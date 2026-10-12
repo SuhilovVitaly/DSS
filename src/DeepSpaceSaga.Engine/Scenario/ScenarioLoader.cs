@@ -89,9 +89,10 @@ public static class ScenarioLoader
             throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
     }
 
-    internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime)
+    internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime,
+        IReadOnlyDictionary<string, int>? armorClasses = null)
     {
-        Validate(scenario, allowNonZeroGameTime);
+        Validate(scenario, allowNonZeroGameTime, armorClasses);
         var gs = scenario.GameState;
         var ids = gs.SpaceObjects.ToDictionary(o => o.ObjectId, o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
         if ((gs.CommandReceipts?.Any(r => r is null || string.IsNullOrWhiteSpace(r.CommandId)) ?? false) ||
@@ -196,7 +197,8 @@ public static class ScenarioLoader
         };
     }
 
-    private static void Validate(ScenarioFile scenario, bool allowNonZeroGameTime = false)
+    private static void Validate(ScenarioFile scenario, bool allowNonZeroGameTime = false,
+        IReadOnlyDictionary<string, int>? armorClasses = null)
     {
         if (scenario.SaveFormatVersion < 0 || scenario.SaveFormatVersion > SaveFormat.CurrentSaveFormatVersion)
             throw new ScenarioException($"Unsupported saveFormatVersion: {scenario.SaveFormatVersion}.");
@@ -262,7 +264,7 @@ public static class ScenarioLoader
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)
         {
-            ValidateObject(obj);
+            ValidateObject(obj, armorClasses);
             foreach (var module in obj.Modules ?? [])
                 foreach (var stack in module.Cargo ?? []) ValidateCargoCostMetadata(stack, scenario.SaveFormatVersion);
             ValidateMarketProfileMetadata(scenario.SaveFormatVersion, obj);
@@ -372,7 +374,7 @@ public static class ScenarioLoader
         }
     }
 
-    private static void ValidateObject(SpaceObjectData obj)
+    private static void ValidateObject(SpaceObjectData obj, IReadOnlyDictionary<string, int>? armorClasses)
     {
         if (obj.ShipClassId is not null &&
             (string.IsNullOrWhiteSpace(obj.ShipClassId) ||
@@ -460,12 +462,13 @@ public static class ScenarioLoader
         {
             foreach (var module in obj.Modules)
             {
-                ValidateModule(obj.ObjectId, module);
+                ValidateModule(obj.ObjectId, module, armorClasses);
             }
         }
     }
 
-    private static void ValidateModule(string objectId, ShipModuleData module)
+    private static void ValidateModule(string objectId, ShipModuleData module,
+        IReadOnlyDictionary<string, int>? armorClasses)
     {
         if (module is null)
             throw new ScenarioException($"Object '{objectId}' modules contains a null element.");
@@ -474,6 +477,10 @@ public static class ScenarioLoader
             throw new ScenarioException($"Object '{objectId}' has a module with empty moduleId.");
         if (string.IsNullOrWhiteSpace(module.ModuleTypeId))
             throw new ScenarioException($"Module '{module.ModuleId}' is missing moduleTypeId.");
+
+        if (string.IsNullOrWhiteSpace(module.ArmorClass) ||
+            (armorClasses is not null && !armorClasses.ContainsKey(module.ArmorClass)))
+            throw new ScenarioException($"Module '{module.ModuleId}' has unknown armorClass '{module.ArmorClass}'.");
 
         if (module.OccupiedCells is null || module.OccupiedCells.Count == 0)
             throw new ScenarioException($"Module '{module.ModuleId}' must occupy at least one cell.");

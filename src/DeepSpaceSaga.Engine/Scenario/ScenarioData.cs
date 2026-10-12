@@ -337,7 +337,9 @@ public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
     [property: JsonPropertyName("displayName")] string DisplayName,
     [property: JsonPropertyName("torpedoSkill")] int? TorpedoSkill = null,
-    [property: JsonPropertyName("countermeasureSkill")] int? CountermeasureSkill = null);
+    [property: JsonPropertyName("countermeasureSkill")] int? CountermeasureSkill = null,
+    [property: JsonPropertyName("accuracySkill")] int AccuracySkill = 0,
+    [property: JsonPropertyName("maneuverabilitySkill")] int ManeuverabilitySkill = 0);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
@@ -459,7 +461,8 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
     [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
     [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true,
-    [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null);
+    [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null,
+    [property: JsonPropertyName("armorClass")] string ArmorClass = "none");
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>
 public sealed record HullCellCoordinate(

@@ -13,7 +13,11 @@ created: 2026-10-12
 
 # EP-0009-US-0001-TK-0005-crew-skills-and-armor-schema
 
-STATUS: NOT STARTED
+STATUS: IMPLEMENTED; separate publication follows
+
+Execution scope before edit: `Scenario/ScenarioData.cs`, `Scenario/ScenarioLoader.cs`, `SimulationEngine.cs`, `SimulationEngine.WeaponOperators.cs`, `tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorSchemaTests.cs`, new `ScenarioArmorSchemaTests.cs`, this card and EP-0009 status reports. Registry-aware `ScenarioLoader.ValidateAndNormalize` checks armor class against loaded `combatRules`; a standalone JSON read without a registry can check syntax only. Legacy skills remain accepted for EP-0008 until their later runtime removal; new skills default to zero. `armorClass` defaults to `none` and is preserved through runtime/save. No Graphify/game/native runs per user.
+
+Implementation: `accuracySkill`/`maneuverabilitySkill` enter crew schema, runtime, and Save/Load at 0..30; legacy scenario fields default to zero. `armorClass` enters module schema, runtime, and Save/Load; registry-aware validation rejects unknown classes. Existing one-crew-per-module rule remains. Focused19/19; broad non-corpus Engine1944/1944 on clean repeat (one pause timing test failed in first broad pass, then passed individually and on full repeat); solution build0 warnings/errors; scoped format and diff checks PASS. Gameplay use of new skills/armor is in later tickets. Native/game/Graphify NOT RUN per user.
 
 **Задача.**
 1. У экипажа появляются `accuracySkill` и `maneuverabilitySkill` (0..30). Навыки, которые EP-0008 оставил «только данными» (`torpedoSkill`/`countermeasureSkill` или их переименования на HEAD), загрузчик продолжает принимать до US-0009-TK-0003, но рантайм их не читает.

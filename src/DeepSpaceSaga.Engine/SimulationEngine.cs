@@ -214,7 +214,8 @@ public sealed partial class SimulationEngine : IDisposable
     public void LoadScenario(ScenarioFile scenario, bool isSave = false, SolarSystemGenerationConfig? generation = null)
     {
         if (isSave) ScenarioLoader.RequireCurrentSaveVersion(scenario.SaveFormatVersion);
-        scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
+        scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true,
+            armorClasses: _registry.CombatRules?.ArmorClasses);
         var gs = scenario.GameState;
         PlacementValidationResult? aiPlacementValidation = null;
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
@@ -1186,7 +1187,8 @@ public sealed partial class SimulationEngine : IDisposable
                     : null,
                 OperatorCrewId: module.OperatorCrewId,
                 AutoDefenseEnabled: module.AutoDefenseEnabled,
-                FuelCostBasisCredits: moduleType.FuelCapacityKg is > 0 ? module.FuelCostBasisCredits : null));
+                FuelCostBasisCredits: moduleType.FuelCapacityKg is > 0 ? module.FuelCostBasisCredits : null,
+                ArmorClass: module.ArmorClass));
         }
 
         return modules;
@@ -1259,7 +1261,8 @@ public sealed partial class SimulationEngine : IDisposable
 
     private static ShipCrewMemberData BuildSaveCrewMember(CrewMemberRuntime member)
     {
-        return new ShipCrewMemberData(member.Id, member.DisplayName, member.TorpedoSkill, member.CountermeasureSkill);
+        return new ShipCrewMemberData(member.Id, member.DisplayName, member.TorpedoSkill, member.CountermeasureSkill,
+            member.AccuracySkill, member.ManeuverabilitySkill);
     }
 
     private static StationCrewMemberData BuildSaveStationCrewMember(StationCrewMemberRuntime member) =>
@@ -1338,7 +1341,8 @@ public sealed partial class SimulationEngine : IDisposable
                 availableCapacityKg,
                 module.OperatorCrewId,
                 module.AutoDefenseEnabled,
-                ResolveFuelCostBasis(module, moduleType, fuelAmountKg, obj.ObjectId)));
+                ResolveFuelCostBasis(module, moduleType, fuelAmountKg, obj.ObjectId),
+                module.ArmorClass));
         }
 
         return modules.ToImmutable();
@@ -1901,7 +1905,8 @@ public sealed partial class SimulationEngine : IDisposable
                     $"Ship '{obj.ObjectId}' has duplicate crew member id '{member.CrewId}'.");
             }
 
-            crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName, member.TorpedoSkill, member.CountermeasureSkill));
+            crew.Add(new CrewMemberRuntime(member.CrewId, member.DisplayName, member.TorpedoSkill,
+                member.CountermeasureSkill, member.AccuracySkill, member.ManeuverabilitySkill));
         }
 
         return crew.ToImmutable();
@@ -3964,7 +3969,8 @@ internal sealed record SpaceObjectRuntime(
     string? RelationToPlayer = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
-internal sealed record CrewMemberRuntime(string Id, string DisplayName, int? TorpedoSkill = null, int? CountermeasureSkill = null);
+internal sealed record CrewMemberRuntime(string Id, string DisplayName, int? TorpedoSkill = null,
+    int? CountermeasureSkill = null, int AccuracySkill = 0, int ManeuverabilitySkill = 0);
 
 /// <summary>One named crew member displayed on a station (see <see cref="StationCrewMemberData"/>).</summary>
 internal sealed record StationCrewMemberRuntime(string Id, string Role, string DisplayName, string PortraitImage);
@@ -4023,7 +4029,8 @@ internal sealed record InstalledModuleRuntime(
     long? AvailableCapacityKg = null,
     string? OperatorCrewId = null,
     bool AutoDefenseEnabled = true,
-    long FuelCostBasisCredits = 0);
+    long FuelCostBasisCredits = 0,
+    string ArmorClass = "none");
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,

@@ -55,6 +55,10 @@ public sealed partial class SimulationEngine
             crewIds.Add(crew.CrewId);
             if (crew.TorpedoSkill is < 0 or > 100 || crew.CountermeasureSkill is < 0 or > 100)
                 throw new ScenarioException($"Crew '{crew.CrewId}' skills must be in 0..100.");
+            if (crew.AccuracySkill is < 0 or > 30)
+                throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..30.");
+            if (crew.ManeuverabilitySkill is < 0 or > 30)
+                throw new ScenarioException($"Crew '{crew.CrewId}' maneuverabilitySkill must be in 0..30.");
         }
         var assigned = new HashSet<string>(StringComparer.Ordinal);
         foreach (var module in obj.Modules ?? [])

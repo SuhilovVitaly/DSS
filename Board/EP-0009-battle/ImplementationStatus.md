@@ -79,3 +79,7 @@ TK-0002 2efad4619528e97af27fd1131f4040e5fe8774d8 published/remote verified. Comb
 ## EP-0009-US-0001-TK-0004 — 2026-10-12
 
 TK-0003 1bead7588ee439464f3d5fde3e3db4e534c20e37 published/remote verified. Additive module schema for launcher, defense, engine, and combat role; JSON ingestion and category/range checks. Focused63/63 after final test addition; non-corpus Engine1936/1936 before final test-only addition; solution build0 warnings/errors. Scoped format/diff PASS. Legacy content without new fields remains loadable until US-0002 catalog migration; gameplay not yet changed. Separate publication follows. Graphify/game/native NOT RUN per current user instruction.
+
+## EP-0009-US-0001-TK-0005 — 2026-10-12
+
+TK-0004 e2bb1da9479db4087dbda250b2f36c9be49c6c73 published/remote verified. Crew accuracy/maneuverability skills and module armorClass schema with runtime and Save/Load preservation. Focused19/19; first broad Engine non-corpus1943/1944 had one pause-timing failure unrelated to changed paths; that test passed alone and full clean repeat1944/1944. Solution build0 warnings/errors; scoped format/diff PASS. New combat math follows in later tickets. Separate publication follows. Graphify/game/native NOT RUN per user.

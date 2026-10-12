@@ -120,4 +120,58 @@ public class WeaponOperatorSchemaTests
         Assert.Equal("operator-" + Player, player.Modules!.Single(m => m.ModuleId == Launcher).OperatorCrewId);
         Assert.All(player.Modules!, m => Assert.False(m.AutoDefenseEnabled));
     }
+
+    [Theory]
+    [InlineData(31, 0, "accuracySkill")]
+    [InlineData(-1, 0, "accuracySkill")]
+    [InlineData(0, 31, "maneuverabilitySkill")]
+    [InlineData(0, -1, "maneuverabilitySkill")]
+    public void Skill_31_rejected(int accuracy, int maneuverability, string field)
+    {
+        var scenario = Assigned() with
+        {
+            GameState = Assigned().GameState with
+            {
+                SpaceObjects = Assigned().GameState.SpaceObjects.Select(o => o.ObjectId != Player ? o : o with
+                {
+                    Crew = o.Crew!.Select(c => c with
+                    {
+                        AccuracySkill = accuracy,
+                        ManeuverabilitySkill = maneuverability
+                    }).ToArray()
+                }).ToArray()
+            }
+        };
+        using var engine = Create(Assigned());
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
+        Assert.Contains(field, error.Message, StringComparison.Ordinal);
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
+    [Fact]
+    public void New_skills_roundtrip_and_legacy_scenario_defaults()
+    {
+        var legacy = Assigned();
+        using var legacyEngine = Create(legacy);
+        var legacyCrew = legacyEngine.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Player).Crew!.Single();
+        Assert.Equal(0, legacyCrew.AccuracySkill);
+        Assert.Equal(0, legacyCrew.ManeuverabilitySkill);
+
+        var skilled = legacy with
+        {
+            GameState = legacy.GameState with
+            {
+                SpaceObjects = legacy.GameState.SpaceObjects.Select(o => o.ObjectId != Player ? o : o with
+                {
+                    Crew = o.Crew!.Select(c => c with { AccuracySkill = 20, ManeuverabilitySkill = 30 }).ToArray()
+                }).ToArray()
+            }
+        };
+        using var engine = Create(skilled);
+        using var restored = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(engine.CaptureSaveState()), true));
+        var crew = restored.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Player).Crew!.Single();
+        Assert.Equal(20, crew.AccuracySkill);
+        Assert.Equal(30, crew.ManeuverabilitySkill);
+    }
 }
