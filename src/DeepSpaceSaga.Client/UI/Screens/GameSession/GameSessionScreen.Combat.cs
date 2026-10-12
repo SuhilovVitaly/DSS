@@ -7,6 +7,82 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed partial class GameSessionScreen
 {
+    private string? _pendingFireModeId;
+    private string? _pendingFireModeCommandId;
+    private Task? _fireModeSendTask;
+    private static readonly string[] FireModeOrder = ["standard", "maneuverability", "overheat"];
+
+    private void RefreshFireModeSubmission()
+    {
+        if (_pendingFireModeId is null) return;
+        var snapshot = _buffer.Latest?.Snapshot;
+        if (FindLauncher()?.LauncherCombat?.ModeId == _pendingFireModeId ||
+            snapshot is { CommandResults.IsDefaultOrEmpty: false } &&
+            snapshot.CommandResults.Any(result => result.CommandId == _pendingFireModeCommandId &&
+                result.Status is CommandResultStatus.Rejected or CommandResultStatus.Failed or CommandResultStatus.Cancelled) == true ||
+            _fireModeSendTask is { IsFaulted: true } or { IsCanceled: true })
+        {
+            _ = _fireModeSendTask?.Exception;
+            _pendingFireModeId = null;
+            _pendingFireModeCommandId = null;
+            _fireModeSendTask = null;
+        }
+    }
+
+    private bool IsFireModeEnabled()
+    {
+        RefreshFireModeSubmission();
+        return _pendingFireModeId is null && _handle is not null &&
+            _buffer.Latest?.Snapshot is { ActiveDialogue: null } snapshot &&
+            FindPlayerShipMotion(snapshot) is { IsDestroyed: false } &&
+            FindLauncher() is
+            {
+                PowerState: "On", OperationalState: "Ready", StructurePoints: > 0,
+                LauncherCombat: { IsBrokenUntilDock: false }
+            } launcher &&
+            launcher.Commands.Any(c => c.CommandTypeId == TorpedoLauncherCommandTypes.SetMode);
+    }
+
+    private void SendNextFireMode()
+    {
+        if (!IsFireModeEnabled()) return;
+        var launcher = FindLauncher()!;
+        string current = launcher.LauncherCombat!.ModeId;
+        int index = Array.IndexOf(FireModeOrder, current);
+        string next = FireModeOrder[(index + 1) % FireModeOrder.Length];
+        _pendingFireModeId = next;
+        try
+        {
+            _fireModeSendTask = _handle!.SendFireModeAsync(_buffer.Latest!.Snapshot.PlayerShipObjectId!,
+                launcher.ModuleId, next, out var id).AsTask();
+            _pendingFireModeCommandId = id;
+        }
+        catch (Exception)
+        {
+            _pendingFireModeId = null;
+            _pendingFireModeCommandId = null;
+            _fireModeSendTask = null;
+        }
+    }
+
+    internal static string FireModeName(string modeId) => modeId switch
+    {
+        "standard" => CombatText("Mode.Standard", "Стандарт"),
+        "maneuverability" => CombatText("Mode.Maneuverability", "Манёвренность"),
+        "overheat" => CombatText("Mode.Overheat", "Перегрев"),
+        _ => modeId
+    };
+
+    internal static string LauncherModeStatus(LauncherCombatSnapshot launcher, double motionTimeMs)
+    {
+        string mode = FireModeName(launcher.ModeId);
+        if (launcher.IsBrokenUntilDock) return mode + " · " + CombatText("BrokenUntilDock", "Сломан до дока");
+        if (launcher.ReadyAtMotionTimeMs is { } readyAt && readyAt > motionTimeMs)
+            return mode + " · " + CombatText("Reloading", "Перезарядка") +
+                $" {Math.Max(0, (readyAt - motionTimeMs) / 1000):0.0} " + CombatText("Seconds", "с");
+        return mode + " · " + CombatText("Ready", "Готов");
+    }
+
     private readonly CombatJournalPanel _combatJournalPanel = new();
     internal TorpedoRoute? LaunchPreviewRoute { get; private set; }
     internal CombatTrajectoryProjector.Geometry? LaunchPreviewGeometry { get; private set; }
@@ -358,7 +434,7 @@ public sealed partial class GameSessionScreen
             FindLauncher() is
             {
                 PowerState: "On", OperationalState: "Ready", StructurePoints: > 0,
-                ActiveCommandType: null, LauncherCombat.Operator: not null
+                ActiveCommandType: null, LauncherCombat.Operator: not null, LauncherCombat.IsBrokenUntilDock: false
             } launcher && !launcher.Commands.IsDefaultOrEmpty &&
             (launcher.LauncherCombat!.ReadyAtMotionTimeMs is null ||
              launcher.LauncherCombat.ReadyAtMotionTimeMs <= snapshot.MotionTimeMs) &&
@@ -373,14 +449,15 @@ public sealed partial class GameSessionScreen
 
     private string ReadyLauncherStatus(LauncherCombatSnapshot launcher)
     {
+        string status = LauncherModeStatus(launcher, _buffer.Latest?.Snapshot.MotionTimeMs ?? 0);
         if (_torpedoRejectedOutOfRange && _selectedObjectId == _pendingTorpedoTargetId)
-            return "Пуск отклонён: цель вне дальности";
-        if (launcher.RangeKm is not { } range || !double.IsFinite(range) || range <= 0) return "Дальность неизвестна";
+            return status + " · Пуск отклонён: цель вне дальности";
+        if (launcher.RangeKm is not { } range || !double.IsFinite(range) || range <= 0) return status + " · Дальность неизвестна";
         if (_buffer.Latest?.Snapshot is { } snapshot && _selectedObjectId is not null &&
             _selectedObjectId != snapshot.PlayerShipObjectId && snapshot.Objects.Any(o => o.ObjectId == _selectedObjectId) &&
             !IsSelectedTargetInTorpedoRange(snapshot, launcher))
-            return $"Вне дальности ({range:0.##} км)";
-        return "Ready";
+            return status + $" · Вне дальности ({range:0.##} км)";
+        return status;
     }
 
     private InstalledModuleSnapshot? FindDefense() => _buffer.Latest?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
@@ -419,10 +496,12 @@ public sealed partial class GameSessionScreen
         RefreshTorpedoSubmission();
         if (_torpedoSubmitPending) return "Sending...";
         if (_torpedoSendFailed) return "Send failed";
+        RefreshFireModeSubmission();
+        if (_pendingFireModeId is not null) return CombatText("Sending", "Отправка...");
         return FindLauncher() switch
         {
-            { LauncherCombat.ReadyAtMotionTimeMs: { } readyAt }
-                when _buffer.Latest?.Snapshot.MotionTimeMs < readyAt => "Reloading",
+            { LauncherCombat.IsBrokenUntilDock: true, LauncherCombat: { } launcher } =>
+                LauncherModeStatus(launcher, _buffer.Latest?.Snapshot.MotionTimeMs ?? 0),
             { LauncherCombat.Operator: null } => "Нет оператора",
             { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, LauncherCombat: { } launcher } => ReadyLauncherStatus(launcher),
             { LauncherCombat: not null } => "Unavailable",

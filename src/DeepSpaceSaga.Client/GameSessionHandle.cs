@@ -128,6 +128,14 @@ public sealed class GameSessionHandle : IAsyncDisposable
         return _connection.SendCommandAsync(command, cancellationToken);
     }
 
+    public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
+    {
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return _connection.SendCommandAsync(new PlayerCommand(commandId, sequence, objectId, moduleId,
+            TorpedoLauncherCommandTypes.SetMode, ModeId: modeId));
+    }
+
     /// <summary>Release the player ship from its current station through the authoritative navigation computer.</summary>
     public string? SendUndockCommand(string? destinationStationObjectId = null)
     {

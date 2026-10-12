@@ -760,6 +760,7 @@ public sealed partial class GameSessionScreen : IScreen
         if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return false;
         if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
         if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
+        if (commandType == TorpedoLauncherCommandTypes.SetMode) return IsFireModeEnabled();
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
             return IsDefenseToggleEnabled(commandType);
         var snapshot = _buffer.Latest?.Snapshot;
@@ -814,6 +815,11 @@ public sealed partial class GameSessionScreen : IScreen
         if (commandType == CombatCommandTypes.SelfDestruct)
         {
             SendSelfDestruct();
+            return;
+        }
+        if (commandType == TorpedoLauncherCommandTypes.SetMode)
+        {
+            SendNextFireMode();
             return;
         }
         if (commandType == CombatCommandTypes.Fire)

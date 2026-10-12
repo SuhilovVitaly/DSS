@@ -46,14 +46,14 @@ public sealed class BasicCombatUiFlowTests
             Assert.Equal(SimulationSpeed.Speed0, launch.CurrentSpeed);
             Assert.False(f.Button.Enabled);
             Assert.Null(f.Screen.LaunchPreviewGeometry);
-            Assert.Equal("Reloading", f.LauncherStatus);
+            Assert.Contains("Reloading", f.LauncherStatus);
 
             long end = missile.Torpedo.PredictedImpactMotionTimeMs!.Value + 1000;
             var impact = await f.AdvanceTo(end);
             Assert.Equal(shot, impact.CombatImpacts.Length);
             Assert.DoesNotContain(impact.Objects, o => o.Torpedo is not null);
             Assert.Equal(150, impact.CombatImpacts[^1].DamageApplied);
-            Assert.Equal("Reloading", f.LauncherStatus);
+            Assert.Contains("Reloading", f.LauncherStatus);
             var effect = Assert.Single(f.Screen.CombatEffects.Active);
             Assert.Equal(shot, effect.Impact.EventId);
             Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
@@ -88,7 +88,7 @@ public sealed class BasicCombatUiFlowTests
                 var after = await f.AdvanceTo(flight.PredictedImpactMotionTimeMs!.Value + 1000);
                 Assert.Equal(0, after.CombatImpacts[^1].DamageApplied);
                 Assert.Equal(wreck, Assert.Single(after.Objects, o => o.ObjectType == SpaceObjectType.Wreck));
-                Assert.Equal("Reloading", f.LauncherStatus);
+                Assert.Contains("Reloading", f.LauncherStatus);
             }
         }
         Assert.Null(f.Handle.Failure);
