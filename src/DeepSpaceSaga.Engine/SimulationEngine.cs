@@ -474,6 +474,7 @@ public sealed partial class SimulationEngine : IDisposable
             _combatJournalSequence = 0;
             _countermeasureTargetPlans.Clear();
             _countermeasureRng = new(resolvedMasterSeed);
+            _moduleHitLocationRng = new(resolvedMasterSeed);
             _combatProcessedTimeMs = gs.MotionTimeMs;
             _hostileCombat.Clear();
             if (gs.HostileCombatState is { } hostile)

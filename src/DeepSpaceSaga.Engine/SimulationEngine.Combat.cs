@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Combat;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 
@@ -8,6 +9,7 @@ namespace DeepSpaceSaga.Engine;
 public sealed partial class SimulationEngine
 {
     private Dictionary<string, HullCombatSnapshot> _hullCombat = new(StringComparer.Ordinal);
+    private ModuleHitLocationRng _moduleHitLocationRng = new(0);
     private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> _launcherCombat = new();
     private long _torpedoSequence;
     private long _combatImpactSequence;
@@ -65,11 +67,14 @@ public sealed partial class SimulationEngine
         var route = TorpedoGuidanceMath.Plan(origin, targetPose, launcher.SpeedKmS, launcher.TurnRateDegPerSec, motionTimeMs);
         if (!TryGetNextTorpedoId(out string id, out long sequence))
             return CommandStartOutcome.Rejected("projectile_id_exhausted");
+        var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
         var flight = new TorpedoSnapshot(owner.InitialMotion.ObjectId, moduleId, targetObjectId!, motionTimeMs,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
             TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator,
             CapturedManeuverability: weaponOperator.EffectiveRating,
-            OwnerPlayerRelationAtLaunch: GetRelationToPlayer(owner) ?? PlayerRelation.Neutral);
+            OwnerPlayerRelationAtLaunch: GetRelationToPlayer(owner) ?? PlayerRelation.Neutral,
+            ArmorPiercingPercent: moduleType.ArmorPiercingPercent ?? 0,
+            ArmorDamagePercent: moduleType.ArmorDamagePercent ?? 100);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
         _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
         _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id, Operator = weaponOperator };
@@ -322,6 +327,9 @@ public sealed partial class SimulationEngine
         int damage = 0;
         string? wreckId = null;
         string hitId = target.InitialMotion.ObjectId;
+        var moduleHit = ApplyModuleHit(target, flight, contact.MotionTimeMs);
+        if (moduleHit is { } hit)
+            target = hit.UpdatedShip;
         if (_hullCombat.TryGetValue(hitId, out var hull) && hull.ShipClassId == "ship.tetrarch")
         {
             damage = Math.Min(hull.CurrentHp, flight.Damage);
@@ -343,6 +351,66 @@ public sealed partial class SimulationEngine
         if (wreckId is not null)
             AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.Destroyed, flight.OwnerObjectId, hitId,
                 projectile.InitialMotion.ObjectId, contact.X, contact.Y, Damage: damage, Result: wreckId));
+        if (moduleHit is { } moduleDamage)
+        {
+            AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.ModuleHit, flight.OwnerObjectId, hitId,
+                projectile.InitialMotion.ObjectId, contact.X, contact.Y, Damage: flight.Damage,
+                HitModuleId: moduleDamage.ModuleId, ArmorBefore: moduleDamage.ArmorBefore,
+                ArmorAfter: moduleDamage.ArmorAfter, StructureBefore: moduleDamage.StructureBefore,
+                StructureAfter: moduleDamage.StructureAfter));
+            if (moduleDamage.StructureAfter == 0)
+                AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.ModuleDestroyed, flight.OwnerObjectId, hitId,
+                    projectile.InitialMotion.ObjectId, contact.X, contact.Y,
+                    HitModuleId: moduleDamage.ModuleId, StructureAfter: 0));
+        }
+    }
+
+    private readonly record struct ModuleHitOutcome(SpaceObjectRuntime UpdatedShip, string ModuleId,
+        int ArmorBefore, int ArmorAfter, int StructureBefore, int StructureAfter);
+
+    private ModuleHitOutcome? ApplyModuleHit(SpaceObjectRuntime target, TorpedoSnapshot flight, double motionTimeMs)
+    {
+        int targetIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == target.InitialMotion.ObjectId);
+        if (targetIndex < 0) return null;
+        target = _objects[targetIndex];
+        if (target.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)) return null;
+        var candidates = target.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
+            .OrderBy(m => m.ModuleId, StringComparer.Ordinal)
+            .Select(m => (Module: m, Mass: _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).MassKg))
+            .ToArray();
+        if (candidates.Length == 0) return null;
+
+        ulong totalMass = 0;
+        foreach (var candidate in candidates)
+            totalMass = checked(totalMass + checked((ulong)candidate.Mass));
+        ulong draw = _moduleHitLocationRng.NextBelow(totalMass);
+        InstalledModuleRuntime selected = candidates[^1].Module;
+        foreach (var candidate in candidates)
+        {
+            if (draw < (ulong)candidate.Mass)
+            {
+                selected = candidate.Module;
+                break;
+            }
+            draw -= (ulong)candidate.Mass;
+        }
+
+        var result = ModuleDamageMath.Apply(flight.Damage, flight.ArmorPiercingPercent,
+            flight.ArmorDamagePercent, selected.Armor, selected.StructurePoints);
+        double? disabledUntil = result.StructureAfter == 0 ? null : Math.Max(
+            selected.DisabledUntilMotionTimeMs ?? 0,
+            motionTimeMs + (_registry.CombatRules?.Damage.HitDisableMs ?? 60000));
+        var updated = selected with
+        {
+            Armor = result.ArmorAfter,
+            StructurePoints = result.StructureAfter,
+            DisabledUntilMotionTimeMs = disabledUntil,
+            Destroyed = result.StructureAfter == 0
+        };
+        var updatedShip = target with { Modules = target.Modules.SetItem(target.Modules.IndexOf(selected), updated) };
+        _objects[targetIndex] = updatedShip;
+        return new(updatedShip, selected.ModuleId, selected.Armor, result.ArmorAfter,
+            selected.StructurePoints, result.StructureAfter);
     }
 
     private string CreateWreck(SpaceObjectRuntime destroyed, double impactMotionTimeMs)

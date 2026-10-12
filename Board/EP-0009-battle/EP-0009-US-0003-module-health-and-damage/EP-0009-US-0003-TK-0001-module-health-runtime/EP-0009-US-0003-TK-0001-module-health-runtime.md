@@ -13,7 +13,7 @@ created: 2026-10-12
 
 # EP-0009-US-0003-TK-0001-module-health-runtime
 
-STATUS: MODULE RUNTIME IMPLEMENTED; HULL REMOVAL DEFERRED TO TK-0002 UNDER A08
+STATUS: MODULE RUNTIME IMPLEMENTED; HULL REMOVAL DEFERRED TO TK-0003 UNDER A08
 
 Execution scope before edit: `SimulationEngine.cs` and `SimulationEngine.Combat.cs` stage runtime and project snapshots; `Scenario/ScenarioData.cs` plus `ScenarioLoader.cs` define/validate persisted module state; focused Engine tests and this card/status records. The existing hull hit path still consumes `_hullCombat` until TK-0002 migrates damage, so under A08 its deletion moves into that migration to keep every per-ticket commit buildable. No Graphify/game/native runs.
 
@@ -30,7 +30,7 @@ Execution scope before edit: `SimulationEngine.cs` and `SimulationEngine.Combat.
 
 `InstalledModuleRuntime` now holds armor current/max, disable-until physical time and destroyed state; structure current remains the existing `StructurePoints`, with max read from the type. Armor is initialized from `combat-rules.json` by `armorClass`, or from a persisted current value. Snapshot projection includes armor/structure, combat role and disable/destroy flags. Scenario/save fields `armor`, `disabledUntilMotionTimeMs`, `destroyed` preserve these values and validate current armor and finite time. Legacy modules without armor continue at zero. `ModuleHealthBootstrapTests` cover light60/structure150, legacy defaults and JSON Save/Load continuation.
 
-`No_hull_state` is intentionally OPEN: the active impact path still reads `_hullCombat`, so deleting it before replacing that path would break the intermediate ticket build. TK-0002 will replace the damage path and delete hull state/DTO consumers under A08; TK-0001 makes no claim that hull combat is already removed. No Graphify/game/native runs per user.
+`No_hull_state` is intentionally OPEN: the active impact path still reads `_hullCombat`, so deleting it before replacing that path would break the intermediate ticket build. TK-0002 added module damage, but old hull state remains for wreck/defeat; TK-0003 will remove its last consumers while consolidating ship destruction under A08. TK-0001 makes no claim that hull combat is already removed. No Graphify/game/native runs per user.
 
 ## Canonical context and execution
 

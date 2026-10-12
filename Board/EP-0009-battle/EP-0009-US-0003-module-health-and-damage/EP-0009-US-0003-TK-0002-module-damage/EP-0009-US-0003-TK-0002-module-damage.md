@@ -13,7 +13,9 @@ created: 2026-10-12
 
 # EP-0009-US-0003-TK-0002-module-damage
 
-STATUS: NOT STARTED
+STATUS: MODULE DAMAGE IMPLEMENTED; LEGACY HULL TRANSITION OPEN
+
+Execution scope before edit: `SimulationEngine.Combat.cs` owns impact and legacy wreck transition; `SimulationEngine.CombatPersistence.cs`, `Scenario/CombatSaveData.cs` own combat continuation; `Rng/RngStreamNames.cs` and a new combat RNG/math helper provide isolated weighted selection and D09 split; Engine tests cover damage and Save/Load. Existing hull/wreck tests require the old transition until TK-0003 consolidates destruction under A08; this ticket will not claim hull removal before that replacement. No Graphify/game/native runs.
 
 **Задача.**
 1. Применение урона в hull заменяется на `ApplyModuleHit(ship, captured, t)`.
@@ -24,6 +26,12 @@ STATUS: NOT STARTED
 
 **Файлы:** `SimulationEngine.Combat.cs`, `Rng/RngStreamNames.cs`, `Combat/ModuleDamageMath.cs` (новый), `tests/DeepSpaceSaga.Engine.Tests/ModuleDamageTests.cs` (новый).
 **Тесты:** `Damage_split_150_vs_light`, `Unarmored_dies_one_hit`, `Hit_location_by_mass_deterministic`, `Disable_extends_not_accumulates`.
+
+## Implementation evidence — 2026-10-12
+
+Impact now selects a living module in ordinal `moduleId` order, weighted by `massKg`, using isolated SplitMix64 stream `combat.hit.location.v1`. State/counter persist in combat continuation and resume after Save/Load; legacy saves without that state derive it from the master seed. Torpedoes capture armor piercing/damage percentages at launch. D09 splits damage between armor and structure; a surviving hit sets `disabledUntilMotionTimeMs` to at least impact time plus the configured 60000 ms, and structure zero marks the module destroyed. `ModuleHit`/`ModuleDestroyed` journal facts include before/after values. Tests cover 150 against light/unarmored modules, deterministic and resumed location selection, and one real light-armor hit with the one-minute disable deadline.
+
+The old hull damage/wreck transition still runs in parallel so existing EP-0008 saves and tests remain valid until TK-0003 replaces ship destruction. Thus `ApplyModuleHit` is active but the hull path is not yet removed, and `Disable_extends_not_accumulates` across two surviving hits is OPEN (the current 150-damage catalog destroys an unarmored module in one hit). TK-0003 must remove hull state and consolidate event order/ship destruction; TK-0004 enforces disabled/destroyed command behavior. This is an intermediate commit under A08, not final US3 acceptance. Graphify/game/native NOT RUN per user.
 
 ## Canonical context and execution
 

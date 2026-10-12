@@ -14,7 +14,9 @@ public sealed record CombatStateData(
     [property: JsonRequired, JsonPropertyName("nextGuidanceMotionTimeMs")] long NextGuidanceMotionTimeMs,
     [property: JsonRequired, JsonPropertyName("launchers")] IReadOnlyList<LauncherSaveData> Launchers,
     [property: JsonRequired, JsonPropertyName("projectiles")] IReadOnlyList<ProjectileSaveData> Projectiles,
-    [property: JsonRequired, JsonPropertyName("processedLaunchCommandIds")] IReadOnlyList<string> ProcessedLaunchCommandIds);
+    [property: JsonRequired, JsonPropertyName("processedLaunchCommandIds")] IReadOnlyList<string> ProcessedLaunchCommandIds,
+    [property: JsonPropertyName("hitLocationRngState")] ulong? HitLocationRngState = null,
+    [property: JsonPropertyName("hitLocationRngCounter")] ulong HitLocationRngCounter = 0);
 
 public sealed record LauncherSaveData(
     [property: JsonRequired, JsonPropertyName("ownerObjectId")] string OwnerObjectId,
@@ -89,6 +91,8 @@ internal static class CombatSaveValidation
         Require(combat.LastProcessedMotionTimeMs == state.MotionTimeMs && combat.ProjectileSequence >= 0 &&
             combat.ImpactSequence is >= 0 and < long.MaxValue && combat.WreckSequence is >= 0 and < long.MaxValue,
             "invalid counters or motion time.");
+        Require(combat.HitLocationRngState is not null || combat.HitLocationRngCounter == 0,
+            "hit-location RNG counter without state.");
         Require(combat.Launchers is not null && combat.Projectiles is not null && combat.ProcessedLaunchCommandIds is not null,
             "missing combat collections.");
         var launches = new HashSet<string>(StringComparer.Ordinal);
@@ -113,6 +117,8 @@ internal static class CombatSaveValidation
             var f = row.Flight;
             if (format >= 16) Require(CountermeasureSaveValidation.SequenceWithin(row.ObjectId, "torpedo-", combat.ProjectileSequence), "projectile sequence behind identity.");
             Require(f is not null && Parameters(f.SpeedKmS, f.TurnRateDegPerSec, f.Damage), "invalid captured weapon.");
+            Require(f!.ArmorPiercingPercent is >= 0 and <= 100 && f.ArmorDamagePercent > 0,
+                "invalid captured armor damage parameters.");
             CountermeasureSaveValidation.ValidateCapturedTorpedoRating(f!, format);
             Require(!string.IsNullOrWhiteSpace(f!.OwnerObjectId) && !string.IsNullOrWhiteSpace(f.LauncherModuleId) &&
                 (!objects.ContainsKey(f.OwnerObjectId) && format >= 16 ||

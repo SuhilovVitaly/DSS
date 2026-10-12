@@ -95,7 +95,11 @@ public sealed record TorpedoSnapshot(
     /// <summary>Captured attack contribution for the contact-time hit roll.</summary>
     decimal? CapturedAttack = null,
     /// <summary>Authoritative chance in tenths of one percent; populated by EP-0009 runtime.</summary>
-    int? HitChanceTenths = null);
+    int? HitChanceTenths = null,
+    /// <summary>Armor piercing captured at launch, independent of later catalog edits.</summary>
+    decimal ArmorPiercingPercent = 0,
+    /// <summary>Armor damage multiplier captured at launch, independent of later catalog edits.</summary>
+    decimal ArmorDamagePercent = 100);
 
 /// <summary>Current execution phase, independent of whether the route predicts an intercept.</summary>
 public enum TorpedoRoutePhase

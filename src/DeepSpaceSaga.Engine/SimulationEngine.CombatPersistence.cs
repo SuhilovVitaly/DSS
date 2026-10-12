@@ -83,7 +83,8 @@ public sealed partial class SimulationEngine
                     tracked ? new ObjectMotionSnapshot(target.Pose.ObjectId, target.Pose.X, target.Pose.Y,
                         target.Pose.SpeedKmS, target.Pose.Direction) : null, tracked ? target.Time : 0);
             }).ToArray(),
-        _processedLaunchCommandIds.Order(StringComparer.Ordinal).ToArray());
+        _processedLaunchCommandIds.Order(StringComparer.Ordinal).ToArray(),
+        _moduleHitLocationRng.State, _moduleHitLocationRng.Counter);
 
     // Validate content compatibility and stage every runtime mutation before publishing the world.
     private static void StageCombatRestore(CombatStateData? saved, List<SpaceObjectRuntime> objects,
@@ -111,6 +112,8 @@ public sealed partial class SimulationEngine
         _combatImpactSequence = saved.ImpactSequence;
         _wreckSequence = saved.WreckSequence;
         _nextCombatGuidanceMs = saved.NextGuidanceMotionTimeMs;
+        if (saved.HitLocationRngState is { } hitLocationState)
+            _moduleHitLocationRng = new(hitLocationState, saved.HitLocationRngCounter);
         _processedLaunchCommandIds.UnionWith(saved.ProcessedLaunchCommandIds);
         foreach (var projectile in saved.Projectiles)
             if (projectile.TargetBaseline is { } target)
