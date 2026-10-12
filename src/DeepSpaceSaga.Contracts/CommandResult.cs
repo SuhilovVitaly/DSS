@@ -147,6 +147,12 @@ public static class CommandReasonCodes
     /// <summary>Module exists but cannot execute commands (power Off / Disabled / no structure points / no inertia).</summary>
     public const string ModuleUnavailable = "module_unavailable";
 
+    /// <summary>Combat damage has temporarily disabled the module.</summary>
+    public const string ModuleDisabled = "module_disabled";
+
+    /// <summary>Combat damage has destroyed the module.</summary>
+    public const string ModuleDestroyed = "module_destroyed";
+
     /// <summary>Module is busy with an active non-auto-repeat cycle; command deferred.</summary>
     public const string Busy = "busy";
 

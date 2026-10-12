@@ -24,7 +24,8 @@ public sealed partial class SimulationEngine
             { Segment = active.Segment with { ElapsedMs = time - active.Segment.EpochMs } }, active is not null);
         }).ToArray());
 
-    private void StageHostileRestore(HostileCombatSaveData? saved, List<SpaceObjectRuntime> objects)
+    private void StageHostileRestore(HostileCombatSaveData? saved, List<SpaceObjectRuntime> objects,
+        long restoredMotionTimeMs)
     {
         if (saved is null) return;
         foreach (var row in saved.Actors)
@@ -35,7 +36,7 @@ public sealed partial class SimulationEngine
             var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
             if (!IsEngineCategory(definition) || definition.MaxSpeedMps is not > 0 || definition.LinearInertiaMps2 is not > 0 ||
                 definition.AngularInertiaDegPerSec is not > 0 || definition.TurnStepDegrees is not > 0 ||
-                row.ActiveMotion && !CanExecuteEngineCommand(module, definition))
+                row.ActiveMotion && !CanExecuteEngineCommand(module, definition, restoredMotionTimeMs))
                 throw new ScenarioException("Invalid hostile combat save: assigned engine is unavailable or not an engine.");
             objects[index] = owner with { InitialMotion = owner.InitialMotion with { HostileCombat = row.ActiveMotion ? row.State : null } };
         }

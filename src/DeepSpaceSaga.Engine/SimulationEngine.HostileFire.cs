@@ -24,10 +24,12 @@ public sealed partial class SimulationEngine
             foreach (var module in owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal))
             {
                 if (!_launcherCombat.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var launcher) ||
-                    launcher.ActiveTorpedoObjectId is not null || !CanExecuteModuleCommand(module) || module.ActiveCycle is not null ||
+                    launcher.ActiveTorpedoObjectId is not null || module.ActiveCycle is not null ||
                 !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire) ||
                     ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack) is null) continue;
-                double earliest = Math.Max(Math.Ceiling(cursor), _combatProcessedTimeMs + 1);
+                double earliest = Math.Max(Math.Max(Math.Ceiling(cursor), _combatProcessedTimeMs + 1),
+                    Math.Ceiling(module.DisabledUntilMotionTimeMs ?? cursor));
+                if (!CanExecuteModuleCommand(module, earliest)) continue;
                 var previous = _combatImpacts.LastOrDefault(i => i.OwnerObjectId == owner.InitialMotion.ObjectId && i.LauncherModuleId == module.ModuleId);
                 if (previous is not null) earliest = Math.Max(earliest, Math.Floor(previous.MotionTimeMs) + 1);
                 if (earliest > to) continue;

@@ -19,6 +19,11 @@ public sealed partial class SimulationEngine
         if (command.ObjectId != PlayerShipObjectId) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
         var key = (command.ObjectId, command.ModuleId);
         if (!_defenses.TryGetValue(key, out var defense)) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId);
+        var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == command.ModuleId);
+        if (module is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+        if (!CanExecuteModuleCommand(module, motionTimeMs))
+            return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
         _defenses[key] = defense with { AutoEnabled = command.CommandType == DefenseCommandTypes.Enable };
         RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         return CommandStartOutcome.Started;
@@ -37,11 +42,13 @@ public sealed partial class SimulationEngine
             {
                 if (!_defenses.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var defense) ||
                     !defense.AutoEnabled || defense.State is DefenseState.Guiding or DefenseState.NoOperator ||
-                    !CanExecuteModuleCommand(module) || module.ActiveCycle is not null) continue;
+                    module.ActiveCycle is not null) continue;
                 var op = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
                 if (op is null) continue;
                 var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-                double readyAt = Math.Max(from, defense.ReloadDueMotionTimeMs ?? from);
+                double readyAt = Math.Max(Math.Max(from, defense.ReloadDueMotionTimeMs ?? from),
+                    module.DisabledUntilMotionTimeMs ?? from);
+                if (!CanExecuteModuleCommand(module, readyAt)) continue;
                 if (readyAt > to) continue;
                 foreach (var target in _objects)
                 {

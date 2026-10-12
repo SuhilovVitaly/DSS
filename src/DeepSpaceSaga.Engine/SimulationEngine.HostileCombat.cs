@@ -13,7 +13,8 @@ public sealed partial class SimulationEngine
         _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
         _objects.Any(o => IsHostileActor(o) && !o.IsDocked &&
             o.Modules.Any(m => _launcherCombat.ContainsKey((o.InitialMotion.ObjectId, m.ModuleId))) &&
-            o.Modules.Any(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex))));
+            o.Modules.Any(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex),
+                Math.Max(_combatProcessedTimeMs, m.DisabledUntilMotionTimeMs ?? _combatProcessedTimeMs))));
 
     private void RefreshHostileCombat(long time)
     {
@@ -32,7 +33,7 @@ public sealed partial class SimulationEngine
             var weapon = owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal)
                 .FirstOrDefault(m => _launcherCombat.ContainsKey((owner.InitialMotion.ObjectId, m.ModuleId)));
             var engine = owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal)
-                .FirstOrDefault(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex)) && m.ActiveCycle is null);
+                .FirstOrDefault(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex), time) && m.ActiveCycle is null);
             var pose = RuntimeMotion.At(owner, time);
             if (target is null || !IsHostileActor(owner) || owner.IsDocked || weapon is null || engine is null)
             {

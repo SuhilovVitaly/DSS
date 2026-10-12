@@ -48,7 +48,8 @@ public sealed partial class SimulationEngine
         if (!_launcherCombat.TryGetValue(key, out var launcher) ||
             !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
-        if (!CanExecuteModuleCommand(module)) return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
+        if (!CanExecuteModuleCommand(module, motionTimeMs))
+            return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
         if (launcher.ActiveTorpedoObjectId is not null || module.ActiveCycle is not null)
             return CommandStartOutcome.Rejected(CommandReasonCodes.Busy);
         if (string.IsNullOrWhiteSpace(targetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
@@ -398,10 +399,35 @@ public sealed partial class SimulationEngine
             Armor = result.ArmorAfter,
             StructurePoints = result.StructureAfter,
             DisabledUntilMotionTimeMs = disabledUntil,
-            Destroyed = result.StructureAfter == 0
+            Destroyed = result.StructureAfter == 0,
+            ActiveCycle = null
         };
+        long interruptTime = (long)Math.Floor(motionTimeMs);
+        var type = _registry.ModuleTypes.GetDefinition(selected.ModuleTypeIndex);
+        bool interruptMotion = selected.ActiveCycle is not null ||
+            (type.CombatRole == "engine" && target.InitialMotion.HostileCombat is not null);
         var updatedShip = target with { Modules = target.Modules.SetItem(target.Modules.IndexOf(selected), updated) };
+        if (interruptMotion)
+        {
+            var pose = RuntimeMotion.At(target, interruptTime) with
+            {
+                ActiveEngineCommandType = null,
+                HostileCombat = null,
+                ApproachRoute = null
+            };
+            updatedShip = updatedShip with { InitialMotion = pose, StartGameTimeMs = interruptTime };
+        }
         _objects[targetIndex] = updatedShip;
+        if (selected.ActiveCycle is { } cycle)
+        {
+            string reason = updated.Destroyed ? CommandReasonCodes.ModuleDestroyed : CommandReasonCodes.ModuleDisabled;
+            RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, interruptTime, reason);
+            RecordShipEvent(target.InitialMotion.ObjectId, selected.ModuleId,
+                ShipEventTypes.CycleInterrupted, reason, interruptTime);
+        }
+        var defenseKey = (target.InitialMotion.ObjectId, selected.ModuleId);
+        if (_defenses.TryGetValue(defenseKey, out var defense))
+            _defenses[defenseKey] = defense with { PendingBurstShots = [] };
         return new(updatedShip, selected.ModuleId, selected.Armor, result.ArmorAfter,
             selected.StructurePoints, result.StructureAfter);
     }
