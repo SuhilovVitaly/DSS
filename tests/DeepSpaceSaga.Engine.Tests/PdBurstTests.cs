@@ -12,6 +12,34 @@ public sealed class PdBurstTests
         Path.Combine(ClientRoot, "Settings.json"), out _, out _);
 
     [Fact]
+    public void Manual_burst_can_restart_after_reload_while_older_countermeasures_are_guiding()
+    {
+        var source = ProductionRegistry();
+        static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition =>
+            Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
+        var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Select(type =>
+            type.TypeId == "module.torpedo.launcher.basic" ? type with { TorpedoSpeedKmS = 3 } :
+            type.CategoryTypeId == "module.countermeasure.launcher" ? type with { CountermeasureSpeedKmS = 0.001 } : type),
+            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
+            All(source.Dialogues), All(source.Quests), catalogVersion: source.CatalogVersion,
+            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
+            stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules,
+            fireModes: source.FireModes);
+        using var engine = Create(HostileTorpedoFireTests.HostileScenario(), registry);
+        string target = LaunchEnemy(engine);
+        engine.ReceiveCommand(Manual("first-slow", target));
+        At(engine, 1);
+        var ready = At(engine, 14501);
+        Assert.Contains(ready.Objects, o => o.ObjectId == target && o.Torpedo is not null);
+        Assert.Contains(ready.Objects, o => o.Countermeasure?.LauncherModuleId == Defense1);
+        engine.ReceiveCommand(Manual("second-slow", target));
+        var second = At(engine, 14501);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(second.CommandResults).Status);
+        Assert.Equal(3, second.Objects.Count(o => o.Countermeasure?.LauncherModuleId == Defense1));
+        Assert.Single(second.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.PendingBurstShots!.Value);
+    }
+
+    [Fact]
     public void Second_barrel_fires_after_two_seconds_and_survives_save_load()
     {
         var registry = ProductionRegistry();
@@ -23,6 +51,9 @@ public sealed class PdBurstTests
         Assert.Equal(2, defense.Barrels);
         Assert.Equal(2001, Assert.Single(defense.PendingBurstShots!.Value).DueMotionTimeMs);
         Assert.Single(first.Objects, o => o.Countermeasure?.LauncherModuleId == Defense1);
+        Assert.Equal(14501, defense.ReadyAtMotionTimeMs);
+        engine.ReceiveCommand(Manual("still-reloading", torpedoId));
+        Assert.Equal(CommandReasonCodes.NotReady, Assert.Single(At(engine, 1).CommandResults).ReasonCode);
 
         var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(
             engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0, 1000)), true);

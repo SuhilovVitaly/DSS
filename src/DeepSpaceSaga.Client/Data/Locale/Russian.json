@@ -361,6 +361,7 @@
   "Combat.Reason.unknown_module": "Аппарат отсутствует",
   "Combat.Reason.module_unavailable": "Аппарат недоступен",
   "Combat.Reason.busy": "Аппарат занят",
+  "Combat.Reason.not_ready": "Аппарат перезаряжается",
   "Combat.Reason.no_weapon_operator": "Нет оператора",
   "Combat.Reason.missing_target": "Выберите вражескую торпеду",
   "Combat.Reason.unknown_target": "Цель недоступна",

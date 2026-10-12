@@ -361,6 +361,7 @@
   "Combat.Reason.unknown_module": "Launcher missing",
   "Combat.Reason.module_unavailable": "Launcher unavailable",
   "Combat.Reason.busy": "Launcher busy",
+  "Combat.Reason.not_ready": "Launcher reloading",
   "Combat.Reason.no_weapon_operator": "No operator",
   "Combat.Reason.missing_target": "Select a hostile torpedo",
   "Combat.Reason.unknown_target": "Target unavailable",

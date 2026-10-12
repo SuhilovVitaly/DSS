@@ -49,7 +49,7 @@ public class ManualCountermeasureFireTests
         Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.Equal(DefenseState.Guiding, m.Defense!.State));
         engine.ReceiveCommand(Manual("busy", target));
         var busy = At(engine, 1);
-        Assert.Equal(CommandReasonCodes.Busy, Assert.Single(busy.CommandResults).ReasonCode);
+        Assert.Equal(CommandReasonCodes.NotReady, Assert.Single(busy.CommandResults).ReasonCode);
         Assert.Equal(2, busy.Objects.Count(o => o.Countermeasure is not null));
         Assert.Equal(0ul, engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
     }
