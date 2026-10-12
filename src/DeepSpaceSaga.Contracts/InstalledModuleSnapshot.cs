@@ -63,4 +63,14 @@ public sealed record InstalledModuleSnapshot(
     /// <summary>Current authoritative operator for either weapon family; null means unassigned.</summary>
     WeaponOperatorSnapshot? Operator = null,
     /// <summary>Eligibility for this exact module and target; never an aggregate over all defense modules.</summary>
-    DefenseLaunchPreview? DefensePreview = null);
+    DefenseLaunchPreview? DefensePreview = null,
+    /// <summary>Authoritative combat armor remaining. Populated by the module-health runtime.</summary>
+    int ArmorCurrent = 0,
+    int ArmorMax = 0,
+    /// <summary>Authoritative combat structure, separate from the older operational StructurePoints.</summary>
+    int StructureCurrent = 0,
+    int StructureMax = 0,
+    /// <summary>Absolute physical time when a non-destroyed module becomes available again.</summary>
+    double? DisabledUntilMotionTimeMs = null,
+    bool IsDestroyed = false,
+    string? CombatRole = null);

@@ -63,3 +63,7 @@ EP-0009-US-0001-TK-0001-module-health-contracts имеет зависимост�
 документации и подготовки Board. Завершающую US-0012 оформить в стандартной
 структуре и расширить до всех требований §6 `EpicExecutionPrompt.md`.
 Все 12 историй и 38 тикетов EP-0009 остаются открытыми.
+
+## EP-0009-US-0001-TK-0001 — 2026-10-12
+
+Additive module-health and journal Contracts implemented. Focused3/3 and full Contracts188/188, solution build0 warnings/errors, scoped format/diff PASS. Existing hull API intentionally remains until US-0003 consumer migration (A08); no module-health gameplay claim yet. Separate publication follows.
