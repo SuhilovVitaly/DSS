@@ -38,7 +38,8 @@ public sealed class TorpedoImpactTests
                     CountermeasureMaxFlightTimeMs = 60000,
                     CountermeasureSpeedKmS = 12,
                     CountermeasureRangeKm = 100,
-                    CountermeasureReloadMs = 10000
+                    CountermeasureReloadMs = 10000,
+                    Barrels = 1
                 },
                 _ => module
             }).Select(module => module with { CombatRole = null }),

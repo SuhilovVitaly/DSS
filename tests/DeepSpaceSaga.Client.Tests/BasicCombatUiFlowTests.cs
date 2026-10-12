@@ -172,6 +172,9 @@ public sealed class BasicCombatUiFlowTests
                         Crew = obj.Crew!.Select(crew => crew.CrewId ==
                             obj.Modules!.Single(module => module.ModuleId == Launcher).OperatorCrewId
                             ? crew with { AccuracySkill = 30 } : crew).ToArray()
+                    } : obj.ObjectId == Target ? obj with
+                    {
+                        Modules = obj.Modules!.Select(module => module with { AutoDefenseEnabled = false }).ToArray()
                     } : obj).ToArray()
                 }
             };

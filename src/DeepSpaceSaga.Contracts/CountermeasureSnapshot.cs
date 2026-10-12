@@ -7,7 +7,8 @@ public enum CountermeasurePhase { Guiding, MissedCoast }
 public enum DefenseState { Ready, Guiding, Reloading, NoOperator }
 
 /// <summary>Physical-time commitment to the next barrel of one defense burst.</summary>
-public sealed record PendingBurstShot(double DueMotionTimeMs, string TargetTorpedoId, int BarrelNumber);
+public sealed record PendingBurstShot(double DueMotionTimeMs, string TargetTorpedoId, int BarrelNumber,
+    LaunchMode Mode = LaunchMode.Auto);
 
 public static class DefenseCommandTypes
 {
@@ -39,7 +40,9 @@ public sealed record DefenseSnapshot(
     int Barrels = 1,
     /// <summary>Null in pre-migration snapshots; an empty array means no queued barrel shots.</summary>
     ImmutableArray<PendingBurstShot>? PendingBurstShots = null,
-    double? ReadyAtMotionTimeMs = null);
+    double? ReadyAtMotionTimeMs = null,
+    /// <summary>Populated only for overlapping flights; the singular field remains the first active ID.</summary>
+    ImmutableArray<string>? ActiveProjectileIds = null);
 
 /// <summary>
 /// Separate projectile type, never a torpedo fire target. All times use physical simulation

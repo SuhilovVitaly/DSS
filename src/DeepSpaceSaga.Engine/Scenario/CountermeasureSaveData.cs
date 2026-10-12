@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Combat;
 using DeepSpaceSaga.Motion;
@@ -59,7 +60,14 @@ internal static class CountermeasureSaveValidation
             {
                 OwnerObjectId = Canon(l.OwnerObjectId),
                 ModuleId = Module(l.OwnerObjectId, l.ModuleId),
-                State = l.State with { ActiveProjectileId = l.State.ActiveProjectileId is { } id ? Canon(id) : null }
+                State = l.State with
+                {
+                    ActiveProjectileId = l.State.ActiveProjectileId is { } id ? Canon(id) : null,
+                    ActiveProjectileIds = l.State.ActiveProjectileIds is { } ids ? ids.Select(Canon).ToImmutableArray() : null,
+                    PendingBurstShots = l.State.PendingBurstShots is { } pending
+                        ? pending.Select(shot => shot with { TargetTorpedoId = Canon(shot.TargetTorpedoId) }).ToImmutableArray()
+                        : null
+                }
             }).ToArray(),
             Projectiles = saved.Projectiles!.Select(p => p with
             {
@@ -100,6 +108,16 @@ internal static class CountermeasureSaveValidation
             Require((d.State == DefenseState.NoOperator) == (d.Operator is null), "operator state mismatch");
             Require((d.State == DefenseState.Guiding) == (d.ActiveProjectileId is not null), "active projectile state mismatch");
             Require((d.State == DefenseState.Reloading) == (d.ReloadDueMotionTimeMs is not null), "reload state mismatch");
+            if (d.ActiveProjectileIds is { } activeIds)
+                Require(activeIds.Length > 1 && activeIds[0] == d.ActiveProjectileId &&
+                    activeIds.All(id => !string.IsNullOrWhiteSpace(id)) &&
+                    activeIds.Distinct(StringComparer.Ordinal).Count() == activeIds.Length,
+                    "invalid active projectile list");
+            if (d.PendingBurstShots is { } pending)
+                Require(pending.All(shot => double.IsFinite(shot.DueMotionTimeMs) &&
+                    shot.DueMotionTimeMs > state.MotionTimeMs && shot.BarrelNumber >= 2 &&
+                    shot.BarrelNumber <= d.Barrels && Enum.IsDefined(shot.Mode) &&
+                    !string.IsNullOrWhiteSpace(shot.TargetTorpedoId)), "invalid pending burst");
             if (d.ReloadDueMotionTimeMs is { } due) Require(double.IsFinite(due) && due > state.MotionTimeMs, "invalid reload deadline");
         }
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -110,7 +128,8 @@ internal static class CountermeasureSaveValidation
                 "invalid or duplicate projectile");
             obj = objects[row.ObjectId];
             if (format >= 16) Require(SequenceWithin(row.ObjectId, "countermeasure-", saved.ProjectileSequence), "projectile sequence behind identity");
-            Require(launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) && launcher.ActiveProjectileId == row.ObjectId,
+            Require(launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) &&
+                (launcher.ActiveProjectileIds?.Contains(row.ObjectId) ?? (launcher.ActiveProjectileId == row.ObjectId)),
                 "orphan projectile");
             Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= state.MotionTimeMs && f.FrozenChanceTenths is >= 0 and <= 1000 &&
                 Enum.IsDefined(f.Phase) && f.RatingBreakdown is not null, "invalid frozen flight");
@@ -179,7 +198,9 @@ internal static class CountermeasureSaveValidation
             }
         }
         Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Countermeasure).All(o => ids.Contains(o.ObjectId)), "projectile without flight");
-        Require(saved.Launchers.All(l => l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
+        Require(saved.Launchers.All(l => l.State.ActiveProjectileIds is { } active
+            ? active.All(ids.Contains)
+            : l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
         long lastId = 0; double lastTime = 0; ulong rolls = 0, torpedoRolls = 0;
         foreach (var entry in saved.Journal!)
         {

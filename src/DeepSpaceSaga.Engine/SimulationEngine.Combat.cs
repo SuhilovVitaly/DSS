@@ -169,6 +169,7 @@ public sealed partial class SimulationEngine
         {
             var impact = FindFirstImpact(cursor, motionTimeMs);
             var launch = NextDefenseLaunch(cursor, motionTimeMs);
+            var pendingBurst = NextPendingBurst(motionTimeMs);
             var hostileLaunch = NextHostileLaunch(cursor, motionTimeMs);
             var intercept = FindFirstIntercept(cursor, motionTimeMs);
             var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is not null)
@@ -178,6 +179,7 @@ public sealed partial class SimulationEngine
             double eventTime = Math.Min(launch?.Time ?? double.PositiveInfinity,
                 Math.Min(intercept?.Contact.MotionTimeMs ?? double.PositiveInfinity, expiryTime));
             eventTime = Math.Min(eventTime, hostileLaunch?.Time ?? double.PositiveInfinity);
+            eventTime = Math.Min(eventTime, pendingBurst?.Shot.DueMotionTimeMs ?? double.PositiveInfinity);
             if (impact is { } hit && hit.Contact.MotionTimeMs <= eventTime)
             {
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
@@ -197,6 +199,12 @@ public sealed partial class SimulationEngine
             {
                 ExpireCountermeasure(expiry, expiryTime);
                 cursor = expiryTime;
+                continue;
+            }
+            if (pendingBurst is { } burst && burst.Shot.DueMotionTimeMs <= eventTime)
+            {
+                ProcessPendingBurst(burst.Key, burst.Shot);
+                cursor = burst.Shot.DueMotionTimeMs;
                 continue;
             }
             if (launch is not null && launch.Time <= eventTime)

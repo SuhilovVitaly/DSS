@@ -32,9 +32,10 @@ public class CountermeasureResolutionTests
         Assert.Equal(70m, defense.CapturedTargetManeuverability);
         Assert.Equal(580, defense.FrozenChanceTenths);
         var resolved = At(engine, 20000);
-        var roll = Assert.Single(resolved.CombatJournal, e => e.RatingBreakdown is not null && e.Roll is not null);
-        Assert.Equal(580, roll.ChanceTenths);
-        Assert.Equal(1UL, engine.CaptureSaveState().GameState.DefenseState!.RngCounter);
+        var rolls = resolved.CombatJournal.Where(e => e.RatingBreakdown is not null && e.Roll is not null).ToArray();
+        Assert.NotEmpty(rolls);
+        Assert.All(rolls, roll => Assert.Equal(580, roll.ChanceTenths));
+        Assert.Equal((ulong)rolls.Length, engine.CaptureSaveState().GameState.DefenseState!.RngCounter);
     }
 
     [Fact]

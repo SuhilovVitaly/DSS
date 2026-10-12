@@ -139,7 +139,7 @@ public sealed class DisabledModuleTests
                 DefenseState = defenses with
                 {
                     Launchers = defenses.Launchers.Select(row => row.OwnerObjectId == Target
-                        ? row with { State = row.State with { PendingBurstShots = [pending] } } : row).ToArray()
+                        ? row with { State = row.State with { Barrels = 2, PendingBurstShots = [pending] } } : row).ToArray()
                 }
             }
         };

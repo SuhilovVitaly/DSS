@@ -12,7 +12,7 @@ public sealed partial class SimulationEngine
     private long _combatProcessedTimeMs;
     private CountermeasureRng _countermeasureRng = new(0);
     private bool HasDefenseActivity => _objects.Any(o => o.InitialMotion.Countermeasure is not null) ||
-        _defenses.Values.Any(d => d.State == DefenseState.Reloading);
+        _defenses.Values.Any(d => d.State == DefenseState.Reloading || d.PendingBurstShots is { IsEmpty: false });
 
     private CommandStartOutcome TrySetDefense(PlayerCommand command, long motionTimeMs)
     {
@@ -104,7 +104,8 @@ public sealed partial class SimulationEngine
         return order != 0 ? order : string.CompareOrdinal(a.Owner.InitialMotion.ObjectId, b.Owner.InitialMotion.ObjectId);
     }
 
-    private bool LaunchCountermeasure(DefenseLaunch launch, LaunchMode mode = LaunchMode.Auto, double? predictedEncounter = null)
+    private bool LaunchCountermeasure(DefenseLaunch launch, LaunchMode mode = LaunchMode.Auto,
+        double? predictedEncounter = null, bool pendingBarrel = false)
     {
         var definition = _registry.ModuleTypes.GetDefinition(launch.Module.ModuleTypeIndex);
         if (!TryGetNextCountermeasureId(out string id, out long sequence)) return false;
@@ -112,7 +113,8 @@ public sealed partial class SimulationEngine
         var flight = new CountermeasureSnapshot(launch.Owner.InitialMotion.ObjectId, launch.Module.ModuleId,
             launch.Target.InitialMotion.ObjectId, CountermeasurePhase.Guiding, launch.Route, launch.Time, launch.Chance,
             new(launch.Operator, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, torpedo.RatingBreakdown), [],
-            PredictedEncounterMotionTimeMs: mode == LaunchMode.Manual ? predictedEncounter : launch.EncounterTime,
+            PredictedEncounterMotionTimeMs: mode == LaunchMode.Manual ? predictedEncounter :
+                double.IsFinite(launch.EncounterTime) ? launch.EncounterTime : predictedEncounter,
             Mode: mode,
             CapturedAccuracy: launch.Operator.EffectiveRating,
             CapturedTargetManeuverability: torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value,
@@ -132,14 +134,76 @@ public sealed partial class SimulationEngine
             LauncherModuleId: flight.LauncherModuleId, LaunchMode: mode, Accuracy: flight.CapturedAccuracy,
             TargetManeuverability: flight.CapturedTargetManeuverability));
         var key = (flight.OwnerObjectId, flight.LauncherModuleId);
+        var defense = _defenses[key];
+        var activeIds = defense.ActiveProjectileIds ?? (defense.ActiveProjectileId is { } active
+            ? System.Collections.Immutable.ImmutableArray.Create(active)
+            : System.Collections.Immutable.ImmutableArray<string>.Empty);
+        activeIds = activeIds.Add(id);
+        var pending = defense.PendingBurstShots ?? System.Collections.Immutable.ImmutableArray<PendingBurstShot>.Empty;
+        if (!pendingBarrel && definition.Barrels is > 1 && definition.BurstIntervalMs is > 0 &&
+            launch.Time <= long.MaxValue - definition.BurstIntervalMs.Value)
+            pending = pending.Add(new PendingBurstShot(launch.Time + definition.BurstIntervalMs.Value,
+                flight.TargetTorpedoId, 2, mode));
         _defenses[key] = _defenses[key] with
         {
             State = DefenseState.Guiding,
-            ActiveProjectileId = id,
+            ActiveProjectileId = activeIds[0],
+            ActiveProjectileIds = activeIds.Length > 1 ? activeIds : null,
+            PendingBurstShots = pending,
             ReloadDueMotionTimeMs = null,
             Operator = launch.Operator
         };
         return true;
+    }
+
+    private ((string ObjectId, string ModuleId) Key, PendingBurstShot Shot)? NextPendingBurst(long to) =>
+        _defenses.SelectMany(pair => (pair.Value.PendingBurstShots ??
+                System.Collections.Immutable.ImmutableArray<PendingBurstShot>.Empty)
+            .Select(shot => (Key: pair.Key, Shot: shot)))
+            .Where(row => row.Shot.DueMotionTimeMs <= to)
+            .OrderBy(row => row.Shot.DueMotionTimeMs)
+            .ThenBy(row => row.Key.ModuleId, StringComparer.Ordinal)
+            .ThenBy(row => row.Key.ObjectId, StringComparer.Ordinal)
+            .Cast<((string ObjectId, string ModuleId) Key, PendingBurstShot Shot)?>()
+            .FirstOrDefault();
+
+    private void ProcessPendingBurst((string ObjectId, string ModuleId) key, PendingBurstShot shot)
+    {
+        if (!_defenses.TryGetValue(key, out var defense)) return;
+        var pending = (defense.PendingBurstShots ??
+            System.Collections.Immutable.ImmutableArray<PendingBurstShot>.Empty).Remove(shot);
+        _defenses[key] = defense with { PendingBurstShots = pending };
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == key.ObjectId && !o.IsDestroyed);
+        var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == key.ModuleId);
+        var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == shot.TargetTorpedoId &&
+            o.InitialMotion.Torpedo is not null);
+        long time = (long)shot.DueMotionTimeMs;
+        if (owner is null || module is null || target is null || !CanExecuteModuleCommand(module, time))
+        {
+            if (TryGetNextCountermeasureId(out string skippedId, out long skippedSequence))
+            {
+                _countermeasureSequence = skippedSequence;
+                AppendCombatEvent(new(0, shot.DueMotionTimeMs, CombatEventType.BurstShotSkipped,
+                    key.ObjectId, shot.TargetTorpedoId, skippedId, 0, 0, Result: "target_or_module_unavailable",
+                    LauncherModuleId: key.ModuleId));
+            }
+            return;
+        }
+        var op = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
+        if (op is null) return;
+        var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        var torpedo = target.InitialMotion.Torpedo!;
+        long lifetime = type.CountermeasureMaxFlightTimeMs!.Value;
+        if (time > long.MaxValue - lifetime) return;
+        var origin = PredictMotion(owner, time - owner.StartGameTimeMs);
+        var plan = CountermeasureGuidanceMath.PlanManual(origin, torpedo.Route, time, lifetime,
+            type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
+            FirstPredictedTorpedoContact(target, time, time + lifetime));
+        int chance = CombatChanceMath.ChanceTenths(op.EffectiveRating,
+            torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, ChanceRules);
+        var launch = new DefenseLaunch(owner, module, target, plan.Route, time,
+            double.PositiveInfinity, chance, op);
+        LaunchCountermeasure(launch, shot.Mode, plan.PredictedEncounterMotionTimeMs, pendingBarrel: true);
     }
 
     private static System.Collections.Immutable.ImmutableArray<TrailSegment> CloseCountermeasureHistory(SpaceObjectRuntime obj, double time)
@@ -184,7 +248,8 @@ public sealed partial class SimulationEngine
                     Accuracy: type.CountermeasureAccuracy,
                     SpeedKmS: type.CountermeasureSpeedKmS,
                     TurnRateDegPerSec: type.CountermeasureTurnRateDegPerSec,
-                    MaxFlightTimeMs: type.CountermeasureMaxFlightTimeMs));
+                    MaxFlightTimeMs: type.CountermeasureMaxFlightTimeMs,
+                    Barrels: type.Barrels ?? 1));
             }
         return result;
     }
@@ -339,12 +404,17 @@ public sealed partial class SimulationEngine
         var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == key.LauncherModuleId);
         if (!reload || module is null) { _defenses.Remove(key); return; }
         var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        var activeIds = defense.ActiveProjectileIds ?? (defense.ActiveProjectileId is { } active
+            ? System.Collections.Immutable.ImmutableArray.Create(active)
+            : System.Collections.Immutable.ImmutableArray<string>.Empty);
+        activeIds = activeIds.Remove(projectile.InitialMotion.ObjectId);
         double due = motionTimeMs + type.CountermeasureReloadMs!.Value;
         _defenses[key] = defense with
         {
-            ActiveProjectileId = null,
-            State = DefenseState.Reloading,
-            ReloadDueMotionTimeMs = due
+            ActiveProjectileId = activeIds.IsEmpty ? null : activeIds[0],
+            ActiveProjectileIds = activeIds.Length > 1 ? activeIds : null,
+            State = activeIds.IsEmpty ? DefenseState.Reloading : DefenseState.Guiding,
+            ReloadDueMotionTimeMs = activeIds.IsEmpty ? due : null
         };
     }
 

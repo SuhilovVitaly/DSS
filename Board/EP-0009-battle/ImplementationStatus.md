@@ -131,3 +131,7 @@ TK-0002 e2420ea361d53ff943bd52aff86fc31ba0540b76 published/remote verified. Torp
 ## EP-0009-US-0005-TK-0001 — 2026-10-12
 
 TK-0003 acd5c646fedba322bb66a5626b80cb1bd8423d36 published/remote verified. Launcher cooldown starts at launch (15000 MotionTimeMs), with independent active-flight list, repeat player/NPC launch, targeted self-destruct, Client reloading state, and legacy singular-field Save/Load migration. Focused multi-flight and idempotence checks passed. Engine non-corpus1970/1970, Client1859/1859, Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. Game/native NOT RUN and Graphify rebuild SKIPPED per user. Separate publication follows.
+
+## EP-0009-US-0005-TK-0002 — 2026-10-12
+
+TK-0001 1af75fb9bcb7721f219480ddaa36d5f9a428ddac published/remote verified. Two-barrel defense now queues a second shot at +2000 MotionTimeMs; the combat scheduler orders pending shots after contacts/expiries and before new launches. It skips a removed target or unavailable module, tracks overlapping countermeasure IDs, and persists the queue through Save/Load. Focused burst/skip/roundtrip3/3; Engine non-corpus1973/1973, Client1859/1859, Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. TK-0003 owns reload-from-first-shot and attempt policy. Game/native NOT RUN and Graphify rebuild SKIPPED per user. Separate publication follows.
