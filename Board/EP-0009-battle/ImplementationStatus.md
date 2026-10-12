@@ -175,3 +175,7 @@ TK-0002 6e858bcde45998e344be5b9c805dc6e2d0ef1839 published/remote verified. Scen
 ## EP-0009-US-0009-TK-0001 — 2026-10-12
 
 TK-0003 52008fcae257bbd0885da382c7f5557388c484f6 published/remote verified. Added selectable `CombatMukha`: Tetrarch against three Strizh-powered, unarmored Mukhas with configured 50±10 km attack band and −35/0/+35 flank offsets. Player has nine light-armored modules, three weapon operators plus a pilot, all skill20; the production catalog gains a four-cabin living-quarters variant. Two solar-only Client tests now select scenarios from the solar generation allowlist, because combat encounters intentionally have no solar map. The initial broad run failed those two assumptions; targeted repeat4/4 and broad repeat1863/1863 (excluding slow market suite) PASS. Final content2/2, solution build0 warnings/errors, scoped format/diff PASS. Native/game NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.
+
+## EP-0009-US-0009-TK-0002 — 2026-10-12
+
+TK-0001 97f7f552a4002d7820f4d0200635d11af15e1fed published/remote verified. Added selectable `CombatShmel` from the Mukha encounter: three `ship.shmel` with an extra existing single-barrel PRO module, active auto-defense and a distinct skill20 operator for each module. Production loader and three hostile AI states verified headlessly; focused content4/4, related scenario/map12/12, solution build0 warnings/errors, scoped format/diff PASS. Native/game NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.
