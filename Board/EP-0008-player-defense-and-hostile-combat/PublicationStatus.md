@@ -58,8 +58,12 @@ Verified 2026-10-12 against live `git ls-remote origin refs/heads/base-fight`.
 
 | EP-0008-US-0013-TK-0001 | `904a21f1602358c8754d746f092858c920413b6f` | Published; remote verified |
 
+| EP-0008-US-0013-TK-0002 | `6b7186444b027a03671e62ba61e86623e00762a2` | Published; remote verified; graph SKIPPED by user |
+
 ## Recovery and current work
 
 The earlier automatic approval block was resolved by the user's explicit authorization for SuhilovVitaly/DSS, branch base-fight. Ticket9c93e1d is published; Data817a856 preserved. No force push or history rewrite.
 
 TK-0003 and the terminal-clock correction are published. TK-0004 self-review is published. US-0013 documentation is published; the final link-audit ticket follows; Graphify rebuilding cancelled by user2026-10-12. Its own SHA/push is verified after creation through Git and recorded at the start of EP-0009. EP-0009 Board is tracked, execution follows EP-0008 implementation/documentation. User deferred all further native/game launches; incomplete native/human acceptance remains OPEN. See ImplementationStatus and the acceptance report for factual gates. Current commit's own SHA is verified through Git after creation and recorded by the next ticket.
+
+Final implementation/documentation chain published through6b71864.45 ticket dispositions recorded, including the user-waived Graphify requirement; native/FPS/human OPEN. EP-0009 continues under user authorization.

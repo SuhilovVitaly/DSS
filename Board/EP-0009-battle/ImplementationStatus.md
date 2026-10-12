@@ -1,3 +1,11 @@
+# EP-0009 — execution evidence
+
+## Resumption — 2026-10-12
+
+EP-0008 final ticket6b7186444b027a03671e62ba61e86623e00762a2 published and remote verified. Dependency is delivered under explicit user deferral of native/human gates and cancellation of Graphify. Current scope: autonomous38-ticket chain, separate commit/push each, no game/native/graph launches. Standard cards and final documentation story prepared. [Technical assumptions](ExecutionDecisions.md). First implementation: US-0001-TK-0001 module-health-contracts. Historical blocker below is resolved under this revised scope.
+
+## Historical baseline report — 2026-10-11
+
 # EP-0009 — проверка базы исполнения
 
 Дата: 2026-10-11 (Asia/Jerusalem).

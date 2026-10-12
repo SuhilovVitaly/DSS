@@ -17,6 +17,11 @@ design_source: "C:/DSS/docs/fight/CombatDesign-v1 (букмарк 1) + рабо�
 
 > **Baseline.** Эпик исходит из того, что EP-0008 реализован полностью и в соответствии со своим контрактом (`Board/EP-0008-player-defense-and-hostile-combat/Documentation.md`). На `origin/base-fight @ 99e15a2` опубликованы только EP-0008-US-0001-TK-0001 и TK-0002. **Перед US-0001 исполнитель обязан** взять HEAD с завершённым EP-0008, заново сверить все пути, номера строк и имена API этого файла и записать расхождения в Code context тикета. Номера строк ниже взяты с `99e15a2`: это подсказка, а не факт.
 
+## Current execution override — 2026-10-12
+
+Execution is authorized autonomously from published EP-0008 baseline6b7186444b027a03671e62ba61e86623e00762a2. Native/human acceptance remains OPEN; the user authorizes continuing EP-0009 without game/native launches and without rebuilding Graphify. Each ticket is committed and pushed to the explicitly authorized GitHub origin/base-fight. This overrides the historical no-GitHub rule in §4. O2–O7 recommendations are adopted as technical assumptions, not invented user answers; source/simulator absences and working-build migration sequencing are recorded in [ExecutionDecisions](ExecutionDecisions.md). Standard [story/ticket cards](Tickets.md) provide durable per-ticket scope/evidence; the final documentation story exists before implementation.
+
+
 ## 1. Цель
 
 Перенести в движок боевую модель, согласованную с автором и проверенную Python-симулятором (`src/DeepSpaceSaga.CombatSim`, 400 боёв на вариант). Для этого EP-0009 **переопределяет боевые правила EP-0008** и **переиспользует его инфраструктуру**:
@@ -689,7 +694,7 @@ git diff --check
   - `Documentation/02-FirstRelease/Mechanics`;
   - `Documentation/01-Requirements` — если там описаны формула или HP;
   - `Board/EP-0008-…/ImplementationStatus.md`: раздел «Superseded by EP-0009» со ссылкой на §2.1.
-- **US12-AC2:** Граф (Graphify, `src/graphify-out/`) перестроен, ссылки проверены.
+- **US12-AC2:** Ссылки, ID/counts/DAG и навигация документации проверены; Graphify SKIPPED по прямому указанию пользователя2026-10-12.
 
 ### TK-0001 — `update-project-documents` · documentation · inventory
 Составить список документов, где упоминается хотя бы одно из:
