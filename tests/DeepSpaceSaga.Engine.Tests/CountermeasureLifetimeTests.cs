@@ -21,7 +21,8 @@ public class CountermeasureLifetimeTests
             slow && m.TorpedoSpeedKmS is not null ? m with { TorpedoSpeedKmS = 0.001 } : m),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules, fireModes: source.FireModes);
     }
 
     private static SimulationEngine Start(long lifetime, double distance, decimal accuracy = 0, bool obstacle = false)

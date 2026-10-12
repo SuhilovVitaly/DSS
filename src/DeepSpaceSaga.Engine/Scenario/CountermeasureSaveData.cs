@@ -116,8 +116,9 @@ internal static class CountermeasureSaveValidation
                 Enum.IsDefined(f.Phase) && f.RatingBreakdown is not null, "invalid frozen flight");
             ValidateOperator(f.RatingBreakdown!.DefenseOperator);
             if (f.RatingBreakdown.TorpedoOperator is { } attack) ValidateOperator(attack);
-            Require(f.RatingBreakdown.TorpedoRating >= 0 && f.FrozenChanceTenths == InterceptionMath.ChanceTenths(
-                f.RatingBreakdown.DefenseOperator.EffectiveRating, f.RatingBreakdown.TorpedoRating), "chance mismatch");
+            Require(f.RatingBreakdown.TorpedoRating >= 0 && CapturedChanceMatches(
+                f.RatingBreakdown.DefenseOperator.EffectiveRating, f.RatingBreakdown.TorpedoRating,
+                f.FrozenChanceTenths), "chance mismatch");
             Require((f.CapturedAccuracy is null || f.CapturedAccuracy == f.RatingBreakdown.DefenseOperator.EffectiveRating) &&
                 (f.CapturedTargetManeuverability is null || f.CapturedTargetManeuverability == f.RatingBreakdown.TorpedoRating),
                 "captured weapon values mismatch");
@@ -205,7 +206,8 @@ internal static class CountermeasureSaveValidation
             {
                 ValidateOperator(rating.DefenseOperator);
                 if (rating.TorpedoOperator is { } attack) ValidateOperator(attack);
-                Require(rating.TorpedoRating >= 0 && entry.ChanceTenths == InterceptionMath.ChanceTenths(rating.DefenseOperator!.EffectiveRating, rating.TorpedoRating), "journal chance mismatch");
+                Require(rating.TorpedoRating >= 0 && entry.ChanceTenths is { } chance && CapturedChanceMatches(
+                    rating.DefenseOperator!.EffectiveRating, rating.TorpedoRating, chance), "journal chance mismatch");
             }
             if (entry.TorpedoOperator is { } op) ValidateOperator(op);
             bool resolution = entry.Type is CombatEventType.Intercept or CombatEventType.Miss;
@@ -251,8 +253,15 @@ internal static class CountermeasureSaveValidation
     {
         Require(op is not null && !string.IsNullOrWhiteSpace(op.CrewId) && !string.IsNullOrWhiteSpace(op.DisplayName) &&
             Enum.IsDefined(op.SkillType) && op.Skill is >= 0 and <= 100 && op.BaseRating >= 0 && op.EffectiveRating >= 0, "invalid operator");
-        Require(op!.EffectiveRating == op.BaseRating && op.BaseRating <= 100, "rating mismatch");
+        Require(op!.BaseRating <= 100 &&
+            (op.EffectiveRating == op.BaseRating || op.EffectiveRating == op.BaseRating + op.Skill), "rating mismatch");
     }
+
+    // v16 has no captured chance-rules revision. Preserve EP-0008 base-zero saves and the
+    // shipped EP-0009 base-fifty rules until v17 records the exact rule identity.
+    private static bool CapturedChanceMatches(decimal attack, decimal defense, int chance) =>
+        chance == InterceptionMath.ChanceTenths(attack, defense) ||
+        chance == CombatChanceMath.ChanceTenths(attack, defense, CombatChanceMath.DefaultRules);
     private static void ValidateSegment(TorpedoRouteSegment? s) => Require(s is not null &&
         new[] { s.X, s.Y, s.Direction, s.SpeedKmS, s.AngularVelocityDegPerSec, s.DurationMs }.All(double.IsFinite) &&
         s.SpeedKmS > 0 && s.DurationMs >= 0, "invalid segment");

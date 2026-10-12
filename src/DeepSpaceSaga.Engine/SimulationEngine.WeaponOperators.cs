@@ -1,10 +1,14 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Combat;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    private CombatChanceRules ChanceRules => _registry.CombatRules?.Chance ?? CombatChanceMath.DefaultRules;
+
     private WeaponOperatorSnapshot? ResolveWeaponOperator(
         SpaceObjectRuntime owner, InstalledModuleRuntime module, WeaponSkillType skillType)
     {
@@ -12,12 +16,16 @@ public sealed partial class SimulationEngine
         var crew = owner.Crew.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
         if (crew is null) return null;
         var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-        int skill = (skillType == WeaponSkillType.TorpedoAttack ? crew.TorpedoSkill : crew.CountermeasureSkill) ?? 0;
+        int skill = skillType == WeaponSkillType.TorpedoAttack
+            ? crew.TorpedoSkill ?? 0 : crew.AccuracySkill;
         decimal baseRating = skillType == WeaponSkillType.TorpedoAttack
             ? definition.TorpedoManeuverability ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks torpedoManeuverability.")
             : definition.CountermeasureAccuracy ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks countermeasureAccuracy.");
-        // EP-0008 keeps operator identity and skill metadata, without a skill multiplier.
-        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill, baseRating, baseRating);
+        // Torpedo attack and maneuverability are split in the following combat-roll
+        // tickets. Until then the legacy torpedo skill remains metadata, while PD
+        // accuracy uses the new direct skill contribution.
+        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill,
+            baseRating, skillType == WeaponSkillType.TorpedoAttack ? baseRating : baseRating + skill);
     }
 
     private LauncherCombatSnapshot? ProjectWeaponLauncher(SpaceObjectRuntime owner, InstalledModuleRuntime module)

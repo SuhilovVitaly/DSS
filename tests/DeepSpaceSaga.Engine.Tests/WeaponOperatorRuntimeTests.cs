@@ -135,7 +135,7 @@ public class WeaponOperatorRuntimeTests
     [InlineData(0, 5)]
     [InlineData(50, 5)]
     [InlineData(100, 5)]
-    public void Skills_zero_fifty_hundred_do_not_change_chance(int skill, int expected)
+    public void Legacy_skills_zero_fifty_hundred_do_not_change_new_chance(int skill, int expected)
     {
         using var engine = Create(AutomaticDefenseTests.DefenseScenario(attack: skill, defense: skill));
         engine.ReceiveCommand(Fire("skill"));
@@ -147,7 +147,7 @@ public class WeaponOperatorRuntimeTests
         var interception = Assert.Single(At(engine, 1000).Objects, o => o.Countermeasure is not null).Countermeasure!;
         Assert.Equal(55m, interception.CapturedAccuracy);
         Assert.Equal(500, interception.FrozenChanceTenths);
-        Assert.Equal(skill, interception.RatingBreakdown.DefenseOperator.Skill);
+        Assert.Equal(0, interception.RatingBreakdown.DefenseOperator.Skill);
     }
 
     [Fact]

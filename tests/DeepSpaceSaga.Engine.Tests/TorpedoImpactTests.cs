@@ -45,7 +45,8 @@ public sealed class TorpedoImpactTests
             All(source.Dialogues), All(source.Quests), catalogVersion: source.CatalogVersion,
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
-            stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules,
+            stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
             fireModes: source.FireModes);
     }
     internal static ScenarioFile Scenario(Func<SpaceObjectData, SpaceObjectData>? configure = null,

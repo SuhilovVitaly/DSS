@@ -54,7 +54,8 @@ public sealed partial class SimulationEngine
                 {
                     if (target.InitialMotion.Torpedo is not { } torpedo || target.InitialMotion.CountermeasureAttempted ||
                         torpedo.TargetObjectId != owner.InitialMotion.ObjectId) continue;
-                    int chance = InterceptionMath.ChanceTenths(op.EffectiveRating, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value);
+                    int chance = CombatChanceMath.ChanceTenths(op.EffectiveRating,
+                        torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, ChanceRules);
                     if (chance == 0) continue;
                     double start = Math.Max(readyAt, Math.Max(target.StartGameTimeMs, owner.StartGameTimeMs));
                     if (start > to) continue;

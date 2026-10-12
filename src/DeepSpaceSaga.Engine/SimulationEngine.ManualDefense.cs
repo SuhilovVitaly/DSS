@@ -29,7 +29,8 @@ public sealed partial class SimulationEngine
         var plan = CountermeasureGuidanceMath.PlanManual(origin, torpedo.Route, time, lifetime,
             type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
             FirstPredictedTorpedoContact(c.Target, time, time + lifetime));
-        int chance = InterceptionMath.ChanceTenths(c.Operator.EffectiveRating, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value);
+        int chance = CombatChanceMath.ChanceTenths(c.Operator.EffectiveRating,
+            torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, ChanceRules);
         var launch = new DefenseLaunch(c.Owner, c.Module, c.Target, plan.Route, time,
             double.PositiveInfinity, chance, c.Operator);
         if (!LaunchCountermeasure(launch, LaunchMode.Manual, plan.PredictedEncounterMotionTimeMs))

@@ -63,7 +63,7 @@ public sealed class CombatPresentationResumeTests
             Assert.Equal("Ready", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
             screen.OnDeactivated();
         }
-        Assert.Null(loaded.Objects.Single(o => o.ObjectId == CombatSessionFixture.Target).HullCombat);
+        Assert.All(loaded.Objects, o => Assert.Null(o.HullCombat));
         Assert.Contains(loaded.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == CombatSessionFixture.Target);
         // A new post-load fact is displayed once and expires on monotonic UI time.
         long now = 0;

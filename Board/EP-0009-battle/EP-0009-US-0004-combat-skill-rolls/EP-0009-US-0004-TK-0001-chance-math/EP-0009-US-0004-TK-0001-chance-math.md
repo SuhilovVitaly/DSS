@@ -13,7 +13,13 @@ created: 2026-10-12
 
 # EP-0009-US-0004-TK-0001-chance-math
 
-STATUS: NOT STARTED
+STATUS: IMPLEMENTED; headless validation PASS; native/game acceptance NOT RUN.
+
+Execution scope before edit: `Combat/InterceptionMath.cs` implements the EP-0008 subtraction formula; production callers are `SimulationEngine.ManualDefense.cs`, `SimulationEngine.Countermeasures.cs`, and `SimulationEngine.DefensePreview.cs`. `SimulationEngine.WeaponOperators.cs` currently keeps skill only as metadata. `Scenario/CountermeasureSaveData.cs` validates frozen flight/journal chances and legacy operator ratings, so Save/Load compatibility must be maintained while switching live calculation. Engine and Client regression expectations will need updating. No Graphify/game/native runs.
+
+Execution result: `CombatChanceMath.ChanceTenths(attack, defense, rules)` now supplies the configured base/clamps to automatic and manual defense and preview. The production rules use base 50. Countermeasure operator accuracy skill contributes directly to the effective rating; torpedo attack/maneuverability separation is assigned to TK-0002/TK-0003. Legacy `InterceptionMath` remains solely for validating frozen EP-0008 save values. Save v16 has no chance-rules identity: historical base-zero and shipped base-fifty values validate, while Save/Load of arbitrary custom chance-base rules remains OPEN for a versioned format. Historical EP-0008 fixtures pin their old rule base, and one Client presentation assertion now tolerates either valid ship-survival outcome.
+
+Evidence: Engine non-corpus 1961/1961, Client 1859/1859, solution build 0 warnings/errors, scoped `dotnet format whitespace --verify-no-changes` PASS, `git diff --check` PASS. Graphify rebuild, game launch and native runs SKIPPED per user instruction. Publication SHA and remote verification are recorded in `PublicationStatus.md` after push.
 
 **Задача.**
 1. Функция шанса EP-0008 (на HEAD — наследник `InterceptionMath.ChanceTenths`) заменяется на `CombatChanceMath.ChanceTenths(attack, defense, rules)`.

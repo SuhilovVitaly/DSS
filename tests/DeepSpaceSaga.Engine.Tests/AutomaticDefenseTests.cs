@@ -17,7 +17,8 @@ public class AutomaticDefenseTests
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
             shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules, fireModes: source.FireModes);
+            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
+            fireModes: source.FireModes);
     }
     [Theory]
     [InlineData(45)]
