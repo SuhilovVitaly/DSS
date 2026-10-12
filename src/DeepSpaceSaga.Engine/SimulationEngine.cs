@@ -379,7 +379,8 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketBudgetCredits: ResolveMarketBudget(
                     obj, isStation ? marketProfile : null, stationSize, credits, loadingSave, scenario.SaveFormatVersion),
                 RelationToPlayer: obj.RelationToPlayer,
-                ShipClassId: obj.ShipClassId));
+                ShipClassId: obj.ShipClassId,
+                AttackAi: obj.Ai));
         }
 
         StationClusterSaveValidation.Validate(gs, _registry);
@@ -1131,7 +1132,8 @@ public sealed partial class SimulationEngine : IDisposable
                 RelationToPlayer: obj.RelationToPlayer,
                 ShipClassId: obj.ShipClassId,
                 Orbit: obj.IsDocked ? null : obj.InitialMotion.Orbit,
-                WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY));
+                WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY,
+                Ai: obj.ObjectType == SpaceObjectType.NpcShip ? obj.AttackAi : null));
         }
 
         var gameState = new GameStateData(
@@ -4004,7 +4006,8 @@ internal sealed record SpaceObjectRuntime(
     /// </summary>
     long MarketRevision = 0,
     string? RelationToPlayer = null,
-    string? ShipClassId = null);
+    string? ShipClassId = null,
+    AttackAiData? AttackAi = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName, int? TorpedoSkill = null,

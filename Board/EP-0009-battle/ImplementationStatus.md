@@ -167,3 +167,7 @@ TK-0002 7d293d4e0bb553816e28febf14e1ceaa8d071487 published/remote verified. Host
 ## EP-0009-US-0008-TK-0002 — 2026-10-12
 
 TK-0001 c82560134948160b8c7954cf6d7fb7772c040f34 published/remote verified. Pure `HostileOrbitMath.PlanAttack` now handles D33 distance-scaled flank with moving-target lead, old orbit steering inside the configured band, and close-range retreat. Missing band delegates exactly to EP-0008 `Plan`. Added stable `FlankApproach`/`Retreat` phase values and Client labels. Historical Python AttackAI source is absent, so simulator equivalence remains unverified. Motion focused17/17 and full173/173, Contracts194/194, related Engine27/27 and Client10/10, solution build0 warnings/errors, scoped format/diff PASS. Scenario parameters and live integration are TK-0003. Native/game NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.
+
+## EP-0009-US-0008-TK-0003 — 2026-10-12
+
+TK-0002 6e858bcde45998e344be5b9c805dc6e2d0ef1839 published/remote verified. Scenario NPC `ai` (`standoffKm`, `bandKm`, `flankOffsetDeg`) is validated and passed to the live hostile planner; the absent block preserves EP-0008 defaults. Parameters survive save/load and configured radius is accepted by hostile-state preflight. Focused Engine9/9, related hostile37/37 (before final orbit assertion), solution build0 warnings/errors, scoped format/diff PASS. Mukha-specific content follows in US-0009. Native/game NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.

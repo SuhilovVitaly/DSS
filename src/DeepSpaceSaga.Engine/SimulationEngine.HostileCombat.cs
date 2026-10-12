@@ -43,9 +43,10 @@ public sealed partial class SimulationEngine
             }
             var definition = _registry.ModuleTypes.GetDefinition(engine.ModuleTypeIndex);
             var launcher = _launcherCombat[(owner.InitialMotion.ObjectId, weapon.ModuleId)];
-            var state = HostileOrbitMath.Plan(pose, target, time, engine.ModuleId, weapon.ModuleId,
-                launcher.RangeKm!.Value / 2, definition.MaxSpeedMps!.Value / 1000.0,
+            var state = HostileOrbitMath.PlanAttack(pose, target, time, engine.ModuleId, weapon.ModuleId,
+                owner.AttackAi?.StandoffKm ?? launcher.RangeKm!.Value / 2, definition.MaxSpeedMps!.Value / 1000.0,
                 definition.LinearInertiaMps2!.Value / 1000.0, definition.AngularInertiaDegPerSec!.Value,
+                owner.AttackAi?.BandKm, owner.AttackAi?.FlankOffsetDeg ?? 0,
                 _hostileCombat.GetValueOrDefault(owner.InitialMotion.ObjectId));
             _hostileCombat[owner.InitialMotion.ObjectId] = state;
             _objects[_objects.IndexOf(owner)] = owner with

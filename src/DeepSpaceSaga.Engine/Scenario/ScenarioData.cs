@@ -318,7 +318,14 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null,
     [property: JsonPropertyName("orbit")] DeepSpaceSaga.Contracts.OrbitalElements? Orbit = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
-    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
+    [property: JsonPropertyName("ai")] AttackAiData? Ai = null);
+
+/// <summary>Configured NPC attack geometry; absent means the EP-0008 orbit defaults.</summary>
+public sealed record AttackAiData(
+    [property: JsonRequired, JsonPropertyName("standoffKm")] double StandoffKm,
+    [property: JsonRequired, JsonPropertyName("bandKm")] double BandKm,
+    [property: JsonRequired, JsonPropertyName("flankOffsetDeg")] double FlankOffsetDeg);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles

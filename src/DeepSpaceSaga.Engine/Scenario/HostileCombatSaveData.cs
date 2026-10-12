@@ -46,7 +46,8 @@ internal static class HostileCombatSaveValidation
             var weapon = state.CombatState?.Launchers?.FirstOrDefault(l =>
                 string.Equals(l.OwnerObjectId, owner.ObjectId, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(l.ModuleId, h.WeaponModuleId, StringComparison.OrdinalIgnoreCase));
-            Require(engine is not null && weapon?.State is not null && h.DesiredRadiusKm == weapon.State.RangeKm / 2,
+            Require(engine is not null && weapon?.State is not null &&
+                h.DesiredRadiusKm == (owner.Ai?.StandoffKm ?? weapon.State.RangeKm / 2),
                 "missing modules or radius mismatch");
             var s = h.Segment!;
             Require(s.Version == 1 && s.EpochMs >= 0 && s.EpochMs <= state.MotionTimeMs &&
