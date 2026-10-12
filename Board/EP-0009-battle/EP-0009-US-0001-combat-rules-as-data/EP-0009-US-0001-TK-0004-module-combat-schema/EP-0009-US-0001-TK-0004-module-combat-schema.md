@@ -13,7 +13,11 @@ created: 2026-10-12
 
 # EP-0009-US-0001-TK-0004-module-combat-schema
 
-STATUS: NOT STARTED
+STATUS: IMPLEMENTED; separate publication follows
+
+Execution scope before edit: `src/DeepSpaceSaga.Engine/Content/ModuleTypeDefinition.cs`, `EngineContentLoader.cs`, `GameDataRegistry.cs`, `tests/DeepSpaceSaga.Engine.Tests/CombatContentLoaderTests.cs`, this card, `Board/EP-0009-battle/ImplementationStatus.md`, `PublicationStatus.md`. New fields are optional for existing catalog records until US-0002 migrates the production catalog; any supplied value is validated, and fields may only occur on their owning module category. Existing required EP-0008 fields remain required. No Graphify, game, or native runs per current user instruction.
+
+Implementation: all nine schema/DTO fields load through JSON into module definitions; registry validation rejects invalid ranges, unknown combat roles, and category mismatches. Existing countermeasure `countermeasureAccuracy` remains the defense accuracy source. Focused content tests 63/63 after final test addition; non-corpus Engine 1936/1936 before that test-only addition; solution build 0 warnings/errors; scoped format and diff check passed before the final test-only addition and rechecked before publication. Production catalog migration and runtime consumption remain in later tickets. Native/game/Graphify: NOT RUN per user.
 
 **Задача.**
 1. В `ModuleTypeDefinition` и DTO загрузчика к полям EP-0008 добавить:

@@ -49,4 +49,13 @@ internal sealed record ModuleTypeDefinition(
     double? TorpedoRangeKm = null,
     decimal? CountermeasureAccuracy = null,
     double? CountermeasureManualRangeKm = null,
-    long? CountermeasureMaxFlightTimeMs = null) : ITypeDefinition;
+    long? CountermeasureMaxFlightTimeMs = null,
+    decimal? Accuracy = null,
+    decimal? ArmorPiercingPercent = null,
+    decimal? ArmorDamagePercent = null,
+    long? LauncherReloadMs = null,
+    long? TorpedoMaxFlightTimeMs = null,
+    int? Barrels = null,
+    long? BurstIntervalMs = null,
+    decimal? Maneuverability = null,
+    string? CombatRole = null) : ITypeDefinition;

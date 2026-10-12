@@ -508,7 +508,16 @@ public static class EngineContentLoader
                 dto.TorpedoRangeKm,
                 dto.CountermeasureAccuracy,
                 dto.CountermeasureManualRangeKm,
-                dto.CountermeasureMaxFlightTimeMs);
+                dto.CountermeasureMaxFlightTimeMs,
+                dto.Accuracy,
+                dto.ArmorPiercingPercent,
+                dto.ArmorDamagePercent,
+                dto.LauncherReloadMs,
+                dto.TorpedoMaxFlightTimeMs,
+                dto.Barrels,
+                dto.BurstIntervalMs,
+                dto.Maneuverability,
+                dto.CombatRole);
             try { GameDataRegistry.ValidateWeaponRatings(definition); }
             catch (ContentException error) { throw new ContentException($"{filePath}: {error.Message}", error); }
             return definition;
@@ -969,7 +978,16 @@ public static class EngineContentLoader
         [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
         [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,
         [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null,
-        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
+        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null,
+        [property: JsonPropertyName("accuracy")] decimal? Accuracy = null,
+        [property: JsonPropertyName("armorPiercingPercent")] decimal? ArmorPiercingPercent = null,
+        [property: JsonPropertyName("armorDamagePercent")] decimal? ArmorDamagePercent = null,
+        [property: JsonPropertyName("launcherReloadMs")] long? LauncherReloadMs = null,
+        [property: JsonPropertyName("torpedoMaxFlightTimeMs")] long? TorpedoMaxFlightTimeMs = null,
+        [property: JsonPropertyName("barrels")] int? Barrels = null,
+        [property: JsonPropertyName("burstIntervalMs")] long? BurstIntervalMs = null,
+        [property: JsonPropertyName("maneuverability")] decimal? Maneuverability = null,
+        [property: JsonPropertyName("combatRole")] string? CombatRole = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

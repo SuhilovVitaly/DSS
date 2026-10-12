@@ -32,7 +32,9 @@ public sealed class CombatContentLoaderTests : IDisposable
         File.WriteAllText(Path.Combine(_directory, "categories.json"), """
             {"moduleTypes":[
               {"typeId":"module.torpedo.launcher","displayName":"Launcher","slotSize":1,"commandTypeIds":["torpedo.fire"]},
-              {"typeId":"module.passive","displayName":"Passive","slotSize":1,"commandTypeIds":[]}
+              {"typeId":"module.passive","displayName":"Passive","slotSize":1,"commandTypeIds":[]},
+              {"typeId":"module.countermeasure.launcher","displayName":"Defense","slotSize":1,"commandTypeIds":[]},
+              {"typeId":"module.engine","displayName":"Engine","slotSize":1,"commandTypeIds":[]}
             ]}
             """);
         File.WriteAllText(Path.Combine(_directory, "commands.json"), """
@@ -63,6 +65,120 @@ public sealed class CombatContentLoaderTests : IDisposable
     private static JsonNode Modules() => JsonNode.Parse(ValidModules)!;
     private static JsonObject Module(JsonNode root) => root["moduleImplementations"]![0]!.AsObject();
     private void WriteModules(JsonNode root) => File.WriteAllText(ModulesPath, root.ToJsonString());
+
+    [Fact]
+    public void Launcher_new_fields_validated_for_launcher_only()
+    {
+        var root = Modules();
+        var module = Module(root);
+        module["accuracy"] = 40;
+        module["armorPiercingPercent"] = 20;
+        module["armorDamagePercent"] = 100;
+        module["launcherReloadMs"] = 15000;
+        module["torpedoMaxFlightTimeMs"] = 120000;
+        WriteModules(root);
+        var launcher = Launcher(Load());
+        Assert.Equal(40m, launcher.Accuracy);
+        Assert.Equal(20m, launcher.ArmorPiercingPercent);
+        Assert.Equal(100m, launcher.ArmorDamagePercent);
+        Assert.Equal(15000, launcher.LauncherReloadMs);
+        Assert.Equal(120000, launcher.TorpedoMaxFlightTimeMs);
+
+        foreach (string field in new[] { "accuracy", "armorPiercingPercent", "armorDamagePercent", "launcherReloadMs", "torpedoMaxFlightTimeMs" })
+        {
+            var nonLauncher = Modules();
+            var other = Module(nonLauncher);
+            other["type"] = "module.passive";
+            foreach (string oldField in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec", "torpedoManeuverability", "torpedoRangeKm" })
+                other.Remove(oldField);
+            other[field] = module[field]!.DeepClone();
+            WriteModules(nonLauncher);
+            var error = Assert.Throws<ContentException>(() => Load());
+            Assert.Contains(ModulesPath, error.Message, StringComparison.Ordinal);
+            Assert.Contains(field, error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Barrels_zero_rejected()
+    {
+        var root = Modules();
+        var module = Module(root);
+        module["type"] = "module.countermeasure.launcher";
+        foreach (string field in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec", "torpedoManeuverability", "torpedoRangeKm" })
+            module.Remove(field);
+        module["countermeasureSpeedKmS"] = 20;
+        module["countermeasureTurnRateDegPerSec"] = 90;
+        module["countermeasureRangeKm"] = 150;
+        module["countermeasureReloadMs"] = 14500;
+        module["countermeasureAccuracy"] = 58;
+        module["countermeasureManualRangeKm"] = 150;
+        module["countermeasureMaxFlightTimeMs"] = 30000;
+        module["barrels"] = 2;
+        module["burstIntervalMs"] = 2000;
+        WriteModules(root);
+        var loaded = Launcher(Load());
+        Assert.Equal(2, loaded.Barrels);
+        Assert.Equal(2000, loaded.BurstIntervalMs);
+        module["barrels"] = 0;
+        WriteModules(root);
+        Assert.Contains("barrels", Assert.Throws<ContentException>(() => Load()).Message, StringComparison.Ordinal);
+        module["barrels"] = 1;
+        module["burstIntervalMs"] = -1;
+        WriteModules(root);
+        Assert.Contains("burstIntervalMs", Assert.Throws<ContentException>(() => Load()).Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("armorPiercingPercent", 101)]
+    [InlineData("armorDamagePercent", 0)]
+    [InlineData("launcherReloadMs", 0)]
+    [InlineData("torpedoMaxFlightTimeMs", 0)]
+    [InlineData("accuracy", 101)]
+    public void Piercing_over_100_rejected(string field, int value)
+    {
+        var root = Modules();
+        Module(root)[field] = value;
+        WriteModules(root);
+        var error = Assert.Throws<ContentException>(() => Load());
+        Assert.Contains(ModulesPath, error.Message, StringComparison.Ordinal);
+        Assert.Contains(field, error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Engine_maneuverability_negative_rejected()
+    {
+        var root = Modules();
+        var module = Module(root);
+        module["type"] = "module.engine";
+        foreach (string field in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec", "torpedoManeuverability", "torpedoRangeKm" })
+            module.Remove(field);
+        module["maxSpeedMps"] = 6000;
+        module["turnStepDegrees"] = 45;
+        module["linearInertiaMps2"] = 100;
+        module["angularInertiaDegPerSec"] = 90;
+        module["fuelCapacityKg"] = 1000;
+        module["maneuverability"] = 10;
+        WriteModules(root);
+        Assert.Equal(10m, Launcher(Load()).Maneuverability);
+        module["maneuverability"] = -1;
+        WriteModules(root);
+        Assert.Contains("maneuverability", Assert.Throws<ContentException>(() => Load()).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Combat_role_rejects_unknown_values()
+    {
+        var root = Modules();
+        Module(root)["combatRole"] = "bridge";
+        WriteModules(root);
+        Assert.Equal("bridge", Launcher(Load()).CombatRole);
+        Module(root)["combatRole"] = "unknown";
+        WriteModules(root);
+        var error = Assert.Throws<ContentException>(() => Load());
+        Assert.Contains(ModulesPath, error.Message, StringComparison.Ordinal);
+        Assert.Contains("combatRole", error.Message, StringComparison.Ordinal);
+    }
 
     [Fact]
     public void Combat_content_loads_ship_and_launcher_values()

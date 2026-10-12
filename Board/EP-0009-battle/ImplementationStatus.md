@@ -75,3 +75,7 @@ TK-0001 6baef18139b177340ba329f272ac22835a96d8dc published/remote verified. Addi
 ## EP-0009-US-0001-TK-0003 — 2026-10-12
 
 TK-0002 2efad4619528e97af27fd1131f4040e5fe8774d8 published/remote verified. Combat rules/fire modes production JSON loaded and validated through Settings/EngineContentLoader/GameDataRegistry. Focused9/9; non-corpus Engine1931/1931 before final additional validation, focused9/9 after; solution build0 warnings/errors, scoped format/diff PASS. Initial new-file EOL formatter failure corrected. Runtime consumption follows. Separate publication follows.
+
+## EP-0009-US-0001-TK-0004 — 2026-10-12
+
+TK-0003 1bead7588ee439464f3d5fde3e3db4e534c20e37 published/remote verified. Additive module schema for launcher, defense, engine, and combat role; JSON ingestion and category/range checks. Focused63/63 after final test addition; non-corpus Engine1936/1936 before final test-only addition; solution build0 warnings/errors. Scoped format/diff PASS. Legacy content without new fields remains loadable until US-0002 catalog migration; gameplay not yet changed. Separate publication follows. Graphify/game/native NOT RUN per current user instruction.

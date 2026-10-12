@@ -443,6 +443,7 @@ internal sealed class GameDataRegistry
 
     internal static void ValidateWeaponRatings(ModuleTypeDefinition module)
     {
+        ValidateAdditionalCombatFields(module);
         bool isTorpedo = module.CategoryTypeId == "module.torpedo.launcher";
         if (isTorpedo)
         {
@@ -471,5 +472,38 @@ internal sealed class GameDataRegistry
             module.CountermeasureRangeKm is not > 0 || !double.IsFinite(module.CountermeasureRangeKm.Value) ||
             module.CountermeasureReloadMs is not > 0)
             throw new ContentException($"Module '{module.TypeId}': positive finite countermeasureSpeedKmS/countermeasureTurnRateDegPerSec/countermeasureRangeKm/countermeasureReloadMs are required.");
+    }
+
+    private static void ValidateAdditionalCombatFields(ModuleTypeDefinition module)
+    {
+        bool isTorpedo = module.CategoryTypeId == "module.torpedo.launcher";
+        if (!isTorpedo && (module.Accuracy.HasValue || module.ArmorPiercingPercent.HasValue ||
+            module.ArmorDamagePercent.HasValue || module.LauncherReloadMs.HasValue || module.TorpedoMaxFlightTimeMs.HasValue))
+            throw new ContentException($"Module '{module.TypeId}': accuracy/armorPiercingPercent/armorDamagePercent/launcherReloadMs/torpedoMaxFlightTimeMs require category module.torpedo.launcher.");
+        if (module.Accuracy is < 0 or > 100)
+            throw new ContentException($"Module '{module.TypeId}': accuracy must be in [0,100].");
+        if (module.ArmorPiercingPercent is < 0 or > 100)
+            throw new ContentException($"Module '{module.TypeId}': armorPiercingPercent must be in [0,100].");
+        if (module.ArmorDamagePercent is <= 0)
+            throw new ContentException($"Module '{module.TypeId}': armorDamagePercent must be positive.");
+        if (module.LauncherReloadMs is <= 0)
+            throw new ContentException($"Module '{module.TypeId}': launcherReloadMs must be positive.");
+        if (module.TorpedoMaxFlightTimeMs is <= 0)
+            throw new ContentException($"Module '{module.TypeId}': torpedoMaxFlightTimeMs must be positive.");
+
+        bool isDefense = module.CategoryTypeId == "module.countermeasure.launcher";
+        if (!isDefense && (module.Barrels.HasValue || module.BurstIntervalMs.HasValue))
+            throw new ContentException($"Module '{module.TypeId}': barrels/burstIntervalMs require category module.countermeasure.launcher.");
+        if (module.Barrels is < 1)
+            throw new ContentException($"Module '{module.TypeId}': barrels must be at least one.");
+        if (module.BurstIntervalMs is < 0)
+            throw new ContentException($"Module '{module.TypeId}': burstIntervalMs must be non-negative.");
+
+        if (module.Maneuverability.HasValue && module.CategoryTypeId != "module.engine")
+            throw new ContentException($"Module '{module.TypeId}': maneuverability requires category module.engine.");
+        if (module.Maneuverability is < 0)
+            throw new ContentException($"Module '{module.TypeId}': maneuverability must be non-negative.");
+        if (module.CombatRole is not null && module.CombatRole is not ("bridge" or "engine"))
+            throw new ContentException($"Module '{module.TypeId}': combatRole must be bridge or engine.");
     }
 }
