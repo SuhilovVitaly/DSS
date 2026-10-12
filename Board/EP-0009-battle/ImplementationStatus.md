@@ -91,3 +91,7 @@ TK-0005 f7eb4c4a8a694227c39bca25600239d0e961649a published/remote verified. US-0
 ## EP-0009-US-0002-TK-0002 — 2026-10-12
 
 TK-0001 65bdb36aa8d419dc5a3240a8d981297589933c25 published/remote verified. Basic engine now reaches6km/s with maneuverability10; new Strizh8km/s, acceleration800m/s², turn12°/s, mass4000kg, maneuverability40. Runtime command/propulsion selection, hostile restore and solar generation use module.engine category, with compatibility for legacy programmatic registries lacking category metadata. Actual Strizh command and solar Vmax regression passed. Engine non-corpus1946/1946, Client full1857/1857, solution build0 warnings/errors, scoped format/diff PASS. Production scenario loadout and combat maneuverability use follow later. Separate publication follows. Graphify/game/native NOT RUN per user.
+
+## EP-0009-US-0002-TK-0003 — 2026-10-12
+
+TK-0002 8bbe76d48f021273312cd09fce1c5e7736f38f15 published/remote verified. All15 module types now have structurePointsMax150, bridge has combatRole bridge. Six shipped scenarios had above-max structurePoints lowered to150 early because standard Engine bootstrap otherwise failed; this subset is recorded in US-0009-TK-0003. Content one/two-hit arithmetic regression is a data gate only; runtime damage follows later. Focused Client26/26; Engine non-corpus1946/1946; Client full1860/1860; solution build0 warnings/errors, scoped format/diff PASS. Separate publication follows. Graphify/game/native NOT RUN per user.

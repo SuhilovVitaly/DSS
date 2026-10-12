@@ -15,6 +15,8 @@ created: 2026-10-12
 
 STATUS: NOT STARTED
 
+Execution note from US-0002-TK-0003: six shipped scenarios already had `structurePoints` 400/180 lowered to150 because the normalized module catalog otherwise made standard bootstrap fail. This ticket must preserve that completed subset and still implement the remaining combat loadouts, armorClass/crew skill schema migration and required scenario validations.
+
 **Файлы:** `Scenarios/{Default, Default_500, Docked, Undocked, MarketProfiles, PlayerShipOnly}/scenario.json` (больше 5 — по A12), `tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs`; удаление устаревших навыков из `ScenarioData.cs` (по A12).
 **Тесты:** `All_scenarios_load`, `Player_tetrarch_light_armor`, `No_legacy_skill_fields`.
 

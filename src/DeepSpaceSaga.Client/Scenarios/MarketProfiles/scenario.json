@@ -51,7 +51,7 @@
             "moduleId": "MOD-MARKET-CARGO",
             "moduleTypeId": "module.container.basic",
             "occupiedCells": [{ "x": 4, "y": 1 }],
-            "structurePoints": 400,
+            "structurePoints": 150,
             "powerState": "On",
             "operationalState": "Ready",
             "activeCycle": null,

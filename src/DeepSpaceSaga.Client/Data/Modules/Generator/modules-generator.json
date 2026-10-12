@@ -5,7 +5,7 @@
       "displayName": "Generator",
       "type": "module.generator",
       "massKg": 12000,
-      "structurePointsMax": 180,
+      "structurePointsMax": 150,
       "powerConsumptionW": 0,
       "baseCycleTimeMs": 0
     }

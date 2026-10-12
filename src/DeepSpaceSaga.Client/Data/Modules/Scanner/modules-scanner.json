@@ -5,7 +5,7 @@
       "displayName": "Scanner MK I",
       "type": "module.scanner",
       "massKg": 2000,
-      "structurePointsMax": 60,
+      "structurePointsMax": 150,
       "powerConsumptionW": 0,
       "baseCycleTimeMs": 20000,
       "baseSuccessChancePercent": 100

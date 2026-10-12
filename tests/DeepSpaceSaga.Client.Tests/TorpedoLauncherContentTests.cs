@@ -58,7 +58,7 @@ public sealed class TorpedoLauncherContentTests
         Assert.Equal(15000, launcher.LauncherReloadMs);
         Assert.Equal(120000, launcher.TorpedoMaxFlightTimeMs);
         Assert.Equal(2000, launcher.MassKg);
-        Assert.Equal(60, launcher.StructurePointsMax);
+        Assert.Equal(150, launcher.StructurePointsMax);
         Assert.Equal(0, launcher.PowerConsumptionW);
         Assert.Null(launcher.FuelCapacityKg);
         Assert.Null(launcher.CargoCapacityKg);

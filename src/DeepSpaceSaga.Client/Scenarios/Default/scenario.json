@@ -120,7 +120,7 @@
                     "y": 2
                   }
                 ],
-                "structurePoints": 400,
+                "structurePoints": 150,
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -159,7 +159,7 @@
                     "y": 4
                   }
                 ],
-                "structurePoints": 180,
+                "structurePoints": 150,
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,

@@ -5,7 +5,7 @@
       "displayName": "Living quarters MK I",
       "type": "living.quarters",
       "massKg": 2000,
-      "structurePointsMax": 60,
+      "structurePointsMax": 150,
       "powerConsumptionW": 0,
       "baseCycleTimeMs": 0,
       "cabines": 2
@@ -15,7 +15,7 @@
       "displayName": "Living quarters MK I (3 cabins)",
       "type": "living.quarters",
       "massKg": 2000,
-      "structurePointsMax": 60,
+      "structurePointsMax": 150,
       "powerConsumptionW": 0,
       "baseCycleTimeMs": 0,
       "cabines": 3
