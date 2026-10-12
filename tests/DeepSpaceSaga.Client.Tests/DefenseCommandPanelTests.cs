@@ -7,6 +7,41 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class DefenseCommandPanelTests
 {
+    [Fact]
+    public async Task Two_defense_panels_show_own_barrels_pending_second_shot_and_reload()
+    {
+        await using var f = new Fixture();
+        var first = Defense with
+        {
+            Defense = Defense.Defense! with
+            {
+                Barrels = 2,
+                PendingBurstShots = [new(2000, "target-torpedo", 2, LaunchMode.Manual)],
+                ReadyAtMotionTimeMs = 14500
+            }
+        };
+        var second = Defense with
+        {
+            ModuleId = "defense-2",
+            Position = 3,
+            Defense = Defense.Defense! with { Barrels = 1, PendingBurstShots = [], ReadyAtMotionTimeMs = null }
+        };
+        f.Update(s => s with { InstalledModules = [Launcher, first, second] });
+        using var bitmap = new SKBitmap(1280, 1080);
+        using var canvas = new SKCanvas(bitmap);
+        f.Screen.Render(canvas, 1280, 1080);
+        var rows = f.Screen.CommandsPanel.CommandPanelRows.Where(r => r.Weapon is not null).ToArray();
+        Assert.Equal(2, rows.Length);
+        var firstDetails = GameSessionScreen.DefenseBurstLines(first.Defense!, 0);
+        var secondDetails = GameSessionScreen.DefenseBurstLines(second.Defense!, 0);
+        Assert.Contains(firstDetails, line => line.Contains("2"));
+        Assert.Contains(firstDetails, line => line.Contains("2.0"));
+        Assert.Contains(firstDetails, line => line.Contains("14.5"));
+        Assert.DoesNotContain(secondDetails, line => line.Contains("14.5") || line.Contains("2.0"));
+        Assert.Contains(rows.Single(r => r.Weapon!.ModuleId == first.ModuleId).DetailLines,
+            line => line.Contains("14.5"));
+    }
+
     private static readonly WeaponOperatorSnapshot Operator = new("crew", "Alex", WeaponSkillType.TorpedoAttack, 0, 30, 0);
     private static readonly InstalledModuleSnapshot Launcher = new("launcher", "module.torpedo.launcher.basic", "Launcher", 1,
         [CombatCommandTypes.Fire], "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")],
