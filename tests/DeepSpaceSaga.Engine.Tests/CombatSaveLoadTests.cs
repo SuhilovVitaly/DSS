@@ -316,7 +316,7 @@ public sealed class CombatSaveLoadTests : IDisposable
             settings["typeData"]![property.Key] = Path.GetFullPath(Path.Combine(ClientRoot, property.Value!.GetValue<string>()));
         settings["defaultScenario"] = Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json");
         string classesPath = Path.Combine(_directory, "classes.json");
-        File.WriteAllText(classesPath, "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":900}]}");
+        File.WriteAllText(classesPath, "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"},{\"typeId\":\"ship.mukha\"}]}");
         settings["typeData"]!["shipClasses"] = classesPath;
         string modulesPath = Path.Combine(_directory, "Modules");
         foreach (string source in Directory.GetFiles(Path.Combine(ClientRoot, "Data", "Modules"), "*.json", SearchOption.AllDirectories))
@@ -341,7 +341,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         Assert.Equal(90, Flight(snapshot).Torpedo!.TurnRateDegPerSec);
         using var fresh = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
         var newSnapshot = fresh.CaptureSnapshot();
-        Assert.Equal(900, newSnapshot.Objects.Single(o => o.ObjectId == Player).HullCombat!.MaxHp);
+        Assert.Equal(450, newSnapshot.Objects.Single(o => o.ObjectId == Player).HullCombat!.MaxHp);
         Assert.Equal(50, newSnapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Damage);
         Assert.Equal(6, newSnapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.SpeedKmS);
     }

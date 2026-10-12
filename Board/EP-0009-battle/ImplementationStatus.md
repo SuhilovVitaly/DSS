@@ -95,3 +95,7 @@ TK-0001 65bdb36aa8d419dc5a3240a8d981297589933c25 published/remote verified. Basi
 ## EP-0009-US-0002-TK-0003 — 2026-10-12
 
 TK-0002 8bbe76d48f021273312cd09fce1c5e7736f38f15 published/remote verified. All15 module types now have structurePointsMax150, bridge has combatRole bridge. Six shipped scenarios had above-max structurePoints lowered to150 early because standard Engine bootstrap otherwise failed; this subset is recorded in US-0009-TK-0003. Content one/two-hit arithmetic regression is a data gate only; runtime damage follows later. Focused Client26/26; Engine non-corpus1946/1946; Client full1860/1860; solution build0 warnings/errors, scoped format/diff PASS. Separate publication follows. Graphify/game/native NOT RUN per user.
+
+## EP-0009-US-0002-TK-0004 — 2026-10-12
+
+TK-0003 cf44b0c975b5185901858e971a9b99ddc05fb995 published/remote verified. Ship class content and Engine schema now contain only TypeId; Mukha and Shmel class ids load. Legacy hull runtime remains under A08, sourcing scenario/save HP or default450 until US-0003. Hostile scenario layouts/images will be integrated by US-0009 scenario tickets; US2-AC3 remains OPEN. Focused Engine99/99 and Client4/4 before final Client test addition; Engine non-corpus1943/1943, Client full1861/1861; solution build0 warnings/errors, scoped format/diff PASS. Full Engine corpus run was cancelled after slow generation and replaced by non-corpus suite. Separate publication follows. Graphify/game/native NOT RUN per user.

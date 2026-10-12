@@ -13,7 +13,9 @@ created: 2026-10-12
 
 # EP-0009-US-0002-TK-0004-hostile-ship-classes
 
-STATUS: NOT STARTED
+STATUS: IMPLEMENTED; INTEGRATED SCENARIO ACCEPTANCE OPEN
+
+Execution scope before edit: `Data/Ships/ship-classes.json`, `Content/ShipClassDefinition.cs`, `GameDataRegistry.cs`, `SimulationEngine.Combat.cs`, Client `TetrarchClassContentTests.cs`, Engine `CombatContentLoaderTests.cs`, this card and EP-0009 status records; extend test paths only for confirmed regressions. The content schema becomes TypeId-only, with legacy hull runtime state retained temporarily at the old 450-HP fallback until US-0003 migrates live damage/save consumers (A08). New ship class identities precede their US-0009 combat scenario loadouts. Planned hull cells: Mukha two adjacent cells (Strizh + torpedo), Shmel three adjacent cells (same plus one-barrel defense). No dedicated sprites exist; later scenarios use the existing small-ship `ship-zero-class.png` placeholder, recorded here rather than claiming a new asset. No Graphify/game/native runs.
 
 **Задача.**
 1. `ship-classes.json`: удалить `hullHitPointsMax`, добавить `ship.mukha` и `ship.shmel`. `ShipClassDefinition` → `(TypeId)`, проверка `> 0` удаляется.
@@ -22,6 +24,12 @@ STATUS: NOT STARTED
 
 **Файлы:** `Data/Ships/ship-classes.json`, `Content/ShipClassDefinition.cs`, `GameDataRegistry.cs`, `EngineContentLoader.cs`, `tests/DeepSpaceSaga.Client.Tests/TetrarchClassContentTests.cs`.
 **Тесты:** `Ship_classes_have_no_hull_hp`, `Mukha_and_shmel_load`.
+
+## Implementation evidence — 2026-10-12
+
+`ship-classes.json` contains only `typeId` for Tetrarch, Mukha and Shmel; the Engine definition and registry validation no longer include class hull HP. Both new ids load through Settings into the Engine registry. EP-0008 hull combat temporarily reads the scenario/save maximum or defaults to 450 under A08, so existing runtime and saves continue to load while US-0003 replaces hull damage.
+
+The specified Mukha two-cell (Strizh + torpedo) and Shmel three-cell (plus single-barrel defense) loadouts and image bindings require scenario objects; no scenario currently references either class. US-0009 scenario tickets own those objects and will verify occupancy limits, module count, and `ship-zero-class.png` placeholder. The sprite exists at `src/DeepSpaceSaga.Client/Images/CelestialObjects/Spacecraft/ship-zero-class.png`; dedicated Mukha/Shmel art is absent. US2-AC3 remains OPEN until those scenario tests. Game/native/Graphify NOT RUN per user.
 
 ## Canonical context and execution
 

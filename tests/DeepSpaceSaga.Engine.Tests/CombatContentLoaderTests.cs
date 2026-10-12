@@ -13,7 +13,7 @@ public sealed class CombatContentLoaderTests : IDisposable
     private string ModulesPath => Path.Combine(_directory, "implementations.json");
     private string ScenarioPath => Path.Combine(_directory, "scenario.json");
     private const string ValidClasses = """
-        {"shipClasses":[{"typeId":"ship.tetrarch","hullHitPointsMax":450}]}
+        {"shipClasses":[{"typeId":"ship.tetrarch"}]}
         """;
     private const string ValidModules = """
         {"moduleImplementations":[{
@@ -184,7 +184,7 @@ public sealed class CombatContentLoaderTests : IDisposable
     public void Combat_content_loads_ship_and_launcher_values()
     {
         var registry = Load();
-        Assert.Equal(450, Ship(registry).HullHitPointsMax);
+        Assert.Equal("ship.tetrarch", Ship(registry).TypeId);
         Assert.False(registry.ShipClasses.Contains("Tetrarch"));
         Assert.False(registry.ShipClasses.Contains("SHIP.TETRARCH"));
         var launcher = Launcher(registry);
@@ -197,19 +197,19 @@ public sealed class CombatContentLoaderTests : IDisposable
         Assert.Equal(1, launcher.SlotSize);
 
         // A fresh load observes edits on disk, without changing the economic catalog identity.
-        File.WriteAllText(ClassesPath, ValidClasses.Replace("450", "900", StringComparison.Ordinal));
+        File.WriteAllText(ClassesPath, """{"shipClasses":[{"typeId":"ship.tetrarch"},{"typeId":"ship.mukha"}]}""");
         var modules = Modules();
         Module(modules)["torpedoDamage"] = 75;
         Module(modules)["torpedoSpeedKmS"] = 2.5;
         Module(modules)["torpedoTurnRateDegPerSec"] = 45.5;
         WriteModules(modules);
         var reloaded = Load();
-        Assert.Equal(900, Ship(reloaded).HullHitPointsMax);
+        Assert.True(reloaded.ShipClasses.Contains("ship.mukha"));
         Assert.Equal(75, Launcher(reloaded).TorpedoDamage);
         Assert.Equal(2.5, Launcher(reloaded).TorpedoSpeedKmS);
         Assert.Equal(45.5, Launcher(reloaded).TorpedoTurnRateDegPerSec);
         Assert.Equal(registry.CatalogCompatibility, reloaded.CatalogCompatibility);
-        Assert.Equal(450, Ship(registry).HullHitPointsMax);
+        Assert.False(registry.ShipClasses.Contains("ship.mukha"));
         Assert.Equal(150, Launcher(registry).TorpedoDamage);
     }
 
@@ -327,11 +327,8 @@ public sealed class CombatContentLoaderTests : IDisposable
     [InlineData("{\"shipClasses\":null}")]
     [InlineData("{\"shipClasses\":[]}")]
     [InlineData("{\"shipClasses\":[null]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"\",\"hullHitPointsMax\":450}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":0}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":-1}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":2147483648}]}")]
+    [InlineData("{\"shipClasses\":[{}]}")]
+    [InlineData("{\"shipClasses\":[{\"typeId\":\"\"}]}")]
     public void Invalid_ship_class_file_is_rejected_with_path(string json)
     {
         File.WriteAllText(ClassesPath, json);
@@ -377,7 +374,7 @@ public sealed class CombatContentLoaderTests : IDisposable
 
         foreach (bool invalidClass in new[] { true, false })
         {
-            File.WriteAllText(ClassesPath, invalidClass ? ValidClasses.Replace("450", "0", StringComparison.Ordinal) : ValidClasses);
+            File.WriteAllText(ClassesPath, invalidClass ? "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"},{\"typeId\":\"ship.tetrarch\"}]}" : ValidClasses);
             File.WriteAllText(ModulesPath, invalidClass ? ValidModules : ValidModules.Replace("\"torpedoSpeedKmS\":3", "\"torpedoSpeedKmS\":0", StringComparison.Ordinal));
             foreach (Func<SimulationEngine> bootstrap in new Func<SimulationEngine>[]
             {
@@ -393,15 +390,15 @@ public sealed class CombatContentLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Direct_registry_creation_validates_class_hp_and_ids()
+    public void Direct_registry_creation_validates_class_ids()
     {
         Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [], [], [],
-            shipClasses: [new ShipClassDefinition("ship.tetrarch", 0)]));
+            shipClasses: [new ShipClassDefinition("")]));
         Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [], [], [],
-            shipClasses: [new ShipClassDefinition("ship.tetrarch", 450), new ShipClassDefinition("ship.tetrarch", 900)]));
+            shipClasses: [new ShipClassDefinition("ship.tetrarch"), new ShipClassDefinition("ship.tetrarch")]));
         var registry = GameDataRegistry.Create([], [], [], [],
-            shipClasses: [new ShipClassDefinition("ship.tetrarch", int.MaxValue)]);
-        Assert.Equal(int.MaxValue, Ship(registry).HullHitPointsMax);
+            shipClasses: [new ShipClassDefinition("ship.tetrarch")]);
+        Assert.Equal("ship.tetrarch", Ship(registry).TypeId);
     }
 
     [Theory]

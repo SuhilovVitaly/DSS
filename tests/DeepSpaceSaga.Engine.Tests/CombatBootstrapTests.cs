@@ -27,13 +27,13 @@ public sealed class CombatBootstrapTests
           ]}}
         """;
 
-    private static GameDataRegistry Registry(int maxHp = 450) => GameDataRegistry.Create(
+    private static GameDataRegistry Registry() => GameDataRegistry.Create(
         moduleCategories: [new("module.torpedo.launcher", "Launcher", 1, [CombatCommandTypes.Fire])],
         moduleTypes: [new("module.torpedo.launcher.basic", "Launcher", 1, 2000, 60, 0, [CombatCommandTypes.Fire],
             TorpedoDamage: 150, TorpedoSpeedKmS: 3, TorpedoTurnRateDegPerSec: 90)],
         itemTypes: [],
         commandDefinitions: [new(CombatCommandTypes.Fire, "Fire", Target: "object", Type: "module.torpedo.launcher")],
-        shipClasses: [new("ship.tetrarch", maxHp)]);
+        shipClasses: [new("ship.tetrarch")]);
 
     private static ScenarioFile Scenario() => ScenarioLoader.LoadFromJson(ScenarioJson);
     private static HullCombatSnapshot Hull(AuthoritativeSnapshot snapshot, string id = "player") =>
@@ -43,10 +43,18 @@ public sealed class CombatBootstrapTests
     [InlineData(450)]
     [InlineData(900)]
     [InlineData(int.MaxValue)]
-    public void Tetrarch_starts_at_configured_hp_and_launcher_ready(int maxHp)
+    public void Legacy_scenario_hull_hp_and_launcher_bootstrap(int maxHp)
     {
-        using var engine = new SimulationEngine(Registry(maxHp));
-        engine.LoadScenario(Scenario());
+        using var engine = new SimulationEngine(Registry());
+        var scenario = Scenario();
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with { HullHitPoints = maxHp, HullHitPointsMax = maxHp }).ToArray()
+            }
+        };
+        engine.LoadScenario(scenario);
         var snapshot = engine.CaptureSnapshot();
         Assert.Equal(new HullCombatSnapshot("ship.tetrarch", maxHp, maxHp), Hull(snapshot));
         Assert.Equal(Hull(snapshot), Hull(snapshot, "pirate"));

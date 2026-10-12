@@ -520,8 +520,9 @@ public sealed partial class SimulationEngine
                 continue;
             if (!_registry.ShipClasses.Contains(classId))
                 throw new ScenarioException($"Object '{obj.ObjectId}' references unknown shipClassId '{classId}'.");
-            var definition = _registry.ShipClasses.GetDefinition(_registry.ShipClasses.GetIndex(classId));
-            int maxHp = obj.HullHitPointsMax ?? definition.HullHitPointsMax;
+            // Temporary EP-0008 hull continuation until US-0003 migrates live combat to module HP.
+            // New class content no longer carries hullHitPointsMax.
+            int maxHp = obj.HullHitPointsMax ?? 450;
             int currentHp = obj.HullHitPoints ?? maxHp;
             if (currentHp <= 0 || currentHp > maxHp)
                 throw new ScenarioException($"Object '{obj.ObjectId}' hullHitPoints must be in 1..{maxHp}.");

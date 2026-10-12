@@ -187,8 +187,6 @@ internal sealed class GameDataRegistry
         {
             if (definition is null)
                 throw new ContentException("shipClasses contains null.");
-            if (definition.HullHitPointsMax <= 0)
-                throw new ContentException($"Ship class '{definition.TypeId}': hullHitPointsMax must be greater than zero.");
         }
         return TypeRegistry<ShipClassDefinition>.Create(definitions, "shipClasses");
     }
