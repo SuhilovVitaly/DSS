@@ -47,7 +47,7 @@ public class DefensePreviewProjectionTests
             Assert.True(Preview(snapshot).CanFire);
             Assert.True(Preview(snapshot, Defense2).CanFire);
             Assert.Equal(target, Preview(snapshot).TargetTorpedoId);
-            Assert.False(snapshot.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+            Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
             Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
         }
         var defense = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState.DefenseState!;

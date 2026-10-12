@@ -54,12 +54,12 @@ public class CountermeasureResolutionTests
         Assert.Equal(1000, entry.ChanceTenths);
         Assert.Equal(801, entry.Roll);
         Assert.Empty(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
-        Assert.Equal(entry.MotionTimeMs + 10000, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.ReloadDueMotionTimeMs);
+        Assert.Equal(10000, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.ReloadDueMotionTimeMs);
         Assert.Single(At(engine, 20000).CombatJournal.Where(e => e.Roll is not null));
         Assert.Equal(DefenseState.Ready, At(engine, 20000).Objects.Single(o => o.ObjectId == Target).Defense!.State);
     }
     [Fact]
-    public void Miss_coasts_straight_then_reload_starts_and_never_retries()
+    public void Miss_coasts_straight_then_retries_after_launch_based_reload()
     {
         using var engine = Create(DefenseScenario());
         engine.ReceiveCommand(Fire("fire")); At(engine, 0);
@@ -76,11 +76,11 @@ public class CountermeasureResolutionTests
         Assert.InRange(Math.Abs(Math.Sqrt(Math.Pow(pr.X - coast.X, 2) + Math.Pow(pr.Y - coast.Y, 2)) - 120), 0, 1e-6);
         snapshot = At(engine, 6000);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(flight.MissExpiresAtMotionTimeMs + 10000, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.ReloadDueMotionTimeMs);
+        Assert.Equal(10000, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.ReloadDueMotionTimeMs);
         snapshot = At(engine, 18000);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.Single(snapshot.CombatJournal.Where(e => e.Roll is not null));
-        Assert.True(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Equal(2, snapshot.CombatJournal.Count(e => e.Roll is not null));
+        Assert.Equal(2, snapshot.CombatJournal.Count(e => e.Type == CombatEventType.Launch && e.Result == "countermeasure"));
     }
     [Theory]
     [InlineData(1000, false)]
@@ -107,10 +107,12 @@ public class CountermeasureResolutionTests
         for (int time = 17; time < 21000; time += 17) At(small, time);
         var b = At(small, 21000);
         Assert.Equal(a.CombatJournal.Length, b.CombatJournal.Length);
-        Assert.Equal(a.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).Roll,
-            b.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).Roll);
-        Assert.InRange(Math.Abs(a.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).MotionTimeMs -
-            b.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).MotionTimeMs), 0, 1e-5);
+        Assert.Equal(a.CombatJournal.Where(e => e.RatingBreakdown is not null && e.Roll is not null).Select(e => e.Roll),
+            b.CombatJournal.Where(e => e.RatingBreakdown is not null && e.Roll is not null).Select(e => e.Roll));
+        var timesA = a.CombatJournal.Where(e => e.RatingBreakdown is not null && e.Roll is not null).Select(e => e.MotionTimeMs).ToArray();
+        var timesB = b.CombatJournal.Where(e => e.RatingBreakdown is not null && e.Roll is not null).Select(e => e.MotionTimeMs).ToArray();
+        Assert.Equal(timesA.Length, timesB.Length);
+        for (int i = 0; i < timesA.Length; i++) Assert.InRange(Math.Abs(timesA[i] - timesB[i]), 0, 1e-5);
         Assert.Equal(a.Objects.Single(o => o.ObjectId == Target).HullCombat, b.Objects.Single(o => o.ObjectId == Target).HullCombat);
     }
 }

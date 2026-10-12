@@ -154,8 +154,8 @@ internal static class CountermeasureSaveValidation
             }
             if (f.Phase == CountermeasurePhase.Guiding)
             {
-                Require(objects.TryGetValue(f.TargetTorpedoId, out var target) && target.ObjectType == SpaceObjectType.Missile && attempted.Contains(f.TargetTorpedoId),
-                    "missing target or attempt");
+                Require(objects.TryGetValue(f.TargetTorpedoId, out var target) && target.ObjectType == SpaceObjectType.Missile,
+                    "missing target");
                 Require(f.ResolutionRoll is null && f.ResolvedAtMotionTimeMs is null && f.MissExpiresAtMotionTimeMs is null, "resolved guiding flight");
                 Require(row.TargetPlanStartMotionTimeMs >= 0 && row.TargetPlanStartMotionTimeMs <= state.MotionTimeMs, "invalid guidance baseline");
             }

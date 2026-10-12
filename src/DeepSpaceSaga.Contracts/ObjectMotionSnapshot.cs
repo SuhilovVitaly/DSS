@@ -131,8 +131,6 @@ public sealed record ObjectMotionSnapshot(
     TorpedoSnapshot? Torpedo = null,
     CountermeasureSnapshot? Countermeasure = null,
     DefenseSnapshot? Defense = null,
-    /// <summary>Authoritative per-torpedo attempt marker; clearing a defender does not clear this flag.</summary>
-    bool CountermeasureAttempted = false,
     [property: JsonPropertyName("orbit")] OrbitalElements? Orbit = null,
     [property: JsonPropertyName("orbitSampleSimulationTimeMs")] long? OrbitSampleSimulationTimeMs = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,

@@ -135,3 +135,7 @@ TK-0003 acd5c646fedba322bb66a5626b80cb1bd8423d36 published/remote verified. Laun
 ## EP-0009-US-0005-TK-0002 — 2026-10-12
 
 TK-0001 1af75fb9bcb7721f219480ddaa36d5f9a428ddac published/remote verified. Two-barrel defense now queues a second shot at +2000 MotionTimeMs; the combat scheduler orders pending shots after contacts/expiries and before new launches. It skips a removed target or unavailable module, tracks overlapping countermeasure IDs, and persists the queue through Save/Load. Focused burst/skip/roundtrip3/3; Engine non-corpus1973/1973, Client1859/1859, Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. TK-0003 owns reload-from-first-shot and attempt policy. Game/native NOT RUN and Graphify rebuild SKIPPED per user. Separate publication follows.
+
+## EP-0009-US-0005-TK-0003 — 2026-10-12
+
+TK-0002 f8096e45af1fb11706c9507187e525e5c3c4811d published/remote verified. D13 readiness now starts with the first barrel; D15 auto targeting checks live guiding countermeasures and retries after a miss. The runtime attempted flag is removed. Save v16 writes an empty legacy attempt list until US-0011 and restores missing readiness from older saves. Production 14500 ms boundary passed; Engine non-corpus1972/1972, Client1859/1859, Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. Headless US-0005 story review: AC1 cooldown/multi-flight PASS, AC2 burst/skip/Save-Load PASS, AC3 launch-based reload/retry/arbitration PASS. Game/native NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.

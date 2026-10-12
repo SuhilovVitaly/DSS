@@ -119,7 +119,15 @@ public sealed class CombatSaveLoadTests : IDisposable
     private static ScenarioFile RealScenario()
     {
         var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
-        return scenario with { GameState = scenario.GameState with { MasterSeed = 42 } };
+        return scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                MasterSeed = 42,
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with
+                { Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = false }).ToArray() } : o).ToArray()
+            }
+        };
     }
     private static ObjectMotionSnapshot Flight(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
     private static void SameWorld(AuthoritativeSnapshot expected, AuthoritativeSnapshot actual)

@@ -84,7 +84,8 @@ public class DualDefenseArbitrationTests
         Assert.Equal(Defense2, flight.LauncherModuleId);
         Assert.Equal(100, flight.FrozenChanceTenths);
         Assert.Equal(24, flight.SpeedKmS);
-        Assert.True(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Equal(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).ObjectId,
+            flight.TargetTorpedoId);
         Assert.Single(At(engine, 100).Objects, o => o.Countermeasure is not null);
     }
 
@@ -117,7 +118,7 @@ public class DualDefenseArbitrationTests
             reason == "solution" ? 0.001 : 12, reason == "solution" ? 0.001 : 12, unavailable: reason);
         var snapshot = At(engine, 100);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.False(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Single(snapshot.Objects, o => o.Torpedo is not null);
         Assert.Equal(0ul, engine.CaptureSaveStateForTests(100, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
     }
 

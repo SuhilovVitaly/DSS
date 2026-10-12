@@ -81,8 +81,9 @@ public class CountermeasureSnapshotTests
         var legacy = JsonSerializer.Deserialize<ObjectMotionSnapshot>("""{"ObjectId":"old","X":0,"Y":0,"SpeedKmS":0,"Direction":0}""")!;
         Assert.Null(legacy.Defense);
         Assert.Null(legacy.Countermeasure);
-        Assert.False(legacy.CountermeasureAttempted);
-        var attempted = npc with { CountermeasureAttempted = true };
-        Assert.True(JsonSerializer.Deserialize<ObjectMotionSnapshot>(JsonSerializer.Serialize(attempted))!.CountermeasureAttempted);
+        Assert.DoesNotContain("CountermeasureAttempted", JsonSerializer.Serialize(legacy));
+        var oldAttempt = JsonSerializer.Deserialize<ObjectMotionSnapshot>(
+            """{"ObjectId":"old","X":0,"Y":0,"SpeedKmS":0,"Direction":0,"CountermeasureAttempted":true}""")!;
+        Assert.DoesNotContain("CountermeasureAttempted", JsonSerializer.Serialize(oldAttempt));
     }
 }

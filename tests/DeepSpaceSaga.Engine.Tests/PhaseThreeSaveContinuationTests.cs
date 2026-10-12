@@ -101,20 +101,22 @@ public class PhaseThreeSaveContinuationTests
     }
 
     [Fact]
-    public void Reload_does_not_reset_automatic_attempt()
+    public void Reload_preserves_automatic_retry_and_rng()
     {
         var registry = AutomaticDefenseTests.WeaponRegistry(1, 0);
         using var continuous = new SimulationEngine(registry);
         continuous.LoadScenario(AutomaticDefenseTests.DefenseScenario());
         continuous.ReceiveCommand(Fire("auto-target")); At(continuous, 0);
         var save = Save(continuous, 17000);
-        Assert.Single(save.GameState.DefenseState!.AttemptedTorpedoIds);
+        Assert.Empty(save.GameState.DefenseState!.AttemptedTorpedoIds);
         Assert.Contains(save.GameState.DefenseState.Journal, e => e.Type == CombatEventType.Miss && e.LaunchMode == LaunchMode.Auto);
-        Assert.Equal(1ul, save.GameState.DefenseState.RngCounter);
+        Assert.True(save.GameState.DefenseState.RngCounter >= 1);
         using var restored = Roundtrip(save, registry);
         foreach (long time in new[] { 17000, 18000, 19999 }) Same(continuous, restored, time);
-        Assert.Single(At(restored, 19999).CombatJournal, e => e.Result == "countermeasure" && e.Type == CombatEventType.Launch);
-        Assert.Equal(1ul, Save(restored, 19999).GameState.DefenseState!.RngCounter);
+        Assert.Equal(At(continuous, 19999).CombatJournal.Count(e => e.Result == "countermeasure" && e.Type == CombatEventType.Launch),
+            At(restored, 19999).CombatJournal.Count(e => e.Result == "countermeasure" && e.Type == CombatEventType.Launch));
+        Assert.Equal(Save(continuous, 19999).GameState.DefenseState!.RngCounter,
+            Save(restored, 19999).GameState.DefenseState!.RngCounter);
     }
 
     [Fact]

@@ -41,18 +41,23 @@ public sealed partial class SimulationEngine
             foreach (var module in owner.Modules)
             {
                 if (!_defenses.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var defense) ||
-                    !defense.AutoEnabled || defense.State is DefenseState.Guiding or DefenseState.NoOperator ||
+                    !defense.AutoEnabled || defense.State == DefenseState.NoOperator ||
                     module.ActiveCycle is not null) continue;
+                if (_objects.Any(o => o.InitialMotion.Countermeasure is
+                    { Phase: CountermeasurePhase.Guiding } active &&
+                    active.OwnerObjectId == owner.InitialMotion.ObjectId && active.LauncherModuleId == module.ModuleId)) continue;
                 var op = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
                 if (op is null) continue;
                 var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-                double readyAt = Math.Max(Math.Max(from, defense.ReloadDueMotionTimeMs ?? from),
+                double readyAt = Math.Max(Math.Max(from, defense.ReadyAtMotionTimeMs ?? defense.ReloadDueMotionTimeMs ?? from),
                     module.DisabledUntilMotionTimeMs ?? from);
                 if (!CanExecuteModuleCommand(module, readyAt)) continue;
                 if (readyAt > to) continue;
                 foreach (var target in _objects)
                 {
-                    if (target.InitialMotion.Torpedo is not { } torpedo || target.InitialMotion.CountermeasureAttempted ||
+                    if (target.InitialMotion.Torpedo is not { } torpedo ||
+                        _objects.Any(o => o.InitialMotion.Countermeasure is
+                        { Phase: CountermeasurePhase.Guiding } cm && cm.TargetTorpedoId == target.InitialMotion.ObjectId) ||
                         torpedo.TargetObjectId != owner.InitialMotion.ObjectId) continue;
                     int chance = CombatChanceMath.ChanceTenths(op.EffectiveRating,
                         torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, ChanceRules);
@@ -122,8 +127,6 @@ public sealed partial class SimulationEngine
             TurnRateDegPerSec: definition.CountermeasureTurnRateDegPerSec,
             MaxFlightTimeMs: definition.CountermeasureMaxFlightTimeMs,
             ExpiresAtMotionTimeMs: checked(launch.Time + definition.CountermeasureMaxFlightTimeMs!.Value));
-        int index = _objects.IndexOf(launch.Target);
-        _objects[index] = launch.Target with { InitialMotion = launch.Target.InitialMotion with { CountermeasureAttempted = true } };
         var origin = launch.Route.Segments[0];
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, origin.SpeedKmS, origin.Direction, Countermeasure: flight);
         _objects.Add(new(motion, SpaceObjectType.Countermeasure, launch.Time, [], Name: "Countermeasure", IsKnown: true));
@@ -144,12 +147,17 @@ public sealed partial class SimulationEngine
             launch.Time <= long.MaxValue - definition.BurstIntervalMs.Value)
             pending = pending.Add(new PendingBurstShot(launch.Time + definition.BurstIntervalMs.Value,
                 flight.TargetTorpedoId, 2, mode));
+        double readyAt = defense.ReadyAtMotionTimeMs ?? 0;
+        if (!pendingBarrel)
+            readyAt = launch.Time + Math.Max(definition.CountermeasureReloadMs!.Value,
+                (definition.BurstIntervalMs ?? 0) * Math.Max(0, (definition.Barrels ?? 1) - 1));
         _defenses[key] = _defenses[key] with
         {
             State = DefenseState.Guiding,
             ActiveProjectileId = activeIds[0],
             ActiveProjectileIds = activeIds.Length > 1 ? activeIds : null,
             PendingBurstShots = pending,
+            ReadyAtMotionTimeMs = readyAt,
             ReloadDueMotionTimeMs = null,
             Operator = launch.Operator
         };
@@ -403,18 +411,19 @@ public sealed partial class SimulationEngine
         var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == key.OwnerObjectId);
         var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == key.LauncherModuleId);
         if (!reload || module is null) { _defenses.Remove(key); return; }
-        var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
         var activeIds = defense.ActiveProjectileIds ?? (defense.ActiveProjectileId is { } active
             ? System.Collections.Immutable.ImmutableArray.Create(active)
             : System.Collections.Immutable.ImmutableArray<string>.Empty);
         activeIds = activeIds.Remove(projectile.InitialMotion.ObjectId);
-        double due = motionTimeMs + type.CountermeasureReloadMs!.Value;
+        double due = defense.ReadyAtMotionTimeMs ?? motionTimeMs;
+        bool reloading = activeIds.IsEmpty && due > motionTimeMs;
         _defenses[key] = defense with
         {
             ActiveProjectileId = activeIds.IsEmpty ? null : activeIds[0],
             ActiveProjectileIds = activeIds.Length > 1 ? activeIds : null,
-            State = activeIds.IsEmpty ? DefenseState.Reloading : DefenseState.Guiding,
-            ReloadDueMotionTimeMs = activeIds.IsEmpty ? due : null
+            State = !activeIds.IsEmpty ? DefenseState.Guiding :
+                reloading ? DefenseState.Reloading : defense.Operator is null ? DefenseState.NoOperator : DefenseState.Ready,
+            ReloadDueMotionTimeMs = reloading ? due : null
         };
     }
 

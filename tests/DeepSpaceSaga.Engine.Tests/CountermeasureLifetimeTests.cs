@@ -59,9 +59,9 @@ public class CountermeasureLifetimeTests
         Assert.Single(before.Objects, o => o.Countermeasure is not null);
         var timeout = At(small, 1001);
         Assert.DoesNotContain(timeout.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(11001, Defense(timeout).ReloadDueMotionTimeMs);
+        Assert.Equal(10001, Defense(timeout).ReloadDueMotionTimeMs);
         Assert.Equal(DefenseState.Reloading, Defense(timeout).State);
-        Assert.Equal(DefenseState.Reloading, Defense(At(small, 11000)).State);
+        Assert.Equal(DefenseState.Reloading, Defense(At(small, 10000)).State);
         var ready = At(small, 11001);
         var whole = At(large, 11001);
         Assert.Equal(DefenseState.Ready, Defense(ready).State);
@@ -83,7 +83,7 @@ public class CountermeasureLifetimeTests
         Assert.InRange(Math.Abs(resolution.MotionTimeMs - 1001), 0, 1e-6);
         Assert.Equal(accuracy == 0 ? CombatEventType.Miss : CombatEventType.Intercept, resolution.Type);
         Assert.DoesNotContain(after.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(11001, Defense(after).ReloadDueMotionTimeMs!.Value, 5);
+        Assert.Equal(10001, Defense(after).ReloadDueMotionTimeMs!.Value, 5);
         Assert.Equal(1ul, engine.CaptureSaveStateForTests(1001, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
     }
 
@@ -106,7 +106,7 @@ public class CountermeasureLifetimeTests
         Assert.Single(At(engine, 1500).Objects, o => o.Countermeasure is not null);
         var timeout = At(engine, 1501);
         Assert.DoesNotContain(timeout.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(11501, Defense(timeout).ReloadDueMotionTimeMs);
+        Assert.Equal(10001, Defense(timeout).ReloadDueMotionTimeMs);
         Assert.Single(timeout.CombatJournal, e => e.Roll is not null);
     }
 
@@ -171,7 +171,8 @@ public class CountermeasureLifetimeTests
         Assert.Single(At(engine, 60000).Objects, o => o.Countermeasure is not null);
         var expired = At(engine, 60001);
         Assert.DoesNotContain(expired.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(70001, Defense(expired).ReloadDueMotionTimeMs);
+        Assert.Null(Defense(expired).ReloadDueMotionTimeMs);
+        Assert.Equal(DefenseState.Ready, Defense(expired).State);
         Assert.Empty(expired.CombatJournal.Where(e => e.Roll is not null));
         Assert.Equal(DefenseState.Ready, Defense(At(engine, 70001)).State);
     }

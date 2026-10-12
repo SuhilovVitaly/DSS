@@ -50,8 +50,10 @@ public sealed partial class SimulationEngine
         if (module is null || !_defenses.TryGetValue((ownerId, moduleId), out var defense)) return CommandReasonCodes.UnknownModule;
         if (!CanExecuteModuleCommand(module, time))
             return ModuleCombatUnavailableReason(module, time) ?? CommandReasonCodes.ModuleUnavailable;
-        if (module.ActiveCycle is not null || defense.ActiveProjectileId is not null ||
-            defense.State == DefenseState.Guiding || defense.ReloadDueMotionTimeMs > time) return CommandReasonCodes.Busy;
+        if (module.ActiveCycle is not null || defense.ReadyAtMotionTimeMs > time ||
+            defense.ReloadDueMotionTimeMs > time ||
+            _objects.Any(o => o.InitialMotion.Countermeasure is { Phase: CountermeasurePhase.Guiding } active &&
+                active.OwnerObjectId == ownerId && active.LauncherModuleId == moduleId)) return CommandReasonCodes.Busy;
         var op = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
         if (op is null) return "no_weapon_operator";
         if (string.IsNullOrWhiteSpace(targetId)) return CommandReasonCodes.MissingTarget;

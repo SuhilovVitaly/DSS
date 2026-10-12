@@ -81,7 +81,8 @@ public class AutomaticDefenseTests
         var snapshot = At(engine, 100, 1100);
         var pr = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null);
         Assert.Equal(500, pr.Countermeasure!.FrozenChanceTenths);
-        Assert.True(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Equal(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).ObjectId,
+            pr.Countermeasure.TargetTorpedoId);
         Assert.Equal(12, pr.SpeedKmS);
         Assert.Equal(DefenseState.Guiding, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.State);
     }
@@ -102,7 +103,7 @@ public class AutomaticDefenseTests
         engine.ReceiveCommand(Fire("fire")); At(engine, 0);
         var snapshot = At(engine, 1000);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.False(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Single(snapshot.Objects, o => o.Torpedo is not null);
     }
     [Fact]
     public void Disable_blocks_future_launches()

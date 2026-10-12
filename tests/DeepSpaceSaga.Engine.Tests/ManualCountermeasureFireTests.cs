@@ -29,7 +29,7 @@ public class ManualCountermeasureFireTests
         Assert.Equal(60001, flight.ExpiresAtMotionTimeMs);
         Assert.Equal(60000, flight.MaxFlightTimeMs);
         Assert.Equal(500, flight.FrozenChanceTenths);
-        Assert.True(snapshot.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
         Assert.Equal(DefenseState.Guiding, snapshot.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
         Assert.Equal(auto, snapshot.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.AutoEnabled);
         Assert.Equal(projectile, At(engine, 1, 9000000).Objects.Single(o => o.ObjectId == projectile.ObjectId));
@@ -100,7 +100,7 @@ public class ManualCountermeasureFireTests
         var result = At(engine, 1);
         Assert.Equal(CommandResultStatus.Rejected, Assert.Single(result.CommandResults).Status);
         Assert.DoesNotContain(result.Objects, o => o.Countermeasure is not null);
-        Assert.False(result.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(result.Objects, o => o.ObjectId == target && o.Torpedo is not null);
         var save = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState;
         Assert.Equal(0, save.DefenseState!.ProjectileSequence);
         Assert.Equal(0ul, save.DefenseState.RngCounter);
@@ -199,7 +199,7 @@ public class ManualCountermeasureFireTests
         var snapshot = At(engine, 1);
         Assert.Equal(CommandResultStatus.Rejected, Assert.Single(snapshot.CommandResults).Status);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.False(snapshot.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
     }
 
     [Fact]
@@ -212,7 +212,7 @@ public class ManualCountermeasureFireTests
         var ready = At(engine, 20000);
         Assert.Contains(ready.CombatJournal, e => e.Type == CombatEventType.Miss && e.ChanceTenths == 0);
         Assert.Equal(DefenseState.Ready, ready.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
-        Assert.True(ready.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(ready.Objects, o => o.ObjectId == target && o.Torpedo is not null);
         engine.ReceiveCommand(Manual("second-attempt", target));
         var second = At(engine, 20000);
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(second.CommandResults).Status);

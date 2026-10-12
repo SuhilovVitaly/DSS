@@ -51,7 +51,6 @@ public class PhaseThreeSaveSchemaTests
     [InlineData("route-speed")]
     [InlineData("route-phase")]
     [InlineData("sequence")]
-    [InlineData("attempt")]
     [InlineData("cursor")]
     [InlineData("journal-mode")]
     [InlineData("missing-hostile")]
@@ -83,7 +82,6 @@ public class PhaseThreeSaveSchemaTests
         state = defect switch
         {
             "sequence" => state with { DefenseState = state.DefenseState! with { ProjectileSequence = 0 } },
-            "attempt" => state with { DefenseState = state.DefenseState! with { AttemptedTorpedoIds = [] } },
             "cursor" => state with { CombatState = state.CombatState! with { LastProcessedMotionTimeMs = 2 } },
             "journal-mode" => state with
             {

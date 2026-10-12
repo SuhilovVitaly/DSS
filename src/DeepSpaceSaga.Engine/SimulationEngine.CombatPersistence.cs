@@ -12,8 +12,7 @@ public sealed partial class SimulationEngine
         _objects.Where(o => o.InitialMotion.Countermeasure is not null).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal)
             .Select(o => new CountermeasureProjectileSaveData(o.InitialMotion.ObjectId, o.InitialMotion.Countermeasure!,
                 _countermeasureTargetPlans.GetValueOrDefault(o.InitialMotion.ObjectId))).ToArray(),
-        _objects.Where(o => o.InitialMotion.Torpedo is not null && o.InitialMotion.CountermeasureAttempted)
-            .Select(o => o.InitialMotion.ObjectId).Order(StringComparer.Ordinal).ToArray(), _combatJournal.ToArray(),
+        [], _combatJournal.ToArray(),
         _objects.Any(o => o.InitialMotion.ObjectId == SelectedObjectId && o.InitialMotion.Countermeasure is not null) ? SelectedObjectId : null);
 
     private HostileCombatSaveData CaptureHostileState(long time) => new(HostileCombatSaveData.CurrentVersion,
@@ -42,22 +41,35 @@ public sealed partial class SimulationEngine
         }
     }
 
-    private static void StageDefenseRestore(CountermeasureStateData? saved, List<SpaceObjectRuntime> objects,
+    private void StageDefenseRestore(CountermeasureStateData? saved, List<SpaceObjectRuntime> objects,
         Dictionary<(string ObjectId, string ModuleId), DefenseSnapshot> defenses)
     {
         if (saved is null) return;
         if (defenses.Count != saved.Launchers.Count || saved.Launchers.Any(l => !defenses.ContainsKey((l.OwnerObjectId, l.ModuleId))))
             throw new ScenarioException("Saved defense launchers do not match installed modules.");
-        foreach (var row in saved.Launchers) defenses[(row.OwnerObjectId, row.ModuleId)] = row.State;
+        foreach (var row in saved.Launchers)
+        {
+            var state = row.State;
+            if (state.ReadyAtMotionTimeMs is null)
+            {
+                double? readyAt = state.ReloadDueMotionTimeMs;
+                var firstFlight = saved.Projectiles.FirstOrDefault(p => p.ObjectId == state.ActiveProjectileId);
+                if (readyAt is null && firstFlight is not null)
+                {
+                    var owner = objects.First(o => o.InitialMotion.ObjectId == row.OwnerObjectId);
+                    var module = owner.Modules.Single(m => m.ModuleId == row.ModuleId);
+                    var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+                    readyAt = firstFlight.Flight.LaunchMotionTimeMs + Math.Max(type.CountermeasureReloadMs!.Value,
+                        (type.BurstIntervalMs ?? 0) * Math.Max(0, state.Barrels - 1));
+                }
+                state = state with { ReadyAtMotionTimeMs = readyAt };
+            }
+            defenses[(row.OwnerObjectId, row.ModuleId)] = state;
+        }
         foreach (var row in saved.Projectiles)
         {
             int i = objects.FindIndex(o => o.InitialMotion.ObjectId == row.ObjectId);
             objects[i] = objects[i] with { InitialMotion = objects[i].InitialMotion with { Countermeasure = row.Flight } };
-        }
-        foreach (var id in saved.AttemptedTorpedoIds)
-        {
-            int i = objects.FindIndex(o => o.InitialMotion.ObjectId == id);
-            objects[i] = objects[i] with { InitialMotion = objects[i].InitialMotion with { CountermeasureAttempted = true } };
         }
     }
 
