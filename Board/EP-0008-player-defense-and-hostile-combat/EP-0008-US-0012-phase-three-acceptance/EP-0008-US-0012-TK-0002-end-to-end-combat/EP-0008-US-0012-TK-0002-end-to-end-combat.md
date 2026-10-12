@@ -89,7 +89,7 @@ git diff --check
 - [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
 - [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
 - [x] Review проведён, ограничения/native статус описаны честно.
-- [x] Board evidence актуально; при execution отдельный commit/push подтверждён.
+- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён. — commit готов, push BLOCKED automatic approval review.
 - [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
@@ -111,3 +111,5 @@ New matrix6/6 PASS (`D:/DeepSpaceSaga/ep8-us12tk2-matrix-final.log`). Full corpu
 Final Engine regression1922/1922 PASS (all non-corpus tests, log `D:/DeepSpaceSaga/ep8-us12tk2-engine.log`); full corpus was passed immediately before this test-only ticket. Scoped whitespace verification and diffPASS. Final solution build recorded below before publication.
 
 Final solution build PASS, 0 warnings/errors. Separate ticket commit and immediate push follow; live SHA is verified before TK-0003.
+
+Publication result: local `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c`; automatic approval review rejected both push attempts. Remote verified still `0cdcc7af7b774096a307fc5520e92f4ac12acffc`. Explicit destination authorization required; next ticket not started. See [publication registry](../../PublicationStatus.md).

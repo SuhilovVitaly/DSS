@@ -253,3 +253,9 @@ US-0011 TK-0004 `222e5bb45063c60e5a689ee5e854f2e9c8867ab6` published/remote veri
 ## EP-0008-US-0012-TK-0002 — 2026-10-11
 
 TK-0001 `0cdcc7af7b774096a307fc5520e92f4ac12acffc` published/remote verified. Generated PlayerShipOnly actual-session battle, real-file continuation/recovery, three-seed pause/x100 partition determinism and two-hostile0/100% custom-weapon matrix implemented. New6/6 and Engine1922/1922 PASS; scoped format/diffPASS. Next after separate publication: native UI matrix. Native OPEN.
+
+## Publication blocked after US-0012-TK-0002 — 2026-10-11
+
+Local commit `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` completed but both push attempts were rejected by automatic approval review, including after authenticated GitHub owner/public/push permission verification. Live remote remains `0cdcc7af7b774096a307fc5520e92f4ac12acffc`. Explicit human destination authorization is required by that reviewer. Existing user instruction authorizes autonomous per-ticket pushes, but the reviewer did not accept it without the URL. No bypass attempted.
+
+Do not start TK-0003 or EP-0009 until the existing commit is pushed and the remote SHA is verified. Native/final review/project documentation/Graphify remain OPEN. Exact ticket SHA registry and recovery instructions: [PublicationStatus.md](PublicationStatus.md).
