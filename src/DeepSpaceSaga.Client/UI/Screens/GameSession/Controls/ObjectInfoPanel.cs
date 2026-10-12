@@ -234,6 +234,8 @@ public sealed class ObjectInfoPanel
                     HostileCombatPhase.Pursuit => GameSessionScreen.CombatText("Phase.Pursuit", "Сближение"),
                     HostileCombatPhase.OrbitEntry => GameSessionScreen.CombatText("Phase.OrbitEntry", "Выход на орбиту"),
                     HostileCombatPhase.OrbitHold => GameSessionScreen.CombatText("Phase.OrbitHold", "Удержание орбиты"),
+                    HostileCombatPhase.FlankApproach => GameSessionScreen.CombatText("Phase.FlankApproach", "Заход с фланга"),
+                    HostileCombatPhase.Retreat => GameSessionScreen.CombatText("Phase.Retreat", "Отход"),
                     _ => "—"
                 }));
                 lines.Add((GameSessionScreen.CombatText("DesiredRadius", "Радиус орбиты"), $"{hostile.DesiredRadiusKm:0.##} " + GameSessionScreen.CombatText("Kilometers", "км")));

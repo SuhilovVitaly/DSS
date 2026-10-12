@@ -9,6 +9,8 @@ public class HostileCombatSnapshotTests
     [InlineData(true, HostileCombatPhase.Pursuit)]
     [InlineData(false, HostileCombatPhase.OrbitEntry)]
     [InlineData(true, HostileCombatPhase.OrbitHold)]
+    [InlineData(true, HostileCombatPhase.FlankApproach)]
+    [InlineData(false, HostileCombatPhase.Retreat)]
     public void Hostile_state_and_motion_segment_roundtrip(bool clockwise, HostileCombatPhase phase)
     {
         var segment = new HostileMotionSegment(12_300, 100, 37, 10.25, -2.5, 0.4, 359.5, 0.1, -12);

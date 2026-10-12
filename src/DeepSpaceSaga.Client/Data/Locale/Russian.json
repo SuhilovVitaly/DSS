@@ -338,6 +338,8 @@
   "Combat.Phase.Pursuit": "Сближение",
   "Combat.Phase.OrbitEntry": "Выход на орбиту",
   "Combat.Phase.OrbitHold": "Удержание орбиты",
+  "Combat.Phase.FlankApproach": "Заход с фланга",
+  "Combat.Phase.Retreat": "Отход",
   "Combat.Journal": "Журнал боя",
   "Combat.Event.Launch": "Пуск",
   "Combat.Event.Intercept": "Перехват",

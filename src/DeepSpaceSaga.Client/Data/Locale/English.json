@@ -338,6 +338,8 @@
   "Combat.Phase.Pursuit": "Pursuit",
   "Combat.Phase.OrbitEntry": "Orbit entry",
   "Combat.Phase.OrbitHold": "Orbit hold",
+  "Combat.Phase.FlankApproach": "Flank approach",
+  "Combat.Phase.Retreat": "Retreat",
   "Combat.Journal": "Combat journal",
   "Combat.Event.Launch": "Launch",
   "Combat.Event.Intercept": "Intercept",
