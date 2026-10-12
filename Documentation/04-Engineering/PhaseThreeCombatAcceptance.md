@@ -56,7 +56,7 @@ Previously collected artifacts, inspected without relaunching the game on 2026-1
 
 Artifacts: `D:/DeepSpaceSaga/ep8-acceptance-native/<case>.json`, adjacent `.log` and screenshots. Intel Arc140V, OpenGL3.3, driver32.0.101.8860, VSync100Hz. Completed timing reports have120 warmup/600 measured frames. The 80FPS target is not accepted. GPU execution, scanout and human playthrough remain unmeasured.
 
-The JSON commit field records base817a856; measurements included this ticket's then-uncommitted sources. Source SHA256 below identifies those sources; generated JSON hashes identify the exact evidence. Native completion is explicitly deferred and does not block the user's authorized code/documentation/publication chain.
+Native samples predate the later9ab6eed terminal-clock correction; native verification after that correction is NOT RUN by user instruction. The JSON commit field records base817a856; measurements included this ticket's then-uncommitted sources. Source SHA256 below identifies those sources; generated JSON hashes identify the exact evidence. Native completion is explicitly deferred and does not block the user's authorized code/documentation/publication chain.
 
 | Evidence / source | SHA256 |
 |---|---|
@@ -83,3 +83,63 @@ The JSON commit field records base817a856; measurements included this ticket's t
 | `GameSessionScreen.Countermeasures.cs` | `81e5071245444b31f8224d3fd429a6dd281087c05c874a2d479ad5b080d2c3c2` |
 
 Final automated ticket validation: Client1855/1855, skipped0 (`D:/DeepSpaceSaga/ep8-us12tk3-client-final.log`); solution build0 warnings/errors (`D:/DeepSpaceSaga/ep8-us12tk3-final-build.log`); scoped whitespace verification and `git diff --check` PASS. No game/native rerun after the user restriction.
+
+
+## Final self-review — US-0012-TK-0004
+
+Scope: EP-0008 production changes through9ab6eed, Contracts/Engine/Motion/LocalClient/Client/content and actual-file continuation. This is author self-review, not independent review or user approval. Graphify14935-node baseline was used for navigation only; primary sources and executable tests determine behavior.
+
+Confirmed finding P2: A09 required ceil(exact death), while DefeatedClock used floor. Real fractional-contact regression failed5001 vs expected5002. Correction9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea published and remote verified; affected196 tests PASS. Exact event/calendar cutoff and no subsequent gameplay events remain unchanged. Footer/label findings were fixed and published by402c375.
+
+### Decisions to executable evidence
+
+Test names below are actual classes in `tests/DeepSpaceSaga.{Contracts,Motion,Engine,Client}.Tests`, not proposed stubs. Story/ticket scopes below map their AC to these checks. Native and human evidence remains separate.
+
+| Decisions | Stories / primary implementation | Executable evidence |
+|---|---|---|
+| Q01,Q02,Q03,Q04,Q41,Q44 | US3; SimulationEngine.Combat.cs / HostileFire.cs shared guards/internal actor | HostileTorpedoFireTests (range entry, ready/operator, all enemies, no player receipts, next physical ms, partitions/file resume); TorpedoLaunchTests |
+| Q05,Q06,Q07,Q08,Q09,Q10,Q11,Q16,Q26,Q31,Q35 | US5/6; ManualDefense.cs, Countermeasures.cs, DefensePreview.cs | ManualCountermeasureFireTests (real pause, duplicate identity, range, orphan/current hostility, non-player target, no-solution0%, repeat after reload); DualDefenseArbitrationTests; DefensePreviewProjectionTests |
+| Q12,Q13,Q14,Q15,Q37,Q48 | US6; absolute expiry, contact ordering and CountermeasureRng | CountermeasureLifetimeTests (contact before/equal/after expiry, hull tie,60 physical seconds, capped coast, file resume); CountermeasureResolutionTests; PhaseThreeJournalTests |
+| Q17,Q20,Q21,Q22,Q23,Q24,Q25 | US1; module catalog, InterceptionMath, WeaponOperators.cs | InterceptionChanceTests; WeaponOperatorRuntimeTests; CountermeasureContentLoaderTests; TorpedoLauncherContentTests; PhaseThreeMultiHostileTests (custom parameters,0/100 draws) |
+| Q18,Q19,Q39,Q40,Q42,Q43,Q51 | US4; HostileOrbitMath, RuntimeMotion, HostileCombat.cs | HostileOrbitMathTests (independent integration, bounded settling plus3 orbits,5% band/10% hysteresis, engine limits); HostileOrbitRuntimeTests; HostileCombatPathTests; PhaseThreeDeterminismTests |
+| Q27,Q28 | US9/10; PlayerDefeat.cs, SimulationClock, EconomyTime.cs, LocalGameSessionConnection.SaveAsync, DefeatScreen/SkiaWindow | PlayerDefeatTests; DefeatTimeBoundaryTests including fractional correction; DefeatedSessionSaveTests; DefeatNavigationTests; PhaseThreeCombatEndToEndTests |
+| Q29,Q30,Q36,Q38,Q45,Q46,Q50 | US7/8; per-module panels, ManualDefense.cs, map annotations, selected info/journal | DualDefensePanelLayoutTests; ManualDefenseUiFlowTests; ManualDefensePreviewTests; DefenseMapAnnotationsTests; HostileSelectedInfoTests; PhaseThreeCombatInfoTests; PhaseThreeJournalUiTests; PhaseThreeCombatUiFlowTests; partial native matrix above |
+| Q32,Q33,Q34 | US2; PlayerShipOnly and three-cabin type only | CountermeasureBootstrapTests; TetrarchLoadoutTests; content catalog tests; real generated battle with two modules |
+| Q47 | US6; CompareDefenseLaunch and shared attempt mutation | DualDefenseArbitrationTests (earliest encounter, chance tie, module ordinal, threat priority, rejected/no-solution candidates) |
+| Q49 | US11; explicit save ingress16 / defense2 / hostile1, staged restore | PhaseThreeSaveVersionTests; PhaseThreeSaveSchemaTests; PhaseThreeSaveContinuationTests; PhaseThreeSessionRoundtripTests |
+
+Review checked public ownership before launch, exact module/command identity, no RNG in preview/rejection/expiry,0/100 contact draws, shared attempt, physical vs calendar vs real UI time, all terminal capture entrypoints, staging before world replacement, normalized IDs, saved captured values and real UI routing. No additional confirmed defect remains from this review; this does not convert deferred acceptance into PASS.
+
+### Story AC and ticket coverage
+
+All13 story cards and45 ticket IDs/dependencies/relative links were checked; every declared AC is served. US13 documentation/graph work follows this review and is not claimed complete here.
+
+| Story | Declared AC | Serving ticket numbers |
+|---|---|---|
+| EP-0008-US-0001 | AC-0001, AC-0002, AC-0003 | 0001, 0002, 0003, 0004, 0005 |
+| EP-0008-US-0002 | AC-0001, AC-0002, AC-0003 | 0001, 0002 |
+| EP-0008-US-0003 | AC-0001, AC-0002, AC-0003 | 0001, 0002, 0003 |
+| EP-0008-US-0004 | AC-0001, AC-0002, AC-0003, AC-0004 | 0001, 0002, 0003, 0004, 0005 |
+| EP-0008-US-0005 | AC-0001, AC-0002, AC-0003, AC-0004 | 0001, 0002, 0003, 0004 |
+| EP-0008-US-0006 | AC-0001, AC-0002, AC-0003, AC-0004 | 0001, 0002, 0003 |
+| EP-0008-US-0007 | AC-0001, AC-0002, AC-0003, AC-0004 | 0001, 0002, 0003, 0004 |
+| EP-0008-US-0008 | AC-0001, AC-0002, AC-0003 | 0001, 0002, 0003 |
+| EP-0008-US-0009 | AC-0001, AC-0002, AC-0003 | 0001, 0002, 0003 |
+| EP-0008-US-0010 | AC-0001, AC-0002, AC-0003 | 0001, 0002, 0003 |
+| EP-0008-US-0011 | AC-0001, AC-0002, AC-0003, AC-0004 | 0001, 0002, 0003, 0004 |
+| EP-0008-US-0012 | AC-0001, AC-0002, AC-0003, AC-0004 | 0001, 0002, 0003, 0004 |
+| EP-0008-US-0013 | AC-0001, AC-0002, AC-0003 | 0001, 0002 |
+
+### Acceptance disposition
+
+US12 AC1 has real generated-session/file evidence; AC2 depends on the final test results recorded below. AC3 remains PARTIAL/OPEN:13/14 native interactions and deferred remainder. AC4 self-review and measured cadence are recorded; the80FPS target is not accepted. User explicitly authorized continuing review/docs and EP9 without further game/native launches. Human playthrough, subjective balance and physical scanout remain OPEN. Prior dated reports retain their original results.
+
+
+Documentation discrepancies identified for mandatory US13: current summaries still call Save15/11 current; EP7 formula/skill multipliers and no offensive AI/manual PR are superseded; six fixed panels do not describe two defense instances; selected-pirate range ring is superseded by module hover; default two-cabin/two-crew descriptions need a PlayerShipOnly-only exception. Historical EP6/7 reports will receive explicit supersession links, retaining their dated evidence. The frontmatter ticket_count44 conflicts with actual45 and must be reconciled. These are tracked documentation tasks, not accepted current gameplay descriptions.
+
+
+### Final automated validation
+
+After correction9ab6eed: `dotnet test DeepSpaceSaga.sln -c Release --no-restore --filter "FullyQualifiedName!~CorrectnessCorpus" --logger trx --results-directory D:/DeepSpaceSaga/ep8-us12tk4-final-results` PASS4201/4201, skipped0 (Contracts185, Motion170, Engine1923, Client1855, Performance9, EconomyBalance59). Log: `D:/DeepSpaceSaga/ep8-us12tk4-final-solution.log`. Release solution build succeeded with0 warnings/errors (`D:/DeepSpaceSaga/ep8-us12tk4-build.log`). The correction's new regression was red before the fix and196 affected checks green after it. Scope format/diff verification passed.
+
+The full Debug solution run started before correction9ab6eed and completed on2026-10-12: PASS4314/4314, skipped0 (Contracts185, Motion170, Engine2036, Client1855, Performance9, EconomyBalance59). Command: `dotnet test DeepSpaceSaga.sln --no-restore --logger trx --results-directory D:/DeepSpaceSaga/ep8-us12tk4-results`; log `D:/DeepSpaceSaga/ep8-us12tk4-solution.log`. Engine duration25m50s includes114 correctness-corpus cases. Those generation/layout cases are unaffected by the one-line terminal-clock correction; the fresh Release run above covers all remaining tests and the new fractional-death regression. This is two distinct runs, not a claim that4315 tests were executed together on the final revision. No game or native window was launched for these checks.

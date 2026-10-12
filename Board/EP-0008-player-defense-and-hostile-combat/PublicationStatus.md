@@ -4,9 +4,9 @@ Verified 2026-10-12 against live `git ls-remote origin refs/heads/base-fight`.
 
 - Branch: `base-fight`.
 - Remote: `https://github.com/SuhilovVitaly/DSS`.
-- Published branch HEAD before TK-0003: `817a856047589f7346c2e280450df3c28372c4b5`.
-- Local HEAD matches that published baseline; TK-0003 changes follow.
-- Forty-one tickets published, including US-0012-TK-0002; previous blocker resolved by explicit user destination authorization.
+- Published baseline before review: `9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea`.
+- Local HEAD matches that published baseline; TK-0004 review changes follow.
+- Forty-two original tickets and one review correction published; previous blocker resolved by explicit user destination authorization.
 
 | Ticket | Commit SHA | Push |
 |---|---|---|
@@ -52,8 +52,11 @@ Verified 2026-10-12 against live `git ls-remote origin refs/heads/base-fight`.
 | EP-0008-US-0012-TK-0001 | `0cdcc7af7b774096a307fc5520e92f4ac12acffc` | Published; ancestor of verified remote HEAD |
 | EP-0008-US-0012-TK-0002 | `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` | Published; ancestor of verified remote HEAD |
 
+| EP-0008-US-0012-TK-0003 | `402c3757e354641bdc92d165d5a1d7df8cf7e6fe` | Published; remote verified |
+| EP-0008-US-0009-TK-0003 correction | `9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea` | Published; remote verified |
+
 ## Recovery and current work
 
 The earlier automatic approval block was resolved by the user's explicit authorization for SuhilovVitaly/DSS, branch base-fight. Ticket9c93e1d is published; Data817a856 preserved. No force push or history rewrite.
 
-TK-0003 is implemented and validated with partial native evidence; separate commit/push follows. TK-0004 review and US-0013 documentation/Graphify remain. EP-0009 Board is tracked, execution follows EP-0008 implementation/documentation. User deferred all further native/game launches; incomplete native/human acceptance remains OPEN. See ImplementationStatus and the acceptance report for factual gates. Current commit's own SHA is verified through Git after creation and recorded by the next ticket.
+TK-0003 and the terminal-clock correction are published. TK-0004 self-review is implemented; separate commit/push follows. US-0013 documentation/Graphify remain. EP-0009 Board is tracked, execution follows EP-0008 implementation/documentation. User deferred all further native/game launches; incomplete native/human acceptance remains OPEN. See ImplementationStatus and the acceptance report for factual gates. Current commit's own SHA is verified through Git after creation and recorded by the next ticket.

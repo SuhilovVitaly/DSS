@@ -14,7 +14,7 @@ revision: 1
 
 # Итоговое review контрактов и границ
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — self-review complete; native/human acceptance OPEN
 
 ## Why
 
@@ -92,3 +92,13 @@ git diff --check
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution — 2026-10-12
+
+Scope includes this execution record and PublicationStatus.md in addition to the two review artifacts. No runtime changes in this ticket. Dependencies402c375 and correction9ab6eed are published and remote verified.
+
+Decisions Q01–Q51, all13 stories/45 tickets, AC coverage, dependency DAG and relative Board links checked. Primary code reviewed across Engine/Contracts/Motion/LocalClient/Client, actual JSON and file continuation. Confirmed A09 rounding finding fixed in separate US-0009-TK-0003 correction9ab6eed; no additional confirmed code finding remains. This is self-review, not independent or user approval.
+
+Full Debug solution4314/4314 (before correction, including114 generation-corpus cases); fresh Release4201/4201 excluding those unaffected corpus cases after correction, skipped0. Release solution build0 warnings/errors. Evidence and exact commands: [acceptance report](../../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md). Documentation links/counts and diff checked. The named decision/gate checks above are document audits, not new executable test methods.
+
+Native matrix13/14 remains PARTIAL, frame-time target not accepted; further game/native runs deferred by explicit user instruction. These AC are OPEN, and do not block the explicitly authorized documentation/EP-0009 chain. Separate ticket commit/push follows; own SHA verified through Git after creation.

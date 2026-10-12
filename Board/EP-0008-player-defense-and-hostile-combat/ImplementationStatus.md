@@ -271,3 +271,7 @@ Implementation and self-review complete, pending separate publication. Real clic
 ## US-0009-TK-0003 review correction — 2026-10-12
 
 TK-0012-0003 published as402c3757e354641bdc92d165d5a1d7df8cf7e6fe (remote verified). Final review found terminal integer time rounded before a fractional death, violating A09. Regression reproduced5001 vs expected5002; ceiling correction passes196 affected Engine tests, build/format/diff. Separate correction publication follows. Full solution run begun before correction remains separate evidence; no native/game runs.
+
+## EP-0008-US-0012-TK-0004 — 2026-10-12
+
+Correction9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea published/remote verified. Final self-review complete with Q01–Q51 and all story AC traced to actual code/tests. Full Debug4314/4314 before rounding correction; fresh Release4201/4201 excluding114 unaffected corpus checks after correction; build0 warnings/errors, diff PASS. No unresolved confirmed runtime finding. Native/human gates remain OPEN by user deferral (13/14 native cases, frame-time target not accepted). Documentation/Graphify follow; this review is not user approval. Separate publication follows.
