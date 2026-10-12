@@ -21,7 +21,9 @@ internal sealed class GameDataRegistry
         string? legacyCatalogFingerprint = null,
         TypeRegistry<StationMarketProfileDefinition>? stationMarketProfiles = null,
         TypeRegistry<ShipClassDefinition>? shipClasses = null,
-        TypeRegistry<StationMarketEventDefinition>? stationMarketEvents = null)
+        TypeRegistry<StationMarketEventDefinition>? stationMarketEvents = null,
+        CombatRulesDefinition? combatRules = null,
+        ImmutableArray<FireModeDefinition> fireModes = default)
     {
         ModuleCategories = moduleCategories;
         ModuleTypes = moduleTypes;
@@ -34,6 +36,8 @@ internal sealed class GameDataRegistry
         StationMarketProfiles = stationMarketProfiles ?? TypeRegistry<StationMarketProfileDefinition>.Empty;
         ShipClasses = shipClasses ?? TypeRegistry<ShipClassDefinition>.Empty;
         StationMarketEvents = stationMarketEvents ?? TypeRegistry<StationMarketEventDefinition>.Empty;
+        CombatRules = combatRules;
+        FireModes = fireModes.IsDefault ? [] : fireModes;
         StationMarketEventCatalogFingerprint = StationMarketEventCatalog.Fingerprint(StationMarketEvents);
         CatalogVersion = catalogVersion;
         LegacyCatalogFingerprint = legacyCatalogFingerprint;
@@ -65,6 +69,8 @@ internal sealed class GameDataRegistry
     public TypeRegistry<StationMarketProfileDefinition> StationMarketProfiles { get; }
     public TypeRegistry<ShipClassDefinition> ShipClasses { get; }
     public TypeRegistry<StationMarketEventDefinition> StationMarketEvents { get; }
+    public CombatRulesDefinition? CombatRules { get; }
+    public ImmutableArray<FireModeDefinition> FireModes { get; }
     public string StationMarketEventCatalogFingerprint { get; }
     public int CatalogVersion { get; }
     public CatalogCompatibilityData CatalogCompatibility { get; }
@@ -92,9 +98,13 @@ internal sealed class GameDataRegistry
         IEnumerable<StationMarketProfileDefinition>? stationMarketProfiles = null,
         IEnumerable<ShipClassDefinition>? shipClasses = null,
         IEnumerable<StationMarketEventDefinition>? stationMarketEvents = null,
-        bool requireCompleteMarketEventSet = false)
+        bool requireCompleteMarketEventSet = false,
+        CombatRulesDefinition? combatRules = null,
+        ImmutableArray<FireModeDefinition> fireModes = default)
     {
         if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
+        if (combatRules is not null) CombatContentValidation.Rules(combatRules);
+        if (!fireModes.IsDefaultOrEmpty) CombatContentValidation.Modes(new(fireModes));
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
         var moduleRegistry = TypeRegistry<ModuleTypeDefinition>.Create(moduleTypes, "module implementations");
@@ -166,7 +176,8 @@ internal sealed class GameDataRegistry
             }
         }
         return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry,
-            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry, eventRegistry);
+            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry, eventRegistry,
+            combatRules, fireModes);
     }
 
     internal static TypeRegistry<ShipClassDefinition> CreateShipClassRegistry(IEnumerable<ShipClassDefinition> classes)
