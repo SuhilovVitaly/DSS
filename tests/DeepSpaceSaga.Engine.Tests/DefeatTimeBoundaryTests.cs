@@ -9,6 +9,40 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class DefeatTimeBoundaryTests
 {
     [Fact]
+    public void Fractional_lethal_hit_stops_at_first_integer_not_before_death()
+    {
+        var scenario = PlayerDefeatTests.LethalScenario(150);
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Player
+                    ? o : o with { PositionY = -155.0123 }).ToArray()
+            }
+        };
+        using var whole = Create(scenario);
+        using var split = Create(scenario);
+        var expected = At(whole, 600000, 180000000);
+        foreach (long time in new long[] { 7, 123, 1111, 4999, 5000 }) At(split, time, time * 300);
+        var actual = At(split, 600000, 180000000);
+        foreach (var final in new[] { expected, actual })
+        {
+            double death = final.EffectiveOutcome.DeathMotionTimeMs!.Value;
+            Assert.InRange(death - Math.Floor(death), .1, .9);
+            Assert.Equal((long)Math.Ceiling(death), final.MotionTimeMs);
+            Assert.Equal(death, Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Destroyed).MotionTimeMs);
+            Assert.DoesNotContain(final.CombatJournal, e => e.MotionTimeMs > death);
+            Assert.Equal(SimulationSpeed.Speed0, final.CurrentSpeed);
+        }
+        Assert.Equal(expected.MotionTimeMs, actual.MotionTimeMs);
+        Assert.Equal(expected.GameTimeMs, actual.GameTimeMs);
+        var later = At(whole, 900000, 270000000);
+        Assert.Equal(expected.Outcome, later.Outcome);
+        Assert.Equal(expected.Objects.ToArray(), later.Objects.ToArray());
+        Assert.Equal(expected.CombatJournal.ToArray(), later.CombatJournal.ToArray());
+    }
+
+    [Fact]
     public void Lethal_hit_in_large_step_stops_all_systems()
     {
         var source = Registry.Value;

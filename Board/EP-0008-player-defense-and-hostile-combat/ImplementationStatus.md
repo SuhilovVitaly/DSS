@@ -267,3 +267,7 @@ Explicit user confirmation names GitHub SuhilovVitaly/DSS and base-fight. `git p
 ## EP-0008-US-0012-TK-0003 — 2026-10-12
 
 Implementation and self-review complete, pending separate publication. Real click/session viewport matrix6/6 and full Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Native artifacts retained:13/14 interaction cases complete; 1920x1080/UI150 combat incomplete, timing target not accepted. Footer/PR label overlaps fixed. User defers further game/native runs and authorizes continuation through review/docs and EP-0009; native/human acceptance remains OPEN. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+
+## US-0009-TK-0003 review correction — 2026-10-12
+
+TK-0012-0003 published as402c3757e354641bdc92d165d5a1d7df8cf7e6fe (remote verified). Final review found terminal integer time rounded before a fractional death, violating A09. Regression reproduced5001 vs expected5002; ceiling correction passes196 affected Engine tests, build/format/diff. Separate correction publication follows. Full solution run begun before correction remains separate evidence; no native/game runs.

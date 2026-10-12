@@ -99,6 +99,12 @@ git diff --check
 
 ## Execution evidence — 2026-10-11
 
+### Correction scope — 2026-10-12 final review
+
+Confirmed A09 discrepancy: DefeatedClock used floor(death), exposing a session timestamp before a fractional lethal hit. Correct it to ceiling(death), retaining exact event/calendar cutoff and the terminal latch. Existing allowlist covers PlayerDefeat.cs and DefeatTimeBoundaryTests.cs. Add a real fractional-hit whole/split regression; publish a separate correction commit under this ticket before completing final review. No native runs.
+
 Dependency `f7b8ecd753e17f5c762ffbea086bb8033becd944` published/remote verified. SimulationClock now latches the first terminal boundary: direct speed changes, baseline reset and repeated updates cannot resume it; validated new-world Reset clears the latch. Player defeat uses this operation under the existing world-lock then clock-lock order. World cutoff/processed cursors introduced necessarily in TK-0002 are exercised by the new tests without redundant scheduler changes.
 
 Three regressions cover real large clock advancement into a lethal hit, identical whole/split death boundaries, station production input reservation without later completion, no meal/ship events or residual launches, frozen runtime world/RNG/history, repeated direct and Engine speed changes, and independent New Game clocks. Initial full Engine1844/1845 exposed a new test attempting to JSON-serialize default internal ImmutableArrays; replaced with direct immutable runtime record comparison. Final affected Engine113/113 PASS (Defeat, SimulationClock, EconomyTimeContinuity), solution build0warnings/errors, scoped format verify/diffPASS. Initial focused fixture assumption that station inventory contained only its one explicit row was corrected to identify the ration row; default catalog rows remain enabled. Self-review complete, not independent approval. Native modal integration remains US-0010/0012.
+
+Correction validation: new real fractional-hit regression failed before the fix (expected5002, actual5001), then affected Engine196/196 passed in Release (Defeat, PhaseThree, SimulationClock, EconomyTimeContinuity). Build via test succeeded; scoped format/diff PASS. Exact death/calendar event remains unchanged; only integer terminal MotionTimeMs now follows A09 ceiling. No game launched. Logs: D:/DeepSpaceSaga/ep8-defeat-ceiling-red.log and ep8-defeat-ceiling-green.log.
