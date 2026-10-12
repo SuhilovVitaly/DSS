@@ -19,6 +19,7 @@ public sealed partial class SimulationEngine
     private long _nextCombatGuidanceMs = long.MaxValue;
     private readonly Dictionary<string, (ObjectMotionSnapshot Pose, long Time)> _torpedoTargets = new(StringComparer.Ordinal);
     private readonly HashSet<string> _processedLaunchCommandIds = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _processedModeCommandIds = new(StringComparer.Ordinal);
     private bool HasActiveTorpedoes => _objects.Any(o => o.InitialMotion.Torpedo is not null);
 
     private CommandStartOutcome TryStartTorpedoFire(PlayerCommand command, long motionTimeMs)
@@ -39,6 +40,46 @@ public sealed partial class SimulationEngine
             RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         }
         return outcome;
+    }
+
+    private CommandStartOutcome TrySetFireMode(PlayerCommand command, long motionTimeMs)
+    {
+        if (command.ObjectId != PlayerShipObjectId) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId && !o.IsDestroyed);
+        var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == command.ModuleId);
+        if (module is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+        var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        if (type.CategoryTypeId != "module.torpedo.launcher") return CommandStartOutcome.Rejected("mode_not_applicable");
+        if (!type.CommandTypeIds.Contains(TorpedoLauncherCommandTypes.SetMode))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
+        var key = (command.ObjectId, command.ModuleId);
+        if (!_launcherCombat.TryGetValue(key, out var launcher)) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+        if (_processedModeCommandIds.Contains(command.CommandId))
+        {
+            RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+            return CommandStartOutcome.Started;
+        }
+        if (!CanExecuteModuleCommand(module, motionTimeMs))
+            return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
+        if (string.IsNullOrWhiteSpace(command.ModeId) || !_registry.FireModes.Any(mode =>
+            mode.ModeId == command.ModeId && mode.AppliesTo.Contains(type.CategoryTypeId)))
+            return CommandStartOutcome.Rejected("unknown_fire_mode");
+        bool inCombat = _objects.Any(o => o.InitialMotion.Torpedo is not null) ||
+            _objects.Any(o => o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
+                o.InitialMotion.ObjectId != owner!.InitialMotion.ObjectId && !o.IsDestroyed &&
+                GetRelationToPlayer(o) == PlayerRelation.Enemy &&
+                CombatRangeMath.IsWithinRange(PredictMotion(owner!, motionTimeMs - owner.StartGameTimeMs),
+                    PredictMotion(o, motionTimeMs - o.StartGameTimeMs), launcher.RangeKm!.Value));
+        _launcherCombat[key] = launcher with
+        {
+            ModeId = command.ModeId!,
+            ReadyAtMotionTimeMs = inCombat
+                ? Math.Max(launcher.ReadyAtMotionTimeMs ?? motionTimeMs, motionTimeMs) + type.LauncherReloadMs!.Value
+                : launcher.ReadyAtMotionTimeMs
+        };
+        _processedModeCommandIds.Add(command.CommandId);
+        RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+        return CommandStartOutcome.Started;
     }
 
     private CommandStartOutcome TryLaunchTorpedo(SpaceObjectRuntime owner, string moduleId, string? targetObjectId, long motionTimeMs)

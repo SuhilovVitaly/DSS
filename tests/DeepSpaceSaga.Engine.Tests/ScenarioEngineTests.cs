@@ -490,7 +490,7 @@ public class ScenarioEngineTests
         Assert.Equal(9, activeTypes.Length); // two engines + scanner + bridge + drilling + container + torpedo + two defense variants
 
         var launcherType = Assert.Single(activeTypes, t => t.TypeId == "module.torpedo.launcher.basic");
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcherType.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, launcherType.CommandTypeIds);
         var cancel = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.SelfDestruct));
         Assert.Equal("module.torpedo.launcher", cancel.Type);
         Assert.Equal("none", cancel.Target);

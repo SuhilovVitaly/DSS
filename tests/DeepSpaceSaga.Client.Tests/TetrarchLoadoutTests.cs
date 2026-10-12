@@ -142,7 +142,7 @@ public sealed class TetrarchLoadoutTests
         Assert.Equal(50m, assignedOperator.EffectiveRating);
         Assert.Equal("Ready", launcher.OperationalState);
         Assert.Equal("On", launcher.PowerState);
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcher.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, launcher.CommandTypeIds);
         Assert.Null(launcher.ActiveCommandType);
         Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
         return scenario;

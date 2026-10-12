@@ -9,7 +9,7 @@ public class TorpedoCommandContentTests
     {
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(AppContext.BaseDirectory, "Settings.json"), out _, out _);
         var module = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.torpedo.launcher.basic"));
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, module.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, module.CommandTypeIds);
         var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.SelfDestruct));
         Assert.Equal("none", command.Target);
         Assert.Equal("module.torpedo.launcher", command.Type);

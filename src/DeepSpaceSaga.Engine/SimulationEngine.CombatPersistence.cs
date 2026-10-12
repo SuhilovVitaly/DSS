@@ -99,7 +99,8 @@ public sealed partial class SimulationEngine
         _processedLaunchCommandIds.Order(StringComparer.Ordinal).ToArray(),
         _moduleHitLocationRng.State, _moduleHitLocationRng.Counter,
         _torpedoHitRng.State, _torpedoHitRng.Counter,
-        _launcherBreakdownRng.State, _launcherBreakdownRng.Counter);
+        _launcherBreakdownRng.State, _launcherBreakdownRng.Counter,
+        _processedModeCommandIds.Order(StringComparer.Ordinal).ToArray());
 
     // Validate content compatibility and stage every runtime mutation before publishing the world.
     private static void StageCombatRestore(CombatStateData? saved, List<SpaceObjectRuntime> objects,
@@ -122,6 +123,7 @@ public sealed partial class SimulationEngine
     private void RestoreCombatState(CombatStateData? saved)
     {
         _processedLaunchCommandIds.Clear();
+        _processedModeCommandIds.Clear();
         if (saved is null) return;
         _torpedoSequence = saved.ProjectileSequence;
         _combatImpactSequence = saved.ImpactSequence;
@@ -134,6 +136,7 @@ public sealed partial class SimulationEngine
         if (saved.LauncherBreakdownRngState is { } breakdownState)
             _launcherBreakdownRng = new(breakdownState, saved.LauncherBreakdownRngCounter);
         _processedLaunchCommandIds.UnionWith(saved.ProcessedLaunchCommandIds);
+        _processedModeCommandIds.UnionWith(saved.ProcessedModeCommandIds ?? []);
         foreach (var projectile in saved.Projectiles)
             if (projectile.TargetBaseline is { } target)
                 _torpedoTargets.Add(projectile.ObjectId, (target, projectile.TargetBaselineMotionTimeMs));

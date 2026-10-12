@@ -21,7 +21,8 @@ public sealed record CombatStateData(
     [property: JsonPropertyName("torpedoHitRngState")] ulong? TorpedoHitRngState = null,
     [property: JsonPropertyName("torpedoHitRngCounter")] ulong TorpedoHitRngCounter = 0,
     [property: JsonPropertyName("launcherBreakdownRngState")] ulong? LauncherBreakdownRngState = null,
-    [property: JsonPropertyName("launcherBreakdownRngCounter")] ulong LauncherBreakdownRngCounter = 0);
+    [property: JsonPropertyName("launcherBreakdownRngCounter")] ulong LauncherBreakdownRngCounter = 0,
+    [property: JsonPropertyName("processedModeCommandIds")] IReadOnlyList<string>? ProcessedModeCommandIds = null);
 
 public sealed record LauncherSaveData(
     [property: JsonRequired, JsonPropertyName("ownerObjectId")] string OwnerObjectId,
@@ -108,6 +109,9 @@ internal static class CombatSaveValidation
         var launches = new HashSet<string>(StringComparer.Ordinal);
         foreach (var id in combat.ProcessedLaunchCommandIds!)
             Require(!string.IsNullOrWhiteSpace(id) && launches.Add(id), "duplicate or empty launch command ID.");
+        var modeCommands = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in combat.ProcessedModeCommandIds ?? [])
+            Require(!string.IsNullOrWhiteSpace(id) && modeCommands.Add(id), "duplicate or empty mode command ID.");
         var launchers = new Dictionary<(string, string), LauncherCombatSnapshot>();
         foreach (var row in combat.Launchers!)
         {
