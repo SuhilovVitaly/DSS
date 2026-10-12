@@ -2,9 +2,9 @@
 epic: EP-0009-module-combat
 story: EP-0009-US-0010-module-combat-ui
 title: "Интерфейс модулей и журнал"
-stage: draft
+stage: implemented
 created: 2026-10-12
-validation_status: not-started
+validation_status: headless-pass-native-open
 ---
 
 # Интерфейс модулей и журнал
@@ -33,4 +33,4 @@ validation_status: not-started
 
 ## Evidence
 
-Execution is authorized by the user and EpicExecutionPrompt. Planning text is not PASS/APPROVED. Actual results go into ticket cards and ImplementationStatus; deferred native/human acceptance stays OPEN. Graph rebuilding is SKIPPED by user instruction.
+Execution is authorized by the user and EpicExecutionPrompt. AC1 defeat timing/terminal/save guard, AC2 known-ship module panel and aggregate map bar, and AC3 journal details pass headless verification in the three ticket cards. Native defeat-window and hands-on combat UI remain NOT RUN/OPEN by user instruction. Graph rebuilding is SKIPPED by user instruction.

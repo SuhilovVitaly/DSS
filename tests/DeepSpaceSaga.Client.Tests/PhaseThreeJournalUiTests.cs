@@ -26,8 +26,9 @@ public class PhaseThreeJournalUiTests
         Assert.Contains(manual, l => l.Contains("defense-two"));
         Assert.Contains(manual, l => l.Contains(Localization.Get("Combat.Manual")));
         Assert.Contains(automatic, l => l.Contains(Localization.Get("Combat.Auto")));
-        Assert.Contains(manual, l => l.Contains(Localization.Get("Combat.Accuracy")) && l.Contains("30") &&
-            l.Contains(Localization.Get("Combat.Maneuverability")) && l.Contains("5"));
+        Assert.Contains(manual, l => l.Contains(Localization.Get("Combat.DefenseRating")) && l.Contains("30") &&
+            l.Contains(Localization.Get("Combat.Attack")) && l.Contains("5"));
+        Assert.Contains(manual, l => l.Contains(Localization.Get("Combat.InterceptFormula")));
         Assert.Contains(manual, l => l.Contains($"{25m:0.0}%") && l.Contains("801/1000"));
         Assert.DoesNotContain(manual, l => l.Contains("×") || l.Contains("/50"));
     }
