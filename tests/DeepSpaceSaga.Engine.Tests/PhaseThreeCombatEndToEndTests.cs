@@ -14,7 +14,8 @@ public class PhaseThreeCombatEndToEndTests
         await using var battle = new Battle(42);
         var initial = battle.At(0);
         Assert.NotNull(initial.SolarSystemMap); Assert.NotNull(initial.ClusterMap); Assert.NotNull(initial.AiMap);
-        Assert.Equal(450, initial.Objects.Single(o => o.ObjectId == Battle.Player).HullCombat!.CurrentHp);
+        Assert.Null(initial.Objects.Single(o => o.ObjectId == Battle.Player).HullCombat);
+        Assert.Contains(initial.InstalledModules, m => m.CombatRole == "bridge" && m.StructureMax > 0);
         Assert.Equal(2, initial.InstalledModules.Count(m => m.Defense is not null));
         await battle.Send(Battle.Defense2, DefenseCommandTypes.Disable);
         await battle.Connection.SendCommandAsync(new("brake", 100, Battle.Player, "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.Brake));
@@ -64,7 +65,8 @@ public class PhaseThreeCombatEndToEndTests
         for (long time = checkpoint + 11000; time <= checkpoint + 600000 && snapshot.EffectiveOutcome.State == SessionOutcomeState.Running; time += 1000)
             snapshot = battle.At(time);
         Assert.Equal(SessionOutcomeState.Defeated, snapshot.EffectiveOutcome.State);
-        Assert.Equal(3, snapshot.CombatJournal.Count(e => e.Type == CombatEventType.Hit && e.TargetObjectId == Battle.Player));
+        Assert.Equal(2, snapshot.CombatJournal.Count(e => e.Type == CombatEventType.Hit && e.TargetObjectId == Battle.Player));
+        Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed && e.TargetObjectId == Battle.Player);
         Assert.Contains(snapshot.CombatJournal, e => e.Roll is not null);
         string terminal = JsonSerializer.Serialize(snapshot.Objects);
         var later = battle.At(checkpoint + 1200000);

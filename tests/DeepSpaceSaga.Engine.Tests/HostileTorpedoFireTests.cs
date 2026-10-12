@@ -111,7 +111,7 @@ public class HostileTorpedoFireTests
         var impact = Assert.Single(snapshot.CombatImpacts);
         var second = Assert.Single(snapshot.Objects, o => o.Torpedo is not null).Torpedo!;
         Assert.Equal(Math.Floor(impact.MotionTimeMs) + 1, second.LaunchMotionTimeMs);
-        Assert.Equal(300, snapshot.Objects.Single(o => o.ObjectId == Player).HullCombat!.CurrentHp);
+        Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed && e.TargetObjectId == Player);
     }
 
     [Theory]
@@ -129,7 +129,7 @@ public class HostileTorpedoFireTests
         Assert.Equal(3, expected.CombatJournal.Count(e => e.Type == CombatEventType.Launch && e.Result == "torpedo"));
         Assert.DoesNotContain(actual.Objects, o => o.Torpedo is not null);
         Assert.DoesNotContain(actual.Objects, o => o.ObjectId == Player);
-        Assert.Single(actual.CombatJournal, e => e.Type == CombatEventType.Destroyed && e.TargetObjectId == Player);
+        Assert.Single(actual.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed && e.TargetObjectId == Player);
     }
 
     [Fact]

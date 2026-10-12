@@ -69,12 +69,6 @@ internal static class CombatSaveValidation
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
         foreach (var obj in objects.Values)
         {
-            if (obj.ShipClassId is not null && format >= 10)
-                Require(obj.HullHitPoints is > 0 && obj.HullHitPointsMax is > 0 &&
-                    obj.HullHitPoints <= obj.HullHitPointsMax, "classified ship requires current and maximum HP.");
-            if (obj.HullHitPointsMax is not null)
-                Require(obj.ShipClassId is not null && obj.HullHitPointsMax > 0 &&
-                    obj.HullHitPoints <= obj.HullHitPointsMax, "invalid maximum HP.");
             if (obj.ObjectType == SpaceObjectType.Wreck)
                 Require(obj.SpeedMps == 0 && obj.DirectionDegrees == 0 &&
                     string.Equals(obj.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase) &&

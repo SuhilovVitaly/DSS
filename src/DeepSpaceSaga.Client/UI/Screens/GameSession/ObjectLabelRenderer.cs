@@ -15,7 +15,7 @@ internal sealed class ObjectLabelRenderer
     internal IReadOnlyDictionary<string, ObjectLabelGeometry> Geometries => _geometries;
     internal static bool HasHullBar(ObjectMotionSnapshot source) =>
         !source.IsDestroyed && source.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
-        source.HullCombat is { ShipClassId: "ship.tetrarch", MaxHp: > 0, CurrentHp: > 0 };
+        source.HullCombat is { MaxHp: > 0, CurrentHp: > 0 };
     private readonly SKPaint _leaderLinePaint;
     private readonly SKPaint _plaqueBgPaint;
     private readonly SKPaint _plaqueBorderPaint;

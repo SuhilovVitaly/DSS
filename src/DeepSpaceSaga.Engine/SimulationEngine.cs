@@ -378,7 +378,8 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketProfileFingerprint: marketProfile?.Fingerprint,
                 MarketBudgetCredits: ResolveMarketBudget(
                     obj, isStation ? marketProfile : null, stationSize, credits, loadingSave, scenario.SaveFormatVersion),
-                RelationToPlayer: obj.RelationToPlayer));
+                RelationToPlayer: obj.RelationToPlayer,
+                ShipClassId: obj.ShipClassId));
         }
 
         StationClusterSaveValidation.Validate(gs, _registry);
@@ -424,7 +425,7 @@ public sealed partial class SimulationEngine : IDisposable
         var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
-        StageCombatRestore(gs.CombatState, runtimeObjects, combatState.Launchers);
+        StageCombatRestore(gs.CombatState, runtimeObjects, combatState);
         StageHostileRestore(gs.HostileCombatState, runtimeObjects);
         StageLegacyWeaponRatings(runtimeObjects);
         var defenses = BuildDefenseState(runtimeObjects);
@@ -466,8 +467,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
-            _hullCombat = combatState.Hulls;
-            _launcherCombat = combatState.Launchers;
+            _launcherCombat = combatState;
             _defenses = defenses;
             _countermeasureSequence = 0;
             _combatJournal.Clear();
@@ -717,7 +717,6 @@ public sealed partial class SimulationEngine : IDisposable
                     DockOperatorDisplayName = dockOperator?.DisplayName,
                     DockOperatorPortraitImage = dockOperator?.PortraitImage,
                     IsDestroyed = obj.IsDestroyed,
-                    HullCombat = known ? _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId) : null,
                     Defense = known ? ProjectDefense(obj) : null
                 });
             }
@@ -1126,9 +1125,7 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketBudgetCredits: isStation ? obj.MarketBudgetCredits : null,
                 MarketRevision: isStation && obj.MarketProfileId is not null ? obj.MarketRevision : null,
                 RelationToPlayer: obj.RelationToPlayer,
-                ShipClassId: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.ShipClassId,
-                HullHitPoints: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.CurrentHp,
-                HullHitPointsMax: _hullCombat.GetValueOrDefault(obj.InitialMotion.ObjectId)?.MaxHp,
+                ShipClassId: obj.ShipClassId,
                 Orbit: obj.IsDocked ? null : obj.InitialMotion.Orbit,
                 WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY));
         }
@@ -3991,7 +3988,8 @@ internal sealed record SpaceObjectRuntime(
     /// profile (D-U2). 0 for every other object type.
     /// </summary>
     long MarketRevision = 0,
-    string? RelationToPlayer = null);
+    string? RelationToPlayer = null,
+    string? ShipClassId = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName, int? TorpedoSkill = null,

@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class CountermeasureResolutionTests
 {
     [Fact]
-    public void Successful_intercept_removes_both_once_and_no_hull_damage()
+    public void Successful_intercept_removes_both_once_and_no_module_damage()
     {
         using var engine = new SimulationEngine(WeaponRegistry(100, 0));
         engine.LoadScenario(DefenseScenario(600, 0, 100));
@@ -16,7 +16,7 @@ public class CountermeasureResolutionTests
         var impact = Assert.Single(snapshot.CombatImpacts);
         Assert.Equal(TorpedoTerminationKind.Intercept, impact.TerminationKind);
         Assert.Equal(0, impact.DamageApplied);
-        Assert.All(snapshot.Objects, o => Assert.Equal(450, o.HullCombat!.CurrentHp));
+        Assert.DoesNotContain(snapshot.CombatJournal, e => e.Type == CombatEventType.ModuleHit);
         var entry = Assert.Single(snapshot.CombatJournal.Where(e => e.Roll is not null));
         Assert.Equal(1000, entry.ChanceTenths);
         Assert.Equal(801, entry.Roll);

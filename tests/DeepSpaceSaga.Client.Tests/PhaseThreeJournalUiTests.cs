@@ -84,6 +84,7 @@ public class PhaseThreeJournalUiTests
                 MasterSeed = 42,
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
                 {
+                    ShipClassId = o.ObjectId == "SPC-0001" ? null : o.ShipClassId,
                     PositionX = 0,
                     PositionY = o.ObjectId == "SPC-0001" ? 0 : -200,
                     DirectionDegrees = o.ObjectId == "SPC-0001" ? 0 : 180,

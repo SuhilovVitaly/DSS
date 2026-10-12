@@ -31,7 +31,7 @@ public class CountermeasureEndToEndTests
             b.Journal.Select(e => (e.Type, e.ActorObjectId, e.TargetObjectId, e.ProjectileObjectId, e.Roll, e.ChanceTenths, e.Damage)));
         Assert.Equal(a.RngState, b.RngState); Assert.Equal(a.RngCounter, b.RngCounter);
         Assert.Equal(3, a.Journal.Count(e => e.Type == CombatEventType.Hit && e.Damage == 150));
-        Assert.Single(a.Journal, e => e.Type == CombatEventType.Destroyed);
+        Assert.Single(a.Journal, e => e.Type == CombatEventType.ShipDestroyed);
         Assert.Equal(3UL, a.RngCounter); // Seed42: first three real rolls801,820,781 all miss at50%.
     }
     private static CountermeasureStateData Run(bool reload)

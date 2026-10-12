@@ -13,7 +13,11 @@ created: 2026-10-12
 
 # EP-0009-US-0003-TK-0003-ship-destruction
 
-STATUS: NOT STARTED
+STATUS: IMPLEMENTED; automated validation PASS; native/game acceptance NOT RUN
+
+Execution scope before edit: `SimulationEngine.Combat.cs` handles impacts/wrecks, `SimulationEngine.cs` stages hull state and Save/Load, `Scenario/CombatSaveData.cs` validates hull continuation, `Dialogue/StationSecuritySystem.cs` handles security death, `SimulationEngine.PlayerDefeat.cs` owns terminal clock. `ObjectLabelRenderer.cs` consumes old hull projection. Engine and Client combat regressions will need migration to D11; list confirmed changes before commit. No Graphify/game/native runs.
+
+Execution evidence (2026-10-12): D11 threshold/critical rules and unified `DestroyShip` replace runtime hull HP for classified ships; station security uses the same wreck/journal/terminal transition. Engine module damage, snapshot, Save/Load and historical combat tests were migrated; Client presentation/loadout/combat tests now assert module events rather than hull HP. New D11 regressions cover 2/9 vs 3/9, both critical roles, Mukha, NPC wreck and one-time player defeat. Engine non-corpus 1956/1956; Client 1859/1859; solution build 0 warnings/errors; scoped formatter and `git diff --check` PASS. The Client total has two fewer parameter cases because completed-impact resume now tests one completed hit; the two-hit wreck/UI path remains in BasicCombatUiFlowTests. Graphify rebuild, game launch, and native runs NOT RUN per user. Publication SHA recorded by the next ticket after verified push.
 
 **Задача.**
 1. Правило D11: N — число модулей на начало боя, порог `ceil(N × fraction − 1e-9)`.

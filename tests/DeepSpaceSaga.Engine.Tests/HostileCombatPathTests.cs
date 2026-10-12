@@ -65,7 +65,7 @@ public class HostileCombatPathTests
         var end = At(engine, 30000);
         var intercept = Assert.Single(end.CombatImpacts);
         Assert.Equal(TorpedoTerminationKind.Intercept, intercept.TerminationKind);
-        Assert.Equal(450, end.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.DoesNotContain(end.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Target);
         Assert.Single(end.CombatJournal.Where(e => e.Roll is not null));
         Assert.Contains(end.CombatJournal, e => e.Type == CombatEventType.Launch && e.Result == "countermeasure");
     }

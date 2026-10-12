@@ -185,6 +185,7 @@ public class PhaseThreeSessionRoundtripTests
                     MasterSeed = 42,
                     SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
                     {
+                        ShipClassId = o.ObjectId == Player ? null : o.ShipClassId,
                         PositionX = 0,
                         PositionY = o.ObjectId == Player ? 0 : -200,
                         DirectionDegrees = o.ObjectId == Player ? 0 : 180,

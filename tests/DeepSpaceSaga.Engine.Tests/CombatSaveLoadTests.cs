@@ -266,7 +266,11 @@ public sealed class CombatSaveLoadTests : IDisposable
                 resumed.ReceiveCommand(Fire("shot-" + shot));
                 SameWorld(expected, At(resumed, end, end * 10));
                 Assert.Empty(At(resumed, end, end * 10).CombatImpacts);
-                if (shot < 3) Assert.Equal(450 - 150 * shot, actual.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+                if (shot < 3)
+                {
+                    Assert.Contains(actual.Objects, o => o.ObjectId == Target && o.HullCombat is null);
+                    Assert.Equal(shot, actual.CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
+                }
                 else Assert.Single(actual.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
                 time = end;
             }
@@ -298,14 +302,15 @@ public sealed class CombatSaveLoadTests : IDisposable
         using var loaded = Roundtrip(engine.CaptureSaveStateForTests(time, SimulationSpeed.Speed0));
         loaded.ReceiveCommand(Fire("contact"));
         var snapshot = At(loaded, 4000);
-        Assert.Equal(300, snapshot.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Null(snapshot.Objects.Single(o => o.ObjectId == Target).HullCombat);
+        Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
         Assert.Empty(snapshot.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
         Assert.Equal(time == 3166 ? 1 : 0, snapshot.CombatImpacts.Length);
         Assert.Equal(1, loaded.CaptureSaveStateForTests(4000, SimulationSpeed.Speed0).GameState.CombatState!.ImpactSequence);
     }
 
     [Fact]
-    public void Saved_hp_and_weapon_values_survive_content_edit()
+    public void Saved_module_and_weapon_values_survive_content_edit()
     {
         using var engine = Create(RealScenario());
         engine.ReceiveCommand(Fire("captured"));
@@ -335,13 +340,13 @@ public sealed class CombatSaveLoadTests : IDisposable
         File.WriteAllText(settingsPath, settings.ToJsonString());
         using var loaded = Roundtrip(save, settingsPath);
         var snapshot = loaded.CaptureSnapshot();
-        Assert.Equal(450, snapshot.Objects.Single(o => o.ObjectId == Player).HullCombat!.MaxHp);
+        Assert.Null(snapshot.Objects.Single(o => o.ObjectId == Player).HullCombat);
         Assert.Equal(150, Flight(snapshot).Torpedo!.Damage);
         Assert.Equal(3, Flight(snapshot).Torpedo!.SpeedKmS);
         Assert.Equal(90, Flight(snapshot).Torpedo!.TurnRateDegPerSec);
         using var fresh = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
         var newSnapshot = fresh.CaptureSnapshot();
-        Assert.Equal(450, newSnapshot.Objects.Single(o => o.ObjectId == Player).HullCombat!.MaxHp);
+        Assert.Null(newSnapshot.Objects.Single(o => o.ObjectId == Player).HullCombat);
         Assert.Equal(50, newSnapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Damage);
         Assert.Equal(6, newSnapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.SpeedKmS);
     }
@@ -408,7 +413,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         using var restored = Roundtrip(save);
         restored.ReceiveCommand(Fire("original"));
         Assert.DoesNotContain(At(restored, 5000).Objects, o => o.Torpedo is not null);
-        Assert.Equal(300, At(restored, 5000).Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Single(At(restored, 5000).CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
     }
 
     [Fact]

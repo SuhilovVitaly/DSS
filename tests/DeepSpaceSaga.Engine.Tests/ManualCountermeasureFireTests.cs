@@ -228,7 +228,7 @@ public class ManualCountermeasureFireTests
             GameState = scenario.GameState with
             {
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == Target ? o with { HullHitPoints = 150 } : o).ToArray()
+            o.ObjectId == Target ? FragileForOneHit(o) : o).ToArray()
             }
         };
         using var engine = Create(scenario);

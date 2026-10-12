@@ -30,7 +30,7 @@ public class DefeatTimeBoundaryTests
             double death = final.EffectiveOutcome.DeathMotionTimeMs!.Value;
             Assert.InRange(death - Math.Floor(death), .1, .9);
             Assert.Equal((long)Math.Ceiling(death), final.MotionTimeMs);
-            Assert.Equal(death, Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Destroyed).MotionTimeMs);
+            Assert.Equal(death, Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed).MotionTimeMs);
             Assert.DoesNotContain(final.CombatJournal, e => e.MotionTimeMs > death);
             Assert.Equal(SimulationSpeed.Speed0, final.CurrentSpeed);
         }
@@ -53,7 +53,7 @@ public class DefeatTimeBoundaryTests
         var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes),
             All(source.ItemTypes), All(source.CommandDefinitions), factoryTypes: [new("factory.defeat", "Food", recipe)],
             shipClasses: All(source.ShipClasses), stationMarketProfiles: All(source.StationMarketProfiles),
-            stationMarketEvents: All(source.StationMarketEvents));
+            stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules, fireModes: source.FireModes);
         var scenario = PlayerDefeatTests.LethalScenario(150);
         scenario = scenario with
         {

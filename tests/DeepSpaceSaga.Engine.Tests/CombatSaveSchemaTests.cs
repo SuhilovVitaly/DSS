@@ -18,7 +18,7 @@ public sealed class CombatSaveSchemaTests
         {
             GameState = save.GameState with
             {
-                SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ShipClassId is null ? o : o with { HullHitPointsMax = 450 }).ToArray(),
+                SpaceObjects = save.GameState.SpaceObjects,
                 CombatState = new(1, 0, 1, 0, 0, 100,
                     snapshot.InstalledModules.Where(m => m.LauncherCombat is not null)
                         .Select(m => new LauncherSaveData(Player, m.ModuleId, m.LauncherCombat!)).ToArray(),
@@ -47,7 +47,8 @@ public sealed class CombatSaveSchemaTests
             state with { Projectiles = [projectile with { Flight = projectile.Flight with { DistanceTravelledWorldUnits = double.PositiveInfinity } }] },
             state with { LastProcessedMotionTimeMs = 1 },
             state with { ProcessedLaunchCommandIds = ["same", "same"] },
-            state with { NextGuidanceMotionTimeMs = 0 }
+            state with { NextGuidanceMotionTimeMs = 0 },
+            state with { HitLocationRngState = null, HitLocationRngCounter = 1 }
         };
         using var existing = Create();
         string before = ScenarioLoader.Serialize(existing.CaptureSaveState());
@@ -60,14 +61,17 @@ public sealed class CombatSaveSchemaTests
     }
 
     [Fact]
-    public void Current_save_requires_complete_hp_and_flight_state()
+    public void Current_save_rejects_invalid_module_and_flight_state()
     {
         var save = ValidSave();
         foreach (var objects in new[]
         {
-            save.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with { HullHitPoints = null } : o).ToArray(),
-            save.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with { HullHitPointsMax = null } : o).ToArray(),
-            save.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with { HullHitPoints = 451 } : o).ToArray()
+            save.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with
+            { Modules = o.Modules!.Select((m, i) => i == 0 ? m with { Armor = -1 } : m).ToArray() } : o).ToArray(),
+            save.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with
+            { Modules = o.Modules!.Select((m, i) => i == 0 ? m with { StructurePoints = -1 } : m).ToArray() } : o).ToArray(),
+            save.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with
+            { Modules = o.Modules!.Select((m, i) => i == 0 ? m with { DisabledUntilMotionTimeMs = -1 } : m).ToArray() } : o).ToArray()
         })
             Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save with
             { GameState = save.GameState with { SpaceObjects = objects } }), true));

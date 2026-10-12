@@ -36,9 +36,6 @@ public sealed class CombatBootstrapTests
         shipClasses: [new("ship.tetrarch")]);
 
     private static ScenarioFile Scenario() => ScenarioLoader.LoadFromJson(ScenarioJson);
-    private static HullCombatSnapshot Hull(AuthoritativeSnapshot snapshot, string id = "player") =>
-        Assert.IsType<HullCombatSnapshot>(snapshot.Objects.Single(o => o.ObjectId == id).HullCombat);
-
     [Theory]
     [InlineData(450)]
     [InlineData(900)]
@@ -56,8 +53,8 @@ public sealed class CombatBootstrapTests
         };
         engine.LoadScenario(scenario);
         var snapshot = engine.CaptureSnapshot();
-        Assert.Equal(new HullCombatSnapshot("ship.tetrarch", maxHp, maxHp), Hull(snapshot));
-        Assert.Equal(Hull(snapshot), Hull(snapshot, "pirate"));
+        Assert.All(snapshot.Objects, obj => Assert.Null(obj.HullCombat));
+        Assert.Equal("ship.tetrarch", engine.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").ShipClassId);
         var module = Assert.Single(snapshot.InstalledModules);
         Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150), module.LauncherCombat);
         Assert.Equal("Ready", module.OperationalState);
@@ -90,7 +87,6 @@ public sealed class CombatBootstrapTests
     [InlineData("hp-without-class")]
     [InlineData("hp-zero")]
     [InlineData("hp-negative")]
-    [InlineData("hp-above-max")]
     [InlineData("hp-overflow")]
     [InlineData("hp-fractional")]
     [InlineData("class-on-station")]
@@ -113,7 +109,6 @@ public sealed class CombatBootstrapTests
             case "hp-without-class": player["shipClassId"] = null; player["hullHitPoints"] = 300; break;
             case "hp-zero": player["hullHitPoints"] = 0; break;
             case "hp-negative": player["hullHitPoints"] = -1; break;
-            case "hp-above-max": player["hullHitPoints"] = 451; break;
             case "hp-overflow": player["hullHitPoints"] = (long)int.MaxValue + 1; break;
             case "hp-fractional": player["hullHitPoints"] = 1.5; break;
             case "class-on-station": pirate["objectType"] = "Station"; break;
@@ -139,7 +134,7 @@ public sealed class CombatBootstrapTests
     [InlineData(1)]
     [InlineData(300)]
     [InlineData(450)]
-    public void Explicit_hp_survives_file_load_without_refilling(int hp)
+    public void Legacy_hp_is_not_reemitted_after_file_load(int hp)
     {
         var json = JsonNode.Parse(ScenarioJson)!;
         json["gameState"]!["gameTimeMs"] = 1000;
@@ -152,13 +147,14 @@ public sealed class CombatBootstrapTests
             File.WriteAllText(path, ScenarioLoader.Serialize(source.CaptureSaveState()));
             using var engine = new SimulationEngine(Registry());
             engine.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
-            Assert.Equal(new HullCombatSnapshot("ship.tetrarch", hp, 450), Hull(engine.CaptureSnapshot()));
+            Assert.Null(engine.CaptureSnapshot().Objects.Single(obj => obj.ObjectId == "player").HullCombat);
+            Assert.Null(engine.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").HullHitPoints);
             // Exercise the real capture -> file -> loader -> new engine boundary as well.
             File.WriteAllText(path, JsonSerializer.Serialize(engine.CaptureSaveState()));
             using var restored = new SimulationEngine(Registry());
             restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
-            Assert.Equal(Hull(engine.CaptureSnapshot()), Hull(restored.CaptureSnapshot()));
-            Assert.Equal(Hull(engine.CaptureSnapshot(), "pirate"), Hull(restored.CaptureSnapshot(), "pirate"));
+            Assert.Null(restored.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").HullHitPoints);
+            Assert.Equal("ship.tetrarch", restored.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").ShipClassId);
             Assert.Equal(Assert.Single(engine.CaptureSnapshot().InstalledModules).LauncherCombat,
                 Assert.Single(restored.CaptureSnapshot().InstalledModules).LauncherCombat);
         }
@@ -179,7 +175,7 @@ public sealed class CombatBootstrapTests
         using var engine = new SimulationEngine(Registry());
         engine.LoadScenario(scenario);
         var snapshot = engine.CaptureSnapshot();
-        Assert.NotNull(Hull(snapshot)); // The controlled ship is always known.
+        Assert.Null(snapshot.Objects.Single(o => o.ObjectId == "player").HullCombat);
         var pirate = snapshot.Objects.Single(o => o.ObjectId == "pirate");
         Assert.Null(pirate.HullCombat);
         Assert.Null(pirate.ObjectType);
@@ -197,7 +193,7 @@ public sealed class CombatBootstrapTests
         Assert.All(snapshot.Objects, o => Assert.Null(o.HullCombat));
         Assert.Empty(snapshot.InstalledModules);
         engine.LoadScenario(Scenario());
-        Assert.Equal(450, Hull(engine.CaptureSnapshot()).CurrentHp);
+        Assert.Null(engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == "player").HullCombat);
         Assert.Null(Assert.Single(engine.CaptureSnapshot().InstalledModules).LauncherCombat!.ActiveTorpedoObjectId);
     }
 }

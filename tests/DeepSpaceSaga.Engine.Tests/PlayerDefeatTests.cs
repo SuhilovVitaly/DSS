@@ -11,12 +11,12 @@ public class PlayerDefeatTests
     {
         PositionY = o.ObjectId == Player ? 0 : -155,
         DirectionDegrees = o.ObjectId == Player ? 0 : 180,
-        HullHitPoints = o.ObjectId == Player ? hp : o.HullHitPoints,
-        Modules = o.Modules!.Select(m => m with
-        {
-            AutoDefenseEnabled = false,
-            PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On"
-        }).ToArray()
+        Modules = o.Modules!.Where(m => o.ObjectId != Player || hp != 150 || m.ModuleTypeId == "module.engine.basic")
+            .Select(m => m with
+            {
+                AutoDefenseEnabled = false,
+                PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On"
+            }).ToArray()
     });
 
     [Fact]
@@ -24,13 +24,13 @@ public class PlayerDefeatTests
     {
         using var engine = Create(LethalScenario());
         engine.SetObjectInteractionState(Player, Player);
-        Assert.Equal(300, At(engine, 5001).Objects.Single(o => o.ObjectId == Player).HullCombat!.CurrentHp);
-        Assert.Equal(150, At(engine, 10002).Objects.Single(o => o.ObjectId == Player).HullCombat!.CurrentHp);
+        Assert.Single(At(engine, 5001).CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
+        Assert.Equal(2, At(engine, 10002).CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
         var final = At(engine, 15003);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
         Assert.Equal(Player, final.EffectiveOutcome.PlayerObjectId);
         Assert.Equal(3, final.CombatJournal.Count(e => e.Type == CombatEventType.Hit));
-        var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Destroyed);
+        var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
         Assert.Equal(death.EventId, final.EffectiveOutcome.DeathEventId);
         Assert.Equal(death.MotionTimeMs, final.EffectiveOutcome.DeathMotionTimeMs);
         Assert.Equal(death.Result, final.EffectiveOutcome.WreckObjectId);

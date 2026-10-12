@@ -209,6 +209,7 @@ public sealed partial class SimulationEngine
 
     private void UpdateStationSecurity(long time)
     {
-        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time);
+        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time,
+            (objectId, deathTime) => DestroyShip(objectId, "station-security", deathTime));
     }
 }

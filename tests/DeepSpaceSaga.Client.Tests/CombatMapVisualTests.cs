@@ -87,7 +87,8 @@ public sealed class CombatMapVisualTests
             Assert.True(geometry.PlaqueRect.Contains(bar));
             Assert.Equal(palette.HullHp, bitmap.GetPixel((int)bar.MidX, (int)bar.MidY));
         }
-        foreach (var obj in new[] { unknown, legacy, other }) Assert.False(ObjectLabelRenderer.HasHullBar(obj));
+        foreach (var obj in new[] { unknown, legacy }) Assert.False(ObjectLabelRenderer.HasHullBar(obj));
+        Assert.True(ObjectLabelRenderer.HasHullBar(other));
     }
 
     [Theory]

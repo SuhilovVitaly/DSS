@@ -7,11 +7,12 @@ namespace DeepSpaceSaga.Engine.Dialogue;
 internal static class StationSecuritySystem
 {
     public static DialogueProgressState Update(List<SpaceObjectRuntime> objects, string? playerId,
-        DialogueProgressState progress, long time)
+        DialogueProgressState progress, long time, Action<string, long>? destroyShip = null)
     {
         int playerIndex = objects.FindIndex(o => o.InitialMotion.ObjectId == playerId);
         if (playerIndex < 0) return progress;
         var incidents = progress.SecurityIncidents.ToBuilder();
+        (string ObjectId, long Time)? destruction = null;
         for (int i = 0; i < incidents.Count; i++)
         {
             var incident = incidents[i];
@@ -27,16 +28,26 @@ internal static class StationSecuritySystem
                 incidents[i] = incident with { Completed = true };
             else if (time >= incident.DeadlineGameTimeMs)
             {
-                objects[playerIndex] = ship with
+                if (destroyShip is null)
                 {
-                    InitialMotion = playerMotion with { SpeedKmS = 0 }, StartGameTimeMs = checkTime,
-                    IsDestroyed = true, IsDocked = false, DockedStationObjectId = null,
-                    FirstPortFeeGameTimeMs = null, NextPortFeeDueGameTimeMs = null,
-                    Modules = ship.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
-                };
+                    objects[playerIndex] = ship with
+                    {
+                        InitialMotion = playerMotion with { SpeedKmS = 0 },
+                        StartGameTimeMs = checkTime,
+                        IsDestroyed = true,
+                        IsDocked = false,
+                        DockedStationObjectId = null,
+                        FirstPortFeeGameTimeMs = null,
+                        NextPortFeeDueGameTimeMs = null,
+                        Modules = ship.Modules.Select(m => m with { ActiveCycle = null }).ToImmutableArray()
+                    };
+                }
+                else
+                    destruction ??= (ship.InitialMotion.ObjectId, checkTime);
                 incidents[i] = incident with { Completed = true };
             }
         }
+        if (destruction is { } dead) destroyShip!(dead.ObjectId, dead.Time);
         return progress with { SecurityIncidents = incidents.ToImmutable() };
     }
 }

@@ -40,7 +40,7 @@ public sealed class TorpedoImpactTests
                     CountermeasureReloadMs = 10000
                 },
                 _ => module
-            }),
+            }).Select(module => module with { CombatRole = null }),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), catalogVersion: source.CatalogVersion,
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
@@ -86,6 +86,12 @@ public sealed class TorpedoImpactTests
                 Modules = o.Modules?.Select(m => m with { AutoDefenseEnabled = false }).ToArray()
             }).ToArray()
         }
+    };
+
+    internal static SpaceObjectData FragileForOneHit(SpaceObjectData ship) => ship with
+    {
+        Modules = ship.Modules!.Select(module => module.ModuleTypeId is "module.container.basic" or "module.scanner.mk1"
+            ? module with { StructurePoints = 0, Destroyed = true } : module).ToArray()
     };
 
     internal static ScenarioFile InRangePlayerAttackScenario(ScenarioFile scenario)
@@ -153,7 +159,7 @@ public sealed class TorpedoImpactTests
             Assert.Equal(JsonSerializer.Serialize(projectile),
                 JsonSerializer.Serialize(Assert.Single(paused.Objects.Where(o => o.Torpedo is not null))));
             Assert.Empty(paused.CombatImpacts);
-            Assert.Equal(450, paused.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+            Assert.Null(paused.Objects.Single(o => o.ObjectId == Target).HullCombat);
             Assert.Equal(projectile.ObjectId,
                 paused.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
         }
@@ -167,13 +173,13 @@ public sealed class TorpedoImpactTests
         Assert.Equal(150, impact.DamageApplied);
         Assert.Empty(impact.FinalTrail);
         Assert.DoesNotContain(advanced.Objects, o => o.Torpedo is not null);
-        Assert.Equal(300, advanced.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Single(advanced.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
         Assert.Null(advanced.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
         Assert.Single(At(engine, launchTime + 1, launchTime + 1001).CombatImpacts);
     }
 
     [Fact]
-    public void Three_contacts_apply_150_without_rng_draws()
+    public void Three_contacts_destroy_modules_with_isolated_rng_draws()
     {
         using var engine = Create();
         var before = At(engine, 0);
@@ -184,15 +190,15 @@ public sealed class TorpedoImpactTests
             var after = At(engine, n * 4000);
             Assert.Equal(n, after.CombatImpacts.Length);
             Assert.Equal(150, after.CombatImpacts[^1].DamageApplied);
-            Assert.Equal(450 - n * 150, after.Objects.FirstOrDefault(o => o.ObjectId == Target)?.HullCombat?.CurrentHp ?? 0);
+            Assert.Equal(n, after.CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
+            Assert.Equal((ulong)n, engine.CaptureSaveStateForTests(n * 4000, SimulationSpeed.Speed0).GameState.CombatState!.HitLocationRngCounter);
             Assert.DoesNotContain(after.Objects, o => o.Torpedo is not null);
             Assert.Null(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
             Assert.Empty(after.ShipEvents);
             Assert.Equal(JsonSerializer.Serialize(before.InstalledModules), JsonSerializer.Serialize(after.InstalledModules));
         }
         Assert.Equal(42UL, engine.MasterSeed);
-        // Launch/impact takes no module cycle (the RNG-bearing command executor).
-        // All module state and event journals above remain unchanged across all hits.
+        // Hit location uses its own stream; the player's launcher state remains unchanged.
     }
 
     [Fact]
@@ -206,7 +212,7 @@ public sealed class TorpedoImpactTests
         Assert.Equal("rock", fact.HitObjectId);
         Assert.Equal(Target, fact.TargetObjectId);
         Assert.Equal(0, fact.DamageApplied);
-        Assert.Equal(450, hit.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Null(hit.Objects.Single(o => o.ObjectId == Target).HullCombat);
         Assert.Equal(1500, fact.MotionTimeMs, 4);
         var last = fact.FinalTrail[^1];
         var end = TorpedoGuidanceMath.PredictSegment(last.Segment, last.Segment.DurationMs);
@@ -225,7 +231,7 @@ public sealed class TorpedoImpactTests
         At(engine, 0);
         var hit = At(engine, 4000);
         Assert.Equal(Target, Assert.Single(hit.CombatImpacts).HitObjectId);
-        Assert.Equal(450, hit.Objects.Single(o => o.ObjectId == Player).HullCombat!.CurrentHp);
+        Assert.Null(hit.Objects.Single(o => o.ObjectId == Player).HullCombat);
     }
 
     [Fact]
@@ -278,7 +284,7 @@ public sealed class TorpedoImpactTests
         Assert.Equal(e.HitObjectId, a.HitObjectId);
         Assert.InRange(Math.Abs(e.MotionTimeMs - a.MotionTimeMs), 0, .0001);
         Assert.InRange(Math.Abs(e.X - a.X) + Math.Abs(e.Y - a.Y), 0, 3e-7);
-        Assert.Equal(300, actual.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Single(actual.CombatJournal, ev => ev.Type == CombatEventType.ModuleDestroyed);
         Assert.InRange(Math.Abs(e.FinalTrail.Sum(s => s.Segment.DurationMs) - a.FinalTrail.Sum(s => s.Segment.DurationMs)), 0, .0001);
     }
 

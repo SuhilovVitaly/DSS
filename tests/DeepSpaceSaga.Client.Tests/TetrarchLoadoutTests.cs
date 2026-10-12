@@ -124,7 +124,7 @@ public sealed class TetrarchLoadoutTests
         foreach (var ship in ships)
         {
             var actual = Assert.Single(snapshot.Objects, o => o.ObjectId == ship.ObjectId);
-            Assert.Equal(new HullCombatSnapshot("ship.tetrarch", 450, 450), actual.HullCombat);
+            Assert.Null(actual.HullCombat);
             Assert.Equal(ship.IsDocked, actual.IsDocked);
             Assert.Equal(ship.DockedStationObjectId, actual.DockedStationObjectId);
         }

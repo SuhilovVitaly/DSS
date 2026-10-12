@@ -8,7 +8,6 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private Dictionary<string, HullCombatSnapshot> _hullCombat = new(StringComparer.Ordinal);
     private ModuleHitLocationRng _moduleHitLocationRng = new(0);
     private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> _launcherCombat = new();
     private long _torpedoSequence;
@@ -324,33 +323,17 @@ public sealed partial class SimulationEngine
     {
         var flight = projectile.InitialMotion.Torpedo!;
         var finalFlight = CloseFlightHistory(projectile, contact.MotionTimeMs, flight);
-        int damage = 0;
         string? wreckId = null;
         string hitId = target.InitialMotion.ObjectId;
         var moduleHit = ApplyModuleHit(target, flight, contact.MotionTimeMs);
-        if (moduleHit is { } hit)
-            target = hit.UpdatedShip;
-        if (_hullCombat.TryGetValue(hitId, out var hull) && hull.ShipClassId == "ship.tetrarch")
-        {
-            damage = Math.Min(hull.CurrentHp, flight.Damage);
-            _hullCombat[hitId] = hull with { CurrentHp = hull.CurrentHp - damage };
-            if (hull.CurrentHp == damage)
-                wreckId = CreateWreck(target, contact.MotionTimeMs);
-        }
         _objects.Remove(projectile);
         _torpedoTargets.Remove(projectile.InitialMotion.ObjectId);
         var key = (flight.OwnerObjectId, flight.LauncherModuleId);
         if (_launcherCombat.TryGetValue(key, out var launcher))
             _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = null };
-        _combatImpacts.Add(new(checked(++_combatImpactSequence), projectile.InitialMotion.ObjectId,
-            flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
-            contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, damage,
-            wreckId is null ? null : hitId, wreckId));
         AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.Hit, flight.OwnerObjectId, hitId,
-            projectile.InitialMotion.ObjectId, contact.X, contact.Y, TorpedoOperator: flight.RatingBreakdown, Damage: damage));
-        if (wreckId is not null)
-            AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.Destroyed, flight.OwnerObjectId, hitId,
-                projectile.InitialMotion.ObjectId, contact.X, contact.Y, Damage: damage, Result: wreckId));
+            projectile.InitialMotion.ObjectId, contact.X, contact.Y, TorpedoOperator: flight.RatingBreakdown,
+            Damage: moduleHit is null ? 0 : flight.Damage));
         if (moduleHit is { } moduleDamage)
         {
             AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.ModuleHit, flight.OwnerObjectId, hitId,
@@ -359,10 +342,19 @@ public sealed partial class SimulationEngine
                 ArmorAfter: moduleDamage.ArmorAfter, StructureBefore: moduleDamage.StructureBefore,
                 StructureAfter: moduleDamage.StructureAfter));
             if (moduleDamage.StructureAfter == 0)
+            {
                 AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.ModuleDestroyed, flight.OwnerObjectId, hitId,
                     projectile.InitialMotion.ObjectId, contact.X, contact.Y,
                     HitModuleId: moduleDamage.ModuleId, StructureAfter: 0));
+                if (ShipDestroyReason(moduleDamage.UpdatedShip, moduleDamage.ModuleId) is { } reason)
+                    wreckId = DestroyShip(hitId, reason, contact.MotionTimeMs,
+                        flight.OwnerObjectId, projectile.InitialMotion.ObjectId);
+            }
         }
+        _combatImpacts.Add(new(checked(++_combatImpactSequence), projectile.InitialMotion.ObjectId,
+            flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
+            contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, moduleHit is null ? 0 : flight.Damage,
+            wreckId is null ? null : hitId, wreckId));
     }
 
     private readonly record struct ModuleHitOutcome(SpaceObjectRuntime UpdatedShip, string ModuleId,
@@ -373,7 +365,8 @@ public sealed partial class SimulationEngine
         int targetIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == target.InitialMotion.ObjectId);
         if (targetIndex < 0) return null;
         target = _objects[targetIndex];
-        if (target.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)) return null;
+        if (target.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) ||
+            target.ShipClassId is null) return null;
         var candidates = target.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
             .OrderBy(m => m.ModuleId, StringComparer.Ordinal)
             .Select(m => (Module: m, Mass: _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).MassKg))
@@ -413,28 +406,39 @@ public sealed partial class SimulationEngine
             selected.StructurePoints, result.StructureAfter);
     }
 
-    private string CreateWreck(SpaceObjectRuntime destroyed, double impactMotionTimeMs)
+    private string? ShipDestroyReason(SpaceObjectRuntime ship, string destroyedModuleId)
     {
+        var rules = _registry.CombatRules?.ShipDestruction;
+        if (rules is null) return null;
+        return ShipDestructionMath.Cause(ship.Modules.Select(module => new ShipModuleLife(module.ModuleId,
+            _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CombatRole, module.Destroyed)).ToArray(),
+            destroyedModuleId, rules.CriticalRoles, rules.DestroyedModuleFraction);
+    }
+
+    private string DestroyShip(string objectId, string cause, double impactMotionTimeMs,
+        string? actorObjectId = null, string? projectileObjectId = null)
+    {
+        var destroyed = _objects.First(o => o.InitialMotion.ObjectId == objectId);
         string id;
         do
         {
             id = "wreck-" + checked(++_wreckSequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
-        string destroyedId = destroyed.InitialMotion.ObjectId;
         var point = CombatPath(destroyed).Position(impactMotionTimeMs);
-        // Hit and Destroyed facts are appended immediately after this wreck transition.
-        RecordPlayerDefeat(destroyedId, id, impactMotionTimeMs, checked(_combatJournalSequence + 2));
         _objects.Remove(destroyed);
-        _hostileCombat.Remove(destroyedId);
-        _hullCombat.Remove(destroyedId);
-        foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == destroyedId).ToArray()) _defenses.Remove(defenseKey);
-        foreach (var key in _launcherCombat.Keys.Where(k => k.ObjectId == destroyedId).ToArray())
+        _hostileCombat.Remove(objectId);
+        foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == objectId).ToArray()) _defenses.Remove(defenseKey);
+        foreach (var key in _launcherCombat.Keys.Where(k => k.ObjectId == objectId).ToArray())
             _launcherCombat.Remove(key);
         _objects.Add(new(new(id, point.X, point.Y, 0, 0), SpaceObjectType.Wreck,
             (long)Math.Floor(impactMotionTimeMs), [], Name: "Wreck", IsKnown: destroyed.IsKnown));
-        if (SelectedObjectId == destroyedId) SelectedObjectId = null;
-        if (ActiveObjectId == destroyedId) ActiveObjectId = null;
-        ClearDestroyedTargetNavigation(destroyedId, impactMotionTimeMs);
+        if (SelectedObjectId == objectId) SelectedObjectId = null;
+        if (ActiveObjectId == objectId) ActiveObjectId = null;
+        ClearDestroyedTargetNavigation(objectId, impactMotionTimeMs);
+        AppendCombatEvent(new(0, impactMotionTimeMs, CombatEventType.ShipDestroyed,
+            actorObjectId ?? objectId, objectId, projectileObjectId ?? string.Empty,
+            point.X, point.Y, Result: id, DestroyReason: cause));
+        RecordPlayerDefeat(objectId, id, impactMotionTimeMs, _combatJournalSequence);
         return id;
     }
 
@@ -576,11 +580,9 @@ public sealed partial class SimulationEngine
 
     // Stage all combat state before publishing the candidate world. Failed loads leave
     // the current session intact; successful loads replace both maps, including empty ones.
-    private (Dictionary<string, HullCombatSnapshot> Hulls,
-        Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> Launchers) BuildCombatState(
+    private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> BuildCombatState(
         IReadOnlyList<SpaceObjectData> objects, IReadOnlyList<SpaceObjectRuntime> runtimeObjects)
     {
-        var hulls = new Dictionary<string, HullCombatSnapshot>(StringComparer.Ordinal);
         var launchers = new Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot>();
         foreach (var obj in objects)
         {
@@ -588,13 +590,6 @@ public sealed partial class SimulationEngine
                 continue;
             if (!_registry.ShipClasses.Contains(classId))
                 throw new ScenarioException($"Object '{obj.ObjectId}' references unknown shipClassId '{classId}'.");
-            // Temporary EP-0008 hull continuation until US-0003 migrates live combat to module HP.
-            // New class content no longer carries hullHitPointsMax.
-            int maxHp = obj.HullHitPointsMax ?? 450;
-            int currentHp = obj.HullHitPoints ?? maxHp;
-            if (currentHp <= 0 || currentHp > maxHp)
-                throw new ScenarioException($"Object '{obj.ObjectId}' hullHitPoints must be in 1..{maxHp}.");
-            hulls.Add(obj.ObjectId, new HullCombatSnapshot(classId, currentHp, maxHp));
         }
 
         foreach (var obj in runtimeObjects)
@@ -619,6 +614,6 @@ public sealed partial class SimulationEngine
             }
         }
 
-        return (hulls, launchers);
+        return launchers;
     }
 }

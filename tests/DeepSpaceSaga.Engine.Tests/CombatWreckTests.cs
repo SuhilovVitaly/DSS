@@ -98,7 +98,8 @@ public sealed class CombatWreckTests
         Assert.NotEqual(dead.Objects.Single(o => o.ObjectId == Player).Y, later.Objects.Single(o => o.ObjectId == Player).Y);
         Assert.Equal(3, later.CombatImpacts.Length);
         Assert.Single(later.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        Assert.Equal(450, later.Objects.Single(o => o.ObjectId == Player).HullCombat!.CurrentHp);
+        Assert.Null(later.Objects.Single(o => o.ObjectId == Player).HullCombat);
+        Assert.DoesNotContain(later.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Player);
     }
 
     [Fact]

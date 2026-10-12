@@ -8,12 +8,12 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class BasicCombatEndToEndTests
 {
     [Fact]
-    public void Legacy_three_hit_contract_stays_valid()
+    public void Three_module_kills_destroy_ship_at_threshold()
     {
         using var run = new CombatRun();
         var initial = run.Snapshot();
         var randomState = run.Engine.CaptureSaveState().GameState.DialogueState;
-        Assert.Equal(450, initial.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Null(initial.Objects.Single(o => o.ObjectId == Target).HullCombat);
         Assert.Equal(2, initial.Objects.Length);
         for (int shot = 1; shot <= 3; shot++)
         {
@@ -63,7 +63,7 @@ public sealed class BasicCombatEndToEndTests
         var later = run.AdvanceTo(final.MotionTimeMs + 10000);
         Assert.Equal(3, later.CombatImpacts.Length);
         Assert.Equal(final.Objects.Single(o => o.ObjectType == SpaceObjectType.Wreck), later.Objects.Single(o => o.ObjectType == SpaceObjectType.Wreck));
-        Assert.Equal(450, later.Objects.Single(o => o.ObjectId == Player).HullCombat!.CurrentHp);
+        Assert.Null(later.Objects.Single(o => o.ObjectId == Player).HullCombat);
         Assert.NotEqual(initial.Objects.Single(o => o.ObjectId == Player).Y, later.Objects.Single(o => o.ObjectId == Player).Y);
         var saved = run.Engine.CaptureSaveState().GameState;
         Assert.Equal(42UL, saved.MasterSeed);
@@ -119,7 +119,8 @@ public sealed class BasicCombatEndToEndTests
         Assert.NotEmpty(hit.FinalTrail);
         if (shot < 3)
         {
-            Assert.Equal(450 - shot * 150, snapshot.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+            Assert.Equal(shot, snapshot.CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
+            Assert.Null(snapshot.Objects.Single(o => o.ObjectId == Target).HullCombat);
             Assert.DoesNotContain(snapshot.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
         }
         else

@@ -221,7 +221,7 @@ public class PhaseThreeSaveSchemaTests
         scenario = scenario with
         {
             GameState = scenario.GameState with
-            { SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with { HullHitPoints = 150 } : o).ToArray() }
+            { SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? FragileForOneHit(o) : o).ToArray() }
         };
         using var engine = Create(scenario);
         string target = LaunchEnemy(engine);

@@ -27,7 +27,7 @@ public sealed class BasicCombatUiFlowTests
         Assert.False(f.Button.Enabled);
         f.Select(Fixture.Target);
         Assert.True(f.Button.Enabled);
-        for (int shot = 1; shot <= 3; shot++)
+        for (int shot = 1; shot <= 2; shot++)
         {
             f.HoverFire();
             Assert.NotNull(f.Screen.LaunchPreviewGeometry!.Intercept);
@@ -62,14 +62,16 @@ public sealed class BasicCombatUiFlowTests
             f.Render();
             Assert.Empty(f.Screen.CombatEffects.Active);
             Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
-            if (shot < 3)
+            Assert.Contains(impact.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Target);
+            if (shot < 2)
             {
-                Assert.Equal(450 - shot * 150, impact.Objects.Single(o => o.ObjectId == Fixture.Target).HullCombat!.CurrentHp);
+                Assert.Contains(impact.Objects, o => o.ObjectId == Fixture.Target);
                 f.Select(Fixture.Target);
                 Assert.True(f.Button.Enabled);
             }
             else
             {
+                Assert.Contains(impact.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed && e.TargetObjectId == Fixture.Target);
                 Assert.DoesNotContain(impact.Objects, o => o.ObjectId == Fixture.Target);
                 var wreck = Assert.Single(impact.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
                 Assert.Equal(0, wreck.SpeedKmS);
@@ -129,8 +131,8 @@ public sealed class BasicCombatUiFlowTests
         Assert.Empty(snapshots.Current.CombatImpacts);
         var hit = await f.AdvanceTo(original.Torpedo!.PredictedImpactMotionTimeMs!.Value + 1000);
         Assert.Equal(Fixture.Target, Assert.Single(hit.CombatImpacts).HitObjectId);
-        Assert.Equal(300, hit.Objects.Single(o => o.ObjectId == Fixture.Target).HullCombat!.CurrentHp);
-        Assert.Equal(450, hit.Objects.Single(o => o.ObjectId == Fixture.Player).HullCombat!.CurrentHp);
+        Assert.Contains(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Target);
+        Assert.DoesNotContain(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Player);
     }
 
     internal sealed class Fixture : IAsyncDisposable

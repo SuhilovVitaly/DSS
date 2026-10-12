@@ -19,7 +19,7 @@ public class TorpedoSelfDestructTests
         Assert.Equal(string.Empty, impact.HitObjectId);
         Assert.Equal(0, impact.DamageApplied);
         Assert.NotEmpty(impact.FinalTrail);
-        Assert.All(after.Objects, o => Assert.Equal(450, o.HullCombat!.CurrentHp));
+        Assert.DoesNotContain(after.CombatJournal, e => e.Type == CombatEventType.ModuleHit);
         Assert.Null(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
     }
     [Fact]
