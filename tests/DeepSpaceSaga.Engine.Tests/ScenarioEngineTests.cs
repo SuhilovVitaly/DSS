@@ -562,7 +562,7 @@ public class ScenarioEngineTests
 
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(6, passiveTypes); // Includes the separate two- and three-cabin living variants.
+        Assert.Equal(7, passiveTypes); // Includes the separate two-, three- and four-cabin living variants.
     }
 
     [Theory]

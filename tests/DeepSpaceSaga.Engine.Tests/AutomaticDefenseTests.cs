@@ -64,12 +64,11 @@ public class AutomaticDefenseTests
             System.Text.Json.JsonSerializer.Serialize(At(roundtripped, 25000).CombatJournal));
     }
 
-    internal static ScenarioFile DefenseScenario(double distance = 600, int attack = 50, int defense = 50) => TorpedoImpactTests.Scenario(o => o with
+    internal static ScenarioFile DefenseScenario(double distance = 600) => TorpedoImpactTests.Scenario(o => o with
     {
         PositionY = o.ObjectId == Player ? 0 : -distance,
         DirectionDegrees = o.ObjectId == Player ? 0 : 180,
-        Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = true }).ToArray(),
-        Crew = o.Crew!.Select(c => c with { TorpedoSkill = attack, CountermeasureSkill = defense }).ToArray()
+        Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = true }).ToArray()
     });
     [Fact]
     public void Defense_fires_only_after_time_advances_and_reserves_once()
@@ -99,7 +98,7 @@ public class AutomaticDefenseTests
     public void Zero_chance_does_not_consume_attempt()
     {
         using var engine = new SimulationEngine(WeaponRegistry(0, 100));
-        engine.LoadScenario(DefenseScenario(600, 100, 0));
+        engine.LoadScenario(DefenseScenario(600));
         engine.ReceiveCommand(Fire("fire")); At(engine, 0);
         var snapshot = At(engine, 1000);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);

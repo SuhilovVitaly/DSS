@@ -343,8 +343,6 @@ public static class StationCrewRoles
 public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
     [property: JsonPropertyName("displayName")] string DisplayName,
-    [property: JsonPropertyName("torpedoSkill")] int? TorpedoSkill = null,
-    [property: JsonPropertyName("countermeasureSkill")] int? CountermeasureSkill = null,
     [property: JsonPropertyName("accuracySkill")] int AccuracySkill = 0,
     [property: JsonPropertyName("maneuverabilitySkill")] int ManeuverabilitySkill = 0);
 

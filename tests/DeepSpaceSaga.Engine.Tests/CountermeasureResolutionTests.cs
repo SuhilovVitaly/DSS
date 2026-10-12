@@ -42,7 +42,7 @@ public class CountermeasureResolutionTests
     public void Successful_intercept_removes_both_once_and_no_module_damage()
     {
         using var engine = new SimulationEngine(WeaponRegistry(100, 0));
-        engine.LoadScenario(DefenseScenario(600, 0, 100));
+        engine.LoadScenario(DefenseScenario(600));
         engine.ReceiveCommand(Fire("fire")); At(engine, 0);
         var snapshot = At(engine, 5000);
         Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null || o.Countermeasure is not null);
