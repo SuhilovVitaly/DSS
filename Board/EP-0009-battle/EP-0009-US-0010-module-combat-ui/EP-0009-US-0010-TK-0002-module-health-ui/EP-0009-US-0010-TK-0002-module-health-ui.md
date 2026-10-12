@@ -28,3 +28,7 @@ Known player and NPC ships project every module's authoritative armor, structure
 ## Canonical context and execution
 
 [Specification](../../EP-0009-module-combat.md) sections2–4 define D01–D33, A01–A07, event order, values and boundaries. [Parent story](../EP-0009-US-0010-module-combat-ui.md). [Current execution decisions](../../ExecutionDecisions.md) supersede historical baseline/push/Graphify instructions. Exact production/test paths and current APIs must be recorded before editing; planned file count is not the runtime scope. Every ticket receives tests appropriate to its change, self-review, a separate commit and immediate verified push to base-fight. No game/native/Graphify runs.
+
+## Post-publication review repair — 2026-10-12
+
+The final non-Balance Engine sweep exposed five older assertions in `DefeatTimeBoundaryTests`, `ResourceSurveyTests` and `EngineCommandTests` that compared whole `ObjectMotionSnapshot` records after the new `ImmutableArray<ModuleHealthSnapshot>` projection was added. The values were identical but immutable-array record equality compared array identities. The tests now compare the full serialized snapshot projection structurally, retaining all clock, movement, module and outcome assertions. Five reproductions failed before the correction and passed 5/5 after it; broad non-corpus/non-Balance Engine regression passed 2005/2005. The full corpus-inclusive run was interrupted after >10 minutes and remains NOT COMPLETE. This repair is a separate follow-up commit, not a rewrite of the published TK-0002 commit.

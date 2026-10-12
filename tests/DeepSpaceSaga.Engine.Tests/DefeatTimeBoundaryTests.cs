@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
@@ -53,7 +54,7 @@ public class DefeatTimeBoundaryTests
         Assert.Equal(expected.GameTimeMs, actual.GameTimeMs);
         var later = At(whole, 900000, 270000000);
         Assert.Equal(expected.Outcome, later.Outcome);
-        Assert.Equal(expected.Objects.ToArray(), later.Objects.ToArray());
+        Assert.Equal(JsonSerializer.Serialize(expected.Objects), JsonSerializer.Serialize(later.Objects));
         Assert.Equal(expected.CombatJournal.ToArray(), later.CombatJournal.ToArray());
     }
 
