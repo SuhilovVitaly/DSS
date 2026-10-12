@@ -141,6 +141,9 @@ internal static class CombatSaveValidation
                 "invalid captured armor damage parameters.");
             Require(f.CapturedAttack is null or >= 0 && f.HitChanceTenths is null or (>= 0 and <= 1000),
                 "invalid captured hit chance.");
+            Require(f.ExpiresAtMotionTimeMs is null ||
+                f.ExpiresAtMotionTimeMs > state.MotionTimeMs && f.ExpiresAtMotionTimeMs > f.LaunchMotionTimeMs,
+                "expired projectile in save.");
             CountermeasureSaveValidation.ValidateCapturedTorpedoRating(f!, format);
             Require(!string.IsNullOrWhiteSpace(f!.OwnerObjectId) && !string.IsNullOrWhiteSpace(f.LauncherModuleId) &&
                 (!objects.ContainsKey(f.OwnerObjectId) && format >= 16 ||

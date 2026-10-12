@@ -127,7 +127,7 @@ public class DefensePreviewProjectionTests
         engine.ReceiveCommand(Manual("fire", target));
         var snapshot = At(engine, 1);
         Assert.False(Preview(snapshot).CanFire);
-        Assert.Equal(CommandReasonCodes.Busy, Preview(snapshot).Reason);
+        Assert.Equal(CommandReasonCodes.NotReady, Preview(snapshot).Reason);
         Assert.True(Preview(snapshot, Defense2).CanFire);
         Assert.Equal(0, Preview(snapshot, Defense2).ChanceTenths);
     }

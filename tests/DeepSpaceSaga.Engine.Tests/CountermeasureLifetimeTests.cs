@@ -18,7 +18,7 @@ public class CountermeasureLifetimeTests
                 CountermeasureMaxFlightTimeMs = lifetime,
                 CountermeasureSpeedKmS = slow ? 0.001 : m.CountermeasureSpeedKmS
             } :
-            slow && m.TorpedoSpeedKmS is not null ? m with { TorpedoSpeedKmS = 0.001, LauncherReloadMs = 120000 } : m),
+            slow && m.TorpedoSpeedKmS is not null ? m with { LauncherReloadMs = 120000 } : m),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
             shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
@@ -164,7 +164,7 @@ public class CountermeasureLifetimeTests
     public void Full_sixty_second_lifetime_is_physical_and_not_extended_by_guidance()
     {
         using var engine = new SimulationEngine(LifetimeRegistry(60000, slow: true));
-        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario());
+        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario(1900));
         engine.ReceiveCommand(Manual("slow", LaunchEnemy(engine)));
         var flight = Assert.Single(At(engine, 1).Objects, o => o.Countermeasure is not null).Countermeasure!;
         Assert.Equal(60001, flight.ExpiresAtMotionTimeMs);

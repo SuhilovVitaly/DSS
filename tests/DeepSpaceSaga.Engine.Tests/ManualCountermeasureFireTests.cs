@@ -60,8 +60,7 @@ public class ManualCountermeasureFireTests
         var source = AutomaticDefenseTests.WeaponRegistry(0, 100);
         static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
         var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Select(m =>
-            m.CountermeasureAccuracy is not null ? m with { CountermeasureSpeedKmS = 0.001 } :
-            m.TorpedoTurnRateDegPerSec is not null ? m with { TorpedoTurnRateDegPerSec = 0.01 } : m),
+            m.CountermeasureAccuracy is not null ? m with { CountermeasureSpeedKmS = 0.001 } : m),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
             shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));

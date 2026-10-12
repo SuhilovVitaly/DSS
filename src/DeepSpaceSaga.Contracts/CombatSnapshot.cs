@@ -107,7 +107,9 @@ public sealed record TorpedoSnapshot(
     decimal ArmorDamagePercent = 100,
     /// <summary>Mode frozen at launch; changing the launcher later cannot rewrite the flight.</summary>
     string ModeId = "standard",
-    decimal ModeManeuverabilityBonus = 0);
+    decimal ModeManeuverabilityBonus = 0,
+    /// <summary>Absolute physical expiry captured at launch; null only for pre-EP-0009 saves.</summary>
+    long? ExpiresAtMotionTimeMs = null);
 
 /// <summary>Current execution phase, independent of whether the route predicts an intercept.</summary>
 public enum TorpedoRoutePhase
@@ -191,4 +193,4 @@ public sealed record CombatImpactSnapshot(
     string? WreckObjectId = null,
     TorpedoTerminationKind TerminationKind = TorpedoTerminationKind.Impact);
 
-public enum TorpedoTerminationKind { Impact, SelfDestruct, Intercept, Miss }
+public enum TorpedoTerminationKind { Impact, SelfDestruct, Intercept, Miss, Expired }

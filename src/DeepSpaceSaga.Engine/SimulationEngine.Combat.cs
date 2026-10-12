@@ -110,10 +110,12 @@ public sealed partial class SimulationEngine
         var targetPose = PredictMotion(target, motionTimeMs - target.StartGameTimeMs);
         if (!CombatRangeMath.IsWithinRange(origin, targetPose, launcher.RangeKm!.Value))
             return CommandStartOutcome.Rejected("target_out_of_range");
+        var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        long lifetime = moduleType.TorpedoMaxFlightTimeMs ?? 120000;
+        if (motionTimeMs > long.MaxValue - lifetime) return CommandStartOutcome.Rejected("invalid_time");
         var route = TorpedoGuidanceMath.Plan(origin, targetPose, launcher.SpeedKmS, launcher.TurnRateDegPerSec, motionTimeMs);
         if (!TryGetNextTorpedoId(out string id, out long sequence))
             return CommandStartOutcome.Rejected("projectile_id_exhausted");
-        var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
         var mode = FireModeMath.Resolve(_registry, launcher.ModeId);
         decimal attack = (moduleType.Accuracy ?? moduleType.TorpedoManeuverability ?? 0) +
             (owner.Crew.FirstOrDefault(c => c.Id == module.OperatorCrewId)?.AccuracySkill ?? 0) + mode.AccuracyBonus;
@@ -128,7 +130,8 @@ public sealed partial class SimulationEngine
             ArmorPiercingPercent: moduleType.ArmorPiercingPercent ?? 0,
             ArmorDamagePercent: moduleType.ArmorDamagePercent ?? 100,
             ModeId: mode.ModeId,
-            ModeManeuverabilityBonus: mode.ManeuverabilityBonus);
+            ModeManeuverabilityBonus: mode.ManeuverabilityBonus,
+            ExpiresAtMotionTimeMs: motionTimeMs + lifetime);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
         _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
         var activeIds = launcher.ActiveTorpedoIds.IsDefault ? ImmutableArray<string>.Empty : launcher.ActiveTorpedoIds;
@@ -203,6 +206,9 @@ public sealed partial class SimulationEngine
         if (kind == TorpedoTerminationKind.SelfDestruct)
             AppendCombatEvent(new(0, motionTimeMs, CombatEventType.SelfDestruct, flight.OwnerObjectId, flight.TargetObjectId,
                 projectile.InitialMotion.ObjectId, point.X, point.Y, TorpedoOperator: flight.RatingBreakdown, Damage: 0));
+        if (kind == TorpedoTerminationKind.Expired)
+            AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Expired, flight.OwnerObjectId, flight.TargetObjectId,
+                projectile.InitialMotion.ObjectId, point.X, point.Y, TorpedoOperator: flight.RatingBreakdown, Damage: 0));
         _combatImpacts.Add(new(checked(++_combatImpactSequence), projectile.InitialMotion.ObjectId,
             flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, string.Empty,
             motionTimeMs, point.X, point.Y, final.Trail, TerminationKind: kind));
@@ -236,10 +242,15 @@ public sealed partial class SimulationEngine
                 .OrderBy(o => CountermeasureExpiry(o.InitialMotion.Countermeasure!))
                 .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).FirstOrDefault();
             double expiryTime = expiry is null ? double.PositiveInfinity : CountermeasureExpiry(expiry.InitialMotion.Countermeasure!);
+            var torpedoExpiry = _objects.Where(o => o.InitialMotion.Torpedo?.ExpiresAtMotionTimeMs is not null)
+                .OrderBy(o => o.InitialMotion.Torpedo!.ExpiresAtMotionTimeMs)
+                .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).FirstOrDefault();
+            double torpedoExpiryTime = torpedoExpiry?.InitialMotion.Torpedo?.ExpiresAtMotionTimeMs ?? double.PositiveInfinity;
             double eventTime = Math.Min(launch?.Time ?? double.PositiveInfinity,
                 Math.Min(intercept?.Contact.MotionTimeMs ?? double.PositiveInfinity, expiryTime));
             eventTime = Math.Min(eventTime, hostileLaunch?.Time ?? double.PositiveInfinity);
             eventTime = Math.Min(eventTime, pendingBurst?.Shot.DueMotionTimeMs ?? double.PositiveInfinity);
+            eventTime = Math.Min(eventTime, torpedoExpiryTime);
             if (impact is { } hit && hit.Contact.MotionTimeMs <= eventTime)
             {
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
@@ -259,6 +270,13 @@ public sealed partial class SimulationEngine
             {
                 ExpireCountermeasure(expiry, expiryTime);
                 cursor = expiryTime;
+                continue;
+            }
+            if (torpedoExpiry is not null && torpedoExpiryTime <= eventTime && torpedoExpiryTime <= motionTimeMs)
+            {
+                TerminateTorpedo(torpedoExpiry, torpedoExpiryTime, TorpedoTerminationKind.Expired);
+                RemoveLostCountermeasures(torpedoExpiryTime);
+                cursor = torpedoExpiryTime;
                 continue;
             }
             if (pendingBurst is { } burst && burst.Shot.DueMotionTimeMs <= eventTime)
