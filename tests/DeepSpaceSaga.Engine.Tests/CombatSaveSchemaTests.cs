@@ -19,11 +19,13 @@ public sealed class CombatSaveSchemaTests
             GameState = save.GameState with
             {
                 SpaceObjects = save.GameState.SpaceObjects,
-                CombatState = new(1, 0, 1, 0, 0, 100,
-                    snapshot.InstalledModules.Where(m => m.LauncherCombat is not null)
+                CombatState = save.GameState.CombatState! with
+                {
+                    Launchers = snapshot.InstalledModules.Where(m => m.LauncherCombat is not null)
                         .Select(m => new LauncherSaveData(Player, m.ModuleId, m.LauncherCombat!)).ToArray(),
-                    [new(missile.ObjectId, missile.Torpedo!, false, snapshot.Objects.Single(o => o.ObjectId == Target), 0)],
-                    ["schema-launch"])
+                    Projectiles = [new(missile.ObjectId, missile.Torpedo!, false, snapshot.Objects.Single(o => o.ObjectId == Target), 0)],
+                    ProcessedLaunchCommandIds = ["schema-launch"]
+                }
             }
         };
     }

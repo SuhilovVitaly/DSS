@@ -106,6 +106,108 @@ public sealed class CombatSaveLoadTests : IDisposable
     private static string Settings => Path.Combine(ClientRoot, "Settings.json");
     public CombatSaveLoadTests() => Directory.CreateDirectory(_directory);
     public void Dispose() => Directory.Delete(_directory, true);
+
+    [Fact]
+    public void Format17_roundtrips_module_durability_ai_and_combat_continuation()
+    {
+        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId switch
+        {
+            Target => o with { Ai = new(50, 10, 35) },
+            Player => o with
+            {
+                Modules = o.Modules!.Select((m, i) => i == 0 ? m with
+                { StructurePoints = 10, DisabledUntilMotionTimeMs = 5000 } : m).ToArray()
+            },
+            _ => o
+        });
+        using var engine = Create(scenario);
+        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        Assert.Equal(17, save.SaveFormatVersion);
+        Assert.Equal(3, save.GameState.DefenseState!.Version);
+        Assert.Equal(2, save.GameState.CombatState!.Version);
+        Assert.Equal(2, save.GameState.HostileCombatState!.Version);
+        Assert.NotNull(save.GameState.CombatState.HitLocationRngState);
+        Assert.NotNull(save.GameState.CombatState.TorpedoHitRngState);
+        Assert.NotNull(save.GameState.CombatState.LauncherBreakdownRngState);
+        Assert.DoesNotContain("AttemptedTorpedoIds", JsonSerializer.Serialize(save.GameState.DefenseState));
+        using var restored = Roundtrip(save);
+        var actual = restored.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.DefenseState), JsonSerializer.Serialize(actual.GameState.DefenseState));
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.CombatState), JsonSerializer.Serialize(actual.GameState.CombatState));
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.HostileCombatState), JsonSerializer.Serialize(actual.GameState.HostileCombatState));
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.SpaceObjects.Single(o => o.ObjectId == Player).Modules),
+            JsonSerializer.Serialize(actual.GameState.SpaceObjects.Single(o => o.ObjectId == Player).Modules));
+        Assert.Equal(save.GameState.SpaceObjects.Single(o => o.ObjectId == Target).Ai,
+            actual.GameState.SpaceObjects.Single(o => o.ObjectId == Target).Ai);
+    }
+
+    [Fact]
+    public void Format17_accepts_a_bounded_captured_hit_chance_instead_of_only_100()
+    {
+        using var engine = Create();
+        engine.ReceiveCommand(Fire("range-check"));
+        At(engine, 0);
+        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        var combat = save.GameState.CombatState!;
+        var flight = Assert.Single(combat.Projectiles);
+        var changed = save with
+        {
+            GameState = save.GameState with
+            {
+                CombatState = combat with { Projectiles = [flight with { Flight = flight.Flight with { HitChancePercent = 35 } }] }
+            }
+        };
+        using var restored = Roundtrip(changed);
+        Assert.Equal(35, Assert.Single(restored.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)
+            .GameState.CombatState!.Projectiles).Flight.HitChancePercent);
+    }
+
+    [Theory]
+    [InlineData("defense")]
+    [InlineData("combat")]
+    [InlineData("hostile")]
+    [InlineData("rng")]
+    [InlineData("armor")]
+    public void Invalid_format17_continuation_is_rejected_before_replacing_world(string defect)
+    {
+        using var engine = Create();
+        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        string before = ScenarioLoader.Serialize(save);
+        var state = save.GameState;
+        var bad = defect switch
+        {
+            "defense" => save with { GameState = state with { DefenseState = state.DefenseState! with { Version = 2 } } },
+            "combat" => save with { GameState = state with { CombatState = state.CombatState! with { Version = 1 } } },
+            "hostile" => save with { GameState = state with { HostileCombatState = state.HostileCombatState! with { Version = 1 } } },
+            "rng" => save with { GameState = state with { CombatState = state.CombatState! with { TorpedoHitRngState = null } } },
+            "armor" => save with
+            {
+                GameState = state with
+                {
+                    SpaceObjects = state.SpaceObjects.Select(o => o.ObjectId == Player
+                ? o with { Modules = o.Modules!.Select((m, i) => i == 0 ? m with { ArmorClass = "light", Armor = null } : m).ToArray() } : o).ToArray()
+                }
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(defect))
+        };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, isSave: true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)));
+    }
+
+    [Theory]
+    [InlineData("attempted")]
+    [InlineData("singular-flight")]
+    public void Format17_rejects_removed_legacy_combat_fields(string field)
+    {
+        using var engine = Create();
+        var json = JsonNode.Parse(ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)))!;
+        if (field == "attempted")
+            json["gameState"]!["defenseState"]!["AttemptedTorpedoIds"] = new JsonArray();
+        else
+            json["gameState"]!["combatState"]!["launchers"]![0]!["state"]!["ActiveTorpedoObjectId"] = "torpedo-1";
+        Assert.Contains("Invalid scenario JSON", Assert.Throws<ScenarioException>(() =>
+            ScenarioLoader.LoadFromJson(json.ToJsonString(), true, isSave: true)).Message);
+    }
     private SimulationEngine Roundtrip(ScenarioFile state, string? settings = null)
     {
         string path = Path.Combine(_directory, "save.json");

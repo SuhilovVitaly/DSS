@@ -56,10 +56,7 @@ internal static class CombatSaveValidation
                     State = l.State with
                     {
                         ActiveTorpedoIds = (l.State.ActiveTorpedoIds.IsDefault ? ImmutableArray<string>.Empty : l.State.ActiveTorpedoIds)
-                            .AddRange(l.State.LegacyActiveTorpedoObjectId is { } legacy
-                                ? ImmutableArray.Create(legacy) : ImmutableArray<string>.Empty)
-                            .Select(Canon).ToImmutableArray(),
-                        LegacyActiveTorpedoObjectId = null
+                            .Select(Canon).ToImmutableArray()
                     }
                 }).ToArray(),
                 Projectiles = saved.Projectiles.Select(p => p is null || p.Flight is null ? p! : p with
@@ -94,7 +91,7 @@ internal static class CombatSaveValidation
             Require(format < 10 && !objects.Values.Any(o => o.ObjectType == SpaceObjectType.Missile), "missing combat state.");
             return;
         }
-        Require(combat.Version == 1, "unsupported combat version.");
+        Require((format >= 17 ? combat.Version == 2 : combat.Version is 1 or 2), "unsupported combat version.");
         Require(combat.LastProcessedMotionTimeMs == state.MotionTimeMs && combat.ProjectileSequence >= 0 &&
             combat.ImpactSequence is >= 0 and < long.MaxValue && combat.WreckSequence is >= 0 and < long.MaxValue,
             "invalid counters or motion time.");
@@ -104,6 +101,10 @@ internal static class CombatSaveValidation
             "torpedo-hit RNG counter without state.");
         Require(combat.LauncherBreakdownRngState is not null || combat.LauncherBreakdownRngCounter == 0,
             "launcher-breakdown RNG counter without state.");
+        if (format >= 17)
+            Require(combat.HitLocationRngState is not null && combat.TorpedoHitRngState is not null &&
+                combat.LauncherBreakdownRngState is not null && combat.ProcessedModeCommandIds is not null,
+                "missing module-combat RNG or mode continuation.");
         Require(combat.Launchers is not null && combat.Projectiles is not null && combat.ProcessedLaunchCommandIds is not null,
             "missing combat collections.");
         var launches = new HashSet<string>(StringComparer.Ordinal);
@@ -153,7 +154,7 @@ internal static class CombatSaveValidation
             Require(!string.IsNullOrWhiteSpace(f.TargetObjectId) && f.TargetObjectId != f.OwnerObjectId && f.TargetObjectId != row.ObjectId &&
                 row.TargetLost == (!objects.TryGetValue(f.TargetObjectId, out var targetObject) || targetObject.IsDestroyed),
                 "invalid target or target-lost state.");
-            Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= state.MotionTimeMs && f.HitChancePercent == 100 &&
+            Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= state.MotionTimeMs && f.HitChancePercent is >= 0 and <= 100 &&
                 double.IsFinite(f.DistanceTravelledWorldUnits) && f.DistanceTravelledWorldUnits >= 0 && SameSpeed(obj!.SpeedMps / 1000, f.SpeedKmS),
                 "invalid flight time, distance or speed.");
             var route = f.Route;

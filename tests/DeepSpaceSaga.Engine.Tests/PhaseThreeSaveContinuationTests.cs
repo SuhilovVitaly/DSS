@@ -108,9 +108,10 @@ public class PhaseThreeSaveContinuationTests
         continuous.LoadScenario(AutomaticDefenseTests.DefenseScenario());
         continuous.ReceiveCommand(Fire("auto-target")); At(continuous, 0);
         var save = Save(continuous, 17000);
-        Assert.Empty(save.GameState.DefenseState!.AttemptedTorpedoIds);
-        Assert.Contains(save.GameState.DefenseState.Journal, e => e.Type == CombatEventType.Miss && e.LaunchMode == LaunchMode.Auto);
-        Assert.True(save.GameState.DefenseState.RngCounter >= 1);
+        var defense = Assert.IsType<CountermeasureStateData>(save.GameState.DefenseState);
+        Assert.DoesNotContain("AttemptedTorpedoIds", JsonSerializer.Serialize(defense));
+        Assert.Contains(defense.Journal, e => e.Type == CombatEventType.Miss && e.LaunchMode == LaunchMode.Auto);
+        Assert.True(defense.RngCounter >= 1);
         using var restored = Roundtrip(save, registry);
         foreach (long time in new[] { 17000, 18000, 19999 }) Same(continuous, restored, time);
         Assert.Equal(At(continuous, 19999).CombatJournal.Count(e => e.Result == "countermeasure" && e.Type == CombatEventType.Launch),

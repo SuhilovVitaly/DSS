@@ -74,7 +74,7 @@ public class CountermeasureSaveSchemaTests
     public void Unknown_rng_version_rejected()
     {
         var saved = TorpedoImpactTests.Scenario();
-        saved = saved with { GameState = saved.GameState with { DefenseState = new(1, 0, 999, 0, 0, 0, [], [], [], []) } };
+        saved = saved with { GameState = saved.GameState with { DefenseState = new(1, 0, 999, 0, 0, 0, [], [], []) } };
         Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(System.Text.Json.JsonSerializer.Serialize(saved)));
     }
 }

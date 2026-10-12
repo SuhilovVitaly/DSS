@@ -28,8 +28,9 @@ public static class SaveFormat
     /// Version 14 requires last-observed coarse station market knowledge; older saves omit unknown observations.
     /// Version 15 requires a versioned trading continuation manifest and complete voyage finance history.
     /// Version 16 requires phase-three combat continuation; earlier files are rejected by the save entrypoint.
+    /// Version 17 requires module-combat continuation (defense 3, combat 2, hostile 2); older saves are rejected.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 16;
+    public const int CurrentSaveFormatVersion = 17;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>

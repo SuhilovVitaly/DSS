@@ -265,6 +265,9 @@ public static class ScenarioLoader
         foreach (var obj in objects)
         {
             ValidateObject(obj, armorClasses);
+            if (scenario.SaveFormatVersion >= 17 && obj.ObjectType is (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) &&
+                obj.Modules?.Any(m => m.ArmorClass != "none" && m.Armor is null) == true)
+                throw new ScenarioException($"Object '{obj.ObjectId}' has a module without saved armor.");
             if (obj.Ai is { } ai &&
                 (!obj.ObjectType.Equals(SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
                  !double.IsFinite(ai.StandoffKm) || ai.StandoffKm <= 0 ||

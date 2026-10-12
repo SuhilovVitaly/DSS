@@ -46,13 +46,7 @@ public sealed record LauncherCombatSnapshot(
     double? ReadyAtMotionTimeMs = null,
     bool IsBrokenUntilDock = false,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
-    ImmutableArray<string> ActiveTorpedoIds = default)
-{
-    // Read-only migration hook for EP-0008/v16 saves. New saves never emit this field.
-    [JsonPropertyName("ActiveTorpedoObjectId")]
-    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    public string? LegacyActiveTorpedoObjectId { get; init; }
-}
+    ImmutableArray<string> ActiveTorpedoIds = default);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs
@@ -73,7 +67,7 @@ public sealed record LauncherCombatSnapshot(
 /// Absolute physical MotionTimeMs of the predicted encounter; null when no intercept is
 /// known (including a lost target). Null must not be replaced with zero or calendar time.
 /// </param>
-/// <param name="HitChancePercent">100 for the MVP: chance on contact, not a promise to ignore obstacles.</param>
+/// <param name="HitChancePercent">Legacy captured percentage in 0..100; the module-combat hit roll uses captured attack, defense and ChanceTenths.</param>
 public sealed record TorpedoSnapshot(
     string OwnerObjectId,
     string LauncherModuleId,

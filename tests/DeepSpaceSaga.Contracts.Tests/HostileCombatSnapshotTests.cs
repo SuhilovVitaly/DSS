@@ -17,7 +17,8 @@ public class HostileCombatSnapshotTests
         var combat = new HostileCombatSnapshot("player", "engine", "weapon", 100, clockwise, phase, segment);
         var motion = new ObjectMotionSnapshot("enemy", 10.5, -2.4, 0.4037, 359.056, HostileCombat: combat);
         var restored = JsonSerializer.Deserialize<ObjectMotionSnapshot>(JsonSerializer.Serialize(motion));
-        Assert.Equal(motion, restored);
+        Assert.Equal(motion with { ModuleHealth = restored!.ModuleHealth }, restored);
+        Assert.Empty(restored.ModuleHealth);
         Assert.Equal(clockwise, restored!.HostileCombat!.Clockwise);
         Assert.Equal(1, restored.HostileCombat.Version);
         Assert.Equal(1, restored.HostileCombat.Segment.Version);

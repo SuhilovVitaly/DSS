@@ -5,14 +5,14 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private CountermeasureStateData CaptureDefenseState() => new(2, _countermeasureSequence,
+    private CountermeasureStateData CaptureDefenseState() => new(3, _countermeasureSequence,
         Combat.CountermeasureRng.AlgorithmVersion, _countermeasureRng.State, _countermeasureRng.Counter, _combatJournalSequence,
         _defenses.OrderBy(p => p.Key.ObjectId, StringComparer.Ordinal).ThenBy(p => p.Key.ModuleId, StringComparer.Ordinal)
             .Select(p => new DefenseLauncherSaveData(p.Key.ObjectId, p.Key.ModuleId, p.Value)).ToArray(),
         _objects.Where(o => o.InitialMotion.Countermeasure is not null).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal)
             .Select(o => new CountermeasureProjectileSaveData(o.InitialMotion.ObjectId, o.InitialMotion.Countermeasure!,
                 _countermeasureTargetPlans.GetValueOrDefault(o.InitialMotion.ObjectId))).ToArray(),
-        [], _combatJournal.ToArray(),
+        _combatJournal.ToArray(),
         _objects.Any(o => o.InitialMotion.ObjectId == SelectedObjectId && o.InitialMotion.Countermeasure is not null) ? SelectedObjectId : null);
 
     private HostileCombatSaveData CaptureHostileState(long time) => new(HostileCombatSaveData.CurrentVersion,
@@ -85,7 +85,7 @@ public sealed partial class SimulationEngine
     }
 
     private CombatStateData CaptureCombatState(long motionTimeMs) => new(
-        1, motionTimeMs, _torpedoSequence, _combatImpactSequence, _wreckSequence, _nextCombatGuidanceMs,
+        2, motionTimeMs, _torpedoSequence, _combatImpactSequence, _wreckSequence, _nextCombatGuidanceMs,
         _launcherCombat.OrderBy(p => p.Key.ObjectId, StringComparer.Ordinal).ThenBy(p => p.Key.ModuleId, StringComparer.Ordinal)
             .Select(p => new LauncherSaveData(p.Key.ObjectId, p.Key.ModuleId, p.Value)).ToArray(),
         _objects.Where(o => o.InitialMotion.Torpedo is not null).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal)

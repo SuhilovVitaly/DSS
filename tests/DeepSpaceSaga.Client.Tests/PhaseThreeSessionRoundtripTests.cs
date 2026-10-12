@@ -51,7 +51,7 @@ public class PhaseThreeSessionRoundtripTests
     public async Task Malformed_current_save_shows_generic_error_and_can_retry()
     {
         await using var f = await Fixture.Create();
-        await File.WriteAllTextAsync(Path.Combine(f.DirectoryPath, "broken.json"), "{\"saveFormatVersion\":16,\"gameState\":{}}");
+        await File.WriteAllTextAsync(Path.Combine(f.DirectoryPath, "broken.json"), "{\"saveFormatVersion\":17,\"gameState\":{}}");
         await f.Route(ScreenEvent.OpenLoadWindow);
         await f.Route(ScreenEvent.LoadSlotRequested, "broken");
         Assert.Equal(Localization.Get("Combat.LoadFailed"), Assert.IsType<LoadScreen>(f.Screens.Current).ErrorMessage);

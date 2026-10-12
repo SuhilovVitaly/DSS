@@ -22,7 +22,7 @@ public class PhaseThreeSaveSchemaTests
     {
         using var engine = ManualZero();
         var save = Save(engine, 1);
-        Assert.Equal(2, save.GameState.DefenseState!.Version);
+        Assert.Equal(3, save.GameState.DefenseState!.Version);
         var flight = Assert.Single(save.GameState.DefenseState.Projectiles).Flight;
         Assert.Equal(0, flight.FrozenChanceTenths);
         Assert.Equal(LaunchMode.Manual, flight.Mode);
@@ -180,7 +180,6 @@ public class PhaseThreeSaveSchemaTests
                         ModuleId = l.ModuleId.ToLowerInvariant(),
                         State = l.State with { ActiveProjectileId = l.State.ActiveProjectileId?.ToUpperInvariant() }
                     }).ToArray(),
-                    AttemptedTorpedoIds = defense.AttemptedTorpedoIds.Select(id => id.ToUpperInvariant()).ToArray(),
                     Projectiles = defense.Projectiles.Select(p => p with
                     {
                         ObjectId = p.ObjectId.ToUpperInvariant(),

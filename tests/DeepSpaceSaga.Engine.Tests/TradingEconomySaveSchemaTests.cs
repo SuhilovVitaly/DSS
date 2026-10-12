@@ -62,7 +62,7 @@ public sealed class TradingEconomySaveSchemaTests
     {
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
-        Assert.Equal(16, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(17, SaveFormat.CurrentSaveFormatVersion);
         var manifest = save.GameState.TradingEconomyContinuation!;
         Assert.Equal(1, manifest.SchemaVersion);
         Assert.Equal(64, manifest.ConfigurationFingerprint.Length);

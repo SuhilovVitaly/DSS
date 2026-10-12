@@ -14,7 +14,6 @@ public sealed record CountermeasureStateData(
     [property: JsonRequired] long JournalSequence,
     [property: JsonRequired] IReadOnlyList<DefenseLauncherSaveData> Launchers,
     [property: JsonRequired] IReadOnlyList<CountermeasureProjectileSaveData> Projectiles,
-    [property: JsonRequired] IReadOnlyList<string> AttemptedTorpedoIds,
     [property: JsonRequired] IReadOnlyList<CombatJournalEntry> Journal,
     string? SelectedProjectileId = null);
 public sealed record DefenseLauncherSaveData(string OwnerObjectId, string ModuleId, DefenseSnapshot State);
@@ -35,10 +34,11 @@ internal static class CountermeasureSaveValidation
             Require(format < 11 && !state.SpaceObjects.Any(o => o.ObjectType == SpaceObjectType.Countermeasure), "missing defense state");
             return state;
         }
-        Require((format >= 16 ? saved.Version == 2 : saved.Version is 1 or 2) && saved.RngVersion == CountermeasureRng.AlgorithmVersion, "unsupported version");
+        Require((format >= 17 ? saved.Version == 3 : format >= 16 ? saved.Version == 2 : saved.Version is 1 or 2 or 3) &&
+            saved.RngVersion == CountermeasureRng.AlgorithmVersion, "unsupported version");
         Require(saved.ProjectileSequence >= 0 && saved.JournalSequence is >= 0 and < long.MaxValue,
             "invalid counters");
-        Require(saved.Launchers is not null && saved.Projectiles is not null && saved.AttemptedTorpedoIds is not null && saved.Journal is not null,
+        Require(saved.Launchers is not null && saved.Projectiles is not null && saved.Journal is not null,
             "missing collections");
         Require(saved.Launchers!.All(l => l is not null && l.State is not null) &&
             saved.Projectiles!.All(p => p is not null && p.Flight is not null) && saved.Journal!.All(e => e is not null), "null row");
@@ -78,13 +78,8 @@ internal static class CountermeasureSaveValidation
                     LauncherModuleId = Module(p.Flight.OwnerObjectId, p.Flight.LauncherModuleId),
                     TargetTorpedoId = Canon(p.Flight.TargetTorpedoId)
                 }
-            }).ToArray(),
-            AttemptedTorpedoIds = saved.AttemptedTorpedoIds!.Select(Canon).ToArray()
+            }).ToArray()
         };
-        var attempted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var id in saved.AttemptedTorpedoIds)
-            Require(attempted.Add(id) && objects.TryGetValue(id, out var torpedo) && torpedo.ObjectType == SpaceObjectType.Missile,
-                "invalid attempted torpedo");
         var launchers = new Dictionary<(string, string), DefenseSnapshot>();
         foreach (var row in saved.Launchers)
         {
@@ -118,6 +113,9 @@ internal static class CountermeasureSaveValidation
                     shot.DueMotionTimeMs > state.MotionTimeMs && shot.BarrelNumber >= 2 &&
                     shot.BarrelNumber <= d.Barrels && Enum.IsDefined(shot.Mode) &&
                     !string.IsNullOrWhiteSpace(shot.TargetTorpedoId)), "invalid pending burst");
+            if (format >= 17 && (d.ActiveProjectileId is not null || d.PendingBurstShots is { Length: > 0 }))
+                Require(d.ReadyAtMotionTimeMs is { } readyAt && double.IsFinite(readyAt) && readyAt >= 0,
+                    "missing burst readiness deadline");
             if (d.ReloadDueMotionTimeMs is { } due) Require(double.IsFinite(due) && due > state.MotionTimeMs, "invalid reload deadline");
         }
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);

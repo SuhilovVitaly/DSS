@@ -1189,7 +1189,7 @@ public class LocalSessionIntegrationTests
             string path = Path.Combine(dir, "economy-roundtrip.json");
             var disk = ScenarioLoader.LoadFromFile(path, true);
             Assert.Equal(EconomicState(f.Save), EconomicState(disk));
-            Assert.Equal(16, disk.SaveFormatVersion); Assert.NotNull(disk.GameState.TradingMap);
+            Assert.Equal(17, disk.SaveFormatVersion); Assert.NotNull(disk.GameState.TradingMap);
             Assert.NotNull(disk.GameState.StationResourceFields); Assert.NotNull(disk.GameState.TradingEconomyContinuation);
             Assert.Single(disk.GameState.VoyageLedgers!);
             Assert.Equal(inFlight ? VoyageFinanceStates.InTransit : VoyageFinanceStates.AwaitingRealization, disk.GameState.VoyageLedgers![0].Finance.State);
