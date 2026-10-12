@@ -29,14 +29,14 @@ public sealed class BasicCombatEndToEndTests
             Assert.Equal(Player, projectile.Torpedo.OwnerObjectId);
             Assert.Equal(Target, projectile.Torpedo.TargetObjectId);
             Assert.Equal(Launcher, projectile.Torpedo.LauncherModuleId);
-            Assert.Equal(projectile.ObjectId, launch.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+            Assert.Equal(projectile.ObjectId, Assert.Single(launch.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds));
 
-            // Duplicate identity and a new busy request must not create another projectile.
+            // Duplicate identity and a request before reload must not create another projectile.
             run.Engine.ReceiveCommand(Fire("proof-" + shot));
             run.Engine.ReceiveCommand(Fire("busy-" + shot));
             var busy = run.Snapshot();
             Assert.Equal(projectile.ObjectId, Flight(busy).ObjectId);
-            Assert.Contains(busy.CommandResults, r => r.CommandId == "busy-" + shot && r.ReasonCode == CommandReasonCodes.Busy);
+            Assert.Contains(busy.CommandResults, r => r.CommandId == "busy-" + shot && r.ReasonCode == "launcher_reloading");
             var end = run.AdvanceTo(EndTime(launch));
             AssertHit(end, shot);
             Assert.Equal(shot, end.CombatImpacts.Length);
@@ -111,7 +111,7 @@ public sealed class BasicCombatEndToEndTests
     internal static void AssertHit(AuthoritativeSnapshot snapshot, int shot)
     {
         Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
-        Assert.Null(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Empty(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
         var hit = snapshot.CombatImpacts[^1];
         Assert.Equal(shot, hit.EventId);
         Assert.Equal(Target, hit.HitObjectId);
@@ -205,6 +205,9 @@ public sealed class BasicCombatEndToEndTests
         internal AuthoritativeSnapshot Snapshot() => Engine.CaptureSnapshot(advanceClock: true);
         internal AuthoritativeSnapshot Launch(int shot)
         {
+            var readyAt = Snapshot().InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs;
+            if (readyAt is { } due && Snapshot().MotionTimeMs < due)
+                AdvanceTo((long)Math.Ceiling(due));
             Engine.ReceiveCommand(Fire("proof-" + shot));
             var snapshot = Snapshot();
             Assert.Contains(snapshot.CommandResults, r => r.CommandId == "proof-" + shot && r.Status == CommandResultStatus.Executed);

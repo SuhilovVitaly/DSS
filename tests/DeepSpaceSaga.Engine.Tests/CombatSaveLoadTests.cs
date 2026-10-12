@@ -138,7 +138,8 @@ public sealed class CombatSaveLoadTests : IDisposable
                 Assert.Equal(flight.TargetObjectId, pair.Second.Torpedo.TargetObjectId);
             }
         }
-        Assert.Equal(expected.InstalledModules.Select(m => m.LauncherCombat), actual.InstalledModules.Select(m => m.LauncherCombat));
+        Assert.Equal(JsonSerializer.Serialize(expected.InstalledModules.Select(m => m.LauncherCombat)),
+            JsonSerializer.Serialize(actual.InstalledModules.Select(m => m.LauncherCombat)));
     }
 
     [Fact]
@@ -288,7 +289,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         var snapshot = loaded.CaptureSnapshot();
         Assert.Equal("torpedo-1", Flight(snapshot).ObjectId);
         Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
-        Assert.Equal("torpedo-1", snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Equal("torpedo-1", Assert.Single(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds));
     }
 
     [Theory]
@@ -367,7 +368,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         loaded.ReceiveCommand(Fire("busy"));
         var snapshot = loaded.CaptureSnapshot();
         Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
-        Assert.Contains(snapshot.CommandResults, r => r.CommandId == "busy" && r.ReasonCode == CommandReasonCodes.Busy);
+        Assert.Contains(snapshot.CommandResults, r => r.CommandId == "busy" && r.ReasonCode == "launcher_reloading");
         Assert.NotEmpty(Flight(snapshot).Torpedo!.Trail);
     }
 

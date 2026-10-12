@@ -74,8 +74,9 @@ public class WeaponOperatorRuntimeTests
         using var twice = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated with { SaveFormatVersion = 15 }), true));
         Assert.True(Assert.Single(At(twice, 0).Objects, o => o.Torpedo is not null).Torpedo!.RatingMigratedFromLegacySave);
         Assert.Equal(Target, Assert.Single(At(twice, 5000).CombatImpacts).HitObjectId);
+        At(twice, 15000);
         twice.ReceiveCommand(Fire("new-launch"));
-        Assert.Equal("no_weapon_operator", At(twice, 5000).CommandResults.Single(r => r.CommandId == "new-launch").ReasonCode);
+        Assert.Equal("no_weapon_operator", At(twice, 15000).CommandResults.Single(r => r.CommandId == "new-launch").ReasonCode);
     }
 
     [Fact]

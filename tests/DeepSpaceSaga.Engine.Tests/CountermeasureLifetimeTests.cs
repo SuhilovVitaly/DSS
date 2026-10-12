@@ -18,7 +18,7 @@ public class CountermeasureLifetimeTests
                 CountermeasureMaxFlightTimeMs = lifetime,
                 CountermeasureSpeedKmS = slow ? 0.001 : m.CountermeasureSpeedKmS
             } :
-            slow && m.TorpedoSpeedKmS is not null ? m with { TorpedoSpeedKmS = 0.001 } : m),
+            slow && m.TorpedoSpeedKmS is not null ? m with { TorpedoSpeedKmS = 0.001, LauncherReloadMs = 120000 } : m),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
             shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),

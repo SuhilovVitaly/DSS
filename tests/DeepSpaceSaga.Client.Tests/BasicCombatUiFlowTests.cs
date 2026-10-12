@@ -46,14 +46,14 @@ public sealed class BasicCombatUiFlowTests
             Assert.Equal(SimulationSpeed.Speed0, launch.CurrentSpeed);
             Assert.False(f.Button.Enabled);
             Assert.Null(f.Screen.LaunchPreviewGeometry);
-            Assert.Equal("Guiding", f.LauncherStatus);
+            Assert.Equal("Reloading", f.LauncherStatus);
 
             long end = missile.Torpedo.PredictedImpactMotionTimeMs!.Value + 1000;
             var impact = await f.AdvanceTo(end);
             Assert.Equal(shot, impact.CombatImpacts.Length);
             Assert.DoesNotContain(impact.Objects, o => o.Torpedo is not null);
             Assert.Equal(150, impact.CombatImpacts[^1].DamageApplied);
-            Assert.Equal("Ready", f.LauncherStatus);
+            Assert.Equal("Reloading", f.LauncherStatus);
             var effect = Assert.Single(f.Screen.CombatEffects.Active);
             Assert.Equal(shot, effect.Impact.EventId);
             Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
@@ -66,6 +66,8 @@ public sealed class BasicCombatUiFlowTests
             if (shot < 2)
             {
                 Assert.Contains(impact.Objects, o => o.ObjectId == Fixture.Target);
+                await f.AdvanceTo((long)impact.InstalledModules.Single(m => m.ModuleId == Fixture.Launcher)
+                    .LauncherCombat!.ReadyAtMotionTimeMs!.Value);
                 f.Select(Fixture.Target);
                 Assert.True(f.Button.Enabled);
             }
@@ -76,6 +78,8 @@ public sealed class BasicCombatUiFlowTests
                 var wreck = Assert.Single(impact.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
                 Assert.Equal(0, wreck.SpeedKmS);
                 Assert.Equal(0, wreck.Direction);
+                await f.AdvanceTo((long)impact.InstalledModules.Single(m => m.ModuleId == Fixture.Launcher)
+                    .LauncherCombat!.ReadyAtMotionTimeMs!.Value);
                 f.Select(wreck.ObjectId);
                 Assert.True(f.Button.Enabled);
                 var wreckShot = await f.Fire();
@@ -84,7 +88,7 @@ public sealed class BasicCombatUiFlowTests
                 var after = await f.AdvanceTo(flight.PredictedImpactMotionTimeMs!.Value + 1000);
                 Assert.Equal(0, after.CombatImpacts[^1].DamageApplied);
                 Assert.Equal(wreck, Assert.Single(after.Objects, o => o.ObjectType == SpaceObjectType.Wreck));
-                Assert.Equal("Ready", f.LauncherStatus);
+                Assert.Equal("Reloading", f.LauncherStatus);
             }
         }
         Assert.Null(f.Handle.Failure);

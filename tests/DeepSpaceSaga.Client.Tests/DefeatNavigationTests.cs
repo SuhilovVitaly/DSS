@@ -191,7 +191,7 @@ public class DefeatNavigationTests
         internal static async Task<Fixture> Create() { var f = new Fixture(); await WaitForSnapshot(f.Handle); return f; }
         internal void Defeat()
         {
-            var snapshot = Engine.CaptureSnapshotForTests(1800000, simulationTimeMs: 6000);
+            var snapshot = Engine.CaptureSnapshotForTests(1800000, simulationTimeMs: 45000);
             Assert.Equal(SessionOutcomeState.Defeated, snapshot.EffectiveOutcome.State);
             Handle.Buffer.Update(snapshot);
         }

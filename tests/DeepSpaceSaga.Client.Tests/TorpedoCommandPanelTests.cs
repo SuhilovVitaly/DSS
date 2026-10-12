@@ -11,7 +11,7 @@ public sealed class TorpedoCommandPanelTests
 {
     private static readonly InstalledModuleSnapshot Launcher = new("actual-launcher", "module.torpedo.launcher.basic", "Launcher", 1,
         [CombatCommandTypes.Fire], "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")],
-        LauncherCombat: new(null, 3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30), RangeKm: 200));
+        LauncherCombat: new(3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30), RangeKm: 200));
 
     [Fact]
     public async Task Busy_and_pending_launcher_disable_fire()
@@ -44,7 +44,7 @@ public sealed class TorpedoCommandPanelTests
         f.Update(s => s with
         {
             CommandResults = [Result(command, CommandResultStatus.Executed)],
-            InstalledModules = [Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoObjectId = "torpedo" } }]
+            InstalledModules = [Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoIds = ["torpedo"], ReadyAtMotionTimeMs = 1000 } }]
         });
         Render(f.Screen);
         Assert.False(Button(f.Screen).Enabled);
@@ -176,7 +176,7 @@ public sealed class TorpedoCommandPanelTests
         var module = state switch
         {
             "legacy" => Launcher with { LauncherCombat = null },
-            "busy" => Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoObjectId = "projectile" } },
+            "busy" => Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoIds = ["projectile"], ReadyAtMotionTimeMs = 1000 } },
             "off" => Launcher with { PowerState = "Off" },
             "broken" => Launcher with { StructurePoints = 0 },
             "disabled" => Launcher with { OperationalState = "Disabled" },

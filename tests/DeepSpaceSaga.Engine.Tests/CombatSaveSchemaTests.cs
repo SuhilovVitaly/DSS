@@ -40,7 +40,7 @@ public sealed class CombatSaveSchemaTests
             state with { Projectiles = [projectile, projectile] },
             state with { Launchers = [launcher, launcher] },
             state with { Launchers = [launcher with { OwnerObjectId = "missing" }] },
-            state with { Launchers = [launcher with { State = launcher.State with { ActiveTorpedoObjectId = null } }] },
+            state with { Launchers = [launcher with { State = launcher.State with { ActiveTorpedoIds = [] } }] },
             state with { Projectiles = [projectile with { Flight = projectile.Flight with { TargetObjectId = "missing" } }] },
             state with { Projectiles = [projectile with { TargetLost = true }] },
             state with { Projectiles = [projectile with { Flight = projectile.Flight with { SpeedKmS = double.NaN } }] },

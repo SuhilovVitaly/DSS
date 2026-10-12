@@ -25,8 +25,8 @@ public class PlayerDefeatTests
         using var engine = Create(LethalScenario());
         engine.SetObjectInteractionState(Player, Player);
         Assert.Single(At(engine, 5001).CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
-        Assert.Equal(2, At(engine, 10002).CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
-        var final = At(engine, 15003);
+        Assert.Equal(2, At(engine, 20002).CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
+        var final = At(engine, 35003);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
         Assert.Equal(Player, final.EffectiveOutcome.PlayerObjectId);
         Assert.Equal(3, final.CombatJournal.Count(e => e.Type == CombatEventType.Hit));
@@ -118,13 +118,13 @@ public class PlayerDefeatTests
         for (int shot = 0; shot < 3; shot++)
         {
             engine.ReceiveCommand(Fire("shot-" + shot));
-            At(engine, shot * 10000);
-            At(engine, (shot + 1) * 10000);
+            At(engine, shot * 15000);
+            At(engine, shot * 15000 + 10000);
         }
-        var final = At(engine, 30000);
+        var final = At(engine, 40000);
         Assert.DoesNotContain(final.Objects, o => o.ObjectId == Target);
         Assert.Equal(SessionOutcomeState.Running, final.EffectiveOutcome.State);
         Assert.True(final.EffectiveOutcome.CanSave);
-        Assert.NotNull(engine.CaptureSaveStateForTests(30000, SimulationSpeed.Speed0));
+        Assert.NotNull(engine.CaptureSaveStateForTests(40000, SimulationSpeed.Speed0));
     }
 }

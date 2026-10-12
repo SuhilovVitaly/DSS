@@ -30,11 +30,10 @@ public sealed record HullCombatSnapshot(string ShipClassId, int CurrentHp, int M
 
 /// <summary>
 /// Captured launcher parameters: speed in km/s, positive maximum turn rate in degrees/s,
-/// damage in integer hull hit points. ActiveTorpedoObjectId is null when no projectile is
-/// active; module power/availability is still checked separately by the Engine.
+/// damage in integer hull hit points. ActiveTorpedoIds lists every projectile still
+/// in flight; launch readiness is governed by ReadyAtMotionTimeMs.
 /// </summary>
 public sealed record LauncherCombatSnapshot(
-    string? ActiveTorpedoObjectId,
     double SpeedKmS,
     double TurnRateDegPerSec,
     int Damage,
@@ -46,8 +45,14 @@ public sealed record LauncherCombatSnapshot(
     string ModeId = "standard",
     double? ReadyAtMotionTimeMs = null,
     bool IsBrokenUntilDock = false,
-    /// <summary>Null in pre-migration snapshots; an empty array means no active flights in the new model.</summary>
-    ImmutableArray<string>? ActiveTorpedoIds = null);
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> ActiveTorpedoIds = default)
+{
+    // Read-only migration hook for EP-0008/v16 saves. New saves never emit this field.
+    [JsonPropertyName("ActiveTorpedoObjectId")]
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? LegacyActiveTorpedoObjectId { get; init; }
+}
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs

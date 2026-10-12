@@ -51,8 +51,10 @@ public sealed partial class SimulationEngine
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
         if (!CanExecuteModuleCommand(module, motionTimeMs))
             return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
-        if (launcher.ActiveTorpedoObjectId is not null || module.ActiveCycle is not null)
+        if (module.ActiveCycle is not null)
             return CommandStartOutcome.Rejected(CommandReasonCodes.Busy);
+        if (launcher.ReadyAtMotionTimeMs is { } readyAt && motionTimeMs < readyAt)
+            return CommandStartOutcome.Rejected("launcher_reloading");
         if (string.IsNullOrWhiteSpace(targetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == targetObjectId && !o.IsDestroyed);
         if (target is null || target.ObjectType == SpaceObjectType.Countermeasure || targetObjectId == owner.InitialMotion.ObjectId)
@@ -82,7 +84,13 @@ public sealed partial class SimulationEngine
             ArmorDamagePercent: moduleType.ArmorDamagePercent ?? 100);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
         _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
-        _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = id, Operator = weaponOperator };
+        var activeIds = launcher.ActiveTorpedoIds.IsDefault ? ImmutableArray<string>.Empty : launcher.ActiveTorpedoIds;
+        _launcherCombat[key] = launcher with
+        {
+            ActiveTorpedoIds = activeIds.Add(id),
+            ReadyAtMotionTimeMs = motionTimeMs + (double)moduleType.LauncherReloadMs!.Value,
+            Operator = weaponOperator
+        };
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
         AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, targetObjectId!, id,
@@ -110,7 +118,8 @@ public sealed partial class SimulationEngine
         if (command.ObjectId != PlayerShipObjectId) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
         var key = (command.ObjectId, command.ModuleId);
         if (!_launcherCombat.TryGetValue(key, out var launcher)) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
-        if (launcher.ActiveTorpedoObjectId is null || launcher.ActiveTorpedoObjectId != command.TargetObjectId)
+        if (command.TargetObjectId is null || launcher.ActiveTorpedoIds.IsDefaultOrEmpty ||
+            !launcher.ActiveTorpedoIds.Contains(command.TargetObjectId))
             return CommandStartOutcome.Rejected("stale_projectile");
         var projectile = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.TargetObjectId &&
             o.InitialMotion.Torpedo is { } flight && flight.OwnerObjectId == command.ObjectId && flight.LauncherModuleId == command.ModuleId);
@@ -130,7 +139,7 @@ public sealed partial class SimulationEngine
         _torpedoTargets.Remove(projectile.InitialMotion.ObjectId);
         var key = (flight.OwnerObjectId, flight.LauncherModuleId);
         if (_launcherCombat.TryGetValue(key, out var launcher))
-            _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = null };
+            _launcherCombat[key] = launcher with { ActiveTorpedoIds = launcher.ActiveTorpedoIds.Remove(projectile.InitialMotion.ObjectId) };
         if (kind == TorpedoTerminationKind.SelfDestruct)
             AppendCombatEvent(new(0, motionTimeMs, CombatEventType.SelfDestruct, flight.OwnerObjectId, flight.TargetObjectId,
                 projectile.InitialMotion.ObjectId, point.X, point.Y, TorpedoOperator: flight.RatingBreakdown, Damage: 0));
@@ -356,7 +365,7 @@ public sealed partial class SimulationEngine
         _torpedoTargets.Remove(projectile.InitialMotion.ObjectId);
         var key = (flight.OwnerObjectId, flight.LauncherModuleId);
         if (_launcherCombat.TryGetValue(key, out var launcher))
-            _launcherCombat[key] = launcher with { ActiveTorpedoObjectId = null };
+            _launcherCombat[key] = launcher with { ActiveTorpedoIds = launcher.ActiveTorpedoIds.Remove(projectile.InitialMotion.ObjectId) };
         AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.Hit, flight.OwnerObjectId, hitId,
             projectile.InitialMotion.ObjectId, contact.X, contact.Y, TorpedoOperator: flight.RatingBreakdown,
             Damage: moduleHit is null ? 0 : flight.Damage));
@@ -670,13 +679,13 @@ public sealed partial class SimulationEngine
                 if (obj.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
                     throw new ScenarioException($"Launcher '{module.ModuleId}' must be installed on a ship.");
                 launchers.Add((obj.InitialMotion.ObjectId, module.ModuleId), new LauncherCombatSnapshot(
-                    ActiveTorpedoObjectId: null,
                     SpeedKmS: definition.TorpedoSpeedKmS!.Value,
                     TurnRateDegPerSec: definition.TorpedoTurnRateDegPerSec!.Value,
                     Damage: damage,
                     Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack),
                     RangeKm: definition.TorpedoRangeKm,
-                    Maneuverability: definition.TorpedoManeuverability));
+                    Maneuverability: definition.TorpedoManeuverability,
+                    ActiveTorpedoIds: []));
             }
         }
 

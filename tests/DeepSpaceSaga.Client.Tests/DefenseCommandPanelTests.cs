@@ -10,7 +10,7 @@ public class DefenseCommandPanelTests
     private static readonly WeaponOperatorSnapshot Operator = new("crew", "Alex", WeaponSkillType.TorpedoAttack, 0, 30, 0);
     private static readonly InstalledModuleSnapshot Launcher = new("launcher", "module.torpedo.launcher.basic", "Launcher", 1,
         [CombatCommandTypes.Fire], "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")],
-        LauncherCombat: new(null, 3, 90, 150, Operator, RangeKm: 200));
+        LauncherCombat: new(3, 90, 150, Operator, RangeKm: 200));
     private static readonly InstalledModuleSnapshot Defense = new("defense", "module.countermeasure.launcher.basic", "Defense", 2,
         [DefenseCommandTypes.Enable, DefenseCommandTypes.Disable], "On", "Ready", 60,
         Commands: [new(DefenseCommandTypes.Enable, "Включить", "none"), new(DefenseCommandTypes.Disable, "Выключить", "none")],

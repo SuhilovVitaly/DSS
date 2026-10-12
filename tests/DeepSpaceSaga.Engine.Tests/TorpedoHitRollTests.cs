@@ -99,7 +99,7 @@ public sealed class TorpedoHitRollTests
     public void Hit_stream_continues_after_save_load()
     {
         var registry = LegacyWeaponRegistry(40, 50);
-        using var continuous = Create(Duel(true), registry);
+        using var continuous = Create(Duel(false), registry);
         continuous.ReceiveCommand(Fire("first"));
         At(continuous, 0);
         var first = At(continuous, 1);
@@ -109,12 +109,14 @@ public sealed class TorpedoHitRollTests
             continuous.CaptureSaveStateForTests(1, SimulationSpeed.Speed0, 1)), true);
         using var resumed = new DeepSpaceSaga.Engine.SimulationEngine(registry);
         resumed.LoadScenario(save, isSave: true);
+        At(continuous, 15001);
+        At(resumed, 15001);
         continuous.ReceiveCommand(Fire("second"));
         resumed.ReceiveCommand(Fire("second"));
-        At(continuous, 2);
-        At(resumed, 2);
-        var expected = At(continuous, 3);
-        var actual = At(resumed, 3);
+        At(continuous, 15001);
+        At(resumed, 15001);
+        var expected = At(continuous, 16000);
+        var actual = At(resumed, 16000);
         Assert.Equal(JsonSerializer.Serialize(expected.CombatJournal), JsonSerializer.Serialize(actual.CombatJournal));
         Assert.Equal(continuous.CaptureSaveState().GameState.CombatState!.TorpedoHitRngState,
             resumed.CaptureSaveState().GameState.CombatState!.TorpedoHitRngState);

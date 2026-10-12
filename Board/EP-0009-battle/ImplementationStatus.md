@@ -127,3 +127,7 @@ TK-0001 3df87e2377bf882a0b6feb415a2ad49a8a8f3a37 published/remote verified. D05 
 ## EP-0009-US-0004-TK-0003 — 2026-10-12
 
 TK-0002 e2420ea361d53ff943bd52aff86fc31ba0540b76 published/remote verified. Torpedo maneuverability directly includes its operator's `ManeuverabilitySkill`, frozen at launch; PD directly includes its operator's `AccuracySkill`, frozen at countermeasure launch. Manual/auto interception and preview share D04, with preview Attack/Defense/BaseChance populated. Production 58+20 vs 50+20 gives 580; 0% and 100% encounters still each consume one interception RNG draw. Focused Engine62/62 and example/preview/boundaries13/13; Engine non-corpus1972/1972, Client1859/1859, solution build0 warnings/errors, scoped format/diff PASS. US-0004 story review: AC1/AC2/AC3 PASS in headless coverage. Custom chance-base Save v16 roundtrip remains OPEN; native/game acceptance NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.
+
+## EP-0009-US-0005-TK-0001 — 2026-10-12
+
+TK-0003 acd5c646fedba322bb66a5626b80cb1bd8423d36 published/remote verified. Launcher cooldown starts at launch (15000 MotionTimeMs), with independent active-flight list, repeat player/NPC launch, targeted self-destruct, Client reloading state, and legacy singular-field Save/Load migration. Focused multi-flight and idempotence checks passed. Engine non-corpus1970/1970, Client1859/1859, Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. Game/native NOT RUN and Graphify rebuild SKIPPED per user. Separate publication follows.

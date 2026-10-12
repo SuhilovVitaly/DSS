@@ -24,7 +24,7 @@ public sealed class CombatPresentationResumeTests
         {
             screen.OnActivated();
             Render(screen);
-            Assert.Equal("Guiding", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
+            Assert.Equal("Reloading", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
             Assert.False(screen.CommandsPanel.AllCommandButtons.Single(b => b.CommandTypeId == CombatCommandTypes.Fire).Enabled);
             Assert.Empty(screen.CombatEffects.Active);
             var path = screen.CombatTrajectories[flightObject.ObjectId].Prediction;
@@ -60,7 +60,7 @@ public sealed class CombatPresentationResumeTests
             Render(screen);
             Assert.Empty(screen.CombatEffects.Active);
             Assert.Empty(screen.CombatTrajectories);
-            Assert.Equal("Ready", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
+            Assert.Equal("Reloading", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
             screen.OnDeactivated();
         }
         Assert.All(loaded.Objects, o => Assert.Null(o.HullCombat));

@@ -163,7 +163,7 @@ public sealed class TorpedoImpactTests
             Assert.Empty(paused.CombatImpacts);
             Assert.Null(paused.Objects.Single(o => o.ObjectId == Target).HullCombat);
             Assert.Equal(projectile.ObjectId,
-                paused.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+                Assert.Single(paused.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds));
         }
 
         // Calendar advancement alone must not trigger physical contact either.
@@ -176,7 +176,7 @@ public sealed class TorpedoImpactTests
         Assert.Empty(impact.FinalTrail);
         Assert.DoesNotContain(advanced.Objects, o => o.Torpedo is not null);
         Assert.Single(advanced.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
-        Assert.Null(advanced.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Empty(advanced.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
         Assert.Single(At(engine, launchTime + 1, launchTime + 1001).CombatImpacts);
     }
 
@@ -187,17 +187,19 @@ public sealed class TorpedoImpactTests
         var before = At(engine, 0);
         for (int n = 1; n <= 3; n++)
         {
+            long launchTime = (n - 1) * 15000;
             engine.ReceiveCommand(Fire("hit-" + n));
-            At(engine, (n - 1) * 4000);
-            var after = At(engine, n * 4000);
+            At(engine, launchTime);
+            var after = At(engine, launchTime + 4000);
             Assert.Equal(n, after.CombatImpacts.Length);
             Assert.Equal(150, after.CombatImpacts[^1].DamageApplied);
             Assert.Equal(n, after.CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
-            Assert.Equal((ulong)n, engine.CaptureSaveStateForTests(n * 4000, SimulationSpeed.Speed0).GameState.CombatState!.HitLocationRngCounter);
+            Assert.Equal((ulong)n, engine.CaptureSaveStateForTests(launchTime + 4000, SimulationSpeed.Speed0).GameState.CombatState!.HitLocationRngCounter);
             Assert.DoesNotContain(after.Objects, o => o.Torpedo is not null);
-            Assert.Null(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+            Assert.Empty(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
             Assert.Empty(after.ShipEvents);
-            Assert.Equal(JsonSerializer.Serialize(before.InstalledModules), JsonSerializer.Serialize(after.InstalledModules));
+            Assert.Equal(launchTime + 15000,
+                after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
         }
         Assert.Equal(42UL, engine.MasterSeed);
         // Hit location uses its own stream; the player's launcher state remains unchanged.
@@ -222,7 +224,9 @@ public sealed class TorpedoImpactTests
         Assert.Equal(fact.Y, end.Y, 7);
         Assert.Equal(fact.MotionTimeMs, fact.FinalTrail.Sum(s => s.Segment.DurationMs), 7);
         engine.ReceiveCommand(Fire("two"));
-        Assert.Single(At(engine, 4000).Objects.Where(o => o.Torpedo is not null));
+        Assert.Equal("launcher_reloading", At(engine, 4000).CommandResults.Single(r => r.CommandId == "two").ReasonCode);
+        engine.ReceiveCommand(Fire("ready"));
+        Assert.Single(At(engine, 15000).Objects.Where(o => o.Torpedo is not null));
     }
 
     [Fact]

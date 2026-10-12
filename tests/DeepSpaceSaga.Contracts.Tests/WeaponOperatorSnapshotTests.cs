@@ -13,13 +13,13 @@ public class WeaponOperatorSnapshotTests
     public void Operator_skill_is_metadata(int skill)
     {
         var assigned = new WeaponOperatorSnapshot("crew", "Operator", WeaponSkillType.TorpedoAttack, skill, 5, 5);
-        var launcher = new LauncherCombatSnapshot(null, 3, 90, 150, assigned, RangeKm: 200, Maneuverability: 5);
+        var launcher = new LauncherCombatSnapshot(3, 90, 150, assigned, RangeKm: 200, Maneuverability: 5);
         var restored = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher))!;
         Assert.Equal(skill, restored.Operator!.Skill);
         Assert.Equal("crew", restored.Operator.CrewId);
         Assert.Equal(5m, restored.Maneuverability);
         Assert.Equal(200, restored.RangeKm);
-        Assert.Equal(launcher, restored);
+        Assert.Equal(JsonSerializer.Serialize(launcher), JsonSerializer.Serialize(restored));
     }
 
     [Theory]
@@ -29,7 +29,7 @@ public class WeaponOperatorSnapshotTests
     {
         var weaponOperator = new WeaponOperatorSnapshot("crew-1", "Operator", skillType, 77, 30.125m, 46.3925m);
         var module = new InstalledModuleSnapshot("launcher", "type", "Launcher", 0,
-            ImmutableArray<string>.Empty, LauncherCombat: new(null, 3, 90, 150, weaponOperator), Operator: weaponOperator);
+            ImmutableArray<string>.Empty, LauncherCombat: new(3, 90, 150, weaponOperator), Operator: weaponOperator);
         var restoredModule = JsonSerializer.Deserialize<InstalledModuleSnapshot>(JsonSerializer.Serialize(module));
         Assert.Equal(weaponOperator, restoredModule!.LauncherCombat!.Operator);
         Assert.Equal(weaponOperator, restoredModule.Operator);
@@ -45,7 +45,7 @@ public class WeaponOperatorSnapshotTests
     [Fact]
     public void Missing_operator_differs_from_zero_skill()
     {
-        var missing = new LauncherCombatSnapshot(null, 3, 90, 150);
+        var missing = new LauncherCombatSnapshot(3, 90, 150);
         var assigned = missing with { Operator = new("crew-1", "Operator", WeaponSkillType.TorpedoAttack, 0, 30, 0) };
         Assert.Null(JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(missing))!.Operator);
         var restored = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(assigned))!;

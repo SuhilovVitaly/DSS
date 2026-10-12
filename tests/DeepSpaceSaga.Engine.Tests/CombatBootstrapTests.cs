@@ -56,7 +56,10 @@ public sealed class CombatBootstrapTests
         Assert.All(snapshot.Objects, obj => Assert.Null(obj.HullCombat));
         Assert.Equal("ship.tetrarch", engine.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").ShipClassId);
         var module = Assert.Single(snapshot.InstalledModules);
-        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150), module.LauncherCombat);
+        Assert.Equal(3, module.LauncherCombat!.SpeedKmS);
+        Assert.Equal(90, module.LauncherCombat.TurnRateDegPerSec);
+        Assert.Equal(150, module.LauncherCombat.Damage);
+        Assert.Empty(module.LauncherCombat.ActiveTorpedoIds);
         Assert.Equal("Ready", module.OperationalState);
         Assert.Null(module.ActiveCommandType);
         Assert.Equal(0, snapshot.PlayerCrewCount);
@@ -194,6 +197,6 @@ public sealed class CombatBootstrapTests
         Assert.Empty(snapshot.InstalledModules);
         engine.LoadScenario(Scenario());
         Assert.Null(engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == "player").HullCombat);
-        Assert.Null(Assert.Single(engine.CaptureSnapshot().InstalledModules).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Empty(Assert.Single(engine.CaptureSnapshot().InstalledModules).LauncherCombat!.ActiveTorpedoIds);
     }
 }

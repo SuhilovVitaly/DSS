@@ -304,7 +304,8 @@ public sealed partial class GameSessionScreen
     {
         RefreshTorpedoSubmission();
         return !_torpedoSubmitPending && _buffer.Latest?.Snapshot.ActiveDialogue is null &&
-            FindLauncher() is { LauncherCombat.ActiveTorpedoObjectId: not null } launcher &&
+            FindLauncher() is { LauncherCombat: { } combat } launcher &&
+            !combat.ActiveTorpedoIds.IsDefaultOrEmpty &&
             launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.SelfDestruct);
     }
 
@@ -313,7 +314,9 @@ public sealed partial class GameSessionScreen
         if (_handle is null || !IsSelfDestructEnabled()) return;
         var launcher = FindLauncher()!;
         var snapshot = _buffer.Latest!.Snapshot;
-        string targetId = launcher.LauncherCombat!.ActiveTorpedoObjectId!;
+        var activeIds = launcher.LauncherCombat!.ActiveTorpedoIds;
+        string targetId = _selectedObjectId is { } selected && activeIds.Contains(selected)
+            ? selected : activeIds[0];
         _pendingTorpedoTargetId = targetId;
         _torpedoRejectedOutOfRange = false;
         _torpedoSubmitPending = true;
@@ -355,8 +358,10 @@ public sealed partial class GameSessionScreen
             FindLauncher() is
             {
                 PowerState: "On", OperationalState: "Ready", StructurePoints: > 0,
-                ActiveCommandType: null, LauncherCombat.ActiveTorpedoObjectId: null, LauncherCombat.Operator: not null
+                ActiveCommandType: null, LauncherCombat.Operator: not null
             } launcher && !launcher.Commands.IsDefaultOrEmpty &&
+            (launcher.LauncherCombat!.ReadyAtMotionTimeMs is null ||
+             launcher.LauncherCombat.ReadyAtMotionTimeMs <= snapshot.MotionTimeMs) &&
             launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.Fire && c.Target == "object") &&
             IsSelectedTargetInTorpedoRange(snapshot, launcher.LauncherCombat!);
     }
@@ -416,7 +421,8 @@ public sealed partial class GameSessionScreen
         if (_torpedoSendFailed) return "Send failed";
         return FindLauncher() switch
         {
-            { LauncherCombat.ActiveTorpedoObjectId: not null } => "Guiding",
+            { LauncherCombat.ReadyAtMotionTimeMs: { } readyAt }
+                when _buffer.Latest?.Snapshot.MotionTimeMs < readyAt => "Reloading",
             { LauncherCombat.Operator: null } => "Нет оператора",
             { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, LauncherCombat: { } launcher } => ReadyLauncherStatus(launcher),
             { LauncherCombat: not null } => "Unavailable",

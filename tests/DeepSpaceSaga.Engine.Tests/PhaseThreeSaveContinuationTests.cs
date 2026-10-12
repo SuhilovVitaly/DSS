@@ -125,11 +125,10 @@ public class PhaseThreeSaveContinuationTests
         Assert.Single(save.GameState.CombatState!.Projectiles);
         using var restored = Roundtrip(save);
         Same(continuous, restored, 5001);
-        Same(continuous, restored, 5002);
-        var next = Assert.Single(Save(restored, 5002).GameState.CombatState!.Projectiles);
-        var hit = Assert.Single(At(restored, 5002).CombatJournal, e => e.Type == CombatEventType.Hit);
-        Assert.Equal((long)Math.Floor(hit.MotionTimeMs) + 1, next.Flight.LaunchMotionTimeMs);
-        Same(continuous, restored, 14000);
+        Same(continuous, restored, 15001);
+        var next = Assert.Single(Save(restored, 15001).GameState.CombatState!.Projectiles);
+        Assert.Equal(15001, next.Flight.LaunchMotionTimeMs);
+        Same(continuous, restored, 20000);
     }
 
     [Fact]

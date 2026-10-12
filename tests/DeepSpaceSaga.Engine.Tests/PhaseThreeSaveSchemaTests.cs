@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
@@ -163,7 +164,7 @@ public class PhaseThreeSaveSchemaTests
                     {
                         OwnerObjectId = l.OwnerObjectId.ToLowerInvariant(),
                         ModuleId = l.ModuleId.ToLowerInvariant(),
-                        State = l.State with { ActiveTorpedoObjectId = l.State.ActiveTorpedoObjectId?.ToUpperInvariant() }
+                        State = l.State with { ActiveTorpedoIds = l.State.ActiveTorpedoIds.Select(id => id.ToUpperInvariant()).ToImmutableArray() }
                     }).ToArray(),
                     Projectiles = combat.Projectiles.Select(p => p with
                     {

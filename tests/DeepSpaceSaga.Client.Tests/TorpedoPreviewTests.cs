@@ -106,7 +106,8 @@ public sealed class TorpedoPreviewTests
         Assert.Empty(f.Connection.Commands);
         Assert.Equal(before, JsonSerializer.Serialize(f.Engine.CaptureSaveState()));
         Assert.DoesNotContain(f.Engine.CaptureSnapshot().Objects, o => o.Torpedo is not null);
-        Assert.All(f.Engine.CaptureSnapshot().InstalledModules, m => Assert.Null(m.LauncherCombat?.ActiveTorpedoObjectId));
+        Assert.All(f.Engine.CaptureSnapshot().InstalledModules.Where(m => m.LauncherCombat is not null),
+            m => Assert.True(m.LauncherCombat!.ActiveTorpedoIds.IsDefaultOrEmpty));
     }
 
     [Theory]
@@ -131,7 +132,7 @@ public sealed class TorpedoPreviewTests
                 InstalledModules = state == "missing" ? [] : snapshot.InstalledModules.Select(m => m.LauncherCombat is null ? m : m with
                 {
                     PowerState = state == "off" ? "Off" : m.PowerState,
-                    LauncherCombat = m.LauncherCombat with { ActiveTorpedoObjectId = state == "busy" ? "existing" : null }
+                    LauncherCombat = m.LauncherCombat with { ReadyAtMotionTimeMs = state == "busy" ? 1000 : null }
                 }).ToImmutableArray()
             });
         if (state == "hidden")

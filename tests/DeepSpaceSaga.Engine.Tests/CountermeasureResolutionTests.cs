@@ -52,7 +52,7 @@ public class CountermeasureResolutionTests
         var entry = Assert.Single(snapshot.CombatJournal.Where(e => e.Roll is not null));
         Assert.Equal(1000, entry.ChanceTenths);
         Assert.Equal(801, entry.Roll);
-        Assert.Null(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Empty(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
         Assert.Equal(entry.MotionTimeMs + 10000, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.ReloadDueMotionTimeMs);
         Assert.Single(At(engine, 20000).CombatJournal.Where(e => e.Roll is not null));
         Assert.Equal(DefenseState.Ready, At(engine, 20000).Objects.Single(o => o.ObjectId == Target).Defense!.State);

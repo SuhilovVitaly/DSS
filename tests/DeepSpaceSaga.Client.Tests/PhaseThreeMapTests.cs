@@ -24,7 +24,7 @@ public class PhaseThreeMapTests
             [new("player", 0, 0, 0, 0), new("enemy", 200, 200, 0, 0, RenderObjectType: SpaceObjectType.NpcShip,
                 Defense: new(true, null, DefenseState.Ready))], "player", SelectedObjectId: "enemy",
             InstalledModules: [new("torp", "module.torpedo.launcher.basic", "Launcher", 1, [CombatCommandTypes.Fire],
-                LauncherCombat: new(null, 3, 90, 150, RangeKm: 200)), Defense("one", 2, 37, 81), Defense("two", 3, 49, 123)]));
+                LauncherCombat: new(3, 90, 150, RangeKm: 200)), Defense("one", 2, 37, 81), Defense("two", 3, 49, 123)]));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), uiScale: scale, timestampProvider: () => 0);
         using var bitmap = new SKBitmap(1920, 1080);
         using var canvas = new SKCanvas(bitmap);
