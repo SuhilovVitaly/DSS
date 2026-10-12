@@ -36,6 +36,7 @@ public sealed partial class SimulationEngine
             else firstContact = FirstPredictedTorpedoContact(target!, time, time + lifetime);
         }
         return new(ownerId, module.ModuleId, target?.InitialMotion.ObjectId, chance, reason is null,
-            reason, accuracy, maneuverability, firstContact);
+            reason, accuracy, maneuverability, firstContact,
+            accuracy, maneuverability, ChanceRules.Base);
     }
 }

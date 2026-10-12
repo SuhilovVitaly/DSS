@@ -64,7 +64,7 @@ public sealed class CombatPresentationResumeTests
             screen.OnDeactivated();
         }
         Assert.All(loaded.Objects, o => Assert.Null(o.HullCombat));
-        Assert.Contains(loaded.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == CombatSessionFixture.Target);
+        Assert.Contains(loaded.CombatJournal, e => e.Type == CombatEventType.TorpedoHitRoll && e.TargetObjectId == CombatSessionFixture.Target);
         // A new post-load fact is displayed once and expires on monotonic UI time.
         long now = 0;
         var effects = new CombatEffectStore(() => now);

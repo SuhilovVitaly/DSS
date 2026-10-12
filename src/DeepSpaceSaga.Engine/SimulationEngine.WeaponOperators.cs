@@ -17,15 +17,14 @@ public sealed partial class SimulationEngine
         if (crew is null) return null;
         var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
         int skill = skillType == WeaponSkillType.TorpedoAttack
-            ? crew.TorpedoSkill ?? 0 : crew.AccuracySkill;
+            ? crew.ManeuverabilitySkill : crew.AccuracySkill;
         decimal baseRating = skillType == WeaponSkillType.TorpedoAttack
             ? definition.TorpedoManeuverability ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks torpedoManeuverability.")
             : definition.CountermeasureAccuracy ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks countermeasureAccuracy.");
-        // Torpedo attack and maneuverability are split in the following combat-roll
-        // tickets. Until then the legacy torpedo skill remains metadata, while PD
-        // accuracy uses the new direct skill contribution.
+        // Torpedo hit accuracy is captured separately. This rating is the
+        // projectile's interception resistance, including its operator's skill.
         return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill,
-            baseRating, skillType == WeaponSkillType.TorpedoAttack ? baseRating : baseRating + skill);
+            baseRating, baseRating + skill);
     }
 
     private LauncherCombatSnapshot? ProjectWeaponLauncher(SpaceObjectRuntime owner, InstalledModuleRuntime module)

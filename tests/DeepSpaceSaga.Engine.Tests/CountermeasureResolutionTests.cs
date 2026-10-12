@@ -6,6 +6,38 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class CountermeasureResolutionTests
 {
     [Fact]
+    public void Intercept_58_example_uses_direct_operator_skills()
+    {
+        var registry = DeepSpaceSaga.Engine.Content.EngineContentLoader.LoadRegistryFromSettingsFile(
+            Path.Combine(ClientRoot, "Settings.json"), out _, out _);
+        var scenario = DefenseScenario(600);
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
+                {
+                    Crew = o.Crew!.Select(c => c with { AccuracySkill = 20, ManeuverabilitySkill = 20 }).ToArray()
+                }).ToArray()
+            }
+        };
+        using var engine = Create(scenario, registry);
+        engine.ReceiveCommand(Fire("example"));
+        var launched = At(engine, 0);
+        var torpedo = Assert.Single(launched.Objects, o => o.Torpedo is not null).Torpedo!;
+        Assert.Equal(70m, torpedo.CapturedManeuverability);
+        Assert.Equal(20, torpedo.RatingBreakdown!.Skill);
+        var defense = Assert.Single(At(engine, 100).Objects, o => o.Countermeasure is not null).Countermeasure!;
+        Assert.Equal(78m, defense.CapturedAccuracy);
+        Assert.Equal(70m, defense.CapturedTargetManeuverability);
+        Assert.Equal(580, defense.FrozenChanceTenths);
+        var resolved = At(engine, 20000);
+        var roll = Assert.Single(resolved.CombatJournal, e => e.RatingBreakdown is not null && e.Roll is not null);
+        Assert.Equal(580, roll.ChanceTenths);
+        Assert.Equal(1UL, engine.CaptureSaveState().GameState.DefenseState!.RngCounter);
+    }
+
+    [Fact]
     public void Successful_intercept_removes_both_once_and_no_module_damage()
     {
         using var engine = new SimulationEngine(WeaponRegistry(100, 0));

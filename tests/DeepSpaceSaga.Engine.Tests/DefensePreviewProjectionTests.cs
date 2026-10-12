@@ -40,6 +40,10 @@ public class DefensePreviewProjectionTests
             var snapshot = At(engine, 1, 9000000);
             Assert.Equal(500, Preview(snapshot).ChanceTenths);
             Assert.Equal(703, Preview(snapshot, Defense2).ChanceTenths);
+            Assert.Equal(55m, Preview(snapshot).Attack);
+            Assert.Equal(5m, Preview(snapshot).Defense);
+            Assert.Equal(0m, Preview(snapshot).BaseChance);
+            Assert.Equal(75.25m, Preview(snapshot, Defense2).Attack);
             Assert.True(Preview(snapshot).CanFire);
             Assert.True(Preview(snapshot, Defense2).CanFire);
             Assert.Equal(target, Preview(snapshot).TargetTorpedoId);

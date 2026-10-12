@@ -219,6 +219,25 @@ public class ManualCountermeasureFireTests
         Assert.Equal(target, Assert.Single(second.Objects, o => o.Countermeasure is not null).Countermeasure!.TargetTorpedoId);
     }
 
+    [Theory]
+    [InlineData(0, 100, 0)]
+    [InlineData(100, 0, 1000)]
+    public void Zero_and_hundred_still_draw(decimal accuracy, decimal maneuverability, int expectedChance)
+    {
+        using var engine = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(accuracy, maneuverability));
+        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario());
+        string target = LaunchEnemy(engine);
+        engine.ReceiveCommand(Manual("boundary", target));
+        var launched = At(engine, 1);
+        Assert.Equal(expectedChance,
+            Assert.Single(launched.Objects, o => o.Countermeasure is not null).Countermeasure!.FrozenChanceTenths);
+        var resolved = At(engine, 20000);
+        var roll = Assert.Single(resolved.CombatJournal, e => e.RatingBreakdown is not null && e.Roll is not null);
+        Assert.Equal(expectedChance, roll.ChanceTenths);
+        Assert.InRange(roll.Roll!.Value, 1, 1000);
+        Assert.Equal(1UL, engine.CaptureSaveState().GameState.DefenseState!.RngCounter);
+    }
+
     [Fact]
     public void Captured_hostility_keeps_orphaned_enemy_torpedo_eligible()
     {

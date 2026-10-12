@@ -4,7 +4,7 @@ story: EP-0009-US-0004-combat-skill-rolls
 title: "Броски навыков"
 stage: draft
 created: 2026-10-12
-validation_status: not-started
+validation_status: headless-pass-native-open
 ---
 
 # Броски навыков
@@ -27,3 +27,5 @@ validation_status: not-started
 ## Evidence
 
 Execution is authorized by the user and EpicExecutionPrompt. Planning text is not PASS/APPROVED. Actual results go into ticket cards and ImplementationStatus; deferred native/human acceptance stays OPEN. Graph rebuilding is SKIPPED by user instruction.
+
+2026-10-12 story review: US4-AC1 shared D04 formula, configured base and preview PASS in headless tests. US4-AC2 launch-time attack, contact-time Strizh/pilot defense, named hit RNG, miss with zero damage, partition invariance and Save/Load continuation PASS in headless tests. US4-AC3 production 58% example, frozen torpedo/PD ratings, preview breakdown and 0%/100% interception draws PASS in headless tests. Final Engine non-corpus 1972/1972, Client 1859/1859, solution build zero warnings/errors. Custom chance-base Save v16 roundtrip remains OPEN pending a versioned rules identity. Game/native/human acceptance NOT RUN by user instruction; Graphify rebuild SKIPPED.

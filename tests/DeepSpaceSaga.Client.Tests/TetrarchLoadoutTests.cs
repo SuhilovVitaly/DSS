@@ -133,7 +133,7 @@ public sealed class TetrarchLoadoutTests
         Assert.Equal(new LauncherCombatSnapshot(null, 10, 90, 150, RangeKm: 150, Maneuverability: 50), launcher.LauncherCombat with { Operator = null });
         var assignedOperator = Assert.IsType<WeaponOperatorSnapshot>(launcher.LauncherCombat.Operator);
         Assert.Equal("CHR-0001", assignedOperator.CrewId);
-        Assert.Equal(50, assignedOperator.Skill);
+        Assert.Equal(0, assignedOperator.Skill);
         Assert.Equal(50m, assignedOperator.EffectiveRating);
         Assert.Equal("Ready", launcher.OperationalState);
         Assert.Equal("On", launcher.PowerState);
