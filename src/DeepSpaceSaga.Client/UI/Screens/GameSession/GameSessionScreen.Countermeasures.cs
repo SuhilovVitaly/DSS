@@ -70,7 +70,8 @@ public sealed partial class GameSessionScreen
         DefenseChanceLabels.Clear();
         DefenseFlightLabels.Clear();
         WeaponRangeRings.Clear();
-        var occupied = new List<SKRect>();
+        var freeMap = AvailableMapRect();
+        var occupied = new List<SKRect>(_mapObstacles);
         using var text = new SKPaint { Color = CombatSettings.DefenseText, TextSize = 12f, IsAntialias = true };
         using var line = new SKPaint { Color = CombatSettings.DefenseRange, Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
         DrawHoveredWeaponRanges(canvas, line);
@@ -86,7 +87,7 @@ public sealed partial class GameSessionScreen
             if (x < 0 || y < 0 || x > _viewportW || y > _viewportH) continue;
             string chance = $"{flight.FrozenChanceTenths / 10m:0.0}%";
             string remaining = RemainingFlightText(flight, DefensePresentationTime);
-            var labelLines = WrapFlightLabel($"{state.Source.ObjectId} · {flight.LauncherModuleId}\n{chance} · {CombatText("RemainingFlight", "Осталось полёта")}: {remaining}", text);
+            var labelLines = WrapFlightLabel($"{state.Source.ObjectId} · {flight.LauncherModuleId}\n{chance} · {CombatText("RemainingFlight", "Осталось полёта")}: {remaining}", text, freeMap.Width - 8);
             var bounds = PlaceFlightLabel(x + 8, y - 8, labelLines, text, occupied);
             occupied.Add(bounds);
             DefenseFlightLabels[state.Source.ObjectId] = new(bounds, string.Join("\n", labelLines));
@@ -145,9 +146,9 @@ public sealed partial class GameSessionScreen
         }
     }
 
-    private List<string> WrapFlightLabel(string value, SKPaint paint)
+    private List<string> WrapFlightLabel(string value, SKPaint paint, float availableWidth)
     {
-        float width = Math.Max(1, Math.Min(340, _viewportW - 16));
+        float width = Math.Max(1, Math.Min(340, Math.Min(availableWidth, _viewportW - 16)));
         var lines = new List<string>();
         foreach (string source in value.Split('\n'))
         {
@@ -171,10 +172,15 @@ public sealed partial class GameSessionScreen
         float left = Math.Clamp(x, 8, Math.Max(8, _viewportW - width - 8));
         float top = Math.Clamp(y, 8, Math.Max(8, _viewportH - height - 8));
         var result = new SKRect(left, top, left + width, top + height);
-        foreach (float candidate in new[] { top }.Concat(occupied.SelectMany(r => new[] { r.Bottom + 4, r.Top - height - 4 })))
+        var xs = new[] { left, 8, _viewportW - width - 8 }.Concat(occupied.SelectMany(r => new[] { r.Right + 4, r.Left - width - 4 })).Distinct();
+        var ys = new[] { top, 8, _viewportH - height - 8 }.Concat(occupied.SelectMany(r => new[] { r.Bottom + 4, r.Top - height - 4 })).Distinct();
+        var candidates = from cx in xs
+                         from cy in ys
+                         where cx >= 8 && cy >= 8 && cx + width <= _viewportW - 8 && cy + height <= _viewportH - 8
+                         orderby (cx - left) * (cx - left) + (cy - top) * (cy - top), cy, cx
+                         select new SKRect(cx, cy, cx + width, cy + height);
+        foreach (var bounds in candidates)
         {
-            if (candidate < 8 || candidate + height > _viewportH - 8) continue;
-            var bounds = new SKRect(left, candidate, left + width, candidate + height);
             if (occupied.Any(r => r.IntersectsWith(bounds))) continue;
             return bounds;
         }

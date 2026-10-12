@@ -46,10 +46,13 @@ public sealed class GameSessionHandle : IAsyncDisposable
     }
 
     public GameSessionHandle(IGameSessionConnection connection)
+        : this(connection, new SnapshotBuffer()) { }
+
+    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer)
     {
         _connection = connection;
 
-        Buffer = new SnapshotBuffer();
+        Buffer = buffer;
 
         // Background loop: connection → buffer
         _receiveTask = Task.Run(() => ReceiveLoopAsync(_cts.Token));

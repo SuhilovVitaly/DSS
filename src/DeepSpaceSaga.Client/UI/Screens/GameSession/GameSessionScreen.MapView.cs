@@ -177,7 +177,7 @@ public sealed partial class GameSessionScreen
         Add(_objectInfoPanel.CaptionRect); Add(_objectInfoPanel.BodyRect);
         Add(_combatJournalPanel.Bounds);
         if (_panelVisible) Add(_lastPanelRect);
-        Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect);
+        Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect); Add(_lastGameTimeRect);
         var hash = new HashCode(); hash.Add(_viewportW); hash.Add(_viewportH);
         foreach (var r in _mapObstacles) hash.Add(r);
         int value = hash.ToHashCode();
@@ -339,7 +339,7 @@ public sealed partial class GameSessionScreen
         float layerRowHeight = hasMapLayers ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62 - layerRowHeight;
-        if (hasMapLayers && _commandsPanel.BodyRect.Bottom > top - 27)
+        if (_commandsPanel.BodyRect.Bottom > top - 27)
         {
             left = Math.Max(left, _commandsPanel.BodyRect.Right + 8);
             width = Math.Min(width, _uiViewportW - left - 8);

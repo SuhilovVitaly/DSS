@@ -259,3 +259,11 @@ TK-0001 `0cdcc7af7b774096a307fc5520e92f4ac12acffc` published/remote verified. Ge
 Local commit `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` completed but both push attempts were rejected by automatic approval review, including after authenticated GitHub owner/public/push permission verification. Live remote remains `0cdcc7af7b774096a307fc5520e92f4ac12acffc`. Explicit human destination authorization is required by that reviewer. Existing user instruction authorizes autonomous per-ticket pushes, but the reviewer did not accept it without the URL. No bypass attempted.
 
 Do not start TK-0003 or EP-0009 until the existing commit is pushed and the remote SHA is verified. Native/final review/project documentation/Graphify remain OPEN. Exact ticket SHA registry and recovery instructions: [PublicationStatus.md](PublicationStatus.md).
+
+## Publication recovery — 2026-10-12
+
+Explicit user confirmation names GitHub SuhilovVitaly/DSS and base-fight. `git push` reports already up to date; live remote SHA `817a856047589f7346c2e280450df3c28372c4b5` includes ticket `9c93e1d`. Publication blocker resolved; continuing US-0012-TK-0003. Existing Data commit preserved.
+
+## EP-0008-US-0012-TK-0003 — 2026-10-12
+
+Implementation and self-review complete, pending separate publication. Real click/session viewport matrix6/6 and full Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Native artifacts retained:13/14 interaction cases complete; 1920x1080/UI150 combat incomplete, timing target not accepted. Footer/PR label overlaps fixed. User defers further game/native runs and authorizes continuation through review/docs and EP-0009; native/human acceptance remains OPEN. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).

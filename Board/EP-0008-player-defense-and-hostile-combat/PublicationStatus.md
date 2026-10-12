@@ -1,12 +1,12 @@
 # EP-0008 publication status
 
-Verified 2026-10-11 against live `git ls-remote origin refs/heads/base-fight`.
+Verified 2026-10-12 against live `git ls-remote origin refs/heads/base-fight`.
 
 - Branch: `base-fight`.
 - Remote: `https://github.com/SuhilovVitaly/DSS`.
-- Published branch HEAD: `0cdcc7af7b774096a307fc5520e92f4ac12acffc`.
-- Local HEAD: `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` (one commit ahead).
-- Forty tickets published; US-0012-TK-0002 implemented and validated locally, push BLOCKED.
+- Published branch HEAD before TK-0003: `817a856047589f7346c2e280450df3c28372c4b5`.
+- Local HEAD matches that published baseline; TK-0003 changes follow.
+- Forty-one tickets published, including US-0012-TK-0002; previous blocker resolved by explicit user destination authorization.
 
 | Ticket | Commit SHA | Push |
 |---|---|---|
@@ -50,27 +50,10 @@ Verified 2026-10-11 against live `git ls-remote origin refs/heads/base-fight`.
 | EP-0008-US-0011-TK-0003 | `c195d6ac4f91cc536e6a0dd2e54739b0bbaca8bd` | Published; ancestor of verified remote HEAD |
 | EP-0008-US-0011-TK-0004 | `222e5bb45063c60e5a689ee5e854f2e9c8867ab6` | Published; ancestor of verified remote HEAD |
 | EP-0008-US-0012-TK-0001 | `0cdcc7af7b774096a307fc5520e92f4ac12acffc` | Published; ancestor of verified remote HEAD |
-| EP-0008-US-0012-TK-0002 | `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` | BLOCKED by automatic approval review |
+| EP-0008-US-0012-TK-0002 | `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` | Published; ancestor of verified remote HEAD |
 
-## Publication blocker
+## Recovery and current work
 
-The normal push was rejected by automatic approval review because the external destination was not explicitly named in the human instruction. Read-only authenticated GitHub verification then confirmed that the signed-in account owns SuhilovVitaly/DSS, the repository is public, and push/admin permissions are true. A second normal push was also rejected: the reviewer treated this tool evidence as insufficient and still required explicit human destination authorization. No alternative upload channel was attempted.
+The earlier automatic approval block was resolved by the user's explicit authorization for SuhilovVitaly/DSS, branch base-fight. Ticket9c93e1d is published; Data817a856 preserved. No force push or history rewrite.
 
-User action required: explicitly authorize publishing the DSS epic commits to `https://github.com/SuhilovVitaly/DSS`, branch `base-fight`. Resume by pushing the existing local commit, verify exact remote SHA, then continue. Do not recreate this ticket or rewrite history.
-
-## Remaining work
-
-- Publish US-0012-TK-0002 (local test-only implementation: generated battle, real file save/recovery, pause/x100 determinism, multiple enemies).
-- US-0012-TK-0003: native viewport/scale/UI combat/defeat/load matrix and presentation measurements; not started.
-- US-0012-TK-0004: final epic review and evidence reconciliation.
-- US-0013-TK-0001: project-wide documentation synchronization.
-- US-0013-TK-0002: final Graphify rebuild and links.
-- EP-0009: execute after EP-0008 completion; existing untracked Board folder preserved.
-
-## Validation
-
-- Prerequisite complete solution:4302/4302, including all Engine corpus, skipped0.
-- Current ticket new matrix:6/6; Engine non-corpus regression:1922/1922.
-- Current solution build:0 warnings/errors; scoped format and diff checks PASS.
-- Native acceptance:OPEN / NOT RUN for this epic acceptance matrix.
-- This registry and the blocker note are local follow-up evidence after the blocked commit; they are not claimed as published.
+TK-0003 is implemented and validated with partial native evidence; separate commit/push follows. TK-0004 review and US-0013 documentation/Graphify remain. EP-0009 Board is tracked, execution follows EP-0008 implementation/documentation. User deferred all further native/game launches; incomplete native/human acceptance remains OPEN. See ImplementationStatus and the acceptance report for factual gates. Current commit's own SHA is verified through Git after creation and recorded by the next ticket.

@@ -98,3 +98,20 @@ Full-map min forces3x10 human stations/2 AI, max5x12/4 AI; native default scenar
 Rows distinguish real entities, descriptors, configured decoration samples, layer flags, calendar and motion epochs. Decorations can be culled by LOD, so configured samples are not the exact drawn count. Full-map raster samples System/belt/cluster, first requested seed in each scenario,120 warmup+600 measured frames. Native reports carry live counts and actual OpenGL context separately. Optional `--client-frame-report D:/absolute/native.json` on --solar-map validates and hashes an existing native case; it is an independent case, not a substitute for matching all raster configurations. `--economy-report` is a separate optional acceptance input; this epic does not establish profitability.
 
 Current measurements: scripted native8/8 PASS, FPS target0/8 PASS (p9950.5839–54.4007ms vs12.5ms), with VSync reported100Hz on Intel Arc140V. Fresh baseline/empty-window controls also fail; exact driver/OS cause unproven. Do not claim GPU execution, physical scanout or human playthrough. Compact results and source/raw hashes are retained in [EP-0004 evidence](../../Board/EP-0004-ai-territories-and-map-environment/ImplementationStatus.md); temporary native JSON/PNG were removed after review. [Current map contract](../../Documentation/04-Engineering/AiMapEnvironment.md).
+
+## EP-0008 combat native evidence
+
+Build Release, then run each native case sequentially without concurrent tests/builds:
+
+```powershell
+dotnet build tools/DeepSpaceSaga.Performance/DeepSpaceSaga.Performance.csproj -c Release --no-restore
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/ep8-native/combat.json --combat-window 1.5 1280x720
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/ep8-native/recovery.json --combat-window 1.5 1280x720 --recovery
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/ep8-native/no-solution.json --combat-window 1.5 1280x720 --no-solution
+```
+
+Matrix:1280x720 and1920x1080, scale1/1.2/1.5, normal and recovery. No-solution uses a deliberately slow, short-lived, zero-accuracy custom defense module; it is not a balance claim about production defaults. Do not combine that option with recovery (its registry intentionally differs from production save loader content). The runner uses production content and real LocalSession, setting a separate initial fixture with8 Enemy NPCs before NewGame. It never sends player commands on behalf of NPCs or edits positions/HP during battle. Two manual PR launches, independent auto toggle, preview equality, selected target, zoom, x100/pause and journal scrolling use actual screen input handlers. Recovery uses real terminal routing, native Defeat/Load presentation, cancel and a separate pre-death save slot.
+
+The executable temporarily applies the selected UI scale to its own output Settings.json and restores original bytes in finally. It does not edit source Settings.json or user slots. A deterministic injected clock advances5 physical milliseconds per measured render in the normal case; the recovery case remains paused after Load. These cases prove rendering and transport interactions, not real-time AI throughput. Full generated-world battle/clock/AI continuity is tested separately by PhaseThreeCombatEndToEndTests/PhaseThreeDeterminismTests.
+
+Reports contain720 presented frames (120 warmup/600 measured), actual OpenGL hardware, CPU submit and completed-swap intervals, plus combatInteraction checks. Exit0 means interaction/report completion, not a passed80FPS target. Inspect targetVerdict independently; GPU execution/physical scanout and human playthrough are not measured. PNGs capture actual native surfaces at preview/two-PR/journal/defeat/load stages. Reports and separate *.slots files remain at the requested output location for review.

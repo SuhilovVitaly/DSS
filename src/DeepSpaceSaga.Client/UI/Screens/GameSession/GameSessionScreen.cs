@@ -119,6 +119,7 @@ public sealed partial class GameSessionScreen : IScreen
     // Mechanics panel (bottom-center) state — holds the Finance/Ship/... buttons
     // (Documentation/02-FirstRelease/Screens/Finance.md, Documentation/02-FirstRelease/Screens/Ship.md)
     private SKRect _lastMechanicsPanelRect;
+    private SKRect _lastGameTimeRect;
     private SKRect _lastFinanceButtonRect;
     private SKRect _lastShipButtonRect;
     private SKRect _lastTempCharacterImageButtonRect;
@@ -1882,7 +1883,19 @@ public sealed partial class GameSessionScreen : IScreen
     private float ComputeScaleSpeedRowLeft()
     {
         float combinedW = ComputeScalePanelWidth() + ScalePanelGapFromSpeed + ComputeSpeedPanelWidth();
-        return (_uiViewportW - combinedW) / 2f;
+        return BottomControlLeft(combinedW);
+    }
+
+    // At high UI scales the centered footer crosses the defense panels. Keep its
+    // controls beside them when they fit, preserving all existing hit-test rects.
+    private float BottomControlLeft(float width)
+    {
+        float centered = (_uiViewportW - width) / 2f;
+        float beside = CommandsPanel.PanelWidth + PanelMargin * 2;
+        bool hasDefense = _buffer.Latest?.Snapshot.InstalledModules is { IsDefaultOrEmpty: false } modules &&
+            modules.Any(m => m.Defense is not null);
+        return hasDefense && _commandsPanel.State != CommandsPanelState.Closed && centered < beside &&
+            beside + width <= _uiViewportW - PanelMargin ? beside : centered;
     }
 
     /// <summary>Compute the speed panel rect from current viewport — used both by DrawSpeedPanel and DrawScalePanel.</summary>
@@ -1901,8 +1914,10 @@ public sealed partial class GameSessionScreen : IScreen
             + " · " + GameTimeDisplay.Status(_buffer.CurrentSpeed);
         if (_buffer.Latest?.Snapshot.MissingRations > 0) text += " · Не хватает рационов";
         float width = _gameTimeTextPaint.MeasureText(text) + 24;
-        var rect = new SKRect(_uiViewportW / 2 - width / 2, ComputeScaleSpeedRowY() - 128,
-            _uiViewportW / 2 + width / 2, ComputeScaleSpeedRowY() - 98);
+        float left = BottomControlLeft(width);
+        var rect = new SKRect(left, ComputeScaleSpeedRowY() - 128,
+            left + width, ComputeScaleSpeedRowY() - 98);
+        _lastGameTimeRect = rect;
         canvas.DrawRect(rect, _panelBgPaint);
         canvas.DrawRect(rect, _panelBorderPaint);
         canvas.DrawText(text, rect.MidX, rect.Top + 20, _gameTimeTextPaint);
@@ -2363,7 +2378,7 @@ public sealed partial class GameSessionScreen : IScreen
         const float portraitButtonWidth = 188f;
         float panelW = MechanicsButtonWidth * buttonCount + MechanicsButtonGap * buttonCount + MechanicsPanelPadding * 2 + portraitButtonWidth;
         float panelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
-        float panelX = (_uiViewportW - panelW) / 2f;
+        float panelX = BottomControlLeft(panelW);
         float panelY = _uiViewportH - panelH - PanelMargin;
 
         _lastMechanicsPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
