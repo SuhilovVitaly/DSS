@@ -68,10 +68,10 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 
 Имена ниже **планируемые**, не результат выполненного тестирования:
 
-- [ ] `Real_battle_exercises_auto_and_manual_defense`
-- [ ] `Multiple_hostiles_share_no_player_authority`
-- [ ] `Single_step_and_partitioned_battle_match`
-- [ ] `Defeat_stops_world_and_rejects_save`
+- [x] `Real_battle_exercises_auto_and_manual_defense`
+- [x] `Multiple_hostiles_share_no_player_authority`
+- [x] `Single_step_and_partitioned_battle_match`
+- [x] `Defeat_stops_world_and_rejects_save`
 
 Команды из корня DSS после реализации:
 
@@ -85,13 +85,31 @@ git diff --check
 
 ## Definition of Done
 
-- [ ] Все AC-0001, AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
-- [ ] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
-- [ ] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
-- [ ] Review проведён, ограничения/native статус описаны честно.
-- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён.
-- [ ] Собственное review не помечено пользовательским APPROVED.
+- [x] Все AC-0001, AC-0002, AC-0004 в scope этой карточки покрыты реальным результатом/проверками.
+- [x] Все шаги выполнены, нет скрытых stub или неразрешённых зависимостей.
+- [x] Соответствующие тесты/build/format/diff пройдены; вызванные изменением регрессии исправлены.
+- [x] Review проведён, ограничения/native статус описаны честно.
+- [ ] Board evidence актуально; при execution отдельный commit/push подтверждён. — commit готов, push BLOCKED automatic approval review.
+- [x] Собственное review не помечено пользовательским APPROVED.
 
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution evidence — 2026-10-11
+
+Dependency TK-0001 `0cdcc7af7b774096a307fc5520e92f4ac12acffc` published; live remote SHA verified before implementation.
+
+- `Real_battle_exercises_auto_and_manual_defense_then_defeat_and_file_recovery`: actual production registry and generated PlayerShipOnly seed42, real LocalSession and Brake command, NPC pursuit/fire, auto PR plus second manual PR, actual current save file and ten-second continuation equality, three real hull hits, frozen defeat and rejected overwrite with unchanged bytes, new session from pre-death file. No runtime relocation or HP edits.
+- `Single_step_and_partitioned_battle_match`: seeds1/42/99, generated full world, one30-minute physical interval versus irregular steps, Speed4 x100 and17-second real pauses. Objects, combat journal (including RNG resolutions), outcome and paused calendar/physical time agree.
+- `Multiple_hostiles_share_no_player_authority`: two independently firing Enemy NPCs at the same initial boundary, no forged NPC command/receipt, two manual modules, exact0/100% outcomes, one RNG draw per encounter, stable large/split interval result. Custom PR speed9, turn45, range111, TTL8000 and reload7000 are configured before scenario load. This is a separate custom combat fixture, not a claim that default PlayerShipOnly starts with two enemies.
+
+Initial multi-enemy fixture placed the second target behind the player: its PR legitimately expired before contact, so the expected two resolutions was invalid. The starting fixture now places both targets ahead; production guidance/TTL assertions were not weakened. Initial end-to-end horizon was too short for the default distant NPC; test now uses a player Brake command and sufficient physical time.
+
+New matrix6/6 PASS (`D:/DeepSpaceSaga/ep8-us12tk2-matrix-final.log`). Full corpus-inclusive solution4302/4302 passed in prerequisite TK-0001; this ticket changes tests only. Native acceptance is separate TK-0003. Self-review checks real authority, time domains, file bytes and explicit test-fixture boundaries; no user approval inferred.
+
+Final Engine regression1922/1922 PASS (all non-corpus tests, log `D:/DeepSpaceSaga/ep8-us12tk2-engine.log`); full corpus was passed immediately before this test-only ticket. Scoped whitespace verification and diffPASS. Final solution build recorded below before publication.
+
+Final solution build PASS, 0 warnings/errors. Separate ticket commit and immediate push follow; live SHA is verified before TK-0003.
+
+Publication result: local `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c`; automatic approval review rejected both push attempts. Remote verified still `0cdcc7af7b774096a307fc5520e92f4ac12acffc`. Explicit destination authorization required; next ticket not started. See [publication registry](../../PublicationStatus.md).
