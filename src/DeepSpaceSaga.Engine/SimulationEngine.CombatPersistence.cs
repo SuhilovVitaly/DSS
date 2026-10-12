@@ -98,7 +98,8 @@ public sealed partial class SimulationEngine
             }).ToArray(),
         _processedLaunchCommandIds.Order(StringComparer.Ordinal).ToArray(),
         _moduleHitLocationRng.State, _moduleHitLocationRng.Counter,
-        _torpedoHitRng.State, _torpedoHitRng.Counter);
+        _torpedoHitRng.State, _torpedoHitRng.Counter,
+        _launcherBreakdownRng.State, _launcherBreakdownRng.Counter);
 
     // Validate content compatibility and stage every runtime mutation before publishing the world.
     private static void StageCombatRestore(CombatStateData? saved, List<SpaceObjectRuntime> objects,
@@ -130,6 +131,8 @@ public sealed partial class SimulationEngine
             _moduleHitLocationRng = new(hitLocationState, saved.HitLocationRngCounter);
         if (saved.TorpedoHitRngState is { } torpedoHitState)
             _torpedoHitRng = new(torpedoHitState, saved.TorpedoHitRngCounter);
+        if (saved.LauncherBreakdownRngState is { } breakdownState)
+            _launcherBreakdownRng = new(breakdownState, saved.LauncherBreakdownRngCounter);
         _processedLaunchCommandIds.UnionWith(saved.ProcessedLaunchCommandIds);
         foreach (var projectile in saved.Projectiles)
             if (projectile.TargetBaseline is { } target)

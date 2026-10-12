@@ -139,3 +139,7 @@ TK-0001 1af75fb9bcb7721f219480ddaa36d5f9a428ddac published/remote verified. Two-
 ## EP-0009-US-0005-TK-0003 — 2026-10-12
 
 TK-0002 f8096e45af1fb11706c9507187e525e5c3c4811d published/remote verified. D13 readiness now starts with the first barrel; D15 auto targeting checks live guiding countermeasures and retries after a miss. The runtime attempted flag is removed. Save v16 writes an empty legacy attempt list until US-0011 and restores missing readiness from older saves. Production 14500 ms boundary passed; Engine non-corpus1972/1972, Client1859/1859, Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. Headless US-0005 story review: AC1 cooldown/multi-flight PASS, AC2 burst/skip/Save-Load PASS, AC3 launch-based reload/retry/arbitration PASS. Game/native NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.
+
+## EP-0009-US-0006-TK-0001 — 2026-10-12
+
+TK-0003 ff6fe1ef83cda0c632331f2f64b5728e8d704d87 published/remote verified. Fire-mode bonuses are frozen at torpedo launch; Maneuverability gives 48% interception in the production fixture and 18750 ms reload. Overheat uses a separate persisted `combat.launcher.breakdown.v1` RNG and can break the launcher after launching; docking clears the broken flag. Focused mode3/3 and docking/dialogue/mode26/26; Engine non-corpus1975/1975, Client1859/1859, Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. Mode selection and UI remain TK-0002/TK-0003; native/game NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.

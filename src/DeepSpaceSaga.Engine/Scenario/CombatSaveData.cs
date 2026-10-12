@@ -19,7 +19,9 @@ public sealed record CombatStateData(
     [property: JsonPropertyName("hitLocationRngState")] ulong? HitLocationRngState = null,
     [property: JsonPropertyName("hitLocationRngCounter")] ulong HitLocationRngCounter = 0,
     [property: JsonPropertyName("torpedoHitRngState")] ulong? TorpedoHitRngState = null,
-    [property: JsonPropertyName("torpedoHitRngCounter")] ulong TorpedoHitRngCounter = 0);
+    [property: JsonPropertyName("torpedoHitRngCounter")] ulong TorpedoHitRngCounter = 0,
+    [property: JsonPropertyName("launcherBreakdownRngState")] ulong? LauncherBreakdownRngState = null,
+    [property: JsonPropertyName("launcherBreakdownRngCounter")] ulong LauncherBreakdownRngCounter = 0);
 
 public sealed record LauncherSaveData(
     [property: JsonRequired, JsonPropertyName("ownerObjectId")] string OwnerObjectId,
@@ -99,6 +101,8 @@ internal static class CombatSaveValidation
             "hit-location RNG counter without state.");
         Require(combat.TorpedoHitRngState is not null || combat.TorpedoHitRngCounter == 0,
             "torpedo-hit RNG counter without state.");
+        Require(combat.LauncherBreakdownRngState is not null || combat.LauncherBreakdownRngCounter == 0,
+            "launcher-breakdown RNG counter without state.");
         Require(combat.Launchers is not null && combat.Projectiles is not null && combat.ProcessedLaunchCommandIds is not null,
             "missing combat collections.");
         var launches = new HashSet<string>(StringComparer.Ordinal);

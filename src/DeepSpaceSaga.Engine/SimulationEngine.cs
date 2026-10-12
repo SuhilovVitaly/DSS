@@ -477,6 +477,8 @@ public sealed partial class SimulationEngine : IDisposable
             _moduleHitLocationRng = new(resolvedMasterSeed);
             _torpedoHitRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
                 RngStreamNames.CombatTorpedoHit), 0);
+            _launcherBreakdownRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
+                RngStreamNames.CombatLauncherBreakdown), 0);
             _combatProcessedTimeMs = gs.MotionTimeMs;
             _hostileCombat.Clear();
             if (gs.HostileCombatState is { } hostile)

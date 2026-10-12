@@ -24,7 +24,7 @@ public sealed partial class SimulationEngine
             foreach (var module in owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal))
             {
                 if (!_launcherCombat.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var launcher) ||
-                    module.ActiveCycle is not null ||
+                    launcher.IsBrokenUntilDock || module.ActiveCycle is not null ||
                 !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire) ||
                     ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack) is null) continue;
                 double earliest = Math.Max(Math.Max(Math.Ceiling(cursor), _combatProcessedTimeMs + 1),

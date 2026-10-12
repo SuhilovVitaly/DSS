@@ -10,6 +10,7 @@ public sealed partial class SimulationEngine
 {
     private ModuleHitLocationRng _moduleHitLocationRng = new(0);
     private CountermeasureRng _torpedoHitRng = new(0, 0);
+    private CountermeasureRng _launcherBreakdownRng = new(0, 0);
     private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> _launcherCombat = new();
     private long _torpedoSequence;
     private long _combatImpactSequence;
@@ -49,6 +50,7 @@ public sealed partial class SimulationEngine
         if (!_launcherCombat.TryGetValue(key, out var launcher) ||
             !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
+        if (launcher.IsBrokenUntilDock) return CommandStartOutcome.Rejected("launcher_broken_until_dock");
         if (!CanExecuteModuleCommand(module, motionTimeMs))
             return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
         if (module.ActiveCycle is not null)
@@ -71,30 +73,47 @@ public sealed partial class SimulationEngine
         if (!TryGetNextTorpedoId(out string id, out long sequence))
             return CommandStartOutcome.Rejected("projectile_id_exhausted");
         var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        var mode = FireModeMath.Resolve(_registry, launcher.ModeId);
         decimal attack = (moduleType.Accuracy ?? moduleType.TorpedoManeuverability ?? 0) +
-            (owner.Crew.FirstOrDefault(c => c.Id == module.OperatorCrewId)?.AccuracySkill ?? 0);
+            (owner.Crew.FirstOrDefault(c => c.Id == module.OperatorCrewId)?.AccuracySkill ?? 0) + mode.AccuracyBonus;
+        decimal maneuverability = weaponOperator.EffectiveRating + mode.ManeuverabilityBonus;
         var flight = new TorpedoSnapshot(owner.InitialMotion.ObjectId, moduleId, targetObjectId!, motionTimeMs,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
-            TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator,
-            CapturedManeuverability: weaponOperator.EffectiveRating,
+            TorpedoRating: maneuverability, RatingBreakdown: weaponOperator,
+            CapturedManeuverability: maneuverability,
             OwnerPlayerRelationAtLaunch: GetRelationToPlayer(owner) ?? PlayerRelation.Neutral,
             CapturedAttack: attack,
             HitChanceTenths: CombatChanceMath.ChanceTenths(attack, TorpedoDefenseRating(target, motionTimeMs), ChanceRules),
             ArmorPiercingPercent: moduleType.ArmorPiercingPercent ?? 0,
-            ArmorDamagePercent: moduleType.ArmorDamagePercent ?? 100);
+            ArmorDamagePercent: moduleType.ArmorDamagePercent ?? 100,
+            ModeId: mode.ModeId,
+            ModeManeuverabilityBonus: mode.ManeuverabilityBonus);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
         _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
         var activeIds = launcher.ActiveTorpedoIds.IsDefault ? ImmutableArray<string>.Empty : launcher.ActiveTorpedoIds;
         _launcherCombat[key] = launcher with
         {
             ActiveTorpedoIds = activeIds.Add(id),
-            ReadyAtMotionTimeMs = motionTimeMs + (double)moduleType.LauncherReloadMs!.Value,
+            ReadyAtMotionTimeMs = motionTimeMs + (double)(moduleType.LauncherReloadMs!.Value * mode.ReloadMultiplier),
             Operator = weaponOperator
         };
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
         AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, targetObjectId!, id,
             origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo"));
+        if (mode.BreakdownChancePercent > 0)
+        {
+            int roll = _launcherBreakdownRng.NextRoll();
+            int chanceTenths = (int)(mode.BreakdownChancePercent * 10);
+            if (roll <= chanceTenths)
+            {
+                _launcherCombat[key] = _launcherCombat[key] with { IsBrokenUntilDock = true };
+                AppendCombatEvent(new(0, motionTimeMs, CombatEventType.LauncherBreakdown,
+                    owner.InitialMotion.ObjectId, targetObjectId!, id, origin.X, origin.Y,
+                    ChanceTenths: chanceTenths, Roll: roll, Result: mode.ModeId,
+                    LauncherModuleId: moduleId));
+            }
+        }
         _nextCombatGuidanceMs = Math.Min(_nextCombatGuidanceMs, NextGuidanceBoundary(motionTimeMs));
         return CommandStartOutcome.Started;
     }

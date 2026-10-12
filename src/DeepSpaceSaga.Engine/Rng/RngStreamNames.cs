@@ -11,6 +11,7 @@ internal static class RngStreamNames
     public const string CountermeasureIntercept = "combat.countermeasure.intercept.v1";
     public const string CombatHitLocation = "combat.hit.location.v1";
     public const string CombatTorpedoHit = "combat.torpedo.hit.v1";
+    public const string CombatLauncherBreakdown = "combat.launcher.breakdown.v1";
     public static string StationCredits(string stationObjectId) => $"StationCredits:{stationObjectId}";
 
     public static string StationPriceCoefficient(string stationObjectId) => $"StationPriceCoefficient:{stationObjectId}";

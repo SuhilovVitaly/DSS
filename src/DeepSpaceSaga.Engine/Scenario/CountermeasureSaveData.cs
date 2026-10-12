@@ -144,7 +144,7 @@ internal static class CountermeasureSaveValidation
             if (format >= 16)
             {
                 Require(Enum.IsDefined(f.Mode) && f.CapturedAccuracy is >= 0 and <= 100 &&
-                    f.CapturedTargetManeuverability is >= 0 and <= 100 && f.MaxFlightTimeMs is > 0 &&
+                    f.CapturedTargetManeuverability is >= 0 and <= 200 && f.MaxFlightTimeMs is > 0 &&
                     f.LaunchMotionTimeMs <= long.MaxValue - f.MaxFlightTimeMs.Value &&
                     f.ExpiresAtMotionTimeMs == f.LaunchMotionTimeMs + f.MaxFlightTimeMs && f.ExpiresAtMotionTimeMs > state.MotionTimeMs &&
                     f.SpeedKmS is { } speed && double.IsFinite(speed) && speed > 0 &&
@@ -201,7 +201,7 @@ internal static class CountermeasureSaveValidation
         Require(saved.Launchers.All(l => l.State.ActiveProjectileIds is { } active
             ? active.All(ids.Contains)
             : l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
-        long lastId = 0; double lastTime = 0; ulong rolls = 0, torpedoRolls = 0;
+        long lastId = 0; double lastTime = 0; ulong rolls = 0, torpedoRolls = 0, breakdownEvents = 0;
         foreach (var entry in saved.Journal!)
         {
             Require(entry.EventId > lastId && entry.EventId <= saved.JournalSequence && Enum.IsDefined(entry.Type) &&
@@ -215,7 +215,7 @@ internal static class CountermeasureSaveValidation
                 entry.Type == CombatEventType.Miss && entry.LaunchMode is not null || entry.Result == "countermeasure"))
             {
                 Require(!string.IsNullOrWhiteSpace(entry.LauncherModuleId) && entry.LaunchMode is { } mode && Enum.IsDefined(mode) &&
-                    entry.Accuracy is >= 0 and <= 100 && entry.TargetManeuverability is >= 0 and <= 100 && entry.Damage == 0 &&
+                    entry.Accuracy is >= 0 and <= 100 && entry.TargetManeuverability is >= 0 and <= 200 && entry.Damage == 0 &&
                     entry.RatingBreakdown is { DefenseOperator: not null } captured && entry.Accuracy == captured.DefenseOperator.EffectiveRating &&
                     entry.TargetManeuverability == captured.TorpedoRating &&
                     SequenceWithin(entry.ProjectileObjectId, "countermeasure-", saved.ProjectileSequence), "invalid captured journal facts");
@@ -235,7 +235,15 @@ internal static class CountermeasureSaveValidation
             bool resolution = entry.Type == CombatEventType.Intercept ||
                 entry.Type == CombatEventType.Miss && entry.RatingBreakdown is not null;
             bool torpedoRoll = entry.Type == CombatEventType.TorpedoHitRoll;
-            Require((resolution || torpedoRoll) == (entry.Roll is not null), "roll on non-resolution");
+            bool breakdown = entry.Type == CombatEventType.LauncherBreakdown;
+            Require((resolution || torpedoRoll || breakdown) == (entry.Roll is not null), "roll on non-resolution");
+            if (breakdown)
+            {
+                Require(entry.ChanceTenths is > 0 and <= 1000 && entry.Roll <= entry.ChanceTenths &&
+                    !string.IsNullOrWhiteSpace(entry.LauncherModuleId) && !string.IsNullOrWhiteSpace(entry.Result),
+                    "invalid launcher breakdown");
+                breakdownEvents++;
+            }
             if (torpedoRoll)
             {
                 Require(entry.Attack is >= 0 && entry.Defense is >= 0 && entry.ChanceTenths is not null &&
@@ -252,6 +260,8 @@ internal static class CountermeasureSaveValidation
         }
         Require(lastId == saved.JournalSequence && rolls == saved.RngCounter, "journal/RNG counter mismatch");
         Require(torpedoRolls == (state.CombatState?.TorpedoHitRngCounter ?? 0), "torpedo-hit journal/RNG counter mismatch");
+        Require(breakdownEvents <= (state.CombatState?.LauncherBreakdownRngCounter ?? 0),
+            "launcher-breakdown journal/RNG counter mismatch");
         if (saved.SelectedProjectileId is { } selected)
         {
             selected = Canon(selected);
@@ -263,7 +273,7 @@ internal static class CountermeasureSaveValidation
     internal static void ValidateCapturedTorpedoRating(TorpedoSnapshot flight, int format)
     {
         if (format >= 16)
-            Require(!flight.RatingMigratedFromLegacySave && flight.CapturedManeuverability is >= 0 and <= 100 &&
+            Require(!flight.RatingMigratedFromLegacySave && flight.CapturedManeuverability is >= 0 and <= 200 &&
                 flight.OwnerPlayerRelationAtLaunch is PlayerRelation.Self or PlayerRelation.Enemy or PlayerRelation.Neutral or PlayerRelation.Friend,
                 "missing phase-three torpedo provenance");
         if (format < 11 && flight.TorpedoRating is null && flight.RatingBreakdown is null &&
@@ -278,7 +288,9 @@ internal static class CountermeasureSaveValidation
         }
         ValidateOperator(flight.RatingBreakdown);
         Require(flight.RatingBreakdown!.SkillType == WeaponSkillType.TorpedoAttack &&
-            flight.RatingBreakdown.EffectiveRating == flight.TorpedoRating, "captured torpedo rating mismatch");
+            flight.ModeManeuverabilityBonus is >= 0 and <= 100 &&
+            flight.RatingBreakdown.EffectiveRating + flight.ModeManeuverabilityBonus == flight.TorpedoRating,
+            "captured torpedo rating mismatch");
     }
 
     private static void ValidateOperator(WeaponOperatorSnapshot? op)

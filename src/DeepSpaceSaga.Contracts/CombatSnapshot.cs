@@ -104,7 +104,10 @@ public sealed record TorpedoSnapshot(
     /// <summary>Armor piercing captured at launch, independent of later catalog edits.</summary>
     decimal ArmorPiercingPercent = 0,
     /// <summary>Armor damage multiplier captured at launch, independent of later catalog edits.</summary>
-    decimal ArmorDamagePercent = 100);
+    decimal ArmorDamagePercent = 100,
+    /// <summary>Mode frozen at launch; changing the launcher later cannot rewrite the flight.</summary>
+    string ModeId = "standard",
+    decimal ModeManeuverabilityBonus = 0);
 
 /// <summary>Current execution phase, independent of whether the route predicts an intercept.</summary>
 public enum TorpedoRoutePhase
