@@ -9,6 +9,21 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class DefeatTimeBoundaryTests
 {
     [Fact]
+    public void No_combat_events_follow_module_defeat_inside_large_step()
+    {
+        using var engine = Create(PlayerDefeatTests.LethalScenario(150));
+        var final = At(engine, 600000, 180000000);
+        var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
+        Assert.Equal((long)Math.Ceiling(death.MotionTimeMs), final.MotionTimeMs);
+        Assert.DoesNotContain(final.CombatJournal, e => e.MotionTimeMs > death.MotionTimeMs);
+        Assert.Equal(death.EventId, final.EffectiveOutcome.DeathEventId);
+        Assert.Equal(SimulationSpeed.Speed0, final.CurrentSpeed);
+        Assert.False(final.EffectiveOutcome.CanSave);
+        var later = At(engine, 900000, 270000000);
+        Assert.Equal(final.CombatJournal.ToArray(), later.CombatJournal.ToArray());
+    }
+
+    [Fact]
     public void Fractional_lethal_hit_stops_at_first_integer_not_before_death()
     {
         var scenario = PlayerDefeatTests.LethalScenario(150);

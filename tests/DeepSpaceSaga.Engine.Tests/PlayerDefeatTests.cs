@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
 
@@ -31,6 +32,8 @@ public class PlayerDefeatTests
         Assert.Equal(Player, final.EffectiveOutcome.PlayerObjectId);
         Assert.Equal(3, final.CombatJournal.Count(e => e.Type == CombatEventType.Hit));
         var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
+        Assert.Equal("threshold:3/9", death.DestroyReason);
+        Assert.Equal((long)Math.Ceiling(death.MotionTimeMs), final.MotionTimeMs);
         Assert.Equal(death.EventId, final.EffectiveOutcome.DeathEventId);
         Assert.Equal(death.MotionTimeMs, final.EffectiveOutcome.DeathMotionTimeMs);
         Assert.Equal(death.Result, final.EffectiveOutcome.WreckObjectId);
@@ -49,6 +52,35 @@ public class PlayerDefeatTests
         Assert.Equal(SimulationSpeed.Speed0, later.CurrentSpeed);
         Assert.Equal(facts, JsonSerializer.Serialize(later.CombatJournal));
         Assert.Equal(JsonSerializer.Serialize(final.Objects), JsonSerializer.Serialize(later.Objects));
+    }
+
+    [Fact]
+    public void Critical_engine_death_transitions_once_to_ep8_defeat()
+    {
+        var source = Registry.Value;
+        static IEnumerable<T> All<T>(TypeRegistry<T> types) where T : ITypeDefinition =>
+            Enumerable.Range(0, types.Count).Select(types.GetDefinition);
+        var registry = GameDataRegistry.Create(All(source.ModuleCategories),
+            All(source.ModuleTypes).Select(module => module.TypeId == "module.engine.basic"
+                ? module with { CombatRole = "engine" } : module),
+            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
+            All(source.Dialogues), All(source.Quests), catalogVersion: source.CatalogVersion,
+            legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
+            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
+            stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules,
+            fireModes: source.FireModes);
+        using var engine = Create(LethalScenario(150), registry);
+        var final = At(engine, 600000, 180000000);
+        var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
+        Assert.Equal("critical:MOD-PLAYER-ENGINE-01", death.DestroyReason);
+        Assert.Equal(death.EventId, final.EffectiveOutcome.DeathEventId);
+        Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
+        Assert.False(final.EffectiveOutcome.CanSave);
+        var later = At(engine, 900000, 270000000);
+        Assert.Equal(final.EffectiveOutcome, later.EffectiveOutcome);
+        Assert.Equal(final.MotionTimeMs, later.MotionTimeMs);
+        Assert.Equal(final.GameTimeMs, later.GameTimeMs);
+        Assert.Equal(final.CombatJournal.ToArray(), later.CombatJournal.ToArray());
     }
 
     [Fact]
