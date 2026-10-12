@@ -6,6 +6,9 @@ namespace DeepSpaceSaga.Contracts;
 public enum CountermeasurePhase { Guiding, MissedCoast }
 public enum DefenseState { Ready, Guiding, Reloading, NoOperator }
 
+/// <summary>Physical-time commitment to the next barrel of one defense burst.</summary>
+public sealed record PendingBurstShot(double DueMotionTimeMs, string TargetTorpedoId, int BarrelNumber);
+
 public static class DefenseCommandTypes
 {
     public const string Fire = "defense.fire";
@@ -32,7 +35,11 @@ public sealed record DefenseSnapshot(
     decimal? Accuracy = null,
     double? SpeedKmS = null,
     double? TurnRateDegPerSec = null,
-    long? MaxFlightTimeMs = null);
+    long? MaxFlightTimeMs = null,
+    int Barrels = 1,
+    /// <summary>Null in pre-migration snapshots; an empty array means no queued barrel shots.</summary>
+    ImmutableArray<PendingBurstShot>? PendingBurstShots = null,
+    double? ReadyAtMotionTimeMs = null);
 
 /// <summary>
 /// Separate projectile type, never a torpedo fire target. All times use physical simulation

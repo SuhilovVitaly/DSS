@@ -65,4 +65,6 @@ public sealed record PlayerCommand(
     /// quote whose revision is no longer current with <see cref="CommandReasonCodes.StaleQuote"/>.
     /// Null for legacy/non-trade commands (null means "no revision", not revision zero).
     /// </summary>
-    long? MarketRevision = null);
+    long? MarketRevision = null,
+    /// <summary>Requested fire mode for torpedo.setMode; validated by the Engine.</summary>
+    string? ModeId = null);

@@ -67,3 +67,7 @@ EP-0009-US-0001-TK-0001-module-health-contracts имеет зависимост�
 ## EP-0009-US-0001-TK-0001 — 2026-10-12
 
 Additive module-health and journal Contracts implemented. Focused3/3 and full Contracts188/188, solution build0 warnings/errors, scoped format/diff PASS. Existing hull API intentionally remains until US-0003 consumer migration (A08); no module-health gameplay claim yet. Separate publication follows.
+
+## EP-0009-US-0001-TK-0002 — 2026-10-12
+
+TK-0001 6baef18139b177340ba329f272ac22835a96d8dc published/remote verified. Additive launcher/defense/torpedo/command/preview Contracts implemented with four JSON regressions. Initial full Contracts7 failures from default/empty ImmutableArray equality corrected with nullable queue identity; final Contracts192/192, solution build0 warnings/errors, scoped format/diff PASS. Old active-flight/hit-chance fields remain until live consumer migration; gameplay acceptance not claimed. Separate publication follows.

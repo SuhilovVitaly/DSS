@@ -10,6 +10,12 @@ public static class CombatCommandTypes
     public const string SelfDestruct = "torpedo.selfDestruct";
 }
 
+/// <summary>Torpedo launcher command identifiers; mode selection is addressed to one launcher.</summary>
+public static class TorpedoLauncherCommandTypes
+{
+    public const string SetMode = "torpedo.setMode";
+}
+
 /// <summary>Origin of a launch; independent of the launcher's current automatic-defense toggle.</summary>
 public enum LaunchMode { Auto, Manual }
 
@@ -36,7 +42,12 @@ public sealed record LauncherCombatSnapshot(
     /// <summary>Inclusive launch range in km, supplied by the module definition. Null means not supplied.</summary>
     double? RangeKm = null,
     /// <summary>Module-owned interception resistance in 0..100, distinct from physical turn rate.</summary>
-    decimal? Maneuverability = null);
+    decimal? Maneuverability = null,
+    string ModeId = "standard",
+    double? ReadyAtMotionTimeMs = null,
+    bool IsBrokenUntilDock = false,
+    /// <summary>Null in pre-migration snapshots; an empty array means no active flights in the new model.</summary>
+    ImmutableArray<string>? ActiveTorpedoIds = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs
@@ -80,7 +91,11 @@ public sealed record TorpedoSnapshot(
     /// <summary>Module maneuverability captured at launch; replan and operator changes never replace it.</summary>
     decimal? CapturedManeuverability = null,
     /// <summary>Launching owner's relation to the player, retained as provenance after the owner disappears.</summary>
-    string? OwnerPlayerRelationAtLaunch = null);
+    string? OwnerPlayerRelationAtLaunch = null,
+    /// <summary>Captured attack contribution for the contact-time hit roll.</summary>
+    decimal? CapturedAttack = null,
+    /// <summary>Authoritative chance in tenths of one percent; populated by EP-0009 runtime.</summary>
+    int? HitChanceTenths = null);
 
 /// <summary>Current execution phase, independent of whether the route predicts an intercept.</summary>
 public enum TorpedoRoutePhase

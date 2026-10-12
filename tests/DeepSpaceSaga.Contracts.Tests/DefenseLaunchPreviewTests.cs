@@ -6,6 +6,21 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public class DefenseLaunchPreviewTests
 {
     [Fact]
+    public void Preview_has_attack_defense_breakdown()
+    {
+        var preview = new DefenseLaunchPreview("ship", "pd-1", "torpedo-1", 580, true,
+            Attack: 78m, Defense: 70m, BaseChance: 50m);
+        var copy = JsonSerializer.Deserialize<DefenseLaunchPreview>(JsonSerializer.Serialize(preview))!;
+        Assert.Equal((78m, 70m, 50m, 580),
+            (copy.Attack, copy.Defense, copy.BaseChance, copy.ChanceTenths));
+        var old = JsonSerializer.Deserialize<DefenseLaunchPreview>(
+            """{"OwnerObjectId":"s","ModuleId":"pd","TargetTorpedoId":"t","ChanceTenths":500,"CanFire":true}""")!;
+        Assert.Null(old.Attack);
+        Assert.Null(old.Defense);
+        Assert.Null(old.BaseChance);
+    }
+
+    [Fact]
     public void Preview_is_bound_to_module_and_target()
     {
         var first = new InstalledModuleSnapshot("defense-1", "type", "Defense", 1, [DefenseCommandTypes.Fire],
