@@ -55,3 +55,5 @@ Operational skill files that must be discovered in-place, such as the character-
 5. Keep old paths out of new documentation; link from `Documentation/` paths.
 
 - [EP-0004 Graphify](06-Tooling/AiMapGraphify.md) — текущий код, документы, hash manifest и ограничения AST.
+
+Обновление Graphify отменено пользователем2026-10-12; существующий граф является историческим артефактом и не подтверждает текущий EP-0008/EP-0009.

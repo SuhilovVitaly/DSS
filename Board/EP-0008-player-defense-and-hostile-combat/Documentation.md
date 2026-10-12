@@ -7,13 +7,13 @@ revision: 1
 current_review: complete
 story_count: 13
 ticket_count: 45
-validation_status: implementation-reviewed-documentation-in-progress-native-open
+validation_status: implementation-documentation-reviewed-graph-skipped-native-open
 source_request: "После интервью создать следующий эпик с юзерстори и тикетами по образцу EP-0006/EP-0007."
 ---
 
 ## Актуализация EP-0008 — 2026-10-12
 
-43 из45 исходных тикетов опубликованы плюс отдельная коррекция A09. Функциональная реализация и self-review завершены, US-0013 документы/Graphify выполняется последней. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [публикации](PublicationStatus.md). Native13/14, frame-time target и human acceptance остаются OPEN; пользователь разрешил продолжить EP-0009 без дальнейших игровых/native запусков. Это не APPROVED за пользователя.
+44 из45 исходных тикетов опубликованы плюс отдельная коррекция A09. Функциональная реализация и self-review завершены, US-0013 документы опубликованы; завершающий аудит ссылок закрывает цепочку. Graphify отменён пользователем2026-10-12 (SKIPPED), дальнейшие игровые/native прогоны отложены. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [публикации](PublicationStatus.md). Native13/14, frame-time target и human acceptance остаются OPEN; пользователь разрешил продолжить EP-0009 без дальнейших игровых/native запусков. Это не APPROVED за пользователя.
 
 
 # EP-0008 — Третья фаза боя

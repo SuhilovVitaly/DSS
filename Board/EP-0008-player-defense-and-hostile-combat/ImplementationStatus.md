@@ -2,7 +2,7 @@
 
 ## Актуализация EP-0008 — 2026-10-12
 
-Текущий опубликованный baseline: `d13afd05e5a26d53492fcc98a96744cdb7ab7976` (US-0012-TK-0004).43/45 исходных тикетов и коррекция A09 опубликованы. Следующая работа — US-0013-TK-0001 документы, затем TK-0002 Graphify и EP-0009. Полный Debug4314/4314 до коррекции; свежий Release4201/4201 после неё, без114 неизменённых corpus cases. Native13/14, FPS/human OPEN; новые игровые/native запуски запрещены текущим указанием пользователя. Записи ниже — хронологическая история, старые blockers/next-ticket не текущий статус.
+Текущий опубликованный baseline: `904a21f1602358c8754d746f092858c920413b6f` (US-0013-TK-0001).44/45 исходных тикетов и коррекция A09 опубликованы. Финальный шаг EP-0008 — US-0013-TK-0002 аудит ссылок/Board; Graphify SKIPPED по указанию пользователя. После проверенной публикации этого шага начинается EP-0009. Полный Debug4314/4314 до коррекции; свежий Release4201/4201 после неё, без114 неизменённых corpus cases. Native13/14, FPS/human OPEN; новые игровые/native запуски запрещены текущим указанием пользователя. Записи ниже — хронологическая история, старые blockers/next-ticket не текущий статус.
 
 
 ## Resumption — 2026-10-11
@@ -284,3 +284,7 @@ Correction9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea published/remote verified. Fi
 ## EP-0008-US-0013-TK-0001 — 2026-10-12
 
 43 Markdown files synchronized across canonical requirements, mechanics/screens, historical reports, related EP6/7 summaries, Board and performance tooling. New Defeat screen contract and durable document inventory. Relative links,13/45 counts, DAG, publication ancestry and diff checked. No runtime code change. Next after publication: Graphify rebuild; native/human acceptance remains OPEN.
+
+## EP-0008-US-0013-TK-0002 — 2026-10-12
+
+Documentation904a21f published/remote verified. User cancelled Graphify rebuilding to avoid token expenditure; semantic agents stopped, existing graph unchanged, .graphifyignore restored. Graph gate SKIPPED by user instruction. Relative links,13 stories/45 tickets and DAG audited. Implementation/documentation chain delivered under revised scope; native13/14, FPS/human remain OPEN. User authorizes EP-0009 continuation without game/native/graph launches. Separate publication follows, own SHA recorded through Git after creation.

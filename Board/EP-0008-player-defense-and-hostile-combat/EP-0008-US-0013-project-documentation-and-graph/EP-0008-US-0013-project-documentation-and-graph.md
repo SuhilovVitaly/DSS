@@ -7,12 +7,12 @@ dependencies: ["EP-0008-US-0001-module-owned-weapon-rules","EP-0008-US-0002-dual
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: documentation-in-progress
+validation_status: documentation-complete-graph-skipped-by-user
 ---
 
 ## Актуализация EP-0008 — 2026-10-12
 
-TK-0001 синхронизирует документы; TK-0002 перестраивает граф после его публикации. [Фактическое evidence](../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
+TK-0001 опубликован904a21f; TK-0002 проверяет ссылки/Board. Перестройка Graphify отменена прямым указанием пользователя2026-10-12; её статус SKIPPED, не PASS. [Фактическое evidence](../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
 
 
 # Актуальная документация всего проекта
@@ -62,3 +62,7 @@ TK-0001 синхронизирует документы; TK-0002 перестр�
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
 При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Исходная запись описывала план; текущий запрос разрешает автономное исполнение.
+
+## Current acceptance disposition
+
+AC-0001/0002 delivered by TK-0001; AC-0003 link/count/DAG audit delivered by TK-0002, Graphify part explicitly waived by user. Documentation story is delivered under that revised scope. No user APPROVED or native PASS claimed.
