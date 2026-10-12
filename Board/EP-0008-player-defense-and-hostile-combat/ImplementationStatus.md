@@ -1,5 +1,10 @@
 # EP-0008 — execution evidence
 
+## Актуализация EP-0008 — 2026-10-12
+
+Текущий опубликованный baseline: `d13afd05e5a26d53492fcc98a96744cdb7ab7976` (US-0012-TK-0004).43/45 исходных тикетов и коррекция A09 опубликованы. Следующая работа — US-0013-TK-0001 документы, затем TK-0002 Graphify и EP-0009. Полный Debug4314/4314 до коррекции; свежий Release4201/4201 после неё, без114 неизменённых corpus cases. Native13/14, FPS/human OPEN; новые игровые/native запуски запрещены текущим указанием пользователя. Записи ниже — хронологическая история, старые blockers/next-ticket не текущий статус.
+
+
 ## Resumption — 2026-10-11
 
 The user explicitly authorized completing EP-0008 and then EP-0009 autonomously,
@@ -275,3 +280,7 @@ TK-0012-0003 published as402c3757e354641bdc92d165d5a1d7df8cf7e6fe (remote verifi
 ## EP-0008-US-0012-TK-0004 — 2026-10-12
 
 Correction9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea published/remote verified. Final self-review complete with Q01–Q51 and all story AC traced to actual code/tests. Full Debug4314/4314 before rounding correction; fresh Release4201/4201 excluding114 unaffected corpus checks after correction; build0 warnings/errors, diff PASS. No unresolved confirmed runtime finding. Native/human gates remain OPEN by user deferral (13/14 native cases, frame-time target not accepted). Documentation/Graphify follow; this review is not user approval. Separate publication follows.
+
+## EP-0008-US-0013-TK-0001 — 2026-10-12
+
+43 Markdown files synchronized across canonical requirements, mechanics/screens, historical reports, related EP6/7 summaries, Board and performance tooling. New Defeat screen contract and durable document inventory. Relative links,13/45 counts, DAG, publication ancestry and diff checked. No runtime code change. Next after publication: Graphify rebuild; native/human acceptance remains OPEN.

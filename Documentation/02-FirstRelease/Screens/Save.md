@@ -1,5 +1,12 @@
 # Save
 
+## Актуализация EP-0008 — 2026-10-12
+
+Текущий формат16: defense payload2, hostile1, combat1; материализованная карта и экономическая continuation сохраняются. Боевой save фиксирует captured параметры, пути, TTL/reload/coast, attempt flags, AI, RNG counters и журнал. В Defeated новый Save/F5 отклоняется до файловой записи, включая гибель при advance. Уже захваченный до гибели immutable save может завершиться. Отказ не перезаписывает старый слот. Указания Save15/11 ниже — датированная история.
+
+[Текущий контракт](../../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../04-Engineering/PhaseThreeCombatAcceptance.md).
+
+
 ## Сверка реализации — 2026-10-10
 
 Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.

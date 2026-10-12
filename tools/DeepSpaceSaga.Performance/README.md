@@ -1,5 +1,12 @@
 # GPU/window probe
 
+## Актуализация EP-0008 — 2026-10-12
+
+EP-0008 final review and recorded native matrix are linked below. The user currently defers all game/native launches: do not execute the native combat harness until that restriction is lifted. Historical13/14 completed interactions and failed frame-time target are not full acceptance. Automated solution tests and headless performance checks remain distinct from native evidence.
+
+[Текущий контракт](../../Documentation/01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+
+
 The existing positional command runs CPU/raster benchmarks. `--window-probe`
 creates a real OpenGL window and renders the game screen from a tactical-map
 snapshot, including camera scale, player following, selection and prediction age.

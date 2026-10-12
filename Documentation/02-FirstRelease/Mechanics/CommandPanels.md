@@ -1,5 +1,12 @@
 # Командные панели корабля
 
+## Актуализация EP-0008 — 2026-10-12
+
+Число панелей зависит от установленных аппаратов: каждая ПРО имеет собственную панель, поэтому в PlayerShipOnly их7, в базовом комплекте6. Fire адресует конкретный moduleId и выбранную вражескую торпеду; auto on/off независим от ручного пуска. Видны оператор, готовность, busy/reload, шанс и remaining lifetime. На паузе ручная команда разрешена;0%/нет ETA не запрещают ручной пуск. Pending CommandId и захваченные module/target исключают повтор и отправку от другого аппарата.
+
+[Текущий контракт](../../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../04-Engineering/PhaseThreeCombatAcceptance.md).
+
+
 Статус: смысловая группировка команд первого релиза обновлена под Tetrarch Class.
 
 Связанные документы: `TetrarchClass.md`, `TacticalMapAndManeuvering.md`, `Docking.md`, `Fuel.md`, `ElectricityAndEnergyCells.md`, `IceMining.md`.
@@ -57,7 +64,7 @@
 
 ## Требования первого релиза
 
-- `GameSessionScreen` должен показывать команды через шесть панелей: Navigation, Maneuver, Engine, Space Control, Torpedo Launcher, Countermeasure Launcher.
+- `GameSessionScreen` показывает базовые шесть панелей, добавляя отдельную панель каждой дополнительной ПРО: Navigation, Maneuver, Engine, Space Control, Torpedo Launcher, Countermeasure Launcher.
 - Панели должны работать поверх существующей module-addressed command model.
 - Команды Navigation Computer: `navigation.dock`, `navigation.stationsList`.
 - Команды Engine: `engine.accelerate`, `engine.brake`, `engine.maintainCourse`, `engine.maintainSpeed`, `engine.turnLeftStep`, `engine.turnRightStep`, `engine.turnLeftUntilCancel`, `engine.turnRightUntilCancel`, `engine.speedSynchronization`, `engine.directionSynchronization`, `engine.orbit`, `navigation.approach` (физически команда Engine, отображается в панели Navigation).

@@ -10,6 +10,11 @@ current_review: complete
 validation_status: automated-pass; native-open
 ---
 
+## Актуализация EP-0008 — 2026-10-12
+
+Функциональные тикеты реализованы, проверены и опубликованы; self-review завершено. [Фактическое evidence](../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
+
+
 # Ручной перехват любой вражеской торпеды
 
 ## User story
@@ -42,7 +47,7 @@ validation_status: automated-pass; native-open
 
 ## Completion evidence
 
-Все AC доказаны связанными тикетами, проверками реального результата и review. Конкретные команды и запланированные регрессии находятся в карточках. Native/UI требования подтверждаются реальным окном отдельно от automated tests; при недоступности это NOT RUN, не PASS.
+Покрытие AC и фактические ограничения приведены в текущем execution status и acceptance report; наличие запланированных проверок само по себе не является evidence. Конкретные команды и запланированные регрессии находятся в карточках. Native/UI требования подтверждаются реальным окном отдельно от automated tests; при недоступности это NOT RUN, не PASS.
 
 ## Gaps и исполнение
 

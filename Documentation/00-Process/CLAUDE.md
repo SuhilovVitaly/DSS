@@ -1,5 +1,12 @@
 # CLAUDE.md
 
+## Актуализация EP-0008 — 2026-10-12
+
+Current writer: SaveFormatVersion16 (defense2, hostile1, combat1); old saves rejected. Engine owns manual defense, hostile pursuit/fire and terminal Defeated; Client routes Defeat/Load to a fresh session. Physical clock stops at ceil(exact death), while journal retains exact contact time. The dated Save15/integration statements below describe their original snapshot. Further game/native launches are deferred by the user; headless tests remain permitted.
+
+[Текущий контракт](../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../04-Engineering/PhaseThreeCombatAcceptance.md).
+
+
 ## Сверка реализации — 2026-10-10
 
 Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.

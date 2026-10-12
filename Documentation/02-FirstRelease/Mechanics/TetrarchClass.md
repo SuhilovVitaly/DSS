@@ -1,5 +1,12 @@
 # Tetrarch Class
 
+## Актуализация EP-0008 — 2026-10-12
+
+Базовая таблица ниже остаётся комплектом остальных пяти сценариев. PlayerShipOnly добавляет вторую `module.countermeasure.launcher.basic` в(3,1): всего9 модулей из12 клеток. Жилой модуль в(4,1) заменён на `living.quarters.mk1.three-cabins`, третий отдельный оператор назначен второй ПРО. У пирата остаётся одна ПРО. Hull HP450; это ещё не модульная модель урона EP-0009.
+
+[Текущий контракт](../../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../04-Engineering/PhaseThreeCombatAcceptance.md).
+
+
 Статус: стартовая комплектация первого релиза зафиксирована в основном requirements-документе и `DefaultScenario`.
 
 Основной источник: раздел 57 `Documentation/01-Requirements/EngineRequirements.md`.

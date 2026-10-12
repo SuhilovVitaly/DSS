@@ -6,10 +6,15 @@ created: 2026-10-07
 revision: 1
 current_review: complete
 story_count: 13
-ticket_count: 44
-validation_status: planning-only
+ticket_count: 45
+validation_status: implementation-reviewed-documentation-in-progress-native-open
 source_request: "После интервью создать следующий эпик с юзерстори и тикетами по образцу EP-0006/EP-0007."
 ---
+
+## Актуализация EP-0008 — 2026-10-12
+
+43 из45 исходных тикетов опубликованы плюс отдельная коррекция A09. Функциональная реализация и self-review завершены, US-0013 документы/Graphify выполняется последней. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [публикации](PublicationStatus.md). Native13/14, frame-time target и human acceptance остаются OPEN; пользователь разрешил продолжить EP-0009 без дальнейших игровых/native запусков. Это не APPROVED за пользователя.
+
 
 # EP-0008 — Третья фаза боя
 
@@ -21,7 +26,7 @@ source_request: "После интервью создать следующий �
 
 Перед нарезкой прочитаны все70 Markdown-документов Documentation и материалы EP6/EP7, затем выполнен read-only grounding текущего кода. Обязательный в AGENTS навык requirements-engineer не найден в доступных skill roots/репозитории/Agents; для структуры использованы доступные DSS-EpicBuilder/DSS-StoryBuilder и EP6/EP7. Пользователь прямо запросил полный эпик с тикетами после уточнения требований, поэтому дополнительные approval-раунды образца EpicBuilder не вводились. Идеи сверх согласованного scope не добавлены.
 
-Это **план**, не реализованная фаза. Статусы draft; current_review=complete относится к полноте нарезки. Production build/tests/native здесь не запускались. Создание плана не равно выполнению [EpicExecutionPrompt](../EpicExecutionPrompt.md), commit/push реализации или пользовательскому APPROVED.
+Следующий абзац фиксирует исходную стадию планирования от2026-10-07; текущий статус указан выше. Это был **план**, а не выполненная на ту дату фаза. Статусы draft; current_review=complete относится к полноте нарезки. Production build/tests/native здесь не запускались. Создание плана не равно выполнению [EpicExecutionPrompt](../EpicExecutionPrompt.md), commit/push реализации или пользовательскому APPROVED.
 
 [EngineRequirements](../../Documentation/01-Requirements/EngineRequirements.md), [CLAUDE](../../Documentation/00-Process/CLAUDE.md) и [правила документации](../../Documentation/00-Process/DocumentationSystem.md) сохраняют архитектурную силу. Gameplay-изменения этой фазы прямо перечислены ниже; canonical требования обновляются по факту исполнения в последней истории.
 
