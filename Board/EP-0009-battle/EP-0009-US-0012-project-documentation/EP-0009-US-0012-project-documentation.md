@@ -4,7 +4,7 @@ story: EP-0009-US-0012-project-documentation
 title: "Документация (обязательная завершающая история)"
 stage: draft
 created: 2026-10-12
-validation_status: documentation-updated-links-pending-native-open
+validation_status: documentation-and-links-pass-graph-skipped-native-open
 ---
 
 # Документация (обязательная завершающая история)

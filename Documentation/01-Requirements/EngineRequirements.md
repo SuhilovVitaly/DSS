@@ -5344,6 +5344,8 @@ Authoritative money path не должен использовать `float`/`dou
 
 <a id="approach-shortest-route"></a>
 
+<a id="approach-shortest-route"></a>
+
 ## 60. Approach: кратчайшее сближение с минимальным временем прибытия
 
 Согласованное изменение от 2026-09-20. Основание: пользователь уточнил, что красная линия на скриншоте нарисована им как желаемый путь, и попросил «достигать цель как можно быстрее с самым коротким путем между точками». Затем отдельно поручил синхронизировать ТЗ и документацию с реализованным поведением.
@@ -5405,6 +5407,8 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 
 
 <a id="countermeasure-combat"></a>
+<a id="countermeasure-combat"></a>
+
 ## EP-0007: операторы и противоракетный бой (2026-10-04)
 
 Исторический контракт: формула, дальности, offensive AI, ручные команды, комплектация, панели и версия save ниже заменены [EP-0008](#phase-three-combat). Старые результаты не являются проверкой новой фазы.
@@ -5430,6 +5434,8 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 Действующее уточнение EP-0004: Engine владеет материализованным AiMap rulesVersion1 и атомарным Save15. Hostile AI stations отклоняют dock/dialogue/trade/quote/refuel с station_access_denied. Территории, Radiation/Dust/Debris и POI информационные и не меняют движение, урон, топливо, экономику или RNG. Локальные связи проверяются на365-дневном горизонте, межкластерная связность — в объявленных/критических эпохах; это не бесконечное непрерывное доказательство. Для SolarSystem стратегическая видимость известных объектов заменяет legacy proximity-only ограничение §40; доступ к котировкам и survey не раскрывается. Overlap cycling и client-local descriptor selection уточняют nearest-only правило §54; hover остаётся нециклическим с приоритетом Station/player/NPC/other, затем distance/ordinal ID. Точные units, bounds, epochs и исключения находятся в текущем контракте.
 
 [Текущий технический контракт и evidence](../04-Engineering/AiMapEnvironment.md).
+
+<a id="phase-three-combat"></a>
 
 <a id="phase-three-combat"></a>
 
