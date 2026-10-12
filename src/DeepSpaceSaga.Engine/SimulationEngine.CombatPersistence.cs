@@ -33,7 +33,7 @@ public sealed partial class SimulationEngine
             var owner = objects[index];
             var module = owner.Modules.Single(m => m.ModuleId == row.State.EngineModuleId);
             var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-            if (definition.MaxSpeedMps is not > 0 || definition.LinearInertiaMps2 is not > 0 ||
+            if (!IsEngineCategory(definition) || definition.MaxSpeedMps is not > 0 || definition.LinearInertiaMps2 is not > 0 ||
                 definition.AngularInertiaDegPerSec is not > 0 || definition.TurnStepDegrees is not > 0 ||
                 row.ActiveMotion && !CanExecuteEngineCommand(module, definition))
                 throw new ScenarioException("Invalid hostile combat save: assigned engine is unavailable or not an engine.");

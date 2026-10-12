@@ -3130,7 +3130,8 @@ public sealed partial class SimulationEngine : IDisposable
 
     private static bool IsEngineCommandType(ModuleTypeDefinition moduleType, string commandType)
     {
-        return commandType is (ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake or
+        return IsEngineCategory(moduleType) &&
+               commandType is (ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake or
                    ShipEngineCommandTypes.MaintainSpeed or ShipEngineCommandTypes.TurnLeftStep or
                    ShipEngineCommandTypes.TurnRightStep or ShipEngineCommandTypes.TurnLeftUntilCancel or
                    ShipEngineCommandTypes.TurnRightUntilCancel or ShipEngineCommandTypes.MaintainCourse or
@@ -3139,9 +3140,14 @@ public sealed partial class SimulationEngine : IDisposable
                moduleType.CommandTypeIds.Contains(commandType, StringComparer.Ordinal);
     }
 
+    // Programmatically constructed legacy registries have no category metadata. Loaded
+    // catalogs always declare one, so an explicit non-engine category cannot propel a ship.
+    private static bool IsEngineCategory(ModuleTypeDefinition moduleType) =>
+        moduleType.CategoryTypeId is null or "module.engine";
+
     private static bool CanExecuteEngineCommand(InstalledModuleRuntime module, ModuleTypeDefinition moduleType)
     {
-        return moduleType.MaxSpeedMps is > 0 &&
+        return IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is > 0 &&
                moduleType.TurnStepDegrees is > 0 &&
                moduleType.LinearInertiaMps2 is > 0 &&
                moduleType.AngularInertiaDegPerSec is > 0 &&
@@ -3290,7 +3296,7 @@ public sealed partial class SimulationEngine : IDisposable
             var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
             if (string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) && module.StructurePoints > 0 &&
-                moduleType.MaxSpeedMps is > 0)
+                IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is > 0)
                 return moduleType.MaxSpeedMps.Value / 1000.0;
         }
         return null;

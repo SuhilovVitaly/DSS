@@ -49,7 +49,8 @@ public sealed class VoyageFuelAccountingTests
         {
             ModuleCategoryDefinition[] categories = [new("module.engine", "Engine", 1, []), new("module.storage", "Storage", 1, [])];
             if (!valid) Assert.Throws<ContentException>(() => EngineContentLoader.LoadModuleImplementations(file, categories));
-            else Assert.Equal(efficiency, Assert.Single(EngineContentLoader.LoadModuleImplementations(file, categories)).FuelEfficiencyKmPerKg);
+            else Assert.Equal(efficiency, EngineContentLoader.LoadModuleImplementations(file, categories)
+                .Single(m => m.TypeId == "module.engine.basic").FuelEfficiencyKmPerKg);
         }
         finally { File.Delete(file); }
     }

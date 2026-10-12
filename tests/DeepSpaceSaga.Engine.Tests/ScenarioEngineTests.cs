@@ -487,7 +487,7 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(8, activeTypes.Length); // engine + scanner + bridge + drilling + container + torpedo + two defense variants
+        Assert.Equal(9, activeTypes.Length); // two engines + scanner + bridge + drilling + container + torpedo + two defense variants
 
         var launcherType = Assert.Single(activeTypes, t => t.TypeId == "module.torpedo.launcher.basic");
         Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcherType.CommandTypeIds);

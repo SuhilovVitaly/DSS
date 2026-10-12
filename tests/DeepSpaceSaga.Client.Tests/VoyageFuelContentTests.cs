@@ -39,7 +39,7 @@ public sealed class VoyageFuelContentTests
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
         var engine = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.engine.basic"));
         Assert.Equal(1000, engine.FuelCapacityKg);
-        Assert.Equal(4000, engine.MaxSpeedMps);
+        Assert.Equal(6000, engine.MaxSpeedMps);
         Assert.Equal(1, engine.TurnStepDegrees);
         Assert.Equal(400, engine.LinearInertiaMps2);
         Assert.Equal(4, engine.AngularInertiaDegPerSec);

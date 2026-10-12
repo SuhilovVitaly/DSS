@@ -79,11 +79,11 @@ public class HostileCombatPathTests
         engine.ReceiveCommand(new("accelerate", 1, Player, "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.Accelerate));
         engine.ReceiveCommand(Fire("attack")); At(engine, 100);
         var snapshot = At(engine, 20100);
-        Assert.Equal(4, snapshot.Objects.Single(o => o.ObjectId == Player).SpeedKmS);
+        Assert.Equal(6, snapshot.Objects.Single(o => o.ObjectId == Player).SpeedKmS);
         var pursuit = snapshot.Objects.Single(o => o.ObjectId == Target);
         Assert.Equal(HostileCombatPhase.Pursuit, pursuit.HostileCombat!.Phase);
         Assert.Equal(orbit.Clockwise, pursuit.HostileCombat.Clockwise);
-        Assert.Equal(4, pursuit.SpeedKmS);
+        Assert.Equal(6, pursuit.SpeedKmS);
         Assert.True(snapshot.Objects.Single(o => o.Torpedo is not null).Torpedo!.Route.StartMotionTimeMs > 100);
     }
 

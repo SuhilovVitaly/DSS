@@ -13,7 +13,13 @@ created: 2026-10-12
 
 # EP-0009-US-0002-TK-0002-engine-catalog
 
-STATUS: NOT STARTED
+STATUS: IMPLEMENTED; separate publication follows
+
+Execution scope before edit: `src/DeepSpaceSaga.Client/Data/Modules/Engine/modules-engine.json`, `src/DeepSpaceSaga.Engine/SimulationEngine.cs`, `SimulationEngine.CombatPersistence.cs`, new `tests/DeepSpaceSaga.Engine.Tests/EngineCategoryDispatchTests.cs`, `VoyageFuelAccountingTests.cs`, this card and EP-0009 status reports. Current Engine has no runtime `module.engine.basic` comparison; dispatch already uses command membership/propulsion fields. This ticket makes `module.engine` category explicit in dispatch, speed selection, and hostile save validation, allowing `strizh` without ID-specific branches. D26 leaves fuel, turn-step, and base-cycle unspecified, so Strizh inherits the basic engine's corresponding values. Additional tests asserting 4 km/s or a single engine type will be included and documented if broad regression finds them. No Graphify/game/native runs.
+
+Scope adjustment from actual regressions: `Scenario/SolarSystemGenerator.cs` also selects operational engine Vmax and now uses category metadata. Engine tests for system generation, cluster distances, voyage, hostile pursuit, and type counts, plus Client content/default-system tests, required updates for basic speed 6 km/s and the new Strizh type. Null category is accepted only for legacy programmatically constructed registries; a loaded explicit non-engine category is excluded from propulsion dispatch. An overbroad headless generator filter entered the long corpus and was canceled; the corrected non-corpus focused run passed15/15. No native/game/Graphify runs.
+
+Implementation: basic `maxSpeedMps` 6000 and `maneuverability` 10; Strizh 8000/800/12, mass 4000 and maneuverability 40, with inherited fuel/turn-step/cycle defaults. Actual Strizh command and system Vmax verified. Focused command/approach114/114, Engine non-corpus1946/1946, Client full1857/1857, solution build0 warnings/errors, scoped format/diff PASS. Production scenario loadouts are updated in later tickets; combat maneuverability consumption also remains later runtime work.
 
 **Задача.**
 1. `module.engine.basic`: `maneuverability` 10, `maxSpeedMps` 6000 (O2).
