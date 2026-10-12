@@ -9,13 +9,34 @@
       "powerConsumptionW": 0,
       "baseCycleTimeMs": 1,
       "baseSuccessChancePercent": 100,
-      "countermeasureAccuracy": 55,
-      "countermeasureManualRangeKm": 200,
-      "countermeasureMaxFlightTimeMs": 60000,
-      "countermeasureSpeedKmS": 12,
+      "countermeasureAccuracy": 58,
+      "countermeasureManualRangeKm": 150,
+      "countermeasureMaxFlightTimeMs": 30000,
+      "countermeasureSpeedKmS": 20,
       "countermeasureTurnRateDegPerSec": 90,
-      "countermeasureRangeKm": 100,
-      "countermeasureReloadMs": 10000
+      "countermeasureRangeKm": 150,
+      "countermeasureReloadMs": 14500,
+      "barrels": 2,
+      "burstIntervalMs": 2000
+    },
+    {
+      "typeId": "module.countermeasure.launcher.single",
+      "displayName": "Single-barrel Countermeasure Launcher",
+      "type": "module.countermeasure.launcher",
+      "massKg": 2000,
+      "structurePointsMax": 60,
+      "powerConsumptionW": 0,
+      "baseCycleTimeMs": 1,
+      "baseSuccessChancePercent": 100,
+      "countermeasureAccuracy": 58,
+      "countermeasureManualRangeKm": 150,
+      "countermeasureMaxFlightTimeMs": 30000,
+      "countermeasureSpeedKmS": 20,
+      "countermeasureTurnRateDegPerSec": 90,
+      "countermeasureRangeKm": 150,
+      "countermeasureReloadMs": 14500,
+      "barrels": 1,
+      "burstIntervalMs": 2000
     }
   ]
 }

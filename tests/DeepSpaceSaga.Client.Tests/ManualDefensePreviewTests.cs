@@ -30,7 +30,7 @@ public class ManualDefensePreviewTests
         Assert.Equal(module, f.Screen.ManualDefensePreviewWeapon!.ModuleId);
         Assert.NotNull(plan.PredictedEncounterMotionTimeMs);
         Assert.NotNull(f.Screen.ManualDefensePreviewGeometry!.Intercept);
-        Assert.Equal(6501, f.Buffer.Latest!.Snapshot.InstalledModules.Single(m => m.ModuleId == module).DefensePreview!.FirstTargetContactMotionTimeMs!.Value, 2);
+        Assert.Equal(1951, f.Buffer.Latest!.Snapshot.InstalledModules.Single(m => m.ModuleId == module).DefensePreview!.FirstTargetContactMotionTimeMs!.Value, 2);
         f.Render(); f.Render();
         Assert.Same(plan, f.Screen.ManualDefensePreviewPlan);
         Assert.Empty(f.Connection.Commands);
@@ -77,7 +77,7 @@ public class ManualDefensePreviewTests
             { Defense = m.Defense! with { SpeedKmS = 6, TurnRateDegPerSec = 30 } }).ToImmutableArray()
         });
         f.Hover(First);
-        Assert.All(f.Screen.ManualDefensePreviewPlan!.Route.Segments, segment => Assert.Equal(12, segment.SpeedKmS));
+        Assert.All(f.Screen.ManualDefensePreviewPlan!.Route.Segments, segment => Assert.Equal(20, segment.SpeedKmS));
         var button = f.Hover(Second);
         Assert.Equal(Second, f.Screen.ManualDefensePreviewWeapon!.ModuleId);
         Assert.All(f.Screen.ManualDefensePreviewPlan!.Route.Segments, segment => Assert.Equal(6, segment.SpeedKmS));

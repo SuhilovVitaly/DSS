@@ -13,7 +13,7 @@ public class DualDefenseArbitrationTests
     {
         var source = AutomaticDefenseTests.WeaponRegistry(firstAccuracy, 5);
         static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
-        var variant = All(source.ModuleTypes).Single(m => m.CountermeasureAccuracy is not null) with
+        var variant = All(source.ModuleTypes).Single(m => m.TypeId == "module.countermeasure.launcher.basic") with
         {
             TypeId = "module.countermeasure.launcher.arbitration",
             CountermeasureAccuracy = secondAccuracy,

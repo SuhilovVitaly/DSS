@@ -11,8 +11,7 @@ public sealed class TorpedoLaunchTests
     private const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
         "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-    private static readonly Lazy<GameDataRegistry> Registry = new(() => EngineContentLoader.LoadRegistryFromSettingsFile(
-        Path.Combine(ClientRoot, "Settings.json"), out _, out _));
+    private static readonly Lazy<GameDataRegistry> Registry = TorpedoImpactTests.Registry;
     private static PlayerCommand Fire(string id = "fire", string? target = Target) => new(id, 1, Player, Launcher, CombatCommandTypes.Fire, target);
     private static ObjectMotionSnapshot Projectile(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
     private static SimulationEngine Create(Func<SpaceObjectData, SpaceObjectData>? configure = null)

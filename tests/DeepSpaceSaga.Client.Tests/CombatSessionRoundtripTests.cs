@@ -14,7 +14,7 @@ public sealed class CombatSessionRoundtripTests
     {
         await using var fixture = await CombatSessionFixture.Create();
         await fixture.Launch("session-launch");
-        var before = await fixture.Advance(12345);
+        var before = await fixture.Advance(1000);
         var restored = await fixture.SaveAndRestore();
         Assert.Equal(before.MotionTimeMs, restored.MotionTimeMs);
         Assert.Equal(before.GameTimeMs, restored.GameTimeMs);

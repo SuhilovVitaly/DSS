@@ -11,8 +11,43 @@ public sealed class TorpedoImpactTests
     internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
     internal static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
         "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-    internal static readonly Lazy<GameDataRegistry> Registry = new(() => EngineContentLoader.LoadRegistryFromSettingsFile(
-        Path.Combine(ClientRoot, "Settings.json"), out _, out _));
+    internal static readonly Lazy<GameDataRegistry> Registry = new(LegacyWeaponRegistry);
+
+    // EP-0008 flight/interception regressions retain their calibrated weapon parameters.
+    // The shipped EP-0009 catalog is asserted separately by Client content tests.
+    private static GameDataRegistry LegacyWeaponRegistry()
+    {
+        var source = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"), out _, out _);
+        static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition =>
+            Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
+        return GameDataRegistry.Create(
+            All(source.ModuleCategories),
+            All(source.ModuleTypes).Select(module => module.TypeId switch
+            {
+                "module.torpedo.launcher.basic" => module with
+                {
+                    TorpedoManeuverability = 5,
+                    TorpedoRangeKm = 200,
+                    TorpedoSpeedKmS = 3
+                },
+                "module.countermeasure.launcher.basic" => module with
+                {
+                    CountermeasureAccuracy = 55,
+                    CountermeasureManualRangeKm = 200,
+                    CountermeasureMaxFlightTimeMs = 60000,
+                    CountermeasureSpeedKmS = 12,
+                    CountermeasureRangeKm = 100,
+                    CountermeasureReloadMs = 10000
+                },
+                _ => module
+            }),
+            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
+            All(source.Dialogues), All(source.Quests), catalogVersion: source.CatalogVersion,
+            legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
+            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
+            stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules,
+            fireModes: source.FireModes);
+    }
     internal static ScenarioFile Scenario(Func<SpaceObjectData, SpaceObjectData>? configure = null,
         params SpaceObjectData[] extras)
     {

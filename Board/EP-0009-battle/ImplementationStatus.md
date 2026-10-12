@@ -83,3 +83,7 @@ TK-0003 1bead7588ee439464f3d5fde3e3db4e534c20e37 published/remote verified. Addi
 ## EP-0009-US-0001-TK-0005 — 2026-10-12
 
 TK-0004 e2bb1da9479db4087dbda250b2f36c9be49c6c73 published/remote verified. Crew accuracy/maneuverability skills and module armorClass schema with runtime and Save/Load preservation. Focused19/19; first broad Engine non-corpus1943/1944 had one pause-timing failure unrelated to changed paths; that test passed alone and full clean repeat1944/1944. Solution build0 warnings/errors; scoped format/diff PASS. New combat math follows in later tickets. Separate publication follows. Graphify/game/native NOT RUN per user.
+
+## EP-0009-US-0002-TK-0001 — 2026-10-12
+
+TK-0005 f7eb4c4a8a694227c39bca25600239d0e961649a published/remote verified. US-0001 story review recorded partial AC2/AC3 until later catalog/runtime migration. Weapon catalog now contains EP-0009 launcher and defense values plus the new single-barrel defense variant. Historical EP-0008 combat fixtures pin their original weapon values; shipped data is checked separately in Client tests. New locale keys cover previously added combat event enum values. Focused Client catalog19/19; Engine non-corpus1944/1944; Client full1857/1857; solution build0 warnings/errors; scoped format/diff PASS. Initial Engine88/Client30 failures came from old fixed catalog assumptions, addressed in tests/fixtures. Runtime multiflight/burst behavior still follows in later tickets. Separate publication follows. Graphify/game/native NOT RUN per user.

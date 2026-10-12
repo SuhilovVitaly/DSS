@@ -39,7 +39,7 @@ public sealed class BasicCombatUiFlowTests
             var owner = launch.Objects.Single(o => o.ObjectId == Fixture.Player);
             Assert.Equal((owner.X, owner.Y, owner.Direction), (missile.X, missile.Y, missile.Direction));
             Assert.Equal((owner.X, owner.Y, owner.Direction), (preview.Segments[0].X, preview.Segments[0].Y, preview.Segments[0].Direction));
-            Assert.Equal(3, missile.SpeedKmS);
+            Assert.Equal(10, missile.SpeedKmS);
             Assert.Equal(Fixture.Target, missile.Torpedo!.TargetObjectId);
             Assert.Equal(Fixture.Player, missile.Torpedo.OwnerObjectId);
             Assert.Equal(Fixture.Launcher, missile.Torpedo.LauncherModuleId);

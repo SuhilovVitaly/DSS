@@ -192,8 +192,8 @@ public class HostileTorpedoFireTests
         try
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(save));
-            using var loaded = DeepSpaceSaga.Engine.Content.EngineContentLoader.CreateEngineFromSaveFile(
-                Path.Combine(ClientRoot, "Settings.json"), path);
+            using var loaded = new SimulationEngine(Registry.Value);
+            loaded.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true), isSave: true);
             Assert.Equal(JsonSerializer.Serialize(At(engine, 150000).CombatJournal), JsonSerializer.Serialize(At(loaded, 150000).CombatJournal));
         }
         finally { File.Delete(path); }

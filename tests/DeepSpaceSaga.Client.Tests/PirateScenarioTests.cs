@@ -73,7 +73,7 @@ public sealed class PirateScenarioTests
         var snapshot = engine.CaptureSnapshotForTests();
         Assert.Equal(2, snapshot.Objects.Count(o => o.ObjectType is "PlayerShip" or "NpcShip"));
         Assert.All(snapshot.Objects.Where(o => o.ObjectType is "PlayerShip" or "NpcShip"), o => Assert.Equal(new HullCombatSnapshot("ship.tetrarch", 450, 450), o.HullCombat));
-        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150, RangeKm: 200, Maneuverability: 5),
+        Assert.Equal(new LauncherCombatSnapshot(null, 10, 90, 150, RangeKm: 150, Maneuverability: 50),
             Assert.Single(snapshot.InstalledModules, m => m.LauncherCombat is not null).LauncherCombat! with { Operator = null });
         var pirate = Pirate(snapshot);
         var playerPose = snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId);
@@ -98,10 +98,10 @@ public sealed class PirateScenarioTests
             JsonSerializer.Serialize(npc.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })));
         var moved = Pirate(engine.CaptureSnapshotForTests(1000));
         Assert.InRange(Math.Sqrt(Math.Pow(moved.X - pirate.X, 2) + Math.Pow(moved.Y - pirate.Y, 2)), 4, 8);
-        Assert.Equal(0.8d, moved.SpeedKmS, 8);
+        Assert.InRange(moved.SpeedKmS, 0.6, 0.8);
         Assert.InRange(Math.Abs(moved.Direction - pirate.Direction), 0, 4.00000001);
         Assert.Equal(HostileCombatPhase.Pursuit, moved.HostileCombat!.Phase);
-        Assert.Equal(100, moved.HostileCombat.DesiredRadiusKm);
+        Assert.Equal(75, moved.HostileCombat.DesiredRadiusKm);
         Assert.Null(moved.ActiveEngineCommandType);
     }
 

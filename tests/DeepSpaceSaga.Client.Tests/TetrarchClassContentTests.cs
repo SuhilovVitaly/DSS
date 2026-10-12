@@ -67,7 +67,7 @@ public sealed class TetrarchClassContentTests
         Assert.Equal(450, Tetrarch(original.Registry).HullHitPointsMax);
         Assert.Equal(original.Registry.CatalogCompatibility, restarted.Registry.CatalogCompatibility);
         Assert.Equal(150, Launcher(restarted.Registry).TorpedoDamage);
-        Assert.Equal(3, Launcher(restarted.Registry).TorpedoSpeedKmS);
+        Assert.Equal(10, Launcher(restarted.Registry).TorpedoSpeedKmS);
         Assert.Equal(90, Launcher(restarted.Registry).TorpedoTurnRateDegPerSec);
         Assert.Equal(sourceJson, File.ReadAllText(Path.Combine(ClientRoot, ClassPath)));
 

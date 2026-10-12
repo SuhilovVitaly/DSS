@@ -13,7 +13,13 @@ created: 2026-10-12
 
 # EP-0009-US-0002-TK-0001-weapon-catalog
 
-STATUS: NOT STARTED
+STATUS: IMPLEMENTED; separate publication follows
+
+Execution scope before edit: the two weapon catalog JSON files, Client `TorpedoLauncherContentTests.cs` and `CountermeasureContentTests.cs`, Engine `CountermeasureContentLoaderTests.cs` and any focused regressions still asserting old catalog values, plus this card and EP-0009 status records. These test files extend the planned list because they assert the exact old production values. No module-content `*BaseRating` field exists on HEAD; the EP-0008 runtime operator `BaseRating` and save data are not catalog fields and will be migrated with the combat runtime, not removed in this content-only ticket. Existing scenarios still use basic launchers; single-barrel content is a new selectable catalog type. No Graphify/game/native runs.
+
+Scope adjustment from regression evidence: actual changed paths are the two weapon JSON files; English/Russian locale JSON (new combat event enum broke existing Client locale completeness test); Client content, preview, session, UI, loadout, and pirate scenario tests; Engine legacy-combat fixture and affected save/registry/order tests; this card, parent US-0001 story, ImplementationStatus and PublicationStatus. `CountermeasureContentLoaderTests.cs` was inspected but its independent JSON fixture remains unchanged. The EP-0008 regression registry now pins its original weapon physics, while Client content tests assert shipped EP-0009 data. This preserves meaningful legacy mechanics coverage and makes the new balance data explicit.
+
+Implementation: launcher 40 accuracy, 50 maneuverability, 150 km range, 10 km/s speed, 20% piercing, 100% armor damage, 15 s reload, 120 s TTL; defense 58 accuracy, 150 km ranges, 20 km/s speed, 30 s TTL, 14.5 s reload, 2 barrels/2 s interval; new one-barrel defense variant. Existing operator `BaseRating` remains in EP-0008 runtime/save only, pending runtime migration. Focused Client catalog19/19; Engine non-corpus1944/1944; Client full1857/1857; solution build0 warnings/errors; scoped format and diff checks PASS. First broad Engine88 and Client30 failures were outdated EP-0008 fixture/value assumptions and were resolved without game/native/Graphify runs. Runtime burst/multiflight behavior remains later-ticket work.
 
 **Задача.**
 1. Торпедный аппарат:

@@ -15,7 +15,7 @@ public class DefensePreviewProjectionTests
     {
         var source = Registry.Value;
         static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
-        var variant = All(source.ModuleTypes).Single(m => m.CountermeasureAccuracy is not null) with
+        var variant = All(source.ModuleTypes).Single(m => m.TypeId == "module.countermeasure.launcher.basic") with
         { TypeId = "module.countermeasure.launcher.preview", CountermeasureAccuracy = 75.25m };
         var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Append(variant),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),

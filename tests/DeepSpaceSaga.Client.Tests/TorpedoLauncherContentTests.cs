@@ -43,15 +43,20 @@ public sealed class TorpedoLauncherContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Launcher_parameters_are_150_3_90_and_no_ammo_cost(bool output)
+    public void Launcher_catalog_matches_ep9(bool output)
     {
         var registry = Load(Root(output));
         var launcher = Launcher(registry);
         Assert.Equal(150, launcher.TorpedoDamage);
-        Assert.Equal(3, launcher.TorpedoSpeedKmS);
+        Assert.Equal(10, launcher.TorpedoSpeedKmS);
         Assert.Equal(90, launcher.TorpedoTurnRateDegPerSec);
-        Assert.Equal(5m, launcher.TorpedoManeuverability);
-        Assert.Equal(200, launcher.TorpedoRangeKm);
+        Assert.Equal(50m, launcher.TorpedoManeuverability);
+        Assert.Equal(150, launcher.TorpedoRangeKm);
+        Assert.Equal(40m, launcher.Accuracy);
+        Assert.Equal(20m, launcher.ArmorPiercingPercent);
+        Assert.Equal(100m, launcher.ArmorDamagePercent);
+        Assert.Equal(15000, launcher.LauncherReloadMs);
+        Assert.Equal(120000, launcher.TorpedoMaxFlightTimeMs);
         Assert.Equal(2000, launcher.MassKg);
         Assert.Equal(60, launcher.StructurePointsMax);
         Assert.Equal(0, launcher.PowerConsumptionW);

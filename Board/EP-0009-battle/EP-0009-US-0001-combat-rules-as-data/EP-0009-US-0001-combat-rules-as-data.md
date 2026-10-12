@@ -11,6 +11,8 @@ validation_status: not-started
 
 **User story.** Как дизайнер, я задаю правила боя, классы брони, режимы и боевые параметры модулей в JSON, а движок отвергает некорректные значения при загрузке.
 
+Review after TK-0005 (2026-10-12): schema, JSON loading, validation and Save/Load regressions passed. US1-AC1 is covered by content validation; US1-AC2 is partial until the real module catalog is migrated in US-0002; US1-AC3 is partial until new skills feed the hit/interception roll in later runtime tickets. Story acceptance remains OPEN. Graphify/game/native NOT RUN per user.
+
 **Acceptance criteria**
 - **US1-AC1:** Файл правил загружается через `Settings.json`. На каждое невалидное значение — `ContentException` с указанием файла и поля:
   - база шанса не в диапазоне 0..100;

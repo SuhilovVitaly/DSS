@@ -125,7 +125,7 @@ public class WeaponOperatorRuntimeTests
             var flight = Assert.Single(snapshot.Objects, o => o.Torpedo is not null).Torpedo!;
             Assert.Equal(5m, flight.TorpedoRating);
             Assert.Equal(launched.RatingBreakdown, flight.RatingBreakdown);
-            Assert.Equal(5m, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Operator!.EffectiveRating);
+            Assert.Equal(50m, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Operator!.EffectiveRating);
             Assert.Equal(Target, Assert.Single(At(restored, 5000).CombatImpacts).HitObjectId);
         }
         finally { File.Delete(path); }

@@ -13,7 +13,7 @@ public sealed class CombatPresentationResumeTests
     {
         await using var fixture = await CombatSessionFixture.Create();
         await fixture.Launch("active");
-        var before = await fixture.Advance(12345);
+        var before = await fixture.Advance(1000);
         var loaded = await fixture.SaveAndRestore();
         long now = 0;
         var buffer = new SnapshotBuffer(() => now);

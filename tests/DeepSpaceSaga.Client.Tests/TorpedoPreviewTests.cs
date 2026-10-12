@@ -54,7 +54,7 @@ public sealed class TorpedoPreviewTests
         var preview = Assert.IsType<TorpedoRoute>(f.Screen.LaunchPreviewRoute);
         var owner = f.Buffer.Latest!.Snapshot.Objects.Single(o => o.ObjectId == "SPC-0001");
         Assert.Equal((owner.X, owner.Y, owner.Direction), (preview.Segments[0].X, preview.Segments[0].Y, preview.Segments[0].Direction));
-        Assert.All(preview.Segments, s => Assert.Equal(3, s.SpeedKmS));
+        Assert.All(preview.Segments, s => Assert.Equal(10, s.SpeedKmS));
         var button = f.FireButton;
         f.Screen.OnMouseDown(button.Rect.MidX * scale, button.Rect.MidY * scale);
         Assert.Single(f.Connection.Commands);
@@ -178,7 +178,7 @@ public sealed class TorpedoPreviewTests
         f.Buffer.Update(snapshot with
         {
             SnapshotSequence = snapshot.SnapshotSequence + 1,
-            Objects = snapshot.Objects.Select(o => o.ObjectId == "SPC-0002" ? o with { X = 0, Y = -200, SpeedKmS = 4 } : o).ToImmutableArray()
+            Objects = snapshot.Objects.Select(o => o.ObjectId == "SPC-0002" ? o with { X = 0, Y = -200, SpeedKmS = 20 } : o).ToImmutableArray()
         });
         f.Render();
         f.Screen.OnMouseDown(960, 340);

@@ -110,7 +110,11 @@ public sealed class CombatSaveLoadTests : IDisposable
     {
         string path = Path.Combine(_directory, "save.json");
         File.WriteAllText(path, ScenarioLoader.Serialize(state));
-        return EngineContentLoader.CreateEngineFromSaveFile(settings ?? Settings, path);
+        if (settings is not null)
+            return EngineContentLoader.CreateEngineFromSaveFile(settings, path);
+        var restored = new SimulationEngine(Registry.Value);
+        restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        return restored;
     }
     private static ScenarioFile RealScenario()
     {
@@ -322,7 +326,7 @@ public sealed class CombatSaveLoadTests : IDisposable
             string content = File.ReadAllText(source);
             if (source.Contains("TorpedoLauncher", StringComparison.Ordinal))
                 content = content.Replace("\"torpedoDamage\": 150", "\"torpedoDamage\": 50")
-                    .Replace("\"torpedoSpeedKmS\": 3", "\"torpedoSpeedKmS\": 6")
+                    .Replace("\"torpedoSpeedKmS\": 10", "\"torpedoSpeedKmS\": 6")
                     .Replace("\"torpedoTurnRateDegPerSec\": 90", "\"torpedoTurnRateDegPerSec\": 45");
             File.WriteAllText(destination, content);
         }
