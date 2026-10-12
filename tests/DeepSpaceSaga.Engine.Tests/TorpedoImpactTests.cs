@@ -11,11 +11,11 @@ public sealed class TorpedoImpactTests
     internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
     internal static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
         "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-    internal static readonly Lazy<GameDataRegistry> Registry = new(LegacyWeaponRegistry);
+    internal static readonly Lazy<GameDataRegistry> Registry = new(() => LegacyWeaponRegistry(100, 0));
 
     // EP-0008 flight/interception regressions retain their calibrated weapon parameters.
     // The shipped EP-0009 catalog is asserted separately by Client content tests.
-    private static GameDataRegistry LegacyWeaponRegistry()
+    internal static GameDataRegistry LegacyWeaponRegistry(decimal accuracy, decimal chanceBase)
     {
         var source = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"), out _, out _);
         static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition =>
@@ -27,6 +27,7 @@ public sealed class TorpedoImpactTests
                 "module.torpedo.launcher.basic" => module with
                 {
                     TorpedoManeuverability = 5,
+                    Accuracy = accuracy,
                     TorpedoRangeKm = 200,
                     TorpedoSpeedKmS = 3
                 },
@@ -46,7 +47,7 @@ public sealed class TorpedoImpactTests
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
             stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
+            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = chanceBase } },
             fireModes: source.FireModes);
     }
     internal static ScenarioFile Scenario(Func<SpaceObjectData, SpaceObjectData>? configure = null,
@@ -128,9 +129,9 @@ public sealed class TorpedoImpactTests
         }
     }
 
-    internal static SimulationEngine Create(ScenarioFile? scenario = null)
+    internal static SimulationEngine Create(ScenarioFile? scenario = null, GameDataRegistry? registry = null)
     {
-        var engine = new SimulationEngine(Registry.Value);
+        var engine = new SimulationEngine(registry ?? Registry.Value);
         engine.LoadScenario(scenario ?? Scenario());
         return engine;
     }

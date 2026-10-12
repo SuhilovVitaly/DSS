@@ -9,6 +9,7 @@ namespace DeepSpaceSaga.Engine;
 public sealed partial class SimulationEngine
 {
     private ModuleHitLocationRng _moduleHitLocationRng = new(0);
+    private CountermeasureRng _torpedoHitRng = new(0, 0);
     private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> _launcherCombat = new();
     private long _torpedoSequence;
     private long _combatImpactSequence;
@@ -68,11 +69,15 @@ public sealed partial class SimulationEngine
         if (!TryGetNextTorpedoId(out string id, out long sequence))
             return CommandStartOutcome.Rejected("projectile_id_exhausted");
         var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        decimal attack = (moduleType.Accuracy ?? moduleType.TorpedoManeuverability ?? 0) +
+            (owner.Crew.FirstOrDefault(c => c.Id == module.OperatorCrewId)?.AccuracySkill ?? 0);
         var flight = new TorpedoSnapshot(owner.InitialMotion.ObjectId, moduleId, targetObjectId!, motionTimeMs,
             launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, route, [], ImpactTime(route),
             TorpedoRating: weaponOperator.EffectiveRating, RatingBreakdown: weaponOperator,
             CapturedManeuverability: weaponOperator.EffectiveRating,
             OwnerPlayerRelationAtLaunch: GetRelationToPlayer(owner) ?? PlayerRelation.Neutral,
+            CapturedAttack: attack,
+            HitChanceTenths: CombatChanceMath.ChanceTenths(attack, TorpedoDefenseRating(target, motionTimeMs), ChanceRules),
             ArmorPiercingPercent: moduleType.ArmorPiercingPercent ?? 0,
             ArmorDamagePercent: moduleType.ArmorDamagePercent ?? 100);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, launcher.SpeedKmS, origin.Direction, Torpedo: flight);
@@ -323,6 +328,26 @@ public sealed partial class SimulationEngine
     private void ApplyImpact(SpaceObjectRuntime projectile, SpaceObjectRuntime target, TorpedoContact contact)
     {
         var flight = projectile.InitialMotion.Torpedo!;
+        if (target.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
+        {
+            decimal attack = flight.CapturedAttack ?? flight.RatingBreakdown?.EffectiveRating ?? 0;
+            decimal defense = TorpedoDefenseRating(target, contact.MotionTimeMs);
+            int chance = CombatChanceMath.ChanceTenths(attack, defense, ChanceRules);
+            int roll = _torpedoHitRng.NextRoll();
+            bool hit = roll <= chance;
+            AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.TorpedoHitRoll,
+                flight.OwnerObjectId, target.InitialMotion.ObjectId, projectile.InitialMotion.ObjectId,
+                contact.X, contact.Y, ChanceTenths: chance, Roll: roll, TorpedoOperator: flight.RatingBreakdown,
+                Result: hit ? "hit" : "miss", Attack: attack, Defense: defense));
+            if (!hit)
+            {
+                AppendCombatEvent(new(0, contact.MotionTimeMs, CombatEventType.Miss,
+                    flight.OwnerObjectId, target.InitialMotion.ObjectId, projectile.InitialMotion.ObjectId,
+                    contact.X, contact.Y, ChanceTenths: chance, Damage: 0));
+                TerminateTorpedo(projectile, contact.MotionTimeMs, TorpedoTerminationKind.Miss);
+                return;
+            }
+        }
         var finalFlight = CloseFlightHistory(projectile, contact.MotionTimeMs, flight);
         string? wreckId = null;
         string hitId = target.InitialMotion.ObjectId;
@@ -356,6 +381,21 @@ public sealed partial class SimulationEngine
             flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
             contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, moduleHit is null ? 0 : flight.Damage,
             wreckId is null ? null : hitId, wreckId));
+    }
+
+    private decimal TorpedoDefenseRating(SpaceObjectRuntime target, double motionTimeMs)
+    {
+        if (target.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)) return 0;
+        var engine = target.Modules.FirstOrDefault(module =>
+        {
+            var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+            return definition.CombatRole == "engine" || definition.CategoryTypeId == "module.engine";
+        });
+        if (engine is null) return 0;
+        var definition = _registry.ModuleTypes.GetDefinition(engine.ModuleTypeIndex);
+        int pilotSkill = target.Crew.FirstOrDefault(c => c.Id == engine.OperatorCrewId)?.ManeuverabilitySkill ?? 0;
+        return (CanExecuteEngineCommand(engine, definition, motionTimeMs) ? definition.Maneuverability ?? 0 : 0)
+            + pilotSkill;
     }
 
     private readonly record struct ModuleHitOutcome(SpaceObjectRuntime UpdatedShip, string ModuleId,

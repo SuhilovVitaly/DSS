@@ -135,6 +135,6 @@ public class PhaseThreeJournalTests
         Assert.Equal("owner_lost", lost.Result);
         Assert.Equal(Defense2, lost.LauncherModuleId);
         Assert.Null(lost.Roll);
-        Assert.Equal(2, snapshot.CombatJournal.Count(e => e.Roll is not null));
+        Assert.Equal(2, snapshot.CombatJournal.Count(e => e.RatingBreakdown is not null && e.Roll is not null));
     }
 }

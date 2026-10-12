@@ -74,8 +74,10 @@ public class CountermeasureResolutionTests
         for (int time = 17; time < 21000; time += 17) At(small, time);
         var b = At(small, 21000);
         Assert.Equal(a.CombatJournal.Length, b.CombatJournal.Length);
-        Assert.Equal(a.CombatJournal.Single(e => e.Roll is not null).Roll, b.CombatJournal.Single(e => e.Roll is not null).Roll);
-        Assert.InRange(Math.Abs(a.CombatJournal.Single(e => e.Roll is not null).MotionTimeMs - b.CombatJournal.Single(e => e.Roll is not null).MotionTimeMs), 0, 1e-5);
+        Assert.Equal(a.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).Roll,
+            b.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).Roll);
+        Assert.InRange(Math.Abs(a.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).MotionTimeMs -
+            b.CombatJournal.Single(e => e.RatingBreakdown is not null && e.Roll is not null).MotionTimeMs), 0, 1e-5);
         Assert.Equal(a.Objects.Single(o => o.ObjectId == Target).HullCombat, b.Objects.Single(o => o.ObjectId == Target).HullCombat);
     }
 }

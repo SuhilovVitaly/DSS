@@ -180,7 +180,7 @@ internal static class CountermeasureSaveValidation
         }
         Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Countermeasure).All(o => ids.Contains(o.ObjectId)), "projectile without flight");
         Require(saved.Launchers.All(l => l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
-        long lastId = 0; double lastTime = 0; ulong rolls = 0;
+        long lastId = 0; double lastTime = 0; ulong rolls = 0, torpedoRolls = 0;
         foreach (var entry in saved.Journal!)
         {
             Require(entry.EventId > lastId && entry.EventId <= saved.JournalSequence && Enum.IsDefined(entry.Type) &&
@@ -190,7 +190,8 @@ internal static class CountermeasureSaveValidation
             Require(entry.ChanceTenths is null or (>= 0 and <= 1000) && entry.Roll is null or (>= 1 and <= 1000) && entry.Damage is null or >= 0,
                 "invalid journal payload");
             if (format >= 16 && (entry.RatingBreakdown is not null || entry.LaunchMode is not null ||
-                entry.Type is CombatEventType.Intercept or CombatEventType.Miss or CombatEventType.Expired || entry.Result == "countermeasure"))
+                entry.Type is CombatEventType.Intercept or CombatEventType.Expired ||
+                entry.Type == CombatEventType.Miss && entry.LaunchMode is not null || entry.Result == "countermeasure"))
             {
                 Require(!string.IsNullOrWhiteSpace(entry.LauncherModuleId) && entry.LaunchMode is { } mode && Enum.IsDefined(mode) &&
                     entry.Accuracy is >= 0 and <= 100 && entry.TargetManeuverability is >= 0 and <= 100 && entry.Damage == 0 &&
@@ -210,8 +211,17 @@ internal static class CountermeasureSaveValidation
                     rating.DefenseOperator!.EffectiveRating, rating.TorpedoRating, chance), "journal chance mismatch");
             }
             if (entry.TorpedoOperator is { } op) ValidateOperator(op);
-            bool resolution = entry.Type is CombatEventType.Intercept or CombatEventType.Miss;
-            Require(resolution == (entry.Roll is not null), "roll on non-resolution");
+            bool resolution = entry.Type == CombatEventType.Intercept ||
+                entry.Type == CombatEventType.Miss && entry.RatingBreakdown is not null;
+            bool torpedoRoll = entry.Type == CombatEventType.TorpedoHitRoll;
+            Require((resolution || torpedoRoll) == (entry.Roll is not null), "roll on non-resolution");
+            if (torpedoRoll)
+            {
+                Require(entry.Attack is >= 0 && entry.Defense is >= 0 && entry.ChanceTenths is not null &&
+                    entry.Result is "hit" or "miss" &&
+                    (entry.Result == "hit") == (entry.Roll <= entry.ChanceTenths), "invalid torpedo hit roll");
+                torpedoRolls++;
+            }
             if (resolution)
             {
                 Require(entry.RatingBreakdown is not null && (entry.Type == CombatEventType.Intercept) == (entry.Roll <= entry.ChanceTenths), "invalid resolution");
@@ -220,6 +230,7 @@ internal static class CountermeasureSaveValidation
             lastId = entry.EventId; lastTime = entry.MotionTimeMs;
         }
         Require(lastId == saved.JournalSequence && rolls == saved.RngCounter, "journal/RNG counter mismatch");
+        Require(torpedoRolls == (state.CombatState?.TorpedoHitRngCounter ?? 0), "torpedo-hit journal/RNG counter mismatch");
         if (saved.SelectedProjectileId is { } selected)
         {
             selected = Canon(selected);

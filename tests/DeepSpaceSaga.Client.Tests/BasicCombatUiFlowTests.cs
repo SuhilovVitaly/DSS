@@ -159,6 +159,18 @@ public sealed class BasicCombatUiFlowTests
             Directory.CreateDirectory(DirectoryPath);
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
             var source = CombatSessionFixture.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
+            source = source with
+            {
+                GameState = source.GameState with
+                {
+                    SpaceObjects = source.GameState.SpaceObjects.Select(obj => obj.ObjectId == Player ? obj with
+                    {
+                        Crew = obj.Crew!.Select(crew => crew.CrewId ==
+                            obj.Modules!.Single(module => module.ModuleId == Launcher).OperatorCrewId
+                            ? crew with { AccuracySkill = 30 } : crew).ToArray()
+                    } : obj).ToArray()
+                }
+            };
             var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
             engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } });
             Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath));

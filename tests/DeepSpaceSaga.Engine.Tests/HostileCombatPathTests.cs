@@ -90,7 +90,7 @@ public class HostileCombatPathTests
     [Fact]
     public void Three_real_hits_destroy_maneuvering_hostile_and_stop_its_controller()
     {
-        using var engine = Create(OrbitScene());
+        using var engine = Create(OrbitScene(), LegacyWeaponRegistry(100, 100));
         long time = 100;
         At(engine, time);
         AuthoritativeSnapshot snapshot = null!;

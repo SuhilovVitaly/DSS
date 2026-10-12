@@ -97,7 +97,7 @@ public sealed class DisabledModuleTests
                 } : obj).ToArray()
             }
         };
-        using var engine = Create(scenario);
+        using var engine = Create(scenario, LegacyWeaponRegistry(100, 100));
         engine.ReceiveCommand(new("turn-before-hit", 1, Player, engineModule,
             ShipEngineCommandTypes.TurnRightUntilCancel));
         var started = At(engine, 1);

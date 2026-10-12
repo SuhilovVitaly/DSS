@@ -183,4 +183,4 @@ public sealed record CombatImpactSnapshot(
     string? WreckObjectId = null,
     TorpedoTerminationKind TerminationKind = TorpedoTerminationKind.Impact);
 
-public enum TorpedoTerminationKind { Impact, SelfDestruct, Intercept }
+public enum TorpedoTerminationKind { Impact, SelfDestruct, Intercept, Miss }

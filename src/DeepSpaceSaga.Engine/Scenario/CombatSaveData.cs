@@ -16,7 +16,9 @@ public sealed record CombatStateData(
     [property: JsonRequired, JsonPropertyName("projectiles")] IReadOnlyList<ProjectileSaveData> Projectiles,
     [property: JsonRequired, JsonPropertyName("processedLaunchCommandIds")] IReadOnlyList<string> ProcessedLaunchCommandIds,
     [property: JsonPropertyName("hitLocationRngState")] ulong? HitLocationRngState = null,
-    [property: JsonPropertyName("hitLocationRngCounter")] ulong HitLocationRngCounter = 0);
+    [property: JsonPropertyName("hitLocationRngCounter")] ulong HitLocationRngCounter = 0,
+    [property: JsonPropertyName("torpedoHitRngState")] ulong? TorpedoHitRngState = null,
+    [property: JsonPropertyName("torpedoHitRngCounter")] ulong TorpedoHitRngCounter = 0);
 
 public sealed record LauncherSaveData(
     [property: JsonRequired, JsonPropertyName("ownerObjectId")] string OwnerObjectId,
@@ -87,6 +89,8 @@ internal static class CombatSaveValidation
             "invalid counters or motion time.");
         Require(combat.HitLocationRngState is not null || combat.HitLocationRngCounter == 0,
             "hit-location RNG counter without state.");
+        Require(combat.TorpedoHitRngState is not null || combat.TorpedoHitRngCounter == 0,
+            "torpedo-hit RNG counter without state.");
         Require(combat.Launchers is not null && combat.Projectiles is not null && combat.ProcessedLaunchCommandIds is not null,
             "missing combat collections.");
         var launches = new HashSet<string>(StringComparer.Ordinal);
@@ -113,6 +117,8 @@ internal static class CombatSaveValidation
             Require(f is not null && Parameters(f.SpeedKmS, f.TurnRateDegPerSec, f.Damage), "invalid captured weapon.");
             Require(f!.ArmorPiercingPercent is >= 0 and <= 100 && f.ArmorDamagePercent > 0,
                 "invalid captured armor damage parameters.");
+            Require(f.CapturedAttack is null or >= 0 && f.HitChanceTenths is null or (>= 0 and <= 1000),
+                "invalid captured hit chance.");
             CountermeasureSaveValidation.ValidateCapturedTorpedoRating(f!, format);
             Require(!string.IsNullOrWhiteSpace(f!.OwnerObjectId) && !string.IsNullOrWhiteSpace(f.LauncherModuleId) &&
                 (!objects.ContainsKey(f.OwnerObjectId) && format >= 16 ||

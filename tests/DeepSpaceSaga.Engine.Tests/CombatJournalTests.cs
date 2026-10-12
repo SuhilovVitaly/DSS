@@ -12,8 +12,9 @@ public class CombatJournalTests
         engine.ReceiveCommand(Fire("fire")); At(engine, 0);
         var snapshot = At(engine, 21000);
         Assert.Equal(new[] { CombatEventType.Launch, CombatEventType.Launch, CombatEventType.Miss, CombatEventType.Expired,
-            CombatEventType.Hit, CombatEventType.ModuleHit, CombatEventType.ModuleDestroyed }, snapshot.CombatJournal.Select(e => e.Type));
-        Assert.Equal(new long[] { 1, 2, 3, 4, 5, 6, 7 }, snapshot.CombatJournal.Select(e => e.EventId));
+            CombatEventType.TorpedoHitRoll, CombatEventType.Hit, CombatEventType.ModuleHit,
+            CombatEventType.ModuleDestroyed }, snapshot.CombatJournal.Select(e => e.Type));
+        Assert.Equal(new long[] { 1, 2, 3, 4, 5, 6, 7, 8 }, snapshot.CombatJournal.Select(e => e.EventId));
         var launch = snapshot.CombatJournal[1];
         var miss = snapshot.CombatJournal[2];
         Assert.Null(launch.Roll);
@@ -22,9 +23,10 @@ public class CombatJournalTests
         Assert.Equal(801, miss.Roll);
         Assert.Equal(CountermeasureTerminationKind.MissedCoastExpired, snapshot.CombatJournal[3].TerminationKind);
         Assert.Null(snapshot.CombatJournal[3].Roll);
-        Assert.Equal(150, snapshot.CombatJournal[4].Damage);
-        Assert.NotNull(snapshot.CombatJournal[5].HitModuleId);
-        Assert.Equal(0, snapshot.CombatJournal[5].StructureAfter);
+        Assert.Equal("hit", snapshot.CombatJournal[4].Result);
+        Assert.Equal(150, snapshot.CombatJournal[5].Damage);
+        Assert.NotNull(snapshot.CombatJournal[6].HitModuleId);
+        Assert.Equal(0, snapshot.CombatJournal[6].StructureAfter);
         Assert.Equal(snapshot.CombatJournal.ToArray(), At(engine, 22000).CombatJournal.ToArray());
     }
 }
