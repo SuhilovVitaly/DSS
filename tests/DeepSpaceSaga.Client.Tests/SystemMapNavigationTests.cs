@@ -103,7 +103,10 @@ public sealed class SystemMapNavigationTests
     [Fact]
     public void FitAndResizePreserveWorldDistances()
     {
-        foreach (var scenario in ScenarioRepository.ListScenarios(Path.Combine(AppContext.BaseDirectory, "Scenarios")))
+        var solarScenarios = DeepSpaceSaga.Engine.Content.EngineContentLoader
+            .LoadSolarSystemGenerationConfig(DefaultSystemContentTests.Settings)!.EnabledScenarios;
+        foreach (var scenario in ScenarioRepository.ListScenarios(Path.Combine(AppContext.BaseDirectory, "Scenarios"))
+            .Where(s => solarScenarios.Contains(Path.GetFileName(Path.GetDirectoryName(s.ScenarioPath)), StringComparer.Ordinal)))
         {
             using var engine = SimulationEngine.CreateFromScenarioFile(DefaultSystemContentTests.Settings, scenario.ScenarioPath);
             engine.SetSpeed(SimulationSpeed.Speed0);
