@@ -288,3 +288,7 @@ Correction9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea published/remote verified. Fi
 ## EP-0008-US-0013-TK-0002 — 2026-10-12
 
 Documentation904a21f published/remote verified. User cancelled Graphify rebuilding to avoid token expenditure; semantic agents stopped, existing graph unchanged, .graphifyignore restored. Graph gate SKIPPED by user instruction. Relative links,13 stories/45 tickets and DAG audited. Implementation/documentation chain delivered under revised scope; native13/14, FPS/human remain OPEN. User authorizes EP-0009 continuation without game/native/graph launches. Separate publication follows, own SHA recorded through Git after creation.
+
+## Superseded by EP-0009 — 2026-10-12
+
+EP-0008 implementation and publication evidence above remains historical. Its Hull HP, attack/interception formulas, one-flight/auto-attempt rules and SaveFormatVersion16 were superseded by [EP-0009 §2.1](../EP-0009-battle/EP-0009-module-combat.md#21-переопределяется-правила-ep-0008-перестают-действовать). Current engineering contract: [ModuleCombat](../../Documentation/04-Engineering/ModuleCombat.md). EP-0008's unfinished native/FPS/human gates remain historical OPEN; EP-0009 native checks are separately NOT RUN by user instruction.

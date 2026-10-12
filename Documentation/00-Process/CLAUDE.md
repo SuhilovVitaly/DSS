@@ -1,8 +1,12 @@
 # CLAUDE.md
 
+## Актуализация EP-0009 — 2026-10-12
+
+Current combat writer: SaveFormatVersion17 (defense3, combat2, hostile2); save16 and older reject atomically. Production `Data/Combat/combat-rules.json` and `fire-modes.json`, module/ship catalogs and CombatMukha/CombatShmel scenarios define configurable combat data. Engine owns module damage, operator rolls, modes, queues, AI and terminal outcome; Client renders snapshots and journal. [Current contract](../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [Implementation and evidence](../04-Engineering/ModuleCombat.md). EP-0008/Save16 text below remains dated history. Game/native checks and Graphify rebuild are deferred by user instruction.
+
 ## Актуализация EP-0008 — 2026-10-12
 
-Current writer: SaveFormatVersion16 (defense2, hostile1, combat1); old saves rejected. Engine owns manual defense, hostile pursuit/fire and terminal Defeated; Client routes Defeat/Load to a fresh session. Physical clock stops at ceil(exact death), while journal retains exact contact time. The dated Save15/integration statements below describe their original snapshot. Further game/native launches are deferred by the user; headless tests remain permitted.
+At the EP-0008 checkpoint the writer was SaveFormatVersion16 (defense2, hostile1, combat1); older saves were rejected. Engine owned manual defense, hostile pursuit/fire and terminal Defeated; Client routed Defeat/Load to a fresh session. Physical clock stopped at ceil(exact death), while journal retained exact contact time. The dated Save15/integration statements below describe their original snapshot. Current EP-0009 behavior is summarized above.
 
 [Текущий контракт](../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../04-Engineering/PhaseThreeCombatAcceptance.md).
 

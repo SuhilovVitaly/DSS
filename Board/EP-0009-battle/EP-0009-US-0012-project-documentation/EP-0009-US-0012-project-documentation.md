@@ -4,7 +4,7 @@ story: EP-0009-US-0012-project-documentation
 title: "Документация (обязательная завершающая история)"
 stage: draft
 created: 2026-10-12
-validation_status: not-started
+validation_status: documentation-updated-links-pending-native-open
 ---
 
 # Документация (обязательная завершающая история)
@@ -16,7 +16,7 @@ validation_status: not-started
   - `Documentation/02-FirstRelease/Mechanics`;
   - `Documentation/01-Requirements` — если там описаны формула или HP;
   - `Board/EP-0008-…/ImplementationStatus.md`: раздел «Superseded by EP-0009» со ссылкой на §2.1.
-- **US12-AC2:** Граф (Graphify, `src/graphify-out/`) перестроен, ссылки проверены.
+- **US12-AC2:** Ссылки проверены; Graphify rebuild SKIPPED по прямому указанию пользователя2026-10-12, граф остаётся прежним.
 
 ## Tickets
 

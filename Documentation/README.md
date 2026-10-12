@@ -1,8 +1,12 @@
 # Deep Space Saga Documentation
 
+## Актуальный бой EP-0009 — 2026-10-12
+
+[Модульный бой](04-Engineering/ModuleCombat.md) · [канонические требования](01-Requirements/EngineRequirements.md#phase-four-module-combat) · [100 сидов Engine](../Board/EP-0009-battle/evidence/balance.md) · [открытая нативная матрица](../Board/EP-0009-battle/evidence/native.md). Текущий SaveFormatVersion17; EP-0008 и Save16 ниже — историческая запись. Native/human приёмка и Graphify rebuild отложены пользователем.
+
 ## Актуализация EP-0008 — 2026-10-12
 
-[Текущий боевой контракт](01-Requirements/EngineRequirements.md#phase-three-combat) · [Defeat](02-FirstRelease/Screens/Defeat.md) · [Acceptance и открытые gates](04-Engineering/PhaseThreeCombatAcceptance.md) · [Инвентаризация документов](04-Engineering/PhaseThreeCombatDocumentation.md). Save16, две ПРО PlayerShipOnly, hostile pursuit/fire, ручной пуск и terminal recovery реализованы. Native/human acceptance остаётся OPEN; датированные обзоры ниже описывают прежние этапы.
+[Боевой контракт этапа EP-0008](01-Requirements/EngineRequirements.md#phase-three-combat) · [Defeat](02-FirstRelease/Screens/Defeat.md) · [Acceptance и открытые gates](04-Engineering/PhaseThreeCombatAcceptance.md) · [Инвентаризация документов](04-Engineering/PhaseThreeCombatDocumentation.md). Save16, две ПРО PlayerShipOnly, hostile pursuit/fire, ручной пуск и terminal recovery были реализованы на этом этапе. Текущие изменения EP-0009 описаны выше.
 
 
 ## Сверка реализации — 2026-10-10
@@ -25,10 +29,10 @@ This folder is the single home for DSS project documentation.
 - [Approach requirements](01-Requirements/EngineRequirements.md#approach-shortest-route) - shortest rendezvous, captured trailing-point fallback, and planner version 3 (2026-09-20).
 - [Approach implementation](04-Engineering/ApproachRoutes.md) - solver, numerical tolerances, prediction, and save compatibility.
 
-- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — исторический EP-0007, операторы, защита и приёмка Save v11; текущий SaveFormat=16.
+- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — исторический EP-0007/0008; текущие правила и Save17 описаны в [ModuleCombat](04-Engineering/ModuleCombat.md).
 - [Countermeasure Graphify](06-Tooling/CountermeasureGraphify.md) — корпус, перестройка и проверка графа.
 
-- [AI map environment](04-Engineering/AiMapEnvironment.md) — EP-0004: контракты, конфигурация, исторический Save15 (текущий16), слои и открытая FPS acceptance.
+- [AI map environment](04-Engineering/AiMapEnvironment.md) — EP-0004: контракты, конфигурация, исторический Save15 (текущий17), слои и открытая FPS acceptance.
 - [Solar-system concept](02-FirstRelease/Mechanics/SolarSystemMapConcept.md) — продуктовый контракт карты.
 - [EP-0002 implementation](04-Engineering/EP-0002-Implementation.md) и [EP-0003 evidence](Validation/EP-0003-Implementation.md) — датированные поставки предшественников.
 

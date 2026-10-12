@@ -1,8 +1,12 @@
 # Deep Space Saga — контрольная точка требований к движку
 
+## Актуальный модульный бой EP-0009 — 2026-10-12
+
+Сейчас действуют [правила EP-0009](#phase-four-module-combat): урон модулей вместо Hull HP, бросок `clamp(50 + атака − защита, 0..100)`, навыки операторов, режимы оружия, несколько летящих торпед, обновлённая ПРО и SaveFormatVersion17. Раздел [EP-0008](#phase-three-combat) и прежние Save16/11/15 ниже сохранены как датированная история; когда они расходятся, применяется EP-0009. [Инженерный контракт и границы проверки](../04-Engineering/ModuleCombat.md).
+
 ## Текущее уточнение боя — 2026-10-12
 
-Действуют [правила EP-0008](#phase-three-combat): наступательный AI, ручная защита, две ПРО в PlayerShipOnly, terminal Defeat и SaveFormatVersion16. Они заменяют противоречащие боевые правила EP-0007 и уточняют стартовую комплектацию §57 только для PlayerShipOnly. Датированные сведения Save15/Save11 ниже сохранены как история. [Проверки и открытая приёмка](../04-Engineering/PhaseThreeCombatAcceptance.md): automated завершены, дальнейшие игровые/native запуски отложены пользователем; это не полная пользовательская приёмка.
+На этапе EP-0008 действовали [эти правила](#phase-three-combat): наступательный AI, ручная защита, две ПРО в PlayerShipOnly, terminal Defeat и SaveFormatVersion16. Они заменили противоречащие боевые правила EP-0007 и уточнили стартовую комплектацию §57 только для PlayerShipOnly. Датированные сведения Save15/Save11 ниже сохранены как история. [Проверки и открытая приёмка EP-0008](../04-Engineering/PhaseThreeCombatAcceptance.md) не означают приёмку EP-0009.
 
 ## Сверка реализации — 2026-10-10
 
@@ -5458,8 +5462,18 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 
 - Гибель игрока — terminal `Defeated`: один exact fractional death event, целое `GameTimeMs = ceil(exactDeathMs)`, календарная граница вычислена от точного момента. ClockSpeed0 фиксируется; остаток шага не продвигает AI, экономику, RNG или последующие события мира.
 - В Defeated новые save отклоняются до файловой записи, включая F5 и гонку гибели при advance. Уже захваченный immutable save до гибели может завершиться. Старый слот при отказе не перезаписывается. Экран [Defeat](../02-FirstRelease/Screens/Defeat.md) предлагает Load/Main Menu; отмена или Escape возвращают к Defeat. Только успешная загрузка прежнего файла создаёт новую Running-сессию; ошибки остаются recoverable и локализованными.
-- Текущий `SaveFormatVersion=16`, `DefenseState.Version=2`, `HostileCombat.Version=1`, combat payload version1. Реальные save старых форматов отклоняются без миграции; version0 вход NewGame не является совместимостью старого save. Сохраняются captured характеристики, операторы, маршруты, TTL/coast/reload deadlines, attempt flags, AI-направление/состояние, named RNG counters, sequences и журнал. Валидация проходит до атомарной замены мира; materialized AiMap rulesVersion1 продолжает загружаться без регенерации.
+- На этапе EP-0008 `SaveFormatVersion=16`, `DefenseState.Version=2`, `HostileCombat.Version=1`, combat payload version1. Реальные save старых форматов отклонялись без миграции; version0 вход NewGame не был совместимостью старого save. Сохранялись captured характеристики, операторы, маршруты, TTL/coast/reload deadlines, attempt flags, AI-направление/состояние, named RNG counters, sequences и журнал. Валидация проходила до атомарной замены мира; materialized AiMap rulesVersion1 загружалась без регенерации.
 
 ### Проверки и границы приёмки
 
-[Отчёт](../04-Engineering/PhaseThreeCombatAcceptance.md) связывает Q01–Q51,13 историй и45 тикетов с настоящими тестами. Полный Debug4314/4314 выполнен до исправления округления; после него Release4201/4201 без114 неизменённых generation-corpus cases и сборка без предупреждений. Native13/14 исторических случаев завершены, один прерван; frame-time target не принят. Дальнейшие игровые/native прогоны отложены пользователем. Баланс, человеческая оценка и scanout не подтверждены этими тестами. Модульный урон, режимы и очереди EP-0009 пока являются отдельным планом.
+[Отчёт](../04-Engineering/PhaseThreeCombatAcceptance.md) связывает Q01–Q51,13 историй и45 тикетов с настоящими тестами EP-0008. Полный Debug4314/4314 выполнен до исправления округления; после него Release4201/4201 без114 неизменённых generation-corpus cases и сборка без предупреждений. Native13/14 исторических случаев завершены, один прерван; frame-time target не принят. Дальнейшие игровые/native прогоны отложены пользователем. Баланс, человеческая оценка и scanout не подтверждены этими тестами. Более поздний модульный бой описан [ниже](#phase-four-module-combat).
+
+## Phase Four Module Combat
+
+EP-0009 supersedes the conflicting EP-0008 combat rules in `Phase Three Combat`. Canonical decisions and numbered edge cases are in [EP-0009](../../Board/EP-0009-battle/EP-0009-module-combat.md); [ModuleCombat](../04-Engineering/ModuleCombat.md) records the implemented layer boundaries and measured acceptance.
+
+- Damage targets modules, not a Hull HP pool. Armor/structure, temporary disable, destroyed-module fraction and critical bridge/engine roles determine combat consequences. Hit location is weighted by module mass. Both player and hostile ships can be damaged.
+- Torpedo hit and interception chance use `clamp(50 + attack - defense, 0..100)` with assigned operator skills. A guided contact still rolls for hit. Standard, maneuverability and overheat modes capture bonuses, reload multiplier and possible breakdown. A launcher may retain multiple active projectile IDs; the obsolete auto-attempt flag is gone.
+- The configured CombatMukha/CombatShmel scenarios use three hostile ships with radius/flank AI. Hostile module, weapon, operator and PRO data are read from production catalogs. UI snapshots expose known module condition while preserving unknown-enemy masking; the journal reports rolls, damage and terminal cause.
+- SaveFormatVersion17 writes defense3/combat2/hostile2 with module state, queues, active flights, deadlines, AI and named combat RNG. Saves16 and earlier are rejected atomically. Defeated sessions remain unsavable. Physical, calendar and presentation clocks retain their distinct ownership.
+- Automated scenario proof and 100-seed results are in [balance evidence](../../Board/EP-0009-battle/evidence/balance.md). The CombatMukha result is outside the historical simulator tolerance; this is documented and non-blocking under US11-AC2. [Native acceptance](../../Board/EP-0009-battle/evidence/native.md) is NOT RUN by user instruction; Graphify rebuilding is SKIPPED.

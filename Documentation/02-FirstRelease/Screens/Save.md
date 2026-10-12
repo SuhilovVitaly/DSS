@@ -1,8 +1,12 @@
 # Save
 
+## Актуализация EP-0009 — 2026-10-12
+
+Текущий writer — SaveFormatVersion17: defense3/combat2/hostile2, броня/структура/отключение модулей, режим/готовность/поломка и список активных торпед, очереди ПРО, параметры ИИ и счётчики named RNG. Hull HP и auto-attempt flag не сохраняются. Сохранение Defeated по-прежнему запрещено. Описание Save16/15/11 ниже историческое. [Требования](../../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [проверки](../../04-Engineering/ModuleCombat.md).
+
 ## Актуализация EP-0008 — 2026-10-12
 
-Текущий формат16: defense payload2, hostile1, combat1; материализованная карта и экономическая continuation сохраняются. Боевой save фиксирует captured параметры, пути, TTL/reload/coast, attempt flags, AI, RNG counters и журнал. В Defeated новый Save/F5 отклоняется до файловой записи, включая гибель при advance. Уже захваченный до гибели immutable save может завершиться. Отказ не перезаписывает старый слот. Указания Save15/11 ниже — датированная история.
+На этапе EP-0008 формат16 имел defense payload2, hostile1, combat1; материализованная карта и экономическая continuation сохранялись. Боевой save фиксировал captured параметры, пути, TTL/reload/coast, attempt flags, AI, RNG counters и журнал. В Defeated новый Save/F5 отклонялся до файловой записи, включая гибель при advance. Уже захваченный до гибели immutable save мог завершиться. Отказ не перезаписывал старый слот. Текущий формат17 описан выше; указания Save15/11 ниже — более ранняя история.
 
 [Текущий контракт](../../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../04-Engineering/PhaseThreeCombatAcceptance.md).
 
