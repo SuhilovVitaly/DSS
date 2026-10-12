@@ -203,3 +203,7 @@ TK-0003 1f816d6a6a6538ab5c6b7887877180b34753be15 published/remote verified. Save
 ## EP-0009-US-0011-TK-0002 — 2026-10-12
 
 TK-0001 18bd3474ea7b4c2bb79ca3ce1e50a64d6f31c9ce published/remote verified. Added real-scenario Engine end-to-end proof and an opt-in Balance category that ran 100 seeds each on CombatMukha and CombatShmel. Focused2/2 and Balance2/2 PASS. Results: Mukha67% versus historical81.2% (−14.2 pp, outside tolerance); Shmel51% versus49.5% (+1.5 pp); one 600-second unfinished battle per scenario. The discrepancy is recorded in `evidence/balance.md` and does not block US11-AC2 under the epic. Native/game NOT RUN, Graphify rebuild SKIPPED per user. Separate publication follows.
+
+## EP-0009-US-0011-TK-0003 — 2026-10-12
+
+TK-0002 3ccadfde0b7109dd7735cc43b1b8d3909c04aa1c published/remote verified. The referenced historical Python simulator and `Client/Data/CombatDesign` are absent; created a clearly labeled independent sampler that reads the current production module/combat/ship/scenario JSON and validates their references. Python unittest4/4 and headless CLI100-seed runs on both scenarios PASS. New sampler win counts Mukha73/100 and Shmel34/100 are not historical or authoritative Engine outcomes. Native matrix at `evidence/native.md` remains entirely NOT RUN by user instruction; US11-AC3 remains OPEN. Graphify rebuild SKIPPED per user. Separate publication follows.
