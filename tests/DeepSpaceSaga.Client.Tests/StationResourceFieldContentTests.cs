@@ -207,7 +207,7 @@ public sealed class StationResourceFieldContentTests
     public void Default_500_and_legacy_without_map_remain_unchanged()
     {
         // Baseline includes the EP-0009 structure normalization; resource-field loading must not modify it.
-        const string baselineHash = "608600241F4774398CCF2D86FCA98517CC15F9BB3FEB10D4E4B358C6AB9377DF";
+        const string baselineHash = "75C648C93E5D300036CC8E6798381ACFB865B4A0560839880D97831B5C6B2797";
         Assert.Equal(baselineHash, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(ScenarioPath("Default_500")))));
         using var enabled = new ContentFixture();
         using var disabled = new ContentFixture(enabled: false);

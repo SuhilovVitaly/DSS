@@ -74,7 +74,8 @@ public sealed class FullMapRenderEvidenceTests
             var body = screen.ObjectInfoPanel.RowBodyRects[1]; double beforeZoom = screen.CameraPixelsPerWorldUnit;
             screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, -1);
             if (width / scale < 1100) Assert.True(screen.ObjectInfoPanel.ScrollOffset(1) > 0);
-            Assert.Equal(beforeZoom, screen.CameraPixelsPerWorldUnit);
+            Assert.True(beforeZoom == screen.CameraPixelsPerWorldUnit,
+                $"width={width};scale={scale};body={body};info={screen.ObjectInfoPanel.BodyRect};before={beforeZoom};after={screen.CameraPixelsPerWorldUnit}");
             screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, 1);
             var fields = EnvironmentFieldRenderer.Resolve(snapshot, screen.RenderStates.Select(s => s.Predicted), snapshot.MotionTimeMs);
             var field = fields.First(f => f.Data.Kind == "Radiation");

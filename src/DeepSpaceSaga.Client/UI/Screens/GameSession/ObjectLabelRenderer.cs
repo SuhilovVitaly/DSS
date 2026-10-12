@@ -13,9 +13,17 @@ internal sealed class ObjectLabelRenderer
 {
     private readonly CombatVisualSettings _combatSettings;
     internal IReadOnlyDictionary<string, ObjectLabelGeometry> Geometries => _geometries;
-    internal static bool HasHullBar(ObjectMotionSnapshot source) =>
-        !source.IsDestroyed && source.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
-        source.HullCombat is { MaxHp: > 0, CurrentHp: > 0 };
+    internal static bool HasModuleBar(ObjectMotionSnapshot source) => ModuleBarFraction(source) is not null;
+
+    internal static double? ModuleBarFraction(ObjectMotionSnapshot source)
+    {
+        if (source.IsDestroyed || source.RenderObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) ||
+            source.ModuleHealth.IsDefaultOrEmpty) return null;
+        long maximum = source.ModuleHealth.Sum(m => (long)m.ArmorMax + m.StructureMax);
+        if (maximum <= 0) return null;
+        long current = source.ModuleHealth.Sum(m => (long)m.ArmorCurrent + m.StructureCurrent);
+        return Math.Clamp((double)current / maximum, 0, 1);
+    }
     private readonly SKPaint _leaderLinePaint;
     private readonly SKPaint _plaqueBgPaint;
     private readonly SKPaint _plaqueBorderPaint;
@@ -132,7 +140,7 @@ internal sealed class ObjectLabelRenderer
                 var predicted = state.Pose;
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
-                bool important = state.IsPlayerShip || HasHullBar(state.Source) || state.Source.Torpedo is not null || isImportant?.Invoke(objectId) == true ||
+                bool important = state.IsPlayerShip || HasModuleBar(state.Source) || state.Source.Torpedo is not null || isImportant?.Invoke(objectId) == true ||
                     predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
                 if (important != (pass == 0)) continue;
                 if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
@@ -171,7 +179,7 @@ internal sealed class ObjectLabelRenderer
 
                 // Target geometry from orbit layout (no smoothing).
                 var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
-                    viewport, markerRadius, HasHullBar(state.Source));
+                    viewport, markerRadius, HasModuleBar(state.Source));
 
                 // Apply smoothing to get the visible plaque position.
                 SKRect visiblePlaque = _smoother.Update(
@@ -293,8 +301,8 @@ internal sealed class ObjectLabelRenderer
             var predicted = state.Pose;
 
             var plaqueRect = geometry.PlaqueRect;
-            bool hasHullBar = HasHullBar(state.Source);
-            if (hasHullBar) plaqueRect.Bottom = Math.Max(plaqueRect.Top, plaqueRect.Bottom - ObjectLabelLayout.HullBarSpace);
+            bool hasModuleBar = HasModuleBar(state.Source);
+            if (hasModuleBar) plaqueRect.Bottom = Math.Max(plaqueRect.Top, plaqueRect.Bottom - ObjectLabelLayout.ModuleBarSpace);
 
             byte opacity = _opacity[objectId];
             _plaqueBgPaint.Color = _plaqueBgPaint.Color.WithAlpha(opacity);
@@ -345,13 +353,13 @@ internal sealed class ObjectLabelRenderer
             canvas.ClipRect(plaqueRect);
             canvas.DrawText(label, geometry.TextOrigin.X, textY, textPaint);
             canvas.Restore();
-            if (hasHullBar)
+            if (hasModuleBar)
             {
-                var hp = state.Source.HullCombat!;
-                var bar = ObjectLabelLayout.HullBarRect(geometry.PlaqueRect);
+                double fraction = ModuleBarFraction(state.Source)!.Value;
+                var bar = ObjectLabelLayout.ModuleBarRect(geometry.PlaqueRect);
                 _stripePaint.Color = new SKColor(24, 40, 24);
                 canvas.DrawRect(bar, _stripePaint);
-                bar.Right = bar.Left + bar.Width * (float)Math.Clamp((double)hp.CurrentHp / hp.MaxHp, 0, 1);
+                bar.Right = bar.Left + bar.Width * (float)fraction;
                 _stripePaint.Color = _combatSettings.HullHp;
                 canvas.DrawRect(bar, _stripePaint);
             }

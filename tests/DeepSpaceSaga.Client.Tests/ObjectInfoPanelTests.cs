@@ -115,6 +115,25 @@ public class ObjectInfoPanelTests
         Assert.Equal("Prospector", Assert.Single(lines, l => l.Label == "Name").Value);
     }
 
+    [Fact]
+    public void Known_ship_module_rows_show_armor_structure_and_authoritative_state()
+    {
+        ModuleHealthSnapshot[] modules =
+        [
+            new("engine", "Engine", 12, 20, 30, 40, 4500, false),
+            new("weapon", "Weapon", 0, 10, 0, 25, null, true)
+        ];
+        var data = new ObjectInfoPanelData("ship", "Ship", 0, 0, SpaceObjectType.NpcShip,
+            Modules: modules, MotionTimeMs: 1000);
+        var lines = ObjectInfoPanel.BuildLines(data);
+        Assert.Contains(lines, row => row.Label.Contains("Engine") && row.Value.Contains("12/20") &&
+            row.Value.Contains("30/40") && row.Value.Contains("4 s"));
+        Assert.Contains(lines, row => row.Label.Contains("Weapon") && row.Value.Contains("0/10") &&
+            row.Value.Contains("0/25") && row.Value.Contains(GameSessionScreen.CombatText("Destroyed", "Уничтожен")));
+        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(data with { RenderObjectType = SpaceObjectType.UnknownSpaceObject }),
+            row => row.Label.Contains("Engine") || row.Label.Contains("Weapon"));
+    }
+
     private static StationMarketKnowledgeSnapshot Market(string id = "STATION-A", bool stale = false, bool available = true) =>
         new(id, "Mining", available, 731, 53, stale,
             [new("item.water", StationMarketStockState.Shortage), new("item.steel", StationMarketStockState.Normal),
@@ -257,8 +276,11 @@ public class ObjectInfoPanelTests
         var panel = new ObjectInfoPanel();
         var data = MarketData(Market()) with
         {
-            ClusterName = "District 5", ClusterProfile = "market.transit", StraightFlightDays = 12,
-            EstimateMotionTimeMs = 123, ClusterDirections = string.Join("; ", Enumerable.Range(1, 60).Select(i => $"Station {i}: visit / return"))
+            ClusterName = "District 5",
+            ClusterProfile = "market.transit",
+            StraightFlightDays = 12,
+            EstimateMotionTimeMs = 123,
+            ClusterDirections = string.Join("; ", Enumerable.Range(1, 60).Select(i => $"Station {i}: visit / return"))
         };
         var lines = panel.BuildRenderLines(data);
         Assert.True(lines.FindIndex(l => l.Label == "Straight flight estimate") < lines.FindIndex(l => l.Label == "Potential cargo"));

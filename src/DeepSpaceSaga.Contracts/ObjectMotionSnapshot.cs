@@ -136,7 +136,15 @@ public sealed record ObjectMotionSnapshot(
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
     [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
     /// <summary>Confirmed hostile maneuver; no client-side AI decisions are required.</summary>
-    HostileCombatSnapshot? HostileCombat = null);
+    HostileCombatSnapshot? HostileCombat = null,
+    /// <summary>Known ship's authoritative module health; hidden for unidentified objects.</summary>
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ModuleHealthSnapshot>))]
+    ImmutableArray<ModuleHealthSnapshot> ModuleHealth = default);
+
+/// <summary>Confirmed module durability and temporary disable state for ship inspection.</summary>
+public sealed record ModuleHealthSnapshot(string ModuleId, string DisplayName,
+    int ArmorCurrent, int ArmorMax, int StructureCurrent, int StructureMax,
+    double? DisabledUntilMotionTimeMs, bool IsDestroyed);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

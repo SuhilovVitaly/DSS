@@ -276,7 +276,7 @@ public sealed partial class GameSessionScreen
         _combatImportantIds.Clear();
         foreach (var state in _renderStates)
         {
-            if (ObjectLabelRenderer.HasHullBar(state.Source)) _combatImportantIds.Add(state.Source.ObjectId);
+            if (ObjectLabelRenderer.HasModuleBar(state.Source)) _combatImportantIds.Add(state.Source.ObjectId);
             if (state.Source.Countermeasure is { } defenseFlight)
             {
                 _combatImportantIds.Add(state.Source.ObjectId);

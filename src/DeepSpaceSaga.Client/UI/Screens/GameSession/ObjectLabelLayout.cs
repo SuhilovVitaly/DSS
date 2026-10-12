@@ -12,10 +12,10 @@ internal static class ObjectLabelLayout
 {
     public const float MinPlaqueWidth = 120f;
     public const float PlaqueHeight = 18f;
-    public const float HullBarHeight = 3f;
-    public const float HullBarSpace = 6f;
+    public const float ModuleBarHeight = 3f;
+    public const float ModuleBarSpace = 6f;
 
-    internal static SKRect HullBarRect(SKRect bounds) => new(bounds.Left, Math.Max(bounds.Top, bounds.Bottom - HullBarHeight), bounds.Right, bounds.Bottom);
+    internal static SKRect ModuleBarRect(SKRect bounds) => new(bounds.Left, Math.Max(bounds.Top, bounds.Bottom - ModuleBarHeight), bounds.Right, bounds.Bottom);
     public const float StripeHeight = 3f;
     public const float StatusSquareSize = 8f;
     public const float TextPaddingX = 12f;
@@ -58,13 +58,13 @@ internal static class ObjectLabelLayout
         float textWidth,
         SKSize viewport,
         float markerRadius,
-        bool hasHullBar = false)
+        bool hasModuleBar = false)
     {
         if (viewport.Width <= 0 || viewport.Height <= 0) return default;
         float plaqueW = Math.Max(MinPlaqueWidth,
             TextPaddingX + StatusSquareSize + StatusTextGap + textWidth + TextPaddingX);
         plaqueW = Math.Min(plaqueW, Math.Max(0, viewport.Width - 2 * ViewportMargin));
-        float plaqueH = Math.Min(PlaqueHeight + (hasHullBar ? HullBarSpace : 0), Math.Max(0, viewport.Height - 2 * ViewportMargin));
+        float plaqueH = Math.Min(PlaqueHeight + (hasModuleBar ? ModuleBarSpace : 0), Math.Max(0, viewport.Height - 2 * ViewportMargin));
         var plaqueSize = new SKSize(plaqueW, plaqueH);
 
         float safeRadius = markerRadius + SafeMarginPx;

@@ -722,7 +722,15 @@ public sealed partial class SimulationEngine : IDisposable
                     DockOperatorDisplayName = dockOperator?.DisplayName,
                     DockOperatorPortraitImage = dockOperator?.PortraitImage,
                     IsDestroyed = obj.IsDestroyed,
-                    Defense = known ? ProjectDefense(obj) : null
+                    Defense = known ? ProjectDefense(obj) : null,
+                    ModuleHealth = known && obj.ObjectType is (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
+                        ? obj.Modules.Select(m =>
+                        {
+                            var type = _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex);
+                            return new ModuleHealthSnapshot(m.ModuleId, type.DisplayName, m.Armor, m.ArmorMax,
+                                m.StructurePoints, type.StructurePointsMax, m.DisabledUntilMotionTimeMs, m.Destroyed);
+                        }).ToImmutableArray()
+                        : ImmutableArray<ModuleHealthSnapshot>.Empty
                 });
             }
 

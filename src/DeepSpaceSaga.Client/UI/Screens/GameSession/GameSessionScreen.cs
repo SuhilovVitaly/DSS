@@ -975,7 +975,7 @@ public sealed partial class GameSessionScreen : IScreen
             double dx = x - sx;
             double dy = y - sy;
             double distanceSq = dx * dx + dy * dy;
-            if (ObjectLabelRenderer.HasHullBar(state.Source) &&
+            if (ObjectLabelRenderer.HasModuleBar(state.Source) &&
                 _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
                 distanceSq = 0;
             if (distanceSq > radiusSq)
@@ -2367,7 +2367,9 @@ public sealed partial class GameSessionScreen : IScreen
             territory?.DefenceRadiusKm, territory?.PatrolRadiusKm,
             HostileCombat: p.ObjectId == _selectedObjectId && s.Source.ObjectType == SpaceObjectType.NpcShip &&
                 p.RenderObjectType == SpaceObjectType.NpcShip && s.Source.RelationToPlayer == PlayerRelation.Enemy
-                ? s.Source.HostileCombat : null);
+                ? s.Source.HostileCombat : null,
+            Modules: s.Source.ModuleHealth.IsDefaultOrEmpty ? null : s.Source.ModuleHealth,
+            MotionTimeMs: _buffer.Latest?.Snapshot.MotionTimeMs ?? 0);
     }
 
     /// <summary>

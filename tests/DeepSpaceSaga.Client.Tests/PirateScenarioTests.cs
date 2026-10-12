@@ -153,7 +153,8 @@ public sealed class PirateScenarioTests
             // may differ by one ULP at generated system coordinates.
             Assert.InRange(Math.Abs(expected.X - actual.X), 0, 1e-6);
             Assert.InRange(Math.Abs(expected.Y - actual.Y), 0, 1e-6);
-            Assert.Equal(expected with { X = actual.X, Y = actual.Y }, actual);
+            Assert.Equal(expected.ModuleHealth.ToArray(), actual.ModuleHealth.ToArray());
+            Assert.Equal(expected with { X = actual.X, Y = actual.Y, ModuleHealth = actual.ModuleHealth }, actual);
             restored.SetObjectInteractionState(null, pirate.ObjectId);
             Assert.Equal(pirate.ObjectId, restored.CaptureSnapshotForTests(2000).SelectedObjectId);
             Assert.Equal(JsonSerializer.Serialize(save.GameState.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId).Modules),

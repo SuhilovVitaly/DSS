@@ -51,7 +51,7 @@ public sealed partial class GameSessionScreen
             if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
             var p = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
             double distance = double.Hypot(p.X - x, p.Y - y);
-            if (ObjectLabelRenderer.HasHullBar(state.Source) && _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y)) distance = 0;
+            if (ObjectLabelRenderer.HasModuleBar(state.Source) && _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y)) distance = 0;
             if (distance <= ObjectHitTestRadiusPx) candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
         }
         if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest))
