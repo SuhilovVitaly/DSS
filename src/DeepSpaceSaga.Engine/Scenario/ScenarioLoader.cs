@@ -481,6 +481,12 @@ public static class ScenarioLoader
         if (string.IsNullOrWhiteSpace(module.ArmorClass) ||
             (armorClasses is not null && !armorClasses.ContainsKey(module.ArmorClass)))
             throw new ScenarioException($"Module '{module.ModuleId}' has unknown armorClass '{module.ArmorClass}'.");
+        if (module.Armor is < 0 ||
+            (module.Armor is { } armor && armorClasses is not null && armor > armorClasses[module.ArmorClass]))
+            throw new ScenarioException($"Module '{module.ModuleId}' armor exceeds its armorClass capacity.");
+        if (module.DisabledUntilMotionTimeMs is { } disabledUntil &&
+            (double.IsNaN(disabledUntil) || double.IsInfinity(disabledUntil) || disabledUntil < 0))
+            throw new ScenarioException($"Module '{module.ModuleId}' has invalid disabledUntilMotionTimeMs.");
 
         if (module.OccupiedCells is null || module.OccupiedCells.Count == 0)
             throw new ScenarioException($"Module '{module.ModuleId}' must occupy at least one cell.");

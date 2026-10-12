@@ -930,7 +930,14 @@ public sealed partial class SimulationEngine : IDisposable
                     ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
                     : moduleType.CountermeasureAccuracy is not null
                         ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null,
-                DefensePreview: BuildDefensePreview(ship, module, motionTimeMs)));
+                DefensePreview: BuildDefensePreview(ship, module, motionTimeMs),
+                ArmorCurrent: module.Armor,
+                ArmorMax: module.ArmorMax,
+                StructureCurrent: module.StructurePoints,
+                StructureMax: moduleType.StructurePointsMax,
+                DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
+                IsDestroyed: module.Destroyed,
+                CombatRole: moduleType.CombatRole));
         }
 
         return builder.MoveToImmutable();
@@ -1188,7 +1195,10 @@ public sealed partial class SimulationEngine : IDisposable
                 OperatorCrewId: module.OperatorCrewId,
                 AutoDefenseEnabled: module.AutoDefenseEnabled,
                 FuelCostBasisCredits: moduleType.FuelCapacityKg is > 0 ? module.FuelCostBasisCredits : null,
-                ArmorClass: module.ArmorClass));
+                ArmorClass: module.ArmorClass,
+                Armor: module.ArmorClass == "none" ? null : module.Armor,
+                DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
+                Destroyed: module.Destroyed));
         }
 
         return modules;
@@ -1307,6 +1317,10 @@ public sealed partial class SimulationEngine : IDisposable
                 throw new ScenarioException(
                     $"Module '{module.ModuleId}' structurePoints {module.StructurePoints} is outside 0..{moduleType.StructurePointsMax}.");
             }
+            int armorMax = _registry.CombatRules?.ArmorClasses.GetValueOrDefault(module.ArmorClass) ?? 0;
+            int armor = module.Armor ?? armorMax;
+            if (armor < 0 || armor > armorMax)
+                throw new ScenarioException($"Module '{module.ModuleId}' armor {armor} is outside 0..{armorMax}.");
 
             var cargo = BuildRuntimeCargo(obj, module, saveVersion);
 
@@ -1342,7 +1356,11 @@ public sealed partial class SimulationEngine : IDisposable
                 module.OperatorCrewId,
                 module.AutoDefenseEnabled,
                 ResolveFuelCostBasis(module, moduleType, fuelAmountKg, obj.ObjectId),
-                module.ArmorClass));
+                module.ArmorClass,
+                armor,
+                armorMax,
+                module.DisabledUntilMotionTimeMs,
+                module.Destroyed));
         }
 
         return modules.ToImmutable();
@@ -4036,7 +4054,11 @@ internal sealed record InstalledModuleRuntime(
     string? OperatorCrewId = null,
     bool AutoDefenseEnabled = true,
     long FuelCostBasisCredits = 0,
-    string ArmorClass = "none");
+    string ArmorClass = "none",
+    int Armor = 0,
+    int ArmorMax = 0,
+    double? DisabledUntilMotionTimeMs = null,
+    bool Destroyed = false);
 
 internal sealed record CargoStackRuntime(
     int ItemTypeIndex,

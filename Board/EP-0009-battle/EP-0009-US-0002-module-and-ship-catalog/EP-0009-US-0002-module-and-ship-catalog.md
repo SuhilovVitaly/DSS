@@ -28,3 +28,7 @@ validation_status: not-started
 ## Evidence
 
 Execution is authorized by the user and EpicExecutionPrompt. Planning text is not PASS/APPROVED. Actual results go into ticket cards and ImplementationStatus; deferred native/human acceptance stays OPEN. Graph rebuilding is SKIPPED by user instruction.
+
+## Story review — 2026-10-12
+
+Four ticket commits are independently published through TK-0004 `44fa559522d126f537d35c8f30552dab4968ec03`. AC1 catalog numbers and AC2 structure150 are covered by content tests. AC2's actual hit rule awaits US-0003. AC3 class ids and TypeId-only schema load; Mukha/Shmel layout and placeholder image require US-0009 scenario objects and remain OPEN. No gameplay, human, native or Graphify acceptance is claimed.
