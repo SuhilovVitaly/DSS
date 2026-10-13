@@ -27,6 +27,7 @@ public sealed class ResourceSurveyTests
     [InlineData("command", CommandReasonCodes.UnknownCommandType)]
     [InlineData("off", CommandReasonCodes.ModuleUnavailable)]
     [InlineData("disabled", CommandReasonCodes.ModuleUnavailable)]
+    [InlineData("combatDisabled", CommandReasonCodes.ModuleDisabled)]
     [InlineData("broken", CommandReasonCodes.ModuleUnavailable)]
     [InlineData("missing", CommandReasonCodes.MissingTarget)]
     [InlineData("unknown", CommandReasonCodes.UnknownTarget)]
@@ -48,6 +49,7 @@ public sealed class ResourceSurveyTests
             case "command": command = command with { ModuleId = EngineModule }; break;
             case "off": ChangeScanner(engine, m => m with { PowerState = "Off" }); break;
             case "disabled": ChangeScanner(engine, m => m with { OperationalState = "Disabled" }); break;
+            case "combatDisabled": ChangeScanner(engine, m => m with { DisabledUntilMotionTimeMs = 60000 }); break;
             case "broken": ChangeScanner(engine, m => m with { StructurePoints = 0 }); break;
             case "missing": command = command with { TargetObjectId = null }; break;
             case "unknown": command = command with { TargetObjectId = "absent" }; break;
@@ -78,6 +80,19 @@ public sealed class ResourceSurveyTests
             Assert.Equal(reason, rejected.ReasonCode);
             Assert.Equal(Json(before.GameState.StationResourceFields), Json(after.GameState.StationResourceFields));
         }
+    }
+
+    [Fact]
+    public void Combat_disabled_scanner_can_start_again_at_disable_deadline()
+    {
+        using var engine = Create();
+        string target = Target(engine);
+        ChangeScanner(engine, m => m with { DisabledUntilMotionTimeMs = 60000 });
+        engine.CaptureSnapshotForTests(59999);
+        engine.ReceiveCommand(Command(target));
+        var snapshot = engine.CaptureSnapshotForTests(60000);
+        Assert.Empty(snapshot.CommandResults);
+        Assert.Single(Save(engine, 60000).GameState.StationResourceFields!.Surveys);
     }
 
     [Fact]
@@ -219,6 +234,7 @@ public sealed class ResourceSurveyTests
     [InlineData("target")]
     [InlineData("remove")]
     [InlineData("off")]
+    [InlineData("combatDisabled")]
     [InlineData("actor")]
     public void Target_loss_and_module_unavailability_finish_once(string failure)
     {
@@ -229,12 +245,14 @@ public sealed class ResourceSurveyTests
         if (failure == "target") Change(engine, target, o => o with { IsDestroyed = true });
         if (failure == "remove") Objects(engine).RemoveAll(o => o.InitialMotion.ObjectId == target);
         if (failure == "off") ChangeScanner(engine, m => m with { PowerState = "Off" });
+        if (failure == "combatDisabled") ChangeScanner(engine, m => m with { DisabledUntilMotionTimeMs = 60000 });
         if (failure == "actor") Change(engine, Player, o => o with { IsDestroyed = true });
         var snapshot = engine.CaptureSnapshotForTests(11000);
         var result = Assert.Single(snapshot.CommandResults);
         bool lost = failure is "target" or "remove";
         Assert.Equal(lost ? CommandResultStatus.Failed : CommandResultStatus.Cancelled, result.Status);
-        Assert.Equal(lost ? ResourceSurveyReasonCodes.TargetLost : CommandReasonCodes.ModuleUnavailable, result.ReasonCode);
+        Assert.Equal(lost ? ResourceSurveyReasonCodes.TargetLost : failure == "combatDisabled"
+            ? CommandReasonCodes.ModuleDisabled : CommandReasonCodes.ModuleUnavailable, result.ReasonCode);
         Assert.Null(snapshot.InstalledModules.Single(m => m.ModuleId == Scanner).ActiveCommandType);
         Assert.Empty(engine.CaptureSnapshotForTests(60000).CommandResults);
         Assert.Empty(SurveyStreams(Save(engine, 60000)));
@@ -278,6 +296,7 @@ public sealed class ResourceSurveyTests
     [InlineData("pending")]
     [InlineData("receipt")]
     [InlineData("off")]
+    [InlineData("combatDisabled")]
     [InlineData("range")]
     [InlineData("cycle")]
     public void Invalid_saved_job_leaves_previous_world_unchanged(string corruption)
@@ -301,14 +320,15 @@ public sealed class ResourceSurveyTests
         gs = gs with { StationResourceFields = fields with { Surveys = corruption == "duplicate" ? [job, job] : [job] } };
         if (corruption == "pending") gs = gs with { PendingCommands = [Command(target)] };
         if (corruption == "receipt") gs = gs with { CommandReceipts = [new("scan", Player, Scanner, ScannerCommandTypes.StructuralScan, CommandResultStatus.Failed, 0)] };
-        if (corruption is "off" or "range" or "cycle") gs = gs with
+        if (corruption is "off" or "combatDisabled" or "range" or "cycle") gs = gs with
         {
             SpaceObjects = gs.SpaceObjects.Select(o => o.ObjectId != Player ? o : corruption == "range"
                 ? o with { PositionX = o.PositionX + 2000 }
                 : o with
                 {
                     Modules = o.Modules!.Select(m => m.ModuleId != Scanner ? m : corruption == "off"
-                    ? m with { PowerState = "Off" } : m with { ActiveCycle = new("bad", 0, 100000, ShipEngineCommandTypes.Accelerate, false) }).ToArray()
+                    ? m with { PowerState = "Off" } : corruption == "combatDisabled"
+                    ? m with { DisabledUntilMotionTimeMs = 60000 } : m with { ActiveCycle = new("bad", 0, 100000, ShipEngineCommandTypes.Accelerate, false) }).ToArray()
                 }).ToArray()
         };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(save with { GameState = gs }, isSave: true));

@@ -17,8 +17,8 @@ public sealed partial class SimulationEngine
     private bool IsResourceScanner(InstalledModuleRuntime module) =>
         _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(ScannerCommandTypes.StructuralScan);
 
-    private static bool ResourceScannerAvailable(SpaceObjectRuntime actor, InstalledModuleRuntime module) =>
-        !actor.IsDestroyed && module.PowerState == "On" && module.OperationalState == "Ready" && module.StructurePoints > 0;
+    private static bool ResourceScannerAvailable(SpaceObjectRuntime actor, InstalledModuleRuntime module, long physicalTime) =>
+        !actor.IsDestroyed && CanExecuteModuleCommand(module, physicalTime);
 
     private CommandStartOutcome TryStartResourceSurvey(PlayerCommand command, long physicalTime)
     {
@@ -28,8 +28,8 @@ public sealed partial class SimulationEngine
         var module = actor.Modules.FirstOrDefault(m => m.ModuleId == command.ModuleId);
         if (module is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
         if (!IsResourceScanner(module)) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
-        if (!ResourceScannerAvailable(actor, module))
-            return CommandStartOutcome.Rejected(CommandReasonCodes.ModuleUnavailable);
+        if (!ResourceScannerAvailable(actor, module, physicalTime))
+            return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, physicalTime) ?? CommandReasonCodes.ModuleUnavailable);
         if (_dialogue.Active is not null) return CommandStartOutcome.Rejected("dialogue_active");
         if (string.IsNullOrWhiteSpace(command.TargetObjectId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingTarget);
         var target = _objects.Find(o => o.InitialMotion.ObjectId == command.TargetObjectId && !o.IsDestroyed);
@@ -102,9 +102,11 @@ public sealed partial class SimulationEngine
             var actor = _objects.Find(o => o.InitialMotion.ObjectId == job.ObjectId);
             var module = actor?.Modules.FirstOrDefault(m => m.ModuleId == job.ModuleId);
             if (actor is null || module is null || !IsResourceScanner(module) ||
-                !ResourceScannerAvailable(actor, module) || module.ActiveCycle is not null)
+                !ResourceScannerAvailable(actor, module, physicalTime) || module.ActiveCycle is not null)
             {
-                FinishResourceSurvey(job, CommandResultStatus.Cancelled, calendarAt(physicalTime), CommandReasonCodes.ModuleUnavailable);
+                FinishResourceSurvey(job, CommandResultStatus.Cancelled, calendarAt(physicalTime),
+                    module is null ? CommandReasonCodes.ModuleUnavailable :
+                    ModuleCombatUnavailableReason(module, physicalTime) ?? CommandReasonCodes.ModuleUnavailable);
                 continue;
             }
             var target = _objects.Find(o => o.InitialMotion.ObjectId == job.TargetObjectId && !o.IsDestroyed);
@@ -163,7 +165,7 @@ public sealed partial class SimulationEngine
             var module = actor?.Modules.FirstOrDefault(m => m.ModuleId == job.ModuleId);
             var target = objects.Find(o => o.InitialMotion.ObjectId == job.TargetObjectId && !o.IsDestroyed && o.IsKnown);
             bool valid = actor is not null && module is not null && IsResourceScanner(module) &&
-                ResourceScannerAvailable(actor, module) && module.ActiveCycle is null && target is not null &&
+                ResourceScannerAvailable(actor, module, state.MotionTimeMs) && module.ActiveCycle is null && target is not null &&
                 fields.Asteroids.Any(a => a.ObjectId == job.TargetObjectId && !a.CompositionKnown) &&
                 job.StartedGameTimeMs >= 0 && job.StartedGameTimeMs <= state.GameTimeMs && state.GameTimeMs < job.DueGameTimeMs &&
                 job.StartedGameTimeMs <= long.MaxValue - fields.Rules.StructuralScan.DurationGameTimeMs &&
