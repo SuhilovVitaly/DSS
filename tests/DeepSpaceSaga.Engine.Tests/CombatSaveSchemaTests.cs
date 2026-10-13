@@ -63,6 +63,26 @@ public sealed class CombatSaveSchemaTests
     }
 
     [Fact]
+    public void Unknown_saved_launcher_fire_mode_is_rejected_before_replacing_world()
+    {
+        using var existing = Create();
+        var save = existing.CaptureSaveState();
+        var combat = save.GameState.CombatState!;
+        var launcher = combat.Launchers[0];
+        var invalidCombat = combat with
+        {
+            Launchers = combat.Launchers.Select(row => row == launcher
+                ? row with { State = row.State with { ModeId = "missing-mode" } } : row).ToArray()
+        };
+        var invalid = save with { GameState = save.GameState with { CombatState = invalidCombat } };
+        var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(invalid), true);
+        string before = ScenarioLoader.Serialize(existing.CaptureSaveState());
+        var exception = Assert.Throws<ScenarioException>(() => existing.LoadScenario(loaded, true));
+        Assert.Contains("missing-mode", exception.Message);
+        Assert.Equal(before, ScenarioLoader.Serialize(existing.CaptureSaveState()));
+    }
+
+    [Fact]
     public void Current_save_rejects_invalid_module_and_flight_state()
     {
         var save = ValidSave();

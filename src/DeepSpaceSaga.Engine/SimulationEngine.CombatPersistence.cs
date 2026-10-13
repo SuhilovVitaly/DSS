@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Combat;
 using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine;
@@ -103,14 +104,24 @@ public sealed partial class SimulationEngine
         _processedModeCommandIds.Order(StringComparer.Ordinal).ToArray());
 
     // Validate content compatibility and stage every runtime mutation before publishing the world.
-    private static void StageCombatRestore(CombatStateData? saved, List<SpaceObjectRuntime> objects,
+    private void StageCombatRestore(CombatStateData? saved, List<SpaceObjectRuntime> objects,
         Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> launchers)
     {
         if (saved is null) return;
         if (launchers.Count != saved.Launchers.Count || saved.Launchers.Any(l => !launchers.ContainsKey((l.OwnerObjectId, l.ModuleId))))
             throw new ScenarioException("Saved combat launchers do not match installed weapon modules.");
         foreach (var launcher in saved.Launchers)
+        {
+            try
+            {
+                FireModeMath.Resolve(_registry, launcher.State.ModeId);
+            }
+            catch (InvalidOperationException exception)
+            {
+                throw new ScenarioException($"Invalid saved fire mode '{launcher.State.ModeId}' for launcher '{launcher.ModuleId}': {exception.Message}");
+            }
             launchers[(launcher.OwnerObjectId, launcher.ModuleId)] = launcher.State;
+        }
         foreach (var projectile in saved.Projectiles)
         {
             int index = objects.FindIndex(o => o.InitialMotion.ObjectId == projectile.ObjectId);
