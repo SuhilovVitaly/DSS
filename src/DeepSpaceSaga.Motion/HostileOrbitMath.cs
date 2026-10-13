@@ -71,6 +71,60 @@ public static class HostileOrbitMath
             new(epochMs, DecisionIntervalMs, 0, ship.X, ship.Y, ship.SpeedKmS, ship.Direction, acceleration, turn));
     }
 
+    /// <summary>Configured D33 attack steering. An absent band preserves the EP-0008 orbit exactly.</summary>
+    public static HostileCombatSnapshot PlanAttack(ObjectMotionSnapshot ship, ObjectMotionSnapshot target,
+        long epochMs, string engineModuleId, string weaponModuleId, double standoffKm,
+        double maxSpeedKmS, double accelerationKmS2, double turnRateDegPerSec,
+        double? bandKm = null, double flankOffsetDeg = 0, HostileCombatSnapshot? previous = null)
+    {
+        if (bandKm is null)
+            return Plan(ship, target, epochMs, engineModuleId, weaponModuleId, standoffKm,
+                maxSpeedKmS, accelerationKmS2, turnRateDegPerSec, previous);
+        RequirePositive(standoffKm, nameof(standoffKm));
+        RequirePositive(maxSpeedKmS, nameof(maxSpeedKmS));
+        RequireNonnegative(accelerationKmS2, nameof(accelerationKmS2));
+        RequireNonnegative(turnRateDegPerSec, nameof(turnRateDegPerSec));
+        if (!double.IsFinite(bandKm.Value) || bandKm.Value < 0 || bandKm.Value >= standoffKm)
+            throw new ArgumentOutOfRangeException(nameof(bandKm));
+        if (!double.IsFinite(flankOffsetDeg) || Math.Abs(flankOffsetDeg) > 180)
+            throw new ArgumentOutOfRangeException(nameof(flankOffsetDeg));
+
+        double dx = (ship.X - target.X) / 10, dy = (ship.Y - target.Y) / 10;
+        double distanceKm = Math.Sqrt(dx * dx + dy * dy);
+        if (distanceKm >= standoffKm - bandKm.Value && distanceKm <= standoffKm + bandKm.Value)
+        {
+            var orbit = Plan(ship, target, epochMs, engineModuleId, weaponModuleId, standoffKm,
+                maxSpeedKmS, accelerationKmS2, turnRateDegPerSec, previous);
+            return orbit.Phase == HostileCombatPhase.Pursuit ? orbit : orbit with { Phase = HostileCombatPhase.OrbitHold };
+        }
+
+        double heading;
+        HostileCombatPhase phase;
+        if (distanceKm < standoffKm - bandKm.Value)
+        {
+            heading = RadialBearing(ship, target);
+            phase = HostileCombatPhase.Retreat;
+        }
+        else
+        {
+            double relativeSpeed = Math.Max(0.001, maxSpeedKmS - target.SpeedKmS);
+            double leadSeconds = Math.Min(120, distanceKm / relativeSpeed);
+            double targetRadians = target.Direction * Math.PI / 180;
+            double leadX = target.X + 10 * target.SpeedKmS * leadSeconds * Math.Sin(targetRadians);
+            double leadY = target.Y - 10 * target.SpeedKmS * leadSeconds * Math.Cos(targetRadians);
+            double leadBearing = Math.Atan2(leadX - ship.X, ship.Y - leadY) * 180 / Math.PI;
+            heading = leadBearing + flankOffsetDeg * Math.Min(1, (distanceKm - standoffKm) / 100);
+            phase = HostileCombatPhase.FlankApproach;
+        }
+
+        double dt = DecisionIntervalMs / 1000.0;
+        double acceleration = Math.Clamp((maxSpeedKmS - ship.SpeedKmS) / dt, -accelerationKmS2, accelerationKmS2);
+        double turn = Math.Clamp(Delta(ship.Direction, heading) / dt, -turnRateDegPerSec, turnRateDegPerSec);
+        return new(target.ObjectId, engineModuleId, weaponModuleId, standoffKm,
+            previous?.Clockwise ?? ChooseClockwise(ship, target), phase,
+            new(epochMs, DecisionIntervalMs, 0, ship.X, ship.Y, ship.SpeedKmS, ship.Direction, acceleration, turn));
+    }
+
     public static ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
         if (state.HostileCombat is not { } hostile) return state;

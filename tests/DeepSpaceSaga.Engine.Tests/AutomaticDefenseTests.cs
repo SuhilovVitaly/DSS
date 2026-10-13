@@ -16,7 +16,9 @@ public class AutomaticDefenseTests
                 : m.TorpedoManeuverability is not null ? m with { TorpedoManeuverability = maneuverability } : m),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
+            fireModes: source.FireModes);
     }
     [Theory]
     [InlineData(45)]
@@ -62,12 +64,11 @@ public class AutomaticDefenseTests
             System.Text.Json.JsonSerializer.Serialize(At(roundtripped, 25000).CombatJournal));
     }
 
-    internal static ScenarioFile DefenseScenario(double distance = 600, int attack = 50, int defense = 50) => TorpedoImpactTests.Scenario(o => o with
+    internal static ScenarioFile DefenseScenario(double distance = 600) => TorpedoImpactTests.Scenario(o => o with
     {
         PositionY = o.ObjectId == Player ? 0 : -distance,
         DirectionDegrees = o.ObjectId == Player ? 0 : 180,
-        Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = true }).ToArray(),
-        Crew = o.Crew!.Select(c => c with { TorpedoSkill = attack, CountermeasureSkill = defense }).ToArray()
+        Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = true }).ToArray()
     });
     [Fact]
     public void Defense_fires_only_after_time_advances_and_reserves_once()
@@ -79,7 +80,8 @@ public class AutomaticDefenseTests
         var snapshot = At(engine, 100, 1100);
         var pr = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null);
         Assert.Equal(500, pr.Countermeasure!.FrozenChanceTenths);
-        Assert.True(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Equal(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).ObjectId,
+            pr.Countermeasure.TargetTorpedoId);
         Assert.Equal(12, pr.SpeedKmS);
         Assert.Equal(DefenseState.Guiding, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.State);
     }
@@ -96,11 +98,11 @@ public class AutomaticDefenseTests
     public void Zero_chance_does_not_consume_attempt()
     {
         using var engine = new SimulationEngine(WeaponRegistry(0, 100));
-        engine.LoadScenario(DefenseScenario(600, 100, 0));
+        engine.LoadScenario(DefenseScenario(600));
         engine.ReceiveCommand(Fire("fire")); At(engine, 0);
         var snapshot = At(engine, 1000);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.False(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Single(snapshot.Objects, o => o.Torpedo is not null);
     }
     [Fact]
     public void Disable_blocks_future_launches()

@@ -29,7 +29,7 @@ public class ManualCountermeasureFireTests
         Assert.Equal(60001, flight.ExpiresAtMotionTimeMs);
         Assert.Equal(60000, flight.MaxFlightTimeMs);
         Assert.Equal(500, flight.FrozenChanceTenths);
-        Assert.True(snapshot.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
         Assert.Equal(DefenseState.Guiding, snapshot.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
         Assert.Equal(auto, snapshot.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.AutoEnabled);
         Assert.Equal(projectile, At(engine, 1, 9000000).Objects.Single(o => o.ObjectId == projectile.ObjectId));
@@ -49,7 +49,7 @@ public class ManualCountermeasureFireTests
         Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.Equal(DefenseState.Guiding, m.Defense!.State));
         engine.ReceiveCommand(Manual("busy", target));
         var busy = At(engine, 1);
-        Assert.Equal(CommandReasonCodes.Busy, Assert.Single(busy.CommandResults).ReasonCode);
+        Assert.Equal(CommandReasonCodes.NotReady, Assert.Single(busy.CommandResults).ReasonCode);
         Assert.Equal(2, busy.Objects.Count(o => o.Countermeasure is not null));
         Assert.Equal(0ul, engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
     }
@@ -60,8 +60,7 @@ public class ManualCountermeasureFireTests
         var source = AutomaticDefenseTests.WeaponRegistry(0, 100);
         static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
         var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Select(m =>
-            m.CountermeasureAccuracy is not null ? m with { CountermeasureSpeedKmS = 0.001 } :
-            m.TorpedoTurnRateDegPerSec is not null ? m with { TorpedoTurnRateDegPerSec = 0.01 } : m),
+            m.CountermeasureAccuracy is not null ? m with { CountermeasureSpeedKmS = 0.001 } : m),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
             shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
@@ -100,7 +99,7 @@ public class ManualCountermeasureFireTests
         var result = At(engine, 1);
         Assert.Equal(CommandResultStatus.Rejected, Assert.Single(result.CommandResults).Status);
         Assert.DoesNotContain(result.Objects, o => o.Countermeasure is not null);
-        Assert.False(result.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(result.Objects, o => o.ObjectId == target && o.Torpedo is not null);
         var save = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState;
         Assert.Equal(0, save.DefenseState!.ProjectileSequence);
         Assert.Equal(0ul, save.DefenseState.RngCounter);
@@ -199,7 +198,7 @@ public class ManualCountermeasureFireTests
         var snapshot = At(engine, 1);
         Assert.Equal(CommandResultStatus.Rejected, Assert.Single(snapshot.CommandResults).Status);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.False(snapshot.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
     }
 
     [Fact]
@@ -212,11 +211,30 @@ public class ManualCountermeasureFireTests
         var ready = At(engine, 20000);
         Assert.Contains(ready.CombatJournal, e => e.Type == CombatEventType.Miss && e.ChanceTenths == 0);
         Assert.Equal(DefenseState.Ready, ready.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
-        Assert.True(ready.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+        Assert.Contains(ready.Objects, o => o.ObjectId == target && o.Torpedo is not null);
         engine.ReceiveCommand(Manual("second-attempt", target));
         var second = At(engine, 20000);
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(second.CommandResults).Status);
         Assert.Equal(target, Assert.Single(second.Objects, o => o.Countermeasure is not null).Countermeasure!.TargetTorpedoId);
+    }
+
+    [Theory]
+    [InlineData(0, 100, 0)]
+    [InlineData(100, 0, 1000)]
+    public void Zero_and_hundred_still_draw(decimal accuracy, decimal maneuverability, int expectedChance)
+    {
+        using var engine = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(accuracy, maneuverability));
+        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario());
+        string target = LaunchEnemy(engine);
+        engine.ReceiveCommand(Manual("boundary", target));
+        var launched = At(engine, 1);
+        Assert.Equal(expectedChance,
+            Assert.Single(launched.Objects, o => o.Countermeasure is not null).Countermeasure!.FrozenChanceTenths);
+        var resolved = At(engine, 20000);
+        var roll = Assert.Single(resolved.CombatJournal, e => e.RatingBreakdown is not null && e.Roll is not null);
+        Assert.Equal(expectedChance, roll.ChanceTenths);
+        Assert.InRange(roll.Roll!.Value, 1, 1000);
+        Assert.Equal(1UL, engine.CaptureSaveState().GameState.DefenseState!.RngCounter);
     }
 
     [Fact]
@@ -228,7 +246,7 @@ public class ManualCountermeasureFireTests
             GameState = scenario.GameState with
             {
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == Target ? o with { HullHitPoints = 150 } : o).ToArray()
+            o.ObjectId == Target ? FragileForOneHit(o) : o).ToArray()
             }
         };
         using var engine = Create(scenario);

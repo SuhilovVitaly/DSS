@@ -99,7 +99,7 @@ public sealed class LocalClusterGenerationTests
         foreach (var link in snapshot.ClusterMap!.Links)
         {
             if (original.ContainsKey(link.FromStationId) && original.ContainsKey(link.ToStationId)) continue;
-            Assert.InRange(Distance(objects[link.FromStationId], objects[link.ToStationId]) / 11520, 0.5 - 1e-8, 2 + 1e-8);
+            Assert.InRange(Distance(objects[link.FromStationId], objects[link.ToStationId]) / 17280, 0.5 - 1e-8, 2 + 1e-8);
         }
     }
 

@@ -11,8 +11,7 @@ public sealed class TorpedoLaunchTests
     private const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
         "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-    private static readonly Lazy<GameDataRegistry> Registry = new(() => EngineContentLoader.LoadRegistryFromSettingsFile(
-        Path.Combine(ClientRoot, "Settings.json"), out _, out _));
+    private static readonly Lazy<GameDataRegistry> Registry = TorpedoImpactTests.Registry;
     private static PlayerCommand Fire(string id = "fire", string? target = Target) => new(id, 1, Player, Launcher, CombatCommandTypes.Fire, target);
     private static ObjectMotionSnapshot Projectile(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
     private static SimulationEngine Create(Func<SpaceObjectData, SpaceObjectData>? configure = null)
@@ -42,7 +41,7 @@ public sealed class TorpedoLaunchTests
         Assert.Equal((carrier.X, carrier.Y, carrier.Direction), (projectile.X, projectile.Y, projectile.Direction));
         Assert.Equal(3, projectile.SpeedKmS);
         Assert.Equal(0, projectile.Torpedo!.DistanceTravelledWorldUnits);
-        Assert.Equal(projectile.ObjectId, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Equal(projectile.ObjectId, Assert.Single(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds));
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot.CommandResults).Status);
         Assert.Equal(Json(projectile), Json(Projectile(engine.CaptureSnapshot(advanceClock: true))));
         Assert.Equal(before.MotionTimeMs, snapshot.MotionTimeMs);
@@ -59,7 +58,7 @@ public sealed class TorpedoLaunchTests
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(engine.CaptureSnapshot().CommandResults).Status);
         engine.ReceiveCommand(Fire("second"));
         var result = engine.CaptureSnapshot();
-        Assert.Equal(CommandReasonCodes.Busy, result.CommandResults.Single(r => r.CommandId == "second").ReasonCode);
+        Assert.Equal("launcher_reloading", result.CommandResults.Single(r => r.CommandId == "second").ReasonCode);
         Assert.Equal(Json(first), Json(Projectile(result)));
     }
 
@@ -180,7 +179,7 @@ public sealed class TorpedoLaunchTests
         Assert.Equal(first.Direction, later.Direction);
         Assert.Equal(Target, later.Torpedo!.TargetObjectId);
         Assert.Equal(30, later.Torpedo.DistanceTravelledWorldUnits);
-        Assert.NotNull(engine.CaptureSnapshotForTests(1000).InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.NotEmpty(engine.CaptureSnapshotForTests(1000).InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
     }
 
     private static string Json<T>(T value) => JsonSerializer.Serialize(value);

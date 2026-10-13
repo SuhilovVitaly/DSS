@@ -18,7 +18,8 @@ public class SystemMapContractTests
         Assert.Null(snapshot.Objects[0].OrbitSampleSimulationTimeMs);
         Assert.Equal(0, snapshot.Objects[0].WorldOffsetX);
         var restored = JsonSerializer.Deserialize<AuthoritativeSnapshot>(JsonSerializer.Serialize(snapshot))!;
-        Assert.Equal(snapshot.Objects[0], restored.Objects[0]);
+        Assert.Equal(snapshot.Objects[0] with { ModuleHealth = restored.Objects[0].ModuleHealth }, restored.Objects[0]);
+        Assert.Empty(restored.Objects[0].ModuleHealth);
         Assert.Null(restored.SolarSystemMap);
 
         var empty = new SolarSystemMapSnapshot(1, 0, 1, default, default, default);
@@ -48,6 +49,7 @@ public class SystemMapContractTests
         Assert.Equal(map.Belts.ToArray(), restored.SolarSystemMap.Belts.ToArray());
         Assert.Equal(map.Planets.ToArray(), restored.SolarSystemMap.Planets.ToArray());
         Assert.Equal(orbit, restored.SolarSystemMap.Orbits[0].Elements);
-        Assert.Equal(snapshot.Objects[0], restored.Objects[0]);
+        Assert.Equal(snapshot.Objects[0] with { ModuleHealth = restored.Objects[0].ModuleHealth }, restored.Objects[0]);
+        Assert.Empty(restored.Objects[0].ModuleHealth);
     }
 }

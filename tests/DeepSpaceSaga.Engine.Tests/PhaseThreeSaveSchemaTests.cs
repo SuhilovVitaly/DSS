@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
@@ -21,7 +22,7 @@ public class PhaseThreeSaveSchemaTests
     {
         using var engine = ManualZero();
         var save = Save(engine, 1);
-        Assert.Equal(2, save.GameState.DefenseState!.Version);
+        Assert.Equal(3, save.GameState.DefenseState!.Version);
         var flight = Assert.Single(save.GameState.DefenseState.Projectiles).Flight;
         Assert.Equal(0, flight.FrozenChanceTenths);
         Assert.Equal(LaunchMode.Manual, flight.Mode);
@@ -50,7 +51,6 @@ public class PhaseThreeSaveSchemaTests
     [InlineData("route-speed")]
     [InlineData("route-phase")]
     [InlineData("sequence")]
-    [InlineData("attempt")]
     [InlineData("cursor")]
     [InlineData("journal-mode")]
     [InlineData("missing-hostile")]
@@ -82,7 +82,6 @@ public class PhaseThreeSaveSchemaTests
         state = defect switch
         {
             "sequence" => state with { DefenseState = state.DefenseState! with { ProjectileSequence = 0 } },
-            "attempt" => state with { DefenseState = state.DefenseState! with { AttemptedTorpedoIds = [] } },
             "cursor" => state with { CombatState = state.CombatState! with { LastProcessedMotionTimeMs = 2 } },
             "journal-mode" => state with
             {
@@ -163,7 +162,7 @@ public class PhaseThreeSaveSchemaTests
                     {
                         OwnerObjectId = l.OwnerObjectId.ToLowerInvariant(),
                         ModuleId = l.ModuleId.ToLowerInvariant(),
-                        State = l.State with { ActiveTorpedoObjectId = l.State.ActiveTorpedoObjectId?.ToUpperInvariant() }
+                        State = l.State with { ActiveTorpedoIds = l.State.ActiveTorpedoIds.Select(id => id.ToUpperInvariant()).ToImmutableArray() }
                     }).ToArray(),
                     Projectiles = combat.Projectiles.Select(p => p with
                     {
@@ -181,7 +180,6 @@ public class PhaseThreeSaveSchemaTests
                         ModuleId = l.ModuleId.ToLowerInvariant(),
                         State = l.State with { ActiveProjectileId = l.State.ActiveProjectileId?.ToUpperInvariant() }
                     }).ToArray(),
-                    AttemptedTorpedoIds = defense.AttemptedTorpedoIds.Select(id => id.ToUpperInvariant()).ToArray(),
                     Projectiles = defense.Projectiles.Select(p => p with
                     {
                         ObjectId = p.ObjectId.ToUpperInvariant(),
@@ -221,7 +219,7 @@ public class PhaseThreeSaveSchemaTests
         scenario = scenario with
         {
             GameState = scenario.GameState with
-            { SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with { HullHitPoints = 150 } : o).ToArray() }
+            { SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? FragileForOneHit(o) : o).ToArray() }
         };
         using var engine = Create(scenario);
         string target = LaunchEnemy(engine);

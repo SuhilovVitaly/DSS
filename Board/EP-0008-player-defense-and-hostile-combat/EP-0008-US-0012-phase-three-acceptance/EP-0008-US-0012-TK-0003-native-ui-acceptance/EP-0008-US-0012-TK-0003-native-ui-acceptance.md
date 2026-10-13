@@ -6,7 +6,7 @@ title: "Нативная приёмка панелей, боя и поражен
 stage: draft
 layer: client
 depends_on: ["EP-0008-US-0012-TK-0002-end-to-end-combat"]
-files_touched: 2
+files_touched: 10
 serves: ["AC-0001","AC-0003","AC-0004"]
 created: 2026-10-07
 revision: 1
@@ -36,6 +36,20 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 |---|---|---|
 | `tests/DeepSpaceSaga.Client.Tests/PhaseThreeCombatUiFlowTests.cs` | Новый файл этого тикета | Только результат и шаги этой карточки |
 | `Documentation/04-Engineering/PhaseThreeCombatAcceptance.md` | Новый файл этого тикета | Только результат и шаги этой карточки |
+
+## Scope refinement — 2026-10-12
+
+Dependency commit `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` is published and is an ancestor of live remote HEAD `817a856047589f7346c2e280450df3c28372c4b5`. Existing `Data` commit preserved. The prior publication blocker is resolved by explicit user destination authorization and live verification.
+
+The existing native-window evidence runner needs a combat scenario and scripted UI interactions to make this ticket reproducible. Extend scope before implementation:
+
+| File | Change |
+|---|---|
+| `tools/DeepSpaceSaga.Performance/CombatNativeEvidence.cs` | New native combat matrix runner using actual Engine/LocalSession/GameSessionScreen/SkiaWindow |
+| `tools/DeepSpaceSaga.Performance/Program.cs` | Route the explicit combat evidence command |
+| `tools/DeepSpaceSaga.Performance/README.md` | Reproduction and measurement limitations |
+
+Board execution/status/publication evidence accompanies this ticket. Test fixtures may set initial positions/module parameters before NewGame, but never relocate or edit HP during battle. Scripted native interactions and human manual acceptance remain distinct.
 
 ## Dependencies
 
@@ -93,3 +107,19 @@ git diff --check
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Native review finding and scope expansion — 2026-10-12
+
+Actual1280x720/UI150 screenshot shows bottom map toolbar covering defense details; scale controls partly under the command panel. The toolbar avoided commands only when AiMap existed. Extend production scope to `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` and `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs`: position bottom controls beside commands when sufficient horizontal room exists, consistently for generated and custom combat worlds. Add actual rectangle non-overlap assertions to the new UI matrix, then rerun native. No gameplay changes.
+
+Native image review also found PR lifetime map labels could be hidden under HUD controls. Extend scope to `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Countermeasures.cs`: wrap to free map width and avoid HUD rectangles as well as other PR labels. New matrix asserts label visibility/non-overlap. Runner must wait for actual Defeat/Load layout before capturing modal pixels (the window transitions after rendering the preceding screen).
+
+Native capture correction: reading the default framebuffer after SwapBuffers can capture the old back buffer. Add an internal optional `NativeFrameRendered` callback to `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs`, invoked after flush and before transition polling/swap. The harness captures that actual rendered surface and drives the next action there; null in normal gameplay. This avoids mislabelled modal screenshots and enables checking rendered screen identity.
+
+Harness clock correction: fake Engine time with a wall-clock SnapshotBuffer lets x100 prediction run ahead while the fixture clock is stationary. Add internal constructor injection of SnapshotBuffer in `src/DeepSpaceSaga.Client/GameSessionHandle.cs` (public constructor retains default buffer), and pass the same deterministic timestamp provider to buffer/screen in the runner. This is test instrumentation, not a gameplay timing change. Real-clock generated battle remains covered separately.
+
+## Execution result — 2026-10-12
+
+Implementation, automated checks and self-review complete; native acceptance PARTIAL/OPEN. Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Existing native artifacts:13/14 interactions complete, one incomplete; 80FPS target not accepted. See [acceptance report](../../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+
+User instruction now prohibits game/native runs while continuing EP-0008 then EP-0009 autonomously. Remaining native/human evidence is deferred, not waived or labelled PASS; downstream review/documentation and EP-0009 may proceed after this ticket's separate publication. Source changes preserve all gameplay authority and public clock behavior.

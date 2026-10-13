@@ -29,7 +29,8 @@ public sealed partial class SimulationEngine
         var plan = CountermeasureGuidanceMath.PlanManual(origin, torpedo.Route, time, lifetime,
             type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
             FirstPredictedTorpedoContact(c.Target, time, time + lifetime));
-        int chance = InterceptionMath.ChanceTenths(c.Operator.EffectiveRating, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value);
+        int chance = CombatChanceMath.ChanceTenths(c.Operator.EffectiveRating,
+            torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, ChanceRules);
         var launch = new DefenseLaunch(c.Owner, c.Module, c.Target, plan.Route, time,
             double.PositiveInfinity, chance, c.Operator);
         if (!LaunchCountermeasure(launch, LaunchMode.Manual, plan.PredictedEncounterMotionTimeMs))
@@ -47,9 +48,11 @@ public sealed partial class SimulationEngine
         if (owner is null) return CommandReasonCodes.UnknownObject;
         var module = owner.Modules.FirstOrDefault(m => m.ModuleId == moduleId);
         if (module is null || !_defenses.TryGetValue((ownerId, moduleId), out var defense)) return CommandReasonCodes.UnknownModule;
-        if (!CanExecuteModuleCommand(module)) return CommandReasonCodes.ModuleUnavailable;
-        if (module.ActiveCycle is not null || defense.ActiveProjectileId is not null ||
-            defense.State == DefenseState.Guiding || defense.ReloadDueMotionTimeMs > time) return CommandReasonCodes.Busy;
+        if (!CanExecuteModuleCommand(module, time))
+            return ModuleCombatUnavailableReason(module, time) ?? CommandReasonCodes.ModuleUnavailable;
+        if (module.ActiveCycle is not null) return CommandReasonCodes.Busy;
+        if (defense.ReadyAtMotionTimeMs > time || defense.ReloadDueMotionTimeMs > time)
+            return CommandReasonCodes.NotReady;
         var op = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
         if (op is null) return "no_weapon_operator";
         if (string.IsNullOrWhiteSpace(targetId)) return CommandReasonCodes.MissingTarget;

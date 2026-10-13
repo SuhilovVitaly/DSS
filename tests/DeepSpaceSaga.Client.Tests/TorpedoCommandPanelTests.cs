@@ -10,8 +10,53 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class TorpedoCommandPanelTests
 {
     private static readonly InstalledModuleSnapshot Launcher = new("actual-launcher", "module.torpedo.launcher.basic", "Launcher", 1,
-        [CombatCommandTypes.Fire], "On", "Ready", 60, Commands: [new(CombatCommandTypes.Fire, "Fire", "object")],
-        LauncherCombat: new(null, 3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30), RangeKm: 200));
+        [CombatCommandTypes.Fire, TorpedoLauncherCommandTypes.SetMode], "On", "Ready", 60,
+        Commands: [new(CombatCommandTypes.Fire, "Fire", "object"), new(TorpedoLauncherCommandTypes.SetMode, "Change mode", "none")],
+        LauncherCombat: new(3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30), RangeKm: 200));
+
+    [Fact]
+    public async Task Paused_mode_selector_cycles_authoritative_modes_and_shows_delay_or_breakdown()
+    {
+        await using var f = new Fixture();
+        Render(f.Screen);
+        CommandButtonGeometry mode = Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
+            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode);
+        Assert.True(mode.Enabled);
+        f.Screen.OnMouseDown(mode.Rect.MidX, mode.Rect.MidY);
+        f.Screen.OnMouseDown(mode.Rect.MidX, mode.Rect.MidY);
+        var first = Assert.Single(f.Connection.Commands);
+        Assert.Equal(TorpedoLauncherCommandTypes.SetMode, first.CommandType);
+        Assert.Equal("maneuverability", first.ModeId);
+        Assert.Equal(SimulationSpeed.Speed0, f.Handle.Buffer.CurrentSpeed);
+        Render(f.Screen);
+        Assert.False(Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
+            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode).Enabled);
+
+        f.Update(s => s with
+        {
+            InstalledModules = [Launcher with
+        { LauncherCombat = Launcher.LauncherCombat! with { ModeId = "maneuverability", ReadyAtMotionTimeMs = 5000 } }]
+        });
+        Render(f.Screen);
+        Assert.True(Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
+            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode).Enabled);
+        var status = f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText;
+        Assert.Contains("5.0", status);
+        Assert.Contains(GameSessionScreen.FireModeName("maneuverability"), status);
+        f.Screen.OnMouseDown(mode.Rect.MidX, mode.Rect.MidY);
+        Assert.Equal("overheat", f.Connection.Commands[1].ModeId);
+
+        f.Update(s => s with
+        {
+            InstalledModules = [Launcher with
+        { LauncherCombat = Launcher.LauncherCombat! with { ModeId = "overheat", IsBrokenUntilDock = true } }]
+        });
+        Render(f.Screen);
+        Assert.False(Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
+            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode).Enabled);
+        Assert.Contains(GameSessionScreen.FireModeName("overheat"),
+            f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
+    }
 
     [Fact]
     public async Task Busy_and_pending_launcher_disable_fire()
@@ -44,7 +89,7 @@ public sealed class TorpedoCommandPanelTests
         f.Update(s => s with
         {
             CommandResults = [Result(command, CommandResultStatus.Executed)],
-            InstalledModules = [Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoObjectId = "torpedo" } }]
+            InstalledModules = [Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoIds = ["torpedo"], ReadyAtMotionTimeMs = 1000 } }]
         });
         Render(f.Screen);
         Assert.False(Button(f.Screen).Enabled);
@@ -176,7 +221,7 @@ public sealed class TorpedoCommandPanelTests
         var module = state switch
         {
             "legacy" => Launcher with { LauncherCombat = null },
-            "busy" => Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoObjectId = "projectile" } },
+            "busy" => Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoIds = ["projectile"], ReadyAtMotionTimeMs = 1000 } },
             "off" => Launcher with { PowerState = "Off" },
             "broken" => Launcher with { StructurePoints = 0 },
             "disabled" => Launcher with { OperationalState = "Disabled" },

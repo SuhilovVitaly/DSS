@@ -16,13 +16,16 @@ public class ResourceSurveySnapshotTests
         var positional = new ObjectMotionSnapshot("SPC-1000", 100, 200, 5, 90);
 
         Assert.NotNull(snapshot);
-        Assert.Equal(positional, snapshot);
+        Assert.Equal(positional with { ModuleHealth = snapshot.ModuleHealth }, snapshot);
+        Assert.True(snapshot.ModuleHealth.IsDefaultOrEmpty);
         Assert.Null(snapshot.Survey);
 
         var json = JsonSerializer.Serialize(snapshot);
         using var document = JsonDocument.Parse(json);
         Assert.Equal(JsonValueKind.Null, document.RootElement.GetProperty("Survey").ValueKind);
-        Assert.Equal(snapshot, JsonSerializer.Deserialize<ObjectMotionSnapshot>(json));
+        var restored = JsonSerializer.Deserialize<ObjectMotionSnapshot>(json)!;
+        Assert.Equal(snapshot with { ModuleHealth = restored.ModuleHealth }, restored);
+        Assert.Empty(restored.ModuleHealth);
     }
 
     [Theory]

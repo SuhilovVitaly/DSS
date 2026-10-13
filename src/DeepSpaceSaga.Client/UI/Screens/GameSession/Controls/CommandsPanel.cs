@@ -75,7 +75,7 @@ public sealed class CommandsPanel
         new CommandPanelDefinition("Space Control", ImmutableArray.Create(
             ScannerCommandTypes.GeneralScan,
             ScannerCommandTypes.StructuralScan)),
-        new CommandPanelDefinition("Torpedo Launcher", ImmutableArray.Create(CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct)),
+        new CommandPanelDefinition("Torpedo Launcher", ImmutableArray.Create(CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode)),
         new CommandPanelDefinition("Countermeasure Launcher", ImmutableArray.Create(DefenseCommandTypes.Enable, DefenseCommandTypes.Disable)));
 
     /// <summary>
@@ -712,7 +712,7 @@ public sealed class CommandsPanel
                 ? FindCommandMetadataAcrossModules(modules.Where(m => m.ModuleId == weapon.ModuleId).ToArray(), commandTypeId)
                 : FindCommandMetadataAcrossModules(modules, commandTypeId);
             string label = metadata?.DisplayName ?? commandTypeId;
-            if (commandTypeId is DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
+            if (commandTypeId is DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable or TorpedoLauncherCommandTypes.SetMode)
                 label = GameSessionScreen.CombatText("Command." + commandTypeId, label);
 
             int col = i % (int)CommandButtonColumns;

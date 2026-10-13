@@ -234,9 +234,26 @@ public sealed class ObjectInfoPanel
                     HostileCombatPhase.Pursuit => GameSessionScreen.CombatText("Phase.Pursuit", "Сближение"),
                     HostileCombatPhase.OrbitEntry => GameSessionScreen.CombatText("Phase.OrbitEntry", "Выход на орбиту"),
                     HostileCombatPhase.OrbitHold => GameSessionScreen.CombatText("Phase.OrbitHold", "Удержание орбиты"),
+                    HostileCombatPhase.FlankApproach => GameSessionScreen.CombatText("Phase.FlankApproach", "Заход с фланга"),
+                    HostileCombatPhase.Retreat => GameSessionScreen.CombatText("Phase.Retreat", "Отход"),
                     _ => "—"
                 }));
                 lines.Add((GameSessionScreen.CombatText("DesiredRadius", "Радиус орбиты"), $"{hostile.DesiredRadiusKm:0.##} " + GameSessionScreen.CombatText("Kilometers", "км")));
+            }
+            if (d.Modules is { Count: > 0 } modules &&
+                d.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
+            {
+                foreach (var module in modules)
+                {
+                    string state = module.IsDestroyed
+                        ? GameSessionScreen.CombatText("Destroyed", "Уничтожен")
+                        : module.DisabledUntilMotionTimeMs is { } until && until > d.MotionTimeMs
+                            ? GameSessionScreen.CombatText("Disabled", "Выключен") + $" {Math.Ceiling((until - d.MotionTimeMs) / 1000):0} s"
+                            : GameSessionScreen.CombatText("Ready", "Готов");
+                    lines.Add((GameSessionScreen.CombatText("Module", "Модуль") + " " + module.DisplayName,
+                        GameSessionScreen.CombatText("Armor", "Броня") + $" {module.ArmorCurrent}/{module.ArmorMax} · " +
+                        GameSessionScreen.CombatText("Structure", "Структура") + $" {module.StructureCurrent}/{module.StructureMax} · {state}"));
+                }
             }
             if (d.ClusterName is { } cluster)
             {
@@ -360,7 +377,8 @@ public sealed class ObjectInfoPanel
         bool compact = viewportWidth < 1100 && float.IsFinite(viewportHeight);
         _renderPanelWidth = compact ? Math.Clamp(viewportWidth * .38f, 320, PanelWidth) : PanelWidth;
         _renderImageWidth = Math.Min(ImageWidth, Math.Max(48, _renderPanelWidth - 296));
-        float panelBottom = Math.Min(compact ? viewportHeight * .58f : viewportHeight, maximumBottom);
+        bool hasModuleRows = playerShip?.Modules is { Count: > 0 } || selectedOrActive?.Modules is { Count: > 0 };
+        float panelBottom = Math.Min(compact || hasModuleRows ? viewportHeight * .58f : viewportHeight, maximumBottom);
         float left = viewportWidth - Margin - _renderPanelWidth;
 
         _captionRect = new SKRect(left, top, left + _renderPanelWidth, top + CaptionHeight);
@@ -391,7 +409,7 @@ public sealed class ObjectInfoPanel
                 float bodyHeight = Math.Max(_renderImageWidth * ImageHeight / ImageWidth + 2 * Padding, 2 * Padding + renderLines.Count * LineHeight);
                 float fullHeight = bodyHeight;
                 float available = Math.Max(0, panelBottom - Margin - rowY - (RowNames.Length - i) * RowCaptionHeight);
-                bodyHeight = Math.Min(bodyHeight, compact ? available / (RowNames.Length - i) : available);
+                bodyHeight = Math.Min(bodyHeight, compact || hasModuleRows ? available / (RowNames.Length - i) : available);
                 if (_rowObjectIds[i] != rowData[i]?.ObjectId)
                 {
                     _rowObjectIds[i] = rowData[i]?.ObjectId;
@@ -429,7 +447,7 @@ public sealed class ObjectInfoPanel
     }
 
     private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
-        data?.HostileCombat is not null || data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null || data?.FieldKind is not null || data?.PoiDescription is not null
+        data?.Modules is { Count: > 0 } || data?.HostileCombat is not null || data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null || data?.FieldKind is not null || data?.PoiDescription is not null
             ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
 
     /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
@@ -441,7 +459,7 @@ public sealed class ObjectInfoPanel
 
     private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
     {
-        if (data?.Countermeasure is null && data?.HostileCombat is null && data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
+        if (data?.Modules is not { Count: > 0 } && data?.Countermeasure is null && data?.HostileCombat is null && data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
         float width = Math.Max(32, _renderPanelWidth - _renderImageWidth - 4 * Padding - valueOffset);
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
@@ -603,7 +621,8 @@ public readonly record struct ObjectInfoPanelData(
     string? Owner = null, string? BaseType = null,
     double? DefenceRadiusKm = null, double? PatrolRadiusKm = null,
     string? FieldKind = null, double? FieldIntensity = null, string? PoiDescription = null,
-    HostileCombatSnapshot? HostileCombat = null);
+    HostileCombatSnapshot? HostileCombat = null,
+    IReadOnlyList<ModuleHealthSnapshot>? Modules = null, long MotionTimeMs = 0);
 
 /// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
 public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

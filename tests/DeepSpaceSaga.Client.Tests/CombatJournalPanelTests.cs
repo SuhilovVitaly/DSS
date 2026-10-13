@@ -44,4 +44,77 @@ public class CombatJournalPanelTests
         Assert.Equal(entry, Assert.Single(panel.Entries));
         Assert.Contains(CombatJournalPanel.Format(entry), s => s.Contains("32.0%") && s.Contains("801/1000"));
     }
+
+    [Fact]
+    public void Torpedo_and_interception_rolls_show_the_new_attack_defense_breakdown()
+    {
+        var torpedo = new CombatJournalEntry(1, 1000, CombatEventType.TorpedoHitRoll,
+            "ship-a", "ship-b", "torpedo", 0, 0, ChanceTenths: 480, Roll: 479,
+            Attack: 72, Defense: 74);
+        var hitLines = CombatJournalPanel.Format(torpedo);
+        Assert.Contains(hitLines, s => s.Contains("72") && s.Contains("74"));
+        Assert.Contains(hitLines, s => s.Contains("48.0%") && s.Contains("479/1000"));
+
+        var op = new WeaponOperatorSnapshot("crew", "Operator", WeaponSkillType.CountermeasureDefense, 20, 58, 58);
+        var intercept = torpedo with
+        {
+            Type = CombatEventType.Intercept,
+            RatingBreakdown = new(op, 50),
+            Accuracy = 58,
+            TargetManeuverability = 50,
+            ChanceTenths = 580,
+            Roll = 501,
+            Attack = null,
+            Defense = null
+        };
+        var interceptLines = CombatJournalPanel.Format(intercept);
+        Assert.Contains(interceptLines, s => s.Contains("58") && s.Contains("50") && !s.Contains('−'));
+        Assert.Contains(interceptLines, s => s.Contains("base + defense") || s.Contains("база + защита"));
+        Assert.Contains(interceptLines, s => s.Contains("58.0%") && s.Contains("501/1000"));
+    }
+
+    [Fact]
+    public void Module_damage_destruction_and_ship_death_keep_ids_values_and_cause()
+    {
+        var hit = new CombatJournalEntry(1, 1000, CombatEventType.ModuleHit,
+            "ship-a", "ship-b", "torpedo", 0, 0, HitModuleId: "engine-1",
+            ArmorBefore: 20, ArmorAfter: 0, StructureBefore: 40, StructureAfter: 25);
+        var lines = CombatJournalPanel.Format(hit);
+        Assert.Contains(lines, s => s.Contains("engine-1"));
+        Assert.Contains(lines, s => s.Contains("20 → 0"));
+        Assert.Contains(lines, s => s.Contains("40 → 25"));
+        Assert.Contains(CombatJournalPanel.Format(hit with { Type = CombatEventType.ModuleDestroyed }),
+            s => s.Contains("engine-1"));
+        Assert.Contains(CombatJournalPanel.Format(hit with
+        {
+            Type = CombatEventType.ShipDestroyed,
+            DestroyReason = "critical:engine-1"
+        }), s => s.Contains("engine-1"));
+        Assert.Contains(CombatJournalPanel.Format(hit with
+        {
+            Type = CombatEventType.ShipDestroyed,
+            DestroyReason = "threshold:3/9"
+        }), s => s.Contains("3/9"));
+    }
+
+    [Fact]
+    public void Skipped_burst_and_overheat_breakdown_show_reason_and_mode()
+    {
+        var entry = new CombatJournalEntry(1, 1000, CombatEventType.BurstShotSkipped,
+            "ship-a", "torpedo", "countermeasure", 0, 0,
+            Result: "target_or_module_unavailable", LauncherModuleId: "pd-1");
+        var skipLines = CombatJournalPanel.Format(entry);
+        Assert.Contains(skipLines, s => s.Contains("pd-1"));
+        Assert.Contains(skipLines, s => s.Contains("Target or launcher unavailable") ||
+            s.Contains("Цель или пусковая установка недоступна"));
+        var breakdownLines = CombatJournalPanel.Format(entry with
+        {
+            Type = CombatEventType.LauncherBreakdown,
+            Result = "overheat",
+            ChanceTenths = 300,
+            Roll = 99
+        });
+        Assert.Contains(breakdownLines, s => s.Contains("30.0%") && s.Contains("99/1000"));
+        Assert.Contains(breakdownLines, s => s.Contains("Overheat") || s.Contains("Перегрев"));
+    }
 }

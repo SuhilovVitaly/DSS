@@ -1,0 +1,7 @@
+# EP-0009 canonical documentation
+
+[Revision2 specification](EP-0009-module-combat.md) contains all gameplay decisions and acceptance criteria. [Execution decisions](ExecutionDecisions.md) records current baseline, technical assumptions and user overrides. [Tickets](Tickets.md):12 standard stories/38 tickets; final US-0012 owns project documentation and link audit. Graphify rebuilding is explicitly skipped by user instruction.
+
+[Current project contract](../../Documentation/01-Requirements/EngineRequirements.md#phase-four-module-combat), [module-combat engineering guide](../../Documentation/04-Engineering/ModuleCombat.md) and [document impact inventory](../../Documentation/04-Engineering/ModuleCombatDocumentation.md) reflect the implemented EP-0009 rules and Save17. [Engine balance](evidence/balance.md) found a documented Mukha mismatch; [native matrix](evidence/native.md) is NOT RUN by user instruction. Publication and self-review evidence is in [ImplementationStatus](ImplementationStatus.md) and [PublicationStatus](PublicationStatus.md). These are implementation records, not independent/user acceptance.
+
+The [ticket-to-commit ledger](CommitLedger.md) maps all 38 tickets to full pushed SHAs and records the post-review repair separately.

@@ -173,8 +173,12 @@ public sealed partial class SimulationEngine
             foreach (var removed in result.CargoRemovals) finance = PrepareVoyageCargoRemoval(finance, removed.ItemTypeIndex, removed.Quantity);
         }
         catch (OverflowException) { return "dialogue_value_overflow"; }
+        bool wasDocked = _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDocked);
         _objects.Clear();
         _objects.AddRange(result!.Objects);
+        if (!wasDocked && _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && o.IsDocked))
+            foreach (var key in _launcherCombat.Keys.Where(key => key.ObjectId == PlayerShipObjectId).ToArray())
+                _launcherCombat[key] = _launcherCombat[key] with { IsBrokenUntilDock = false };
         PlayerCredits = result.Credits;
         _dialogue.Progress = result.Progress;
         _voyageLedgers = finance;
@@ -209,6 +213,7 @@ public sealed partial class SimulationEngine
 
     private void UpdateStationSecurity(long time)
     {
-        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time);
+        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time,
+            (objectId, deathTime) => DestroyShip(objectId, "station-security", deathTime));
     }
 }

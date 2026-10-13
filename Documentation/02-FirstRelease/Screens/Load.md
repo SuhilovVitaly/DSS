@@ -1,5 +1,16 @@
 # Load
 
+## Актуализация EP-0009 — 2026-10-12
+
+Load принимает только SaveFormatVersion17; версии16 и ниже отклоняются без миграции до замены мира. Валидируются defense3/combat2/hostile2, состояния модулей, очереди, полёты, AI и RNG. Успешная загрузка из Defeat создаёт Running-сессию на паузе. Указания Save16/15/11 ниже сохранены как история. [Требования](../../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [проверки](../../04-Engineering/ModuleCombat.md).
+
+## Актуализация EP-0008 — 2026-10-12
+
+На этапе EP-0008 Load принимал SaveFormatVersion16; версии15/11 отклонялись без миграции. Version0 NewGame не являлся поддержкой старого save. Полная staged validation defense2/hostile1/combat1 предшествовала замене мира, captured параметры не регенерировались из каталога. Ошибки отображались локализованно и допускали повтор. Загрузка прежнего файла из Defeat создавала новую Running-сессию на паузе; отмена/Escape оставляла Defeat. Текущий формат17 описан выше.
+
+[Текущий контракт](../../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../04-Engineering/PhaseThreeCombatAcceptance.md).
+
+
 ## Сверка реализации — 2026-10-10
 
 Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.

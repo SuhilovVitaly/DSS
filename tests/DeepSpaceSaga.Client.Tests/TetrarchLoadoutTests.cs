@@ -12,6 +12,37 @@ public sealed class TetrarchLoadoutTests
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
 
     [Theory]
+    [InlineData("Default")]
+    [InlineData("Default_500")]
+    [InlineData("Docked")]
+    [InlineData("Undocked")]
+    [InlineData("MarketProfiles")]
+    [InlineData("PlayerShipOnly")]
+    public void Legacy_scenarios_load_with_new_crew_and_armor_schema(string name)
+    {
+        var path = Path.Combine(ClientRoot, "Scenarios", name, "scenario.json");
+        var json = File.ReadAllText(path);
+        Assert.DoesNotContain("\"torpedoSkill\"", json);
+        Assert.DoesNotContain("\"countermeasureSkill\"", json);
+        var scenario = ScenarioLoader.LoadFromFile(path);
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"), path);
+        Assert.NotNull(engine.CaptureSnapshot());
+        foreach (var ship in scenario.GameState.SpaceObjects.Where(o => o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
+        {
+            Assert.All(ship.Modules ?? [], module =>
+            {
+                Assert.InRange(module.StructurePoints, 0, 150);
+                Assert.Equal("none", module.ArmorClass);
+            });
+            Assert.All(ship.Crew ?? [], member =>
+            {
+                Assert.Equal(0, member.AccuracySkill);
+                Assert.Equal(0, member.ManeuverabilitySkill);
+            });
+        }
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void Player_and_pirate_have_one_launcher_in_new_room(bool output)
@@ -124,20 +155,25 @@ public sealed class TetrarchLoadoutTests
         foreach (var ship in ships)
         {
             var actual = Assert.Single(snapshot.Objects, o => o.ObjectId == ship.ObjectId);
-            Assert.Equal(new HullCombatSnapshot("ship.tetrarch", 450, 450), actual.HullCombat);
+            Assert.Null(actual.HullCombat);
             Assert.Equal(ship.IsDocked, actual.IsDocked);
             Assert.Equal(ship.DockedStationObjectId, actual.DockedStationObjectId);
         }
         var launcher = Assert.Single(snapshot.InstalledModules, m => m.ModuleTypeId == LauncherId);
         Assert.NotNull(launcher.LauncherCombat);
-        Assert.Equal(new LauncherCombatSnapshot(null, 3, 90, 150, RangeKm: 200, Maneuverability: 5), launcher.LauncherCombat with { Operator = null });
+        Assert.Equal(10, launcher.LauncherCombat.SpeedKmS);
+        Assert.Equal(90, launcher.LauncherCombat.TurnRateDegPerSec);
+        Assert.Equal(150, launcher.LauncherCombat.Damage);
+        Assert.Equal(150, launcher.LauncherCombat.RangeKm);
+        Assert.Equal(50, launcher.LauncherCombat.Maneuverability);
+        Assert.True(launcher.LauncherCombat.ActiveTorpedoIds.IsDefaultOrEmpty);
         var assignedOperator = Assert.IsType<WeaponOperatorSnapshot>(launcher.LauncherCombat.Operator);
         Assert.Equal("CHR-0001", assignedOperator.CrewId);
-        Assert.Equal(50, assignedOperator.Skill);
-        Assert.Equal(5m, assignedOperator.EffectiveRating);
+        Assert.Equal(0, assignedOperator.Skill);
+        Assert.Equal(50m, assignedOperator.EffectiveRating);
         Assert.Equal("Ready", launcher.OperationalState);
         Assert.Equal("On", launcher.PowerState);
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcher.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, launcher.CommandTypeIds);
         Assert.Null(launcher.ActiveCommandType);
         Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
         return scenario;
@@ -184,7 +220,7 @@ public sealed class TetrarchLoadoutTests
             Assert.NotEqual(launcher.OperatorCrewId, defender.OperatorCrewId);
             Assert.Contains(ship.Crew, c => c.CrewId == launcher.OperatorCrewId);
             Assert.Contains(ship.Crew, c => c.CrewId == defender.OperatorCrewId);
-            Assert.All(ship.Crew, c => { Assert.Equal(50, c.TorpedoSkill); Assert.Equal(50, c.CountermeasureSkill); });
+            Assert.All(ship.Crew, c => { Assert.Equal(0, c.AccuracySkill); Assert.Equal(0, c.ManeuverabilitySkill); });
         }
         var existing = ship.Modules.Where(m => m.ModuleTypeId != LauncherId && m.ModuleTypeId != "module.countermeasure.launcher.basic").ToArray();
         (string Type, int Row)[] fullLoadout = [("module.bridge.navigation.computer.basic", 0), (dualDefense ? "living.quarters.mk1.three-cabins" : "living.quarters.mk1", 1),

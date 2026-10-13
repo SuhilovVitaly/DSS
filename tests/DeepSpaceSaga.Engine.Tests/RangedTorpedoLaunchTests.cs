@@ -61,8 +61,12 @@ public class RangedTorpedoLaunchTests
         At(engine, 2000);
         if (hostile)
         {
-            var automatic = Assert.Single(At(engine, 2000).Objects, o => o.Torpedo is not null).Torpedo!;
-            Assert.Equal(approaching ? 1000 : 1, automatic.LaunchMotionTimeMs);
+            if (approaching)
+            {
+                var automatic = Assert.Single(At(engine, 2000).Objects, o => o.Torpedo is not null).Torpedo!;
+                Assert.Equal(1000, automatic.LaunchMotionTimeMs);
+            }
+            else Assert.DoesNotContain(At(engine, 2000).Objects, o => o.Torpedo is not null);
         }
         else
         {
@@ -124,12 +128,12 @@ public class RangedTorpedoLaunchTests
     public void Active_torpedo_survives_range_exit(bool hostile)
     {
         using var engine = Create(LaunchScenario(hostile, o => o.ObjectId == (hostile ? Player : Target)
-            ? o with { PositionY = -1990, SpeedMps = 4000, DirectionDegrees = 0, MovementType = "Linear" }
+            ? o with { PositionY = -1990, SpeedMps = hostile ? 900 : 4000, DirectionDegrees = 0, MovementType = "Linear" }
             : o with { PositionY = 0 }));
         if (hostile) Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostileTorpedoFire(Target, PirateLauncher, 0).Disposition);
         else { engine.ReceiveCommand(Fire("flee")); At(engine, 0); }
         var initial = Assert.Single(At(engine, 0).Objects, o => o.Torpedo is not null);
-        var after = At(engine, 1000);
+        var after = At(engine, 2000);
         Assert.Equal(initial.ObjectId, Assert.Single(after.Objects, o => o.Torpedo is not null).ObjectId);
         Assert.Empty(after.CombatImpacts);
     }

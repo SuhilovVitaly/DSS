@@ -24,12 +24,13 @@ public sealed partial class SimulationEngine
             foreach (var module in owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal))
             {
                 if (!_launcherCombat.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var launcher) ||
-                    launcher.ActiveTorpedoObjectId is not null || !CanExecuteModuleCommand(module) || module.ActiveCycle is not null ||
+                    launcher.IsBrokenUntilDock || module.ActiveCycle is not null ||
                 !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire) ||
                     ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack) is null) continue;
-                double earliest = Math.Max(Math.Ceiling(cursor), _combatProcessedTimeMs + 1);
-                var previous = _combatImpacts.LastOrDefault(i => i.OwnerObjectId == owner.InitialMotion.ObjectId && i.LauncherModuleId == module.ModuleId);
-                if (previous is not null) earliest = Math.Max(earliest, Math.Floor(previous.MotionTimeMs) + 1);
+                double earliest = Math.Max(Math.Max(Math.Ceiling(cursor), _combatProcessedTimeMs + 1),
+                    Math.Max(Math.Ceiling(module.DisabledUntilMotionTimeMs ?? cursor),
+                        Math.Ceiling(launcher.ReadyAtMotionTimeMs ?? cursor)));
+                if (!CanExecuteModuleCommand(module, earliest)) continue;
                 if (earliest > to) continue;
                 while (earliest <= to)
                 {
@@ -42,14 +43,31 @@ public sealed partial class SimulationEngine
                     if (CombatRangeMath.IsWithinRange(PredictMotion(owner, time - owner.StartGameTimeMs),
                         PredictMotion(player, time - player.StartGameTimeMs), launcher.RangeKm.Value))
                     {
-                        if (first is null || time < first.Time) first = new(owner.InitialMotion.ObjectId, module.ModuleId, time);
-                        break;
+                        if (CanHostileIntercept(owner, module, player, launcher, time))
+                        {
+                            if (first is null || time < first.Time) first = new(owner.InitialMotion.ObjectId, module.ModuleId, time);
+                            break;
+                        }
+                        long nextCheck = NextGuidanceBoundary(time);
+                        if (nextCheck <= time) break;
+                        earliest = nextCheck;
+                        continue;
                     }
                     if (time == long.MaxValue) break;
                     earliest = time + 1;
                 }
             }
         return first;
+    }
+
+    private bool CanHostileIntercept(SpaceObjectRuntime owner, InstalledModuleRuntime module,
+        SpaceObjectRuntime player, LauncherCombatSnapshot launcher, long time)
+    {
+        var origin = PredictMotion(owner, time - owner.StartGameTimeMs);
+        var target = PredictMotion(player, time - player.StartGameTimeMs);
+        var route = TorpedoGuidanceMath.Plan(origin, target, launcher.SpeedKmS, launcher.TurnRateDegPerSec, time);
+        long lifetime = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).TorpedoMaxFlightTimeMs ?? 120000;
+        return ImpactTime(route) is { } impact && impact - time <= lifetime * 0.8;
     }
 
     // Internal actor entry point; it cannot submit commands or write player receipts.
@@ -63,6 +81,11 @@ public sealed partial class SimulationEngine
             var player = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId &&
                 o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
             if (player is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownTarget);
+            var module = owner.Modules.FirstOrDefault(m => m.ModuleId == moduleId);
+            if (module is null || !_launcherCombat.TryGetValue((ownerId, moduleId), out var launcher))
+                return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+            if (!CanHostileIntercept(owner, module, player, launcher, motionTimeMs))
+                return CommandStartOutcome.Rejected("target_unreachable");
             return TryLaunchTorpedo(owner, moduleId, player.InitialMotion.ObjectId, motionTimeMs);
         }
     }

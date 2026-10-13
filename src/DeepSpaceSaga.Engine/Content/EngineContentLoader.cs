@@ -172,6 +172,7 @@ public static class EngineContentLoader
                 throw new ContentException($"{settingsPath}: typeData.shipClasses contains an empty content path.");
             shipClasses = LoadShipClasses(Resolve(basePath, declaredShipClassPath));
         }
+        var (combatRules, fireModes) = LoadCombatRulesAndModes(settingsPath);
         var dialogues = settings.TypeData.Dialogues is null ? null : DialogueContentLoader.Load(Resolve(basePath, settings.TypeData.Dialogues));
         var quests = settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests));
         if (profiles is not null)
@@ -189,7 +190,32 @@ public static class EngineContentLoader
         return GameDataRegistry.Create(moduleCategories, moduleImplementations, catalog.Items, commands, factoryTypes, recipes,
             dialogues, quests, catalogVersion: catalog.Version,
             legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles,
-            shipClasses: shipClasses, stationMarketEvents: marketEvents, requireCompleteMarketEventSet: marketEvents is not null);
+            shipClasses: shipClasses, stationMarketEvents: marketEvents, requireCompleteMarketEventSet: marketEvents is not null,
+            combatRules: combatRules, fireModes: fireModes);
+    }
+
+    internal static CombatRulesDefinition LoadCombatRules(string path)
+    {
+        try { return CombatContentValidation.Rules(ReadJson<CombatRulesDefinition>(path, "combat rules")); }
+        catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
+    }
+
+    internal static (CombatRulesDefinition? Rules, ImmutableArray<FireModeDefinition> Modes)
+        LoadCombatRulesAndModes(string settingsPath)
+    {
+        var paths = ReadJson<EngineSettingsFile>(settingsPath, "settings").TypeData;
+        if (paths is null) throw new ContentException($"{settingsPath}: missing typeData.");
+        if (paths.CombatRules is null && paths.FireModes is null) return (null, []);
+        if (string.IsNullOrWhiteSpace(paths.CombatRules) || string.IsNullOrWhiteSpace(paths.FireModes))
+            throw new ContentException($"{settingsPath}: typeData.combatRules and typeData.fireModes must both name files.");
+        string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+        return (LoadCombatRules(Resolve(root, paths.CombatRules)), LoadFireModes(Resolve(root, paths.FireModes)));
+    }
+
+    internal static ImmutableArray<FireModeDefinition> LoadFireModes(string path)
+    {
+        try { return CombatContentValidation.Modes(ReadJson<FireModesFile>(path, "fire modes")); }
+        catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
     }
 
     internal static IReadOnlyList<StationMarketEventDefinition> LoadStationMarketEvents(string path)
@@ -482,7 +508,16 @@ public static class EngineContentLoader
                 dto.TorpedoRangeKm,
                 dto.CountermeasureAccuracy,
                 dto.CountermeasureManualRangeKm,
-                dto.CountermeasureMaxFlightTimeMs);
+                dto.CountermeasureMaxFlightTimeMs,
+                dto.Accuracy,
+                dto.ArmorPiercingPercent,
+                dto.ArmorDamagePercent,
+                dto.LauncherReloadMs,
+                dto.TorpedoMaxFlightTimeMs,
+                dto.Barrels,
+                dto.BurstIntervalMs,
+                dto.Maneuverability,
+                dto.CombatRole);
             try { GameDataRegistry.ValidateWeaponRatings(definition); }
             catch (ContentException error) { throw new ContentException($"{filePath}: {error.Message}", error); }
             return definition;
@@ -829,7 +864,9 @@ public static class EngineContentLoader
         [property: JsonPropertyName("stationResourceFields"), JsonConverter(typeof(DeclaredResourceFieldPathConverter))] string? StationResourceFields = null,
         [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null,
         [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null,
-        [property: JsonPropertyName("stationMarketEvents"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketEvents = null);
+        [property: JsonPropertyName("stationMarketEvents"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketEvents = null,
+        [property: JsonPropertyName("combatRules")] string? CombatRules = null,
+        [property: JsonPropertyName("fireModes")] string? FireModes = null);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
     {
@@ -941,7 +978,16 @@ public static class EngineContentLoader
         [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
         [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,
         [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null,
-        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
+        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null,
+        [property: JsonPropertyName("accuracy")] decimal? Accuracy = null,
+        [property: JsonPropertyName("armorPiercingPercent")] decimal? ArmorPiercingPercent = null,
+        [property: JsonPropertyName("armorDamagePercent")] decimal? ArmorDamagePercent = null,
+        [property: JsonPropertyName("launcherReloadMs")] long? LauncherReloadMs = null,
+        [property: JsonPropertyName("torpedoMaxFlightTimeMs")] long? TorpedoMaxFlightTimeMs = null,
+        [property: JsonPropertyName("barrels")] int? Barrels = null,
+        [property: JsonPropertyName("burstIntervalMs")] long? BurstIntervalMs = null,
+        [property: JsonPropertyName("maneuverability")] decimal? Maneuverability = null,
+        [property: JsonPropertyName("combatRole")] string? CombatRole = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

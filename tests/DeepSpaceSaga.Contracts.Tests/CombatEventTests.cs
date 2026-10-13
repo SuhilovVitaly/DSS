@@ -6,6 +6,39 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class CombatEventTests
 {
     [Fact]
+    public void New_event_types_after_ep8_values()
+    {
+        Assert.Equal(7, (int)CombatEventType.Expired);
+        Assert.Equal(8, (int)CombatEventType.TorpedoHitRoll);
+        Assert.Equal(9, (int)CombatEventType.ModuleHit);
+        Assert.Equal(10, (int)CombatEventType.ModuleDestroyed);
+        Assert.Equal(11, (int)CombatEventType.ShipDestroyed);
+        Assert.Equal(12, (int)CombatEventType.BurstShotSkipped);
+        Assert.Equal(13, (int)CombatEventType.LauncherBreakdown);
+    }
+
+    [Fact]
+    public void Journal_roll_breakdown_roundtrip()
+    {
+        var fact = new CombatJournalEntry(4, 120.25, CombatEventType.ModuleHit,
+            "actor", "target", "torpedo-1", 1, 2,
+            ChanceTenths: 500, Roll: 317, Accuracy: 40m, TargetManeuverability: 20m,
+            Attack: 60m, Defense: 60m, HitModuleId: "bridge-1",
+            ArmorBefore: 60, ArmorAfter: 0, StructureBefore: 150,
+            StructureAfter: 60, DestroyReason: "critical:bridge-1");
+
+        var copy = JsonSerializer.Deserialize<CombatJournalEntry>(JsonSerializer.Serialize(fact))!;
+        Assert.Equal(fact, copy);
+        Assert.Equal((60m, 60m, 317, "bridge-1"),
+            (copy.Attack, copy.Defense, copy.Roll, copy.HitModuleId));
+        Assert.Equal("critical:bridge-1", copy.DestroyReason);
+        var previous = JsonSerializer.Deserialize<CombatJournalEntry>(
+            """{"EventId":1,"MotionTimeMs":0,"Type":0,"ActorObjectId":"a","TargetObjectId":"t","ProjectileObjectId":"p","X":0,"Y":0}""")!;
+        Assert.Null(previous.Attack);
+        Assert.Null(previous.HitModuleId);
+    }
+
+    [Fact]
     public void Impact_event_roundtrips_final_trail_and_object_ids()
     {
         var impact = new CombatImpactSnapshot(17, "torpedo-3", "owner", "launcher", "target", "obstacle",

@@ -63,7 +63,8 @@ public class PhaseThreeMultiHostileTests
             CountermeasureMaxFlightTimeMs = 8000,
             CountermeasureReloadMs = 7000
         }), All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
-            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules, fireModes: source.FireModes);
         var scenario = HostileTorpedoFireTests.HostileScenario(600);
         var enemy = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == Target);
         var extra = enemy with

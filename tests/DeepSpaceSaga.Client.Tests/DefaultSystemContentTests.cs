@@ -37,7 +37,7 @@ public sealed class DefaultSystemContentTests
         var saved = engine.CaptureSaveState();
         var snapshot = engine.CaptureSnapshot();
         Assert.NotNull(snapshot.SolarSystemMap);
-        Assert.Equal(4, snapshot.Objects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId).MaxSpeedKmS);
+        Assert.Equal(6, snapshot.Objects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId).MaxSpeedKmS);
         foreach (var original in scenario.GameState.SpaceObjects)
         {
             var actual = saved.GameState.SpaceObjects.Single(o => o.ObjectId == original.ObjectId);

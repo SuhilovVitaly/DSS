@@ -28,7 +28,7 @@ public sealed partial class SimulationEngine
     }
 
     private SimulationClockState DefeatedClock => new(_sessionOutcome.DeathGameTimeMs!.Value,
-        SimulationSpeed.Speed0, (long)Math.Floor(_sessionOutcome.DeathMotionTimeMs!.Value));
+        SimulationSpeed.Speed0, (long)Math.Ceiling(_sessionOutcome.DeathMotionTimeMs!.Value));
 
     private bool CommitDefeatBoundary()
     {

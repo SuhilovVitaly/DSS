@@ -5,16 +5,36 @@
       "displayName": "Engine",
       "type": "module.engine",
       "massKg": 5000,
-      "structurePointsMax": 100,
+      "structurePointsMax": 150,
+      "combatRole": "engine",
       "powerConsumptionW": 0,
-      "maxSpeedMps": 4000,
+      "maxSpeedMps": 6000,
       "turnStepDegrees": 1,
       "linearInertiaMps2": 400,
       "angularInertiaDegPerSec": 4,
       "baseCycleTimeMs": 1000,
       "fuelCapacityKg": 1000,
       "fuelEfficiencyKmPerKg": 200,
-      "baseSuccessChancePercent": 100
+      "baseSuccessChancePercent": 100,
+      "maneuverability": 10
+    },
+    {
+      "typeId": "module.engine.strizh",
+      "displayName": "Strizh Engine",
+      "type": "module.engine",
+      "massKg": 4000,
+      "structurePointsMax": 150,
+      "combatRole": "engine",
+      "powerConsumptionW": 0,
+      "maxSpeedMps": 8000,
+      "turnStepDegrees": 1,
+      "linearInertiaMps2": 800,
+      "angularInertiaDegPerSec": 12,
+      "baseCycleTimeMs": 1000,
+      "fuelCapacityKg": 1000,
+      "fuelEfficiencyKmPerKg": 200,
+      "baseSuccessChancePercent": 100,
+      "maneuverability": 40
     }
   ]
 }

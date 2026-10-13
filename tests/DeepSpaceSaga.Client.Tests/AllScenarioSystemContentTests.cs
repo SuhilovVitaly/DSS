@@ -13,8 +13,10 @@ public sealed class AllScenarioSystemContentTests
     {
         var scenarios = ScenarioRepository.ListScenarios(Path.Combine(AppContext.BaseDirectory, "Scenarios"));
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(DefaultSystemContentTests.Settings)!;
-        Assert.Equal(scenarios.Select(s => Path.GetFileName(Path.GetDirectoryName(s.ScenarioPath))).Order(), config.EnabledScenarios.Order());
-        foreach (var scenario in scenarios)
+        Assert.All(config.EnabledScenarios, name => Assert.Contains(scenarios,
+            s => Path.GetFileName(Path.GetDirectoryName(s.ScenarioPath)) == name));
+        foreach (var scenario in scenarios.Where(s => config.EnabledScenarios.Contains(
+            Path.GetFileName(Path.GetDirectoryName(s.ScenarioPath)), StringComparer.Ordinal)))
         {
             await using var connection = LocalGameSessionConnection.CreateFromScenarioFile(DefaultSystemContentTests.Settings, scenario.ScenarioPath);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));

@@ -583,7 +583,7 @@ public class CommandsPanelSkeletonTests
     {
         Assert.Equal(
             CommandsPanel.Panels.SelectMany(panel => panel.CommandTypeIds)
-                .Where(id => id is not (CombatCommandTypes.Fire or CombatCommandTypes.SelfDestruct or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable))
+                .Where(id => id is not (CombatCommandTypes.Fire or CombatCommandTypes.SelfDestruct or TorpedoLauncherCommandTypes.SetMode or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable))
                 .OrderBy(k => k, StringComparer.Ordinal),
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
         Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey(CombatCommandTypes.Fire));

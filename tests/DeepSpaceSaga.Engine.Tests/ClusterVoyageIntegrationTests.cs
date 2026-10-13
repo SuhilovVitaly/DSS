@@ -167,7 +167,7 @@ public sealed class ClusterVoyageIntegrationTests
         voyage.Trade(TradeCommandTypes.Buy, voyage.OutboundItem);
         voyage.FlyTo(voyage.Destination, v =>
         {
-            Assert.Equal(4, v.Player.SpeedKmS);
+            Assert.Equal(6, v.Player.SpeedKmS);
             Assert.NotNull(v.Player.ApproachRoute); Assert.False(v.Player.IsDocked);
             Assert.Equal(v.Destination, v.Snapshot.ActiveVoyage!.DestinationStationObjectId);
         });

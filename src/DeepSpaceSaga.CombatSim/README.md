@@ -1,0 +1,7 @@
+# DSS combat sampler
+
+This is a new independent Python sampler. The historical `CombatDesign-v1` simulator cited by EP-0009 is not present in this checkout, so its 400-run results cannot be reproduced from source here. This sampler reads current production files under `src/DeepSpaceSaga.Client`: all `Data/Modules/**/*.json`, `Data/Combat/combat-rules.json`, `Data/Combat/fire-modes.json`, `Data/Ships/ship-classes.json`, and both `Scenarios/Combat*/scenario.json`. There is no shadow `CombatDesign` data tree.
+
+From this directory, run `python -m unittest discover -s tests -v` or `python -m combatsim CombatMukha --seed 1 --runs 100`. Use a real Python executable when the Windows Store alias is unavailable. The CLI prints the resolved data root so an old checkout is visible.
+
+The sampler models launcher reload, contact hit chance, automatic point defense, mass-weighted module hits, armor/structure and destruction threshold. It simplifies geometry to an effective closing distance, gives each defense launcher one opportunity per incoming torpedo, and omits the production AI controller, torpedo guidance, burst timing, and named RNG streams. It is useful for checking that content edits reach an independent model; it is **not** the authoritative Engine, a replay of the missing historical simulator, or native acceptance. Use `tests/DeepSpaceSaga.Engine.Tests/CombatBalanceReport.cs` and `Board/EP-0009-battle/evidence/balance.md` for actual 100-seed Engine results.

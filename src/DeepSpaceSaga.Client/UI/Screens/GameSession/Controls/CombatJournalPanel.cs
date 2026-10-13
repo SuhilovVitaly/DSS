@@ -82,17 +82,40 @@ internal sealed class CombatJournalPanel
             $"{entry.ActorObjectId} → {entry.TargetObjectId}" };
         if (entry.LauncherModuleId is { } module) lines.Add($"{T("Module")}: {module}");
         if (entry.LaunchMode is { } mode) lines.Add($"{T("LaunchMode")}: {T(mode == LaunchMode.Manual ? "Manual" : "Auto")}");
-        if (entry.Accuracy is { } accuracy && entry.TargetManeuverability is { } maneuverability)
+        if (entry.Type == CombatEventType.TorpedoHitRoll && entry.Attack is { } attack && entry.Defense is { } defense)
+            lines.Add($"{T("Attack")} {attack:0.##} · {T("DefenseRating")} {defense:0.##}");
+        else if (entry.Type is CombatEventType.Intercept or CombatEventType.Miss &&
+            entry.Accuracy is { } defenseRating && entry.TargetManeuverability is { } attackRating)
+        {
+            lines.Add($"{T("DefenseRating")} {defenseRating:0.##} · {T("Attack")} {attackRating:0.##}");
+            lines.Add(T("InterceptFormula"));
+        }
+        else if (entry.Accuracy is { } accuracy && entry.TargetManeuverability is { } maneuverability)
             lines.Add($"{T("Accuracy")} {accuracy:0.##} − {T("Maneuverability")} {maneuverability:0.##}");
         if (entry.ChanceTenths is { } chance) lines.Add($"{T("Chance")} {chance / 10m:0.0}%" + (entry.Roll is { } roll ? $" · {T("Roll")} {roll}/1000" : " · " + T("NoRoll")));
         if (entry.RatingBreakdown is { } ratings)
         {
             lines.Add($"{T("Countermeasure")}: {Describe(ratings.DefenseOperator)}");
-            lines.Add(ratings.TorpedoOperator is { } attack ? $"{T("Torpedo")}: {Describe(attack)}" : $"{T("Maneuverability")}: {ratings.TorpedoRating:0.##}");
+            lines.Add(ratings.TorpedoOperator is { } torpedoOperator ? $"{T("Torpedo")}: {Describe(torpedoOperator)}" : $"{T("Maneuverability")}: {ratings.TorpedoRating:0.##}");
         }
         else if (entry.TorpedoOperator is { } op) lines.Add(Describe(op));
         if (entry.Type is CombatEventType.Hit or CombatEventType.Destroyed && entry.Damage is { } damage)
             lines.Add($"{T("Damage")} {damage}");
+        if (entry.HitModuleId is { } hitModule)
+            lines.Add($"{T("HitModule")}: {hitModule}");
+        if (entry.Type == CombatEventType.ModuleHit)
+        {
+            if (entry.ArmorBefore is { } armorBefore && entry.ArmorAfter is { } armorAfter)
+                lines.Add($"{T("Armor")}: {armorBefore} → {armorAfter}");
+            if (entry.StructureBefore is { } structureBefore && entry.StructureAfter is { } structureAfter)
+                lines.Add($"{T("Structure")}: {structureBefore} → {structureAfter}");
+        }
+        if (entry.Type == CombatEventType.ShipDestroyed && entry.DestroyReason is { } destroyReason)
+            lines.Add($"{T("Cause")}: {DescribeDestroyReason(destroyReason)}");
+        if (entry.Type == CombatEventType.BurstShotSkipped && entry.Result is { } skippedReason)
+            lines.Add($"{T("Cause")}: {(skippedReason == "target_or_module_unavailable" ? T("Reason.BurstTargetOrModuleUnavailable") : skippedReason)}");
+        if (entry.Type == CombatEventType.LauncherBreakdown && entry.Result is { Length: > 0 } brokenMode)
+            lines.Add($"{T("Mode")}: {T("Mode." + char.ToUpperInvariant(brokenMode[0]) + brokenMode[1..])}");
         string? reason = entry.TerminationKind switch
         {
             CountermeasureTerminationKind.LifetimeExpired => "lifetime_expired",
@@ -104,5 +127,10 @@ internal sealed class CombatJournalPanel
         if (reason is not null) lines.Add($"{T("State")}: {GameSessionScreen.DefenseReasonText(reason)}");
         return lines;
         static string Describe(WeaponOperatorSnapshot op) => $"{op.DisplayName}: {T("SkillMetadata")} {op.Skill}";
+        static string DescribeDestroyReason(string reason) => reason.StartsWith("critical:", StringComparison.Ordinal)
+            ? T("CriticalModule") + " " + reason["critical:".Length..]
+            : reason.StartsWith("threshold:", StringComparison.Ordinal)
+                ? T("ModuleThreshold") + " " + reason["threshold:".Length..]
+                : reason;
     }
 }

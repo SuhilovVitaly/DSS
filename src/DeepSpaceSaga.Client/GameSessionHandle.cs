@@ -46,10 +46,13 @@ public sealed class GameSessionHandle : IAsyncDisposable
     }
 
     public GameSessionHandle(IGameSessionConnection connection)
+        : this(connection, new SnapshotBuffer()) { }
+
+    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer)
     {
         _connection = connection;
 
-        Buffer = new SnapshotBuffer();
+        Buffer = buffer;
 
         // Background loop: connection → buffer
         _receiveTask = Task.Run(() => ReceiveLoopAsync(_cts.Token));
@@ -123,6 +126,14 @@ public sealed class GameSessionHandle : IAsyncDisposable
             WriteDiagnostic($"APPROACH {command.CommandId}: send, ship={objectId}, target={targetObjectId}, speed={Buffer.CurrentSpeed}");
 
         return _connection.SendCommandAsync(command, cancellationToken);
+    }
+
+    public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
+    {
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return _connection.SendCommandAsync(new PlayerCommand(commandId, sequence, objectId, moduleId,
+            TorpedoLauncherCommandTypes.SetMode, ModeId: modeId));
     }
 
     /// <summary>Release the player ship from its current station through the authoritative navigation computer.</summary>

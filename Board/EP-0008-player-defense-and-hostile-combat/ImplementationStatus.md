@@ -1,5 +1,10 @@
 # EP-0008 — execution evidence
 
+## Актуализация EP-0008 — 2026-10-12
+
+Текущий опубликованный baseline: `904a21f1602358c8754d746f092858c920413b6f` (US-0013-TK-0001).44/45 исходных тикетов и коррекция A09 опубликованы. Финальный шаг EP-0008 — US-0013-TK-0002 аудит ссылок/Board; Graphify SKIPPED по указанию пользователя. После проверенной публикации этого шага начинается EP-0009. Полный Debug4314/4314 до коррекции; свежий Release4201/4201 после неё, без114 неизменённых corpus cases. Native13/14, FPS/human OPEN; новые игровые/native запуски запрещены текущим указанием пользователя. Записи ниже — хронологическая история, старые blockers/next-ticket не текущий статус.
+
+
 ## Resumption — 2026-10-11
 
 The user explicitly authorized completing EP-0008 and then EP-0009 autonomously,
@@ -259,3 +264,31 @@ TK-0001 `0cdcc7af7b774096a307fc5520e92f4ac12acffc` published/remote verified. Ge
 Local commit `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` completed but both push attempts were rejected by automatic approval review, including after authenticated GitHub owner/public/push permission verification. Live remote remains `0cdcc7af7b774096a307fc5520e92f4ac12acffc`. Explicit human destination authorization is required by that reviewer. Existing user instruction authorizes autonomous per-ticket pushes, but the reviewer did not accept it without the URL. No bypass attempted.
 
 Do not start TK-0003 or EP-0009 until the existing commit is pushed and the remote SHA is verified. Native/final review/project documentation/Graphify remain OPEN. Exact ticket SHA registry and recovery instructions: [PublicationStatus.md](PublicationStatus.md).
+
+## Publication recovery — 2026-10-12
+
+Explicit user confirmation names GitHub SuhilovVitaly/DSS and base-fight. `git push` reports already up to date; live remote SHA `817a856047589f7346c2e280450df3c28372c4b5` includes ticket `9c93e1d`. Publication blocker resolved; continuing US-0012-TK-0003. Existing Data commit preserved.
+
+## EP-0008-US-0012-TK-0003 — 2026-10-12
+
+Implementation and self-review complete, pending separate publication. Real click/session viewport matrix6/6 and full Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Native artifacts retained:13/14 interaction cases complete; 1920x1080/UI150 combat incomplete, timing target not accepted. Footer/PR label overlaps fixed. User defers further game/native runs and authorizes continuation through review/docs and EP-0009; native/human acceptance remains OPEN. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+
+## US-0009-TK-0003 review correction — 2026-10-12
+
+TK-0012-0003 published as402c3757e354641bdc92d165d5a1d7df8cf7e6fe (remote verified). Final review found terminal integer time rounded before a fractional death, violating A09. Regression reproduced5001 vs expected5002; ceiling correction passes196 affected Engine tests, build/format/diff. Separate correction publication follows. Full solution run begun before correction remains separate evidence; no native/game runs.
+
+## EP-0008-US-0012-TK-0004 — 2026-10-12
+
+Correction9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea published/remote verified. Final self-review complete with Q01–Q51 and all story AC traced to actual code/tests. Full Debug4314/4314 before rounding correction; fresh Release4201/4201 excluding114 unaffected corpus checks after correction; build0 warnings/errors, diff PASS. No unresolved confirmed runtime finding. Native/human gates remain OPEN by user deferral (13/14 native cases, frame-time target not accepted). Documentation/Graphify follow; this review is not user approval. Separate publication follows.
+
+## EP-0008-US-0013-TK-0001 — 2026-10-12
+
+43 Markdown files synchronized across canonical requirements, mechanics/screens, historical reports, related EP6/7 summaries, Board and performance tooling. New Defeat screen contract and durable document inventory. Relative links,13/45 counts, DAG, publication ancestry and diff checked. No runtime code change. Next after publication: Graphify rebuild; native/human acceptance remains OPEN.
+
+## EP-0008-US-0013-TK-0002 — 2026-10-12
+
+Documentation904a21f published/remote verified. User cancelled Graphify rebuilding to avoid token expenditure; semantic agents stopped, existing graph unchanged, .graphifyignore restored. Graph gate SKIPPED by user instruction. Relative links,13 stories/45 tickets and DAG audited. Implementation/documentation chain delivered under revised scope; native13/14, FPS/human remain OPEN. User authorizes EP-0009 continuation without game/native/graph launches. Separate publication follows, own SHA recorded through Git after creation.
+
+## Superseded by EP-0009 — 2026-10-12
+
+EP-0008 implementation and publication evidence above remains historical. Its Hull HP, attack/interception formulas, one-flight/auto-attempt rules and SaveFormatVersion16 were superseded by [EP-0009 §2.1](../EP-0009-battle/EP-0009-module-combat.md#21-переопределяется-правила-ep-0008-перестают-действовать). Current engineering contract: [ModuleCombat](../../Documentation/04-Engineering/ModuleCombat.md). EP-0008's unfinished native/FPS/human gates remain historical OPEN; EP-0009 native checks are separately NOT RUN by user instruction.

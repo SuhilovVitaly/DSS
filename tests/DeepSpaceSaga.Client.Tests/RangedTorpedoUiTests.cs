@@ -76,7 +76,7 @@ public class RangedTorpedoUiTests
         Reject(second);
         Render(f.Screen);
         Assert.True(Button(f.Screen).Enabled);
-        Assert.Null(f.Handle.Buffer.Latest!.Snapshot.InstalledModules[0].LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.True(f.Handle.Buffer.Latest!.Snapshot.InstalledModules[0].LauncherCombat!.ActiveTorpedoIds.IsDefaultOrEmpty);
     }
 
     private static string? Status(Fixture f) => f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText;

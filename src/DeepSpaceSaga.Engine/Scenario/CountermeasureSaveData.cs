@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Combat;
 using DeepSpaceSaga.Motion;
@@ -13,7 +14,6 @@ public sealed record CountermeasureStateData(
     [property: JsonRequired] long JournalSequence,
     [property: JsonRequired] IReadOnlyList<DefenseLauncherSaveData> Launchers,
     [property: JsonRequired] IReadOnlyList<CountermeasureProjectileSaveData> Projectiles,
-    [property: JsonRequired] IReadOnlyList<string> AttemptedTorpedoIds,
     [property: JsonRequired] IReadOnlyList<CombatJournalEntry> Journal,
     string? SelectedProjectileId = null);
 public sealed record DefenseLauncherSaveData(string OwnerObjectId, string ModuleId, DefenseSnapshot State);
@@ -34,10 +34,11 @@ internal static class CountermeasureSaveValidation
             Require(format < 11 && !state.SpaceObjects.Any(o => o.ObjectType == SpaceObjectType.Countermeasure), "missing defense state");
             return state;
         }
-        Require((format >= 16 ? saved.Version == 2 : saved.Version is 1 or 2) && saved.RngVersion == CountermeasureRng.AlgorithmVersion, "unsupported version");
+        Require((format >= 17 ? saved.Version == 3 : format >= 16 ? saved.Version == 2 : saved.Version is 1 or 2 or 3) &&
+            saved.RngVersion == CountermeasureRng.AlgorithmVersion, "unsupported version");
         Require(saved.ProjectileSequence >= 0 && saved.JournalSequence is >= 0 and < long.MaxValue,
             "invalid counters");
-        Require(saved.Launchers is not null && saved.Projectiles is not null && saved.AttemptedTorpedoIds is not null && saved.Journal is not null,
+        Require(saved.Launchers is not null && saved.Projectiles is not null && saved.Journal is not null,
             "missing collections");
         Require(saved.Launchers!.All(l => l is not null && l.State is not null) &&
             saved.Projectiles!.All(p => p is not null && p.Flight is not null) && saved.Journal!.All(e => e is not null), "null row");
@@ -59,7 +60,14 @@ internal static class CountermeasureSaveValidation
             {
                 OwnerObjectId = Canon(l.OwnerObjectId),
                 ModuleId = Module(l.OwnerObjectId, l.ModuleId),
-                State = l.State with { ActiveProjectileId = l.State.ActiveProjectileId is { } id ? Canon(id) : null }
+                State = l.State with
+                {
+                    ActiveProjectileId = l.State.ActiveProjectileId is { } id ? Canon(id) : null,
+                    ActiveProjectileIds = l.State.ActiveProjectileIds is { } ids ? ids.Select(Canon).ToImmutableArray() : null,
+                    PendingBurstShots = l.State.PendingBurstShots is { } pending
+                        ? pending.Select(shot => shot with { TargetTorpedoId = Canon(shot.TargetTorpedoId) }).ToImmutableArray()
+                        : null
+                }
             }).ToArray(),
             Projectiles = saved.Projectiles!.Select(p => p with
             {
@@ -70,13 +78,8 @@ internal static class CountermeasureSaveValidation
                     LauncherModuleId = Module(p.Flight.OwnerObjectId, p.Flight.LauncherModuleId),
                     TargetTorpedoId = Canon(p.Flight.TargetTorpedoId)
                 }
-            }).ToArray(),
-            AttemptedTorpedoIds = saved.AttemptedTorpedoIds!.Select(Canon).ToArray()
+            }).ToArray()
         };
-        var attempted = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        foreach (var id in saved.AttemptedTorpedoIds)
-            Require(attempted.Add(id) && objects.TryGetValue(id, out var torpedo) && torpedo.ObjectType == SpaceObjectType.Missile,
-                "invalid attempted torpedo");
         var launchers = new Dictionary<(string, string), DefenseSnapshot>();
         foreach (var row in saved.Launchers)
         {
@@ -100,6 +103,19 @@ internal static class CountermeasureSaveValidation
             Require((d.State == DefenseState.NoOperator) == (d.Operator is null), "operator state mismatch");
             Require((d.State == DefenseState.Guiding) == (d.ActiveProjectileId is not null), "active projectile state mismatch");
             Require((d.State == DefenseState.Reloading) == (d.ReloadDueMotionTimeMs is not null), "reload state mismatch");
+            if (d.ActiveProjectileIds is { } activeIds)
+                Require(activeIds.Length > 1 && activeIds[0] == d.ActiveProjectileId &&
+                    activeIds.All(id => !string.IsNullOrWhiteSpace(id)) &&
+                    activeIds.Distinct(StringComparer.Ordinal).Count() == activeIds.Length,
+                    "invalid active projectile list");
+            if (d.PendingBurstShots is { } pending)
+                Require(pending.All(shot => double.IsFinite(shot.DueMotionTimeMs) &&
+                    shot.DueMotionTimeMs > state.MotionTimeMs && shot.BarrelNumber >= 2 &&
+                    shot.BarrelNumber <= d.Barrels && Enum.IsDefined(shot.Mode) &&
+                    !string.IsNullOrWhiteSpace(shot.TargetTorpedoId)), "invalid pending burst");
+            if (format >= 17 && (d.ActiveProjectileId is not null || d.PendingBurstShots is { Length: > 0 }))
+                Require(d.ReadyAtMotionTimeMs is { } readyAt && double.IsFinite(readyAt) && readyAt >= 0,
+                    "missing burst readiness deadline");
             if (d.ReloadDueMotionTimeMs is { } due) Require(double.IsFinite(due) && due > state.MotionTimeMs, "invalid reload deadline");
         }
         var ids = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -110,21 +126,23 @@ internal static class CountermeasureSaveValidation
                 "invalid or duplicate projectile");
             obj = objects[row.ObjectId];
             if (format >= 16) Require(SequenceWithin(row.ObjectId, "countermeasure-", saved.ProjectileSequence), "projectile sequence behind identity");
-            Require(launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) && launcher.ActiveProjectileId == row.ObjectId,
+            Require(launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) &&
+                (launcher.ActiveProjectileIds?.Contains(row.ObjectId) ?? (launcher.ActiveProjectileId == row.ObjectId)),
                 "orphan projectile");
             Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= state.MotionTimeMs && f.FrozenChanceTenths is >= 0 and <= 1000 &&
                 Enum.IsDefined(f.Phase) && f.RatingBreakdown is not null, "invalid frozen flight");
             ValidateOperator(f.RatingBreakdown!.DefenseOperator);
             if (f.RatingBreakdown.TorpedoOperator is { } attack) ValidateOperator(attack);
-            Require(f.RatingBreakdown.TorpedoRating >= 0 && f.FrozenChanceTenths == InterceptionMath.ChanceTenths(
-                f.RatingBreakdown.DefenseOperator.EffectiveRating, f.RatingBreakdown.TorpedoRating), "chance mismatch");
+            Require(f.RatingBreakdown.TorpedoRating >= 0 && CapturedChanceMatches(
+                f.RatingBreakdown.DefenseOperator.EffectiveRating, f.RatingBreakdown.TorpedoRating,
+                f.FrozenChanceTenths), "chance mismatch");
             Require((f.CapturedAccuracy is null || f.CapturedAccuracy == f.RatingBreakdown.DefenseOperator.EffectiveRating) &&
                 (f.CapturedTargetManeuverability is null || f.CapturedTargetManeuverability == f.RatingBreakdown.TorpedoRating),
                 "captured weapon values mismatch");
             if (format >= 16)
             {
                 Require(Enum.IsDefined(f.Mode) && f.CapturedAccuracy is >= 0 and <= 100 &&
-                    f.CapturedTargetManeuverability is >= 0 and <= 100 && f.MaxFlightTimeMs is > 0 &&
+                    f.CapturedTargetManeuverability is >= 0 and <= 200 && f.MaxFlightTimeMs is > 0 &&
                     f.LaunchMotionTimeMs <= long.MaxValue - f.MaxFlightTimeMs.Value &&
                     f.ExpiresAtMotionTimeMs == f.LaunchMotionTimeMs + f.MaxFlightTimeMs && f.ExpiresAtMotionTimeMs > state.MotionTimeMs &&
                     f.SpeedKmS is { } speed && double.IsFinite(speed) && speed > 0 &&
@@ -134,8 +152,8 @@ internal static class CountermeasureSaveValidation
             }
             if (f.Phase == CountermeasurePhase.Guiding)
             {
-                Require(objects.TryGetValue(f.TargetTorpedoId, out var target) && target.ObjectType == SpaceObjectType.Missile && attempted.Contains(f.TargetTorpedoId),
-                    "missing target or attempt");
+                Require(objects.TryGetValue(f.TargetTorpedoId, out var target) && target.ObjectType == SpaceObjectType.Missile,
+                    "missing target");
                 Require(f.ResolutionRoll is null && f.ResolvedAtMotionTimeMs is null && f.MissExpiresAtMotionTimeMs is null, "resolved guiding flight");
                 Require(row.TargetPlanStartMotionTimeMs >= 0 && row.TargetPlanStartMotionTimeMs <= state.MotionTimeMs, "invalid guidance baseline");
             }
@@ -178,8 +196,10 @@ internal static class CountermeasureSaveValidation
             }
         }
         Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Countermeasure).All(o => ids.Contains(o.ObjectId)), "projectile without flight");
-        Require(saved.Launchers.All(l => l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
-        long lastId = 0; double lastTime = 0; ulong rolls = 0;
+        Require(saved.Launchers.All(l => l.State.ActiveProjectileIds is { } active
+            ? active.All(ids.Contains)
+            : l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
+        long lastId = 0; double lastTime = 0; ulong rolls = 0, torpedoRolls = 0, breakdownEvents = 0;
         foreach (var entry in saved.Journal!)
         {
             Require(entry.EventId > lastId && entry.EventId <= saved.JournalSequence && Enum.IsDefined(entry.Type) &&
@@ -189,10 +209,11 @@ internal static class CountermeasureSaveValidation
             Require(entry.ChanceTenths is null or (>= 0 and <= 1000) && entry.Roll is null or (>= 1 and <= 1000) && entry.Damage is null or >= 0,
                 "invalid journal payload");
             if (format >= 16 && (entry.RatingBreakdown is not null || entry.LaunchMode is not null ||
-                entry.Type is CombatEventType.Intercept or CombatEventType.Miss or CombatEventType.Expired || entry.Result == "countermeasure"))
+                entry.Type is CombatEventType.Intercept or CombatEventType.Expired ||
+                entry.Type == CombatEventType.Miss && entry.LaunchMode is not null || entry.Result == "countermeasure"))
             {
                 Require(!string.IsNullOrWhiteSpace(entry.LauncherModuleId) && entry.LaunchMode is { } mode && Enum.IsDefined(mode) &&
-                    entry.Accuracy is >= 0 and <= 100 && entry.TargetManeuverability is >= 0 and <= 100 && entry.Damage == 0 &&
+                    entry.Accuracy is >= 0 and <= 100 && entry.TargetManeuverability is >= 0 and <= 200 && entry.Damage == 0 &&
                     entry.RatingBreakdown is { DefenseOperator: not null } captured && entry.Accuracy == captured.DefenseOperator.EffectiveRating &&
                     entry.TargetManeuverability == captured.TorpedoRating &&
                     SequenceWithin(entry.ProjectileObjectId, "countermeasure-", saved.ProjectileSequence), "invalid captured journal facts");
@@ -205,11 +226,29 @@ internal static class CountermeasureSaveValidation
             {
                 ValidateOperator(rating.DefenseOperator);
                 if (rating.TorpedoOperator is { } attack) ValidateOperator(attack);
-                Require(rating.TorpedoRating >= 0 && entry.ChanceTenths == InterceptionMath.ChanceTenths(rating.DefenseOperator!.EffectiveRating, rating.TorpedoRating), "journal chance mismatch");
+                Require(rating.TorpedoRating >= 0 && entry.ChanceTenths is { } chance && CapturedChanceMatches(
+                    rating.DefenseOperator!.EffectiveRating, rating.TorpedoRating, chance), "journal chance mismatch");
             }
             if (entry.TorpedoOperator is { } op) ValidateOperator(op);
-            bool resolution = entry.Type is CombatEventType.Intercept or CombatEventType.Miss;
-            Require(resolution == (entry.Roll is not null), "roll on non-resolution");
+            bool resolution = entry.Type == CombatEventType.Intercept ||
+                entry.Type == CombatEventType.Miss && entry.RatingBreakdown is not null;
+            bool torpedoRoll = entry.Type == CombatEventType.TorpedoHitRoll;
+            bool breakdown = entry.Type == CombatEventType.LauncherBreakdown;
+            Require((resolution || torpedoRoll || breakdown) == (entry.Roll is not null), "roll on non-resolution");
+            if (breakdown)
+            {
+                Require(entry.ChanceTenths is > 0 and <= 1000 && entry.Roll <= entry.ChanceTenths &&
+                    !string.IsNullOrWhiteSpace(entry.LauncherModuleId) && !string.IsNullOrWhiteSpace(entry.Result),
+                    "invalid launcher breakdown");
+                breakdownEvents++;
+            }
+            if (torpedoRoll)
+            {
+                Require(entry.Attack is >= 0 && entry.Defense is >= 0 && entry.ChanceTenths is not null &&
+                    entry.Result is "hit" or "miss" &&
+                    (entry.Result == "hit") == (entry.Roll <= entry.ChanceTenths), "invalid torpedo hit roll");
+                torpedoRolls++;
+            }
             if (resolution)
             {
                 Require(entry.RatingBreakdown is not null && (entry.Type == CombatEventType.Intercept) == (entry.Roll <= entry.ChanceTenths), "invalid resolution");
@@ -218,6 +257,9 @@ internal static class CountermeasureSaveValidation
             lastId = entry.EventId; lastTime = entry.MotionTimeMs;
         }
         Require(lastId == saved.JournalSequence && rolls == saved.RngCounter, "journal/RNG counter mismatch");
+        Require(torpedoRolls == (state.CombatState?.TorpedoHitRngCounter ?? 0), "torpedo-hit journal/RNG counter mismatch");
+        Require(breakdownEvents <= (state.CombatState?.LauncherBreakdownRngCounter ?? 0),
+            "launcher-breakdown journal/RNG counter mismatch");
         if (saved.SelectedProjectileId is { } selected)
         {
             selected = Canon(selected);
@@ -229,7 +271,7 @@ internal static class CountermeasureSaveValidation
     internal static void ValidateCapturedTorpedoRating(TorpedoSnapshot flight, int format)
     {
         if (format >= 16)
-            Require(!flight.RatingMigratedFromLegacySave && flight.CapturedManeuverability is >= 0 and <= 100 &&
+            Require(!flight.RatingMigratedFromLegacySave && flight.CapturedManeuverability is >= 0 and <= 200 &&
                 flight.OwnerPlayerRelationAtLaunch is PlayerRelation.Self or PlayerRelation.Enemy or PlayerRelation.Neutral or PlayerRelation.Friend,
                 "missing phase-three torpedo provenance");
         if (format < 11 && flight.TorpedoRating is null && flight.RatingBreakdown is null &&
@@ -244,15 +286,24 @@ internal static class CountermeasureSaveValidation
         }
         ValidateOperator(flight.RatingBreakdown);
         Require(flight.RatingBreakdown!.SkillType == WeaponSkillType.TorpedoAttack &&
-            flight.RatingBreakdown.EffectiveRating == flight.TorpedoRating, "captured torpedo rating mismatch");
+            flight.ModeManeuverabilityBonus is >= 0 and <= 100 &&
+            flight.RatingBreakdown.EffectiveRating + flight.ModeManeuverabilityBonus == flight.TorpedoRating,
+            "captured torpedo rating mismatch");
     }
 
     private static void ValidateOperator(WeaponOperatorSnapshot? op)
     {
         Require(op is not null && !string.IsNullOrWhiteSpace(op.CrewId) && !string.IsNullOrWhiteSpace(op.DisplayName) &&
             Enum.IsDefined(op.SkillType) && op.Skill is >= 0 and <= 100 && op.BaseRating >= 0 && op.EffectiveRating >= 0, "invalid operator");
-        Require(op!.EffectiveRating == op.BaseRating && op.BaseRating <= 100, "rating mismatch");
+        Require(op!.BaseRating <= 100 &&
+            (op.EffectiveRating == op.BaseRating || op.EffectiveRating == op.BaseRating + op.Skill), "rating mismatch");
     }
+
+    // v16 has no captured chance-rules revision. Preserve EP-0008 base-zero saves and the
+    // shipped EP-0009 base-fifty rules until v17 records the exact rule identity.
+    private static bool CapturedChanceMatches(decimal attack, decimal defense, int chance) =>
+        chance == InterceptionMath.ChanceTenths(attack, defense) ||
+        chance == CombatChanceMath.ChanceTenths(attack, defense, CombatChanceMath.DefaultRules);
     private static void ValidateSegment(TorpedoRouteSegment? s) => Require(s is not null &&
         new[] { s.X, s.Y, s.Direction, s.SpeedKmS, s.AngularVelocityDegPerSec, s.DurationMs }.All(double.IsFinite) &&
         s.SpeedKmS > 0 && s.DurationMs >= 0, "invalid segment");

@@ -1,10 +1,14 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Combat;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    private CombatChanceRules ChanceRules => _registry.CombatRules?.Chance ?? CombatChanceMath.DefaultRules;
+
     private WeaponOperatorSnapshot? ResolveWeaponOperator(
         SpaceObjectRuntime owner, InstalledModuleRuntime module, WeaponSkillType skillType)
     {
@@ -12,12 +16,15 @@ public sealed partial class SimulationEngine
         var crew = owner.Crew.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
         if (crew is null) return null;
         var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-        int skill = (skillType == WeaponSkillType.TorpedoAttack ? crew.TorpedoSkill : crew.CountermeasureSkill) ?? 0;
+        int skill = skillType == WeaponSkillType.TorpedoAttack
+            ? crew.ManeuverabilitySkill : crew.AccuracySkill;
         decimal baseRating = skillType == WeaponSkillType.TorpedoAttack
             ? definition.TorpedoManeuverability ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks torpedoManeuverability.")
             : definition.CountermeasureAccuracy ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks countermeasureAccuracy.");
-        // EP-0008 keeps operator identity and skill metadata, without a skill multiplier.
-        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill, baseRating, baseRating);
+        // Torpedo hit accuracy is captured separately. This rating is the
+        // projectile's interception resistance, including its operator's skill.
+        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill,
+            baseRating, baseRating + skill);
     }
 
     private LauncherCombatSnapshot? ProjectWeaponLauncher(SpaceObjectRuntime owner, InstalledModuleRuntime module)
@@ -53,8 +60,10 @@ public sealed partial class SimulationEngine
             if (crew is null)
                 throw new ScenarioException($"Ship '{obj.ObjectId}' has a null crew member.");
             crewIds.Add(crew.CrewId);
-            if (crew.TorpedoSkill is < 0 or > 100 || crew.CountermeasureSkill is < 0 or > 100)
-                throw new ScenarioException($"Crew '{crew.CrewId}' skills must be in 0..100.");
+            if (crew.AccuracySkill is < 0 or > 30)
+                throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..30.");
+            if (crew.ManeuverabilitySkill is < 0 or > 30)
+                throw new ScenarioException($"Crew '{crew.CrewId}' maneuverabilitySkill must be in 0..30.");
         }
         var assigned = new HashSet<string>(StringComparer.Ordinal);
         foreach (var module in obj.Modules ?? [])

@@ -1,12 +1,12 @@
 # EP-0008 publication status
 
-Verified 2026-10-11 against live `git ls-remote origin refs/heads/base-fight`.
+Verified 2026-10-12 against live `git ls-remote origin refs/heads/base-fight`.
 
 - Branch: `base-fight`.
 - Remote: `https://github.com/SuhilovVitaly/DSS`.
-- Published branch HEAD: `0cdcc7af7b774096a307fc5520e92f4ac12acffc`.
-- Local HEAD: `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` (one commit ahead).
-- Forty tickets published; US-0012-TK-0002 implemented and validated locally, push BLOCKED.
+- Published baseline before final link audit: `904a21f1602358c8754d746f092858c920413b6f`.
+- Local HEAD matches that published baseline; US-0013-TK-0002 link audit and user-requested graph cancellation follow.
+- Forty-four original tickets and one review correction published; previous blocker resolved by explicit user destination authorization.
 
 | Ticket | Commit SHA | Push |
 |---|---|---|
@@ -50,27 +50,20 @@ Verified 2026-10-11 against live `git ls-remote origin refs/heads/base-fight`.
 | EP-0008-US-0011-TK-0003 | `c195d6ac4f91cc536e6a0dd2e54739b0bbaca8bd` | Published; ancestor of verified remote HEAD |
 | EP-0008-US-0011-TK-0004 | `222e5bb45063c60e5a689ee5e854f2e9c8867ab6` | Published; ancestor of verified remote HEAD |
 | EP-0008-US-0012-TK-0001 | `0cdcc7af7b774096a307fc5520e92f4ac12acffc` | Published; ancestor of verified remote HEAD |
-| EP-0008-US-0012-TK-0002 | `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` | BLOCKED by automatic approval review |
+| EP-0008-US-0012-TK-0002 | `9c93e1d227ac32eb8319ce28dc9eb7c68cbea73c` | Published; ancestor of verified remote HEAD |
 
-## Publication blocker
+| EP-0008-US-0012-TK-0003 | `402c3757e354641bdc92d165d5a1d7df8cf7e6fe` | Published; remote verified |
+| EP-0008-US-0009-TK-0003 correction | `9ab6eedcf51aea3515dbf2bab1ea3f4d58786dea` | Published; remote verified |
+| EP-0008-US-0012-TK-0004 | `d13afd05e5a26d53492fcc98a96744cdb7ab7976` | Published; remote verified |
 
-The normal push was rejected by automatic approval review because the external destination was not explicitly named in the human instruction. Read-only authenticated GitHub verification then confirmed that the signed-in account owns SuhilovVitaly/DSS, the repository is public, and push/admin permissions are true. A second normal push was also rejected: the reviewer treated this tool evidence as insufficient and still required explicit human destination authorization. No alternative upload channel was attempted.
+| EP-0008-US-0013-TK-0001 | `904a21f1602358c8754d746f092858c920413b6f` | Published; remote verified |
 
-User action required: explicitly authorize publishing the DSS epic commits to `https://github.com/SuhilovVitaly/DSS`, branch `base-fight`. Resume by pushing the existing local commit, verify exact remote SHA, then continue. Do not recreate this ticket or rewrite history.
+| EP-0008-US-0013-TK-0002 | `6b7186444b027a03671e62ba61e86623e00762a2` | Published; remote verified; graph SKIPPED by user |
 
-## Remaining work
+## Recovery and current work
 
-- Publish US-0012-TK-0002 (local test-only implementation: generated battle, real file save/recovery, pause/x100 determinism, multiple enemies).
-- US-0012-TK-0003: native viewport/scale/UI combat/defeat/load matrix and presentation measurements; not started.
-- US-0012-TK-0004: final epic review and evidence reconciliation.
-- US-0013-TK-0001: project-wide documentation synchronization.
-- US-0013-TK-0002: final Graphify rebuild and links.
-- EP-0009: execute after EP-0008 completion; existing untracked Board folder preserved.
+The earlier automatic approval block was resolved by the user's explicit authorization for SuhilovVitaly/DSS, branch base-fight. Ticket9c93e1d is published; Data817a856 preserved. No force push or history rewrite.
 
-## Validation
+TK-0003 and the terminal-clock correction are published. TK-0004 self-review is published. US-0013 documentation is published; the final link-audit ticket follows; Graphify rebuilding cancelled by user2026-10-12. Its own SHA/push is verified after creation through Git and recorded at the start of EP-0009. EP-0009 Board is tracked, execution follows EP-0008 implementation/documentation. User deferred all further native/game launches; incomplete native/human acceptance remains OPEN. See ImplementationStatus and the acceptance report for factual gates. Current commit's own SHA is verified through Git after creation and recorded by the next ticket.
 
-- Prerequisite complete solution:4302/4302, including all Engine corpus, skipped0.
-- Current ticket new matrix:6/6; Engine non-corpus regression:1922/1922.
-- Current solution build:0 warnings/errors; scoped format and diff checks PASS.
-- Native acceptance:OPEN / NOT RUN for this epic acceptance matrix.
-- This registry and the blocker note are local follow-up evidence after the blocked commit; they are not claimed as published.
+Final implementation/documentation chain published through6b71864.45 ticket dispositions recorded, including the user-waived Graphify requirement; native/FPS/human OPEN. EP-0009 continues under user authorization.

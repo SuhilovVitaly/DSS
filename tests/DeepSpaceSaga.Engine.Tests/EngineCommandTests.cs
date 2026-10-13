@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
@@ -100,7 +101,7 @@ public class EngineCommandTests
             new SimulationClock(SimulationSpeed.Speed0, () => loadedRealMs));
         loaded.LoadScenario(save);
         var restored = loaded.CaptureSnapshot();
-        Assert.Equal(PlayerShipFrom(paused), PlayerShipFrom(restored));
+        Assert.Equal(JsonSerializer.Serialize(PlayerShipFrom(paused)), JsonSerializer.Serialize(PlayerShipFrom(restored)));
         Assert.Equal(450_000, restored.GameTimeMs);
         Assert.Equal(1500, restored.SimulationTimeMs);
         engine.SetSpeed(SimulationSpeed.Speed1);
@@ -111,7 +112,7 @@ public class EngineCommandTests
         var continued = loaded.CaptureSnapshot(advanceClock: true);
         Assert.Equal(750_000, continued.GameTimeMs);
         Assert.Equal(2500, continued.SimulationTimeMs);
-        Assert.Equal(PlayerShipFrom(uninterrupted), PlayerShipFrom(continued));
+        Assert.Equal(JsonSerializer.Serialize(PlayerShipFrom(uninterrupted)), JsonSerializer.Serialize(PlayerShipFrom(continued)));
         Assert.Equal(2, PlayerShipFrom(continued).Direction);
     }
     [Fact]

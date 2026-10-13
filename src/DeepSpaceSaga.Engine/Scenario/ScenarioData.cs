@@ -28,8 +28,9 @@ public static class SaveFormat
     /// Version 14 requires last-observed coarse station market knowledge; older saves omit unknown observations.
     /// Version 15 requires a versioned trading continuation manifest and complete voyage finance history.
     /// Version 16 requires phase-three combat continuation; earlier files are rejected by the save entrypoint.
+    /// Version 17 requires module-combat continuation (defense 3, combat 2, hostile 2); older saves are rejected.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 16;
+    public const int CurrentSaveFormatVersion = 17;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -318,7 +319,14 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null,
     [property: JsonPropertyName("orbit")] DeepSpaceSaga.Contracts.OrbitalElements? Orbit = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
-    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
+    [property: JsonPropertyName("ai")] AttackAiData? Ai = null);
+
+/// <summary>Configured NPC attack geometry; absent means the EP-0008 orbit defaults.</summary>
+public sealed record AttackAiData(
+    [property: JsonRequired, JsonPropertyName("standoffKm")] double StandoffKm,
+    [property: JsonRequired, JsonPropertyName("bandKm")] double BandKm,
+    [property: JsonRequired, JsonPropertyName("flankOffsetDeg")] double FlankOffsetDeg);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -336,8 +344,8 @@ public static class StationCrewRoles
 public sealed record ShipCrewMemberData(
     [property: JsonPropertyName("crewId")] string CrewId,
     [property: JsonPropertyName("displayName")] string DisplayName,
-    [property: JsonPropertyName("torpedoSkill")] int? TorpedoSkill = null,
-    [property: JsonPropertyName("countermeasureSkill")] int? CountermeasureSkill = null);
+    [property: JsonPropertyName("accuracySkill")] int AccuracySkill = 0,
+    [property: JsonPropertyName("maneuverabilitySkill")] int ManeuverabilitySkill = 0);
 
 /// <summary>
 /// One crew member displayed on a station (director/dock operator etc.), cosmetic/narrative
@@ -459,7 +467,11 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
     [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
     [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true,
-    [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null);
+    [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null,
+    [property: JsonPropertyName("armorClass")] string ArmorClass = "none",
+    [property: JsonPropertyName("armor")] int? Armor = null,
+    [property: JsonPropertyName("disabledUntilMotionTimeMs")] double? DisabledUntilMotionTimeMs = null,
+    [property: JsonPropertyName("destroyed")] bool Destroyed = false);
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>
 public sealed record HullCellCoordinate(

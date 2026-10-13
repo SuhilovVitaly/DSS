@@ -14,7 +14,7 @@ revision: 1
 
 # Перестроить граф и проверить навигацию финального проекта
 
-STATUS: DRAFT
+STATUS: COMPLETED — links audited; graph rebuild SKIPPED by user instruction
 
 ## Why
 
@@ -35,7 +35,7 @@ HEAD `6907c58`, проверка 2026-10-07. Технические assumptions 
 | File | Current state | Allowed change |
 |---|---|---|
 | `src/graphify-out/` | Фактический существующий набор Graphify; путь уточнён при execution 2026-10-07 | Только результат и шаги этой карточки |
-| `.graphifyignore` | Существующая конфигурация включает только Board EP-0007 | Включить EP-0008 и необходимые связанные документы в финальный корпус, сохранив исключения медиа и build artifacts |
+| `.graphifyignore` | Существующая конфигурация включает Board EP-0001–0004 и EP-0007 | Включить EP-0008 и необходимые связанные документы в финальный корпус, сохранив исключения медиа и build artifacts |
 | `Documentation/06-Tooling/PhaseThreeCombatGraphify.md` | Новый файл этого тикета | Только результат и шаги этой карточки |
 | `Board/EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md` | Создаётся предыдущим тикетом EP-0008-US-0012-TK-0004-epic-review | Только результат и шаги этой карточки |
 
@@ -94,3 +94,9 @@ git diff --check
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution override and result — 2026-10-12
+
+The user explicitly instructed continuing without Graphify rebuilding, game launch or native runs. This supersedes the planned Graphify requirement. Semantic agents were interrupted; no rebuilt graph was published. Existing tracked graph artifacts are retained as historical navigation only. The temporary .graphifyignore change was reverted.
+
+Actual scope: this card, parent story, epic Documentation.md/Tickets.md/ImplementationStatus.md/PublicationStatus.md and Documentation/README.md. Remaining work is relative-link, ID/count and dependency-DAG audit, with a separate ticket commit/push. The graph portion is SKIPPED by user request, not PASS. Native/FPS/human acceptance remains OPEN. No runtime change; no new tests required for these Markdown edits. Own SHA is verified through Git after commit.

@@ -13,7 +13,7 @@ public class DualDefenseArbitrationTests
     {
         var source = AutomaticDefenseTests.WeaponRegistry(firstAccuracy, 5);
         static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
-        var variant = All(source.ModuleTypes).Single(m => m.CountermeasureAccuracy is not null) with
+        var variant = All(source.ModuleTypes).Single(m => m.TypeId == "module.countermeasure.launcher.basic") with
         {
             TypeId = "module.countermeasure.launcher.arbitration",
             CountermeasureAccuracy = secondAccuracy,
@@ -28,7 +28,8 @@ public class DualDefenseArbitrationTests
             }).Append(variant),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules, fireModes: source.FireModes);
         var scenario = HostileTorpedoFireTests.HostileScenario(800);
         scenario = scenario with
         {
@@ -83,7 +84,8 @@ public class DualDefenseArbitrationTests
         Assert.Equal(Defense2, flight.LauncherModuleId);
         Assert.Equal(100, flight.FrozenChanceTenths);
         Assert.Equal(24, flight.SpeedKmS);
-        Assert.True(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Equal(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).ObjectId,
+            flight.TargetTorpedoId);
         Assert.Single(At(engine, 100).Objects, o => o.Countermeasure is not null);
     }
 
@@ -116,7 +118,7 @@ public class DualDefenseArbitrationTests
             reason == "solution" ? 0.001 : 12, reason == "solution" ? 0.001 : 12, unavailable: reason);
         var snapshot = At(engine, 100);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.False(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).CountermeasureAttempted);
+        Assert.Single(snapshot.Objects, o => o.Torpedo is not null);
         Assert.Equal(0ul, engine.CaptureSaveStateForTests(100, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
     }
 

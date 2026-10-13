@@ -7,8 +7,13 @@ dependencies: ["EP-0008-US-0001-module-owned-weapon-rules","EP-0008-US-0002-dual
 created: 2026-10-07
 revision: 1
 current_review: complete
-validation_status: planning-only
+validation_status: documentation-complete-graph-skipped-by-user
 ---
+
+## Актуализация EP-0008 — 2026-10-12
+
+TK-0001 опубликован904a21f; TK-0002 проверяет ссылки/Board. Перестройка Graphify отменена прямым указанием пользователя2026-10-12; её статус SKIPPED, не PASS. [Фактическое evidence](../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
+
 
 # Актуальная документация всего проекта
 
@@ -50,10 +55,14 @@ validation_status: planning-only
 
 ## Completion evidence
 
-Все AC доказаны связанными тикетами, проверками реального результата и review. Конкретные команды и запланированные регрессии находятся в карточках. Native/UI требования подтверждаются реальным окном отдельно от automated tests; при недоступности это NOT RUN, не PASS.
+Покрытие AC и фактические ограничения приведены в текущем execution status и acceptance report; наличие запланированных проверок само по себе не является evidence. Конкретные команды и запланированные регрессии находятся в карточках. Native/UI требования подтверждаются реальным окном отдельно от automated tests; при недоступности это NOT RUN, не PASS.
 
 ## Gaps и исполнение
 
 Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
 
-При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Текущая задача только создаёт план.
+При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Исходная запись описывала план; текущий запрос разрешает автономное исполнение.
+
+## Current acceptance disposition
+
+AC-0001/0002 delivered by TK-0001; AC-0003 link/count/DAG audit delivered by TK-0002, Graphify part explicitly waived by user. Documentation story is delivered under that revised scope. No user APPROVED or native PASS claimed.

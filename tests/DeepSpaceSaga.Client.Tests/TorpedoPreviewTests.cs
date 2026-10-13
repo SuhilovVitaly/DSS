@@ -54,7 +54,7 @@ public sealed class TorpedoPreviewTests
         var preview = Assert.IsType<TorpedoRoute>(f.Screen.LaunchPreviewRoute);
         var owner = f.Buffer.Latest!.Snapshot.Objects.Single(o => o.ObjectId == "SPC-0001");
         Assert.Equal((owner.X, owner.Y, owner.Direction), (preview.Segments[0].X, preview.Segments[0].Y, preview.Segments[0].Direction));
-        Assert.All(preview.Segments, s => Assert.Equal(3, s.SpeedKmS));
+        Assert.All(preview.Segments, s => Assert.Equal(10, s.SpeedKmS));
         var button = f.FireButton;
         f.Screen.OnMouseDown(button.Rect.MidX * scale, button.Rect.MidY * scale);
         Assert.Single(f.Connection.Commands);
@@ -106,7 +106,8 @@ public sealed class TorpedoPreviewTests
         Assert.Empty(f.Connection.Commands);
         Assert.Equal(before, JsonSerializer.Serialize(f.Engine.CaptureSaveState()));
         Assert.DoesNotContain(f.Engine.CaptureSnapshot().Objects, o => o.Torpedo is not null);
-        Assert.All(f.Engine.CaptureSnapshot().InstalledModules, m => Assert.Null(m.LauncherCombat?.ActiveTorpedoObjectId));
+        Assert.All(f.Engine.CaptureSnapshot().InstalledModules.Where(m => m.LauncherCombat is not null),
+            m => Assert.True(m.LauncherCombat!.ActiveTorpedoIds.IsDefaultOrEmpty));
     }
 
     [Theory]
@@ -131,7 +132,7 @@ public sealed class TorpedoPreviewTests
                 InstalledModules = state == "missing" ? [] : snapshot.InstalledModules.Select(m => m.LauncherCombat is null ? m : m with
                 {
                     PowerState = state == "off" ? "Off" : m.PowerState,
-                    LauncherCombat = m.LauncherCombat with { ActiveTorpedoObjectId = state == "busy" ? "existing" : null }
+                    LauncherCombat = m.LauncherCombat with { ReadyAtMotionTimeMs = state == "busy" ? 1000 : null }
                 }).ToImmutableArray()
             });
         if (state == "hidden")
@@ -178,7 +179,7 @@ public sealed class TorpedoPreviewTests
         f.Buffer.Update(snapshot with
         {
             SnapshotSequence = snapshot.SnapshotSequence + 1,
-            Objects = snapshot.Objects.Select(o => o.ObjectId == "SPC-0002" ? o with { X = 0, Y = -200, SpeedKmS = 4 } : o).ToImmutableArray()
+            Objects = snapshot.Objects.Select(o => o.ObjectId == "SPC-0002" ? o with { X = 0, Y = -200, SpeedKmS = 20 } : o).ToImmutableArray()
         });
         f.Render();
         f.Screen.OnMouseDown(960, 340);

@@ -1,8 +1,7 @@
 {
   "shipClasses": [
-    {
-      "typeId": "ship.tetrarch",
-      "hullHitPointsMax": 450
-    }
+    { "typeId": "ship.tetrarch" },
+    { "typeId": "ship.mukha" },
+    { "typeId": "ship.shmel" }
   ]
 }

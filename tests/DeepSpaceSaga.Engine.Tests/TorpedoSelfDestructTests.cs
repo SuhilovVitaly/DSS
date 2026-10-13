@@ -19,8 +19,8 @@ public class TorpedoSelfDestructTests
         Assert.Equal(string.Empty, impact.HitObjectId);
         Assert.Equal(0, impact.DamageApplied);
         Assert.NotEmpty(impact.FinalTrail);
-        Assert.All(after.Objects, o => Assert.Equal(450, o.HullCombat!.CurrentHp));
-        Assert.Null(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.DoesNotContain(after.CombatJournal, e => e.Type == CombatEventType.ModuleHit);
+        Assert.Empty(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
     }
     [Fact]
     public void Duplicate_or_stale_command_does_not_destroy_next_launch()
@@ -30,10 +30,11 @@ public class TorpedoSelfDestructTests
         string id = Assert.Single(At(engine, 0).Objects, o => o.Torpedo is not null).ObjectId;
         var cancel = new PlayerCommand("cancel", 1, Player, Launcher, CombatCommandTypes.SelfDestruct, id);
         engine.ReceiveCommand(cancel); At(engine, 0);
-        engine.ReceiveCommand(Fire("two")); At(engine, 0);
+        At(engine, 15000);
+        engine.ReceiveCommand(Fire("two")); At(engine, 15000);
         engine.ReceiveCommand(cancel);
         engine.ReceiveCommand(cancel with { CommandId = "stale" });
-        var snapshot = At(engine, 0);
+        var snapshot = At(engine, 15000);
         Assert.NotEqual(id, Assert.Single(snapshot.Objects, o => o.Torpedo is not null).ObjectId);
         Assert.Single(snapshot.CombatImpacts);
         Assert.Equal("stale_projectile", snapshot.CommandResults.Single(r => r.CommandId == "stale").ReasonCode);

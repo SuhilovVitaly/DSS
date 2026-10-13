@@ -1,0 +1,9 @@
+{
+  "chance": { "base": 50, "min": 0, "max": 100 },
+  "damage": { "hitDisableMs": 60000, "hitLocationWeighting": "mass" },
+  "shipDestruction": {
+    "criticalRoles": ["bridge", "engine"],
+    "destroyedModuleFraction": 0.3333
+  },
+  "armorClasses": { "none": 0, "light": 60 }
+}

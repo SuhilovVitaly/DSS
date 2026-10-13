@@ -120,7 +120,8 @@ public sealed class ResourceSurveyTests
         var result = Assert.Single(done.CommandResults);
         Assert.Equal(CommandResultStatus.Executed, result.Status);
         Assert.Equal(60000, result.EffectiveGameTimeMs);
-        Assert.Equal(comparison.Objects.Single(o => o.ObjectId == Player), done.Objects.Single(o => o.ObjectId == Player));
+        Assert.Equal(JsonSerializer.Serialize(comparison.Objects.Single(o => o.ObjectId == Player)),
+            JsonSerializer.Serialize(done.Objects.Single(o => o.ObjectId == Player)));
         Assert.Empty(Save(engine, 60000, 60000 / multiplier).GameState.StationResourceFields!.Surveys);
     }
 

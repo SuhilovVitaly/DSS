@@ -19,6 +19,16 @@
       "target": "none",
       "activationEnergyCellsCost": 0,
       "type": "module.torpedo.launcher"
+    },
+    {
+      "typeId": "torpedo.setMode",
+      "displayName": "Режим аппарата",
+      "timeFactor": 1,
+      "complexityFactor": 1,
+      "consumptionFactor": 1,
+      "target": "none",
+      "activationEnergyCellsCost": 0,
+      "type": "module.torpedo.launcher"
     }
   ]
 }

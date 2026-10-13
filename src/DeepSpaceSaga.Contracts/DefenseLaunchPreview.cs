@@ -17,4 +17,8 @@ public sealed record DefenseLaunchPreview(
     decimal? TargetManeuverability = null,
     /// <summary>Known earliest target collision in the captured launch horizon. Prediction only;
     /// Client must not promise a later encounter or independently search hidden world objects.</summary>
-    double? FirstTargetContactMotionTimeMs = null);
+    double? FirstTargetContactMotionTimeMs = null,
+    /// <summary>Future EP-0009 chance breakdown; null until the authoritative runtime supplies it.</summary>
+    decimal? Attack = null,
+    decimal? Defense = null,
+    decimal? BaseChance = null);

@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 
@@ -14,7 +15,14 @@ public sealed record CombatStateData(
     [property: JsonRequired, JsonPropertyName("nextGuidanceMotionTimeMs")] long NextGuidanceMotionTimeMs,
     [property: JsonRequired, JsonPropertyName("launchers")] IReadOnlyList<LauncherSaveData> Launchers,
     [property: JsonRequired, JsonPropertyName("projectiles")] IReadOnlyList<ProjectileSaveData> Projectiles,
-    [property: JsonRequired, JsonPropertyName("processedLaunchCommandIds")] IReadOnlyList<string> ProcessedLaunchCommandIds);
+    [property: JsonRequired, JsonPropertyName("processedLaunchCommandIds")] IReadOnlyList<string> ProcessedLaunchCommandIds,
+    [property: JsonPropertyName("hitLocationRngState")] ulong? HitLocationRngState = null,
+    [property: JsonPropertyName("hitLocationRngCounter")] ulong HitLocationRngCounter = 0,
+    [property: JsonPropertyName("torpedoHitRngState")] ulong? TorpedoHitRngState = null,
+    [property: JsonPropertyName("torpedoHitRngCounter")] ulong TorpedoHitRngCounter = 0,
+    [property: JsonPropertyName("launcherBreakdownRngState")] ulong? LauncherBreakdownRngState = null,
+    [property: JsonPropertyName("launcherBreakdownRngCounter")] ulong LauncherBreakdownRngCounter = 0,
+    [property: JsonPropertyName("processedModeCommandIds")] IReadOnlyList<string>? ProcessedModeCommandIds = null);
 
 public sealed record LauncherSaveData(
     [property: JsonRequired, JsonPropertyName("ownerObjectId")] string OwnerObjectId,
@@ -45,7 +53,11 @@ internal static class CombatSaveValidation
                 {
                     OwnerObjectId = Canon(l.OwnerObjectId),
                     ModuleId = Module(l.OwnerObjectId, l.ModuleId),
-                    State = l.State with { ActiveTorpedoObjectId = l.State.ActiveTorpedoObjectId is { } id ? Canon(id) : null }
+                    State = l.State with
+                    {
+                        ActiveTorpedoIds = (l.State.ActiveTorpedoIds.IsDefault ? ImmutableArray<string>.Empty : l.State.ActiveTorpedoIds)
+                            .Select(Canon).ToImmutableArray()
+                    }
                 }).ToArray(),
                 Projectiles = saved.Projectiles.Select(p => p is null || p.Flight is null ? p! : p with
                 {
@@ -67,12 +79,6 @@ internal static class CombatSaveValidation
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
         foreach (var obj in objects.Values)
         {
-            if (obj.ShipClassId is not null && format >= 10)
-                Require(obj.HullHitPoints is > 0 && obj.HullHitPointsMax is > 0 &&
-                    obj.HullHitPoints <= obj.HullHitPointsMax, "classified ship requires current and maximum HP.");
-            if (obj.HullHitPointsMax is not null)
-                Require(obj.ShipClassId is not null && obj.HullHitPointsMax > 0 &&
-                    obj.HullHitPoints <= obj.HullHitPointsMax, "invalid maximum HP.");
             if (obj.ObjectType == SpaceObjectType.Wreck)
                 Require(obj.SpeedMps == 0 && obj.DirectionDegrees == 0 &&
                     string.Equals(obj.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase) &&
@@ -85,15 +91,28 @@ internal static class CombatSaveValidation
             Require(format < 10 && !objects.Values.Any(o => o.ObjectType == SpaceObjectType.Missile), "missing combat state.");
             return;
         }
-        Require(combat.Version == 1, "unsupported combat version.");
+        Require((format >= 17 ? combat.Version == 2 : combat.Version is 1 or 2), "unsupported combat version.");
         Require(combat.LastProcessedMotionTimeMs == state.MotionTimeMs && combat.ProjectileSequence >= 0 &&
             combat.ImpactSequence is >= 0 and < long.MaxValue && combat.WreckSequence is >= 0 and < long.MaxValue,
             "invalid counters or motion time.");
+        Require(combat.HitLocationRngState is not null || combat.HitLocationRngCounter == 0,
+            "hit-location RNG counter without state.");
+        Require(combat.TorpedoHitRngState is not null || combat.TorpedoHitRngCounter == 0,
+            "torpedo-hit RNG counter without state.");
+        Require(combat.LauncherBreakdownRngState is not null || combat.LauncherBreakdownRngCounter == 0,
+            "launcher-breakdown RNG counter without state.");
+        if (format >= 17)
+            Require(combat.HitLocationRngState is not null && combat.TorpedoHitRngState is not null &&
+                combat.LauncherBreakdownRngState is not null && combat.ProcessedModeCommandIds is not null,
+                "missing module-combat RNG or mode continuation.");
         Require(combat.Launchers is not null && combat.Projectiles is not null && combat.ProcessedLaunchCommandIds is not null,
             "missing combat collections.");
         var launches = new HashSet<string>(StringComparer.Ordinal);
         foreach (var id in combat.ProcessedLaunchCommandIds!)
             Require(!string.IsNullOrWhiteSpace(id) && launches.Add(id), "duplicate or empty launch command ID.");
+        var modeCommands = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in combat.ProcessedModeCommandIds ?? [])
+            Require(!string.IsNullOrWhiteSpace(id) && modeCommands.Add(id), "duplicate or empty mode command ID.");
         var launchers = new Dictionary<(string, string), LauncherCombatSnapshot>();
         foreach (var row in combat.Launchers!)
         {
@@ -103,6 +122,12 @@ internal static class CombatSaveValidation
                 owner.Modules?.Any(m => m.ModuleId == row.ModuleId && m.ActiveCycle is null) == true, "orphan or cycling launcher.");
             Require(row.State is not null && Parameters(row.State.SpeedKmS, row.State.TurnRateDegPerSec, row.State.Damage) &&
                 launchers.TryAdd((row.OwnerObjectId, row.ModuleId), row.State), "invalid or duplicate launcher.");
+            Require(!row.State!.ActiveTorpedoIds.IsDefault &&
+                row.State.ActiveTorpedoIds.All(id => !string.IsNullOrWhiteSpace(id)) &&
+                row.State.ActiveTorpedoIds.Distinct(StringComparer.Ordinal).Count() == row.State.ActiveTorpedoIds.Length &&
+                row.State.ReadyAtMotionTimeMs is null or >= 0 &&
+                (row.State.ReadyAtMotionTimeMs is null || double.IsFinite(row.State.ReadyAtMotionTimeMs.Value)),
+                "invalid launcher flight list or reload time.");
         }
         var projectileIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var row in combat.Projectiles!)
@@ -113,16 +138,23 @@ internal static class CombatSaveValidation
             var f = row.Flight;
             if (format >= 16) Require(CountermeasureSaveValidation.SequenceWithin(row.ObjectId, "torpedo-", combat.ProjectileSequence), "projectile sequence behind identity.");
             Require(f is not null && Parameters(f.SpeedKmS, f.TurnRateDegPerSec, f.Damage), "invalid captured weapon.");
+            Require(f!.ArmorPiercingPercent is >= 0 and <= 100 && f.ArmorDamagePercent > 0,
+                "invalid captured armor damage parameters.");
+            Require(f.CapturedAttack is null or >= 0 && f.HitChanceTenths is null or (>= 0 and <= 1000),
+                "invalid captured hit chance.");
+            Require(f.ExpiresAtMotionTimeMs is null ||
+                f.ExpiresAtMotionTimeMs > state.MotionTimeMs && f.ExpiresAtMotionTimeMs > f.LaunchMotionTimeMs,
+                "expired projectile in save.");
             CountermeasureSaveValidation.ValidateCapturedTorpedoRating(f!, format);
             Require(!string.IsNullOrWhiteSpace(f!.OwnerObjectId) && !string.IsNullOrWhiteSpace(f.LauncherModuleId) &&
                 (!objects.ContainsKey(f.OwnerObjectId) && format >= 16 ||
-                launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) && launcher.ActiveTorpedoObjectId == row.ObjectId &&
+                launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) && launcher.ActiveTorpedoIds.Contains(row.ObjectId) &&
                 launcher.SpeedKmS == f.SpeedKmS && launcher.TurnRateDegPerSec == f.TurnRateDegPerSec && launcher.Damage == f.Damage),
                 "busy/projectile mismatch.");
             Require(!string.IsNullOrWhiteSpace(f.TargetObjectId) && f.TargetObjectId != f.OwnerObjectId && f.TargetObjectId != row.ObjectId &&
                 row.TargetLost == (!objects.TryGetValue(f.TargetObjectId, out var targetObject) || targetObject.IsDestroyed),
                 "invalid target or target-lost state.");
-            Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= state.MotionTimeMs && f.HitChancePercent == 100 &&
+            Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= state.MotionTimeMs && f.HitChancePercent is >= 0 and <= 100 &&
                 double.IsFinite(f.DistanceTravelledWorldUnits) && f.DistanceTravelledWorldUnits >= 0 && SameSpeed(obj!.SpeedMps / 1000, f.SpeedKmS),
                 "invalid flight time, distance or speed.");
             var route = f.Route;
@@ -179,7 +211,7 @@ internal static class CombatSaveValidation
         }
         Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Missile).All(o => projectileIds.Contains(o.ObjectId)), "missile without flight payload.");
         foreach (var launcher in launchers)
-            if (launcher.Value.ActiveTorpedoObjectId is { } id)
+            foreach (var id in launcher.Value.ActiveTorpedoIds)
                 Require(combat.Projectiles!.Any(p => p.ObjectId == id && p.Flight.OwnerObjectId == launcher.Key.Item1 &&
                     p.Flight.LauncherModuleId == launcher.Key.Item2), "busy launcher without matching flight.");
         if (projectileIds.Count > 0)

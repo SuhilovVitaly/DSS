@@ -1,5 +1,13 @@
 # Deep Space Saga — контрольная точка требований к движку
 
+## Актуальный модульный бой EP-0009 — 2026-10-12
+
+Сейчас действуют [правила EP-0009](#phase-four-module-combat): урон модулей вместо Hull HP, бросок `clamp(50 + атака − защита, 0..100)`, навыки операторов, режимы оружия, несколько летящих торпед, обновлённая ПРО и SaveFormatVersion17. Раздел [EP-0008](#phase-three-combat) и прежние Save16/11/15 ниже сохранены как датированная история; когда они расходятся, применяется EP-0009. [Инженерный контракт и границы проверки](../04-Engineering/ModuleCombat.md).
+
+## Текущее уточнение боя — 2026-10-12
+
+На этапе EP-0008 действовали [эти правила](#phase-three-combat): наступательный AI, ручная защита, две ПРО в PlayerShipOnly, terminal Defeat и SaveFormatVersion16. Они заменили противоречащие боевые правила EP-0007 и уточнили стартовую комплектацию §57 только для PlayerShipOnly. Датированные сведения Save15/Save11 ниже сохранены как история. [Проверки и открытая приёмка EP-0008](../04-Engineering/PhaseThreeCombatAcceptance.md) не означают приёмку EP-0009.
+
 ## Сверка реализации — 2026-10-10
 
 Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
@@ -5336,6 +5344,8 @@ Authoritative money path не должен использовать `float`/`dou
 
 <a id="approach-shortest-route"></a>
 
+<a id="approach-shortest-route"></a>
+
 ## 60. Approach: кратчайшее сближение с минимальным временем прибытия
 
 Согласованное изменение от 2026-09-20. Основание: пользователь уточнил, что красная линия на скриншоте нарисована им как желаемый путь, и попросил «достигать цель как можно быстрее с самым коротким путем между точками». Затем отдельно поручил синхронизировать ТЗ и документацию с реализованным поведением.
@@ -5397,7 +5407,11 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 
 
 <a id="countermeasure-combat"></a>
+<a id="countermeasure-combat"></a>
+
 ## EP-0007: операторы и противоракетный бой (2026-10-04)
+
+Исторический контракт: формула, дальности, offensive AI, ручные команды, комплектация, панели и версия save ниже заменены [EP-0008](#phase-three-combat). Старые результаты не являются проверкой новой фазы.
 
 Текущий этап заменяет прежнее отсутствие защиты/требования оператора. Он не вводит наступательный AI или распределение урона по модулям: обычное попадание торпеды наносит 150 hull HP, стандартный Тетрарх имеет 450 HP.
 
@@ -5420,3 +5434,52 @@ Engine фиксирует неизменяемый `ApproachRoute`; исполн
 Действующее уточнение EP-0004: Engine владеет материализованным AiMap rulesVersion1 и атомарным Save15. Hostile AI stations отклоняют dock/dialogue/trade/quote/refuel с station_access_denied. Территории, Radiation/Dust/Debris и POI информационные и не меняют движение, урон, топливо, экономику или RNG. Локальные связи проверяются на365-дневном горизонте, межкластерная связность — в объявленных/критических эпохах; это не бесконечное непрерывное доказательство. Для SolarSystem стратегическая видимость известных объектов заменяет legacy proximity-only ограничение §40; доступ к котировкам и survey не раскрывается. Overlap cycling и client-local descriptor selection уточняют nearest-only правило §54; hover остаётся нециклическим с приоритетом Station/player/NPC/other, затем distance/ordinal ID. Точные units, bounds, epochs и исключения находятся в текущем контракте.
 
 [Текущий технический контракт и evidence](../04-Engineering/AiMapEnvironment.md).
+
+<a id="phase-three-combat"></a>
+
+<a id="phase-three-combat"></a>
+
+## EP-0008: активный противник и ручная защита (2026-10-12)
+
+Источник решений: [Q01–Q51 и A01–A12](../../Board/EP-0008-player-defense-and-hostile-combat/Documentation.md). Engine владеет исходами, временем, RNG и журналом; Contracts передают immutable snapshots, Motion содержит общую математику, Client отправляет module-addressed команды и отображает подтверждённые данные.
+
+### Оружие, операторы и время
+
+- Каталог определяет параметры каждого аппарата. Стандартная торпеда: дальность200км, скорость3км/с, поворот90°/с, манёвренность5, урон150 hull HP; Тетрарх450 HP. Одна активная торпеда на аппарат, без добавленного cooldown после удаления.
+- Стандартная ПРО: точность55, auto radius100км, manual radius200км, скорость12км/с, поворот90°/с, максимальная жизнь60000 физических мс. Reload10000 физических мс начинается после удаления ПР; MissedCoast длится максимум2000мс и ограничен абсолютным TTL.
+- `ChanceTenths = Round(clamp(countermeasureAccuracy - capturedTorpedoManeuverability, 0, 100) * 10, AwayFromZero)`. Прежние `50+` и множитель навыка удалены. Назначенный живой оператор обязателен; навык0 допустим, навыки в этой фазе не меняют формулу. Параметры и операторы захватываются при запуске и сохраняются.
+- При фактическом контакте один roll1..1000 из `combat.countermeasure.intercept.v1`, в том числе при0% и100%; успех `roll <= ChanceTenths`. Preview, отказ, expiry и потеря цели RNG не расходуют. Порядок совпавших событий: попадание в корпус, контакт ПР, expiry, последующие auto-пуски; внутри категории стабильный порядок ID.
+- Физическое время управляет движением/AI/TTL/coast/reload; пауза их останавливает. Календарное время не подменяет физическое; эффекты UI имеют отдельный monotonic срок2 реальные секунды.
+
+### Противник и выбор защиты
+
+- Каждый вооружённый Enemy NPC преследует игрока с начала сценария и автоматически стреляет в пределах дальности своего аппарата, при наличии оператора и свободного аппарата. NPC использует внутренний Engine actor, а не пользовательские command receipts. После завершения снаряда новый пуск не раньше следующей целой физической миллисекунды.
+- AI пересчитывается на сетке100мс. Он использует параметры установленного двигателя (стандартный:4000м/с, ускорение400м/с², поворот4°/с), выходит на относительную орбиту радиуса половины дальности торпедного аппарата. Направление минимизирует начальный поворот, при равенстве CW, затем сохраняется. Полоса удержания5%, выход из режима при10%; при недостижимой орбите продолжается pursuit. Нового расхода топлива AI эта фаза не вводит.
+- Ручной `defense.fire` адресует конкретный модуль и выбранную вражескую торпеду в manual radius, в том числе на паузе, при выключенном auto,0% или отсутствии решения встречи. Допустима торпеда, направленная не на игрока. Для живого владельца действует текущая hostility; для отсутствующего — захваченное значение. Два аппарата могут вручную стрелять по одной цели.
+- Первая ручная/автоматическая попытка отмечает общий флаг торпеды и запрещает последующую auto-попытку. Ручной повтор после готовности разрешён. Auto выбирает ближайшую угрозу попадания в корпус, затем аппарат с ранней встречей, большим шансом и ordinal module ID. Недостижимая auto-встреча не расходует попытку.
+
+### Сценарий и интерфейс
+
+- Только PlayerShipOnly получает девятый модуль — вторую ПРО в клетке(3,1), третьего отдельного оператора и `living.quarters.mk1.three-cabins` на3 человека. Остальные пять существующих сценариев сохраняют8 модулей,2 членов экипажа и2 каюты. У пирата одна ПРО.
+- Панель создаётся для каждого установленного аппарата, с отдельными Fire, auto toggle, busy/reload, оператором и pending CommandId. В PlayerShipOnly семь панелей вместо базовых шести. Команда сохраняет module/target identity на момент нажатия; повторное подтверждение не создаёт второй side effect.
+- Радиусы отображаются по hover аппарата. Manual preview использует общую Motion-математику и совпадает с фактическим пуском; отсутствие ETA обозначается явно, а0% не скрывается. ПР показывает оставшуюся физическую жизнь, маршрут и captured breakdown. Обычные торпедные trails скрыты. Подписи, журнал и панели учитывают viewport/UI scale; old journal effects после Load не повторяются.
+
+### Гибель, сохранение и восстановление
+
+- Гибель игрока — terminal `Defeated`: один exact fractional death event, целое `GameTimeMs = ceil(exactDeathMs)`, календарная граница вычислена от точного момента. ClockSpeed0 фиксируется; остаток шага не продвигает AI, экономику, RNG или последующие события мира.
+- В Defeated новые save отклоняются до файловой записи, включая F5 и гонку гибели при advance. Уже захваченный immutable save до гибели может завершиться. Старый слот при отказе не перезаписывается. Экран [Defeat](../02-FirstRelease/Screens/Defeat.md) предлагает Load/Main Menu; отмена или Escape возвращают к Defeat. Только успешная загрузка прежнего файла создаёт новую Running-сессию; ошибки остаются recoverable и локализованными.
+- На этапе EP-0008 `SaveFormatVersion=16`, `DefenseState.Version=2`, `HostileCombat.Version=1`, combat payload version1. Реальные save старых форматов отклонялись без миграции; version0 вход NewGame не был совместимостью старого save. Сохранялись captured характеристики, операторы, маршруты, TTL/coast/reload deadlines, attempt flags, AI-направление/состояние, named RNG counters, sequences и журнал. Валидация проходила до атомарной замены мира; materialized AiMap rulesVersion1 загружалась без регенерации.
+
+### Проверки и границы приёмки
+
+[Отчёт](../04-Engineering/PhaseThreeCombatAcceptance.md) связывает Q01–Q51,13 историй и45 тикетов с настоящими тестами EP-0008. Полный Debug4314/4314 выполнен до исправления округления; после него Release4201/4201 без114 неизменённых generation-corpus cases и сборка без предупреждений. Native13/14 исторических случаев завершены, один прерван; frame-time target не принят. Дальнейшие игровые/native прогоны отложены пользователем. Баланс, человеческая оценка и scanout не подтверждены этими тестами. Более поздний модульный бой описан [ниже](#phase-four-module-combat).
+
+## Phase Four Module Combat
+
+EP-0009 supersedes the conflicting EP-0008 combat rules in `Phase Three Combat`. Canonical decisions and numbered edge cases are in [EP-0009](../../Board/EP-0009-battle/EP-0009-module-combat.md); [ModuleCombat](../04-Engineering/ModuleCombat.md) records the implemented layer boundaries and measured acceptance.
+
+- Damage targets modules, not a Hull HP pool. Armor/structure, temporary disable, destroyed-module fraction and critical bridge/engine roles determine combat consequences. Hit location is weighted by module mass. Both player and hostile ships can be damaged.
+- Torpedo hit and interception chance use `clamp(50 + attack - defense, 0..100)` with assigned operator skills. A guided contact still rolls for hit. Standard, maneuverability and overheat modes capture bonuses, reload multiplier and possible breakdown. A launcher may retain multiple active projectile IDs; the obsolete auto-attempt flag is gone.
+- The configured CombatMukha/CombatShmel scenarios use three hostile ships with radius/flank AI. Hostile module, weapon, operator and PRO data are read from production catalogs. UI snapshots expose known module condition while preserving unknown-enemy masking; the journal reports rolls, damage and terminal cause.
+- SaveFormatVersion17 writes defense3/combat2/hostile2 with module state, queues, active flights, deadlines, AI and named combat RNG. Saves16 and earlier are rejected atomically. Defeated sessions remain unsavable. Physical, calendar and presentation clocks retain their distinct ownership.
+- Automated scenario proof and 100-seed results are in [balance evidence](../../Board/EP-0009-battle/evidence/balance.md). The CombatMukha result is outside the historical simulator tolerance; this is documented and non-blocking under US11-AC2. [Native acceptance](../../Board/EP-0009-battle/evidence/native.md) is NOT RUN by user instruction; Graphify rebuilding is SKIPPED.

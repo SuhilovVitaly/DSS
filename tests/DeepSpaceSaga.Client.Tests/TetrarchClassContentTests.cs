@@ -19,29 +19,38 @@ public sealed class TetrarchClassContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Tetrarch_class_defines_450_hull_hp(bool output)
+    public void Ship_classes_have_no_hull_hp(bool output)
     {
         string root = output ? AppContext.BaseDirectory : ClientRoot;
         string settingsPath = Path.Combine(root, "Settings.json");
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out var settings);
         Assert.Equal(ClassPath, settings.TypeData.ShipClasses);
-        Assert.Equal(1, registry.ShipClasses.Count);
+        Assert.Equal(3, registry.ShipClasses.Count);
         Assert.Equal(ClassId, Tetrarch(registry).TypeId);
-        Assert.Equal(450, Tetrarch(registry).HullHitPointsMax);
+        Assert.True(registry.ShipClasses.Contains("ship.mukha"));
+        Assert.True(registry.ShipClasses.Contains("ship.shmel"));
         Assert.False(registry.ShipClasses.Contains("Tetrarch"));
         Assert.False(registry.ShipClasses.Contains("SHIP.TETRARCH"));
 
         string classFile = Path.Combine(root, ClassPath);
         Assert.True(File.Exists(classFile), $"Missing class content: {classFile}");
         var json = JsonNode.Parse(File.ReadAllText(classFile))!;
-        var definition = Assert.Single(json["shipClasses"]!.AsArray())!.AsObject();
-        Assert.Equal(new[] { "hullHitPointsMax", "typeId" }, definition.Select(p => p.Key).Order(StringComparer.Ordinal));
-        Assert.Equal(ClassId, definition["typeId"]!.GetValue<string>());
-        Assert.Equal(450, definition["hullHitPointsMax"]!.GetValue<int>());
+        var classes = json["shipClasses"]!.AsArray();
+        Assert.Equal(new[] { ClassId, "ship.mukha", "ship.shmel" }, classes.Select(c => c!["typeId"]!.GetValue<string>()));
+        Assert.All(classes, definition => Assert.Equal(new[] { "typeId" }, definition!.AsObject().Select(p => p.Key)));
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(Path.Combine(ClientRoot, ClassPath))), json));
 
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
         Assert.NotNull(engine.PlayerShipObjectId);
+    }
+
+    [Fact]
+    public void Mukha_and_shmel_load()
+    {
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
+            Path.Combine(ClientRoot, "Settings.json"), out _, out _);
+        Assert.Equal("ship.mukha", registry.ShipClasses.GetDefinition(registry.ShipClasses.GetIndex("ship.mukha")).TypeId);
+        Assert.Equal("ship.shmel", registry.ShipClasses.GetDefinition(registry.ShipClasses.GetIndex("ship.shmel")).TypeId);
     }
 
     [Fact]
@@ -51,33 +60,33 @@ public sealed class TetrarchClassContentTests
         string sourceJson = File.ReadAllText(Path.Combine(ClientRoot, ClassPath));
         var original = EngineContentLoader.LoadFromSettingsFile(temporary.SettingsPath);
         using var firstEngine = EngineContentLoader.CreateEngineFromSettingsFile(temporary.SettingsPath);
-        Assert.Equal(450, Tetrarch(original.Registry).HullHitPointsMax);
+        Assert.Equal(3, original.Registry.ShipClasses.Count);
 
         string classFile = Path.GetFullPath(Path.Combine(temporary.Root, ClassPath));
         var edited = JsonNode.Parse(File.ReadAllText(classFile))!;
-        edited["shipClasses"]![0]!["hullHitPointsMax"] = 900;
+        edited["shipClasses"]!.AsArray().Add(new JsonObject { ["typeId"] = "ship.custom" });
         File.WriteAllText(classFile, edited.ToJsonString());
 
         // Verify content through the same bootstrap loader, then start a fresh engine.
-        // Applying class HP to runtime ships is a separate ticket from this data-only change.
+        // Runtime combat and hostile loadouts are migrated by later tickets.
         var restarted = EngineContentLoader.LoadFromSettingsFile(temporary.SettingsPath);
         using var secondEngine = EngineContentLoader.CreateEngineFromSettingsFile(temporary.SettingsPath);
-        Assert.Equal(900, Tetrarch(restarted.Registry).HullHitPointsMax);
+        Assert.True(restarted.Registry.ShipClasses.Contains("ship.custom"));
         Assert.NotNull(secondEngine.PlayerShipObjectId);
-        Assert.Equal(450, Tetrarch(original.Registry).HullHitPointsMax);
+        Assert.False(original.Registry.ShipClasses.Contains("ship.custom"));
         Assert.Equal(original.Registry.CatalogCompatibility, restarted.Registry.CatalogCompatibility);
         Assert.Equal(150, Launcher(restarted.Registry).TorpedoDamage);
-        Assert.Equal(3, Launcher(restarted.Registry).TorpedoSpeedKmS);
+        Assert.Equal(10, Launcher(restarted.Registry).TorpedoSpeedKmS);
         Assert.Equal(90, Launcher(restarted.Registry).TorpedoTurnRateDegPerSec);
         Assert.Equal(sourceJson, File.ReadAllText(Path.Combine(ClientRoot, ClassPath)));
 
         // Prove the engine factory rereads the declared file on each restart rather than
         // reusing a cached registry; already-created engines remain usable after an edit.
-        edited["shipClasses"]![0]!["hullHitPointsMax"] = 0;
+        edited["shipClasses"]!.AsArray().Add(new JsonObject { ["typeId"] = "ship.custom" });
         File.WriteAllText(classFile, edited.ToJsonString());
         var error = Assert.Throws<ContentException>(() => EngineContentLoader.CreateEngineFromSettingsFile(temporary.SettingsPath));
         Assert.Contains(classFile, error.Message, StringComparison.Ordinal);
-        Assert.Contains("hullHitPointsMax", error.Message, StringComparison.Ordinal);
+        Assert.Contains("duplicate", error.Message, StringComparison.Ordinal);
         Assert.NotEmpty(firstEngine.CaptureSnapshot().Objects);
         Assert.NotEmpty(secondEngine.CaptureSnapshot().Objects);
     }

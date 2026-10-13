@@ -11,7 +11,8 @@ public sealed class CombatMapVisualTests
 {
     private static ObjectMotionSnapshot Ship(string id, double x, double y, int hp = 450) =>
         new(id, x, y, 0, 0, RenderObjectType: id == "player" ? SpaceObjectType.PlayerShip : SpaceObjectType.NpcShip,
-            HullCombat: new("ship.tetrarch", hp, 450));
+            HullCombat: new("ship.tetrarch", 1, 450),
+            ModuleHealth: [new("engine", "Engine", 0, 0, hp, 450, null, false)]);
 
     private static ObjectMotionSnapshot Missile(double x, double y) =>
         new("torpedo", x, y, 3, 0, RenderObjectType: SpaceObjectType.Missile,
@@ -65,14 +66,14 @@ public sealed class CombatMapVisualTests
     }
 
     [Fact]
-    public void All_known_tetrarchs_show_authoritative_hp_below_labels()
+    public void Known_ships_show_authoritative_module_health_below_labels()
     {
         var palette = CombatVisualSettings.Default with { HullHp = new SKColor(20, 210, 100) };
         var renderer = new ObjectLabelRenderer(palette);
         var known = Enumerable.Range(0, 8).Select(i => Ship(i == 0 ? "player" : "ship" + i, 100 + i * 180, 200)).ToArray();
         var unknown = Ship("hidden", 200, 400) with { RenderObjectType = SpaceObjectType.UnknownSpaceObject };
-        var legacy = Ship("legacy", 400, 400) with { HullCombat = null };
-        var other = Ship("other", 600, 400) with { HullCombat = new("ship.other", 450, 450) };
+        var legacy = Ship("legacy", 400, 400) with { ModuleHealth = default, HullCombat = new("ship.tetrarch", 450, 450) };
+        var other = Ship("other", 600, 400) with { HullCombat = new("ship.other", 0, 450) };
         var states = known.Concat([unknown, legacy, other]).Select(o => new ObjectRenderState(o, o, o.ObjectId == "player")).ToArray();
         var camera = new CameraState(960, 540, 1);
         renderer.ComputeGeometries(states, .02, 1920, 1080, camera, mapSettings: new() { MaximumLabels = 4 });
@@ -82,12 +83,13 @@ public sealed class CombatMapVisualTests
         foreach (var obj in known)
         {
             var geometry = renderer.Geometries[obj.ObjectId];
-            Assert.Equal(ObjectLabelLayout.PlaqueHeight + ObjectLabelLayout.HullBarSpace, geometry.PlaqueRect.Height);
-            var bar = ObjectLabelLayout.HullBarRect(geometry.PlaqueRect);
+            Assert.Equal(ObjectLabelLayout.PlaqueHeight + ObjectLabelLayout.ModuleBarSpace, geometry.PlaqueRect.Height);
+            var bar = ObjectLabelLayout.ModuleBarRect(geometry.PlaqueRect);
             Assert.True(geometry.PlaqueRect.Contains(bar));
             Assert.Equal(palette.HullHp, bitmap.GetPixel((int)bar.MidX, (int)bar.MidY));
         }
-        foreach (var obj in new[] { unknown, legacy, other }) Assert.False(ObjectLabelRenderer.HasHullBar(obj));
+        foreach (var obj in new[] { unknown, legacy }) Assert.False(ObjectLabelRenderer.HasModuleBar(obj));
+        Assert.True(ObjectLabelRenderer.HasModuleBar(other));
     }
 
     [Theory]
@@ -105,12 +107,26 @@ public sealed class CombatMapVisualTests
         using var bitmap = new SKBitmap(800, 600);
         using var canvas = new SKCanvas(bitmap);
         renderer.DrawPlaques(canvas, states, 0, SimulationSpeed.Speed0, 800, 600, camera);
-        var bar = ObjectLabelLayout.HullBarRect(renderer.Geometries["player"].PlaqueRect);
+        var bar = ObjectLabelLayout.ModuleBarRect(renderer.Geometries["player"].PlaqueRect);
         int green = Enumerable.Range((int)Math.Ceiling(bar.Left), (int)bar.Width)
             .Count(x => bitmap.GetPixel(x, (int)bar.MidY) == SKColors.Lime);
         Assert.InRange(green, bar.Width * fraction - 1, bar.Width * fraction + 1);
-        Assert.False(ObjectLabelRenderer.HasHullBar(obj with { HullCombat = obj.HullCombat! with { CurrentHp = 0 } }));
-        Assert.False(ObjectLabelRenderer.HasHullBar(obj with { RenderObjectType = SpaceObjectType.Wreck }));
+        Assert.Equal(0, ObjectLabelRenderer.ModuleBarFraction(obj with { ModuleHealth = [new("engine", "Engine", 0, 0, 0, 450, null, false)] }));
+        Assert.False(ObjectLabelRenderer.HasModuleBar(obj with { RenderObjectType = SpaceObjectType.Wreck }));
+    }
+
+    [Fact]
+    public void Module_bar_aggregates_armor_and_structure_across_modules()
+    {
+        var ship = Ship("player", 0, 0) with
+        {
+            ModuleHealth =
+            [
+                new("a", "A", 10, 20, 20, 40, null, false),
+                new("b", "B", 0, 20, 40, 80, null, false)
+            ]
+        };
+        Assert.Equal(70.0 / 160, ObjectLabelRenderer.ModuleBarFraction(ship));
     }
 
     [Fact]

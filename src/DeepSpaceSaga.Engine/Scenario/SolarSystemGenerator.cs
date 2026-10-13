@@ -11,7 +11,8 @@ internal static class SolarSystemGenerator
         (ship.Modules ?? []).OrderBy(m => m.ModuleId, StringComparer.Ordinal)
             .Where(m => string.Equals(m.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(m.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) && m.StructurePoints > 0)
-            .Select(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)).MaxSpeedMps)
+            .Select(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)))
+            .Select(type => type.CategoryTypeId is null or "module.engine" ? type.MaxSpeedMps : null)
             .FirstOrDefault(speed => speed is > 0) / 1000.0;
 
     internal static ScenarioFile Generate(ScenarioFile source, SolarSystemGenerationConfig config,

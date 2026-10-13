@@ -106,16 +106,130 @@ public sealed class CombatSaveLoadTests : IDisposable
     private static string Settings => Path.Combine(ClientRoot, "Settings.json");
     public CombatSaveLoadTests() => Directory.CreateDirectory(_directory);
     public void Dispose() => Directory.Delete(_directory, true);
+
+    [Fact]
+    public void Format17_roundtrips_module_durability_ai_and_combat_continuation()
+    {
+        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId switch
+        {
+            Target => o with { Ai = new(50, 10, 35) },
+            Player => o with
+            {
+                Modules = o.Modules!.Select((m, i) => i == 0 ? m with
+                { StructurePoints = 10, DisabledUntilMotionTimeMs = 5000 } : m).ToArray()
+            },
+            _ => o
+        });
+        using var engine = Create(scenario);
+        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        Assert.Equal(17, save.SaveFormatVersion);
+        Assert.Equal(3, save.GameState.DefenseState!.Version);
+        Assert.Equal(2, save.GameState.CombatState!.Version);
+        Assert.Equal(2, save.GameState.HostileCombatState!.Version);
+        Assert.NotNull(save.GameState.CombatState.HitLocationRngState);
+        Assert.NotNull(save.GameState.CombatState.TorpedoHitRngState);
+        Assert.NotNull(save.GameState.CombatState.LauncherBreakdownRngState);
+        Assert.DoesNotContain("AttemptedTorpedoIds", JsonSerializer.Serialize(save.GameState.DefenseState));
+        using var restored = Roundtrip(save);
+        var actual = restored.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.DefenseState), JsonSerializer.Serialize(actual.GameState.DefenseState));
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.CombatState), JsonSerializer.Serialize(actual.GameState.CombatState));
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.HostileCombatState), JsonSerializer.Serialize(actual.GameState.HostileCombatState));
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.SpaceObjects.Single(o => o.ObjectId == Player).Modules),
+            JsonSerializer.Serialize(actual.GameState.SpaceObjects.Single(o => o.ObjectId == Player).Modules));
+        Assert.Equal(save.GameState.SpaceObjects.Single(o => o.ObjectId == Target).Ai,
+            actual.GameState.SpaceObjects.Single(o => o.ObjectId == Target).Ai);
+    }
+
+    [Fact]
+    public void Format17_accepts_a_bounded_captured_hit_chance_instead_of_only_100()
+    {
+        using var engine = Create();
+        engine.ReceiveCommand(Fire("range-check"));
+        At(engine, 0);
+        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        var combat = save.GameState.CombatState!;
+        var flight = Assert.Single(combat.Projectiles);
+        var changed = save with
+        {
+            GameState = save.GameState with
+            {
+                CombatState = combat with { Projectiles = [flight with { Flight = flight.Flight with { HitChancePercent = 35 } }] }
+            }
+        };
+        using var restored = Roundtrip(changed);
+        Assert.Equal(35, Assert.Single(restored.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)
+            .GameState.CombatState!.Projectiles).Flight.HitChancePercent);
+    }
+
+    [Theory]
+    [InlineData("defense")]
+    [InlineData("combat")]
+    [InlineData("hostile")]
+    [InlineData("rng")]
+    [InlineData("armor")]
+    public void Invalid_format17_continuation_is_rejected_before_replacing_world(string defect)
+    {
+        using var engine = Create();
+        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        string before = ScenarioLoader.Serialize(save);
+        var state = save.GameState;
+        var bad = defect switch
+        {
+            "defense" => save with { GameState = state with { DefenseState = state.DefenseState! with { Version = 2 } } },
+            "combat" => save with { GameState = state with { CombatState = state.CombatState! with { Version = 1 } } },
+            "hostile" => save with { GameState = state with { HostileCombatState = state.HostileCombatState! with { Version = 1 } } },
+            "rng" => save with { GameState = state with { CombatState = state.CombatState! with { TorpedoHitRngState = null } } },
+            "armor" => save with
+            {
+                GameState = state with
+                {
+                    SpaceObjects = state.SpaceObjects.Select(o => o.ObjectId == Player
+                ? o with { Modules = o.Modules!.Select((m, i) => i == 0 ? m with { ArmorClass = "light", Armor = null } : m).ToArray() } : o).ToArray()
+                }
+            },
+            _ => throw new ArgumentOutOfRangeException(nameof(defect))
+        };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, isSave: true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)));
+    }
+
+    [Theory]
+    [InlineData("attempted")]
+    [InlineData("singular-flight")]
+    public void Format17_rejects_removed_legacy_combat_fields(string field)
+    {
+        using var engine = Create();
+        var json = JsonNode.Parse(ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)))!;
+        if (field == "attempted")
+            json["gameState"]!["defenseState"]!["AttemptedTorpedoIds"] = new JsonArray();
+        else
+            json["gameState"]!["combatState"]!["launchers"]![0]!["state"]!["ActiveTorpedoObjectId"] = "torpedo-1";
+        Assert.Contains("Invalid scenario JSON", Assert.Throws<ScenarioException>(() =>
+            ScenarioLoader.LoadFromJson(json.ToJsonString(), true, isSave: true)).Message);
+    }
     private SimulationEngine Roundtrip(ScenarioFile state, string? settings = null)
     {
         string path = Path.Combine(_directory, "save.json");
         File.WriteAllText(path, ScenarioLoader.Serialize(state));
-        return EngineContentLoader.CreateEngineFromSaveFile(settings ?? Settings, path);
+        if (settings is not null)
+            return EngineContentLoader.CreateEngineFromSaveFile(settings, path);
+        var restored = new SimulationEngine(Registry.Value);
+        restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        return restored;
     }
     private static ScenarioFile RealScenario()
     {
         var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
-        return scenario with { GameState = scenario.GameState with { MasterSeed = 42 } };
+        return scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                MasterSeed = 42,
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with
+                { Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = false }).ToArray() } : o).ToArray()
+            }
+        };
     }
     private static ObjectMotionSnapshot Flight(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
     private static void SameWorld(AuthoritativeSnapshot expected, AuthoritativeSnapshot actual)
@@ -134,7 +248,8 @@ public sealed class CombatSaveLoadTests : IDisposable
                 Assert.Equal(flight.TargetObjectId, pair.Second.Torpedo.TargetObjectId);
             }
         }
-        Assert.Equal(expected.InstalledModules.Select(m => m.LauncherCombat), actual.InstalledModules.Select(m => m.LauncherCombat));
+        Assert.Equal(JsonSerializer.Serialize(expected.InstalledModules.Select(m => m.LauncherCombat)),
+            JsonSerializer.Serialize(actual.InstalledModules.Select(m => m.LauncherCombat)));
     }
 
     [Fact]
@@ -262,7 +377,11 @@ public sealed class CombatSaveLoadTests : IDisposable
                 resumed.ReceiveCommand(Fire("shot-" + shot));
                 SameWorld(expected, At(resumed, end, end * 10));
                 Assert.Empty(At(resumed, end, end * 10).CombatImpacts);
-                if (shot < 3) Assert.Equal(450 - 150 * shot, actual.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+                if (shot < 3)
+                {
+                    Assert.Contains(actual.Objects, o => o.ObjectId == Target && o.HullCombat is null);
+                    Assert.Equal(shot, actual.CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
+                }
                 else Assert.Single(actual.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
                 time = end;
             }
@@ -280,7 +399,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         var snapshot = loaded.CaptureSnapshot();
         Assert.Equal("torpedo-1", Flight(snapshot).ObjectId);
         Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
-        Assert.Equal("torpedo-1", snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Equal("torpedo-1", Assert.Single(snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds));
     }
 
     [Theory]
@@ -294,14 +413,15 @@ public sealed class CombatSaveLoadTests : IDisposable
         using var loaded = Roundtrip(engine.CaptureSaveStateForTests(time, SimulationSpeed.Speed0));
         loaded.ReceiveCommand(Fire("contact"));
         var snapshot = At(loaded, 4000);
-        Assert.Equal(300, snapshot.Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Null(snapshot.Objects.Single(o => o.ObjectId == Target).HullCombat);
+        Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
         Assert.Empty(snapshot.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
         Assert.Equal(time == 3166 ? 1 : 0, snapshot.CombatImpacts.Length);
         Assert.Equal(1, loaded.CaptureSaveStateForTests(4000, SimulationSpeed.Speed0).GameState.CombatState!.ImpactSequence);
     }
 
     [Fact]
-    public void Saved_hp_and_weapon_values_survive_content_edit()
+    public void Saved_module_and_weapon_values_survive_content_edit()
     {
         using var engine = Create(RealScenario());
         engine.ReceiveCommand(Fire("captured"));
@@ -312,7 +432,7 @@ public sealed class CombatSaveLoadTests : IDisposable
             settings["typeData"]![property.Key] = Path.GetFullPath(Path.Combine(ClientRoot, property.Value!.GetValue<string>()));
         settings["defaultScenario"] = Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json");
         string classesPath = Path.Combine(_directory, "classes.json");
-        File.WriteAllText(classesPath, "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":900}]}");
+        File.WriteAllText(classesPath, "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"},{\"typeId\":\"ship.mukha\"}]}");
         settings["typeData"]!["shipClasses"] = classesPath;
         string modulesPath = Path.Combine(_directory, "Modules");
         foreach (string source in Directory.GetFiles(Path.Combine(ClientRoot, "Data", "Modules"), "*.json", SearchOption.AllDirectories))
@@ -322,7 +442,7 @@ public sealed class CombatSaveLoadTests : IDisposable
             string content = File.ReadAllText(source);
             if (source.Contains("TorpedoLauncher", StringComparison.Ordinal))
                 content = content.Replace("\"torpedoDamage\": 150", "\"torpedoDamage\": 50")
-                    .Replace("\"torpedoSpeedKmS\": 3", "\"torpedoSpeedKmS\": 6")
+                    .Replace("\"torpedoSpeedKmS\": 10", "\"torpedoSpeedKmS\": 6")
                     .Replace("\"torpedoTurnRateDegPerSec\": 90", "\"torpedoTurnRateDegPerSec\": 45");
             File.WriteAllText(destination, content);
         }
@@ -331,13 +451,13 @@ public sealed class CombatSaveLoadTests : IDisposable
         File.WriteAllText(settingsPath, settings.ToJsonString());
         using var loaded = Roundtrip(save, settingsPath);
         var snapshot = loaded.CaptureSnapshot();
-        Assert.Equal(450, snapshot.Objects.Single(o => o.ObjectId == Player).HullCombat!.MaxHp);
+        Assert.Null(snapshot.Objects.Single(o => o.ObjectId == Player).HullCombat);
         Assert.Equal(150, Flight(snapshot).Torpedo!.Damage);
         Assert.Equal(3, Flight(snapshot).Torpedo!.SpeedKmS);
         Assert.Equal(90, Flight(snapshot).Torpedo!.TurnRateDegPerSec);
         using var fresh = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
         var newSnapshot = fresh.CaptureSnapshot();
-        Assert.Equal(900, newSnapshot.Objects.Single(o => o.ObjectId == Player).HullCombat!.MaxHp);
+        Assert.Null(newSnapshot.Objects.Single(o => o.ObjectId == Player).HullCombat);
         Assert.Equal(50, newSnapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Damage);
         Assert.Equal(6, newSnapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.SpeedKmS);
     }
@@ -358,7 +478,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         loaded.ReceiveCommand(Fire("busy"));
         var snapshot = loaded.CaptureSnapshot();
         Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
-        Assert.Contains(snapshot.CommandResults, r => r.CommandId == "busy" && r.ReasonCode == CommandReasonCodes.Busy);
+        Assert.Contains(snapshot.CommandResults, r => r.CommandId == "busy" && r.ReasonCode == "launcher_reloading");
         Assert.NotEmpty(Flight(snapshot).Torpedo!.Trail);
     }
 
@@ -404,7 +524,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         using var restored = Roundtrip(save);
         restored.ReceiveCommand(Fire("original"));
         Assert.DoesNotContain(At(restored, 5000).Objects, o => o.Torpedo is not null);
-        Assert.Equal(300, At(restored, 5000).Objects.Single(o => o.ObjectId == Target).HullCombat!.CurrentHp);
+        Assert.Single(At(restored, 5000).CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
     }
 
     [Fact]

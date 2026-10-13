@@ -92,6 +92,7 @@
                   }
                 ],
                 "structurePoints": 80,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -107,6 +108,7 @@
                   }
                 ],
                 "structurePoints": 60,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -121,7 +123,8 @@
                     "y": 2
                   }
                 ],
-                "structurePoints": 400,
+                "structurePoints": 150,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -146,6 +149,7 @@
                   }
                 ],
                 "structurePoints": 60,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -160,7 +164,8 @@
                     "y": 4
                   }
                 ],
-                "structurePoints": 180,
+                "structurePoints": 150,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -176,6 +181,7 @@
                   }
                 ],
                 "structurePoints": 100,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -192,6 +198,7 @@
                   }
                 ],
                 "structurePoints": 60,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -208,6 +215,7 @@
                   }
                 ],
                 "structurePoints": 60,
+                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -220,14 +228,14 @@
               {
                 "crewId": "CHR-0001",
                 "displayName": "Dunkan Su",
-                "torpedoSkill": 50,
-                "countermeasureSkill": 50
+                "accuracySkill": 0,
+                "maneuverabilitySkill": 0
               },
               {
                 "crewId": "CHR-PLAYER-DEFENSE",
                 "displayName": "Defense operator",
-                "torpedoSkill": 50,
-                "countermeasureSkill": 50
+                "accuracySkill": 0,
+                "maneuverabilitySkill": 0
               }
             ],
             "captainDisplayName": "Dunkan Su",

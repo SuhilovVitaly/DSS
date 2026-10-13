@@ -174,6 +174,8 @@ public sealed partial class GameSessionScreen
     {
         var module = DefenseModule(weapon);
         var lines = new List<string>();
+        if (module?.Defense is { } defense)
+            lines.AddRange(DefenseBurstLines(defense, DefensePresentationTime));
         if (module?.DefensePreview is { TargetTorpedoId: { } target, ChanceTenths: { } chance } preview &&
             target == _selectedObjectId && preview.OwnerObjectId == weapon.OwnerObjectId && preview.ModuleId == weapon.ModuleId)
             lines.Add($"{CombatText("Accuracy", "Точность")} {preview.Accuracy:0.##} − " +
@@ -184,6 +186,24 @@ public sealed partial class GameSessionScreen
             lines.Add($"{CombatText("FrozenChance", "Шанс активной ПРО")}: {flight.FrozenChanceTenths / 10m:0.0}%");
             lines.Add($"{CombatText("RemainingFlight", "Осталось полёта")}: {RemainingFlightText(flight, DefensePresentationTime)}");
         }
+        return lines;
+    }
+
+    internal static IReadOnlyList<string> DefenseBurstLines(DefenseSnapshot defense, double motionTimeMs)
+    {
+        var lines = new List<string>
+        {
+            $"{CombatText("Barrels", "Стволы")}: {defense.Barrels}"
+        };
+        if (defense.PendingBurstShots is { IsDefaultOrEmpty: false } pending)
+        {
+            double due = pending.Min(shot => shot.DueMotionTimeMs);
+            lines.Add($"{CombatText("NextBarrel", "Следующий выстрел")}: " +
+                $"{Math.Max(0, (due - motionTimeMs) / 1000):0.0} {CombatText("Seconds", "с")}");
+        }
+        if (defense.ReadyAtMotionTimeMs is { } readyAt && readyAt > motionTimeMs)
+            lines.Add($"{CombatText("Reloading", "Перезарядка")}: " +
+                $"{(readyAt - motionTimeMs) / 1000:0.0} {CombatText("Seconds", "с")}");
         return lines;
     }
 }

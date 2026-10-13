@@ -11,6 +11,30 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public class InstalledModuleSnapshotTests
 {
     [Fact]
+    public void Module_health_fields_roundtrip_json()
+    {
+        var module = new InstalledModuleSnapshot("bridge-1", "module.bridge.navigation.computer.basic",
+            "Bridge", 4, ImmutableArray<string>.Empty, ArmorCurrent: 35, ArmorMax: 60,
+            StructureCurrent: 90, StructureMax: 150, DisabledUntilMotionTimeMs: 60123.25,
+            IsDestroyed: false, CombatRole: "bridge");
+
+        var copy = JsonSerializer.Deserialize<InstalledModuleSnapshot>(JsonSerializer.Serialize(module))!;
+        Assert.Equal((35, 60, 90, 150),
+            (copy.ArmorCurrent, copy.ArmorMax, copy.StructureCurrent, copy.StructureMax));
+        Assert.Equal(60123.25, copy.DisabledUntilMotionTimeMs);
+        Assert.Equal("bridge", copy.CombatRole);
+        Assert.False(copy.IsDestroyed);
+
+        var destroyed = module with { ArmorCurrent = 0, StructureCurrent = 0, IsDestroyed = true };
+        Assert.True(JsonSerializer.Deserialize<InstalledModuleSnapshot>(JsonSerializer.Serialize(destroyed))!.IsDestroyed);
+        const string oldJson = """{"ModuleId":"m","ModuleTypeId":"t","DisplayName":"M","Position":0,"CommandTypeIds":[]}""";
+        var legacy = JsonSerializer.Deserialize<InstalledModuleSnapshot>(oldJson)!;
+        Assert.Equal(0, legacy.ArmorMax);
+        Assert.Null(legacy.DisabledUntilMotionTimeMs);
+        Assert.False(legacy.IsDestroyed);
+    }
+
+    [Fact]
     public void Serialization_round_trip_preserves_populated_runtime_state_fields()
     {
         var snapshot = new InstalledModuleSnapshot(

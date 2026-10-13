@@ -147,8 +147,17 @@ public static class CommandReasonCodes
     /// <summary>Module exists but cannot execute commands (power Off / Disabled / no structure points / no inertia).</summary>
     public const string ModuleUnavailable = "module_unavailable";
 
+    /// <summary>Combat damage has temporarily disabled the module.</summary>
+    public const string ModuleDisabled = "module_disabled";
+
+    /// <summary>Combat damage has destroyed the module.</summary>
+    public const string ModuleDestroyed = "module_destroyed";
+
     /// <summary>Module is busy with an active non-auto-repeat cycle; command deferred.</summary>
     public const string Busy = "busy";
+
+    /// <summary>Combat launcher has not reached its authoritative readiness deadline.</summary>
+    public const string NotReady = "not_ready";
 
     /// <summary>Match command (e.g. speed-synchronization) arrived without the required targetObjectId (§56.9).</summary>
     public const string MissingTarget = "missing_target";

@@ -5,15 +5,20 @@
       "displayName": "Torpedo Launcher",
       "type": "module.torpedo.launcher",
       "massKg": 2000,
-      "structurePointsMax": 60,
+      "structurePointsMax": 150,
       "powerConsumptionW": 0,
       "baseCycleTimeMs": 1000,
       "baseSuccessChancePercent": 100,
-      "torpedoManeuverability": 5,
-      "torpedoRangeKm": 200,
+      "torpedoManeuverability": 50,
+      "torpedoRangeKm": 150,
       "torpedoDamage": 150,
-      "torpedoSpeedKmS": 3,
-      "torpedoTurnRateDegPerSec": 90
+      "torpedoSpeedKmS": 10,
+      "torpedoTurnRateDegPerSec": 90,
+      "accuracy": 40,
+      "armorPiercingPercent": 20,
+      "armorDamagePercent": 100,
+      "launcherReloadMs": 15000,
+      "torpedoMaxFlightTimeMs": 120000
     }
   ]
 }

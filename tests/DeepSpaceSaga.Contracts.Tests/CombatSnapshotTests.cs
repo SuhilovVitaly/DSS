@@ -7,16 +7,64 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public class CombatSnapshotTests
 {
     [Fact]
+    public void Launcher_mode_ready_and_multiple_torpedoes_roundtrip()
+    {
+        var launcher = new LauncherCombatSnapshot(10, 90, 150,
+            ModeId: "overheat", ReadyAtMotionTimeMs: 15123.5,
+            IsBrokenUntilDock: true, ActiveTorpedoIds: ["torpedo-1", "torpedo-2"]);
+        var copy = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher))!;
+        Assert.Equal("overheat", copy.ModeId);
+        Assert.Equal(15123.5, copy.ReadyAtMotionTimeMs);
+        Assert.True(copy.IsBrokenUntilDock);
+        Assert.Equal(["torpedo-1", "torpedo-2"], copy.ActiveTorpedoIds.ToArray());
+
+        var command = new PlayerCommand("set-mode-1", 1, "ship", "launcher", TorpedoLauncherCommandTypes.SetMode,
+            ModeId: "maneuverability");
+        Assert.Equal("maneuverability", JsonSerializer.Deserialize<PlayerCommand>(JsonSerializer.Serialize(command))!.ModeId);
+        Assert.Equal("torpedo.setMode", TorpedoLauncherCommandTypes.SetMode);
+        var legacy = JsonSerializer.Deserialize<LauncherCombatSnapshot>(
+            """{"ActiveTorpedoObjectId":null,"SpeedKmS":3,"TurnRateDegPerSec":90,"Damage":150}""")!;
+        Assert.Equal("standard", legacy.ModeId);
+        Assert.True(legacy.ActiveTorpedoIds.IsDefaultOrEmpty);
+    }
+
+    [Fact]
+    public void Defense_burst_queue_roundtrip()
+    {
+        var defense = new DefenseSnapshot(true, null, DefenseState.Guiding,
+            Barrels: 2, PendingBurstShots: [new(3000.25, "torpedo-a", 2)],
+            ReadyAtMotionTimeMs: 15500.25);
+        var copy = JsonSerializer.Deserialize<DefenseSnapshot>(JsonSerializer.Serialize(defense))!;
+        Assert.Equal(2, copy.Barrels);
+        var shot = Assert.Single(copy.PendingBurstShots!.Value);
+        Assert.Equal((3000.25, "torpedo-a", 2),
+            (shot.DueMotionTimeMs, shot.TargetTorpedoId, shot.BarrelNumber));
+        Assert.Equal(15500.25, copy.ReadyAtMotionTimeMs);
+    }
+
+    [Fact]
+    public void Torpedo_hit_chance_not_constant()
+    {
+        var torpedo = new TorpedoSnapshot("ship", "launcher", "target", 1,
+            10, 90, 150, 0, new(1, 1, TorpedoRoutePhase.Straight, false),
+            CapturedAttack: 60m, HitChanceTenths: 375);
+        var copy = JsonSerializer.Deserialize<TorpedoSnapshot>(JsonSerializer.Serialize(torpedo))!;
+        Assert.Equal(60m, copy.CapturedAttack);
+        Assert.Equal(375, copy.HitChanceTenths);
+        Assert.Equal(100, copy.HitChancePercent); // Live EP-0008 field, removed with migrated consumers.
+    }
+
+    [Fact]
     public void Weapon_parameters_roundtrip()
     {
-        var launcher = new LauncherCombatSnapshot("torpedo", 3, 90, 150,
-            RangeKm: 200.25, Maneuverability: 5.125m);
+        var launcher = new LauncherCombatSnapshot(3, 90, 150,
+            RangeKm: 200.25, Maneuverability: 5.125m, ActiveTorpedoIds: ["torpedo"]);
         var flight = new TorpedoSnapshot("owner", "launcher", "target", 100,
             3, 90, 150, 0, new(100, 1, TorpedoRoutePhase.Straight, false),
             CapturedManeuverability: 5.125m, OwnerPlayerRelationAtLaunch: PlayerRelation.Enemy);
         var restoredLauncher = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher));
         var restoredFlight = JsonSerializer.Deserialize<TorpedoSnapshot>(JsonSerializer.Serialize(flight))!;
-        Assert.Equal(launcher, restoredLauncher);
+        Assert.Equal(JsonSerializer.Serialize(launcher), JsonSerializer.Serialize(restoredLauncher));
         Assert.Equal(5.125m, restoredFlight.CapturedManeuverability);
         Assert.Equal(PlayerRelation.Enemy, restoredFlight.OwnerPlayerRelationAtLaunch);
         Assert.Equal(90, restoredFlight.TurnRateDegPerSec);
@@ -50,7 +98,8 @@ public class CombatSnapshotTests
         var torpedo = new TorpedoSnapshot("ship-1", "launcher-1", "ship-2", 1000,
             3, 90, 150, 24.015, route, trail, PredictedImpactMotionTimeMs: 3201);
         var hull = new HullCombatSnapshot("ship.tetrarch", 300, 450);
-        var launcher = new LauncherCombatSnapshot(activeTorpedoObjectId, 3, 90, 150);
+        var launcher = new LauncherCombatSnapshot(3, 90, 150,
+            ActiveTorpedoIds: activeTorpedoObjectId is null ? [] : [activeTorpedoObjectId]);
         var snapshot = new AuthoritativeSnapshot(7, 987654321, SimulationSpeed.Speed0,
             ImmutableArray.Create(
                 new ObjectMotionSnapshot("ship-1", 0, 0, 0, 0, HullCombat: hull),
@@ -86,7 +135,7 @@ public class CombatSnapshotTests
         Assert.Equal(600.5, restoredTorpedo.Route.ElapsedMs);
         Assert.Equal(route.Segments.ToArray(), restoredTorpedo.Route.Segments.ToArray());
         Assert.Equal(trail.ToArray(), restoredTorpedo.Trail.ToArray());
-        Assert.Equal(launcher, restored.InstalledModules[0].LauncherCombat);
+        Assert.Equal(JsonSerializer.Serialize(launcher), JsonSerializer.Serialize(restored.InstalledModules[0].LauncherCombat));
         Assert.Equal("torpedo.fire", Assert.Single(restored.InstalledModules[0].CommandTypeIds));
         Assert.Equal(json, JsonSerializer.Serialize(restored));
     }

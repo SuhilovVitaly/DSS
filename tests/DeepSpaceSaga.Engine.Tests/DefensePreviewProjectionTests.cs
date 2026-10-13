@@ -15,12 +15,13 @@ public class DefensePreviewProjectionTests
     {
         var source = Registry.Value;
         static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
-        var variant = All(source.ModuleTypes).Single(m => m.CountermeasureAccuracy is not null) with
+        var variant = All(source.ModuleTypes).Single(m => m.TypeId == "module.countermeasure.launcher.basic") with
         { TypeId = "module.countermeasure.launcher.preview", CountermeasureAccuracy = 75.25m };
         var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Append(variant),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules, fireModes: source.FireModes);
         var scenario = HostileTorpedoFireTests.HostileScenario();
         scenario = scenario with
         {
@@ -39,10 +40,14 @@ public class DefensePreviewProjectionTests
             var snapshot = At(engine, 1, 9000000);
             Assert.Equal(500, Preview(snapshot).ChanceTenths);
             Assert.Equal(703, Preview(snapshot, Defense2).ChanceTenths);
+            Assert.Equal(55m, Preview(snapshot).Attack);
+            Assert.Equal(5m, Preview(snapshot).Defense);
+            Assert.Equal(0m, Preview(snapshot).BaseChance);
+            Assert.Equal(75.25m, Preview(snapshot, Defense2).Attack);
             Assert.True(Preview(snapshot).CanFire);
             Assert.True(Preview(snapshot, Defense2).CanFire);
             Assert.Equal(target, Preview(snapshot).TargetTorpedoId);
-            Assert.False(snapshot.Objects.Single(o => o.ObjectId == target).CountermeasureAttempted);
+            Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
             Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
         }
         var defense = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState.DefenseState!;
@@ -122,7 +127,7 @@ public class DefensePreviewProjectionTests
         engine.ReceiveCommand(Manual("fire", target));
         var snapshot = At(engine, 1);
         Assert.False(Preview(snapshot).CanFire);
-        Assert.Equal(CommandReasonCodes.Busy, Preview(snapshot).Reason);
+        Assert.Equal(CommandReasonCodes.NotReady, Preview(snapshot).Reason);
         Assert.True(Preview(snapshot, Defense2).CanFire);
         Assert.Equal(0, Preview(snapshot, Defense2).ChanceTenths);
     }

@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
@@ -6,7 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class PhaseThreeSaveVersionTests
 {
-    public static IEnumerable<object[]> OldVersions => Enumerable.Range(0, 16).Select(v => new object[] { v });
+    public static IEnumerable<object[]> OldVersions => Enumerable.Range(0, 17).Select(v => new object[] { v });
 
     [Theory]
     [MemberData(nameof(OldVersions))]
@@ -40,14 +41,14 @@ public class PhaseThreeSaveVersionTests
         Assert.Equal(SessionOutcomeState.Running, newGame.CaptureSnapshot().EffectiveOutcome.State);
         Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() =>
             SimulationEngine.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path)).Message);
-        Assert.Equal(16, newGame.CaptureSaveState().SaveFormatVersion);
+        Assert.Equal(17, newGame.CaptureSaveState().SaveFormatVersion);
     }
 
     [Theory]
     [InlineData("{\"saveFormatVersion\":15,\"gameState\":\"invalid historical body\"}")]
     [InlineData("{\"gameState\":\"invalid legacy body\"}")]
-    [InlineData("{\"saveFormatVersion\":\"16\"}")]
-    [InlineData("{\"saveFormatVersion\":17}")]
+    [InlineData("{\"saveFormatVersion\":\"17\"}")]
+    [InlineData("{\"saveFormatVersion\":18}")]
     public void Save_gate_runs_before_historical_payload_deserialization(string json)
     {
         Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() =>
@@ -62,7 +63,7 @@ public class PhaseThreeSaveVersionTests
         var parsed = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, isSave: true);
         using var restored = Create();
         restored.LoadScenario(parsed, isSave: true);
-        Assert.Equal(16, parsed.SaveFormatVersion);
-        Assert.Equal(At(engine, 0).Objects.ToArray(), At(restored, 0).Objects.ToArray());
+        Assert.Equal(17, parsed.SaveFormatVersion);
+        Assert.Equal(JsonSerializer.Serialize(At(engine, 0).Objects), JsonSerializer.Serialize(At(restored, 0).Objects));
     }
 }

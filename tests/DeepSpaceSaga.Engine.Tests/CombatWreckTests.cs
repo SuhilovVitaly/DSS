@@ -11,11 +11,12 @@ public sealed class CombatWreckTests
         AuthoritativeSnapshot snapshot = At(engine, 0);
         for (int n = 0; n < 3; n++)
         {
+            long launchTime = n * 15000;
             engine.ReceiveCommand(Fire("hit-" + n));
-            At(engine, n * 5000);
+            At(engine, launchTime);
             if (partition)
-                for (long t = n * 5000 + 37; t < (n + 1) * 5000; t += 137) At(engine, t);
-            snapshot = At(engine, (n + 1) * 5000);
+                for (long t = launchTime + 37; t < launchTime + 5000; t += 137) At(engine, t);
+            snapshot = At(engine, launchTime + 5000);
         }
         return snapshot;
     }
@@ -66,7 +67,7 @@ public sealed class CombatWreckTests
         Assert.DoesNotContain(engine.RuntimeObjects.SelectMany(o => o.Modules), m => m.ActiveCycle?.TargetObjectId == Target);
         var wreck = Assert.Single(result.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
         engine.SetObjectInteractionState(wreck.ObjectId, wreck.ObjectId);
-        Assert.Equal(wreck.ObjectId, At(engine, 15000).SelectedObjectId);
+        Assert.Equal(wreck.ObjectId, At(engine, 35000).SelectedObjectId);
     }
 
     [Fact]
@@ -75,9 +76,10 @@ public sealed class CombatWreckTests
         using var engine = Create();
         var third = ThreeHits(engine);
         var wreck = Assert.Single(third.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
+        At(engine, 45000);
         engine.ReceiveCommand(Fire("wreck-shot", wreck.ObjectId));
-        Assert.Single(At(engine, 15000).Objects.Where(o => o.Torpedo is not null));
-        var after = At(engine, 19000);
+        Assert.Single(At(engine, 45000).Objects.Where(o => o.Torpedo is not null));
+        var after = At(engine, 49000);
         Assert.Equal(4, after.CombatImpacts.Length);
         var hit = after.CombatImpacts[^1];
         Assert.Equal(wreck.ObjectId, hit.HitObjectId);
@@ -85,7 +87,7 @@ public sealed class CombatWreckTests
         Assert.Null(hit.DestroyedObjectId);
         Assert.Null(hit.WreckObjectId);
         Assert.Equal(wreck, Assert.Single(after.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck)));
-        Assert.Null(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoObjectId);
+        Assert.Empty(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
     }
 
     [Fact]
@@ -93,12 +95,13 @@ public sealed class CombatWreckTests
     {
         using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Player ? o with { SpeedMps = 50, MovementType = "Linear" } : o));
         var dead = ThreeHits(engine);
-        var later = At(engine, 30000);
+        var later = At(engine, 45000);
         Assert.True(later.GameTimeMs > dead.GameTimeMs);
         Assert.NotEqual(dead.Objects.Single(o => o.ObjectId == Player).Y, later.Objects.Single(o => o.ObjectId == Player).Y);
         Assert.Equal(3, later.CombatImpacts.Length);
         Assert.Single(later.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        Assert.Equal(450, later.Objects.Single(o => o.ObjectId == Player).HullCombat!.CurrentHp);
+        Assert.Null(later.Objects.Single(o => o.ObjectId == Player).HullCombat);
+        Assert.DoesNotContain(later.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Player);
     }
 
     [Fact]
@@ -107,7 +110,7 @@ public sealed class CombatWreckTests
         using var engine = Create();
         var result = ThreeHits(engine);
         string wreckId = result.CombatImpacts[^1].WreckObjectId!;
-        var save = engine.CaptureSaveStateForTests(15000, SimulationSpeed.Speed0);
+        var save = engine.CaptureSaveStateForTests(35000, SimulationSpeed.Speed0);
         var wreck = save.GameState.SpaceObjects.Single(o => o.ObjectId == wreckId);
         Assert.Equal("Stationary", wreck.MovementType);
         string path = Path.Combine(Path.GetTempPath(), "dss-wreck-" + Guid.NewGuid() + ".json");
@@ -115,13 +118,14 @@ public sealed class CombatWreckTests
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(save));
             using var loaded = SimulationEngine.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path);
-            var snapshot = At(loaded, 15000);
+            var snapshot = At(loaded, 35000);
             Assert.Empty(snapshot.CombatImpacts);
             Assert.Single(snapshot.Objects.Where(o => o.ObjectId == wreckId));
             Assert.DoesNotContain(snapshot.Objects, o => o.ObjectId == Target);
+            At(loaded, 45000);
             loaded.ReceiveCommand(Fire("after-load", wreckId));
-            At(loaded, 15000);
-            var hit = Assert.Single(At(loaded, 19000).CombatImpacts);
+            At(loaded, 45000);
+            var hit = Assert.Single(At(loaded, 49000).CombatImpacts);
             Assert.Equal(wreckId, hit.HitObjectId);
             Assert.Equal(0, hit.DamageApplied);
         }
@@ -141,7 +145,7 @@ public sealed class CombatWreckTests
     {
         using var engine = Create();
         ThreeHits(engine);
-        var save = engine.CaptureSaveStateForTests(15000, SimulationSpeed.Speed0);
+        var save = engine.CaptureSaveStateForTests(35000, SimulationSpeed.Speed0);
         var wreck = save.GameState.SpaceObjects.Single(o => o.ObjectType == SpaceObjectType.Wreck);
         var invalid = kind switch
         {
@@ -190,8 +194,8 @@ public sealed class CombatWreckTests
             for (int n = 0; n < 3; n++)
             {
                 engine.ReceiveCommand(Fire("shot-" + n));
-                At(engine, n * 5000);
-                At(engine, (n + 1) * 5000, n == 2 ? GameCalendar.HourMs : (n + 1) * 5000);
+                At(engine, n * 15000);
+                At(engine, n * 15000 + 5000, n == 2 ? GameCalendar.HourMs : n * 15000 + 5000);
             }
         }
         var expected = control.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "market");

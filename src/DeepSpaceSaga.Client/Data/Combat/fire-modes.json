@@ -1,0 +1,22 @@
+{
+  "fireModes": [
+    {
+      "modeId": "standard", "displayName": "Стандарт",
+      "accuracyBonus": 0, "maneuverabilityBonus": 0,
+      "breakdownChancePercent": 0, "reloadMultiplier": 1,
+      "appliesTo": ["module.torpedo.launcher", "module.countermeasure.launcher"]
+    },
+    {
+      "modeId": "maneuverability", "displayName": "Манёвренность",
+      "accuracyBonus": 0, "maneuverabilityBonus": 10,
+      "breakdownChancePercent": 0, "reloadMultiplier": 1.25,
+      "appliesTo": ["module.torpedo.launcher"]
+    },
+    {
+      "modeId": "overheat", "displayName": "Перегрев",
+      "accuracyBonus": 10, "maneuverabilityBonus": 10,
+      "breakdownChancePercent": 10, "reloadMultiplier": 1.25,
+      "appliesTo": ["module.torpedo.launcher"]
+    }
+  ]
+}

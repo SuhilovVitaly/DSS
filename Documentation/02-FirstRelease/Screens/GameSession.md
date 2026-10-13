@@ -1,5 +1,16 @@
 # GameSession
 
+## Актуализация EP-0009 — 2026-10-12
+
+Выбранный известный корабль показывает броню, структуру и время отключения каждого модуля; карта выводит агрегат модульного состояния вместо Hull HP. Журнал показывает броски попадания/перехвата, повреждения, уничтожение, пропущенную очередь, перегрев и причину гибели. Неизвестные модули противника скрыты. Это проверено headless; реальное окно/ввод NOT RUN по указанию пользователя. [Модульный бой](../../04-Engineering/ModuleCombat.md) · [нативная матрица](../../../Board/EP-0009-battle/evidence/native.md).
+
+## Актуализация EP-0008 — 2026-10-12
+
+Две независимые ПРО PlayerShipOnly создают7 командных панелей. Preview/Fire, pending identity, hover ranges, remaining lifetime и журнал читают authoritative snapshots. Footer и PR labels учитывают панели, HUD и viewport/UI scale. Terminal Defeated переводит экран в Defeat; Escape/отмена Load не возобновляют погибший мир. Автоматические click/session проверки покрывают1280x720/1920x1080 при UI100/120/150%; дальнейшая native проверка отложена.
+
+[Текущий контракт](../../01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../04-Engineering/PhaseThreeCombatAcceptance.md).
+
+
 ## Сверка реализации — 2026-10-10
 
 Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.
@@ -40,7 +51,7 @@ EP-0002–0003 реализованы в base-fight: seeded система и о
 
 ## Требующие проектирования элементы UI
 
-- Шесть командных панелей: Navigation, Maneuver, Engine, Space Control, Torpedo Launcher, Countermeasure Launcher (реализованы).
+- Базовые шесть панелей (семь в PlayerShipOnly): Navigation, Maneuver, Engine, Space Control, Torpedo Launcher, Countermeasure Launcher (реализованы).
 - Команды `navigation.dock` и `navigation.stationsList` навигационного компьютера.
 - Команды Scanner: `scanner.generalScan`, `scanner.structuralScan`, `scanner.nearbySignatures`.
 - Команды Drilling Unit: `mining.extractIce`, `mining.stopExtraction`.

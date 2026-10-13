@@ -68,7 +68,8 @@ public class PhaseThreeCombatInfoTests
         });
         var row = Open(f.Screen, "defense-1");
         Assert.Contains($"{5m:0.0}", row.StatusBarText);
-        Assert.Empty(row.DetailLines);
+        Assert.Single(row.DetailLines);
+        Assert.Contains("1", row.DetailLines[0]);
         Assert.StartsWith($"{58m:0.0}", GameSessionScreen.RemainingFlightText(Flight, 3000));
         Assert.StartsWith($"{1m:0.0}", GameSessionScreen.RemainingFlightText(Flight with
         { Phase = CountermeasurePhase.MissedCoast, MissExpiresAtMotionTimeMs = 4000 }, 3000));

@@ -10,7 +10,7 @@ public sealed record HostileCombatSaveData(
     [property: JsonRequired] long NextDecisionMotionTimeMs,
     [property: JsonRequired] IReadOnlyList<HostileCombatActorSaveData> Actors)
 {
-    public const int CurrentVersion = 1;
+    public const int CurrentVersion = 2;
 }
 
 public sealed record HostileCombatActorSaveData(
@@ -28,7 +28,7 @@ internal static class HostileCombatSaveValidation
         }
         var saved = state.HostileCombatState;
         if (saved is null) { Require(format < 16, "missing state"); return state; }
-        Require(saved.Version == HostileCombatSaveData.CurrentVersion && saved.Actors is not null &&
+        Require((format >= 17 ? saved.Version == HostileCombatSaveData.CurrentVersion : saved.Version is 1 or 2) && saved.Actors is not null &&
             saved.NextDecisionMotionTimeMs >= 0, "invalid version, cursor or actors");
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
         var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -46,7 +46,8 @@ internal static class HostileCombatSaveValidation
             var weapon = state.CombatState?.Launchers?.FirstOrDefault(l =>
                 string.Equals(l.OwnerObjectId, owner.ObjectId, StringComparison.OrdinalIgnoreCase) &&
                 string.Equals(l.ModuleId, h.WeaponModuleId, StringComparison.OrdinalIgnoreCase));
-            Require(engine is not null && weapon?.State is not null && h.DesiredRadiusKm == weapon.State.RangeKm / 2,
+            Require(engine is not null && weapon?.State is not null &&
+                h.DesiredRadiusKm == (owner.Ai?.StandoffKm ?? weapon.State.RangeKm / 2),
                 "missing modules or radius mismatch");
             var s = h.Segment!;
             Require(s.Version == 1 && s.EpochMs >= 0 && s.EpochMs <= state.MotionTimeMs &&

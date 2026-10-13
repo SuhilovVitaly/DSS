@@ -17,7 +17,9 @@ public class PhaseThreeJournalTests
             m.CountermeasureAccuracy is null ? m : m with { CountermeasureMaxFlightTimeMs = lifetime }),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
+            fireModes: source.FireModes);
     }
 
     private static SimulationEngine Start(decimal accuracy = 0, long lifetime = 60000, double distance = 155, bool two = false, bool fragile = false)
@@ -30,7 +32,7 @@ public class PhaseThreeJournalTests
             {
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o =>
                 o.ObjectId == Target ? o with { DirectionDegrees = 180 } :
-                fragile && o.ObjectId == Player ? o with { HullHitPoints = 150 } : o).ToArray()
+                fragile && o.ObjectId == Player ? FragileForOneHit(o) : o).ToArray()
             }
         };
         engine.LoadScenario(scenario);
@@ -80,7 +82,7 @@ public class PhaseThreeJournalTests
         Assert.Equal(LaunchMode.Manual, expiry.LaunchMode);
         Assert.Null(expiry.Roll);
         Assert.Equal(0, expiry.Damage);
-        Assert.DoesNotContain(snapshot.CombatJournal, e => e.Type is CombatEventType.Miss or CombatEventType.Hit or CombatEventType.Destroyed);
+        Assert.DoesNotContain(snapshot.CombatJournal, e => e.Type is CombatEventType.Miss or CombatEventType.Hit or CombatEventType.ShipDestroyed);
         var save = engine.CaptureSaveStateForTests(1001, SimulationSpeed.Speed0);
         using var resumed = new SimulationEngine(JournalRegistry(0, 1000));
         resumed.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), isSave: true);
@@ -133,6 +135,6 @@ public class PhaseThreeJournalTests
         Assert.Equal("owner_lost", lost.Result);
         Assert.Equal(Defense2, lost.LauncherModuleId);
         Assert.Null(lost.Roll);
-        Assert.Equal(2, snapshot.CombatJournal.Count(e => e.Roll is not null));
+        Assert.Equal(2, snapshot.CombatJournal.Count(e => e.RatingBreakdown is not null && e.Roll is not null));
     }
 }

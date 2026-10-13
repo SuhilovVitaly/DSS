@@ -83,6 +83,9 @@ public sealed class SkiaWindow : IDisposable
     private string? _graphicsVersion;
     private readonly MapFrameEvidence? _mapFrameEvidence = MapFrameEvidence.FromEnvironment();
     private double? _monitorRefreshHz;
+    // Optional native evidence hook: the surface still contains this screen's
+    // rendered pixels, before polling transitions or swapping the framebuffer.
+    internal Action<SKSurface, IScreen?>? NativeFrameRendered { get; set; }
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
         : this(initialScreen, sessionFactory, startupStopwatch, createNativeWindow: true) { }
@@ -360,6 +363,7 @@ public sealed class SkiaWindow : IDisposable
         long flushStart = Stopwatch.GetTimestamp();
         canvas.Flush();
         long flushEnd = Stopwatch.GetTimestamp();
+        NativeFrameRendered?.Invoke(_surface, _screens.Current);
 
         if (isFirstFrame)
             InterfaceLog.Write($"STARTUP DIAG: first-frame canvas.Flush done — {diagSw!.ElapsedMilliseconds} ms into OnRender");

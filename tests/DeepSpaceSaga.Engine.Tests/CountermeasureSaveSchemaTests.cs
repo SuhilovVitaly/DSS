@@ -41,7 +41,6 @@ public class CountermeasureSaveSchemaTests
     [InlineData("chance")]
     [InlineData("captured-accuracy")]
     [InlineData("captured-target")]
-    [InlineData("attempt")]
     [InlineData("busy")]
     [InlineData("phase")]
     [InlineData("route")]
@@ -60,7 +59,6 @@ public class CountermeasureSaveSchemaTests
             "chance" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { FrozenChanceTenths = 501 } }] },
             "captured-accuracy" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { CapturedAccuracy = 54 } }] },
             "captured-target" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { CapturedTargetManeuverability = 6 } }] },
-            "attempt" => state with { AttemptedTorpedoIds = [] },
             "busy" => state with { Launchers = state.Launchers.Select(l => l with { State = l.State with { ActiveProjectileId = "missing" } }).ToArray() },
             "phase" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { Phase = (DeepSpaceSaga.Contracts.CountermeasurePhase)99 } }] },
             "route" => state with { Projectiles = [projectile with { Flight = projectile.Flight with { Route = projectile.Flight.Route with { ElapsedMs = -1 } } }] },
@@ -76,7 +74,7 @@ public class CountermeasureSaveSchemaTests
     public void Unknown_rng_version_rejected()
     {
         var saved = TorpedoImpactTests.Scenario();
-        saved = saved with { GameState = saved.GameState with { DefenseState = new(1, 0, 999, 0, 0, 0, [], [], [], []) } };
+        saved = saved with { GameState = saved.GameState with { DefenseState = new(1, 0, 999, 0, 0, 0, [], [], []) } };
         Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(System.Text.Json.JsonSerializer.Serialize(saved)));
     }
 }

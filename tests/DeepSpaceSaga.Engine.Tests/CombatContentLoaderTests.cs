@@ -13,7 +13,7 @@ public sealed class CombatContentLoaderTests : IDisposable
     private string ModulesPath => Path.Combine(_directory, "implementations.json");
     private string ScenarioPath => Path.Combine(_directory, "scenario.json");
     private const string ValidClasses = """
-        {"shipClasses":[{"typeId":"ship.tetrarch","hullHitPointsMax":450}]}
+        {"shipClasses":[{"typeId":"ship.tetrarch"}]}
         """;
     private const string ValidModules = """
         {"moduleImplementations":[{
@@ -32,7 +32,9 @@ public sealed class CombatContentLoaderTests : IDisposable
         File.WriteAllText(Path.Combine(_directory, "categories.json"), """
             {"moduleTypes":[
               {"typeId":"module.torpedo.launcher","displayName":"Launcher","slotSize":1,"commandTypeIds":["torpedo.fire"]},
-              {"typeId":"module.passive","displayName":"Passive","slotSize":1,"commandTypeIds":[]}
+              {"typeId":"module.passive","displayName":"Passive","slotSize":1,"commandTypeIds":[]},
+              {"typeId":"module.countermeasure.launcher","displayName":"Defense","slotSize":1,"commandTypeIds":[]},
+              {"typeId":"module.engine","displayName":"Engine","slotSize":1,"commandTypeIds":[]}
             ]}
             """);
         File.WriteAllText(Path.Combine(_directory, "commands.json"), """
@@ -65,10 +67,124 @@ public sealed class CombatContentLoaderTests : IDisposable
     private void WriteModules(JsonNode root) => File.WriteAllText(ModulesPath, root.ToJsonString());
 
     [Fact]
+    public void Launcher_new_fields_validated_for_launcher_only()
+    {
+        var root = Modules();
+        var module = Module(root);
+        module["accuracy"] = 40;
+        module["armorPiercingPercent"] = 20;
+        module["armorDamagePercent"] = 100;
+        module["launcherReloadMs"] = 15000;
+        module["torpedoMaxFlightTimeMs"] = 120000;
+        WriteModules(root);
+        var launcher = Launcher(Load());
+        Assert.Equal(40m, launcher.Accuracy);
+        Assert.Equal(20m, launcher.ArmorPiercingPercent);
+        Assert.Equal(100m, launcher.ArmorDamagePercent);
+        Assert.Equal(15000, launcher.LauncherReloadMs);
+        Assert.Equal(120000, launcher.TorpedoMaxFlightTimeMs);
+
+        foreach (string field in new[] { "accuracy", "armorPiercingPercent", "armorDamagePercent", "launcherReloadMs", "torpedoMaxFlightTimeMs" })
+        {
+            var nonLauncher = Modules();
+            var other = Module(nonLauncher);
+            other["type"] = "module.passive";
+            foreach (string oldField in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec", "torpedoManeuverability", "torpedoRangeKm" })
+                other.Remove(oldField);
+            other[field] = module[field]!.DeepClone();
+            WriteModules(nonLauncher);
+            var error = Assert.Throws<ContentException>(() => Load());
+            Assert.Contains(ModulesPath, error.Message, StringComparison.Ordinal);
+            Assert.Contains(field, error.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
+    public void Barrels_zero_rejected()
+    {
+        var root = Modules();
+        var module = Module(root);
+        module["type"] = "module.countermeasure.launcher";
+        foreach (string field in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec", "torpedoManeuverability", "torpedoRangeKm" })
+            module.Remove(field);
+        module["countermeasureSpeedKmS"] = 20;
+        module["countermeasureTurnRateDegPerSec"] = 90;
+        module["countermeasureRangeKm"] = 150;
+        module["countermeasureReloadMs"] = 14500;
+        module["countermeasureAccuracy"] = 58;
+        module["countermeasureManualRangeKm"] = 150;
+        module["countermeasureMaxFlightTimeMs"] = 30000;
+        module["barrels"] = 2;
+        module["burstIntervalMs"] = 2000;
+        WriteModules(root);
+        var loaded = Launcher(Load());
+        Assert.Equal(2, loaded.Barrels);
+        Assert.Equal(2000, loaded.BurstIntervalMs);
+        module["barrels"] = 0;
+        WriteModules(root);
+        Assert.Contains("barrels", Assert.Throws<ContentException>(() => Load()).Message, StringComparison.Ordinal);
+        module["barrels"] = 1;
+        module["burstIntervalMs"] = -1;
+        WriteModules(root);
+        Assert.Contains("burstIntervalMs", Assert.Throws<ContentException>(() => Load()).Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("armorPiercingPercent", 101)]
+    [InlineData("armorDamagePercent", 0)]
+    [InlineData("launcherReloadMs", 0)]
+    [InlineData("torpedoMaxFlightTimeMs", 0)]
+    [InlineData("accuracy", 101)]
+    public void Piercing_over_100_rejected(string field, int value)
+    {
+        var root = Modules();
+        Module(root)[field] = value;
+        WriteModules(root);
+        var error = Assert.Throws<ContentException>(() => Load());
+        Assert.Contains(ModulesPath, error.Message, StringComparison.Ordinal);
+        Assert.Contains(field, error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Engine_maneuverability_negative_rejected()
+    {
+        var root = Modules();
+        var module = Module(root);
+        module["type"] = "module.engine";
+        foreach (string field in new[] { "torpedoDamage", "torpedoSpeedKmS", "torpedoTurnRateDegPerSec", "torpedoManeuverability", "torpedoRangeKm" })
+            module.Remove(field);
+        module["maxSpeedMps"] = 6000;
+        module["turnStepDegrees"] = 45;
+        module["linearInertiaMps2"] = 100;
+        module["angularInertiaDegPerSec"] = 90;
+        module["fuelCapacityKg"] = 1000;
+        module["maneuverability"] = 10;
+        WriteModules(root);
+        Assert.Equal(10m, Launcher(Load()).Maneuverability);
+        module["maneuverability"] = -1;
+        WriteModules(root);
+        Assert.Contains("maneuverability", Assert.Throws<ContentException>(() => Load()).Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Combat_role_rejects_unknown_values()
+    {
+        var root = Modules();
+        Module(root)["combatRole"] = "bridge";
+        WriteModules(root);
+        Assert.Equal("bridge", Launcher(Load()).CombatRole);
+        Module(root)["combatRole"] = "unknown";
+        WriteModules(root);
+        var error = Assert.Throws<ContentException>(() => Load());
+        Assert.Contains(ModulesPath, error.Message, StringComparison.Ordinal);
+        Assert.Contains("combatRole", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Combat_content_loads_ship_and_launcher_values()
     {
         var registry = Load();
-        Assert.Equal(450, Ship(registry).HullHitPointsMax);
+        Assert.Equal("ship.tetrarch", Ship(registry).TypeId);
         Assert.False(registry.ShipClasses.Contains("Tetrarch"));
         Assert.False(registry.ShipClasses.Contains("SHIP.TETRARCH"));
         var launcher = Launcher(registry);
@@ -81,19 +197,19 @@ public sealed class CombatContentLoaderTests : IDisposable
         Assert.Equal(1, launcher.SlotSize);
 
         // A fresh load observes edits on disk, without changing the economic catalog identity.
-        File.WriteAllText(ClassesPath, ValidClasses.Replace("450", "900", StringComparison.Ordinal));
+        File.WriteAllText(ClassesPath, """{"shipClasses":[{"typeId":"ship.tetrarch"},{"typeId":"ship.mukha"}]}""");
         var modules = Modules();
         Module(modules)["torpedoDamage"] = 75;
         Module(modules)["torpedoSpeedKmS"] = 2.5;
         Module(modules)["torpedoTurnRateDegPerSec"] = 45.5;
         WriteModules(modules);
         var reloaded = Load();
-        Assert.Equal(900, Ship(reloaded).HullHitPointsMax);
+        Assert.True(reloaded.ShipClasses.Contains("ship.mukha"));
         Assert.Equal(75, Launcher(reloaded).TorpedoDamage);
         Assert.Equal(2.5, Launcher(reloaded).TorpedoSpeedKmS);
         Assert.Equal(45.5, Launcher(reloaded).TorpedoTurnRateDegPerSec);
         Assert.Equal(registry.CatalogCompatibility, reloaded.CatalogCompatibility);
-        Assert.Equal(450, Ship(registry).HullHitPointsMax);
+        Assert.False(registry.ShipClasses.Contains("ship.mukha"));
         Assert.Equal(150, Launcher(registry).TorpedoDamage);
     }
 
@@ -211,11 +327,8 @@ public sealed class CombatContentLoaderTests : IDisposable
     [InlineData("{\"shipClasses\":null}")]
     [InlineData("{\"shipClasses\":[]}")]
     [InlineData("{\"shipClasses\":[null]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"\",\"hullHitPointsMax\":450}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":0}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":-1}]}")]
-    [InlineData("{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\",\"hullHitPointsMax\":2147483648}]}")]
+    [InlineData("{\"shipClasses\":[{}]}")]
+    [InlineData("{\"shipClasses\":[{\"typeId\":\"\"}]}")]
     public void Invalid_ship_class_file_is_rejected_with_path(string json)
     {
         File.WriteAllText(ClassesPath, json);
@@ -261,7 +374,7 @@ public sealed class CombatContentLoaderTests : IDisposable
 
         foreach (bool invalidClass in new[] { true, false })
         {
-            File.WriteAllText(ClassesPath, invalidClass ? ValidClasses.Replace("450", "0", StringComparison.Ordinal) : ValidClasses);
+            File.WriteAllText(ClassesPath, invalidClass ? "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"},{\"typeId\":\"ship.tetrarch\"}]}" : ValidClasses);
             File.WriteAllText(ModulesPath, invalidClass ? ValidModules : ValidModules.Replace("\"torpedoSpeedKmS\":3", "\"torpedoSpeedKmS\":0", StringComparison.Ordinal));
             foreach (Func<SimulationEngine> bootstrap in new Func<SimulationEngine>[]
             {
@@ -277,15 +390,15 @@ public sealed class CombatContentLoaderTests : IDisposable
     }
 
     [Fact]
-    public void Direct_registry_creation_validates_class_hp_and_ids()
+    public void Direct_registry_creation_validates_class_ids()
     {
         Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [], [], [],
-            shipClasses: [new ShipClassDefinition("ship.tetrarch", 0)]));
+            shipClasses: [new ShipClassDefinition("")]));
         Assert.Throws<ContentException>(() => GameDataRegistry.Create([], [], [], [],
-            shipClasses: [new ShipClassDefinition("ship.tetrarch", 450), new ShipClassDefinition("ship.tetrarch", 900)]));
+            shipClasses: [new ShipClassDefinition("ship.tetrarch"), new ShipClassDefinition("ship.tetrarch")]));
         var registry = GameDataRegistry.Create([], [], [], [],
-            shipClasses: [new ShipClassDefinition("ship.tetrarch", int.MaxValue)]);
-        Assert.Equal(int.MaxValue, Ship(registry).HullHitPointsMax);
+            shipClasses: [new ShipClassDefinition("ship.tetrarch")]);
+        Assert.Equal("ship.tetrarch", Ship(registry).TypeId);
     }
 
     [Theory]

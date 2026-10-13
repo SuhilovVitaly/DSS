@@ -48,8 +48,8 @@ public sealed class ClusterResourcePlacementTests
                 var owner = first.Objects.Single(o => o.ObjectId == binding.AnchorStationId);
                 var futureA = OrbitalMotionMath.At(asteroid, asteroid.Orbit!, days * 86400000L / 300);
                 var futureB = OrbitalMotionMath.At(owner, owner.Orbit!, days * 86400000L / 300);
-                Assert.Equal(Math.Sqrt(binding.OffsetX * binding.OffsetX + binding.OffsetY * binding.OffsetY),
-                    Math.Sqrt(Math.Pow(futureA.X - futureB.X, 2) + Math.Pow(futureA.Y - futureB.Y, 2)), 6);
+                Assert.InRange(Math.Abs(Math.Sqrt(binding.OffsetX * binding.OffsetX + binding.OffsetY * binding.OffsetY) -
+                    Math.Sqrt(Math.Pow(futureA.X - futureB.X, 2) + Math.Pow(futureA.Y - futureB.Y, 2))), 0, 1e-6);
             }
         var save = a.CaptureSaveState();
         using var restored = new SimulationEngine(SeededWorldBootstrapTests.Registry());

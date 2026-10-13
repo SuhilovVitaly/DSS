@@ -21,7 +21,9 @@ internal sealed class GameDataRegistry
         string? legacyCatalogFingerprint = null,
         TypeRegistry<StationMarketProfileDefinition>? stationMarketProfiles = null,
         TypeRegistry<ShipClassDefinition>? shipClasses = null,
-        TypeRegistry<StationMarketEventDefinition>? stationMarketEvents = null)
+        TypeRegistry<StationMarketEventDefinition>? stationMarketEvents = null,
+        CombatRulesDefinition? combatRules = null,
+        ImmutableArray<FireModeDefinition> fireModes = default)
     {
         ModuleCategories = moduleCategories;
         ModuleTypes = moduleTypes;
@@ -34,6 +36,8 @@ internal sealed class GameDataRegistry
         StationMarketProfiles = stationMarketProfiles ?? TypeRegistry<StationMarketProfileDefinition>.Empty;
         ShipClasses = shipClasses ?? TypeRegistry<ShipClassDefinition>.Empty;
         StationMarketEvents = stationMarketEvents ?? TypeRegistry<StationMarketEventDefinition>.Empty;
+        CombatRules = combatRules;
+        FireModes = fireModes.IsDefault ? [] : fireModes;
         StationMarketEventCatalogFingerprint = StationMarketEventCatalog.Fingerprint(StationMarketEvents);
         CatalogVersion = catalogVersion;
         LegacyCatalogFingerprint = legacyCatalogFingerprint;
@@ -65,6 +69,8 @@ internal sealed class GameDataRegistry
     public TypeRegistry<StationMarketProfileDefinition> StationMarketProfiles { get; }
     public TypeRegistry<ShipClassDefinition> ShipClasses { get; }
     public TypeRegistry<StationMarketEventDefinition> StationMarketEvents { get; }
+    public CombatRulesDefinition? CombatRules { get; }
+    public ImmutableArray<FireModeDefinition> FireModes { get; }
     public string StationMarketEventCatalogFingerprint { get; }
     public int CatalogVersion { get; }
     public CatalogCompatibilityData CatalogCompatibility { get; }
@@ -92,9 +98,13 @@ internal sealed class GameDataRegistry
         IEnumerable<StationMarketProfileDefinition>? stationMarketProfiles = null,
         IEnumerable<ShipClassDefinition>? shipClasses = null,
         IEnumerable<StationMarketEventDefinition>? stationMarketEvents = null,
-        bool requireCompleteMarketEventSet = false)
+        bool requireCompleteMarketEventSet = false,
+        CombatRulesDefinition? combatRules = null,
+        ImmutableArray<FireModeDefinition> fireModes = default)
     {
         if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
+        if (combatRules is not null) CombatContentValidation.Rules(combatRules);
+        if (!fireModes.IsDefaultOrEmpty) CombatContentValidation.Modes(new(fireModes));
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
         var moduleRegistry = TypeRegistry<ModuleTypeDefinition>.Create(moduleTypes, "module implementations");
@@ -166,7 +176,8 @@ internal sealed class GameDataRegistry
             }
         }
         return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry,
-            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry, eventRegistry);
+            dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry, eventRegistry,
+            combatRules, fireModes);
     }
 
     internal static TypeRegistry<ShipClassDefinition> CreateShipClassRegistry(IEnumerable<ShipClassDefinition> classes)
@@ -176,8 +187,6 @@ internal sealed class GameDataRegistry
         {
             if (definition is null)
                 throw new ContentException("shipClasses contains null.");
-            if (definition.HullHitPointsMax <= 0)
-                throw new ContentException($"Ship class '{definition.TypeId}': hullHitPointsMax must be greater than zero.");
         }
         return TypeRegistry<ShipClassDefinition>.Create(definitions, "shipClasses");
     }
@@ -432,6 +441,7 @@ internal sealed class GameDataRegistry
 
     internal static void ValidateWeaponRatings(ModuleTypeDefinition module)
     {
+        ValidateAdditionalCombatFields(module);
         bool isTorpedo = module.CategoryTypeId == "module.torpedo.launcher";
         if (isTorpedo)
         {
@@ -460,5 +470,38 @@ internal sealed class GameDataRegistry
             module.CountermeasureRangeKm is not > 0 || !double.IsFinite(module.CountermeasureRangeKm.Value) ||
             module.CountermeasureReloadMs is not > 0)
             throw new ContentException($"Module '{module.TypeId}': positive finite countermeasureSpeedKmS/countermeasureTurnRateDegPerSec/countermeasureRangeKm/countermeasureReloadMs are required.");
+    }
+
+    private static void ValidateAdditionalCombatFields(ModuleTypeDefinition module)
+    {
+        bool isTorpedo = module.CategoryTypeId == "module.torpedo.launcher";
+        if (!isTorpedo && (module.Accuracy.HasValue || module.ArmorPiercingPercent.HasValue ||
+            module.ArmorDamagePercent.HasValue || module.LauncherReloadMs.HasValue || module.TorpedoMaxFlightTimeMs.HasValue))
+            throw new ContentException($"Module '{module.TypeId}': accuracy/armorPiercingPercent/armorDamagePercent/launcherReloadMs/torpedoMaxFlightTimeMs require category module.torpedo.launcher.");
+        if (module.Accuracy is < 0 or > 100)
+            throw new ContentException($"Module '{module.TypeId}': accuracy must be in [0,100].");
+        if (module.ArmorPiercingPercent is < 0 or > 100)
+            throw new ContentException($"Module '{module.TypeId}': armorPiercingPercent must be in [0,100].");
+        if (module.ArmorDamagePercent is <= 0)
+            throw new ContentException($"Module '{module.TypeId}': armorDamagePercent must be positive.");
+        if (module.LauncherReloadMs is <= 0)
+            throw new ContentException($"Module '{module.TypeId}': launcherReloadMs must be positive.");
+        if (module.TorpedoMaxFlightTimeMs is <= 0)
+            throw new ContentException($"Module '{module.TypeId}': torpedoMaxFlightTimeMs must be positive.");
+
+        bool isDefense = module.CategoryTypeId == "module.countermeasure.launcher";
+        if (!isDefense && (module.Barrels.HasValue || module.BurstIntervalMs.HasValue))
+            throw new ContentException($"Module '{module.TypeId}': barrels/burstIntervalMs require category module.countermeasure.launcher.");
+        if (module.Barrels is < 1)
+            throw new ContentException($"Module '{module.TypeId}': barrels must be at least one.");
+        if (module.BurstIntervalMs is < 0)
+            throw new ContentException($"Module '{module.TypeId}': burstIntervalMs must be non-negative.");
+
+        if (module.Maneuverability.HasValue && module.CategoryTypeId != "module.engine")
+            throw new ContentException($"Module '{module.TypeId}': maneuverability requires category module.engine.");
+        if (module.Maneuverability is < 0)
+            throw new ContentException($"Module '{module.TypeId}': maneuverability must be non-negative.");
+        if (module.CombatRole is not null && module.CombatRole is not ("bridge" or "engine"))
+            throw new ContentException($"Module '{module.TypeId}': combatRole must be bridge or engine.");
     }
 }

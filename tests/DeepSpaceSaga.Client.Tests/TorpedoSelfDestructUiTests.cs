@@ -10,7 +10,7 @@ public class TorpedoSelfDestructUiTests
     private static readonly InstalledModuleSnapshot Launcher = new("launcher", "module.torpedo.launcher.basic", "Launcher", 1,
         [CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct], "On", "Ready", 60,
         Commands: [new(CombatCommandTypes.Fire, "Fire", "object"), new(CombatCommandTypes.SelfDestruct, "Самоуничтожение", "none")],
-        LauncherCombat: new("active-flight", 3, 90, 150));
+        LauncherCombat: new(3, 90, 150, ActiveTorpedoIds: ["active-flight"]));
     [Fact]
     public async Task Self_destruct_button_uses_launcher_active_id_on_pause()
     {

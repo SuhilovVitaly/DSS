@@ -18,10 +18,11 @@ public class CountermeasureLifetimeTests
                 CountermeasureMaxFlightTimeMs = lifetime,
                 CountermeasureSpeedKmS = slow ? 0.001 : m.CountermeasureSpeedKmS
             } :
-            slow && m.TorpedoSpeedKmS is not null ? m with { TorpedoSpeedKmS = 0.001 } : m),
+            slow && m.TorpedoSpeedKmS is not null ? m with { LauncherReloadMs = 120000 } : m),
             All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
             All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules, fireModes: source.FireModes);
     }
 
     private static SimulationEngine Start(long lifetime, double distance, decimal accuracy = 0, bool obstacle = false)
@@ -58,9 +59,9 @@ public class CountermeasureLifetimeTests
         Assert.Single(before.Objects, o => o.Countermeasure is not null);
         var timeout = At(small, 1001);
         Assert.DoesNotContain(timeout.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(11001, Defense(timeout).ReloadDueMotionTimeMs);
+        Assert.Equal(10001, Defense(timeout).ReloadDueMotionTimeMs);
         Assert.Equal(DefenseState.Reloading, Defense(timeout).State);
-        Assert.Equal(DefenseState.Reloading, Defense(At(small, 11000)).State);
+        Assert.Equal(DefenseState.Reloading, Defense(At(small, 10000)).State);
         var ready = At(small, 11001);
         var whole = At(large, 11001);
         Assert.Equal(DefenseState.Ready, Defense(ready).State);
@@ -82,7 +83,7 @@ public class CountermeasureLifetimeTests
         Assert.InRange(Math.Abs(resolution.MotionTimeMs - 1001), 0, 1e-6);
         Assert.Equal(accuracy == 0 ? CombatEventType.Miss : CombatEventType.Intercept, resolution.Type);
         Assert.DoesNotContain(after.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(11001, Defense(after).ReloadDueMotionTimeMs!.Value, 5);
+        Assert.Equal(10001, Defense(after).ReloadDueMotionTimeMs!.Value, 5);
         Assert.Equal(1ul, engine.CaptureSaveStateForTests(1001, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
     }
 
@@ -105,7 +106,7 @@ public class CountermeasureLifetimeTests
         Assert.Single(At(engine, 1500).Objects, o => o.Countermeasure is not null);
         var timeout = At(engine, 1501);
         Assert.DoesNotContain(timeout.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(11501, Defense(timeout).ReloadDueMotionTimeMs);
+        Assert.Equal(10001, Defense(timeout).ReloadDueMotionTimeMs);
         Assert.Single(timeout.CombatJournal, e => e.Roll is not null);
     }
 
@@ -163,14 +164,15 @@ public class CountermeasureLifetimeTests
     public void Full_sixty_second_lifetime_is_physical_and_not_extended_by_guidance()
     {
         using var engine = new SimulationEngine(LifetimeRegistry(60000, slow: true));
-        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario());
+        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario(1900));
         engine.ReceiveCommand(Manual("slow", LaunchEnemy(engine)));
         var flight = Assert.Single(At(engine, 1).Objects, o => o.Countermeasure is not null).Countermeasure!;
         Assert.Equal(60001, flight.ExpiresAtMotionTimeMs);
         Assert.Single(At(engine, 60000).Objects, o => o.Countermeasure is not null);
         var expired = At(engine, 60001);
         Assert.DoesNotContain(expired.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(70001, Defense(expired).ReloadDueMotionTimeMs);
+        Assert.Null(Defense(expired).ReloadDueMotionTimeMs);
+        Assert.Equal(DefenseState.Ready, Defense(expired).State);
         Assert.Empty(expired.CombatJournal.Where(e => e.Roll is not null));
         Assert.Equal(DefenseState.Ready, Defense(At(engine, 70001)).State);
     }

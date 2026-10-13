@@ -236,7 +236,7 @@ public class ScenarioEngineTests
         // Module type registry order follows the deterministic (ordinal) sort of
         // Data/Modules/**/*.json file paths, not the historical flat module-types.json order.
         Assert.Equal(2, cargoModule.ModuleTypeIndex);
-        Assert.Equal(5, engineModule.ModuleTypeIndex);
+        Assert.Equal(6, engineModule.ModuleTypeIndex);
         Assert.Null(engineModule.ActiveCycle);
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
@@ -487,10 +487,10 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(7, activeTypes.Length); // engine + scanner + bridge + drilling + container + torpedo + defense
+        Assert.Equal(9, activeTypes.Length); // two engines + scanner + bridge + drilling + container + torpedo + two defense variants
 
         var launcherType = Assert.Single(activeTypes, t => t.TypeId == "module.torpedo.launcher.basic");
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct }, launcherType.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, launcherType.CommandTypeIds);
         var cancel = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.SelfDestruct));
         Assert.Equal("module.torpedo.launcher", cancel.Type);
         Assert.Equal("none", cancel.Target);
@@ -562,7 +562,7 @@ public class ScenarioEngineTests
 
         int passiveTypes = Enumerable.Range(0, registry.ModuleTypes.Count)
             .Count(i => registry.ModuleTypes.GetDefinition(i).CommandTypeIds.Length == 0);
-        Assert.Equal(6, passiveTypes); // Includes the separate two- and three-cabin living variants.
+        Assert.Equal(7, passiveTypes); // Includes the separate two-, three- and four-cabin living variants.
     }
 
     [Theory]

@@ -140,10 +140,11 @@ public class DialogueTests
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save)));
         Assert.Equal("station_access_denied", Assert.Single(Start(loaded, "retry").CommandResults).ReasonCode);
         Assert.False(loaded.CaptureSnapshotForTests(59999).Objects.Single(o => o.ObjectId == "SPC-0001").IsDestroyed);
-        Assert.True(loaded.CaptureSnapshotForTests(60000).Objects.Single(o => o.ObjectId == "SPC-0001").IsDestroyed);
-        var destroyed = loaded.CaptureSaveStateForTests(60000, SimulationSpeed.Speed0);
-        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(destroyed), allowNonZeroGameTime: true));
-        Assert.True(loaded.CaptureSnapshotForTests(60000).Objects.Single(o => o.ObjectId == "SPC-0001").IsDestroyed);
+        var defeated = loaded.CaptureSnapshotForTests(60000);
+        Assert.Equal(SessionOutcomeState.Defeated, defeated.EffectiveOutcome.State);
+        Assert.DoesNotContain(defeated.Objects, o => o.ObjectId == "SPC-0001");
+        Assert.Single(defeated.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed && e.DestroyReason == "station-security");
+        Assert.Throws<InvalidOperationException>(() => loaded.CaptureSaveStateForTests(60000, SimulationSpeed.Speed0));
     }
     [Fact]
     public void Leaving_zone_completes_incident_but_access_stays_denied()
@@ -152,8 +153,14 @@ public class DialogueTests
         Start(engine); Choose(engine, "false_id"); Choose(engine, "continue");
         var save = engine.CaptureSaveState();
         // Flight state after leaving; persistence must not reactivate the warning on re-entry.
-        save = save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == "SPC-0001" ? o with { PositionX = 20000 } : o).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o =>
+            o.ObjectId == "SPC-0001" ? o with { PositionX = 20000 } : o).ToArray()
+            }
+        };
         engine.LoadScenario(save);
         Assert.False(engine.CaptureSnapshotForTests(1000).Objects.Single(o => o.ObjectId == "SPC-0001").IsDestroyed);
         var escaped = engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0);
@@ -174,8 +181,14 @@ public class DialogueTests
     {
         using var engine = DockCommandTests.CreateEngine(); Start(engine); Choose(engine, "truthful_id");
         var save = engine.CaptureSaveState();
-        save = save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == "SPC-0001" ? o with { PositionX = 50000 } : o).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o =>
+            o.ObjectId == "SPC-0001" ? o with { PositionX = 50000 } : o).ToArray()
+            }
+        };
         engine.LoadScenario(save);
         var snapshot = Choose(engine, "accept_fee");
         Assert.Equal(1000, snapshot.PlayerCredits);
@@ -207,10 +220,18 @@ public class DialogueTests
     {
         using var engine = DockCommandTests.CreateEngine(); Start(engine); Choose(engine, "false_id"); Choose(engine, "continue");
         var save = engine.CaptureSaveState();
-        save = save with { GameState = save.GameState with { SpaceObjects = save.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == "SPC-0001" ? o with { SpeedMps = 3000, DirectionDegrees = 90, MovementType = "Linear" } : o).ToArray() } };
+        save = save with
+        {
+            GameState = save.GameState with
+            {
+                SpaceObjects = save.GameState.SpaceObjects.Select(o =>
+            o.ObjectId == "SPC-0001" ? o with { SpeedMps = 3000, DirectionDegrees = 90, MovementType = "Linear" } : o).ToArray()
+            }
+        };
         engine.LoadScenario(save);
         // The ship travels 180 km at the deadline, 210 km by the next snapshot.
-        Assert.True(engine.CaptureSnapshotForTests(70000).Objects.Single(o => o.ObjectId == "SPC-0001").IsDestroyed);
+        var defeated = engine.CaptureSnapshotForTests(70000);
+        Assert.Equal(SessionOutcomeState.Defeated, defeated.EffectiveOutcome.State);
+        Assert.DoesNotContain(defeated.Objects, o => o.ObjectId == "SPC-0001");
     }
 }

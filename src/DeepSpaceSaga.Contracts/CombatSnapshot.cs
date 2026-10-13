@@ -10,6 +10,12 @@ public static class CombatCommandTypes
     public const string SelfDestruct = "torpedo.selfDestruct";
 }
 
+/// <summary>Torpedo launcher command identifiers; mode selection is addressed to one launcher.</summary>
+public static class TorpedoLauncherCommandTypes
+{
+    public const string SetMode = "torpedo.setMode";
+}
+
 /// <summary>Origin of a launch; independent of the launcher's current automatic-defense toggle.</summary>
 public enum LaunchMode { Auto, Manual }
 
@@ -24,11 +30,10 @@ public sealed record HullCombatSnapshot(string ShipClassId, int CurrentHp, int M
 
 /// <summary>
 /// Captured launcher parameters: speed in km/s, positive maximum turn rate in degrees/s,
-/// damage in integer hull hit points. ActiveTorpedoObjectId is null when no projectile is
-/// active; module power/availability is still checked separately by the Engine.
+/// damage in integer hull hit points. ActiveTorpedoIds lists every projectile still
+/// in flight; launch readiness is governed by ReadyAtMotionTimeMs.
 /// </summary>
 public sealed record LauncherCombatSnapshot(
-    string? ActiveTorpedoObjectId,
     double SpeedKmS,
     double TurnRateDegPerSec,
     int Damage,
@@ -36,7 +41,12 @@ public sealed record LauncherCombatSnapshot(
     /// <summary>Inclusive launch range in km, supplied by the module definition. Null means not supplied.</summary>
     double? RangeKm = null,
     /// <summary>Module-owned interception resistance in 0..100, distinct from physical turn rate.</summary>
-    decimal? Maneuverability = null);
+    decimal? Maneuverability = null,
+    string ModeId = "standard",
+    double? ReadyAtMotionTimeMs = null,
+    bool IsBrokenUntilDock = false,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> ActiveTorpedoIds = default);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs
@@ -57,7 +67,7 @@ public sealed record LauncherCombatSnapshot(
 /// Absolute physical MotionTimeMs of the predicted encounter; null when no intercept is
 /// known (including a lost target). Null must not be replaced with zero or calendar time.
 /// </param>
-/// <param name="HitChancePercent">100 for the MVP: chance on contact, not a promise to ignore obstacles.</param>
+/// <param name="HitChancePercent">Legacy captured percentage in 0..100; the module-combat hit roll uses captured attack, defense and ChanceTenths.</param>
 public sealed record TorpedoSnapshot(
     string OwnerObjectId,
     string LauncherModuleId,
@@ -80,7 +90,20 @@ public sealed record TorpedoSnapshot(
     /// <summary>Module maneuverability captured at launch; replan and operator changes never replace it.</summary>
     decimal? CapturedManeuverability = null,
     /// <summary>Launching owner's relation to the player, retained as provenance after the owner disappears.</summary>
-    string? OwnerPlayerRelationAtLaunch = null);
+    string? OwnerPlayerRelationAtLaunch = null,
+    /// <summary>Captured attack contribution for the contact-time hit roll.</summary>
+    decimal? CapturedAttack = null,
+    /// <summary>Authoritative chance in tenths of one percent; populated by EP-0009 runtime.</summary>
+    int? HitChanceTenths = null,
+    /// <summary>Armor piercing captured at launch, independent of later catalog edits.</summary>
+    decimal ArmorPiercingPercent = 0,
+    /// <summary>Armor damage multiplier captured at launch, independent of later catalog edits.</summary>
+    decimal ArmorDamagePercent = 100,
+    /// <summary>Mode frozen at launch; changing the launcher later cannot rewrite the flight.</summary>
+    string ModeId = "standard",
+    decimal ModeManeuverabilityBonus = 0,
+    /// <summary>Absolute physical expiry captured at launch; null only for pre-EP-0009 saves.</summary>
+    long? ExpiresAtMotionTimeMs = null);
 
 /// <summary>Current execution phase, independent of whether the route predicts an intercept.</summary>
 public enum TorpedoRoutePhase
@@ -164,4 +187,4 @@ public sealed record CombatImpactSnapshot(
     string? WreckObjectId = null,
     TorpedoTerminationKind TerminationKind = TorpedoTerminationKind.Impact);
 
-public enum TorpedoTerminationKind { Impact, SelfDestruct, Intercept }
+public enum TorpedoTerminationKind { Impact, SelfDestruct, Intercept, Miss, Expired }

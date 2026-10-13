@@ -27,7 +27,7 @@ public sealed class BasicCombatUiFlowTests
         Assert.False(f.Button.Enabled);
         f.Select(Fixture.Target);
         Assert.True(f.Button.Enabled);
-        for (int shot = 1; shot <= 3; shot++)
+        for (int shot = 1; shot <= 2; shot++)
         {
             f.HoverFire();
             Assert.NotNull(f.Screen.LaunchPreviewGeometry!.Intercept);
@@ -39,21 +39,21 @@ public sealed class BasicCombatUiFlowTests
             var owner = launch.Objects.Single(o => o.ObjectId == Fixture.Player);
             Assert.Equal((owner.X, owner.Y, owner.Direction), (missile.X, missile.Y, missile.Direction));
             Assert.Equal((owner.X, owner.Y, owner.Direction), (preview.Segments[0].X, preview.Segments[0].Y, preview.Segments[0].Direction));
-            Assert.Equal(3, missile.SpeedKmS);
+            Assert.Equal(10, missile.SpeedKmS);
             Assert.Equal(Fixture.Target, missile.Torpedo!.TargetObjectId);
             Assert.Equal(Fixture.Player, missile.Torpedo.OwnerObjectId);
             Assert.Equal(Fixture.Launcher, missile.Torpedo.LauncherModuleId);
             Assert.Equal(SimulationSpeed.Speed0, launch.CurrentSpeed);
             Assert.False(f.Button.Enabled);
             Assert.Null(f.Screen.LaunchPreviewGeometry);
-            Assert.Equal("Guiding", f.LauncherStatus);
+            Assert.Contains("Reloading", f.LauncherStatus);
 
             long end = missile.Torpedo.PredictedImpactMotionTimeMs!.Value + 1000;
             var impact = await f.AdvanceTo(end);
             Assert.Equal(shot, impact.CombatImpacts.Length);
             Assert.DoesNotContain(impact.Objects, o => o.Torpedo is not null);
             Assert.Equal(150, impact.CombatImpacts[^1].DamageApplied);
-            Assert.Equal("Ready", f.LauncherStatus);
+            Assert.Contains("Reloading", f.LauncherStatus);
             var effect = Assert.Single(f.Screen.CombatEffects.Active);
             Assert.Equal(shot, effect.Impact.EventId);
             Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
@@ -62,18 +62,24 @@ public sealed class BasicCombatUiFlowTests
             f.Render();
             Assert.Empty(f.Screen.CombatEffects.Active);
             Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
-            if (shot < 3)
+            Assert.Contains(impact.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Target);
+            if (shot < 2)
             {
-                Assert.Equal(450 - shot * 150, impact.Objects.Single(o => o.ObjectId == Fixture.Target).HullCombat!.CurrentHp);
+                Assert.Contains(impact.Objects, o => o.ObjectId == Fixture.Target);
+                await f.AdvanceTo((long)impact.InstalledModules.Single(m => m.ModuleId == Fixture.Launcher)
+                    .LauncherCombat!.ReadyAtMotionTimeMs!.Value);
                 f.Select(Fixture.Target);
                 Assert.True(f.Button.Enabled);
             }
             else
             {
+                Assert.Contains(impact.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed && e.TargetObjectId == Fixture.Target);
                 Assert.DoesNotContain(impact.Objects, o => o.ObjectId == Fixture.Target);
                 var wreck = Assert.Single(impact.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
                 Assert.Equal(0, wreck.SpeedKmS);
                 Assert.Equal(0, wreck.Direction);
+                await f.AdvanceTo((long)impact.InstalledModules.Single(m => m.ModuleId == Fixture.Launcher)
+                    .LauncherCombat!.ReadyAtMotionTimeMs!.Value);
                 f.Select(wreck.ObjectId);
                 Assert.True(f.Button.Enabled);
                 var wreckShot = await f.Fire();
@@ -82,7 +88,7 @@ public sealed class BasicCombatUiFlowTests
                 var after = await f.AdvanceTo(flight.PredictedImpactMotionTimeMs!.Value + 1000);
                 Assert.Equal(0, after.CombatImpacts[^1].DamageApplied);
                 Assert.Equal(wreck, Assert.Single(after.Objects, o => o.ObjectType == SpaceObjectType.Wreck));
-                Assert.Equal("Ready", f.LauncherStatus);
+                Assert.Contains("Reloading", f.LauncherStatus);
             }
         }
         Assert.Null(f.Handle.Failure);
@@ -129,8 +135,8 @@ public sealed class BasicCombatUiFlowTests
         Assert.Empty(snapshots.Current.CombatImpacts);
         var hit = await f.AdvanceTo(original.Torpedo!.PredictedImpactMotionTimeMs!.Value + 1000);
         Assert.Equal(Fixture.Target, Assert.Single(hit.CombatImpacts).HitObjectId);
-        Assert.Equal(300, hit.Objects.Single(o => o.ObjectId == Fixture.Target).HullCombat!.CurrentHp);
-        Assert.Equal(450, hit.Objects.Single(o => o.ObjectId == Fixture.Player).HullCombat!.CurrentHp);
+        Assert.Contains(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Target);
+        Assert.DoesNotContain(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Player);
     }
 
     internal sealed class Fixture : IAsyncDisposable
@@ -157,6 +163,21 @@ public sealed class BasicCombatUiFlowTests
             Directory.CreateDirectory(DirectoryPath);
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
             var source = CombatSessionFixture.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
+            source = source with
+            {
+                GameState = source.GameState with
+                {
+                    SpaceObjects = source.GameState.SpaceObjects.Select(obj => obj.ObjectId == Player ? obj with
+                    {
+                        Crew = obj.Crew!.Select(crew => crew.CrewId ==
+                            obj.Modules!.Single(module => module.ModuleId == Launcher).OperatorCrewId
+                            ? crew with { AccuracySkill = 30 } : crew).ToArray()
+                    } : obj.ObjectId == Target ? obj with
+                    {
+                        Modules = obj.Modules!.Select(module => module with { AutoDefenseEnabled = false }).ToArray()
+                    } : obj).ToArray()
+                }
+            };
             var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
             engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } });
             Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath));

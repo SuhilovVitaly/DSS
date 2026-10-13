@@ -32,20 +32,22 @@ public class CountermeasureContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Basic_weapon_values_load_from_real_catalog(bool output)
+    public void Pd_catalog_matches_ep9(bool output)
     {
         var registry = Registry(output);
         var module = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.countermeasure.launcher.basic"));
-        Assert.Equal(55m, module.CountermeasureAccuracy);
-        Assert.Equal(12, module.CountermeasureSpeedKmS);
+        Assert.Equal(58m, module.CountermeasureAccuracy);
+        Assert.Equal(20, module.CountermeasureSpeedKmS);
         Assert.Equal(90, module.CountermeasureTurnRateDegPerSec);
-        Assert.Equal(100, module.CountermeasureRangeKm);
-        Assert.Equal(200, module.CountermeasureManualRangeKm);
-        Assert.Equal(60000, module.CountermeasureMaxFlightTimeMs);
-        Assert.Equal(10000, module.CountermeasureReloadMs);
+        Assert.Equal(150, module.CountermeasureRangeKm);
+        Assert.Equal(150, module.CountermeasureManualRangeKm);
+        Assert.Equal(30000, module.CountermeasureMaxFlightTimeMs);
+        Assert.Equal(14500, module.CountermeasureReloadMs);
+        Assert.Equal(2, module.Barrels);
+        Assert.Equal(2000, module.BurstIntervalMs);
         var torpedo = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.torpedo.launcher.basic"));
-        Assert.Equal(5m, torpedo.TorpedoManeuverability);
-        Assert.Equal(200, torpedo.TorpedoRangeKm);
+        Assert.Equal(50m, torpedo.TorpedoManeuverability);
+        Assert.Equal(150, torpedo.TorpedoRangeKm);
     }
 
     [Theory]
@@ -68,11 +70,11 @@ public class CountermeasureContentTests
             var defenseType = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(defenses[0].ModuleTypeId));
             Assert.All(defenses, m => Assert.Equal(defenses[0].ModuleTypeId, m.ModuleTypeId));
             var launcherType = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(launcher.ModuleTypeId));
-            Assert.Equal(55m, defenseType.CountermeasureAccuracy);
-            Assert.Equal(5m, launcherType.TorpedoManeuverability);
-            Assert.Equal(200, launcherType.TorpedoRangeKm);
-            Assert.Equal(100, defenseType.CountermeasureRangeKm);
-            Assert.Equal(200, defenseType.CountermeasureManualRangeKm);
+            Assert.Equal(58m, defenseType.CountermeasureAccuracy);
+            Assert.Equal(50m, launcherType.TorpedoManeuverability);
+            Assert.Equal(150, launcherType.TorpedoRangeKm);
+            Assert.Equal(150, defenseType.CountermeasureRangeKm);
+            Assert.Equal(150, defenseType.CountermeasureManualRangeKm);
             Assert.Contains(DefenseCommandTypes.Fire, defenseType.CommandTypeIds);
         }
         using var engine = new DeepSpaceSaga.Engine.SimulationEngine(registry);
@@ -85,5 +87,21 @@ public class CountermeasureContentTests
             Assert.Equal(DefenseState.Ready, m.Defense!.State);
             Assert.Null(m.ActiveCommandType);
         });
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Single_barrel_pd_exists(bool output)
+    {
+        var registry = Registry(output);
+        var basic = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.countermeasure.launcher.basic"));
+        var single = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.countermeasure.launcher.single"));
+        Assert.Equal("module.countermeasure.launcher", single.CategoryTypeId);
+        Assert.Equal(1, single.Barrels);
+        Assert.Equal(basic.BurstIntervalMs, single.BurstIntervalMs);
+        Assert.Equal(basic.CountermeasureAccuracy, single.CountermeasureAccuracy);
+        Assert.Equal(basic.CountermeasureReloadMs, single.CountermeasureReloadMs);
+        Assert.Equal(basic.CommandTypeIds, single.CommandTypeIds);
     }
 }

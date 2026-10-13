@@ -14,7 +14,7 @@ revision: 1
 
 # Обновить релевантные документы во всех папках
 
-STATUS: DRAFT
+STATUS: IMPLEMENTED — documentation reviewed; Graphify follows in TK-0002
 
 ## Why
 
@@ -97,3 +97,57 @@ git diff --check
 ## Self-containment check
 
 Решения, числа, порядок событий, допущения, write scope, реальные зависимости и named checks доступны здесь и в связанных документах эпика. Для смысла коротких ответов не требуется искать чат. Предлагаемые API не являются доказательством готовой реализации.
+
+## Execution inventory before edits — 2026-10-12
+
+Baseline d13afd05e5a26d53492fcc98a96744cdb7ab7976 published and remote verified. This scope reconciles current EP-0008 rules, per-scenario loadout, Save16, Defeat and truthful acceptance/publication status. Dated evidence is retained. New files: Defeat.md screen contract and PhaseThreeCombatDocumentation.md impact inventory. No runtime changes. Exact scope:
+
+- `Documentation/01-Requirements/EngineRequirements.md`
+- `Documentation/01-Requirements/FirstReleaseRequirements.md`
+- `Documentation/00-Process/CLAUDE.md`
+- `Documentation/README.md`
+- `Documentation/02-FirstRelease/Mechanics/TetrarchClass.md`
+- `Documentation/02-FirstRelease/Mechanics/CrewAndHabitation.md`
+- `Documentation/02-FirstRelease/Mechanics/PassengerContracts.md`
+- `Documentation/02-FirstRelease/Mechanics/CommandPanels.md`
+- `Documentation/02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md`
+- `Documentation/02-FirstRelease/Screens/GameSession.md`
+- `Documentation/02-FirstRelease/Screens/Save.md`
+- `Documentation/02-FirstRelease/Screens/Load.md`
+- `Documentation/02-FirstRelease/Screens/Defeat.md`
+- `Documentation/03-Design/TacticalMapSpecification.md`
+- `Documentation/06-Tooling/GameSessionScreenUI.md`
+- `Documentation/04-Engineering/BasicTorpedoCombat.md`
+- `Documentation/04-Engineering/CountermeasureCombat.md`
+- `Documentation/04-Engineering/AiMapEnvironment.md`
+- `Documentation/04-Engineering/TradingAndSolarSystem.md`
+- `Documentation/04-Engineering/PhaseThreeCombatDocumentation.md`
+- `tools/DeepSpaceSaga.Performance/README.md`
+- `Board/EP-0006-basic-torpedo-combat/Documentation.md`
+- `Board/EP-0006-basic-torpedo-combat/Tickets.md`
+- `Board/EP-0007-countermeasure-combat/Documentation.md`
+- `Board/EP-0007-countermeasure-combat/Tickets.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/Documentation.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/PublicationStatus.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/Tickets.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-module-owned-weapon-rules.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0002-dual-defense-loadout/EP-0008-US-0002-dual-defense-loadout.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0003-ranged-hostile-torpedo-fire/EP-0008-US-0003-ranged-hostile-torpedo-fire.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0004-hostile-pursuit-and-orbit/EP-0008-US-0004-hostile-pursuit-and-orbit.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0005-manual-countermeasure-fire/EP-0008-US-0005-manual-countermeasure-fire.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0006-lifetime-and-auto-arbitration/EP-0008-US-0006-lifetime-and-auto-arbitration.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0007-independent-defense-panels/EP-0008-US-0007-independent-defense-panels.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0008-manual-preview-and-map/EP-0008-US-0008-manual-preview-and-map.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0009-authoritative-player-defeat/EP-0008-US-0009-authoritative-player-defeat.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0010-defeat-screen-and-recovery/EP-0008-US-0010-defeat-screen-and-recovery.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0011-phase-three-save-continuation/EP-0008-US-0011-phase-three-save-continuation.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0012-phase-three-acceptance/EP-0008-US-0012-phase-three-acceptance.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0013-project-documentation-and-graph/EP-0008-US-0013-project-documentation-and-graph.md`
+- `Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0013-project-documentation-and-graph/EP-0008-US-0013-TK-0001-update-project-documents/EP-0008-US-0013-TK-0001-update-project-documents.md`
+
+Root AGENTS/CLAUDE are compatibility links; no root README exists. Asset workflows, ItemCatalogSchema and unrelated dated reports do not change. No relevant adjacent src/tests Markdown requires an edit. Graphify artifacts are owned by TK-0002 after this publication.
+
+## Validation and result — 2026-10-12
+
+43 scoped Markdown files synchronized, including two new durable documents. Canonical EngineRequirements updated before summaries. Relative links resolve after Windows path normalization;13 stories/45 unique tickets and dependency DAG checked, publication hashes are HEAD ancestors. Self-review and git diff --check PASS. No runtime change or repeated tests. Native/FPS/human gaps remain explicitly OPEN. Scope inventory: [PhaseThreeCombatDocumentation](../../../../Documentation/04-Engineering/PhaseThreeCombatDocumentation.md). Separate commit/push follows; own SHA verified through Git.

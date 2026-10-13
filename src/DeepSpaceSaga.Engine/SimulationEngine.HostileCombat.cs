@@ -13,7 +13,8 @@ public sealed partial class SimulationEngine
         _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
         _objects.Any(o => IsHostileActor(o) && !o.IsDocked &&
             o.Modules.Any(m => _launcherCombat.ContainsKey((o.InitialMotion.ObjectId, m.ModuleId))) &&
-            o.Modules.Any(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex))));
+            o.Modules.Any(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex),
+                Math.Max(_combatProcessedTimeMs, m.DisabledUntilMotionTimeMs ?? _combatProcessedTimeMs))));
 
     private void RefreshHostileCombat(long time)
     {
@@ -32,7 +33,7 @@ public sealed partial class SimulationEngine
             var weapon = owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal)
                 .FirstOrDefault(m => _launcherCombat.ContainsKey((owner.InitialMotion.ObjectId, m.ModuleId)));
             var engine = owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal)
-                .FirstOrDefault(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex)) && m.ActiveCycle is null);
+                .FirstOrDefault(m => CanExecuteEngineCommand(m, _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex), time) && m.ActiveCycle is null);
             var pose = RuntimeMotion.At(owner, time);
             if (target is null || !IsHostileActor(owner) || owner.IsDocked || weapon is null || engine is null)
             {
@@ -42,9 +43,10 @@ public sealed partial class SimulationEngine
             }
             var definition = _registry.ModuleTypes.GetDefinition(engine.ModuleTypeIndex);
             var launcher = _launcherCombat[(owner.InitialMotion.ObjectId, weapon.ModuleId)];
-            var state = HostileOrbitMath.Plan(pose, target, time, engine.ModuleId, weapon.ModuleId,
-                launcher.RangeKm!.Value / 2, definition.MaxSpeedMps!.Value / 1000.0,
+            var state = HostileOrbitMath.PlanAttack(pose, target, time, engine.ModuleId, weapon.ModuleId,
+                owner.AttackAi?.StandoffKm ?? launcher.RangeKm!.Value / 2, definition.MaxSpeedMps!.Value / 1000.0,
                 definition.LinearInertiaMps2!.Value / 1000.0, definition.AngularInertiaDegPerSec!.Value,
+                owner.AttackAi?.BandKm, owner.AttackAi?.FlankOffsetDeg ?? 0,
                 _hostileCombat.GetValueOrDefault(owner.InitialMotion.ObjectId));
             _hostileCombat[owner.InitialMotion.ObjectId] = state;
             _objects[_objects.IndexOf(owner)] = owner with

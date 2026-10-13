@@ -1,4 +1,5 @@
 using System.Reflection;
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
@@ -8,6 +9,55 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class DefeatTimeBoundaryTests
 {
+    [Fact]
+    public void No_combat_events_follow_module_defeat_inside_large_step()
+    {
+        using var engine = Create(PlayerDefeatTests.LethalScenario(150));
+        var final = At(engine, 600000, 180000000);
+        var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
+        Assert.Equal((long)Math.Ceiling(death.MotionTimeMs), final.MotionTimeMs);
+        Assert.DoesNotContain(final.CombatJournal, e => e.MotionTimeMs > death.MotionTimeMs);
+        Assert.Equal(death.EventId, final.EffectiveOutcome.DeathEventId);
+        Assert.Equal(SimulationSpeed.Speed0, final.CurrentSpeed);
+        Assert.False(final.EffectiveOutcome.CanSave);
+        var later = At(engine, 900000, 270000000);
+        Assert.Equal(final.CombatJournal.ToArray(), later.CombatJournal.ToArray());
+    }
+
+    [Fact]
+    public void Fractional_lethal_hit_stops_at_first_integer_not_before_death()
+    {
+        var scenario = PlayerDefeatTests.LethalScenario(150);
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Player
+                    ? o : o with { PositionY = -155.0123 }).ToArray()
+            }
+        };
+        using var whole = Create(scenario);
+        using var split = Create(scenario);
+        var expected = At(whole, 600000, 180000000);
+        foreach (long time in new long[] { 7, 123, 1111, 4999, 5000 }) At(split, time, time * 300);
+        var actual = At(split, 600000, 180000000);
+        foreach (var final in new[] { expected, actual })
+        {
+            double death = final.EffectiveOutcome.DeathMotionTimeMs!.Value;
+            Assert.InRange(death - Math.Floor(death), .1, .9);
+            Assert.Equal((long)Math.Ceiling(death), final.MotionTimeMs);
+            Assert.Equal(death, Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed).MotionTimeMs);
+            Assert.DoesNotContain(final.CombatJournal, e => e.MotionTimeMs > death);
+            Assert.Equal(SimulationSpeed.Speed0, final.CurrentSpeed);
+        }
+        Assert.Equal(expected.MotionTimeMs, actual.MotionTimeMs);
+        Assert.Equal(expected.GameTimeMs, actual.GameTimeMs);
+        var later = At(whole, 900000, 270000000);
+        Assert.Equal(expected.Outcome, later.Outcome);
+        Assert.Equal(JsonSerializer.Serialize(expected.Objects), JsonSerializer.Serialize(later.Objects));
+        Assert.Equal(expected.CombatJournal.ToArray(), later.CombatJournal.ToArray());
+    }
+
     [Fact]
     public void Lethal_hit_in_large_step_stops_all_systems()
     {
@@ -19,7 +69,9 @@ public class DefeatTimeBoundaryTests
         var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes),
             All(source.ItemTypes), All(source.CommandDefinitions), factoryTypes: [new("factory.defeat", "Food", recipe)],
             shipClasses: All(source.ShipClasses), stationMarketProfiles: All(source.StationMarketProfiles),
-            stationMarketEvents: All(source.StationMarketEvents));
+            stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
+            fireModes: source.FireModes);
         var scenario = PlayerDefeatTests.LethalScenario(150);
         scenario = scenario with
         {

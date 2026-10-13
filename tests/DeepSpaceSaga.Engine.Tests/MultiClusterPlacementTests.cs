@@ -72,7 +72,7 @@ public sealed class MultiClusterPlacementTests
             var objects = snapshot.Objects.Where(o => c.StationIds.Contains(o.ObjectId)).ToArray();
             return new ObjectMotionSnapshot(c.Id, objects.Average(o => o.X), objects.Average(o => o.Y), 0, 0);
         }).ToArray();
-        foreach (var a in centers) Assert.InRange(centers.Where(b => b != a).Min(b => Distance(a, b)) / 11520, 15, 35);
+        foreach (var a in centers) Assert.InRange(centers.Where(b => b != a).Min(b => Distance(a, b)) / 17280, 15, 35);
         string before = JsonSerializer.Serialize(snapshot);
         var source = SeededWorldBootstrapTests.Scenario();
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(source, generation: GenerationInputSchemaTests.Config() with

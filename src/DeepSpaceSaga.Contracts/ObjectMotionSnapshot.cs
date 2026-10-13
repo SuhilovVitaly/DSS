@@ -131,14 +131,20 @@ public sealed record ObjectMotionSnapshot(
     TorpedoSnapshot? Torpedo = null,
     CountermeasureSnapshot? Countermeasure = null,
     DefenseSnapshot? Defense = null,
-    /// <summary>Authoritative per-torpedo attempt marker; clearing a defender does not clear this flag.</summary>
-    bool CountermeasureAttempted = false,
     [property: JsonPropertyName("orbit")] OrbitalElements? Orbit = null,
     [property: JsonPropertyName("orbitSampleSimulationTimeMs")] long? OrbitSampleSimulationTimeMs = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
     [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
     /// <summary>Confirmed hostile maneuver; no client-side AI decisions are required.</summary>
-    HostileCombatSnapshot? HostileCombat = null);
+    HostileCombatSnapshot? HostileCombat = null,
+    /// <summary>Known ship's authoritative module health; hidden for unidentified objects.</summary>
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ModuleHealthSnapshot>))]
+    ImmutableArray<ModuleHealthSnapshot> ModuleHealth = default);
+
+/// <summary>Confirmed module durability and temporary disable state for ship inspection.</summary>
+public sealed record ModuleHealthSnapshot(string ModuleId, string DisplayName,
+    int ArmorCurrent, int ArmorMax, int StructureCurrent, int StructureMax,
+    double? DisabledUntilMotionTimeMs, bool IsDestroyed);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

@@ -5,7 +5,9 @@ public enum HostileCombatPhase
 {
     Pursuit,
     OrbitEntry,
-    OrbitHold
+    OrbitHold,
+    FlankApproach,
+    Retreat
 }
 
 /// <summary>
