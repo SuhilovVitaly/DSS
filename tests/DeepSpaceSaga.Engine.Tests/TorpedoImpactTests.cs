@@ -207,18 +207,18 @@ public sealed class TorpedoImpactTests
     }
 
     [Fact]
-    public void Invulnerable_obstacle_explodes_torpedo_and_releases_launcher()
+    public void Intermediate_obstacle_is_ignored_and_target_contact_releases_launcher()
     {
         using var engine = Create(Scenario(null, Obstacle("rock", 0, -50)));
         engine.ReceiveCommand(Fire("one"));
         At(engine, 0);
         var hit = At(engine, 4000);
         var fact = Assert.Single(hit.CombatImpacts);
-        Assert.Equal("rock", fact.HitObjectId);
+        Assert.Equal(Target, fact.HitObjectId);
         Assert.Equal(Target, fact.TargetObjectId);
-        Assert.Equal(0, fact.DamageApplied);
+        Assert.Equal(150, fact.DamageApplied);
         Assert.Null(hit.Objects.Single(o => o.ObjectId == Target).HullCombat);
-        Assert.Equal(1500, fact.MotionTimeMs, 4);
+        Assert.Equal(3166.6666666666665, fact.MotionTimeMs, 4);
         var last = fact.FinalTrail[^1];
         var end = TorpedoGuidanceMath.PredictSegment(last.Segment, last.Segment.DurationMs);
         Assert.Equal(fact.X, end.X, 7);
@@ -242,7 +242,7 @@ public sealed class TorpedoImpactTests
     }
 
     [Fact]
-    public void Equal_time_contacts_use_stable_order_and_apply_once()
+    public void Equal_time_non_targets_are_ignored_and_target_is_hit_once()
     {
         foreach (bool reverse in new[] { false, true })
         {
@@ -252,7 +252,7 @@ public sealed class TorpedoImpactTests
             engine.ReceiveCommand(Fire("one"));
             At(engine, 0);
             var hit = At(engine, 5000);
-            Assert.Equal("a", Assert.Single(hit.CombatImpacts).HitObjectId);
+            Assert.Equal(Target, Assert.Single(hit.CombatImpacts).HitObjectId);
             Assert.Single(At(engine, 6000).CombatImpacts);
             engine.ReceiveCommand(Fire("one"));
             Assert.DoesNotContain(At(engine, 6000).Objects, o => o.Torpedo is not null);
@@ -296,7 +296,7 @@ public sealed class TorpedoImpactTests
     }
 
     [Fact]
-    public void Moving_obstacle_is_hit_between_boundary_endpoints()
+    public void Moving_non_target_does_not_intercept_torpedo_between_boundary_endpoints()
     {
         // The obstacle crosses the projectile at 1500 ms and leaves before 1600 ms.
         var rock = Obstacle("crossing", -3000, -45) with { SpeedMps = 200000, DirectionDegrees = 90, MovementType = "Linear" };
@@ -304,8 +304,22 @@ public sealed class TorpedoImpactTests
         engine.ReceiveCommand(Fire("one"));
         At(engine, 0);
         var hit = Assert.Single(At(engine, 4000).CombatImpacts);
-        Assert.Equal("crossing", hit.HitObjectId);
-        Assert.InRange(hit.MotionTimeMs, 1497, 1500);
+        Assert.Equal(Target, hit.HitObjectId);
+        Assert.InRange(hit.MotionTimeMs, 3166, 3167);
+    }
+
+    [Fact]
+    public void Non_target_ship_is_ignored_on_way_to_selected_asteroid()
+    {
+        var scene = Scenario(o => o.ObjectId == Target ? o with { PositionY = -50 } : o,
+            Obstacle("selected-rock", 0, -100));
+        using var engine = Create(scene);
+        engine.ReceiveCommand(Fire("one", "selected-rock"));
+        At(engine, 0);
+        var hit = Assert.Single(At(engine, 4000).CombatImpacts);
+        Assert.Equal("selected-rock", hit.HitObjectId);
+        Assert.Equal("selected-rock", hit.TargetObjectId);
+        Assert.Null(At(engine, 4000).Objects.Single(o => o.ObjectId == Target).HullCombat);
     }
 
     [Fact]

@@ -78,17 +78,17 @@ public sealed class TorpedoHistoryTests
     }
 
     [Fact]
-    public void Final_history_stops_at_first_contact()
+    public void Final_history_stops_at_selected_target_contact()
     {
         using var engine = Create(TorpedoImpactTests.Scenario(null, Obstacle("rock", 0, -50)));
         engine.ReceiveCommand(Fire("contact"));
         At(engine, 0);
         var impact = Assert.Single(At(engine, 10000).CombatImpacts);
-        Assert.Equal("rock", impact.HitObjectId);
-        Assert.InRange(Math.Abs(impact.MotionTimeMs - 1500), 0, 1e-5);
-        Assert.Equal(-45, impact.Y, 6);
+        Assert.Equal(Target, impact.HitObjectId);
+        Assert.InRange(Math.Abs(impact.MotionTimeMs - 3166.6666666666665), 0, 1e-5);
+        Assert.Equal(-95, impact.Y, 6);
         AssertHistory(impact.FinalTrail, 0, impact.MotionTimeMs, impact.X, impact.Y);
-        Assert.Equal(45, impact.FinalTrail.Sum(s => s.Segment.DurationMs * s.Segment.SpeedKmS / 100), 6);
+        Assert.Equal(95, impact.FinalTrail.Sum(s => s.Segment.DurationMs * s.Segment.SpeedKmS / 100), 6);
     }
 
     [Fact]
