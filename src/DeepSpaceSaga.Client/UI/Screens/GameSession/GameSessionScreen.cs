@@ -1422,7 +1422,9 @@ public sealed partial class GameSessionScreen : IScreen
 
             // Combat participants share their confirmed display time with the launch
             // preview and target path. A frozen/corrected marker would detach the line.
-            if (hasCombatPose || predicted.HasAbsoluteOrbit)
+            // Guided flight geometry stays on confirmed motion, but its hostile
+            // target marker still needs visual reconciliation at snapshot changes.
+            if ((hasCombatPose && obj.HostileCombat is null) || predicted.HasAbsoluteOrbit)
             {
                 _visualCorrections.Remove(obj.ObjectId);
                 _pausedVisualAnchors.Remove(obj.ObjectId);
@@ -1539,6 +1541,19 @@ public sealed partial class GameSessionScreen : IScreen
     private RenderMotion PredictRenderMotion(ObjectMotionSnapshot state, long elapsedMs)
     {
         if (elapsedMs == 0 && state.Orbit is null) return new(state);
+        if (state.HostileCombat is { Segment: { } segment } && elapsedMs > 0)
+        {
+            // Engine confirms only one 100 ms steering segment at a time. Keep its
+            // endpoint velocity for the map until the next 1 Hz snapshot arrives;
+            // the combat predictor itself must still stop at the confirmed endpoint.
+            var confirmed = _predictor.Predict(state, elapsedMs);
+            long unconfirmedMs = Math.Max(0, elapsedMs - Math.Max(0, segment.DurationMs - segment.ElapsedMs));
+            if (unconfirmedMs == 0) return new(confirmed);
+            double radians = confirmed.Direction * Math.PI / 180;
+            double distance = confirmed.SpeedKmS * 10 * (unconfirmedMs / 1000.0);
+            return new(confirmed, confirmed.X + distance * Math.Sin(radians),
+                confirmed.Y - distance * Math.Cos(radians), confirmed.Direction);
+        }
         if (_predictor is LinearMotionPredictor &&
             LinearMotionPredictor.TryPredictLinearPosition(state, elapsedMs, out double x, out double y))
             return new(state, x, y, state.Direction);

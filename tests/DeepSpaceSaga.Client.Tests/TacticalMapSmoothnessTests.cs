@@ -65,6 +65,105 @@ public class TacticalMapSmoothnessTests
         Assert.Equal(3750, buffer.EffectivePredictionDeltaMs);
     }
 
+    [Fact]
+    public void Hostile_ship_keeps_moving_between_one_second_snapshots()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        var player = new ObjectMotionSnapshot("player", 0, 0, 0, 0,
+            RenderObjectType: SpaceObjectType.PlayerShip);
+        var segment = new HostileMotionSegment(0, 100, 0, 100, 0, 2, 90, 0, 0);
+        var hostile = new ObjectMotionSnapshot("mukha", 100, 0, 2, 90,
+            RenderObjectType: SpaceObjectType.NpcShip,
+            HostileCombat: new("player", "engine", "weapon", 50, true,
+                HostileCombatPhase.Pursuit, segment));
+        buffer.Update(new(1, 0, SimulationSpeed.Speed1, [player, hostile], PlayerShipObjectId: "player"));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+
+        foreach (int realMs in new[] { 50, 150, 300, 600, 900 })
+        {
+            clock = Stopwatch.Frequency * realMs / 1000;
+            screen.Render(surface.Canvas, 1280, 720);
+            Assert.Equal(100 + 2 * 10 * realMs / 1000.0,
+                screen.RenderStates.Single(s => s.Source.ObjectId == "mukha").Predicted.X, 6);
+        }
+        Assert.Equal(100, hostile.X);
+        Assert.Equal(0, hostile.HostileCombat!.Segment.ElapsedMs);
+    }
+
+    [Fact]
+    public void Hostile_visual_pose_is_continuous_when_next_segment_arrives()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        var predictor = new LinearMotionPredictor();
+        var player = new ObjectMotionSnapshot("player", 0, 0, 0, 0,
+            RenderObjectType: SpaceObjectType.PlayerShip);
+        var segment = new HostileMotionSegment(0, 100, 0, 100, 0, 2, 90, 0, 0);
+        var hostile = new ObjectMotionSnapshot("shmel", 100, 0, 2, 90,
+            RenderObjectType: SpaceObjectType.NpcShip,
+            HostileCombat: new("player", "engine", "weapon", 50, true,
+                HostileCombatPhase.FlankApproach, segment));
+        buffer.Update(new(1, 0, SimulationSpeed.Speed1, [player, hostile], PlayerShipObjectId: "player"));
+        var screen = new GameSessionScreen(buffer, predictor, timestampProvider: () => clock);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        clock = Stopwatch.Frequency;
+        screen.Render(surface.Canvas, 1280, 720);
+        double before = screen.RenderStates.Single(s => s.Source.ObjectId == "shmel").Predicted.X;
+
+        var next = hostile with
+        {
+            X = before,
+            HostileCombat = hostile.HostileCombat! with
+            {
+                Segment = segment with { EpochMs = 1000, StartX = before, ElapsedMs = 0 }
+            }
+        };
+        buffer.Update(new(2, 1000, SimulationSpeed.Speed1, [player, next], PlayerShipObjectId: "player"));
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal(before, screen.RenderStates.Single(s => s.Source.ObjectId == "shmel").Predicted.X, 6);
+        clock += Stopwatch.Frequency / 5;
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal(before + 4, screen.RenderStates.Single(s => s.Source.ObjectId == "shmel").Predicted.X, 6);
+    }
+
+    [Fact]
+    public void Hostile_target_of_torpedo_reconciles_visual_pose_without_jumping()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        var player = new ObjectMotionSnapshot("player", 0, 0, 0, 0,
+            RenderObjectType: SpaceObjectType.PlayerShip);
+        var segment = new HostileMotionSegment(0, 100, 0, 100, 0, 2, 90, 0, 0);
+        var hostile = new ObjectMotionSnapshot("mukha", 100, 0, 2, 90,
+            RenderObjectType: SpaceObjectType.NpcShip,
+            HostileCombat: new("player", "engine", "weapon", 50, true,
+                HostileCombatPhase.Pursuit, segment));
+        var torpedo = new ObjectMotionSnapshot("torpedo", 0, 0, 3, 90,
+            RenderObjectType: SpaceObjectType.Missile,
+            Torpedo: new("player", "launcher", "mukha", 0, 3, 90, 150, 0,
+                new(0, 1, TorpedoRoutePhase.Straight, false, [new(0, 0, 90, 3, 0, 1000)])));
+        buffer.Update(new(1, 0, SimulationSpeed.Speed1, [player, hostile, torpedo], PlayerShipObjectId: "player"));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        clock = Stopwatch.Frequency;
+        screen.Render(surface.Canvas, 1280, 720);
+        double before = screen.RenderStates.Single(s => s.Source.ObjectId == "mukha").Predicted.X;
+
+        var next = hostile with
+        {
+            X = before + 10,
+            HostileCombat = hostile.HostileCombat! with
+            {
+                Segment = segment with { EpochMs = 1000, StartX = before + 10, ElapsedMs = 0 }
+            }
+        };
+        buffer.Update(new(2, 1000, SimulationSpeed.Speed1, [player, next, torpedo], PlayerShipObjectId: "player"));
+        screen.Render(surface.Canvas, 1280, 720);
+        Assert.Equal(before, screen.RenderStates.Single(s => s.Source.ObjectId == "mukha").Predicted.X, 6);
+    }
+
     [Theory]
     [InlineData(2, false)]
     [InlineData(15, false)]
