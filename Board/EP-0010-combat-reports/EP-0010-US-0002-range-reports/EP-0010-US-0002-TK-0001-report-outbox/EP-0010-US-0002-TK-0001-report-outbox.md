@@ -4,14 +4,14 @@ story: EP-0010-US-0002-range-reports
 ticket: EP-0010-US-0002-TK-0001-report-outbox
 title: "Сессия докладов и авторитетный outbox"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0001-TK-0002-snapshot-batch"]
 files_touched: 3
 serves: ["US02-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Сессия докладов и авторитетный outbox
@@ -86,3 +86,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Создать единственную точку выпуска и публикации докладов. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Implemented session sequence, fixed baseline, bounded outbox, reset and physical-step hooks. Range/fact hooks intentionally await following tickets. Four focused tests PASS; Engine build and scoped format PASS; git diff --check PASS. Full Engine suite running separately; native not applicable to this infrastructure ticket. Overflow raises an explicit session exception without removing queued reports.

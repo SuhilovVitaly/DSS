@@ -513,6 +513,7 @@ public sealed partial class SimulationEngine : IDisposable
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
+            ResetCombatReports();
 
         }
     }
@@ -755,7 +756,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             var installedModules = BuildInstalledModuleProjection(gameTimeMs);
 
-            return new AuthoritativeSnapshot(
+            var snapshot = new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: clockState.GameTimeMs,
                 CurrentSpeed: _dialogue.Active is not null ? SimulationSpeed.Speed0 : dialogueWasActive ? _clock.Speed : clockState.Speed,
@@ -784,7 +785,9 @@ public sealed partial class SimulationEngine : IDisposable
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: BuildVoyageFinanceProjection(),
                 StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap, AiMap: _aiMap,
-                Outcome: _sessionOutcome);
+                Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch());
+            _pendingCombatReports.Clear();
+            return snapshot;
         }
     }
 
@@ -3422,12 +3425,14 @@ public sealed partial class SimulationEngine : IDisposable
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
         if (IsDefeated) return;
+        EvaluateCombatReportRange(_combatProcessedTimeMs);
         if (gameTimeMs > _combatProcessedTimeMs)
             RefreshHostileCombat(_combatProcessedTimeMs);
         if (!HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
+            EvaluateCombatReportRange(gameTimeMs);
             return;
         }
         // Visit steering boundaries and security deadlines in time order. Predicting
@@ -3462,6 +3467,7 @@ public sealed partial class SimulationEngine : IDisposable
             RefreshCountermeasureGuidance(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
+            EvaluateCombatReportRange(next);
             if (next >= gameTimeMs) break;
         }
     }

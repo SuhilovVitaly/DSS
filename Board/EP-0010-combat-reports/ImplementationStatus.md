@@ -23,7 +23,7 @@
 |---|---|---|---|
 | [EP-0010-US-0001-TK-0001-immutable-report](EP-0010-US-0001-report-contracts/EP-0010-US-0001-TK-0001-immutable-report/EP-0010-US-0001-TK-0001-immutable-report.md) | IMPLEMENTED | 13 focused / 207 suite PASS | OPEN / по scope |
 | [EP-0010-US-0001-TK-0002-snapshot-batch](EP-0010-US-0001-report-contracts/EP-0010-US-0001-TK-0002-snapshot-batch/EP-0010-US-0001-TK-0002-snapshot-batch.md) | IMPLEMENTED | 3 focused / 210 suite PASS | OPEN / по scope |
-| [EP-0010-US-0002-TK-0001-report-outbox](EP-0010-US-0002-range-reports/EP-0010-US-0002-TK-0001-report-outbox/EP-0010-US-0002-TK-0001-report-outbox.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0002-TK-0001-report-outbox](EP-0010-US-0002-range-reports/EP-0010-US-0002-TK-0001-report-outbox/EP-0010-US-0002-TK-0001-report-outbox.md) | IMPLEMENTED | 4 focused PASS; build/format PASS | OPEN / по scope |
 | [EP-0010-US-0002-TK-0002-first-range-entry](EP-0010-US-0002-range-reports/EP-0010-US-0002-TK-0002-first-range-entry/EP-0010-US-0002-TK-0002-first-range-entry.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0003-TK-0001-captured-reporters](EP-0010-US-0003-launch-reports/EP-0010-US-0003-TK-0001-captured-reporters/EP-0010-US-0003-TK-0001-captured-reporters.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0003-TK-0002-confirmed-launches](EP-0010-US-0003-launch-reports/EP-0010-US-0003-TK-0002-confirmed-launches/EP-0010-US-0003-TK-0002-confirmed-launches.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -63,4 +63,4 @@
 
 Подготовительный f6cd7ea41a705aca7d6c25689c96de5bc35f1306 опубликован в origin/base-fight и SHA подтверждён git ls-remote. Первичный auto-review отказ push снят после read-only GitHub проверки: connected user=owner SuhilovVitaly, repository permissions admin/push=true. Обязательное чтение Documentation и карточек выполнено частями; текущая реализация соответствует contract US0001. Baseline Contracts194/194, после первого DTO207/207. Полный solution baseline в sandbox завершился exit1 без diagnostics; scoped test в sandbox завис на IPC и был отменён, разрешённый host run PASS.
 
-US0001 review: оба AC проверены, Contracts210/210, build/format/diff PASS. TK0001 a49debeb6a6df8b01b150487b6d002420a53cfcd —push и remote SHA PASS. TK0002 ожидает свой commit/push; US0002 не начата.
+US0001 review: оба AC проверены, Contracts210/210, build/format/diff PASS. TK0001 a49debeb6a6df8b01b150487b6d002420a53cfcd —push и remote SHA PASS. TK0002 e944f2827c7ab294e6e7b05c153a5236fd4650ac опубликован, remote SHA PASS. US0002 выполняется.
