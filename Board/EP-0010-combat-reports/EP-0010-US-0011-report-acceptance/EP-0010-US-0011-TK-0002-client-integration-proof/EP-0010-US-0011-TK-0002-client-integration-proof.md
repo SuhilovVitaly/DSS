@@ -1,0 +1,88 @@
+---
+epic: EP-0010-combat-reports
+story: EP-0010-US-0011-report-acceptance
+ticket: EP-0010-US-0011-TK-0002-client-integration-proof
+title: "Интеграционная матрица доставки и UI"
+stage: draft
+status: planned
+layer: client
+depends_on: ["EP-0010-US-0011-TK-0001-engine-scenario-proof"]
+files_touched: 2
+serves: ["US11-AC2"]
+created: 2026-10-16
+revision: 1
+validation_status: not-run
+---
+
+# Интеграционная матрица доставки и UI
+
+## Why
+
+Проверить всю Client цепочку и регрессии соседних панелей. [История](../EP-0010-US-0011-report-acceptance.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R08, R09, R10, R11, R17, R19, R20, R21, R22, R23, R24.
+
+## Decisions
+
+Пользователь поручил сохранить ТЗ и создать эпик с историями/тикетами (2026-10-16). Выполнение этого тикета, commit/push, генерация art или запуск игры пока не поручены. Продуктовые решения — §§1–10 ТЗ; не выдавать A01–A10 за дополнительные ответы пользователя.
+
+## Assumptions
+
+Технические A01–A10 ТЗ. Proposed API ниже — ожидаемый результат, не утверждение о текущем коде. Максимум 5 файлов из таблицы; Board evidence не разрешает скрытые изменения production. Layer `client`; matching coverage `tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj`. Для purely art/evidence runtime source не меняется.
+
+## Code context
+
+| File | Current state | Allowed change |
+|---|---|---|
+| `tests/DeepSpaceSaga.Client.Tests/CombatReportsAcceptanceTests.cs` | NEW — proposed; файл отсутствует на planning baseline | Создать/дополнить тесты только этого тикета |
+| `tests/DeepSpaceSaga.Client.Tests/CombatReportsAcceptanceFixtures.cs` | NEW — proposed; файл отсутствует на planning baseline | Создать/дополнить тесты только этого тикета |
+
+Read-only общий [grounding](../../Documentation.md#grounding) содержит текущие точки входа и ограничения. Остальные файлы не разрешены к изменению. Зависимости: EP-0010-US-0011-TK-0001-engine-scenario-proof; их новый код/DTO считаются доступными только после завершения.
+
+## Public API after the change
+
+No public API change.
+
+## Implementation steps
+
+1. Создать fixture connection/handle/buffer/screen с real report batches: медленный receiver/UI, many reports до frame, re-delivery и разные bootstrap.
+2. Проверить лимиты200 истории/4096 pending, long wrapped body, locale keys, портрет/asset fallback, viewport/scale/input matrix, старые journal/object panels.
+3. Запустить focused report suites и релевантные существующие Client/Engine suites; build и scoped format/diff evidence. Существующие посторонние failures описать отдельно, не исправлять вне scope.
+
+## Out of scope
+
+Изменение баланса/конфигурации оружия, формул попадания, RNG, часов, поведения AI, discovery rules, посторонних журналов и незакоммиченных изменений. Никакой публикации или автоматического выполнения следующего тикета без execution-поручения. Root save version не менять в обход A07.
+
+## Invariants
+
+- Engine/renderer separation: `src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs:10`; immutable snapshot: `src/DeepSpaceSaga.Contracts/AuthoritativeSnapshot.cs:11`. Через boundary нет Skia/GL.
+- Физическое время/модульный бой — EngineRequirements §Phase Four Module Combat и §§7–8 ТЗ; UI не меняет исходы/часы/sequence журнала.
+- Captured identity, privacy, once-per-target и ровно одна открытая карточка проверяются в соответствующих layers; этот тикет не ослабляет смежные гарантии.
+
+## Tests
+
+- `TransportToPanelKeepsEveryPendingReport` (планируемый сценарий проверки).
+- `HistoryAndDeliveryLimitsAreDifferent` (планируемый сценарий проверки).
+- `AllSupportedViewportsAndLocales` (планируемый сценарий проверки).
+- `NoMapInputLeakOrFocusSteal` (планируемый сценарий проверки).
+- `LegacyJournalAndObjectInfoRemainUsable` (планируемый сценарий проверки).
+
+Команды выполнять из корня репозитория **при реализации**, сейчас NOT RUN:
+
+```powershell
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter "FullyQualifiedName~CombatReportsAcceptanceTests"
+dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore
+dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include tests/DeepSpaceSaga.Client.Tests/CombatReportsAcceptanceTests.cs tests/DeepSpaceSaga.Client.Tests/CombatReportsAcceptanceFixtures.cs
+git diff --check
+```
+
+## Definition of Done
+
+- Шаги выполнены только в 2 разрешённых файлах, выбранный layer соблюдён.
+- Критерии US11-AC2 подтверждены именованными проверками выше и ссылками на evidence.
+- Focused проверки и соответствующий build/format проходят либо исходное падение записано отдельно; prose/art gates проверены подходящим способом.
+- Сохранены public API/invariants/out-of-scope; нет скрытой работы или нерешённых блокирующих допущений.
+- Native/human/FPS не помечены PASS по headless; статус NOT RUN/OPEN сохраняется до реального прогона.
+- Обновлён status/evidence тикета, выполнен diff check; не заявлять реализацию на основании этого planning-документа.
+
+## Self-containment check
+
+Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Проверить всю Client цепочку и регрессии соседних панелей. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
