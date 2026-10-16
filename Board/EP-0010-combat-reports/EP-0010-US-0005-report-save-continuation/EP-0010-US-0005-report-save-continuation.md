@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0004-combat-result-reports"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ EP-0010-US-0004-combat-result-reports Ticket DAG ниже имеет приор�
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+Save17 extension validated, required fields enforced, pre-feature baseline supported, allocator/range IDs captured and restored atomically. 83 report/save/burst cases PASS. Reviewed new-game reset, silent loaded contacts, out-of-range and removed IDs, post-load first event and defeat rejection. Native acceptance remains OPEN.

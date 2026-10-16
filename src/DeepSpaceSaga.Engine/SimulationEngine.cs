@@ -431,6 +431,7 @@ public sealed partial class SimulationEngine : IDisposable
         StageLegacyWeaponRatings(runtimeObjects);
         var defenses = BuildDefenseState(runtimeObjects);
         StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
+        var restoredReports = StageCombatReportsRestore(gs, loadingSave, runtimeObjects, combatState);
 
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         lock (_worldStateLock)
@@ -513,7 +514,7 @@ public sealed partial class SimulationEngine : IDisposable
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-            ResetCombatReports();
+            RestoreCombatReports(restoredReports);
 
         }
     }
@@ -1164,7 +1165,7 @@ public sealed partial class SimulationEngine : IDisposable
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
             CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
-            HostileCombatState: CaptureHostileState(gameTimeMs),
+            HostileCombatState: CaptureHostileState(gameTimeMs), CombatReportsState: CaptureCombatReportsState(),
             MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
             LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),

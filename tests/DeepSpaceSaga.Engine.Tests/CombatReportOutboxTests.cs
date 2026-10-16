@@ -54,8 +54,13 @@ public sealed class CombatReportOutboxTests
     public void ReportsDoNotAdvanceRngOrClocks()
     {
         using var engine = Create(TorpedoImpactTests.Scenario(o => o with { IsKnown = false }));
-        var before = System.Text.Json.JsonSerializer.Serialize(engine.CaptureSaveState());
+        static string State(SimulationEngine e)
+        {
+            var save = e.CaptureSaveState();
+            return System.Text.Json.JsonSerializer.Serialize(save with { GameState = save.GameState with { CombatReportsState = null } });
+        }
+        var before = State(engine);
         Emit(engine);
-        Assert.Equal(before, System.Text.Json.JsonSerializer.Serialize(engine.CaptureSaveState()));
+        Assert.Equal(before, State(engine));
     }
 }

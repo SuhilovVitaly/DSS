@@ -5,19 +5,25 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private IEnumerable<SpaceObjectRuntime> CombatReportRangeTargets(SpaceObjectRuntime player, double motionTimeMs)
+    private IEnumerable<SpaceObjectRuntime> CombatReportRangeTargets(SpaceObjectRuntime player, double motionTimeMs) =>
+        CombatReportRangeTargets(player, motionTimeMs, _objects, _launcherCombat, GetRelationToPlayer);
+
+    private IEnumerable<SpaceObjectRuntime> CombatReportRangeTargets(SpaceObjectRuntime player, double motionTimeMs,
+        IEnumerable<SpaceObjectRuntime> objects,
+        IReadOnlyDictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> launchers,
+        Func<SpaceObjectRuntime, string?> relation)
     {
         var ranges = player.Modules.Where(m => CanExecuteModuleCommand(m, motionTimeMs))
-            .Where(m => !_launcherCombat.TryGetValue((player.InitialMotion.ObjectId, m.ModuleId), out var launcher) || !launcher.IsBrokenUntilDock)
+            .Where(m => !launchers.TryGetValue((player.InitialMotion.ObjectId, m.ModuleId), out var launcher) || !launcher.IsBrokenUntilDock)
             .Select(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex))
             .Where(t => t.CommandTypeIds.Contains(CombatCommandTypes.Fire) && t.TorpedoRangeKm is > 0)
             .Select(t => t.TorpedoRangeKm!.Value).ToArray();
         if (ranges.Length == 0) yield break;
         var origin = CombatPath(player).Position(motionTimeMs);
-        foreach (var target in _objects.Where(o => o.IsKnown && !o.IsDestroyed &&
+        foreach (var target in objects.Where(o => o.IsKnown && !o.IsDestroyed &&
             o.InitialMotion.ObjectId != player.InitialMotion.ObjectId &&
             o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
-            GetRelationToPlayer(o) == PlayerRelation.Enemy).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal))
+            relation(o) == PlayerRelation.Enemy).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal))
         {
             var position = CombatPath(target).Position(motionTimeMs);
             if (ranges.Any(range => CombatRangeMath.IsWithinRange(

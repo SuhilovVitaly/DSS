@@ -4,14 +4,14 @@ story: EP-0010-US-0005-report-save-continuation
 ticket: EP-0010-US-0005-TK-0002-capture-and-restore
 title: "Capture/restore и bootstrap baseline"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0005-TK-0001-save-schema-validation"]
-files_touched: 4
+files_touched: 5
 serves: ["US05-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Capture/restore и bootstrap baseline
@@ -34,7 +34,7 @@ validation_status: not-run
 |---|---|---|
 | `src/DeepSpaceSaga.Engine/SimulationEngine.cs` | src/DeepSpaceSaga.Engine/SimulationEngine.cs:17 — `public sealed partial class SimulationEngine` | Изменение только для шагов этого тикета; соседний scope запрещён |
 | `src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportPersistence.cs` | NEW — proposed; файл отсутствует на planning baseline | Изменение только для шагов этого тикета; соседний scope запрещён |
-| `src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs` | NEW — proposed; файл отсутствует на planning baseline | Изменение только для шагов этого тикета; соседний scope запрещён |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportRange.cs` | NEW — proposed; файл отсутствует на planning baseline | Изменение только для шагов этого тикета; соседний scope запрещён |
 | `tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveLoadTests.cs` | NEW — proposed; файл отсутствует на planning baseline | Создать/дополнить тесты только этого тикета |
 
 Read-only общий [grounding](../../Documentation.md#grounding) содержит текущие точки входа и ограничения. Остальные файлы не разрешены к изменению. Зависимости: EP-0010-US-0005-TK-0001-save-schema-validation; их новый код/DTO считаются доступными только после завершения.
@@ -88,3 +88,11 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Продолжить идентичность докладов при чистом UI после загрузки. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Scope adjustment before implementation - 2026-10-16
+
+Actual five files: SimulationEngine.cs, CombatReportPersistence.cs, CombatReportRange.cs, CombatReportsSaveLoadTests.cs, CombatReportOutboxTests.cs. Shared range evaluator accepts staged world/launchers for atomic restore without duplicate geometry. Outbox RNG/clock regression excludes the newly persisted report allocator while still comparing every other save field. CombatReports.cs needs no modification in this ticket.
+
+## Execution evidence - 2026-10-16
+
+Staged state shares physical range evaluator and loaded availability; commits fixed baseline only with successful world restore. Saves retain allocator and all range IDs, including absent targets, no presentation/outbox history. Seven restore cases plus report/schema/combat/burst regressions PASS (83 total). Engine compile, scoped format/diff PASS. Atomic failure preserves pending commands/reports. Defeated save remains prohibited.
