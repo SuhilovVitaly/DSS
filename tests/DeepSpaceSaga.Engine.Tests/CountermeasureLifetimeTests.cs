@@ -137,13 +137,15 @@ public class CountermeasureLifetimeTests
     }
 
     [Fact]
-    public void Hull_at_contact_wins_without_draw()
+    public void Non_target_hull_does_not_preempt_intercept()
     {
         using var engine = Start(1000, 155, 100, obstacle: true);
         var snapshot = At(engine, 1001);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.Empty(snapshot.CombatJournal.Where(e => e.Roll is not null));
-        Assert.Equal("hull-tie", Assert.Single(snapshot.CombatImpacts).HitObjectId);
+        Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.Intercept && e.Roll is not null);
+        var impact = Assert.Single(snapshot.CombatImpacts);
+        Assert.Equal(TorpedoTerminationKind.Intercept, impact.TerminationKind);
+        Assert.Empty(impact.HitObjectId);
     }
 
     [Fact]

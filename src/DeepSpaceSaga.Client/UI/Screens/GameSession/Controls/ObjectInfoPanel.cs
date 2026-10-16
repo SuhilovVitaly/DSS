@@ -446,11 +446,12 @@ public sealed class ObjectInfoPanel
         _bodyRect = new SKRect(left, _captionRect.Bottom, left + _renderPanelWidth, rowY);
     }
 
-    private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines) =>
-        data?.Modules is { Count: > 0 } || data?.HostileCombat is not null || data?.Survey is not null || data?.Torpedo is not null || data?.Countermeasure is not null || data?.MarketKnowledge is not null || data?.ClusterName is not null || data?.Owner is not null || data?.FieldKind is not null || data?.PoiDescription is not null
-            ? Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding) : 62f;
+    private float ValueOffset(ObjectInfoPanelData? data, List<(string Label, string Value)> lines)
+    {
+        float textWidth = _renderPanelWidth - _renderImageWidth - 4 * Padding;
+        return Math.Min(Math.Max(62f, lines.Max(line => _labelPaint.MeasureText(line.Label)) + Padding), textWidth * .45f);
+    }
 
-    /// <summary>Wrap market values using the same measured text width used for rendering and body height.</summary>
     internal List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data)
     {
         var source = BuildLines(data);
@@ -459,24 +460,30 @@ public sealed class ObjectInfoPanel
 
     private List<(string Label, string Value)> BuildRenderLines(ObjectInfoPanelData? data, List<(string Label, string Value)> source, float valueOffset)
     {
-        if (data?.Modules is not { Count: > 0 } && data?.Countermeasure is null && data?.HostileCombat is null && data?.MarketKnowledge is null && data?.ClusterName is null && data?.Owner is null && data?.FieldKind is null && data?.PoiDescription is null) return source;
-        float width = Math.Max(32, _renderPanelWidth - _renderImageWidth - 4 * Padding - valueOffset);
+        float valueWidth = _renderPanelWidth - _renderImageWidth - 4 * Padding - valueOffset;
         var result = new List<(string Label, string Value)>();
         foreach (var (label, value) in source)
         {
-            string remaining = value;
-            bool first = true;
-            while (_valuePaint.MeasureText(remaining) > width)
-            {
-                int length = Math.Max(1, (int)_valuePaint.BreakText(remaining, width));
-                int space = remaining.LastIndexOf(' ', length - 1, length);
-                if (space > 0) length = space;
-                result.Add((first ? label : "", remaining[..length].TrimEnd()));
-                remaining = remaining[length..].TrimStart();
-                first = false;
-            }
-            result.Add((first ? label : "", remaining));
+            var labels = WrapText(label, valueOffset - Padding, _labelPaint);
+            var values = WrapText(value, valueWidth, _valuePaint);
+            for (int i = 0; i < Math.Max(labels.Count, values.Count); i++)
+                result.Add((i < labels.Count ? labels[i] : "", i < values.Count ? values[i] : ""));
         }
+        return result;
+    }
+
+    private static List<string> WrapText(string text, float width, SKPaint paint)
+    {
+        var result = new List<string>();
+        while (paint.MeasureText(text) > width)
+        {
+            int length = Math.Max(1, (int)paint.BreakText(text, width));
+            int space = text.LastIndexOf(' ', length - 1, length);
+            if (space > 0) length = space;
+            result.Add(text[..length].TrimEnd());
+            text = text[length..].TrimStart();
+        }
+        result.Add(text);
         return result;
     }
 

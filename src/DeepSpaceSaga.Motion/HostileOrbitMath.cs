@@ -95,7 +95,7 @@ public static class HostileOrbitMath
         {
             var orbit = Plan(ship, target, epochMs, engineModuleId, weaponModuleId, standoffKm,
                 maxSpeedKmS, accelerationKmS2, turnRateDegPerSec, previous);
-            return orbit.Phase == HostileCombatPhase.Pursuit ? orbit : orbit with { Phase = HostileCombatPhase.OrbitHold };
+            return SmoothAttack(orbit.Phase == HostileCombatPhase.Pursuit ? orbit : orbit with { Phase = HostileCombatPhase.OrbitHold }, previous, accelerationKmS2, turnRateDegPerSec, maxSpeedKmS);
         }
 
         double heading;
@@ -120,9 +120,48 @@ public static class HostileOrbitMath
         double dt = DecisionIntervalMs / 1000.0;
         double acceleration = Math.Clamp((maxSpeedKmS - ship.SpeedKmS) / dt, -accelerationKmS2, accelerationKmS2);
         double turn = Math.Clamp(Delta(ship.Direction, heading) / dt, -turnRateDegPerSec, turnRateDegPerSec);
-        return new(target.ObjectId, engineModuleId, weaponModuleId, standoffKm,
+        var attack = new HostileCombatSnapshot(target.ObjectId, engineModuleId, weaponModuleId, standoffKm,
             previous?.Clockwise ?? ChooseClockwise(ship, target), phase,
             new(epochMs, DecisionIntervalMs, 0, ship.X, ship.Y, ship.SpeedKmS, ship.Direction, acceleration, turn));
+        // Blend into the orbit controller before crossing the band boundary. Both
+        // acceleration and curvature then approach the same limit on either side.
+        var orbitPlan = Plan(ship, target, epochMs, engineModuleId, weaponModuleId, standoffKm,
+            maxSpeedKmS, accelerationKmS2, turnRateDegPerSec, previous);
+        double edgeDistance = Math.Max(0, Math.Abs(distanceKm - standoffKm) - bandKm.Value);
+        double blend = Math.Clamp(edgeDistance / Math.Max(bandKm.Value, standoffKm * .5), 0, 1);
+        blend = blend * blend * (3 - 2 * blend);
+        attack = attack with
+        {
+            Segment = attack.Segment with
+            {
+                AccelerationKmS2 = orbitPlan.Segment.AccelerationKmS2 * (1 - blend) + acceleration * blend,
+                TurnRateDegPerSec = orbitPlan.Segment.TurnRateDegPerSec * (1 - blend) + turn * blend
+            }
+        };
+        return SmoothAttack(attack, previous, accelerationKmS2, turnRateDegPerSec, maxSpeedKmS);
+    }
+
+    private static HostileCombatSnapshot SmoothAttack(HostileCombatSnapshot plan, HostileCombatSnapshot? previous,
+        double accelerationLimit, double turnLimit, double maxSpeedKmS)
+    {
+        if (previous is null) return plan;
+        // Ramp control changes over one physical second instead of reversing
+        // maximum thrust/turn every 100 ms. The previous segment is persisted.
+        double dt = DecisionIntervalMs / 1000.0;
+        return plan with
+        {
+            Segment = plan.Segment with
+            {
+                AccelerationKmS2 = Math.Clamp(Math.Clamp(plan.Segment.AccelerationKmS2,
+                previous.Segment.AccelerationKmS2 - accelerationLimit * dt,
+                previous.Segment.AccelerationKmS2 + accelerationLimit * dt),
+                Math.Max(-accelerationLimit, -plan.Segment.StartSpeedKmS / dt),
+                Math.Min(accelerationLimit, Math.Max(0, maxSpeedKmS - plan.Segment.StartSpeedKmS) / dt)),
+                TurnRateDegPerSec = Math.Clamp(Math.Clamp(plan.Segment.TurnRateDegPerSec,
+                previous.Segment.TurnRateDegPerSec - turnLimit * dt,
+                previous.Segment.TurnRateDegPerSec + turnLimit * dt), -turnLimit, turnLimit)
+            }
+        };
     }
 
     public static ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)

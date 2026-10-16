@@ -46,14 +46,19 @@ public sealed class CombatScenariosContentTests
             registry.ModuleTypes.GetIndex(m.ModuleTypeId)).CabinesCount ?? 0));
         var hostiles = scene.GameState.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.NpcShip).ToArray();
         Assert.Equal(3, hostiles.Length);
-        var expected = new (double X, double Y, double Flank)[] { (-400, 1500, -35), (0, 1650, 0), (400, 1500, 35) };
+        var expected = new (double X, double Flank)[] { (1800, -35), (2100, 0), (2400, 35) };
         for (int i = 0; i < hostiles.Length; i++)
         {
             var ship = hostiles[i];
             Assert.Equal("ship.mukha", ship.ShipClassId);
             Assert.Equal(PlayerRelation.Enemy, ship.RelationToPlayer);
-            Assert.Equal((expected[i].X, expected[i].Y, 3000d, 180d),
-                (ship.PositionX, ship.PositionY, ship.SpeedMps, ship.DirectionDegrees));
+            Assert.Equal(expected[i].X, ship.PositionX);
+            Assert.Equal(3000, ship.SpeedMps);
+            Assert.Equal(270, ship.DirectionDegrees);
+            var launcher = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.torpedo.launcher.basic"));
+            Assert.Equal(2 * launcher.TorpedoRangeKm!.Value,
+                Math.Sqrt(ship.PositionX * ship.PositionX + ship.PositionY * ship.PositionY) / 10, 8);
+            Assert.True(ship.PositionX > player.PositionX && ship.PositionY < player.PositionY);
             Assert.Equal(new AttackAiData(50, 10, expected[i].Flank), ship.Ai);
             Assert.Equal(new[] { "module.engine.strizh", "module.torpedo.launcher.basic" },
                 ship.Modules!.Select(m => m.ModuleTypeId));

@@ -337,8 +337,8 @@ public sealed partial class SimulationEngine
             var path = CombatPath(projectile);
             foreach (var target in _objects)
             {
-                if (target.IsDestroyed || target.ObjectType == SpaceObjectType.Countermeasure || target.InitialMotion.ObjectId == projectile.InitialMotion.ObjectId ||
-                    target.InitialMotion.ObjectId == flight.OwnerObjectId) continue;
+                // A02: only the object selected at launch can terminate this flight.
+                if (target.IsDestroyed || target.InitialMotion.ObjectId != flight.TargetObjectId) continue;
                 double start = Math.Max(from, Math.Max(projectile.StartGameTimeMs, target.StartGameTimeMs));
                 if (start > to) continue;
                 var hit = TorpedoCollisionMath.FirstContact(path, CombatPath(target), start, to);
