@@ -141,6 +141,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     // Object Info Panel (top-right) — mirrors Commands Panel chrome; Player Ship + Selected/Active Object rows
     private readonly ObjectInfoPanel _objectInfoPanel;
+    internal SKRect CombatReportsBounds { get; private set; }
 
     // Mechanics panel paints (bottom-center)
     private readonly SKPaint _mechanicsBtnNormalPaint;
@@ -1335,7 +1336,11 @@ public sealed partial class GameSessionScreen : IScreen
             buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
-        _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default);
+        float rightHudTop = ComputeScaleSpeedRowY() - (buffered?.Snapshot.AiMap is null ? 0 : 62 + 28 + 27 + 8);
+        var rightColumn = GameSessionRightColumnLayout.Create(_uiViewportW, _uiViewportH, PanelMargin,
+            rightHudTop, ObjectInfoPanel.ResolveWidth(_uiViewportW, _uiViewportH));
+        _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default,
+            rightColumn.Bounds.Left - PanelMargin);
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
@@ -1344,9 +1349,9 @@ public sealed partial class GameSessionScreen : IScreen
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
         // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
-        float infoBottom = buffered?.Snapshot.AiMap is null ? float.PositiveInfinity : ComputeScaleSpeedRowY() - 62 - 28 - 27 - 8;
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, infoBottom);
+            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, rightColumn.ObjectInfoMaximumBottom);
+        CombatReportsBounds = rightColumn.ReportsAfter(_objectInfoPanel.Bounds);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);

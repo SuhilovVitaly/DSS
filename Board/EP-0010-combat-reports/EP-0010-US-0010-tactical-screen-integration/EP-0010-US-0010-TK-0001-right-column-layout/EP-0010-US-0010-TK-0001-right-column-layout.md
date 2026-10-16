@@ -4,14 +4,14 @@ story: EP-0010-US-0010-tactical-screen-integration
 ticket: EP-0010-US-0010-TK-0001-right-column-layout
 title: "Общая геометрия Object Info и докладов"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0009-TK-0002-accordion-input"]
-files_touched: 4
+files_touched: 5
 serves: ["US10-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Общая геометрия Object Info и докладов
@@ -88,3 +88,11 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Резервировать место докладам под фактическим Object Info. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Scope adjustment before implementation - 2026-10-16
+
+Add Controls/CombatJournalPanel.cs to allowlist (five actual files total): accept maximumRight from shared right-column layout so the technical journal cannot cover reports at high UI scales. Existing journal content/event behavior stays unchanged.
+
+## Execution evidence - 2026-10-16
+
+Actual ObjectInfo Bounds and shared ResolveWidth drive report placement. Right column reserves80 logical pixels for report caption/card header above footer, caps existing scrollable ObjectInfo. Journal accepts maximumRight to remain beside column. Ten geometry cases (six viewport/scale plus expanded/collapsed, actual bottom and journal) plus38 prior report cases PASS (48). Client compile/scoped format/diff PASS. Render hook exposes CombatReportsBounds for next ticket.

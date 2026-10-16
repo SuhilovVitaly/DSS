@@ -347,6 +347,10 @@ public sealed class ObjectInfoPanel
     }
 
     internal float ScrollOffset(int row) => _rowScrollOffsets[row];
+    internal SKRect Bounds => new(_captionRect.Left, _captionRect.Top, _captionRect.Right, _bodyRect.Bottom);
+    internal static float ResolveWidth(float viewportWidth, float viewportHeight) =>
+        Math.Min(Math.Max(0, viewportWidth - 16), viewportWidth < 1100 && float.IsFinite(viewportHeight)
+            ? Math.Clamp(viewportWidth * .38f, 320, PanelWidth) : PanelWidth);
 
     // ── Render ──────────────────────────────────────────────────
 
@@ -360,7 +364,7 @@ public sealed class ObjectInfoPanel
         float viewportHeight = float.PositiveInfinity, float maximumBottom = float.PositiveInfinity)
     {
         bool compact = viewportWidth < 1100 && float.IsFinite(viewportHeight);
-        _renderPanelWidth = compact ? Math.Clamp(viewportWidth * .38f, 320, PanelWidth) : PanelWidth;
+        _renderPanelWidth = ResolveWidth(viewportWidth, viewportHeight);
         _renderImageWidth = Math.Min(ImageWidth, Math.Max(48, _renderPanelWidth - 296));
         float panelBottom = Math.Min(compact ? viewportHeight * .58f : viewportHeight, maximumBottom);
         float left = viewportWidth - Margin - _renderPanelWidth;
