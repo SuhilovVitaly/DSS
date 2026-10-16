@@ -109,6 +109,7 @@ internal sealed class CombatReportPanel : IDisposable
     internal bool Scroll(float x, float y, float delta)
     {
         if (!Bounds.Contains(x, y) || _store is null || Layout is null) return false;
+        if (!float.IsFinite(delta)) return true;
         _store.ScrollOffset = Math.Clamp(_store.ScrollOffset - delta * 48, 0, Layout.MaxScroll);
         return true;
     }

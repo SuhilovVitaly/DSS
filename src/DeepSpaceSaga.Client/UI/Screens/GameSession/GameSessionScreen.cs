@@ -408,6 +408,16 @@ public sealed partial class GameSessionScreen : IScreen
         float uiX = x / _uiScale;
         float uiY = y / _uiScale;
 
+        if (button == MouseButton.Left)
+        {
+            if (_combatReportPanel.OnMouseDown(uiX, uiY)) return ScreenEvent.None;
+        }
+        else
+        {
+            _combatReportPanel.ClearFocus();
+            if (_combatReportPanel.Bounds.Contains(uiX, uiY)) return ScreenEvent.None;
+        }
+
         if (button == MouseButton.Right)
         {
             // Right-click on a UI panel is not a map click — it must not reset the
@@ -555,6 +565,12 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
 
+        if (_combatReportPanel.OnMouseMove(_uiMouseX, _uiMouseY))
+        {
+            SetActiveObjectId(null);
+            return true;
+        }
+
         if (_isPanningMap)
         {
             float dx = x - _panLastScreenX;
@@ -587,12 +603,14 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _isPanningMap = false;
+        if (_combatReportPanel.OnMouseUp(_uiMouseX, _uiMouseY)) return;
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
         _objectInfoPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (_combatReportPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_commandsPanel.OnMouseWheel(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
@@ -606,6 +624,7 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnKeyDown(Key key)
     {
         if (_buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (_combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
         {
             ZoomBy(key is Key.Equal or Key.KeypadAdd ? 1 : -1, _viewportW / 2f, _viewportH / 2f);
@@ -1063,6 +1082,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
+        if (_combatReportPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatJournalPanel.Contains(uiX, uiY)) return true;
         if (_mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
             _lastSpeedPanelRect.Contains(uiX, uiY) || _lastMechanicsPanelRect.Contains(uiX, uiY)) return true;
@@ -1352,6 +1372,7 @@ public sealed partial class GameSessionScreen : IScreen
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
             ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, rightColumn.ObjectInfoMaximumBottom);
         CombatReportsBounds = rightColumn.ReportsAfter(_objectInfoPanel.Bounds);
+        RenderCombatReports(canvas);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);

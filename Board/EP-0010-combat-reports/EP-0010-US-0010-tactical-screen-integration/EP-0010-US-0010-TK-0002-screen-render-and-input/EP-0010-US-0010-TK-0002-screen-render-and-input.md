@@ -4,14 +4,14 @@ story: EP-0010-US-0010-tactical-screen-integration
 ticket: EP-0010-US-0010-TK-0002-screen-render-and-input
 title: "Подключение докладов к тактическому экрану"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0010-TK-0001-right-column-layout"]
 files_touched: 5
 serves: ["US10-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Подключение докладов к тактическому экрану
@@ -89,3 +89,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Соединить inbox/store/preparation/render и ввод на экране. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+SkiaWindow prepares receive/store/resources on UI thread before every drawn GameSessionScreen.Render. Render only lays out against actual current ObjectInfo bottom and draws prepared assets; no drain/decode there. Panel has first pointer/wheel/key refusal and blocks map hit testing. Five integrated screen cases plus48 prior cases PASS (53), including probe connection proving no command/speed change and unchanged camera/selection. Client compile/scoped format/diff PASS.

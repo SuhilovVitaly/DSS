@@ -348,6 +348,7 @@ public sealed class SkiaWindow : IDisposable
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
+            if (screen is GameSessionScreen reportScreen) reportScreen.PrepareCombatReports();
             screen.Render(canvas, windowSize.X, windowSize.Y);
             if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
             index++;
