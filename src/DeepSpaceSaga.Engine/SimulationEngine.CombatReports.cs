@@ -55,6 +55,11 @@ public sealed partial class SimulationEngine
 
     private void ObserveCombatReportFact(CombatJournalEntry entry)
     {
+        if (entry.Type == CombatEventType.Intercept)
+        {
+            ObserveCombatReportIntercept(entry);
+            return;
+        }
         if (entry.Type != CombatEventType.Launch) return;
         var projectile = _objects.Find(o => o.InitialMotion.ObjectId == entry.ProjectileObjectId);
         var owner = _objects.Find(o => o.InitialMotion.ObjectId == entry.ActorObjectId);
@@ -88,5 +93,20 @@ public sealed partial class SimulationEngine
         var target = CaptureKnownParticipant(entry.TargetObjectId);
         EmitCombatReport(new(0, entry.MotionTimeMs, kind, entry.ProjectileObjectId, reporter,
             source.Id, source.Name, target.Id, target.Name, entry.ProjectileObjectId, entry.LauncherModuleId));
+    }
+
+    private void ObserveCombatReportIntercept(CombatJournalEntry entry)
+    {
+        var projectile = _objects.Find(o => o.InitialMotion.ObjectId == entry.ProjectileObjectId);
+        var target = _objects.Find(o => o.InitialMotion.ObjectId == entry.TargetObjectId);
+        if (projectile?.InitialMotion.Countermeasure is not { } defense || defense.OwnerObjectId != PlayerShipObjectId ||
+            target?.InitialMotion.Torpedo is not { OwnerPlayerRelationAtLaunch: PlayerRelation.Enemy }) return;
+        var reporter = CaptureWeaponReportIdentity(defense.RatingBreakdown.DefenseOperator,
+            BattleReportReporterRole.CountermeasureOperator);
+        var source = CaptureKnownParticipant(defense.OwnerObjectId);
+        var destination = CaptureKnownParticipant(defense.TargetTorpedoId);
+        EmitCombatReport(new(0, entry.MotionTimeMs, BattleReportKind.EnemyTorpedoIntercepted,
+            $"intercept:{entry.ProjectileObjectId}:{entry.TargetObjectId}", reporter,
+            source.Id, source.Name, destination.Id, destination.Name, entry.ProjectileObjectId, defense.LauncherModuleId));
     }
 }

@@ -4,14 +4,14 @@ story: EP-0010-US-0004-combat-result-reports
 ticket: EP-0010-US-0004-TK-0001-intercept-results
 title: "E05 успешного перехвата"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0003-TK-0002-confirmed-launches"]
 files_touched: 3
 serves: ["US04-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # E05 успешного перехвата
@@ -85,3 +85,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Сделать доклад ПРО точным отражением успешного перехвата. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+E05 observes structured Intercept before removal, requires player-owned PR and captured hostile torpedo relation. Captured launch operator survives projectile deletion. Five intercept cases (success/miss, foreign/friendly, deleted identity) plus 21 prior report cases PASS (26). Engine compilation, scoped format and diff checked. RNG/termination untouched.

@@ -4,6 +4,9 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    private static BattleReportReporterSnapshot CaptureWeaponReportIdentity(WeaponOperatorSnapshot? captured,
+        BattleReportReporterRole role) => new(role, captured?.CrewId, captured?.DisplayName);
+
     private BattleReportReporterSnapshot CaptureReportIdentity(SpaceObjectRuntime owner, string? moduleId,
         BattleReportReporterRole role)
     {
