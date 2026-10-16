@@ -4,14 +4,14 @@ story: EP-0010-US-0011-report-acceptance
 ticket: EP-0010-US-0011-TK-0001-engine-scenario-proof
 title: "Сценарные доказательства всех семи типов"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0010-TK-0003-session-reset-and-defeat"]
 files_touched: 2
 serves: ["US11-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Сценарные доказательства всех семи типов
@@ -86,3 +86,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Проверить реальную цепочку Engine вместо синтетического рендера DTO. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Production CombatMukha and production registry seed1 executed unchanged through commands to terminal outcome; all three independent E01 and actual launches verified. Separate calibrated fixtures prove every kind and both E06 variants. Same seed+commands yields identical report sequence/time. Disabling scanner reporting changes report count but leaves complete combat journal, outcome, physical time and object motion identical; emission helper regression separately compares all non-report save/RNG state. Save/load and final damage/defeat matrix PASS. Five E2E cases plus52 report cases PASS (57), compile/scoped format/diff PASS. Rare outcome fixtures do not alter shipped balance.

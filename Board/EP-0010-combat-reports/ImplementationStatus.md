@@ -44,7 +44,7 @@
 | [EP-0010-US-0010-TK-0001-right-column-layout](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-TK-0001-right-column-layout/EP-0010-US-0010-TK-0001-right-column-layout.md) | IMPLEMENTED | 10 focused; 48 report/client PASS | OPEN / по scope |
 | [EP-0010-US-0010-TK-0002-screen-render-and-input](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-TK-0002-screen-render-and-input/EP-0010-US-0010-TK-0002-screen-render-and-input.md) | IMPLEMENTED | 5 focused; 53 report/client PASS | OPEN / по scope |
 | [EP-0010-US-0010-TK-0003-session-reset-and-defeat](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-TK-0003-session-reset-and-defeat/EP-0010-US-0010-TK-0003-session-reset-and-defeat.md) | IMPLEMENTED | 6 focused; 67 report/reliability PASS | OPEN / по scope |
-| [EP-0010-US-0011-TK-0001-engine-scenario-proof](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0001-engine-scenario-proof/EP-0010-US-0011-TK-0001-engine-scenario-proof.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0011-TK-0001-engine-scenario-proof](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0001-engine-scenario-proof/EP-0010-US-0011-TK-0001-engine-scenario-proof.md) | IMPLEMENTED | 5 E2E; 57 Engine report PASS | OPEN / по scope |
 | [EP-0010-US-0011-TK-0002-client-integration-proof](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0002-client-integration-proof/EP-0010-US-0011-TK-0002-client-integration-proof.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0011-TK-0003-native-visual-and-performance](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0003-native-visual-and-performance/EP-0010-US-0011-TK-0003-native-visual-and-performance.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0012-TK-0001-project-documentation](EP-0010-US-0012-documentation-and-handoff/EP-0010-US-0012-TK-0001-project-documentation/EP-0010-US-0012-TK-0001-project-documentation.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -104,3 +104,5 @@ US0009 input31b83e0b22948ddd645ae9689a7364b14086510a published/remote verified. 
 US0010 right-column d2a177051d9c430ff00a628fd641a521c8626b18 published/remote verified. Screen render/input integrated,53 cases PASS.
 
 US0010 screen integration6ff6199e32f7cc9bcab2a040e074e9d09cfaca93 published/remote verified. Lifecycle implemented and story self-reviewed;67 cases PASS.
+
+US0010 lifecycle81fa61f0a593b909719563c16bd6cef839b297d8 published/remote verified. Engine acceptance production CombatMukha + rare outcomes PASS.
