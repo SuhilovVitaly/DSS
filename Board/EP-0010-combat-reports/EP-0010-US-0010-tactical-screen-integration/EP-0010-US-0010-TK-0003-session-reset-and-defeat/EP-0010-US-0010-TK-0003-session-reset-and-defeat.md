@@ -4,14 +4,14 @@ story: EP-0010-US-0010-tactical-screen-integration
 ticket: EP-0010-US-0010-TK-0003-session-reset-and-defeat
 title: "Чистая смена сессии и приоритет Defeat"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0010-TK-0002-screen-render-and-input"]
 files_touched: 4
 serves: ["US10-AC3"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Чистая смена сессии и приоритет Defeat
@@ -89,3 +89,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Закрыть first-snapshot и session replacement races. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Handle closing synchronously releases report paints/bitmaps/history; receive loop checks cancellation/disposal before applying a late snapshot. Modal deactivation clears focus but retains history/resources. Defeat deactivation releases resources without delaying existing transition. Six lifecycle cases plus53 report cases and8 session reliability regressions PASS (67). Client compile/scoped format/diff PASS. Failed-load UI policy retains current screen until successful replacement; actual loader failures also covered by existing reliability tests and later acceptance.

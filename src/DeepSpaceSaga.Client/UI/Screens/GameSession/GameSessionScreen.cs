@@ -313,6 +313,7 @@ public sealed partial class GameSessionScreen : IScreen
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         _predictor = predictor;
         _handle = handle;
+        InitializeCombatReports();
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
         _showTrajectoryPrediction = showTrajectoryPrediction;
         _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
@@ -389,6 +390,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _combatReportPanel.ClearFocus();
+        if (_buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
         ClearLaunchPreview();
         ReleaseCombatPaints();
         _zoomTransition.Cancel();

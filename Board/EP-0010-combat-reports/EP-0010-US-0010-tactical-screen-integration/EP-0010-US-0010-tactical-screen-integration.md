@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0009-report-accordion"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -54,3 +54,7 @@ EP-0010-US-0009-report-accordion Ticket DAG ниже имеет приорите
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+Right-column geometry, pre-render resource/drain hook, first input refusal and session lifecycle integrated.67 report/reliability cases PASS. Reviewed six scale/viewports, actual ObjectInfo bottom, journal/footer separation, command/speed/camera isolation, modal history, late delivery and defeat priority. Native matrix/FPS remain US0011 OPEN.

@@ -30,6 +30,8 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private bool _disposed;
     private Exception? _failure;
     public Exception? Failure => Volatile.Read(ref _failure);
+    // Disposed by the owning window; subscribers release UI-thread resources before awaits.
+    internal event Action? Closing;
 
     private void Fail(Exception error)
     {
@@ -294,6 +296,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
         {
             await foreach (var snapshot in _connection.ReadSnapshotsAsync(ct))
             {
+                if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
                 Buffer.Update(snapshot);
                 CombatMetrics.Record(snapshot);
                 if (!snapshot.CommandResults.IsDefaultOrEmpty)
@@ -377,6 +380,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
             return;
 
         _disposed = true;
+        Closing?.Invoke();
 
         _cts.Cancel();
         _interactionStateChannel.Writer.TryComplete();
