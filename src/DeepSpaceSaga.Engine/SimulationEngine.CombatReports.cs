@@ -37,18 +37,18 @@ public sealed partial class SimulationEngine
     {
         var player = _objects.Find(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed);
         if (player is null) return;
-        var scanner = player.Modules.Where(m => IsResourceScanner(m) && CanExecuteModuleCommand(m, motionTimeMs))
-            .OrderBy(m => m.ModuleId, StringComparer.Ordinal).FirstOrDefault();
+        var scanner = CombatReportScanner(player, motionTimeMs);
         if (scanner is null) return;
-        var crew = player.Crew.IsDefaultOrEmpty ? null : player.Crew.FirstOrDefault(c => c.Id == scanner.OperatorCrewId);
-        var reporter = new BattleReportReporterSnapshot(BattleReportReporterRole.ScannerOperator, crew?.Id, crew?.DisplayName);
+        var reporter = CaptureReportIdentity(player, scanner.ModuleId, BattleReportReporterRole.ScannerOperator);
         foreach (var target in CombatReportRangeTargets(player, motionTimeMs))
         {
             if (_reportedRangeTargetIds.Contains(target.InitialMotion.ObjectId)) continue;
+            var source = CaptureKnownParticipant(player.InitialMotion.ObjectId);
+            var destination = CaptureKnownParticipant(target.InitialMotion.ObjectId);
             EmitCombatReport(new(0, motionTimeMs, BattleReportKind.EnemyInRange,
                 $"range:{target.InitialMotion.ObjectId}", reporter,
-                SourceObjectId: player.InitialMotion.ObjectId, SourceDisplayName: player.Name,
-                TargetObjectId: target.InitialMotion.ObjectId, TargetDisplayName: target.Name));
+                SourceObjectId: source.Id, SourceDisplayName: source.Name,
+                TargetObjectId: destination.Id, TargetDisplayName: destination.Name));
             _reportedRangeTargetIds.Add(target.InitialMotion.ObjectId);
         }
     }

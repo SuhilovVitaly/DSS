@@ -4,14 +4,14 @@ story: EP-0010-US-0003-launch-reports
 ticket: EP-0010-US-0003-TK-0001-captured-reporters
 title: "Докладчики и безопасные имена участников"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0002-TK-0002-first-range-entry"]
 files_touched: 4
 serves: ["US03-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Докладчики и безопасные имена участников
@@ -88,3 +88,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Переиспользовать фактические назначения и не расширять видимость. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Central capture helper freezes module crew identity, captain portrait and role-only fallback. Known-participant projection masks absent/hidden objects; no schema changes. Five identity tests and 11 prior report cases PASS (16 total); Engine compilation PASS. Scoped format and diff checked before commit. Native/human not applicable to helper.
