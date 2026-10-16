@@ -33,7 +33,25 @@ public sealed partial class SimulationEngine
     private CombatReportBatchSnapshot CaptureCombatReportBatch() =>
         new(_combatReportBaseline, _combatReportSequence, _pendingCombatReports.ToImmutableArray());
 
-    // Filled by the following range and confirmed-fact tickets.
-    private void EvaluateCombatReportRange(double motionTimeMs) { }
+    private void EvaluateCombatReportRange(double motionTimeMs)
+    {
+        var player = _objects.Find(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed);
+        if (player is null) return;
+        var scanner = player.Modules.Where(m => IsResourceScanner(m) && CanExecuteModuleCommand(m, motionTimeMs))
+            .OrderBy(m => m.ModuleId, StringComparer.Ordinal).FirstOrDefault();
+        if (scanner is null) return;
+        var crew = player.Crew.IsDefaultOrEmpty ? null : player.Crew.FirstOrDefault(c => c.Id == scanner.OperatorCrewId);
+        var reporter = new BattleReportReporterSnapshot(BattleReportReporterRole.ScannerOperator, crew?.Id, crew?.DisplayName);
+        foreach (var target in CombatReportRangeTargets(player, motionTimeMs))
+        {
+            if (_reportedRangeTargetIds.Contains(target.InitialMotion.ObjectId)) continue;
+            EmitCombatReport(new(0, motionTimeMs, BattleReportKind.EnemyInRange,
+                $"range:{target.InitialMotion.ObjectId}", reporter,
+                SourceObjectId: player.InitialMotion.ObjectId, SourceDisplayName: player.Name,
+                TargetObjectId: target.InitialMotion.ObjectId, TargetDisplayName: target.Name));
+            _reportedRangeTargetIds.Add(target.InitialMotion.ObjectId);
+        }
+    }
+
     private void ObserveCombatReportFact(CombatJournalEntry entry) { }
 }

@@ -4,14 +4,14 @@ story: EP-0010-US-0002-range-reports
 ticket: EP-0010-US-0002-TK-0002-first-range-entry
 title: "E01 по физическому состоянию мира"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0002-TK-0001-report-outbox"]
-files_touched: 3
+files_touched: 4
 serves: ["US02-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # E01 по физическому состоянию мира
@@ -88,3 +88,11 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Сделать дальность самостоятельным авторитетным фактом. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Scope adjustment before tests - 2026-10-16
+
+Add tests/DeepSpaceSaga.Engine.Tests/CombatReportOutboxTests.cs to allowlist: its infrastructure fixture must exclude discoverable enemies once E01 is enabled, keeping queue assertions independent from range generation. Four files total; same Engine layer.
+
+## Execution evidence - 2026-10-16
+
+Seven range cases plus four outbox cases PASS. Fourteen existing combat journal, hostile path, module combat and player defeat regressions PASS. Engine compilation PASS as part of focused tests; scoped whitespace corrected. Full Engine run was cancelled after no completion output; not counted as PASS. Range uses catalogue TorpedoRangeKm, operational modules and physical paths; per-target IDs persist for session and reset on New Game. Reporter capture will be centralized by US0003.

@@ -14,7 +14,7 @@ public sealed class CombatReportOutboxTests
     [Fact]
     public void OutboxSequenceAndBootstrapBaseline()
     {
-        using var engine = Create(TorpedoImpactTests.Scenario());
+        using var engine = Create(TorpedoImpactTests.Scenario(o => o with { IsKnown = false }));
         Assert.Equal(0, engine.CaptureSnapshot().CombatReports!.BaselineSequence);
         Emit(engine, 12.5);
         Emit(engine, 13.5);
@@ -23,14 +23,14 @@ public sealed class CombatReportOutboxTests
         Assert.Equal(2, batch.LatestSequence);
         Assert.Equal(new long[] { 1, 2 }, batch.Reports.Select(r => r.Sequence));
         Assert.Equal(new double[] { 12.5, 13.5 }, batch.Reports.Select(r => r.MotionTimeMs));
-        engine.LoadScenario(TorpedoImpactTests.Scenario());
+        engine.LoadScenario(TorpedoImpactTests.Scenario(o => o with { IsKnown = false }));
         Assert.Equal(0, engine.CaptureSnapshot().CombatReports!.LatestSequence);
     }
 
     [Fact]
     public void SnapshotPublishesOutboxOnce()
     {
-        using var engine = Create(TorpedoImpactTests.Scenario());
+        using var engine = Create(TorpedoImpactTests.Scenario(o => o with { IsKnown = false }));
         Emit(engine);
         Assert.Single(engine.CaptureSnapshot().CombatReports!.Reports);
         var next = engine.CaptureSnapshot().CombatReports!;
@@ -41,7 +41,7 @@ public sealed class CombatReportOutboxTests
     [Fact]
     public void ReportOutboxOverflowIsExplicit()
     {
-        using var engine = Create(TorpedoImpactTests.Scenario());
+        using var engine = Create(TorpedoImpactTests.Scenario(o => o with { IsKnown = false }));
         for (int i = 0; i < CombatReportBatchSnapshot.PendingLimit; i++) Emit(engine);
         var failure = Assert.Throws<TargetInvocationException>(() => Emit(engine));
         Assert.IsType<InvalidOperationException>(failure.InnerException);
@@ -53,7 +53,7 @@ public sealed class CombatReportOutboxTests
     [Fact]
     public void ReportsDoNotAdvanceRngOrClocks()
     {
-        using var engine = Create(TorpedoImpactTests.Scenario());
+        using var engine = Create(TorpedoImpactTests.Scenario(o => o with { IsKnown = false }));
         var before = System.Text.Json.JsonSerializer.Serialize(engine.CaptureSaveState());
         Emit(engine);
         Assert.Equal(before, System.Text.Json.JsonSerializer.Serialize(engine.CaptureSaveState()));

@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0001-report-contracts"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ EP-0010-US-0001-report-contracts Ticket DAG ниже имеет приорите
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+US02-AC1/2 implemented. Checked bounded publish/reset, physical fast path and combat substeps, available scanner/launcher and inclusive catalogue distance, stable target order, disabled recovery and once-per-ID. 11 focused cases and 14 combat regressions PASS. No gameplay/RNG/time changes. Save/load baseline continuity belongs to US0005. Native acceptance remains OPEN.
