@@ -61,6 +61,7 @@ internal static class CombatReportsScenarioFixtures
     internal static BattleReportSnapshot[] InterceptReports()
     {
         using var engine = Create(HostileTorpedoFireTests.HostileScenario(), AutomaticDefenseTests.WeaponRegistry(100, 0));
+        engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1);
         var reports = At(engine, 1).CombatReports!.Reports.ToList();
         string target = engine.RuntimeObjects.Single(o => o.InitialMotion.Torpedo is not null).InitialMotion.ObjectId;
         engine.ReceiveCommand(ManualCountermeasureFireTests.Manual("intercept", target));

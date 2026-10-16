@@ -38,7 +38,7 @@ public sealed class CombatReportDamageTests
     public void ArmorOnlyDamageCreatesCaptainReport()
     {
         using var engine = Create(PlayerDefeatTests.LethalScenario());
-        At(engine, 1);
+        ManualCountermeasureFireTests.LaunchEnemy(engine);
         var objects = (List<SpaceObjectRuntime>)typeof(SimulationEngine).GetField("_objects", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(engine)!;
         int player = objects.FindIndex(o => o.InitialMotion.ObjectId == Player);
         objects[player] = objects[player] with
@@ -53,7 +53,7 @@ public sealed class CombatReportDamageTests
                 Torpedo = objects[projectile].InitialMotion.Torpedo! with { Damage = 1, ArmorPiercingPercent = 0 }
             }
         };
-        var snapshot = At(engine, 5001);
+        var snapshot = At(engine, 6251);
         var report = Assert.Single(snapshot.CombatReports!.Reports, r => r.Kind == BattleReportKind.PlayerShipDamaged);
         Assert.Equal(BattleReportReporterRole.Captain, report.Reporter.Role);
         Assert.NotNull(report.Reporter.DisplayName);
@@ -70,7 +70,7 @@ public sealed class CombatReportDamageTests
             GameState = source.GameState with
             { SpaceObjects = source.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with { ShipClassId = null } : o).ToArray() }
         });
-        var snapshot = At(engine, 5001);
+        var snapshot = At(engine, 6251);
         Assert.Contains(snapshot.CombatJournal, e => e.Type == CombatEventType.Hit && e.Damage == 0);
         Assert.DoesNotContain(snapshot.CombatReports!.Reports, r => r.Kind == BattleReportKind.PlayerShipDamaged);
     }

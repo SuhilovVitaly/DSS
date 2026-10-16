@@ -17,6 +17,9 @@ public class PhaseThreeMultiHostileTests
         using var split = CreateBattle(accuracy);
         foreach (var engine in new[] { whole, split })
         {
+            // Manual-defense fixture establishes both threats independently of automatic AI reaction.
+            engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1);
+            engine.TryStartHostileTorpedoFire("enemy-b", "extra-MOD-PIRATE-TORPEDO-01", 1);
             var snapshot = At(engine, 1);
             var torpedoes = snapshot.Objects.Where(o => o.Torpedo is not null).OrderBy(o => o.Torpedo!.OwnerObjectId, StringComparer.Ordinal).ToArray();
             Assert.Equal(2, torpedoes.Length);

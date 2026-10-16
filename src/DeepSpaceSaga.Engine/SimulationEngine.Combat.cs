@@ -230,6 +230,7 @@ public sealed partial class SimulationEngine
         // Recompute after each mutation: a previous contact may remove an obstacle
         // (or, in the wreck lifecycle, replace it) inside this same physical interval.
         if (motionTimeMs <= _combatProcessedTimeMs) return;
+        PruneCombatReactions();
         double cursor = _combatProcessedTimeMs;
         while (true)
         {

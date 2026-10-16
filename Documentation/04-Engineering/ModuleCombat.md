@@ -21,3 +21,9 @@ Current save writer is **SaveFormatVersion 17**, with defense payload 3, combat 
 ## Продолжение EP-0010 — 2026-10-16
 
 [Боевые доклады](CombatReports.md) добавляют presentation facts E01–E07 поверх этого модульного боя и optional CombatReportsState Version1 внутри Save17. Формулы, конфигурация, journal, RNG и баланс EP9 сохраняются. [Evidence/публикация](../../Board/EP-0010-combat-reports/ImplementationStatus.md); native/human/FPS OPEN. Graphify обновлён в EP10; прежний skip остаётся датированной историей EP9. Самостоятельные игровые запуски агентом запрещены пользователем.
+
+## Автоматическая реакция оружия —2026-10-16
+
+По последующему запросу пользователя NPC после появления подходящей цели в configured range и после каждого launcher cooldown ждёт случайную задержку перед автоматическим пуском. Автоматическая ПРО игрока также ждёт перед началом залпа по доступной торпеде. Задержка500–1250мс физического времени даёт2–5секунд на Speed1 (motion multiplier0.25); ускорение масштабирует ожидание, пауза его не расходует. Ручные команды пуска и интервалы последующих стволов уже начатой очереди сохраняют прежние правила. Проверка дальности/оператора/исправности и возможности перехвата остаётся обязательной на реальном пуске.
+
+`SimulationEngine.CombatReactions.cs` хранит armed deadline. Равномерный integer sample берётся из независимого event-addressed `combat.automatic-reaction.v1` через existing stable seed derivation/SplitMix; повторные scheduler queries и Save/Load не перерисовывают задержку и не потребляют hit/intercept/breakdown RNG. Optional `GameStateData.CombatReactionDelays` сохраняется внутри root Save17; отсутствие поля у старого Save17 означает отсутствие armed ожиданий. Невалидный список отклоняется до изменения мира. Незавершённые ожидания не являются UI-историей докладов. Headless проверки — `CombatReactionDelayTests` и боевые regression suites; native запуск не выполняется по запрету пользователя.

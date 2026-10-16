@@ -104,7 +104,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("hostileCombatState")] HostileCombatSaveData? HostileCombatState = null,
     /// <summary>Fractional physical milliseconds, in quarters. Absent in older saves (zero).</summary>
     [property: JsonPropertyName("motionQuarterRemainder")] int MotionQuarterRemainder = 0,
-    [property: JsonPropertyName("combatReportsState")] CombatReportsSaveData? CombatReportsState = null)
+    [property: JsonPropertyName("combatReportsState")] CombatReportsSaveData? CombatReportsState = null,
+    [property: JsonPropertyName("combatReactionDelays")] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]

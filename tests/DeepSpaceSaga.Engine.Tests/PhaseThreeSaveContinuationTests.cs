@@ -128,9 +128,9 @@ public class PhaseThreeSaveContinuationTests
         Assert.Single(save.GameState.CombatState!.Projectiles);
         using var restored = Roundtrip(save);
         Same(continuous, restored, 5001);
-        Same(continuous, restored, 15001);
-        var next = Assert.Single(Save(restored, 15001).GameState.CombatState!.Projectiles);
-        Assert.Equal(15001, next.Flight.LaunchMotionTimeMs);
+        Same(continuous, restored, 17501);
+        var next = Assert.Single(Save(restored, 17501).GameState.CombatState!.Projectiles);
+        Assert.InRange(next.Flight.LaunchMotionTimeMs, 16001, 17501);
         Same(continuous, restored, 20000);
     }
 

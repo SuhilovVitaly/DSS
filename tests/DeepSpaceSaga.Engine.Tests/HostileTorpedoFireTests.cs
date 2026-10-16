@@ -40,10 +40,10 @@ public class HostileTorpedoFireTests
                 Clone("neutral", PlayerRelation.Neutral, 500), Clone("friend", PlayerRelation.Friend, -500) }).ToArray()
             }
         });
-        var snapshot = At(engine, 1);
+        var snapshot = At(engine, 1251);
         var flights = snapshot.Objects.Where(o => o.Torpedo is not null).Select(o => o.Torpedo!).ToArray();
-        Assert.Equal(new[] { Target, "enemy-b" }, flights.Select(f => f.OwnerObjectId));
-        Assert.All(flights, f => { Assert.Equal(Player, f.TargetObjectId); Assert.Equal(1, f.LaunchMotionTimeMs); });
+        Assert.Equal(new[] { Target, "enemy-b" }.Order(), flights.Select(f => f.OwnerObjectId).Order());
+        Assert.All(flights, f => { Assert.Equal(Player, f.TargetObjectId); Assert.InRange(f.LaunchMotionTimeMs, 501, 1251); });
         Assert.Empty(snapshot.CommandResults);
         Assert.Empty(engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState.CombatState!.ProcessedLaunchCommandIds);
     }
@@ -53,11 +53,11 @@ public class HostileTorpedoFireTests
     {
         using var engine = Create(HostileScenario());
         for (int i = 0; i < 5; i++) Assert.DoesNotContain(At(engine, 0, i * 1000).Objects, o => o.Torpedo is not null);
-        Assert.Single(At(engine, 1, 5000).Objects, o => o.Torpedo is not null);
+        Assert.Single(At(engine, 1251, 5000).Objects, o => o.Torpedo is not null);
     }
 
     [Fact]
-    public void Range_entry_inside_large_interval_uses_first_integer_ms()
+    public void Range_entry_inside_large_interval_waits_for_reaction()
     {
         var scenario = HostileScenario(2100);
         scenario = scenario with
@@ -71,7 +71,7 @@ public class HostileTorpedoFireTests
         using var engine = Create(scenario);
         Assert.DoesNotContain(At(engine, 9999).Objects, o => o.Torpedo is not null);
         var flight = Assert.Single(At(engine, 12000).Objects, o => o.Torpedo is not null).Torpedo!;
-        Assert.Equal(10000, flight.LaunchMotionTimeMs);
+        Assert.InRange(flight.LaunchMotionTimeMs, 10500, 11250);
     }
 
     [Theory]
@@ -105,13 +105,13 @@ public class HostileTorpedoFireTests
     public void Finishing_torpedo_allows_next_shot()
     {
         using var engine = Create(HostileScenario(100));
-        var first = Assert.Single(At(engine, 1).Objects, o => o.Torpedo is not null).Torpedo!;
+        var first = Assert.Single(At(engine, 1251).Objects, o => o.Torpedo is not null).Torpedo!;
         long after = first.PredictedImpactMotionTimeMs!.Value + 2;
         var snapshot = At(engine, after);
         var impact = Assert.Single(snapshot.CombatImpacts);
         Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
-        var second = Assert.Single(At(engine, 15001).Objects, o => o.Torpedo is not null).Torpedo!;
-        Assert.Equal(15001, second.LaunchMotionTimeMs);
+        var second = Assert.Single(At(engine, first.LaunchMotionTimeMs + 16251).Objects, o => o.Torpedo is not null).Torpedo!;
+        Assert.InRange(second.LaunchMotionTimeMs - first.LaunchMotionTimeMs, 15500, 16250);
         Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed && e.TargetObjectId == Player);
     }
 
@@ -169,7 +169,7 @@ public class HostileTorpedoFireTests
             }
         };
         using var engine = Create(scenario);
-        var snapshot = At(engine, 1000);
+        var snapshot = At(engine, 2502);
         var hostile = Assert.Single(snapshot.Objects, o => o.Torpedo is not null).Torpedo!;
         var defense = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null).Countermeasure!;
         Assert.Equal(Target, hostile.OwnerObjectId);

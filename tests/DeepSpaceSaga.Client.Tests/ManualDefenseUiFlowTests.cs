@@ -218,7 +218,7 @@ public class ManualDefenseUiFlowTests
             await Wait(s => s.Objects.Length == 2);
             screen.OnActivated();
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Exchange(ref now, 4);
+            Interlocked.Exchange(ref now, 5004); // Include the 2–5s Speed1 automatic reaction.
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
             var launched = await Wait(s => s.Objects.Any(o => o.Torpedo is not null));
             string target = launched.Objects.Single(o => o.Torpedo is not null).ObjectId;
@@ -237,13 +237,13 @@ public class ManualDefenseUiFlowTests
                 Click(screen, button, scale); Click(screen, button, scale);
             }
             var after = await Wait(s => s.Objects.Count(o => o.Countermeasure is not null) == 2);
-            Assert.Equal(1, after.MotionTimeMs);
+            Assert.Equal(launched.MotionTimeMs, after.MotionTimeMs);
             Assert.Equal(SimulationSpeed.Speed0, after.CurrentSpeed);
             Assert.All(after.Objects.Where(o => o.Countermeasure is not null), o =>
             {
                 Assert.Equal(target, o.Countermeasure!.TargetTorpedoId);
                 Assert.Equal(LaunchMode.Manual, o.Countermeasure.Mode);
-                Assert.Equal(1, o.Countermeasure.LaunchMotionTimeMs);
+                Assert.Equal(launched.MotionTimeMs, o.Countermeasure.LaunchMotionTimeMs);
             });
             Assert.Equal(2, after.InstalledModules.Count(m => m.Defense?.State == DefenseState.Guiding));
             Assert.Empty(after.CombatJournal.Where(e => e.Roll is not null));

@@ -18,6 +18,7 @@ public sealed class CombatReportLaunchTests
     public void EnemyPlayerAndCountermeasureLaunches()
     {
         using var engine = Create(HostileTorpedoFireTests.HostileScenario());
+        engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1);
         var first = At(engine, 1);
         var enemy = Assert.Single(first.CombatReports!.Reports, r => r.Kind == BattleReportKind.EnemyTorpedoLaunch);
         Assert.Equal(BattleReportReporterRole.ScannerOperator, enemy.Reporter.Role);
@@ -61,6 +62,7 @@ public sealed class CombatReportLaunchTests
     public void EnemyNpcBattleAndUnknownLaunchAreExcluded()
     {
         using var engine = Create(HostileTorpedoFireTests.HostileScenario());
+        engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1);
         var initial = At(engine, 1);
         var launch = initial.CombatJournal.Single(e => e.Type == CombatEventType.Launch);
         var objects = Objects(engine);
@@ -92,6 +94,7 @@ public sealed class CombatReportLaunchTests
             }
         };
         using var engine = Create(scenario);
+        engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1);
         Assert.DoesNotContain(At(engine, 1).CombatReports!.Reports, r => r.Kind == BattleReportKind.EnemyTorpedoLaunch);
         Assert.DoesNotContain(At(engine, 10).CombatReports!.Reports, r => r.Kind == BattleReportKind.EnemyTorpedoLaunch);
     }
