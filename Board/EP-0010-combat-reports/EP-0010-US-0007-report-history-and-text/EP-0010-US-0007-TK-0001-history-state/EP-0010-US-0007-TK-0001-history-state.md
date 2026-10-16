@@ -4,14 +4,14 @@ story: EP-0010-US-0007-report-history-and-text
 ticket: EP-0010-US-0007-TK-0001-history-state
 title: "Ограниченная история и раскрытая карточка"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0006-TK-0002-buffer-pending-reports"]
 files_touched: 2
 serves: ["US07-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Ограниченная история и раскрытая карточка
@@ -86,3 +86,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Отделить логику карточек от рендера и объектов мира. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+UI-owned store retains newest200, one expanded ID and separate keyboard selection. Batch expands last sequence, repeat expand stays open, duplicates preserve scroll/manual view, reset clears session. Five store cases plus nine delivery cases PASS (14); Client compile/scoped format/diff PASS. No map state dependency.
