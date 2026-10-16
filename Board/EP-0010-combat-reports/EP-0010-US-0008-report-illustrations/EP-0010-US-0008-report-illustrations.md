@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0007-report-history-and-text"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed-art-open
 revision: 1
 ---
 
@@ -54,3 +54,7 @@ EP-0010-US-0007-report-history-and-text Ticket DAG ниже имеет прио�
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+All8 original opaque1024x576 assets generated with built-in imagegen, normalized/visually checked at320px; scene differences reviewed. Catalogue/cache implemented, 28 client report tests PASS. Art files and catalogue copied to output; resolve does not decode. Bounded portrait cache/disposal tested. Human art acceptance OPEN; native UI acceptance belongs to US0011.

@@ -4,14 +4,14 @@ story: EP-0010-US-0008-report-illustrations
 ticket: EP-0010-US-0008-TK-0004-catalog-and-cache
 title: "Каталог, доставка ресурсов и ограниченный кеш"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0008-TK-0003-damage-art"]
 files_touched: 4
 serves: ["US08-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Каталог, доставка ресурсов и ограниченный кеш
@@ -87,3 +87,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Подключить готовую графику с безопасными заменами и без I/O в Draw. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Eight mapping catalogue with semantic accents, explicit output/publish copy. UI-thread Prepare loads eight illustrations once and bounded32 portrait LRU (including negative lookups); large portraits reduced to128px. Resolve is memory-only. Dispose releases native bitmaps. Four asset cases plus24 prior Client report cases PASS (28); includes build-output1024x576 images, corrupt/missing fallback, eviction/disposal and repeated consumption with no additional decode. Client compile/scoped format/diff PASS.

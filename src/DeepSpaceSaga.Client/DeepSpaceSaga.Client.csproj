@@ -75,6 +75,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Images/UI/CombatReports/*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
     <Folder Include="Images\UI\GameSessionScreenUI\title-bar\" />
     <Folder Include="UI\Screens\" />
   </ItemGroup>
