@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0010-tactical-screen-integration"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed-native-open
 revision: 1
 ---
 
@@ -54,3 +54,7 @@ EP-0010-US-0010-tactical-screen-integration Ticket DAG ниже имеет пр�
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Acceptance self-review - 2026-10-16
+
+Production Engine all-kind/sequence/outcome proof57 PASS, Client integration/matrix82 PASS, follow-up regression repair166 PASS. Two confirmed layout issues fixed and separately published (TK0004/TK0005). Station refuel15-second timeout reproduced before EP0010 at af594de; retained as baseline limitation. Native evidence limited to one existing sample; complete native/human/performance gates OPEN under explicit user prohibition on autonomous game launches. Final project documentation must preserve these limits and must not label epic fully accepted.

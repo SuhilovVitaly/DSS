@@ -1,15 +1,18 @@
-# EP-0010 — native / visual acceptance
+# EP-0010 native / visual acceptance
 
-Статус: **NOT RUN / OPEN**. Создание плана не запускает игру и не оценивает изображения. Заполняется US0011-TK0003.
+Status: **PARTIAL / OPEN**. On2026-10-16 the user explicitly instructed: **«никогда не запускай самостоятельно игру»**. No further game/native-window/harness runs are permitted autonomously. Headless tests/builds do not close this gate.
 
-| Проверка | Матрица | Статус | Evidence |
-|---|---|---|---|
-| Правая колонка, отсутствие перекрытий | 1280×720/1920×1080 × UI 100/120/150 × RU/EN | NOT RUN | — |
-| Object Info open/collapsed,0/200 cards | Полная layout matrix выше | NOT RUN | — |
-| Восемь иллюстраций, portrait/role fallback | Каждый variant в размере карточки | NOT RUN | — |
-| Accordion: newest/manual/multiple events | Все E01–E07, hit/destroyed | NOT RUN | — |
-| Click/wheel/keyboard/focus, отсутствие map leak | Каждый масштаб, RU/EN | NOT RUN | — |
-| NewGame/Load success/failure/modal resume | Реальный клиент | NOT RUN | — |
-| Defeat transition | Фатальный удар без задержки на доклад | NOT RUN | — |
+A previously started native process had already finished before the instruction. Process inspection found no remaining reports-window process. Its existing artifacts are retained honestly as a single partial sample, not full acceptance.
 
-Для каждой выполненной строки: дата/сборка/seed, viewport/scale/locale, шаги, ожидаемое/фактическое, screenshot/recording путь, PASS/FAIL. Ручная оценка владельца проекта: OPEN. Headless не закрывает этот gate.
+| Check | Evidence | State |
+|---|---|---|
+|1280x720/UI100/English, ObjectInfo open/closed,0/200 reports | [native JSON](native/1280-1-English.json), four matching PNGs | Automated native checks PASS |
+|All8 art variants in native card size | native/1280-1-English.variant-0.png through variant-7.png | Artifacts generated; assistant partial visual inspection; human OPEN |
+|Full1280/1920 x UI100/120/150 x RU/EN x0/200 x open/closed |48 offscreen combinations in Client acceptance tests | Headless PASS; native remaining cases NOT RUN per user policy |
+|Accordion/focus/input isolation | Same native JSON checks, report unit/integration tests | Single native sample PASS; complete manual matrix OPEN |
+|NewGame/load success/failure/modal/defeat | Engine/Client automated lifecycle tests | Automated PASS; native manual NOT RUN |
+|Human visual/gameplay acceptance | Owner review | OPEN |
+
+The native harness uses an unchanged production CombatMukha seed1 paused world and explicitly injected presentation fixtures. It does not prove live CombatMukha balance or native Save/Load/defeat. It ran64 frames for3.40seconds. It did not measure600-frame performance. Screenshots do not prove scanout.
+
+Manual harness source: tools/DeepSpaceSaga.Performance/CombatReportsNativeEvidence.cs. It is prepared for owner-operated review only. **Agent must not invoke it autonomously.** No claim of complete native acceptance.

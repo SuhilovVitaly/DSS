@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "passed": true,
+  "failure": null,
+  "checks": {
+    "empty-open": true,
+    "empty-closed": true,
+    "200-open": true,
+    "history200": true,
+    "newestExpanded": true,
+    "noFocusSteal": true,
+    "inputIsolation": true,
+    "200-closed": true
+  },
+  "frame": 64,
+  "durationSeconds": 3.3956461,
+  "viewport": {
+    "width": 1280,
+    "height": 720,
+    "scale": 1,
+    "language": "English"
+  },
+  "world": "production CombatMukha seed1 at physical0; UI fixture reports explicitly injected",
+  "backend": "native SkiaWindow OpenGL frame-callback intervals including prior presentation wait; raster tests excluded",
+  "cpu": "Intel64 Family 6 Model 189 Stepping 1, GenuineIntel",
+  "logicalProcessors": 8,
+  "baseline0": {
+    "frames": 0,
+    "p50Ms": 0,
+    "p95Ms": 0,
+    "p99Ms": 0,
+    "maxMs": 0
+  },
+  "history200": {
+    "frames": 0,
+    "p50Ms": 0,
+    "p95Ms": 0,
+    "p99Ms": 0,
+    "maxMs": 0
+  },
+  "targetFrameMs": 12.5,
+  "targetPassed": false,
+  "humanAcceptance": "OPEN"
+}

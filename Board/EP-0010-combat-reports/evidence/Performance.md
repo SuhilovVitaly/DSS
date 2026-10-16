@@ -1,13 +1,9 @@
-# EP-0010 — frame-time evidence
+# EP-0010 performance acceptance
 
-Статус: **NOT RUN / OPEN**. Цель проекта80 FPS,12,5 ms на кадр. Не утверждать, что исторические performance gates закрыты.
+Status: **NOT MEASURED / OPEN**. User instruction2026-10-16 forbids autonomous game/native-window launches, including performance harnesses. No further runs were started after that instruction.
 
-Протокол US0011-TK0003: CombatMukha, фиксированный seed/команды/скорость/zoom, одинаковая сборка/hardware/viewport/scale/locale; отдельно baseline без новой панели и новая панель с 0/200 карточками. Указать warm-up, длительность и число кадров; измерять p50/p95/p99/max frame interval, UI preparation и отсутствие decode/file I/O в Draw. Отдельно отметить CPU/native present/GPU/scanout ограничения доступного измерения. Плохой baseline не превращает новый результат в PASS80 FPS.
+Target: frame p99 <=12.5ms for80FPS, compare same seed/speed/viewport/hardware with0 versus200 reports. Required p50/p95/p99/max and actual presentation context remain unavailable. Existing native sample has zero measured frames for both baseline0/history200; its targetPassed=false is an unmeasured gate, not a measured FPS failure.
 
-| Run | Build/seed/hardware | Viewport/scale | Duration/frames | p50 | p95 | p99 | Max | Result |
-|---|---|---|---|---|---|---|---|---|
-| Baseline | NOT RUN | — | — | — | — | — | — | OPEN |
-| Reports0 | NOT RUN | — | — | — | — | — | — | OPEN |
-| Reports200 | NOT RUN | — | — | — | — | — | — | OPEN |
+Headless tests prove bounded queues4096, history200, portraitLRU32, cached layout and no repeated decode. They are not GPU/presentation evidence. No80FPS or native performance PASS is claimed.
 
-Приложить raw evidence и причину любого NOT RUN. Человеческая плавность и scanout — отдельные наблюдения, не следствие dotnet test.
+Prepared owner-operated harness supports --performance:120 warmup +600 measured callbacks for0 reports, then120 warmup +600 for200. Any future result must distinguish callback intervals from physical scanout and retain hardware/VSync context. Agent must not execute this mode autonomously.

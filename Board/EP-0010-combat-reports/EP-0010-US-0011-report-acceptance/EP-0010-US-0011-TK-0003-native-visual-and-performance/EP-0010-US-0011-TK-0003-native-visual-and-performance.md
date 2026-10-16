@@ -4,14 +4,14 @@ story: EP-0010-US-0011-report-acceptance
 ticket: EP-0010-US-0011-TK-0003-native-visual-and-performance
 title: "Визуальная приёмка и frame-time evidence"
 stage: draft
-status: planned
+status: evidence-recorded-open
 layer: client
 depends_on: ["EP-0010-US-0011-TK-0005-hud-and-fixture-regressions"]
-files_touched: 2
+files_touched: 4
 serves: ["US11-AC3"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: partial-native-user-policy
 ---
 
 # Визуальная приёмка и frame-time evidence
@@ -84,3 +84,11 @@ dotnet run --project src/DeepSpaceSaga.Client --no-restore
 ## Execution scope/order adjustment - 2026-10-16
 
 Run corrective TK0004 after TK0002 and before this native ticket. Confirmed free-map viewport regression must be fixed first.
+
+## Native harness scope before implementation - 2026-10-16
+
+Add tools/DeepSpaceSaga.Performance/CombatReportsNativeEvidence.cs and tools/DeepSpaceSaga.Performance/Program.cs to the two evidence Markdown files (four source/doc files total). Reuse actual SkiaWindow OpenGL frame callback, prepare reports through its production loop, exercise visual fixtures in real native window and record baseline0/history200 frame intervals. Generated JSON/PNG evidence lives under this epic evidence/native. No production runtime changes in this native ticket. Baseline station-timeout comparison uses isolated af594de checkout, not a code fix.
+
+## Execution evidence and user constraint - 2026-10-16
+
+Prepared and Release-built native evidence harness (0 warnings/errors). One already-started1280/UI100/EN sample finished64 frames; layout/history/focus checks PASS, screenshots retained. User then explicitly forbade autonomous game launches. Verified no remaining native reports process; no more native/game/performance runs. Full native matrix, native lifecycle, human art/playtest and600-frame performance are OPEN/NOT RUN by this explicit constraint. This ticket records evidence and limitation; it does not claim complete acceptance. Headless coverage remains separate. Baseline station timeout reproduced on af594de in isolated checkout, see regression/station-baseline.trx versus station-current.trx.

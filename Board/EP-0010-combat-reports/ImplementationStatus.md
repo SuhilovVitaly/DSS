@@ -46,7 +46,7 @@
 | [EP-0010-US-0010-TK-0003-session-reset-and-defeat](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-TK-0003-session-reset-and-defeat/EP-0010-US-0010-TK-0003-session-reset-and-defeat.md) | IMPLEMENTED | 6 focused; 67 report/reliability PASS | OPEN / по scope |
 | [EP-0010-US-0011-TK-0001-engine-scenario-proof](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0001-engine-scenario-proof/EP-0010-US-0011-TK-0001-engine-scenario-proof.md) | IMPLEMENTED | 5 E2E; 57 Engine report PASS | OPEN / по scope |
 | [EP-0010-US-0011-TK-0002-client-integration-proof](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0002-client-integration-proof/EP-0010-US-0011-TK-0002-client-integration-proof.md) | IMPLEMENTED | 10 acceptance; 82 Client focused PASS | OPEN / по scope |
-| [EP-0010-US-0011-TK-0003-native-visual-and-performance](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0003-native-visual-and-performance/EP-0010-US-0011-TK-0003-native-visual-and-performance.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0011-TK-0003-native-visual-and-performance](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0003-native-visual-and-performance/EP-0010-US-0011-TK-0003-native-visual-and-performance.md) | EVIDENCE RECORDED / OPEN | One native sample; full matrix/performance NOT RUN | OPEN / по scope |
 | [EP-0010-US-0012-TK-0001-project-documentation](EP-0010-US-0012-documentation-and-handoff/EP-0010-US-0012-TK-0001-project-documentation/EP-0010-US-0012-TK-0001-project-documentation.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 
 ## Execution started — 2026-10-16
@@ -112,3 +112,5 @@ US0011 Engine proof276bc6331e89b65412713ccf02eaf2840cc9f186 published/remote ver
 Corrective US0011-TK0004: report rectangle added to free-map obstacles, new6 + existingMapLayer3 PASS. Full Client before repair1948/1971,23failures; remaining navigation fixtures and station timeout investigation open. Client proof9f022367fec29f41f15e8cb20c9a1f232bf26b02 published/remote verified.
 
 CorrectiveTK0004 cfb91938c2c1409213d535911cc11e7ed73e7bf6 published/remote verified. TK0005 toolbar reservation and affected fixtures repaired;166 cases PASS, including all12 failures reproduced by scoped pre-fix run. Raw evidence in evidence/regression.
+
+TK0005 47b60d2902c8577642d51af3894682104b9673f9 published/remote verified. User explicitly forbids autonomous game/native launches from2026-10-16 onward. Native/performance gate stays OPEN. Existing64-frame1280/UI100/EN sample retained; no active native process remained. Station timeout reproduced on source af594de, baseline evidence retained.
