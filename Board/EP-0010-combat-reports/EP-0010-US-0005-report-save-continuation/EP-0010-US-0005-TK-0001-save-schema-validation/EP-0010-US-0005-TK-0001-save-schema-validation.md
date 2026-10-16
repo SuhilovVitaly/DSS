@@ -4,14 +4,14 @@ story: EP-0010-US-0005-report-save-continuation
 ticket: EP-0010-US-0005-TK-0001-save-schema-validation
 title: "Схема и атомарная валидация состояния докладов"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0004-TK-0002-contact-summary"]
 files_touched: 5
 serves: ["US05-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Схема и атомарная валидация состояния докладов
@@ -89,3 +89,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Сохранить durable отметки без обязательной миграции текущих Save17. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Optional Version1 report continuation added at end of GameStateData. Validator rejects invalid version/sequence/null IDs, duplicates including case aliases, blank/control/untrimmed IDs; removed targets accepted without world references. Required JSON properties enforced. Thirteen schema tests PASS, including atomic rejection and pre-feature Save17/Save16 boundaries; Engine compile and scoped format/diff PASS.

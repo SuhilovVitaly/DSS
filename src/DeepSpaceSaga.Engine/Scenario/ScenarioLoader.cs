@@ -205,6 +205,7 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
+        CombatReportsSaveValidation.Validate(gs.CombatReportsState);
         if (scenario.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion && gs.MasterSeed is null)
             throw new ScenarioException("Trading economy save: missing masterSeed. Save was not modified.");
         if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)
