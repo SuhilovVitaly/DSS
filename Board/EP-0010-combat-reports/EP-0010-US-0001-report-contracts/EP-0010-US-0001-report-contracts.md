@@ -7,7 +7,7 @@ dependencies: []
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ revision: 1
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Story self-review — 2026-10-16
+
+US01-AC1/AC2 покрыты16 новыми executable cases; полная Contracts suite210/210. Проверены immutable records/arrays, отсутствие graphics/runtime dependencies, captured nullable identity/privacy, module facts, E01–E07 и Hit/Destroyed, default/empty и старый snapshot JSON, независимость sequence и физического времени. Подтверждённых дефектов в scoped contracts после review не найдено. Это self-review автора; runtime emit/delivery/SaveLoad/UI принадлежат следующим историям и не заявляются реализованными.

@@ -4,14 +4,14 @@ story: EP-0010-US-0001-report-contracts
 ticket: EP-0010-US-0001-TK-0002-snapshot-batch
 title: "Пакет докладов в snapshot"
 stage: draft
-status: planned
+status: implemented
 layer: contracts
 depends_on: ["EP-0010-US-0001-TK-0001-immutable-report"]
 files_touched: 2
 serves: ["US01-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: passed
 ---
 
 # Пакет докладов в snapshot
@@ -84,3 +84,9 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Передавать доклады через существующую async границу. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence — 2026-10-16
+
+Добавлен последний optional параметр CombatReports; прежние параметры AuthoritativeSnapshot сохранены. XML contract различает legacy null, пустой пакет, фиксированный bootstrap baseline и новую sequence. Все3 именованных теста PASS: legacy JSON, default/empty/nonempty batch round-trip, дробное физическое время и отдельные snapshot/report/journal identities.
+
+`dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj --no-restore --nologo --verbosity minimal -p:UseSharedCompilation=false --filter FullyQualifiedName~CombatReportBatchTests` —3/3; тот же project без filter —210/210. `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj --no-restore --nologo -p:UseSharedCompilation=false` —0 warnings/errors. `dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Contracts/AuthoritativeSnapshot.cs tests/DeepSpaceSaga.Contracts.Tests/CombatReportBatchTests.cs --verbosity quiet` и `git diff --check` —PASS. Dependency TK0001 опубликован a49debeb6a6df8b01b150487b6d002420a53cfcd, remote SHA проверен перед реализацией.

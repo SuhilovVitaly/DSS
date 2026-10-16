@@ -71,7 +71,11 @@ public sealed record AuthoritativeSnapshot(
     [property: JsonPropertyName("clusterMap")] StationClusterMapSnapshot? ClusterMap = null,
     [property: JsonPropertyName("aiMap")] AiMapEnvironmentSnapshot? AiMap = null,
     /// <summary>Current session outcome, repeated on every modern snapshot. Null only for older producers.</summary>
-    SessionOutcomeSnapshot? Outcome = null)
+    SessionOutcomeSnapshot? Outcome = null,
+    /// <summary>New report deltas above a fixed bootstrap baseline, independent of SnapshotSequence.
+    /// Null denotes a legacy producer and must not clear pending reports. Empty batches still carry
+    /// the baseline/latest watermark; history from a loaded save is never replayed as new reports.</summary>
+    CombatReportBatchSnapshot? CombatReports = null)
 {
     [JsonIgnore]
     public SessionOutcomeSnapshot EffectiveOutcome => Outcome ?? SessionOutcomeSnapshot.Running;
