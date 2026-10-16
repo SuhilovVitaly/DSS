@@ -39,7 +39,7 @@ public sealed partial class GameSessionScreen
         var key = (snapshot, weapon);
         if (_manualPreviewKey != key)
         {
-            ManualDefensePreviewPlan = CountermeasureGuidanceMath.PlanManual(owner, target.Route, snapshot.MotionTimeMs,
+            ManualDefensePreviewPlan = CountermeasureGuidanceMath.PlanManualLaunch(owner, target.Route, snapshot.MotionTimeMs,
                 defense.MaxFlightTimeMs.Value, defense.SpeedKmS.Value, defense.TurnRateDegPerSec.Value,
                 module.DefensePreview?.FirstTargetContactMotionTimeMs);
             _manualPreviewKey = key;
@@ -49,6 +49,12 @@ public sealed partial class GameSessionScreen
             snapshot.MotionTimeMs, defense.MaxFlightTimeMs.Value, _camera);
         DrawCombatGeometry(canvas, ManualDefensePreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
         ManualDefensePreviewMessage = ManualDefensePreviewGeometry.Intercept is null ? CombatText("UnknownIntercept", "Intercept unknown") : null;
+        if (ManualDefensePreviewGeometry.Intercept is { } intercept && module.DefensePreview?.ChanceTenths is { } chance)
+        {
+            var (x, y) = _camera.WorldToScreen(intercept.X, intercept.Y, _viewportW, _viewportH);
+            using var text = new SKPaint { Color = CombatSettings.Preview, TextSize = 12, IsAntialias = true };
+            canvas.DrawText($"{chance / 10m:0.0}%", x + 8, y - 8, text);
+        }
     }
 
     private sealed class DefenseSubmission

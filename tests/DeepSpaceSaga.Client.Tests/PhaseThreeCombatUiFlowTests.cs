@@ -88,7 +88,7 @@ public class PhaseThreeCombatUiFlowTests
             var after = await Wait(s => s.Objects.Count(o => o.Countermeasure is not null) == 2);
             Render(); Render();
             Assert.Empty(screen.DefenseFlightLabels);
-            Assert.Empty(screen.DefenseChanceLabels);
+            Assert.All(screen.DefenseChanceLabels.Values, label => Assert.NotNull(label.Encounter));
             Assert.Equal(2, screen.DefenseGeometry.Count);
             Assert.Equal(1, after.MotionTimeMs);
             Assert.Equal(SimulationSpeed.Speed0, after.CurrentSpeed);

@@ -149,6 +149,9 @@ public sealed class CommandsPanel
     private readonly Func<WeaponPanelInstance, string?>? _weaponStatus;
     private readonly Func<WeaponPanelInstance, string?>? _weaponOperatorText;
     private readonly Func<WeaponPanelInstance, IReadOnlyList<string>>? _weaponDetails;
+    private readonly Func<double> _motionTime;
+    private readonly HashSet<string> _visibleWeaponRanges = new(StringComparer.Ordinal);
+    internal bool IsWeaponRangeVisible(string moduleId) => _visibleWeaponRanges.Contains(moduleId);
     private float _viewportHeight = float.PositiveInfinity;
     private float _scrollOffset;
     private float _maxScroll;
@@ -241,7 +244,8 @@ public sealed class CommandsPanel
         Action<WeaponPanelInstance, string>? weaponCommandClicked = null,
         Func<WeaponPanelInstance, string?>? weaponStatus = null,
         Func<WeaponPanelInstance, string?>? weaponOperatorText = null,
-        Func<WeaponPanelInstance, IReadOnlyList<string>>? weaponDetails = null)
+        Func<WeaponPanelInstance, IReadOnlyList<string>>? weaponDetails = null,
+        Func<double>? motionTime = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
@@ -253,6 +257,7 @@ public sealed class CommandsPanel
         _weaponStatus = weaponStatus;
         _weaponOperatorText = weaponOperatorText;
         _weaponDetails = weaponDetails;
+        _motionTime = motionTime ?? (() => 0);
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -438,6 +443,11 @@ public sealed class CommandsPanel
         {
             if (row.CaptionRect.Contains(x, y))
             {
+                if (row.RangeModuleId is { } moduleId && row.RangeToggleRect.Contains(x, y))
+                {
+                    if (!_visibleWeaponRanges.Add(moduleId)) _visibleWeaponRanges.Remove(moduleId);
+                    return true;
+                }
                 string name = row.Key;
                 bool wasOpened = row.Opened;
                 _panelOpenedByName[name] = !wasOpened;
@@ -614,8 +624,24 @@ public sealed class CommandsPanel
                 if (opened && panel.Weapon is null && panel.Name == "Countermeasure Launcher") statusBarText = _defenseStatus?.Invoke() ?? statusBarText;
                 if (opened && statusBarText is null && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon);
 
+                var weaponModule = panel.Weapon is { } instance
+                    ? safeModules.FirstOrDefault(m => m.ModuleId == instance.ModuleId)
+                    : panel.Name == "Torpedo Launcher" ? safeModules.OrderBy(m => m.Position).FirstOrDefault(m => m.LauncherCombat is not null)
+                    : panel.Name == "Countermeasure Launcher" ? safeModules.OrderBy(m => m.Position).FirstOrDefault(m => m.Defense is not null) : null;
+                float toggleSize = Math.Min(18, captionRect.Height - 4);
+                var toggle = weaponModule is null ? SKRect.Empty : new SKRect(captionRect.Right - toggleSize - 8,
+                    captionRect.MidY - toggleSize / 2, captionRect.Right - 8, captionRect.MidY + toggleSize / 2);
+                var reloadBar = opened && weaponModule is not null
+                    ? new SKRect(bodyRect.Left + 12, bodyRect.Bottom - 9, bodyRect.Right - 12, bodyRect.Bottom - 3) : SKRect.Empty;
+                double? readyAt = weaponModule?.LauncherCombat?.ReadyAtMotionTimeMs ??
+                    weaponModule?.Defense?.ReadyAtMotionTimeMs ?? weaponModule?.Defense?.ReloadDueMotionTimeMs;
+                double? reloadDuration = weaponModule?.LauncherCombat?.ReloadDurationMs ?? weaponModule?.Defense?.ReloadDurationMs;
+                double remainingReload = Math.Max(0, (readyAt ?? 0) - _motionTime());
+                double reloadFraction = remainingReload <= 0 ? 1 : reloadDuration is > 0 ? Math.Clamp(1 - remainingReload / reloadDuration.Value, 0, 1) : 0;
+                if (weaponModule is { StructureMax: > 0, StructureCurrent: <= 0 } || weaponModule?.LauncherCombat?.IsBrokenUntilDock == true) reloadFraction = 0;
                 _panelRows.Add(new CommandPanelGeometry(
-                    panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon, details[panel.Key]));
+                    panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon, details[panel.Key],
+                    weaponModule?.ModuleId, toggle, weaponModule is not null && IsWeaponRangeVisible(weaponModule.ModuleId), reloadBar, reloadFraction));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -815,7 +841,20 @@ public sealed class CommandsPanel
 
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;
-        canvas.DrawText(row.Name, textX, textY, _moduleCaptionTextPaint);
+        canvas.DrawText(TruncateLabel(row.Name, _moduleCaptionTextPaint,
+            (row.RangeToggleRect.IsEmpty ? row.CaptionRect.Right - 6 : row.RangeToggleRect.Left - 6) - textX), textX, textY, _moduleCaptionTextPaint);
+        if (!row.RangeToggleRect.IsEmpty)
+        {
+            canvas.DrawRect(row.RangeToggleRect, row.RangeVisible ? _btnActivePaint : _btnNormalPaint);
+            canvas.DrawRect(row.RangeToggleRect, _btnBorderPaint);
+            if (row.RangeVisible)
+            {
+                using var check = new SKPaint { Color = XenonStyle.CyanBright, StrokeWidth = 2, IsAntialias = true };
+                var r = row.RangeToggleRect;
+                canvas.DrawLine(r.Left + 3, r.MidY, r.MidX - 1, r.Bottom - 4, check);
+                canvas.DrawLine(r.MidX - 1, r.Bottom - 4, r.Right - 3, r.Top + 3, check);
+            }
+        }
 
         if (row.Opened && row.BodyRect.Height > 0)
         {
@@ -849,6 +888,15 @@ public sealed class CommandsPanel
                 for (int i = 0; i < row.DetailLines.Length; i++)
                     canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, row.BodyRect.Top + 96 + i * 16, paint);
                 canvas.Restore();
+            }
+            if (!row.ReloadBarRect.IsEmpty)
+            {
+                canvas.DrawRect(row.ReloadBarRect, _statusBarBgPaint);
+                using var progress = new SKPaint { Color = XenonStyle.CyanBright };
+                var fill = row.ReloadBarRect;
+                fill.Right = fill.Left + fill.Width * (float)row.ReloadFraction;
+                canvas.DrawRect(fill, progress);
+                canvas.DrawRect(row.ReloadBarRect, _btnBorderPaint);
             }
         }
     }
@@ -1014,7 +1062,9 @@ public readonly record struct CommandPanelGeometry(
     SKRect StatusBarRect,
     string? StatusBarText,
     WeaponPanelInstance? Weapon = null,
-    ImmutableArray<string> DetailLines = default)
+    ImmutableArray<string> DetailLines = default,
+    string? RangeModuleId = null, SKRect RangeToggleRect = default, bool RangeVisible = false,
+    SKRect ReloadBarRect = default, double ReloadFraction = 1)
 {
     public string Key => Weapon?.Key ?? Name;
 }

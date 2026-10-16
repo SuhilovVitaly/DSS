@@ -39,6 +39,8 @@ public sealed class FireModeRuntimeTests
         Assert.Equal(10, flight.ModeManeuverabilityBonus);
         Assert.Equal(18750, launched.InstalledModules.Single(m => m.ModuleId == Launcher)
             .LauncherCombat!.ReadyAtMotionTimeMs);
+        Assert.Equal(18750, launched.InstalledModules.Single(m => m.ModuleId == Launcher)
+            .LauncherCombat!.ReloadDurationMs);
         ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(
             engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)), true);
     }

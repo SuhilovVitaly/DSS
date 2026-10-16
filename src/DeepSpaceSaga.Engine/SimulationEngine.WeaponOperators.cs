@@ -30,7 +30,12 @@ public sealed partial class SimulationEngine
     private LauncherCombatSnapshot? ProjectWeaponLauncher(SpaceObjectRuntime owner, InstalledModuleRuntime module)
     {
         var launcher = _launcherCombat.GetValueOrDefault((owner.InitialMotion.ObjectId, module.ModuleId));
-        return launcher is null ? null : launcher with { Operator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack) };
+        return launcher is null ? null : launcher with
+        {
+            Operator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack),
+            ReloadDurationMs = (double?)(_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).LauncherReloadMs *
+                FireModeMath.Resolve(_registry, launcher.ModeId).ReloadMultiplier)
+        };
     }
 
     private static void StageLegacyWeaponRatings(List<SpaceObjectRuntime> objects)

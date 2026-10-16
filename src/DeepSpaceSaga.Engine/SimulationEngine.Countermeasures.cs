@@ -73,7 +73,7 @@ public sealed partial class SimulationEngine
                     var hull = TorpedoCollisionMath.FirstContact(CombatPath(target), CombatPath(owner), launchAt, end + 1);
                     if (hull is null) continue;
                     var origin = PredictMotion(owner, launchAt - owner.StartGameTimeMs);
-                    var route = CountermeasureGuidanceMath.Plan(origin, torpedo.Route, launchAt, hull.Value.MotionTimeMs,
+                    var route = CountermeasureGuidanceMath.PlanLaunch(origin, torpedo.Route, launchAt, hull.Value.MotionTimeMs,
                         type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
                         launchAt + type.CountermeasureMaxFlightTimeMs!.Value);
                     if (route is null) continue;
@@ -204,7 +204,7 @@ public sealed partial class SimulationEngine
         long lifetime = type.CountermeasureMaxFlightTimeMs!.Value;
         if (time > long.MaxValue - lifetime) return;
         var origin = PredictMotion(owner, time - owner.StartGameTimeMs);
-        var plan = CountermeasureGuidanceMath.PlanManual(origin, torpedo.Route, time, lifetime,
+        var plan = CountermeasureGuidanceMath.PlanManualLaunch(origin, torpedo.Route, time, lifetime,
             type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
             FirstPredictedTorpedoContact(target, time, time + lifetime));
         int chance = CombatChanceMath.ChanceTenths(op.EffectiveRating,
@@ -428,6 +428,11 @@ public sealed partial class SimulationEngine
     }
 
     private DefenseSnapshot? ProjectDefense(SpaceObjectRuntime owner) => owner.Modules
-        .Select(m => _defenses.GetValueOrDefault((owner.InitialMotion.ObjectId, m.ModuleId)))
+        .Select(m => ProjectModuleDefense(owner, m))
         .FirstOrDefault(d => d is not null);
+
+    private DefenseSnapshot? ProjectModuleDefense(SpaceObjectRuntime owner, InstalledModuleRuntime module) =>
+        _defenses.GetValueOrDefault((owner.InitialMotion.ObjectId, module.ModuleId)) is { } defense
+            ? defense with { ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureReloadMs }
+            : null;
 }

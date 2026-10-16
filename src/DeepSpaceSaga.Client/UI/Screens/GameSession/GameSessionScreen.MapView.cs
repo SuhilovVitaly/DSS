@@ -285,22 +285,27 @@ public sealed partial class GameSessionScreen
         return true;
     }
 
+    internal readonly List<string> OffscreenMarkerIds = new();
     private void DrawOffscreenTargets(SKCanvas canvas)
     {
+        OffscreenMarkerIds.Clear();
         var rect = AvailableMapRect(); rect.Inflate(-18, -18);
         if (rect.Width <= 0 || rect.Height <= 0) return;
+        var screenBounds = new SKRect(0, 0, _viewportW, _viewportH);
+        var emitted = new HashSet<string>(StringComparer.Ordinal);
         var ship = FindPlayerShip(_renderStates)?.Predicted;
         foreach (var state in _renderStates)
             if (!state.IsPlayerShip && IsImportantMapObject(state.Pose.ObjectId))
-                Draw(state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
+                Draw(state.Pose.ObjectId, state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
         if (ship?.NavigationTargetX is { } tx && ship.NavigationTargetY is { } ty &&
             (_navigationTargetId is null || !_renderStates.Any(s => s.Pose.ObjectId == _navigationTargetId)))
-            Draw(tx, ty, "Map.Target");
+            Draw(_navigationTargetId ?? "navigation-point", tx, ty, "Map.Target");
 
-        void Draw(double worldX, double worldY, string labelKey)
+        void Draw(string id, double worldX, double worldY, string labelKey)
         {
             var (sx, sy) = _camera.WorldToScreen(worldX, worldY, _viewportW, _viewportH);
-            if (rect.Contains(sx, sy)) return;
+            if (screenBounds.Contains(sx, sy) || !emitted.Add(id)) return;
+            OffscreenMarkerIds.Add(id);
             double dx = sx - rect.MidX, dy = sy - rect.MidY;
             double scale = Math.Min(rect.Width / 2 / Math.Max(.001, Math.Abs(dx)), rect.Height / 2 / Math.Max(.001, Math.Abs(dy)));
             float x = rect.MidX + (float)(dx * scale), y = rect.MidY + (float)(dy * scale);

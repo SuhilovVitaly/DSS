@@ -42,6 +42,12 @@ public sealed partial class GameSessionScreen
             var adapter = new TorpedoSnapshot(flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetTorpedoId,
                 flight.LaunchMotionTimeMs, state.Pose.Motion.SpeedKmS, 90, 0, 0, flight.Route, flight.Trail);
             var geometry = CombatTrajectoryProjector.Project(adapter, target, _predictor, _camera, _viewportW, _viewportH);
+            if (flight.ExpiresAtMotionTimeMs is { } expires && target?.Torpedo is { } targetFlight)
+            {
+                long now = (long)Math.Floor(flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs);
+                geometry = CombatTrajectoryProjector.ProjectManual(new(flight.Route, flight.PredictedEncounterMotionTimeMs),
+                    targetFlight.Route, now, Math.Max(1, expires - now), _camera);
+            }
             DefenseGeometry[state.Source.ObjectId] = geometry;
             DrawCombatGeometry(canvas, geometry, CombatSettings.CountermeasurePrediction, CombatSettings.CountermeasureIntercept);
 
@@ -77,22 +83,39 @@ public sealed partial class GameSessionScreen
             if (state.Source.RenderObjectType == SpaceObjectType.NpcShip && state.Source.Defense is { } defense &&
                 _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label))
                 canvas.DrawText(DefenseStatusText(defense, DefensePresentationTime), label.PlaqueRect.Left, label.PlaqueRect.Bottom + 22, text);
+            if (state.Source.Countermeasure is { Phase: CountermeasurePhase.Guiding } flight &&
+                DefenseGeometry.TryGetValue(state.Source.ObjectId, out var geometry) && geometry.Intercept is { } encounter)
+            {
+                var marker = _camera.WorldToScreen(encounter.X, encounter.Y, _viewportW, _viewportH);
+                if (marker.X < 0 || marker.Y < 0 || marker.X > _viewportW || marker.Y > _viewportH) continue;
+                var projectile = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
+                string chance = $"{flight.FrozenChanceTenths / 10m:0.0}%";
+                canvas.DrawText(chance, marker.X + 8, marker.Y - 8, text);
+                DefenseChanceLabels[state.Source.ObjectId] = (new(projectile.X, projectile.Y), new(marker.X, marker.Y), chance);
+            }
         }
     }
 
     private void DrawHoveredWeaponRanges(SKCanvas canvas, SKPaint paint)
     {
-        if (!_hasMousePosition || _panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY) ||
-            _commandsPanel.PanelAt(_uiMouseX, _uiMouseY) is not { } panel ||
-            FindPlayerShip(_renderStates) is not { } player || player.Source.IsDestroyed) return;
+        if (FindPlayerShip(_renderStates) is not { } player || player.Source.IsDestroyed) return;
         var (x, y) = _camera.WorldToScreen(player.Pose.X, player.Pose.Y, _viewportW, _viewportH);
-        if (panel.Weapon is { } weapon && DefenseModule(weapon)?.Defense is { } defense)
+        string? hoveredModule = null;
+        if (_hasMousePosition && !(_panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY)) &&
+            _commandsPanel.PanelAt(_uiMouseX, _uiMouseY) is { } panel)
+            hoveredModule = panel.Weapon?.ModuleId ?? (panel.Name == "Torpedo Launcher" ? FindLauncher()?.ModuleId : null);
+        var modules = _buffer.Latest?.Snapshot.InstalledModules ?? default;
+        if (modules.IsDefault) return;
+        foreach (var module in modules)
         {
-            Ring(weapon.ModuleId, "auto", defense.RangeKm, false);
-            if (defense.ManualRangeKm is { } manual) Ring(weapon.ModuleId, "manual", manual, true);
+            if (module.ModuleId != hoveredModule && !_commandsPanel.IsWeaponRangeVisible(module.ModuleId)) continue;
+            if (module.Defense is { } defense)
+            {
+                Ring(module.ModuleId, "auto", defense.RangeKm, false);
+                if (defense.ManualRangeKm is { } manual) Ring(module.ModuleId, "manual", manual, true);
+            }
+            else if (module.LauncherCombat?.RangeKm is { } range) Ring(module.ModuleId, "torpedo", range, false);
         }
-        else if (panel.Name == "Torpedo Launcher" && FindLauncher() is { LauncherCombat.RangeKm: { } range } launcher)
-            Ring(launcher.ModuleId, "torpedo", range, false);
 
         void Ring(string module, string kind, double range, bool dashed)
         {

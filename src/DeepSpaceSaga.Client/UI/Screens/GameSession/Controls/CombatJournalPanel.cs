@@ -18,7 +18,7 @@ internal sealed class CombatJournalPanel
     {
         Entries = entries.IsDefault ? [] : entries;
         float left = Math.Min(384, Math.Max(8, width - 96));
-        float w = Expanded ? Math.Min(540, width - left - 8) : Math.Max(80, width - 2 * 384);
+        float w = Math.Max(1, Math.Min(540, width - left - 8));
         Bounds = new(left, 48, left + w, 74 + (Expanded ? Math.Min(260, Math.Max(100, height - 180)) : 0));
         using var fill = new SKPaint { Color = new SKColor(8, 25, 36, 242) };
         using var text = new SKPaint { Color = new SKColor(160, 230, 245), TextSize = 12, IsAntialias = true };

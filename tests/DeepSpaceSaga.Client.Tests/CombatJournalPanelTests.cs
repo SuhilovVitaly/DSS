@@ -5,6 +5,24 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class CombatJournalPanelTests
 {
+    [Theory]
+    [InlineData(640)]
+    [InlineData(1280)]
+    [InlineData(1920)]
+    public void Collapsing_changes_only_journal_height(int width)
+    {
+        var panel = new CombatJournalPanel();
+        using var bitmap = new SKBitmap(width, 720);
+        using var canvas = new SKCanvas(bitmap);
+        panel.Render(canvas, width, 720, []);
+        var collapsed = panel.Bounds;
+        panel.Click(collapsed.MidX, collapsed.MidY);
+        panel.Render(canvas, width, 720, []);
+        Assert.Equal(collapsed.Width, panel.Bounds.Width);
+        Assert.Equal(collapsed.Left, panel.Bounds.Left);
+        Assert.True(panel.Bounds.Height > collapsed.Height);
+    }
+
     [Fact]
     public void Single_wrapped_entry_can_scroll_to_its_hidden_tail()
     {

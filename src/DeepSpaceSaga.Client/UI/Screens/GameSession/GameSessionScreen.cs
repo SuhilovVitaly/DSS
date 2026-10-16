@@ -358,7 +358,7 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
-            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText, GetDefenseInstanceDetails);
+            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText, GetDefenseInstanceDetails, () => DefensePresentationTime);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -1200,6 +1200,8 @@ public sealed partial class GameSessionScreen : IScreen
             DrawNavigationTrajectories(canvas, width, height);
             DrawCombatTrajectories(canvas, buffered);
             DrawCountermeasureTrajectories(canvas);
+            if (_handle is not null && buffered is not null)
+                _handle.CombatMetrics.RecordVisual(buffered.Snapshot, _renderStates, prediction?.EffectivePredictionDeltaMs ?? 0, _timestampProvider());
             RenderStageCompleted?.Invoke("combat_trajectories");
             DrawLaunchPreview(canvas, prediction, viewportResized);
             RenderStageCompleted?.Invoke("launch_preview");

@@ -14,6 +14,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private readonly IGameSessionConnection _connection;
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _receiveTask;
+    internal CombatMetricsWriter CombatMetrics { get; }
     private readonly Task _interactionStateSenderTask;
     private readonly Channel<(string? ActiveObjectId, string? SelectedObjectId)> _interactionStateChannel =
         Channel.CreateBounded<(string?, string?)>(new BoundedChannelOptions(1)
@@ -48,9 +49,10 @@ public sealed class GameSessionHandle : IAsyncDisposable
     public GameSessionHandle(IGameSessionConnection connection)
         : this(connection, new SnapshotBuffer()) { }
 
-    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer)
+    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer, CombatMetricsWriter? combatMetrics = null)
     {
         _connection = connection;
+        CombatMetrics = combatMetrics ?? new();
 
         Buffer = buffer;
 
@@ -293,6 +295,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
             await foreach (var snapshot in _connection.ReadSnapshotsAsync(ct))
             {
                 Buffer.Update(snapshot);
+                CombatMetrics.Record(snapshot);
                 if (!snapshot.CommandResults.IsDefaultOrEmpty)
                     foreach (var result in snapshot.CommandResults)
                         if (result.CommandType == NavigationComputerCommandTypes.Approach &&
@@ -382,6 +385,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
         try { await _interactionStateSenderTask.ConfigureAwait(false); } catch { }
 
         _cts.Dispose();
+        await CombatMetrics.DisposeAsync().ConfigureAwait(false);
 
         if (_connection is IAsyncDisposable asyncDisposable)
             await asyncDisposable.DisposeAsync().ConfigureAwait(false);

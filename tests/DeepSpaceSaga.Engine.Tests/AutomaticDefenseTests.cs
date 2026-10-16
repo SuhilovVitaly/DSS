@@ -5,6 +5,26 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class AutomaticDefenseTests
 {
+    [Fact]
+    public void Automatic_launcher_aims_toward_intercept_when_carrier_faces_away()
+    {
+        var scenario = DefenseScenario();
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with { DirectionDegrees = 0 } : o).ToArray()
+            }
+        };
+        using var engine = Create(scenario);
+        engine.ReceiveCommand(Fire("fire"));
+        At(engine, 0);
+        var projectile = Assert.Single(At(engine, 100).Objects, o => o.Countermeasure is not null);
+        var launch = projectile.Countermeasure!.Route.Segments[0];
+        Assert.InRange(launch.Direction, 179, 181);
+        Assert.InRange(projectile.Countermeasure.Route.Segments.Sum(s => Math.Abs(s.AngularVelocityDegPerSec) * s.DurationMs / 1000), 0, .01);
+    }
+
     internal static DeepSpaceSaga.Engine.Content.GameDataRegistry WeaponRegistry(decimal accuracy, decimal maneuverability)
     {
         var source = Registry.Value;

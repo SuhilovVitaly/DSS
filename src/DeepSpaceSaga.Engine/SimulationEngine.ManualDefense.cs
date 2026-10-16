@@ -26,7 +26,7 @@ public sealed partial class SimulationEngine
         if (!TryGetNextCountermeasureId(out _, out _)) return CommandStartOutcome.Rejected("projectile_id_exhausted");
         var torpedo = c.Target.InitialMotion.Torpedo!;
         var origin = PredictMotion(c.Owner, time - c.Owner.StartGameTimeMs);
-        var plan = CountermeasureGuidanceMath.PlanManual(origin, torpedo.Route, time, lifetime,
+        var plan = CountermeasureGuidanceMath.PlanManualLaunch(origin, torpedo.Route, time, lifetime,
             type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
             FirstPredictedTorpedoContact(c.Target, time, time + lifetime));
         int chance = CombatChanceMath.ChanceTenths(c.Operator.EffectiveRating,

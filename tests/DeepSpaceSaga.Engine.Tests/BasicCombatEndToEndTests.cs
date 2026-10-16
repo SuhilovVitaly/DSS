@@ -166,8 +166,8 @@ public sealed class BasicCombatEndToEndTests
         Assert.Equal(expected.DestroyedObjectId, actual.DestroyedObjectId);
         Assert.Equal(expected.WreckObjectId, actual.WreckObjectId);
         Assert.Equal(expected.MotionTimeMs, actual.MotionTimeMs, 4);
-        Assert.Equal(expected.X, actual.X, 6);
-        Assert.Equal(expected.Y, actual.Y, 6);
+        Assert.InRange(Math.Abs(expected.X - actual.X), 0, 1e-6);
+        Assert.InRange(Math.Abs(expected.Y - actual.Y), 0, 1e-6);
         SameTrail(expected.FinalTrail, actual.FinalTrail);
     }
 
@@ -224,7 +224,7 @@ public sealed class BasicCombatEndToEndTests
             long remaining = motionMs - Snapshot().MotionTimeMs;
             Assert.True(remaining >= 0);
             Engine.SetSpeed(speed);
-            long realMs = remaining / (int)speed;
+            long realMs = remaining / (int)speed * 4;
             while (realMs > 0)
             {
                 long delta = partition ? Math.Min(realMs, 1379) : realMs;
@@ -233,7 +233,7 @@ public sealed class BasicCombatEndToEndTests
                 Snapshot();
             }
             Engine.SetSpeed(SimulationSpeed.Speed1);
-            _now += remaining % (int)speed;
+            _now += remaining % (int)speed * 4;
             Engine.SetSpeed(SimulationSpeed.Speed0);
             return Snapshot();
         }

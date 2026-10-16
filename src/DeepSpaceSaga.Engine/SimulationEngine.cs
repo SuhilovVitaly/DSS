@@ -938,7 +938,7 @@ public sealed partial class SimulationEngine : IDisposable
                 CabinesCount: moduleType.CabinesCount,
                 CargoCapacityKg: moduleType.CargoCapacityKg,
                 LauncherCombat: ProjectWeaponLauncher(ship, module),
-                Defense: _defenses.GetValueOrDefault((ship.InitialMotion.ObjectId, module.ModuleId)),
+                Defense: ProjectModuleDefense(ship, module),
                 Operator: moduleType.TorpedoDamage is not null
                     ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
                     : moduleType.CountermeasureAccuracy is not null
