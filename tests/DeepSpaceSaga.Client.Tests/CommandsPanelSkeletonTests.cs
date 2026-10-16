@@ -299,7 +299,7 @@ public class CommandsPanelSkeletonTests
         double fxBefore = screen.CameraFocusX;
         double fyBefore = screen.CameraFocusY;
 
-        var result = screen.OnMouseDown(1000, 500);
+        var result = screen.OnMouseDown(700, 300);
 
         // Click alone no longer jumps the camera by itself (disabled — see
         // GameSessionNavigationTests), but it must still reach the map's
@@ -309,7 +309,7 @@ public class CommandsPanelSkeletonTests
         Assert.Equal(fxBefore, screen.CameraFocusX);
         Assert.Equal(fyBefore, screen.CameraFocusY);
 
-        screen.OnMouseMove(1030, 470);
+        screen.OnMouseMove(730, 270);
 
         Assert.NotEqual(fxBefore, screen.CameraFocusX);
         Assert.NotEqual(fyBefore, screen.CameraFocusY);
@@ -321,7 +321,7 @@ public class CommandsPanelSkeletonTests
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
 
         Assert.Empty(fixture.Connection.Commands);
     }
@@ -1002,7 +1002,7 @@ public class CommandsPanelSkeletonTests
         Assert.Equal("OBJ-1", command.TargetObjectId);
 
         // Clear the selection (right-click on empty map) → disabled again.
-        fixture.Screen.OnMouseDown(1000, 500, MouseButton.Right);
+        fixture.Screen.OnMouseDown(700, 300, MouseButton.Right);
         Assert.Null(fixture.Screen.SelectedObjectId);
         Render(fixture.Screen);
 

@@ -6,7 +6,7 @@ title: "Синхронизация спецификации, экрана и с�
 stage: draft
 status: planned
 layer: documentation
-depends_on: ["EP-0010-US-0011-TK-0003-native-visual-and-performance"]
+depends_on: ["EP-0010-US-0011-TK-0006-hover-cleanup"]
 files_touched: 5
 serves: ["US12-AC1"]
 created: 2026-10-16

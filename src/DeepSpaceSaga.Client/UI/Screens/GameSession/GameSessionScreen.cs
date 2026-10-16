@@ -570,6 +570,9 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (_combatReportPanel.OnMouseMove(_uiMouseX, _uiMouseY))
         {
+            _commandsPanel.OnMouseMove(-1, -1);
+            _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
             SetActiveObjectId(null);
             return true;
         }
@@ -606,7 +609,7 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _isPanningMap = false;
-        if (_combatReportPanel.OnMouseUp(_uiMouseX, _uiMouseY)) return;
+        _combatReportPanel.OnMouseUp(_uiMouseX, _uiMouseY);
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
         _objectInfoPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }

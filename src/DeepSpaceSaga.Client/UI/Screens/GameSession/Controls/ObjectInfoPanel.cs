@@ -463,9 +463,9 @@ public sealed class ObjectInfoPanel
     private static List<string> WrapText(string text, float width, SKPaint paint)
     {
         var result = new List<string>();
-        while (paint.MeasureText(text) > width)
+        while (text.Length > 0 && paint.MeasureText(text) > width)
         {
-            int length = Math.Max(1, (int)paint.BreakText(text, width));
+            int length = Math.Clamp((int)paint.BreakText(text, Math.Max(0, width)), 1, text.Length);
             int space = text.LastIndexOf(' ', length - 1, length);
             if (space > 0) length = space;
             result.Add(text[..length].TrimEnd());

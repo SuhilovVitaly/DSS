@@ -114,3 +114,5 @@ Corrective US0011-TK0004: report rectangle added to free-map obstacles, new6 + e
 CorrectiveTK0004 cfb91938c2c1409213d535911cc11e7ed73e7bf6 published/remote verified. TK0005 toolbar reservation and affected fixtures repaired;166 cases PASS, including all12 failures reproduced by scoped pre-fix run. Raw evidence in evidence/regression.
 
 TK0005 47b60d2902c8577642d51af3894682104b9673f9 published/remote verified. User explicitly forbids autonomous game/native launches from2026-10-16 onward. Native/performance gate stays OPEN. Existing64-frame1280/UI100/EN sample retained; no active native process remained. Station timeout reproduced on source af594de, baseline evidence retained.
+
+TK0003 5d2d9357a4c08b303ce7285ee1bfa7178f5346bd published/remote verified. TK0006 fixed HUD hover, empty-string tiny-width wrapping and free-map fixtures;226 focused cases PASS, scoped format/diff PASS. Native remains OPEN by explicit user policy.
