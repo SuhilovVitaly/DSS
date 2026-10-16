@@ -109,4 +109,35 @@ public sealed partial class SimulationEngine
             $"intercept:{entry.ProjectileObjectId}:{entry.TargetObjectId}", reporter,
             source.Id, source.Name, destination.Id, destination.Name, entry.ProjectileObjectId, defense.LauncherModuleId));
     }
+
+    private void EmitCombatContactReport(SpaceObjectRuntime projectile, SpaceObjectRuntime target,
+        double motionTimeMs, ModuleHitOutcome? hit, bool destroyed)
+    {
+        var flight = projectile.InitialMotion.Torpedo!;
+        bool playerDamage = target.InitialMotion.ObjectId == PlayerShipObjectId;
+        if (playerDamage)
+        {
+            if (hit is not { } damage || damage.ArmorAfter >= damage.ArmorBefore && damage.StructureAfter >= damage.StructureBefore) return;
+        }
+        else if (flight.OwnerObjectId != PlayerShipObjectId || GetRelationToPlayer(target) != PlayerRelation.Enemy) return;
+        var reporter = playerDamage
+            ? CaptureReportIdentity(target, null, BattleReportReporterRole.Captain)
+            : CaptureWeaponReportIdentity(flight.RatingBreakdown, BattleReportReporterRole.TorpedoOperator);
+        var source = CaptureKnownParticipant(flight.OwnerObjectId);
+        bool targetKnown = playerDamage || target.IsKnown;
+        BattleReportDamageSnapshot? facts = null;
+        if (targetKnown && hit is { } moduleHit)
+        {
+            var module = target.Modules.First(m => m.ModuleId == moduleHit.ModuleId);
+            facts = new(moduleHit.ModuleId, _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).DisplayName,
+                moduleHit.ArmorBefore, moduleHit.ArmorAfter, moduleHit.StructureBefore, moduleHit.StructureAfter);
+        }
+        string? targetId = targetKnown ? target.InitialMotion.ObjectId : null;
+        EmitCombatReport(new(0, motionTimeMs,
+            playerDamage ? BattleReportKind.PlayerShipDamaged : BattleReportKind.EnemyShipHit,
+            $"contact:{projectile.InitialMotion.ObjectId}:{targetId ?? "unknown"}", reporter,
+            source.Id, source.Name, targetId, targetKnown ? target.Name : null,
+            projectile.InitialMotion.ObjectId, source.Id is null ? null : flight.LauncherModuleId,
+            playerDamage ? BattleReportVariant.None : destroyed ? BattleReportVariant.Destroyed : BattleReportVariant.Hit, facts));
+    }
 }

@@ -4,14 +4,14 @@ story: EP-0010-US-0004-combat-result-reports
 ticket: EP-0010-US-0004-TK-0002-contact-summary
 title: "E06–E07 после полного применения удара"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0004-TK-0001-intercept-results"]
 files_touched: 4
 serves: ["US04-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # E06–E07 после полного применения удара
@@ -89,3 +89,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Сформировать итог одного контакта после определения module damage и ship death. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+One summary emitted after complete contact/destroy. E06 includes zero-effect hits with Hit/Destroyed; E07 requires armor or structure reduction, captures captain before removal. Hidden participants and their launcher IDs are masked. Six summary cases plus report/defeat/wreck/module regressions PASS (60 combined); isolated armor-only case tightened and rerun PASS. Engine compile/scoped format/diff PASS. Defeat stays immediate with final E07 captured.

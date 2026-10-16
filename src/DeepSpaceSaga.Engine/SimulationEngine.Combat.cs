@@ -476,6 +476,7 @@ public sealed partial class SimulationEngine
             flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
             contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, moduleHit is null ? 0 : flight.Damage,
             wreckId is null ? null : hitId, wreckId));
+        EmitCombatContactReport(projectile, target, contact.MotionTimeMs, moduleHit, wreckId is not null);
     }
 
     private decimal TorpedoDefenseRating(SpaceObjectRuntime target, double motionTimeMs)

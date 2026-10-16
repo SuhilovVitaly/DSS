@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0003-launch-reports"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ EP-0010-US-0003-launch-reports Ticket DAG ниже имеет приоритет
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+E05/E06/E07 implemented. Checked structural success filters, captured operator, one summary per impact after destroy resolution, armor-only and zero damage boundaries, distinct projectile episodes and final defeat snapshot. 60 report/combat cases PASS. Native/art/UI gates remain OPEN; no balance or RNG changes.
