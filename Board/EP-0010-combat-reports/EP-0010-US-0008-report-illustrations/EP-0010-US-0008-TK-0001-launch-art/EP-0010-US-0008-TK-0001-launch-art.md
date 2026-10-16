@@ -4,14 +4,14 @@ story: EP-0010-US-0008-report-illustrations
 ticket: EP-0010-US-0008-TK-0001-launch-art
 title: "Иллюстрации дальности и торпедных пусков"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0007-TK-0002-localized-report-text"]
 files_touched: 3
 serves: ["US08-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: artifact-verified
 ---
 
 # Иллюстрации дальности и торпедных пусков
@@ -83,3 +83,9 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Подготовить первые три графических сюжета. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Artifact evidence - 2026-10-16
+
+Built-in imagegen, one generation per asset. References: Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png and ship-zero-class.png (existing visual family; dedicated Mukha sprite absent). Final files in listed Images/UI/CombatReports paths, opaque RGB PNG1024x576, normalized from1672x941 to required dimensions. All three inspected together at320x180; detection/hostile launch/player launch remain distinct, no embedded text. Assistant visual QA PASS; human art acceptance OPEN. No runtime changes.
+
+Prompt set: original cinematic isometric DSS hard-sci-fi combat illustrations; charcoal worn gunmetal hulls matching reference silhouettes, black stars, teal rim light, main action readable at280px, full principal ships in frame, opaque16:9, no text/letters/numbers/watermarks/UI borders. enemy-in-range: compact hostile contact ahead of Tetrarch under amber detection illumination; enemy-torpedo-launch: enemy swept-wing fighter visibly releases torpedo toward distant Tetrarch, amber threat exhaust; player-torpedo-launch: Tetrarch forward tube releases separated torpedo toward distant fighter, cyan own-action trail. Generated source files retained under Codex generated_images session folder.
