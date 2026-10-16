@@ -4,14 +4,14 @@ story: EP-0010-US-0007-report-history-and-text
 ticket: EP-0010-US-0007-TK-0002-localized-report-text
 title: "Реплики и заголовки Russian/English"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0007-TK-0001-history-state"]
 files_touched: 4
 serves: ["US07-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Реплики и заголовки Russian/English
@@ -89,3 +89,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Сформировать короткие понятные тексты без потери privacy и captured identity. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Formatter freezes presentation from DTO only: all eight visuals, titles/body, roles, unknown contacts, physical time and optional damage. Enemy target sentence requires explicit permitted TargetObjectId. RU/EN key/placeholder sets equal. Ten formatter cases plus 14 report/client cases PASS (24). Client compile/scoped format/diff PASS. Assertions inspect actual UI strings, not record diagnostic ToString.

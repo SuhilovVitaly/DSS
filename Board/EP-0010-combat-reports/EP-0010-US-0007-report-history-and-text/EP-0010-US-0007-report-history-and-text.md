@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0006-reliable-report-delivery"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ EP-0010-US-0006-reliable-report-delivery Ticket DAG ниже имеет прио
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+Bounded store and localized captured-fact presentation implemented. Reviewed single expanded card, keyboard selection, newest batch, duplicates/reset/eviction, both E06 variants, role fallback, unavailable participants and equal placeholders. 24 client report cases PASS. Layout and native checks remain later stories.

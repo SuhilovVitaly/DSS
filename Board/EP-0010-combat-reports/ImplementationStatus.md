@@ -34,7 +34,7 @@
 | [EP-0010-US-0006-TK-0001-mailbox-report-merge](EP-0010-US-0006-reliable-report-delivery/EP-0010-US-0006-TK-0001-mailbox-report-merge/EP-0010-US-0006-TK-0001-mailbox-report-merge.md) | IMPLEMENTED | 4 focused + 8 reliability PASS | OPEN / по scope |
 | [EP-0010-US-0006-TK-0002-buffer-pending-reports](EP-0010-US-0006-reliable-report-delivery/EP-0010-US-0006-TK-0002-buffer-pending-reports/EP-0010-US-0006-TK-0002-buffer-pending-reports.md) | IMPLEMENTED | 5 focused; 28 delivery/buffer PASS | OPEN / по scope |
 | [EP-0010-US-0007-TK-0001-history-state](EP-0010-US-0007-report-history-and-text/EP-0010-US-0007-TK-0001-history-state/EP-0010-US-0007-TK-0001-history-state.md) | IMPLEMENTED | 5 focused; 14 report/client PASS | OPEN / по scope |
-| [EP-0010-US-0007-TK-0002-localized-report-text](EP-0010-US-0007-report-history-and-text/EP-0010-US-0007-TK-0002-localized-report-text/EP-0010-US-0007-TK-0002-localized-report-text.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0007-TK-0002-localized-report-text](EP-0010-US-0007-report-history-and-text/EP-0010-US-0007-TK-0002-localized-report-text/EP-0010-US-0007-TK-0002-localized-report-text.md) | IMPLEMENTED | 10 focused; 24 report/client PASS | OPEN / по scope |
 | [EP-0010-US-0008-TK-0001-launch-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0001-launch-art/EP-0010-US-0008-TK-0001-launch-art.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0008-TK-0002-defense-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0002-defense-art/EP-0010-US-0008-TK-0002-defense-art.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0008-TK-0003-damage-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0003-damage-art/EP-0010-US-0008-TK-0003-damage-art.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -84,3 +84,5 @@ US0005 capture/restore 9900015d413b898af49b58ee18b6896b0905d390 published/remote
 US0006 mailbox 8cbb8ad96bd08508ae76b31b76a06c4cab5130e7 published/remote verified. Inbox implemented and story self-reviewed, 28 cases PASS.
 
 US0006 inbox 344aae55db58a91dd60253e1217d51756c89bdb5 published/remote verified. History store implemented, 14 cases PASS.
+
+US0007 history 0eb073a59c85646889538f586cccef3eb7481c84 published/remote verified. Formatter implemented, story self-review complete, 24 cases PASS.
