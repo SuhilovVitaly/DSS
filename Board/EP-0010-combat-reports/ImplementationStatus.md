@@ -110,3 +110,5 @@ US0010 lifecycle81fa61f0a593b909719563c16bd6cef839b297d8 published/remote verifi
 US0011 Engine proof276bc6331e89b65412713ccf02eaf2840cc9f186 published/remote verified. Client integration/matrix82 PASS; native remains separate.
 
 Corrective US0011-TK0004: report rectangle added to free-map obstacles, new6 + existingMapLayer3 PASS. Full Client before repair1948/1971,23failures; remaining navigation fixtures and station timeout investigation open. Client proof9f022367fec29f41f15e8cb20c9a1f232bf26b02 published/remote verified.
+
+CorrectiveTK0004 cfb91938c2c1409213d535911cc11e7ed73e7bf6 published/remote verified. TK0005 toolbar reservation and affected fixtures repaired;166 cases PASS, including all12 failures reproduced by scoped pre-fix run. Raw evidence in evidence/regression.

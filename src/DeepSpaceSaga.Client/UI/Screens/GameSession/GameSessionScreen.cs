@@ -1359,7 +1359,7 @@ public sealed partial class GameSessionScreen : IScreen
             buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
-        float rightHudTop = ComputeScaleSpeedRowY() - (buffered?.Snapshot.AiMap is null ? 0 : 62 + 28 + 27 + 8);
+        float rightHudTop = ComputeScaleSpeedRowY() - 62 - (buffered?.Snapshot.AiMap is null ? 0 : 28) - 27 - 8;
         var rightColumn = GameSessionRightColumnLayout.Create(_uiViewportW, _uiViewportH, PanelMargin,
             rightHudTop, ObjectInfoPanel.ResolveWidth(_uiViewportW, _uiViewportH));
         _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default,

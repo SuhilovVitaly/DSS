@@ -33,7 +33,12 @@ public class CountermeasureSessionRoundtripTests
         Assert.Empty(screen.CombatEffects.Active);
         for (int i = 0; i < 100 && snapshot.CombatJournal.All(e => e.Roll is null); i++) snapshot = await f.Advance(500);
         Assert.Contains(snapshot.CombatJournal, e => e.Roll is not null);
-        buffer.Update(snapshot with { SnapshotSequence = loaded.SnapshotSequence + 1 });
+        // Compare the original engine continuation under the restored presentation baseline.
+        buffer.Update(snapshot with
+        {
+            SnapshotSequence = loaded.SnapshotSequence + 1,
+            CombatReports = snapshot.CombatReports! with { BaselineSequence = loaded.CombatReports!.BaselineSequence }
+        });
         screen.Render(canvas, 1280, 720);
         Assert.Single(screen.CombatEffects.Results);
         now = Stopwatch.Frequency * 2;

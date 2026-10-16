@@ -6,7 +6,7 @@ title: "Визуальная приёмка и frame-time evidence"
 stage: draft
 status: planned
 layer: client
-depends_on: ["EP-0010-US-0011-TK-0004-map-viewport-regression"]
+depends_on: ["EP-0010-US-0011-TK-0005-hud-and-fixture-regressions"]
 files_touched: 2
 serves: ["US11-AC3"]
 created: 2026-10-16

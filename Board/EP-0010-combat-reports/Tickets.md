@@ -68,3 +68,5 @@ E01: US0002; E02–E04: US0003; E05–E07: US0004; SaveLoad: US0005; reliable de
 ## Execution correction
 
 After US0011-TK0002 and before TK0003: [TK0004 map viewport regression](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0004-map-viewport-regression/EP-0010-US-0011-TK-0004-map-viewport-regression.md). Confirmed full-suite defect; scoped repair and publication required before native evidence.
+
+Then [TK0005 HUD and affected fixtures](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0005-hud-and-fixture-regressions/EP-0010-US-0011-TK-0005-hud-and-fixture-regressions.md), before native TK0003.

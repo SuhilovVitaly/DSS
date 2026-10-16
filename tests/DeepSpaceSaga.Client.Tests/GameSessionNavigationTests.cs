@@ -20,8 +20,8 @@ public class GameSessionNavigationTests
     private const string EngineModuleId = "MOD-PLAYER-ENGINE-01";
 
     // Ship at (10000, 10000), camera focus (10000, 10000), PPU 1.0:
-    // ScreenToWorld(1000, 500) = (10000 + (1000-640)/1, 10000 + (500-360)/1) = (10360, 10140).
-    // (1000, 500) is outside the Commands Panel (8,8)-(368,248) — a free map area.
+    // ScreenToWorld(700, 300) = (10060, 9940); the old (1000,500) point is now the reports panel.
+    // (700, 300) is between Commands and the right column and above the footer.
 
     [Fact]
     public async Task Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates()
@@ -32,14 +32,14 @@ public class GameSessionNavigationTests
         Render(fixture.Screen);
 
         fixture.Screen.OnKeyDown(Key.ControlLeft);
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
 
         var command = Assert.Single(fixture.Connection.Commands);
         Assert.Equal(ShipEngineCommandTypes.Orbit, command.CommandType);
         Assert.Equal(PlayerShipId, command.ObjectId);
         Assert.Equal(EngineModuleId, command.ModuleId);
-        Assert.Equal(10360.0, command.TargetWorldX!.Value, precision: 6);
-        Assert.Equal(10140.0, command.TargetWorldY!.Value, precision: 6);
+        Assert.Equal(10060.0, command.TargetWorldX!.Value, precision: 6);
+        Assert.Equal(9940.0, command.TargetWorldY!.Value, precision: 6);
         Assert.False(string.IsNullOrWhiteSpace(command.CommandId));
         Assert.Equal(1UL, command.ClientSequence);
     }
@@ -55,7 +55,7 @@ public class GameSessionNavigationTests
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
 
         Assert.Empty(fixture.Connection.Commands);
         Assert.Equal(10000.0, fixture.Screen.CameraFocusX, precision: 6);
@@ -73,7 +73,7 @@ public class GameSessionNavigationTests
         double fyBefore = fixture.Screen.CameraFocusY;
 
         fixture.Screen.OnKeyDown(Key.ControlRight);
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
 
         Assert.Equal(fxBefore, fixture.Screen.CameraFocusX);
         Assert.Equal(fyBefore, fixture.Screen.CameraFocusY);
@@ -954,7 +954,7 @@ public class GameSessionNavigationTests
 
         // 1. Ctrl+Click → one navigation command.
         fixture.Screen.OnKeyDown(Key.ControlLeft);
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
 
         var command = Assert.Single(fixture.Connection.Commands);
         Assert.Equal(ShipEngineCommandTypes.Orbit, command.CommandType);
@@ -966,14 +966,14 @@ public class GameSessionNavigationTests
         double fxBefore = fixture.Screen.CameraFocusX;
         double fyBefore = fixture.Screen.CameraFocusY;
 
-        fixture.Screen.OnMouseDown(900, 500);
+        fixture.Screen.OnMouseDown(680, 300);
 
         Assert.Single(fixture.Connection.Commands); // still only one
         Assert.Equal(fxBefore, fixture.Screen.CameraFocusX); // no jump on click alone
         Assert.Equal(fyBefore, fixture.Screen.CameraFocusY);
 
         // 4. Dragging afterward (still held) pans by the exact screen-space delta.
-        fixture.Screen.OnMouseMove(920, 480); // dx=+20, dy=-20, PPU=1.0
+        fixture.Screen.OnMouseMove(700, 280); // dx=+20, dy=-20, PPU=1.0
 
         Assert.Single(fixture.Connection.Commands); // dragging still sends nothing
         Assert.Equal(fxBefore - 20.0, fixture.Screen.CameraFocusX, precision: 6);
@@ -989,13 +989,13 @@ public class GameSessionNavigationTests
         Render(fixture.Screen);
 
         fixture.Screen.OnKeyDown(Key.ControlRight);
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
         Assert.Single(fixture.Connection.Commands);
 
         fixture.Screen.OnKeyUp(Key.ControlRight);
 
         double fxBefore = fixture.Screen.CameraFocusX;
-        fixture.Screen.OnMouseDown(900, 500);
+        fixture.Screen.OnMouseDown(680, 300);
 
         Assert.Single(fixture.Connection.Commands);
         Assert.Equal(fxBefore, fixture.Screen.CameraFocusX);
@@ -1011,7 +1011,7 @@ public class GameSessionNavigationTests
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
 
         double focusXAfterDown = fixture.Screen.CameraFocusX;
         double focusYAfterDown = fixture.Screen.CameraFocusY;
@@ -1020,7 +1020,7 @@ public class GameSessionNavigationTests
         const double ppu = 1.0;
         float dx = 30f;
         float dy = -20f;
-        fixture.Screen.OnMouseMove(1000 + dx, 500 + dy);
+        fixture.Screen.OnMouseMove(700 + dx, 300 + dy);
 
         Assert.Equal(focusXAfterDown - dx / ppu, fixture.Screen.CameraFocusX, precision: 6);
         Assert.Equal(focusYAfterDown - dy / ppu, fixture.Screen.CameraFocusY, precision: 6);
@@ -1032,13 +1032,13 @@ public class GameSessionNavigationTests
         await using var fixture = CreateFixture();
         Render(fixture.Screen);
 
-        fixture.Screen.OnMouseDown(1000, 500);
-        fixture.Screen.OnMouseMove(1030, 480);
+        fixture.Screen.OnMouseDown(700, 300);
+        fixture.Screen.OnMouseMove(730, 280);
 
         double focusXAfterMove = fixture.Screen.CameraFocusX;
         double focusYAfterMove = fixture.Screen.CameraFocusY;
 
-        fixture.Screen.OnMouseUp(1030, 480);
+        fixture.Screen.OnMouseUp(730, 280);
         fixture.Screen.OnMouseMove(1100, 400);
 
         Assert.Equal(focusXAfterMove, fixture.Screen.CameraFocusX, precision: 6);

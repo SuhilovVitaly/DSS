@@ -22,6 +22,7 @@ public sealed class CombatReportMapViewportTests
         var panel = screen.CombatReportsBounds;
         var physical = new SKRect(panel.Left * scale, panel.Top * scale, panel.Right * scale, panel.Bottom * scale);
         Assert.False(screen.AvailableMapRect().IntersectsWith(physical));
+        Assert.False(screen.MapToolbarRect.IntersectsWith(panel));
         screen.DisposeCombatReports();
     }
 }
