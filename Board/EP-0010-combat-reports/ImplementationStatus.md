@@ -1,6 +1,6 @@
 # EP-0010 — статус реализации
 
-Дата: 2026-10-16. **План создан; execution NOT STARTED.**
+Дата: 2026-10-16. **EXECUTING: contracts; остальной эпик OPEN.**
 
 | Область | Статус |
 |---|---|
@@ -12,7 +12,7 @@
 | Native UI | NOT RUN / OPEN |
 | Human art/gameplay acceptance | OPEN |
 | 80 FPS/frame-time | NOT RUN / OPEN |
-| Commit/push | NOT REQUESTED / NOT RUN |
+| Commit/push | Authorized; preparation f6cd7ea published and remote verified |
 | Graphify rebuild | NOT RUN |
 
 ## Ticket evidence
@@ -21,7 +21,7 @@
 
 | Ticket | Implementation | Automated | Native/human |
 |---|---|---|---|
-| [EP-0010-US-0001-TK-0001-immutable-report](EP-0010-US-0001-report-contracts/EP-0010-US-0001-TK-0001-immutable-report/EP-0010-US-0001-TK-0001-immutable-report.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0001-TK-0001-immutable-report](EP-0010-US-0001-report-contracts/EP-0010-US-0001-TK-0001-immutable-report/EP-0010-US-0001-TK-0001-immutable-report.md) | IMPLEMENTED | 13 focused / 207 suite PASS | OPEN / по scope |
 | [EP-0010-US-0001-TK-0002-snapshot-batch](EP-0010-US-0001-report-contracts/EP-0010-US-0001-TK-0002-snapshot-batch/EP-0010-US-0001-TK-0002-snapshot-batch.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0002-TK-0001-report-outbox](EP-0010-US-0002-range-reports/EP-0010-US-0002-TK-0001-report-outbox/EP-0010-US-0002-TK-0001-report-outbox.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0002-TK-0002-first-range-entry](EP-0010-US-0002-range-reports/EP-0010-US-0002-TK-0002-first-range-entry/EP-0010-US-0002-TK-0002-first-range-entry.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -58,3 +58,7 @@
 - Исходное дерево: изменены Documentation/01-Requirements/EngineRequirements.md и Documentation/README.md; неотслеживаемые целевой Board и TacticalCombatReports.md. Это входные материалы пользователя; tracked правки пока сохраняются вне служебного коммита. Целевой Board и его исходное ТЗ фиксируются как утверждённая база исполнения.
 - Commit/push разрешены текущим запросом; planning-only запреты карточек заменены этим поручением. Нативные и человеческие gates остаются OPEN до фактических проверок.
 - Обязательное полное чтение Documentation и эпика ещё не завершено. Production implementation не начинается до завершения preflight.
+
+### Current checkpoint
+
+Подготовительный f6cd7ea41a705aca7d6c25689c96de5bc35f1306 опубликован в origin/base-fight и SHA подтверждён git ls-remote. Первичный auto-review отказ push снят после read-only GitHub проверки: connected user=owner SuhilovVitaly, repository permissions admin/push=true. Обязательное чтение Documentation и карточек выполнено частями; текущая реализация соответствует contract US0001. Baseline Contracts194/194, после первого DTO207/207. Полный solution baseline в sandbox завершился exit1 без diagnostics; scoped test в sandbox завис на IPC и был отменён, разрешённый host run PASS.

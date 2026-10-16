@@ -4,14 +4,14 @@ story: EP-0010-US-0001-report-contracts
 ticket: EP-0010-US-0001-TK-0001-immutable-report
 title: "Неизменяемые данные доклада"
 stage: draft
-status: planned
+status: implemented
 layer: contracts
 depends_on: []
 files_touched: 2
 serves: ["US01-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: passed
 ---
 
 # Неизменяемые данные доклада
@@ -84,3 +84,9 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Определить общий неизменяемый факт без зависимости от существования объектов. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence — 2026-10-16
+
+Текущий запрос разрешает execution/commit/push по EpicExecutionPrompt.md; прежние planning-only ограничения исторические. Реализованы immutable records/enums, captured identity, nullable privacy fields, module before/after и batch с лимитом4096. DTO не содержит runtime/graphics dependencies. Проверены все7 kinds и оба E06 variants, дробное время, long.MaxValue sequence, nullable службы/портреты и независимость captured данных от live world.
+
+Validation: `dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj --no-restore --nologo --verbosity minimal -p:UseSharedCompilation=false --filter FullyQualifiedName~BattleReportSnapshotTests` —13/13 PASS; тот же project без filter —207/207 PASS. `dotnet build src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj --no-restore --nologo -p:UseSharedCompilation=false` —0 warnings/errors. `dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs tests/DeepSpaceSaga.Contracts.Tests/BattleReportSnapshotTests.cs --verbosity quiet` и `git diff --check` —PASS. Выполнен self-review относительно US01-AC1; это не независимая приёмка. Native/FPS не относятся к DTO и не заявляются пройденными.
