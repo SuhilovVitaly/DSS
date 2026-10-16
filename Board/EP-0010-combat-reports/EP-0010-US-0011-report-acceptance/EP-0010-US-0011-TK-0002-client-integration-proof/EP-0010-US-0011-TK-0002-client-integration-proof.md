@@ -4,14 +4,14 @@ story: EP-0010-US-0011-report-acceptance
 ticket: EP-0010-US-0011-TK-0002-client-integration-proof
 title: "Интеграционная матрица доставки и UI"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0011-TK-0001-engine-scenario-proof"]
 files_touched: 2
 serves: ["US11-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Интеграционная матрица доставки и UI
@@ -86,3 +86,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Проверить всю Client цепочку и регрессии соседних панелей. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Real production CombatMukha report snapshots coalesced through mailbox, async connection/handle, buffer and prepared screen; every pending event reaches history once.4096 delivery versus200 UI retention proven.48 viewport/locale/open-collapse/empty-history combinations exercised offscreen; long names wrap, footer/journal separation and focus/camera/speed isolation verified. Ten acceptance test cases plus report/reliability/basic combat UI regressions PASS (82 total). Compile/scoped format/diff PASS. Full Engine regression launched separately; native matrix still OPEN.
