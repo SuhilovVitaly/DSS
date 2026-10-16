@@ -1,23 +1,47 @@
-# EP-0010 — статус реализации
+# EP-0010 — статус реализации и приёмки
 
-Дата: 2026-10-16. **EXECUTING: contracts; остальной эпик OPEN.**
+2026-10-16. **IMPLEMENTED / HEADLESS VERIFIED / ACCEPTANCE OPEN**. Пользовательский результат: E01–E07 в правой панели, captured facts/докладчики, RU/EN,8 illustrations,200-card accordion, надёжная доставка и Save17 continuation. Полностью принятым эпик не объявляется.
 
-| Область | Статус |
+| Область | Текущий результат |
 |---|---|
-| ТЗ и декомпозиция 12/27 | CREATED |
-| Структурная проверка | См. PlanningValidation.md |
-| Production implementation | NOT STARTED |
-| PNG assets | NOT CREATED — 0/8 |
-| Автоматические продуктовые проверки/build | NOT RUN |
-| Native UI | NOT RUN / OPEN |
-| Human art/gameplay acceptance | OPEN |
-| 80 FPS/frame-time | NOT RUN / OPEN |
-| Commit/push | Authorized; preparation f6cd7ea published and remote verified |
-| Graphify rebuild | NOT RUN |
+| Scope | 12 историй /30 тикетов:27 исходных +3 corrective |
+| Production implementation US01–US10 | IMPLEMENTED; self-review complete |
+| Assets |8/8 PNG1024×576, catalog/output/publish; assistant QA, human OPEN |
+| Contracts |210/210 PASS |
+| Engine |2197/2197 PASS, full headless suite,29min |
+| Client |1973/1973 PASS, excluding5 baseline station-deadline scenarios |
+| Scope regression |226/226 PASS; all confirmed EP10 failures repaired |
+| Build |Full DeepSpaceSaga.sln,0warnings/0errors |
+| Format/diff |All epic-changed C# scoped dotnet format PASS; git diff --check PASS |
+| US11 automated proof |Production CombatMukha +rare E01–E07 outcomes, delivery/persistence/UI matrix PASS |
+| US11 native/human/FPS |PARTIAL/OPEN; one old64-frame sample; no600-frame perf measurement |
+| US12 documentation/Graphify |IMPLEMENTED: inventory,428links/45anchors/30-ticket DAG/R01–R24 PASS;844-input Graphify verified |
+| Commit/push |29 prior ticket commits published and verified; US12 final documentation commit published last; own SHA verified through Git after creation |
+
+**Инструкция пользователя: «никогда не запускай самостоятельно игру».** Больше игровых окон/native/performance harness агент не запускает. Native matrix, manual Save/Load/Defeated, human art/gameplay, GPU/scanout/80FPS остаются OPEN. [Native evidence](evidence/NativeAcceptance.md), [Performance](evidence/Performance.md).
+
+Полная торговая theory не зелёная: current10/11 в классе, baseline4/5 theory;15s refuel deadline воспроизведён на исходном af594de (другой station subtype в повторе, что указывает на общий временной бюджет). Это сторонняя baseline-проблема, не исправлялась. Финальная Client suite явно исключает ровно5 theory cases; её результат не выдается за полный1978/1978. Raw TRX — evidence/regression.
+
+[Тикет → SHA → push](Publication.md) · [инвентаризация документов](DocumentationInventory.md) · [audit](DocumentationAudit.json) · [финальное собственное ревью](FinalReview.md) · [текущая архитектура](../../Documentation/04-Engineering/CombatReports.md) · [Graphify](../../Documentation/06-Tooling/TradingSolarGraphify.md).
+
+## Graphify и документация
+
+Свежий graph13087nodes/45407edges/416communities по713code+131Markdown.844SHA256 inputs verified;0missing/invalid locations/dangling/selfloops.992unresolved edges и2494unlocatedreference nodes сохранены отдельным audit; selective14mechanisms, не exhaustive semantic coverage. HTML агрегирует communities. Снижение объёма старой семантики EP1–4 явно задокументировано, AST всего выбранного кода свежий. Локальные query CombatReportInbox/CombatReports и semantic path outbox→mailbox→buffer→inbox→history проверены. Подробнее — tooling doc и src/graphify-out/verification.json. Link audit428relative/45anchors,12stories/30tickets,unknown deps0/cycles0/R01–R24 covered. Временная baseline worktree удалена после записи evidence, остальные worktrees сохранены.
+
+## Итоговые команды и evidence
+
+- `dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-build --no-restore --nologo --verbosity minimal --blame-hang-timeout 60s`:2197/2197,29min; [сохранённый terminal result](evidence/regression/final-headless.txt).
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj --no-build --no-restore --nologo --verbosity minimal --logger "trx;LogFileName=contracts-final.trx" --results-directory Board/EP-0010-combat-reports/evidence/regression`:210/210, [TRX](evidence/regression/contracts-final.trx).
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-build --no-restore --nologo --verbosity minimal --filter "FullyQualifiedName!~StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session" --logger "trx;LogFileName=client-final-corrected.trx" --results-directory Board/EP-0010-combat-reports/evidence/regression --blame-hang-timeout 60s`:1973/1973,1m17s, [TRX](evidence/regression/client-final-corrected.trx).
+- Focused filter CombatReport / CommandsPanelSkeletonTests / ApproachCameraIntegrationTests / ObjectInfoPanelTests / TacticalMapLabelBoundsTests:226/226, [TRX](evidence/regression/hover-resize-repair.trx).
+- `dotnet build DeepSpaceSaga.sln --no-restore --nologo --verbosity minimal -p:UseSharedCompilation=false -p:SkipPortraitPackCheck=true`:0warnings/0errors. Portrait pack check explicitly skipped; no new portrait assets added. Eight new illustrations validated independently in US8.
+- `dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include <all changed .cs from git diff af594de> --verbosity quiet`:PASS; `git diff --check`:PASS.
+
+US11 corrections:TK04 report rectangle in free map;TK05 footer/toolbar reservation and affected snapshot/navigation fixtures;TK06 HUD hover/tiny-width wrapping and remaining free-map fixtures. All have separate committed/pushed cards and regression evidence. Story-level reviews are in each US document; final self-review is not independent reviewer or human acceptance.
 
 ## Ticket evidence
 
-Каждый тикет ниже планируемый; после выполнения добавить реальные команды, результаты, diff/commit при наличии и ссылки на доказательства. Planning audit не является доказательством реализации.
+Фактические результаты тикетов; SHA и push — в Publication.md. Planning audit остаётся историей, не runtime evidence.
 
 | Ticket | Implementation | Automated | Native/human |
 |---|---|---|---|
@@ -47,9 +71,17 @@
 | [EP-0010-US-0011-TK-0001-engine-scenario-proof](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0001-engine-scenario-proof/EP-0010-US-0011-TK-0001-engine-scenario-proof.md) | IMPLEMENTED | 5 E2E; 57 Engine report PASS | OPEN / по scope |
 | [EP-0010-US-0011-TK-0002-client-integration-proof](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0002-client-integration-proof/EP-0010-US-0011-TK-0002-client-integration-proof.md) | IMPLEMENTED | 10 acceptance; 82 Client focused PASS | OPEN / по scope |
 | [EP-0010-US-0011-TK-0003-native-visual-and-performance](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0003-native-visual-and-performance/EP-0010-US-0011-TK-0003-native-visual-and-performance.md) | EVIDENCE RECORDED / OPEN | One native sample; full matrix/performance NOT RUN | OPEN / по scope |
-| [EP-0010-US-0012-TK-0001-project-documentation](EP-0010-US-0012-documentation-and-handoff/EP-0010-US-0012-TK-0001-project-documentation/EP-0010-US-0012-TK-0001-project-documentation.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0012-TK-0001-project-documentation](EP-0010-US-0012-documentation-and-handoff/EP-0010-US-0012-TK-0001-project-documentation/EP-0010-US-0012-TK-0001-project-documentation.md) | DOCUMENTED | Link/ID/DAG/Graphify audit | Native/human gates retained OPEN |
 
-## Execution started — 2026-10-16
+## Дополнительные corrective tickets
+
+| Ticket | Implementation | Automated | Publication |
+|---|---|---|---|
+| US11/TK04 map viewport | IMPLEMENTED | Report/free-map cases PASS | cfb91938, verified push |
+| US11/TK05 HUD/fixtures | IMPLEMENTED |166 focused PASS |47b60d29, verified push |
+| US11/TK06 hover/resize | IMPLEMENTED |226 focused +1973 full filtered PASS |a1a4dd1f, verified push |
+
+## История исполнения — checkpoints2026-10-16 (superseded current status выше)
 
 Запрошено полное автономное выполнение по Board/EpicExecutionPrompt.md. Подготовительное чтение и аудит продолжаются; runtime ещё не изменён, тикеты не завершены. Последняя история US0012 расширена до §6, включая Graphify.
 
@@ -59,7 +91,7 @@
 - Commit/push разрешены текущим запросом; planning-only запреты карточек заменены этим поручением. Нативные и человеческие gates остаются OPEN до фактических проверок.
 - Обязательное полное чтение Documentation и эпика ещё не завершено. Production implementation не начинается до завершения preflight.
 
-### Current checkpoint
+### Исторические checkpoints
 
 Подготовительный f6cd7ea41a705aca7d6c25689c96de5bc35f1306 опубликован в origin/base-fight и SHA подтверждён git ls-remote. Первичный auto-review отказ push снят после read-only GitHub проверки: connected user=owner SuhilovVitaly, repository permissions admin/push=true. Обязательное чтение Documentation и карточек выполнено частями; текущая реализация соответствует contract US0001. Baseline Contracts194/194, после первого DTO207/207. Полный solution baseline в sandbox завершился exit1 без diagnostics; scoped test в sandbox завис на IPC и был отменён, разрешённый host run PASS.
 

@@ -2,7 +2,7 @@
 epic: EP-0010-combat-reports
 story: EP-0010-US-0002-range-reports
 title: "Первый доклад о входе противника в дальность"
-stage: draft
+stage: implemented
 dependencies: ["EP-0010-US-0001-report-contracts"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
@@ -15,7 +15,7 @@ revision: 1
 
 ## Входное техническое задание
 
-[Каноническое ТЗ](../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R08, R16, R18, R20, R21. [Эпик](../EP-0010-combat-reports.md). Документ создан 2026-10-16; поручение — сохранение и декомпозиция, execution NOT STARTED.
+[Каноническое ТЗ](../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R08, R16, R18, R20, R21. [Эпик](../EP-0010-combat-reports.md). Документ создан2026-10-16; затем выполнено отдельное execution-поручение по EpicExecutionPrompt. Реальные результаты и открытая приёмка — в ImplementationStatus и Execution evidence.
 
 ## User story
 
@@ -47,7 +47,7 @@ EP-0010-US-0001-report-contracts Ticket DAG ниже имеет приорите
 
 ## Gaps and backlog
 
-Блокирующих вопросов для планирования нет. Все новые API/файлы — proposed, наличие ещё не означает реализацию. Для art/native/performance человеческая приёмка OPEN. Перед execution сверить HEAD и существующее рабочее дерево; при изменении контекста обновить карту и allowlist до редактирования кода. Общее ограничение 5 файлов на тикет,1 production layer+matching tests; сгенерированные evidence/assets перечислены в соответствующем scope.
+Блокирующих вопросов для планирования нет. API/файлы реализованы и проверены по ticket evidence; исходные proposed описания ниже сохранены как контекст планирования. Для art/native/performance человеческая приёмка OPEN. Перед execution сверить HEAD и существующее рабочее дерево; при изменении контекста обновить карту и allowlist до редактирования кода. Общее ограничение 5 файлов на тикет,1 production layer+matching tests; сгенерированные evidence/assets перечислены в соответствующем scope.
 
 ## Review log
 

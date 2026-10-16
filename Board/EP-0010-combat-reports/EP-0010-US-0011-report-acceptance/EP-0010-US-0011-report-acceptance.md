@@ -2,7 +2,7 @@
 epic: EP-0010-combat-reports
 story: EP-0010-US-0011-report-acceptance
 title: "Воспроизводимая приёмка боя и интерфейса"
-stage: draft
+stage: acceptance-open
 dependencies: ["EP-0010-US-0010-tactical-screen-integration"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
@@ -15,7 +15,7 @@ revision: 1
 
 ## Входное техническое задание
 
-[Каноническое ТЗ](../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R08, R09, R10, R11, R17, R19, R20, R21, R22, R23, R24. [Эпик](../EP-0010-combat-reports.md). Документ создан 2026-10-16; поручение — сохранение и декомпозиция, execution NOT STARTED.
+[Каноническое ТЗ](../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R08, R09, R10, R11, R17, R19, R20, R21, R22, R23, R24. [Эпик](../EP-0010-combat-reports.md). Документ создан2026-10-16; затем выполнено отдельное execution-поручение по EpicExecutionPrompt. Реальные результаты и открытая приёмка — в ImplementationStatus и Execution evidence.
 
 ## User story
 
@@ -49,7 +49,7 @@ EP-0010-US-0010-tactical-screen-integration Ticket DAG ниже имеет пр�
 
 ## Gaps and backlog
 
-Блокирующих вопросов для планирования нет. Все новые API/файлы — proposed, наличие ещё не означает реализацию. Для art/native/performance человеческая приёмка OPEN. Перед execution сверить HEAD и существующее рабочее дерево; при изменении контекста обновить карту и allowlist до редактирования кода. Общее ограничение 5 файлов на тикет,1 production layer+matching tests; сгенерированные evidence/assets перечислены в соответствующем scope.
+Блокирующих вопросов для планирования нет. API/файлы реализованы и проверены по ticket evidence; исходные proposed описания ниже сохранены как контекст планирования. Для art/native/performance человеческая приёмка OPEN. Перед execution сверить HEAD и существующее рабочее дерево; при изменении контекста обновить карту и allowlist до редактирования кода. Общее ограничение 5 файлов на тикет,1 production layer+matching tests; сгенерированные evidence/assets перечислены в соответствующем scope.
 
 ## Review log
 
@@ -58,3 +58,7 @@ EP-0010-US-0010-tactical-screen-integration Ticket DAG ниже имеет пр�
 ## Acceptance self-review - 2026-10-16
 
 Production Engine all-kind/sequence/outcome proof57 PASS, Client integration/matrix82 PASS, follow-up regression repair166 PASS. Two confirmed layout issues fixed and separately published (TK0004/TK0005). Station refuel15-second timeout reproduced before EP0010 at af594de; retained as baseline limitation. Native evidence limited to one existing sample; complete native/human/performance gates OPEN under explicit user prohibition on autonomous game launches. Final project documentation must preserve these limits and must not label epic fully accepted.
+
+## Final self-review —2026-10-16
+
+Engine2197/2197, Contracts210/210, Client1973/1973 (explicit baseline trading exclusion) PASS. TK04/TK05/TK06 fixed confirmed geometry/input/wrapping regressions,226 focused PASS. Full solution build0warnings/0errors and scoped format/diff PASS. Native/human/FPS OPEN by explicit no-game-launch user policy. [Final review](../FinalReview.md), [status/evidence](../ImplementationStatus.md). US11 contains6tickets, including3corrective; order TK01→TK02→TK04→TK05→TK03→TK06.

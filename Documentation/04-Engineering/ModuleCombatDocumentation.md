@@ -21,3 +21,7 @@ This inventory is based on the final module-combat contracts and searches for Hu
 | EP-0006/0007 Board `Documentation.md` and `Tickets.md`, other dated engineering/backlog/asset reports | Reviewed as historical ticket/review records; current contract linked through canonical requirements and new ModuleCombat page, so historical outcomes were not rewritten. |
 
 The historical `Data/CombatDesign` tree and simulator source were absent; the new sampler's README states its limitations. The graph remains unchanged by user instruction. [Balance evidence](../../Board/EP-0009-battle/evidence/balance.md) records the 100-seed Engine discrepancy; [native matrix](../../Board/EP-0009-battle/evidence/native.md) records every deferred real-window case as NOT RUN. This documentation ticket does not turn those gates into PASS.
+
+## Продолжение EP-0010 — 2026-10-16
+
+[Боевые доклады](CombatReports.md) добавляют presentation facts E01–E07 поверх этого модульного боя и optional CombatReportsState Version1 внутри Save17. Формулы, конфигурация, journal, RNG и баланс EP9 сохраняются. [Evidence/публикация](../../Board/EP-0010-combat-reports/ImplementationStatus.md); native/human/FPS OPEN. Graphify обновлён в EP10; прежний skip остаётся датированной историей EP9. Самостоятельные игровые запуски агентом запрещены пользователем.

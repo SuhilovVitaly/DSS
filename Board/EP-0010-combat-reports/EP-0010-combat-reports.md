@@ -1,13 +1,13 @@
 ---
 epic: EP-0010-combat-reports
 title: "Панель графических боевых докладов экипажа"
-stage: draft
+stage: acceptance-open
 created: 2026-10-16
 revision: 1
 depends_on_epic: EP-0009-module-combat
-validation_status: planning-only
+validation_status: headless-passed-native-open
 story_count: 12
-ticket_count: 27
+ticket_count: 30
 ---
 
 # EP-0010 — Панель графических боевых докладов
@@ -20,7 +20,7 @@ ticket_count: 27
 
 ## Статус и полномочия
 
-12 историй / 27 тикетов созданы как **draft / planned**. Реализация NOT STARTED; автоматические продуктовые проверки NOT RUN; art/native/human/FPS acceptance OPEN. Пользователь поручил сохранить ТЗ и создать Board; commit/push и execution не выполнялись. Planning validation не закрывает продуктовые gates. EP-0009 переиспользуется как baseline, незавершённые native/balance gates предшественника не считаются закрытыми этим эпиком.
+12 историй /30 тикетов (27 исходных +3 corrective). Production implementation и8 PNG готовы; Engine2197, Contracts210, Client1973 headless cases PASS (baseline trading timeout исключён и подтверждён отдельно). Каждый тикет публикуется отдельным commit/push; финальная документация/Graphify — US12. Полный эпик остаётся **acceptance-open**: native matrix, human art/gameplay и FPS OPEN. Самостоятельный запуск игры запрещён пользователем. [Полный статус](ImplementationStatus.md), [тикет → SHA → push](Publication.md), [инвентаризация](DocumentationInventory.md). EP-0009 переиспользуется как baseline, незавершённые native/balance gates предшественника не считаются закрытыми этим эпиком.
 
 ## Scope
 
@@ -28,7 +28,7 @@ E01 первый вход известного enemy в configured range; E02 в
 
 ## Non-goals
 
-Озвучка, ответы, автопауза, фильтры, новая модель обнаружения, изменение оружия/AI/баланса, замена журнала, публикация. Graphify используется только для навигации; старый граф не является доказательством текущего кода.
+Озвучка, ответы, автопауза, фильтры, новая модель обнаружения, изменение оружия/AI/баланса, замена журнала. Публикация и Graphify разрешены execution-поручением; граф используется для навигации, не как доказательство runtime acceptance.
 
 ## Истории
 
@@ -44,7 +44,7 @@ E01 первый вход известного enemy в configured range; E02 в
 | US0008 | [Графические доклады в стиле DSS](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-report-illustrations.md) | 4 | R12, R14, R15, R22 |
 | US0009 | [Карточки аккордеона и чтение докладов](EP-0010-US-0009-report-accordion/EP-0010-US-0009-report-accordion.md) | 2 | R04, R05, R06, R07, R13, R15, R22 |
 | US0010 | [Правая колонка и жизненный цикл экрана](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-tactical-screen-integration.md) | 3 | R01, R02, R03, R06, R13, R20, R21, R22 |
-| US0011 | [Воспроизводимая приёмка боя и интерфейса](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-report-acceptance.md) | 3 | R08, R09, R10, R11, R17, R19, R20, R21, R22, R23, R24 |
+| US0011 | [Воспроизводимая приёмка боя и интерфейса](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-report-acceptance.md) | 6 | R08, R09, R10, R11, R17, R19, R20, R21, R22, R23, R24 |
 | US0012 | [Документация и честный статус поставки](EP-0010-US-0012-documentation-and-handoff/EP-0010-US-0012-documentation-and-handoff.md) | 1 | R01, R02, R03, R04, R05, R06, R07, R08, R09, R10, R11, R12, R13, R14, R15, R16, R17, R18, R19, R20, R21, R22, R23, R24 |
 
 ## Порядок и Definition of Done

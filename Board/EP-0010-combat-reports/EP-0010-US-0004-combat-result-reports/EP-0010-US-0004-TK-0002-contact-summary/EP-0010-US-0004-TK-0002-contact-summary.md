@@ -3,7 +3,7 @@ epic: EP-0010-combat-reports
 story: EP-0010-US-0004-combat-result-reports
 ticket: EP-0010-US-0004-TK-0002-contact-summary
 title: "E06–E07 после полного применения удара"
-stage: draft
+stage: implemented
 status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0004-TK-0001-intercept-results"]
@@ -22,11 +22,11 @@ validation_status: automated-passed
 
 ## Decisions
 
-Пользователь поручил сохранить ТЗ и создать эпик с историями/тикетами (2026-10-16). Выполнение этого тикета, commit/push, генерация art или запуск игры пока не поручены. Продуктовые решения — §§1–10 ТЗ; не выдавать A01–A10 за дополнительные ответы пользователя.
+Пользователь поручил сохранить ТЗ и создать эпик с историями/тикетами (2026-10-16). Execution, art и отдельные commit/push поручены EpicExecutionPrompt2026-10-16. Самостоятельный запуск игры запрещён последующей явной инструкцией пользователя; native/human/FPS OPEN. Продуктовые решения — §§1–10 ТЗ; не выдавать A01–A10 за дополнительные ответы пользователя.
 
 ## Assumptions
 
-Технические A01–A10 ТЗ. Proposed API ниже — ожидаемый результат, не утверждение о текущем коде. Максимум 5 файлов из таблицы; Board evidence не разрешает скрытые изменения production. Layer `engine`; matching coverage `tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj`. Для purely art/evidence runtime source не меняется.
+Технические A01–A10 ТЗ. Code context ниже фиксирует исходный planning baseline; актуальные API и результаты приведены в Execution evidence и engineering CombatReports.md. Максимум 5 файлов из таблицы; Board evidence не разрешает скрытые изменения production. Layer `engine`; matching coverage `tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj`. Для purely art/evidence runtime source не меняется.
 
 ## Code context
 
@@ -68,7 +68,7 @@ No public API change.
 - `SameTimeProjectilesRemainSeparate` (планируемый сценарий проверки).
 - `DefeatDoesNotWaitForReportPresentation` (планируемый сценарий проверки).
 
-Команды выполнять из корня репозитория **при реализации**, сейчас NOT RUN:
+Команды ниже — исходный план воспроизведения из корня репозитория; реальные результаты — в Execution evidence и ImplementationStatus:
 
 ```powershell
 dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore --filter "FullyQualifiedName~CombatReportDamageTests"

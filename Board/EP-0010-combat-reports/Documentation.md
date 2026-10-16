@@ -1,8 +1,18 @@
+# EP-0010 — текущая документация и grounding
+
+2026-10-16: production path реализован. [Текущая архитектура](../../Documentation/04-Engineering/CombatReports.md), [status/tests](ImplementationStatus.md), [публикация](Publication.md), [инвентаризация](DocumentationInventory.md), [Graphify](../../Documentation/06-Tooling/TradingSolarGraphify.md). Самостоятельные игровые запуски запрещены пользователем; native/human/FPS OPEN.
+
+## Grounding
+
+Текущие точки: Contracts/BattleReportSnapshot + AuthoritativeSnapshot; SimulationEngine.CombatReports/CombatReportRange/CombatReportIdentity/CombatReportPersistence; Scenario/CombatReportsSaveData/CombatReportsSaveValidation; LocalClient/SnapshotMailbox; Client/CombatReportInbox/SnapshotBuffer; GameSession/CombatReportStore/Formatter/Assets, Controls/CombatReportPanel/Layout, GameSessionScreen.CombatReports/MapView и SkiaWindow.PrepareCombatReports. Все пути подтверждены текущим кодом и финальной сборкой. Восемь PNG созданы и копируются в output/publish. Root Save17 с optional child Version1 реализован. Современные line locations — в перестроенном Graphify; старые line numbers ниже относятся только к planning baseline.
+
+## Исходный документ — история, superseded current summary выше
+
 # EP-0010 — документация и grounding
 
 [Эпик](EP-0010-combat-reports.md) · [ТЗ](../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [Тикеты](Tickets.md) · [Статус](ImplementationStatus.md)
 
-## Grounding
+## Исторический grounding планирования
 
 Planning baseline: HEAD `af594de8465421f45cd362e82c6c1dbfdd8631ed` на финальной проверке 2026-10-16. Во время планирования существовавшие исходные изменения были включены во внешний коммит af594de; эта задача исходники не меняла. Подтверждены те же точки входа в актуальном исходном дереве. Номера строк — навигационные ориентиры на эту дату, перед execution сверять заново. Обязательные документы прочитаны: AGENTS/CLAUDE/EngineRequirements; источник игрового боя — Phase Four Module Combat.
 

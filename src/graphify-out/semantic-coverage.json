@@ -1,0 +1,37 @@
+{
+  "mode": "Fresh AST + Markdown structure + selective EP-0010 semantics",
+  "code_files": 713,
+  "markdown_files": 131,
+  "doc_heading_occurrences": 1450,
+  "resolved_markdown_links": 546,
+  "curated_mechanisms": 14,
+  "curated_source_files": [
+    "src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs",
+    "src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs",
+    "src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportRange.cs",
+    "src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportIdentity.cs",
+    "src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportPersistence.cs",
+    "src/DeepSpaceSaga.Engine/Scenario/CombatReportsSaveValidation.cs",
+    "src/DeepSpaceSaga.Engine.LocalClient/SnapshotMailbox.cs",
+    "src/DeepSpaceSaga.Client/SnapshotBuffer.cs",
+    "src/DeepSpaceSaga.Client/CombatReportInbox.cs",
+    "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportStore.cs",
+    "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportFormatter.cs",
+    "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportAssets.cs",
+    "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CombatReportPanel.cs",
+    "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CombatReports.cs"
+  ],
+  "limitations": [
+    "Not exhaustive semantic coverage of Documentation or Board",
+    "No image vision extraction",
+    "INFERRED architecture mappings are not runtime traces",
+    "Undirected graph collapses some relations; extraction.json retains them",
+    "Generated status and graph docs excluded to avoid circular hashes",
+    "Historical semantic fragments intentionally replaced"
+  ],
+  "token_usage": {
+    "input": null,
+    "output": null,
+    "status": "unmeasured host-agent extraction"
+  }
+}

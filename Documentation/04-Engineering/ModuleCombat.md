@@ -17,3 +17,7 @@ Current save writer is **SaveFormatVersion 17**, with defense payload 3, combat 
 ## Evidence and open acceptance
 
 [Implementation status](../../Board/EP-0009-battle/ImplementationStatus.md), [100-seed Engine balance](../../Board/EP-0009-battle/evidence/balance.md) and [native matrix](../../Board/EP-0009-battle/evidence/native.md) separate automated proof from open acceptance. The real Engine won 67/100 CombatMukha and 51/100 CombatShmel runs under the documented test policy; Mukha is 14.2 percentage points below the historical simulator reference. The old Python simulator source was absent; the [new independent sampler](../../src/DeepSpaceSaga.CombatSim/README.md) reads production JSON but uses simplified geometry and does not certify Engine equivalence. Game/native runs, real-window UI, human balance judgement and Graphify rebuilding were explicitly deferred by the user. They are NOT RUN/SKIPPED, not PASS.
+
+## Продолжение EP-0010 — 2026-10-16
+
+[Боевые доклады](CombatReports.md) добавляют presentation facts E01–E07 поверх этого модульного боя и optional CombatReportsState Version1 внутри Save17. Формулы, конфигурация, journal, RNG и баланс EP9 сохраняются. [Evidence/публикация](../../Board/EP-0010-combat-reports/ImplementationStatus.md); native/human/FPS OPEN. Graphify обновлён в EP10; прежний skip остаётся датированной историей EP9. Самостоятельные игровые запуски агентом запрещены пользователем.
