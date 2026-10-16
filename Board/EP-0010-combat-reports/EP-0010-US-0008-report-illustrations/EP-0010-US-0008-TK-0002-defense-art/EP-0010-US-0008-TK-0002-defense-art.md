@@ -4,14 +4,14 @@ story: EP-0010-US-0008-report-illustrations
 ticket: EP-0010-US-0008-TK-0002-defense-art
 title: "Иллюстрации ПРО, перехвата и попадания"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0008-TK-0001-launch-art"]
 files_touched: 3
 serves: ["US08-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: artifact-verified
 ---
 
 # Иллюстрации ПРО, перехвата и попадания
@@ -83,3 +83,9 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Продолжить общий стиль тремя отдельными сюжетами. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Artifact evidence - 2026-10-16
+
+Built-in imagegen, three separate scenes using existing Tetrarch/zero-class visual references. Final listed PNGs opaqueRGB1024x576, normalized from generated sources. Visual QA at320x180: PR turn toward hostile torpedo, missile-only interception burst and localized nonlethal enemy module hit are distinct. No text or UI frames. Assistant QA PASS; human art acceptance OPEN.
+
+Prompt set shares prior launch-art hard-sci-fi charcoal/teal reference style and no-text constraints. player-countermeasure-launch: small cyan defensive missile turns from Tetrarch toward separate amber incoming torpedo; enemy-torpedo-intercepted: compact cyan-white missile burst and cylindrical fragments in open space, intact ships; enemy-ship-hit: localized torpedo impact on swept-wing fighter nacelle, ship remains whole, no catastrophic explosion. Runtime unchanged.

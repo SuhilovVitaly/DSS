@@ -36,7 +36,7 @@
 | [EP-0010-US-0007-TK-0001-history-state](EP-0010-US-0007-report-history-and-text/EP-0010-US-0007-TK-0001-history-state/EP-0010-US-0007-TK-0001-history-state.md) | IMPLEMENTED | 5 focused; 14 report/client PASS | OPEN / по scope |
 | [EP-0010-US-0007-TK-0002-localized-report-text](EP-0010-US-0007-report-history-and-text/EP-0010-US-0007-TK-0002-localized-report-text/EP-0010-US-0007-TK-0002-localized-report-text.md) | IMPLEMENTED | 10 focused; 24 report/client PASS | OPEN / по scope |
 | [EP-0010-US-0008-TK-0001-launch-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0001-launch-art/EP-0010-US-0008-TK-0001-launch-art.md) | IMPLEMENTED | 3 PNG dimensions/visual QA PASS | OPEN / по scope |
-| [EP-0010-US-0008-TK-0002-defense-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0002-defense-art/EP-0010-US-0008-TK-0002-defense-art.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0008-TK-0002-defense-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0002-defense-art/EP-0010-US-0008-TK-0002-defense-art.md) | IMPLEMENTED | 3 PNG dimensions/visual QA PASS | OPEN / по scope |
 | [EP-0010-US-0008-TK-0003-damage-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0003-damage-art/EP-0010-US-0008-TK-0003-damage-art.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0008-TK-0004-catalog-and-cache](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0004-catalog-and-cache/EP-0010-US-0008-TK-0004-catalog-and-cache.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0009-TK-0001-card-rendering](EP-0010-US-0009-report-accordion/EP-0010-US-0009-TK-0001-card-rendering/EP-0010-US-0009-TK-0001-card-rendering.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -88,3 +88,5 @@ US0006 inbox 344aae55db58a91dd60253e1217d51756c89bdb5 published/remote verified.
 US0007 history 0eb073a59c85646889538f586cccef3eb7481c84 published/remote verified. Formatter implemented, story self-review complete, 24 cases PASS.
 
 US0007 formatter03eccb6d7a51092fe2068f5155621f67d297a431 published/remote verified. First three art assets built-in generated and visually inspected; human art acceptance OPEN.
+
+US0008 launch-art b320f74850b6ba70388ee4d24fa35bca1265d202 published/remote verified. Defense/hit art assistant visual QA PASS, human acceptance OPEN.
