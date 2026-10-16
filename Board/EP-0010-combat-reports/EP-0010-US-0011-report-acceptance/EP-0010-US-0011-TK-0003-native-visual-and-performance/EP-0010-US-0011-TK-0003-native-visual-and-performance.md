@@ -6,7 +6,7 @@ title: "Визуальная приёмка и frame-time evidence"
 stage: draft
 status: planned
 layer: client
-depends_on: ["EP-0010-US-0011-TK-0002-client-integration-proof"]
+depends_on: ["EP-0010-US-0011-TK-0004-map-viewport-regression"]
 files_touched: 2
 serves: ["US11-AC3"]
 created: 2026-10-16
@@ -80,3 +80,7 @@ dotnet run --project src/DeepSpaceSaga.Client --no-restore
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Заполнить отдельные gates наблюдением настоящего клиента. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution scope/order adjustment - 2026-10-16
+
+Run corrective TK0004 after TK0002 and before this native ticket. Confirmed free-map viewport regression must be fixed first.

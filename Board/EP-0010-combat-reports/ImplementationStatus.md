@@ -108,3 +108,5 @@ US0010 screen integration6ff6199e32f7cc9bcab2a040e074e9d09cfaca93 published/remo
 US0010 lifecycle81fa61f0a593b909719563c16bd6cef839b297d8 published/remote verified. Engine acceptance production CombatMukha + rare outcomes PASS.
 
 US0011 Engine proof276bc6331e89b65412713ccf02eaf2840cc9f186 published/remote verified. Client integration/matrix82 PASS; native remains separate.
+
+Corrective US0011-TK0004: report rectangle added to free-map obstacles, new6 + existingMapLayer3 PASS. Full Client before repair1948/1971,23failures; remaining navigation fixtures and station timeout investigation open. Client proof9f022367fec29f41f15e8cb20c9a1f232bf26b02 published/remote verified.

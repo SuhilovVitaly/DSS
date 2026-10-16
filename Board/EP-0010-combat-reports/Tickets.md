@@ -64,3 +64,7 @@ R — из ТЗ; точные AC и их served tickets — в каждой ис
 | R24 | [US0011](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-report-acceptance.md) | EP-0010-US-0011-TK-0001-engine-scenario-proof, EP-0010-US-0011-TK-0002-client-integration-proof, EP-0010-US-0011-TK-0003-native-visual-and-performance |
 
 E01: US0002; E02–E04: US0003; E05–E07: US0004; SaveLoad: US0005; reliable delivery: US0006. Проверки всех E/R: US0011. Графика8 variants: US0008. Точки отложенной human/native/performance приёмки — evidence/.
+
+## Execution correction
+
+After US0011-TK0002 and before TK0003: [TK0004 map viewport regression](EP-0010-US-0011-report-acceptance/EP-0010-US-0011-TK-0004-map-viewport-regression/EP-0010-US-0011-TK-0004-map-viewport-regression.md). Confirmed full-suite defect; scoped repair and publication required before native evidence.
