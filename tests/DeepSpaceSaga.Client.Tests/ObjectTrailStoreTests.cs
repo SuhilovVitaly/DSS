@@ -362,7 +362,7 @@ public class ObjectTrailStoreTests
             timestampProvider: () => clock.Timestamp);
 
         Render(screen);
-        clock.AdvanceMs(1_000);
+        clock.AdvanceMs(4_000);
         Render(screen);
 
         buffer.Update(new AuthoritativeSnapshot(
@@ -656,7 +656,7 @@ public class ObjectTrailStoreTests
             timestampProvider: () => clock.Timestamp);
 
         Render(screen);
-        clock.AdvanceMs(900);
+        clock.AdvanceMs(3600);
         Render(screen);
 
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
@@ -695,7 +695,7 @@ public class ObjectTrailStoreTests
         Assert.Equal(SimulationSpeed.Speed1, buffer.CurrentSpeed);
         Assert.Equal(900, screen.CameraFocusX);
 
-        clock.AdvanceMs(400);
+        clock.AdvanceMs(1600);
         Render(screen);
         Assert.Equal(904, screen.CameraFocusX, precision: 6);
         Assert.Equal(904, screen.GetObjectTrail("ship")[^1].X, precision: 6);

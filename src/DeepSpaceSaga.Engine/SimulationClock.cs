@@ -23,6 +23,7 @@ public sealed class SimulationClock
     private long _lastRealTick;
     private readonly Func<long> _realTimeMs;
     private bool _terminalStopped;
+    private long _motionQuarterRemainder;
 
     public SimulationClock(SimulationSpeed initialSpeed = SimulationSpeed.Speed1)
         // Match the client's high-resolution monotonic source; coarse platform ticks
@@ -36,10 +37,10 @@ public sealed class SimulationClock
         _lastRealTick = _realTimeMs();
     }
 
-    /// <summary>Accumulated calendar time in milliseconds (five minutes per real second at Speed1).</summary>
+    /// <summary>Accumulated calendar time in milliseconds (75 calendar seconds per real second at Speed1).</summary>
     public long GameTimeMs { get; private set; }
 
-    /// <summary>Time for motion and ship cycles, at one second per real second at Speed1.</summary>
+    /// <summary>Time for motion and ship cycles, at one physical second per four real seconds at Speed1.</summary>
     public long SimulationTimeMs { get; private set; }
 
     /// <summary>Current simulation speed.</summary>
@@ -57,9 +58,18 @@ public sealed class SimulationClock
             long deltaReal = now - _lastRealTick;
             _lastRealTick = now;
 
-            GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
-            SimulationTimeMs += deltaReal * (int)Speed;
+            Advance(deltaReal);
         }
+    }
+
+    private void Advance(long deltaReal)
+    {
+        GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
+        // Preserve fractions across short updates and speed changes. Otherwise
+        // quarter-speed updates shorter than 4 real ms would lose motion time.
+        long quarters = deltaReal * (int)Speed + _motionQuarterRemainder;
+        SimulationTimeMs += quarters / 4;
+        _motionQuarterRemainder = quarters % 4;
     }
 
     /// <summary>
@@ -74,8 +84,7 @@ public sealed class SimulationClock
             long deltaReal = now - _lastRealTick;
             _lastRealTick = now;
 
-            GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
-            SimulationTimeMs += deltaReal * (int)Speed;
+            Advance(deltaReal);
             return new SimulationClockState(GameTimeMs, Speed, SimulationTimeMs);
         }
     }
@@ -102,6 +111,7 @@ public sealed class SimulationClock
         lock (_lock)
         {
             _terminalStopped = false;
+            _motionQuarterRemainder = 0;
             GameTimeMs = gameTimeMs;
             // Legacy saves used one timestamp for both domains. Preserve their baselines.
             SimulationTimeMs = simulationTimeMs ?? gameTimeMs;
@@ -125,8 +135,7 @@ public sealed class SimulationClock
             long deltaReal = now - _lastRealTick;
 
             // Accumulate time at the current speed before switching
-            GameTimeMs += deltaReal * Speed.GameTimeMultiplier();
-            SimulationTimeMs += deltaReal * (int)Speed;
+            Advance(deltaReal);
 
             // Switch to new speed and reset baseline
             _lastRealTick = now;
@@ -153,6 +162,7 @@ public sealed class SimulationClock
         {
             if (_terminalStopped) return;
             _terminalStopped = true;
+            _motionQuarterRemainder = 0;
             GameTimeMs = gameTimeMs;
             SimulationTimeMs = simulationTimeMs;
             Speed = SimulationSpeed.Speed0;

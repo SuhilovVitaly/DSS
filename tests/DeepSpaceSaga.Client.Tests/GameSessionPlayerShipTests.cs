@@ -77,7 +77,7 @@ public class GameSessionPlayerShipTests
             PlayerShipObjectId: "player"));
 
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
-        clock.AdvanceMs(1000);
+        clock.AdvanceMs(4000);
 
         using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
         using var canvas = new SKCanvas(bitmap);

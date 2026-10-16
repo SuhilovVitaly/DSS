@@ -2393,7 +2393,6 @@ public sealed partial class GameSessionScreen : IScreen
             HostileCombat: p.ObjectId == _selectedObjectId && s.Source.ObjectType == SpaceObjectType.NpcShip &&
                 p.RenderObjectType == SpaceObjectType.NpcShip && s.Source.RelationToPlayer == PlayerRelation.Enemy
                 ? s.Source.HostileCombat : null,
-            Modules: s.Source.ModuleHealth.IsDefaultOrEmpty ? null : s.Source.ModuleHealth,
             MotionTimeMs: _buffer.Latest?.Snapshot.MotionTimeMs ?? 0);
     }
 

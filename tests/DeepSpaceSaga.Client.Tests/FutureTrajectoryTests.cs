@@ -335,8 +335,8 @@ public class FutureTrajectoryTests
             Objects: ImmutableArray.Create(ship),
             PlayerShipObjectId: "ship"));
 
-        // Advance real time by 500 ms → 500 ms of prediction at Speed1
-        clock.AdvanceMs(500);
+        // Advance real time by 2000 ms → 500 ms of prediction at Speed1
+        clock.AdvanceMs(2000);
 
         var screen = new GameSessionScreen(
             buffer,

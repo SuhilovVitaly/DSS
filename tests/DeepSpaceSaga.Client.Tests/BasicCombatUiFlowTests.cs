@@ -281,9 +281,9 @@ public sealed class BasicCombatUiFlowTests
             long remaining = motionMs - Latest.MotionTimeMs;
             Assert.True(remaining >= 0);
             await Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed4);
-            Interlocked.Add(ref _realMs, remaining / 100);
+            Interlocked.Add(ref _realMs, remaining / 100 * 4);
             await Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Add(ref _realMs, remaining % 100);
+            Interlocked.Add(ref _realMs, remaining % 100 * 4);
             await Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
             var result = await Wait(s => s.MotionTimeMs == motionMs && s.CurrentSpeed == SimulationSpeed.Speed0);
             UiNow = Handle.Buffer.Latest!.ReceivedAtTimestamp;

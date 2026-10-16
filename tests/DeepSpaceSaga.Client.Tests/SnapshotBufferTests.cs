@@ -93,17 +93,31 @@ public class SnapshotBufferTests
         var clock = new FakeClock();
         var buffer = new SnapshotBuffer(() => clock.Timestamp);
         buffer.Update(new AuthoritativeSnapshot(1, 300_000, SimulationSpeed.Speed1, [], SimulationTimeMs: 1000));
-        clock.AdvanceMs(1000);
+        clock.AdvanceMs(4000);
         Assert.Equal(1000, buffer.EffectivePredictionDeltaMs);
         buffer.Update(new AuthoritativeSnapshot(2, 600_000, SimulationSpeed.Speed1, [], SimulationTimeMs: 2000));
         Assert.Equal(0, buffer.LatestPrediction!.ReconciliationForwardJumpMs);
         Assert.Equal(0, buffer.EffectivePredictionDeltaMs);
-        clock.AdvanceMs(500);
+        clock.AdvanceMs(2000);
         Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
         clock.AdvanceMs(10_000);
         Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
     }
+    [Theory]
+    [InlineData(SimulationSpeed.Speed1, 250)]
+    [InlineData(SimulationSpeed.Speed2, 1250)]
+    [InlineData(SimulationSpeed.Speed3, 5000)]
+    [InlineData(SimulationSpeed.Speed4, 25000)]
+    public void Prediction_uses_the_slower_base_pace(SimulationSpeed speed, long expected)
+    {
+        var clock = new FakeClock();
+        var buffer = new SnapshotBuffer(() => clock.Timestamp);
+        buffer.Update(new(1, 0, speed, []));
+        clock.AdvanceMs(1000);
+        Assert.Equal(expected, buffer.EffectivePredictionDeltaMs);
+    }
+
     private sealed class FakeClock
     {
         public long Timestamp { get; private set; }

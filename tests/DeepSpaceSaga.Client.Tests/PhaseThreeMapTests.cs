@@ -69,7 +69,7 @@ public class PhaseThreeMapTests
             MaxFlightTimeMs: 60000, ExpiresAtMotionTimeMs: 60000));
 
     [Fact]
-    public void Countdown_uses_physical_time_freezes_on_pause_and_resumes()
+    public void Calculation_labels_stay_hidden_through_pause_and_resume()
     {
         long now = 0;
         var buffer = new SnapshotBuffer(() => now);
@@ -80,18 +80,18 @@ public class PhaseThreeMapTests
         using var canvas = new SKCanvas(bitmap);
         void Render() => screen.Render(canvas, 1280, 720);
         Render();
-        Assert.Contains($"{60m:0.0}", screen.DefenseFlightLabels["pr"].Text);
+        Assert.Empty(screen.DefenseFlightLabels);
         now = Stopwatch.Frequency * 100;
         Render();
-        Assert.Contains($"{60m:0.0}", screen.DefenseFlightLabels["pr"].Text);
+        Assert.Empty(screen.DefenseFlightLabels);
         buffer.Update(buffer.Latest!.Snapshot with { SnapshotSequence = 2, CurrentSpeed = SimulationSpeed.Speed2 });
         now += Stopwatch.Frequency;
         Render();
-        Assert.Contains($"{55m:0.0}", screen.DefenseFlightLabels["pr"].Text);
+        Assert.Empty(screen.DefenseFlightLabels);
         buffer.Update(buffer.Latest!.Snapshot with { SnapshotSequence = 3, CurrentSpeed = SimulationSpeed.Speed0, SimulationTimeMs = 5000 });
         now += Stopwatch.Frequency * 100;
         Render();
-        Assert.Contains($"{55m:0.0}", screen.DefenseFlightLabels["pr"].Text);
+        Assert.Empty(screen.DefenseFlightLabels);
         buffer.Update(buffer.Latest!.Snapshot with { SnapshotSequence = 4, Objects = [buffer.Latest.Snapshot.Objects[0]] });
         Render();
         Assert.Empty(screen.DefenseFlightLabels);
@@ -101,7 +101,7 @@ public class PhaseThreeMapTests
     [Theory]
     [InlineData(1280, 720)]
     [InlineData(640, 360)]
-    public void Coincident_countermeasures_keep_distinct_wrapped_labels_inside_viewport(int width, int height)
+    public void Coincident_countermeasures_do_not_display_calculation_labels(int width, int height)
     {
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(new(1, 0, SimulationSpeed.Speed0, [new("player", 0, 0, 0, 0),
@@ -111,21 +111,9 @@ public class PhaseThreeMapTests
         using var bitmap = new SKBitmap(width, height);
         using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, width, height);
-        Assert.Equal(2, screen.DefenseFlightLabels.Count);
-        var first = screen.DefenseFlightLabels["pr-one"];
-        var second = screen.DefenseFlightLabels["pr-two"];
-        Assert.Contains("launcher-one", first.Text);
-        Assert.Contains("launcher-two", second.Text);
-        Assert.False(first.Bounds.IntersectsWith(second.Bounds));
-        Assert.All(screen.DefenseFlightLabels.Values, label =>
-        {
-            Assert.InRange(label.Bounds.Left, 0, width);
-            Assert.InRange(label.Bounds.Right, 0, width);
-            Assert.InRange(label.Bounds.Top, 0, height);
-            Assert.InRange(label.Bounds.Bottom, 0, height);
-            Assert.Contains($"{50m:0.0}%", label.Text);
-            Assert.Contains($"{60m:0.0}", label.Text);
-        });
+        Assert.Empty(screen.DefenseFlightLabels);
+        Assert.Empty(screen.DefenseChanceLabels);
+        Assert.Equal(2, screen.RenderStates.Count(r => r.Source.Countermeasure is not null));
         screen.OnDeactivated();
     }
 

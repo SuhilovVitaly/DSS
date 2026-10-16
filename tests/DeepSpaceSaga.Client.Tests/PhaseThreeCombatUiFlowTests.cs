@@ -57,7 +57,7 @@ public class PhaseThreeCombatUiFlowTests
             await Wait(s => s.Objects.Length == 2);
             screen.OnActivated();
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Exchange(ref now, 1);
+            Interlocked.Exchange(ref now, 4);
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
             var launched = await Wait(s => s.Objects.Any(o => o.Torpedo is not null));
             string target = launched.Objects.Single(o => o.Torpedo is not null).ObjectId;
@@ -87,14 +87,9 @@ public class PhaseThreeCombatUiFlowTests
             }
             var after = await Wait(s => s.Objects.Count(o => o.Countermeasure is not null) == 2);
             Render(); Render();
-            Assert.Equal(2, screen.DefenseFlightLabels.Count);
-            var labels = screen.DefenseFlightLabels.Values.Select(l => l.Bounds).ToArray();
-            Assert.False(labels[0].IntersectsWith(labels[1]));
-            foreach (var label in labels)
-                foreach (var hud in new[] { screen.CommandsPanel.BodyRect, screen.ObjectInfoPanel.BodyRect, screen.MapToolbarRect,
-                    screen.LastScalePanelRect, screen.LastSpeedPanelRect, screen.LastMechanicsPanelRect })
-                    Assert.False(label.IntersectsWith(new SKRect(hud.Left * scale, hud.Top * scale, hud.Right * scale, hud.Bottom * scale)),
-                        $"PR countdown hidden under HUD: {label}/{hud} at {width}x{height}/{scale}");
+            Assert.Empty(screen.DefenseFlightLabels);
+            Assert.Empty(screen.DefenseChanceLabels);
+            Assert.Equal(2, screen.DefenseGeometry.Count);
             Assert.Equal(1, after.MotionTimeMs);
             Assert.Equal(SimulationSpeed.Speed0, after.CurrentSpeed);
             Assert.All(after.Objects.Where(o => o.Countermeasure is not null), o =>

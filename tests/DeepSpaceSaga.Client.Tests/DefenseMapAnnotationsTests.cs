@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public class DefenseMapAnnotationsTests
 {
     [Fact]
-    public void Chance_shown_at_projectile_and_encounter_with_frozen_tooltip()
+    public void Intercept_geometry_remains_without_chance_labels_or_tooltip()
     {
         var op = new WeaponOperatorSnapshot("crew", "Crew", WeaponSkillType.CountermeasureDefense, 50, 55, 55);
         var route = new TorpedoRoute(0, 1, TorpedoRoutePhase.Straight, true, [new(0, 0, 90, 12, 0, 1000)]);
@@ -24,12 +24,11 @@ public class DefenseMapAnnotationsTests
         var geometry = screen.DefenseGeometry["pr"];
         Assert.Equal(120, geometry.Intercept!.Value.X, 5);
         Assert.Equal(0, geometry.Intercept!.Value.Y, 5);
-        Assert.Equal("50.0%", screen.DefenseChanceLabels["pr"].Chance);
-        var marker = screen.DefenseChanceLabels["pr"].Encounter!.Value;
-        screen.OnMouseMove(marker.X, marker.Y);
+        Assert.Empty(screen.DefenseChanceLabels);
+        Assert.Empty(screen.DefenseFlightLabels);
+        screen.OnMouseMove((float)geometry.Intercept.Value.X, (float)geometry.Intercept.Value.Y);
         screen.Render(canvas, 1280, 720);
-        Assert.Contains("Crew", screen.DefenseTooltip);
-        Assert.Contains("50.0%", screen.DefenseTooltip);
+        Assert.Null(screen.DefenseTooltip);
         buffer.Update(buffer.Latest!.Snapshot with { SnapshotSequence = 2, Objects = [new("player", 0, 0, 0, 0)] });
         screen.Render(canvas, 1280, 720);
         Assert.Null(screen.DefenseTooltip);

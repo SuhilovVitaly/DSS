@@ -32,8 +32,9 @@ public class TacticalMapSmoothnessTests
             control.Render(surface.Canvas, 1280, 720);
         }
         for (int i = 0; i < 80; i++) Frame();
-        var ahead = new AuthoritativeSnapshot(2, 106000, SimulationSpeed.Speed4,
-            [predictor.Predict(obj, 106000)], PlayerShipObjectId: "player");
+        long aheadTime = buffer.EffectivePredictionDeltaMs + 6000;
+        var ahead = new AuthoritativeSnapshot(2, aheadTime, SimulationSpeed.Speed4,
+            [predictor.Predict(obj, aheadTime)], PlayerShipObjectId: "player");
         buffer.Update(ahead);
         controlBuffer.Update(ahead);
         Frame(); // Both begin smoothing a 60-world-unit offset.
@@ -47,7 +48,8 @@ public class TacticalMapSmoothnessTests
         if (baselineIncludesCorrection) next = next with { X = next.X - remainingOffset };
         buffer.Update(new(3, time, SimulationSpeed.Speed4, [next], PlayerShipObjectId: "player"));
         Frame();
-        Assert.Equal(control.RenderStates[0].Predicted.X, screen.RenderStates[0].Predicted.X, 6);
+        // Quarter pace can quantize the two baselines one physical millisecond apart.
+        Assert.InRange(Math.Abs(control.RenderStates[0].Predicted.X - screen.RenderStates[0].Predicted.X), 0, .010001);
         for (int i = 0; i < 40; i++) Frame();
         Assert.Equal(predictor.Predict(next, buffer.EffectivePredictionDeltaMs).X,
             screen.RenderStates[0].Predicted.X, 6);
@@ -60,9 +62,9 @@ public class TacticalMapSmoothnessTests
         var buffer = new SnapshotBuffer(() => clock);
         buffer.Update(new(1, 0, SimulationSpeed.Speed4, []));
         clock = Stopwatch.Frequency / 80; // 12.5 real ms at 80 Hz
-        Assert.Equal(1250, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(312, buffer.EffectivePredictionDeltaMs);
         clock = Stopwatch.Frequency * 3 / 80;
-        Assert.Equal(3750, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(937, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -85,7 +87,7 @@ public class TacticalMapSmoothnessTests
         {
             clock = Stopwatch.Frequency * realMs / 1000;
             screen.Render(surface.Canvas, 1280, 720);
-            Assert.Equal(100 + 2 * 10 * realMs / 1000.0,
+            Assert.Equal(100 + 2 * 10 * (realMs / 4) / 1000.0,
                 screen.RenderStates.Single(s => s.Source.ObjectId == "mukha").Predicted.X, 6);
         }
         Assert.Equal(100, hostile.X);
@@ -109,11 +111,12 @@ public class TacticalMapSmoothnessTests
             clock = Stopwatch.Frequency * ms / 1000;
             screen.Render(surface.Canvas, 1280, 720);
             var pose = Assert.Single(screen.RenderStates).Predicted;
-            double angle = 12 * Math.PI / 180 * ms / 1000.0;
+            double motionSeconds = (ms / 4) / 1000.0;
+            double angle = 12 * Math.PI / 180 * motionSeconds;
             double radius = 30 / (12 * Math.PI / 180);
             Assert.Equal(radius * (1 - Math.Cos(angle)), pose.X, 5);
             Assert.Equal(-radius * Math.Sin(angle), pose.Y, 5);
-            Assert.Equal(12 * ms / 1000.0, pose.Direction, 5);
+            Assert.Equal(12 * motionSeconds, pose.Direction, 5);
         }
         Assert.Equal(100, hostile.HostileCombat!.Segment.DurationMs);
     }
@@ -151,7 +154,7 @@ public class TacticalMapSmoothnessTests
         Assert.Equal(before, screen.RenderStates.Single(s => s.Source.ObjectId == "shmel").Predicted.X, 6);
         clock += Stopwatch.Frequency / 5;
         screen.Render(surface.Canvas, 1280, 720);
-        Assert.Equal(before + 4, screen.RenderStates.Single(s => s.Source.ObjectId == "shmel").Predicted.X, 6);
+        Assert.Equal(before + 1, screen.RenderStates.Single(s => s.Source.ObjectId == "shmel").Predicted.X, 6);
     }
 
     [Fact]
@@ -191,11 +194,11 @@ public class TacticalMapSmoothnessTests
     }
 
     [Theory]
-    [InlineData(2, false)]
-    [InlineData(15, false)]
-    [InlineData(60, false)]
-    [InlineData(60, true)]
-    public void All_500_contacts_keep_continuous_motion_when_snapshots_advance_time(int skewRealMs, bool skipSnapshotFrame)
+    [InlineData(200, false)]
+    [InlineData(1500, false)]
+    [InlineData(6000, false)]
+    [InlineData(6000, true)]
+    public void All_500_contacts_keep_continuous_motion_when_snapshots_advance_time(int skewMotionMs, bool skipSnapshotFrame)
     {
         long clock = 0;
         var buffer = new SnapshotBuffer(() => clock);
@@ -216,14 +219,16 @@ public class TacticalMapSmoothnessTests
         long previousTime = buffer.LatestPrediction!.BufferedSnapshot.Snapshot.MotionTimeMs + buffer.EffectivePredictionDeltaMs;
         void Publish(ulong sequence, long time) => buffer.Update(new(sequence, time, SimulationSpeed.Speed4,
             objects.Select(o => predictor.Predict(o, time)).ToImmutableArray(), PlayerShipObjectId: objects[0].ObjectId));
-        if (skipSnapshotFrame) Publish(2, previousTime + skewRealMs * 50);
-        Publish(3, previousTime + skewRealMs * 100);
+        if (skipSnapshotFrame) Publish(2, previousTime + skewMotionMs / 2);
+        Publish(3, previousTime + skewMotionMs);
         Frame();
         for (int i = 0; i < objects.Length; i++)
         {
-            double normalStep = objects[i].SpeedKmS * 10 * 1.25;
+            double normalStep = objects[i].SpeedKmS * 10 * .3125;
             double actualStep = screen.RenderStates[i].Predicted.X - before[i];
-            Assert.InRange(actualStep, normalStep * .999, normalStep * 1.001);
+            // A physical timestamp has integer-millisecond precision.
+            double quantization = objects[i].SpeedKmS * .01;
+            Assert.InRange(actualStep, normalStep - quantization, normalStep + quantization);
         }
         for (int i = 0; i < 40; i++) Frame();
         var prediction = buffer.LatestPrediction!;

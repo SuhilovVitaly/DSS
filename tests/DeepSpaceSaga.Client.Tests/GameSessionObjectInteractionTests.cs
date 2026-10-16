@@ -142,8 +142,8 @@ public class GameSessionObjectInteractionTests
         screen.OnMouseMove(640, 360);
         Assert.Equal("OBJ-1", screen.ActiveObjectId);
 
-        // 50 km/s × 10 units/s per km/s × 0.2 s = 100 world units of drift.
-        clock.AdvanceMs(200);
+        // 50 km/s × 10 units/s per km/s × 0.2 physical s (0.8 real s) = 100 world units of drift.
+        clock.AdvanceMs(800);
         Render(screen);
 
         Assert.Null(screen.ActiveObjectId);

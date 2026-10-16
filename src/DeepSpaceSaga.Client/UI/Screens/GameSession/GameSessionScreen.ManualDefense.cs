@@ -49,15 +49,6 @@ public sealed partial class GameSessionScreen
             snapshot.MotionTimeMs, defense.MaxFlightTimeMs.Value, _camera);
         DrawCombatGeometry(canvas, ManualDefensePreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
         ManualDefensePreviewMessage = ManualDefensePreviewGeometry.Intercept is null ? CombatText("UnknownIntercept", "Intercept unknown") : null;
-        var labelPoint = ManualDefensePreviewGeometry.Intercept ?? new FutureTrajectoryPoint(owner.X, owner.Y);
-        var (x, y) = _camera.WorldToScreen(labelPoint.X, labelPoint.Y, _viewportW, _viewportH);
-        using var text = new SKPaint { Color = CombatSettings.Preview, TextSize = 12, IsAntialias = true };
-        if (module.DefensePreview?.ChanceTenths is { } chance)
-            canvas.DrawText($"{chance / 10m:0.0}%", x + 10, y - 10, text);
-        if (ManualDefensePreviewMessage is { } message)
-        {
-            canvas.DrawText(message, x + 10, y + 18, text);
-        }
     }
 
     private sealed class DefenseSubmission

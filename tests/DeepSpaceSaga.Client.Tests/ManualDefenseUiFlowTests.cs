@@ -218,7 +218,7 @@ public class ManualDefenseUiFlowTests
             await Wait(s => s.Objects.Length == 2);
             screen.OnActivated();
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Exchange(ref now, 1);
+            Interlocked.Exchange(ref now, 4);
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
             var launched = await Wait(s => s.Objects.Any(o => o.Torpedo is not null));
             string target = launched.Objects.Single(o => o.Torpedo is not null).ObjectId;

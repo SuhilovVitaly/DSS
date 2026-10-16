@@ -1,7 +1,6 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
-using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed partial class GameSessionScreen
@@ -70,53 +69,14 @@ public sealed partial class GameSessionScreen
         DefenseChanceLabels.Clear();
         DefenseFlightLabels.Clear();
         WeaponRangeRings.Clear();
-        var freeMap = AvailableMapRect();
-        var occupied = new List<SKRect>(_mapObstacles);
         using var text = new SKPaint { Color = CombatSettings.DefenseText, TextSize = 12f, IsAntialias = true };
         using var line = new SKPaint { Color = CombatSettings.DefenseRange, Style = SKPaintStyle.Stroke, StrokeWidth = 1, IsAntialias = true };
         DrawHoveredWeaponRanges(canvas, line);
         foreach (var state in _renderStates)
         {
-            var (x, y) = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
-            if (state.Source.RenderObjectType == SpaceObjectType.NpcShip && state.Source.Defense is { } defense)
-            {
-                if (_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label))
-                    canvas.DrawText(DefenseStatusText(defense, DefensePresentationTime), label.PlaqueRect.Left, label.PlaqueRect.Bottom + 22, text);
-            }
-            if (state.Source.RenderObjectType != SpaceObjectType.Countermeasure || state.Source.Countermeasure is not { } flight) continue;
-            if (x < 0 || y < 0 || x > _viewportW || y > _viewportH) continue;
-            string chance = $"{flight.FrozenChanceTenths / 10m:0.0}%";
-            string remaining = RemainingFlightText(flight, DefensePresentationTime);
-            var labelLines = WrapFlightLabel($"{state.Source.ObjectId} · {flight.LauncherModuleId}\n{chance} · {CombatText("RemainingFlight", "Осталось полёта")}: {remaining}", text, freeMap.Width - 8);
-            var bounds = PlaceFlightLabel(x + 8, y - 8, labelLines, text, occupied);
-            occupied.Add(bounds);
-            DefenseFlightLabels[state.Source.ObjectId] = new(bounds, string.Join("\n", labelLines));
-            for (int i = 0; i < labelLines.Count; i++) canvas.DrawText(labelLines[i], bounds.Left, bounds.Top + 12 + 16 * i, text);
-            SKPoint? marker = null;
-            if (DefenseGeometry.TryGetValue(state.Source.ObjectId, out var geometry) && geometry.Intercept is { } encounter)
-            {
-                var (mx, my) = _camera.WorldToScreen(encounter.X, encounter.Y, _viewportW, _viewportH);
-                marker = new(mx, my);
-                if (mx >= 0 && my >= 0 && mx <= _viewportW && my <= _viewportH)
-                {
-                    var markerBounds = PlaceFlightLabel(mx + 8, my - 8, [chance], text, occupied);
-                    occupied.Add(markerBounds);
-                    canvas.DrawText(chance, markerBounds.Left, markerBounds.Top + 12, text);
-                }
-                if (_hasMousePosition && Math.Abs(_mouseX - mx) <= 10 && Math.Abs(_mouseY - my) <= 10)
-                    DefenseTooltip = string.Join("\n", ObjectInfoPanel.CountermeasureLines(state.Pose.Motion.Countermeasure ?? flight).Select(l => $"{l.Label}: {l.Value}"));
-            }
-            DefenseChanceLabels[state.Source.ObjectId] = (new(x, y), marker, chance);
-        }
-        if (DefenseTooltip is not null)
-        {
-            string[] lines = DefenseTooltip.Split('\n');
-            float width = Math.Min(_viewportW - 16, Math.Max(260, lines.Max(l => text.MeasureText(l)) + 20));
-            float left = Math.Clamp(_mouseX + 16, 8, Math.Max(8, _viewportW - width - 8));
-            float top = Math.Clamp(_mouseY + 16, 8, Math.Max(8, _viewportH - lines.Length * 18 - 16));
-            using var background = new SKPaint { Color = new SKColor(8, 25, 36, 245) };
-            canvas.DrawRect(left, top, width, lines.Length * 18 + 12, background);
-            for (int i = 0; i < lines.Length; i++) canvas.DrawText(lines[i], left + 8, top + 18 + i * 18, text);
+            if (state.Source.RenderObjectType == SpaceObjectType.NpcShip && state.Source.Defense is { } defense &&
+                _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label))
+                canvas.DrawText(DefenseStatusText(defense, DefensePresentationTime), label.PlaqueRect.Left, label.PlaqueRect.Bottom + 22, text);
         }
     }
 
@@ -146,56 +106,8 @@ public sealed partial class GameSessionScreen
         }
     }
 
-    private List<string> WrapFlightLabel(string value, SKPaint paint, float availableWidth)
-    {
-        float width = Math.Max(1, Math.Min(340, Math.Min(availableWidth, _viewportW - 16)));
-        var lines = new List<string>();
-        foreach (string source in value.Split('\n'))
-        {
-            string rest = source;
-            while (paint.MeasureText(rest) > width)
-            {
-                int length = Math.Max(1, (int)paint.BreakText(rest, width));
-                int space = rest.LastIndexOf(' ', length - 1, length);
-                if (space > 0) length = space;
-                lines.Add(rest[..length].TrimEnd());
-                rest = rest[length..].TrimStart();
-            }
-            lines.Add(rest);
-        }
-        return lines;
-    }
-
-    private SKRect PlaceFlightLabel(float x, float y, IReadOnlyList<string> lines, SKPaint paint, List<SKRect> occupied)
-    {
-        float width = lines.Max(l => paint.MeasureText(l)), height = lines.Count * 16;
-        float left = Math.Clamp(x, 8, Math.Max(8, _viewportW - width - 8));
-        float top = Math.Clamp(y, 8, Math.Max(8, _viewportH - height - 8));
-        var result = new SKRect(left, top, left + width, top + height);
-        var xs = new[] { left, 8, _viewportW - width - 8 }.Concat(occupied.SelectMany(r => new[] { r.Right + 4, r.Left - width - 4 })).Distinct();
-        var ys = new[] { top, 8, _viewportH - height - 8 }.Concat(occupied.SelectMany(r => new[] { r.Bottom + 4, r.Top - height - 4 })).Distinct();
-        var candidates = from cx in xs
-                         from cy in ys
-                         where cx >= 8 && cy >= 8 && cx + width <= _viewportW - 8 && cy + height <= _viewportH - 8
-                         orderby (cx - left) * (cx - left) + (cy - top) * (cy - top), cy, cx
-                         select new SKRect(cx, cy, cx + width, cy + height);
-        foreach (var bounds in candidates)
-        {
-            if (occupied.Any(r => r.IntersectsWith(bounds))) continue;
-            return bounds;
-        }
-        return result;
-    }
-
     private void DrawCountermeasureResults(SKCanvas canvas, BufferedSnapshot? buffered)
     {
         _combatEffects.ReceiveJournal(buffered?.Snapshot.CombatJournal ?? default, buffered?.ReceivedAtTimestamp ?? _timestampProvider());
-        using var paint = new SKPaint { Color = CombatSettings.DefenseText, IsAntialias = true };
-        using var font = new SKFont(SKTypeface.Default, 14);
-        foreach (var (entry, _) in _combatEffects.Results)
-        {
-            var (x, y) = _camera.WorldToScreen(entry.X, entry.Y, _viewportW, _viewportH);
-            canvas.DrawText(entry.Type == CombatEventType.Intercept ? "Перехват" : "Промах", x + 10, y - 10, font, paint);
-        }
     }
 }

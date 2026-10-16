@@ -220,7 +220,7 @@ public class PhaseThreeSessionRoundtripTests
         internal async Task Advance(long delta)
         {
             await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Add(ref _now, delta);
+            Interlocked.Add(ref _now, delta * 4);
             await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
         }
         internal Task Route(ScreenEvent action, string? payload = null) => (Task)Invoke(Window, "HandleScreenEvent", action, payload)!;

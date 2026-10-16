@@ -91,7 +91,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
     internal async Task<AuthoritativeSnapshot> Advance(long deltaMs)
     {
         await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-        Interlocked.Add(ref _now, deltaMs);
+        Interlocked.Add(ref _now, deltaMs * 4);
         await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
         return Engine.CaptureSnapshot();
     }

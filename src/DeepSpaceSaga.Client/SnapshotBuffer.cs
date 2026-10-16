@@ -284,6 +284,6 @@ public sealed class SnapshotBuffer
 
         // Scale high-resolution time first: truncating real milliseconds at x100
         // quantizes motion into 100 ms jumps even on an evenly paced display.
-        return (long)(elapsedTicks * (1000.0 * (int)speed / Stopwatch.Frequency));
+        return (long)(elapsedTicks * (1000.0 * speed.MotionTimeMultiplier() / Stopwatch.Frequency));
     }
 }
