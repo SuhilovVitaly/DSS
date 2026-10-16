@@ -93,6 +93,32 @@ public class TacticalMapSmoothnessTests
     }
 
     [Fact]
+    public void Hostile_visual_prediction_keeps_curvature_between_snapshots()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock);
+        var segment = new HostileMotionSegment(0, 100, 0, 0, 0, 3, 0, 0, 12);
+        var hostile = new ObjectMotionSnapshot("mukha", 0, 0, 3, 0,
+            RenderObjectType: SpaceObjectType.NpcShip,
+            HostileCombat: new("player", "engine", "weapon", 50, true, HostileCombatPhase.FlankApproach, segment));
+        buffer.Update(new(1, 0, SimulationSpeed.Speed1, [hostile]));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        foreach (int ms in new[] { 100, 250, 500, 750, 1000 })
+        {
+            clock = Stopwatch.Frequency * ms / 1000;
+            screen.Render(surface.Canvas, 1280, 720);
+            var pose = Assert.Single(screen.RenderStates).Predicted;
+            double angle = 12 * Math.PI / 180 * ms / 1000.0;
+            double radius = 30 / (12 * Math.PI / 180);
+            Assert.Equal(radius * (1 - Math.Cos(angle)), pose.X, 5);
+            Assert.Equal(-radius * Math.Sin(angle), pose.Y, 5);
+            Assert.Equal(12 * ms / 1000.0, pose.Direction, 5);
+        }
+        Assert.Equal(100, hostile.HostileCombat!.Segment.DurationMs);
+    }
+
+    [Fact]
     public void Hostile_visual_pose_is_continuous_when_next_segment_arrives()
     {
         long clock = 0;

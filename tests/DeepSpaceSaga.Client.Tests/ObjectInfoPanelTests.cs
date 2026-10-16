@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Globalization;
 using System.Text.Json;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
@@ -132,6 +133,30 @@ public class ObjectInfoPanelTests
             row.Value.Contains("0/25") && row.Value.Contains(GameSessionScreen.CombatText("Destroyed", "Уничтожен")));
         Assert.DoesNotContain(ObjectInfoPanel.BuildLines(data with { RenderObjectType = SpaceObjectType.UnknownSpaceObject }),
             row => row.Label.Contains("Engine") || row.Label.Contains("Weapon"));
+    }
+
+    [Theory]
+    [InlineData(1280)]
+    [InlineData(900)]
+    public void Long_module_labels_and_values_fit_both_columns(int viewportWidth)
+    {
+        var panel = new ObjectInfoPanel();
+        var data = new ObjectInfoPanelData("ship", "Player Ship", 2, 0, SpaceObjectType.PlayerShip,
+            Modules: [new("room", "Launcher Living quarters MK I (4 cabins)", 60, 60, 150, 150, null, false)]);
+        using var bitmap = new SKBitmap(viewportWidth, 900);
+        using var canvas = new SKCanvas(bitmap);
+        panel.Render(canvas, viewportWidth, 8, data, null, 900);
+        var rows = panel.BuildRenderLines(data);
+        using var paint = new SKPaint { TextSize = 12, Typeface = XenonStyle.TypefaceRegular };
+        float imageWidth = Math.Min(200, Math.Max(48, panel.CaptionRect.Width - 296));
+        float textWidth = panel.CaptionRect.Width - imageWidth - 24;
+        Assert.All(rows, row =>
+        {
+            Assert.True(paint.MeasureText(row.Label) <= textWidth * .45f - 6 + .01f);
+            Assert.True(paint.MeasureText(row.Value) <= textWidth * .55f + .01f);
+        });
+        Assert.Contains("Living", string.Join(" ", rows.Select(r => r.Label)));
+        Assert.Contains("150/150", string.Concat(rows.Select(r => r.Value)));
     }
 
     private static StationMarketKnowledgeSnapshot Market(string id = "STATION-A", bool stale = false, bool available = true) =>
@@ -410,7 +435,7 @@ public class ObjectInfoPanelTests
         panel.Render(canvas, ScreenWidth, 8, null, data);
         int lineCount = ObjectInfoPanel.BuildLines(data).Count;
         Assert.Equal(extended ? 20 : 8, lineCount);
-        Assert.Equal(Math.Max(162f, 12f + lineCount * 16f), panel.RowBodyRects[1].Height);
+        Assert.Equal(Math.Max(162f, 12f + panel.BuildRenderLines(data).Count * 16f), panel.RowBodyRects[1].Height);
         Assert.Equal(162f, panel.RowBodyRects[0].Height);
         Assert.Equal(panel.RowBodyRects[0].Bottom, panel.RowCaptionRects[1].Top);
         Assert.Equal(panel.RowBodyRects[1].Bottom, panel.BodyRect.Bottom);

@@ -1543,16 +1543,26 @@ public sealed partial class GameSessionScreen : IScreen
         if (elapsedMs == 0 && state.Orbit is null) return new(state);
         if (state.HostileCombat is { Segment: { } segment } && elapsedMs > 0)
         {
-            // Engine confirms only one 100 ms steering segment at a time. Keep its
-            // endpoint velocity for the map until the next 1 Hz snapshot arrives;
-            // the combat predictor itself must still stop at the confirmed endpoint.
-            var confirmed = _predictor.Predict(state, elapsedMs);
-            long unconfirmedMs = Math.Max(0, elapsedMs - Math.Max(0, segment.DurationMs - segment.ElapsedMs));
-            if (unconfirmedMs == 0) return new(confirmed);
-            double radians = confirmed.Direction * Math.PI / 180;
-            double distance = confirmed.SpeedKmS * 10 * (unconfirmedMs / 1000.0);
-            return new(confirmed, confirmed.X + distance * Math.Sin(radians),
-                confirmed.Y - distance * Math.Cos(radians), confirmed.Direction);
+            // Continue confirmed curvature through one snapshot interval for
+            // presentation; authoritative combat prediction stays segment-bounded.
+            long remainingMs = Math.Max(0, segment.DurationMs - segment.ElapsedMs);
+            var confirmed = _predictor.Predict(state, Math.Min(elapsedMs, remainingMs));
+            long curveMs = Math.Min(Math.Max(0, elapsedMs - remainingMs), 1000);
+            var continuation = segment with
+            {
+                StartX = confirmed.X,
+                StartY = confirmed.Y,
+                StartDirectionDegrees = confirmed.Direction,
+                StartSpeedKmS = confirmed.SpeedKmS,
+                AccelerationKmS2 = 0,
+                DurationMs = curveMs
+            };
+            var sample = HostileOrbitMath.Sample(continuation, curveMs);
+            long coastMs = Math.Max(0, elapsedMs - remainingMs - curveMs);
+            double radians = sample.Direction * Math.PI / 180;
+            double distance = sample.SpeedKmS * 10 * (coastMs / 1000.0);
+            return new(confirmed, sample.X + distance * Math.Sin(radians),
+                sample.Y - distance * Math.Cos(radians), sample.Direction);
         }
         if (_predictor is LinearMotionPredictor &&
             LinearMotionPredictor.TryPredictLinearPosition(state, elapsedMs, out double x, out double y))
