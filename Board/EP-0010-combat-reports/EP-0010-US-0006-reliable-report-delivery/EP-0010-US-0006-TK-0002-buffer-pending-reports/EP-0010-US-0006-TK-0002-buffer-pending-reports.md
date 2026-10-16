@@ -4,14 +4,14 @@ story: EP-0010-US-0006-reliable-report-delivery
 ticket: EP-0010-US-0006-TK-0002-buffer-pending-reports
 title: "Потокобезопасное накопление перед UI"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0006-TK-0001-mailbox-report-merge"]
 files_touched: 3
 serves: ["US06-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Потокобезопасное накопление перед UI
@@ -87,3 +87,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Сохранить события, которые UI не успел обработать до замены Latest. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Receive path retains report deltas before world-sequence rejection; drain acknowledges contiguous sequence only, preserving delayed gaps. Pending limit4096, bounded recent payload cache4096, explicit conflicts/overflow; null/default never clear pending. Five inbox cases plus mailbox/reliability/buffer regressions PASS (28). Includes concurrent producer/drain and 10000-event memory proof. Client compile/scoped format/diff PASS.

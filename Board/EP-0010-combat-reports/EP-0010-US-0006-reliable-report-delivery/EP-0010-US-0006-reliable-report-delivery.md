@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0005-report-save-continuation"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ EP-0010-US-0005-report-save-continuation Ticket DAG ниже имеет прио
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+Mailbox and session inbox preserve every report across coalescing, legacy nulls and reordered snapshots; first received batch uses explicit baseline. Sequence ordering, conflict/overflow faults, lock ownership, drain and bounded memory reviewed. 28 delivery/buffer cases PASS. Screen drain integration remains US0010.

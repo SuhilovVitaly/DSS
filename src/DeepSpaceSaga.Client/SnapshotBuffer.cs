@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
 
@@ -22,6 +23,12 @@ public sealed class SnapshotBuffer
 {
     private readonly object _sync = new();
     private readonly SessionEventHistory _events = new();
+    private readonly CombatReportInbox _combatReports = new();
+
+    internal ImmutableArray<BattleReportSnapshot> DrainCombatReports()
+    {
+        lock (_sync) return _combatReports.Drain();
+    }
     private readonly Dictionary<long, long> _combatImpactReceivedAt = new();
 
     /// <summary>First local receipt of a session impact, retained across coalesced snapshots.</summary>
@@ -85,6 +92,7 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            _combatReports.Receive(snapshot.CombatReports);
             if (!snapshot.CombatImpacts.IsDefaultOrEmpty)
                 foreach (var impact in snapshot.CombatImpacts)
                     _combatImpactReceivedAt.TryAdd(impact.EventId, now);
