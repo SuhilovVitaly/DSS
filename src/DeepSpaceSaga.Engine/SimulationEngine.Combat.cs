@@ -144,7 +144,7 @@ public sealed partial class SimulationEngine
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
         AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, targetObjectId!, id,
-            origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo"));
+            origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo", LauncherModuleId: moduleId));
         if (mode.BreakdownChancePercent > 0)
         {
             int roll = _launcherBreakdownRng.NextRoll();

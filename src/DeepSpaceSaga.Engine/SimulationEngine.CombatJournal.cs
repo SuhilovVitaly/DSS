@@ -5,8 +5,12 @@ public sealed partial class SimulationEngine
 {
     private readonly List<CombatJournalEntry> _combatJournal = new();
     private long _combatJournalSequence;
-    private void AppendCombatEvent(CombatJournalEntry entry) =>
-        _combatJournal.Add(entry with { EventId = checked(++_combatJournalSequence) });
+    private void AppendCombatEvent(CombatJournalEntry entry)
+    {
+        var committed = entry with { EventId = checked(++_combatJournalSequence) };
+        _combatJournal.Add(committed);
+        ObserveCombatReportFact(committed);
+    }
 
     private void AppendCountermeasureEvent(SpaceObjectRuntime projectile, double time, CombatEventType type,
         string result, int? roll = null, CountermeasureTerminationKind? termination = null)

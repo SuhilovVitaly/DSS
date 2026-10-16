@@ -26,7 +26,7 @@
 | [EP-0010-US-0002-TK-0001-report-outbox](EP-0010-US-0002-range-reports/EP-0010-US-0002-TK-0001-report-outbox/EP-0010-US-0002-TK-0001-report-outbox.md) | IMPLEMENTED | 4 focused PASS; build/format PASS | OPEN / по scope |
 | [EP-0010-US-0002-TK-0002-first-range-entry](EP-0010-US-0002-range-reports/EP-0010-US-0002-TK-0002-first-range-entry/EP-0010-US-0002-TK-0002-first-range-entry.md) | IMPLEMENTED | 7 focused + 4 outbox + 14 regressions PASS | OPEN / по scope |
 | [EP-0010-US-0003-TK-0001-captured-reporters](EP-0010-US-0003-launch-reports/EP-0010-US-0003-TK-0001-captured-reporters/EP-0010-US-0003-TK-0001-captured-reporters.md) | IMPLEMENTED | 5 focused + 11 regressions PASS | OPEN / по scope |
-| [EP-0010-US-0003-TK-0002-confirmed-launches](EP-0010-US-0003-launch-reports/EP-0010-US-0003-TK-0002-confirmed-launches/EP-0010-US-0003-TK-0002-confirmed-launches.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0003-TK-0002-confirmed-launches](EP-0010-US-0003-launch-reports/EP-0010-US-0003-TK-0002-confirmed-launches/EP-0010-US-0003-TK-0002-confirmed-launches.md) | IMPLEMENTED | 5 focused; 26 report/combat PASS | OPEN / по scope |
 | [EP-0010-US-0004-TK-0001-intercept-results](EP-0010-US-0004-combat-result-reports/EP-0010-US-0004-TK-0001-intercept-results/EP-0010-US-0004-TK-0001-intercept-results.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0004-TK-0002-contact-summary](EP-0010-US-0004-combat-result-reports/EP-0010-US-0004-TK-0002-contact-summary/EP-0010-US-0004-TK-0002-contact-summary.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0005-TK-0001-save-schema-validation](EP-0010-US-0005-report-save-continuation/EP-0010-US-0005-TK-0001-save-schema-validation/EP-0010-US-0005-TK-0001-save-schema-validation.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -68,3 +68,5 @@ US0001 review: оба AC проверены, Contracts210/210, build/format/diff
 US0002: TK0001 5f682d2dfe8e47ba5dda007390e12c31c3e3b2ad published/remote verified. TK0002 E01 implemented and self-reviewed; focused11 + existing combat14 PASS. Full Engine suite cancelled without result; not a green gate.
 
 US0002 TK0002 00d3c9d8afdfe6ba992e126bffc68c207ccd06fc published/remote verified; story self-review complete. US0003 identity helper implemented, 16 report cases PASS.
+
+US0003 TK0001 4b6b1d0d6419ff51eef8c026ad9d300a2645e0ac published/remote verified. TK0002 launches implemented, 26 cases PASS, story self-review complete.

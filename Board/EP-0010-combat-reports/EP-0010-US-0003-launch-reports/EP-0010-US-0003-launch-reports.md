@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0002-range-reports"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ EP-0010-US-0002-range-reports Ticket DAG ниже имеет приоритет 
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+Captured-role and confirmed-launch AC implemented. 26 report/journal/burst cases PASS. Checked event authority order, actual projectile identity, masking and no scanner replay. Runtime outcomes and existing journal IDs preserved. Native acceptance deferred to US0011.

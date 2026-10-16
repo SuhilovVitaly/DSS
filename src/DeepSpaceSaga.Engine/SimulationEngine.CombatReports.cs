@@ -53,5 +53,40 @@ public sealed partial class SimulationEngine
         }
     }
 
-    private void ObserveCombatReportFact(CombatJournalEntry entry) { }
+    private void ObserveCombatReportFact(CombatJournalEntry entry)
+    {
+        if (entry.Type != CombatEventType.Launch) return;
+        var projectile = _objects.Find(o => o.InitialMotion.ObjectId == entry.ProjectileObjectId);
+        var owner = _objects.Find(o => o.InitialMotion.ObjectId == entry.ActorObjectId);
+        if (projectile is null || owner is null) return;
+        BattleReportKind kind;
+        BattleReportReporterSnapshot reporter;
+        if (projectile.InitialMotion.Torpedo is { } torpedo)
+        {
+            if (owner.InitialMotion.ObjectId == PlayerShipObjectId)
+            {
+                kind = BattleReportKind.PlayerTorpedoLaunch;
+                reporter = CaptureReportIdentity(owner, torpedo.LauncherModuleId, BattleReportReporterRole.TorpedoOperator);
+            }
+            else
+            {
+                if (!owner.IsKnown || GetRelationToPlayer(owner) != PlayerRelation.Enemy || torpedo.TargetObjectId != PlayerShipObjectId) return;
+                var player = _objects.Find(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed);
+                var scanner = player is null ? null : CombatReportScanner(player, entry.MotionTimeMs);
+                if (scanner is null) return;
+                kind = BattleReportKind.EnemyTorpedoLaunch;
+                reporter = CaptureReportIdentity(player!, scanner.ModuleId, BattleReportReporterRole.ScannerOperator);
+            }
+        }
+        else if (projectile.InitialMotion.Countermeasure is { } defense && owner.InitialMotion.ObjectId == PlayerShipObjectId)
+        {
+            kind = BattleReportKind.PlayerCountermeasureLaunch;
+            reporter = CaptureReportIdentity(owner, defense.LauncherModuleId, BattleReportReporterRole.CountermeasureOperator);
+        }
+        else return;
+        var source = CaptureKnownParticipant(entry.ActorObjectId);
+        var target = CaptureKnownParticipant(entry.TargetObjectId);
+        EmitCombatReport(new(0, entry.MotionTimeMs, kind, entry.ProjectileObjectId, reporter,
+            source.Id, source.Name, target.Id, target.Name, entry.ProjectileObjectId, entry.LauncherModuleId));
+    }
 }

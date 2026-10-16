@@ -4,14 +4,14 @@ story: EP-0010-US-0003-launch-reports
 ticket: EP-0010-US-0003-TK-0002-confirmed-launches
 title: "E02–E04 из фактов пуска"
 stage: draft
-status: planned
+status: implemented
 layer: engine
 depends_on: ["EP-0010-US-0003-TK-0001-captured-reporters"]
 files_touched: 4
 serves: ["US03-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # E02–E04 из фактов пуска
@@ -88,3 +88,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Связать фактические пуски с новой панелью без второй боевой логики. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Journal commits EventId before observing; torpedo launch carries existing LauncherModuleId. Structured runtime projectile kind selects E02/E03/E04. Actual burst shots remain distinct, rejection/skips absent, disabled scanner events are not replayed, hidden/foreign battles suppressed. Five launch cases plus prior report16 + journal1 + burst4 PASS (26). Engine compile, scoped format and diff PASS.
