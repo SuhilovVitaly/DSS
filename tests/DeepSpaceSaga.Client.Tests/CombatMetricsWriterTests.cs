@@ -11,6 +11,64 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class CombatMetricsWriterTests
 {
     [Fact]
+    public async Task Directory_quota_removes_oldest_metrics_and_keeps_valid_rotated_records()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "dss-metrics-quota-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(directory);
+        try
+        {
+            Assert.Equal(100 * 1024 * 1024, CombatMetricsWriter.DirectoryLimitBytes);
+            string old = Path.Combine(directory, "combat-old-000.jsonl");
+            await File.WriteAllTextAsync(old, new string('x', 6000));
+            File.SetLastWriteTimeUtc(old, DateTime.UtcNow.AddDays(-2));
+            string newer = Path.Combine(directory, "combat-newer-000.jsonl");
+            await File.WriteAllTextAsync(newer, "{}\n");
+            File.SetLastWriteTimeUtc(newer, DateTime.UtcNow.AddDays(-1));
+            string unrelated = Path.Combine(directory, "notes.txt");
+            await File.WriteAllTextAsync(unrelated, "Keep me");
+            await using (var first = new CombatMetricsWriter(directory, 4096))
+            {
+                first.Record(MetricsSnapshot(1));
+            }
+            Assert.False(File.Exists(old));
+            Assert.True(File.Exists(newer));
+            await using (var second = new CombatMetricsWriter(directory, 4096))
+            {
+                for (int i = 2; i < 32; i++) second.Record(MetricsSnapshot(i));
+            }
+            var files = new DirectoryInfo(directory).GetFiles("combat-*.jsonl");
+            Assert.InRange(files.Sum(f => f.Length), 1, 4096);
+            Assert.True(files.Length > 1);
+            Assert.Equal("Keep me", await File.ReadAllTextAsync(unrelated));
+            foreach (var file in files)
+                foreach (string line in await File.ReadAllLinesAsync(file.FullName))
+                    using (JsonDocument.Parse(line)) { }
+        }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Fact]
+    public async Task Concurrent_sessions_share_quota_and_oversized_records_are_dropped()
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "dss-metrics-quota-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var first = new CombatMetricsWriter(directory, 8192);
+            var second = new CombatMetricsWriter(directory, 8192);
+            for (int i = 0; i < 32; i++) { first.Record(MetricsSnapshot(i)); second.Record(MetricsSnapshot(i)); }
+            first.Record(MetricsSnapshot(33) with { PlayerShipObjectId = new string('x', 9000) });
+            await Task.WhenAll(first.DisposeAsync().AsTask(), second.DisposeAsync().AsTask());
+            Assert.Null(first.Error); Assert.Null(second.Error);
+            Assert.True(first.DroppedRecords > 0);
+            Assert.InRange(new DirectoryInfo(directory).GetFiles("combat-*.jsonl").Sum(f => f.Length), 0, 8192);
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    private static AuthoritativeSnapshot MetricsSnapshot(long sequence) => new((ulong)sequence, 0, SimulationSpeed.Speed0, [],
+        InstalledModules: [new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [], LauncherCombat: new(10, 90, 150))]);
+
+    [Fact]
     public async Task Real_session_automatically_records_authoritative_and_rendered_combat_state()
     {
         string directory = Path.Combine(Path.GetTempPath(), "dss-combat-metrics-" + Guid.NewGuid().ToString("N"));

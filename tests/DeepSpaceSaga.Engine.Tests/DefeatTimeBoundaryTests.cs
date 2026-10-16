@@ -157,7 +157,7 @@ public class DefeatTimeBoundaryTests
         now += 100;
         var fresh = engine.CaptureSnapshot(advanceClock: true);
         Assert.Equal(SessionOutcomeState.Running, fresh.EffectiveOutcome.State);
-        Assert.Equal(100, fresh.MotionTimeMs);
-        Assert.Equal(30000, fresh.GameTimeMs);
+        Assert.Equal(25, fresh.MotionTimeMs);
+        Assert.Equal(7500, fresh.GameTimeMs);
     }
 }

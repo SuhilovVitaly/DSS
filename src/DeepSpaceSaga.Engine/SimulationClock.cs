@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine;
 /// Immutable snapshot of clock state, captured atomically under lock.
 /// </summary>
 public readonly record struct SimulationClockState(long GameTimeMs, SimulationSpeed Speed,
-    long? SimulationTimeMs = null)
+    long? SimulationTimeMs = null, int MotionQuarterRemainder = 0)
 {
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;
 }
@@ -23,7 +23,7 @@ public sealed class SimulationClock
     private long _lastRealTick;
     private readonly Func<long> _realTimeMs;
     private bool _terminalStopped;
-    private long _motionQuarterRemainder;
+    private int _motionQuarterRemainder;
 
     public SimulationClock(SimulationSpeed initialSpeed = SimulationSpeed.Speed1)
         // Match the client's high-resolution monotonic source; coarse platform ticks
@@ -69,7 +69,7 @@ public sealed class SimulationClock
         // quarter-speed updates shorter than 4 real ms would lose motion time.
         long quarters = deltaReal * (int)Speed + _motionQuarterRemainder;
         SimulationTimeMs += quarters / 4;
-        _motionQuarterRemainder = quarters % 4;
+        _motionQuarterRemainder = (int)(quarters % 4);
     }
 
     /// <summary>
@@ -85,7 +85,7 @@ public sealed class SimulationClock
             _lastRealTick = now;
 
             Advance(deltaReal);
-            return new SimulationClockState(GameTimeMs, Speed, SimulationTimeMs);
+            return new SimulationClockState(GameTimeMs, Speed, SimulationTimeMs, _motionQuarterRemainder);
         }
     }
 
@@ -97,7 +97,7 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            return new SimulationClockState(GameTimeMs, Speed, SimulationTimeMs);
+            return new SimulationClockState(GameTimeMs, Speed, SimulationTimeMs, _motionQuarterRemainder);
         }
     }
 
@@ -106,12 +106,13 @@ public sealed class SimulationClock
     /// Sets GameTimeMs and Speed directly, without accumulating any real time.
     /// Resets the real-time baseline so subsequent Update() calls measure from now.
     /// </summary>
-    public void Reset(long gameTimeMs, SimulationSpeed speed, long? simulationTimeMs = null)
+    public void Reset(long gameTimeMs, SimulationSpeed speed, long? simulationTimeMs = null, int motionQuarterRemainder = 0)
     {
+        if (motionQuarterRemainder is < 0 or > 3) throw new ArgumentOutOfRangeException(nameof(motionQuarterRemainder));
         lock (_lock)
         {
             _terminalStopped = false;
-            _motionQuarterRemainder = 0;
+            _motionQuarterRemainder = motionQuarterRemainder;
             GameTimeMs = gameTimeMs;
             // Legacy saves used one timestamp for both domains. Preserve their baselines.
             SimulationTimeMs = simulationTimeMs ?? gameTimeMs;

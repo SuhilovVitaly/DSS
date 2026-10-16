@@ -104,7 +104,7 @@ public class PhaseThreeCombatEndToEndTests
         {
             Assert.Equal(0, (time - _time) % (int)speed);
             Engine.SetSpeed(speed);
-            Interlocked.Add(ref _now, (time - _time) / (int)speed); _time = time;
+            Interlocked.Add(ref _now, (time - _time) / (int)speed * 4); _time = time;
             Engine.SetSpeed(SimulationSpeed.Speed0);
             return Engine.CaptureSnapshot();
         }

@@ -11,6 +11,11 @@ namespace DeepSpaceSaga.Client;
 /// <summary>Always-on, bounded, asynchronous evidence for combat motion and presentation.</summary>
 internal sealed class CombatMetricsWriter : IAsyncDisposable
 {
+    internal const long DirectoryLimitBytes = 100 * 1024 * 1024;
+    private static readonly SemaphoreSlim DiskGate = new(1, 1);
+    private static readonly Dictionary<string, long> ActiveFiles = new(StringComparer.OrdinalIgnoreCase);
+    private readonly long _limitBytes;
+    private readonly long _partBytes;
     internal static string DefaultDirectory => Path.Combine(AppContext.BaseDirectory, "CombatMetrics");
     private readonly string _directory;
     private readonly string _stem = $"combat-{DateTime.UtcNow:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}";
@@ -35,9 +40,12 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
     internal Exception? Error { get; private set; }
     internal long DroppedRecords => Interlocked.Read(ref _dropped);
 
-    internal CombatMetricsWriter(string? directory = null)
+    internal CombatMetricsWriter(string? directory = null, long limitBytes = DirectoryLimitBytes)
     {
-        _directory = directory ?? DefaultDirectory;
+        ArgumentOutOfRangeException.ThrowIfLessThan(limitBytes, 4096);
+        _directory = Path.GetFullPath(directory ?? DefaultDirectory);
+        _limitBytes = limitBytes;
+        _partBytes = Math.Min(10 * 1024 * 1024, limitBytes / 4);
         _worker = Task.Run(WriteLoop);
     }
 
@@ -130,15 +138,19 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
         {
             await foreach (var record in _records.Reader.ReadAllAsync())
             {
-                if (writer is null || bytes >= 64 * 1024 * 1024)
+                string line = JsonSerializer.Serialize(new { DroppedRecords, Frame = record }, Options);
+                long lineBytes = System.Text.Encoding.UTF8.GetByteCount(line) + 1;
+                await DiskGate.WaitAsync();
+                try
                 {
-                    if (writer is not null) await writer.DisposeAsync();
                     Directory.CreateDirectory(_directory);
-                    FilePath = Path.Combine(_directory, $"{_stem}-{part++:D3}.jsonl");
-                    writer = new StreamWriter(new FileStream(FilePath, FileMode.CreateNew, FileAccess.Write, FileShare.Read,
-                        65536, FileOptions.Asynchronous | FileOptions.SequentialScan))
-                    { AutoFlush = true };
-                    var header = new
+                    if (writer is not null && bytes + lineBytes > _partBytes)
+                    {
+                        await writer.DisposeAsync();
+                        ActiveFiles.Remove(FilePath!);
+                        writer = null;
+                    }
+                    string? header = writer is null ? JsonSerializer.Serialize(new
                     {
                         Kind = "session",
                         SchemaVersion = 1,
@@ -148,14 +160,29 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
                         WorldUnitsPerKm = 10,
                         TimeUnit = "physical milliseconds",
                         VisualSampleIntervalMs = 200,
-                        Part = part - 1
-                    };
-                    await writer.WriteLineAsync(JsonSerializer.Serialize(header, Options));
-                    bytes = 0;
+                        Part = part
+                    }, Options) : null;
+                    long headerBytes = header is null ? 0 : System.Text.Encoding.UTF8.GetByteCount(header) + 1;
+                    if (!ReserveSpace(lineBytes + headerBytes))
+                    {
+                        Interlocked.Increment(ref _dropped);
+                        continue;
+                    }
+                    if (header is not null)
+                    {
+                        FilePath = Path.Combine(_directory, $"{_stem}-{part++:D3}.jsonl");
+                        writer = new StreamWriter(new FileStream(FilePath, FileMode.CreateNew, FileAccess.Write, FileShare.Read,
+                            65536, FileOptions.Asynchronous | FileOptions.SequentialScan))
+                        { AutoFlush = true, NewLine = "\n" };
+                        ActiveFiles[FilePath] = 0;
+                        await writer.WriteLineAsync(header);
+                        bytes = headerBytes;
+                    }
+                    await writer!.WriteLineAsync(line);
+                    bytes += lineBytes;
+                    ActiveFiles[FilePath!] = bytes;
                 }
-                string line = JsonSerializer.Serialize(new { DroppedRecords, Frame = record }, Options);
-                bytes += System.Text.Encoding.UTF8.GetByteCount(line) + 1;
-                await writer.WriteLineAsync(line);
+                finally { DiskGate.Release(); }
             }
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException or JsonException or NotSupportedException)
@@ -166,10 +193,36 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
         {
             if (writer is not null)
             {
+                await DiskGate.WaitAsync();
                 try { await writer.DisposeAsync(); }
                 catch (Exception error) when (error is IOException or UnauthorizedAccessException) { Error = error; }
+                finally { ActiveFiles.Remove(FilePath!); DiskGate.Release(); }
             }
         }
+    }
+
+    // Only our top-level metric files are eligible for removal. Open sessions retain
+    // their current part; when space cannot be reclaimed, diagnostics drop records.
+    private bool ReserveSpace(long incomingBytes)
+    {
+        if (incomingBytes > _limitBytes) return false;
+        var files = new DirectoryInfo(_directory).GetFiles("combat-*.jsonl")
+            .OrderBy(f => f.LastWriteTimeUtc).ThenBy(f => f.Name, StringComparer.Ordinal).ToArray();
+        // Windows directory entries can report an old length while a file is open.
+        long total = files.Sum(f => ActiveFiles.TryGetValue(f.FullName, out long size) ? size : f.Length);
+        foreach (var file in files)
+        {
+            if (incomingBytes <= _limitBytes && total <= _limitBytes - incomingBytes) return true;
+            if (ActiveFiles.ContainsKey(file.FullName)) continue;
+            try
+            {
+                long size = file.Length;
+                file.Delete();
+                total -= size;
+            }
+            catch (Exception error) when (error is IOException or UnauthorizedAccessException) { }
+        }
+        return incomingBytes <= _limitBytes && total <= _limitBytes - incomingBytes;
     }
 
     public async ValueTask DisposeAsync()

@@ -442,7 +442,7 @@ public sealed partial class SimulationEngine : IDisposable
             // null for both.
             ActiveObjectId = null;
             SelectedObjectId = null;
-            _clock.Reset(gs.GameTimeMs, speed, gs.MotionTimeMs);
+            _clock.Reset(gs.GameTimeMs, speed, gs.MotionTimeMs, gs.MotionQuarterRemainder);
             _sessionOutcome = SessionOutcomeSnapshot.Running;
             _nextEngineCycleId = 0;
             _nextShipEventId = 0;
@@ -1155,7 +1155,7 @@ public sealed partial class SimulationEngine : IDisposable
             DialogueState: _dialogue.Save(),
             CommandReceipts: CaptureCommandReceipts(),
             PendingCommands: CapturePendingCommands(),
-            EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs,
+            EconomyTime: CaptureEconomyTime(), SimulationTimeMs: gameTimeMs, MotionQuarterRemainder: clockState.MotionQuarterRemainder,
             CatalogCompatibility: _registry.CatalogCompatibility,
             TradingMap: _tradingMap,
             StationResourceFields: _stationResourceFields,
