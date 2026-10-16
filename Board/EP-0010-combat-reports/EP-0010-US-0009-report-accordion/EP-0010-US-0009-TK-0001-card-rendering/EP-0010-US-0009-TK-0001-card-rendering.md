@@ -4,14 +4,14 @@ story: EP-0010-US-0009-report-accordion
 ticket: EP-0010-US-0009-TK-0001-card-rendering
 title: "Рендер раскрытой и свёрнутой карточки"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0008-TK-0004-catalog-and-cache"]
 files_touched: 3
 serves: ["US09-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Рендер раскрытой и свёрнутой карточки
@@ -87,3 +87,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Собрать визуальную карточку из готового store, текста и assets. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Prepared immutable card geometry/wrap, cached by bounds/history/expanded ID; Render draws cached lines and prepared bitmaps only. Expanded card has16:9 illustration, separate portrait/role mark, reporter/time/body/damage. Collapsed cards only titlebar. Viewport clips long scrollable content; zero-height safe. Five offscreen render/layout cases plus28 prior report cases PASS (33); compile/scoped format/diff PASS. Native visual acceptance remains OPEN.
