@@ -4,14 +4,14 @@ story: EP-0010-US-0009-report-accordion
 ticket: EP-0010-US-0009-TK-0002-accordion-input
 title: "Ввод и навигация по карточкам"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0009-TK-0001-card-rendering"]
 files_touched: 3
 serves: ["US09-AC2"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Ввод и навигация по карточкам
@@ -87,3 +87,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Реализовать один раскрытый доклад и локальное управление списком. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Panel owns explicit focus/pointer capture and consumes all pointer/wheel input within bounds. Up/Down select, Enter expands only with panel focus; other keys retain gameplay meaning. Header clicks refresh presented geometry and keep selection visible; repeat stays open. New report auto-scroll does not change focus. Five input cases plus33 prior report cases PASS (38); Client compile/scoped format/diff PASS.

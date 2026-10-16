@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
+using Silk.NET.Input;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 
@@ -16,6 +17,8 @@ internal sealed class CombatReportPanel : IDisposable
     private int _count = -1;
     private string _caption = "";
     private string[] _emptyLines = [];
+    private bool _pointerCaptured;
+    internal bool HasFocus { get; private set; }
     internal CombatReportPanelLayout? Layout { get; private set; }
     internal SKRect Bounds => Layout?.Bounds ?? SKRect.Empty;
 
@@ -54,6 +57,11 @@ internal sealed class CombatReportPanel : IDisposable
             var accent = assets.Accent(card.Text.VisualKey);
             _line.Color = accent;
             canvas.DrawRect(new(card.Header.Left, card.Header.Top, card.Header.Right, card.Bottom), _line);
+            if (HasFocus && _store.KeyboardSelection == card.Report.Sequence)
+            {
+                _line.Color = MenuStyle.ColorText;
+                canvas.DrawRect(card.Header, _line);
+            }
             _title.Color = MenuStyle.ColorText;
             float y = card.Header.Top + 18;
             foreach (string line in card.TitleLines) { canvas.DrawText(line, card.Header.Left + 8, y, _title); y += 18; }
@@ -70,6 +78,65 @@ internal sealed class CombatReportPanel : IDisposable
             foreach (string line in card.BodyLines) { canvas.DrawText(line, Bounds.Left + 8, y, _body); y += 17; }
         }
         canvas.Restore(); canvas.Restore();
+    }
+
+    internal bool OnMouseDown(float x, float y)
+    {
+        HasFocus = Bounds.Contains(x, y);
+        _pointerCaptured = HasFocus;
+        if (!HasFocus || _store is null || Layout is null) return false;
+        if (Layout.Viewport.Contains(x, y))
+        {
+            var card = Layout.Cards.FirstOrDefault(c => c.Header.Contains(x, y + _store.ScrollOffset));
+            if (card is not null)
+            {
+                _store.Expand(card.Report.Sequence);
+                RefreshLayout();
+                EnsureSelectionVisible();
+            }
+        }
+        return true;
+    }
+
+    internal bool OnMouseMove(float x, float y) => _pointerCaptured || Bounds.Contains(x, y);
+    internal bool OnMouseUp(float x, float y)
+    {
+        bool consumed = _pointerCaptured || Bounds.Contains(x, y);
+        _pointerCaptured = false;
+        return consumed;
+    }
+
+    internal bool Scroll(float x, float y, float delta)
+    {
+        if (!Bounds.Contains(x, y) || _store is null || Layout is null) return false;
+        _store.ScrollOffset = Math.Clamp(_store.ScrollOffset - delta * 48, 0, Layout.MaxScroll);
+        return true;
+    }
+
+    internal bool OnKeyDown(Key key)
+    {
+        if (!HasFocus || _store is null || key is not (Key.Up or Key.Down or Key.Enter)) return false;
+        if (key == Key.Enter && _store.KeyboardSelection is { } selected) { _store.Expand(selected); RefreshLayout(); }
+        else if (key != Key.Enter) _store.MoveSelection(key == Key.Down ? 1 : -1);
+        EnsureSelectionVisible();
+        return true;
+    }
+
+    internal void ClearFocus() { HasFocus = false; _pointerCaptured = false; }
+    private void RefreshLayout()
+    {
+        if (_store is not null && _formatter is not null) Prepare(Bounds, _store, _formatter);
+    }
+
+    private void EnsureSelectionVisible()
+    {
+        if (_store is null || Layout is null) return;
+        var card = Layout.Cards.FirstOrDefault(c => c.Report.Sequence == _store.KeyboardSelection);
+        if (card is null) return;
+        float top = card.Header.Top - _store.ScrollOffset, bottom = card.Header.Bottom - _store.ScrollOffset;
+        if (top < Layout.Viewport.Top) _store.ScrollOffset = card.Header.Top - Layout.Viewport.Top;
+        else if (bottom > Layout.Viewport.Bottom) _store.ScrollOffset = card.Header.Bottom - Layout.Viewport.Bottom;
+        _store.ScrollOffset = Math.Clamp(_store.ScrollOffset, 0, Layout.MaxScroll);
     }
 
     private static void DrawFit(SKCanvas canvas, SKBitmap bitmap, SKRect bounds)

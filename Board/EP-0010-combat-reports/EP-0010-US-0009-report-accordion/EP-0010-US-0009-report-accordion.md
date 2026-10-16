@@ -7,7 +7,7 @@ dependencies: ["EP-0010-US-0008-report-illustrations"]
 created: 2026-10-16
 source_request: "Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами."
 current_review: complete
-validation_status: planning-only
+validation_status: automated-passed
 revision: 1
 ---
 
@@ -52,3 +52,7 @@ EP-0010-US-0008-report-illustrations Ticket DAG ниже имеет приори
 ## Review log
 
 - 2026-10-16: критерии и dependency map созданы; все тикеты draft/planned. User instruction: «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
+
+## Implementation self-review - 2026-10-16
+
+Prepared card render and accordion interaction implemented. Reviewed cached wrap, clipping, separate portrait, fallback, logical expansion, focus/pointer ownership, consumed wheel/keys and resize geometry.38 client report cases PASS. Native visual/input acceptance remains OPEN until integrated screen run.

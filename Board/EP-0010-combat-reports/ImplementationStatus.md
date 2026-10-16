@@ -40,7 +40,7 @@
 | [EP-0010-US-0008-TK-0003-damage-art](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0003-damage-art/EP-0010-US-0008-TK-0003-damage-art.md) | IMPLEMENTED | 2 PNG; all8 dimensions/visual QA PASS | OPEN / по scope |
 | [EP-0010-US-0008-TK-0004-catalog-and-cache](EP-0010-US-0008-report-illustrations/EP-0010-US-0008-TK-0004-catalog-and-cache/EP-0010-US-0008-TK-0004-catalog-and-cache.md) | IMPLEMENTED | 4 focused; 28 report/client PASS | OPEN / по scope |
 | [EP-0010-US-0009-TK-0001-card-rendering](EP-0010-US-0009-report-accordion/EP-0010-US-0009-TK-0001-card-rendering/EP-0010-US-0009-TK-0001-card-rendering.md) | IMPLEMENTED | 5 focused; 33 report/client PASS | OPEN / по scope |
-| [EP-0010-US-0009-TK-0002-accordion-input](EP-0010-US-0009-report-accordion/EP-0010-US-0009-TK-0002-accordion-input/EP-0010-US-0009-TK-0002-accordion-input.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0009-TK-0002-accordion-input](EP-0010-US-0009-report-accordion/EP-0010-US-0009-TK-0002-accordion-input/EP-0010-US-0009-TK-0002-accordion-input.md) | IMPLEMENTED | 5 focused; 38 report/client PASS | OPEN / по scope |
 | [EP-0010-US-0010-TK-0001-right-column-layout](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-TK-0001-right-column-layout/EP-0010-US-0010-TK-0001-right-column-layout.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0010-TK-0002-screen-render-and-input](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-TK-0002-screen-render-and-input/EP-0010-US-0010-TK-0002-screen-render-and-input.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0010-TK-0003-session-reset-and-defeat](EP-0010-US-0010-tactical-screen-integration/EP-0010-US-0010-TK-0003-session-reset-and-defeat/EP-0010-US-0010-TK-0003-session-reset-and-defeat.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -96,3 +96,5 @@ US0008 defense-art844942856d29d1f5c745ca5c25b369d7b696f1d3 published/remote veri
 US0008 damage-art ce47dac2100b2d5d7cccfac4e7efdf2d7c449214 published/remote verified. Catalogue/cache implemented and story self-reviewed; human art gate remains OPEN.
 
 US0008 catalogue/cache acfdce903df3e7829a40b234fe1f7e35048cced9 published/remote verified. Card rendering implemented;33 report cases PASS.
+
+US0009 card render7a62c7b7554170a7f9c50c590a8623101c64022d published/remote verified. Input implemented, story self-review complete,38 cases PASS.
