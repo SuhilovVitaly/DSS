@@ -31,7 +31,7 @@
 | [EP-0010-US-0004-TK-0002-contact-summary](EP-0010-US-0004-combat-result-reports/EP-0010-US-0004-TK-0002-contact-summary/EP-0010-US-0004-TK-0002-contact-summary.md) | IMPLEMENTED | 6 focused; 60 report/combat PASS | OPEN / по scope |
 | [EP-0010-US-0005-TK-0001-save-schema-validation](EP-0010-US-0005-report-save-continuation/EP-0010-US-0005-TK-0001-save-schema-validation/EP-0010-US-0005-TK-0001-save-schema-validation.md) | IMPLEMENTED | 13 focused PASS | OPEN / по scope |
 | [EP-0010-US-0005-TK-0002-capture-and-restore](EP-0010-US-0005-report-save-continuation/EP-0010-US-0005-TK-0002-capture-and-restore/EP-0010-US-0005-TK-0002-capture-and-restore.md) | IMPLEMENTED | 7 focused; 83 report/save/combat PASS | OPEN / по scope |
-| [EP-0010-US-0006-TK-0001-mailbox-report-merge](EP-0010-US-0006-reliable-report-delivery/EP-0010-US-0006-TK-0001-mailbox-report-merge/EP-0010-US-0006-TK-0001-mailbox-report-merge.md) | NOT STARTED | NOT RUN | OPEN / по scope |
+| [EP-0010-US-0006-TK-0001-mailbox-report-merge](EP-0010-US-0006-reliable-report-delivery/EP-0010-US-0006-TK-0001-mailbox-report-merge/EP-0010-US-0006-TK-0001-mailbox-report-merge.md) | IMPLEMENTED | 4 focused + 8 reliability PASS | OPEN / по scope |
 | [EP-0010-US-0006-TK-0002-buffer-pending-reports](EP-0010-US-0006-reliable-report-delivery/EP-0010-US-0006-TK-0002-buffer-pending-reports/EP-0010-US-0006-TK-0002-buffer-pending-reports.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0007-TK-0001-history-state](EP-0010-US-0007-report-history-and-text/EP-0010-US-0007-TK-0001-history-state/EP-0010-US-0007-TK-0001-history-state.md) | NOT STARTED | NOT RUN | OPEN / по scope |
 | [EP-0010-US-0007-TK-0002-localized-report-text](EP-0010-US-0007-report-history-and-text/EP-0010-US-0007-TK-0002-localized-report-text/EP-0010-US-0007-TK-0002-localized-report-text.md) | NOT STARTED | NOT RUN | OPEN / по scope |
@@ -78,3 +78,5 @@ US0004 TK0001 caadaa025d86a6388ac1a714092cc81a87aa70d6 published/remote verified
 US0004 summary 518efe5495721825e2fefc562ad5004a7f345fe5 published/remote verified. US0005 schema13 PASS; continuation capture/restore next.
 
 US0005 schema 5ad677422f317281f0630e7a0a99bede6ff764cd published/remote verified. Capture/restore implemented and self-reviewed, 83 cases PASS.
+
+US0005 capture/restore 9900015d413b898af49b58ee18b6896b0905d390 published/remote verified. Mailbox merge implemented, 12 cases PASS.

@@ -4,14 +4,14 @@ story: EP-0010-US-0006-reliable-report-delivery
 ticket: EP-0010-US-0006-TK-0001-mailbox-report-merge
 title: "Слияние докладов в local adapter"
 stage: draft
-status: planned
+status: implemented
 layer: local-client
 depends_on: ["EP-0010-US-0005-TK-0002-capture-and-restore"]
 files_touched: 2
 serves: ["US06-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: automated-passed
 ---
 
 # Слияние докладов в local adapter
@@ -85,3 +85,7 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Не потерять report deltas, когда world snapshots coalesce. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Mailbox merges pending report deltas by sequence, orders them, preserves fixed baseline/max latest, rejects conflicting payload/baseline/overflow. Legacy null keeps pending reports. Four mailbox cases plus eight SessionReliability regressions PASS (12 total); Client/LocalClient compile and scoped format/diff PASS. Other event streams unchanged.
