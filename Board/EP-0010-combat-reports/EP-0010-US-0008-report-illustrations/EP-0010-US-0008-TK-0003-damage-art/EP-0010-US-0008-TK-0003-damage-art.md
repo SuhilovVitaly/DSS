@@ -4,14 +4,14 @@ story: EP-0010-US-0008-report-illustrations
 ticket: EP-0010-US-0008-TK-0003-damage-art
 title: "Уничтожение противника и повреждение игрока"
 stage: draft
-status: planned
+status: implemented
 layer: client
 depends_on: ["EP-0010-US-0008-TK-0002-defense-art"]
 files_touched: 2
 serves: ["US08-AC1"]
 created: 2026-10-16
 revision: 1
-validation_status: not-run
+validation_status: artifact-verified
 ---
 
 # Уничтожение противника и повреждение игрока
@@ -82,3 +82,9 @@ git diff --check
 ## Self-containment check
 
 Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Завершить восемь вариантов и отличить попадание от уничтожения. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Artifact evidence - 2026-10-16
+
+Two separate built-in imagegen outputs normalized to opaqueRGB PNG1024x576. All eight final assets rechecked for size/mode/format; damage pair inspected at320x180. Enemy destruction has clearly separated hull sections; player damage retains Tetrarch silhouette with localized external nacelle/armor damage, no Hull HP bar. Assistant visual QA PASS, human art acceptance OPEN.
+
+Prompt set: same original cinematic isometric charcoal/teal DSS visual family and existing Tetrarch/zero-class silhouette references, no text/letters/numbers/borders/UI. enemy-ship-destroyed: swept-wing fighter decisively breaks into large wing/nacelle/fuselage pieces around contained warm explosion, distant Tetrarch intact. player-ship-damaged: intact Tetrarch with torn side module armor, exposed glowing localized damage, sparks/small debris, no catastrophic breakup. Final paths listed in scope; original sources retained in Codex generated_images.
