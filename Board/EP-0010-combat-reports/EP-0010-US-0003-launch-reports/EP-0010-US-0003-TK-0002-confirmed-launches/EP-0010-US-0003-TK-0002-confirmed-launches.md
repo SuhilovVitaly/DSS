@@ -1,0 +1,94 @@
+---
+epic: EP-0010-combat-reports
+story: EP-0010-US-0003-launch-reports
+ticket: EP-0010-US-0003-TK-0002-confirmed-launches
+title: "E02–E04 из фактов пуска"
+stage: implemented
+status: implemented
+layer: engine
+depends_on: ["EP-0010-US-0003-TK-0001-captured-reporters"]
+files_touched: 4
+serves: ["US03-AC2"]
+created: 2026-10-16
+revision: 1
+validation_status: automated-passed
+---
+
+# E02–E04 из фактов пуска
+
+## Why
+
+Связать фактические пуски с новой панелью без второй боевой логики. [История](../EP-0010-US-0003-launch-reports.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R09, R11, R12, R16, R18.
+
+## Decisions
+
+Пользователь поручил сохранить ТЗ и создать эпик с историями/тикетами (2026-10-16). Execution, art и отдельные commit/push поручены EpicExecutionPrompt2026-10-16. Самостоятельный запуск игры запрещён последующей явной инструкцией пользователя; native/human/FPS OPEN. Продуктовые решения — §§1–10 ТЗ; не выдавать A01–A10 за дополнительные ответы пользователя.
+
+## Assumptions
+
+Технические A01–A10 ТЗ. Code context ниже фиксирует исходный planning baseline; актуальные API и результаты приведены в Execution evidence и engineering CombatReports.md. Максимум 5 файлов из таблицы; Board evidence не разрешает скрытые изменения production. Layer `engine`; matching coverage `tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj`. Для purely art/evidence runtime source не меняется.
+
+## Code context
+
+| File | Current state | Allowed change |
+|---|---|---|
+| `src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs` | src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs:8 — `private void AppendCombatEvent` | Изменение только для шагов этого тикета; соседний scope запрещён |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs` | NEW — proposed; файл отсутствует на planning baseline | Изменение только для шагов этого тикета; соседний scope запрещён |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs` | src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs:146 — `CombatEventType.Launch` | Изменение только для шагов этого тикета; соседний scope запрещён |
+| `tests/DeepSpaceSaga.Engine.Tests/CombatReportLaunchTests.cs` | NEW — proposed; файл отсутствует на planning baseline | Создать/дополнить тесты только этого тикета |
+
+Read-only общий [grounding](../../Documentation.md#grounding) содержит текущие точки входа и ограничения. Остальные файлы не разрешены к изменению. Зависимости: EP-0010-US-0003-TK-0001-captured-reporters; их новый код/DTO считаются доступными только после завершения.
+
+## Public API after the change
+
+No public API change.
+
+## Implementation steps
+
+1. AppendCombatEvent сначала фиксирует присвоенный EventId и уведомляет ObserveCombatReportFact; прежние journal IDs/порядок не меняются.
+2. В торпедном Launch заполнить существующий LauncherModuleId. Различать projectile kind по структурированным фактам/состоянию, не парсить локализованные строки.
+3. Создать E02 только known Enemy->player и Scanner available; E03 player torpedo; E04 player countermeasure с фактическим оператором. Пропущенные при выключенном сканере E02 не переигрывать.
+
+## Out of scope
+
+Изменение баланса/конфигурации оружия, формул попадания, RNG, часов, поведения AI, discovery rules, посторонних журналов и незакоммиченных изменений. Никакой публикации или автоматического выполнения следующего тикета без execution-поручения. Root save version не менять в обход A07.
+
+## Invariants
+
+- Engine/renderer separation: `src/DeepSpaceSaga.Contracts/IGameSessionConnection.cs:10`; immutable snapshot: `src/DeepSpaceSaga.Contracts/AuthoritativeSnapshot.cs:11`. Через boundary нет Skia/GL.
+- Физическое время/модульный бой — EngineRequirements §Phase Four Module Combat и §§7–8 ТЗ; UI не меняет исходы/часы/sequence журнала.
+- Captured identity, privacy, once-per-target и ровно одна открытая карточка проверяются в соответствующих layers; этот тикет не ослабляет смежные гарантии.
+
+## Tests
+
+- `EnemyPlayerAndCountermeasureLaunches` (планируемый сценарий проверки).
+- `BurstCreatesOneReportPerActualShot` (планируемый сценарий проверки).
+- `RejectedAndSkippedLaunchesHaveNoReport` (планируемый сценарий проверки).
+- `EnemyNpcBattleAndUnknownLaunchAreExcluded` (планируемый сценарий проверки).
+- `DisabledScannerDoesNotReplayLaunches` (планируемый сценарий проверки).
+
+Команды ниже — исходный план воспроизведения из корня репозитория; реальные результаты — в Execution evidence и ImplementationStatus:
+
+```powershell
+dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore --filter "FullyQualifiedName~CombatReportLaunchTests"
+dotnet build src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj --no-restore
+dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs tests/DeepSpaceSaga.Engine.Tests/CombatReportLaunchTests.cs
+git diff --check
+```
+
+## Definition of Done
+
+- Шаги выполнены только в 4 разрешённых файлах, выбранный layer соблюдён.
+- Критерии US03-AC2 подтверждены именованными проверками выше и ссылками на evidence.
+- Focused проверки и соответствующий build/format проходят либо исходное падение записано отдельно; prose/art gates проверены подходящим способом.
+- Сохранены public API/invariants/out-of-scope; нет скрытой работы или нерешённых блокирующих допущений.
+- Native/human/FPS не помечены PASS по headless; статус NOT RUN/OPEN сохраняется до реального прогона.
+- Обновлён status/evidence тикета, выполнен diff check; не заявлять реализацию на основании этого planning-документа.
+
+## Self-containment check
+
+Вход: зависимости по ID, ТЗ, scope и Code context. Выход: Связать фактические пуски с новой панелью без второй боевой логики. Проверки конкретизированы. Если текущий diff требует шестого файла или второго production layer, сначала переразбить/обновить тикет, не расширять allowlist молча.
+
+## Execution evidence - 2026-10-16
+
+Journal commits EventId before observing; torpedo launch carries existing LauncherModuleId. Structured runtime projectile kind selects E02/E03/E04. Actual burst shots remain distinct, rejection/skips absent, disabled scanner events are not replayed, hidden/foreign battles suppressed. Five launch cases plus prior report16 + journal1 + burst4 PASS (26). Engine compile, scoped format and diff PASS.

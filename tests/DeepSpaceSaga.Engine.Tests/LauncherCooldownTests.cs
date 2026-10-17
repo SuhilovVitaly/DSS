@@ -45,12 +45,21 @@ public sealed class LauncherCooldownTests
     public void Npc_fires_on_cooldown_while_first_flight_is_active()
     {
         using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        var first = At(engine, 1);
-        string firstId = Assert.Single(first.Objects, o => o.Torpedo?.OwnerObjectId == Target).ObjectId;
-        var second = At(engine, 15001);
+        Assert.DoesNotContain(At(engine, 500).Objects, o => o.Torpedo?.OwnerObjectId == Target);
+        var first = At(engine, 1251);
+        var firstTorpedo = Assert.Single(first.Objects, o => o.Torpedo?.OwnerObjectId == Target);
+        long firstLaunch = firstTorpedo.Torpedo!.LaunchMotionTimeMs;
+        Assert.InRange(firstLaunch, 501, 1251);
+        long readyAt = firstLaunch + 15000;
+        Assert.Equal(firstTorpedo.ObjectId,
+            Assert.Single(At(engine, readyAt).Objects, o => o.Torpedo?.OwnerObjectId == Target).ObjectId);
+        Assert.Equal(firstTorpedo.ObjectId,
+            Assert.Single(At(engine, readyAt + 499).Objects, o => o.Torpedo?.OwnerObjectId == Target).ObjectId);
+        var second = At(engine, readyAt + 1250);
         var ids = second.Objects.Where(o => o.Torpedo?.OwnerObjectId == Target).Select(o => o.ObjectId).ToArray();
         Assert.Equal(2, ids.Length);
-        Assert.Contains(firstId, ids);
-        Assert.Equal(15001, second.CombatJournal.Last(e => e.Type == CombatEventType.Launch).MotionTimeMs);
+        Assert.Contains(firstTorpedo.ObjectId, ids);
+        Assert.InRange(second.CombatJournal.Last(e => e.Type == CombatEventType.Launch).MotionTimeMs,
+            readyAt + 500, readyAt + 1250);
     }
 }

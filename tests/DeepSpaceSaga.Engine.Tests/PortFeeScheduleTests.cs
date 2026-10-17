@@ -12,7 +12,7 @@ public class PortFeeScheduleTests
         using var engine = DockCommandTests.CreateEngine(clock:
             new SimulationClock(SimulationSpeed.Speed1, () => realMs));
         engine.SetSpeed(SimulationSpeed.Speed1);
-        realMs = 1000;
+        realMs = 4000;
         engine.ReceiveCommand(new("dock", 1, "SPC-0001", "MOD-NAV-01", NavigationComputerCommandTypes.Dock,
             TargetObjectId: "STATION-01"));
         var snapshot = engine.CaptureSnapshot(advanceClock: true);
@@ -32,7 +32,7 @@ public class PortFeeScheduleTests
         Assert.Equal(300_000 + GameCalendar.DayMs, snapshot.PortFees.NextPortFeeDueGameTimeMs);
         Assert.Equal(900, snapshot.PlayerCredits);
         Assert.Equal(SimulationSpeed.Speed1, snapshot.CurrentSpeed);
-        realMs += 288_000; // 24 calendar hours at five minutes per real second.
+        realMs += 1_152_000; // 24 calendar hours at 75 calendar seconds per real second.
         snapshot = engine.CaptureSnapshot(advanceClock: true);
         Assert.Equal(300_000 + GameCalendar.DayMs, snapshot.GameTimeMs);
         Assert.Equal(289_000, snapshot.SimulationTimeMs);

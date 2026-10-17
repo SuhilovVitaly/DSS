@@ -50,16 +50,16 @@ public class PhaseThreeCombatUiFlowTests
         var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref now)));
         engine.LoadScenario(scenario);
         var connection = new LocalGameSessionConnection(engine, directory);
-        var handle = new GameSessionHandle(connection);
+        var handle = new GameSessionHandle(connection, new SnapshotBuffer(() => System.Diagnostics.Stopwatch.GetTimestamp() * 20));
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle, uiScale: scale);
         try
         {
             await Wait(s => s.Objects.Length == 2);
             screen.OnActivated();
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Exchange(ref now, 1);
+            Interlocked.Exchange(ref now, 5004); // Include the 2–5s Speed1 automatic reaction.
             await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
-            var launched = await Wait(s => s.Objects.Any(o => o.Torpedo is not null));
+            var launched = await Wait(s => s.CurrentSpeed == SimulationSpeed.Speed0 && s.Objects.Any(o => o.Torpedo is not null));
             string target = launched.Objects.Single(o => o.Torpedo is not null).ObjectId;
             await connection.SetObjectInteractionStateAsync(null, target);
             await Wait(s => s.SelectedObjectId == target && s.InstalledModules.Count(m => m.DefensePreview?.CanFire == true) == 2);
@@ -87,21 +87,16 @@ public class PhaseThreeCombatUiFlowTests
             }
             var after = await Wait(s => s.Objects.Count(o => o.Countermeasure is not null) == 2);
             Render(); Render();
-            Assert.Equal(2, screen.DefenseFlightLabels.Count);
-            var labels = screen.DefenseFlightLabels.Values.Select(l => l.Bounds).ToArray();
-            Assert.False(labels[0].IntersectsWith(labels[1]));
-            foreach (var label in labels)
-                foreach (var hud in new[] { screen.CommandsPanel.BodyRect, screen.ObjectInfoPanel.BodyRect, screen.MapToolbarRect,
-                    screen.LastScalePanelRect, screen.LastSpeedPanelRect, screen.LastMechanicsPanelRect })
-                    Assert.False(label.IntersectsWith(new SKRect(hud.Left * scale, hud.Top * scale, hud.Right * scale, hud.Bottom * scale)),
-                        $"PR countdown hidden under HUD: {label}/{hud} at {width}x{height}/{scale}");
-            Assert.Equal(1, after.MotionTimeMs);
+            Assert.Empty(screen.DefenseFlightLabels);
+            Assert.All(screen.DefenseChanceLabels.Values, label => Assert.NotNull(label.Encounter));
+            Assert.Equal(2, screen.DefenseGeometry.Count);
+            Assert.Equal(launched.MotionTimeMs, after.MotionTimeMs);
             Assert.Equal(SimulationSpeed.Speed0, after.CurrentSpeed);
             Assert.All(after.Objects.Where(o => o.Countermeasure is not null), o =>
             {
                 Assert.Equal(target, o.Countermeasure!.TargetTorpedoId);
                 Assert.Equal(LaunchMode.Manual, o.Countermeasure.Mode);
-                Assert.Equal(1, o.Countermeasure.LaunchMotionTimeMs);
+                Assert.Equal(launched.MotionTimeMs, o.Countermeasure.LaunchMotionTimeMs);
             });
             Assert.Equal(2, after.InstalledModules.Count(m => m.Defense?.State == DefenseState.Guiding));
             Assert.Empty(after.CombatJournal.Where(e => e.Roll is not null));
@@ -132,12 +127,13 @@ public class PhaseThreeCombatUiFlowTests
         async Task<AuthoritativeSnapshot> Wait(Func<AuthoritativeSnapshot, bool> predicate)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            while (handle.Buffer.Latest is not { } buffered || !predicate(buffered.Snapshot))
+            while (true)
             {
+                handle.Buffer.PreparePresentation();
+                if (handle.Buffer.Presented is { } buffered && predicate(buffered.Snapshot)) return buffered.Snapshot;
                 Assert.Null(handle.Failure);
                 await Task.Delay(10, timeout.Token);
             }
-            return handle.Buffer.Latest!.Snapshot;
         }
     }
 }

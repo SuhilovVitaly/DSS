@@ -291,6 +291,7 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnRender(double deltaTime)
     {
+        _session?.Buffer.PreparePresentation();
         if (_grContext is null || _gl is null || _closing)
             return;
 
@@ -348,6 +349,7 @@ public sealed class SkiaWindow : IDisposable
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
+            if (screen is GameSessionScreen reportScreen) reportScreen.PrepareCombatReports();
             screen.Render(canvas, windowSize.X, windowSize.Y);
             if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
             index++;
@@ -1603,6 +1605,8 @@ public sealed class SkiaWindow : IDisposable
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
         _pendingUndockCommandId = null;
+        // The root may already be inactive under an overlay; ReplaceAll deactivates only Current.
+        _gameSessionScreen?.DisposeCombatReports();
         _gameSessionScreen = null;
         _screens.ReplaceAll(new DefeatScreen((float)GetUiScale()));
         return true;

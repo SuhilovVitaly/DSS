@@ -13,20 +13,25 @@ internal sealed class SessionEventHistory
 
     internal void Receive(AuthoritativeSnapshot snapshot)
     {
-        if (!snapshot.CommandResults.IsDefault)
-            foreach (var result in snapshot.CommandResults)
-            {
-                if (!_commands.ContainsKey(result.CommandId)) _commandOrder.Enqueue(result.CommandId);
-                _commands[result.CommandId] = result;
-            }
+        ReceiveCommandResults(snapshot.CommandResults);
         if (!snapshot.ShipEvents.IsDefault)
             foreach (var item in snapshot.ShipEvents)
             {
                 if (!_events.ContainsKey(item.EventId)) _eventOrder.Enqueue(item.EventId);
                 _events[item.EventId] = item;
             }
-        while (_commandOrder.Count > Limit) _commands.Remove(_commandOrder.Dequeue());
         while (_eventOrder.Count > Limit) _events.Remove(_eventOrder.Dequeue());
+    }
+
+    internal void ReceiveCommandResults(System.Collections.Immutable.ImmutableArray<CommandResult> results)
+    {
+        if (!results.IsDefault)
+            foreach (var result in results)
+            {
+                if (!_commands.ContainsKey(result.CommandId)) _commandOrder.Enqueue(result.CommandId);
+                _commands[result.CommandId] = result;
+            }
+        while (_commandOrder.Count > Limit) _commands.Remove(_commandOrder.Dequeue());
     }
 
     internal CommandResult? Find(string commandId) => _commands.GetValueOrDefault(commandId);

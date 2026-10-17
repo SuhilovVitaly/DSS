@@ -1,0 +1,34 @@
+{
+  "enemy-in-range": {
+    "path": "Images/UI/CombatReports/enemy-in-range.png",
+    "accent": "#F3BE62"
+  },
+  "enemy-torpedo-launch": {
+    "path": "Images/UI/CombatReports/enemy-torpedo-launch.png",
+    "accent": "#FF9860"
+  },
+  "player-torpedo-launch": {
+    "path": "Images/UI/CombatReports/player-torpedo-launch.png",
+    "accent": "#70D7E6"
+  },
+  "player-countermeasure-launch": {
+    "path": "Images/UI/CombatReports/player-countermeasure-launch.png",
+    "accent": "#70D7E6"
+  },
+  "enemy-torpedo-intercepted": {
+    "path": "Images/UI/CombatReports/enemy-torpedo-intercepted.png",
+    "accent": "#8ED9B1"
+  },
+  "enemy-ship-hit": {
+    "path": "Images/UI/CombatReports/enemy-ship-hit.png",
+    "accent": "#D9D77C"
+  },
+  "enemy-ship-destroyed": {
+    "path": "Images/UI/CombatReports/enemy-ship-destroyed.png",
+    "accent": "#8ED9B1"
+  },
+  "player-ship-damaged": {
+    "path": "Images/UI/CombatReports/player-ship-damaged.png",
+    "accent": "#FF766D"
+  }
+}

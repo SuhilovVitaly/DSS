@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
 
@@ -18,10 +19,16 @@ public sealed record SnapshotPrediction(
 /// Also tracks the client-side authoritative simulation speed
 /// (updated immediately on speed changes, without waiting for the next snapshot).
 /// </summary>
-public sealed class SnapshotBuffer
+public sealed partial class SnapshotBuffer
 {
     private readonly object _sync = new();
-    private readonly SessionEventHistory _events = new();
+    private SessionEventHistory _events = new();
+    private CombatReportInbox _combatReports = new();
+
+    internal ImmutableArray<BattleReportSnapshot> DrainCombatReports()
+    {
+        lock (_sync) return _combatReports.Drain();
+    }
     private readonly Dictionary<long, long> _combatImpactReceivedAt = new();
 
     /// <summary>First local receipt of a session impact, retained across coalesced snapshots.</summary>
@@ -85,6 +92,8 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            if (_presentationSession is not null) { _events.Receive(snapshot); return; }
+            _combatReports.Receive(snapshot.CombatReports);
             if (!snapshot.CombatImpacts.IsDefaultOrEmpty)
                 foreach (var impact in snapshot.CombatImpacts)
                     _combatImpactReceivedAt.TryAdd(impact.EventId, now);
@@ -182,6 +191,8 @@ public sealed class SnapshotBuffer
 
             lock (_sync)
             {
+                if (_presentationSession is not null)
+                    return _presented is null ? null : new SnapshotPrediction(_presented, _sceneDelta, _presented.Snapshot.CurrentSpeed, 0);
                 if (_latest is null)
                     return null;
 
@@ -284,6 +295,6 @@ public sealed class SnapshotBuffer
 
         // Scale high-resolution time first: truncating real milliseconds at x100
         // quantizes motion into 100 ms jumps even on an evenly paced display.
-        return (long)(elapsedTicks * (1000.0 * (int)speed / Stopwatch.Frequency));
+        return (long)(elapsedTicks * (1000.0 * speed.MotionTimeMultiplier() / Stopwatch.Frequency));
     }
 }

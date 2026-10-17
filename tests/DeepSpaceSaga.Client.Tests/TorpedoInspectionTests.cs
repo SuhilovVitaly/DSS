@@ -76,7 +76,7 @@ public sealed class TorpedoInspectionTests
         Assert.Contains(("Travelled", "9 km"), lines);
         Assert.Contains(("ETA", "10 s"), lines);
         Assert.Contains(("Hit chance", "100%"), lines);
-        now = Stopwatch.Frequency;
+        now = Stopwatch.Frequency * 4;
         Render(screen);
         var info = screen.SelectedOrActiveObjectInfo!.Value.Torpedo!;
         Assert.Equal(12, info.TravelledKm, 8);

@@ -7,16 +7,16 @@ public class SimulationClockTests
 {
     [Theory]
     [InlineData(SimulationSpeed.Speed0, 0)]
-    [InlineData(SimulationSpeed.Speed1, 300_000)]
-    [InlineData(SimulationSpeed.Speed2, 1_500_000)]
-    [InlineData(SimulationSpeed.Speed3, 6_000_000)]
-    [InlineData(SimulationSpeed.Speed4, 30_000_000)]
+    [InlineData(SimulationSpeed.Speed1, 75_000)]
+    [InlineData(SimulationSpeed.Speed2, 375_000)]
+    [InlineData(SimulationSpeed.Speed3, 1_500_000)]
+    [InlineData(SimulationSpeed.Speed4, 7_500_000)]
     public void One_real_second_uses_the_configured_base_pace(SimulationSpeed speed, long expected)
     {
         long realMs = 0;
         var clock = new SimulationClock(speed, () => realMs);
         realMs = 1000;
-        Assert.Equal(new SimulationClockState(expected, speed, 1000 * (int)speed), clock.UpdateAndCapture());
+        Assert.Equal(new SimulationClockState(expected, speed, 250 * (int)speed), clock.UpdateAndCapture());
     }
 
     [Fact]
@@ -27,7 +27,7 @@ public class SimulationClockTests
         Assert.Equal(new SimulationClockState(0, SimulationSpeed.Speed2, 0), clock.Capture());
         realMs = 30;
         Assert.Equal(new SimulationClockState(0, SimulationSpeed.Speed2, 0), clock.Capture());
-        Assert.Equal(new SimulationClockState(30_000, SimulationSpeed.Speed2, 100), clock.UpdateAndCapture());
+        Assert.Equal(new SimulationClockState(7500, SimulationSpeed.Speed2, 25), clock.UpdateAndCapture());
         Assert.Equal(clock.Capture(), clock.UpdateAndCapture());
     }
 
@@ -38,9 +38,9 @@ public class SimulationClockTests
         var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
         realMs = 17;
         clock.Update();
-        Assert.Equal(new SimulationClockState(5100, SimulationSpeed.Speed1, 17), clock.Capture());
+        Assert.Equal(new SimulationClockState(1275, SimulationSpeed.Speed1, 4, 1), clock.Capture());
         realMs = 43;
-        Assert.Equal(new SimulationClockState(12_900, SimulationSpeed.Speed1, 43), clock.UpdateAndCapture());
+        Assert.Equal(new SimulationClockState(3225, SimulationSpeed.Speed1, 10, 3), clock.UpdateAndCapture());
     }
 
     [Fact]
@@ -52,9 +52,9 @@ public class SimulationClockTests
         clock.UpdateAndCapture();
         realMs = 37;
         clock.SetSpeed(SimulationSpeed.Speed2);
-        Assert.Equal(new SimulationClockState(11_100, SimulationSpeed.Speed2, 37), clock.Capture());
+        Assert.Equal(new SimulationClockState(2775, SimulationSpeed.Speed2, 9, 1), clock.Capture());
         realMs = 60;
-        Assert.Equal(new SimulationClockState(45_600, SimulationSpeed.Speed2, 152), clock.UpdateAndCapture());
+        Assert.Equal(new SimulationClockState(11400, SimulationSpeed.Speed2, 38), clock.UpdateAndCapture());
     }
 
     [Fact]
@@ -64,7 +64,7 @@ public class SimulationClockTests
         var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
         realMs = 100;
         clock.SetSpeed(SimulationSpeed.Speed0);
-        var paused = new SimulationClockState(30_000, SimulationSpeed.Speed0, 100);
+        var paused = new SimulationClockState(7500, SimulationSpeed.Speed0, 25);
         Assert.Equal(paused, clock.Capture());
         realMs = 1100;
         clock.Update();
@@ -72,7 +72,7 @@ public class SimulationClockTests
         realMs = 2100;
         clock.SetSpeed(SimulationSpeed.Speed2);
         realMs = 2120;
-        Assert.Equal(new SimulationClockState(60_000, SimulationSpeed.Speed2, 200), clock.UpdateAndCapture());
+        Assert.Equal(new SimulationClockState(15000, SimulationSpeed.Speed2, 50), clock.UpdateAndCapture());
     }
 
     [Theory]
@@ -88,7 +88,7 @@ public class SimulationClockTests
         clock.Reset(900_000, SimulationSpeed.Speed1, motion);
         Assert.Equal(new SimulationClockState(900_000, SimulationSpeed.Speed1, expected), clock.Capture());
         realMs = 1007;
-        Assert.Equal(new SimulationClockState(902_100, SimulationSpeed.Speed1, expected + 7), clock.UpdateAndCapture());
+        Assert.Equal(new SimulationClockState(900525, SimulationSpeed.Speed1, expected + 1, 3), clock.UpdateAndCapture());
     }
 
     [Fact]
@@ -102,7 +102,35 @@ public class SimulationClockTests
         clock.ResetRealBaseline();
         Assert.Equal(before, clock.Capture());
         realMs = 1005;
-        Assert.Equal(new SimulationClockState(4500, SimulationSpeed.Speed1, 15), clock.UpdateAndCapture());
+        Assert.Equal(new SimulationClockState(1125, SimulationSpeed.Speed1, 3, 3), clock.UpdateAndCapture());
+    }
+
+    [Fact]
+    public void Millisecond_updates_preserve_submillisecond_motion_across_speed_changes_and_pause()
+    {
+        long now = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed1, () => now);
+        now = 1;
+        clock.SetSpeed(SimulationSpeed.Speed2); // 1 quarter of a motion millisecond.
+        now = 2;
+        clock.SetSpeed(SimulationSpeed.Speed0); // 6 quarters accumulated.
+        Assert.Equal(new SimulationClockState(450, SimulationSpeed.Speed0, 1, 2), clock.Capture());
+        now = 1000;
+        clock.SetSpeed(SimulationSpeed.Speed1);
+        now = 1002;
+        Assert.Equal(new SimulationClockState(600, SimulationSpeed.Speed1, 2), clock.UpdateAndCapture());
+    }
+
+    [Fact]
+    public void Base_pace_is_partition_invariant_at_single_real_millisecond_updates()
+    {
+        long now = 0;
+        var split = new SimulationClock(SimulationSpeed.Speed1, () => now);
+        var whole = new SimulationClock(SimulationSpeed.Speed1, () => now);
+        for (now = 1; now <= 1000; now++) split.Update();
+        now = 1000;
+        Assert.Equal(whole.UpdateAndCapture(), split.Capture());
+        Assert.Equal(250, split.SimulationTimeMs);
     }
 
     [Fact]

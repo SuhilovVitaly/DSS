@@ -240,21 +240,6 @@ public sealed class ObjectInfoPanel
                 }));
                 lines.Add((GameSessionScreen.CombatText("DesiredRadius", "Радиус орбиты"), $"{hostile.DesiredRadiusKm:0.##} " + GameSessionScreen.CombatText("Kilometers", "км")));
             }
-            if (d.Modules is { Count: > 0 } modules &&
-                d.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
-            {
-                foreach (var module in modules)
-                {
-                    string state = module.IsDestroyed
-                        ? GameSessionScreen.CombatText("Destroyed", "Уничтожен")
-                        : module.DisabledUntilMotionTimeMs is { } until && until > d.MotionTimeMs
-                            ? GameSessionScreen.CombatText("Disabled", "Выключен") + $" {Math.Ceiling((until - d.MotionTimeMs) / 1000):0} s"
-                            : GameSessionScreen.CombatText("Ready", "Готов");
-                    lines.Add((GameSessionScreen.CombatText("Module", "Модуль") + " " + module.DisplayName,
-                        GameSessionScreen.CombatText("Armor", "Броня") + $" {module.ArmorCurrent}/{module.ArmorMax} · " +
-                        GameSessionScreen.CombatText("Structure", "Структура") + $" {module.StructureCurrent}/{module.StructureMax} · {state}"));
-                }
-            }
             if (d.ClusterName is { } cluster)
             {
                 lines.Add(("Cluster", cluster));
@@ -362,6 +347,10 @@ public sealed class ObjectInfoPanel
     }
 
     internal float ScrollOffset(int row) => _rowScrollOffsets[row];
+    internal SKRect Bounds => new(_captionRect.Left, _captionRect.Top, _captionRect.Right, _bodyRect.Bottom);
+    internal static float ResolveWidth(float viewportWidth, float viewportHeight) =>
+        Math.Min(Math.Max(0, viewportWidth - 16), viewportWidth < 1100 && float.IsFinite(viewportHeight)
+            ? Math.Clamp(viewportWidth * .38f, 320, PanelWidth) : PanelWidth);
 
     // ── Render ──────────────────────────────────────────────────
 
@@ -375,10 +364,9 @@ public sealed class ObjectInfoPanel
         float viewportHeight = float.PositiveInfinity, float maximumBottom = float.PositiveInfinity)
     {
         bool compact = viewportWidth < 1100 && float.IsFinite(viewportHeight);
-        _renderPanelWidth = compact ? Math.Clamp(viewportWidth * .38f, 320, PanelWidth) : PanelWidth;
+        _renderPanelWidth = ResolveWidth(viewportWidth, viewportHeight);
         _renderImageWidth = Math.Min(ImageWidth, Math.Max(48, _renderPanelWidth - 296));
-        bool hasModuleRows = playerShip?.Modules is { Count: > 0 } || selectedOrActive?.Modules is { Count: > 0 };
-        float panelBottom = Math.Min(compact || hasModuleRows ? viewportHeight * .58f : viewportHeight, maximumBottom);
+        float panelBottom = Math.Min(compact ? viewportHeight * .58f : viewportHeight, maximumBottom);
         float left = viewportWidth - Margin - _renderPanelWidth;
 
         _captionRect = new SKRect(left, top, left + _renderPanelWidth, top + CaptionHeight);
@@ -409,7 +397,7 @@ public sealed class ObjectInfoPanel
                 float bodyHeight = Math.Max(_renderImageWidth * ImageHeight / ImageWidth + 2 * Padding, 2 * Padding + renderLines.Count * LineHeight);
                 float fullHeight = bodyHeight;
                 float available = Math.Max(0, panelBottom - Margin - rowY - (RowNames.Length - i) * RowCaptionHeight);
-                bodyHeight = Math.Min(bodyHeight, compact || hasModuleRows ? available / (RowNames.Length - i) : available);
+                bodyHeight = Math.Min(bodyHeight, compact ? available / (RowNames.Length - i) : available);
                 if (_rowObjectIds[i] != rowData[i]?.ObjectId)
                 {
                     _rowObjectIds[i] = rowData[i]?.ObjectId;
@@ -475,9 +463,9 @@ public sealed class ObjectInfoPanel
     private static List<string> WrapText(string text, float width, SKPaint paint)
     {
         var result = new List<string>();
-        while (paint.MeasureText(text) > width)
+        while (text.Length > 0 && paint.MeasureText(text) > width)
         {
-            int length = Math.Max(1, (int)paint.BreakText(text, width));
+            int length = Math.Clamp((int)paint.BreakText(text, Math.Max(0, width)), 1, text.Length);
             int space = text.LastIndexOf(' ', length - 1, length);
             if (space > 0) length = space;
             result.Add(text[..length].TrimEnd());

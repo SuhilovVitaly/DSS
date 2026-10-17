@@ -88,3 +88,9 @@ EP-0002–0003 реализованы в base-fight: seeded система и о
 Карта показывает AI diamond/owner/type, движущиеся defence/patrol circles, Radiation/Dust/Debris и известные POI. Toolbar переключает четыре слоя; выбор перекрытий циклический. Поля показывают отсутствие эффектов, POI — отсутствие исследования. База недоступна для стыковки/торговли и в UI, и в Engine. Панель AI/POI/field компактна и прокручивается на малом viewport; выбор descriptors не отправляет engine command. Native interactions8/8 PASS;80FPS acceptance OPEN.
 
 [Текущий технический контракт и evidence](../../04-Engineering/AiMapEnvironment.md).
+
+## Боевые доклады экипажа — 2026-10-16
+
+[EP-0010](../../../Board/EP-0010-combat-reports/ImplementationStatus.md) добавляет панель справа под фактическим Object Info. История200 карточек newest-first, ровно одна раскрыта; новый report раскрывается и прокручивает список наверх. Click/drag/wheel поглощаются панелью, карта/команды/скорость не меняются; keyboard Up/Down/Enter действует только при её focus. Новое событие не перехватывает focus. Правая колонка исключена из свободного map viewport, journal/footer не перекрываются. На компактной высоте тело Object Info прокручивается.
+
+UI получает immutable captured факты E01–E07 из Engine независимо от свежести world snapshot. RU/EN formatter и8 иллюстраций/portrait role fallback подготовлены до Render; Draw не загружает файлы. New Game/Load создают чистую историю без replay, modal очищает focus с сохранением истории; закрытие/Defeated освобождает ресурсы. [Полный текущий контракт и limits](../../04-Engineering/CombatReports.md). Headless matrix проверена; native/human/FPS OPEN, самостоятельный запуск игры агентом запрещён пользователем.

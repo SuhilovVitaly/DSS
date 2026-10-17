@@ -63,8 +63,8 @@ public class RangedTorpedoLaunchTests
         {
             if (approaching)
             {
-                var automatic = Assert.Single(At(engine, 2000).Objects, o => o.Torpedo is not null).Torpedo!;
-                Assert.Equal(1000, automatic.LaunchMotionTimeMs);
+                var automatic = Assert.Single(At(engine, 2250).Objects, o => o.Torpedo is not null).Torpedo!;
+                Assert.InRange(automatic.LaunchMotionTimeMs, 1500, 2250);
             }
             else Assert.DoesNotContain(At(engine, 2000).Objects, o => o.Torpedo is not null);
         }

@@ -140,7 +140,7 @@ public sealed class TorpedoLaunchTests
         real = 100;
         var time = clock.UpdateAndCapture();
         var snapshot = engine.CaptureSnapshotForTests(time.GameTimeMs, speed, time.MotionTimeMs);
-        Assert.Equal((int)speed * 3, Projectile(snapshot).Torpedo!.DistanceTravelledWorldUnits);
+        Assert.Equal(speed.MotionTimeMultiplier() * 3, Projectile(snapshot).Torpedo!.DistanceTravelledWorldUnits);
     }
 
     [Theory]

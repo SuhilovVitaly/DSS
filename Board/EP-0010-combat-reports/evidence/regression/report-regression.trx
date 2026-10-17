@@ -1,0 +1,811 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="fdf71bc2-a4d5-433e-8bcf-3d56ba57de56" name="sushi@VITA-CASTLE 2026-10-16 14:00:15" runUser="VITA-CASTLE\sushi" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-16T14:00:15.3989315+03:00" queuing="2026-10-16T14:00:15.3989321+03:00" start="2026-10-16T14:00:12.2594072+03:00" finish="2026-10-16T14:00:30.5512604+03:00" />
+  <TestSettings name="default" id="75867745-9678-4799-a94e-53c51f3de00e">
+    <Deployment runDeploymentRoot="sushi_VITA-CASTLE_2026-10-16_14_00_15" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="acd3d829-2a1d-4a44-bdd6-2a2e53bf0b01" testId="eae95a2e-de53-1580-99dd-e772e781c597" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_a_non_player_object_leaves_the_camera_exactly_where_it_was" computerName="VITA-CASTLE" duration="00:00:00.2761702" startTime="2026-10-16T14:00:18.0398797+03:00" endTime="2026-10-16T14:00:18.0398802+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="acd3d829-2a1d-4a44-bdd6-2a2e53bf0b01" />
+    <UnitTestResult executionId="660cf8c1-b71d-48ce-86e0-d71d27b3c485" testId="288d943f-01dd-bd61-c847-e9d68b420de5" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;LineCapture&quot;)" computerName="VITA-CASTLE" duration="00:00:00.6208326" startTime="2026-10-16T14:00:20.5036394+03:00" endTime="2026-10-16T14:00:20.5036403+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="660cf8c1-b71d-48ce-86e0-d71d27b3c485" />
+    <UnitTestResult executionId="b14e2bff-5231-4417-97fe-b4ef1c002bb1" testId="7cdf7714-f89e-7d92-01e9-b1cbf6da56fd" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Legacy_approach_snapshot_without_route_uses_the_compatibility_fallback" computerName="VITA-CASTLE" duration="00:00:00.4055282" startTime="2026-10-16T14:00:18.2893813+03:00" endTime="2026-10-16T14:00:18.2893816+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b14e2bff-5231-4417-97fe-b4ef1c002bb1" />
+    <UnitTestResult executionId="63eb214e-f32a-4f1b-9d5d-819b1a0a4cf4" testId="689a24b9-d83d-4efd-a690-8bf194280f5f" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_test_seam_is_empty_without_authoritative_target" computerName="VITA-CASTLE" duration="00:00:00.0806925" startTime="2026-10-16T14:00:20.8811373+03:00" endTime="2026-10-16T14:00:20.8811378+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="63eb214e-f32a-4f1b-9d5d-819b1a0a4cf4" />
+    <UnitTestResult executionId="ad0909bd-4cea-4a30-b4ac-459976ee7113" testId="827990a9-4863-d9d5-1c9d-11794e569b2d" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Reactivation_does_not_reuse_stale_mouse_position_until_a_fresh_move" computerName="VITA-CASTLE" duration="00:00:00.0882706" startTime="2026-10-16T14:00:21.0050428+03:00" endTime="2026-10-16T14:00:21.0050432+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ad0909bd-4cea-4a30-b4ac-459976ee7113" />
+    <UnitTestResult executionId="02426ebb-396b-4ac9-82a9-1f5fc61334d3" testId="946e1aaa-a11f-2362-4539-ca52f6683915" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_runs_past_the_old_200s_cap_to_reach_the_aim_point" computerName="VITA-CASTLE" duration="00:00:00.0048844" startTime="2026-10-16T14:00:20.9856234+03:00" endTime="2026-10-16T14:00:20.9856236+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="02426ebb-396b-4ac9-82a9-1f5fc61334d3" />
+    <UnitTestResult executionId="99fac6f0-8ea0-41ab-b498-9f7740c24dfa" testId="5c46a9d2-a550-7da2-1c65-f38977520734" testName="DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests.Local_session_preserves_live_selection_and_history_without_replaying_effects" computerName="VITA-CASTLE" duration="00:00:03.6825221" startTime="2026-10-16T14:00:18.9058054+03:00" endTime="2026-10-16T14:00:18.9058057+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="99fac6f0-8ea0-41ab-b498-9f7740c24dfa">
+      <Output>
+        <ErrorInfo>
+          <Message>System.InvalidOperationException : Combat report session baseline mismatch.</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.CombatReportInbox.Receive(CombatReportBatchSnapshot batch) in D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Client\CombatReportInbox.cs:line 22&#xD;
+   at DeepSpaceSaga.Client.SnapshotBuffer.Update(AuthoritativeSnapshot snapshot) in D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Client\SnapshotBuffer.cs:line 95&#xD;
+   at DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests.Local_session_preserves_live_selection_and_history_without_replaying_effects() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\CountermeasureSessionRoundtripTests.cs:line 36&#xD;
+   at DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests.Local_session_preserves_live_selection_and_history_without_replaying_effects() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\CountermeasureSessionRoundtripTests.cs:line 49&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="217fd5e2-f4e7-41bf-ac55-1ccf1604cc87" testId="087d0880-22d9-5526-bc7a-faa649d69791" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Zoom_change_recomputes_ActiveObjectId_without_a_new_mouse_move" computerName="VITA-CASTLE" duration="00:00:00.0966641" startTime="2026-10-16T14:00:24.8749708+03:00" endTime="2026-10-16T14:00:24.8749714+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="217fd5e2-f4e7-41bf-ac55-1ccf1604cc87" />
+    <UnitTestResult executionId="e9e1cbf1-234c-4e82-ba7d-dea05cdd8950" testId="150db4e7-42fb-aba4-4413-b09643d7322f" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Default_scenario_paused_start_asteroid_route_ends_at_the_confirmed_intercept" computerName="VITA-CASTLE" duration="00:00:00.0010725" startTime="2026-10-16T14:00:20.5058275+03:00" endTime="2026-10-16T14:00:20.5058280+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e9e1cbf1-234c-4e82-ba7d-dea05cdd8950" />
+    <UnitTestResult executionId="f74a73f0-67a4-4b2a-abb0-baf9c271930d" testId="c54c1d17-8cf8-3d99-5e1d-dac84c29c070" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_preview_resumes_a_persisted_confirmed_intercept_plan_and_completes_immediately" computerName="VITA-CASTLE" duration="00:00:00.0016405" startTime="2026-10-16T14:00:18.5126120+03:00" endTime="2026-10-16T14:00:18.5126124+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f74a73f0-67a4-4b2a-abb0-baf9c271930d" />
+    <UnitTestResult executionId="c67ac4b8-04d6-4084-92f3-4788ce9976b0" testId="333139cd-ec15-06e7-0e84-1e75189d5c4b" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trail_phase_continues_from_behind_waypoint_to_the_target" computerName="VITA-CASTLE" duration="00:00:00.0007905" startTime="2026-10-16T14:00:20.5108436+03:00" endTime="2026-10-16T14:00:20.5108439+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c67ac4b8-04d6-4084-92f3-4788ce9976b0" />
+    <UnitTestResult executionId="f23dcff1-4923-4170-972b-abb023418a25" testId="ae6eb557-b39c-1296-35a2-bacf87dac7a1" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_preview_after_a_full_loop_reorientation_ends_without_a_visible_kink" computerName="VITA-CASTLE" duration="00:00:00.0017160" startTime="2026-10-16T14:00:18.5102709+03:00" endTime="2026-10-16T14:00:18.5102712+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f23dcff1-4923-4170-972b-abb023418a25" />
+    <UnitTestResult executionId="a4f071b1-e9ce-48b0-86f8-fa91674a380d" testId="c6668a68-b4b2-ca68-106f-193da6960fc9" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone" computerName="VITA-CASTLE" duration="00:00:00.0975390" startTime="2026-10-16T14:00:20.6213139+03:00" endTime="2026-10-16T14:00:20.6213142+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4f071b1-e9ce-48b0-86f8-fa91674a380d">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Single() Failure: The collection was empty</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 993&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 1001&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="98f02ed4-67fd-404f-ad26-6617a7b91abd" testId="251e4959-04b0-d986-d108-e89e10703a6b" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Station_wins_selection_over_a_closer_player_ship" computerName="VITA-CASTLE" duration="00:00:00.0886960" startTime="2026-10-16T14:00:20.7978861+03:00" endTime="2026-10-16T14:00:20.7978865+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="98f02ed4-67fd-404f-ad26-6617a7b91abd" />
+    <UnitTestResult executionId="b44a0685-9348-4a79-9d91-938a2397c38f" testId="067ffebd-54a2-625e-ef8c-e40963fae536" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Transport_failure_is_retried_and_the_state_eventually_reaches_the_connection" computerName="VITA-CASTLE" duration="00:00:00.8977619" startTime="2026-10-16T14:00:22.7224067+03:00" endTime="2026-10-16T14:00:22.7224071+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b44a0685-9348-4a79-9d91-938a2397c38f" />
+    <UnitTestResult executionId="ee2b732c-a58d-4667-8718-03d9d46ffa3b" testId="f73b4d5a-554d-734d-76a8-85999996b58b" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_prediction_holds_current_target_point_until_next_snapshot" computerName="VITA-CASTLE" duration="00:00:00.0013258" startTime="2026-10-16T14:00:20.7808456+03:00" endTime="2026-10-16T14:00:20.7808459+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ee2b732c-a58d-4667-8718-03d9d46ffa3b" />
+    <UnitTestResult executionId="092383ef-73ca-4275-a3d3-ec687767d5ba" testId="f231c57d-d0c5-0921-ebb3-5db5eb61a9a2" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;FlyThroughPending&quot;)" computerName="VITA-CASTLE" duration="00:00:00.4287570" startTime="2026-10-16T14:00:19.7713021+03:00" endTime="2026-10-16T14:00:19.7713027+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="092383ef-73ca-4275-a3d3-ec687767d5ba" />
+    <UnitTestResult executionId="93dea7b3-1602-42b7-8e94-a621de5204a1" testId="96fed1f6-d2b9-f9ba-337c-cb6f92ce5150" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Camera_drag_pan_recomputes_ActiveObjectId" computerName="VITA-CASTLE" duration="00:00:00.1080011" startTime="2026-10-16T14:00:21.4939838+03:00" endTime="2026-10-16T14:00:21.4939845+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="93dea7b3-1602-42b7-8e94-a621de5204a1" />
+    <UnitTestResult executionId="8ef2e270-bc2c-4129-9c27-70ad075383ac" testId="580e287c-e934-0a4c-1757-e0f2f934fec7" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time" computerName="VITA-CASTLE" duration="00:00:00.6655788" startTime="2026-10-16T14:00:16.4313504+03:00" endTime="2026-10-16T14:00:16.4313509+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8ef2e270-bc2c-4129-9c27-70ad075383ac">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Equal() Failure: Values are not within 6 decimal places&#xD;
+Expected: 9970 (rounded from 9970)&#xD;
+Actual:   10000 (rounded from 10000)</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 1025&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 1026&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="12ba6744-e767-4cae-aebd-3789fd5d3969" testId="578f13c0-d995-7efb-47f5-7fe984040752" testName="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(scale: 1)" computerName="VITA-CASTLE" duration="00:00:00.0547171" startTime="2026-10-16T14:00:25.3956673+03:00" endTime="2026-10-16T14:00:25.3956681+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="12ba6744-e767-4cae-aebd-3789fd5d3969" />
+    <UnitTestResult executionId="9a3bb873-f9a4-4541-85d4-e9f1d21e13a0" testId="e8f61eb1-f11f-542d-203c-3c3b3bdc4121" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;FlyThroughIntercept:LSR&quot;)" computerName="VITA-CASTLE" duration="00:00:00.1666248" startTime="2026-10-16T14:00:19.2029955+03:00" endTime="2026-10-16T14:00:19.2029960+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9a3bb873-f9a4-4541-85d4-e9f1d21e13a0" />
+    <UnitTestResult executionId="55442f26-4d7b-4cc8-8081-dad59860f43c" testId="df6a6233-34ce-3e12-5775-0a475298e519" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Object_info_panel_selected_row_shows_placeholder_then_real_object" computerName="VITA-CASTLE" duration="00:00:00.0541774" startTime="2026-10-16T14:00:24.6258357+03:00" endTime="2026-10-16T14:00:24.6258364+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="55442f26-4d7b-4cc8-8081-dad59860f43c" />
+    <UnitTestResult executionId="3253f503-5223-439b-9665-8796223cd3a3" testId="0d78afbb-406f-8423-7a24-c2fdde795efe" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Closed_info_panel_does_not_disable_hit_testing_or_engine_sync" computerName="VITA-CASTLE" duration="00:00:01.2139051" startTime="2026-10-16T14:00:16.5800197+03:00" endTime="2026-10-16T14:00:16.5800202+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3253f503-5223-439b-9665-8796223cd3a3" />
+    <UnitTestResult executionId="9ec11e2a-686d-4081-b733-c2e45e7e4c98" testId="caced57b-a5d1-cd23-5276-871d002b00f9" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_empty_map_still_sends_navigation_command" computerName="VITA-CASTLE" duration="00:00:00.0549041" startTime="2026-10-16T14:00:25.4188303+03:00" endTime="2026-10-16T14:00:25.4188306+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9ec11e2a-686d-4081-b733-c2e45e7e4c98">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Single() Failure: The collection was empty</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_empty_map_still_sends_navigation_command() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 280&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_empty_map_still_sends_navigation_command() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 282&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="185ce144-4e58-45a1-8839-87d9222e6b52" testId="e91b8234-af31-fa43-0b96-9fa0aee2305e" testName="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.MapClustersDoNotPaintOverSelectedPlaque" computerName="VITA-CASTLE" duration="00:00:00.6511216" startTime="2026-10-16T14:00:26.0469637+03:00" endTime="2026-10-16T14:00:26.0469642+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="185ce144-4e58-45a1-8839-87d9222e6b52" />
+    <UnitTestResult executionId="5f5d5dc5-09c0-4044-8246-c51d71cec7f7" testId="b33bf355-2057-0490-290f-59fa5ee86dcc" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_completes_in_under_horizon" computerName="VITA-CASTLE" duration="00:00:00.0005352" startTime="2026-10-16T14:00:16.4350352+03:00" endTime="2026-10-16T14:00:16.4350357+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5f5d5dc5-09c0-4044-8246-c51d71cec7f7" />
+    <UnitTestResult executionId="f268ad4a-5bfd-4a0d-8864-159fe52e5048" testId="36ceb558-005b-fab4-3bc1-7bb8c028dedd" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_stops_panning_after_mouse_up" computerName="VITA-CASTLE" duration="00:00:00.1750783" startTime="2026-10-16T14:00:16.6623784+03:00" endTime="2026-10-16T14:00:16.6623790+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f268ad4a-5bfd-4a0d-8864-159fe52e5048" />
+    <UnitTestResult executionId="3a15a05c-6d39-4473-a3a4-0745a274ba90" testId="131dc1ba-2d43-c401-42f4-55ecc2f82850" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Deactivating_the_screen_clears_ActiveObjectId" computerName="VITA-CASTLE" duration="00:00:00.0533377" startTime="2026-10-16T14:00:21.3760989+03:00" endTime="2026-10-16T14:00:21.3760994+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3a15a05c-6d39-4473-a3a4-0745a274ba90" />
+    <UnitTestResult executionId="c07a0e21-7a12-4178-a2a7-5aacc347315a" testId="8e5dc10e-9bdd-7d48-f049-54d5eb2f273b" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Unchanged_state_does_not_send_duplicate_updates_to_the_engine" computerName="VITA-CASTLE" duration="00:00:00.2001684" startTime="2026-10-16T14:00:24.5668195+03:00" endTime="2026-10-16T14:00:24.5668198+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c07a0e21-7a12-4178-a2a7-5aacc347315a" />
+    <UnitTestResult executionId="a4112033-4870-4d9a-a24e-c52801ac3155" testId="f6d79cb8-22d5-0794-630b-ffcbc571f576" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_object_or_panel_sends_no_command" computerName="VITA-CASTLE" duration="00:00:00.0626330" startTime="2026-10-16T14:00:20.7784065+03:00" endTime="2026-10-16T14:00:20.7784078+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4112033-4870-4d9a-a24e-c52801ac3155" />
+    <UnitTestResult executionId="70dd985a-bf64-45ef-b921-75a8b6502040" testId="bea08302-85e8-634d-7e0f-ca593f32e9cd" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_the_players_own_ship_while_not_docked_returns_None" computerName="VITA-CASTLE" duration="00:00:00.0340239" startTime="2026-10-16T14:00:25.3052003+03:00" endTime="2026-10-16T14:00:25.3052009+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="70dd985a-bf64-45ef-b921-75a8b6502040" />
+    <UnitTestResult executionId="1fe39732-387f-47f0-b340-5bf7d66cb1df" testId="bb53b80d-0cf6-4070-dd75-04c648af0017" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation" computerName="VITA-CASTLE" duration="00:00:00.0636460" startTime="2026-10-16T14:00:20.6878802+03:00" endTime="2026-10-16T14:00:20.6878804+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1fe39732-387f-47f0-b340-5bf7d66cb1df">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Single() Failure: The collection was empty</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 959&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 980&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="544529f4-d832-4092-9ab0-252840fcc438" testId="0d203362-cf2b-77e3-d1a8-0722fed8df7e" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_the_player_ship_still_reattaches_camera_follow" computerName="VITA-CASTLE" duration="00:00:00.3170915" startTime="2026-10-16T14:00:20.5313655+03:00" endTime="2026-10-16T14:00:20.5313658+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="544529f4-d832-4092-9ab0-252840fcc438">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.False() Failure&#xD;
+Expected: False&#xD;
+Actual:   True</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_the_player_ship_still_reattaches_camera_follow() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 357&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_the_player_ship_still_reattaches_camera_follow() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 362&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="f6618c86-cf8c-4383-90f6-1f0073a8b70f" testId="28d67b65-fc4d-15b6-350c-b10b86a4c0e4" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_exactly_30px_activates_the_object" computerName="VITA-CASTLE" duration="00:00:00.2898172" startTime="2026-10-16T14:00:19.4932275+03:00" endTime="2026-10-16T14:00:19.4932281+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f6618c86-cf8c-4383-90f6-1f0073a8b70f" />
+    <UnitTestResult executionId="2a5dbd52-714a-4c8c-8dd7-3804c37cc87e" testId="69e13d76-7fb5-0440-ce20-ecab2a29dc86" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_does_not_change_camera_focus" computerName="VITA-CASTLE" duration="00:00:00.1234528" startTime="2026-10-16T14:00:18.7302514+03:00" endTime="2026-10-16T14:00:18.7302516+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2a5dbd52-714a-4c8c-8dd7-3804c37cc87e">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Single() Failure: The collection was empty</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_does_not_change_camera_focus() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 80&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_does_not_change_camera_focus() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 80&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="9a9f1280-49d1-41f8-83c8-6952d3193823" testId="1f63d0d3-3c36-bbf5-606b-40e67faac5f5" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_the_station_the_ship_is_docked_to_returns_OpenStation" computerName="VITA-CASTLE" duration="00:00:00.0480562" startTime="2026-10-16T14:00:25.3610482+03:00" endTime="2026-10-16T14:00:25.3610488+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="9a9f1280-49d1-41f8-83c8-6952d3193823" />
+    <UnitTestResult executionId="6c776e3a-4b5d-4679-8488-10ccc55a8f86" testId="6584c787-cf9c-3155-d02c-021fc825c4d0" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_arrives_for_lateral_miss_target" computerName="VITA-CASTLE" duration="00:00:00.0006713" startTime="2026-10-16T14:00:16.4891521+03:00" endTime="2026-10-16T14:00:16.4891527+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6c776e3a-4b5d-4679-8488-10ccc55a8f86" />
+    <UnitTestResult executionId="7402624e-b6d8-4ff8-b21b-17f9fd7d4d9d" testId="4bf6f715-df79-0c49-d690-e5e01247f96a" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: null, y: 100, speed: 1, direction: 90)" computerName="VITA-CASTLE" duration="00:00:00.0413956" startTime="2026-10-16T14:00:15.3186866+03:00" endTime="2026-10-16T14:00:15.3187067+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7402624e-b6d8-4ff8-b21b-17f9fd7d4d9d" />
+    <UnitTestResult executionId="833155e1-8e23-4d3a-8f55-7e897e5977c0" testId="e440aa70-0e00-9fe7-3b7b-0e72520f2923" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_empty_map_does_not_change_SelectedObjectId" computerName="VITA-CASTLE" duration="00:00:00.0373910" startTime="2026-10-16T14:00:21.3117673+03:00" endTime="2026-10-16T14:00:21.3117677+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="833155e1-8e23-4d3a-8f55-7e897e5977c0" />
+    <UnitTestResult executionId="510ce12e-ab40-4c0a-a1d8-096bddaf1830" testId="47087af5-cb8b-fd9b-c4df-00423e7c303a" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Player_ship_wins_selection_over_a_closer_asteroid" computerName="VITA-CASTLE" duration="00:00:00.0891837" startTime="2026-10-16T14:00:18.8964730+03:00" endTime="2026-10-16T14:00:18.8964735+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="510ce12e-ab40-4c0a-a1d8-096bddaf1830" />
+    <UnitTestResult executionId="7c0113d9-cb95-42de-a888-af576c8b7bdb" testId="e6ba1a5c-2707-9df8-49df-5339d91603f0" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Active_transitions_directly_between_objects_and_back_to_null" computerName="VITA-CASTLE" duration="00:00:00.4319867" startTime="2026-10-16T14:00:20.1727778+03:00" endTime="2026-10-16T14:00:20.1727783+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="7c0113d9-cb95-42de-a888-af576c8b7bdb" />
+    <UnitTestResult executionId="d017786c-9cb5-40c8-9a5a-84b4cc54493c" testId="0dd55f9d-0dae-8c4a-e5d5-cd108e15062e" testName="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.FitAndResizePreserveWorldDistances" computerName="VITA-CASTLE" duration="00:00:08.3618932" startTime="2026-10-16T14:00:25.1984506+03:00" endTime="2026-10-16T14:00:25.1984509+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d017786c-9cb5-40c8-9a5a-84b4cc54493c" />
+    <UnitTestResult executionId="3767805e-d3d7-4a15-80d6-7d8190397dc3" testId="252230d6-c0ab-d2db-96a3-a26d81c40b0a" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: 100, y: null, speed: 1, direction: 90)" computerName="VITA-CASTLE" duration="00:00:00.0001133" startTime="2026-10-16T14:00:15.3481581+03:00" endTime="2026-10-16T14:00:15.3481587+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3767805e-d3d7-4a15-80d6-7d8190397dc3" />
+    <UnitTestResult executionId="ce9e2402-1902-4831-a101-bbf85fc7439d" testId="17b3a8a7-8e41-868f-947b-eadd055e8ac8" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Plain_click_sends_no_command_and_does_not_change_focus" computerName="VITA-CASTLE" duration="00:00:00.0749660" startTime="2026-10-16T14:00:20.9761123+03:00" endTime="2026-10-16T14:00:20.9761128+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ce9e2402-1902-4831-a101-bbf85fc7439d" />
+    <UnitTestResult executionId="fdeb3b5a-4834-4321-a437-0b864fb6149b" testId="35b1af63-c387-ca28-1935-cca8b625cd7d" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: null, y: null, speed: null, direction: null)" computerName="VITA-CASTLE" duration="00:00:00.0009027" startTime="2026-10-16T14:00:15.3430308+03:00" endTime="2026-10-16T14:00:15.3430314+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fdeb3b5a-4834-4321-a437-0b864fb6149b" />
+    <UnitTestResult executionId="ceb96471-547a-43a9-ba60-bd02067cb7be" testId="dd400672-114c-3511-e360-974fb877acda" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Tie_break_picks_lexicographically_smaller_object_id" computerName="VITA-CASTLE" duration="00:00:00.2673609" startTime="2026-10-16T14:00:24.3654406+03:00" endTime="2026-10-16T14:00:24.3654413+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="ceb96471-547a-43a9-ba60-bd02067cb7be" />
+    <UnitTestResult executionId="899b5b5a-3309-4f03-9ecb-a243ad1f1da8" testId="2cc7eb8e-21f4-2f74-fbb5-b8337c4db23a" testName="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(scale: 1.20000005)" computerName="VITA-CASTLE" duration="00:00:00.0758166" startTime="2026-10-16T14:00:25.2743961+03:00" endTime="2026-10-16T14:00:25.2743967+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="899b5b5a-3309-4f03-9ecb-a243ad1f1da8" />
+    <UnitTestResult executionId="38645ac3-2ce7-4955-8bbf-560297cae62b" testId="676d06bc-f037-a125-1e8c-f642444da221" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_position_outside_viewport_bounds_is_treated_as_no_cursor" computerName="VITA-CASTLE" duration="00:00:00.2080383" startTime="2026-10-16T14:00:23.3436728+03:00" endTime="2026-10-16T14:00:23.3436734+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="38645ac3-2ce7-4955-8bbf-560297cae62b" />
+    <UnitTestResult executionId="af780fca-6a71-42fd-b1ff-b303e38d4ba2" testId="2aeb913d-006b-7a97-4c10-230158de0711" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_empty_map_clears_selection_without_moving_camera" computerName="VITA-CASTLE" duration="00:00:00.0385337" startTime="2026-10-16T14:00:21.2746816+03:00" endTime="2026-10-16T14:00:21.2746821+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="af780fca-6a71-42fd-b1ff-b303e38d4ba2">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Null() Failure: Value is not null&#xD;
+Expected: null&#xD;
+Actual:   "OBJ-1"</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_empty_map_clears_selection_without_moving_camera() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 661&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_empty_map_clears_selection_without_moving_camera() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 663&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="4b64958d-bcc3-4d83-a242-9cffefe54ce5" testId="50becb5d-3348-64d2-664d-697cea555526" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_from_a_free_map_point_reattaches_player_follow" computerName="VITA-CASTLE" duration="00:00:00.1943201" startTime="2026-10-16T14:00:18.8053015+03:00" endTime="2026-10-16T14:00:18.8053018+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="4b64958d-bcc3-4d83-a242-9cffefe54ce5">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.False() Failure&#xD;
+Expected: False&#xD;
+Actual:   True</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_from_a_free_map_point_reattaches_player_follow() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 377&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_from_a_free_map_point_reattaches_player_follow() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 382&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="6d29e9c4-6f08-4a85-9f3b-bbf7b0ae22ea" testId="13dd5a91-6622-451e-d169-f242d14ed349" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_just_outside_30px_leaves_ActiveObjectId_null" computerName="VITA-CASTLE" duration="00:00:00.0585113" startTime="2026-10-16T14:00:21.6030157+03:00" endTime="2026-10-16T14:00:21.6030161+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="6d29e9c4-6f08-4a85-9f3b-bbf7b0ae22ea" />
+    <UnitTestResult executionId="8d1c6819-1f0a-4d4f-8afc-15255cbc6ebe" testId="d349c0a2-828f-1f07-833a-e9371ddf1a33" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_just_inside_30px_activates_the_object" computerName="VITA-CASTLE" duration="00:00:00.0769468" startTime="2026-10-16T14:00:20.9028631+03:00" endTime="2026-10-16T14:00:20.9028637+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="8d1c6819-1f0a-4d4f-8afc-15255cbc6ebe" />
+    <UnitTestResult executionId="666d4a06-87a8-41f0-bcb5-2c7836b6f220" testId="482a2fab-f6a2-aba5-1020-730c484c5fe1" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Npc_ship_wins_selection_over_a_closer_asteroid" computerName="VITA-CASTLE" duration="00:00:00.1912361" startTime="2026-10-16T14:00:24.0668612+03:00" endTime="2026-10-16T14:00:24.0668619+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="666d4a06-87a8-41f0-bcb5-2c7836b6f220" />
+    <UnitTestResult executionId="2c0e2940-d0c1-432c-925d-2605620822f3" testId="7627fa3b-01fd-1986-d34f-0f25320b9714" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally" computerName="VITA-CASTLE" duration="00:00:00.1511770" startTime="2026-10-16T14:00:21.1877438+03:00" endTime="2026-10-16T14:00:21.1877440+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2c0e2940-d0c1-432c-925d-2605620822f3">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.False() Failure&#xD;
+Expected: False&#xD;
+Actual:   True</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 432&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs:line 444&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="2181fbe1-1603-4937-921f-d2f6efb8b917" testId="bd2b77db-2975-4ada-3a97-b076d19e4a53" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Object_removed_from_the_snapshot_clears_both_ids" computerName="VITA-CASTLE" duration="00:00:00.0731996" startTime="2026-10-16T14:00:24.7624964+03:00" endTime="2026-10-16T14:00:24.7624970+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2181fbe1-1603-4937-921f-d2f6efb8b917" />
+    <UnitTestResult executionId="a57f0a10-7aa8-441f-8d80-9a6c779987f7" testId="c9fe4ccc-bb27-6045-f6f1-b41c90feecdd" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_projects_escape_turn_for_close_target" computerName="VITA-CASTLE" duration="00:00:00.0113591" startTime="2026-10-16T14:00:15.3734322+03:00" endTime="2026-10-16T14:00:15.3734325+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a57f0a10-7aa8-441f-8d80-9a6c779987f7" />
+    <UnitTestResult executionId="260bd6de-2e0f-4825-90f0-14e5c68732a8" testId="010e8e98-74e9-4b88-c90a-5213f69fb885" testName="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests.FullMapInteractionMatrix" computerName="VITA-CASTLE" duration="00:00:05.0703012" startTime="2026-10-16T14:00:28.4512182+03:00" endTime="2026-10-16T14:00:28.4512188+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="260bd6de-2e0f-4825-90f0-14e5c68732a8" />
+    <UnitTestResult executionId="720fd620-68aa-4a05-8e1c-91a0b85c4447" testId="6452b278-4c20-04da-de7b-d89f7fa9a449" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Player_ship_wins_selection_over_a_closer_npc_ship" computerName="VITA-CASTLE" duration="00:00:00.0317715" startTime="2026-10-16T14:00:21.5261923+03:00" endTime="2026-10-16T14:00:21.5261932+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="720fd620-68aa-4a05-8e1c-91a0b85c4447" />
+    <UnitTestResult executionId="d2524c13-7f35-46eb-8750-60e72e63c455" testId="dbfd0861-4189-66fd-3718-f76c39ce72cb" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_initial_phase_near_pass_ends_on_the_exact_aim_point" computerName="VITA-CASTLE" duration="00:00:00.0105156" startTime="2026-10-16T14:00:15.3717396+03:00" endTime="2026-10-16T14:00:15.3717399+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d2524c13-7f35-46eb-8750-60e72e63c455" />
+    <UnitTestResult executionId="a7603439-1a5d-44e7-9e75-420d481b6c83" testId="c0517864-51e0-997e-eda9-1d519dc662e6" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_a_station_while_not_docked_returns_None" computerName="VITA-CASTLE" duration="00:00:00.2331705" startTime="2026-10-16T14:00:23.0380725+03:00" endTime="2026-10-16T14:00:23.0380731+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a7603439-1a5d-44e7-9e75-420d481b6c83" />
+    <UnitTestResult executionId="b4f08ebf-8745-4f2b-b4db-7601c622c2bf" testId="68a40b0f-c508-20bf-4793-c403ec0d33f3" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_after_selecting_a_non_player_object_still_reattaches_player_follow" computerName="VITA-CASTLE" duration="00:00:00.0344164" startTime="2026-10-16T14:00:25.0822091+03:00" endTime="2026-10-16T14:00:25.0822096+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b4f08ebf-8745-4f2b-b4db-7601c622c2bf" />
+    <UnitTestResult executionId="06b70f23-9e50-4e5b-a2bc-f614e4901e90" testId="3bb5eb88-4f17-9775-ecb8-a6971aafe360" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Future_trajectory_projector_does_not_reference_engine" computerName="VITA-CASTLE" duration="00:00:00.0043145" startTime="2026-10-16T14:00:20.9811034+03:00" endTime="2026-10-16T14:00:20.9811036+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="06b70f23-9e50-4e5b-a2bc-f614e4901e90" />
+    <UnitTestResult executionId="d006909a-4d2e-410b-a9e3-94adfc81d2fa" testId="64954496-2d7a-e72c-e1e2-d6600b57059d" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Full_state_reaches_the_connection_when_it_actually_changes" computerName="VITA-CASTLE" duration="00:00:00.1699589" startTime="2026-10-16T14:00:25.0472812+03:00" endTime="2026-10-16T14:00:25.0472817+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d006909a-4d2e-410b-a9e3-94adfc81d2fa" />
+    <UnitTestResult executionId="b3eb749f-415f-4d71-9596-2767a160e675" testId="03aa15a4-97c0-2625-dce6-6cc1340c1ccd" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: 100, y: 100, speed: 1, direction: null)" computerName="VITA-CASTLE" duration="00:00:00.0001947" startTime="2026-10-16T14:00:15.3508497+03:00" endTime="2026-10-16T14:00:15.3508499+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="b3eb749f-415f-4d71-9596-2767a160e675" />
+    <UnitTestResult executionId="3f98d137-031b-4b5f-8a0c-1beefb79a590" testId="f291b778-8ff3-131a-196f-61d25bf85c18" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Station_wins_selection_over_a_closer_npc_ship" computerName="VITA-CASTLE" duration="00:00:00.0574261" startTime="2026-10-16T14:00:20.6853136+03:00" endTime="2026-10-16T14:00:20.6853141+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3f98d137-031b-4b5f-8a0c-1beefb79a590" />
+    <UnitTestResult executionId="1d0ccb48-46c6-4186-8bca-a7e431b59ac4" testId="7748af9d-1ec0-619b-d0bb-1af99b45916e" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Zoomed_out_contact_remains_interactive" computerName="VITA-CASTLE" duration="00:00:00.7207664" startTime="2026-10-16T14:00:17.7633950+03:00" endTime="2026-10-16T14:00:17.7633958+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1d0ccb48-46c6-4186-8bca-a7e431b59ac4" />
+    <UnitTestResult executionId="3c5c8b73-958b-4b32-aad4-1d038060a66d" testId="45b6c3fb-7eb5-c010-9443-4eff5ec9f36b" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_projection_shows_wait_turn_then_straight_to_target" computerName="VITA-CASTLE" duration="00:00:00.0087341" startTime="2026-10-16T14:00:20.6948644+03:00" endTime="2026-10-16T14:00:20.6948646+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3c5c8b73-958b-4b32-aad4-1d038060a66d" />
+    <UnitTestResult executionId="aab463d7-e6d4-4266-bd5a-737a29d937b7" testId="ad2bb05b-5477-013f-1e4e-ca65deed3907" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_object_selects_it_without_moving_camera_or_navigating" computerName="VITA-CASTLE" duration="00:00:00.2405151" startTime="2026-10-16T14:00:18.3886910+03:00" endTime="2026-10-16T14:00:18.3886912+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="aab463d7-e6d4-4266-bd5a-737a29d937b7" />
+    <UnitTestResult executionId="150cafbc-f658-4371-95ea-f20a0c53bf7a" testId="3b9af34a-2921-d6f7-07e4-c08af776db72" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Nearest_still_wins_within_the_same_priority_tier" computerName="VITA-CASTLE" duration="00:00:00.1044715" startTime="2026-10-16T14:00:21.7262302+03:00" endTime="2026-10-16T14:00:21.7262306+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="150cafbc-f658-4371-95ea-f20a0c53bf7a" />
+    <UnitTestResult executionId="184a9adb-ab43-4147-994c-638e9890d85c" testId="39bfae28-bba8-9307-9185-dc3c84e289ab" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Zoomed_out_selected_contact_remains_active_and_selected" computerName="VITA-CASTLE" duration="00:00:00.1191761" startTime="2026-10-16T14:00:25.2688016+03:00" endTime="2026-10-16T14:00:25.2688021+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="184a9adb-ab43-4147-994c-638e9890d85c" />
+    <UnitTestResult executionId="2d265d16-c40b-4996-927d-6d36e495c700" testId="cb5a957f-cec9-e511-23c7-56d875e666dc" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_object_selects_instead_of_navigating" computerName="VITA-CASTLE" duration="00:00:00.1158810" startTime="2026-10-16T14:00:19.0429614+03:00" endTime="2026-10-16T14:00:19.0429619+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2d265d16-c40b-4996-927d-6d36e495c700" />
+    <UnitTestResult executionId="d721f5fe-f6cd-4152-96e0-7e8a3681155a" testId="bca0a25a-438c-5d4b-c628-9786610aeee1" testName="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.OrbitToggleKeepsWorldAndSelection" computerName="VITA-CASTLE" duration="00:00:01.6382324" startTime="2026-10-16T14:00:16.8412110+03:00" endTime="2026-10-16T14:00:16.8412116+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d721f5fe-f6cd-4152-96e0-7e8a3681155a" />
+    <UnitTestResult executionId="1039a624-9a15-43a5-8a21-ee9d3a7573d4" testId="15c828a5-3a18-1ed8-e6df-45db5459d241" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_stops_at_the_target_when_arrival_happens_in_the_initial_phase" computerName="VITA-CASTLE" duration="00:00:00.0003963" startTime="2026-10-16T14:00:20.5087808+03:00" endTime="2026-10-16T14:00:20.5087813+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="1039a624-9a15-43a5-8a21-ee9d3a7573d4" />
+    <UnitTestResult executionId="babd2199-a04c-46a0-b6d0-9b77f40a54da" testId="a4036c21-fe5d-0d89-9925-c68d3183e358" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Nearest_object_wins_regardless_of_declaration_order" computerName="VITA-CASTLE" duration="00:00:00.0458481" startTime="2026-10-16T14:00:21.2329526+03:00" endTime="2026-10-16T14:00:21.2329528+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="babd2199-a04c-46a0-b6d0-9b77f40a54da" />
+    <UnitTestResult executionId="86122040-7fc9-49a6-a915-e30c9c910179" testId="936260db-4ade-d240-977a-f77f14e9be75" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;Trail&quot;)" computerName="VITA-CASTLE" duration="00:00:00.1519583" startTime="2026-10-16T14:00:18.9281025+03:00" endTime="2026-10-16T14:00:18.9281030+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="86122040-7fc9-49a6-a915-e30c9c910179" />
+    <UnitTestResult executionId="bc5601df-f029-46b1-830b-f9a2e70993a8" testId="ddeb4923-9e45-a6ac-9ae7-cd9394fd2ac8" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates" computerName="VITA-CASTLE" duration="00:00:00.1731589" startTime="2026-10-16T14:00:18.5057053+03:00" endTime="2026-10-16T14:00:18.5057057+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="bc5601df-f029-46b1-830b-f9a2e70993a8">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.Single() Failure: The collection was empty</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 37&#xD;
+   at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates() in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs:line 44&#xD;
+--- End of stack trace from previous location ---</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="e9282903-0245-48e6-bde4-022b52ec130c" testId="640b7e22-46c0-589a-6b6a-1cf8bbbd8909" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Moving_object_under_stationary_cursor_clears_ActiveObjectId" computerName="VITA-CASTLE" duration="00:00:00.0816462" startTime="2026-10-16T14:00:18.5908685+03:00" endTime="2026-10-16T14:00:18.5908689+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e9282903-0245-48e6-bde4-022b52ec130c" />
+    <UnitTestResult executionId="acc01969-b061-4a21-addb-b3fc87ee7abe" testId="c33ffb8d-ae40-0382-dc7f-e579bf3f628b" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Object_info_panel_selected_row_prefers_the_hovered_object_over_the_clicked_one" computerName="VITA-CASTLE" duration="00:00:00.0556423" startTime="2026-10-16T14:00:24.6883581+03:00" endTime="2026-10-16T14:00:24.6883586+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="acc01969-b061-4a21-addb-b3fc87ee7abe" />
+    <UnitTestResult executionId="fef9daf9-e8e4-43b5-b412-3813f7ea05c1" testId="13f78fc2-8073-c39e-33e5-0169ab92fdcc" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_ui_panel_does_not_reset_selection" computerName="VITA-CASTLE" duration="00:00:00.0956711" startTime="2026-10-16T14:00:18.5142975+03:00" endTime="2026-10-16T14:00:18.5142977+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fef9daf9-e8e4-43b5-b412-3813f7ea05c1" />
+    <UnitTestResult executionId="f8a39b0d-6a2f-4425-a658-18727ae5e83b" testId="90ab4f16-6cc0-c7fe-fa22-a36b4247d0a3" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_starting_on_object_or_panel_does_not_pan_map" computerName="VITA-CASTLE" duration="00:00:00.8692154" startTime="2026-10-16T14:00:17.8186819+03:00" endTime="2026-10-16T14:00:17.8186823+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f8a39b0d-6a2f-4425-a658-18727ae5e83b" />
+    <UnitTestResult executionId="97f43b21-5ed6-439d-aaa6-181f1d96dae9" testId="9ccd7b08-84da-70f2-f880-f10573d957d1" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_object_clears_selection_but_not_active" computerName="VITA-CASTLE" duration="00:00:00.0800276" startTime="2026-10-16T14:00:20.6268456+03:00" endTime="2026-10-16T14:00:20.6268460+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="97f43b21-5ed6-439d-aaa6-181f1d96dae9" />
+    <UnitTestResult executionId="fbf618d9-1724-4e09-83cd-9c223df11bb9" testId="100f44e2-567d-73fa-47f9-77b9f94903ab" testName="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests.FrameReportIdentifiesActualMap" computerName="VITA-CASTLE" duration="00:00:01.4144638" startTime="2026-10-16T14:00:29.8764505+03:00" endTime="2026-10-16T14:00:29.8764509+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="fbf618d9-1724-4e09-83cd-9c223df11bb9" />
+    <UnitTestResult executionId="e5ebc718-7276-4eb1-b01b-bdb35cf7253b" testId="cdd41ac3-e003-82d3-efbd-a97680391918" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_stops_at_closest_approach_when_the_target_cannot_be_caught" computerName="VITA-CASTLE" duration="00:00:00.0007688" startTime="2026-10-16T14:00:16.4914856+03:00" endTime="2026-10-16T14:00:16.4914861+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="e5ebc718-7276-4eb1-b01b-bdb35cf7253b" />
+    <UnitTestResult executionId="eecdfd04-57bc-4fdd-917c-5ceb6f10e8bd" testId="f9063ab4-ba38-b654-9fed-73e0b305ebb8" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_preview_uses_confirmed_intercept_solve_when_achievable" computerName="VITA-CASTLE" duration="00:00:00.1359651" startTime="2026-10-16T14:00:16.8018668+03:00" endTime="2026-10-16T14:00:16.8018674+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="eecdfd04-57bc-4fdd-917c-5ceb6f10e8bd" />
+    <UnitTestResult executionId="5b8ca670-7b8d-473c-9edc-00007ffc0809" testId="efd1a6ad-fdc1-768d-6e04-6487c3b48118" testName="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(scale: 1.5)" computerName="VITA-CASTLE" duration="00:00:00.0657582" startTime="2026-10-16T14:00:25.3465901+03:00" endTime="2026-10-16T14:00:25.3465904+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="5b8ca670-7b8d-473c-9edc-00007ffc0809">
+      <Output>
+        <ErrorInfo>
+          <Message>Assert.False() Failure&#xD;
+Expected: False&#xD;
+Actual:   True</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(Single scale) in D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\SystemMapNavigationTests.cs:line 68&#xD;
+   at InvokeStub_SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(Object, Span`1)&#xD;
+   at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="d02412fd-3d2f-4166-9dd7-9e9d102320ab" testId="24b04257-792d-6bfc-edeb-cc5b22d66516" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_turns_toward_the_current_fixed_aim_point" computerName="VITA-CASTLE" duration="00:00:00.0571961" startTime="2026-10-16T14:00:16.4846921+03:00" endTime="2026-10-16T14:00:16.4846926+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d02412fd-3d2f-4166-9dd7-9e9d102320ab" />
+    <UnitTestResult executionId="73458e4a-d924-47f5-abdc-e4d503372220" testId="4f9d0e46-2903-ab16-9f1b-e8949cfcb853" testName="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests.RenderNeverCallsSession" computerName="VITA-CASTLE" duration="00:00:08.0756000" startTime="2026-10-16T14:00:23.3803152+03:00" endTime="2026-10-16T14:00:23.3803157+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="73458e4a-d924-47f5-abdc-e4d503372220" />
+    <UnitTestResult executionId="3476df9b-c149-408e-9093-412511bf4006" testId="9ef48b8b-4fd5-5e83-5794-8162a4421a9b" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.No_mouse_move_yet_does_not_phantom_activate_an_object_near_the_origin" computerName="VITA-CASTLE" duration="00:00:00.0216942" startTime="2026-10-16T14:00:25.1476099+03:00" endTime="2026-10-16T14:00:25.1476104+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="3476df9b-c149-408e-9093-412511bf4006" />
+    <UnitTestResult executionId="2165cdd9-bdc8-41f5-9f54-e5c3803aac36" testId="01aeda5b-31f3-eb08-d89d-db97cd5da5be" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_the_players_own_ship_while_docked_also_returns_OpenStation" computerName="VITA-CASTLE" duration="00:00:00.2294285" startTime="2026-10-16T14:00:23.6834345+03:00" endTime="2026-10-16T14:00:23.6834351+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="2165cdd9-bdc8-41f5-9f54-e5c3803aac36" />
+    <UnitTestResult executionId="a4ebc13e-7d0a-4693-90e5-b3339fcbb27b" testId="07b07349-fae9-c270-c86e-6858d5d96614" testName="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_a_station_the_ship_is_not_docked_to_returns_None" computerName="VITA-CASTLE" duration="00:00:00.0345765" startTime="2026-10-16T14:00:25.1257694+03:00" endTime="2026-10-16T14:00:25.1257698+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="a4ebc13e-7d0a-4693-90e5-b3339fcbb27b" />
+    <UnitTestResult executionId="c7f2f08d-c08c-4267-8ea6-8fc6c31f24ff" testId="cf2895e3-dd23-bb88-f3a0-58eeef31e5c0" testName="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: 100, y: 100, speed: null, direction: 90)" computerName="VITA-CASTLE" duration="00:00:00.0000848" startTime="2026-10-16T14:00:15.3533599+03:00" endTime="2026-10-16T14:00:15.3533605+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="c7f2f08d-c08c-4267-8ea6-8fc6c31f24ff" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Nearest_object_wins_regardless_of_declaration_order" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="a4036c21-fe5d-0d89-9925-c68d3183e358">
+      <Execution id="babd2199-a04c-46a0-b6d0-9b77f40a54da" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Nearest_object_wins_regardless_of_declaration_order" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_the_station_the_ship_is_docked_to_returns_OpenStation" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="1f63d0d3-3c36-bbf5-606b-40e67faac5f5">
+      <Execution id="9a9f1280-49d1-41f8-83c8-6952d3193823" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Left_click_on_the_station_the_ship_is_docked_to_returns_OpenStation" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="bb53b80d-0cf6-4070-dd75-04c648af0017">
+      <Execution id="1fe39732-387f-47f0-b340-5bf7d66cb1df" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_after_selecting_a_non_player_object_still_reattaches_player_follow" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="68a40b0f-c508-20bf-4793-c403ec0d33f3">
+      <Execution id="b4f08ebf-8745-4f2b-b4db-7601c622c2bf" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="CtrlC_after_selecting_a_non_player_object_still_reattaches_player_follow" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Active_transitions_directly_between_objects_and_back_to_null" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="e6ba1a5c-2707-9df8-49df-5339d91603f0">
+      <Execution id="7c0113d9-cb95-42de-a888-af576c8b7bdb" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Active_transitions_directly_between_objects_and_back_to_null" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_object_selects_it_without_moving_camera_or_navigating" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="ad2bb05b-5477-013f-1e4e-ca65deed3907">
+      <Execution id="aab463d7-e6d4-4266-bd5a-737a29d937b7" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Left_click_on_object_selects_it_without_moving_camera_or_navigating" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;FlyThroughPending&quot;)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="f231c57d-d0c5-0921-ebb3-5db5eb61a9a2">
+      <Execution id="092383ef-73ca-4275-a3d3-ec687767d5ba" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Preview_route_takes_precedence_over_stale_navigation_target_fields" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_from_a_free_map_point_reattaches_player_follow" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="50becb5d-3348-64d2-664d-697cea555526">
+      <Execution id="4b64958d-bcc3-4d83-a242-9cffefe54ce5" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="CtrlC_from_a_free_map_point_reattaches_player_follow" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Full_state_reaches_the_connection_when_it_actually_changes" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="64954496-2d7a-e72c-e1e2-d6600b57059d">
+      <Execution id="d006909a-4d2e-410b-a9e3-94adfc81d2fa" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Full_state_reaches_the_connection_when_it_actually_changes" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;FlyThroughIntercept:LSR&quot;)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="e8f61eb1-f11f-542d-203c-3c3b3bdc4121">
+      <Execution id="9a3bb873-f9a4-4541-85d4-e9f1d21e13a0" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Preview_route_takes_precedence_over_stale_navigation_target_fields" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: 100, y: null, speed: 1, direction: 90)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="252230d6-c0ab-d2db-96a3-a26d81c40b0a">
+      <Execution id="3767805e-d3d7-4a15-80d6-7d8190397dc3" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Incomplete_legacy_approach_snapshot_has_no_preview" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_stops_at_the_target_when_arrival_happens_in_the_initial_phase" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="15c828a5-3a18-1ed8-e6df-45db5459d241">
+      <Execution id="1039a624-9a15-43a5-8a21-ee9d3a7573d4" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_trajectory_projection_stops_at_the_target_when_arrival_happens_in_the_initial_phase" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_object_or_panel_sends_no_command" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="f6d79cb8-22d5-0794-630b-ffcbc571f576">
+      <Execution id="a4112033-4870-4d9a-a24e-c52801ac3155" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Ctrl_click_on_object_or_panel_sends_no_command" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Tie_break_picks_lexicographically_smaller_object_id" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="dd400672-114c-3511-e360-974fb877acda">
+      <Execution id="ceb96471-547a-43a9-ba60-bd02067cb7be" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Tie_break_picks_lexicographically_smaller_object_id" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_just_inside_30px_activates_the_object" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="d349c0a2-828f-1f07-833a-e9371ddf1a33">
+      <Execution id="8d1c6819-1f0a-4d4f-8afc-15255cbc6ebe" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Cursor_just_inside_30px_activates_the_object" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Legacy_approach_snapshot_without_route_uses_the_compatibility_fallback" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="7cdf7714-f89e-7d92-01e9-b1cbf6da56fd">
+      <Execution id="b14e2bff-5231-4417-97fe-b4ef1c002bb1" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Legacy_approach_snapshot_without_route_uses_the_compatibility_fallback" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trail_phase_continues_from_behind_waypoint_to_the_target" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="333139cd-ec15-06e7-0e84-1e75189d5c4b">
+      <Execution id="c67ac4b8-04d6-4084-92f3-4788ce9976b0" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_trail_phase_continues_from_behind_waypoint_to_the_target" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_exactly_30px_activates_the_object" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="28d67b65-fc4d-15b6-350c-b10b86a4c0e4">
+      <Execution id="f6618c86-cf8c-4383-90f6-1f0073a8b70f" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Cursor_exactly_30px_activates_the_object" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="ddeb4923-9e45-a6ac-9ae7-cd9394fd2ac8">
+      <Execution id="bc5601df-f029-46b1-830b-f9a2e70993a8" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Zoomed_out_selected_contact_remains_active_and_selected" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="39bfae28-bba8-9307-9185-dc3c84e289ab">
+      <Execution id="184a9adb-ab43-4147-994c-638e9890d85c" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Zoomed_out_selected_contact_remains_active_and_selected" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_turns_toward_the_current_fixed_aim_point" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="24b04257-792d-6bfc-edeb-cc5b22d66516">
+      <Execution id="d02412fd-3d2f-4166-9dd7-9e9d102320ab" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_trajectory_projection_turns_toward_the_current_fixed_aim_point" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.OrbitToggleKeepsWorldAndSelection" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="bca0a25a-438c-5d4b-c628-9786610aeee1">
+      <Execution id="d721f5fe-f6cd-4152-96e0-7e8a3681155a" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests" name="OrbitToggleKeepsWorldAndSelection" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_position_outside_viewport_bounds_is_treated_as_no_cursor" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="676d06bc-f037-a125-1e8c-f642444da221">
+      <Execution id="38645ac3-2ce7-4955-8bbf-560297cae62b" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Cursor_position_outside_viewport_bounds_is_treated_as_no_cursor" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Object_info_panel_selected_row_shows_placeholder_then_real_object" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="df6a6233-34ce-3e12-5775-0a475298e519">
+      <Execution id="55442f26-4d7b-4cc8-8081-dad59860f43c" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Object_info_panel_selected_row_shows_placeholder_then_real_object" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests.RenderNeverCallsSession" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="4f9d0e46-2903-ab16-9f1b-e8949cfcb853">
+      <Execution id="73458e4a-d924-47f5-abdc-e4d503372220" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests" name="RenderNeverCallsSession" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.FitAndResizePreserveWorldDistances" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="0dd55f9d-0dae-8c4a-e5d5-cd108e15062e">
+      <Execution id="d017786c-9cb5-40c8-9a5a-84b4cc54493c" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests" name="FitAndResizePreserveWorldDistances" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests.FullMapInteractionMatrix" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="010e8e98-74e9-4b88-c90a-5213f69fb885">
+      <Execution id="260bd6de-2e0f-4825-90f0-14e5c68732a8" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests" name="FullMapInteractionMatrix" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.MapClustersDoNotPaintOverSelectedPlaque" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="e91b8234-af31-fa43-0b96-9fa0aee2305e">
+      <Execution id="185ce144-4e58-45a1-8839-87d9222e6b52" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests" name="MapClustersDoNotPaintOverSelectedPlaque" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(scale: 1)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="578f13c0-d995-7efb-47f5-7fe984040752">
+      <Execution id="12ba6744-e767-4cae-aebd-3789fd5d3969" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests" name="SelectedLabelWinsAtEveryScale" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_projection_shows_wait_turn_then_straight_to_target" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="45b6c3fb-7eb5-c010-9443-4eff5ec9f36b">
+      <Execution id="3c5c8b73-958b-4b32-aad4-1d038060a66d" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Navigation_trajectory_projection_shows_wait_turn_then_straight_to_target" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Npc_ship_wins_selection_over_a_closer_asteroid" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="482a2fab-f6a2-aba5-1020-730c484c5fe1">
+      <Execution id="666d4a06-87a8-41f0-bcb5-2c7836b6f220" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Npc_ship_wins_selection_over_a_closer_asteroid" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Station_wins_selection_over_a_closer_npc_ship" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="f291b778-8ff3-131a-196f-61d25bf85c18">
+      <Execution id="3f98d137-031b-4b5f-8a0c-1beefb79a590" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Station_wins_selection_over_a_closer_npc_ship" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_stops_panning_after_mouse_up" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="36ceb558-005b-fab4-3bc1-7bb8c028dedd">
+      <Execution id="f268ad4a-5bfd-4a0d-8864-159fe52e5048" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Drag_stops_panning_after_mouse_up" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_arrives_for_lateral_miss_target" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="6584c787-cf9c-3155-d02c-021fc825c4d0">
+      <Execution id="6c776e3a-4b5d-4679-8488-10ccc55a8f86" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Navigation_trajectory_arrives_for_lateral_miss_target" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_ui_panel_does_not_reset_selection" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="13f78fc2-8073-c39e-33e5-0169ab92fdcc">
+      <Execution id="fef9daf9-e8e4-43b5-b412-3813f7ea05c1" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Right_click_on_ui_panel_does_not_reset_selection" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests.FrameReportIdentifiesActualMap" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="100f44e2-567d-73fa-47f9-77b9f94903ab">
+      <Execution id="fbf618d9-1724-4e09-83cd-9c223df11bb9" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.FullMapRenderEvidenceTests" name="FrameReportIdentifiesActualMap" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_preview_after_a_full_loop_reorientation_ends_without_a_visible_kink" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="ae6eb557-b39c-1296-35a2-bacf87dac7a1">
+      <Execution id="f23dcff1-4923-4170-972b-abb023418a25" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_preview_after_a_full_loop_reorientation_ends_without_a_visible_kink" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="c6668a68-b4b2-ca68-106f-193da6960fc9">
+      <Execution id="a4f071b1-e9ce-48b0-86f8-fa91674a380d" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Station_wins_selection_over_a_closer_player_ship" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="251e4959-04b0-d986-d108-e89e10703a6b">
+      <Execution id="98f02ed4-67fd-404f-ad26-6617a7b91abd" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Station_wins_selection_over_a_closer_player_ship" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_completes_in_under_horizon" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="b33bf355-2057-0490-290f-59fa5ee86dcc">
+      <Execution id="5f5d5dc5-09c0-4044-8246-c51d71cec7f7" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Navigation_trajectory_completes_in_under_horizon" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_the_players_own_ship_while_not_docked_returns_None" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="bea08302-85e8-634d-7e0f-ca593f32e9cd">
+      <Execution id="70dd985a-bf64-45ef-b921-75a8b6502040" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Left_click_on_the_players_own_ship_while_not_docked_returns_None" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_object_selects_instead_of_navigating" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="cb5a957f-cec9-e511-23c7-56d875e666dc">
+      <Execution id="2d265d16-c40b-4996-927d-6d36e495c700" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Ctrl_left_click_on_object_selects_instead_of_navigating" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_prediction_holds_current_target_point_until_next_snapshot" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="f73b4d5a-554d-734d-76a8-85999996b58b">
+      <Execution id="ee2b732c-a58d-4667-8718-03d9d46ffa3b" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_prediction_holds_current_target_point_until_next_snapshot" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Zoomed_out_contact_remains_interactive" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="7748af9d-1ec0-619b-d0bb-1af99b45916e">
+      <Execution id="1d0ccb48-46c6-4186-8bca-a7e431b59ac4" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Zoomed_out_contact_remains_interactive" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_the_players_own_ship_while_docked_also_returns_OpenStation" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="01aeda5b-31f3-eb08-d89d-db97cd5da5be">
+      <Execution id="2165cdd9-bdc8-41f5-9f54-e5c3803aac36" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Left_click_on_the_players_own_ship_while_docked_also_returns_OpenStation" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Plain_click_sends_no_command_and_does_not_change_focus" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="17b3a8a7-8e41-868f-947b-eadd055e8ac8">
+      <Execution id="ce9e2402-1902-4831-a101-bbf85fc7439d" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Plain_click_sends_no_command_and_does_not_change_focus" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: 100, y: 100, speed: null, direction: 90)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="cf2895e3-dd23-bb88-f3a0-58eeef31e5c0">
+      <Execution id="c7f2f08d-c08c-4267-8ea6-8fc6c31f24ff" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Incomplete_legacy_approach_snapshot_has_no_preview" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_preview_resumes_a_persisted_confirmed_intercept_plan_and_completes_immediately" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="c54c1d17-8cf8-3d99-5e1d-dac84c29c070">
+      <Execution id="f74a73f0-67a4-4b2a-abb0-baf9c271930d" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_preview_resumes_a_persisted_confirmed_intercept_plan_and_completes_immediately" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(scale: 1.5)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="efd1a6ad-fdc1-768d-6e04-6487c3b48118">
+      <Execution id="5b8ca670-7b8d-473c-9edc-00007ffc0809" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests" name="SelectedLabelWinsAtEveryScale" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_projects_escape_turn_for_close_target" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="c9fe4ccc-bb27-6045-f6f1-b41c90feecdd">
+      <Execution id="a57f0a10-7aa8-441f-8d80-9a6c779987f7" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Navigation_trajectory_projects_escape_turn_for_close_target" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_object_clears_selection_but_not_active" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="9ccd7b08-84da-70f2-f880-f10573d957d1">
+      <Execution id="97f43b21-5ed6-439d-aaa6-181f1d96dae9" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Right_click_on_object_clears_selection_but_not_active" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(scale: 1.20000005)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="2cc7eb8e-21f4-2f74-fbb5-b8337c4db23a">
+      <Execution id="899b5b5a-3309-4f03-9ecb-a243ad1f1da8" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.SystemMapNavigationTests" name="SelectedLabelWinsAtEveryScale" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_preview_uses_confirmed_intercept_solve_when_achievable" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="f9063ab4-ba38-b654-9fed-73e0b305ebb8">
+      <Execution id="eecdfd04-57bc-4fdd-917c-5ceb6f10e8bd" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_preview_uses_confirmed_intercept_solve_when_achievable" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_empty_map_does_not_change_SelectedObjectId" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="e440aa70-0e00-9fe7-3b7b-0e72520f2923">
+      <Execution id="833155e1-8e23-4d3a-8f55-7e897e5977c0" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Left_click_on_empty_map_does_not_change_SelectedObjectId" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: 100, y: 100, speed: 1, direction: null)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="03aa15a4-97c0-2625-dce6-6cc1340c1ccd">
+      <Execution id="b3eb749f-415f-4d71-9596-2767a160e675" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Incomplete_legacy_approach_snapshot_has_no_preview" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_a_station_the_ship_is_not_docked_to_returns_None" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="07b07349-fae9-c270-c86e-6858d5d96614">
+      <Execution id="a4ebc13e-7d0a-4693-90e5-b3339fcbb27b" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Left_click_on_a_station_the_ship_is_not_docked_to_returns_None" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Transport_failure_is_retried_and_the_state_eventually_reaches_the_connection" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="067ffebd-54a2-625e-ef8c-e40963fae536">
+      <Execution id="b44a0685-9348-4a79-9d91-938a2397c38f" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Transport_failure_is_retried_and_the_state_eventually_reaches_the_connection" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Nearest_still_wins_within_the_same_priority_tier" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="3b9af34a-2921-d6f7-07e4-c08af776db72">
+      <Execution id="150cafbc-f658-4371-95ea-f20a0c53bf7a" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Nearest_still_wins_within_the_same_priority_tier" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Camera_drag_pan_recomputes_ActiveObjectId" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="96fed1f6-d2b9-f9ba-337c-cb6f92ce5150">
+      <Execution id="93dea7b3-1602-42b7-8e94-a621de5204a1" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Camera_drag_pan_recomputes_ActiveObjectId" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Default_scenario_paused_start_asteroid_route_ends_at_the_confirmed_intercept" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="150db4e7-42fb-aba4-4413-b09643d7322f">
+      <Execution id="e9e1cbf1-234c-4e82-ba7d-dea05cdd8950" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Default_scenario_paused_start_asteroid_route_ends_at_the_confirmed_intercept" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Left_click_on_a_station_while_not_docked_returns_None" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="c0517864-51e0-997e-eda9-1d519dc662e6">
+      <Execution id="a7603439-1a5d-44e7-9e75-420d481b6c83" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Left_click_on_a_station_while_not_docked_returns_None" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Player_ship_wins_selection_over_a_closer_asteroid" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="47087af5-cb8b-fd9b-c4df-00423e7c303a">
+      <Execution id="510ce12e-ab40-4c0a-a1d8-096bddaf1830" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Player_ship_wins_selection_over_a_closer_asteroid" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Zoom_change_recomputes_ActiveObjectId_without_a_new_mouse_move" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="087d0880-22d9-5526-bc7a-faa649d69791">
+      <Execution id="217fd5e2-f4e7-41bf-ac55-1ccf1604cc87" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Zoom_change_recomputes_ActiveObjectId_without_a_new_mouse_move" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Object_info_panel_selected_row_prefers_the_hovered_object_over_the_clicked_one" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="c33ffb8d-ae40-0382-dc7f-e579bf3f628b">
+      <Execution id="acc01969-b061-4a21-addb-b3fc87ee7abe" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Object_info_panel_selected_row_prefers_the_hovered_object_over_the_clicked_one" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="7627fa3b-01fd-1986-d34f-0f25320b9714">
+      <Execution id="2c0e2940-d0c1-432c-925d-2605620822f3" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Object_removed_from_the_snapshot_clears_both_ids" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="bd2b77db-2975-4ada-3a97-b076d19e4a53">
+      <Execution id="2181fbe1-1603-4937-921f-d2f6efb8b917" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Object_removed_from_the_snapshot_clears_both_ids" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: null, y: 100, speed: 1, direction: 90)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="4bf6f715-df79-0c49-d690-e5e01247f96a">
+      <Execution id="7402624e-b6d8-4ff8-b21b-17f9fd7d4d9d" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Incomplete_legacy_approach_snapshot_has_no_preview" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests.Local_session_preserves_live_selection_and_history_without_replaying_effects" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="5c46a9d2-a550-7da2-1c65-f38977520734">
+      <Execution id="99fac6f0-8ea0-41ab-b498-9f7740c24dfa" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests" name="Local_session_preserves_live_selection_and_history_without_replaying_effects" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Deactivating_the_screen_clears_ActiveObjectId" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="131dc1ba-2d43-c401-42f4-55ecc2f82850">
+      <Execution id="3a15a05c-6d39-4473-a3a4-0745a274ba90" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Deactivating_the_screen_clears_ActiveObjectId" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_starting_on_object_or_panel_does_not_pan_map" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="90ab4f16-6cc0-c7fe-fa22-a36b4247d0a3">
+      <Execution id="f8a39b0d-6a2f-4425-a658-18727ae5e83b" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Drag_starting_on_object_or_panel_does_not_pan_map" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_empty_map_still_sends_navigation_command" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="caced57b-a5d1-cd23-5276-871d002b00f9">
+      <Execution id="9ec11e2a-686d-4081-b733-c2e45e7e4c98" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Ctrl_left_click_on_empty_map_still_sends_navigation_command" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Incomplete_legacy_approach_snapshot_has_no_preview(x: null, y: null, speed: null, direction: null)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="35b1af63-c387-ca28-1935-cca8b625cd7d">
+      <Execution id="fdeb3b5a-4834-4321-a437-0b864fb6149b" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Incomplete_legacy_approach_snapshot_has_no_preview" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;Trail&quot;)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="936260db-4ade-d240-977a-f77f14e9be75">
+      <Execution id="86122040-7fc9-49a6-a915-e30c9c910179" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Preview_route_takes_precedence_over_stale_navigation_target_fields" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Future_trajectory_projector_does_not_reference_engine" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="3bb5eb88-4f17-9775-ecb8-a6971aafe360">
+      <Execution id="06b70f23-9e50-4e5b-a2bc-f614e4901e90" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Future_trajectory_projector_does_not_reference_engine" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_initial_phase_near_pass_ends_on_the_exact_aim_point" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="dbfd0861-4189-66fd-3718-f76c39ce72cb">
+      <Execution id="d2524c13-7f35-46eb-8750-60e72e63c455" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_initial_phase_near_pass_ends_on_the_exact_aim_point" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Closed_info_panel_does_not_disable_hit_testing_or_engine_sync" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="0d78afbb-406f-8423-7a24-c2fdde795efe">
+      <Execution id="3253f503-5223-439b-9665-8796223cd3a3" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Closed_info_panel_does_not_disable_hit_testing_or_engine_sync" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Moving_object_under_stationary_cursor_clears_ActiveObjectId" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="640b7e22-46c0-589a-6b6a-1cf8bbbd8909">
+      <Execution id="e9282903-0245-48e6-bde4-022b52ec130c" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Moving_object_under_stationary_cursor_clears_ActiveObjectId" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.No_mouse_move_yet_does_not_phantom_activate_an_object_near_the_origin" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="9ef48b8b-4fd5-5e83-5794-8162a4421a9b">
+      <Execution id="3476df9b-c149-408e-9093-412511bf4006" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="No_mouse_move_yet_does_not_phantom_activate_an_object_near_the_origin" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Preview_route_takes_precedence_over_stale_navigation_target_fields(phase: &quot;LineCapture&quot;)" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="288d943f-01dd-bd61-c847-e9d68b420de5">
+      <Execution id="660cf8c1-b71d-48ce-86e0-d71d27b3c485" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Preview_route_takes_precedence_over_stale_navigation_target_fields" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Unchanged_state_does_not_send_duplicate_updates_to_the_engine" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="8e5dc10e-9bdd-7d48-f049-54d5eb2f273b">
+      <Execution id="c07a0e21-7a12-4178-a2a7-5aacc347315a" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Unchanged_state_does_not_send_duplicate_updates_to_the_engine" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_the_player_ship_still_reattaches_camera_follow" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="0d203362-cf2b-77e3-d1a8-0722fed8df7e">
+      <Execution id="544529f4-d832-4092-9ab0-252840fcc438" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Selecting_the_player_ship_still_reattaches_camera_follow" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_a_non_player_object_leaves_the_camera_exactly_where_it_was" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="eae95a2e-de53-1580-99dd-e772e781c597">
+      <Execution id="acd3d829-2a1d-4a44-bdd6-2a2e53bf0b01" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Selecting_a_non_player_object_leaves_the_camera_exactly_where_it_was" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_stops_at_closest_approach_when_the_target_cannot_be_caught" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="cdd41ac3-e003-82d3-efbd-a97680391918">
+      <Execution id="e5ebc718-7276-4eb1-b01b-bdb35cf7253b" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_trajectory_projection_stops_at_closest_approach_when_the_target_cannot_be_caught" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_empty_map_clears_selection_without_moving_camera" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="2aeb913d-006b-7a97-4c10-230158de0711">
+      <Execution id="af780fca-6a71-42fd-b1ff-b303e38d4ba2" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Right_click_on_empty_map_clears_selection_without_moving_camera" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Navigation_trajectory_test_seam_is_empty_without_authoritative_target" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="689a24b9-d83d-4efd-a690-8bf194280f5f">
+      <Execution id="63eb214e-f32a-4f1b-9d5d-819b1a0a4cf4" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Navigation_trajectory_test_seam_is_empty_without_authoritative_target" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Approach_trajectory_projection_runs_past_the_old_200s_cap_to_reach_the_aim_point" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="946e1aaa-a11f-2362-4539-ca52f6683915">
+      <Execution id="02426ebb-396b-4ac9-82a9-1f5fc61334d3" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Approach_trajectory_projection_runs_past_the_old_200s_cap_to_reach_the_aim_point" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="580e287c-e934-0a4c-1757-e0f2f934fec7">
+      <Execution id="8ef2e270-bc2c-4129-9c27-70ad075383ac" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Reactivation_does_not_reuse_stale_mouse_position_until_a_fresh_move" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="827990a9-4863-d9d5-1c9d-11794e569b2d">
+      <Execution id="ad0909bd-4cea-4a30-b4ac-459976ee7113" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Reactivation_does_not_reuse_stale_mouse_position_until_a_fresh_move" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_does_not_change_camera_focus" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="69e13d76-7fb5-0440-ce20-ecab2a29dc86">
+      <Execution id="2a5dbd52-714a-4c8c-8dd7-3804c37cc87e" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionNavigationTests" name="Ctrl_click_does_not_change_camera_focus" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Player_ship_wins_selection_over_a_closer_npc_ship" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="6452b278-4c20-04da-de7b-d89f7fa9a449">
+      <Execution id="720fd620-68aa-4a05-8e1c-91a0b85c4447" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Player_ship_wins_selection_over_a_closer_npc_ship" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Cursor_just_outside_30px_leaves_ActiveObjectId_null" storage="d:\deepspacesaga\dss\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="13dd5a91-6622-451e-d169-f242d14ed349">
+      <Execution id="6d29e9c4-6f08-4a85-9f3b-bbf7b0ae22ea" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests" name="Cursor_just_outside_30px_leaves_ActiveObjectId_null" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="eae95a2e-de53-1580-99dd-e772e781c597" executionId="acd3d829-2a1d-4a44-bdd6-2a2e53bf0b01" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="288d943f-01dd-bd61-c847-e9d68b420de5" executionId="660cf8c1-b71d-48ce-86e0-d71d27b3c485" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7cdf7714-f89e-7d92-01e9-b1cbf6da56fd" executionId="b14e2bff-5231-4417-97fe-b4ef1c002bb1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="689a24b9-d83d-4efd-a690-8bf194280f5f" executionId="63eb214e-f32a-4f1b-9d5d-819b1a0a4cf4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="827990a9-4863-d9d5-1c9d-11794e569b2d" executionId="ad0909bd-4cea-4a30-b4ac-459976ee7113" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="946e1aaa-a11f-2362-4539-ca52f6683915" executionId="02426ebb-396b-4ac9-82a9-1f5fc61334d3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="5c46a9d2-a550-7da2-1c65-f38977520734" executionId="99fac6f0-8ea0-41ab-b498-9f7740c24dfa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="087d0880-22d9-5526-bc7a-faa649d69791" executionId="217fd5e2-f4e7-41bf-ac55-1ccf1604cc87" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="150db4e7-42fb-aba4-4413-b09643d7322f" executionId="e9e1cbf1-234c-4e82-ba7d-dea05cdd8950" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c54c1d17-8cf8-3d99-5e1d-dac84c29c070" executionId="f74a73f0-67a4-4b2a-abb0-baf9c271930d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="333139cd-ec15-06e7-0e84-1e75189d5c4b" executionId="c67ac4b8-04d6-4084-92f3-4788ce9976b0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ae6eb557-b39c-1296-35a2-bacf87dac7a1" executionId="f23dcff1-4923-4170-972b-abb023418a25" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c6668a68-b4b2-ca68-106f-193da6960fc9" executionId="a4f071b1-e9ce-48b0-86f8-fa91674a380d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="251e4959-04b0-d986-d108-e89e10703a6b" executionId="98f02ed4-67fd-404f-ad26-6617a7b91abd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="067ffebd-54a2-625e-ef8c-e40963fae536" executionId="b44a0685-9348-4a79-9d91-938a2397c38f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f73b4d5a-554d-734d-76a8-85999996b58b" executionId="ee2b732c-a58d-4667-8718-03d9d46ffa3b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f231c57d-d0c5-0921-ebb3-5db5eb61a9a2" executionId="092383ef-73ca-4275-a3d3-ec687767d5ba" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="96fed1f6-d2b9-f9ba-337c-cb6f92ce5150" executionId="93dea7b3-1602-42b7-8e94-a621de5204a1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="580e287c-e934-0a4c-1757-e0f2f934fec7" executionId="8ef2e270-bc2c-4129-9c27-70ad075383ac" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="578f13c0-d995-7efb-47f5-7fe984040752" executionId="12ba6744-e767-4cae-aebd-3789fd5d3969" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e8f61eb1-f11f-542d-203c-3c3b3bdc4121" executionId="9a3bb873-f9a4-4541-85d4-e9f1d21e13a0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="df6a6233-34ce-3e12-5775-0a475298e519" executionId="55442f26-4d7b-4cc8-8081-dad59860f43c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0d78afbb-406f-8423-7a24-c2fdde795efe" executionId="3253f503-5223-439b-9665-8796223cd3a3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="caced57b-a5d1-cd23-5276-871d002b00f9" executionId="9ec11e2a-686d-4081-b733-c2e45e7e4c98" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e91b8234-af31-fa43-0b96-9fa0aee2305e" executionId="185ce144-4e58-45a1-8839-87d9222e6b52" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="b33bf355-2057-0490-290f-59fa5ee86dcc" executionId="5f5d5dc5-09c0-4044-8246-c51d71cec7f7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="36ceb558-005b-fab4-3bc1-7bb8c028dedd" executionId="f268ad4a-5bfd-4a0d-8864-159fe52e5048" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="131dc1ba-2d43-c401-42f4-55ecc2f82850" executionId="3a15a05c-6d39-4473-a3a4-0745a274ba90" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="8e5dc10e-9bdd-7d48-f049-54d5eb2f273b" executionId="c07a0e21-7a12-4178-a2a7-5aacc347315a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f6d79cb8-22d5-0794-630b-ffcbc571f576" executionId="a4112033-4870-4d9a-a24e-c52801ac3155" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bea08302-85e8-634d-7e0f-ca593f32e9cd" executionId="70dd985a-bf64-45ef-b921-75a8b6502040" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bb53b80d-0cf6-4070-dd75-04c648af0017" executionId="1fe39732-387f-47f0-b340-5bf7d66cb1df" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0d203362-cf2b-77e3-d1a8-0722fed8df7e" executionId="544529f4-d832-4092-9ab0-252840fcc438" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="28d67b65-fc4d-15b6-350c-b10b86a4c0e4" executionId="f6618c86-cf8c-4383-90f6-1f0073a8b70f" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="69e13d76-7fb5-0440-ce20-ecab2a29dc86" executionId="2a5dbd52-714a-4c8c-8dd7-3804c37cc87e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="1f63d0d3-3c36-bbf5-606b-40e67faac5f5" executionId="9a9f1280-49d1-41f8-83c8-6952d3193823" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6584c787-cf9c-3155-d02c-021fc825c4d0" executionId="6c776e3a-4b5d-4679-8488-10ccc55a8f86" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4bf6f715-df79-0c49-d690-e5e01247f96a" executionId="7402624e-b6d8-4ff8-b21b-17f9fd7d4d9d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e440aa70-0e00-9fe7-3b7b-0e72520f2923" executionId="833155e1-8e23-4d3a-8f55-7e897e5977c0" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="47087af5-cb8b-fd9b-c4df-00423e7c303a" executionId="510ce12e-ab40-4c0a-a1d8-096bddaf1830" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="e6ba1a5c-2707-9df8-49df-5339d91603f0" executionId="7c0113d9-cb95-42de-a888-af576c8b7bdb" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="0dd55f9d-0dae-8c4a-e5d5-cd108e15062e" executionId="d017786c-9cb5-40c8-9a5a-84b4cc54493c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="252230d6-c0ab-d2db-96a3-a26d81c40b0a" executionId="3767805e-d3d7-4a15-80d6-7d8190397dc3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="17b3a8a7-8e41-868f-947b-eadd055e8ac8" executionId="ce9e2402-1902-4831-a101-bbf85fc7439d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="35b1af63-c387-ca28-1935-cca8b625cd7d" executionId="fdeb3b5a-4834-4321-a437-0b864fb6149b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dd400672-114c-3511-e360-974fb877acda" executionId="ceb96471-547a-43a9-ba60-bd02067cb7be" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2cc7eb8e-21f4-2f74-fbb5-b8337c4db23a" executionId="899b5b5a-3309-4f03-9ecb-a243ad1f1da8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="676d06bc-f037-a125-1e8c-f642444da221" executionId="38645ac3-2ce7-4955-8bbf-560297cae62b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="2aeb913d-006b-7a97-4c10-230158de0711" executionId="af780fca-6a71-42fd-b1ff-b303e38d4ba2" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="50becb5d-3348-64d2-664d-697cea555526" executionId="4b64958d-bcc3-4d83-a242-9cffefe54ce5" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13dd5a91-6622-451e-d169-f242d14ed349" executionId="6d29e9c4-6f08-4a85-9f3b-bbf7b0ae22ea" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d349c0a2-828f-1f07-833a-e9371ddf1a33" executionId="8d1c6819-1f0a-4d4f-8afc-15255cbc6ebe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="482a2fab-f6a2-aba5-1020-730c484c5fe1" executionId="666d4a06-87a8-41f0-bcb5-2c7836b6f220" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7627fa3b-01fd-1986-d34f-0f25320b9714" executionId="2c0e2940-d0c1-432c-925d-2605620822f3" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bd2b77db-2975-4ada-3a97-b076d19e4a53" executionId="2181fbe1-1603-4937-921f-d2f6efb8b917" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c9fe4ccc-bb27-6045-f6f1-b41c90feecdd" executionId="a57f0a10-7aa8-441f-8d80-9a6c779987f7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="010e8e98-74e9-4b88-c90a-5213f69fb885" executionId="260bd6de-2e0f-4825-90f0-14e5c68732a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="6452b278-4c20-04da-de7b-d89f7fa9a449" executionId="720fd620-68aa-4a05-8e1c-91a0b85c4447" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="dbfd0861-4189-66fd-3718-f76c39ce72cb" executionId="d2524c13-7f35-46eb-8750-60e72e63c455" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c0517864-51e0-997e-eda9-1d519dc662e6" executionId="a7603439-1a5d-44e7-9e75-420d481b6c83" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="68a40b0f-c508-20bf-4793-c403ec0d33f3" executionId="b4f08ebf-8745-4f2b-b4db-7601c622c2bf" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3bb5eb88-4f17-9775-ecb8-a6971aafe360" executionId="06b70f23-9e50-4e5b-a2bc-f614e4901e90" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="64954496-2d7a-e72c-e1e2-d6600b57059d" executionId="d006909a-4d2e-410b-a9e3-94adfc81d2fa" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="03aa15a4-97c0-2625-dce6-6cc1340c1ccd" executionId="b3eb749f-415f-4d71-9596-2767a160e675" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f291b778-8ff3-131a-196f-61d25bf85c18" executionId="3f98d137-031b-4b5f-8a0c-1beefb79a590" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="7748af9d-1ec0-619b-d0bb-1af99b45916e" executionId="1d0ccb48-46c6-4186-8bca-a7e431b59ac4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="45b6c3fb-7eb5-c010-9443-4eff5ec9f36b" executionId="3c5c8b73-958b-4b32-aad4-1d038060a66d" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ad2bb05b-5477-013f-1e4e-ca65deed3907" executionId="aab463d7-e6d4-4266-bd5a-737a29d937b7" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="3b9af34a-2921-d6f7-07e4-c08af776db72" executionId="150cafbc-f658-4371-95ea-f20a0c53bf7a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="39bfae28-bba8-9307-9185-dc3c84e289ab" executionId="184a9adb-ab43-4147-994c-638e9890d85c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cb5a957f-cec9-e511-23c7-56d875e666dc" executionId="2d265d16-c40b-4996-927d-6d36e495c700" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="bca0a25a-438c-5d4b-c628-9786610aeee1" executionId="d721f5fe-f6cd-4152-96e0-7e8a3681155a" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="15c828a5-3a18-1ed8-e6df-45db5459d241" executionId="1039a624-9a15-43a5-8a21-ee9d3a7573d4" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="a4036c21-fe5d-0d89-9925-c68d3183e358" executionId="babd2199-a04c-46a0-b6d0-9b77f40a54da" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="936260db-4ade-d240-977a-f77f14e9be75" executionId="86122040-7fc9-49a6-a915-e30c9c910179" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="ddeb4923-9e45-a6ac-9ae7-cd9394fd2ac8" executionId="bc5601df-f029-46b1-830b-f9a2e70993a8" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="640b7e22-46c0-589a-6b6a-1cf8bbbd8909" executionId="e9282903-0245-48e6-bde4-022b52ec130c" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="c33ffb8d-ae40-0382-dc7f-e579bf3f628b" executionId="acc01969-b061-4a21-addb-b3fc87ee7abe" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="13f78fc2-8073-c39e-33e5-0169ab92fdcc" executionId="fef9daf9-e8e4-43b5-b412-3813f7ea05c1" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="90ab4f16-6cc0-c7fe-fa22-a36b4247d0a3" executionId="f8a39b0d-6a2f-4425-a658-18727ae5e83b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9ccd7b08-84da-70f2-f880-f10573d957d1" executionId="97f43b21-5ed6-439d-aaa6-181f1d96dae9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="100f44e2-567d-73fa-47f9-77b9f94903ab" executionId="fbf618d9-1724-4e09-83cd-9c223df11bb9" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cdd41ac3-e003-82d3-efbd-a97680391918" executionId="e5ebc718-7276-4eb1-b01b-bdb35cf7253b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="f9063ab4-ba38-b654-9fed-73e0b305ebb8" executionId="eecdfd04-57bc-4fdd-917c-5ceb6f10e8bd" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="efd1a6ad-fdc1-768d-6e04-6487c3b48118" executionId="5b8ca670-7b8d-473c-9edc-00007ffc0809" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="24b04257-792d-6bfc-edeb-cc5b22d66516" executionId="d02412fd-3d2f-4166-9dd7-9e9d102320ab" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="4f9d0e46-2903-ab16-9f1b-e8949cfcb853" executionId="73458e4a-d924-47f5-abdc-e4d503372220" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="9ef48b8b-4fd5-5e83-5794-8162a4421a9b" executionId="3476df9b-c149-408e-9093-412511bf4006" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="01aeda5b-31f3-eb08-d89d-db97cd5da5be" executionId="2165cdd9-bdc8-41f5-9f54-e5c3803aac36" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="07b07349-fae9-c270-c86e-6858d5d96614" executionId="a4ebc13e-7d0a-4693-90e5-b3339fcbb27b" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="cf2895e3-dd23-bb88-f3a0-58eeef31e5c0" executionId="c7f2f08d-c08c-4267-8ea6-8fc6c31f24ff" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="91" executed="91" passed="79" failed="12" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 8.0.26)&#xD;
+[xUnit.net 00:00:00.21]   Discovering: DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:01.13]   Discovered:  DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:01.15]   Starting:    DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:02.53]       Assert.Equal() Failure: Values are not within 6 decimal places&#xD;
+[xUnit.net 00:00:02.53]       Expected: 9970 (rounded from 9970)&#xD;
+[xUnit.net 00:00:02.53]       Actual:   10000 (rounded from 10000)&#xD;
+[xUnit.net 00:00:02.53]       Stack Trace:&#xD;
+[xUnit.net 00:00:02.53]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(1025,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time()&#xD;
+[xUnit.net 00:00:02.53]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(1026,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time()&#xD;
+[xUnit.net 00:00:02.53]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:04.61]       Assert.Single() Failure: The collection was empty&#xD;
+[xUnit.net 00:00:04.61]       Stack Trace:&#xD;
+[xUnit.net 00:00:04.61]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(37,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates()&#xD;
+[xUnit.net 00:00:04.61]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(44,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates()&#xD;
+[xUnit.net 00:00:04.61]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:04.83]       Assert.Single() Failure: The collection was empty&#xD;
+[xUnit.net 00:00:04.83]       Stack Trace:&#xD;
+[xUnit.net 00:00:04.83]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(80,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_does_not_change_camera_focus()&#xD;
+[xUnit.net 00:00:04.83]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(80,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_does_not_change_camera_focus()&#xD;
+[xUnit.net 00:00:04.83]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:04.89]       Assert.False() Failure&#xD;
+[xUnit.net 00:00:04.89]       Expected: False&#xD;
+[xUnit.net 00:00:04.89]       Actual:   True&#xD;
+[xUnit.net 00:00:04.91]       Stack Trace:&#xD;
+[xUnit.net 00:00:04.91]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(377,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_from_a_free_map_point_reattaches_player_follow()&#xD;
+[xUnit.net 00:00:04.91]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(382,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_from_a_free_map_point_reattaches_player_follow()&#xD;
+[xUnit.net 00:00:04.91]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:05.01]       System.InvalidOperationException : Combat report session baseline mismatch.&#xD;
+[xUnit.net 00:00:05.01]       Stack Trace:&#xD;
+[xUnit.net 00:00:05.01]         D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Client\CombatReportInbox.cs(22,0): at DeepSpaceSaga.Client.CombatReportInbox.Receive(CombatReportBatchSnapshot batch)&#xD;
+[xUnit.net 00:00:05.01]         D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Client\SnapshotBuffer.cs(95,0): at DeepSpaceSaga.Client.SnapshotBuffer.Update(AuthoritativeSnapshot snapshot)&#xD;
+[xUnit.net 00:00:05.01]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\CountermeasureSessionRoundtripTests.cs(36,0): at DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests.Local_session_preserves_live_selection_and_history_without_replaying_effects()&#xD;
+[xUnit.net 00:00:05.01]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\CountermeasureSessionRoundtripTests.cs(49,0): at DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests.Local_session_preserves_live_selection_and_history_without_replaying_effects()&#xD;
+[xUnit.net 00:00:05.01]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:06.63]       Assert.False() Failure&#xD;
+[xUnit.net 00:00:06.63]       Expected: False&#xD;
+[xUnit.net 00:00:06.63]       Actual:   True&#xD;
+[xUnit.net 00:00:06.63]       Stack Trace:&#xD;
+[xUnit.net 00:00:06.63]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(357,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_the_player_ship_still_reattaches_camera_follow()&#xD;
+[xUnit.net 00:00:06.63]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(362,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_the_player_ship_still_reattaches_camera_follow()&#xD;
+[xUnit.net 00:00:06.63]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:06.72]       Assert.Single() Failure: The collection was empty&#xD;
+[xUnit.net 00:00:06.72]       Stack Trace:&#xD;
+[xUnit.net 00:00:06.72]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(993,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone()&#xD;
+[xUnit.net 00:00:06.72]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(1001,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone()&#xD;
+[xUnit.net 00:00:06.72]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:06.79]       Assert.Single() Failure: The collection was empty&#xD;
+[xUnit.net 00:00:06.79]       Stack Trace:&#xD;
+[xUnit.net 00:00:06.79]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(959,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation()&#xD;
+[xUnit.net 00:00:06.79]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionNavigationTests.cs(980,0): at DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation()&#xD;
+[xUnit.net 00:00:06.79]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:07.29]       Assert.False() Failure&#xD;
+[xUnit.net 00:00:07.29]       Expected: False&#xD;
+[xUnit.net 00:00:07.29]       Actual:   True&#xD;
+[xUnit.net 00:00:07.29]       Stack Trace:&#xD;
+[xUnit.net 00:00:07.29]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(432,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally()&#xD;
+[xUnit.net 00:00:07.29]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(444,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally()&#xD;
+[xUnit.net 00:00:07.29]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:07.38]       Assert.Null() Failure: Value is not null&#xD;
+[xUnit.net 00:00:07.38]       Expected: null&#xD;
+[xUnit.net 00:00:07.38]       Actual:   "OBJ-1"&#xD;
+[xUnit.net 00:00:07.38]       Stack Trace:&#xD;
+[xUnit.net 00:00:07.38]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(661,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_empty_map_clears_selection_without_moving_camera()&#xD;
+[xUnit.net 00:00:07.38]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(663,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_empty_map_clears_selection_without_moving_camera()&#xD;
+[xUnit.net 00:00:07.38]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:11.45]       Assert.False() Failure&#xD;
+[xUnit.net 00:00:11.45]       Expected: False&#xD;
+[xUnit.net 00:00:11.45]       Actual:   True&#xD;
+[xUnit.net 00:00:11.45]       Stack Trace:&#xD;
+[xUnit.net 00:00:11.45]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\SystemMapNavigationTests.cs(68,0): at DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(Single scale)&#xD;
+[xUnit.net 00:00:11.45]            at InvokeStub_SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(Object, Span`1)&#xD;
+[xUnit.net 00:00:11.45]            at System.Reflection.MethodBaseInvoker.InvokeWithOneArg(Object obj, BindingFlags invokeAttr, Binder binder, Object[] parameters, CultureInfo culture)&#xD;
+[xUnit.net 00:00:11.52]       Assert.Single() Failure: The collection was empty&#xD;
+[xUnit.net 00:00:11.52]       Stack Trace:&#xD;
+[xUnit.net 00:00:11.52]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(280,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_empty_map_still_sends_navigation_command()&#xD;
+[xUnit.net 00:00:11.52]         D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\GameSessionObjectInteractionTests.cs(282,0): at DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_empty_map_still_sends_navigation_command()&#xD;
+[xUnit.net 00:00:11.52]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:15.99]   Finished:    DeepSpaceSaga.Client.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:16.4280690+03:00">
+        <Text>[xUnit.net 00:00:02.53]     DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Drag_after_plain_click_pans_camera_by_mouse_delta_in_real_time [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:18.5049006+03:00">
+        <Text>[xUnit.net 00:00:04.61]     DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_on_free_area_sends_exactly_one_navigate_command_with_world_coordinates [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:18.7296170+03:00">
+        <Text>[xUnit.net 00:00:04.83]     DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_does_not_change_camera_focus [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:18.7916422+03:00">
+        <Text>[xUnit.net 00:00:04.89]     DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.CtrlC_from_a_free_map_point_reattaches_player_follow [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:18.9058237+03:00">
+        <Text>[xUnit.net 00:00:05.01]     DeepSpaceSaga.Client.Tests.CountermeasureSessionRoundtripTests.Local_session_preserves_live_selection_and_history_without_replaying_effects [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:20.5309759+03:00">
+        <Text>[xUnit.net 00:00:06.63]     DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Selecting_the_player_ship_still_reattaches_camera_follow [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:20.6234001+03:00">
+        <Text>[xUnit.net 00:00:06.72]     DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_with_ctrl_right_then_release_then_plain_click_does_not_pan_alone [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:20.6875937+03:00">
+        <Text>[xUnit.net 00:00:06.79]     DeepSpaceSaga.Client.Tests.GameSessionNavigationTests.Ctrl_click_then_ctrl_release_then_plain_click_and_drag_pans_without_second_navigation [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:21.1874145+03:00">
+        <Text>[xUnit.net 00:00:07.29]     DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Starting_a_manual_drag_after_selecting_a_non_player_object_pans_normally [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:21.2742015+03:00">
+        <Text>[xUnit.net 00:00:07.38]     DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Right_click_on_empty_map_clears_selection_without_moving_camera [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:25.3456686+03:00">
+        <Text>[xUnit.net 00:00:11.45]     DeepSpaceSaga.Client.Tests.SystemMapNavigationTests.SelectedLabelWinsAtEveryScale(scale: 1.5) [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:00:25.4183722+03:00">
+        <Text>[xUnit.net 00:00:11.52]     DeepSpaceSaga.Client.Tests.GameSessionObjectInteractionTests.Ctrl_left_click_on_empty_map_still_sends_navigation_command [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Warning" timestamp="2026-10-16T14:00:30.3592207+03:00">
+        <Text>Data collector 'Blame' message: All tests finished running, Sequence file will not be generated.</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

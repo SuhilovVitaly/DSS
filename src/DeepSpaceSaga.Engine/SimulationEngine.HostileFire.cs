@@ -26,7 +26,12 @@ public sealed partial class SimulationEngine
                 if (!_launcherCombat.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var launcher) ||
                     launcher.IsBrokenUntilDock || module.ActiveCycle is not null ||
                 !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire) ||
-                    ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack) is null) continue;
+                    ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack) is null)
+                { ClearCombatReactions(owner.InitialMotion.ObjectId, module.ModuleId); continue; }
+                if (module.DisabledUntilMotionTimeMs > cursor || !CanExecuteModuleCommand(module, cursor) ||
+                    !CombatRangeMath.IsWithinRange(PredictMotion(owner, (long)Math.Ceiling(cursor) - owner.StartGameTimeMs),
+                        PredictMotion(player, (long)Math.Ceiling(cursor) - player.StartGameTimeMs), launcher.RangeKm!.Value))
+                    ClearCombatReactions(owner.InitialMotion.ObjectId, module.ModuleId);
                 double earliest = Math.Max(Math.Max(Math.Ceiling(cursor), _combatProcessedTimeMs + 1),
                     Math.Max(Math.Ceiling(module.DisabledUntilMotionTimeMs ?? cursor),
                         Math.Ceiling(launcher.ReadyAtMotionTimeMs ?? cursor)));
@@ -39,6 +44,10 @@ public sealed partial class SimulationEngine
                     if (entry is null || entry.Value.MotionTimeMs > long.MaxValue) break;
                     long time = (long)Math.Ceiling(entry.Value.MotionTimeMs);
                     if (time > to) break;
+                    var delayed = ReactionTime("hostile", owner.InitialMotion.ObjectId, module.ModuleId,
+                        player.InitialMotion.ObjectId, time, launcher.ReadyAtMotionTimeMs ?? 0);
+                    if (delayed is null || delayed > to) break;
+                    time = delayed.Value;
                     // A sub-ms grazing contact need not contain an eligible integer launch instant.
                     if (CombatRangeMath.IsWithinRange(PredictMotion(owner, time - owner.StartGameTimeMs),
                         PredictMotion(player, time - player.StartGameTimeMs), launcher.RangeKm.Value))
@@ -86,7 +95,9 @@ public sealed partial class SimulationEngine
                 return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
             if (!CanHostileIntercept(owner, module, player, launcher, motionTimeMs))
                 return CommandStartOutcome.Rejected("target_unreachable");
-            return TryLaunchTorpedo(owner, moduleId, player.InitialMotion.ObjectId, motionTimeMs);
+            var result = TryLaunchTorpedo(owner, moduleId, player.InitialMotion.ObjectId, motionTimeMs);
+            if (result.Disposition == CommandStartDisposition.Started) ClearCombatReactions(ownerId, moduleId);
+            return result;
         }
     }
 }

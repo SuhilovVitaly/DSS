@@ -171,7 +171,7 @@ public class ModalPauseTests
 
         clock.AdvanceMs(200);
 
-        Assert.Equal(1000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(250, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -187,12 +187,12 @@ public class ModalPauseTests
         buffer.CurrentSpeed = SimulationSpeed.Speed4;
 
         // The 500 ms that already passed must stay at Speed1.
-        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(125, buffer.EffectivePredictionDeltaMs);
 
         clock.AdvanceMs(100);
 
         // Then only the new 100 ms segment runs at Speed4 / 100x.
-        Assert.Equal(10500, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(2625, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -206,10 +206,10 @@ public class ModalPauseTests
 
         clock.AdvanceMs(500);
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
-        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(125, buffer.EffectivePredictionDeltaMs);
 
         clock.AdvanceMs(1000);
-        Assert.Equal(500, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(125, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]
@@ -222,20 +222,20 @@ public class ModalPauseTests
             ImmutableArray<ObjectMotionSnapshot>.Empty));
 
         clock.AdvanceMs(900);
-        Assert.Equal(90_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(22_500, buffer.EffectivePredictionDeltaMs);
 
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
-        buffer.Update(new AuthoritativeSnapshot(2, 50_000, SimulationSpeed.Speed0,
+        buffer.Update(new AuthoritativeSnapshot(2, 12_500, SimulationSpeed.Speed0,
             ImmutableArray<ObjectMotionSnapshot>.Empty));
 
         var prediction = Assert.IsType<SnapshotPrediction>(buffer.LatestPrediction);
-        Assert.Equal(40_000, prediction.EffectivePredictionDeltaMs);
+        Assert.Equal(10_000, prediction.EffectivePredictionDeltaMs);
         Assert.Equal(
-            90_000,
+            22_500,
             prediction.BufferedSnapshot.Snapshot.GameTimeMs + prediction.EffectivePredictionDeltaMs);
 
         clock.AdvanceMs(1_000);
-        Assert.Equal(40_000, buffer.EffectivePredictionDeltaMs);
+        Assert.Equal(10_000, buffer.EffectivePredictionDeltaMs);
     }
 
     [Fact]

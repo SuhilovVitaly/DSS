@@ -1,0 +1,11 @@
+{
+  "nodes": 13087,
+  "edges": 45407,
+  "communities": 416,
+  "extraction_nodes": 13800,
+  "extraction_edges": 47706,
+  "code_files": 713,
+  "markdown_files": 131,
+  "pruned_unresolved_edges": 992,
+  "unlocated_reference_nodes": 2494
+}

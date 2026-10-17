@@ -25,9 +25,9 @@ public class PlayerDefeatTests
     {
         using var engine = Create(LethalScenario());
         engine.SetObjectInteractionState(Player, Player);
-        Assert.Single(At(engine, 5001).CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
-        Assert.Equal(2, At(engine, 20002).CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
-        var final = At(engine, 35003);
+        Assert.Single(At(engine, 6251).CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
+        Assert.Equal(2, At(engine, 22502).CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
+        var final = At(engine, 38753);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
         Assert.Equal(Player, final.EffectiveOutcome.PlayerObjectId);
         Assert.Equal(3, final.CombatJournal.Count(e => e.Type == CombatEventType.Hit));

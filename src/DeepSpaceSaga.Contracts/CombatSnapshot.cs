@@ -46,7 +46,8 @@ public sealed record LauncherCombatSnapshot(
     double? ReadyAtMotionTimeMs = null,
     bool IsBrokenUntilDock = false,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
-    ImmutableArray<string> ActiveTorpedoIds = default);
+    ImmutableArray<string> ActiveTorpedoIds = default,
+    double? ReloadDurationMs = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs

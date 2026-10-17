@@ -1,8 +1,12 @@
 # Deep Space Saga Documentation
 
+## Боевые доклады EP-0010 — 2026-10-16
+
+[ТЗ: панель боевых докладов](02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [эпик, истории и тикеты](../Board/EP-0010-combat-reports/EP-0010-combat-reports.md). Реализованы E01–E07,200-card accordion, Save17 continuation, надёжная доставка и8 иллюстраций. [Текущая архитектура](04-Engineering/CombatReports.md) · [проверки и отдельные SHA/push](../Board/EP-0010-combat-reports/ImplementationStatus.md). Native/human/FPS acceptance OPEN. Самостоятельный запуск игры агентом запрещён пользователем.
+
 ## Актуальный бой EP-0009 — 2026-10-12
 
-[Модульный бой](04-Engineering/ModuleCombat.md) · [канонические требования](01-Requirements/EngineRequirements.md#phase-four-module-combat) · [100 сидов Engine](../Board/EP-0009-battle/evidence/balance.md) · [открытая нативная матрица](../Board/EP-0009-battle/evidence/native.md). Текущий SaveFormatVersion17; EP-0008 и Save16 ниже — историческая запись. Native/human приёмка и Graphify rebuild отложены пользователем.
+[Модульный бой](04-Engineering/ModuleCombat.md) · [канонические требования](01-Requirements/EngineRequirements.md#phase-four-module-combat) · [100 сидов Engine](../Board/EP-0009-battle/evidence/balance.md) · [открытая нативная матрица](../Board/EP-0009-battle/evidence/native.md). Текущий SaveFormatVersion17; EP-0008 и Save16 ниже — историческая запись. Native/human приёмка EP9 остаётся открытой; Graphify повторно перестроен в EP10 (см. ниже).
 
 ## Актуализация EP-0008 — 2026-10-12
 
@@ -60,4 +64,4 @@ Operational skill files that must be discovered in-place, such as the character-
 
 - [EP-0004 Graphify](06-Tooling/AiMapGraphify.md) — текущий код, документы, hash manifest и ограничения AST.
 
-Обновление Graphify отменено пользователем2026-10-12; существующий граф является историческим артефактом и не подтверждает текущий EP-0008/EP-0009.
+Graphify обновлён2026-10-16 в завершающей истории EP10: [corpus, rebuild и ограничения](06-Tooling/TradingSolarGraphify.md). AST охватывает текущий код, семантика документов выборочная; граф служит навигации и не доказывает runtime/native acceptance. Отмена2026-10-12 относится к прежнему запуску.

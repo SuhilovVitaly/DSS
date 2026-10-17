@@ -54,7 +54,7 @@ public sealed partial class SimulationEngine
                 GameCalendar.HourMs / SimulationSpeedExtensions.BaseGameSecondsPerRealSecond);
             AdvanceWorldTo(targetTime, targetSimulationTime);
             if (IsDefeated) return new(false, CommandReasonCodes.SessionDefeated, CaptureSnapshot());
-            _clock.Reset(targetTime, SimulationSpeed.Speed0, targetSimulationTime);
+            _clock.Reset(targetTime, SimulationSpeed.Speed0, targetSimulationTime, _clock.Capture().MotionQuarterRemainder);
             _stationDistrict = command.Destination;
             _stationTravelReceipts.Add(command.CommandId);
             return new(true, null, CaptureSnapshot());

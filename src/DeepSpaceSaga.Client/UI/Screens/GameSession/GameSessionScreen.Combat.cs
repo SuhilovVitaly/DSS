@@ -15,11 +15,10 @@ public sealed partial class GameSessionScreen
     private void RefreshFireModeSubmission()
     {
         if (_pendingFireModeId is null) return;
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = _buffer.Presented?.Snapshot;
         if (FindLauncher()?.LauncherCombat?.ModeId == _pendingFireModeId ||
-            snapshot is { CommandResults.IsDefaultOrEmpty: false } &&
-            snapshot.CommandResults.Any(result => result.CommandId == _pendingFireModeCommandId &&
-                result.Status is CommandResultStatus.Rejected or CommandResultStatus.Failed or CommandResultStatus.Cancelled) == true ||
+            _pendingFireModeCommandId is { } id && _buffer.FindCommandResult(id) is
+            { Status: CommandResultStatus.Rejected or CommandResultStatus.Failed or CommandResultStatus.Cancelled } ||
             _fireModeSendTask is { IsFaulted: true } or { IsCanceled: true })
         {
             _ = _fireModeSendTask?.Exception;
@@ -33,7 +32,7 @@ public sealed partial class GameSessionScreen
     {
         RefreshFireModeSubmission();
         return _pendingFireModeId is null && _handle is not null &&
-            _buffer.Latest?.Snapshot is { ActiveDialogue: null } snapshot &&
+            _buffer.Presented?.Snapshot is { ActiveDialogue: null } snapshot &&
             FindPlayerShipMotion(snapshot) is { IsDestroyed: false } &&
             FindLauncher() is
             {
@@ -53,7 +52,7 @@ public sealed partial class GameSessionScreen
         _pendingFireModeId = next;
         try
         {
-            _fireModeSendTask = _handle!.SendFireModeAsync(_buffer.Latest!.Snapshot.PlayerShipObjectId!,
+            _fireModeSendTask = _handle!.SendFireModeAsync(_buffer.Presented!.Snapshot.PlayerShipObjectId!,
                 launcher.ModuleId, next, out var id).AsTask();
             _pendingFireModeCommandId = id;
         }
@@ -332,6 +331,7 @@ public sealed partial class GameSessionScreen
     private bool _torpedoSendFailed;
     private string? _pendingTorpedoTargetId;
     private bool _torpedoRejectedOutOfRange;
+    private string? _torpedoRejectionReason;
 
     private void RefreshTorpedoSubmission()
     {
@@ -340,6 +340,7 @@ public sealed partial class GameSessionScreen
         var result = _pendingTorpedoCommandId is { } id ? _buffer.FindCommandResult(id) : null;
         if (result is { Status: not CommandResultStatus.Deferred })
         {
+            _torpedoRejectionReason = result.Status == CommandResultStatus.Rejected ? result.ReasonCode : null;
             _torpedoRejectedOutOfRange = result.Status == CommandResultStatus.Rejected && result.ReasonCode == "target_out_of_range";
             _torpedoSubmitPending = false;
             return;
@@ -355,11 +356,12 @@ public sealed partial class GameSessionScreen
     private void SendTorpedoFire()
     {
         if (_handle is null || !IsTorpedoFireEnabled()) return;
-        var snapshot = _buffer.Latest!.Snapshot;
+        var snapshot = _buffer.Presented!.Snapshot;
         string moduleId = FindLauncher()!.ModuleId;
         string? targetId = _selectedObjectId;
         _pendingTorpedoTargetId = targetId;
         _torpedoRejectedOutOfRange = false;
+        _torpedoRejectionReason = null;
         _torpedoSubmitPending = true;
         _torpedoSendFailed = false;
         _pendingTorpedoCommandId = null;
@@ -379,7 +381,7 @@ public sealed partial class GameSessionScreen
     private bool IsSelfDestructEnabled()
     {
         RefreshTorpedoSubmission();
-        return !_torpedoSubmitPending && _buffer.Latest?.Snapshot.ActiveDialogue is null &&
+        return !_torpedoSubmitPending && _buffer.Presented?.Snapshot.ActiveDialogue is null &&
             FindLauncher() is { LauncherCombat: { } combat } launcher &&
             !combat.ActiveTorpedoIds.IsDefaultOrEmpty &&
             launcher.Commands.Any(c => c.CommandTypeId == CombatCommandTypes.SelfDestruct);
@@ -389,7 +391,7 @@ public sealed partial class GameSessionScreen
     {
         if (_handle is null || !IsSelfDestructEnabled()) return;
         var launcher = FindLauncher()!;
-        var snapshot = _buffer.Latest!.Snapshot;
+        var snapshot = _buffer.Presented!.Snapshot;
         var activeIds = launcher.LauncherCombat!.ActiveTorpedoIds;
         string targetId = _selectedObjectId is { } selected && activeIds.Contains(selected)
             ? selected : activeIds[0];
@@ -416,7 +418,7 @@ public sealed partial class GameSessionScreen
     private InstalledModuleSnapshot? FindLauncher()
     {
         string? moduleId = ResolveModuleId(CombatCommandTypes.Fire);
-        var modules = _buffer.Latest?.Snapshot.InstalledModules;
+        var modules = _buffer.Presented?.Snapshot.InstalledModules;
         return moduleId is null || modules is null || modules.Value.IsDefaultOrEmpty
             ? null : modules.Value.FirstOrDefault(m => m.ModuleId == moduleId);
     }
@@ -425,7 +427,7 @@ public sealed partial class GameSessionScreen
     {
         RefreshTorpedoSubmission();
         if (_torpedoSubmitPending) return false;
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = _buffer.Presented?.Snapshot;
         if (snapshot is null || snapshot.ActiveDialogue is not null ||
             FindPlayerShipMotion(snapshot) is not { IsDestroyed: false } ||
             _selectedObjectId is null || _selectedObjectId == snapshot.PlayerShipObjectId)
@@ -449,29 +451,29 @@ public sealed partial class GameSessionScreen
 
     private string ReadyLauncherStatus(LauncherCombatSnapshot launcher)
     {
-        string status = LauncherModeStatus(launcher, _buffer.Latest?.Snapshot.MotionTimeMs ?? 0);
+        string status = LauncherModeStatus(launcher, _buffer.Presented?.Snapshot.MotionTimeMs ?? 0);
         if (_torpedoRejectedOutOfRange && _selectedObjectId == _pendingTorpedoTargetId)
             return status + " · Пуск отклонён: цель вне дальности";
         if (launcher.RangeKm is not { } range || !double.IsFinite(range) || range <= 0) return status + " · Дальность неизвестна";
-        if (_buffer.Latest?.Snapshot is { } snapshot && _selectedObjectId is not null &&
+        if (_buffer.Presented?.Snapshot is { } snapshot && _selectedObjectId is not null &&
             _selectedObjectId != snapshot.PlayerShipObjectId && snapshot.Objects.Any(o => o.ObjectId == _selectedObjectId) &&
             !IsSelectedTargetInTorpedoRange(snapshot, launcher))
             return status + $" · Вне дальности ({range:0.##} км)";
         return status;
     }
 
-    private InstalledModuleSnapshot? FindDefense() => _buffer.Latest?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
+    private InstalledModuleSnapshot? FindDefense() => _buffer.Presented?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
         ? snapshot.InstalledModules.FirstOrDefault(m => m.Defense is not null) : null;
     private bool IsDefenseToggleEnabled(string commandType)
     {
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = _buffer.Presented?.Snapshot;
         return snapshot is not null && snapshot.ActiveDialogue is null && FindPlayerShipMotion(snapshot) is { IsDestroyed: false } &&
             FindDefense() is { Defense: { } defense } module && !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId == commandType) &&
             defense.AutoEnabled != (commandType == DefenseCommandTypes.Enable);
     }
     private long DefensePresentationTime => _buffer.LatestPrediction is { } prediction
         ? prediction.BufferedSnapshot.Snapshot.MotionTimeMs + CombatPredictionDelta(prediction)
-        : _buffer.Latest?.Snapshot.MotionTimeMs ?? 0;
+        : _buffer.Presented?.Snapshot.MotionTimeMs ?? 0;
     private string? GetDefenseStatus() => FindDefense()?.Defense is { } defense
         ? DefenseStatusText(defense, DefensePresentationTime) : null;
     internal static string WeaponOperatorText(WeaponOperatorSnapshot? op) => op is null ? CombatText("NoOperator", "Нет оператора") :
@@ -494,14 +496,16 @@ public sealed partial class GameSessionScreen
     private string? GetLauncherStatus()
     {
         RefreshTorpedoSubmission();
-        if (_torpedoSubmitPending) return "Sending...";
+        if (_torpedoSubmitPending) return _pendingTorpedoCommandId is { } id &&
+            _buffer.FindCommandAcceptance(id) is { Accepted: true } ? CombatText("Accepted", "Команда принята") : "Sending...";
+        if (_torpedoRejectionReason is { } reason && !_torpedoRejectedOutOfRange) return CombatText("Reason." + reason, reason == CommandReasonCodes.TargetDestroyed ? "Цель уже уничтожена" : reason);
         if (_torpedoSendFailed) return "Send failed";
         RefreshFireModeSubmission();
         if (_pendingFireModeId is not null) return CombatText("Sending", "Отправка...");
         return FindLauncher() switch
         {
             { LauncherCombat.IsBrokenUntilDock: true, LauncherCombat: { } launcher } =>
-                LauncherModeStatus(launcher, _buffer.Latest?.Snapshot.MotionTimeMs ?? 0),
+                LauncherModeStatus(launcher, _buffer.Presented?.Snapshot.MotionTimeMs ?? 0),
             { LauncherCombat.Operator: null } => "Нет оператора",
             { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, LauncherCombat: { } launcher } => ReadyLauncherStatus(launcher),
             { LauncherCombat: not null } => "Unavailable",

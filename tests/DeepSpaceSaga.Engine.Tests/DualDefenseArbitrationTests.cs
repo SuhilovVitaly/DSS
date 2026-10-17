@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
 using static DeepSpaceSaga.Engine.Tests.ManualCountermeasureFireTests;
 
@@ -72,21 +73,40 @@ public class DualDefenseArbitrationTests
         }
         var engine = new SimulationEngine(registry);
         engine.LoadScenario(scenario);
+        foreach (var enemy in scenario.GameState.SpaceObjects.Where(o => o.ObjectType == "NpcShip"))
+            foreach (var weapon in enemy.Modules!.Where(m => m.ModuleTypeId == "module.torpedo.launcher.basic"))
+                engine.TryStartHostileTorpedoFire(enemy.ObjectId, weapon.ModuleId, 1);
+        At(engine, 1);
+        if (auto) EqualizeReactions(engine, 1);
         return engine;
+    }
+
+    // Freeze equal reaction deadlines through the supported save seam, isolating arbitration ties.
+    private static void EqualizeReactions(SimulationEngine engine, long time)
+    {
+        var save = engine.CaptureSaveStateForTests(time, SimulationSpeed.Speed0);
+        engine.LoadScenario(save with
+        {
+            GameState = save.GameState with
+            {
+                CombatReactionDelays =
+            save.GameState.CombatReactionDelays!.Select(r => r.Kind == "defense" ? r with { DueAt = time + 500, EligibleAt = time } : r).ToArray()
+            }
+        }, isSave: true);
     }
 
     [Fact]
     public void Earlier_encounter_wins_over_higher_chance()
     {
         using var engine = CreateDual(95, 15, 12, 24);
-        var snapshot = At(engine, 1);
+        var snapshot = At(engine, 501);
         var flight = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null).Countermeasure!;
         Assert.Equal(Defense2, flight.LauncherModuleId);
         Assert.Equal(100, flight.FrozenChanceTenths);
         Assert.Equal(24, flight.SpeedKmS);
         Assert.Equal(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).ObjectId,
             flight.TargetTorpedoId);
-        Assert.Single(At(engine, 100).Objects, o => o.Countermeasure is not null);
+        Assert.Single(At(engine, 600).Objects, o => o.Countermeasure is not null);
     }
 
     [Theory]
@@ -95,16 +115,16 @@ public class DualDefenseArbitrationTests
     public void Equal_encounter_prefers_chance_then_ordinal_module_id(bool reverse)
     {
         using var higher = CreateDual(55, 75, reverse: reverse);
-        Assert.Equal(Defense2, Assert.Single(At(higher, 1).Objects, o => o.Countermeasure is not null).Countermeasure!.LauncherModuleId);
+        Assert.Equal(Defense2, Assert.Single(At(higher, 501).Objects, o => o.Countermeasure is not null).Countermeasure!.LauncherModuleId);
         using var equal = CreateDual(reverse: reverse);
-        Assert.Equal(Defense1, Assert.Single(At(equal, 1).Objects, o => o.Countermeasure is not null).Countermeasure!.LauncherModuleId);
+        Assert.Equal(Defense1, Assert.Single(At(equal, 501).Objects, o => o.Countermeasure is not null).Countermeasure!.LauncherModuleId);
     }
 
     [Fact]
     public void No_solution_candidate_does_not_hide_valid_second_module()
     {
         using var engine = CreateDual(firstSpeed: 0.001);
-        Assert.Equal(Defense2, Assert.Single(At(engine, 1).Objects, o => o.Countermeasure is not null).Countermeasure!.LauncherModuleId);
+        Assert.Equal(Defense2, Assert.Single(At(engine, 501).Objects, o => o.Countermeasure is not null).Countermeasure!.LauncherModuleId);
     }
 
     [Theory]
@@ -116,10 +136,10 @@ public class DualDefenseArbitrationTests
     {
         using var engine = CreateDual(reason == "zero" ? 0 : 55, reason == "zero" ? 0 : 55,
             reason == "solution" ? 0.001 : 12, reason == "solution" ? 0.001 : 12, unavailable: reason);
-        var snapshot = At(engine, 100);
+        var snapshot = At(engine, 1251);
         Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
         Assert.Single(snapshot.Objects, o => o.Torpedo is not null);
-        Assert.Equal(0ul, engine.CaptureSaveStateForTests(100, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
+        Assert.Equal(0ul, engine.CaptureSaveStateForTests(1251, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
     }
 
     [Fact]
@@ -164,7 +184,8 @@ public class DualDefenseArbitrationTests
         engine.ReceiveCommand(new("enable1", 2, Player, Defense1, DefenseCommandTypes.Enable));
         engine.ReceiveCommand(new("enable2", 3, Player, Defense2, DefenseCommandTypes.Enable));
         At(engine, 1);
-        var after = At(engine, 2);
+        At(engine, 2); EqualizeReactions(engine, 2);
+        var after = At(engine, 502);
         var launches = after.CombatJournal.Where(e => e.Type == CombatEventType.Launch && e.LaunchMode == LaunchMode.Auto).ToArray();
         Assert.Equal(2, launches.Length);
         Assert.Equal(nearest, launches[0].TargetObjectId);

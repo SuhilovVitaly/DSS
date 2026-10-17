@@ -176,6 +176,83 @@ public sealed class CombatTrajectoryTests
     }
 
     [Fact]
+    public void Turning_target_rejects_old_aim_point_and_continues_to_viewport()
+    {
+        var predictor = new LinearMotionPredictor();
+        var target = Target with { SpeedKmS = 1, Direction = 90 };
+        var route = TorpedoGuidanceMath.Plan(Player, target, 3, 90);
+        var flight = Flight with { Route = route, Trail = [] };
+        target = target with { TurnStepDegrees = 90, TurnStepRemainingMs = 100, TurnStepIntervalMs = 1000 };
+        string before = JsonSerializer.Serialize(flight);
+        var oldAim = TorpedoGuidanceMath.PredictPose(route, route.Segments.Sum(s => s.DurationMs));
+        var geometry = CombatTrajectoryProjector.Project(flight, target, predictor, new(0, 0, 1), 1920, 1080);
+
+        Assert.True(route.HasIntercept);
+        Assert.Null(geometry.Intercept);
+        Assert.Empty(geometry.Target);
+        Assert.Equal(new FutureTrajectoryPoint(Player.X, Player.Y), geometry.Prediction[0]);
+        Assert.NotEqual(new FutureTrajectoryPoint(oldAim.X, oldAim.Y), geometry.Prediction[^1]);
+        AssertOnViewportEdge(geometry.Prediction[^1], new(0, 0, 1), 1920, 1080);
+        Assert.Equal(before, JsonSerializer.Serialize(flight));
+    }
+
+    [Theory]
+    [InlineData(0.1)]
+    [InlineData(1)]
+    [InlineData(3)]
+    public void Ai_frozen_endpoint_beyond_confirmed_segment_is_not_a_meeting(double zoom)
+    {
+        // The bounded predictor returns the target centre after 71 ms, exactly at
+        // the torpedo's old aim point. That cannot confirm a meeting 10 s away.
+        var target = Target with
+        {
+            HostileCombat = new("player", "engine", "weapon", 50, false, HostileCombatPhase.Pursuit,
+                new(1971, 100, 29, Target.X, Target.Y, 0, 0, 0, 0))
+        };
+        var camera = new CameraState(100, 0, zoom);
+        var geometry = CombatTrajectoryProjector.Project(Flight, target, new LinearMotionPredictor(), camera, 1920, 1920);
+
+        Assert.Null(geometry.Intercept);
+        Assert.Empty(geometry.Target);
+        Assert.Equal(new FutureTrajectoryPoint(Torpedo.X, Torpedo.Y), geometry.Prediction[0]);
+        AssertOnViewportEdge(geometry.Prediction[^1], camera, 1920, 1920);
+    }
+
+    [Theory]
+    [InlineData(10000, true)]
+    [InlineData(9999, false)]
+    public void Ai_meeting_requires_both_geometry_and_confirmed_time(long confirmedRemainingMs, bool hasMeeting)
+    {
+        var target = Target with
+        {
+            HostileCombat = new("player", "engine", "weapon", 50, false, HostileCombatPhase.Pursuit,
+                new(0, 2000 + confirmedRemainingMs, 2000, Target.X, Target.Y, 0, 0, 0, 0))
+        };
+        var camera = new CameraState(100, 0, 1);
+        var geometry = CombatTrajectoryProjector.Project(Flight, target, new LinearMotionPredictor(), camera, 800, 600);
+
+        Assert.Equal(hasMeeting, geometry.Intercept is not null);
+        if (hasMeeting)
+        {
+            Assert.Equal(geometry.Intercept, geometry.Prediction[^1]);
+            Assert.Equal(geometry.Intercept, geometry.Target[^1]);
+            Assert.Equal(new FutureTrajectoryPoint(target.X, target.Y), geometry.Target[0]);
+        }
+        else
+        {
+            Assert.Empty(geometry.Target);
+            AssertOnViewportEdge(geometry.Prediction[^1], camera, 800, 600);
+        }
+    }
+
+    private static void AssertOnViewportEdge(FutureTrajectoryPoint point, CameraState camera, int width, int height)
+    {
+        var (x, y) = camera.WorldToScreen(point.X, point.Y, width, height);
+        Assert.True(Math.Abs(x) < .001 || Math.Abs(x - width) < .001 ||
+            Math.Abs(y) < .001 || Math.Abs(y - height) < .001, $"Expected viewport edge, got ({x}, {y})");
+    }
+
+    [Fact]
     public void Zoom_changes_screen_geometry_not_flight_state()
     {
         string before = JsonSerializer.Serialize(Flight);

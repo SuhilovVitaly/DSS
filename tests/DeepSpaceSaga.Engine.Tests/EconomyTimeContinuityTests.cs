@@ -23,7 +23,7 @@ public class EconomyTimeContinuityTests
         // Include snapshots between boundaries as well as coincident meal/fee/deadline times.
         for (int hour = 1; hour <= 48; hour++)
         {
-            realMs = hour * GameCalendar.HourMs / 300;
+            realMs = hour * GameCalendar.HourMs / SimulationSpeed.Speed1.GameTimeMultiplier();
             actual = regular.CaptureSnapshot(advanceClock: true);
             regularEvents.AddRange(actual.ShipEvents);
             if (hour == 12) Assert.Equal(0, RationScheduleTests.Food(actual));

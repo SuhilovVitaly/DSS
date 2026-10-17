@@ -24,6 +24,7 @@ public sealed partial class SimulationEngine
         if (module is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
         if (!CanExecuteModuleCommand(module, motionTimeMs))
             return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
+        ClearCombatReactions(command.ObjectId, command.ModuleId, "defense");
         _defenses[key] = defense with { AutoEnabled = command.CommandType == DefenseCommandTypes.Enable };
         RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         return CommandStartOutcome.Started;
@@ -42,7 +43,9 @@ public sealed partial class SimulationEngine
             {
                 if (!_defenses.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var defense) ||
                     !defense.AutoEnabled || defense.State == DefenseState.NoOperator ||
-                    module.ActiveCycle is not null) continue;
+                    module.ActiveCycle is not null)
+                { ClearCombatReactions(owner.InitialMotion.ObjectId, module.ModuleId, "defense"); continue; }
+                if (!CanExecuteModuleCommand(module, from)) ClearCombatReactions(owner.InitialMotion.ObjectId, module.ModuleId, "defense");
                 if (_objects.Any(o => o.InitialMotion.Countermeasure is
                     { Phase: CountermeasurePhase.Guiding } active &&
                     active.OwnerObjectId == owner.InitialMotion.ObjectId && active.LauncherModuleId == module.ModuleId)) continue;
@@ -67,13 +70,22 @@ public sealed partial class SimulationEngine
                     var entry = TorpedoCollisionMath.FirstContact(CombatPath(target), CombatPath(owner), start, to, defense.RangeKm * 10);
                     if (entry is null) continue;
                     long launchAt = (long)Math.Ceiling(entry.Value.MotionTimeMs);
+                    if (owner.InitialMotion.ObjectId == PlayerShipObjectId)
+                    {
+                        var delayed = ReactionTime("defense", owner.InitialMotion.ObjectId, module.ModuleId,
+                            target.InitialMotion.ObjectId, launchAt, defense.ReadyAtMotionTimeMs ?? defense.ReloadDueMotionTimeMs ?? 0);
+                        if (delayed is null || delayed > to) continue;
+                        launchAt = delayed.Value;
+                        if (!CombatRangeMath.IsWithinRange(PredictMotion(owner, launchAt - owner.StartGameTimeMs),
+                            PredictMotion(target, launchAt - target.StartGameTimeMs), defense.RangeKm)) continue;
+                    }
                     if (launchAt > to || launchAt > long.MaxValue - type.CountermeasureMaxFlightTimeMs!.Value) continue;
                     double end = torpedo.Route.StartMotionTimeMs + torpedo.Route.Segments.Sum(s => s.DurationMs);
                     if (end <= launchAt) continue;
                     var hull = TorpedoCollisionMath.FirstContact(CombatPath(target), CombatPath(owner), launchAt, end + 1);
                     if (hull is null) continue;
                     var origin = PredictMotion(owner, launchAt - owner.StartGameTimeMs);
-                    var route = CountermeasureGuidanceMath.Plan(origin, torpedo.Route, launchAt, hull.Value.MotionTimeMs,
+                    var route = CountermeasureGuidanceMath.PlanLaunch(origin, torpedo.Route, launchAt, hull.Value.MotionTimeMs,
                         type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
                         launchAt + type.CountermeasureMaxFlightTimeMs!.Value);
                     if (route is null) continue;
@@ -115,6 +127,7 @@ public sealed partial class SimulationEngine
         var definition = _registry.ModuleTypes.GetDefinition(launch.Module.ModuleTypeIndex);
         if (!TryGetNextCountermeasureId(out string id, out long sequence)) return false;
         var torpedo = launch.Target.InitialMotion.Torpedo!;
+        ClearCombatReactions(launch.Owner.InitialMotion.ObjectId, launch.Module.ModuleId, "defense");
         var flight = new CountermeasureSnapshot(launch.Owner.InitialMotion.ObjectId, launch.Module.ModuleId,
             launch.Target.InitialMotion.ObjectId, CountermeasurePhase.Guiding, launch.Route, launch.Time, launch.Chance,
             new(launch.Operator, torpedo.CapturedManeuverability ?? torpedo.TorpedoRating!.Value, torpedo.RatingBreakdown), [],
@@ -204,7 +217,7 @@ public sealed partial class SimulationEngine
         long lifetime = type.CountermeasureMaxFlightTimeMs!.Value;
         if (time > long.MaxValue - lifetime) return;
         var origin = PredictMotion(owner, time - owner.StartGameTimeMs);
-        var plan = CountermeasureGuidanceMath.PlanManual(origin, torpedo.Route, time, lifetime,
+        var plan = CountermeasureGuidanceMath.PlanManualLaunch(origin, torpedo.Route, time, lifetime,
             type.CountermeasureSpeedKmS!.Value, type.CountermeasureTurnRateDegPerSec!.Value,
             FirstPredictedTorpedoContact(target, time, time + lifetime));
         int chance = CombatChanceMath.ChanceTenths(op.EffectiveRating,
@@ -428,6 +441,11 @@ public sealed partial class SimulationEngine
     }
 
     private DefenseSnapshot? ProjectDefense(SpaceObjectRuntime owner) => owner.Modules
-        .Select(m => _defenses.GetValueOrDefault((owner.InitialMotion.ObjectId, m.ModuleId)))
+        .Select(m => ProjectModuleDefense(owner, m))
         .FirstOrDefault(d => d is not null);
+
+    private DefenseSnapshot? ProjectModuleDefense(SpaceObjectRuntime owner, InstalledModuleRuntime module) =>
+        _defenses.GetValueOrDefault((owner.InitialMotion.ObjectId, module.ModuleId)) is { } defense
+            ? defense with { ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureReloadMs }
+            : null;
 }

@@ -42,7 +42,8 @@ public sealed record DefenseSnapshot(
     ImmutableArray<PendingBurstShot>? PendingBurstShots = null,
     double? ReadyAtMotionTimeMs = null,
     /// <summary>Populated only for overlapping flights; the singular field remains the first active ID.</summary>
-    ImmutableArray<string>? ActiveProjectileIds = null);
+    ImmutableArray<string>? ActiveProjectileIds = null,
+    double? ReloadDurationMs = null);
 
 /// <summary>
 /// Separate projectile type, never a torpedo fire target. All times use physical simulation

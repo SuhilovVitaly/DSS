@@ -75,8 +75,8 @@ public sealed partial class GameSessionScreen
     }
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
-        id == _buffer.Latest?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id) ||
-        AiMapPresentation.Base(_buffer.Latest?.Snapshot, id) is not null;
+        id == _buffer.Presented?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id) ||
+        AiMapPresentation.Base(_buffer.Presented?.Snapshot, id) is not null;
 
     private void SetFollowPlayer()
     {
@@ -175,6 +175,7 @@ public sealed partial class GameSessionScreen
         }
         Add(_commandsPanel.CaptionRect); Add(_commandsPanel.BodyRect);
         Add(_objectInfoPanel.CaptionRect); Add(_objectInfoPanel.BodyRect);
+        Add(CombatReportsBounds);
         Add(_combatJournalPanel.Bounds);
         if (_panelVisible) Add(_lastPanelRect);
         Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect); Add(_lastGameTimeRect);
@@ -199,7 +200,7 @@ public sealed partial class GameSessionScreen
 
     internal bool FitBelt(string beltId)
     {
-        var belt = _buffer.Latest?.Snapshot.SolarSystemMap?.Belts.FirstOrDefault(b => b.Id == beltId);
+        var belt = _buffer.Presented?.Snapshot.SolarSystemMap?.Belts.FirstOrDefault(b => b.Id == beltId);
         if (belt is null || _viewportW <= 0 || _viewportH <= 0) return false;
         MapWorldBounds bounds = new();
         bounds.Include(-belt.OuterRadius, -belt.OuterRadius);
@@ -211,7 +212,7 @@ public sealed partial class GameSessionScreen
 
     internal bool FitCluster(string clusterId)
     {
-        var cluster = _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == clusterId);
+        var cluster = _buffer.Presented?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == clusterId);
         if (cluster is null || _viewportW <= 0 || _viewportH <= 0) return false;
         var bounds = ClusterMapPresentation.Bounds(cluster, _renderStates.Select(s => s.Predicted));
         if (!bounds.HasValue) return false;
@@ -222,7 +223,7 @@ public sealed partial class GameSessionScreen
 
     private void FitNextBelt()
     {
-        if (_buffer.Latest?.Snapshot.SolarSystemMap is not { } map || map.Belts.IsEmpty) return;
+        if (_buffer.Presented?.Snapshot.SolarSystemMap is not { } map || map.Belts.IsEmpty) return;
         int index = -1;
         for (int i = 0; i < map.Belts.Length; i++) if (map.Belts[i].Id == _fittedBeltId) index = i;
         FitBelt(map.Belts[(index + 1) % map.Belts.Length].Id);
@@ -230,7 +231,7 @@ public sealed partial class GameSessionScreen
 
     private void FitNextCluster()
     {
-        if (_buffer.Latest?.Snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
+        if (_buffer.Presented?.Snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
         int index = -1;
         for (int i = 0; i < map.Clusters.Length; i++) if (map.Clusters[i].Id == _fittedClusterId) index = i;
         FitCluster(map.Clusters[(index + 1) % map.Clusters.Length].Id);
@@ -244,7 +245,7 @@ public sealed partial class GameSessionScreen
         bounds.Include(ship.X, ship.Y);
         if (mode == MapFitMode.System)
         {
-            if (_buffer.Latest?.Snapshot.SolarSystemMap is { } system)
+            if (_buffer.Presented?.Snapshot.SolarSystemMap is { } system)
             {
                 bounds.Include(-system.SystemRadius, -system.SystemRadius);
                 bounds.Include(system.SystemRadius, system.SystemRadius);
@@ -285,22 +286,27 @@ public sealed partial class GameSessionScreen
         return true;
     }
 
+    internal readonly List<string> OffscreenMarkerIds = new();
     private void DrawOffscreenTargets(SKCanvas canvas)
     {
+        OffscreenMarkerIds.Clear();
         var rect = AvailableMapRect(); rect.Inflate(-18, -18);
         if (rect.Width <= 0 || rect.Height <= 0) return;
+        var screenBounds = new SKRect(0, 0, _viewportW, _viewportH);
+        var emitted = new HashSet<string>(StringComparer.Ordinal);
         var ship = FindPlayerShip(_renderStates)?.Predicted;
         foreach (var state in _renderStates)
             if (!state.IsPlayerShip && IsImportantMapObject(state.Pose.ObjectId))
-                Draw(state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
+                Draw(state.Pose.ObjectId, state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
         if (ship?.NavigationTargetX is { } tx && ship.NavigationTargetY is { } ty &&
             (_navigationTargetId is null || !_renderStates.Any(s => s.Pose.ObjectId == _navigationTargetId)))
-            Draw(tx, ty, "Map.Target");
+            Draw(_navigationTargetId ?? "navigation-point", tx, ty, "Map.Target");
 
-        void Draw(double worldX, double worldY, string labelKey)
+        void Draw(string id, double worldX, double worldY, string labelKey)
         {
             var (sx, sy) = _camera.WorldToScreen(worldX, worldY, _viewportW, _viewportH);
-            if (rect.Contains(sx, sy)) return;
+            if (screenBounds.Contains(sx, sy) || !emitted.Add(id)) return;
+            OffscreenMarkerIds.Add(id);
             double dx = sx - rect.MidX, dy = sy - rect.MidY;
             double scale = Math.Min(rect.Width / 2 / Math.Max(.001, Math.Abs(dx)), rect.Height / 2 / Math.Max(.001, Math.Abs(dy)));
             float x = rect.MidX + (float)(dx * scale), y = rect.MidY + (float)(dy * scale);
@@ -335,7 +341,7 @@ public sealed partial class GameSessionScreen
 
     private void DrawMapToolbar(SKCanvas canvas)
     {
-        bool hasMapLayers = _buffer.Latest?.Snapshot.AiMap is not null;
+        bool hasMapLayers = _buffer.Presented?.Snapshot.AiMap is not null;
         float layerRowHeight = hasMapLayers ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62 - layerRowHeight;
@@ -406,9 +412,9 @@ public sealed partial class GameSessionScreen
         {
             1 => (_selectedObjectId is not null && _selectedObjectId != ship.ObjectId) || ship.NavigationTargetX is not null,
             2 => ship.NavigationTargetX is not null,
-            5 => _buffer.Latest?.Snapshot.SolarSystemMap is not null,
-            6 => _buffer.Latest?.Snapshot.SolarSystemMap?.Belts.Length > 0,
-            7 => _buffer.Latest?.Snapshot.ClusterMap?.Clusters.Length > 0,
+            5 => _buffer.Presented?.Snapshot.SolarSystemMap is not null,
+            6 => _buffer.Presented?.Snapshot.SolarSystemMap?.Belts.Length > 0,
+            7 => _buffer.Presented?.Snapshot.ClusterMap?.Clusters.Length > 0,
             _ => true
         };
     }

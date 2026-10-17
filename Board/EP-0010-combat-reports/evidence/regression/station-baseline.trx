@@ -1,0 +1,100 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<TestRun id="8b2388c8-38c9-46be-a3b6-491b05b5217a" name="sushi@VITA-CASTLE 2026-10-16 14:08:15" runUser="VITA-CASTLE\sushi" xmlns="http://microsoft.com/schemas/VisualStudio/TeamTest/2010">
+  <Times creation="2026-10-16T14:08:15.5877717+03:00" queuing="2026-10-16T14:08:15.5877721+03:00" start="2026-10-16T14:07:54.9479178+03:00" finish="2026-10-16T14:09:13.5226231+03:00" />
+  <TestSettings name="default" id="9b2ebe8e-4a95-452e-a429-17eafc981676">
+    <Deployment runDeploymentRoot="sushi_VITA-CASTLE_2026-10-16_14_08_15" />
+  </TestSettings>
+  <Results>
+    <UnitTestResult executionId="34c5b677-6548-4074-8b7c-2d69a990fe8e" testId="2ba74446-c5a2-122c-94af-4b271f16750c" testName="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-SCIENTIFIC&quot;, representativeSupplyItemId: &quot;item.electronics&quot;)" computerName="VITA-CASTLE" duration="00:00:14.5315721" startTime="2026-10-16T14:08:58.9665302+03:00" endTime="2026-10-16T14:08:58.9665307+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="34c5b677-6548-4074-8b7c-2d69a990fe8e" />
+    <UnitTestResult executionId="f5e4bbe1-9075-4f1f-9b4d-b1ec5a67f971" testId="d811c5fd-9121-435d-ddf1-41d40e6ee408" testName="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-MINING&quot;, representativeSupplyItemId: &quot;item.ice&quot;)" computerName="VITA-CASTLE" duration="00:00:14.4849783" startTime="2026-10-16T14:08:44.4299944+03:00" endTime="2026-10-16T14:08:44.4299948+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f5e4bbe1-9075-4f1f-9b4d-b1ec5a67f971" />
+    <UnitTestResult executionId="f4b1a19e-efcf-4d34-9a00-0b0929a522c6" testId="63623a8c-a041-a920-2ae1-5f2542196d24" testName="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-TRANSIT&quot;, representativeSupplyItemId: &quot;item.water&quot;)" computerName="VITA-CASTLE" duration="00:00:14.4218904" startTime="2026-10-16T14:08:29.9401542+03:00" endTime="2026-10-16T14:08:29.9401547+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="f4b1a19e-efcf-4d34-9a00-0b0929a522c6" />
+    <UnitTestResult executionId="d1a2cfe7-3f16-43e8-bff3-8825f661c781" testId="33cd22d9-fe0f-7f99-2326-8c8d60e76e2d" testName="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-INDUSTRIAL&quot;, representativeSupplyItemId: &quot;item.steel&quot;)" computerName="VITA-CASTLE" duration="00:00:15.0568646" startTime="2026-10-16T14:08:15.5245626+03:00" endTime="2026-10-16T14:08:15.5245910+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Failed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="d1a2cfe7-3f16-43e8-bff3-8825f661c781">
+      <Output>
+        <ErrorInfo>
+          <Message>System.TimeoutException : Expected snapshot =&gt; HasCommandResult(snapshot, refuelCommandId); last snapshot: none game ms.&#xD;
+---- System.OperationCanceledException : The operation was canceled.</Message>
+          <StackTrace>   at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.WaitForSnapshotAsync(IAsyncEnumerator`1 snapshots, Func`2 predicate, CancellationToken cancellationToken, String expected) in D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs:line 434&#xD;
+   at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(String stationId, String representativeSupplyItemId) in D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs:line 317&#xD;
+   at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(String stationId, String representativeSupplyItemId) in D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs:line 322&#xD;
+   at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(String stationId, String representativeSupplyItemId) in D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs:line 322&#xD;
+--- End of stack trace from previous location ---&#xD;
+----- Inner Stack Trace -----&#xD;
+   at System.Threading.Channels.AsyncOperation`1.GetResult(Int16 token)&#xD;
+   at System.Threading.Channels.ChannelReader`1.ReadAllAsync(CancellationToken cancellationToken)+MoveNext()&#xD;
+   at DeepSpaceSaga.Engine.LocalClient.LocalGameSessionConnection.ReadSnapshotsAsync(CancellationToken cancellationToken)+MoveNext() in D:\DeepSpaceSaga\DSS-EP0010-baseline\src\DeepSpaceSaga.Engine.LocalClient\LocalGameSessionConnection.cs:line 165&#xD;
+   at DeepSpaceSaga.Engine.LocalClient.LocalGameSessionConnection.ReadSnapshotsAsync(CancellationToken cancellationToken)+MoveNext() in D:\DeepSpaceSaga\DSS-EP0010-baseline\src\DeepSpaceSaga.Engine.LocalClient\LocalGameSessionConnection.cs:line 165&#xD;
+   at DeepSpaceSaga.Engine.LocalClient.LocalGameSessionConnection.ReadSnapshotsAsync(CancellationToken cancellationToken)+System.Threading.Tasks.Sources.IValueTaskSource&lt;System.Boolean&gt;.GetResult()&#xD;
+   at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.WaitForSnapshotAsync(IAsyncEnumerator`1 snapshots, Func`2 predicate, CancellationToken cancellationToken, String expected) in D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs:line 425</StackTrace>
+        </ErrorInfo>
+      </Output>
+    </UnitTestResult>
+    <UnitTestResult executionId="43c6e33d-b9a9-4b67-b6e8-6ffeb4d81213" testId="832f81fe-117c-73f2-495c-171a4ce43936" testName="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-HYDROPONIC&quot;, representativeSupplyItemId: &quot;item.water&quot;)" computerName="VITA-CASTLE" duration="00:00:14.3920616" startTime="2026-10-16T14:09:13.3597602+03:00" endTime="2026-10-16T14:09:13.3597605+03:00" testType="13cdc9d9-ddb5-4fa4-a97d-d965ccfc6d4b" outcome="Passed" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" relativeResultsDirectory="43c6e33d-b9a9-4b67-b6e8-6ffeb4d81213" />
+  </Results>
+  <TestDefinitions>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-SCIENTIFIC&quot;, representativeSupplyItemId: &quot;item.electronics&quot;)" storage="d:\deepspacesaga\dss-ep0010-baseline\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="2ba74446-c5a2-122c-94af-4b271f16750c">
+      <Execution id="34c5b677-6548-4074-8b7c-2d69a990fe8e" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests" name="Every_demo_station_docks_and_trades_via_session" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-TRANSIT&quot;, representativeSupplyItemId: &quot;item.water&quot;)" storage="d:\deepspacesaga\dss-ep0010-baseline\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="63623a8c-a041-a920-2ae1-5f2542196d24">
+      <Execution id="f4b1a19e-efcf-4d34-9a00-0b0929a522c6" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests" name="Every_demo_station_docks_and_trades_via_session" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-INDUSTRIAL&quot;, representativeSupplyItemId: &quot;item.steel&quot;)" storage="d:\deepspacesaga\dss-ep0010-baseline\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="33cd22d9-fe0f-7f99-2326-8c8d60e76e2d">
+      <Execution id="d1a2cfe7-3f16-43e8-bff3-8825f661c781" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests" name="Every_demo_station_docks_and_trades_via_session" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-MINING&quot;, representativeSupplyItemId: &quot;item.ice&quot;)" storage="d:\deepspacesaga\dss-ep0010-baseline\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="d811c5fd-9121-435d-ddf1-41d40e6ee408">
+      <Execution id="f5e4bbe1-9075-4f1f-9b4d-b1ec5a67f971" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests" name="Every_demo_station_docks_and_trades_via_session" />
+    </UnitTest>
+    <UnitTest name="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: &quot;SPC-MARKET-HYDROPONIC&quot;, representativeSupplyItemId: &quot;item.water&quot;)" storage="d:\deepspacesaga\dss-ep0010-baseline\tests\deepspacesaga.client.tests\bin\debug\net8.0\deepspacesaga.client.tests.dll" id="832f81fe-117c-73f2-495c-171a4ce43936">
+      <Execution id="43c6e33d-b9a9-4b67-b6e8-6ffeb4d81213" />
+      <TestMethod codeBase="D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll" adapterTypeName="executor://xunit/VsTestRunner2/netcoreapp" className="DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests" name="Every_demo_station_docks_and_trades_via_session" />
+    </UnitTest>
+  </TestDefinitions>
+  <TestEntries>
+    <TestEntry testId="2ba74446-c5a2-122c-94af-4b271f16750c" executionId="34c5b677-6548-4074-8b7c-2d69a990fe8e" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="d811c5fd-9121-435d-ddf1-41d40e6ee408" executionId="f5e4bbe1-9075-4f1f-9b4d-b1ec5a67f971" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="63623a8c-a041-a920-2ae1-5f2542196d24" executionId="f4b1a19e-efcf-4d34-9a00-0b0929a522c6" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="33cd22d9-fe0f-7f99-2326-8c8d60e76e2d" executionId="d1a2cfe7-3f16-43e8-bff3-8825f661c781" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestEntry testId="832f81fe-117c-73f2-495c-171a4ce43936" executionId="43c6e33d-b9a9-4b67-b6e8-6ffeb4d81213" testListId="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+  </TestEntries>
+  <TestLists>
+    <TestList name="Results Not in a List" id="8c84fa94-04c1-424b-9868-57a2d4851a1d" />
+    <TestList name="All Loaded Results" id="19431567-8539-422a-85d7-44ee4e166bda" />
+  </TestLists>
+  <ResultSummary outcome="Failed">
+    <Counters total="5" executed="5" passed="4" failed="1" error="0" timeout="0" aborted="0" inconclusive="0" passedButRunAborted="0" notRunnable="0" notExecuted="0" disconnected="0" warning="0" completed="0" inProgress="0" pending="0" />
+    <Output>
+      <StdOut>[xUnit.net 00:00:00.00] xUnit.net VSTest Adapter v2.8.2+699d445a1a (64-bit .NET 8.0.26)&#xD;
+[xUnit.net 00:00:03.94]   Discovering: DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:04.26]   Discovered:  DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:04.27]   Starting:    DeepSpaceSaga.Client.Tests&#xD;
+[xUnit.net 00:00:19.40]       System.TimeoutException : Expected snapshot =&gt; HasCommandResult(snapshot, refuelCommandId); last snapshot: none game ms.&#xD;
+[xUnit.net 00:00:19.40]       ---- System.OperationCanceledException : The operation was canceled.&#xD;
+[xUnit.net 00:00:19.40]       Stack Trace:&#xD;
+[xUnit.net 00:00:19.40]         D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs(434,0): at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.WaitForSnapshotAsync(IAsyncEnumerator`1 snapshots, Func`2 predicate, CancellationToken cancellationToken, String expected)&#xD;
+[xUnit.net 00:00:19.40]         D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs(317,0): at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(String stationId, String representativeSupplyItemId)&#xD;
+[xUnit.net 00:00:19.40]         D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs(322,0): at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(String stationId, String representativeSupplyItemId)&#xD;
+[xUnit.net 00:00:19.40]         D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs(322,0): at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(String stationId, String representativeSupplyItemId)&#xD;
+[xUnit.net 00:00:19.40]         --- End of stack trace from previous location ---&#xD;
+[xUnit.net 00:00:19.40]         ----- Inner Stack Trace -----&#xD;
+[xUnit.net 00:00:19.40]            at System.Threading.Channels.AsyncOperation`1.GetResult(Int16 token)&#xD;
+[xUnit.net 00:00:19.40]            at System.Threading.Channels.ChannelReader`1.ReadAllAsync(CancellationToken cancellationToken)+MoveNext()&#xD;
+[xUnit.net 00:00:19.40]         D:\DeepSpaceSaga\DSS-EP0010-baseline\src\DeepSpaceSaga.Engine.LocalClient\LocalGameSessionConnection.cs(165,0): at DeepSpaceSaga.Engine.LocalClient.LocalGameSessionConnection.ReadSnapshotsAsync(CancellationToken cancellationToken)+MoveNext()&#xD;
+[xUnit.net 00:00:19.40]         D:\DeepSpaceSaga\DSS-EP0010-baseline\src\DeepSpaceSaga.Engine.LocalClient\LocalGameSessionConnection.cs(165,0): at DeepSpaceSaga.Engine.LocalClient.LocalGameSessionConnection.ReadSnapshotsAsync(CancellationToken cancellationToken)+MoveNext()&#xD;
+[xUnit.net 00:00:19.40]            at DeepSpaceSaga.Engine.LocalClient.LocalGameSessionConnection.ReadSnapshotsAsync(CancellationToken cancellationToken)+System.Threading.Tasks.Sources.IValueTaskSource&lt;System.Boolean&gt;.GetResult()&#xD;
+[xUnit.net 00:00:19.40]         D:\DeepSpaceSaga\DSS-EP0010-baseline\tests\DeepSpaceSaga.Client.Tests\StationMarketDemoContentTests.cs(425,0): at DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.WaitForSnapshotAsync(IAsyncEnumerator`1 snapshots, Func`2 predicate, CancellationToken cancellationToken, String expected)&#xD;
+[xUnit.net 00:01:17.25]   Finished:    DeepSpaceSaga.Client.Tests&#xD;
+</StdOut>
+    </Output>
+    <RunInfos>
+      <RunInfo computerName="VITA-CASTLE" outcome="Error" timestamp="2026-10-16T14:08:15.5190586+03:00">
+        <Text>[xUnit.net 00:00:19.39]     DeepSpaceSaga.Client.Tests.StationMarketDemoContentTests.Every_demo_station_docks_and_trades_via_session(stationId: "SPC-MARKET-INDUSTRIAL", representativeSupplyItemId: "item.steel") [FAIL]</Text>
+      </RunInfo>
+      <RunInfo computerName="VITA-CASTLE" outcome="Warning" timestamp="2026-10-16T14:09:13.4371079+03:00">
+        <Text>Data collector 'Blame' message: All tests finished running, Sequence file will not be generated.</Text>
+      </RunInfo>
+    </RunInfos>
+  </ResultSummary>
+</TestRun>

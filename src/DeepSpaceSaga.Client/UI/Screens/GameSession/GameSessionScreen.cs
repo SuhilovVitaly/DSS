@@ -141,6 +141,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     // Object Info Panel (top-right) — mirrors Commands Panel chrome; Player Ship + Selected/Active Object rows
     private readonly ObjectInfoPanel _objectInfoPanel;
+    internal SKRect CombatReportsBounds { get; private set; }
 
     // Mechanics panel paints (bottom-center)
     private readonly SKPaint _mechanicsBtnNormalPaint;
@@ -232,7 +233,7 @@ public sealed partial class GameSessionScreen : IScreen
     // ── Test seams ──────────────────────────────────────────────
 
     internal bool IsPanelVisible => _panelVisible;
-    internal AuthoritativeSnapshot? FrameEvidenceSnapshot => _buffer.Latest?.Snapshot;
+    internal AuthoritativeSnapshot? FrameEvidenceSnapshot => _buffer.Presented?.Snapshot;
     internal double CameraFocusX => _camera.FocusX;
     internal double CameraFocusY => _camera.FocusY;
     internal double CameraPixelsPerWorldUnit => _camera.PixelsPerWorldUnit;
@@ -312,14 +313,16 @@ public sealed partial class GameSessionScreen : IScreen
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         _predictor = predictor;
         _handle = handle;
+        InitializeCombatReports();
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
         _showTrajectoryPrediction = showTrajectoryPrediction;
         _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
         _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
-        _combatEffects = new CombatEffectStore(_timestampProvider, _buffer.FindCombatImpactReceivedAtTimestamp);
-        _combatEffects.Reset(_buffer.Latest?.Snapshot.CombatImpacts ?? default);
-        _combatEffects.ResetJournal(_buffer.Latest?.Snapshot.CombatJournal ?? default);
+        _combatEffects = new CombatEffectStore(_timestampProvider,
+            _buffer.HasCombatPresentation ? null : _buffer.FindCombatImpactReceivedAtTimestamp);
+        _combatEffects.Reset(_buffer.Presented?.Snapshot.CombatImpacts ?? default);
+        _combatEffects.ResetJournal(_buffer.Presented?.Snapshot.CombatJournal ?? default);
 
         _mapSettings = (mapSettings ?? new()).Validate();
         ScaleTargets = _mapSettings.ScaleTargets;
@@ -358,7 +361,7 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
-            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText, GetDefenseInstanceDetails);
+            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText, GetDefenseInstanceDetails, () => DefensePresentationTime);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -388,6 +391,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _combatReportPanel.ClearFocus();
+        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
         ClearLaunchPreview();
         ReleaseCombatPaints();
         _zoomTransition.Cancel();
@@ -400,12 +405,22 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
-        if (_buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
         float uiX = x / _uiScale;
         float uiY = y / _uiScale;
+
+        if (button == MouseButton.Left)
+        {
+            if (_combatReportPanel.OnMouseDown(uiX, uiY)) return ScreenEvent.None;
+        }
+        else
+        {
+            _combatReportPanel.ClearFocus();
+            if (_combatReportPanel.Bounds.Contains(uiX, uiY)) return ScreenEvent.None;
+        }
 
         if (button == MouseButton.Right)
         {
@@ -492,7 +507,7 @@ public sealed partial class GameSessionScreen : IScreen
             _selectedFieldId = null; _selectedPoiId = null;
             SetSelectedObjectId(hitObjectId);
 
-            if (hitObjectId == _buffer.Latest?.Snapshot.PlayerShipObjectId && _selectionCycle.Length == 1)
+            if (hitObjectId == _buffer.Presented?.Snapshot.PlayerShipObjectId && _selectionCycle.Length == 1)
             {
                 SetFollowPlayer();
             }
@@ -506,7 +521,7 @@ public sealed partial class GameSessionScreen : IScreen
             // snapshot) therefore (re)opens the Station screen — clicking "the ship" and
             // clicking "the station" are the same physical spot once docked. Docking
             // itself is unaffected by this click either way.
-            var snapshot = _buffer.Latest?.Snapshot;
+            var snapshot = _buffer.Presented?.Snapshot;
             var playerShip = snapshot?.Objects.FirstOrDefault(o => o.ObjectId == snapshot.PlayerShipObjectId);
             if (playerShip is { IsDocked: true } dockedShip &&
                 (hitObjectId == dockedShip.DockedStationObjectId || hitObjectId == dockedShip.ObjectId))
@@ -554,6 +569,15 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
 
+        if (_combatReportPanel.OnMouseMove(_uiMouseX, _uiMouseY))
+        {
+            _commandsPanel.OnMouseMove(-1, -1);
+            _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null);
+            return true;
+        }
+
         if (_isPanningMap)
         {
             float dx = x - _panLastScreenX;
@@ -586,12 +610,14 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _isPanningMap = false;
+        _combatReportPanel.OnMouseUp(_uiMouseX, _uiMouseY);
         _commandsPanel.OnMouseUp(_uiMouseX, _uiMouseY);
         _objectInfoPanel.OnMouseUp(_uiMouseX, _uiMouseY);
     }
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (_combatReportPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_commandsPanel.OnMouseWheel(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
@@ -604,7 +630,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
-        if (_buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (_combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
         {
             ZoomBy(key is Key.Equal or Key.KeypadAdd ? 1 : -1, _viewportW / 2f, _viewportH / 2f);
@@ -680,7 +707,7 @@ public sealed partial class GameSessionScreen : IScreen
             _ => null
         };
 
-        if (commandType is not null && CanSendEngineCommand(commandType, _buffer.Latest?.Snapshot))
+        if (commandType is not null && CanSendEngineCommand(commandType, _buffer.Presented?.Snapshot))
         {
             SendEngineCommand(commandType);
             return ScreenEvent.None;
@@ -719,7 +746,7 @@ public sealed partial class GameSessionScreen : IScreen
             _lastNonPauseSpeed = speed;
 
         if (_handle is not null)
-            _ = _handle.SetSpeedAsync(speed);
+            _ = _handle.SetSpeedAsync(speed, manualResume: true);
         else
             _buffer.CurrentSpeed = speed; // fallback for tests
     }
@@ -763,7 +790,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (commandType == TorpedoLauncherCommandTypes.SetMode) return IsFireModeEnabled();
         if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
             return IsDefenseToggleEnabled(commandType);
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = _buffer.Presented?.Snapshot;
         if (commandType == NavigationComputerCommandTypes.Dock && AiMapPresentation.Base(snapshot, _selectedObjectId) is not null)
             return false;
         if (snapshot is not null && FindPlayerShipMotion(snapshot)?.IsDestroyed == true)
@@ -793,7 +820,7 @@ public sealed partial class GameSessionScreen : IScreen
                 return _selectedObjectId is not null;
             case "none":
                 return commandType.StartsWith("engine.", StringComparison.Ordinal)
-                    ? CanSendEngineCommand(commandType, _buffer.Latest?.Snapshot)
+                    ? CanSendEngineCommand(commandType, _buffer.Presented?.Snapshot)
                     : true;
             default:
                 return false; // metadata missing — never send a command blind
@@ -849,7 +876,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private string? ResolveModuleId(string commandType)
     {
-        var modules = _buffer.Latest?.Snapshot.InstalledModules;
+        var modules = _buffer.Presented?.Snapshot.InstalledModules;
         if (modules is null || modules.Value.IsDefaultOrEmpty)
             return null; // no snapshot yet, or InstalledModules left at its default (uninitialized) value
 
@@ -869,7 +896,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// <summary>Target requirement ("none"/"point"/"object") for a command type, from the buffered snapshot's Commands metadata.</summary>
     private string? FindCommandTarget(string commandType)
     {
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = _buffer.Presented?.Snapshot;
         if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty)
             return null;
 
@@ -1062,6 +1089,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
+        if (_combatReportPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatJournalPanel.Contains(uiX, uiY)) return true;
         if (_mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
             _lastSpeedPanelRect.Contains(uiX, uiY) || _lastMechanicsPanelRect.Contains(uiX, uiY)) return true;
@@ -1087,6 +1115,10 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
+        ResetCombatPresentationSession();
+        if (!_presentationPrepared) _buffer.PreparePresentation();
+        _presentationPrepared = false;
+        _combatEffects.StartOnPresentation = _buffer.HasCombatPresentation;
         BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
         RenderStageCompleted?.Invoke("begin");
@@ -1200,6 +1232,8 @@ public sealed partial class GameSessionScreen : IScreen
             DrawNavigationTrajectories(canvas, width, height);
             DrawCombatTrajectories(canvas, buffered);
             DrawCountermeasureTrajectories(canvas);
+            if (_handle is not null && buffered is not null)
+                _handle.CombatMetrics.RecordVisual(buffered.Snapshot, _renderStates, prediction?.EffectivePredictionDeltaMs ?? 0, _timestampProvider());
             RenderStageCompleted?.Invoke("combat_trajectories");
             DrawLaunchPreview(canvas, prediction, viewportResized);
             RenderStageCompleted?.Invoke("launch_preview");
@@ -1333,7 +1367,11 @@ public sealed partial class GameSessionScreen : IScreen
             buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
-        _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default);
+        float rightHudTop = ComputeScaleSpeedRowY() - 62 - (buffered?.Snapshot.AiMap is null ? 0 : 28) - 27 - 8;
+        var rightColumn = GameSessionRightColumnLayout.Create(_uiViewportW, _uiViewportH, PanelMargin,
+            rightHudTop, ObjectInfoPanel.ResolveWidth(_uiViewportW, _uiViewportH));
+        _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default,
+            rightColumn.Bounds.Left - PanelMargin);
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
@@ -1342,9 +1380,10 @@ public sealed partial class GameSessionScreen : IScreen
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
         // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
-        float infoBottom = buffered?.Snapshot.AiMap is null ? float.PositiveInfinity : ComputeScaleSpeedRowY() - 62 - 28 - 27 - 8;
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, infoBottom);
+            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, rightColumn.ObjectInfoMaximumBottom);
+        CombatReportsBounds = rightColumn.ReportsAfter(_objectInfoPanel.Bounds);
+        RenderCombatReports(canvas);
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
@@ -1424,7 +1463,7 @@ public sealed partial class GameSessionScreen : IScreen
             // preview and target path. A frozen/corrected marker would detach the line.
             // Guided flight geometry stays on confirmed motion, but its hostile
             // target marker still needs visual reconciliation at snapshot changes.
-            if ((hasCombatPose && obj.HostileCombat is null) || predicted.HasAbsoluteOrbit)
+            if (_buffer.HasCombatPresentation || (hasCombatPose && obj.HostileCombat is null) || predicted.HasAbsoluteOrbit)
             {
                 _visualCorrections.Remove(obj.ObjectId);
                 _pausedVisualAnchors.Remove(obj.ObjectId);
@@ -1923,7 +1962,7 @@ public sealed partial class GameSessionScreen : IScreen
     {
         float centered = (_uiViewportW - width) / 2f;
         float beside = CommandsPanel.PanelWidth + PanelMargin * 2;
-        bool hasDefense = _buffer.Latest?.Snapshot.InstalledModules is { IsDefaultOrEmpty: false } modules &&
+        bool hasDefense = _buffer.Presented?.Snapshot.InstalledModules is { IsDefaultOrEmpty: false } modules &&
             modules.Any(m => m.Defense is not null);
         return hasDefense && _commandsPanel.State != CommandsPanelState.Closed && centered < beside &&
             beside + width <= _uiViewportW - PanelMargin ? beside : centered;
@@ -1941,9 +1980,11 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void DrawGameTime(SKCanvas canvas)
     {
-        string text = GameTimeDisplay.Minutes(_buffer.Latest?.Snapshot.GameTimeMs)
+        string text = GameTimeDisplay.Minutes(_buffer.Presented?.Snapshot.GameTimeMs)
             + " · " + GameTimeDisplay.Status(_buffer.CurrentSpeed);
-        if (_buffer.Latest?.Snapshot.MissingRations > 0) text += " · Не хватает рационов";
+        if (_buffer.AutomaticPresentationPause) text += " · Отображение боя отстаёт — игра приостановлена";
+        else if (_buffer.PresentationPauseRequested) text += " · Запрошена пауза: отображение боя отстаёт";
+        if (_buffer.Presented?.Snapshot.MissingRations > 0) text += " · Не хватает рационов";
         float width = _gameTimeTextPaint.MeasureText(text) + 24;
         float left = BottomControlLeft(width);
         var rect = new SKRect(left, ComputeScaleSpeedRowY() - 128,
@@ -2156,7 +2197,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     internal ScreenEvent ConsumePendingAutoTransition()
     {
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = _buffer.Presented?.Snapshot;
         if (snapshot is null || snapshot.SnapshotSequence == _lastAutoTransitionCheckedSnapshotSequence)
             return ScreenEvent.None;
 
@@ -2374,15 +2415,15 @@ public sealed partial class GameSessionScreen : IScreen
         }
         // Resolve against this snapshot only. Unknown and non-station objects cannot inherit a market row.
         StationMarketKnowledgeSnapshot? market = null;
-        var observations = _buffer.Latest?.Snapshot.StationMarketKnowledge ?? default;
+        var observations = _buffer.Presented?.Snapshot.StationMarketKnowledge ?? default;
         if (s.Source.ObjectType == SpaceObjectType.Station && p.RenderObjectType == SpaceObjectType.Station &&
             !observations.IsDefaultOrEmpty)
             market = observations.FirstOrDefault(o => string.Equals(o.StationObjectId, p.ObjectId, StringComparison.Ordinal));
-        var cluster = ClusterMapPresentation.Station(_buffer.Latest?.Snapshot, p.ObjectId);
-        var ai = AiMapPresentation.Base(_buffer.Latest?.Snapshot, p.ObjectId);
-        var territory = AiMapPresentation.Territory(_buffer.Latest?.Snapshot, p.ObjectId);
-        var resource = ClusterMapPresentation.Resource(_buffer.Latest?.Snapshot, p.ObjectId);
-        var resourceCluster = resource is null ? null : _buffer.Latest?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
+        var cluster = ClusterMapPresentation.Station(_buffer.Presented?.Snapshot, p.ObjectId);
+        var ai = AiMapPresentation.Base(_buffer.Presented?.Snapshot, p.ObjectId);
+        var territory = AiMapPresentation.Territory(_buffer.Presented?.Snapshot, p.ObjectId);
+        var resource = ClusterMapPresentation.Resource(_buffer.Presented?.Snapshot, p.ObjectId);
+        var resourceCluster = resource is null ? null : _buffer.Presented?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
             p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), p.Motion.Countermeasure, market,
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
@@ -2393,8 +2434,7 @@ public sealed partial class GameSessionScreen : IScreen
             HostileCombat: p.ObjectId == _selectedObjectId && s.Source.ObjectType == SpaceObjectType.NpcShip &&
                 p.RenderObjectType == SpaceObjectType.NpcShip && s.Source.RelationToPlayer == PlayerRelation.Enemy
                 ? s.Source.HostileCombat : null,
-            Modules: s.Source.ModuleHealth.IsDefaultOrEmpty ? null : s.Source.ModuleHealth,
-            MotionTimeMs: _buffer.Latest?.Snapshot.MotionTimeMs ?? 0);
+            MotionTimeMs: _buffer.Presented?.Snapshot.MotionTimeMs ?? 0);
     }
 
     /// <summary>

@@ -11,16 +11,18 @@ public sealed class NpcTorpedoLifetimeTests
         Path.Combine(ClientRoot, "Settings.json"), out _, out _);
 
     [Fact]
-    public void Reachable_hostile_launches_again_after_fifteen_seconds()
+    public void Reachable_hostile_waits_for_reload_and_reaction()
     {
         using var engine = Create(HostileTorpedoFireTests.HostileScenario(), ProductionRegistry());
-        var first = At(engine, 1);
-        Assert.Equal(120001, Assert.Single(first.Objects, o => o.Torpedo is not null)
-            .Torpedo!.ExpiresAtMotionTimeMs);
-        var later = At(engine, 15001);
+        var first = At(engine, 1251);
+        var flight = Assert.Single(first.Objects, o => o.Torpedo is not null).Torpedo!;
+        Assert.Equal(flight.LaunchMotionTimeMs + 120000, flight.ExpiresAtMotionTimeMs);
+        var later = At(engine, flight.LaunchMotionTimeMs + 16251);
         var launches = later.CombatJournal.Where(e => e.Type == CombatEventType.Launch && e.Result == "torpedo" &&
             e.ActorObjectId == Target).Select(e => e.MotionTimeMs).ToArray();
-        Assert.Equal(new double[] { 1, 15001 }, launches);
+        Assert.Equal(2, launches.Length);
+        Assert.InRange(launches[0], 501, 1251);
+        Assert.InRange(launches[1] - launches[0], 15500, 16250);
     }
 
     [Fact]

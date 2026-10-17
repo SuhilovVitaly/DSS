@@ -65,6 +65,8 @@ public class PhaseThreeSessionRoundtripTests
     public async Task Real_file_roundtrip_restores_both_panels_and_selection()
     {
         await using var f = await Fixture.Create();
+        // Establish the projectile at the fixture epoch; this test isolates Save/Load from AI reaction timing.
+        Assert.Equal(CommandStartDisposition.Started, f.Engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1).Disposition);
         await f.Advance(1);
         string target = f.Engine.CaptureSnapshot().Objects.Single(o => o.Torpedo is not null).ObjectId;
         foreach (string module in Fixture.Defenses)
@@ -116,6 +118,8 @@ public class PhaseThreeSessionRoundtripTests
     public async Task Load_has_no_old_effect_or_pending_replay()
     {
         await using var f = await Fixture.Create();
+        // Establish the projectile at the fixture epoch; this test isolates Save/Load from AI reaction timing.
+        Assert.Equal(CommandStartDisposition.Started, f.Engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1).Disposition);
         await f.Advance(1);
         string target = f.Engine.CaptureSnapshot().Objects.Single(o => o.Torpedo is not null).ObjectId;
         await f.Connection.SendCommandAsync(new("manual", 1, Fixture.Player, Fixture.Defenses[0], DefenseCommandTypes.Fire, target));
@@ -154,9 +158,13 @@ public class PhaseThreeSessionRoundtripTests
     private static async Task<AuthoritativeSnapshot> Wait(GameSessionHandle handle, Func<AuthoritativeSnapshot, bool>? predicate = null)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        while (handle.Buffer.Latest is not { } latest || predicate?.Invoke(latest.Snapshot) == false)
-        { Assert.Null(handle.Failure); await Task.Delay(10, timeout.Token); }
-        return handle.Buffer.Latest!.Snapshot;
+        while (true)
+        {
+            handle.Buffer.PreparePresentation();
+            if (handle.Buffer.Presented is { } latest && predicate?.Invoke(latest.Snapshot) != false) return latest.Snapshot;
+            Assert.Null(handle.Failure);
+            await Task.Delay(10, timeout.Token);
+        }
     }
 
     private sealed class Fixture : IAsyncDisposable, IGameSessionFactory
@@ -211,7 +219,8 @@ public class PhaseThreeSessionRoundtripTests
                 }
             };
             Engine.LoadScenario(prepared);
-            Connection = new(Engine, DirectoryPath); Handle = new(Connection);
+            Connection = new(Engine, DirectoryPath); Handle = new(Connection,
+                new SnapshotBuffer(() => System.Diagnostics.Stopwatch.GetTimestamp() * 20));
             Game = new(Handle.Buffer, new LinearMotionPredictor(), Handle);
             Window = new(Game, this, null, createNativeWindow: false);
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
@@ -220,7 +229,7 @@ public class PhaseThreeSessionRoundtripTests
         internal async Task Advance(long delta)
         {
             await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Add(ref _now, delta);
+            Interlocked.Add(ref _now, delta * 4);
             await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
         }
         internal Task Route(ScreenEvent action, string? payload = null) => (Task)Invoke(Window, "HandleScreenEvent", action, payload)!;

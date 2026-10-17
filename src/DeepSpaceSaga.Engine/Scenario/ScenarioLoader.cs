@@ -205,12 +205,15 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
+        CombatReportsSaveValidation.Validate(gs.CombatReportsState);
         if (scenario.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion && gs.MasterSeed is null)
             throw new ScenarioException("Trading economy save: missing masterSeed. Save was not modified.");
         if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)
             throw new ScenarioException("Missing catalogCompatibility in save format 7 or later.");
         if (scenario.SaveFormatVersion >= 6 && gs.SimulationTimeMs is null)
             throw new ScenarioException("Missing simulationTimeMs in save format 6.");
+        if (gs.MotionQuarterRemainder is < 0 or > 3 || !allowNonZeroGameTime && gs.MotionQuarterRemainder != 0)
+            throw new ScenarioException("Invalid motionQuarterRemainder; expected 0..3 for saves or 0 for New Game.");
         if (gs.GameTimeMs < 0 || gs.SimulationTimeMs < 0 || gs.PlayerTokens < 0)
             throw new ScenarioException("Game time and player balance must be nonnegative.");
 

@@ -136,7 +136,8 @@ public class PauseSimulationTests
         long pausedGameTimeMs = s2.GameTimeMs;
         // Bound the real/motion interval, not the calendar (which runs 300x faster).
         long pauseTransitionDeltaMs = s2.MotionTimeMs - s1.MotionTimeMs;
-        Assert.Equal(pauseTransitionDeltaMs * SimulationSpeedExtensions.BaseGameSecondsPerRealSecond, pausedGameTimeMs - t1);
+        // Integer motion timestamps can retain up to three quarter-millisecond ticks.
+        Assert.InRange(pausedGameTimeMs - t1 - pauseTransitionDeltaMs * SimulationSpeedExtensions.BaseGameSecondsPerRealSecond, -225, 225);
         Assert.True(
             pauseTransitionDeltaMs >= 0 && pauseTransitionDeltaMs < 100,
             $"Pause transition advanced {pauseTransitionDeltaMs}ms; expected only a tiny pre-pause partial interval.");

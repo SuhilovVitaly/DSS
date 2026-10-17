@@ -6,6 +6,57 @@ public sealed record CountermeasurePlan(TorpedoRoute Route, double? PredictedEnc
 /// <summary>Predictive interception of the confirmed curved projectile trajectory, from the carrier centre.</summary>
 public static class CountermeasureGuidanceMath
 {
+    /// <summary>The launcher aims before release; airborne guidance still obeys the captured turn rate.</summary>
+    public static TorpedoRoute? PlanLaunch(ObjectMotionSnapshot defender, TorpedoRoute target, long now,
+        double firstHullContactMotionTimeMs, double speedKmS = 12, double turnRateDegPerSec = 90,
+        double? expiresAtMotionTimeMs = null) =>
+        Plan(AimLaunch(defender, target, now, Math.Min(firstHullContactMotionTimeMs,
+                expiresAtMotionTimeMs ?? firstHullContactMotionTimeMs) - now, speedKmS),
+            target, now, firstHullContactMotionTimeMs, speedKmS, turnRateDegPerSec, expiresAtMotionTimeMs);
+
+    public static CountermeasurePlan PlanManualLaunch(ObjectMotionSnapshot defender, TorpedoRoute target, long now,
+        long remainingLifetimeMs, double speedKmS = 12, double turnRateDegPerSec = 90,
+        double? firstTargetContactMotionTimeMs = null) =>
+        PlanManual(AimLaunch(defender, target, now, remainingLifetimeMs, speedKmS), target, now,
+            remainingLifetimeMs, speedKmS, turnRateDegPerSec, firstTargetContactMotionTimeMs);
+
+    private static ObjectMotionSnapshot AimLaunch(ObjectMotionSnapshot defender, TorpedoRoute target, long now,
+        double horizon, double speedKmS)
+    {
+        // Find the first straight-flight rendezvous on the confirmed curved target route.
+        // Distances use world units (100 m), while speeds are supplied in km/s.
+        double low = 0;
+        double aimAt = Math.Min(100, Math.Max(0, horizon));
+        if (double.IsFinite(horizon) && horizon > 0 && double.IsFinite(speedKmS) && speedKmS > 0)
+        {
+            for (double high = Math.Min(20, horizon); ; high = Math.Min(horizon, high + 20))
+            {
+                if (Residual(high) <= 0)
+                {
+                    for (int i = 0; i < 60; i++)
+                    {
+                        double mid = (low + high) / 2;
+                        if (Residual(mid) > 0) low = mid; else high = mid;
+                    }
+                    aimAt = (low + high) / 2;
+                    break;
+                }
+                if (high >= horizon) break;
+                low = high;
+            }
+        }
+        var point = TorpedoGuidanceMath.PredictPose(target, now - target.StartMotionTimeMs + aimAt);
+        double direction = Math.Atan2(point.X - defender.X, -(point.Y - defender.Y)) * 180 / Math.PI;
+        return defender with { Direction = (direction + 360) % 360 };
+
+        double Residual(double ms)
+        {
+            var point = TorpedoGuidanceMath.PredictPose(target, now - target.StartMotionTimeMs + ms);
+            double dx = point.X - defender.X, dy = point.Y - defender.Y;
+            return Math.Sqrt(dx * dx + dy * dy) - speedKmS * ms / 100;
+        }
+    }
+
     public static TorpedoRoute? Plan(ObjectMotionSnapshot defender, TorpedoRoute target, long now,
         double firstHullContactMotionTimeMs, double speedKmS = 12, double turnRateDegPerSec = 90,
         double? expiresAtMotionTimeMs = null)

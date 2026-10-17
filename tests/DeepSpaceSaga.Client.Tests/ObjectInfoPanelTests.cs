@@ -116,29 +116,21 @@ public class ObjectInfoPanelTests
         Assert.Equal("Prospector", Assert.Single(lines, l => l.Label == "Name").Value);
     }
 
-    [Fact]
-    public void Known_ship_module_rows_show_armor_structure_and_authoritative_state()
+    [Theory]
+    [InlineData(SpaceObjectType.PlayerShip)]
+    [InlineData(SpaceObjectType.NpcShip)]
+    public void Ship_info_omits_modules_even_when_snapshot_contains_health(string type)
     {
-        ModuleHealthSnapshot[] modules =
-        [
-            new("engine", "Engine", 12, 20, 30, 40, 4500, false),
-            new("weapon", "Weapon", 0, 10, 0, 25, null, true)
-        ];
-        var data = new ObjectInfoPanelData("ship", "Ship", 0, 0, SpaceObjectType.NpcShip,
-            Modules: modules, MotionTimeMs: 1000);
-        var lines = ObjectInfoPanel.BuildLines(data);
-        Assert.Contains(lines, row => row.Label.Contains("Engine") && row.Value.Contains("12/20") &&
-            row.Value.Contains("30/40") && row.Value.Contains("4 s"));
-        Assert.Contains(lines, row => row.Label.Contains("Weapon") && row.Value.Contains("0/10") &&
-            row.Value.Contains("0/25") && row.Value.Contains(GameSessionScreen.CombatText("Destroyed", "Уничтожен")));
-        Assert.DoesNotContain(ObjectInfoPanel.BuildLines(data with { RenderObjectType = SpaceObjectType.UnknownSpaceObject }),
-            row => row.Label.Contains("Engine") || row.Label.Contains("Weapon"));
+        var data = new ObjectInfoPanelData("ship", "Ship", 2, 90, type,
+            Modules: [new("engine", "Engine", 12, 20, 30, 40, 4500, false),
+                      new("weapon", "Weapon", 0, 10, 0, 25, null, true)], MotionTimeMs: 1000);
+        Assert.Equal(new[] { ("Name", "Ship"), ("Speed", "2 km/s"), ("Direction", "90°") }, ObjectInfoPanel.BuildLines(data));
     }
 
     [Theory]
     [InlineData(1280)]
     [InlineData(900)]
-    public void Long_module_labels_and_values_fit_both_columns(int viewportWidth)
+    public void Hidden_modules_do_not_expand_or_scroll_ship_info(int viewportWidth)
     {
         var panel = new ObjectInfoPanel();
         var data = new ObjectInfoPanelData("ship", "Player Ship", 2, 0, SpaceObjectType.PlayerShip,
@@ -146,17 +138,10 @@ public class ObjectInfoPanelTests
         using var bitmap = new SKBitmap(viewportWidth, 900);
         using var canvas = new SKCanvas(bitmap);
         panel.Render(canvas, viewportWidth, 8, data, null, 900);
-        var rows = panel.BuildRenderLines(data);
-        using var paint = new SKPaint { TextSize = 12, Typeface = XenonStyle.TypefaceRegular };
-        float imageWidth = Math.Min(200, Math.Max(48, panel.CaptionRect.Width - 296));
-        float textWidth = panel.CaptionRect.Width - imageWidth - 24;
-        Assert.All(rows, row =>
-        {
-            Assert.True(paint.MeasureText(row.Label) <= textWidth * .45f - 6 + .01f);
-            Assert.True(paint.MeasureText(row.Value) <= textWidth * .55f + .01f);
-        });
-        Assert.Contains("Living", string.Join(" ", rows.Select(r => r.Label)));
-        Assert.Contains("150/150", string.Concat(rows.Select(r => r.Value)));
+        var bounds = panel.RowBodyRects[0];
+        Assert.Equal(3, panel.BuildRenderLines(data).Count);
+        panel.Render(canvas, viewportWidth, 8, data with { Modules = null }, null, 900);
+        Assert.Equal(bounds, panel.RowBodyRects[0]);
     }
 
     private static StationMarketKnowledgeSnapshot Market(string id = "STATION-A", bool stale = false, bool available = true) =>
@@ -592,7 +577,12 @@ public class ObjectInfoPanelTests
 
         // 150px image + 6px padding above and below.
         Assert.Equal(162f, ObjectInfoPanel.RowBodyHeight);
-        Assert.All(screen.ObjectInfoPanel.RowBodyRects, r => Assert.Equal(162f, r.Height));
+        Assert.Equal(162f, screen.ObjectInfoPanel.RowBodyRects[0].Height);
+        Assert.All(screen.ObjectInfoPanel.RowBodyRects, r => Assert.InRange(r.Height, 1f, 162f));
+        Assert.True(screen.ObjectInfoPanel.Bounds.Bottom <= screen.CombatReportsBounds.Top);
+        var clipped = screen.ObjectInfoPanel.RowBodyRects[1];
+        Assert.True(screen.ObjectInfoPanel.Scroll(clipped.MidX, clipped.MidY, -1));
+        Assert.True(screen.ObjectInfoPanel.ScrollOffset(1) > 0);
     }
 
     [Fact]

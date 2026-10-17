@@ -153,9 +153,9 @@ public sealed class TacticalMapSnapshotTests
         Assert.NotNull(saved);
         Assert.Equal(18UL, buffer.Latest!.Snapshot.SnapshotSequence);
         Assert.Equal(17UL, saved.State.AuthoritativeSnapshot!.SnapshotSequence);
-        Assert.Equal(100L, saved.State.EffectivePredictionDeltaMs);
+        Assert.Equal(25L, saved.State.EffectivePredictionDeltaMs);
         Assert.Equal(Stopwatch.Frequency / 10, saved.State.CaptureTimestampTicks);
-        Assert.Equal(10001, Assert.Single(saved.State.Objects).Rendered.X);
+        Assert.Equal(10000.25, Assert.Single(saved.State.Objects).Rendered.X);
         var frame = saved.Profile!.Frames[^1];
         Assert.Equal(saved.FrameId, frame.FrameId);
         Assert.Equal(saved.State.PredictedGameTimeMs, frame.PredictedGameTimeMs);
@@ -208,7 +208,7 @@ public sealed class TacticalMapSnapshotTests
             Assert.False(pending.IsCompleted);
             Assert.Same(pending, screen.SnapshotSaveTask);
             Assert.Equal(1, Volatile.Read(ref calls));
-            Assert.Equal(10003, screen.RenderStates[0].Predicted.X);
+            Assert.Equal(10000.75, screen.RenderStates[0].Predicted.X);
         }
         finally
         {
@@ -254,10 +254,10 @@ public sealed class TacticalMapSnapshotTests
         Assert.Equal(4096, frames[0].Window!.Value.GpuCacheLimitBytes);
         Assert.Null(frames[1].Window); // Current callback has not completed yet.
         Assert.True(frames[1].NewSnapshot);
-        Assert.Equal(100L, frames[1].ForwardJumpMs);
-        Assert.Equal(100L, frames[1].TotalForwardJumpMs);
+        Assert.Equal(700L, frames[1].ForwardJumpMs);
+        Assert.Equal(700L, frames[1].TotalForwardJumpMs);
         Assert.True(frames[1].CaptureRequested);
-        Assert.Equal(10008, frames[1].Player!.Value.RenderedX);
+        Assert.Equal(10002, frames[1].Player!.Value.RenderedX);
         Assert.Equal(10009, frames[1].Player!.Value.RawPredictedX);
         Assert.True(frames[1].RenderAllocatedBytes >= 0);
         Assert.True(frames[1].Stages.CoordinatesAndHitTestMs >= 0);

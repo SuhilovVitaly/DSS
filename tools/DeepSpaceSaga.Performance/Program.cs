@@ -10,6 +10,12 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Contains("--reports-window"))
+{
+    Environment.ExitCode = CombatReportsNativeEvidence.Run(args);
+    return;
+}
+
 if (args.Contains("--combat-window"))
 {
     Environment.ExitCode = CombatNativeEvidence.Run(args);

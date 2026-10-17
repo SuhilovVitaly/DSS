@@ -274,10 +274,10 @@ public class ApproachCommandTests
             AuthoritativeSnapshot slowSnapshot = normal.CaptureSnapshot();
             for (int tick = 0; tick < 100; tick++)
             {
-                normalRealMs += 1000;
+                normalRealMs += 4000;
                 slowSnapshot = normal.CaptureSnapshot(advanceClock: true);
             }
-            fastRealMs += 1000;
+            fastRealMs += 4000;
             var fastSnapshot = fast.CaptureSnapshot(advanceClock: true);
             var actual = PlayerShipFrom(fastSnapshot);
             Assert.Equal(slowSnapshot.GameTimeMs, fastSnapshot.GameTimeMs);
@@ -291,7 +291,7 @@ public class ApproachCommandTests
             }
             else
             {
-                loadedRealMs += 1000;
+                loadedRealMs += 4000;
                 Compare(actual, PlayerShipFrom(loaded.CaptureSnapshot(advanceClock: true)));
             }
         }

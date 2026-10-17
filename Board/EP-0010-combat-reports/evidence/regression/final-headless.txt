@@ -1,0 +1,9 @@
+2026-10-16 final headless evidence; captured from exec sessions, not native run.
+Engine session87321: Passed! Failed0 Passed2197 Skipped0 Total2197 Duration29m.
+Client session33861: Passed! Failed0 Passed1973 Skipped0 Total1973 Duration1m17s; explicit filter excludes Every_demo_station_docks_and_trades_via_session (5cases).
+Contracts: Passed! Failed0 Passed210 Skipped0 Total210 Duration175ms; contracts-final.trx.
+Focused corrective session83024: Passed! Failed0 Passed226 Skipped0 Total226 Duration5s; hover-resize-repair.trx.
+Full solution build session48608: Build succeeded.0Warning(s),0Error(s). Elapsed00:00:34.97. SkipPortraitPackCheck=true.
+Scoped final format session97300: exit0, no diagnostics.
+Engine full suite produced terminal completion only; no TRX was requested, and this file is a truthful transcription, not a fabricated test-runner TRX.
+Native/human/FPS remain OPEN. No autonomous game/native/performance launches after explicit user prohibition.

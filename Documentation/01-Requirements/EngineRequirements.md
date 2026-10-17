@@ -499,37 +499,32 @@ Renderer не должен сканировать весь список объе
 
 ## 21. Authoritative turn и частоты симуляции
 
-Для текущей первой локальной версии фиксируются две независимые частоты:
+Для локальной версии действуют независимые частоты:
 
-- authoritative snapshot loop: `1 раз в 1 секунду` (`1 Hz`);
+- продвижение authoritative Engine и выпуск компактных боевых обновлений: `100 ms` реального монотонного времени;
+- полный `AuthoritativeSnapshot`: примерно `1000 ms` реального времени (`1 Hz`);
 - render loop: `80 FPS`.
 
-Отдельный внутренний базовый тик `100 ms` в текущей baseline-реализации не вводится. Authoritative Engine при публикации snapshot вычисляет прошедшее игровое время по elapsed real time с учётом текущего `SimulationSpeed`, применяет due runtime transitions и публикует новый immutable `AuthoritativeSnapshot`.
-
-Будущая серверная модель может вернуть отдельные internal ticks и calculation tiers, но они не являются обязательным требованием текущей локальной версии, пока не появится отдельное ТЗ на sub-second authoritative simulation.
-
-На первом этапе локальный режим обязан эмулировать будущую серверную границу:
+Реализуемый контракт уточнён в [CombatPresentationSynchronization.md](../02-FirstRelease/TechnicalTasks/CombatPresentationSynchronization.md). Реальные публикации не заменяют физическую сетку наведения `100 ms` и не округляют время контактов. Engine последовательно обрабатывает due transitions, фиксирует промежуточные боевые состояния после событий и изменений маршрутов, затем публикует подтверждённую временную границу.
 
 ```text
 Local Engine
-    ↓ authoritative snapshot loop: 1000 ms
+    ↓ CombatPresentationUpdate: 100 ms real time + intermediate event/route revisions
+    ↓ AuthoritativeSnapshot: ~1000 ms real time
+LocalGameSessionConnection (bounded, ordered, no silent event loss)
     ↓
-AuthoritativeSnapshot
-    ↓
-LocalGameSessionConnection
-    ↓
-Client State Buffer
-    ↓
-MotionPrediction
-    ↓
-Skia @ 80 FPS
+SnapshotBuffer: immediate command receipts + delayed scene history
+    ↓ confirmed scene time, normally 150 ms behind Engine
+MotionPrediction → Skia @ 80 FPS
 ```
 
-UI не получает «короткий путь» к более свежим внутренним координатам локального движка.
+Client не прогнозирует сцену за непрерывно полученную подтверждённую границу. Позиции участников, версия маршрута, эффекты, повреждения, журнал, доклады и terminal-переход используют один подготовленный кадр. Полный снимок не обходит эту очередь. Камера следует за отображаемой позицией.
+
+Отсутствие непрерывно пригодных данных более `1000 ms` реального времени вызывает подтверждаемую автоматическую паузу. Контроль сессии на стороне Engine обеспечивает остановку и при потере обратной связи; он не зависит от render loop. Восстановление и закрытие modal не возобновляют бой автоматически. История ограничена; переполнение останавливает сессию с явной ошибкой.
 
 ## 22. Client-side motion prediction / dead reckoning
 
-Будущая целевая модель предполагает, что authoritative server присылает клиенту состояние мира строго один раз в секунду. Между этими обновлениями плавное движение рассчитывается на клиенте.
+Полный снимок мира поступает примерно раз в секунду. Между полными снимками клиент получает отдельные боевые обновления; плавное движение рассчитывается на клиенте только до непрерывно подтверждённой границы времени.
 
 Прогноз строится на основании последнего authoritative snapshot и известной модели движения объекта, в частности:
 
@@ -598,13 +593,11 @@ predictedGameTime = snapshot.gameTimeMs + elapsedLocal × effectiveGameSpeedMult
 
 Визуальное сглаживание не должно влиять на игровые расчёты, столкновения, дистанции, цели, RNG или серверные решения.
 
-## 24. Команды игрока и секундный authoritative turn
+## 24. Команды игрока и authoritative turn
 
 Команда игрока отправляется authoritative engine/server немедленно после ввода, но не вступает в силу на клиенте сразу.
 
-До получения следующего authoritative snapshot клиент продолжает прогнозировать прежнюю подтверждённую траекторию. Неподтверждённая команда не участвует в `MotionPrediction`.
-
-Это намеренная игровая «задержка исполнения приказа».
+Неподтверждённая команда не участвует в `MotionPrediction`. Приём команды подтверждается отдельно от её выполнения, без ожидания часов сцены. Результат и отказ доступны сразу после ответа Engine; запуск и последствия появляются на часах сцены. Обработка очереди выполняется при authoritative-обновлении с периодом `100 ms` реального времени, независимо от выпуска полного снимка.
 
 Серверная модель:
 
@@ -614,7 +607,7 @@ predictedGameTime = snapshot.gameTimeMs + elapsedLocal × effectiveGameSpeedMult
     валидировать их при приёме
     накапливать разрешённые команды
 
-на границе 1 секунды:
+на границе authoritative-обновления (100 ms реального времени):
     завершить симуляцию до TurnTime(n)
     зафиксировать CommandBatch
     выполнить повторную execution validation
@@ -627,7 +620,7 @@ predictedGameTime = snapshot.gameTimeMs + elapsedLocal × effectiveGameSpeedMult
 
 Команда получает фактическое `effectiveGameTime` от authoritative engine на границе хода. Клиент не назначает authoritative время исполнения.
 
-В локальной версии запрещён shortcut мгновенного исполнения команд. Локальный и будущий сетевой режим используют одинаковый жизненный цикл команд и те же секундные границы; различается только transport implementation.
+В локальной версии запрещён shortcut мгновенного исполнения команд. Локальный и будущий сетевой режим используют одинаковый жизненный цикл команд и те же границы authoritative-обновлений; различается только transport implementation.
 
 ## 25. Module-addressed command model
 
@@ -5483,3 +5476,7 @@ EP-0009 supersedes the conflicting EP-0008 combat rules in `Phase Three Combat`.
 - The configured CombatMukha/CombatShmel scenarios use three hostile ships with radius/flank AI. Hostile module, weapon, operator and PRO data are read from production catalogs. UI snapshots expose known module condition while preserving unknown-enemy masking; the journal reports rolls, damage and terminal cause.
 - SaveFormatVersion17 writes defense3/combat2/hostile2 with module state, queues, active flights, deadlines, AI and named combat RNG. Saves16 and earlier are rejected atomically. Defeated sessions remain unsavable. Physical, calendar and presentation clocks retain their distinct ownership.
 - Automated scenario proof and 100-seed results are in [balance evidence](../../Board/EP-0009-battle/evidence/balance.md). The CombatMukha result is outside the historical simulator tolerance; this is documented and non-blocking under US11-AC2. [Native acceptance](../../Board/EP-0009-battle/evidence/native.md) is NOT RUN by user instruction; Graphify rebuilding is SKIPPED.
+
+## Tactical Combat Reports — EP-0010
+
+2026-10-16: реализовано расширение Phase Four Module Combat — [контракт R01–R24](../02-FirstRelease/TechnicalTasks/TacticalCombatReports.md), [текущая архитектура](../04-Engineering/CombatReports.md), [статус EP-0010](../../Board/EP-0010-combat-reports/ImplementationStatus.md). Авторитетные E01–E07,8 иллюстраций, captured докладчики, privacy, надёжная доставка и200 карточек справа под Object Info. Root Save17 содержит optional CombatReportsState Version1 с sequence/once-per-target marks; UI history не сохраняется, Load не проигрывает прошлые доклады. Действующие правила боя/обнаружения, journal, RNG, часы и Defeated сохраняются. Headless реализация проверена; human/native/FPS acceptance OPEN. Пользователь запретил самостоятельный запуск игры2026-10-16; агент не запускает ни игру, ни native/performance harness без нового явного поручения.

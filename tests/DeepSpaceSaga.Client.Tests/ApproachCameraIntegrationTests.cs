@@ -76,13 +76,13 @@ public class ApproachCameraIntegrationTests
         }
         Refresh();
         Approach("TARGET-A", 640, 460);
-        screen.OnMouseDown(900, 530);
-        screen.OnMouseMove(-300, 530);
-        screen.OnMouseUp(-300, 530);
+        screen.OnMouseDown(700, 300);
+        screen.OnMouseMove(-700, 300);
+        screen.OnMouseUp(-700, 300);
         Refresh();
         Assert.False(screen.IsFocusAttachedToPlayer);
-        Approach("TARGET-B", 940, 460);
-        Approach("TARGET-C", 740, 360);
+        Approach("TARGET-B", 740, 460);
+        Approach("TARGET-C", 540, 360);
         Assert.False(screen.IsFocusAttachedToPlayer);
     }
 

@@ -10,6 +10,59 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class EngineCommandTests
 {
     [Theory]
+    [InlineData(397)]
+    [InlineData(398)]
+    [InlineData(399)]
+    public void Serialized_save_preserves_fractional_motion_across_pause_and_resume(long elapsed)
+    {
+        long now = 0, restoredNow = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed0, () => now);
+        var restoredClock = new SimulationClock(SimulationSpeed.Speed0, () => restoredNow);
+        using var engine = CreateEngine(speedMps: 1000, directionDegrees: 90, clock: clock);
+        using var restored = CreateEngine(speedMps: 1000, clock: restoredClock);
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        now = elapsed;
+        engine.CaptureSnapshot(advanceClock: true);
+        engine.SetSpeed(SimulationSpeed.Speed0);
+        var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(engine.CaptureSaveState()), true);
+        Assert.Equal(elapsed % 4, save.GameState.MotionQuarterRemainder);
+        restored.LoadScenario(save, isSave: true);
+        Assert.Equal(clock.Capture(), restoredClock.Capture());
+        engine.SetSpeed(SimulationSpeed.Speed1);
+        restored.SetSpeed(SimulationSpeed.Speed1);
+        for (int i = 0; i < 8; i++)
+        {
+            now++; restoredNow++;
+            var originalSnapshot = engine.CaptureSnapshot(advanceClock: true);
+            var restoredSnapshot = restored.CaptureSnapshot(advanceClock: true);
+            Assert.Equal(clock.Capture(), restoredClock.Capture());
+            Assert.Equal(JsonSerializer.Serialize(PlayerShipFrom(originalSnapshot)), JsonSerializer.Serialize(PlayerShipFrom(restoredSnapshot)));
+        }
+    }
+
+    [Theory]
+    [InlineData(-1)]
+    [InlineData(4)]
+    public void Save_rejects_invalid_fractional_clock_state(int remainder)
+    {
+        using var engine = CreateEngine();
+        var save = engine.CaptureSaveState();
+        save = save with { GameState = save.GameState with { MotionQuarterRemainder = remainder } };
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
+    }
+
+    [Fact]
+    public void Save_without_fractional_clock_field_defaults_to_zero()
+    {
+        using var engine = CreateEngine();
+        var json = System.Text.Json.Nodes.JsonNode.Parse(ScenarioLoader.Serialize(engine.CaptureSaveState()))!;
+        json["gameState"]!.AsObject().Remove("motionQuarterRemainder");
+        var save = ScenarioLoader.LoadFromJson(json.ToJsonString(), true);
+        Assert.Equal(0, save.GameState.MotionQuarterRemainder);
+        engine.LoadScenario(save, isSave: true);
+    }
+
+    [Theory]
     [InlineData("On", "Ready", 100, true)]
     [InlineData("Off", "Ready", 100, false)]
     [InlineData("On", "Ready", 0, false)]
@@ -48,7 +101,7 @@ public class EngineCommandTests
     }
 
     [Fact]
-    public void Real_second_advances_calendar_five_minutes_but_motion_one_second()
+    public void Real_second_advances_calendar_75_seconds_and_motion_quarter_second()
     {
         long realMs = 0;
         var clock = new SimulationClock(SimulationSpeed.Speed1, () => realMs);
@@ -57,9 +110,9 @@ public class EngineCommandTests
         var before = PlayerShipFrom(engine.CaptureSnapshot());
         realMs = 1000;
         var after = engine.CaptureSnapshot(advanceClock: true);
-        Assert.Equal(300_000, after.GameTimeMs);
-        Assert.Equal(1000, after.SimulationTimeMs);
-        Assert.Equal(before.X + 10, PlayerShipFrom(after).X, precision: 6);
+        Assert.Equal(75_000, after.GameTimeMs);
+        Assert.Equal(250, after.SimulationTimeMs);
+        Assert.Equal(before.X + 2.5, PlayerShipFrom(after).X, precision: 6);
         Assert.Equal(before.Y, PlayerShipFrom(after).Y, precision: 6);
     }
 
@@ -74,8 +127,8 @@ public class EngineCommandTests
         engine.CaptureSnapshot();
         realMs = 1000;
         var after = engine.CaptureSnapshot(advanceClock: true);
-        Assert.Equal(300_000, after.GameTimeMs);
-        Assert.Equal(2.0, PlayerShipFrom(after).SpeedKmS);
+        Assert.Equal(75_000, after.GameTimeMs);
+        Assert.Equal(0.5, PlayerShipFrom(after).SpeedKmS);
     }
 
     [Fact]
@@ -87,7 +140,7 @@ public class EngineCommandTests
         engine.SetSpeed(SimulationSpeed.Speed1);
         engine.ReceiveCommand(Command(ShipEngineCommandTypes.TurnRightUntilCancel));
         engine.CaptureSnapshot();
-        realMs = 1500;
+        realMs = 6000;
         var before = engine.CaptureSnapshot(advanceClock: true);
         Assert.Equal(1, PlayerShipFrom(before).Direction);
         engine.SetSpeed(SimulationSpeed.Speed0);
@@ -106,8 +159,8 @@ public class EngineCommandTests
         Assert.Equal(1500, restored.SimulationTimeMs);
         engine.SetSpeed(SimulationSpeed.Speed1);
         loaded.SetSpeed(SimulationSpeed.Speed1);
-        realMs += 1000;
-        loadedRealMs += 1000;
+        realMs += 4000;
+        loadedRealMs += 4000;
         var uninterrupted = engine.CaptureSnapshot(advanceClock: true);
         var continued = loaded.CaptureSnapshot(advanceClock: true);
         Assert.Equal(750_000, continued.GameTimeMs);
@@ -133,9 +186,9 @@ public class EngineCommandTests
         Assert.Equal(12_345, before.SimulationTimeMs);
         realMs = 1000;
         var after = loaded.CaptureSnapshot(advanceClock: true);
-        Assert.Equal(312_345, after.GameTimeMs);
-        Assert.Equal(13_345, after.SimulationTimeMs);
-        Assert.Equal(storedShip.PositionX + 10, PlayerShipFrom(after).X, precision: 6);
+        Assert.Equal(87_345, after.GameTimeMs);
+        Assert.Equal(12_595, after.SimulationTimeMs);
+        Assert.Equal(storedShip.PositionX + 2.5, PlayerShipFrom(after).X, precision: 6);
     }
     private const string PlayerShipId = "SHIP";
     private const string EngineModuleId = "ENGINE-1";

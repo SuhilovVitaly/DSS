@@ -84,6 +84,9 @@ public sealed partial class SimulationEngine
 
     private CommandStartOutcome TryLaunchTorpedo(SpaceObjectRuntime owner, string moduleId, string? targetObjectId, long motionTimeMs)
     {
+        if (targetObjectId is not null && (_objects.Any(o => o.InitialMotion.ObjectId == targetObjectId && o.IsDestroyed) ||
+            _combatImpacts.Any(i => i.DestroyedObjectId == targetObjectId)))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.TargetDestroyed);
         int index = FindModuleIndex(owner.Modules, moduleId);
         if (index < 0) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
         var module = owner.Modules[index];
@@ -144,7 +147,7 @@ public sealed partial class SimulationEngine
         _torpedoTargets[id] = (targetPose, motionTimeMs);
         _torpedoSequence = sequence;
         AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, targetObjectId!, id,
-            origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo"));
+            origin.X, origin.Y, TorpedoOperator: weaponOperator, Result: "torpedo", LauncherModuleId: moduleId));
         if (mode.BreakdownChancePercent > 0)
         {
             int roll = _launcherBreakdownRng.NextRoll();
@@ -230,6 +233,7 @@ public sealed partial class SimulationEngine
         // Recompute after each mutation: a previous contact may remove an obstacle
         // (or, in the wreck lifecycle, replace it) inside this same physical interval.
         if (motionTimeMs <= _combatProcessedTimeMs) return;
+        PruneCombatReactions();
         double cursor = _combatProcessedTimeMs;
         while (true)
         {
@@ -256,6 +260,7 @@ public sealed partial class SimulationEngine
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
                 cursor = hit.Contact.MotionTimeMs;
                 RemoveLostCountermeasures(cursor);
+                CapturePresentationFrame(cursor);
                 if (IsDefeated) return;
                 continue;
             }
@@ -264,12 +269,14 @@ public sealed partial class SimulationEngine
                 ResolveFirstIntercept(encounter.Projectile, encounter.Target, encounter.Contact);
                 cursor = encounter.Contact.MotionTimeMs;
                 RemoveLostCountermeasures(cursor);
+                CapturePresentationFrame(cursor);
                 continue;
             }
             if (expiry is not null && expiryTime <= eventTime && expiryTime <= motionTimeMs)
             {
                 ExpireCountermeasure(expiry, expiryTime);
                 cursor = expiryTime;
+                CapturePresentationFrame(cursor);
                 continue;
             }
             if (torpedoExpiry is not null && torpedoExpiryTime <= eventTime && torpedoExpiryTime <= motionTimeMs)
@@ -277,18 +284,21 @@ public sealed partial class SimulationEngine
                 TerminateTorpedo(torpedoExpiry, torpedoExpiryTime, TorpedoTerminationKind.Expired);
                 RemoveLostCountermeasures(torpedoExpiryTime);
                 cursor = torpedoExpiryTime;
+                CapturePresentationFrame(cursor);
                 continue;
             }
             if (pendingBurst is { } burst && burst.Shot.DueMotionTimeMs <= eventTime)
             {
                 ProcessPendingBurst(burst.Key, burst.Shot);
                 cursor = burst.Shot.DueMotionTimeMs;
+                CapturePresentationFrame(cursor);
                 continue;
             }
             if (launch is not null && launch.Time <= eventTime)
             {
                 LaunchCountermeasure(launch);
                 cursor = launch.Time;
+                CapturePresentationFrame(cursor);
                 continue;
             }
             if (hostileLaunch is not null)
@@ -297,6 +307,7 @@ public sealed partial class SimulationEngine
                 if (result.Disposition != CommandStartDisposition.Started)
                     throw new InvalidOperationException($"Validated hostile launch was rejected: {result.ReasonCode}.");
                 cursor = hostileLaunch.Time;
+                CapturePresentationFrame(cursor);
                 continue;
             }
             break;
@@ -476,6 +487,7 @@ public sealed partial class SimulationEngine
             flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetObjectId, hitId,
             contact.MotionTimeMs, contact.X, contact.Y, finalFlight.Trail, moduleHit is null ? 0 : flight.Damage,
             wreckId is null ? null : hitId, wreckId));
+        EmitCombatContactReport(projectile, target, contact.MotionTimeMs, moduleHit, wreckId is not null);
     }
 
     private decimal TorpedoDefenseRating(SpaceObjectRuntime target, double motionTimeMs)

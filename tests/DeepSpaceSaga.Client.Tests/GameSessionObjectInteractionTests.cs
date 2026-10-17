@@ -142,8 +142,8 @@ public class GameSessionObjectInteractionTests
         screen.OnMouseMove(640, 360);
         Assert.Equal("OBJ-1", screen.ActiveObjectId);
 
-        // 50 km/s × 10 units/s per km/s × 0.2 s = 100 world units of drift.
-        clock.AdvanceMs(200);
+        // 50 km/s × 10 units/s per km/s × 0.2 physical s (0.8 real s) = 100 world units of drift.
+        clock.AdvanceMs(800);
         Render(screen);
 
         Assert.Null(screen.ActiveObjectId);
@@ -275,7 +275,7 @@ public class GameSessionObjectInteractionTests
         Render(fixture.Screen);
         fixture.Screen.OnKeyDown(Key.ControlLeft);
 
-        fixture.Screen.OnMouseDown(1000, 500); // far from the ship at screen center
+        fixture.Screen.OnMouseDown(700, 300); // far from the ship at screen center
 
         var command = Assert.Single(fixture.Connection.Commands);
         Assert.Equal(ShipEngineCommandTypes.Orbit, command.CommandType);
@@ -353,7 +353,7 @@ public class GameSessionObjectInteractionTests
         Render(fixture.Screen);
 
         // Detach from the player first (plain map click), so reattachment is observable.
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
         Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
 
         fixture.Screen.OnMouseDown(640, 360); // select the player ship
@@ -372,8 +372,8 @@ public class GameSessionObjectInteractionTests
 
         // Off the (now always-visible, 4-group) Commands Panel footprint — a real
         // free map point, not swallowed as a UI-panel click.
-        fixture.Screen.OnMouseDown(1000, 500);
-        fixture.Screen.OnMouseMove(1200, 700); // drag -> detaches from player
+        fixture.Screen.OnMouseDown(700, 300);
+        fixture.Screen.OnMouseMove(750, 350); // drag -> detaches from player
         Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
 
         fixture.Screen.OnKeyDown(Key.ControlLeft);
@@ -428,10 +428,10 @@ public class GameSessionObjectInteractionTests
 
         // Plain map click off any object and off the (now always-visible, 4-group)
         // Commands Panel footprint starts a drag-pan.
-        fixture.Screen.OnMouseDown(1000, 500);
+        fixture.Screen.OnMouseDown(700, 300);
         Assert.False(fixture.Screen.IsFocusAttachedToPlayer);
 
-        fixture.Screen.OnMouseMove(1050, 540); // drag delta (50, 40)
+        fixture.Screen.OnMouseMove(750, 340); // drag delta (50, 40)
 
         double ppu = fixture.Screen.CameraPixelsPerWorldUnit;
         double expectedX = focusXBeforeDrag - 50 / ppu;
@@ -656,7 +656,7 @@ public class GameSessionObjectInteractionTests
         double fy = fixture.Screen.CameraFocusY;
         // Off the (now always-visible, 4-group) Commands Panel footprint — a real
         // free map point, not swallowed as a UI-panel click.
-        fixture.Screen.OnMouseDown(1000, 500, MouseButton.Right);
+        fixture.Screen.OnMouseDown(700, 300, MouseButton.Right);
 
         Assert.Null(fixture.Screen.SelectedObjectId);
         Assert.Equal(fx, fixture.Screen.CameraFocusX);

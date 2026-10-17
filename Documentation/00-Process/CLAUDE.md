@@ -56,7 +56,8 @@ Engine → IGameSessionConnection → LocalGameSessionConnection → Client
 
 | Parameter | Value |
 |-----------|-------|
-| Internal simulation tick | 100 ms |
+| Real-time combat publication/advancement | 100 ms (physical guidance grid remains independent) |
+| Combat scene presentation delay | 150 ms real time, capped at contiguous confirmed watermark |
 | Authoritative snapshot interval | 1000 ms (1 Hz) |
 | Target render FPS | 80 |
 
@@ -93,17 +94,18 @@ All definitions land in `GameDataRegistry` (`Engine/Content/`). Scenarios (`Clie
 ```
 Engine (authoritative)
   │
-  │  produces immutable AuthoritativeSnapshot every 1 s
+  │  publishes CombatPresentationUpdate every 100 real ms, including intermediate revisions
+  │  produces immutable full AuthoritativeSnapshot about every 1 s
   │  uses DeepSpaceSaga.Motion for deterministic position calculation
   ▼
 IGameSessionConnection (async boundary)
   │
-  │  IAsyncEnumerable<AuthoritativeSnapshot>
+  │  ICombatPresentationConnection.ReadCombatUpdatesAsync (legacy: ReadSnapshotsAsync)
   ▼
 Client receive loop (background task, GameSessionHandle)
   │
   ▼
-SnapshotBuffer → BufferedSnapshot (snapshot + Stopwatch timestamp, atomic)
+SnapshotBuffer → immediate receipts + bounded, ordered scene history → prepared BufferedSnapshot
   │
   ▼
 MotionPredictor (client-side, LinearMotionPredictor from DeepSpaceSaga.Motion)

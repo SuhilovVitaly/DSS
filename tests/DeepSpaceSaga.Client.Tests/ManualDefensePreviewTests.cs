@@ -152,6 +152,7 @@ public class ManualDefensePreviewTests
                     }).ToArray()
                 }
             });
+            Engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1);
             string target = Assert.Single(Engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1).Objects, o => o.Torpedo is not null).ObjectId;
             Engine.SetObjectInteractionState(null, target);
             _handle = new(Connection);
