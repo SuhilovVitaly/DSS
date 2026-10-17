@@ -144,6 +144,20 @@ public sealed class SimulationClock
         }
     }
 
+    /// <summary>Expire a transport lease without accumulating an unobserved real-time backlog.</summary>
+    internal void PauseAtRealTime(long deadlineRealMs)
+    {
+        lock (_lock)
+        {
+            if (_terminalStopped) return;
+            long now = _realTimeMs();
+            long boundary = Math.Max(_lastRealTick, Math.Min(now, deadlineRealMs));
+            Advance(boundary - _lastRealTick);
+            _lastRealTick = now;
+            Speed = SimulationSpeed.Speed0;
+        }
+    }
+
     /// <summary>
     /// Reset the real-time baseline without advancing GameTimeMs.
     /// Use at the start of a new loop to prevent counting backlog time.

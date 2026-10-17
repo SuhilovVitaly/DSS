@@ -379,6 +379,7 @@
   "Combat.Reason.not_ready": "Launcher reloading",
   "Combat.Reason.no_weapon_operator": "No operator",
   "Combat.Reason.missing_target": "Select a hostile torpedo",
+  "Combat.Reason.target_destroyed": "Target already destroyed",
   "Combat.Reason.unknown_target": "Target unavailable",
   "Combat.Reason.target_not_hostile": "Target is not hostile",
   "Combat.Reason.target_out_of_range": "Target out of range",

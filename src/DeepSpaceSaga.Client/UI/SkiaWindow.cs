@@ -291,6 +291,7 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnRender(double deltaTime)
     {
+        _session?.Buffer.PreparePresentation();
         if (_grContext is null || _gl is null || _closing)
             return;
 

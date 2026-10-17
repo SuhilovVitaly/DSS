@@ -158,9 +158,13 @@ public class PhaseThreeSessionRoundtripTests
     private static async Task<AuthoritativeSnapshot> Wait(GameSessionHandle handle, Func<AuthoritativeSnapshot, bool>? predicate = null)
     {
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        while (handle.Buffer.Latest is not { } latest || predicate?.Invoke(latest.Snapshot) == false)
-        { Assert.Null(handle.Failure); await Task.Delay(10, timeout.Token); }
-        return handle.Buffer.Latest!.Snapshot;
+        while (true)
+        {
+            handle.Buffer.PreparePresentation();
+            if (handle.Buffer.Presented is { } latest && predicate?.Invoke(latest.Snapshot) != false) return latest.Snapshot;
+            Assert.Null(handle.Failure);
+            await Task.Delay(10, timeout.Token);
+        }
     }
 
     private sealed class Fixture : IAsyncDisposable, IGameSessionFactory
@@ -215,7 +219,8 @@ public class PhaseThreeSessionRoundtripTests
                 }
             };
             Engine.LoadScenario(prepared);
-            Connection = new(Engine, DirectoryPath); Handle = new(Connection);
+            Connection = new(Engine, DirectoryPath); Handle = new(Connection,
+                new SnapshotBuffer(() => System.Diagnostics.Stopwatch.GetTimestamp() * 20));
             Game = new(Handle.Buffer, new LinearMotionPredictor(), Handle);
             Window = new(Game, this, null, createNativeWindow: false);
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);

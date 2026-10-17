@@ -19,11 +19,11 @@ public sealed record SnapshotPrediction(
 /// Also tracks the client-side authoritative simulation speed
 /// (updated immediately on speed changes, without waiting for the next snapshot).
 /// </summary>
-public sealed class SnapshotBuffer
+public sealed partial class SnapshotBuffer
 {
     private readonly object _sync = new();
-    private readonly SessionEventHistory _events = new();
-    private readonly CombatReportInbox _combatReports = new();
+    private SessionEventHistory _events = new();
+    private CombatReportInbox _combatReports = new();
 
     internal ImmutableArray<BattleReportSnapshot> DrainCombatReports()
     {
@@ -92,6 +92,7 @@ public sealed class SnapshotBuffer
 
         lock (_sync)
         {
+            if (_presentationSession is not null) { _events.Receive(snapshot); return; }
             _combatReports.Receive(snapshot.CombatReports);
             if (!snapshot.CombatImpacts.IsDefaultOrEmpty)
                 foreach (var impact in snapshot.CombatImpacts)
@@ -190,6 +191,8 @@ public sealed class SnapshotBuffer
 
             lock (_sync)
             {
+                if (_presentationSession is not null)
+                    return _presented is null ? null : new SnapshotPrediction(_presented, _sceneDelta, _presented.Snapshot.CurrentSpeed, 0);
                 if (_latest is null)
                     return null;
 

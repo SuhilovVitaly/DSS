@@ -39,6 +39,7 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
     internal string? FilePath { get; private set; }
     internal Exception? Error { get; private set; }
     internal long DroppedRecords => Interlocked.Read(ref _dropped);
+    internal void RecordPresentation(object record) => Enqueue(record);
 
     internal CombatMetricsWriter(string? directory = null, long limitBytes = DirectoryLimitBytes)
     {

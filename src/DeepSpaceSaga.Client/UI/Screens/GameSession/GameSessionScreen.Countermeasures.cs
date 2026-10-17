@@ -104,7 +104,7 @@ public sealed partial class GameSessionScreen
         if (_hasMousePosition && !(_panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY)) &&
             _commandsPanel.PanelAt(_uiMouseX, _uiMouseY) is { } panel)
             hoveredModule = panel.Weapon?.ModuleId ?? (panel.Name == "Torpedo Launcher" ? FindLauncher()?.ModuleId : null);
-        var modules = _buffer.Latest?.Snapshot.InstalledModules ?? default;
+        var modules = _buffer.Presented?.Snapshot.InstalledModules ?? default;
         if (modules.IsDefault) return;
         foreach (var module in modules)
         {

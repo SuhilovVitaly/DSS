@@ -14,6 +14,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private readonly IGameSessionConnection _connection;
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _receiveTask;
+    private readonly Task _presentationWatchdogTask;
     internal CombatMetricsWriter CombatMetrics { get; }
     private readonly Task _interactionStateSenderTask;
     private readonly Channel<(string? ActiveObjectId, string? SelectedObjectId)> _interactionStateChannel =
@@ -57,9 +58,11 @@ public sealed class GameSessionHandle : IAsyncDisposable
         CombatMetrics = combatMetrics ?? new();
 
         Buffer = buffer;
+        Buffer.PresentationDiagnostic += CombatMetrics.RecordPresentation;
 
         // Background loop: connection → buffer
         _receiveTask = Task.Run(() => ReceiveLoopAsync(_cts.Token));
+        _presentationWatchdogTask = Task.Run(() => PresentationWatchdogAsync(_cts.Token));
 
         // Background loop: coalesced ActiveObjectId/SelectedObjectId → connection
         _interactionStateSenderTask = Task.Run(() => InteractionStateSenderLoopAsync(_cts.Token));
@@ -70,7 +73,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
-    public bool IsDefeated => Buffer.Latest?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated;
+    public bool IsDefeated => Buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated;
     private int _stationTravelPending;
     public bool StationTravelPending => Volatile.Read(ref _stationTravelPending) != 0;
     public bool KeepPausedAfterStationTravel { get; private set; }
@@ -129,14 +132,22 @@ public sealed class GameSessionHandle : IAsyncDisposable
         if (commandType == NavigationComputerCommandTypes.Approach)
             WriteDiagnostic($"APPROACH {command.CommandId}: send, ship={objectId}, target={targetObjectId}, speed={Buffer.CurrentSpeed}");
 
-        return _connection.SendCommandAsync(command, cancellationToken);
+        return SubmitCommandAsync(command, cancellationToken);
+    }
+
+    private async ValueTask SubmitCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
+    {
+        if (_connection is ICombatPresentationConnection presentation)
+            Buffer.RecordAcceptance(await presentation.SubmitCommandAsync(command, cancellationToken));
+        else
+            await _connection.SendCommandAsync(command, cancellationToken);
     }
 
     public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
     {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
         commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
-        return _connection.SendCommandAsync(new PlayerCommand(commandId, sequence, objectId, moduleId,
+        return SubmitCommandAsync(new PlayerCommand(commandId, sequence, objectId, moduleId,
             TorpedoLauncherCommandTypes.SetMode, ModeId: modeId));
     }
 
@@ -154,7 +165,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
         string commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
-        _ = _connection.SendCommandAsync(new PlayerCommand(commandId, sequence,
+        _ = SubmitCommandAsync(new PlayerCommand(commandId, sequence,
             snapshot.PlayerShipObjectId, navigationModule.ModuleId,
             NavigationComputerCommandTypes.Undock, TargetObjectId: destinationStationObjectId));
         return commandId;
@@ -192,7 +203,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
             TargetWorldX: targetWorldX,
             TargetWorldY: targetWorldY);
 
-        return _connection.SendCommandAsync(command, cancellationToken);
+        return SubmitCommandAsync(command, cancellationToken);
     }
 
     /// <summary>
@@ -252,7 +263,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     private async Task SendTradeAsync(PlayerCommand command, CancellationToken token)
     {
-        try { await _connection.SendCommandAsync(command, token); }
+        try { await SubmitCommandAsync(command, token); }
         catch (Exception error) { Fail(error); }
     }
 
@@ -262,11 +273,22 @@ public sealed class GameSessionHandle : IAsyncDisposable
     /// synchronously; for network connections the speed is confirmed before the
     /// client-side state is updated.
     /// </summary>
-    public async ValueTask SetSpeedAsync(SimulationSpeed speed)
+    public async ValueTask SetSpeedAsync(SimulationSpeed speed, bool manualResume = false)
     {
         if (IsDefeated) { Buffer.CurrentSpeed = SimulationSpeed.Speed0; return; }
-        await _connection.SetSimulationSpeedAsync(speed);
-        Buffer.CurrentSpeed = Failure is null && !IsDefeated ? speed : SimulationSpeed.Speed0;
+        if (_connection is ICombatPresentationConnection presentation)
+        {
+            var acknowledgement = manualResume && speed != SimulationSpeed.Speed0
+                ? await presentation.ResumePresentationAsync(speed)
+                : await presentation.SetPresentationSpeedAsync(speed);
+            Buffer.ConfirmPresentationControl(acknowledgement);
+            Buffer.CurrentSpeed = Failure is null && !IsDefeated ? acknowledgement.CurrentSpeed : SimulationSpeed.Speed0;
+        }
+        else
+        {
+            await _connection.SetSimulationSpeedAsync(speed);
+            Buffer.CurrentSpeed = Failure is null && !IsDefeated ? speed : SimulationSpeed.Speed0;
+        }
     }
 
     /// <summary>Capture and persist the current authoritative world state into the given save slot.</summary>
@@ -294,6 +316,21 @@ public sealed class GameSessionHandle : IAsyncDisposable
     {
         try
         {
+            if (_connection is ICombatPresentationConnection presentation)
+            {
+                await foreach (var update in presentation.ReadCombatUpdatesAsync(ct))
+                {
+                    if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
+                    if (!update.Frames.IsDefaultOrEmpty)
+                        foreach (var frame in update.Frames) CombatMetrics.Record(frame.State);
+                    if (update.FullSnapshot is { } full) CombatMetrics.Record(full);
+                    // Enable and enqueue authoritative diagnostics before publishing a
+                    // bootstrap that the UI may render immediately on another thread.
+                    Buffer.UpdatePresentation(update);
+                }
+                if (!ct.IsCancellationRequested) Fail(new IOException("The combat connection closed unexpectedly."));
+                return;
+            }
             await foreach (var snapshot in _connection.ReadSnapshotsAsync(ct))
             {
                 if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
@@ -307,6 +344,23 @@ public sealed class GameSessionHandle : IAsyncDisposable
                 if (Failure is not null) Buffer.CurrentSpeed = SimulationSpeed.Speed0;
             }
             if (!ct.IsCancellationRequested) Fail(new IOException("The simulation connection closed unexpectedly."));
+        }
+        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
+        catch (Exception error) { Fail(error); }
+    }
+
+    private async Task PresentationWatchdogAsync(CancellationToken ct)
+    {
+        if (_connection is not ICombatPresentationConnection presentation) return;
+        try
+        {
+            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
+            while (await timer.WaitForNextTickAsync(ct))
+            {
+                bool pause = Failure is not null || Buffer.PresentationPauseRequested;
+                await presentation.ReportPresentationProgressAsync(Buffer.PresentationSessionId ?? Guid.Empty,
+                    Buffer.ContiguousPresentationSequence, pause, ct);
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (Exception error) { Fail(error); }
@@ -385,10 +439,13 @@ public sealed class GameSessionHandle : IAsyncDisposable
         _cts.Cancel();
         _interactionStateChannel.Writer.TryComplete();
 
+        try { await _presentationWatchdogTask.ConfigureAwait(false); }
+        catch (OperationCanceledException) { }
         try { await _receiveTask.ConfigureAwait(false); } catch { }
         try { await _interactionStateSenderTask.ConfigureAwait(false); } catch { }
 
         _cts.Dispose();
+        Buffer.PresentationDiagnostic -= CombatMetrics.RecordPresentation;
         await CombatMetrics.DisposeAsync().ConfigureAwait(false);
 
         if (_connection is IAsyncDisposable asyncDisposable)

@@ -163,6 +163,7 @@ public static class CommandReasonCodes
     public const string MissingTarget = "missing_target";
 
     /// <summary>Match command referenced a targetObjectId that does not exist in the world (§56.9).</summary>
+    public const string TargetDestroyed = "target_destroyed";
     public const string UnknownTarget = "unknown_target";
 
     /// <summary>Turn command arrived inside the angular-inertia window since the previous turn.</summary>

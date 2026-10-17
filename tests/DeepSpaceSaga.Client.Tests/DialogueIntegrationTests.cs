@@ -68,7 +68,8 @@ public class DialogueIntegrationTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(6));
         while (true)
         {
-            if (handle.Buffer.Latest?.Snapshot is { } snapshot && predicate(snapshot)) return snapshot;
+            handle.Buffer.PreparePresentation();
+            if (handle.Buffer.Presented?.Snapshot is { } snapshot && predicate(snapshot)) return snapshot;
             await Task.Delay(20, timeout.Token);
         }
     }

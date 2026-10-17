@@ -88,14 +88,14 @@ public sealed partial class GameSessionScreen
     }
 
     private InstalledModuleSnapshot? DefenseModule(WeaponPanelInstance weapon) =>
-        _buffer.Latest?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot &&
+        _buffer.Presented?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot &&
         snapshot.PlayerShipObjectId == weapon.OwnerObjectId
             ? snapshot.InstalledModules.FirstOrDefault(m => m.ModuleId == weapon.ModuleId && m.Defense is not null) : null;
 
     private bool IsDefenseCommandEnabled(WeaponPanelInstance weapon, string commandType)
     {
         RefreshDefenseSubmissions();
-        var snapshot = _buffer.Latest?.Snapshot;
+        var snapshot = _buffer.Presented?.Snapshot;
         if (snapshot is null || snapshot.ActiveDialogue is not null || FindPlayerShipMotion(snapshot) is not { IsDestroyed: false } ||
             _defenseSubmissions.ContainsKey((weapon.OwnerObjectId, weapon.ModuleId)) ||
             DefenseModule(weapon) is not { Defense: { } defense } module || module.Commands.IsDefaultOrEmpty) return false;
@@ -178,7 +178,7 @@ public sealed partial class GameSessionScreen
             lines.Add($"{CombatText("Accuracy", "Точность")} {preview.Accuracy:0.##} − " +
                 $"{CombatText("Maneuverability", "манёвренность")} {preview.TargetManeuverability:0.##} → {chance / 10m:0.0}%");
         if (module?.Defense?.ActiveProjectileId is { } id &&
-            _buffer.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == id)?.Countermeasure is { } flight)
+            _buffer.Presented?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == id)?.Countermeasure is { } flight)
         {
             lines.Add($"{CombatText("FrozenChance", "Шанс активной ПРО")}: {flight.FrozenChanceTenths / 10m:0.0}%");
             lines.Add($"{CombatText("RemainingFlight", "Осталось полёта")}: {RemainingFlightText(flight, DefensePresentationTime)}");

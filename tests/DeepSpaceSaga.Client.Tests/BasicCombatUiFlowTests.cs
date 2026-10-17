@@ -180,7 +180,8 @@ public sealed class BasicCombatUiFlowTests
             };
             var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
             engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } });
-            Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath));
+            Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath),
+                new SnapshotBuffer(() => Stopwatch.GetTimestamp() * 20));
             Screen = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, timestampProvider: () => UiNow, uiScale: scale);
             _bitmap = new(width, height);
             _canvas = new(_bitmap);
@@ -293,13 +294,14 @@ public sealed class BasicCombatUiFlowTests
         internal async Task<AuthoritativeSnapshot> Wait(Func<AuthoritativeSnapshot, bool> predicate)
         {
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            while (Handle.Buffer.Latest is not { } buffered || !predicate(buffered.Snapshot))
+            while (true)
             {
+                Handle.Buffer.PreparePresentation();
+                if (Handle.Buffer.Presented is { } buffered && predicate(buffered.Snapshot)) return buffered.Snapshot;
                 Assert.Null(Handle.Failure);
-                // Wait only for transport delivery; physical and effect clocks are explicit.
+                // Transport runs normally; the scene clock is accelerated independently of physical/effect clocks.
                 await Task.Delay(10, timeout.Token);
             }
-            return Latest;
         }
         public async ValueTask DisposeAsync()
         {

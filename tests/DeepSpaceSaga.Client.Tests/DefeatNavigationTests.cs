@@ -32,7 +32,7 @@ public class DefeatNavigationTests
         if (overlayDepth == 2) await f.Route(ScreenEvent.OpenLoadWindow);
         Assert.False(f.Game.CombatReportResourcesDisposed);
         Assert.Contains(Get<Action?>(f.Handle, "Closing")!.GetInvocationList(), d => ReferenceEquals(d.Target, f.Game));
-        f.Defeat();
+        await f.Defeat();
         Invoke(f.Window, "PollGameSessionAutoTransition");
         if (Get<Task?>(f.Window, "_defeatTransitionTask") is { } pending) await pending;
         var screen = Assert.IsType<DefeatScreen>(f.Screens.Current);
@@ -57,7 +57,7 @@ public class DefeatNavigationTests
     public async Task Cancel_or_failed_load_keeps_defeat()
     {
         await using var f = await Fixture.Create();
-        f.Defeat();
+        await f.Defeat();
         await f.Route(ScreenEvent.OpenLoadWindow);
         Assert.IsType<LoadScreen>(f.Screens.Current);
         Assert.IsType<DefeatScreen>(f.Screens.UnderCurrent);
@@ -76,7 +76,7 @@ public class DefeatNavigationTests
     {
         await using var f = await Fixture.Create();
         await f.Connection.SaveAsync("before");
-        f.Defeat();
+        await f.Defeat();
         await f.Route(ScreenEvent.OpenLoadWindow);
         await f.Route(ScreenEvent.LoadSlotRequested, "before");
         var fresh = Get<GameSessionHandle>(f.Window, "_session");
@@ -104,7 +104,7 @@ public class DefeatNavigationTests
         await f.Connection.SaveAsync(SaveSlots.Quicksave);
         string path = Path.Combine(f.DirectoryPath, "quicksave.json");
         byte[] before = await File.ReadAllBytesAsync(path);
-        f.Defeat();
+        await f.Defeat();
         await f.Route(ScreenEvent.QuickSave);
         await (Task)Invoke(f.Window, "SaveToSlotAsync", SaveSlots.Quicksave)!;
         Assert.Equal(CommandReasonCodes.SessionDefeated,
@@ -118,7 +118,7 @@ public class DefeatNavigationTests
     public async Task Keyboard_focus_and_activation_reach_actual_window_event_router()
     {
         await using var f = await Fixture.Create();
-        f.Defeat();
+        await f.Defeat();
         await f.Route(ScreenEvent.None);
         var tracker = Get<KeyboardEdgeTracker>(f.Window, "_keyboardEdges");
         var pressed = new Key[32]; var released = new Key[32];
@@ -165,6 +165,7 @@ public class DefeatNavigationTests
     {
         private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
         internal string DirectoryPath { get; } = Path.Combine(Path.GetTempPath(), "dss-defeat-ui-" + Guid.NewGuid().ToString("N"));
+        private long _presentationNow;
         internal SimulationEngine Engine { get; }
         internal LocalGameSessionConnection Connection { get; }
         internal GameSessionHandle Handle { get; }
@@ -196,17 +197,26 @@ public class DefeatNavigationTests
             Engine = new(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
             Engine.LoadScenario(scenario);
             Connection = new(Engine, DirectoryPath);
-            Handle = new(Connection);
+            Handle = new(Connection, new SnapshotBuffer(() => _presentationNow));
             Game = new(Handle.Buffer, new LinearMotionPredictor(), Handle);
             Window = new(Game, this, null, createNativeWindow: false);
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
         }
         internal static async Task<Fixture> Create() { var f = new Fixture(); await WaitForSnapshot(f.Handle); return f; }
-        internal void Defeat()
+        internal async Task Defeat()
         {
+            Engine.SetSpeed(SimulationSpeed.Speed4);
             var snapshot = Engine.CaptureSnapshotForTests(1800000, simulationTimeMs: 45000);
             Assert.Equal(SessionOutcomeState.Defeated, snapshot.EffectiveOutcome.State);
-            Handle.Buffer.Update(snapshot);
+            Assert.False(Handle.IsDefeated); // A terminal world cannot bypass the scene clock.
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+            while (!Handle.IsDefeated)
+            {
+                _presentationNow += System.Diagnostics.Stopwatch.Frequency / 10;
+                Handle.Buffer.PreparePresentation();
+                Assert.Null(Handle.Failure);
+                await Task.Delay(10, timeout.Token);
+            }
         }
         internal Task Route(ScreenEvent action, string? payload = null) => (Task)Invoke(Window, "HandleScreenEvent", action, payload)!;
         public IGameSessionConnection CreateSessionFromSave(string slotId) => LocalGameSessionConnection.CreateFromSaveFile(

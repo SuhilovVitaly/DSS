@@ -379,6 +379,7 @@
   "Combat.Reason.not_ready": "Аппарат перезаряжается",
   "Combat.Reason.no_weapon_operator": "Нет оператора",
   "Combat.Reason.missing_target": "Выберите вражескую торпеду",
+  "Combat.Reason.target_destroyed": "Цель уже уничтожена",
   "Combat.Reason.unknown_target": "Цель недоступна",
   "Combat.Reason.target_not_hostile": "Цель не враждебна",
   "Combat.Reason.target_out_of_range": "Цель вне дальности",

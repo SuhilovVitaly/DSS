@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Engine.LocalClient;
 /// Starts the engine loop and forwards snapshots to the client via Channel.
 /// Replaceable by NetworkGameSessionConnection without client changes.
 /// </summary>
-public sealed class LocalGameSessionConnection : IGameSessionConnection
+public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombatPresentationConnection
 {
     private readonly SimulationEngine _engine;
     private readonly SnapshotMailbox _snapshots = new();
@@ -19,6 +19,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     private readonly string? _saveDirectory;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
     private volatile bool _disposed;
+    private volatile bool _usesCombatUpdates;
+    private readonly Channel<CombatPresentationUpdate> _combatUpdates = Channel.CreateBounded<CombatPresentationUpdate>(128);
 
     /// <param name="saveDirectory">
     /// Directory SaveAsync writes slot files into — each slot becomes
@@ -83,20 +85,63 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
     {
         try
         {
-            await foreach (var snapshot in _engine.RunAsync(ct))
+            await foreach (var update in _engine.RunCombatUpdatesAsync(ct))
             {
-                _snapshots.Publish(snapshot);
+                if (!_usesCombatUpdates && update.FullSnapshot is { } snapshot) _snapshots.Publish(snapshot);
+                if (_usesCombatUpdates && !_combatUpdates.Writer.TryWrite(update))
+                {
+                    _engine.ReportPresentationProgress(0, pauseRequested: true);
+                    throw new InvalidOperationException("Combat update delivery overflow; simulation paused.");
+                }
             }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (Exception error)
         {
+            _engine.ReportPresentationProgress(0, pauseRequested: true);
+            _combatUpdates.Writer.TryComplete(error);
             _snapshots.Complete(error);
         }
         finally
         {
+            _combatUpdates.Writer.TryComplete();
             _snapshots.Complete();
         }
+    }
+
+    public async IAsyncEnumerable<CombatPresentationUpdate> ReadCombatUpdatesAsync(
+        [EnumeratorCancellation] CancellationToken cancellationToken = default)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _usesCombatUpdates = true;
+        _engine.EnablePresentationLease();
+        await foreach (var update in _combatUpdates.Reader.ReadAllAsync(cancellationToken)) yield return update;
+    }
+
+    public ValueTask ReportPresentationProgressAsync(Guid sessionId, long contiguousSequence, bool pauseRequested,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _engine.ReportPresentationProgress(contiguousSequence, pauseRequested, sessionId);
+        return ValueTask.CompletedTask;
+    }
+
+    public ValueTask<SimulationControlAcknowledgement> ResumePresentationAsync(SimulationSpeed speed, CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _engine.ResumePresentation(speed);
+        return ValueTask.FromResult(_engine.CapturePresentationControl());
+    }
+
+    public ValueTask<SimulationControlAcknowledgement> SetPresentationSpeedAsync(SimulationSpeed speed,
+        CancellationToken cancellationToken = default)
+    {
+        cancellationToken.ThrowIfCancellationRequested();
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        _engine.SetSpeed(speed);
+        return ValueTask.FromResult(_engine.CapturePresentationControl());
     }
 
     public ValueTask SendCommandAsync(
@@ -107,6 +152,13 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection
         ObjectDisposedException.ThrowIf(_disposed, this);
         _engine.ReceiveCommand(command);
         return ValueTask.CompletedTask;
+    }
+
+    public async ValueTask<CommandAcceptance> SubmitCommandAsync(PlayerCommand command,
+        CancellationToken cancellationToken = default)
+    {
+        await SendCommandAsync(command, cancellationToken);
+        return new(command.CommandId, true);
     }
 
     /// <summary>
