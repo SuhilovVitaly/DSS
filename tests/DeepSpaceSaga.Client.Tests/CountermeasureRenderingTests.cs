@@ -19,11 +19,13 @@ public class CountermeasureRenderingTests
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
         using var bitmap = new SKBitmap(1280, 720);
         using var canvas = new SKCanvas(bitmap);
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1280, 720);
         Assert.True(GameSessionScreen.HasCombatMarker(pr));
         var geometry = screen.DefenseGeometry["pr"];
-        Assert.Equal(120, geometry.Intercept!.Value.X, 5);
-        Assert.Equal(0, geometry.Intercept!.Value.Y, 5);
+        Assert.Null(geometry.Intercept);
+        Assert.Equal(CombatForecastStatus.TargetLost, geometry.Status);
+        Assert.NotEmpty(geometry.Prediction);
         screen.OnDeactivated();
     }
     [Fact]

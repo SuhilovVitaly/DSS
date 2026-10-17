@@ -42,6 +42,16 @@ internal sealed class FutureTrajectoryProjector
     public void ProjectInto(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points)
     {
         points.Clear();
+        if (state.RenderObjectType == SpaceObjectType.UnknownSpaceObject) return;
+        if (state.HostileCombat is not null && CurrentManeuverForecast.HasRequiredData(state))
+        {
+            for (long t = 0; t <= FutureTrajectoryHorizonMs; t += FutureTrajectorySampleIntervalMs)
+            {
+                var sample = CurrentManeuverForecast.Sample(state, t);
+                points.Add(new(sample.X, sample.Y));
+            }
+            return;
+        }
         if (_predictor is LinearMotionPredictor && LinearMotionPredictor.IsLinear(state))
         {
             double angle = state.Direction * Math.PI / 180;
@@ -65,6 +75,7 @@ internal sealed class FutureTrajectoryProjector
     internal void ProjectViewportInto(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points,
         CameraState camera, int width, int height)
     {
+        if (state.RenderObjectType == SpaceObjectType.UnknownSpaceObject) { points.Clear(); return; }
         if (_predictor is LinearMotionPredictor && LinearMotionPredictor.IsLinear(state))
         {
             points.Clear();

@@ -394,6 +394,7 @@ public sealed partial class GameSessionScreen : IScreen
         _combatReportPanel.ClearFocus();
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
         ClearLaunchPreview();
+        _combatForecastCache.CancelPending();
         ReleaseCombatPaints();
         _zoomTransition.Cancel();
         _isPanningMap = false;
@@ -1116,7 +1117,11 @@ public sealed partial class GameSessionScreen : IScreen
     public void Render(SKCanvas canvas, int width, int height)
     {
         ResetCombatPresentationSession();
-        if (!_presentationPrepared) _buffer.PreparePresentation();
+        if (!_presentationPrepared)
+        {
+            _buffer.PreparePresentation();
+            PrepareCombatForecasts();
+        }
         _presentationPrepared = false;
         _combatEffects.StartOnPresentation = _buffer.HasCombatPresentation;
         BeginFrameProfile();
@@ -1151,7 +1156,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (viewportResized) _zoomTransition.Cancel();
         _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height);
 
-        var prediction = _buffer.LatestPrediction;
+        var prediction = _preparedForecastPrediction;
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
         _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
@@ -1230,8 +1235,8 @@ public sealed partial class GameSessionScreen : IScreen
             // 3.55. Navigation trajectory (Ctrl+Click) — after future trajectory,
             // painted last so the solid Approach covers the target forecast at overlaps.
             DrawNavigationTrajectories(canvas, width, height);
-            DrawCombatTrajectories(canvas, buffered);
-            DrawCountermeasureTrajectories(canvas);
+            DrawCombatTrajectories(canvas, prediction);
+            DrawCountermeasureTrajectories(canvas, prediction);
             if (_handle is not null && buffered is not null)
                 _handle.CombatMetrics.RecordVisual(buffered.Snapshot, _renderStates, prediction?.EffectivePredictionDeltaMs ?? 0, _timestampProvider());
             RenderStageCompleted?.Invoke("combat_trajectories");
@@ -1454,7 +1459,12 @@ public sealed partial class GameSessionScreen : IScreen
         foreach (var obj in snapshot.Objects)
         {
             bool hasCombatPose = _combatPoseObjectIds.Contains(obj.ObjectId);
-            var predicted = PredictRenderMotion(obj, hasCombatPose ? combatDelta : ed);
+            // A combat target uses the same bounded physical sample as its
+            // forecast source. Ordinary map-only hostile smoothing may extend
+            // curvature; applying it here would detach the subsequent path.
+            var predicted = hasCombatPose && obj.HostileCombat is not null
+                ? new RenderMotion(_predictor.Predict(obj, combatDelta))
+                : PredictRenderMotion(obj, hasCombatPose ? combatDelta : ed);
             if (obj.ObjectId == playerShipObjectId) _profilePlayerRaw = predicted;
             if (obj.ObjectId == _profileTargetId) _profileTargetRaw = predicted;
             _currentVisualObjectIds.Add(obj.ObjectId);
@@ -1496,7 +1506,9 @@ public sealed partial class GameSessionScreen : IScreen
                     long unseenForwardJump = prediction.TotalReconciliationForwardJumpMs - _lastObservedForwardJumpMs;
                     long elapsedFromPrevBaseline = targetGameTimeMs - unseenForwardJump - _lastSnapshotBaselineGameTimeMs;
                     var continuityExpected = elapsedFromPrevBaseline > 0
-                        ? PredictRenderMotion(prevBaseline, elapsedFromPrevBaseline)
+                        ? hasCombatPose && prevBaseline.HostileCombat is not null
+                            ? new RenderMotion(_predictor.Predict(prevBaseline, elapsedFromPrevBaseline))
+                            : PredictRenderMotion(prevBaseline, elapsedFromPrevBaseline)
                         : new RenderMotion(prevBaseline);
 
                     // Carry any unfinished correction into this rebase; otherwise a
@@ -1791,7 +1803,8 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var state in _renderStates)
         {
-            if (state.Source.RenderObjectType == SpaceObjectType.Missile) continue;
+            if (state.Source.Torpedo is not null || state.Source.Countermeasure is not null ||
+                _combatForecastCache.Results.Values.Any(r => r.TargetId == state.Source.ObjectId)) continue;
             // The player ship always gets its own ballistic preview (subject to the
             // Approach exclusion below). A non-player object only gets one when it is
             // the current SelectedObjectId — e.g. the target of an active

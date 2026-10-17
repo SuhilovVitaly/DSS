@@ -4,123 +4,63 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
-/// <summary>Samples confirmed analytic geometry for display only; never changes flight state.</summary>
+/// <summary>Projects prepared conditional paths for display; never changes the confirmed scene.</summary>
 internal static class CombatTrajectoryProjector
 {
     internal sealed record Geometry(
         List<FutureTrajectoryPoint> Prediction,
         List<FutureTrajectoryPoint> Target,
-        FutureTrajectoryPoint? Intercept);
-
-    /// <summary>Bounded manual flight: the marker is the first 500 m contact, not a later
-    /// centre rendezvous. Unknown solutions show only the confirmed short pursuit segment.</summary>
-    internal static Geometry ProjectManual(CountermeasurePlan plan, TorpedoRoute target, long now,
-        long lifetime, CameraState camera)
+        FutureTrajectoryPoint? Intercept)
     {
-        var points = new List<FutureTrajectoryPoint>();
-        var targetPoints = new List<FutureTrajectoryPoint>();
-        double expires = now + (double)lifetime;
-        double? encounter = plan.PredictedEncounterMotionTimeMs is { } contact && contact >= now && contact <= expires
-            ? contact : null;
-        double end = encounter ?? Math.Min(expires, plan.Route.StartMotionTimeMs + plan.Route.Segments.Sum(s => s.DurationMs));
-        SampleRoute(plan.Route, Math.Max(0, now - plan.Route.StartMotionTimeMs), end - plan.Route.StartMotionTimeMs, camera, points);
-        if (encounter is null || points.Count == 0) return new(points, targetPoints, null);
-        SampleRoute(target, now - target.StartMotionTimeMs, encounter.Value - target.StartMotionTimeMs, camera, targetPoints);
-        return new(points, targetPoints, points[^1]);
+        internal CombatForecastStatus Status { get; init; }
+        internal double EndMotionTimeMs { get; init; }
+        internal double? EtaSeconds { get; init; }
+        internal double HorizonSeconds { get; init; }
     }
 
     internal static Geometry Project(TorpedoSnapshot flight, ObjectMotionSnapshot? target,
         IMotionPredictor predictor, CameraState camera, int width, int height)
     {
-        var prediction = new List<FutureTrajectoryPoint>();
-        var targetPath = new List<FutureTrajectoryPoint>();
-        var route = flight.Route;
-        if (route.Segments.IsDefaultOrEmpty) return new(prediction, targetPath, null);
-        double duration = route.Segments.Sum(s => s.DurationMs);
-        double elapsed = route.ElapsedMs;
-        double remaining = duration - elapsed;
-        bool intercept = route.HasIntercept && remaining >= 0 && target is { IsDestroyed: false };
-        // An AI segment is only confirmed until its next decision boundary. The
-        // predictor clamps there; a coincident frozen endpoint is not an intercept.
-        if (target?.HostileCombat is { } hostile)
-            intercept &= remaining <= hostile.Segment.DurationMs - hostile.Segment.ElapsedMs;
-        SampleRoute(route, elapsed, Math.Max(elapsed, duration), camera, prediction);
-        var encounter = prediction[^1];
-        if (intercept)
-        {
-            var targetEnd = PredictTarget(target!, remaining, predictor);
-            // A manoeuvre can invalidate the confirmed constant-velocity aim point.
-            intercept = Math.Abs(targetEnd.X - encounter.X) + Math.Abs(targetEnd.Y - encounter.Y) <= 1e-3;
-        }
-        if (!intercept)
-        {
-            // All unconfirmed encounters use the same display: a continuation to the
-            // viewport, without a target connector or hit marker. The rejected aim
-            // point must not look like the end of the projectile's flight.
-            var end = TorpedoGuidanceMath.PredictPose(route, Math.Max(elapsed, duration));
-            TrajectoryViewportGeometry.ExtendToEdge(prediction, end.Direction, camera, width, height);
-            return new(prediction, targetPath, null);
-        }
-
-        if (target!.RenderObjectType != SpaceObjectType.UnknownSpaceObject)
-        {
-            int samples = LinearMotionPredictor.IsLinear(target) ? 1 : 256;
-            for (int i = 0; i <= samples; i++) targetPath.Add(PredictTarget(target, remaining * i / samples, predictor));
-            // Collapse only the accepted numerical tolerance so both lines and the
-            // marker share exactly one endpoint at every zoom level.
-            targetPath[^1] = encounter;
-        }
-        return new(prediction, targetPath, encounter);
+        if (flight.Route.Segments.IsDefaultOrEmpty)
+            return new([], [], null) { Status = CombatForecastStatus.InsufficientData };
+        var pose = TorpedoGuidanceMath.PredictPose(flight.Route, flight.Route.ElapsedMs);
+        double now = flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs;
+        var result = CombatForecast.Torpedo(new("preview", pose.X, pose.Y, flight.SpeedKmS, pose.Direction, Torpedo: flight), target, now);
+        return FromForecast(result, now);
     }
 
-    private static FutureTrajectoryPoint PredictTarget(ObjectMotionSnapshot target, double ms, IMotionPredictor predictor)
+    internal static Geometry FromForecast(CombatForecastResult result, double now, Geometry? reuse = null)
     {
-        // The shared predictor accepts integer milliseconds; interpolate the sub-ms endpoint.
-        long whole = (long)Math.Min(long.MaxValue - 1d, Math.Floor(ms));
-        var a = predictor.Predict(target, whole);
-        double fraction = ms - whole;
-        if (fraction <= 0) return new(a.X, a.Y);
-        var b = predictor.Predict(target, whole + 1);
-        return new(a.X + (b.X - a.X) * fraction, a.Y + (b.Y - a.Y) * fraction);
+        now = Math.Clamp(now, result.StartMotionTimeMs, result.EndMotionTimeMs);
+        var prediction = reuse?.Prediction ?? new List<FutureTrajectoryPoint>();
+        var target = reuse?.Target ?? new List<FutureTrajectoryPoint>();
+        Slice(result.Projectile, now, prediction);
+        Slice(result.Target, now, target);
+        bool contact = result.Status == CombatForecastStatus.Contact;
+        return new(prediction, target, contact && prediction.Count > 0 ? prediction[^1] : null)
+        {
+            Status = result.Status,
+            EndMotionTimeMs = result.EndMotionTimeMs,
+            EtaSeconds = contact ? Math.Max(0, (result.EndMotionTimeMs - now) / 1000) : null,
+            HorizonSeconds = Math.Max(0, (result.EndMotionTimeMs - now) / 1000)
+        };
     }
 
-    private static void SampleRoute(TorpedoRoute route, double from, double to, CameraState camera, List<FutureTrajectoryPoint> points)
+    private static void Slice(System.Collections.Immutable.ImmutableArray<CombatForecastPoint> path, double now, List<FutureTrajectoryPoint> points)
     {
-        if (route.Segments.IsDefaultOrEmpty || to < from) return;
-        double cursor = 0;
-        foreach (var segment in route.Segments)
+        points.Clear();
+        if (path.IsEmpty) return;
+        int i = 0;
+        while (i + 1 < path.Length && path[i + 1].MotionTimeMs <= now) i++;
+        var a = path[i];
+        if (i + 1 < path.Length && now > a.MotionTimeMs)
         {
-            double start = Math.Max(from, cursor), end = Math.Min(to, cursor + segment.DurationMs);
-            if (end >= start) SampleSegment(segment, start - cursor, end - cursor, camera, points);
-            cursor += segment.DurationMs;
+            var b = path[i + 1];
+            double f = (now - a.MotionTimeMs) / (b.MotionTimeMs - a.MotionTimeMs);
+            points.Add(new(a.X + (b.X - a.X) * f, a.Y + (b.Y - a.Y) * f));
+            i++;
         }
-        if (to > cursor || points.Count == 0)
-        {
-            double start = Math.Max(from, cursor);
-            var pose = TorpedoGuidanceMath.PredictPose(route, start);
-            SampleSegment(new(pose.X, pose.Y, pose.Direction, route.Segments[^1].SpeedKmS, 0, Math.Max(0, to - start)),
-                0, Math.Max(0, to - start), camera, points);
-        }
-    }
-
-    private static void SampleSegment(TorpedoRouteSegment segment, double from, double to,
-        CameraState camera, List<FutureTrajectoryPoint> points)
-    {
-        int count = 1;
-        if (segment.AngularVelocityDegPerSec != 0)
-        {
-            double omega = Math.Abs(segment.AngularVelocityDegPerSec) * Math.PI / 180;
-            double radiusPx = segment.SpeedKmS * 10 / omega * camera.PixelsPerWorldUnit;
-            double step = 2 * Math.Acos(Math.Clamp(1 - .5 / Math.Max(.5, radiusPx), -1, 1));
-            double angle = omega * (to - from) / 1000;
-            count = (int)Math.Clamp(Math.Ceiling(angle / Math.Max(.001, Math.Min(.1, step))), 1, 4096);
-        }
-        for (int i = 0; i <= count; i++)
-        {
-            var p = TorpedoGuidanceMath.PredictSegment(segment, from + (to - from) * i / count);
-            var point = new FutureTrajectoryPoint(p.X, p.Y);
-            if (points.Count == 0 || points[^1] != point) points.Add(point);
-        }
+        for (; i < path.Length; i++) points.Add(new(path[i].X, path[i].Y));
     }
 
     /// <summary>Clip in double precision before converting to Skia's float coordinates.</summary>

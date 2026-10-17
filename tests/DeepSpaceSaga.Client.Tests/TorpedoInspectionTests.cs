@@ -15,7 +15,7 @@ public sealed class TorpedoInspectionTests
     private static ObjectMotionSnapshot Torpedo => new("torpedo", 100, 100, 3, 0, RenderObjectType: SpaceObjectType.Missile,
         Torpedo: new("player", "launcher", "target", 0, 3, 90, 150, 90,
             new(1000, 1, TorpedoRoutePhase.Straight, true, [new(100, 100, 0, 3, 0, 10000)]),
-            PredictedImpactMotionTimeMs: 11000));
+            PredictedImpactMotionTimeMs: 11000, ExpiresAtMotionTimeMs: 120_000));
 
     [Theory]
     [InlineData(1f)]
@@ -74,13 +74,13 @@ public sealed class TorpedoInspectionTests
         Assert.Contains(("Target", "Pirate"), lines);
         Assert.Contains(("Speed", "3 km/s"), lines);
         Assert.Contains(("Travelled", "9 km"), lines);
-        Assert.Contains(("ETA", "10 s"), lines);
+        Assert.Equal(screen.CombatTrajectories["torpedo"].EtaSeconds, screen.SelectedOrActiveObjectInfo!.Value.Torpedo!.EtaSeconds);
         Assert.Contains(("Hit chance", "100%"), lines);
         now = Stopwatch.Frequency * 4;
         Render(screen);
         var info = screen.SelectedOrActiveObjectInfo!.Value.Torpedo!;
         Assert.Equal(12, info.TravelledKm, 8);
-        Assert.Equal(9, info.EtaSeconds);
+        Assert.Equal(screen.CombatTrajectories["torpedo"].EtaSeconds, info.EtaSeconds);
         buffer.CurrentSpeed = SimulationSpeed.Speed0;
         now += Stopwatch.Frequency * 50;
         Render(screen);
@@ -141,8 +141,8 @@ public sealed class TorpedoInspectionTests
     public void Unreachable_target_has_no_eta_and_does_not_invent_impact()
     {
         var buffer = new SnapshotBuffer(() => 0);
-        var torpedo = Torpedo with { Torpedo = Torpedo.Torpedo! with { PredictedImpactMotionTimeMs = null, Route = Torpedo.Torpedo.Route with { HasIntercept = false } } };
-        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [Player, Target, torpedo], "player"));
+        var torpedo = Torpedo with { Torpedo = Torpedo.Torpedo! with { PredictedImpactMotionTimeMs = null, Route = Torpedo.Torpedo.Route with { HasIntercept = false, StartMotionTimeMs = 0 } } };
+        buffer.Update(new(1, 0, SimulationSpeed.Speed0, [Player, Target with { SpeedKmS = 20, Direction = 90 }, torpedo], "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
         Render(screen);
         screen.OnMouseDown(1060, 640);
@@ -173,6 +173,7 @@ public sealed class TorpedoInspectionTests
     {
         using var bitmap = new SKBitmap(1920, 1080);
         using var canvas = new SKCanvas(bitmap);
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1920, 1080);
     }
 

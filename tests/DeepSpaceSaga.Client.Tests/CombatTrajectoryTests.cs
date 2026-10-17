@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using System.Text.Json;
 using DeepSpaceSaga.Client.UI;
@@ -14,12 +15,69 @@ public sealed class CombatTrajectoryTests
     private static readonly ObjectMotionSnapshot Target = new("target", 100, -200, 0, 0, RenderObjectType: SpaceObjectType.NpcShip);
     private static readonly TorpedoSnapshot Flight = new("player", "launcher", "target", 0, 3, 90, 150, 60,
         new(0, 1, TorpedoRoutePhase.Straight, true, [new(100, 160, 0, 3, 0, 12000)], 2000),
-        [new(0, new(100, 160, 0, 3, 0, 2000), 1)], 12000);
+        [new(0, new(100, 160, 0, 3, 0, 2000), 1)], 12000, ExpiresAtMotionTimeMs: 300_000);
     private static readonly ObjectMotionSnapshot Torpedo = new("torpedo", 100, 100, 3, 0,
         RenderObjectType: SpaceObjectType.Missile, Torpedo: Flight);
     private static AuthoritativeSnapshot Snapshot => new(1, 9000000000, SimulationSpeed.Speed0,
         [Player, Target, Torpedo, new("other", 300, 100, 0, 0)], "player", SimulationTimeMs: 2000);
     private static long Ticks(int ms) => Stopwatch.Frequency * ms / 1000;
+
+    [Fact]
+    public void Missing_torpedo_expiry_invalidates_a_previously_displayed_contact()
+    {
+        var buffer = new SnapshotBuffer(() => 0);
+        buffer.Update(Snapshot);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        screen.ForecastCache.UseWorker = false;
+        Render(screen);
+        Assert.NotNull(screen.CombatTrajectories["torpedo"].Intercept);
+        buffer.Update(Snapshot with
+        {
+            SnapshotSequence = 2,
+            Objects = Snapshot.Objects.Select(o => o.Torpedo is { } flight
+                ? o with { Torpedo = flight with { ExpiresAtMotionTimeMs = null } } : o).ToImmutableArray()
+        });
+        Render(screen);
+        var geometry = screen.CombatTrajectories["torpedo"];
+        Assert.Equal(CombatForecastStatus.InsufficientData, geometry.Status);
+        Assert.Null(geometry.Intercept);
+        Assert.Null(geometry.EtaSeconds);
+        Assert.InRange(geometry.EndMotionTimeMs, 2000, 2100);
+        screen.OnDeactivated();
+    }
+
+    [Fact]
+    public void Forecast_starts_from_the_displayed_clamped_hostile_pose_not_an_older_conditional_pose()
+    {
+        long now = 0;
+        var target = Target with
+        {
+            SpeedKmS = 1,
+            Direction = 90,
+            MaxSpeedKmS = 2,
+            HostileCombat = new("player", "engine", "weapon", 50, true, HostileCombatPhase.Pursuit,
+                new(0, 100, 0, Target.X, Target.Y, 1, 90, 0, 20))
+        };
+        var route = TorpedoGuidanceMath.Plan(Player, target, 3, 90);
+        var torpedo = Torpedo with { X = 0, Y = 0, Torpedo = Flight with { Route = route, Trail = [] } };
+        var buffer = new SnapshotBuffer(() => now);
+        buffer.Update(new(1, 0, SimulationSpeed.Speed1, [Player, target, torpedo], "player", SimulationTimeMs: 0));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => now);
+        screen.ForecastCache.UseWorker = false;
+        Render(screen);
+        now = Ticks(500);
+        Render(screen);
+        var displayed = screen.RenderStates.Single(s => s.Source.ObjectId == "target").Predicted;
+        var geometry = screen.CombatTrajectories["torpedo"];
+        Assert.NotNull(geometry.Intercept);
+        // Speed1 advances physical motion at 1/4 real time: 500 real ms = 125 motion ms.
+        double start = 500 * SimulationSpeed.Speed1.MotionTimeMultiplier();
+        var expected = CurrentManeuverForecast.Sample(displayed, geometry.EndMotionTimeMs - start);
+        Assert.Equal(expected.X, geometry.Target[^1].X, 6);
+        Assert.Equal(expected.Y, geometry.Target[^1].Y, 6);
+        Assert.Equal(start, screen.ForecastCache.Results["torpedo"].StartMotionTimeMs);
+        screen.OnDeactivated();
+    }
 
     [Theory]
     [InlineData(0)]
@@ -67,8 +125,7 @@ public sealed class CombatTrajectoryTests
             Assert.Equal(pose.X, geometry.Target[0].X, 8);
             Assert.Equal(pose.Y, geometry.Target[0].Y, 8);
             Assert.NotNull(geometry.Intercept);
-            Assert.Equal(geometry.Intercept.Value.X, geometry.Target[^1].X, 6);
-            Assert.Equal(geometry.Intercept.Value.Y, geometry.Target[^1].Y, 6);
+            AssertContactDistance(geometry);
         }
     }
 
@@ -92,13 +149,15 @@ public sealed class CombatTrajectoryTests
             int dashPixels = Enumerable.Range(420, 100).Count(y => bitmap.GetPixel(1060, y).Alpha > 20);
             Assert.InRange(dashPixels, 30, 80);
             Assert.All(Enumerable.Range(420, 100), y => Assert.InRange(bitmap.GetPixel(1060, y).Alpha, (byte)0, (byte)102));
-            Assert.True(bitmap.GetPixel(1060, 340).Alpha > 100); // confirmed encounter cross
+            Assert.True(bitmap.GetPixel(1060, 345).Alpha > 100); // confirmed encounter cross
         };
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1920, 1080);
         string geometry = JsonSerializer.Serialize(screen.CombatTrajectories["torpedo"]);
         screen.OnMouseDown(1260, 640);
         Assert.Equal("other", screen.SelectedObjectId);
         now = Ticks(10000);
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1920, 1080);
         Assert.True(observed);
         Assert.Equal(geometry, JsonSerializer.Serialize(screen.CombatTrajectories["torpedo"]));
@@ -119,8 +178,7 @@ public sealed class CombatTrajectoryTests
         Assert.True(route.HasIntercept);
         Assert.NotNull(geometry.Intercept);
         Assert.Equal(geometry.Prediction[^1], geometry.Intercept);
-        Assert.Equal(geometry.Intercept!.Value.X, geometry.Target[^1].X, 6);
-        Assert.Equal(geometry.Intercept.Value.Y, geometry.Target[^1].Y, 6);
+        AssertContactDistance(geometry);
         var current = TorpedoGuidanceMath.PredictPose(route, elapsed);
         Assert.Equal(new FutureTrajectoryPoint(current.X, current.Y), geometry.Prediction[0]);
     }
@@ -162,21 +220,45 @@ public sealed class CombatTrajectoryTests
     }
 
     [Fact]
-    public void No_intercept_renders_no_false_cross()
+    public void Unknown_target_does_not_disclose_conditional_hostile_motion()
     {
-        var flight = Flight with { Route = Flight.Route with { HasIntercept = false }, PredictedImpactMotionTimeMs = null };
-        var camera = new CameraState(100, 0, 1);
-        var geometry = CombatTrajectoryProjector.Project(flight, Target, new LinearMotionPredictor(), camera, 800, 600);
+        var target = Target with
+        {
+            RenderObjectType = SpaceObjectType.UnknownSpaceObject,
+            SpeedKmS = 1,
+            HostileCombat = new("player", "engine", "weapon", 50, true, HostileCombatPhase.Pursuit,
+                new(2000, 100, 0, Target.X, Target.Y, 1, 0, 0, 20))
+        };
+        var predictor = new LinearMotionPredictor();
+        var geometry = CombatTrajectoryProjector.Project(Flight, target, predictor, new(0, 0, 1), 800, 600);
         Assert.Null(geometry.Intercept);
         Assert.Empty(geometry.Target);
-        Assert.InRange(geometry.Prediction.Count, 2, 4);
-        Assert.Equal(-300, geometry.Prediction[^1].Y);
-        var lost = CombatTrajectoryProjector.Project(Flight, null, new LinearMotionPredictor(), camera, 800, 600);
-        Assert.Null(lost.Intercept);
+        var projector = new FutureTrajectoryProjector(predictor);
+        Assert.Empty(projector.Project(target));
+        var points = new List<FutureTrajectoryPoint>();
+        projector.ProjectViewportInto(target, points, new(0, 0, 1), 800, 600);
+        Assert.Empty(points);
     }
 
     [Fact]
-    public void Turning_target_rejects_old_aim_point_and_continues_to_viewport()
+    public void No_contact_keeps_both_lines_to_a_physical_horizon()
+    {
+        var target = Target with { SpeedKmS = 20, Direction = 0 };
+        var flight = Flight with { Route = Flight.Route with { HasIntercept = false }, PredictedImpactMotionTimeMs = null };
+        var camera = new CameraState(100, 0, 1);
+        var geometry = CombatTrajectoryProjector.Project(flight, target, new LinearMotionPredictor(), camera, 800, 600);
+        Assert.Null(geometry.Intercept);
+        Assert.NotEmpty(geometry.Target);
+        Assert.Equal(CombatForecastStatus.NoContact, geometry.Status);
+        Assert.Equal(200, geometry.HorizonSeconds);
+        Assert.Equal(geometry.Prediction, CombatTrajectoryProjector.Project(flight, target, new LinearMotionPredictor(), new(0, 0, .1), 400, 300).Prediction);
+        var lost = CombatTrajectoryProjector.Project(Flight, null, new LinearMotionPredictor(), camera, 800, 600);
+        Assert.Null(lost.Intercept);
+        Assert.Equal(CombatForecastStatus.TargetLost, lost.Status);
+    }
+
+    [Fact]
+    public void Turning_target_replaces_old_aim_with_a_conditional_contact()
     {
         var predictor = new LinearMotionPredictor();
         var target = Target with { SpeedKmS = 1, Direction = 90 };
@@ -186,13 +268,8 @@ public sealed class CombatTrajectoryTests
         string before = JsonSerializer.Serialize(flight);
         var oldAim = TorpedoGuidanceMath.PredictPose(route, route.Segments.Sum(s => s.DurationMs));
         var geometry = CombatTrajectoryProjector.Project(flight, target, predictor, new(0, 0, 1), 1920, 1080);
-
-        Assert.True(route.HasIntercept);
-        Assert.Null(geometry.Intercept);
-        Assert.Empty(geometry.Target);
-        Assert.Equal(new FutureTrajectoryPoint(Player.X, Player.Y), geometry.Prediction[0]);
+        AssertContactDistance(geometry);
         Assert.NotEqual(new FutureTrajectoryPoint(oldAim.X, oldAim.Y), geometry.Prediction[^1]);
-        AssertOnViewportEdge(geometry.Prediction[^1], new(0, 0, 1), 1920, 1080);
         Assert.Equal(before, JsonSerializer.Serialize(flight));
     }
 
@@ -200,56 +277,29 @@ public sealed class CombatTrajectoryTests
     [InlineData(0.1)]
     [InlineData(1)]
     [InlineData(3)]
-    public void Ai_frozen_endpoint_beyond_confirmed_segment_is_not_a_meeting(double zoom)
+    public void Conditional_forecast_continues_beyond_confirmed_AI_watermark(double zoom)
     {
-        // The bounded predictor returns the target centre after 71 ms, exactly at
-        // the torpedo's old aim point. That cannot confirm a meeting 10 s away.
         var target = Target with
         {
+            SpeedKmS = 1,
+            MaxSpeedKmS = 2,
             HostileCombat = new("player", "engine", "weapon", 50, false, HostileCombatPhase.Pursuit,
-                new(1971, 100, 29, Target.X, Target.Y, 0, 0, 0, 0))
+                new(1971, 100, 29, Target.X, Target.Y, 1, 0, 0, 20))
         };
-        var camera = new CameraState(100, 0, zoom);
-        var geometry = CombatTrajectoryProjector.Project(Flight, target, new LinearMotionPredictor(), camera, 1920, 1920);
-
-        Assert.Null(geometry.Intercept);
-        Assert.Empty(geometry.Target);
+        var geometry = CombatTrajectoryProjector.Project(Flight, target, new LinearMotionPredictor(), new(100, 0, zoom), 1920, 1920);
+        AssertContactDistance(geometry);
+        Assert.True(geometry.EndMotionTimeMs > 2071);
+        Assert.Equal(new LinearMotionPredictor().Predict(target, 100), new LinearMotionPredictor().Predict(target, 20_000));
         Assert.Equal(new FutureTrajectoryPoint(Torpedo.X, Torpedo.Y), geometry.Prediction[0]);
-        AssertOnViewportEdge(geometry.Prediction[^1], camera, 1920, 1920);
     }
 
-    [Theory]
-    [InlineData(10000, true)]
-    [InlineData(9999, false)]
-    public void Ai_meeting_requires_both_geometry_and_confirmed_time(long confirmedRemainingMs, bool hasMeeting)
+    private static void AssertContactDistance(CombatTrajectoryProjector.Geometry geometry)
     {
-        var target = Target with
-        {
-            HostileCombat = new("player", "engine", "weapon", 50, false, HostileCombatPhase.Pursuit,
-                new(0, 2000 + confirmedRemainingMs, 2000, Target.X, Target.Y, 0, 0, 0, 0))
-        };
-        var camera = new CameraState(100, 0, 1);
-        var geometry = CombatTrajectoryProjector.Project(Flight, target, new LinearMotionPredictor(), camera, 800, 600);
-
-        Assert.Equal(hasMeeting, geometry.Intercept is not null);
-        if (hasMeeting)
-        {
-            Assert.Equal(geometry.Intercept, geometry.Prediction[^1]);
-            Assert.Equal(geometry.Intercept, geometry.Target[^1]);
-            Assert.Equal(new FutureTrajectoryPoint(target.X, target.Y), geometry.Target[0]);
-        }
-        else
-        {
-            Assert.Empty(geometry.Target);
-            AssertOnViewportEdge(geometry.Prediction[^1], camera, 800, 600);
-        }
-    }
-
-    private static void AssertOnViewportEdge(FutureTrajectoryPoint point, CameraState camera, int width, int height)
-    {
-        var (x, y) = camera.WorldToScreen(point.X, point.Y, width, height);
-        Assert.True(Math.Abs(x) < .001 || Math.Abs(x - width) < .001 ||
-            Math.Abs(y) < .001 || Math.Abs(y - height) < .001, $"Expected viewport edge, got ({x}, {y})");
+        Assert.NotNull(geometry.Intercept);
+        double dx = geometry.Prediction[^1].X - geometry.Target[^1].X;
+        double dy = geometry.Prediction[^1].Y - geometry.Target[^1].Y;
+        Assert.InRange(Math.Sqrt(dx * dx + dy * dy), 4.99999, 5.00001);
+        Assert.NotNull(geometry.EtaSeconds);
     }
 
     [Fact]
@@ -281,7 +331,7 @@ public sealed class CombatTrajectoryTests
         Render(screen);
         var prediction = screen.CombatTrajectories["torpedo"].Prediction;
         Assert.Equal(new FutureTrajectoryPoint(100, 100), prediction[0]);
-        Assert.Equal(new FutureTrajectoryPoint(100, -200), prediction[^1]);
+        Assert.InRange(prediction[^1].Y, -195.00001, -194.99999);
         screen.OnDeactivated();
     }
 
@@ -310,6 +360,7 @@ public sealed class CombatTrajectoryTests
             Assert.True(behind.Red > behind.Green && behind.Alpha > 100, $"Expected orange exhaust, got {behind}");
             Assert.True(behind.Alpha > ahead.Alpha, $"Exhaust must point behind the torpedo: {behind}, {ahead}");
         };
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1920, 1080);
         Assert.True(observed);
         screen.OnDeactivated();
@@ -319,6 +370,7 @@ public sealed class CombatTrajectoryTests
     {
         using var bitmap = new SKBitmap(1920, 1080);
         using var canvas = new SKCanvas(bitmap);
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1920, 1080);
     }
 }

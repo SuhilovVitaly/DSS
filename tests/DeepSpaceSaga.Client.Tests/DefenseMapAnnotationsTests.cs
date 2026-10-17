@@ -19,11 +19,11 @@ public class DefenseMapAnnotationsTests
         var target = new ObjectMotionSnapshot("target", 120, 0, 0, 0);
         if (capturedContact)
         {
-            pr = pr with { Countermeasure = pr.Countermeasure! with { ExpiresAtMotionTimeMs = 10000, PredictedEncounterMotionTimeMs = 115d / 120 * 1000 } };
+            pr = pr with { Countermeasure = pr.Countermeasure! with { ExpiresAtMotionTimeMs = 10000, SpeedKmS = 12, TurnRateDegPerSec = 90, PredictedEncounterMotionTimeMs = 115d / 120 * 1000 } };
             target = target with
             {
-                Torpedo = new("enemy", "launcher", "player", 0, 0, 90, 0, 0,
-                new(0, 1, TorpedoRoutePhase.Straight, true, [new(120, 0, 0, 0, 0, 10000)]), [])
+                Torpedo = new("enemy", "launcher", "player", 0, 1, 90, 0, 0,
+                new(0, 1, TorpedoRoutePhase.Straight, true, [new(120, 0, 270, 1, 0, 10000)]), [], ExpiresAtMotionTimeMs: 10_000)
             };
         }
         var buffer = new SnapshotBuffer(() => 0);
@@ -31,19 +31,29 @@ public class DefenseMapAnnotationsTests
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
         using var bitmap = new SKBitmap(1280, 720);
         using var canvas = new SKCanvas(bitmap);
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1280, 720);
         Assert.True(GameSessionScreen.HasCombatMarker(pr));
         var geometry = screen.DefenseGeometry["pr"];
-        Assert.Equal(capturedContact ? 115 : 120, geometry.Intercept!.Value.X, 5);
-        Assert.Equal(0, geometry.Intercept!.Value.Y, 5);
-        var chance = Assert.Single(screen.DefenseChanceLabels).Value;
-        Assert.Equal("50.0%", chance.Chance);
-        Assert.NotNull(chance.Encounter);
+        if (capturedContact)
+        {
+            Assert.NotNull(geometry.Intercept);
+            var chance = Assert.Single(screen.DefenseChanceLabels).Value;
+            Assert.Equal("50.0%", chance.Chance);
+            Assert.NotNull(chance.Encounter);
+            screen.OnMouseMove((float)geometry.Intercept.Value.X, (float)geometry.Intercept.Value.Y);
+        }
+        else
+        {
+            Assert.Null(geometry.Intercept);
+            Assert.Empty(screen.DefenseChanceLabels);
+        }
         Assert.Empty(screen.DefenseFlightLabels);
-        screen.OnMouseMove((float)geometry.Intercept.Value.X, (float)geometry.Intercept.Value.Y);
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1280, 720);
         Assert.Null(screen.DefenseTooltip);
         buffer.Update(buffer.Latest!.Snapshot with { SnapshotSequence = 2, Objects = [new("player", 0, 0, 0, 0)] });
+        screen.ForecastCache.UseWorker = false;
         screen.Render(canvas, 1280, 720);
         Assert.Null(screen.DefenseTooltip);
         screen.OnDeactivated();

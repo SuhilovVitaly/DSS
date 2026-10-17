@@ -139,7 +139,23 @@ public sealed record ObjectMotionSnapshot(
     HostileCombatSnapshot? HostileCombat = null,
     /// <summary>Known ship's authoritative module health; hidden for unidentified objects.</summary>
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ModuleHealthSnapshot>))]
-    ImmutableArray<ModuleHealthSnapshot> ModuleHealth = default);
+    ImmutableArray<ModuleHealthSnapshot> ModuleHealth = default,
+    /// <summary>Player-visible execution phase, projected only; never stored in saves.</summary>
+    [property: JsonPropertyName("engineManeuver"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    EngineManeuverSnapshot? EngineManeuver = null);
+
+/// <summary>Existing discrete engine command, not a proposed command or future AI decision.
+/// Acceleration is km/s²; the first speed delta includes elapsed inertia before this snapshot.
+/// A synchronization command may sample an already known analytic orbit at completion.</summary>
+public sealed record EngineManeuverSnapshot(string CommandType, double CycleRemainingMs,
+    long CycleIntervalMs, bool Repeats, double AccelerationKmS2, double FirstSpeedDeltaKmS,
+    int TurnStepDegrees, double? CapturedSpeedKmS = null, double? CapturedDirectionDegrees = null,
+    OrbitalElements? TargetOrbit = null, long? TargetOrbitSampleTimeMs = null,
+    double TargetWorldOffsetX = 0, double TargetWorldOffsetY = 0,
+    // A zero-duration cycle completes at the next positive motion update,
+    // not at a predetermined deadline. FirstSpeedDeltaKmS is accrued inertia
+    // at MotionSampleTimeMs; add the update's elapsed inertia on completion.
+    bool CompletesOnMotionUpdate = false, double? MotionSampleTimeMs = null);
 
 /// <summary>Confirmed module durability and temporary disable state for ship inspection.</summary>
 public sealed record ModuleHealthSnapshot(string ModuleId, string DisplayName,

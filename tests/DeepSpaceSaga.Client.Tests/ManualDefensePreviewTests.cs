@@ -9,13 +9,68 @@ using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
+using Xunit.Abstractions;
 
 namespace DeepSpaceSaga.Client.Tests;
 
-public class ManualDefensePreviewTests
+[Collection("Combat forecast performance")]
+public class ManualDefensePreviewTests(ITestOutputHelper output)
 {
     private const string First = "MOD-PLAYER-COUNTERMEASURE-01";
     private const string Second = "MOD-PLAYER-COUNTERMEASURE-02";
+
+    [Fact]
+    [Trait("Category", "ForecastBudget")]
+    public async Task Manual_defense_preview_preparation_obeys_UI_budget()
+    {
+        await using var f = new Fixture();
+        f.Screen.ForecastCache.UseWorker = true;
+        f.Hover(First);
+        var timings = new List<double>();
+        var phases = new List<(double Launch, double Target, double Defense)>();
+        for (int i = 0; i < 220; i++)
+        {
+            // Advance an actual guided flight, including route phase and absolute
+            // time. Snapshot production is outside the measured UI preparation.
+            long time = 1 + i * 4;
+            f.Buffer.Update(f.Engine.CaptureSnapshotForTests(time, SimulationSpeed.Speed0, time));
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            f.Screen.PrepareCombatReports();
+            double ms = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            if (i >= 20) { timings.Add(ms); phases.Add(f.Screen.ManualPreviewPreparationMs); }
+            Assert.NotNull(f.Screen.ManualDefensePreviewGeometry);
+            await Task.Delay(16);
+        }
+        timings.Sort();
+        output.WriteLine($"manual defense preview UI prepare n=200 warmup=20 p99={timings[197]:F3} ms; headless only");
+        output.WriteLine($"phase means launch={phases.Average(p => p.Launch):F3} target={phases.Average(p => p.Target):F3} defense={phases.Average(p => p.Defense):F3} ms");
+        Assert.True(timings[197] <= 2, $"preview UI p99={timings[197]} ms");
+    }
+
+    [Theory]
+    [InlineData("speed")]
+    [InlineData("turn")]
+    [InlineData("life")]
+    public async Task Missing_captured_parameters_show_an_explicit_data_status(string missing)
+    {
+        await using var f = new Fixture();
+        f.Update(s => s with
+        {
+            InstalledModules = s.InstalledModules.Select(m => m.ModuleId != First ? m : m with
+            {
+                Defense = m.Defense! with
+                {
+                    SpeedKmS = missing == "speed" ? null : m.Defense.SpeedKmS,
+                    TurnRateDegPerSec = missing == "turn" ? null : m.Defense.TurnRateDegPerSec,
+                    MaxFlightTimeMs = missing == "life" ? null : m.Defense.MaxFlightTimeMs
+                }
+            }).ToImmutableArray()
+        });
+        Assert.True(f.Hover(First).Enabled);
+        Assert.Equal(CombatForecastStatus.InsufficientData, f.Screen.ManualDefensePreviewGeometry!.Status);
+        Assert.Null(f.Screen.ManualDefensePreviewGeometry.Intercept);
+        Assert.NotNull(f.Screen.ManualDefensePreviewMessage);
+    }
 
     [Theory]
     [InlineData(1f, First)]
@@ -60,9 +115,19 @@ public class ManualDefensePreviewTests
         });
         Assert.True(f.Hover(First).Enabled);
         Assert.NotNull(f.Screen.ManualDefensePreviewPlan);
-        Assert.Null(f.Screen.ManualDefensePreviewGeometry!.Intercept);
-        Assert.Empty(f.Screen.ManualDefensePreviewGeometry.Target);
-        Assert.Equal(Localization.Get("Combat.UnknownIntercept"), f.Screen.ManualDefensePreviewMessage);
+        if (reason == "short-life")
+        {
+            Assert.Null(f.Screen.ManualDefensePreviewGeometry!.Intercept);
+            Assert.NotEmpty(f.Screen.ManualDefensePreviewGeometry.Target);
+            Assert.Equal(CombatForecastStatus.Expired, f.Screen.ManualDefensePreviewGeometry.Status);
+            Assert.NotNull(f.Screen.ManualDefensePreviewMessage);
+        }
+        else
+        {
+            // The new conditional path uses physical contact, not an obsolete captured estimate.
+            Assert.NotNull(f.Screen.ManualDefensePreviewGeometry!.Intercept);
+            Assert.Null(f.Screen.ManualDefensePreviewMessage);
+        }
         Assert.InRange(f.Screen.ManualDefensePreviewPlan!.Route.Segments.Sum(s => s.DurationMs), 0, 100);
         Assert.Empty(f.Connection.Commands);
     }
@@ -160,6 +225,7 @@ public class ManualDefensePreviewTests
             Connection.OnSend = c => { Engine.ReceiveCommand(c); return ValueTask.CompletedTask; };
             Screen = new(Buffer, new LinearMotionPredictor(), _handle, uiScale: scale,
                 combatSettings: CombatVisualSettings.Default with { Preview = new SKColor(100, 110, 120) });
+            Screen.ForecastCache.UseWorker = false;
             Canvas = new(Bitmap);
         }
         internal void Update(Func<AuthoritativeSnapshot, AuthoritativeSnapshot> change)

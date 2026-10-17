@@ -29,7 +29,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     }
 
     public static bool IsLinear(ObjectMotionSnapshot state) =>
-        state.Orbit is null && state.Torpedo is null && state.Countermeasure is null && state.HostileCombat is null &&
+        state.Orbit is null && state.Torpedo is null && state.Countermeasure is null && state.HostileCombat is null && state.EngineManeuver is null &&
         state.ActiveEngineCommandType is not (NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit) &&
         (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0);
 
@@ -43,6 +43,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             return TorpedoGuidanceMath.Predict(state, elapsedMs);
         if (state.HostileCombat is not null)
             return HostileOrbitMath.Predict(state, elapsedMs);
+        if (elapsedMs >= 0 && CurrentManeuverForecast.ValidEngineManeuver(state))
+            return CurrentManeuverForecast.Sample(state, elapsedMs);
 
         if (state.ActiveEngineCommandType == NavigationComputerCommandTypes.Approach &&
             state.ApproachRoute is not null)

@@ -15,6 +15,7 @@ public sealed record CombatVisualSettings(
     public SKColor CountermeasureIntercept { get; init; } = new(0, 204, 255);
     public SKColor DefenseRange { get; init; } = new(0, 204, 255, 85);
     public SKColor DefenseText { get; init; } = new(153, 238, 255);
+    public long ForecastHorizonMs { get; init; } = 200_000;
     public const string RelativePath = "Data/UI/combat-visuals.json";
     public static CombatVisualSettings Default { get; } = new(
         SKColors.Yellow, SKColors.Yellow, new(255, 255, 0, 102), SKColors.Yellow,
@@ -42,7 +43,9 @@ public sealed record CombatVisualSettings(
                 CountermeasurePrediction = Optional("countermeasurePrediction", Default.CountermeasurePrediction),
                 CountermeasureIntercept = Optional("countermeasureIntercept", Default.CountermeasureIntercept),
                 DefenseRange = Optional("defenseRange", Default.DefenseRange),
-                DefenseText = Optional("defenseText", Default.DefenseText)
+                DefenseText = Optional("defenseText", Default.DefenseText),
+                ForecastHorizonMs = root.TryGetProperty("forecastHorizonMs", out var horizon) &&
+                    horizon.ValueKind == JsonValueKind.Number && horizon.TryGetInt64(out long ms) && ms is > 0 and <= 200_000 ? ms : 200_000
             };
 
             // New fields remain compatible with v1 palettes. Invalid optional fields use the documented default.

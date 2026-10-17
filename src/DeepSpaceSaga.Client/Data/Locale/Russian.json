@@ -419,5 +419,14 @@
   "CombatReports.enemy-ship-destroyed.Title": "{target} уничтожен",
   "CombatReports.enemy-ship-destroyed.Body": "{target} уничтожен. Поражение цели подтверждено.",
   "CombatReports.player-ship-damaged.Title": "Наш корабль получил повреждения",
-  "CombatReports.player-ship-damaged.Body": "Зафиксировано попадание. Наш корабль получил повреждения."
+  "CombatReports.player-ship-damaged.Body": "Зафиксировано попадание. Наш корабль получил повреждения.",
+  "Combat.Forecast.Recalculating": "Пересчёт прогноза",
+  "Combat.Forecast.Conditional": "При текущем манёвре",
+  "Combat.Forecast.NoContact": "Встреча в пределах горизонта не найдена",
+  "Combat.Forecast.CalculationLimited": "Прогноз ограничен",
+  "Combat.Forecast.InsufficientData": "Недостаточно данных",
+  "Combat.Forecast.TargetLost": "Цель потеряна",
+  "Combat.Forecast.Expired": "Истекает время жизни",
+  "Combat.Forecast.MissedCoast": "Полёт после промаха",
+  "Combat.Forecast.TargetTerminated": "Полёт цели завершён"
 }
