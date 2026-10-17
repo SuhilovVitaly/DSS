@@ -29,7 +29,7 @@ internal sealed class CombatReportFormatter(Func<string, string>? localize = nul
             _ => "Captain"
         };
         string reporter = string.IsNullOrWhiteSpace(report.Reporter.DisplayName)
-            ? Text("Role." + role) : report.Reporter.DisplayName;
+            ? Text("Role." + role) : report.Reporter.DisplayName + "\n" + Text("Role." + role);
         string? damage = report.Damage is { } facts ? Text("Damage")
             .Replace("{module}", facts.ModuleDisplayName ?? Text("UnknownModule"), StringComparison.Ordinal)
             .Replace("{armorBefore}", facts.ArmorBefore.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)

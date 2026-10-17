@@ -65,6 +65,8 @@ public class PhaseThreeSessionRoundtripTests
     public async Task Real_file_roundtrip_restores_both_panels_and_selection()
     {
         await using var f = await Fixture.Create();
+        // Establish the projectile at the fixture epoch; this test isolates Save/Load from AI reaction timing.
+        Assert.Equal(CommandStartDisposition.Started, f.Engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1).Disposition);
         await f.Advance(1);
         string target = f.Engine.CaptureSnapshot().Objects.Single(o => o.Torpedo is not null).ObjectId;
         foreach (string module in Fixture.Defenses)
@@ -116,6 +118,8 @@ public class PhaseThreeSessionRoundtripTests
     public async Task Load_has_no_old_effect_or_pending_replay()
     {
         await using var f = await Fixture.Create();
+        // Establish the projectile at the fixture epoch; this test isolates Save/Load from AI reaction timing.
+        Assert.Equal(CommandStartDisposition.Started, f.Engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1).Disposition);
         await f.Advance(1);
         string target = f.Engine.CaptureSnapshot().Objects.Single(o => o.Torpedo is not null).ObjectId;
         await f.Connection.SendCommandAsync(new("manual", 1, Fixture.Player, Fixture.Defenses[0], DefenseCommandTypes.Fire, target));

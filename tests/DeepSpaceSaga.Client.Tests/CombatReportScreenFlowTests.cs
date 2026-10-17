@@ -1,6 +1,7 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using DeepSpaceSaga.Client.UI;
+using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
@@ -42,6 +43,39 @@ public sealed class CombatReportScreenFlowTests
         using var surface = SKSurface.Create(new SKImageInfo(1280, 720)); Frame(screen, surface.Canvas);
         buffer.Update(World(2, 12, Report(12))); Frame(screen, surface.Canvas);
         Assert.Equal(12, screen.ReportStore.ExpandedSequence); Assert.False(screen.ReportPanel.HasFocus);
+    }
+
+    [Fact]
+    public void KeyboardCanBrowseReportsAndReturnToMapWithoutMouse()
+    {
+        var buffer = new SnapshotBuffer(); buffer.Update(World(1, 12, Report(11), Report(12)));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720)); Frame(screen, surface.Canvas);
+        var focus = (screen.CameraFocusX, screen.CameraFocusY);
+        var selected = screen.SelectedObjectId;
+        var tracker = new KeyboardEdgeTracker();
+        var pressed = new Key[32]; var released = new Key[32];
+        void Press(Key key)
+        {
+            var edges = tracker.PollBoth(k => k == key, pressed, released);
+            foreach (var edge in pressed.Take(edges.pressedCount)) screen.OnKeyDown(edge);
+            Assert.Equal(0, tracker.PollBoth(k => k == key, pressed, released).pressedCount);
+            edges = tracker.PollBoth(_ => false, pressed, released);
+            foreach (var edge in released.Take(edges.releasedCount)) screen.OnKeyUp(edge);
+        }
+
+        Press(Key.Tab); Assert.True(screen.ReportPanel.HasFocus);
+        Press(Key.Down); Assert.Equal(11, screen.ReportStore.KeyboardSelection);
+        Assert.Equal(12, screen.ReportStore.ExpandedSequence);
+        Press(Key.Enter); Assert.Equal(11, screen.ReportStore.ExpandedSequence);
+        Assert.Equal(focus, (screen.CameraFocusX, screen.CameraFocusY));
+        Assert.Equal(selected, screen.SelectedObjectId);
+        Press(Key.Tab); Assert.False(screen.ReportPanel.HasFocus);
+        Press(Key.Tab); Assert.True(screen.ReportPanel.HasFocus);
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Escape));
+        Assert.False(screen.ReportPanel.HasFocus);
+        Assert.Equal(ScreenEvent.OpenGameMenu, screen.OnKeyDown(Key.Escape));
+        screen.DisposeCombatReports();
     }
 
     [Fact]

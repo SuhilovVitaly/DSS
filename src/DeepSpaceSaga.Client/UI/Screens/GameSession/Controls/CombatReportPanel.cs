@@ -116,6 +116,13 @@ internal sealed class CombatReportPanel : IDisposable
 
     internal bool OnKeyDown(Key key)
     {
+        if (key == Key.Tab && _store is not null && Bounds.Width > 0 && Bounds.Height > 0)
+        {
+            if (HasFocus) ClearFocus();
+            else { HasFocus = true; EnsureSelectionVisible(); }
+            return true;
+        }
+        if (key == Key.Escape && HasFocus) { ClearFocus(); return true; }
         if (!HasFocus || _store is null || key is not (Key.Up or Key.Down or Key.Enter)) return false;
         if (key == Key.Enter && _store.KeyboardSelection is { } selected) { _store.Expand(selected); RefreshLayout(); }
         else if (key != Key.Enter) _store.MoveSelection(key == Key.Down ? 1 : -1);

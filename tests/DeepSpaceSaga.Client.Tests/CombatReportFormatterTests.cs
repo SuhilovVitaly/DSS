@@ -10,6 +10,20 @@ public sealed class CombatReportFormatterTests
     [Theory]
     [InlineData("English")]
     [InlineData("Russian")]
+    public void NamedReporterIncludesLocalizedRole(string language)
+    {
+        var locale = Localization.LoadLocaleFile(language)!;
+        var formatter = new CombatReportFormatter(key => locale[key]);
+        foreach (var role in Enum.GetValues<BattleReportReporterRole>())
+        {
+            var model = formatter.Format(Report(11) with { Reporter = new(role, "crew", "Vera") });
+            Assert.Equal("Vera\n" + locale["CombatReports.Role." + role], model.Reporter);
+        }
+    }
+
+    [Theory]
+    [InlineData("English")]
+    [InlineData("Russian")]
     public void EveryKindHasRussianAndEnglishText(string language)
     {
         var locale = Localization.LoadLocaleFile(language)!;
@@ -71,7 +85,7 @@ public sealed class CombatReportFormatterTests
         };
         var model = new CombatReportFormatter(key => locale[key]).Format(report);
         Assert.Contains("ÐœÑƒÑ…Ð°-2", model.Message);
-        Assert.Equal("Ð’ÐµÑ€Ð°", model.Reporter);
+        Assert.Equal(report.Reporter.DisplayName + "\n" + locale["CombatReports.Role.TorpedoOperator"], model.Reporter);
         Assert.Contains("Ð”Ð²Ð¸Ð³Ð°Ñ‚ÐµÐ»ÑŒ", model.DamageDetails);
         Assert.DoesNotContain("{", model.DamageDetails);
     }

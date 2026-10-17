@@ -1604,6 +1604,8 @@ public sealed class SkiaWindow : IDisposable
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
         _pendingUndockCommandId = null;
+        // The root may already be inactive under an overlay; ReplaceAll deactivates only Current.
+        _gameSessionScreen?.DisposeCombatReports();
         _gameSessionScreen = null;
         _screens.ReplaceAll(new DefeatScreen((float)GetUiScale()));
         return true;

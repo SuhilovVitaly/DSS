@@ -18,16 +18,29 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class DefeatNavigationTests
 {
-    [Fact]
-    public async Task Terminal_snapshot_opens_one_defeat_screen_above_existing_modals()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    public async Task Terminal_snapshot_opens_one_defeat_screen_above_existing_modals(int overlayDepth)
     {
         await using var f = await Fixture.Create();
+        f.Game.PrepareCombatReports();
+        var assets = Get<CombatReportAssets>(f.Game, "_combatReportAssets");
+        Assert.True(assets.IllustrationCount > 0);
         await f.Route(ScreenEvent.OpenGameMenu);
         Assert.IsType<GameMenuScreen>(f.Screens.Current);
+        if (overlayDepth == 2) await f.Route(ScreenEvent.OpenLoadWindow);
+        Assert.False(f.Game.CombatReportResourcesDisposed);
+        Assert.Contains(Get<Action?>(f.Handle, "Closing")!.GetInvocationList(), d => ReferenceEquals(d.Target, f.Game));
         f.Defeat();
         Invoke(f.Window, "PollGameSessionAutoTransition");
         if (Get<Task?>(f.Window, "_defeatTransitionTask") is { } pending) await pending;
         var screen = Assert.IsType<DefeatScreen>(f.Screens.Current);
+        Assert.True(f.Game.CombatReportResourcesDisposed);
+        Assert.Equal(0, assets.IllustrationCount);
+        Assert.Equal(0, assets.PortraitCount);
+        Assert.DoesNotContain(Get<Action?>(f.Handle, "Closing")?.GetInvocationList() ?? [], d => ReferenceEquals(d.Target, f.Game));
+        f.Game.PrepareCombatReports(); Assert.Empty(f.Game.ReportStore.Reports);
         for (int i = 0; i < 3; i++) await f.Route(ScreenEvent.None);
         Assert.Same(screen, f.Screens.Current);
         Assert.Equal(1, f.Screens.Count);

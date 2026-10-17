@@ -30,7 +30,7 @@ Outbox/mailbox/inbox имеют явный PendingLimit4096; переполне�
 
 Root SaveFormatVersion остаётся17. Optional `GameStateData.CombatReportsState` содержит child Version1, Sequence и ReportedRangeTargetIds; все поля child обязательны. Validator проверяет version, nonnegative sequence, ненулевой список, непустые trimmed IDs без control characters и case-insensitive duplicates до изменения мира. Удалённые target IDs допустимы как once-per-target история. Старый Save17 без child поддерживается; несовместимые <=16 отклоняются прежним контрактом.
 
-При Load сначала полностью проверяется и материализуется мир. Текущие подходящие range contacts тихо объединяются с сохранёнными marks; baseline восстанавливается из sequence. История карточек, pending deltas и UI focus не сохраняются, старые события не проигрываются повторно. New Game сбрасывает marks/sequence/UI; закрытие/Defeated освобождают panel/assets и прекращают приём в старый экран. Открытие модального экрана сохраняет историю, очищая focus.
+При Load сначала полностью проверяется и материализуется мир. Текущие подходящие range contacts тихо объединяются с сохранёнными marks; baseline восстанавливается из sequence. История карточек, pending deltas и UI focus не сохраняются, старые события не проигрываются повторно. New Game сбрасывает marks/sequence/UI; закрытие/Defeated освобождают panel/assets и прекращают приём в старый экран. Открытие модального экрана сохраняет историю, очищая focus. При переходе на Defeat SkiaWindow явно освобождает ресурсы игрового экрана до удаления корня из ScreenStack, даже если он уже деактивирован под одним или несколькими overlay.
 
 ## Экран и ресурсы
 
@@ -38,7 +38,7 @@ Root SaveFormatVersion остаётся17. Optional `GameStateData.CombatReports
 
 `SkiaWindow.OnRender` вызывает `PrepareCombatReports` на UI thread до screen.Render: drain, formatter и подготовка изображений. Draw выполняет чтение подготовленных ресурсов без file I/O/decode. Восемь opaque PNG1024×576 перечислены в `Data/UI/combat-report-visuals.json`; catalog и изображения копируются в output/publish. Один набор illustrations на session, portrait LRU32 включая negative cache; большой portrait уменьшается до128. Paint/bitmap освобождаются при закрытии.
 
-Заголовок содержит время/тип, раскрытая карточка — illustration16:9, отдельный portrait48/role icon, captured reporter, текст/модульные damage details. Click/drag/wheel внутри панели не уходят на карту или команды. Up/Down и Enter действуют только при focus панели. Последующие новые reports не захватывают keyboard focus. Повторный click по открытой карточке сохраняет её открытой.
+Заголовок содержит время/тип, раскрытая карточка — illustration16:9, отдельный portrait48/role icon, captured reporter (имя при наличии и локализованная должность отдельной строкой), текст/модульные damage details. Click/drag/wheel внутри панели не уходят на карту или команды. Tab переводит keyboard focus между картой и панелью; Escape в панели возвращает focus карте, повторный Escape открывает игровое меню. Up/Down и Enter действуют только при focus панели. Последующие новые reports не захватывают keyboard focus. Повторный click по открытой карточке сохраняет её открытой.
 
 ## Проверка и открытая приёмка
 

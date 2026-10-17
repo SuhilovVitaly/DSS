@@ -99,6 +99,8 @@ public class PhaseThreeJournalUiTests
                 }).ToArray()
             }
         });
+        // This fixture tests journal restoration with an already launched threat, not AI reaction timing.
+        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1).Disposition);
         string target = Assert.Single(engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1).Objects, o => o.Torpedo is not null).ObjectId;
         engine.ReceiveCommand(new("manual", 1, "SPC-0001", "MOD-PLAYER-COUNTERMEASURE-01", DefenseCommandTypes.Fire, target));
         engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1);
