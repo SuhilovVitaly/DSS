@@ -15,7 +15,10 @@ public sealed record CombatPresentationUpdate(
     ImmutableArray<CombatPresentationFrame> Frames, AuthoritativeSnapshot? FullSnapshot,
     bool AutomaticPause, long SentAtTimestamp);
 
-public sealed record CombatPresentationFrame(double MotionTimeMs, AuthoritativeSnapshot State);
+public sealed record CombatPresentationFrame(double MotionTimeMs, AuthoritativeSnapshot State,
+    // Absence from the compact object set does not imply removal from the world.
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> RemovedObjectIds = default);
 
 /// <summary>Queue acceptance, independent of the subsequent CommandResult.</summary>
 public sealed record CommandAcceptance(string CommandId, bool Accepted);

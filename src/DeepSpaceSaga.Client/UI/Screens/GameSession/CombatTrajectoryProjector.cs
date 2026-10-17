@@ -38,28 +38,37 @@ internal static class CombatTrajectoryProjector
         if (route.Segments.IsDefaultOrEmpty) return new(prediction, targetPath, null);
         double duration = route.Segments.Sum(s => s.DurationMs);
         double elapsed = route.ElapsedMs;
-        bool intercept = route.HasIntercept && duration >= elapsed && target is not null;
+        double remaining = duration - elapsed;
+        bool intercept = route.HasIntercept && remaining >= 0 && target is { IsDestroyed: false };
+        // An AI segment is only confirmed until its next decision boundary. The
+        // predictor clamps there; a coincident frozen endpoint is not an intercept.
+        if (target?.HostileCombat is { } hostile)
+            intercept &= remaining <= hostile.Segment.DurationMs - hostile.Segment.ElapsedMs;
         SampleRoute(route, elapsed, Math.Max(elapsed, duration), camera, prediction);
+        var encounter = prediction[^1];
+        if (intercept)
+        {
+            var targetEnd = PredictTarget(target!, remaining, predictor);
+            // A manoeuvre can invalidate the confirmed constant-velocity aim point.
+            intercept = Math.Abs(targetEnd.X - encounter.X) + Math.Abs(targetEnd.Y - encounter.Y) <= 1e-3;
+        }
         if (!intercept)
         {
-            // No lifetime/physical range is invented. Extend the last confirmed tangent
-            // only to the viewport; the Engine will continue to guide the actual projectile.
+            // All unconfirmed encounters use the same display: a continuation to the
+            // viewport, without a target connector or hit marker. The rejected aim
+            // point must not look like the end of the projectile's flight.
             var end = TorpedoGuidanceMath.PredictPose(route, Math.Max(elapsed, duration));
             TrajectoryViewportGeometry.ExtendToEdge(prediction, end.Direction, camera, width, height);
             return new(prediction, targetPath, null);
         }
 
-        double remaining = duration - elapsed;
-        var encounter = prediction[^1];
-        var targetEnd = PredictTarget(target!, remaining, predictor);
-        // A manoeuvring target can invalidate the last confirmed linear interception.
-        // Do not advertise a meeting that shared motion no longer predicts.
-        if (Math.Abs(targetEnd.X - encounter.X) + Math.Abs(targetEnd.Y - encounter.Y) > 1e-3)
-            return new(prediction, targetPath, null);
         if (target!.RenderObjectType != SpaceObjectType.UnknownSpaceObject)
         {
             int samples = LinearMotionPredictor.IsLinear(target) ? 1 : 256;
             for (int i = 0; i <= samples; i++) targetPath.Add(PredictTarget(target, remaining * i / samples, predictor));
+            // Collapse only the accepted numerical tolerance so both lines and the
+            // marker share exactly one endpoint at every zoom level.
+            targetPath[^1] = encounter;
         }
         return new(prediction, targetPath, encounter);
     }

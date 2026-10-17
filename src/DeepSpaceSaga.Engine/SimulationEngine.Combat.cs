@@ -326,7 +326,6 @@ public sealed partial class SimulationEngine
                     { Countermeasure = predictedDefense.Countermeasure! with { Trail = CloseCountermeasureHistory(obj, motionTimeMs) } },
                     StartGameTimeMs = motionTimeMs
                 };
-                CapturePresentationFrame(cursor);
                 continue;
             }
             if (obj.InitialMotion.Torpedo is not { } flight || motionTimeMs <= obj.StartGameTimeMs) continue;

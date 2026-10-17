@@ -87,14 +87,20 @@ public class DefeatTimeBoundaryTests
         engine.LoadScenario(scenario);
         var final = At(engine, 2 * GameCalendar.DayMs / 300, 2 * GameCalendar.DayMs);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
-        Assert.InRange(final.MotionTimeMs, 5000, 5001);
-        Assert.InRange(final.GameTimeMs, 1500000, 1500300);
+        var launch = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Launch);
+        Assert.InRange(launch.MotionTimeMs, 501, 1251);
+        // The stationary target is still five seconds of flight away after the NPC reacts.
+        double expectedDeath = launch.MotionTimeMs + 5000;
+        double death = final.EffectiveOutcome.DeathMotionTimeMs!.Value;
+        Assert.InRange(Math.Abs(death - expectedDeath), 0, .0001);
+        Assert.Equal((long)Math.Ceiling(death), final.MotionTimeMs);
+        // Calendar time floors fractional contacts rather than the rounded physical boundary.
+        Assert.InRange(Math.Abs(final.GameTimeMs - expectedDeath * 300), 0, 1);
         Assert.Equal(0, final.MissingRations);
         Assert.Empty(final.ShipEvents);
         var factory = engine.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "factory");
         Assert.Equal(99, Assert.Single(factory.Inventory, i => i.ItemTypeIndex == registry.ItemTypes.GetIndex("item.food-rations")).StockQuantity);
         Assert.Equal(12 * GameCalendar.HourMs, Assert.Single(factory.ProducingModules).NextProductionDueGameTimeMs);
-        Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Launch);
         var world = engine.RuntimeObjects.ToArray();
         var rngField = typeof(SimulationEngine).GetField("_countermeasureRng", BindingFlags.Instance | BindingFlags.NonPublic)!;
         var rng = (Combat.CountermeasureRng)rngField.GetValue(engine)!;

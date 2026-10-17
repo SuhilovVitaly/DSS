@@ -79,7 +79,7 @@ public sealed class CombatPresentationTests
             CombatReports = new(0, 1, [report]),
             CombatImpacts = [impact]
         };
-        buffer.UpdatePresentation(Update(2, terminal));
+        buffer.UpdatePresentation(Update(2, terminal) with { Frames = [new(2500, terminal, ["ship"])] });
         Assert.Equal(receipt, buffer.FindCommandResult("fire"));
         Assert.Single(buffer.Presented!.Snapshot.Objects);
         Assert.Empty(buffer.DrainCombatReports());
@@ -162,5 +162,58 @@ public sealed class CombatPresentationTests
         var impacts = Enumerable.Range(1, SnapshotBuffer.PresentationHistoryLimit + 1).Select(id =>
             new CombatImpactSnapshot(id, "torpedo-" + id, "owner", "module", "target", "target", 1, 0, 0)).ToImmutableArray();
         Assert.Throws<InvalidOperationException>(() => buffer.UpdatePresentation(Update(2, State(1) with { CombatImpacts = impacts })));
+    }
+
+    [Fact]
+    public void Compact_omission_retains_static_target_until_explicit_removal_is_presented()
+    {
+        long now = 0;
+        var buffer = new SnapshotBuffer(() => now);
+        var asteroid = new ObjectMotionSnapshot("asteroid", 10, 20, 0, 0);
+        var bootstrap = State(0) with { Objects = [asteroid] };
+        buffer.UpdatePresentation(Update(1, bootstrap, true));
+        var targeted = State(100) with { Objects = [asteroid with { X = 12 }] };
+        buffer.UpdatePresentation(Update(2, targeted));
+        var omitted = State(200) with { Objects = [] };
+        buffer.UpdatePresentation(Update(3, omitted));
+        Assert.Equal(12, Assert.Single(buffer.AuthoritativeLatest!.Objects).X);
+        now = Ticks(250);
+        buffer.PreparePresentation();
+        Assert.Equal(12, Assert.Single(buffer.Presented!.Snapshot.Objects).X);
+        var removed = State(300) with { Objects = [] };
+        var deletion = Update(4, removed) with { Frames = [new(300, removed, ["asteroid"])] };
+        deletion = JsonSerializer.Deserialize<CombatPresentationUpdate>(JsonSerializer.Serialize(deletion))!;
+        buffer.UpdatePresentation(deletion);
+        Assert.Empty(buffer.AuthoritativeLatest!.Objects);
+        Assert.Single(buffer.Presented.Snapshot.Objects);
+        now += Ticks(200);
+        buffer.PreparePresentation();
+        Assert.Empty(buffer.Presented.Snapshot.Objects);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Rejection_bypasses_sequence_gap_without_advancing_scene_and_is_session_scoped(bool full)
+    {
+        var buffer = new SnapshotBuffer(() => 0);
+        buffer.UpdatePresentation(Update(1, State(0), true));
+        var rejection = new CommandResult("rejected", "ship", "launcher", CombatCommandTypes.Fire,
+            CommandResultStatus.Rejected, 200, CommandReasonCodes.TargetDestroyed);
+        var state = State(200) with { CommandResults = [rejection] };
+        var third = Update(3, full ? State(200) : state) with { FullSnapshot = full ? state : null };
+        buffer.UpdatePresentation(third);
+        buffer.UpdatePresentation(JsonSerializer.Deserialize<CombatPresentationUpdate>(JsonSerializer.Serialize(third))!);
+        Assert.Equal(rejection, buffer.FindCommandResult("rejected"));
+        Assert.Equal(1, buffer.ContiguousPresentationSequence);
+        Assert.Equal(0, buffer.AuthoritativeLatest!.MotionTimeMs);
+        Assert.Equal(0, buffer.Presented!.Snapshot.MotionTimeMs);
+        buffer.UpdatePresentation(Update(2, State(100)));
+        Assert.Equal(rejection, buffer.FindCommandResult("rejected"));
+        buffer.UpdatePresentation(Update(1, State(0), true) with { SessionId = Guid.NewGuid() });
+        buffer.UpdatePresentation(third);
+        Assert.Null(buffer.FindCommandResult("rejected"));
+        buffer.UpdatePresentation(third with { SessionId = Guid.NewGuid(), FullSnapshot = null });
+        Assert.Null(buffer.FindCommandResult("rejected"));
     }
 }

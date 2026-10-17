@@ -11,6 +11,7 @@ public sealed partial class SimulationEngine
     private Guid _presentationSession = Guid.NewGuid();
     private long _presentationSequence;
     private readonly List<CombatPresentationFrame> _presentationFrames = [];
+    private HashSet<string> _presentationWorldObjectIds = [];
     private bool _collectPresentation;
     private bool _presentationLease;
     private bool _presentationBootstrap;
@@ -30,6 +31,7 @@ public sealed partial class SimulationEngine
         _presentationImpactCursor = 0;
         _presentationJournalCursor = 0;
         _presentationFrames.Clear();
+        _presentationWorldObjectIds.Clear();
         _automaticPresentationPause = false;
         _presentationBootstrap = true;
         _presentationProgressAt = _presentationTimestamp();
@@ -123,7 +125,16 @@ public sealed partial class SimulationEngine
         state = state with { CurrentSpeed = IsDefeated ? SimulationSpeed.Speed0 : _presentationIntervalSpeed };
         _presentationImpactCursor = _combatImpacts.Count;
         _presentationJournalCursor = _combatJournal.Count;
-        _presentationFrames.Add(new(time, state));
+        AddPresentationFrame(time, state);
+    }
+
+    private void AddPresentationFrame(double time, AuthoritativeSnapshot state)
+    {
+        var worldIds = _objects.Select(o => o.InitialMotion.ObjectId).ToHashSet(StringComparer.Ordinal);
+        var removed = _presentationWorldObjectIds.Where(id => !worldIds.Contains(id))
+            .Order(StringComparer.Ordinal).ToImmutableArray();
+        _presentationWorldObjectIds = worldIds;
+        _presentationFrames.Add(new(time, state, removed));
     }
 
     internal CombatPresentationUpdate CapturePresentationUpdate(bool fullSnapshot = false, bool advanceClock = true)
@@ -135,7 +146,7 @@ public sealed partial class SimulationEngine
             var clock = advanceClock ? _clock.UpdateAndCapture() : _clock.Capture();
             var state = BuildSnapshot(clock, presentationOnly: true);
             // Includes commands, terminal outcomes and control acknowledgements after world advancement.
-            if (_collectPresentation) _presentationFrames.Add(new(state.MotionTimeMs, state));
+            if (_collectPresentation) AddPresentationFrame(state.MotionTimeMs, state);
             _presentationImpactCursor = _combatImpacts.Count;
             _presentationJournalCursor = _combatJournal.Count;
             AuthoritativeSnapshot? full = fullSnapshot || _presentationBootstrap

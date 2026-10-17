@@ -36,6 +36,7 @@ public sealed class CombatPresentationTests
         Assert.Contains(frame.State.CombatJournal, e => e.Type == CombatEventType.Hit);
         Assert.NotEmpty(frame.State.CombatReports!.Reports);
         Assert.DoesNotContain(frame.State.Objects, o => o.ObjectId == impact.TorpedoObjectId);
+        Assert.Contains(impact.TorpedoObjectId, frame.RemovedObjectIds);
         Assert.Equal(bootstrap.SessionId, contact.SessionId);
     }
 
@@ -223,5 +224,69 @@ public sealed class CombatPresentationTests
         Assert.True(stopped.AutomaticPause);
         Assert.Equal(25000, stopped.ConfirmedMotionTimeMs); // Exactly the first 1000 real ms at Speed4.
         Assert.Equal(SimulationSpeed.Speed0, engine.CurrentSpeed);
+    }
+
+    [Fact]
+    public void Countermeasure_trails_never_extend_beyond_their_frame_time()
+    {
+        long real = 0;
+        using var engine = new SimulationEngine(Registry.Value, clock: new SimulationClock(SimulationSpeed.Speed4, () => real));
+        var scenario = AutomaticDefenseTests.DefenseScenario(600);
+        engine.LoadScenario(scenario with { GameState = scenario.GameState with { CurrentSpeed = "Speed4" } });
+        engine.EnablePresentationLease();
+        engine.CapturePresentationUpdate(true, false);
+        engine.ReceiveCommand(Fire());
+        engine.CapturePresentationUpdate();
+        int trails = 0;
+        for (real = 100; real <= 1000; real += 100)
+        {
+            var update = engine.CapturePresentationUpdate();
+            Assert.All(update.Frames, frame =>
+            {
+                foreach (var projectile in frame.State.Objects.Where(o => o.Countermeasure is not null))
+                    foreach (var segment in projectile.Countermeasure!.Trail)
+                    {
+                        trails++;
+                        Assert.True(segment.StartMotionTimeMs + segment.Segment.DurationMs <= frame.MotionTimeMs + 1e-6);
+                    }
+            });
+        }
+        Assert.True(trails > 0);
+    }
+
+    [Fact]
+    public void Living_static_target_leaves_compact_set_without_a_removal_after_flight_expiry()
+    {
+        long real = 0;
+        var source = Registry.Value;
+        static IEnumerable<T> All<T>(DeepSpaceSaga.Engine.Content.TypeRegistry<T> registry)
+            where T : DeepSpaceSaga.Engine.Content.ITypeDefinition => Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
+        var registry = DeepSpaceSaga.Engine.Content.GameDataRegistry.Create(All(source.ModuleCategories),
+            All(source.ModuleTypes).Select(m => m.TorpedoSpeedKmS is null ? m : m with { TorpedoMaxFlightTimeMs = 1000 }),
+            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
+            All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules, fireModes: source.FireModes);
+        using var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed4, () => real));
+        const string asteroidId = "distant-asteroid";
+        var scenario = TorpedoImpactTests.Scenario(null, Obstacle(asteroidId, 0, -1900));
+        engine.LoadScenario(scenario with { GameState = scenario.GameState with { CurrentSpeed = "Speed4" } });
+        engine.EnablePresentationLease();
+        engine.CapturePresentationUpdate(true, false);
+        engine.ReceiveCommand(Fire() with { TargetObjectId = asteroidId });
+        var launch = engine.CapturePresentationUpdate();
+        string torpedoId = Assert.Single(launch.Frames[^1].State.Objects, o => o.Torpedo is not null).ObjectId;
+        Assert.Contains(launch.Frames[^1].State.Objects, o => o.ObjectId == asteroidId);
+        CombatPresentationUpdate update = launch;
+        for (real = 100; real <= 10000; real += 100)
+        {
+            update = engine.CapturePresentationUpdate();
+            Assert.DoesNotContain(update.Frames.SelectMany(f => f.RemovedObjectIds), id => id == asteroidId);
+            if (update.Frames.Any(f => f.RemovedObjectIds.Contains(torpedoId))) break;
+        }
+        Assert.Contains(update.Frames, f => f.RemovedObjectIds.Contains(torpedoId));
+        Assert.Contains(update.Frames.SelectMany(f => f.State.CombatImpacts), i => i.TerminationKind == TorpedoTerminationKind.Expired);
+        Assert.DoesNotContain(update.Frames[^1].State.Objects, o => o.ObjectId == asteroidId);
+        Assert.Contains(engine.CaptureSnapshot().Objects, o => o.ObjectId == asteroidId);
     }
 }

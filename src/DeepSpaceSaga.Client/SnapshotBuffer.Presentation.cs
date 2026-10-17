@@ -11,12 +11,11 @@ public sealed partial class SnapshotBuffer
     private Guid? _presentationSession;
     private readonly HashSet<Guid> _retiredPresentationSessions = [];
     private readonly SortedDictionary<long, CombatPresentationUpdate> _reorderedUpdates = [];
-    private sealed record PendingSceneFrame(double MotionTimeMs, AuthoritativeSnapshot State, bool Full);
+    private sealed record PendingSceneFrame(double MotionTimeMs, AuthoritativeSnapshot State, bool Full,
+        ImmutableArray<string> RemovedObjectIds = default);
     private readonly Queue<PendingSceneFrame> _sceneFrames = [];
     private AuthoritativeSnapshot? _displayBaseline;
-    private HashSet<string> _displayDynamicObjectIds = [];
     private AuthoritativeSnapshot? _sceneBaseline;
-    private HashSet<string> _dynamicObjectIds = [];
     private BufferedSnapshot? _presented;
     private long _contiguousSequence;
     private long _confirmedMotionTime;
@@ -110,9 +109,6 @@ public sealed partial class SnapshotBuffer
                 _sceneTime = bootstrap.MotionTimeMs;
                 _sceneTick = now + Stopwatch.Frequency * 150 / 1000;
                 _sceneBaseline = _displayBaseline = TrimSceneHistory(bootstrap);
-                _dynamicObjectIds = update.Frames.IsDefaultOrEmpty ? [] :
-                    update.Frames[^1].State.Objects.Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
-                _displayDynamicObjectIds = new(_dynamicObjectIds, StringComparer.Ordinal);
                 _latest = _presented = new(_sceneBaseline, now);
                 _currentSpeed = bootstrap.CurrentSpeed;
                 _stoppedBoundary = bootstrap.CurrentSpeed == SimulationSpeed.Speed0 ? bootstrap.MotionTimeMs : null;
@@ -133,6 +129,10 @@ public sealed partial class SnapshotBuffer
             }
             if (_reorderedUpdates.Count >= 128) throw new InvalidOperationException("Combat update reorder limit exceeded.");
             _reorderedUpdates.Add(update.Sequence, update);
+            // Command responses bypass both scene playback and sequence gaps.
+            if (!update.Frames.IsDefault)
+                foreach (var frame in update.Frames) _events.ReceiveCommandResults(frame.State.CommandResults);
+            if (update.FullSnapshot is { } receivedFull) _events.ReceiveCommandResults(receivedFull.CommandResults);
             while (_reorderedUpdates.Remove(_contiguousSequence + 1, out var next))
             {
                 if (next.ConfirmedMotionTimeMs < _confirmedMotionTime)
@@ -151,17 +151,9 @@ public sealed partial class SnapshotBuffer
                     _pendingCombatFacts += facts;
                     if (_sceneFrames.Count >= PresentationHistoryLimit)
                         throw new InvalidOperationException("Combat scene history overflow.");
-                    _sceneFrames.Enqueue(new(frame.MotionTimeMs, frame.State, false));
-                    _events.Receive(frame.State); // Command receipts bypass the scene clock.
-                }
-                if (!next.Frames.IsDefaultOrEmpty)
-                {
-                    var tail = next.Frames[^1].State with
-                    {
-                        CombatImpacts = next.Frames.SelectMany(f => f.State.CombatImpacts.IsDefault ? [] : f.State.CombatImpacts).ToImmutableArray(),
-                        CombatJournal = next.Frames.SelectMany(f => f.State.CombatJournal.IsDefault ? [] : f.State.CombatJournal).ToImmutableArray()
-                    };
-                    _latest = new(MergeScene(tail), now);
+                    _sceneFrames.Enqueue(new(frame.MotionTimeMs, frame.State, false, frame.RemovedObjectIds));
+                    _latest = new(MergeScene(frame.State, frame.RemovedObjectIds), now);
+                    _events.Receive(frame.State with { CommandResults = default });
                 }
                 if (next.FullSnapshot is { } fullState)
                 {
@@ -171,7 +163,7 @@ public sealed partial class SnapshotBuffer
                         throw new InvalidOperationException("Combat scene history overflow.");
                     _sceneFrames.Enqueue(new(full.MotionTimeMs, full, true));
                     _latest = new(full, now);
-                    _events.Receive(full);
+                    _events.Receive(full with { CommandResults = default });
                 }
                 _currentSpeed = _latest?.Snapshot.CurrentSpeed ?? _currentSpeed;
                 if (_currentSpeed != SimulationSpeed.Speed0) _stoppedBoundary = null;
@@ -188,15 +180,13 @@ public sealed partial class SnapshotBuffer
         }
     }
 
-    private AuthoritativeSnapshot MergeScene(AuthoritativeSnapshot state, bool display = false)
+    private AuthoritativeSnapshot MergeScene(AuthoritativeSnapshot state, ImmutableArray<string> removedObjectIds, bool display = false)
     {
         var baseline = (display ? _displayBaseline : _sceneBaseline)!;
-        var oldIds = display ? _displayDynamicObjectIds : _dynamicObjectIds;
+        var removedIds = removedObjectIds.IsDefaultOrEmpty ? [] : removedObjectIds.ToHashSet(StringComparer.Ordinal);
         var nextIds = state.Objects.Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
-        var objects = baseline.Objects.Where(o => !oldIds.Contains(o.ObjectId) && !nextIds.Contains(o.ObjectId))
+        var objects = baseline.Objects.Where(o => !removedIds.Contains(o.ObjectId) && !nextIds.Contains(o.ObjectId))
             .Concat(state.Objects).ToImmutableArray();
-        if (display) _displayDynamicObjectIds = nextIds;
-        else _dynamicObjectIds = nextIds;
         var merged = baseline with
         {
             SnapshotSequence = state.SnapshotSequence,
@@ -275,7 +265,7 @@ public sealed partial class SnapshotBuffer
                     _pendingCombatFacts -= (revision.State.CombatImpacts.IsDefault ? 0 : revision.State.CombatImpacts.Length) +
                         (revision.State.CombatJournal.IsDefault ? 0 : revision.State.CombatJournal.Length);
                 if (revision.Full) _displayBaseline = revision.State;
-                var frame = revision.Full ? revision.State : MergeScene(revision.State, display: true);
+                var frame = revision.Full ? revision.State : MergeScene(revision.State, revision.RemovedObjectIds, display: true);
                 _presented = new(frame, now);
                 PresentationDiagnostic?.Invoke(new
                 {
