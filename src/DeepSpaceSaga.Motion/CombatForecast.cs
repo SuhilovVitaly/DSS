@@ -163,7 +163,10 @@ public static class CombatForecast
         int steps = 0;
         while (cursor < end)
         {
-            cancellationToken.ThrowIfCancellationRequested();
+            // Cancellation is a normal forecast budget/lifecycle limit. Return an
+            // incomplete result without throwing a first-chance debugger exception.
+            if (cancellationToken.IsCancellationRequested)
+            { status = CombatForecastStatus.CalculationLimited; break; }
             if (steps++ >= options.MaxSteps || points.Count + 2 > options.MaxPoints)
             { status = CombatForecastStatus.CalculationLimited; break; }
             double next = Math.Min(end, CombatGuidanceRules.NextBoundary((long)Math.Floor(cursor)));

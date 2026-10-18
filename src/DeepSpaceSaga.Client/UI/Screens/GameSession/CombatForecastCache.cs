@@ -54,11 +54,14 @@ internal sealed class CombatForecastCache
         var scene = new Scene(session, snapshot, options);
         if (_worker is { IsCompleted: true })
         {
-            if (_worker.IsCanceled && System.Diagnostics.Stopwatch.GetElapsedTime(_startedAt).TotalMilliseconds >= 200)
+            bool canceled = _cancellation?.IsCancellationRequested == true;
+            if (canceled && System.Diagnostics.Stopwatch.GetElapsedTime(_startedAt).TotalMilliseconds >= 200)
                 _limitedUntil = System.Diagnostics.Stopwatch.GetTimestamp() + System.Diagnostics.Stopwatch.Frequency / 2;
-            if (!_worker.IsCanceled)
+            // Observe genuine faults even when cancellation was requested. A
+            // canceled calculation may have partial geometry and must not publish.
+            var completed = _worker.GetAwaiter().GetResult();
+            if (!canceled)
             {
-                var completed = _worker.GetAwaiter().GetResult();
                 if (_pending is { } pending && Matches(pending, scene, completed))
                 {
                     Results = completed;
@@ -97,7 +100,7 @@ internal sealed class CombatForecastCache
             _startedAt = System.Diagnostics.Stopwatch.GetTimestamp();
             _cancellation.CancelAfter(225);
             var token = _cancellation.Token;
-            _worker = Task.Run(() => CalculateMeasured(scene, token), token);
+            _worker = Task.Run(() => CalculateMeasured(scene, token));
         }
         else { Results = CalculateMeasured(scene); _published = scene; }
     }
@@ -125,7 +128,9 @@ internal sealed class CombatForecastCache
         var torpedoGeometry = new ConcurrentDictionary<(ObjectMotionSnapshot, CombatForecastOptions), Lazy<CombatForecastResult>>();
         var defenseGeometry = new ConcurrentDictionary<(ObjectMotionSnapshot, ImmutableArray<CombatForecastLeg>, CombatForecastOptions), Lazy<CombatForecastResult>>();
         var routeValues = new ConcurrentDictionary<TorpedoRoute, TorpedoRoute>(new RouteEquality());
-        var parallel = new ParallelOptions { MaxDegreeOfParallelism = Math.Min(4, Environment.ProcessorCount), CancellationToken = cancellationToken };
+        // Poll inside each item: ParallelOptions cancellation throws on normal
+        // cancellation and would still interrupt a debugger configured for throws.
+        var parallel = new ParallelOptions { MaxDegreeOfParallelism = Math.Min(4, Environment.ProcessorCount) };
         if (!placeholder && torpedoes.Length + defenses.Length > 2)
         {
             Parallel.For(0, torpedoes.Length, parallel, Torpedo);
@@ -161,6 +166,7 @@ internal sealed class CombatForecastCache
         }
         void Torpedo(int index)
         {
+            if (cancellationToken.IsCancellationRequested) return;
             var obj = torpedoes[index];
             objects.TryGetValue(obj.Torpedo!.TargetObjectId, out var target);
             if (placeholder || index >= MaxFullFlights)
@@ -179,6 +185,7 @@ internal sealed class CombatForecastCache
         }
         void Defense(int index)
         {
+            if (cancellationToken.IsCancellationRequested) return;
             var obj = defenses[index];
             objects.TryGetValue(obj.Countermeasure!.TargetTorpedoId, out var target);
             results.TryGetValue(obj.Countermeasure.TargetTorpedoId, out var targetForecast);

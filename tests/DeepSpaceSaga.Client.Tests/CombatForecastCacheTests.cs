@@ -30,6 +30,60 @@ public sealed class CombatForecastCacheTests(ITestOutputHelper output)
     }
 
     [Fact]
+    public void CombatForecast_cancellation_returns_limited_geometry_without_throwing()
+    {
+        var scene = Scene();
+        var target = scene.Objects[0];
+        var torpedo = scene.Objects[1];
+        var defense = scene.Objects[2];
+        var targetForecast = CombatForecast.Torpedo(torpedo, target, 0);
+        using var cancellation = new CancellationTokenSource();
+        cancellation.Cancel();
+
+        var flight = CombatForecast.Torpedo(torpedo, target, 0, cancellationToken: cancellation.Token);
+        var interception = CombatForecast.Countermeasure(defense, torpedo, targetForecast, 0,
+            cancellationToken: cancellation.Token);
+
+        foreach (var result in new[] { flight, interception })
+        {
+            Assert.Equal(CombatForecastStatus.CalculationLimited, result.Status);
+            Assert.Null(result.ContactMotionTimeMs);
+            Assert.Empty(result.Legs);
+            Assert.Equal(0, result.EndMotionTimeMs);
+        }
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task CombatForecast_canceled_worker_completes_without_throwing_and_cannot_publish(bool parallel)
+    {
+        var cache = new CombatForecastCache();
+        var scene = parallel ? Load(20) : Scene();
+        var session = Guid.NewGuid();
+        cache.Prepare(session, scene, CombatForecastOptions.Default);
+        var pending = Assert.IsAssignableFrom<Task>(cache.PendingWork);
+        cache.CancelPending();
+        await pending;
+        Assert.True(pending.IsCompletedSuccessfully);
+
+        cache.Prepare(session, scene, CombatForecastOptions.Default);
+        Assert.Equal(0, cache.Hits);
+        Assert.All(cache.Results.Values, r => Assert.Contains(r.Status,
+            new[] { CombatForecastStatus.Recalculating, CombatForecastStatus.CalculationLimited }));
+        cache.CancelPending();
+        if (cache.PendingWork is { } next) await next;
+    }
+
+    [Fact]
+    public async Task CombatForecast_worker_preserves_genuine_calculation_errors()
+    {
+        var cache = new CombatForecastCache();
+        cache.Prepare(Guid.NewGuid(), Scene(), new CombatForecastOptions(MaxSteps: 0));
+        await Assert.ThrowsAsync<ArgumentOutOfRangeException>(async () => await cache.PendingWork!);
+    }
+
+    [Fact]
     public void CombatForecast_cache_invalidates_the_entire_chain_on_paused_control_change()
     {
         var cache = new CombatForecastCache { UseWorker = false };
