@@ -1825,7 +1825,8 @@ public sealed partial class GameSessionScreen : IScreen
             if (state.IsPlayerShip && state.Pose.NavigationTargetX is not null)
                 continue;
 
-            _futureTrajectoryProjector.ProjectViewportInto(state.Pose.ToSnapshot(), _futureTrajectoryPoints, _camera, width, height);
+            _futureTrajectoryProjector.ProjectViewportInto(state.Pose.ToSnapshot(), _futureTrajectoryPoints, _camera, width, height,
+                _buffer.GetNpcObservedTurnRate(state.Pose.ObjectId));
             var points = _futureTrajectoryPoints;
             if (points.Count < 2)
                 continue;

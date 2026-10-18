@@ -110,6 +110,8 @@ public sealed partial class SnapshotBuffer
                 _sceneTick = now + Stopwatch.Frequency * 150 / 1000;
                 _sceneBaseline = _displayBaseline = TrimSceneHistory(bootstrap);
                 _latest = _presented = new(_sceneBaseline, now);
+                _npcObservations.Clear();
+                ObserveNpcScene(_sceneBaseline, bootstrap.MotionTimeMs);
                 _currentSpeed = bootstrap.CurrentSpeed;
                 _stoppedBoundary = bootstrap.CurrentSpeed == SimulationSpeed.Speed0 ? bootstrap.MotionTimeMs : null;
                 _stoppedBoundaryReceivedAt = now;
@@ -267,6 +269,7 @@ public sealed partial class SnapshotBuffer
                 if (revision.Full) _displayBaseline = revision.State;
                 var frame = revision.Full ? revision.State : MergeScene(revision.State, revision.RemovedObjectIds, display: true);
                 _presented = new(frame, now);
+                ObserveNpcScene(frame, revision.MotionTimeMs);
                 PresentationDiagnostic?.Invoke(new
                 {
                     Kind = "combat-frame-presented",

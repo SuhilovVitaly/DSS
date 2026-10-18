@@ -6,8 +6,8 @@ Execution authority: current user request and EpicExecutionPrompt override plann
 
 | Ticket | Automated implementation | Published SHA |
 |---|---|---|
-| US-0001-TK-0001 observation-history | PASS 15/15 unit cases | See Git commit with full ticket ID |
-| US-0001-TK-0002 map-forecast-integration | Pending | Pending |
+| US-0001-TK-0001 observation-history | PASS 15/15 unit cases | 0f2811430f47411b2be7aa321fb393f2de0a971f; origin/base-fight verified |
+| US-0001-TK-0002 map-forecast-integration | PASS 50/50 combined with history and existing future tests | See full ticket ID in Git |
 | US-0001-TK-0003 regression-coverage | Pending | Pending |
 | US-0002-TK-0001 documentation-and-graph | Pending | Pending |
 

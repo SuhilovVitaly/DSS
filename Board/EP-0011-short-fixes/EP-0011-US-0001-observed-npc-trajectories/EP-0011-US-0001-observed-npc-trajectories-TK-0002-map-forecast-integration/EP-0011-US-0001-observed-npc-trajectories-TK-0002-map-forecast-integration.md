@@ -80,3 +80,7 @@ git diff --check
 - Нет скрытых assumptions/работы вне Code context; dependencies реализованы и проверены.
 - Headless evidence не заменяет native/human gate. Запуск игры NOT RUN до отдельного разрешения.
 - Статус на момент создания: NOT STARTED. Команды выше — план проверок, а не результаты.
+
+## Execution 2026-10-18
+
+Implementation and self-review complete. All nine named integration scenarios implemented (11 theory cases). Pre-fix UnconfirmedNpcUsesCurrentCourse failed: expected X=2100, actual X=100; same test now PASS. Combined history/integration/FutureTrajectoryTests command: PASS 50/50. Client build PASS 0 warnings/errors; scoped format verification and diff check PASS. History observes bootstrap and every admitted intermediate revision; raw ingress cannot authorize observations. Both NPC projection entrypoints bypass the predictor including terminal/viewport extension. Stable sinc integral implements the planned arc formula without cancellation near zero. Existing player paths unchanged. Native NOT RUN.
