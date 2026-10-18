@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
+using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
@@ -157,10 +158,155 @@ public sealed class NpcObservedTrajectoryTests
         Assert.Single(points);
     }
 
+    [Theory]
+    [InlineData(90)]
+    [InlineData(80)]
+    [InlineData(105)]
+    public void ChangedTurnImmediatelyReturnsToStraight(double nextHeading)
+    {
+        var buffer = LegacyTrend();
+        buffer.Update(State(3000, nextHeading));
+        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+    }
+
+    [Fact]
+    public void StraightThenTurnNeedsTwoIntervals()
+    {
+        var buffer = new SnapshotBuffer(() => 0);
+        buffer.Update(State(0, 70)); buffer.Update(State(1000, 70)); buffer.Update(State(2000, 70));
+        buffer.Update(State(3000, 80));
+        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+        buffer.Update(State(4000, 90));
+        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
+    }
+
+    [Fact]
+    public void PauseAndSpeedDoNotInventSeconds()
+    {
+        long now = 0;
+        var buffer = new SnapshotBuffer(() => now);
+        buffer.Update(State(0, 70)); buffer.Update(State(1000, 80));
+        for (int i = 0; i < 100; i++)
+        {
+            now += Ticks(1000);
+            buffer.CurrentSpeed = i % 2 == 0 ? SimulationSpeed.Speed0 : SimulationSpeed.Speed4;
+            _ = buffer.LatestPrediction;
+            buffer.Update(State(1000, 80));
+        }
+        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+        buffer.Update(State(2000, 90));
+        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
+    }
+
+    [Fact]
+    public void FuturePacketAndDuplicateCannotRevealAi()
+    {
+        long now = 0;
+        var buffer = new SnapshotBuffer(() => now);
+        buffer.UpdatePresentation(Update(1, State(0, 70), true));
+        var future = Update(3, State(2000, 90));
+        buffer.UpdatePresentation(future); buffer.UpdatePresentation(future);
+        now = Ticks(10000); buffer.PreparePresentation();
+        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+        buffer.UpdatePresentation(Update(2, State(1000, 80)));
+        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+        now += Ticks(200); buffer.PreparePresentation();
+        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
+        buffer.UpdatePresentation(future);
+        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
+    }
+
+    [Theory]
+    [InlineData("removed")]
+    [InlineData("unknown")]
+    [InlineData("destroyed")]
+    [InlineData("rollback")]
+    [InlineData("duplicate-pose-change")]
+    [InlineData("gap")]
+    [InlineData("load")]
+    public void LoadRemovalUnknownAndDestroyedResetObservation(string kind)
+    {
+        var buffer = LegacyTrend();
+        var next = State(3000, 100);
+        next = kind switch
+        {
+            "removed" => next with { Objects = [] },
+            "unknown" => next with { Objects = [Npc with { RenderObjectType = SpaceObjectType.UnknownSpaceObject }] },
+            "destroyed" => next with { Objects = [Npc with { IsDestroyed = true }] },
+            "rollback" => State(1000, 80) with { SnapshotSequence = 4001 },
+            "duplicate-pose-change" => State(2000, 90, Npc with { X = 101 }),
+            "gap" => State(3001, 100),
+            _ => next
+        };
+        if (kind == "load")
+            buffer.UpdatePresentation(Update(1, next, true) with { SessionId = Guid.NewGuid() });
+        else buffer.Update(next);
+        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+        if (kind is "removed" or "unknown" or "destroyed")
+        {
+            buffer.Update(State(4000, 110));
+            Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+        }
+        Assert.Equal(0, new SnapshotBuffer(() => 0).GetNpcObservedTurnRate("npc"));
+    }
+
+    [Fact]
+    public async Task CameraAndSelectionPreserveTrend()
+    {
+        var buffer = new SnapshotBuffer(() => 0);
+        var player = new ObjectMotionSnapshot("player", 10000, 10000, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip);
+        for (int i = 0; i <= 2; i++)
+            buffer.Update(State(i * 1000, 70 + i * 10, Npc with { X = 10050, Y = 10000 }) with
+            { Objects = [player, Npc with { X = 10050, Y = 10000, Direction = 70 + i * 10 }], PlayerShipObjectId = "player", SelectedObjectId = "npc", CurrentSpeed = SimulationSpeed.Speed0 });
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        using var bitmap = new SKBitmap(1920, 1080);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        TacticalMapSnapshotDocument? captured = null;
+        screen.SnapshotWriter = (document, _) => { captured = document; return "in-memory"; };
+        var rect = screen.MapViewButtonRects[4];
+        screen.OnMouseDown(rect.MidX, rect.MidY);
+        screen.Render(canvas, 1920, 1080);
+        await screen.SnapshotSaveTask;
+        Assert.NotNull(captured);
+        var trajectory = Assert.Single(captured.State.Trajectories, t => t.ObjectId == "npc" && t.Kind == "future");
+        var pose = captured.State.Objects.Single(o => o.Authoritative.ObjectId == "npc").Rendered;
+        Assert.Equal(pose.X, trajectory.Points[0].X, 8);
+        Assert.Equal(pose.Y, trajectory.Points[0].Y, 8);
+        // The real draw call must pass the measured 10 deg/s, not its optional zero default.
+        double w = Math.PI / 18;
+        Assert.Equal(pose.X + 10 * Math.Sin(w) / w, trajectory.Points[4].X, 8);
+        Assert.Equal(pose.Y + 10 * (1 - Math.Cos(w)) / w, trajectory.Points[4].Y, 8);
+        screen.OnMouseDown(1700, 700); // selection changes do not authorize observations
+        screen.Render(canvas, 1280, 720); // viewport/camera changes do not reset history
+        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
+        screen.OnDeactivated();
+    }
+
+    [Fact]
+    public void EquivalentPresentedFramesIgnoreRenderFrequency()
+    {
+        long now = 0;
+        var frequent = new SnapshotBuffer(() => now);
+        var sparse = new SnapshotBuffer(() => now);
+        frequent.UpdatePresentation(Update(1, State(0, 70), true));
+        sparse.UpdatePresentation(Update(1, State(0, 70), true));
+        for (int i = 1; i <= 20; i++)
+        {
+            now = Ticks(i * 400);
+            var update = Update(i + 1, State(i * 100, 70 + i));
+            frequent.UpdatePresentation(update); sparse.UpdatePresentation(update);
+            frequent.PreparePresentation();
+        }
+        now += Ticks(1000);
+        frequent.PreparePresentation(); sparse.PreparePresentation();
+        Assert.Equal(10, frequent.GetNpcObservedTurnRate("npc"), 8);
+        Assert.Equal(frequent.GetNpcObservedTurnRate("npc"), sparse.GetNpcObservedTurnRate("npc"), 8);
+    }
+
     private sealed class RejectingPredictor : IMotionPredictor
     {
         public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long deltaMs) =>
             throw new InvalidOperationException("NPC projection must never read hidden motion controls.");
     }
 }
-

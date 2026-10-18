@@ -9,6 +9,39 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class FutureTrajectoryTests
 {
+    [Fact]
+    public void PlayerAndOrbitalProjectionRemainUnchanged()
+    {
+        var predictor = new LinearMotionPredictor();
+        var projector = new FutureTrajectoryProjector(predictor);
+        var player = new ObjectMotionSnapshot("player", 100, 50, 1, 90,
+            TurnStepDegrees: 10, TurnStepRemainingMs: 500, TurnStepIntervalMs: 1000,
+            RenderObjectType: SpaceObjectType.PlayerShip);
+        var orbital = player with
+        {
+            ObjectId = "station",
+            RenderObjectType = SpaceObjectType.Station,
+            ActiveEngineCommandType = ShipEngineCommandTypes.Orbit,
+            NavigationTargetX = 0,
+            NavigationTargetY = 0,
+            NavigationAngularInertiaDegPerSec = 10
+        };
+        var station = new ObjectMotionSnapshot("station-orbit", 0, -10000, 1, 90,
+            RenderObjectType: SpaceObjectType.Station,
+            Orbit: new(10000, 8000, 300000000, 0, 0, 0, "clockwise"), OrbitSampleSimulationTimeMs: 0);
+        foreach (var state in new[] { player, orbital, station })
+        {
+            var points = projector.Project(state, 77);
+            Assert.Equal(projector.Project(state), points);
+            foreach (int index in new[] { 0, 1, 4, 200, 800 })
+            {
+                var expected = predictor.Predict(state, index * FutureTrajectoryProjector.FutureTrajectorySampleIntervalMs);
+                Assert.Equal(expected.X, points[index].X, 8);
+                Assert.Equal(expected.Y, points[index].Y, 8);
+            }
+        }
+    }
+
     private const int ScreenWidth = 1920;
     private const int ScreenHeight = 1080;
 

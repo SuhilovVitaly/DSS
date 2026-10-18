@@ -83,3 +83,7 @@ git diff --check
 - Нет скрытых assumptions/работы вне Code context; dependencies реализованы и проверены.
 - Headless evidence не заменяет native/human gate. Запуск игры NOT RUN до отдельного разрешения.
 - Статус на момент создания: NOT STARTED. Команды выше — план проверок, а не результаты.
+
+## Execution 2026-10-18
+
+Implementation and self-review complete. All eight named regressions implemented, including real headless draw capture with independent 10 deg/s arc oracle, physical-clock/FPS, lifecycle, hidden packet/duplicate, player and station orbit checks. Focused command: PASS 62/62. Full Client headless command Category!=ForecastBudget: PASS 2057/2057. Engine CombatForecast: PASS 47/47. Client build PASS 0 warnings/errors; scoped format verification PASS; git diff --check PASS. Full suite initially found invalid Clockwise capitalization in the new station fixture; corrected to contractual clockwise and full suite rerun green. No existing assertion removed or weakened. TK-0002 cached diff check had flagged an extra EOF blank line in the previously untracked integration test; removed here (the earlier unstaged-only check omitted that file). Final diff checks include staged files. Native NOT RUN, human acceptance OPEN. See ../../ImplementationStatus.md and ../../evidence/automated-results.json.

@@ -1,0 +1,58 @@
+[
+  {
+    "source": "tests/DeepSpaceSaga.Client.Tests/TestResults/ep0011-client.trx",
+    "sha256": "669a1409613a5d484b1f321dd3c1ee152f76b747f01ffb7e772e59188eb41e18",
+    "counters": {
+      "total": "2057",
+      "executed": "2057",
+      "passed": "2057",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "times": {
+      "creation": "2026-10-18T11:09:33.5241737+03:00",
+      "queuing": "2026-10-18T11:09:33.5241742+03:00",
+      "start": "2026-10-18T11:09:32.3268354+03:00",
+      "finish": "2026-10-18T11:10:49.7804079+03:00"
+    }
+  },
+  {
+    "source": "tests/DeepSpaceSaga.Engine.Tests/TestResults/ep0011-engine-forecast.trx",
+    "sha256": "b2c775b112a9ce6445eb1707644f8c6399360be15235b2277ddbf39bad0b9774",
+    "counters": {
+      "total": "47",
+      "executed": "47",
+      "passed": "47",
+      "failed": "0",
+      "error": "0",
+      "timeout": "0",
+      "aborted": "0",
+      "inconclusive": "0",
+      "passedButRunAborted": "0",
+      "notRunnable": "0",
+      "notExecuted": "0",
+      "disconnected": "0",
+      "warning": "0",
+      "completed": "0",
+      "inProgress": "0",
+      "pending": "0"
+    },
+    "times": {
+      "creation": "2026-10-18T11:07:50.3192703+03:00",
+      "queuing": "2026-10-18T11:07:50.3192705+03:00",
+      "start": "2026-10-18T11:07:48.4970424+03:00",
+      "finish": "2026-10-18T11:07:54.6110095+03:00"
+    }
+  }
+]
