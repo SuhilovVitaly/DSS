@@ -3,7 +3,7 @@ epic: EP-0011-short-fixes
 story: EP-0011-US-0001-observed-npc-trajectories
 ticket: EP-0011-US-0001-observed-npc-trajectories-TK-0001-observation-history
 title: История наблюдений и определение тенденции
-stage: approved
+stage: implemented
 layer: client
 depends_on: []
 files_touched: 2

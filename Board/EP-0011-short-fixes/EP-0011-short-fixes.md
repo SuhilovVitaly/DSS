@@ -1,33 +1,24 @@
 ---
 epic: EP-0011-short-fixes
 title: Короткие фиксы
-stage: approved
+stage: implemented
 created: 2026-10-18T07:47:19+00:00
-revision: 1
+revision: 2
 ---
 
 # EP-0011 — Короткие фиксы
 
-Эпик объединяет небольшие ограниченные исправления DSS. Каждая история имеет отдельные критерии, зависимости и allowlist. Сейчас включён только прогноз движения НПС по наблюдениям игрока; дальнейшие фиксы добавляются по отдельному поручению.
-
-## Полномочия и статус
-
-Пользователь разрешил создание Board без отсутствующего requirements-engineer. Текущий запрос разрешает исполнение US-0001 по EpicExecutionPrompt: реализацию, проверки, Board, отдельные коммиты и push. Добавлена завершающая US-0002 документации. Итого 2 истории / 4 тикета. Native/human acceptance NOT RUN; игру не запускать.
+Текущий запрос выполнен в scope US-0001 и обязательной завершающей US-0002 документации по EpicExecutionPrompt.md. Несвязанные фиксы не добавлялись. 2 истории / 4 тикета. Implementation и automated validation завершены; native/human acceptance OPEN / NOT RUN, игру не запускали. Это не полная игровая приёмка эпика.
 
 ## Истории
 
 | Story | Результат | Тикеты |
 |---|---|---|
-| [US-0001 — Прогноз движения НПС по наблюдениям](EP-0011-US-0001-observed-npc-trajectories/EP-0011-US-0001-observed-npc-trajectories.md) | Две одинаковые наблюдаемые секунды подтверждают тенденцию; иначе прямая | 3 |
+| [US-0001 — Наблюдаемый прогноз NPC](EP-0011-US-0001-observed-npc-trajectories/EP-0011-US-0001-observed-npc-trajectories.md) | Два равных секундных поворота подтверждают дугу; иначе прямая | 3 |
+| [US-0002 — Документация](EP-0011-US-0002-project-documentation/EP-0011-US-0002-project-documentation.md) | Документы, Board/evidence, Graphify | 1 |
 
-## Scope / Non-goals
+## Scope и статус
 
-Только Client: наблюдения, будущая линия известных NPC ships и тесты. Engine, Contracts, Motion, AI, RNG, сохранения, guidance, прогнозы попадания и поведение игрока не меняются. Общий эпик не разрешает несвязанные исправления.
+Client observation history, собственная future line известных живых NPC и tests. Engine/Contracts/Motion, AI/RNG, saves, guidance, combat/launch forecasts и игрок не изменены. Финальная документация уточняет соответствующую границу, не вводит новые игровые правила. Историческое планирование 2026-10-18T07:47:19+00:00 не было разрешением реализации; текущий пользовательский запрос отдельно разрешил реализацию, Board, per-ticket commit/push.
 
-## Definition of Done
-
-Критерии каждой истории подтверждены tests/evidence; реализация, headless validation и native/human acceptance учитываются отдельно. Незакрытые gates остаются OPEN. Планирование не закрывает реализацию истории.
-
-[Документация и grounding](Documentation.md)
-
-| [US-0002 — Документация](EP-0011-US-0002-project-documentation/EP-0011-US-0002-project-documentation.md) | Документы, evidence и Graphify после US-0001 | 1 |
+[Тикеты и зависимости](Tickets.md) · [grounding D-01–D-03 / A-01–A-08](Documentation.md) · [execution, SHA и открытые gates](ImplementationStatus.md) · [текущий контракт](../../Documentation/04-Engineering/NpcObservedTrajectories.md).

@@ -18,10 +18,12 @@ from graphify.detect import save_manifest
 O=Path(__file__).resolve().parent
 R=O.parent.parent
 EP='Board/EP-0010-combat-reports'
+OBSERVED_EP='Board/EP-0011-short-fixes'
 EXCLUDED={'Documentation/README.md':'navigation index updated alongside graph',
  'Documentation/06-Tooling/TradingSolarGraphify.md':'describes generated graph itself',
  'Documentation/06-Tooling/AiMapGraphify.md':'historical graph evidence',
- EP+'/ImplementationStatus.md':'execution status updated alongside graph'}
+ EP+'/ImplementationStatus.md':'execution status updated alongside graph',
+ OBSERVED_EP+'/ImplementationStatus.md':'execution status updated alongside graph'}
 def dump(n,v): (O/n).write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def txt(p): return (R/p).read_text(encoding='utf-8-sig')
@@ -33,7 +35,7 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'Documentation').rglob('*.md'))|set((R/EP).rglob('*.md')))
+ docs=sorted(set((R/'Documentation').rglob('*.md'))|set((R/EP).rglob('*.md'))|set((R/OBSERVED_EP).rglob('*.md')))
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and 'evidence' not in p.relative_to(R).parts]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)
  ast=extract(code,cache_root=R,root=R,parallel=False)

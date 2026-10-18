@@ -1,5 +1,9 @@
 # Deep Space Saga Documentation
 
+## Наблюдаемые будущие линии NPC — 2026-10-18
+
+[Контракт и покрытие EP-0011](04-Engineering/NpcObservedTrajectories.md) · [Board и публикация](../Board/EP-0011-short-fixes/ImplementationStatus.md). NPC future line продолжает подтверждённые два равных секундных поворота; иначе прямая. Combat/launch forecasts сохраняют прежнюю модель. Automated PASS; native/human OPEN, игру не запускали.
+
 ## Боевые доклады EP-0010 — 2026-10-16
 
 [ТЗ: панель боевых докладов](02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [эпик, истории и тикеты](../Board/EP-0010-combat-reports/EP-0010-combat-reports.md). Реализованы E01–E07,200-card accordion, Save17 continuation, надёжная доставка и8 иллюстраций. [Текущая архитектура](04-Engineering/CombatReports.md) · [проверки и отдельные SHA/push](../Board/EP-0010-combat-reports/ImplementationStatus.md). Native/human/FPS acceptance OPEN. Самостоятельный запуск игры агентом запрещён пользователем.

@@ -3,7 +3,7 @@ epic: EP-0011-short-fixes
 story: EP-0011-US-0001-observed-npc-trajectories
 ticket: EP-0011-US-0001-observed-npc-trajectories-TK-0003-regression-coverage
 title: Регрессии и жизненный цикл прогноза
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0011-US-0001-observed-npc-trajectories-TK-0001-observation-history, EP-0011-US-0001-observed-npc-trajectories-TK-0002-map-forecast-integration]
 files_touched: 2

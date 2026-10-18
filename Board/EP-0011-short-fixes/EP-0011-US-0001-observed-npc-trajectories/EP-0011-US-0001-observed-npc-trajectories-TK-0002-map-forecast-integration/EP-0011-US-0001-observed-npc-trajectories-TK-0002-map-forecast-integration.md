@@ -3,7 +3,7 @@ epic: EP-0011-short-fixes
 story: EP-0011-US-0001-observed-npc-trajectories
 ticket: EP-0011-US-0001-observed-npc-trajectories-TK-0002-map-forecast-integration
 title: Интеграция наблюдаемого прогноза в карту
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0011-US-0001-observed-npc-trajectories-TK-0001-observation-history]
 files_touched: 5

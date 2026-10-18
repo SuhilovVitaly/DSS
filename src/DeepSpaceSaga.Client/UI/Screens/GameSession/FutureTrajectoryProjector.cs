@@ -28,8 +28,8 @@ internal sealed class FutureTrajectoryProjector
 
     /// <summary>
     /// Compute future world-coordinate trajectory points from the predicted state.
-    /// Uses the shared straight-line formula or discrete-step predictor as appropriate
-    /// to match the authoritative simulation and preserve turn-cycle phase.
+    /// NPC ships continue an observed trend at constant speed; absent a confirmed trend they fly straight.
+    /// Other objects use the shared predictor to preserve their authoritative turn-cycle phase.
     /// </summary>
     public List<FutureTrajectoryPoint> Project(ObjectMotionSnapshot predictedState, double npcTurnRateDegPerSec = 0)
     {
@@ -74,7 +74,8 @@ internal sealed class FutureTrajectoryProjector
 
     /// <summary>
     /// Player and target displays extend straight flight to the viewport edge instead of stopping
-    /// after 200 seconds. Curved/closed motion retains the predictor's actual geometry.
+    /// after 200 seconds. NPC arcs retain their observed curvature without hidden terminal extensions;
+    /// other curved/closed motion retains the predictor's actual geometry.
     /// Time-based callers keep ProjectInto's bounded horizon.
     /// </summary>
     internal void ProjectViewportInto(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points,

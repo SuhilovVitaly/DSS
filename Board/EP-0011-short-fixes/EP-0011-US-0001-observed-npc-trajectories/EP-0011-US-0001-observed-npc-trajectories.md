@@ -2,7 +2,7 @@
 epic: EP-0011-short-fixes
 story: EP-0011-US-0001-observed-npc-trajectories
 title: Прогноз движения НПС по наблюдениям игрока
-stage: approved
+stage: implemented
 dependencies: []
 created: 2026-10-18T07:47:19+00:00
 source_request: "Два одинаковых секундных интервала подтверждают тенденцию; иначе прямая по текущему курсу"
@@ -58,3 +58,7 @@ A-01–A-08 из Documentation.md обязательны для реализац
 ## Decision / review log
 
 2026-10-18T07:47:19+00:00: прямое разрешение пользователя на Board без requirements-engineer, вариант А подтверждён. Grounding и карта трёх тикетов готовы. current_review=complete относится к планированию. Все тикеты NOT STARTED; implementation/acceptance не выполнены.
+
+## Implementation checkpoint — 2026-10-18
+
+Три тикета реализованы и опубликованы; self-review complete. Текущий статус: implementation/automated PASS, native/human OPEN / NOT RUN. Ранний Decision/review log выше — история планирования. [Evidence и SHA](../ImplementationStatus.md). Все AC-01–07 покрыты тестами; AC-08 automated закрыта, ручная приёмка отделена и открыта.
