@@ -713,6 +713,7 @@ public sealed partial class SimulationEngine : IDisposable
                     X = linear ? x : motion.X,
                     Y = linear ? y : motion.Y,
                     ActiveEngineCommandType = cycleMotion.CommandType,
+                    EngineManeuver = known ? ProjectEngineManeuver(obj, gameTimeMs) : null,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
                     TurnStepIntervalMs = cycleMotion.TurnStepIntervalMs,
@@ -974,7 +975,8 @@ public sealed partial class SimulationEngine : IDisposable
                 StructureMax: moduleType.StructurePointsMax,
                 DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 IsDestroyed: module.Destroyed,
-                CombatRole: moduleType.CombatRole));
+                CombatRole: moduleType.CombatRole,
+                TorpedoMaxFlightTimeMs: moduleType.TorpedoDamage is not null ? TorpedoLifetimeMs(moduleType) : null));
         }
 
         return builder.MoveToImmutable();
@@ -3361,6 +3363,37 @@ public sealed partial class SimulationEngine : IDisposable
             if (CanExecuteModuleCommand(module, _processedWorldTimeMs) &&
                 IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is > 0)
                 return moduleType.MaxSpeedMps.Value / 1000.0;
+        }
+        return null;
+    }
+
+    private EngineManeuverSnapshot? ProjectEngineManeuver(SpaceObjectRuntime obj, long time)
+    {
+        foreach (var module in obj.Modules)
+        {
+            if (module.ActiveCycle is not { } cycle) continue;
+            var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+            if (!CanExecuteEngineCommand(module, type, time) || cycle.CommandType is not
+                (ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake or
+                 ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnRightStep or
+                 ShipEngineCommandTypes.SpeedSynchronization or ShipEngineCommandTypes.DirectionSynchronization)) continue;
+            // A zero-duration cycle has no scheduled deadline: it completes at
+            // the next positive advance, including advances between guidance ticks.
+            bool onUpdate = cycle.DurationMs == 0;
+            long completion = onUpdate ? time : cycle.StartedGameTimeMs + cycle.DurationMs;
+            double sign = cycle.CommandType == ShipEngineCommandTypes.Brake ? -1 : 1;
+            bool changesSpeed = cycle.CommandType is ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake;
+            var target = cycle.TargetObjectId is { } id ? _objects.FirstOrDefault(o =>
+                o.InitialMotion.ObjectId == id && (o.IsKnown || id == PlayerShipObjectId)) : null;
+            return new(cycle.CommandType, Math.Max(0, completion - time), cycle.DurationMs, cycle.IsAutoRepeat,
+                changesSpeed ? sign * (type.LinearInertiaMps2 ?? 0) / 1000.0 : 0,
+                changesSpeed ? sign * ComputeLinearInertiaDeltaKmS(obj, type, completion) : 0,
+                cycle.CommandType == ShipEngineCommandTypes.TurnLeftStep ? -Math.Abs(type.TurnStepDegrees ?? 0) :
+                cycle.CommandType == ShipEngineCommandTypes.TurnRightStep ? Math.Abs(type.TurnStepDegrees ?? 0) : 0,
+                cycle.CapturedTargetSpeedKmS, cycle.CapturedTargetCourseDegrees,
+                target?.InitialMotion.Orbit, target?.InitialMotion.Orbit is null ? null : time,
+                target?.InitialMotion.WorldOffsetX ?? 0, target?.InitialMotion.WorldOffsetY ?? 0,
+                CompletesOnMotionUpdate: onUpdate, MotionSampleTimeMs: onUpdate ? time : null);
         }
         return null;
     }

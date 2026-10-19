@@ -31,7 +31,8 @@ public sealed class CombatPaletteContentTests
             ["defenseRange"] = "#00CCFF55",
             ["defenseText"] = "#99EEFFFF"
         };
-        Assert.Equal(expected.Count + 1, root.EnumerateObject().Count());
+        Assert.Equal(expected.Count + 2, root.EnumerateObject().Count());
+        Assert.Equal(200_000, root.GetProperty("forecastHorizonMs").GetInt64());
         foreach (var (key, value) in expected)
         {
             string actual = root.GetProperty(key).GetString()!;

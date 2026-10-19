@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## NPC future line — 2026-10-18
+
+[Наблюдаемый прогноз](../04-Engineering/NpcObservedTrajectories.md): SnapshotBuffer собирает physical-second headings только из display-admitted confirmed frames. FutureTrajectoryProjector для NpcShip использует measured rate и текущую скорость, без hidden predictor или terminal extension. Текущая render pose, player/orbital motion и combat/launch forecasts сохраняют прежние правила. Client 2057/2057, Engine forecast 47/47; native NOT RUN.
+
 ## Актуализация EP-0009 — 2026-10-12
 
 Current combat writer: SaveFormatVersion17 (defense3, combat2, hostile2); save16 and older reject atomically. Production `Data/Combat/combat-rules.json` and `fire-modes.json`, module/ship catalogs and CombatMukha/CombatShmel scenarios define configurable combat data. Engine owns module damage, operator rolls, modes, queues, AI and terminal outcome; Client renders snapshots and journal. [Current contract](../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [Implementation and evidence](../04-Engineering/ModuleCombat.md). EP-0008/Save16 text below remains dated history. Game/native checks and Graphify rebuild are deferred by user instruction.

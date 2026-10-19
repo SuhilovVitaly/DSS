@@ -1,5 +1,6 @@
 {
     "schemaVersion": 1,
+    "forecastHorizonMs": 200000,
     "torpedo": "#FFFF00FF",
     "trail": "#FFFF00FF",
     "prediction": "#FFFF0066",

@@ -64,6 +64,8 @@ public static class CountermeasureGuidanceMath
         double deadline = Math.Min(firstHullContactMotionTimeMs, expiresAtMotionTimeMs ?? firstHullContactMotionTimeMs);
         double horizon = deadline - now;
         if (!double.IsFinite(horizon) || horizon <= 0) return null;
+        double lastX = double.NaN, lastY = double.NaN;
+        TorpedoRoute? lastRoute = null;
         double low = 0;
         double previous = Residual(0, out _);
         // Bracket the earliest feasible arrival. Every evaluation uses the entire analytic target route.
@@ -102,8 +104,18 @@ public static class CountermeasureGuidanceMath
         double Residual(double ms, out TorpedoRoute route)
         {
             var point = TorpedoGuidanceMath.PredictPose(target, now - target.StartMotionTimeMs + ms);
-            route = TorpedoGuidanceMath.Plan(defender,
-                new("intercept-point", point.X, point.Y, 0, 0), speedKmS, turnRateDegPerSec, now);
+            // Near convergence several bisection times round to the same world
+            // point. Reuse that exact immutable plan, without changing the root
+            // iterations, comparisons or duration arithmetic.
+            if (lastRoute is not null && point.X == lastX && point.Y == lastY) route = lastRoute;
+            else
+            {
+                route = TorpedoGuidanceMath.PlanStationaryPoint(defender,
+                    point.X, point.Y, speedKmS, turnRateDegPerSec, now);
+                lastX = point.X;
+                lastY = point.Y;
+                lastRoute = route;
+            }
             return route.HasIntercept ? route.Segments.Sum(s => s.DurationMs) - ms : double.PositiveInfinity;
         }
     }

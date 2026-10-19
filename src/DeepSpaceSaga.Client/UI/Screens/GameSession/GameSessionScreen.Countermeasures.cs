@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 public sealed partial class GameSessionScreen
 {
     internal readonly Dictionary<string, CombatTrajectoryProjector.Geometry> DefenseGeometry = new(StringComparer.Ordinal);
-    private void DrawCountermeasureTrajectories(SKCanvas canvas)
+    private void DrawCountermeasureTrajectories(SKCanvas canvas, SnapshotPrediction? prediction)
     {
         DefenseGeometry.Clear();
         foreach (var state in _renderStates)
@@ -37,17 +37,9 @@ public sealed partial class GameSessionScreen
             points.Add(new(routeEnd.X, routeEnd.Y));
             CombatTrajectoryProjector.BuildPath(path, points, _camera, _viewportW, _viewportH);
             canvas.DrawPath(path, paint);
-            if (flight.Phase != CountermeasurePhase.Guiding) continue;
-            var target = _renderStates.Where(s => s.Source.ObjectId == flight.TargetTorpedoId).Select(s => s.Pose.Motion).FirstOrDefault();
-            var adapter = new TorpedoSnapshot(flight.OwnerObjectId, flight.LauncherModuleId, flight.TargetTorpedoId,
-                flight.LaunchMotionTimeMs, state.Pose.Motion.SpeedKmS, 90, 0, 0, flight.Route, flight.Trail);
-            var geometry = CombatTrajectoryProjector.Project(adapter, target, _predictor, _camera, _viewportW, _viewportH);
-            if (flight.ExpiresAtMotionTimeMs is { } expires && target?.Torpedo is { } targetFlight)
-            {
-                long now = (long)Math.Floor(flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs);
-                geometry = CombatTrajectoryProjector.ProjectManual(new(flight.Route, flight.PredictedEncounterMotionTimeMs),
-                    targetFlight.Route, now, Math.Max(1, expires - now), _camera);
-            }
+            var geometry = PreparedFlight(state.Source.ObjectId, prediction);
+            if (geometry is null) continue;
+            AlignFlightStart(geometry, state);
             DefenseGeometry[state.Source.ObjectId] = geometry;
             DrawCombatGeometry(canvas, geometry, CombatSettings.CountermeasurePrediction, CombatSettings.CountermeasureIntercept);
 

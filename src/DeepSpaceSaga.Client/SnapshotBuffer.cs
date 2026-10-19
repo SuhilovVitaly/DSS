@@ -22,6 +22,19 @@ public sealed record SnapshotPrediction(
 public sealed partial class SnapshotBuffer
 {
     private readonly object _sync = new();
+    private readonly NpcMotionObservationHistory _npcObservations = new();
+
+    internal double GetNpcObservedTurnRate(string objectId)
+    {
+        lock (_sync) return _npcObservations.TurnRateDegPerSec(objectId);
+    }
+
+    private void ObserveNpcScene(AuthoritativeSnapshot scene, double motionTimeMs)
+    {
+        var poses = scene.Objects.Where(o => o.RenderObjectType == SpaceObjectType.NpcShip && !o.IsDestroyed)
+            .Select(o => new NpcMotionObservation(o.ObjectId, motionTimeMs, o.X, o.Y, o.SpeedKmS, o.Direction)).ToArray();
+        _npcObservations.ObserveScene(_presentationSession, motionTimeMs, poses);
+    }
     private SessionEventHistory _events = new();
     private CombatReportInbox _combatReports = new();
 
@@ -114,6 +127,7 @@ public sealed partial class SnapshotBuffer
             }
 
             _latest = value;
+            ObserveNpcScene(snapshot, snapshot.MotionTimeMs);
             _events.Receive(snapshot);
 
             // A newer authoritative baseline must not make visual game time run backward.

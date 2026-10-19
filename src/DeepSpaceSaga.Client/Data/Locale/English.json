@@ -419,5 +419,14 @@
   "CombatReports.enemy-ship-destroyed.Title": "{target} destroyed",
   "CombatReports.enemy-ship-destroyed.Body": "{target} destroyed. Target elimination confirmed.",
   "CombatReports.player-ship-damaged.Title": "Our ship has been damaged",
-  "CombatReports.player-ship-damaged.Body": "Impact detected. Our ship has been damaged."
+  "CombatReports.player-ship-damaged.Body": "Impact detected. Our ship has been damaged.",
+  "Combat.Forecast.Recalculating": "Recalculating",
+  "Combat.Forecast.Conditional": "Current maneuver",
+  "Combat.Forecast.NoContact": "No contact within horizon",
+  "Combat.Forecast.CalculationLimited": "Forecast limited",
+  "Combat.Forecast.InsufficientData": "Insufficient data",
+  "Combat.Forecast.TargetLost": "Target lost",
+  "Combat.Forecast.Expired": "Lifetime ends",
+  "Combat.Forecast.MissedCoast": "Coasting after miss",
+  "Combat.Forecast.TargetTerminated": "Target flight ends"
 }

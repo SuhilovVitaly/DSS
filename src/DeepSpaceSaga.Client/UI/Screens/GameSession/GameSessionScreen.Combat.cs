@@ -85,7 +85,7 @@ public sealed partial class GameSessionScreen
     private readonly CombatJournalPanel _combatJournalPanel = new();
     internal TorpedoRoute? LaunchPreviewRoute { get; private set; }
     internal CombatTrajectoryProjector.Geometry? LaunchPreviewGeometry { get; private set; }
-    private (ObjectMotionSnapshot Owner, ObjectMotionSnapshot Target, LauncherCombatSnapshot Launcher, long Time)? _launchPreviewKey;
+    private (ObjectMotionSnapshot Owner, ObjectMotionSnapshot Target, LauncherCombatSnapshot Launcher, long Time, long? Lifetime)? _launchPreviewKey;
     private readonly HashSet<string> _combatPoseObjectIds = new(StringComparer.Ordinal);
 
     private bool IsLaunchPreviewRequested() => _hasMousePosition &&
@@ -127,33 +127,7 @@ public sealed partial class GameSessionScreen
     private void DrawLaunchPreview(SKCanvas canvas, SnapshotPrediction? prediction, bool viewportResized)
     {
         DrawManualDefensePreview(canvas, prediction, viewportResized);
-        if (viewportResized || prediction is null || !IsLaunchPreviewRequested() ||
-            FindLauncher()?.LauncherCombat is not { } launcher ||
-            FindPlayerShip(_renderStates) is not { } ownerState ||
-            FindRenderStateById(_selectedObjectId) is not { } targetState)
-        {
-            ClearLaunchPreview();
-            return;
-        }
-
-        // Guidance uses confirmed motion, never the visual correction or frozen pose.
-        // A confirmed paused snapshot fixes physical time even if the presentation
-        // buffer retained an earlier extrapolation lead for ordinary map objects.
-        long delta = CombatPredictionDelta(prediction);
-        var owner = _predictor.Predict(ownerState.Source, delta);
-        var target = _predictor.Predict(targetState.Source, delta);
-        long time = prediction.BufferedSnapshot.Snapshot.MotionTimeMs + delta;
-        var key = (owner, target, launcher, time);
-        if (_launchPreviewKey != key)
-        {
-            LaunchPreviewRoute = TorpedoGuidanceMath.Plan(owner, target, launcher.SpeedKmS, launcher.TurnRateDegPerSec, time);
-            _launchPreviewKey = key;
-        }
-        // A value-only proposed flight feeds the same display sampler. No world object,
-        // command, receipt, RNG or launcher state is created or changed here.
-        var proposed = new TorpedoSnapshot(owner.ObjectId, FindLauncher()!.ModuleId, target.ObjectId, time,
-            launcher.SpeedKmS, launcher.TurnRateDegPerSec, launcher.Damage, 0, LaunchPreviewRoute!, []);
-        LaunchPreviewGeometry = CombatTrajectoryProjector.Project(proposed, target, _predictor, _camera, _viewportW, _viewportH);
+        if (prediction is null || LaunchPreviewGeometry is null) return;
         DrawCombatGeometry(canvas, LaunchPreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
     }
 
@@ -163,23 +137,29 @@ public sealed partial class GameSessionScreen
     private SKPathEffect? _combatDash;
     private SKPath? _combatTrajectoryPath;
 
-    private void DrawCombatTrajectories(SKCanvas canvas, BufferedSnapshot? buffered)
+    private void DrawCombatTrajectories(SKCanvas canvas, SnapshotPrediction? prediction)
     {
+        var buffered = prediction?.BufferedSnapshot;
         _combatTrajectories.Clear();
         _combatEffects.Receive(buffered?.Snapshot.CombatImpacts ?? default, buffered?.ReceivedAtTimestamp);
         foreach (var state in _renderStates)
         {
-            if (state.Source.RenderObjectType != SpaceObjectType.Missile || state.Pose.Motion.Torpedo is not { } flight) continue;
-            var target = FindRenderStateById(flight.TargetObjectId)?.Source;
-            if (target is not null && buffered is not null)
-            {
-                long delta = Math.Max(0, flight.Route.StartMotionTimeMs + (long)flight.Route.ElapsedMs - buffered.Snapshot.MotionTimeMs);
-                target = _predictor.Predict(target, delta);
-            }
-            var geometry = CombatTrajectoryProjector.Project(flight, target, _predictor, _camera, _viewportW, _viewportH);
+            if (state.Pose.Motion.Torpedo is null) continue;
+            var geometry = PreparedFlight(state.Source.ObjectId, prediction);
+            if (geometry is null) continue;
+            AlignFlightStart(geometry, state);
             _combatTrajectories[state.Source.ObjectId] = geometry;
             DrawCombatGeometry(canvas, geometry, CombatSettings.Prediction, CombatSettings.Intercept);
         }
+    }
+
+    private void AlignFlightStart(CombatTrajectoryProjector.Geometry geometry, ObjectRenderState state)
+    {
+        if (geometry.Prediction.Count > 0) geometry.Prediction[0] = new(state.Pose.X, state.Pose.Y);
+        else geometry.Prediction.Add(new(state.Pose.X, state.Pose.Y));
+        string? targetId = state.Source.Torpedo?.TargetObjectId ?? state.Source.Countermeasure?.TargetTorpedoId;
+        if (geometry.Target.Count > 0 && FindRenderStateById(targetId) is { } target)
+            geometry.Target[0] = new(target.Pose.X, target.Pose.Y);
     }
 
     private void DrawCombatGeometry(SKCanvas canvas, CombatTrajectoryProjector.Geometry geometry,
@@ -189,7 +169,7 @@ public sealed partial class GameSessionScreen
         _combatDash ??= SKPathEffect.CreateDash([6f, 4f], 0);
         _combatTrajectoryPath ??= new SKPath();
         DrawPath(geometry.Prediction, prediction, true);
-        DrawPath(geometry.Target, prediction, true);
+        DrawPath(geometry.Target, CombatSettings.DefenseText.WithAlpha(102), false);
         _combatTrajectoryPaint.PathEffect = null;
         _combatTrajectoryPaint.Color = intercept;
         if (geometry.Intercept is { } point)
@@ -199,6 +179,35 @@ public sealed partial class GameSessionScreen
             {
                 canvas.DrawLine(x - 5, y - 5, x + 5, y + 5, _combatTrajectoryPaint);
                 canvas.DrawLine(x - 5, y + 5, x + 5, y - 5, _combatTrajectoryPaint);
+            }
+        }
+
+        // Both centres are physical positions. Never snap the target onto the projectile.
+        if (geometry.Intercept is not null && geometry.Target.Count > 0)
+        {
+            var q = geometry.Target[^1];
+            var (qx, qy) = _camera.WorldToScreen(q.X, q.Y, _viewportW, _viewportH);
+            canvas.DrawCircle(qx, qy, 3, _combatTrajectoryPaint);
+        }
+        if (geometry.Prediction.Count > 0)
+        {
+            var last = geometry.Prediction[^1];
+            var (x, y) = _camera.WorldToScreen(last.X, last.Y, _viewportW, _viewportH);
+            bool endpointVisible = x >= 0 && y >= 0 && x <= _viewportW && y <= _viewportH;
+            if (!endpointVisible)
+            {
+                var first = geometry.Prediction[0];
+                (x, y) = _camera.WorldToScreen(first.X, first.Y, _viewportW, _viewportH);
+            }
+            if (x >= 0 && y >= 0 && x <= _viewportW && y <= _viewportH)
+            {
+                using var text = new SKPaint { Color = intercept, TextSize = 12, IsAntialias = true };
+                string label = geometry.EtaSeconds is { } eta
+                    ? $"{CombatText("Forecast.Conditional", "Current maneuver")} · {eta:0.0} {CombatText("Seconds", "s")}"
+                    : CombatText("Forecast." + geometry.Status, "Forecast limited") +
+                        $" · {geometry.HorizonSeconds:0.0} {CombatText("Seconds", "s")}";
+                if (geometry.Intercept is null && endpointVisible) canvas.DrawRect(x - 3, y - 3, 6, 6, _combatTrajectoryPaint);
+                canvas.DrawText(label, x + 8, y + 16, text);
             }
         }
 
@@ -219,9 +228,8 @@ public sealed partial class GameSessionScreen
         // changes only X/Y/heading; neither it nor pixels can change travelled distance.
         double extraMs = Math.Max(0, predicted.Route.ElapsedMs - flight.Route.ElapsedMs);
         double travelledKm = flight.DistanceTravelledWorldUnits / 10 + flight.SpeedKmS * extraMs / 1000;
-        double? etaSeconds = predicted.Route.HasIntercept && flight.PredictedImpactMotionTimeMs is { } impact
-            ? Math.Max(0, ((double)impact - predicted.Route.StartMotionTimeMs - predicted.Route.ElapsedMs) / 1000)
-            : null;
+        double? etaSeconds = _combatTrajectories.TryGetValue(state.Source.ObjectId, out var geometry)
+            ? geometry.EtaSeconds : null;
         var target = FindRenderStateById(flight.TargetObjectId)?.Source;
         string targetLabel = target is { RenderObjectType: not null and not SpaceObjectType.UnknownSpaceObject }
             && !string.IsNullOrWhiteSpace(target.DisplayName) ? target.DisplayName : flight.TargetObjectId;

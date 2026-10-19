@@ -9,11 +9,101 @@ using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
+using Xunit.Abstractions;
 
 namespace DeepSpaceSaga.Client.Tests;
 
-public sealed class TorpedoPreviewTests
+[Collection("Combat forecast performance")]
+public sealed class TorpedoPreviewTests(ITestOutputHelper output)
 {
+    [Fact]
+    [Trait("Category", "ForecastBudget")]
+    public async Task Moving_launch_preview_preparation_obeys_UI_budget()
+    {
+        await using var f = new Fixture(deterministicClock: true);
+        f.SelectTarget();
+        f.HoverFire();
+        var source = f.Buffer.Latest!.Snapshot;
+        var timings = new List<double>();
+        for (int i = 0; i < 220; i++)
+        {
+            f.Buffer.Update(source with
+            {
+                SnapshotSequence = source.SnapshotSequence + (ulong)i + 1,
+                Objects = source.Objects.Select(o => o.ObjectId == "SPC-0002" ? o with
+                {
+                    SpeedKmS = 1,
+                    MaxSpeedKmS = 2,
+                    HostileCombat = new("SPC-0001", "engine", "launcher", 50, true, HostileCombatPhase.Pursuit,
+                        new(source.MotionTimeMs, 100, 0, o.X, o.Y, 1, o.Direction, 0, i % 2 == 0 ? 20 : -20))
+                } : o).ToImmutableArray()
+            });
+            long start = System.Diagnostics.Stopwatch.GetTimestamp();
+            f.Screen.PrepareCombatReports();
+            double ms = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
+            if (i >= 20) timings.Add(ms);
+            Assert.NotNull(f.Screen.LaunchPreviewGeometry);
+            await Task.Delay(16);
+        }
+        timings.Sort();
+        output.WriteLine($"launch preview UI prepare n=200 warmup=20 p99={timings[197]:F3} ms; headless only");
+        Assert.True(timings[197] <= 2, $"preview UI p99={timings[197]} ms");
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(1L)]
+    public async Task Preview_requires_published_torpedo_lifetime_and_never_draws_contact_after_expiry(long? lifetime)
+    {
+        await using var f = new Fixture();
+        var snapshot = f.Buffer.Latest!.Snapshot;
+        f.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = snapshot.SnapshotSequence + 1,
+            InstalledModules = snapshot.InstalledModules.Select(m => m.LauncherCombat is null ? m :
+                m with { TorpedoMaxFlightTimeMs = lifetime }).ToImmutableArray()
+        });
+        f.SelectTarget();
+        f.HoverFire();
+        var geometry = Assert.IsType<CombatTrajectoryProjector.Geometry>(f.Screen.LaunchPreviewGeometry);
+        Assert.Null(geometry.Intercept);
+        Assert.Equal(lifetime is null ? CombatForecastStatus.InsufficientData : CombatForecastStatus.Expired, geometry.Status);
+        Assert.InRange(geometry.HorizonSeconds, 0, .001);
+    }
+
+    [Fact]
+    public async Task Moving_maneuver_preview_uses_each_frames_launch_state_without_permanent_recalculation()
+    {
+        await using var f = new Fixture(deterministicClock: true);
+        var snapshot = f.Buffer.Latest!.Snapshot;
+        f.Buffer.Update(snapshot with
+        {
+            SnapshotSequence = snapshot.SnapshotSequence + 1,
+            CurrentSpeed = SimulationSpeed.Speed1,
+            Objects = snapshot.Objects.Select(o => o.ObjectId == "SPC-0002" ? o with
+            {
+                SpeedKmS = 1,
+                MaxSpeedKmS = 2,
+                HostileCombat = new("SPC-0001", "engine", "launcher", 50, true, HostileCombatPhase.Pursuit,
+                    new(snapshot.MotionTimeMs, 100, 0, o.X, o.Y, 1, o.Direction, 0, 20))
+            } : o.ObjectId == "SPC-0001" ? o with { SpeedKmS = .1 } : o).ToImmutableArray()
+        });
+        f.SelectTarget();
+        f.HoverFire();
+        for (int frame = 1; frame <= 5; frame++)
+        {
+            f.Now = System.Diagnostics.Stopwatch.Frequency * frame * 30 / 1000;
+            f.Render();
+            var geometry = Assert.IsType<CombatTrajectoryProjector.Geometry>(f.Screen.LaunchPreviewGeometry);
+            Assert.NotEqual(CombatForecastStatus.Recalculating, geometry.Status);
+            Assert.NotEmpty(geometry.Target);
+            var owner = f.Screen.RenderStates.Single(o => o.IsPlayerShip).Pose;
+            Assert.Equal(new FutureTrajectoryPoint(owner.X, owner.Y), geometry.Prediction[0]);
+            Assert.InRange(geometry.HorizonSeconds, 0, 25.6);
+        }
+        Assert.Empty(f.Connection.Commands);
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(300)]
@@ -166,8 +256,8 @@ public sealed class TorpedoPreviewTests
         f.HoverFire();
         Assert.NotEqual(original, JsonSerializer.Serialize(f.Screen.LaunchPreviewRoute));
         Assert.NotNull(f.Screen.LaunchPreviewGeometry!.Intercept);
-        Assert.Equal(0, f.Screen.LaunchPreviewGeometry.Intercept.Value.X, 8);
-        Assert.Equal(100, f.Screen.LaunchPreviewGeometry.Intercept.Value.Y, 8);
+        var end = f.Screen.LaunchPreviewGeometry.Intercept.Value;
+        Assert.InRange(Math.Sqrt(end.X * end.X + Math.Pow(end.Y - 100, 2)), 4.99999, 5.00001);
         Assert.Empty(f.Connection.Commands);
     }
 
@@ -261,6 +351,7 @@ public sealed class TorpedoPreviewTests
             Buffer = deterministicClock ? new SnapshotBuffer(() => Now) : Handle.Buffer;
             Buffer.Update(Engine.CaptureSnapshotForTests());
             Screen = new GameSessionScreen(Buffer, new LinearMotionPredictor(), Handle, uiScale: scale, combatSettings: palette, timestampProvider: () => Now);
+            Screen.ForecastCache.UseWorker = false;
             Canvas = new SKCanvas(Bitmap);
         }
 

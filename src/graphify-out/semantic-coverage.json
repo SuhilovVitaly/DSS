@@ -1,9 +1,9 @@
 {
   "mode": "Fresh AST + Markdown structure + selective EP-0010 semantics",
-  "code_files": 713,
-  "markdown_files": 131,
-  "doc_heading_occurrences": 1450,
-  "resolved_markdown_links": 546,
+  "code_files": 735,
+  "markdown_files": 143,
+  "doc_heading_occurrences": 1564,
+  "resolved_markdown_links": 585,
   "curated_mechanisms": 14,
   "curated_source_files": [
     "src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs",

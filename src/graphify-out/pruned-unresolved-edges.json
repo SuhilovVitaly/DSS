@@ -359,6 +359,57 @@
       "confidence_score": 1.0
     },
     {
+      "source": "src_deepspacesaga_client_snapshotbuffer_presentation",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Client/SnapshotBuffer.Presentation.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_client_snapshotbuffer_presentation",
+      "target": "system_diagnostics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Client/SnapshotBuffer.Presentation.cs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Diagnostics",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_client_snapshotbuffer_presentation",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Client/SnapshotBuffer.Presentation.cs",
+      "source_location": "L3",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "src_deepspacesaga_client_ui_assets_uiassetloader",
       "target": "skiasharp",
       "relation": "imports",
@@ -1328,6 +1379,40 @@
       "confidence_score": 1.0
     },
     {
+      "source": "src_deepspacesaga_client_ui_screens_gamesession_combatforecastcache",
+      "target": "system_collections_concurrent",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatForecastCache.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Concurrent",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_client_ui_screens_gamesession_combatforecastcache",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatForecastCache.cs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "src_deepspacesaga_client_ui_screens_gamesession_combatreportassets",
       "target": "system_text_json",
       "relation": "imports",
@@ -1594,6 +1679,23 @@
       "metadata": {
         "using_kind": "namespace",
         "target_fqn": "SkiaSharp",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_client_ui_screens_gamesession_gamesessionscreen_combatforecast",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CombatForecast.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
         "scope_kind": "file"
       },
       "_origin": "ast",
@@ -3131,6 +3233,40 @@
       "confidence_score": 1.0
     },
     {
+      "source": "src_deepspacesaga_contracts_combatpresentationupdate",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Contracts/CombatPresentationUpdate.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_contracts_combatpresentationupdate",
+      "target": "system_text_json_serialization",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Contracts/CombatPresentationUpdate.cs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json.Serialization",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "src_deepspacesaga_contracts_combatsnapshot",
       "target": "system_collections_immutable",
       "relation": "imports",
@@ -4236,6 +4372,23 @@
       "confidence_score": 1.0
     },
     {
+      "source": "src_deepspacesaga_engine_scenario_combatreactionsavedata",
+      "target": "system_text_json_serialization",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/Scenario/CombatReactionSaveData.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json.Serialization",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "src_deepspacesaga_engine_scenario_combatreportssavedata",
       "target": "system_text_json_serialization",
       "relation": "imports",
@@ -4780,6 +4933,40 @@
       "confidence_score": 1.0
     },
     {
+      "source": "src_deepspacesaga_engine_simulationengine_combatreactions",
+      "target": "system_globalization",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Globalization",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_engine_simulationengine_combatreactions",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "src_deepspacesaga_engine_simulationengine_combatreports",
       "target": "system_collections_immutable",
       "relation": "imports",
@@ -4893,6 +5080,57 @@
       "metadata": {
         "using_kind": "namespace",
         "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_engine_simulationengine_presentation",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/SimulationEngine.Presentation.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_engine_simulationengine_presentation",
+      "target": "system_diagnostics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/SimulationEngine.Presentation.cs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Diagnostics",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "src_deepspacesaga_engine_simulationengine_presentation",
+      "target": "system_runtime_compilerservices",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Engine/SimulationEngine.Presentation.cs",
+      "source_location": "L3",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Runtime.CompilerServices",
         "scope_kind": "file"
       },
       "_origin": "ast",
@@ -5256,6 +5494,23 @@
       "confidence_score": 1.0
     },
     {
+      "source": "src_deepspacesaga_motion_combatforecast",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "src/DeepSpaceSaga.Motion/CombatForecast.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "src_deepspacesaga_motion_torpedoguidancemath",
       "target": "system_collections_immutable",
       "relation": "imports",
@@ -5528,6 +5783,40 @@
       "confidence_score": 1.0
     },
     {
+      "source": "tests_deepspacesaga_client_tests_combatforecastcachetests",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatForecastCacheTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_combatforecastcachetests",
+      "target": "xunit_abstractions",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatForecastCacheTests.cs",
+      "source_location": "L5",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "Xunit.Abstractions",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "tests_deepspacesaga_client_tests_combatjournalpaneltests",
       "target": "skiasharp",
       "relation": "imports",
@@ -5675,6 +5964,57 @@
       "metadata": {
         "using_kind": "namespace",
         "target_fqn": "SkiaSharp",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_combatpresentationtests",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatPresentationTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_combatpresentationtests",
+      "target": "system_diagnostics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatPresentationTests.cs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Diagnostics",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_combatpresentationtests",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatPresentationTests.cs",
+      "source_location": "L3",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
         "scope_kind": "file"
       },
       "_origin": "ast",
@@ -6197,7 +6537,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatReportScreenFlowTests.cs",
-      "source_location": "L7",
+      "source_location": "L8",
       "weight": 1.0,
       "metadata": {
         "using_kind": "namespace",
@@ -6214,7 +6554,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatReportScreenFlowTests.cs",
-      "source_location": "L8",
+      "source_location": "L9",
       "weight": 1.0,
       "metadata": {
         "using_kind": "namespace",
@@ -6231,7 +6571,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatReportScreenFlowTests.cs",
-      "source_location": "L9",
+      "source_location": "L10",
       "weight": 1.0,
       "metadata": {
         "using_kind": "static",
@@ -6277,12 +6617,29 @@
     },
     {
       "source": "tests_deepspacesaga_client_tests_combattrajectorytests",
-      "target": "system_diagnostics",
+      "target": "system_collections_immutable",
       "relation": "imports",
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatTrajectoryTests.cs",
       "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_combattrajectorytests",
+      "target": "system_diagnostics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatTrajectoryTests.cs",
+      "source_location": "L2",
       "weight": 1.0,
       "metadata": {
         "using_kind": "namespace",
@@ -6299,7 +6656,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatTrajectoryTests.cs",
-      "source_location": "L2",
+      "source_location": "L3",
       "weight": 1.0,
       "metadata": {
         "using_kind": "namespace",
@@ -6316,7 +6673,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Client.Tests/CombatTrajectoryTests.cs",
-      "source_location": "L7",
+      "source_location": "L8",
       "weight": 1.0,
       "metadata": {
         "using_kind": "namespace",
@@ -8062,6 +8419,23 @@
       "confidence_score": 1.0
     },
     {
+      "source": "tests_deepspacesaga_client_tests_manualdefensepreviewtests",
+      "target": "xunit_abstractions",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/ManualDefensePreviewTests.cs",
+      "source_location": "L12",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "Xunit.Abstractions",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "tests_deepspacesaga_client_tests_manualdefenseuiflowtests",
       "target": "system_collections_immutable",
       "relation": "imports",
@@ -8308,6 +8682,40 @@
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Client.Tests/NinePatchTests.cs",
       "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "SkiaSharp",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_npcobservedtrajectorytests",
+      "target": "system_diagnostics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/NpcObservedTrajectoryTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Diagnostics",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_client_tests_npcobservedtrajectorytests",
+      "target": "skiasharp",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/NpcObservedTrajectoryTests.cs",
+      "source_location": "L6",
       "weight": 1.0,
       "metadata": {
         "using_kind": "namespace",
@@ -10308,6 +10716,23 @@
       "confidence_score": 1.0
     },
     {
+      "source": "tests_deepspacesaga_client_tests_torpedopreviewtests",
+      "target": "xunit_abstractions",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Client.Tests/TorpedoPreviewTests.cs",
+      "source_location": "L12",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "Xunit.Abstractions",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "tests_deepspacesaga_client_tests_torpedoselfdestructuitests",
       "target": "system_diagnostics",
       "relation": "imports",
@@ -10757,6 +11182,23 @@
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Contracts.Tests/CombatEventTests.cs",
       "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_contracts_tests_combatforecastcontracttests",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Contracts.Tests/CombatForecastContractTests.cs",
+      "source_location": "L1",
       "weight": 1.0,
       "metadata": {
         "using_kind": "namespace",
@@ -12025,6 +12467,74 @@
       "confidence_score": 1.0
     },
     {
+      "source": "tests_deepspacesaga_engine_tests_combatforecastenginemaneuvertests",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatForecastEngineManeuverTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatforecaststationaryguidancetests",
+      "target": "system_collections_immutable",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatForecastStationaryGuidanceTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Collections.Immutable",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatforecasttests",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatForecastTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatforecasttests",
+      "target": "xunit_abstractions",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatForecastTests.cs",
+      "source_location": "L4",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "Xunit.Abstractions",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
       "source": "tests_deepspacesaga_engine_tests_combatjournaltests",
       "target": "deepspacesaga_engine_tests_torpedoimpacttests",
       "relation": "imports",
@@ -12053,6 +12563,91 @@
       "metadata": {
         "using_kind": "static",
         "target_fqn": "DeepSpaceSaga.Engine.Tests.AutomaticDefenseTests",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatpresentationtests",
+      "target": "system_diagnostics",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatPresentationTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Diagnostics",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatpresentationtests",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatPresentationTests.cs",
+      "source_location": "L2",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatpresentationtests",
+      "target": "deepspacesaga_engine_tests_torpedoimpacttests",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatPresentationTests.cs",
+      "source_location": "L5",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "static",
+        "target_fqn": "DeepSpaceSaga.Engine.Tests.TorpedoImpactTests",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatreactiondelaytests",
+      "target": "system_text_json",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatReactionDelayTests.cs",
+      "source_location": "L1",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "namespace",
+        "target_fqn": "System.Text.Json",
+        "scope_kind": "file"
+      },
+      "_origin": "ast",
+      "confidence_score": 1.0
+    },
+    {
+      "source": "tests_deepspacesaga_engine_tests_combatreactiondelaytests",
+      "target": "deepspacesaga_engine_tests_torpedoimpacttests",
+      "relation": "imports",
+      "context": "import",
+      "confidence": "EXTRACTED",
+      "source_file": "tests/DeepSpaceSaga.Engine.Tests/CombatReactionDelayTests.cs",
+      "source_location": "L4",
+      "weight": 1.0,
+      "metadata": {
+        "using_kind": "static",
+        "target_fqn": "DeepSpaceSaga.Engine.Tests.TorpedoImpactTests",
         "scope_kind": "file"
       },
       "_origin": "ast",
@@ -13051,7 +13646,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Engine.Tests/DualDefenseArbitrationTests.cs",
-      "source_location": "L3",
+      "source_location": "L4",
       "weight": 1.0,
       "metadata": {
         "using_kind": "static",
@@ -13068,7 +13663,7 @@
       "context": "import",
       "confidence": "EXTRACTED",
       "source_file": "tests/DeepSpaceSaga.Engine.Tests/DualDefenseArbitrationTests.cs",
-      "source_location": "L4",
+      "source_location": "L5",
       "weight": 1.0,
       "metadata": {
         "using_kind": "static",

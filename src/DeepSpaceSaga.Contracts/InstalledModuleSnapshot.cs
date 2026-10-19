@@ -73,4 +73,8 @@ public sealed record InstalledModuleSnapshot(
     /// <summary>Absolute physical time when a non-destroyed module becomes available again.</summary>
     double? DisabledUntilMotionTimeMs = null,
     bool IsDestroyed = false,
-    string? CombatRole = null);
+    string? CombatRole = null,
+    /// <summary>Snapshot-only maximum life of a newly launched torpedo, in physical ms.
+    /// Null means unavailable; this module projection is never part of save state.</summary>
+    [property: JsonPropertyName("torpedoMaxFlightTimeMs"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    long? TorpedoMaxFlightTimeMs = null);

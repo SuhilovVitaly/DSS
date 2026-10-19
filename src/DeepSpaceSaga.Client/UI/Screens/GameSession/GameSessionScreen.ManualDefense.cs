@@ -11,7 +11,10 @@ public sealed partial class GameSessionScreen
     internal CombatTrajectoryProjector.Geometry? ManualDefensePreviewGeometry { get; private set; }
     internal WeaponPanelInstance? ManualDefensePreviewWeapon { get; private set; }
     internal string? ManualDefensePreviewMessage { get; private set; }
-    private (AuthoritativeSnapshot Snapshot, WeaponPanelInstance Weapon)? _manualPreviewKey;
+    internal (double Launch, double Target, double Defense) ManualPreviewPreparationMs { get; private set; }
+    private (AuthoritativeSnapshot Snapshot, WeaponPanelInstance Weapon, long Time)? _manualPreviewKey;
+    private (double X, double Y, TorpedoRoute Route, long Time, long Lifetime, double Speed, double Turn,
+        double? FirstContact)? _manualLaunchPlanKey;
 
     private WeaponPanelInstance? ManualPreviewWeapon() => _hasMousePosition &&
         !(_panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY)) &&
@@ -20,36 +23,87 @@ public sealed partial class GameSessionScreen
             b.Rect.Contains(_uiMouseX, _uiMouseY)).Weapon is { } weapon && IsDefenseCommandEnabled(weapon, DefenseCommandTypes.Fire)
             ? weapon : null;
 
-    private void DrawManualDefensePreview(SKCanvas canvas, SnapshotPrediction? prediction, bool resized)
+    private void PrepareManualDefenseForecast(SnapshotPrediction? prediction)
     {
         var snapshot = prediction?.BufferedSnapshot.Snapshot;
         var weapon = ManualPreviewWeapon();
-        if (resized || snapshot is null || weapon is null || DefenseModule(weapon) is not { Defense: { } defense } module ||
-            defense.SpeedKmS is not > 0 || defense.TurnRateDegPerSec is not > 0 || defense.MaxFlightTimeMs is not > 0 ||
+        if (snapshot is null || weapon is null || DefenseModule(weapon) is not { Defense: { } defense } module ||
             snapshot.Objects.FirstOrDefault(o => o.ObjectId == weapon.OwnerObjectId) is not { } owner ||
-            snapshot.Objects.FirstOrDefault(o => o.ObjectId == _selectedObjectId)?.Torpedo is not { } target)
+            snapshot.Objects.FirstOrDefault(o => o.ObjectId == _selectedObjectId) is not { Torpedo: { } target } targetObject)
         {
             ManualDefensePreviewPlan = null;
             ManualDefensePreviewGeometry = null;
             ManualDefensePreviewWeapon = null;
             ManualDefensePreviewMessage = null;
             _manualPreviewKey = null;
+            _manualLaunchPlanKey = null;
             return;
         }
-        var key = (snapshot, weapon);
-        if (_manualPreviewKey != key)
+        long delta = CombatPredictionDelta(prediction!);
+        long time = snapshot.MotionTimeMs + delta;
+        var key = (snapshot, weapon, time);
+        if (_manualPreviewKey == key) return;
+        owner = _predictor.Predict(owner, delta);
+        targetObject = _predictor.Predict(targetObject, delta);
+        target = targetObject.Torpedo!;
+        if (defense.SpeedKmS is not > 0 || defense.TurnRateDegPerSec is not > 0 || defense.MaxFlightTimeMs is not > 0 ||
+            time > long.MaxValue - defense.MaxFlightTimeMs.Value)
         {
-            ManualDefensePreviewPlan = CountermeasureGuidanceMath.PlanManualLaunch(owner, target.Route, snapshot.MotionTimeMs,
+            ManualDefensePreviewPlan = null;
+            ManualDefensePreviewWeapon = weapon;
+            ManualDefensePreviewGeometry = new([new(owner.X, owner.Y)], [], null)
+            { Status = CombatForecastStatus.InsufficientData, EndMotionTimeMs = time };
+            ManualDefensePreviewMessage = CombatText("Forecast.InsufficientData", "Insufficient data");
+            _manualPreviewKey = key;
+            return;
+        }
+        // AimLaunch sets the release heading independently of the carrier's
+        // heading/speed. Reuse that plan when its actual physical inputs agree.
+        var launchKey = (owner.X, owner.Y, target.Route, time, defense.MaxFlightTimeMs.Value,
+            defense.SpeedKmS.Value, defense.TurnRateDegPerSec.Value, module.DefensePreview?.FirstTargetContactMotionTimeMs);
+        long launchAt = System.Diagnostics.Stopwatch.GetTimestamp();
+        if (_manualLaunchPlanKey != launchKey || ManualDefensePreviewPlan is null)
+        {
+            ManualDefensePreviewPlan = CountermeasureGuidanceMath.PlanManualLaunch(owner, target.Route, time,
                 defense.MaxFlightTimeMs.Value, defense.SpeedKmS.Value, defense.TurnRateDegPerSec.Value,
                 module.DefensePreview?.FirstTargetContactMotionTimeMs);
-            _manualPreviewKey = key;
+            _manualLaunchPlanKey = launchKey;
         }
+        var shipSource = snapshot.Objects.FirstOrDefault(o => o.ObjectId == target.TargetObjectId);
+        var ship = shipSource is null ? null : _predictor.Predict(shipSource, delta);
+        var flight = new CountermeasureSnapshot(owner.ObjectId, weapon.ModuleId, targetObject.ObjectId,
+            CountermeasurePhase.Guiding, ManualDefensePreviewPlan.Route, time, module.DefensePreview?.ChanceTenths ?? 0,
+            new(defense.Operator!, target.TorpedoRating ?? 0), Mode: LaunchMode.Manual,
+            ExpiresAtMotionTimeMs: time + defense.MaxFlightTimeMs.Value,
+            SpeedKmS: defense.SpeedKmS, TurnRateDegPerSec: defense.TurnRateDegPerSec);
+        var origin = ManualDefensePreviewPlan.Route.Segments[0];
+        var proposed = new ObjectMotionSnapshot("defense-preview", origin.X, origin.Y, origin.SpeedKmS, origin.Direction, Countermeasure: flight);
+        var options = new CombatForecastOptions(CombatSettings.ForecastHorizonMs, MaxSteps: PreviewForecastSteps);
+        long targetAt = System.Diagnostics.Stopwatch.GetTimestamp();
+        // Active flights were prepared from this same displayed scene above.
+        // Reuse their immutable dependent path instead of forecasting it twice.
+        var targetForecast = _combatForecastCache.Results.TryGetValue(targetObject.ObjectId, out var prepared) &&
+            prepared.StartMotionTimeMs == time && prepared.Status is not
+                (CombatForecastStatus.Recalculating or CombatForecastStatus.CalculationLimited)
+            ? prepared : CombatForecast.Torpedo(targetObject, ship, time, options);
+        long defenseAt = System.Diagnostics.Stopwatch.GetTimestamp();
+        var result = CombatForecast.Countermeasure(proposed, targetObject, targetForecast, time, options);
+        ManualPreviewPreparationMs = (System.Diagnostics.Stopwatch.GetElapsedTime(launchAt, targetAt).TotalMilliseconds,
+            System.Diagnostics.Stopwatch.GetElapsedTime(targetAt, defenseAt).TotalMilliseconds,
+            System.Diagnostics.Stopwatch.GetElapsedTime(defenseAt).TotalMilliseconds);
+        ManualDefensePreviewGeometry = CombatTrajectoryProjector.FromForecast(result, time);
         ManualDefensePreviewWeapon = weapon;
-        ManualDefensePreviewGeometry = CombatTrajectoryProjector.ProjectManual(ManualDefensePreviewPlan!, target.Route,
-            snapshot.MotionTimeMs, defense.MaxFlightTimeMs.Value, _camera);
-        DrawCombatGeometry(canvas, ManualDefensePreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
-        ManualDefensePreviewMessage = ManualDefensePreviewGeometry.Intercept is null ? CombatText("UnknownIntercept", "Intercept unknown") : null;
-        if (ManualDefensePreviewGeometry.Intercept is { } intercept && module.DefensePreview?.ChanceTenths is { } chance)
+        ManualDefensePreviewMessage = result.Status == CombatForecastStatus.Contact ? null :
+            CombatText("Forecast." + result.Status, "Forecast limited");
+        _manualPreviewKey = key;
+    }
+
+    private void DrawManualDefensePreview(SKCanvas canvas, SnapshotPrediction? prediction, bool resized)
+    {
+        if (ManualDefensePreviewGeometry is not { } geometry) return;
+        DrawCombatGeometry(canvas, geometry, CombatSettings.Preview, CombatSettings.Preview);
+        if (geometry.Intercept is { } intercept && ManualDefensePreviewWeapon is { } weapon &&
+            DefenseModule(weapon)?.DefensePreview?.ChanceTenths is { } chance)
         {
             var (x, y) = _camera.WorldToScreen(intercept.X, intercept.Y, _viewportW, _viewportH);
             using var text = new SKPaint { Color = CombatSettings.Preview, TextSize = 12, IsAntialias = true };

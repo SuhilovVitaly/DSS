@@ -114,7 +114,7 @@ public sealed partial class SimulationEngine
         if (!CombatRangeMath.IsWithinRange(origin, targetPose, launcher.RangeKm!.Value))
             return CommandStartOutcome.Rejected("target_out_of_range");
         var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-        long lifetime = moduleType.TorpedoMaxFlightTimeMs ?? 120000;
+        long lifetime = TorpedoLifetimeMs(moduleType);
         if (motionTimeMs > long.MaxValue - lifetime) return CommandStartOutcome.Rejected("invalid_time");
         var route = TorpedoGuidanceMath.Plan(origin, targetPose, launcher.SpeedKmS, launcher.TurnRateDegPerSec, motionTimeMs);
         if (!TryGetNextTorpedoId(out string id, out long sequence))
@@ -217,8 +217,10 @@ public sealed partial class SimulationEngine
             motionTimeMs, point.X, point.Y, final.Trail, TerminationKind: kind));
     }
 
-    private static long NextGuidanceBoundary(long time) => time > long.MaxValue - 100
-        ? long.MaxValue : time - time % 100 + 100;
+    private static long TorpedoLifetimeMs(DeepSpaceSaga.Engine.Content.ModuleTypeDefinition moduleType) =>
+        moduleType.TorpedoMaxFlightTimeMs ?? 120000;
+
+    private static long NextGuidanceBoundary(long time) => CombatGuidanceRules.NextBoundary(time);
 
     private static long? ImpactTime(TorpedoRoute route)
     {
@@ -731,10 +733,7 @@ public sealed partial class SimulationEngine
                 {
                     // The intercept assumes constant target velocity. Compare against
                     // that assumption, not a curved predictor that could hide a turn.
-                    var expected = TorpedoGuidanceMath.PredictSegment(new(baseline.Pose.X, baseline.Pose.Y,
-                        baseline.Pose.Direction, baseline.Pose.SpeedKmS, 0, 0), motionTimeMs - baseline.Time);
-                    changed = Math.Abs(expected.X - pose.X) > 1e-6 || Math.Abs(expected.Y - pose.Y) > 1e-6 ||
-                        Math.Abs((expected.Direction - pose.Direction + 540) % 360 - 180) > 1e-8 || baseline.Pose.SpeedKmS != pose.SpeedKmS;
+                    changed = CombatGuidanceRules.TargetChanged(baseline.Pose, motionTimeMs - baseline.Time, pose);
                 }
                 if (!changed && !(boundary && (!flight.Route.HasIntercept ||
                     flight.Route.ElapsedMs >= flight.Route.Segments.Sum(s => s.DurationMs)))) continue;

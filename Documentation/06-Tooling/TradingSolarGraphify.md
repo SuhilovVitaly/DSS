@@ -1,5 +1,13 @@
 # DSS Graphify — актуальная перестройка EP-0010
 
+## Текущая перестройка EP-0011 — 2026-10-18
+
+Ниже сохранены датированные предыдущие перестройки. Текущий граф: 13620 узлов, 47142 связи, 419 сообществ; корпус 735 code / 143 Markdown. Добавлены новые NPC observations и Board EP-0011, обновлены реальные source locations. HTML агрегирован (более 5000 узлов); полный JSON доступен. [Контракт](../04-Engineering/NpcObservedTrajectories.md) · [текущий execution/evidence](../../Board/EP-0011-short-fixes/ImplementationStatus.md) · [проверка хешей и целостности](../../Board/EP-0011-short-fixes/evidence/graph-check.json).
+
+Перестройка src/graphify-out/rebuild.py выполнена offline без --force; shrink guard сохранён. Structural AST/Markdown coverage обновлено, selective curated semantics остаются EP-0010; новая NPC документация не объявляется полной semantic extraction. 1027 unresolved AST endpoint edges явно исключены, 2606 reference-only symbols не имеют локальной declaration location; diagnostics и extraction.json сохраняют ограничения. Missing source files, invalid locations, dangling edges и self-loops: 0. Все 878 input SHA256 и artifact hashes проверены. Token usage unmeasured; нулевая стоимость не заявляется.
+
+Pre-export HEAD: 246987bb7c904f4dc779512e8f5ff42b0ff51061. Source hashes описывают итоговое рабочее дерево документационного тикета. Generated execution report/evidence и self-referential tooling index исключены из source hashes; это не доказательство игрового поведения/native/FPS. Native/human OPEN.
+
 2026-10-16. Текущий output: `src/graphify-out`. [Исполнение/evidence](../../Board/EP-0010-combat-reports/ImplementationStatus.md), [контракт докладов](../04-Engineering/CombatReports.md). Graphify — навигация, не доказательство runtime, детерминизма, баланса, human/native/FPS acceptance. Самостоятельные игровые/native/performance запуски запрещены пользователем. Builder выполняет только offline Python/AST/Markdown, не запускает игру и не обращается к внешним API.
 
 | Область | Проверенный результат |
