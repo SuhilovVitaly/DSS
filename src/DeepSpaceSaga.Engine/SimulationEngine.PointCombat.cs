@@ -13,13 +13,13 @@ public sealed partial class SimulationEngine
         lock (_worldStateLock) return (_launchScatterRng.State, _launchScatterRng.Counter);
     }
 
-    private CommandStartOutcome TryStartPointLaunch(PlayerCommand command, long motionTimeMs)
+    private CommandStartOutcome TryStartPointLaunch(PlayerCommand command, long motionTimeMs, ProjectileKind kind = ProjectileKind.Torpedo)
     {
         var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId &&
             o.InitialMotion.ObjectId == PlayerShipObjectId && o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
         if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
         var result = TryLaunchPointProjectile(owner, command.ModuleId, command.TargetWorldX, command.TargetWorldY,
-            command.ProfileId, motionTimeMs, ProjectileKind.Torpedo);
+            command.ProfileId, motionTimeMs, kind);
         if (result.Disposition == CommandStartDisposition.Started)
         {
             _processedLaunchCommandIds.Add(command.CommandId);
@@ -47,23 +47,28 @@ public sealed partial class SimulationEngine
         if (index < 0) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
         var module = owner.Modules[index];
         var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-        if (kind != ProjectileKind.Torpedo || type.CategoryTypeId != "module.torpedo.launcher" ||
-            !type.IsPointLauncher || !type.CommandTypeIds.Contains(CombatCommandTypes.Launch))
+        bool torpedo = kind == ProjectileKind.Torpedo;
+        string category = torpedo ? "module.torpedo.launcher" : "module.countermeasure.launcher";
+        string commandType = torpedo ? CombatCommandTypes.Launch : DefenseCommandTypes.Launch;
+        if (type.CategoryTypeId != category || !type.IsPointLauncher || !type.CommandTypeIds.Contains(commandType))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
         var key = (owner.InitialMotion.ObjectId, moduleId);
-        if (!_launcherCombat.TryGetValue(key, out var launcher))
+        _launcherCombat.TryGetValue(key, out var launcher);
+        _defenses.TryGetValue(key, out var defense);
+        if (torpedo ? launcher is null : defense is null)
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
         if (!CanExecuteModuleCommand(module, motionTimeMs))
             return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
         if (module.ActiveCycle is not null) return CommandStartOutcome.Rejected(CommandReasonCodes.Busy);
-        if (launcher.ReadyAtMotionTimeMs is { } ready && motionTimeMs < ready)
+        double? readyAt = torpedo ? launcher!.ReadyAtMotionTimeMs : defense!.ReadyAtMotionTimeMs ?? defense.ReloadDueMotionTimeMs;
+        if (readyAt is { } ready && motionTimeMs < ready)
             return CommandStartOutcome.Rejected(CommandReasonCodes.LauncherReloading);
         if (string.IsNullOrWhiteSpace(profileId)) return CommandStartOutcome.Rejected(CommandReasonCodes.MissingProfile);
         var profile = type.Profiles.FirstOrDefault(p => p.ProfileId == profileId);
         if (profile is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownProfile);
         if (targetX is not { } x || targetY is not { } y || !double.IsFinite(x) || !double.IsFinite(y))
             return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidTargetCoordinates);
-        var weaponOperator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack);
+        var weaponOperator = ResolveWeaponOperator(owner, module, torpedo ? WeaponSkillType.TorpedoAttack : WeaponSkillType.CountermeasureDefense);
         if (weaponOperator is null) return CommandStartOutcome.Rejected(CommandReasonCodes.NoWeaponOperator);
         var origin = PredictMotion(owner, Math.Max(0, motionTimeMs - owner.StartGameTimeMs));
         double dx = (x - origin.X) / WorldUnitsPerKm, dy = (y - origin.Y) / WorldUnitsPerKm;
@@ -73,7 +78,8 @@ public sealed partial class SimulationEngine
             return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidTime);
         if (_registry.CombatRules?.Scatter is not { } rules)
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
-        if (!TryGetNextTorpedoId(out string id, out long sequence))
+        bool allocated = torpedo ? TryGetNextTorpedoId(out string id, out long sequence) : TryGetNextCountermeasureId(out id, out sequence);
+        if (!allocated)
             return CommandStartOutcome.Rejected(CommandReasonCodes.ProjectileIdExhausted);
 
         // Stage the draw and geometry. Any numeric rejection leaves RNG, sequence and reload untouched.
@@ -92,21 +98,42 @@ public sealed partial class SimulationEngine
         double direction = (Math.Atan2(finalDx, -finalDy) * 180 / Math.PI + 360) % 360;
         var flight = new OwnProjectileSnapshot(kind, owner.InitialMotion.ObjectId, moduleId, origin.X, origin.Y,
             origin.X, origin.Y, endpointX, endpointY, motionTimeMs, deadline, profile.SpeedKmS,
-            profile.ProfileId, profile.BlastRadiusKm, type.TorpedoDamage!.Value,
-            type.ArmorPiercingPercent!.Value, type.ArmorDamagePercent ?? 100);
+            profile.ProfileId, profile.BlastRadiusKm, torpedo ? type.TorpedoDamage!.Value : 0,
+            torpedo ? type.ArmorPiercingPercent!.Value : 0, type.ArmorDamagePercent ?? 100);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, profile.SpeedKmS, direction, OwnProjectile: flight);
-        _objects.Add(new(motion, SpaceObjectType.Missile, motionTimeMs, [], Name: "Torpedo", IsKnown: true));
-        var active = launcher.ActiveTorpedoIds.IsDefault ? [] : launcher.ActiveTorpedoIds;
-        _launcherCombat[key] = launcher with
+        _objects.Add(new(motion, torpedo ? SpaceObjectType.Missile : SpaceObjectType.Countermeasure,
+            motionTimeMs, [], Name: torpedo ? "Torpedo" : "Countermissile", IsKnown: true));
+        if (torpedo)
         {
-            ActiveTorpedoIds = active.Add(id),
-            ReadyAtMotionTimeMs = motionTimeMs + (double)type.ReloadMs.Value,
-            Operator = weaponOperator
-        };
-        _torpedoSequence = sequence;
+            var active = launcher!.ActiveTorpedoIds.IsDefault ? [] : launcher.ActiveTorpedoIds;
+            _launcherCombat[key] = launcher with
+            {
+                ActiveTorpedoIds = active.Add(id),
+                ReadyAtMotionTimeMs = motionTimeMs + (double)type.ReloadMs.Value,
+                Operator = weaponOperator
+            };
+            _torpedoSequence = sequence;
+        }
+        else
+        {
+            var active = defense!.ActiveProjectileIds ?? [];
+            active = active.Add(id);
+            _defenses[key] = defense with
+            {
+                AutoEnabled = false,
+                State = DefenseState.Reloading,
+                ActiveProjectileId = active[0],
+                ActiveProjectileIds = active,
+                PendingBurstShots = [],
+                ReadyAtMotionTimeMs = motionTimeMs + (double)type.ReloadMs.Value,
+                ReloadDueMotionTimeMs = motionTimeMs + (double)type.ReloadMs.Value,
+                Operator = weaponOperator
+            };
+            _countermeasureSequence = sequence;
+        }
         _launchScatterRng = random;
         AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, string.Empty, id,
-            origin.X, origin.Y, Result: "torpedo", ProjectileKind: kind, ProfileId: profile.ProfileId, BlastRadiusKm: profile.BlastRadiusKm));
+            origin.X, origin.Y, Result: torpedo ? "torpedo" : "countermissile", ProjectileKind: kind, ProfileId: profile.ProfileId, BlastRadiusKm: profile.BlastRadiusKm));
         return CommandStartOutcome.Started;
     }
 

@@ -978,9 +978,9 @@ public sealed partial class SimulationEngine : IDisposable
                 Defense: ProjectModuleDefense(ship, module),
                 Operator: moduleType.TorpedoDamage is not null
                     ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
-                    : moduleType.CountermeasureAccuracy is not null
+                    : moduleType.CountermeasureAccuracy is not null || moduleType.IsPointLauncher && moduleType.CategoryTypeId == "module.countermeasure.launcher"
                         ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null,
-                DefensePreview: BuildDefensePreview(ship, module, motionTimeMs),
+                DefensePreview: moduleType.IsPointLauncher ? null : BuildDefensePreview(ship, module, motionTimeMs),
                 ArmorCurrent: module.Armor,
                 ArmorMax: module.ArmorMax,
                 StructureCurrent: module.StructurePoints,
@@ -2446,6 +2446,8 @@ public sealed partial class SimulationEngine : IDisposable
 
         if (command.CommandType == CombatCommandTypes.Launch)
             return TryStartPointLaunch(command, gameTimeMs);
+        if (command.CommandType == DefenseCommandTypes.Launch)
+            return TryStartPointLaunch(command, gameTimeMs, ProjectileKind.Countermissile);
         if (command.CommandType == CombatCommandTypes.Detonate)
             return TryStartPointDetonation(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Fire)

@@ -22,6 +22,8 @@ public sealed partial class SimulationEngine
         var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId);
         var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == command.ModuleId);
         if (module is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+        if (_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).IsPointLauncher)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
         if (!CanExecuteModuleCommand(module, motionTimeMs))
             return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, motionTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
         ClearCombatReactions(command.ObjectId, command.ModuleId, "defense");
@@ -258,6 +260,17 @@ public sealed partial class SimulationEngine
             foreach (var module in owner.Modules)
             {
                 var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+                if (type.IsPointLauncher && type.CategoryTypeId == "module.countermeasure.launcher")
+                {
+                    if (owner.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
+                        throw new ScenarioException($"Defense module '{module.ModuleId}' must be installed on a ship.");
+                    var op = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
+                    result.Add((owner.InitialMotion.ObjectId, module.ModuleId), new(false, op,
+                        op is null ? DefenseState.NoOperator : DefenseState.Ready, RangeKm: type.RangeKm!.Value,
+                        PendingBurstShots: [], ActiveProjectileIds: [], ReloadDurationMs: type.ReloadMs,
+                        Profiles: type.Profiles, ScatterPercent: type.ScatterPercent));
+                    continue;
+                }
                 if (type.CountermeasureAccuracy is null) continue;
                 if (owner.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
                     throw new ScenarioException($"Defense module '{module.ModuleId}' must be installed on a ship.");
@@ -446,6 +459,10 @@ public sealed partial class SimulationEngine
 
     private DefenseSnapshot? ProjectModuleDefense(SpaceObjectRuntime owner, InstalledModuleRuntime module) =>
         _defenses.GetValueOrDefault((owner.InitialMotion.ObjectId, module.ModuleId)) is { } defense
-            ? defense with { ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureReloadMs }
+            ? defense with
+            {
+                ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex) is { IsPointLauncher: true } point
+                ? point.ReloadMs : _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureReloadMs
+            }
             : null;
 }

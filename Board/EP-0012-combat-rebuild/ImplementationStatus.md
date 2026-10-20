@@ -46,7 +46,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | Fix / US-0017-TK-0001 locale consumer | Reproduced full Client 2128 passed / 1 failed; locale correction PASS 3/3, original assertions retained | `809bd18e3d2d226927efe7438eccb74a2d9d1c12`, origin SHA verified |
 | 11 / US-0003-TK-0002-torpedo-point-launch | PASS 15 named / 242 bounded regression; build/format/diff PASS | `ce2dcf9d55c9656cd32a6158551647dcb002ec5d`, origin SHA verified |
 | 12 / US-0003-TK-0003-torpedo-area-detonation | PASS 13 named / 273 bounded regression; build/format/diff PASS | `e1e34582d43d87194c0352e8103f31d02572adca`, origin SHA verified |
-| 13 / US-0003-TK-0004-manual-detonation | PASS 4 named / 289 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 13 / US-0003-TK-0004-manual-detonation | PASS 4 named / 289 bounded regression; build/format/diff PASS | `40ded2cbb65ee98eca483b889238e465a1f041bf`, origin SHA verified |
+| 14 / US-0004-TK-0001-countermissile-point-launch | PASS 11 named / 341 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

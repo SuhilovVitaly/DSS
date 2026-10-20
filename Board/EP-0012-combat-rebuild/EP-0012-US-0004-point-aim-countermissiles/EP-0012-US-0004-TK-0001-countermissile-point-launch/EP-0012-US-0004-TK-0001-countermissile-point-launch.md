@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0004-point-aim-countermissiles"
 ticket: "EP-0012-US-0004-TK-0001-countermissile-point-launch"
 title: "countermissile-point-launch"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0003-TK-0004-manual-detonation"]
 files_touched: 4
 serves: ["US4-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0004-TK-0001-countermissile-point-launch
@@ -24,18 +24,20 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Актуальный allowlist остаётся 4 файла: shared executor уже находится в point partial, поэтому legacy ManualDefense.cs заменён этим файлом. Countermeasures.cs адаптирует реальный state builder/projection к profiles, Engine dispatcher/own module projection подключают новую команду. Противоракетный blast выполняется следующим тикетом.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs:8; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.ManualDefense.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.ManualDefense.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.ManualDefense.cs:7; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs) | Shared point-launch executor | Countermissile kind uses same validation/scatter/capture/motion path with defense readiness. |
 | [src/DeepSpaceSaga.Engine/SimulationEngine.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.cs:17; public sealed partial class SimulationEngine : IDisposable | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0004TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
 ## Public API after the change
 
 No public API change; внутренние детали ограничены перечисленным scope.
+
+Execution refinement: point-defense starts AutoEnabled=false, no burst/legacy forecast; legacy enable/disable rejected on point type. ReadyAt/ReloadDue capture12500ms at launch, independent of live flights; active IDs preserve concurrent flights. Countermissile captures damage/AP=0, common profiles/scatter and fractional endpoint deadline. Old countermeasure path remains only for legacy catalog until explicit cleanup. No separate RNG or countermeasure-only geometry introduced.
 
 ## Implementation steps
 
@@ -74,4 +76,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 11 named / 341 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0004-tk0001-results.json).
+
+Countermissile использует общий validation/scatter/capture/motion executor, тот же named stream и отдельную ID sequence. Range30 inclusive проверяется до RNG; profiles wide15/R1 и fast25/R0.5 захвачены, damage/AP0, scatter0.08, ready12500/25000 на boundary. Snapshot profiles/operator доступны владельцу; legacy forecast/burst/auto отсутствуют у point defense. Legacy enable rejected. Invalid/operator/off/disabled/destroyed не меняют RNG/state, replay не повторяет launch. Проверены общий RNG state после torpedo+counter и counter+counter, physical motion/pause. Собственно counter area detonation и удаление legacy механизмов остаются следующими тикетами; общие Engine/Client gates OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
