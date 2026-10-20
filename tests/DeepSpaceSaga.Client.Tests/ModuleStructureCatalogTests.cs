@@ -23,7 +23,7 @@ public sealed class ModuleStructureCatalogTests
         Assert.Equal("bridge", modules.Single(m => m.TypeId == "module.bridge.navigation.computer.basic").CombatRole);
         Assert.Contains(modules, m => m.TypeId == "living.quarters.mk1.three-cabins");
         Assert.Contains(modules, m => m.TypeId == "module.engine.strizh");
-        Assert.Contains(modules, m => m.TypeId == "module.countermeasure.launcher.single");
+        Assert.DoesNotContain(modules, m => m.TypeId == "module.countermeasure.launcher.single");
     }
 
     [Fact]

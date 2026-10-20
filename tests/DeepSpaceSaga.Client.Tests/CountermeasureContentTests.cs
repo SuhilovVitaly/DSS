@@ -96,17 +96,11 @@ public class CountermeasureContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Single_barrel_pd_exists(bool output)
+    public void Retired_single_launcher_is_absent(bool output)
     {
         var registry = Registry(output);
         var basic = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.countermeasure.launcher.basic"));
-        var single = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.countermeasure.launcher.single"));
-        Assert.Equal("module.countermeasure.launcher", single.CategoryTypeId);
-        Assert.Equal(1, single.Barrels);
-        Assert.Equal(2000, single.BurstIntervalMs);
-        Assert.Equal(58m, single.CountermeasureAccuracy);
-        Assert.Equal(14500, single.CountermeasureReloadMs);
-        Assert.Equal(basic.CommandTypeIds, single.CommandTypeIds);
-        Assert.True(basic.IsPointLauncher); Assert.False(single.IsPointLauncher); // Removed with CombatShmel in US9-TK2.
+        Assert.True(basic.IsPointLauncher);
+        Assert.False(registry.ModuleTypes.Contains("module.countermeasure.launcher.single"));
     }
 }

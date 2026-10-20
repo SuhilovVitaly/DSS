@@ -536,7 +536,6 @@
   "Combat.Field.LegacyHitChance": "Шанс попадания",
   "Combat.Module.module.container.basic": "Контейнер",
   "Combat.Module.module.countermeasure.launcher.basic": "Пусковая ПРО",
-  "Combat.Module.module.countermeasure.launcher.single": "Одноствольная ПУ ПРО",
   "Combat.Module.module.engine.basic": "Двигатель",
   "Combat.Module.module.engine.strizh": "Двигатель «Стриж»",
   "Combat.Module.module.engine.tetrarch": "Двигатель «Тетрарх»",

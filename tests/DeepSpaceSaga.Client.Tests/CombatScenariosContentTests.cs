@@ -10,7 +10,6 @@ public sealed class CombatScenariosContentTests
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
     private static readonly string ScenarioPath = Path.Combine(ClientRoot, "Scenarios", "CombatMukha", "scenario.json");
-    private static readonly string ShmelPath = Path.Combine(ClientRoot, "Scenarios", "CombatShmel", "scenario.json");
 
     [Fact]
     public void Mukha_scenario_is_listed_and_loads()
@@ -72,42 +71,4 @@ public sealed class CombatScenariosContentTests
         });
     }
 
-    [Fact]
-    public void Shmel_scenario_is_listed_loads_and_activates_three_hostiles()
-    {
-        var entry = Assert.Single(ScenarioRepository.ListScenarios(Path.Combine(ClientRoot, "Scenarios")),
-            item => item.ScenarioId == "combat_shmel");
-        Assert.Equal(ShmelPath, entry.ScenarioPath);
-        Assert.False(string.IsNullOrWhiteSpace(entry.Description));
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"), ShmelPath);
-        var paused = engine.CaptureSnapshotForTests();
-        Assert.Equal(4, paused.Objects.Count(o => o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip));
-        var fighting = engine.CaptureSnapshotForTests(1, simulationTimeMs: 1);
-        Assert.Equal(3, fighting.Objects.Count(o => o.HostileCombat?.DesiredRadiusKm == 50));
-    }
-
-    [Fact]
-    public void Shmel_has_single_barrel_defense_and_distinct_operator()
-    {
-        var scene = ScenarioLoader.LoadFromFile(ShmelPath);
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"), out _, out _);
-        var ships = scene.GameState.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.NpcShip).ToArray();
-        Assert.Equal(3, ships.Length);
-        for (int i = 0; i < ships.Length; i++)
-        {
-            var ship = ships[i];
-            Assert.Equal("ship.shmel", ship.ShipClassId);
-            Assert.Equal(PlayerRelation.Enemy, ship.RelationToPlayer);
-            Assert.Equal(new AttackAiData(50, 10, new double[] { -35, 0, 35 }[i]), ship.Ai);
-            Assert.Equal(3, ship.Modules!.Count);
-            Assert.Equal(3, ship.Crew!.Count);
-            Assert.Equal(3, ship.Modules.Select(m => m.OperatorCrewId).Distinct().Count());
-            var defense = Assert.Single(ship.Modules, m => m.ModuleTypeId == "module.countermeasure.launcher.single");
-            Assert.True(defense.AutoDefenseEnabled);
-            Assert.Equal(1, registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(defense.ModuleTypeId)).Barrels);
-            Assert.Contains(ship.Crew, c => c.CrewId == defense.OperatorCrewId);
-            Assert.All(ship.Modules, m => Assert.Equal("none", m.ArmorClass));
-            Assert.All(ship.Crew, c => { Assert.Equal(20, c.AccuracySkill); Assert.Equal(20, c.ManeuverabilitySkill); });
-        }
-    }
 }

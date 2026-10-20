@@ -11,7 +11,6 @@ public sealed class CombatBalanceReport
     [Theory]
     [Trait("Category", "Balance")]
     [InlineData("CombatMukha", 81.2)]
-    [InlineData("CombatShmel", 49.5)]
     public void Compare_one_hundred_real_engine_seeds_to_simulator_reference(string scenario, double referenceWinPercent)
     {
         var runs = Enumerable.Range(1, 100)

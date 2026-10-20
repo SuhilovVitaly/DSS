@@ -15,6 +15,8 @@
     <Delete Files="$(PublishDir)Data/CombatV3/Commands/TorpedoLauncher/commands.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Commands/TorpedoLauncher/commands.json')" />
     <Delete Files="$(TargetDir)Data/CombatV3/Commands/CountermeasureLauncher/commands.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Commands/CountermeasureLauncher/commands.json')" />
     <Delete Files="$(PublishDir)Data/CombatV3/Commands/CountermeasureLauncher/commands.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Commands/CountermeasureLauncher/commands.json')" />
+    <Delete Files="$(TargetDir)Scenarios/CombatShmel/scenario.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Scenarios/CombatShmel/scenario.json')" />
+    <Delete Files="$(PublishDir)Scenarios/CombatShmel/scenario.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Scenarios/CombatShmel/scenario.json')" />
   </Target>
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'DeepSpaceSaga.Engine.Tests' Or '$(MSBuildProjectName)' == 'DeepSpaceSaga.Client.Tests'">
     <Compile Include="$(MSBuildThisFileDirectory)tests/Support/LegacyCombatCatalog.cs" Link="Support/LegacyCombatCatalog.cs" />

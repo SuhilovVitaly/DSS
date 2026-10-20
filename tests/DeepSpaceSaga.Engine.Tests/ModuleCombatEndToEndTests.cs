@@ -14,7 +14,6 @@ public sealed class ModuleCombatEndToEndTests
 
     [Theory]
     [InlineData("CombatMukha")]
-    [InlineData("CombatShmel")]
     public void Real_scenario_runs_hostile_ai_player_fire_and_module_damage(string scenarioName)
     {
         var result = Run(scenarioName, 1);
