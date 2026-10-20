@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0005-snapshot-privacy"
 ticket: "EP-0012-US-0005-TK-0002-hidden-fields-leak-test"
 title: "hidden-fields-leak-test"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0005-TK-0001-snapshot-masking"]
 files_touched: 2
 serves: ["US5-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0005-TK-0002-hidden-fields-leak-test
@@ -19,6 +19,9 @@ revision: 1
 [Сокрытие информации](../EP-0012-US-0005-snapshot-privacy.md) · [Контракт D/A/G](../../Documentation.md) · [Execution DAG](../../Tickets.md). Результат: hidden-fields-leak-test; доказать US5-AC3 в границах этой карточки.
 
 ## Decisions / Assumptions
+
+A-JSON-PRIVACY: validate actual serialized full snapshots and compact frames by foreign object subtree while proving own endpoints remain available. Use known/unknown enemy scenarios with private module sentinels; preserve O12 HostileCombat exception covered by TK0001. Reload_reset means actual LoadScenario session reset, bootstrap and following delta; Save18 save/load roundtrip remains a separate US9 integration gate and is not claimed here. Existing masking already implements production behavior, so no gratuitous Presentation change is required.
+
 
 D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
 
@@ -72,4 +75,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 3 named / 785 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0005-tk0002-results.json).
+
+Serialized actual known/unknown enemy and own/foreign active flights. Foreign rows have exactly eight observed fields, no private module sentinels, endpoints or deadlines; own endpoint remains present. Actual LoadScenario creates a new session/bootstrap without old flights, then compact updates preserve masking. Intermediate pre-command frames may precede own launch; final scene explicitly requires it. Unknown enemy status remains undisclosed. Save18 roundtrip is separate OPEN integration, not claimed by scenario-reset tests. O12 remains as covered in TK0001; no redundant production change.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
