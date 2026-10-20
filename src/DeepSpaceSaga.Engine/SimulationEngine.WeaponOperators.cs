@@ -16,6 +16,8 @@ public sealed partial class SimulationEngine
         var crew = owner.Crew.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
         if (crew is null) return null;
         var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        if (definition.IsPointLauncher)
+            return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, crew.AccuracySkill, 0, crew.AccuracySkill);
         int skill = skillType == WeaponSkillType.TorpedoAttack
             ? crew.ManeuverabilitySkill : crew.AccuracySkill;
         decimal baseRating = skillType == WeaponSkillType.TorpedoAttack
@@ -33,8 +35,9 @@ public sealed partial class SimulationEngine
         return launcher is null ? null : launcher with
         {
             Operator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack),
-            ReloadDurationMs = (double?)(_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).LauncherReloadMs *
-                FireModeMath.Resolve(_registry, launcher.ModeId).ReloadMultiplier)
+            ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex) is { IsPointLauncher: true } point
+                ? point.ReloadMs : (double?)(_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).LauncherReloadMs *
+                    FireModeMath.Resolve(_registry, launcher.ModeId).ReloadMultiplier)
         };
     }
 

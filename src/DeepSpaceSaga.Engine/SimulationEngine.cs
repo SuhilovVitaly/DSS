@@ -488,6 +488,7 @@ public sealed partial class SimulationEngine : IDisposable
             _countermeasureTargetPlans.Clear();
             _countermeasureRng = new(resolvedMasterSeed);
             _moduleHitLocationRng = new(resolvedMasterSeed);
+            _launchScatterRng = new(resolvedMasterSeed);
             _torpedoHitRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
                 RngStreamNames.CombatTorpedoHit), 0);
             _launcherBreakdownRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
@@ -692,7 +693,8 @@ public sealed partial class SimulationEngine : IDisposable
                 // Project ordinary objects straight into the outgoing DTO: avoid
                 // allocating a full intermediate motion snapshot for every asteroid.
                 double x = 0, y = 0;
-                bool linear = cycleMotion.ApproachRoute is null && _motion is LinearMotionPredictor &&
+                bool linear = obj.InitialMotion.OwnProjectile is null && obj.InitialMotion.ObservedProjectile is null &&
+                    cycleMotion.ApproachRoute is null && _motion is LinearMotionPredictor &&
                     LinearMotionPredictor.TryPredictLinearPosition(obj.InitialMotion, elapsed, out x, out y);
                 var motion = linear ? obj.InitialMotion : PredictMotion(obj, elapsed);
                 // Render projection: the client may only see factual data
@@ -712,6 +714,8 @@ public sealed partial class SimulationEngine : IDisposable
                 {
                     X = linear ? x : motion.X,
                     Y = linear ? y : motion.Y,
+                    OwnProjectile = motion.OwnProjectile?.OwnerObjectId == PlayerShipObjectId ? motion.OwnProjectile : null,
+                    ObservedProjectile = ProjectObservedProjectile(motion),
                     ActiveEngineCommandType = cycleMotion.CommandType,
                     EngineManeuver = known ? ProjectEngineManeuver(obj, gameTimeMs) : null,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
@@ -2432,6 +2436,8 @@ public sealed partial class SimulationEngine : IDisposable
         if (command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel)
             return TryStartTradeCommand(command, gameTimeMs);
 
+        if (command.CommandType == CombatCommandTypes.Launch)
+            return TryStartPointLaunch(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Fire)
             return TryStartTorpedoFire(command, gameTimeMs);
         if (command.CommandType == TorpedoLauncherCommandTypes.SetMode)

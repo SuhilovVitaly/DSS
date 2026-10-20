@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0003-point-aim-torpedoes"
 ticket: "EP-0012-US-0003-TK-0002-torpedo-point-launch"
 title: "torpedo-point-launch"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0018-TK-0004-shared-point-forecast"]
-files_touched: 5
+files_touched: 8
 serves: ["US3-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0003-TK-0002-torpedo-point-launch
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Актуальный allowlist (8 файлов, включая tests). Execution scope расширен до изменений ниже перед кодом: point JSON требует нового BuildCombatState/operator projection; RuntimeMotion должен действительно двигать новый DTO; ранняя public projection обязана маскировать чужой captured endpoint. Это необходимые consumers launch path, без area damage/AI/Save18.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -33,10 +33,15 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs](../../../../src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs) | Существует: src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs:9; internal static class RngStreamNames | Только изменения для scope этой карточки и served AC. |
 | `src/DeepSpaceSaga.Engine/Combat/LaunchScatterRng.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0003TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| [src/DeepSpaceSaga.Engine/RuntimeMotion.cs](../../../../src/DeepSpaceSaga.Engine/RuntimeMotion.cs) | Existing authoritative motion dispatcher | Point flight through shared Motion geometry. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.WeaponOperators.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.WeaponOperators.cs) | Legacy ratings/reload mandatory | Point AccuracySkill operator and profile/reload projection. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs` | NEW | Bounded player/NPC point executor and public own/observed projection helper. |
 
 ## Public API after the change
 
 Proposed internal единый point-launch executor в SimulationEngine.Combat.cs для player/NPC и ProjectileKind; публичная граница — PlayerCommand US1-TK2. LaunchScatterRng использует named stream launch_scatter и persisted state/counter.
+
+Execution refinement: executor вынесен в тематический partial SimulationEngine.PointCombat.cs, общий для player/NPC; сначала torpedo Kind, counter Kind подключается своим тикетом. SplitMix64 + Box-Muller pair, ровно два uniform draws на принятый пуск (также sigma=0), без cached normal/System.Random. State/counter доступны capture для Save18; файловое сохранение подключается и проверяется отдельной US9. Rejected команды не потребляют RNG и не меняют reload/sequence. Legacy dispatcher остаётся только для прежнего каталога до cleanup. Новые события launch не содержат endpoint/deadline/rating/module id. Движение выполняется сейчас; подрыв — следующий тикет.
 
 ## Implementation steps
 
@@ -75,4 +80,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 15 named / 242 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0003-tk0002-results.json).
+
+Проверен настоящий Engine command path, общий player/NPC executor, два Gaussian draws на accepted launch, seeded sequence/state restore и независимые distribution bounds. Range проверяется до scatter, endpoint не clamped; пауза/дубликат/rejected launch не меняют flight/RNG, reload deadline включителен. Foreign snapshot и новый launch journal не содержат captured endpoint/deadline/ratings/module id. Полный Client: первый run 2128/1 (locale enum defect исправлен отдельно 809bd18e); повтор 2127/2 с p99 FAIL 2.227ms и2.378ms против2ms. Это открытый performance gate, причинная связь с текущим launch change не установлена; full Client PASS не заявляется. Файловое Save18, area detonation, AI и окончательная privacy migration остаются своими тикетами.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

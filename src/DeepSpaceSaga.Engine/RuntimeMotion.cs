@@ -9,6 +9,8 @@ internal static class RuntimeMotion
 
     internal static ObjectMotionSnapshot At(SpaceObjectRuntime obj, long gameTimeMs)
     {
+        if (obj.InitialMotion.OwnProjectile is not null || obj.InitialMotion.ObservedProjectile is not null)
+            return CurrentManeuverForecast.Sample(obj.InitialMotion, Math.Max(0, gameTimeMs - obj.StartGameTimeMs));
         if (obj.InitialMotion.Orbit is { } orbit)
             return OrbitalMotionMath.At(obj.InitialMotion, orbit, gameTimeMs);
         foreach (var module in obj.Modules)

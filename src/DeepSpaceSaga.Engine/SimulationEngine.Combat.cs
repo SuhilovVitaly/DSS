@@ -775,6 +775,15 @@ public sealed partial class SimulationEngine
                     continue;
                 if (obj.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
                     throw new ScenarioException($"Launcher '{module.ModuleId}' must be installed on a ship.");
+                if (definition.IsPointLauncher)
+                {
+                    launchers.Add((obj.InitialMotion.ObjectId, module.ModuleId), new LauncherCombatSnapshot(
+                        definition.Profiles[0].SpeedKmS, 0, damage,
+                        Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack),
+                        RangeKm: definition.RangeKm, ActiveTorpedoIds: [], ReloadDurationMs: definition.ReloadMs,
+                        Profiles: definition.Profiles, ScatterPercent: definition.ScatterPercent));
+                    continue;
+                }
                 launchers.Add((obj.InitialMotion.ObjectId, module.ModuleId), new LauncherCombatSnapshot(
                     SpeedKmS: definition.TorpedoSpeedKmS!.Value,
                     TurnRateDegPerSec: definition.TorpedoTurnRateDegPerSec!.Value,
