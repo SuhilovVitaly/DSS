@@ -553,7 +553,7 @@ public sealed class SkiaWindow : IDisposable
 
     private async void OnMouseDown(IMouse mouse, MouseButton button)
     {
-        if (_closing || (button != MouseButton.Left && button != MouseButton.Right))
+        if (_closing || (button != MouseButton.Left && button != MouseButton.Right && button != MouseButton.Middle))
             return;
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false })

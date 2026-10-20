@@ -101,7 +101,8 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 56 / US-0009-TK-0001-scenario-combat-mukha-v3 | PASS 14 named / 2358 bounded regression; build/format/diff PASS | `3aaf0807dda5a1c06fad2c68269c2a14f4a24c4c`, origin SHA verified |
 | 57 / US-0009-TK-0002-remove-shmel-and-migrate-scenarios | PASS 2 named / 2358 bounded regression; build/format/diff PASS | `a89133245b9ad7bb44289f7ef6a08df9faa53903`, origin SHA verified |
 | 58 / US-0019-TK-0001-migrate-other-combat-scenarios | PASS 2 named / 2360 bounded regression; build/format/diff PASS | `201e1d7ab1b97ddcc92edcd9cfc94f7d770a9d34`, origin SHA verified |
-| 59 / US-0019-TK-0002-scenario-engine-fixtures | PASS 4 named / 1265 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 59 / US-0019-TK-0002-scenario-engine-fixtures | PASS 4 named / 1265 bounded regression; build/format/diff PASS | `d9bce90fa1bae496ede798a87604f9688745d8c4`, origin SHA verified |
+| 60 / US-0019-TK-0004-client-combat-regressions | PASS 1 named / 2363 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

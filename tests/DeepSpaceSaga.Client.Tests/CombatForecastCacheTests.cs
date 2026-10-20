@@ -83,36 +83,15 @@ public sealed class CombatForecastCacheTests(ITestOutputHelper output)
     [Trait("Category", "ForecastBudget")]
     public async Task CombatForecast_changing_observed_linear_targets_obey_UI_budget(bool includeDefenses)
     {
-        var basis = Scene(0);
-        var target = basis.Objects[0] with { HostileCombat = null };
-        var flights = Enumerable.Range(0, 8).Select(i =>
-        {
-            var origin = basis.Objects[1] with { ObjectId = $"torpedo-{i}", X = i * 20 };
-            return origin with
-            {
-                Torpedo = origin.Torpedo! with
-                {
-                    Route = TorpedoGuidanceMath.Plan(origin, target, 3, 90)
-                }
-            };
-        }).ToArray();
-        var defenses = includeDefenses ? Enumerable.Range(0, 4).Select(i => basis.Objects[2] with
-        {
-            ObjectId = $"defense-{i}",
-            Countermeasure = basis.Objects[2].Countermeasure! with
-            {
-                TargetTorpedoId = flights[i].ObjectId,
-                Route = TorpedoGuidanceMath.Plan(target, flights[i], 12, 90)
-            }
-        }).ToArray() : [];
-        var predictor = new LinearMotionPredictor();
-        var cache = new CombatForecastCache();
-        var session = Guid.NewGuid();
-        var timings = new List<double>();
-        var refreshed = new HashSet<string>(StringComparer.Ordinal);
-        // Render preparation runs on a dedicated UI thread in the application.
-        // Keep the benchmark on one thread too; async frame delays would migrate
-        // it between pool workers while it schedules its own parallel forecasts.
+        var target = new ObjectMotionSnapshot("observed-npc", 200, 50, 2, 45, RenderObjectType: SpaceObjectType.NpcShip);
+        var flights = Enumerable.Range(0, 8).Select(i => new ObjectMotionSnapshot($"torpedo-{i}", i * 20, i * 5, 6, 90,
+            OwnProjectile: new(ProjectileKind.Torpedo, "player", $"launcher-{i}", i * 20, i * 5,
+                i * 20, i * 5, i * 20 + 600, i * 5, 0, 10000, 6, "slow", 9, 200, 20))).ToArray();
+        var defenses = includeDefenses ? Enumerable.Range(0, 4).Select(i => new ObjectMotionSnapshot($"defense-{i}", 600 + i * 5, 50, 15, 270,
+            OwnProjectile: new(ProjectileKind.Countermissile, "player", $"counter-{i}", 600 + i * 5, 50,
+                600 + i * 5, 50, 300 + i * 5, 50, 0, 2000, 15, "wide", 1, 0, 0))).ToArray() : [];
+        var predictor = new LinearMotionPredictor(); var cache = new CombatForecastCache(); var session = Guid.NewGuid();
+        var timings = new List<double>(); var refreshed = new HashSet<string>(StringComparer.Ordinal);
         var completion = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         var uiThread = new Thread(() =>
         {
@@ -120,45 +99,37 @@ public sealed class CombatForecastCacheTests(ITestOutputHelper output)
             {
                 for (int frame = -20; frame < 200; frame++)
                 {
-                    // Warm representative early/late guidance branches, including a
-                    // defense that cannot arrive before target termination. The measured
-                    // 200 frames still advance continuously at the normal UI cadence.
-                    int i = frame < 0 ? (frame + 20) * 11 : frame + 20;
-                    long time = i * 16;
-                    var observed = predictor.Predict(target, time) with { Direction = target.Direction + i * 0.01 };
-                    var scene = basis with
-                    {
-                        SimulationTimeMs = time,
-                        Objects = flights.Concat(defenses).Select(o => predictor.Predict(o, time)).Prepend(observed).ToImmutableArray()
-                    };
+                    int i = frame + 20;
+                    long time = i * 4; //16ms real frames at Speed1 advance four physical milliseconds.
+                    var observed = predictor.Predict(target, time) with { Direction = target.Direction + i * .01 };
+                    var scene = new AuthoritativeSnapshot((ulong)i + 1, time * 300, SimulationSpeed.Speed1,
+                        flights.Concat(defenses).Select(o => predictor.Predict(o, time)).Prepend(observed).ToImmutableArray(), SimulationTimeMs: time);
                     long start = System.Diagnostics.Stopwatch.GetTimestamp();
                     cache.Prepare(session, scene, CombatForecastOptions.Default);
                     double ms = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
                     if (frame >= 0) timings.Add(ms);
-                    Assert.All(cache.Results.Values, r =>
+                    Assert.Equal(8 + defenses.Length, cache.Results.Count);
+                    foreach (var source in flights.Concat(defenses))
                     {
-                        Assert.DoesNotContain(r.Status, new[] { CombatForecastStatus.Recalculating, CombatForecastStatus.CalculationLimited });
-                        Assert.Equal(time, r.StartMotionTimeMs);
-                    });
-                    Assert.All(flights, f => Assert.Equal(CombatForecastStatus.Contact, cache.Results[f.ObjectId].Status));
-                    refreshed.UnionWith(cache.Results.Where(p => p.Key.StartsWith("torpedo-", StringComparison.Ordinal) && p.Value.Status == CombatForecastStatus.Contact &&
-                        p.Value.StartMotionTimeMs == time).Select(p => p.Key));
+                        var result = cache.Results[source.ObjectId]; var captured = source.OwnProjectile!;
+                        Assert.InRange(result.StartMotionTimeMs, 0, time); Assert.Equal(captured.DetonationMotionTimeMs, result.EndMotionTimeMs);
+                        Assert.Equal(CombatForecastStatus.Expired, result.Status); Assert.Null(result.ContactMotionTimeMs);
+                        Assert.Empty(result.TargetId); Assert.Empty(result.Target);
+                        Assert.Equal(captured.DetonationX, result.Projectile[^1].X); Assert.Equal(captured.DetonationY, result.Projectile[^1].Y);
+                        refreshed.Add(source.ObjectId);
+                    }
                     Assert.Null(cache.PendingWork);
-                    // Use the same real frame cadence as the continuous UI budget test;
-                    // source construction and the frame wait are outside preparation time.
                     Thread.Sleep(16);
                 }
                 completion.SetResult();
             }
             catch (Exception error) { completion.SetException(error); }
         })
-        { IsBackground = true, Name = "Forecast UI budget" };
-        uiThread.Start();
-        await completion.Task;
-        Assert.Equal(8, refreshed.Count);
-        timings.Sort();
-        output.WriteLine($"8 distinct flights + {defenses.Length} defenses, changing observed linear target, 16 ms frames, UI p99={timings[197]:F3} ms; headless only");
-        Assert.True(timings[197] <= 2, $"UI p99={timings[197]} ms");
+        { IsBackground = true, Name = "Point forecast UI budget" };
+        uiThread.Start(); await completion.Task;
+        Assert.Equal(8 + defenses.Length, refreshed.Count); Assert.True(cache.Hits >= 200); timings.Sort();
+        output.WriteLine($"POINT V3:8captured torpedoes +{defenses.Length}captured counters; changing observed NPC;16ms real/4ms physical frames; UI p99={timings[197]:F4}ms; headless only. Retired homing measurements are not relabeled as PASS.");
+        Assert.True(timings[197] <= 2, $"Point UI p99={timings[197]}ms");
     }
 
     [Theory]

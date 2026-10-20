@@ -1,14 +1,6 @@
-using System.Diagnostics;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
-using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
-using DeepSpaceSaga.Engine;
-using DeepSpaceSaga.Engine.Content;
-using DeepSpaceSaga.Engine.LocalClient;
-using DeepSpaceSaga.Engine.Scenario;
-using DeepSpaceSaga.Motion;
 using Silk.NET.Input;
-using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
@@ -19,297 +11,80 @@ public sealed class BasicCombatUiFlowTests
     [InlineData(1280, 720, 1.5f)]
     [InlineData(1920, 1080, 1f)]
     [InlineData(1920, 1080, 1.2f)]
-    public async Task Ui_fire_flows_through_real_session_to_torpedo_snapshot(int width, int height, float scale)
+    public async Task Ui_point_launch_flows_through_real_session_reload_blast_and_paused_effect_lifetime(int width, int height, float scale)
     {
-        await using var f = await Fixture.Create(width, height, scale);
-        Assert.False(f.Button.Enabled);
-        f.Select(Fixture.Player);
-        Assert.False(f.Button.Enabled);
-        f.Select(Fixture.Target);
-        Assert.True(f.Button.Enabled);
-        for (int shot = 1; shot <= 2; shot++)
+        await using var f = await PointCombatUiFixture.Create(width, height, scale);
+        for (int shot = 0; shot < 2; shot++)
         {
-            f.HoverFire();
-            Assert.NotNull(f.Screen.LaunchPreviewGeometry!.Intercept);
-            var preview = Assert.IsType<TorpedoRoute>(f.Screen.LaunchPreviewRoute);
-            Assert.DoesNotContain(f.Latest.Objects, o => o.Torpedo is not null);
-            Assert.True(f.Button.Enabled);
-            var launch = await f.Fire();
-            var missile = Assert.Single(launch.Objects, o => o.Torpedo is not null);
-            var owner = launch.Objects.Single(o => o.ObjectId == Fixture.Player);
-            Assert.Equal((owner.X, owner.Y, owner.Direction), (missile.X, missile.Y, missile.Direction));
-            Assert.Equal((owner.X, owner.Y, owner.Direction), (preview.Segments[0].X, preview.Segments[0].Y, preview.Segments[0].Direction));
-            Assert.Equal(10, missile.SpeedKmS);
-            Assert.Equal(Fixture.Target, missile.Torpedo!.TargetObjectId);
-            Assert.Equal(Fixture.Player, missile.Torpedo.OwnerObjectId);
-            Assert.Equal(Fixture.Launcher, missile.Torpedo.LauncherModuleId);
-            Assert.Equal(SimulationSpeed.Speed0, launch.CurrentSpeed);
-            Assert.False(f.Button.Enabled);
-            Assert.Null(f.Screen.LaunchPreviewGeometry);
-            Assert.Contains("Reloading", f.LauncherStatus);
-
-            long end = missile.Torpedo.PredictedImpactMotionTimeMs!.Value + 1000;
-            var impact = await f.AdvanceTo(end);
-            Assert.Equal(shot, impact.CombatImpacts.Length);
-            Assert.DoesNotContain(impact.Objects, o => o.Torpedo is not null);
-            Assert.Equal(150, impact.CombatImpacts[^1].DamageApplied);
-            Assert.Contains("Reloading", f.LauncherStatus);
-            var effect = Assert.Single(f.Screen.CombatEffects.Active);
-            Assert.Equal(shot, effect.Impact.EventId);
+            f.Expose(300); f.Aim(); var pixel = f.Pixel(300); f.Screen.OnMouseMove(pixel.X, pixel.Y); f.Render();
+            Assert.True(f.Screen.CurrentTorpedoAimPreview is not null, f.DebugMap(300));
+            var preview = f.Screen.CurrentTorpedoAimPreview!;
+            Assert.Equal(300, preview.X, 5); Assert.Equal(0, preview.Y, 5); Assert.Equal(5, preview.RadiusKm);
+            Assert.DoesNotContain(f.Presented.Objects, o => o.OwnProjectile is not null);
+            var result = await f.Launch(); Assert.Equal(CommandResultStatus.Executed, result.Status);
+            await f.Wait(() => f.Presented.Objects.Any(o => o.OwnProjectile is not null));
+            var missile = Assert.Single(f.Presented.Objects, o => o.OwnProjectile is not null);
+            var flight = missile.OwnProjectile!;
+            Assert.Equal(PointCombatUiFixture.Player, flight.OwnerObjectId); Assert.Equal(PointCombatUiFixture.Torpedo, flight.LauncherModuleId);
+            Assert.Equal("medium", flight.ProfileId); Assert.Equal(10, flight.SpeedKmS); Assert.Equal(5, flight.BlastRadiusKm);
+            Assert.Equal((0d, 0d), (flight.StartX, flight.StartY)); Assert.Null(missile.Torpedo);
+            Assert.Equal(SimulationSpeed.Speed0, f.Presented.CurrentSpeed);
+            Assert.Equal(GameSessionScreen.CombatText("Reloading", "Reloading"), f.Screen.PointAimFeedback);
+            var end = await f.AdvanceTo((long)Math.Ceiling(flight.DetonationMotionTimeMs) + 1);
+            Assert.DoesNotContain(end.Objects, o => o.ObjectId == missile.ObjectId);
+            Assert.Contains(end.CombatJournal, e => e.Type == CombatEventType.TorpedoDetonated && e.ProjectileObjectId == missile.ObjectId);
+            var hit = Assert.Single(end.CombatJournal, e => e.Type == CombatEventType.Hit &&
+                e.TargetObjectId == PointCombatUiFixture.Enemy && e.ProjectileObjectId == missile.ObjectId);
+            Assert.NotNull(hit.HitResult); Assert.Null(hit.Damage); Assert.Null(hit.HitModuleId);
+            Assert.DoesNotContain(end.CombatJournal, e => e.ChanceTenths is not null || e.Roll is not null);
+            Assert.Contains(f.Screen.CombatEffects.PointEffects, e => e.Entry.ProjectileObjectId == missile.ObjectId);
             Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
-            // Real-time effect expiry is independent of the paused simulation clock.
-            f.UiNow = f.Handle.Buffer.Latest!.ReceivedAtTimestamp + 2 * Stopwatch.Frequency;
-            f.Render();
-            Assert.Empty(f.Screen.CombatEffects.Active);
-            Assert.DoesNotContain(missile.ObjectId, f.Screen.CombatTrajectories.Keys);
-            Assert.Contains(impact.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Target);
-            if (shot < 2)
-            {
-                Assert.Contains(impact.Objects, o => o.ObjectId == Fixture.Target);
-                await f.AdvanceTo((long)impact.InstalledModules.Single(m => m.ModuleId == Fixture.Launcher)
-                    .LauncherCombat!.ReadyAtMotionTimeMs!.Value);
-                f.Select(Fixture.Target);
-                Assert.True(f.Button.Enabled);
-            }
-            else
-            {
-                Assert.Contains(impact.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed && e.TargetObjectId == Fixture.Target);
-                Assert.DoesNotContain(impact.Objects, o => o.ObjectId == Fixture.Target);
-                var wreck = Assert.Single(impact.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
-                Assert.Equal(0, wreck.SpeedKmS);
-                Assert.Equal(0, wreck.Direction);
-                await f.AdvanceTo((long)impact.InstalledModules.Single(m => m.ModuleId == Fixture.Launcher)
-                    .LauncherCombat!.ReadyAtMotionTimeMs!.Value);
-                f.Select(wreck.ObjectId);
-                Assert.True(f.Button.Enabled);
-                var wreckShot = await f.Fire();
-                var flight = Assert.Single(wreckShot.Objects, o => o.Torpedo is not null).Torpedo!;
-                Assert.Equal(wreck.ObjectId, flight.TargetObjectId);
-                var after = await f.AdvanceTo(flight.PredictedImpactMotionTimeMs!.Value + 1000);
-                Assert.Equal(0, after.CombatImpacts[^1].DamageApplied);
-                Assert.Equal(wreck, Assert.Single(after.Objects, o => o.ObjectType == SpaceObjectType.Wreck));
-                Assert.Contains("Reloading", f.LauncherStatus);
-            }
+            long stopped = end.MotionTimeMs;
+            f.UiMs += 2100; f.Render(); Assert.Empty(f.Screen.CombatEffects.PointEffects);
+            Assert.Equal(stopped, f.Presented.MotionTimeMs);
+            double due = end.InstalledModules.Single(m => m.ModuleId == PointCombatUiFixture.Torpedo).LauncherCombat!.ReadyAtMotionTimeMs!.Value;
+            await f.AdvanceTo((long)Math.Ceiling(due));
+            Assert.Equal(GameSessionScreen.CombatText("Ready", "Ready"), f.Screen.PointAimFeedback);
         }
-        Assert.Null(f.Handle.Failure);
     }
 
     [Fact]
-    public async Task Ui_selection_changes_do_not_retarget_active_torpedo()
+    public async Task Ui_selection_and_owner_turn_do_not_retarget_captured_point_flight()
     {
-        await using var f = await Fixture.Create(1920, 1080, 1f);
-        f.Select(Fixture.Target);
-        var launched = await f.Fire();
-        var original = Assert.Single(launched.Objects, o => o.Torpedo is not null);
+        await using var f = await PointCombatUiFixture.Create();
+        Assert.Equal(CommandResultStatus.Executed, (await f.Launch()).Status);
+        await f.Wait(() => f.Presented.Objects.Any(o => o.OwnProjectile is not null));
+        var original = Assert.Single(f.Presented.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
+        f.Screen.OnKeyDown(Key.Escape); f.Expose(0); f.Click(0); f.Render();
+        Assert.Equal(PointCombatUiFixture.Player, f.Screen.SelectedObjectId);
         f.Screen.OnKeyDown(Key.Right);
-        await f.Wait(s => s.Objects.Single(o => o.ObjectId == Fixture.Player).ActiveEngineCommandType == ShipEngineCommandTypes.TurnRightStep);
-        // Inspect while the projectile is still visually separated from the now closer target.
-        var mid = await f.AdvanceTo(launched.MotionTimeMs + 10000);
-        Assert.NotEqual(launched.Objects.Single(o => o.ObjectId == Fixture.Player).Direction,
-            mid.Objects.Single(o => o.ObjectId == Fixture.Player).Direction);
-        f.Select(Fixture.Player);
-        Assert.False(f.Button.Enabled);
-        f.Select(original.ObjectId);
-        var inspection = Assert.IsType<TorpedoInspectionData>(f.Screen.SelectedOrActiveObjectInfo!.Value.Torpedo);
-        Assert.Equal(100, inspection.HitChancePercent);
-        Assert.True(inspection.TravelledKm > 0);
-        Assert.NotNull(inspection.EtaSeconds);
-        Assert.False(f.Button.Enabled);
-        var geometry = f.Screen.CombatTrajectories[original.ObjectId];
-        Assert.NotEmpty(geometry.Prediction);
-        Assert.NotEmpty(geometry.Target);
-        Assert.NotNull(geometry.Intercept);
-        await f.Handle.Connection.SaveAsync("selection-midflight");
-        var saved = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(f.DirectoryPath, "selection-midflight.json")), true);
-        Assert.Equal(Fixture.Target, Assert.Single(saved.GameState.CombatState!.Projectiles).Flight.TargetObjectId);
-        await using var restored = LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Fixture.Settings),
-            Path.Combine(f.DirectoryPath, "selection-midflight.json"));
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
-        await using var snapshots = restored.ReadSnapshotsAsync(timeout.Token).GetAsyncEnumerator();
-        Assert.True(await snapshots.MoveNextAsync());
-        var loaded = Assert.Single(snapshots.Current.Objects, o => o.Torpedo is not null);
-        Assert.Equal(original.ObjectId, loaded.ObjectId);
-        Assert.Equal(Fixture.Target, loaded.Torpedo!.TargetObjectId);
-        Assert.Equal(mid.MotionTimeMs, snapshots.Current.MotionTimeMs);
-        Assert.NotEmpty(loaded.Torpedo.Trail);
-        Assert.Empty(snapshots.Current.CombatImpacts);
-        var hit = await f.AdvanceTo(original.Torpedo!.PredictedImpactMotionTimeMs!.Value + 1000);
-        Assert.Equal(Fixture.Target, Assert.Single(hit.CombatImpacts).HitObjectId);
-        Assert.Contains(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Target);
-        Assert.DoesNotContain(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Fixture.Player);
+        await f.Wait(() => f.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatUiFixture.Player).ActiveEngineCommandType == ShipEngineCommandTypes.TurnRightStep);
+        var moved = await f.AdvanceTo(500); f.Screen.OnKeyUp(Key.Right);
+        var flight = Assert.Single(moved.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
+        Assert.Equal(original.DetonationX, flight.DetonationX); Assert.Equal(original.DetonationY, flight.DetonationY);
+        Assert.Equal(original.DetonationMotionTimeMs, flight.DetonationMotionTimeMs);
+        Assert.NotEqual(90, moved.Objects.Single(o => o.ObjectId == PointCombatUiFixture.Player).Direction);
+        double fraction = 500 / original.DetonationMotionTimeMs;
+        Assert.Equal(original.StartX + (original.DetonationX - original.StartX) * fraction, flight.X, 6);
+        Assert.Equal(original.StartY + (original.DetonationY - original.StartY) * fraction, flight.Y, 6);
     }
 
-    internal sealed class Fixture : IAsyncDisposable
+    [Fact]
+    public async Task Real_point_blasts_replace_destroyed_ship_with_one_stationary_visible_wreck()
     {
-        internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
-        private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-        internal static string Settings => Path.Combine(Root, "Settings.json");
-        internal string DirectoryPath { get; } = Path.Combine(Path.GetTempPath(), "dss-ui-combat-" + Guid.NewGuid().ToString("N"));
-        internal GameSessionHandle Handle { get; }
-        internal GameSessionScreen Screen { get; }
-        internal long UiNow = Stopwatch.GetTimestamp();
-        private long _realMs;
-        private readonly int _width, _height;
-        private readonly float _scale;
-        private readonly SKBitmap _bitmap;
-        private readonly SKCanvas _canvas;
-        internal AuthoritativeSnapshot Latest => Handle.Buffer.Latest!.Snapshot;
-        internal CommandButtonGeometry Button => Assert.Single(Screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == CombatCommandTypes.Fire);
-        internal string LauncherStatus => Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText!;
-
-        private Fixture(int width, int height, float scale)
+        await using var f = await PointCombatUiFixture.Create();
+        for (int shot = 0; shot < 32 && f.Presented.Objects.Any(o => o.ObjectId == PointCombatUiFixture.Enemy); shot++)
         {
-            (_width, _height, _scale) = (width, height, scale);
-            Directory.CreateDirectory(DirectoryPath);
-            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings), out _, out _);
-            var source = CombatSessionFixture.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"))));
-            source = source with
-            {
-                GameState = source.GameState with
-                {
-                    SpaceObjects = source.GameState.SpaceObjects.Select(obj => obj.ObjectId == Player ? obj with
-                    {
-                        Crew = obj.Crew!.Select(crew => crew.CrewId ==
-                            obj.Modules!.Single(module => module.ModuleId == Launcher).OperatorCrewId
-                            ? crew with { AccuracySkill = 30 } : crew).ToArray()
-                    } : obj.ObjectId == Target ? obj with
-                    {
-                        Modules = obj.Modules!.Select(module => module with { AutoDefenseEnabled = false }).ToArray()
-                    } : obj).ToArray()
-                }
-            };
-            var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
-            engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } });
-            Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath),
-                new SnapshotBuffer(Stopwatch.GetTimestamp));
-            Screen = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, timestampProvider: () => UiNow, uiScale: scale);
-            _bitmap = new(width, height);
-            _canvas = new(_bitmap);
+            Assert.Equal(CommandResultStatus.Executed, (await f.Launch(profile: 2)).Status);
+            await f.Wait(() => f.Presented.Objects.Any(o => o.OwnProjectile is not null));
+            var flight = Assert.Single(f.Presented.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
+            var ended = await f.AdvanceTo((long)Math.Ceiling(flight.DetonationMotionTimeMs) + 1);
+            if (ended.Objects.All(o => o.ObjectId != PointCombatUiFixture.Enemy)) break;
+            await f.AdvanceTo((long)Math.Ceiling(ended.InstalledModules.Single(m => m.ModuleId == PointCombatUiFixture.Torpedo).LauncherCombat!.ReadyAtMotionTimeMs!.Value));
         }
-        internal static async Task<Fixture> Create(int width, int height, float scale)
-        {
-            var fixture = new Fixture(width, height, scale);
-            await fixture.Wait(s => s.Objects.Length == 2);
-            fixture.Screen.OnActivated();
-            fixture.Render();
-            if (fixture.Screen.IsPanelVisible)
-            {
-                var close = fixture.Screen.LastCloseRect;
-                fixture.Screen.OnMouseDown(close.MidX * scale, close.MidY * scale);
-                fixture.Render();
-            }
-            return fixture;
-        }
-        internal void Render() => Screen.Render(_canvas, _width, _height);
-        internal void Select(string id)
-        {
-            var commandsToggle = Screen.CommandsPanel.HideShowButtonRect;
-            Screen.OnMouseDown(commandsToggle.MidX * _scale, commandsToggle.MidY * _scale);
-            Render();
-            bool restoreInfo = Screen.ObjectInfoPanel.State == ObjectInfoPanelState.Open;
-            if (restoreInfo)
-            {
-                var toggle = Screen.ObjectInfoPanel.HideShowButtonRect;
-                Screen.OnMouseDown(toggle.MidX * _scale, toggle.MidY * _scale);
-                Render();
-            }
-            Screen.OnKeyDown(Key.End);
-            // Frame through ordinary camera input, never select an offscreen coordinate.
-            double framingScale = Screen.RenderStates.Single(o => o.Source.ObjectId == id).Source.Torpedo is null ? .1 : .5;
-            while (Screen.CameraPixelsPerWorldUnit > framingScale) Screen.OnKeyDown(Key.Minus);
-            while (Screen.CameraPixelsPerWorldUnit < framingScale * .8) Screen.OnKeyDown(Key.Equal);
-            Render();
-            SKPoint Position(string objectId)
-            {
-                var pose = Screen.RenderStates.Single(o => o.Source.ObjectId == objectId).Pose;
-                return new((float)(_width / 2.0 + (pose.X - Screen.CameraFocusX) * Screen.CameraPixelsPerWorldUnit),
-                    (float)(_height / 2.0 + (pose.Y - Screen.CameraFocusY) * Screen.CameraPixelsPerWorldUnit));
-            }
-            for (int attempt = 0; attempt < 30; attempt++)
-            {
-                var rect = Screen.AvailableMapRect();
-                rect.Inflate(-Math.Min(40, rect.Width / 4), -Math.Min(40, rect.Height / 4));
-                var target = Position(id);
-                if (rect.Contains(target)) break;
-                var candidates = new[] { new SKPoint(rect.Left, rect.Top), new SKPoint(rect.Right, rect.Top),
-                    new SKPoint(rect.Left, rect.Bottom), new SKPoint(rect.Right, rect.Bottom) }
-                    .OrderByDescending(p => Math.Abs(Math.Clamp(p.X + rect.MidX - target.X, rect.Left, rect.Right) - p.X)
-                        + Math.Abs(Math.Clamp(p.Y + rect.MidY - target.Y, rect.Top, rect.Bottom) - p.Y))
-                    .Where(p => Screen.RenderStates.All(o => SKPoint.Distance(p, Position(o.Source.ObjectId)) > 35)).ToArray();
-                // A label plaque is also selectable; alternate corners if it catches a drag.
-                var start = candidates[attempt % candidates.Length];
-                var end = new SKPoint(Math.Clamp(start.X + rect.MidX - target.X, rect.Left, rect.Right),
-                    Math.Clamp(start.Y + rect.MidY - target.Y, rect.Top, rect.Bottom));
-                Screen.OnMouseDown(start.X, start.Y);
-                Screen.OnMouseMove(end.X, end.Y);
-                Screen.OnMouseUp(end.X, end.Y);
-                Render();
-            }
-            var point = Position(id);
-            Assert.True(Screen.AvailableMapRect().Contains(point), $"{id} must be visible before clicking.");
-            Screen.OnMouseDown(point.X, point.Y);
-            Render();
-            Assert.Equal(id, Screen.SelectedObjectId);
-            if (restoreInfo)
-            {
-                var toggle = Screen.ObjectInfoPanel.HideShowButtonRect;
-                Screen.OnMouseDown(toggle.MidX * _scale, toggle.MidY * _scale);
-                Render();
-            }
-            commandsToggle = Screen.CommandsPanel.HideShowButtonRect;
-            Screen.OnMouseDown(commandsToggle.MidX * _scale, commandsToggle.MidY * _scale);
-            Render();
-        }
-        internal void HoverFire()
-        {
-            Screen.OnMouseMove(Button.Rect.MidX * _scale, Button.Rect.MidY * _scale);
-            Render();
-        }
-        internal async Task<AuthoritativeSnapshot> Fire()
-        {
-            Assert.True(Button.Enabled);
-            var button = Button;
-            Screen.OnMouseDown(button.Rect.MidX * _scale, button.Rect.MidY * _scale);
-            // A second click before confirmation uses the real UI pending guard.
-            Screen.OnMouseDown(button.Rect.MidX * _scale, button.Rect.MidY * _scale);
-            var launched = await Wait(s => s.Objects.Any(o => o.Torpedo is not null));
-            Render();
-            Assert.Single(launched.Objects, o => o.Torpedo is not null);
-            return launched;
-        }
-        internal async Task<AuthoritativeSnapshot> AdvanceTo(long motionMs)
-        {
-            long remaining = motionMs - Latest.MotionTimeMs;
-            Assert.True(remaining >= 0);
-            await Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed4);
-            Interlocked.Add(ref _realMs, remaining / 100 * 4);
-            await Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
-            Interlocked.Add(ref _realMs, remaining % 100 * 4);
-            await Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
-            var result = await Wait(s => s.MotionTimeMs == motionMs && s.CurrentSpeed == SimulationSpeed.Speed0);
-            UiNow = Handle.Buffer.Latest!.ReceivedAtTimestamp;
-            Render();
-            return result;
-        }
-        internal async Task<AuthoritativeSnapshot> Wait(Func<AuthoritativeSnapshot, bool> predicate)
-        {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            while (true)
-            {
-                Handle.Buffer.PreparePresentation();
-                if (Handle.Buffer.Presented is { } buffered && predicate(buffered.Snapshot)) return buffered.Snapshot;
-                Assert.Null(Handle.Failure);
-                // Transport and its watchdog use real monotonic time; paused scenes admit their boundary after150ms.
-                await Task.Delay(10, timeout.Token);
-            }
-        }
-        public async ValueTask DisposeAsync()
-        {
-            Screen.OnDeactivated();
-            _canvas.Dispose();
-            _bitmap.Dispose();
-            await Handle.DisposeAsync();
-            Directory.Delete(DirectoryPath, true);
-        }
+        Assert.DoesNotContain(f.Presented.Objects, o => o.ObjectId == PointCombatUiFixture.Enemy);
+        var wreck = Assert.Single(f.Presented.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
+        Assert.Equal(0, wreck.SpeedKmS); Assert.Equal(0, wreck.Direction);
+        Assert.Contains(f.Screen.RenderStates, s => s.Source.ObjectId == wreck.ObjectId);
     }
 }

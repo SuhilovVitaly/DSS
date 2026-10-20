@@ -11,19 +11,28 @@ public sealed class CombatScenariosContentTests
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
     private static readonly string ScenarioPath = Path.Combine(ClientRoot, "Scenarios", "CombatMukha", "scenario.json");
 
-    [Fact]
-    public void Mukha_scenario_is_listed_and_loads()
+    [Theory]
+    [InlineData("CombatMukha", "combat_mukha", 3)]
+    [InlineData("CombatMukhaSingle", "combat_mukha_single", 1)]
+    public void Mukha_scenarios_are_listed_and_load_the_current_point_catalog(string folder, string id, int enemies)
     {
         var entry = Assert.Single(ScenarioRepository.ListScenarios(Path.Combine(ClientRoot, "Scenarios")),
-            item => item.ScenarioId == "combat_mukha");
-        Assert.Equal(ScenarioPath, entry.ScenarioPath);
+            item => item.ScenarioId == id);
+        string path = Path.Combine(ClientRoot, "Scenarios", folder, "scenario.json");
+        Assert.Equal(path, entry.ScenarioPath);
         Assert.False(string.IsNullOrWhiteSpace(entry.Name));
         Assert.False(string.IsNullOrWhiteSpace(entry.Description));
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"), ScenarioPath);
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"), path);
         var snapshot = engine.CaptureSnapshotForTests();
-        Assert.Equal(4, snapshot.Objects.Count(o => o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip));
+        Assert.Equal(enemies + 1, snapshot.Objects.Count(o => o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip));
         var fighting = engine.CaptureSnapshotForTests(1, simulationTimeMs: 1);
-        Assert.Equal(3, fighting.Objects.Count(o => o.HostileCombat?.DesiredRadiusKm == 25));
+        Assert.Equal(enemies, fighting.Objects.Count(o => o.HostileCombat?.DesiredRadiusKm == 25));
+        Assert.Equal(CombatEncounterState.Active, snapshot.Encounter!.State);
+        Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
+        Assert.All(snapshot.InstalledModules.Where(m => m.LauncherCombat is not null), m =>
+            Assert.Equal(new[] { "slow", "medium", "fast" }, m.LauncherCombat!.Profiles!.Value.Select(p => p.ProfileId)));
+        Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m =>
+        { Assert.False(m.Defense!.AutoEnabled); Assert.Equal(new[] { "wide", "fast" }, m.Defense.Profiles!.Value.Select(p => p.ProfileId)); });
     }
 
     [Fact]
