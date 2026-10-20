@@ -17,7 +17,7 @@ public sealed class TorpedoImpactTests
     // The shipped EP-0009 catalog is asserted separately by Client content tests.
     internal static GameDataRegistry LegacyWeaponRegistry(decimal accuracy, decimal chanceBase)
     {
-        var source = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"), out _, out _);
+        var source = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), out _, out _);
         static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition =>
             Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
         return GameDataRegistry.Create(

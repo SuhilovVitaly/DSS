@@ -103,7 +103,7 @@ public sealed class CombatSaveLoadTests : IDisposable
     }
 
     private readonly string _directory = Path.Combine(Path.GetTempPath(), "dss-combat-" + Guid.NewGuid().ToString("N"));
-    private static string Settings => Path.Combine(ClientRoot, "Settings.json");
+    private static string Settings => global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json"));
     public CombatSaveLoadTests() => Directory.CreateDirectory(_directory);
     public void Dispose() => Directory.Delete(_directory, true);
 
@@ -213,7 +213,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         string path = Path.Combine(_directory, "save.json");
         File.WriteAllText(path, ScenarioLoader.Serialize(state));
         if (settings is not null)
-            return EngineContentLoader.CreateEngineFromSaveFile(settings, path);
+            return EngineContentLoader.CreateEngineFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(settings), path);
         var restored = new SimulationEngine(Registry.Value);
         restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true), isSave: true);
         return restored;
@@ -261,7 +261,7 @@ public sealed class CombatSaveLoadTests : IDisposable
             settings["typeData"]![property.Key] = Path.GetFullPath(Path.Combine(ClientRoot, property.Value!.GetValue<string>()));
         settings["defaultScenario"] = Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json");
         string modulesPath = Path.Combine(_directory, "Modules");
-        string sourceModules = Path.Combine(ClientRoot, "Data", "Modules");
+        string sourceModules = Path.Combine(Path.GetDirectoryName(Settings)!, "Data", "Modules");
         foreach (string source in Directory.GetFiles(sourceModules, "*.json", SearchOption.AllDirectories))
         {
             string destination = Path.Combine(modulesPath, Path.GetRelativePath(sourceModules, source));
@@ -275,7 +275,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         settings["typeData"]!["moduleImplementations"] = modulesPath;
         string settingsPath = Path.Combine(_directory, "Settings.json");
         File.WriteAllText(settingsPath, settings.ToJsonString());
-        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
+        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(settingsPath));
         MovePlayerWithinRange(engine, Target);
         engine.ReceiveCommand(Fire("fractional-speed"));
         At(engine, 0);
@@ -435,16 +435,17 @@ public sealed class CombatSaveLoadTests : IDisposable
         File.WriteAllText(classesPath, "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"},{\"typeId\":\"ship.mukha\"}]}");
         settings["typeData"]!["shipClasses"] = classesPath;
         string modulesPath = Path.Combine(_directory, "Modules");
-        foreach (string source in Directory.GetFiles(Path.Combine(ClientRoot, "Data", "Modules"), "*.json", SearchOption.AllDirectories))
+        foreach (string source in Directory.GetFiles(Path.Combine(Path.GetDirectoryName(Settings)!, "Data", "Modules"), "*.json", SearchOption.AllDirectories))
         {
-            string destination = Path.Combine(modulesPath, Path.GetRelativePath(Path.Combine(ClientRoot, "Data", "Modules"), source));
+            string destination = Path.Combine(modulesPath, Path.GetRelativePath(Path.Combine(Path.GetDirectoryName(Settings)!, "Data", "Modules"), source));
             Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-            string content = File.ReadAllText(source);
-            if (source.Contains("TorpedoLauncher", StringComparison.Ordinal))
-                content = content.Replace("\"torpedoDamage\": 150", "\"torpedoDamage\": 50")
-                    .Replace("\"torpedoSpeedKmS\": 10", "\"torpedoSpeedKmS\": 6")
-                    .Replace("\"torpedoTurnRateDegPerSec\": 90", "\"torpedoTurnRateDegPerSec\": 45");
-            File.WriteAllText(destination, content);
+            var content = JsonNode.Parse(File.ReadAllText(source))!;
+            foreach (var module in content["moduleImplementations"]!.AsArray())
+                if (module!["typeId"]!.GetValue<string>() == "module.torpedo.launcher.basic")
+                {
+                    module["torpedoDamage"] = 50; module["torpedoSpeedKmS"] = 6; module["torpedoTurnRateDegPerSec"] = 45;
+                }
+            File.WriteAllText(destination, content.ToJsonString());
         }
         settings["typeData"]!["moduleImplementations"] = modulesPath;
         string settingsPath = Path.Combine(_directory, "Settings.json");
@@ -455,7 +456,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         Assert.Equal(150, Flight(snapshot).Torpedo!.Damage);
         Assert.Equal(3, Flight(snapshot).Torpedo!.SpeedKmS);
         Assert.Equal(90, Flight(snapshot).Torpedo!.TurnRateDegPerSec);
-        using var fresh = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
+        using var fresh = EngineContentLoader.CreateEngineFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(settingsPath));
         var newSnapshot = fresh.CaptureSnapshot();
         Assert.Null(newSnapshot.Objects.Single(o => o.ObjectId == Player).HullCombat);
         Assert.Equal(50, newSnapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Damage);
@@ -485,7 +486,7 @@ public sealed class CombatSaveLoadTests : IDisposable
     [Fact]
     public void Combat_restore_preserves_named_world_rng_states_and_next_draws()
     {
-        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Settings);
+        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings));
         var initial = engine.CaptureSaveState();
         var target = initial.GameState.SpaceObjects.Last(o => o.ObjectType == SpaceObjectType.Station);
         MovePlayerWithinRange(engine, target.ObjectId);

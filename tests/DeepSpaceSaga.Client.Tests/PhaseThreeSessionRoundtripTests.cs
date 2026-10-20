@@ -184,7 +184,7 @@ public class PhaseThreeSessionRoundtripTests
         private Fixture(bool ai)
         {
             Directory.CreateDirectory(DirectoryPath);
-            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(Root, "Settings.json")), out _, out _);
             var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
             Engine = new(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
             var prepared = scenario with
@@ -234,7 +234,7 @@ public class PhaseThreeSessionRoundtripTests
             await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
         }
         internal Task Route(ScreenEvent action, string? payload = null) => (Task)Invoke(Window, "HandleScreenEvent", action, payload)!;
-        public IGameSessionConnection CreateSessionFromSave(string slot) => LocalGameSessionConnection.CreateFromSaveFile(Path.Combine(Root, "Settings.json"), Path.Combine(DirectoryPath, slot + ".json"), DirectoryPath);
+        public IGameSessionConnection CreateSessionFromSave(string slot) => LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(Root, "Settings.json")), Path.Combine(DirectoryPath, slot + ".json"), DirectoryPath);
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromScenario(string path) => throw new NotSupportedException();
         public ScenarioInfo[] ListScenarios() => [];

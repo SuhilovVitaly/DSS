@@ -13,10 +13,13 @@
     "stationResourceFields": "Data/World/station-resource-fields.json",
     "shipClasses": "Data/Ships/ship-classes.json",
     "solarSystem": "Data/Maps/solar-system.json",
-    "combatRules": "Data/Combat/combat-rules.json",
-    "fireModes": "Data/Combat/fire-modes.json"
+    "combatRules": "Data/Combat/combat-rules.json"
   },
-  "economy": { "catalogVersion": 1, "rulesVersion": 1, "legacyCatalogFingerprint": "0E0C8DCBDBB06051AC1D7DBA5321DA8DFD0A2CA29C7980AAA4F56486FA300555" },
+  "economy": {
+    "catalogVersion": 1,
+    "rulesVersion": 1,
+    "legacyCatalogFingerprint": "0E0C8DCBDBB06051AC1D7DBA5321DA8DFD0A2CA29C7980AAA4F56486FA300555"
+  },
   "defaultScenario": "Scenarios/Default/scenario.json",
   "gameSettings": {
     "showTrajectoryPrediction": true,
@@ -30,7 +33,7 @@
         1000000,
         10000000
       ],
-      "minimumPpu": 1E-12,
+      "minimumPpu": 1e-12,
       "wheelFactor": 1.25,
       "wheelUnitsPerStep": 1,
       "zoomAnimationMs": 120,

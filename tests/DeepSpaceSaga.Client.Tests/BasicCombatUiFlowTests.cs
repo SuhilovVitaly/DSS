@@ -122,7 +122,7 @@ public sealed class BasicCombatUiFlowTests
         await f.Handle.Connection.SaveAsync("selection-midflight");
         var saved = ScenarioLoader.LoadFromFile(Path.Combine(f.DirectoryPath, "selection-midflight.json"), true);
         Assert.Equal(Fixture.Target, Assert.Single(saved.GameState.CombatState!.Projectiles).Flight.TargetObjectId);
-        await using var restored = LocalGameSessionConnection.CreateFromSaveFile(Fixture.Settings,
+        await using var restored = LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Fixture.Settings),
             Path.Combine(f.DirectoryPath, "selection-midflight.json"));
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var snapshots = restored.ReadSnapshotsAsync(timeout.Token).GetAsyncEnumerator();
@@ -161,7 +161,7 @@ public sealed class BasicCombatUiFlowTests
         {
             (_width, _height, _scale) = (width, height, scale);
             Directory.CreateDirectory(DirectoryPath);
-            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings), out _, out _);
             var source = CombatSessionFixture.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
             source = source with
             {

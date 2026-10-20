@@ -13,15 +13,15 @@ public sealed class CombatRulesContentTests : IDisposable
     public CombatRulesContentTests()
     {
         Directory.CreateDirectory(_directory);
-        File.Copy(Path.Combine(ClientRoot, "Data", "Combat", "combat-rules.json"), RulesPath);
-        File.Copy(Path.Combine(ClientRoot, "Data", "Combat", "fire-modes.json"), ModesPath);
+        File.Copy(Path.Combine(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Root(Path.Combine(ClientRoot, "Settings.json")), "Data", "Combat", "combat-rules.json"), RulesPath);
+        File.Copy(Path.Combine(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Root(Path.Combine(ClientRoot, "Settings.json")), "Data", "Combat", "fire-modes.json"), ModesPath);
     }
 
     [Fact]
     public void Rules_load()
     {
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
-            Path.Combine(ClientRoot, "Settings.json"), out _, out _);
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(
+            Path.Combine(ClientRoot, "Settings.json")), out _, out _);
         Assert.Equal(50, Assert.IsType<CombatChanceRules>(registry.CombatRules!.Chance).Base);
         Assert.Equal(60000, registry.CombatRules.Damage.HitDisableMs);
         Assert.Equal(60, registry.CombatRules.ArmorClasses["light"]);

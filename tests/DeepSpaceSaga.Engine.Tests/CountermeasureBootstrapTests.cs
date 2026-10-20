@@ -12,7 +12,7 @@ public class CountermeasureBootstrapTests
     [Fact]
     public void Both_launchers_bootstrap_independently()
     {
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"),
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")),
             Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
         var defenses = At(engine, 0).InstalledModules.Where(m => m.Defense is not null).ToArray();
         Assert.Equal(2, defenses.Length);
@@ -48,7 +48,7 @@ public class CountermeasureBootstrapTests
         try
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(save));
-            using var restored = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path);
+            using var restored = EngineContentLoader.CreateEngineFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path);
             var firstDeadline = At(restored, 1000);
             var first = firstDeadline.InstalledModules.Single(m => m.ModuleId == defenses[0].ModuleId).Defense!;
             var second = firstDeadline.InstalledModules.Single(m => m.ModuleId == defenses[1].ModuleId).Defense!;
@@ -67,7 +67,7 @@ public class CountermeasureBootstrapTests
     [Fact]
     public void Generated_world_keeps_loadout()
     {
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"),
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")),
             Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
         var snapshot = At(engine, 0);
         Assert.Equal(3, snapshot.PlayerCrewCount);

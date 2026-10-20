@@ -131,7 +131,7 @@ public class WeaponOperatorRuntimeTests
         try
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(saved));
-            using var restored = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path);
+            using var restored = EngineContentLoader.CreateEngineFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path);
             var snapshot = At(restored, 100);
             var flight = Assert.Single(snapshot.Objects, o => o.Torpedo is not null).Torpedo!;
             Assert.Equal(25m, flight.TorpedoRating);

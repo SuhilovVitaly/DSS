@@ -174,7 +174,7 @@ public class DefeatNavigationTests
         internal ScreenStack Screens => Get<ScreenStack>(Window, "_screens");
         private Fixture()
         {
-            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(Root, "Settings.json")), out _, out _);
             var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
             scenario = scenario with
             {
@@ -219,8 +219,8 @@ public class DefeatNavigationTests
             }
         }
         internal Task Route(ScreenEvent action, string? payload = null) => (Task)Invoke(Window, "HandleScreenEvent", action, payload)!;
-        public IGameSessionConnection CreateSessionFromSave(string slotId) => LocalGameSessionConnection.CreateFromSaveFile(
-            Path.Combine(Root, "Settings.json"), Path.Combine(DirectoryPath, slotId + ".json"), DirectoryPath);
+        public IGameSessionConnection CreateSessionFromSave(string slotId) => LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(
+            Path.Combine(Root, "Settings.json")), Path.Combine(DirectoryPath, slotId + ".json"), DirectoryPath);
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromScenario(string path) => throw new NotSupportedException();
         public ScenarioInfo[] ListScenarios() => [];

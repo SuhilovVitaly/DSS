@@ -25,7 +25,7 @@ public class PhaseThreeCombatUiFlowTests
         string directory = Path.Combine(Path.GetTempPath(), "dss-manual-defense-" + Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         long now = 0;
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json"));
         scenario = scenario with
         {

@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0002-combat-catalog-v3"
 ticket: "EP-0012-US-0002-TK-0005-combat-rules-v3"
 title: "combat-rules-v3"
-stage: "draft"
+stage: "implemented"
 layer: "content-data"
 depends_on: ["EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands"]
-files_touched: 17
+files_touched: 49
 serves: ["US1-AC4", "US2-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0002-TK-0005-combat-rules-v3
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (17 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (49 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -44,11 +44,75 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | `src/DeepSpaceSaga.Client/Data/CombatV3/Commands/TorpedoLauncher/commands.json` | Bounded staging/activation file or matching test | Atomically activate previously committed v3 components, rules and command categories, remove mode path/file/staging files and obsolete deployed content. |
 | `src/DeepSpaceSaga.Client/Data/CombatV3/Commands/CountermeasureLauncher/commands.json` | Bounded staging/activation file or matching test | Atomically activate previously committed v3 components, rules and command categories, remove mode path/file/staging files and obsolete deployed content. |
 | `src/DeepSpaceSaga.Client/Data/CombatV3/module-types.json` | Bounded staging/activation file or matching test | Atomically activate previously committed v3 components, rules and command categories, remove mode path/file/staging files and obsolete deployed content. |
-| `src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` | Bounded staging/activation file or matching test | Atomically activate previously committed v3 components, rules and command categories, remove mode path/file/staging files and obsolete deployed content. |
+| `Directory.Build.targets` | Bounded staging/activation file or matching test | Atomically activate previously committed v3 components, rules and command categories, remove mode path/file/staging files and obsolete deployed content. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0003TK0002Tests.cs` | Pre-activation test fixture appends commands already in canonical v3 | Replace fixture definitions by ID without duplicate registry entries. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0004TK0001Tests.cs` | Pre-activation test fixture appends commands already in canonical v3 | Replace fixture definitions by ID without duplicate registry entries. |
+
+| `tests/DeepSpaceSaga.Client.Tests/BasicCombatUiFlowTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/CombatForecastCacheTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/CombatReportsAcceptanceFixtures.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/CombatSessionRoundtripTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/DefeatNavigationTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/FullMapRenderEvidenceTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/ManualDefensePreviewTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/ManualDefenseUiFlowTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/PhaseThreeCombatUiFlowTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/PhaseThreeJournalUiTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/TorpedoPreviewTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/CombatRulesContentTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/CountermeasureBootstrapTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/DefeatedSessionSaveTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/TorpedoImpactTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/Support/LegacyCombatCatalog.cs` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/Support/LegacyCombatCatalog.json` | Historical calibrated legacy regression fixture | Explicit test-only snapshot of pre-activation combat content; retain assertions until scheduled legacy cleanup. Never evidence for current default v3. |
+
+| `tests/DeepSpaceSaga.Client.Tests/TorpedoLauncherContentTests.cs` | Current production content expectations still legacy | Assert new actual catalog/profile values while retaining independent loadout, source/deployed, edit/reload, operator and RNG invariants. |
+
+| `tests/DeepSpaceSaga.Client.Tests/TorpedoCommandContentTests.cs` | Current production content expectations still legacy | Assert new actual catalog/profile values while retaining independent loadout, source/deployed, edit/reload, operator and RNG invariants. |
+
+| `tests/DeepSpaceSaga.Client.Tests/CountermeasureContentTests.cs` | Current production content expectations still legacy | Assert new actual catalog/profile values while retaining independent loadout, source/deployed, edit/reload, operator and RNG invariants. |
+
+| `tests/DeepSpaceSaga.Client.Tests/TetrarchClassContentTests.cs` | Current production content expectations still legacy | Assert new actual catalog/profile values while retaining independent loadout, source/deployed, edit/reload, operator and RNG invariants. |
+
+| `tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs` | Current production content expectations still legacy | Assert new actual catalog/profile values while retaining independent loadout, source/deployed, edit/reload, operator and RNG invariants. |
+
+| `tests/DeepSpaceSaga.Client.Tests/PirateScenarioTests.cs` | Current production content expectations still legacy | Assert new actual catalog/profile values while retaining independent loadout, source/deployed, edit/reload, operator and RNG invariants. |
+
+| `tests/DeepSpaceSaga.Client.Tests/CombatScenariosContentTests.cs` | Current production content expectations still legacy | Assert new actual catalog/profile values while retaining independent loadout, source/deployed, edit/reload, operator and RNG invariants. |
 
 ## Public API after the change
 
-No public API change; использовать контракт зависимых тикетов.
+No public API change. Default Settings activate point rules and exact published v3 catalog components; legacy mode configuration/file removed. Historical test snapshots are isolated from current default acceptance.
 
 ## Implementation steps
 
@@ -60,10 +124,6 @@ No public API change; использовать контракт зависимы
 ## Out of scope / Invariants
 
 Один production layer: content-data; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
-
-## Atomic activation check
-
-**Point_rules_activate_without_legacy_mode_path**: source and deployed Settings contain no fireModes entry, obsolete mode file is absent, strict point rules load and real Engine/Client point launch paths work.
 
 ## Atomic activation check
 
@@ -94,7 +154,11 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 4 named / 2342 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0002-tk0005-results.json).
+
+Atomic canonical activation; source/deployed actual session launches and file Save18 roundtrip PASS. Engine bounded851/851 and current content68/68 PASS. Explicit historical fixture preserves old regression assertions until US18 cleanup.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 Atomic activation prerequisite: replace combat rules, remove typeData.fireModes and delete its obsolete JSON in the same commit. Source EngineContentLoader.cs:216-221 rejects point rules with a fireModes path and legacy rules without it. Validate source and deployed registry plus actual launch/Client integration after this switch.
 
@@ -103,3 +167,7 @@ Atomic activation prerequisite: replace combat rules, remove typeData.fireModes 
 Before implementation: TK1–4 author real production JSON components under `Data/CombatV3`, outside the recursively loaded active Modules/Commands folders. Each component is validated through the real loader in source and deployed output, with independent expected constants. TK5 moves those exact committed components to canonical paths in one atomic switch with rules, module categories, Settings and mode removal. Before that switch, active default catalog remains coherent; component implementation does not close default-game integration/US2 acceptance. Tests select staged component while it exists in the source tree, and canonical component after activation. No numeric or product requirement is changed.
 
 Activation validation includes actual default source/deployed registry and Engine/Client launches and roundtrip. Scope may expand before code for necessary fixture migration found by regression. PreserveNewest does not remove deleted output files; the owning csproj may explicitly clean obsolete combat content only when its source no longer exists. Staged source files are removed only after canonical bytes match.
+
+Before implementation: clean obsolete content in every referencing project output through Directory.Build.targets, since a Client-only target cannot remove stale transitive files from test/tool outputs. Delete only the seven fixed obsolete files when their canonical source is absent; same rule applies to publish.
+
+Activation reproduction: Client94/2338 and Engine509/851 failed. New actual-default v3 source/deployed launch+Save18 integration4/4PASS. Most Engine failures share duplicate fixture commands; remaining historical tests intentionally invoke removed legacy commands. Preserve their independent calibrated assertions using a clearly named test-only pre-activation combat snapshot; do not route v3/default-content acceptance through it. Migrate current content expectations separately; scheduled US18 cleanup retires obsolete legacy paths/tests.

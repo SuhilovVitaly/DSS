@@ -34,7 +34,8 @@ public sealed class PointCombatUS0004TK0001Tests
                 Barrels = null,
                 BurstIntervalMs = null
             }), All(source.ItemTypes), All(source.CommandDefinitions)
-                .Append(new(DefenseCommandTypes.Launch, "Launch countermissile", Target: "point", Type: "module.countermeasure.launcher")),
+                .Append(new(DefenseCommandTypes.Launch, "Launch countermissile", Target: "point", Type: "module.countermeasure.launcher"))
+                .GroupBy(c => c.TypeId).Select(g => g.Last()),
             All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
             stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);

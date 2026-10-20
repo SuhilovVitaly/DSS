@@ -24,39 +24,44 @@ public sealed class TorpedoLauncherContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Real_launcher_content_exposes_one_targeted_command(bool output)
+    public void Real_launcher_content_exposes_point_launch_and_owned_detonation(bool output)
     {
         var registry = Load(Root(output));
         var category = registry.ModuleCategories.GetDefinition(registry.ModuleCategories.GetIndex(CategoryId));
         var launcher = Launcher(registry);
         Assert.Equal(1, category.SlotSize);
         Assert.Equal(1, launcher.SlotSize);
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, category.CommandTypeIds);
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, launcher.CommandTypeIds);
-        var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
+        Assert.Equal(new[] { CombatCommandTypes.Launch, CombatCommandTypes.Detonate }, category.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Launch, CombatCommandTypes.Detonate }, launcher.CommandTypeIds);
+        var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.Launch));
         Assert.Equal(CategoryId, command.Type);
-        Assert.Equal("object", command.Target);
-        Assert.Equal(3, Enumerable.Range(0, registry.CommandDefinitions.Count)
+        Assert.Equal("point", command.Target);
+        Assert.Equal(2, Enumerable.Range(0, registry.CommandDefinitions.Count)
             .Select(registry.CommandDefinitions.GetDefinition).Count(c => c.Type == CategoryId));
     }
 
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Launcher_catalog_matches_ep9(bool output)
+    public void Launcher_catalog_matches_ep12(bool output)
     {
         var registry = Load(Root(output));
         var launcher = Launcher(registry);
-        Assert.Equal(150, launcher.TorpedoDamage);
-        Assert.Equal(10, launcher.TorpedoSpeedKmS);
-        Assert.Equal(90, launcher.TorpedoTurnRateDegPerSec);
-        Assert.Equal(50m, launcher.TorpedoManeuverability);
-        Assert.Equal(150, launcher.TorpedoRangeKm);
-        Assert.Equal(40m, launcher.Accuracy);
+        Assert.Equal(200, launcher.TorpedoDamage);
+        Assert.Null(launcher.TorpedoSpeedKmS);
+        Assert.Equal(new[] { 6d, 10d, 16d }, launcher.Profiles.Select(p => p.SpeedKmS));
+        Assert.Equal(new[] { 9d, 5d, 2.5 }, launcher.Profiles.Select(p => p.BlastRadiusKm));
+        Assert.Null(launcher.TorpedoTurnRateDegPerSec);
+        Assert.Null(launcher.TorpedoManeuverability);
+        Assert.Null(launcher.TorpedoRangeKm);
+        Assert.Equal(70, launcher.RangeKm);
+        Assert.Null(launcher.Accuracy);
+        Assert.Equal(.02, launcher.ScatterPercent);
         Assert.Equal(20m, launcher.ArmorPiercingPercent);
         Assert.Equal(100m, launcher.ArmorDamagePercent);
-        Assert.Equal(15000, launcher.LauncherReloadMs);
-        Assert.Equal(120000, launcher.TorpedoMaxFlightTimeMs);
+        Assert.Null(launcher.LauncherReloadMs);
+        Assert.Equal(10000, launcher.ReloadMs);
+        Assert.Null(launcher.TorpedoMaxFlightTimeMs);
         Assert.Equal(2000, launcher.MassKg);
         Assert.Equal(150, launcher.StructurePointsMax);
         Assert.Equal(0, launcher.PowerConsumptionW);
@@ -66,7 +71,7 @@ public sealed class TorpedoLauncherContentTests
         // Required positive loader metadata (epic A10), not a combat cooldown.
         Assert.Equal(1000, launcher.BaseCycleTimeMs);
 
-        var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
+        var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.Launch));
         Assert.Equal(0, command.ActivationEnergyCellsCost);
         Assert.Equal(CommandDefinition.Neutral, command.TimeFactor);
         Assert.Equal(CommandDefinition.Neutral, command.ComplexityFactor);
@@ -105,21 +110,21 @@ public sealed class TorpedoLauncherContentTests
         var json = JsonNode.Parse(File.ReadAllText(modulePath))!;
         var module = json["moduleImplementations"]![0]!;
         module["torpedoDamage"] = 175;
-        module["torpedoSpeedKmS"] = 4.5;
-        module["torpedoTurnRateDegPerSec"] = 60;
+        module["profiles"]![0]!["speedKmS"] = 4.5;
+        module["profiles"]![0]!["blastRadiusKm"] = 6;
         File.WriteAllText(modulePath, json.ToJsonString());
 
         var reloaded = Load(temporary.Path);
         Assert.Equal(175, Launcher(reloaded).TorpedoDamage);
-        Assert.Equal(4.5, Launcher(reloaded).TorpedoSpeedKmS);
-        Assert.Equal(60, Launcher(reloaded).TorpedoTurnRateDegPerSec);
+        Assert.Equal(4.5, Launcher(reloaded).Profiles[0].SpeedKmS);
+        Assert.Equal(6, Launcher(reloaded).Profiles[0].BlastRadiusKm);
         Assert.Equal(original.CatalogCompatibility, reloaded.CatalogCompatibility);
-        Assert.Equal(150, Launcher(original).TorpedoDamage);
-        Assert.Equal(150, Launcher(Load(ClientRoot)).TorpedoDamage);
+        Assert.Equal(200, Launcher(original).TorpedoDamage);
+        Assert.Equal(200, Launcher(Load(ClientRoot)).TorpedoDamage);
     }
 
     [Fact]
-    public void Fire_metadata_does_not_start_generic_module_cycle_or_consume_rng()
+    public void Point_launch_does_not_start_generic_module_cycle_or_consume_economy_rng()
     {
         using var temporary = new TemporaryContent();
         // Install only in a temporary scenario fixture; production loadouts belong to later tickets.
@@ -146,9 +151,12 @@ public sealed class TorpedoLauncherContentTests
         string targetId = initial.Objects.First(o => o.ObjectId != playerId).ObjectId;
         var before = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0).GameState;
 
-        engine.ReceiveCommand(new PlayerCommand("test-fire", 1, playerId, launcherModuleId, CombatCommandTypes.Fire, targetId));
+        var carrier = initial.Objects.Single(o => o.ObjectId == playerId);
+        engine.ReceiveCommand(new PlayerCommand("test-fire", 1, playerId, launcherModuleId, CombatCommandTypes.Launch,
+            TargetWorldX: carrier.X + 100, TargetWorldY: carrier.Y, ProfileId: "slow"));
         var snapshot = engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1);
-        Assert.Contains(snapshot.CommandResults, result => result.CommandId == "test-fire");
+        Assert.Contains(snapshot.CommandResults, result => result.CommandId == "test-fire" && result.Status == CommandResultStatus.Executed);
+        Assert.Single(snapshot.Objects, o => o.OwnProjectile is not null);
         var after = engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0).GameState;
         var installed = after.SpaceObjects.Single(o => o.ObjectId == playerId).Modules!.Single(m => m.ModuleId == launcherModuleId);
         Assert.Null(installed.ActiveCycle);

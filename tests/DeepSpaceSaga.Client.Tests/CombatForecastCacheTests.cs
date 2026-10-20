@@ -36,7 +36,7 @@ public sealed class CombatForecastCacheTests(ITestOutputHelper output)
     public async Task CombatForecast_worker_publishes_across_real_engine_updates()
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
         using var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
         engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "CombatMukha", "scenario.json")));
         engine.ReceiveCommand(new("forecast-turn", 1, "SPC-0001", "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.TurnRightUntilCancel));

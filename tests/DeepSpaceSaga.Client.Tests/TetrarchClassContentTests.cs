@@ -75,9 +75,9 @@ public sealed class TetrarchClassContentTests
         Assert.NotNull(secondEngine.PlayerShipObjectId);
         Assert.False(original.Registry.ShipClasses.Contains("ship.custom"));
         Assert.Equal(original.Registry.CatalogCompatibility, restarted.Registry.CatalogCompatibility);
-        Assert.Equal(150, Launcher(restarted.Registry).TorpedoDamage);
-        Assert.Equal(10, Launcher(restarted.Registry).TorpedoSpeedKmS);
-        Assert.Equal(90, Launcher(restarted.Registry).TorpedoTurnRateDegPerSec);
+        Assert.Equal(200, Launcher(restarted.Registry).TorpedoDamage);
+        Assert.Equal(new[] { 6d, 10d, 16d }, Launcher(restarted.Registry).Profiles.Select(p => p.SpeedKmS));
+        Assert.Null(Launcher(restarted.Registry).TorpedoTurnRateDegPerSec);
         Assert.Equal(sourceJson, File.ReadAllText(Path.Combine(ClientRoot, ClassPath)));
 
         // Prove the engine factory rereads the declared file on each restart rather than

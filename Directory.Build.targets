@@ -1,0 +1,22 @@
+<Project>
+  <!-- Remove deleted EP-0012 content from transitive build/publish outputs too. -->
+  <Target Name="RemoveObsoleteCombatContent" AfterTargets="CopyFilesToOutputDirectory;Publish">
+    <Delete Files="$(TargetDir)Data/Combat/fire-modes.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/Combat/fire-modes.json')" />
+    <Delete Files="$(PublishDir)Data/Combat/fire-modes.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/Combat/fire-modes.json')" />
+    <Delete Files="$(TargetDir)Data/CombatV3/module-types.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/module-types.json')" />
+    <Delete Files="$(PublishDir)Data/CombatV3/module-types.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/module-types.json')" />
+    <Delete Files="$(TargetDir)Data/CombatV3/Modules/TorpedoLauncher/modules-torpedolauncher.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Modules/TorpedoLauncher/modules-torpedolauncher.json')" />
+    <Delete Files="$(PublishDir)Data/CombatV3/Modules/TorpedoLauncher/modules-torpedolauncher.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Modules/TorpedoLauncher/modules-torpedolauncher.json')" />
+    <Delete Files="$(TargetDir)Data/CombatV3/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json')" />
+    <Delete Files="$(PublishDir)Data/CombatV3/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json')" />
+    <Delete Files="$(TargetDir)Data/CombatV3/Modules/Engine/modules-engine.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Modules/Engine/modules-engine.json')" />
+    <Delete Files="$(PublishDir)Data/CombatV3/Modules/Engine/modules-engine.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Modules/Engine/modules-engine.json')" />
+    <Delete Files="$(TargetDir)Data/CombatV3/Commands/TorpedoLauncher/commands.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Commands/TorpedoLauncher/commands.json')" />
+    <Delete Files="$(PublishDir)Data/CombatV3/Commands/TorpedoLauncher/commands.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Commands/TorpedoLauncher/commands.json')" />
+    <Delete Files="$(TargetDir)Data/CombatV3/Commands/CountermeasureLauncher/commands.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Commands/CountermeasureLauncher/commands.json')" />
+    <Delete Files="$(PublishDir)Data/CombatV3/Commands/CountermeasureLauncher/commands.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Data/CombatV3/Commands/CountermeasureLauncher/commands.json')" />
+  </Target>
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'DeepSpaceSaga.Engine.Tests' Or '$(MSBuildProjectName)' == 'DeepSpaceSaga.Client.Tests'">
+    <Compile Include="$(MSBuildThisFileDirectory)tests/Support/LegacyCombatCatalog.cs" Link="Support/LegacyCombatCatalog.cs" />
+  </ItemGroup>
+</Project>

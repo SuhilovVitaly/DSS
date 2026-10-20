@@ -37,7 +37,8 @@ public sealed class PointCombatUS0003TK0002Tests
             }),
             All(source.ItemTypes), All(source.CommandDefinitions)
                 .Append(new(CombatCommandTypes.Launch, "Launch", Target: "point", Type: "module.torpedo.launcher"))
-                .Append(new(CombatCommandTypes.Detonate, "Detonate", Target: "object", Type: "module.torpedo.launcher")),
+                .Append(new(CombatCommandTypes.Detonate, "Detonate", Target: "object", Type: "module.torpedo.launcher"))
+                .GroupBy(c => c.TypeId).Select(g => g.Last()),
             All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
             stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules! with

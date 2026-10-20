@@ -1,0 +1,352 @@
+{
+  "baseline": "5454d93d3c5791fe3b3f5886402732d22fed6670",
+  "purpose": "Historical legacy characterization only; current default acceptance must use actual Settings.",
+  "files": {
+    "Data/module-types.json": {
+      "moduleTypes": [
+        {
+          "typeId": "module.bridge.navigation.computer",
+          "displayName": "Bridge Navigation Computer",
+          "slotSize": 1,
+          "commandTypeIds": [
+            "navigation.dock",
+            "navigation.undock",
+            "navigation.stationsList"
+          ]
+        },
+        {
+          "typeId": "module.engine",
+          "displayName": "Engine",
+          "slotSize": 1,
+          "commandTypeIds": [
+            "engine.accelerate",
+            "engine.brake",
+            "engine.maintainSpeed",
+            "engine.turnLeftStep",
+            "engine.turnRightStep",
+            "engine.turnLeftUntilCancel",
+            "engine.turnRightUntilCancel",
+            "engine.maintainCourse",
+            "engine.speedSynchronization",
+            "engine.directionSynchronization",
+            "engine.orbit",
+            "navigation.approach",
+            "trade.refuel"
+          ]
+        },
+        {
+          "typeId": "module.generator",
+          "displayName": "Generator",
+          "slotSize": 1,
+          "commandTypeIds": []
+        },
+        {
+          "typeId": "module.battery",
+          "displayName": "Battery",
+          "slotSize": 1,
+          "commandTypeIds": []
+        },
+        {
+          "typeId": "module.container",
+          "displayName": "Container",
+          "slotSize": 1,
+          "commandTypeIds": [
+            "trade.buy",
+            "trade.sell"
+          ]
+        },
+        {
+          "typeId": "module.drilling.unit",
+          "displayName": "Drilling Unit",
+          "slotSize": 1,
+          "commandTypeIds": [
+            "mining.extractIce",
+            "mining.stopExtraction"
+          ]
+        },
+        {
+          "typeId": "module.scanner",
+          "displayName": "Scanner",
+          "slotSize": 1,
+          "commandTypeIds": [
+            "scanner.generalScan",
+            "scanner.structuralScan",
+            "scanner.nearbySignatures"
+          ]
+        },
+        {
+          "typeId": "module.habitation",
+          "displayName": "Habitation Module",
+          "slotSize": 1,
+          "commandTypeIds": []
+        },
+        {
+          "typeId": "module.combat.laser",
+          "displayName": "Combat Laser",
+          "slotSize": 1,
+          "commandTypeIds": []
+        },
+        {
+          "typeId": "module.torpedo.launcher",
+          "displayName": "Torpedo Launcher",
+          "slotSize": 1,
+          "commandTypeIds": [
+            "torpedo.fire",
+            "torpedo.selfDestruct",
+            "torpedo.setMode"
+          ]
+        },
+        {
+          "typeId": "module.countermeasure.launcher",
+          "displayName": "Countermeasure Launcher",
+          "slotSize": 1,
+          "commandTypeIds": [
+            "defense.fire",
+            "defense.enable",
+            "defense.disable"
+          ]
+        },
+        {
+          "typeId": "living.quarters",
+          "displayName": "Living quarters",
+          "slotSize": 1,
+          "commandTypeIds": []
+        }
+      ]
+    },
+    "Data/Modules/TorpedoLauncher/modules-torpedolauncher.json": {
+      "moduleImplementations": [
+        {
+          "typeId": "module.torpedo.launcher.basic",
+          "displayName": "Torpedo Launcher",
+          "type": "module.torpedo.launcher",
+          "massKg": 2000,
+          "structurePointsMax": 150,
+          "powerConsumptionW": 0,
+          "baseCycleTimeMs": 1000,
+          "baseSuccessChancePercent": 100,
+          "torpedoManeuverability": 50,
+          "torpedoRangeKm": 150,
+          "torpedoDamage": 150,
+          "torpedoSpeedKmS": 10,
+          "torpedoTurnRateDegPerSec": 90,
+          "accuracy": 40,
+          "armorPiercingPercent": 20,
+          "armorDamagePercent": 100,
+          "launcherReloadMs": 15000,
+          "torpedoMaxFlightTimeMs": 120000
+        }
+      ]
+    },
+    "Data/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json": {
+      "moduleImplementations": [
+        {
+          "typeId": "module.countermeasure.launcher.basic",
+          "displayName": "Countermeasure Launcher",
+          "type": "module.countermeasure.launcher",
+          "massKg": 2000,
+          "structurePointsMax": 150,
+          "powerConsumptionW": 0,
+          "baseCycleTimeMs": 1,
+          "baseSuccessChancePercent": 100,
+          "countermeasureAccuracy": 58,
+          "countermeasureManualRangeKm": 150,
+          "countermeasureMaxFlightTimeMs": 30000,
+          "countermeasureSpeedKmS": 20,
+          "countermeasureTurnRateDegPerSec": 90,
+          "countermeasureRangeKm": 150,
+          "countermeasureReloadMs": 14500,
+          "barrels": 2,
+          "burstIntervalMs": 2000
+        },
+        {
+          "typeId": "module.countermeasure.launcher.single",
+          "displayName": "Single-barrel Countermeasure Launcher",
+          "type": "module.countermeasure.launcher",
+          "massKg": 2000,
+          "structurePointsMax": 150,
+          "powerConsumptionW": 0,
+          "baseCycleTimeMs": 1,
+          "baseSuccessChancePercent": 100,
+          "countermeasureAccuracy": 58,
+          "countermeasureManualRangeKm": 150,
+          "countermeasureMaxFlightTimeMs": 30000,
+          "countermeasureSpeedKmS": 20,
+          "countermeasureTurnRateDegPerSec": 90,
+          "countermeasureRangeKm": 150,
+          "countermeasureReloadMs": 14500,
+          "barrels": 1,
+          "burstIntervalMs": 2000
+        }
+      ]
+    },
+    "Data/Modules/Engine/modules-engine.json": {
+      "moduleImplementations": [
+        {
+          "typeId": "module.engine.basic",
+          "displayName": "Engine",
+          "type": "module.engine",
+          "massKg": 5000,
+          "structurePointsMax": 150,
+          "combatRole": "engine",
+          "powerConsumptionW": 0,
+          "maxSpeedMps": 6000,
+          "turnStepDegrees": 1,
+          "linearInertiaMps2": 400,
+          "angularInertiaDegPerSec": 4,
+          "baseCycleTimeMs": 1000,
+          "fuelCapacityKg": 1000,
+          "fuelEfficiencyKmPerKg": 200,
+          "baseSuccessChancePercent": 100,
+          "maneuverability": 10
+        },
+        {
+          "typeId": "module.engine.strizh",
+          "displayName": "Strizh Engine",
+          "type": "module.engine",
+          "massKg": 4000,
+          "structurePointsMax": 150,
+          "combatRole": "engine",
+          "powerConsumptionW": 0,
+          "maxSpeedMps": 8000,
+          "turnStepDegrees": 1,
+          "linearInertiaMps2": 800,
+          "angularInertiaDegPerSec": 12,
+          "baseCycleTimeMs": 1000,
+          "fuelCapacityKg": 1000,
+          "fuelEfficiencyKmPerKg": 200,
+          "baseSuccessChancePercent": 100,
+          "maneuverability": 40
+        }
+      ]
+    },
+    "Data/Commands/TorpedoLauncher/commands.json": {
+      "commandDefinitions": [
+        {
+          "typeId": "torpedo.fire",
+          "displayName": "Fire",
+          "timeFactor": 1,
+          "complexityFactor": 1,
+          "consumptionFactor": 1,
+          "target": "object",
+          "activationEnergyCellsCost": 0,
+          "type": "module.torpedo.launcher"
+        },
+        {
+          "typeId": "torpedo.selfDestruct",
+          "displayName": "Самоуничтожение",
+          "timeFactor": 1,
+          "complexityFactor": 1,
+          "consumptionFactor": 1,
+          "target": "none",
+          "activationEnergyCellsCost": 0,
+          "type": "module.torpedo.launcher"
+        },
+        {
+          "typeId": "torpedo.setMode",
+          "displayName": "Режим аппарата",
+          "timeFactor": 1,
+          "complexityFactor": 1,
+          "consumptionFactor": 1,
+          "target": "none",
+          "activationEnergyCellsCost": 0,
+          "type": "module.torpedo.launcher"
+        }
+      ]
+    },
+    "Data/Commands/CountermeasureLauncher/commands.json": {
+      "commandDefinitions": [
+        {
+          "typeId": "defense.fire",
+          "displayName": "Fire",
+          "timeFactor": 1.0,
+          "complexityFactor": 1.0,
+          "consumptionFactor": 1.0,
+          "target": "object",
+          "activationEnergyCellsCost": 0,
+          "type": "module.countermeasure.launcher"
+        },
+        {
+          "typeId": "defense.enable",
+          "displayName": "Enable defense",
+          "timeFactor": 1.0,
+          "complexityFactor": 1.0,
+          "consumptionFactor": 1.0,
+          "target": "none",
+          "activationEnergyCellsCost": 0,
+          "type": "module.countermeasure.launcher"
+        },
+        {
+          "typeId": "defense.disable",
+          "displayName": "Disable defense",
+          "timeFactor": 1.0,
+          "complexityFactor": 1.0,
+          "consumptionFactor": 1.0,
+          "target": "none",
+          "activationEnergyCellsCost": 0,
+          "type": "module.countermeasure.launcher"
+        }
+      ]
+    },
+    "Data/Combat/combat-rules.json": {
+      "chance": {
+        "base": 50,
+        "min": 0,
+        "max": 100
+      },
+      "damage": {
+        "hitDisableMs": 60000,
+        "hitLocationWeighting": "mass"
+      },
+      "shipDestruction": {
+        "criticalRoles": [
+          "bridge",
+          "engine"
+        ],
+        "destroyedModuleFraction": 0.3333
+      },
+      "armorClasses": {
+        "none": 0,
+        "light": 60
+      }
+    },
+    "Data/Combat/fire-modes.json": {
+      "fireModes": [
+        {
+          "modeId": "standard",
+          "displayName": "Стандарт",
+          "accuracyBonus": 0,
+          "maneuverabilityBonus": 0,
+          "breakdownChancePercent": 0,
+          "reloadMultiplier": 1,
+          "appliesTo": [
+            "module.torpedo.launcher",
+            "module.countermeasure.launcher"
+          ]
+        },
+        {
+          "modeId": "maneuverability",
+          "displayName": "Манёвренность",
+          "accuracyBonus": 0,
+          "maneuverabilityBonus": 10,
+          "breakdownChancePercent": 0,
+          "reloadMultiplier": 1.25,
+          "appliesTo": [
+            "module.torpedo.launcher"
+          ]
+        },
+        {
+          "modeId": "overheat",
+          "displayName": "Перегрев",
+          "accuracyBonus": 10,
+          "maneuverabilityBonus": 10,
+          "breakdownChancePercent": 10,
+          "reloadMultiplier": 1.25,
+          "appliesTo": [
+            "module.torpedo.launcher"
+          ]
+        }
+      ]
+    }
+  }
+}

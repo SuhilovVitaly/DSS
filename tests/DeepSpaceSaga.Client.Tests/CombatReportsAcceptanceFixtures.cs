@@ -21,7 +21,7 @@ internal sealed class CombatReportsAcceptanceFixtures : IAsyncDisposable
     internal static async Task<CombatReportsAcceptanceFixtures> Create()
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/CombatMukha/scenario.json"));
         using var engine = new SimulationEngine(registry);
         engine.LoadScenario(scenario with { GameState = scenario.GameState with { MasterSeed = 1 } });

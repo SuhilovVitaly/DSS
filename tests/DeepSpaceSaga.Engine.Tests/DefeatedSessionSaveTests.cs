@@ -74,7 +74,7 @@ public class DefeatedSessionSaveTests
                 await connection.SaveAsync("before");
                 Assert.Equal(SessionOutcomeState.Defeated, At(engine, 6000).EffectiveOutcome.State);
             }
-            await using var fresh = LocalGameSessionConnection.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"),
+            await using var fresh = LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")),
                 Path.Combine(directory, "before.json"), directory);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             await using var snapshots = fresh.ReadSnapshotsAsync(timeout.Token).GetAsyncEnumerator();

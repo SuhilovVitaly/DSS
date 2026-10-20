@@ -28,13 +28,31 @@
       "powerConsumptionW": 0,
       "maxSpeedMps": 8000,
       "turnStepDegrees": 1,
-      "linearInertiaMps2": 800,
-      "angularInertiaDegPerSec": 12,
+      "linearInertiaMps2": 1000,
+      "angularInertiaDegPerSec": 24,
       "baseCycleTimeMs": 1000,
       "fuelCapacityKg": 1000,
       "fuelEfficiencyKmPerKg": 200,
       "baseSuccessChancePercent": 100,
       "maneuverability": 40
+    },
+    {
+      "typeId": "module.engine.tetrarch",
+      "displayName": "Tetrarch Engine",
+      "type": "module.engine",
+      "massKg": 5000,
+      "structurePointsMax": 150,
+      "combatRole": "engine",
+      "powerConsumptionW": 0,
+      "maxSpeedMps": 5000,
+      "turnStepDegrees": 1,
+      "linearInertiaMps2": 600,
+      "angularInertiaDegPerSec": 20,
+      "baseCycleTimeMs": 1000,
+      "fuelCapacityKg": 1000,
+      "fuelEfficiencyKmPerKg": 200,
+      "baseSuccessChancePercent": 100,
+      "maneuverability": 10
     }
   ]
 }

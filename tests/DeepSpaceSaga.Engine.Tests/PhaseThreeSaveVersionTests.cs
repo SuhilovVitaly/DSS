@@ -26,7 +26,7 @@ public class PhaseThreeSaveVersionTests
             File.WriteAllText(path, ScenarioLoader.Serialize(old));
             byte[] bytes = File.ReadAllBytes(path);
             Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() =>
-                SimulationEngine.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path)).Message);
+                SimulationEngine.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path)).Message);
             Assert.Equal(bytes, File.ReadAllBytes(path));
         }
         finally { File.Delete(path); }
@@ -37,10 +37,10 @@ public class PhaseThreeSaveVersionTests
     {
         string path = Path.Combine(ClientRoot, "Scenarios/PlayerShipOnly/scenario.json");
         Assert.Equal(0, ScenarioLoader.LoadFromFile(path).SaveFormatVersion);
-        using var newGame = SimulationEngine.CreateFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"), path);
+        using var newGame = SimulationEngine.CreateFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path);
         Assert.Equal(SessionOutcomeState.Running, newGame.CaptureSnapshot().EffectiveOutcome.State);
         Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() =>
-            SimulationEngine.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path)).Message);
+            SimulationEngine.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path)).Message);
         Assert.Equal(18, newGame.CaptureSaveState().SaveFormatVersion);
     }
 

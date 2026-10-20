@@ -1361,6 +1361,11 @@ public class LocalSessionIntegrationTests
     private static string CreateCurrentCatalogSave(string settingsPath, bool includeMasterSeed)
     {
         using var source = EngineContentLoader.CreateEngineFromSettingsFile(settingsPath);
+        if (includeMasterSeed)
+        {
+            var initial = EngineContentLoader.LoadFromSettingsFile(settingsPath).DefaultScenario;
+            source.LoadScenario(initial with { GameState = initial.GameState with { MasterSeed = 42UL } });
+        }
         var save = source.CaptureSaveState();
         var state = save.GameState with
         {

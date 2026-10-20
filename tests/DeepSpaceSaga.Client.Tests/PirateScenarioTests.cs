@@ -74,11 +74,12 @@ public sealed class PirateScenarioTests
         Assert.Equal(2, snapshot.Objects.Count(o => o.ObjectType is "PlayerShip" or "NpcShip"));
         Assert.All(snapshot.Objects.Where(o => o.ObjectType is "PlayerShip" or "NpcShip"), o => Assert.Null(o.HullCombat));
         var launcher = Assert.Single(snapshot.InstalledModules, m => m.LauncherCombat is not null).LauncherCombat!;
-        Assert.Equal(10, launcher.SpeedKmS);
-        Assert.Equal(90, launcher.TurnRateDegPerSec);
-        Assert.Equal(150, launcher.Damage);
-        Assert.Equal(150, launcher.RangeKm);
-        Assert.Equal(50, launcher.Maneuverability);
+        Assert.Equal(6, launcher.SpeedKmS);
+        Assert.Equal(new[] { 6d, 10d, 16d }, launcher.Profiles!.Value.Select(p => p.SpeedKmS));
+        Assert.Equal(0, launcher.TurnRateDegPerSec);
+        Assert.Equal(200, launcher.Damage);
+        Assert.Equal(70, launcher.RangeKm);
+        Assert.Null(launcher.Maneuverability);
         Assert.True(launcher.ActiveTorpedoIds.IsDefaultOrEmpty);
         var pirate = Pirate(snapshot);
         var playerPose = snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId);
@@ -101,12 +102,21 @@ public sealed class PirateScenarioTests
         Assert.Equal(originalPlayerModules.Select(m => m.ModuleTypeId), npc.Modules!.Select(m => m.ModuleTypeId));
         Assert.Equal(JsonSerializer.Serialize(originalPlayerModules.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })),
             JsonSerializer.Serialize(npc.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })));
+        var startingSave = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
         var moved = Pirate(engine.CaptureSnapshotForTests(1000));
-        Assert.InRange(Math.Sqrt(Math.Pow(moved.X - pirate.X, 2) + Math.Pow(moved.Y - pirate.Y, 2)), 4, 8);
-        Assert.InRange(moved.SpeedKmS, 0.6, 0.8);
+        Assert.NotEqual((pirate.X, pirate.Y), (moved.X, moved.Y));
+        // Point AI pursues its 35km orbit (half the 70km launcher range) with the shared constrained step controller.
+        // Preserve a partitioned physics comparison instead of the removed legacy acceleration range.
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
+        using var partitioned = new SimulationEngine(registry);
+        partitioned.LoadScenario(startingSave, isSave: true);
+        partitioned.CaptureSnapshotForTests(1);
+        var split = Pirate(partitioned.CaptureSnapshotForTests(1000));
+        Assert.Equal(moved.X, split.X, 6); Assert.Equal(moved.Y, split.Y, 6);
+        Assert.Equal(moved.SpeedKmS, split.SpeedKmS, 6); Assert.Equal(moved.Direction, split.Direction, 6);
         Assert.InRange(Math.Abs(moved.Direction - pirate.Direction), 0, 4.00000001);
         Assert.Equal(HostileCombatPhase.Pursuit, moved.HostileCombat!.Phase);
-        Assert.Equal(75, moved.HostileCombat.DesiredRadiusKm);
+        Assert.Equal(35, moved.HostileCombat.DesiredRadiusKm);
         Assert.Null(moved.ActiveEngineCommandType);
     }
 

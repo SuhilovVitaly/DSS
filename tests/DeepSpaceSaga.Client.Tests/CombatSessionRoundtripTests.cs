@@ -62,7 +62,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
     private CombatSessionFixture(bool defense)
     {
         Directory.CreateDirectory(DirectoryPath);
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings), out _, out _);
         Engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
         var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
         if (!defense) scenario = scenario with
@@ -99,7 +99,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
     {
         await Connection.SaveAsync("combat");
         if (Restored is not null) await Restored.DisposeAsync();
-        Restored = LocalGameSessionConnection.CreateFromSaveFile(Settings, Path.Combine(DirectoryPath, "combat.json"));
+        Restored = LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings), Path.Combine(DirectoryPath, "combat.json"));
         return await First(Restored);
     }
     private static async Task<AuthoritativeSnapshot> First(LocalGameSessionConnection connection)

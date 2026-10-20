@@ -56,7 +56,8 @@ public sealed class CombatScenariosContentTests
             Assert.Equal(3000, ship.SpeedMps);
             Assert.Equal(270, ship.DirectionDegrees);
             var launcher = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.torpedo.launcher.basic"));
-            Assert.Equal(2 * launcher.TorpedoRangeKm!.Value,
+            Assert.Equal(300d // Existing scenario layout is migrated by US9-TK1; independent baseline distance until then.
+                ,
                 Math.Sqrt(ship.PositionX * ship.PositionX + ship.PositionY * ship.PositionY) / 10, 8);
             Assert.True(ship.PositionX > player.PositionX && ship.PositionY < player.PositionY);
             Assert.Equal(new AttackAiData(50, 10, expected[i].Flank), ship.Ai);

@@ -48,7 +48,7 @@ public class PhaseThreeCombatEndToEndTests
         await battle.Connection.SaveAsync("before-defeat");
         string path = Path.Combine(battle.DirectoryPath, "before-defeat.json");
         byte[] bytes = await File.ReadAllBytesAsync(path);
-        using (var resumed = EngineContentLoader.CreateEngineFromSaveFile(Battle.Settings, path))
+        using (var resumed = EngineContentLoader.CreateEngineFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Battle.Settings), path))
         {
             for (long time = checkpoint; time <= checkpoint + 10000; time += 1000)
             {
@@ -75,7 +75,7 @@ public class PhaseThreeCombatEndToEndTests
         Assert.Equal(terminal, JsonSerializer.Serialize(later.Objects));
         await Assert.ThrowsAsync<InvalidOperationException>(() => battle.Connection.SaveAsync("before-defeat").AsTask());
         Assert.Equal(bytes, await File.ReadAllBytesAsync(path));
-        await using var recovered = LocalGameSessionConnection.CreateFromSaveFile(Battle.Settings, path, battle.DirectoryPath);
+        await using var recovered = LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Battle.Settings), path, battle.DirectoryPath);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         await using var reader = recovered.ReadSnapshotsAsync(timeout.Token).GetAsyncEnumerator();
         Assert.True(await reader.MoveNextAsync());
@@ -93,7 +93,7 @@ public class PhaseThreeCombatEndToEndTests
         private long _now, _time, _command;
         internal Battle(ulong seed)
         {
-            var registry = SeededWorldBootstrapTests.Registry();
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings), out _, out _);
             Engine = new(registry, EngineContentLoader.LoadCrewPortraits(Settings), new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
             Engine.ConfigureStationResourceFields(JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Data/World/station-resource-fields.json")))!);
             var source = SeededWorldBootstrapTests.Scenario("PlayerShipOnly");
