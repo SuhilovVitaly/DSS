@@ -31,7 +31,11 @@ public sealed partial class GameSessionScreen
             canvas.DrawPath(path, line);
         }
         line.Color = own is null ? styles.ForeignTrace : kind == ProjectileKind.Torpedo ? CombatSettings.Prediction : CombatSettings.CountermeasurePrediction;
-        line.PathEffect = dash;
+        using var observedDash = own is null && ObservedThreatVisuals.TryGetValue(state.Source.ObjectId, out var threatVisual) && threatVisual.Dash is { } pattern
+            ? SKPathEffect.CreateDash(pattern, 0) : null;
+        if (own is null && ObservedThreatVisuals.TryGetValue(state.Source.ObjectId, out var classified))
+        { line.Color = classified.Color; line.StrokeWidth = classified.WidthPx; line.PathEffect = observedDash; }
+        else line.PathEffect = dash;
         CombatTrajectoryProjector.BuildPath(path, geometry.Prediction, _camera, _viewportW, _viewportH);
         canvas.DrawPath(path, line);
         line.PathEffect = null;

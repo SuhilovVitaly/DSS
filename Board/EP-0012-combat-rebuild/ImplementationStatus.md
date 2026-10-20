@@ -81,7 +81,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unchanged. `2d59fe4b659ac3341d4fc5431d7218d520faccfc`, origin SHA verified.
 
 | 38 / US-0012-TK-0001-evade-input-and-threat-select | PASS 12 named / 2227 bounded regression; build/format/diff PASS | `4ed46b208c9e14a8adf838dc1587133a70abccfd`, origin SHA verified |
-| 39 / US-0012-TK-0002-threat-panel | PASS 9 named / 2236 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 39 / US-0012-TK-0002-threat-panel | PASS 9 named / 2236 bounded regression; build/format/diff PASS | `f2b2b08daa61ca6ae253ca58280854f0e4a2ddfd`, origin SHA verified |
+| 40 / US-0012-TK-0003-threat-alerts | PASS 22 named / 2258 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

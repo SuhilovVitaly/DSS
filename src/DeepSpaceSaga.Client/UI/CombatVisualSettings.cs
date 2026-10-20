@@ -18,6 +18,7 @@ public sealed record CombatVisualSettings(
     public SKColor TorpedoRange { get; init; } = TacticalMapPalette.Torpedo.WithAlpha(46);
     public SKColor ManualDefenseRange { get; init; } = TacticalMapPalette.Countermeasure.WithAlpha(71);
     public PointCombatVisualSettings PointCombat { get; init; } = PointCombatVisualSettings.Default;
+    public ThreatAlertVisualSettings ThreatAlerts { get; init; } = ThreatAlertVisualSettings.Default;
     internal SKColor RangeColor(string kind) => kind switch
     {
         "torpedo" => TorpedoRange,
@@ -56,9 +57,51 @@ public sealed record CombatVisualSettings(
                 TorpedoRange = Optional("torpedoRange", Default.TorpedoRange),
                 ManualDefenseRange = Optional("manualDefenseRange", Default.ManualDefenseRange),
                 PointCombat = ReadPointCombat(),
+                ThreatAlerts = ReadThreatAlerts(),
                 ForecastHorizonMs = root.TryGetProperty("forecastHorizonMs", out var horizon) &&
                     horizon.ValueKind == JsonValueKind.Number && horizon.TryGetInt64(out long ms) && ms is > 0 and <= 200_000 ? ms : 200_000
             };
+
+            ThreatAlertVisualSettings ReadThreatAlerts()
+            {
+                if (!root.TryGetProperty("threatAlerts", out var group)) return ThreatAlertVisualSettings.Default;
+                if (group.ValueKind != JsonValueKind.Object) throw Invalid("threatAlerts", "expected an object");
+                var expected = typeof(ThreatAlertVisualSettings).GetProperties().Where(p => p.GetMethod?.IsStatic == false)
+                    .ToDictionary(p => JsonNamingPolicy.CamelCase.ConvertName(p.Name), StringComparer.Ordinal);
+                var names = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var item in group.EnumerateObject())
+                {
+                    if (!names.Add(item.Name)) throw Invalid("threatAlerts." + item.Name, "duplicate key");
+                    if (!expected.ContainsKey(item.Name)) throw Invalid("threatAlerts." + item.Name, "unknown key");
+                }
+                var result = ThreatAlertVisualSettings.Default with { };
+                foreach (var (name, property) in expected)
+                {
+                    if (!group.TryGetProperty(name, out var item)) throw Invalid("threatAlerts." + name, "required field");
+                    if (property.PropertyType == typeof(bool))
+                    {
+                        if (item.ValueKind is not (JsonValueKind.True or JsonValueKind.False)) throw Invalid("threatAlerts." + name, "expected boolean");
+                        property.SetValue(result, item.GetBoolean());
+                    }
+                    else
+                    {
+                        if (item.ValueKind != JsonValueKind.Number || !item.TryGetDouble(out double value) || !double.IsFinite(value) || value <= 0 || value > 10000)
+                            throw Invalid("threatAlerts." + name, "expected finite positive value <=10000");
+                        property.SetValue(result, value);
+                    }
+                }
+                if (result.MinimumSignalIntervalRealMs < 1500 || result.UrgentSignalIntervalRealMs < result.MinimumSignalIntervalRealMs ||
+                    result.DangerSignalIntervalRealMs <= result.UrgentSignalIntervalRealMs) throw Invalid("threatAlerts", "cadence requires minimum >=1500ms and urgent interval < danger interval");
+                if (result.DangerWidthMultiplier <= result.NearWidthMultiplier || result.NearWidthMultiplier <= result.MissWidthMultiplier)
+                    throw Invalid("threatAlerts", "danger/near/miss widths must be strictly distinct in descending order");
+                if (result.NearDashLengthPx == result.MissDotLengthPx && result.NearDashGapPx == result.MissDashGapPx)
+                    throw Invalid("threatAlerts", "near and miss dash patterns must be distinct");
+                if (result.LaunchToneHz < 37 || result.DangerToneHz < 37 || result.UrgentToneHz < 37 || result.ToneDurationRealMs > 250 ||
+                    result.UrgentPulseGapRealMs > 250 || result.UrgentPulseCount is < 1 or > 4 || result.UrgentPulseCount != Math.Truncate(result.UrgentPulseCount) ||
+                    result.UrgentPulseCount * result.ToneDurationRealMs + (result.UrgentPulseCount - 1) * result.UrgentPulseGapRealMs >= result.MinimumSignalIntervalRealMs)
+                    throw Invalid("threatAlerts", "invalid tone frequency, pulse count or pattern duration");
+                return result;
+            }
 
             PointCombatVisualSettings ReadPointCombat()
             {
@@ -151,4 +194,29 @@ public sealed record PointCombatVisualSettings
     public double ShotDownDurationRealMs { get; init; } = 350;
     public double ThreatPulsePeriodRealMs { get; init; } = 800;
     public static PointCombatVisualSettings Default { get; } = new();
+}
+
+/// <summary>Real-time accessible presentation and sound only; never changes threat physics.</summary>
+public sealed record ThreatAlertVisualSettings
+{
+    public bool SoundEnabled { get; init; } = true;
+    public double DangerWidthMultiplier { get; init; } = 3;
+    public double NearWidthMultiplier { get; init; } = 2;
+    public double MissWidthMultiplier { get; init; } = 1;
+    public double NearDashLengthPx { get; init; } = 6;
+    public double NearDashGapPx { get; init; } = 4;
+    public double MissDotLengthPx { get; init; } = 1;
+    public double MissDashGapPx { get; init; } = 8;
+    public double MinimumSignalIntervalRealMs { get; init; } = 1500;
+    public double DangerSignalIntervalRealMs { get; init; } = 3000;
+    public double UrgentSignalIntervalRealMs { get; init; } = 1500;
+    public double LaunchFlashDurationRealMs { get; init; } = 600;
+    public double LaunchToneHz { get; init; } = 880;
+    public double DangerToneHz { get; init; } = 1200;
+    public double UrgentToneHz { get; init; } = 1800;
+    public double ToneDurationRealMs { get; init; } = 80;
+    public double UrgentPulseCount { get; init; } = 2;
+    public double UrgentPulseGapRealMs { get; init; } = 60;
+    public double OffscreenArrowRadiusPx { get; init; } = 8;
+    public static ThreatAlertVisualSettings Default { get; } = new();
 }

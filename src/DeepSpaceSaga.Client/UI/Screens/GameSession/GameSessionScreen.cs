@@ -308,12 +308,17 @@ public sealed partial class GameSessionScreen : IScreen
         TacticalMapSettings? mapSettings = null,
         string? tacticalMapSnapshotDirectory = null,
         CombatVisualSettings? combatSettings = null,
-        CombatInputSettings? combatInputs = null)
+        CombatInputSettings? combatInputs = null,
+        Action<CombatAlertCue>? alertAudio = null,
+        Action? activateAudio = null,
+        Action? deactivateAudio = null)
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         CombatInputs = (combatInputs ?? CombatInputSettings.Default).Validate();
+        _alertAudio = alertAudio;
+        _activateAlertAudio = activateAudio; _deactivateAlertAudio = deactivateAudio;
         _predictor = predictor;
         _handle = handle;
         InitializeCombatReports();
@@ -387,6 +392,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnActivated()
     {
+        _alertsInactive = false;
+        _activateAlertAudio?.Invoke();
         // Wait for a fresh MouseMove before hit-testing again — the position we had
         // before this screen was last deactivated (e.g. under a since-closed modal) is
         // stale and must not silently reactivate an object under it.
@@ -395,6 +402,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _alertsInactive = true; _launchFlashes.Clear();
+        _deactivateAlertAudio?.Invoke();
         CancelManeuverInput();
         CancelPointAim();
         _combatReportPanel.ClearFocus();
@@ -1204,6 +1213,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (_selectedPoiId is not null && !_poiGeometry.Any(p => p.Data.ObjectId == _selectedPoiId)) _selectedPoiId = null;
 
         UpdateCameraFocusFromPlayer(_renderStates);
+        UpdateThreatAlerts(now);
         UpdateCombatImportance();
         UpdateMapClusters();
 
@@ -1281,6 +1291,7 @@ public sealed partial class GameSessionScreen : IScreen
             DrawLaunchPreview(canvas, prediction, viewportResized);
             DrawPointAimFeedback(canvas);
             DrawManeuverInput(canvas);
+            DrawThreatAlertOverlays(canvas, now);
             RenderStageCompleted?.Invoke("launch_preview");
             CompleteRenderStage("forecasts");
 
@@ -1335,6 +1346,8 @@ public sealed partial class GameSessionScreen : IScreen
                         AiMapPresentation.DrawBase(canvas, aiBase, sx, sy, r);
                         continue;
                     }
+                    if (state.Source.ObservedProjectile is { Kind: ProjectileKind.Torpedo })
+                    { DrawObservedThreatMarker(canvas, state, sx, sy, r, now); continue; }
                     if (HasCombatMarker(state.Source))
                     {
                         if (state.Source.Torpedo is not null)

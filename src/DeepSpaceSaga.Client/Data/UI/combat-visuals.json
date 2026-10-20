@@ -43,5 +43,26 @@
         "blastDurationRealMs": 600,
         "shotDownDurationRealMs": 350,
         "threatPulsePeriodRealMs": 800
+    },
+    "threatAlerts": {
+        "soundEnabled": true,
+        "dangerWidthMultiplier": 3,
+        "nearWidthMultiplier": 2,
+        "missWidthMultiplier": 1,
+        "nearDashLengthPx": 6,
+        "nearDashGapPx": 4,
+        "missDotLengthPx": 1,
+        "missDashGapPx": 8,
+        "minimumSignalIntervalRealMs": 1500,
+        "dangerSignalIntervalRealMs": 3000,
+        "urgentSignalIntervalRealMs": 1500,
+        "launchFlashDurationRealMs": 600,
+        "launchToneHz": 880,
+        "dangerToneHz": 1200,
+        "urgentToneHz": 1800,
+        "toneDurationRealMs": 80,
+        "urgentPulseCount": 2,
+        "urgentPulseGapRealMs": 60,
+        "offscreenArrowRadiusPx": 8
     }
 }

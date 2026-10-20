@@ -53,7 +53,7 @@ Execution order задаётся ticket DAG, который допускает �
 |---|---|---|---|---:|
 | 38 / [EP-0012-US-0012-TK-0001-evade-input-and-threat-select](EP-0012-US-0012-TK-0001-evade-input-and-threat-select/EP-0012-US-0012-TK-0001-evade-input-and-threat-select.md) | client | EP-0012-US-0011-TK-0004-launch-commands-and-reasons | US12-AC1 | 8 |
 | 39 / [EP-0012-US-0012-TK-0002-threat-panel](EP-0012-US-0012-TK-0002-threat-panel/EP-0012-US-0012-TK-0002-threat-panel.md) | client | EP-0012-US-0012-TK-0001-evade-input-and-threat-select | US12-AC2 | 7 |
-| 40 / [EP-0012-US-0012-TK-0003-threat-alerts](EP-0012-US-0012-TK-0003-threat-alerts/EP-0012-US-0012-TK-0003-threat-alerts.md) | client | EP-0012-US-0012-TK-0002-threat-panel | US12-AC3 | 5 |
+| 40 / [EP-0012-US-0012-TK-0003-threat-alerts](EP-0012-US-0012-TK-0003-threat-alerts/EP-0012-US-0012-TK-0003-threat-alerts.md) | client | EP-0012-US-0012-TK-0002-threat-panel | US12-AC3 | 9 |
 
 ## Decisions / Assumptions
 
