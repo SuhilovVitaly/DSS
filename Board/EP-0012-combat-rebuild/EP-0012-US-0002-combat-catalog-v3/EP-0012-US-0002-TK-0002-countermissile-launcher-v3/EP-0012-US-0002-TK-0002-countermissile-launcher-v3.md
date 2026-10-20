@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0002-combat-catalog-v3"
 ticket: "EP-0012-US-0002-TK-0002-countermissile-launcher-v3"
 title: "countermissile-launcher-v3"
-stage: "draft"
+stage: "implemented"
 layer: "content-data"
 depends_on: ["EP-0012-US-0002-TK-0001-torpedo-launchers-v3"]
 files_touched: 2
 serves: ["US2-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0002-TK-0002-countermissile-launcher-v3
@@ -33,12 +33,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+No public API change. Staged countermissile component uses the strict point-launch module schema; canonical default activation belongs to US2-TK5.
 
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
-2. `Data/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json`. Одноствольная версия (`single`) использовалась Шмелем. Здесь её не трогают: она удаляется в US9-TK2 вместе со сценарием.
+2. Подготовить `Data/CombatV3/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json`; TK5 переносит его в canonical path атомарно. Одноствольная версия (`single`) использовалась Шмелем. Здесь её не трогают: она удаляется в US9-TK2 вместе со сценарием.
 3. Добавить/обновить named checks ниже одновременно с реализацией. Удаляемые legacy tests заменять проверками нового контракта, сохраняющиеся инварианты не выкидывать.
 4. Записать фактические команды/результаты при исполнении; сейчас всё NOT RUN.
 
@@ -71,7 +71,11 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 2 named / 2334 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0002-tk0002-results.json).
+
+Staged countermissile component parsed/validated in source/deployed:30km,12500ms,scatter0.08,wide15/R1 fast25/R0.5; no legacy guidance/rating/barrels/burst fields on basic. Single variant semantically unchanged; removal remains US9-TK2. Active default Engine still coherent; default v3 activation remains US2-TK5.2334 non-budget Client PASS; native/strict budgets OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 ## Atomic catalog staging decision
 
