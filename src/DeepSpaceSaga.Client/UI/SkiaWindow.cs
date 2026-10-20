@@ -567,6 +567,9 @@ public sealed class SkiaWindow : IDisposable
         // that produced it — never re-derived later from (possibly stale) screen state
         // inside the locked HandleScreenEvent switch. See LoadScreen's doc comment.
         var currentScreen = _screens.Current;
+        if (currentScreen is GameSessionScreen game && _keyboard is not null)
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
+                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
         var screenEvent = currentScreen.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
         string? payload = screenEvent == ScreenEvent.LoadSlotRequested && currentScreen is LoadScreen loadScreen
             ? loadScreen.LastRequestedSlotId
@@ -651,7 +654,8 @@ public sealed class SkiaWindow : IDisposable
 
         if (_screens.Current is GameSessionScreen game)
         {
-            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight));
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
+                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
             bool aimPressed = Array.IndexOf(_keyboardPressedKeys, _combatInputs.TorpedoAim, 0, pressedCount) >= 0 ||
                 Array.IndexOf(_keyboardPressedKeys, _combatInputs.CountermissileAim, 0, pressedCount) >= 0;
             if (aimPressed && _mouse is not null && !_keyboard.IsKeyPressed(Key.ControlLeft) && !_keyboard.IsKeyPressed(Key.ControlRight))

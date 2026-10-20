@@ -29,14 +29,15 @@ public sealed partial class GameSessionScreen
     internal string? PointAimFeedback => PointAim is { } aim && PointAimModule(aim.ModuleId) is { } module
         ? PointWeaponStatus(module) : null;
 
-    internal void SynchronizeModifiers(bool controlLeft, bool controlRight)
-    { _isCtrlLeftDown = controlLeft; _isCtrlRightDown = controlRight; }
+    private bool _pointAltLeft, _pointAltRight;
+    internal void SynchronizeModifiers(bool controlLeft, bool controlRight, bool altLeft = false, bool altRight = false)
+    { _isCtrlLeftDown = controlLeft; _isCtrlRightDown = controlRight; _pointAltLeft = altLeft; _pointAltRight = altRight; }
 
     private InstalledModuleSnapshot? PointAimModule(string id) =>
         _buffer.Presented?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
             ? snapshot.InstalledModules.FirstOrDefault(m => m.ModuleId == id && !PointProfiles(m).IsDefaultOrEmpty) : null;
 
-    private void CancelPointAim() { PointAim = null; CurrentTorpedoAimPreview = null; ResetPointFriendlyConfirmation(); }
+    private void CancelPointAim() { PointAim = null; CurrentTorpedoAimPreview = null; CurrentCounterAimPreview = null; ResetPointFriendlyConfirmation(); }
 
     private void RefreshPointAiming()
     {
@@ -105,6 +106,8 @@ public sealed partial class GameSessionScreen
 
     private bool HandlePointAimKey(Key key)
     {
+        if (key is Key.AltLeft or Key.AltRight)
+        { if (key == Key.AltLeft) _pointAltLeft = true; else _pointAltRight = true; return true; }
         RefreshPointAiming();
         if (PointAim is not null && (key == CombatInputs.Cancel || key == Key.Escape)) { CancelPointAim(); return true; }
         if (IsCtrlDown) return false;
@@ -148,6 +151,8 @@ public sealed partial class GameSessionScreen
         if (PointReadyReason(module) is not null) { _pointErrors.Remove(module.ModuleId); return true; }
         if (_handle is null) { _pointErrors[module.ModuleId] = "connection_unavailable"; return true; }
         var target = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
+        if (aim.Kind == ProjectileKind.Countermissile && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
+            target = (counter.X, counter.Y);
         var player = FindPlayerShip(_renderStates);
         double? range = module.LauncherCombat?.RangeKm ?? module.Defense?.RangeKm;
         if (range is not > 0 || !double.IsFinite(range.Value))
@@ -210,9 +215,12 @@ public sealed partial class GameSessionScreen
         if (PointAim is not { } aim) return;
         var styles = CombatSettings.PointCombat;
         DrawTorpedoAimPreview(canvas);
+        DrawCounterAimPreview(canvas);
         var rect = AvailableMapRect();
         float x = _hasMousePosition ? _mouseX : rect.MidX;
         float y = _hasMousePosition ? _mouseY : rect.Top + (float)styles.TextSizePx * 2;
+        if (CurrentCounterAimPreview is { } counter)
+        { var point = _camera.WorldToScreen(counter.X, counter.Y, _viewportW, _viewportH); x = point.X; y = point.Y; }
         if (_hasMousePosition && IsClickOnUiPanel(_uiMouseX, _uiMouseY)) return;
         using var line = new SKPaint { Color = styles.AimReticle, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)styles.LineWidthPx };
         float radius = (float)styles.ReticleRadiusPx;

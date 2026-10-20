@@ -21,7 +21,7 @@ internal sealed class KeyboardEdgeTracker
     {
         var input = (bindings ?? CombatInputSettings.Default).Validate();
         // Modifiers precede actions; aim entry precedes profile/speed keys in the same poll.
-        _keys = new[] { Key.ControlLeft, Key.ControlRight, input.TorpedoAim, input.CountermissileAim }
+        _keys = new[] { Key.ControlLeft, Key.ControlRight, Key.AltLeft, Key.AltRight, input.TorpedoAim, input.CountermissileAim }
             .Concat(StandardKeys).Concat(input.MappedKeys).Distinct().ToArray();
     }
 

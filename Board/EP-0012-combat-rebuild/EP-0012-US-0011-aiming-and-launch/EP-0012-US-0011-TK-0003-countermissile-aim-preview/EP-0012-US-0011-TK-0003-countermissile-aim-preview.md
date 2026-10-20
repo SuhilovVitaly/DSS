@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0011-aiming-and-launch"
 ticket: "EP-0012-US-0011-TK-0003-countermissile-aim-preview"
 title: "countermissile-aim-preview"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0011-TK-0002-torpedo-aim-preview"]
-files_touched: 4
+files_touched: 6
 serves: ["US11-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0011-TK-0003-countermissile-aim-preview
@@ -24,14 +24,18 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Bounded scope (6 files), updated before code under EpicExecutionPrompt authority. Actual native Alt state and snapped launch point must reach the existing authoritative submission path; separate pure rendering would not satisfy AC3.
 
-| File | Current state | Allowed change |
-|---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs:8; public sealed partial class GameSessionScreen | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatTrajectoryProjector.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatTrajectoryProjector.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatTrajectoryProjector.cs:8; internal static class CombatTrajectoryProjector | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| File | Allowed change |
+|---|---|
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | Actual click uses snapped point; modifier state and preview rendering |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CounterAimPreview.cs` | NEW public-observation snapping/threat/arrival/salvo/own-torpedo geometry and render |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Actual Alt down/up and deactivate handling |
+| `src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs` | Alt edges precede actions, focus resync preserves held modifier |
+| `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` | Actual native Alt synchronization before keyboard and launch click |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs` | NEW analytic geometry, actual input and real transport checks |
+
+A-COUNTER-PREVIEW: threat deadlines/danger segments derive only from BlastThreatMath and displayed positions/velocities. Snapping chooses the nearest forward observed torpedo ray within 12 physical screen pixels, ties ordinal ID. Arrival and salvo are conditional projections, not confirmed interceptions. Own in-flight countermissile prediction may use its own captured fuse; foreign fuses are never read. Missing deadlines remain unknown.
 
 ## Public API after the change
 
@@ -74,4 +78,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 10 named / 2208 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0011-tk0003-results.json).
+
+Actual counter aim snaps to the nearest forward observed torpedo ray within 12 physical pixels; Alt disables snap through native synchronization and real input. Rendered reticle and Engine-submitted point agree. Shared BlastThreatMath supplies danger/deadline, arrival/spare and late/unreachable labels; projected salvo and own-torpedo warning use current displayed motion. Enroute badge is explicitly conditional and reads only own captured CM fuse plus foreign observation. Input regression 70/70 PASS; native, strict legacy ForecastBudget and final catalog integration remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

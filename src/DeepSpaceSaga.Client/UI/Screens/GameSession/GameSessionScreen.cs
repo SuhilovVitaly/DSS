@@ -405,6 +405,7 @@ public sealed partial class GameSessionScreen : IScreen
         _isPanningMap = false;
         _isCtrlLeftDown = false;
         _isCtrlRightDown = false;
+        _pointAltLeft = _pointAltRight = false;
         _hasMousePosition = false;
         SetActiveObjectId(null);
     }
@@ -731,6 +732,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnKeyUp(Key key)
     {
+        if (key == Key.AltLeft) _pointAltLeft = false;
+        else if (key == Key.AltRight) _pointAltRight = false;
         if (key == Key.ControlLeft)
             _isCtrlLeftDown = false;
         else if (key == Key.ControlRight)
