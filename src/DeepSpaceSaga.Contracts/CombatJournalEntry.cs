@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
@@ -37,4 +38,5 @@ public sealed record CombatJournalEntry(long EventId, double MotionTimeMs, Comba
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ProjectileKind? ProjectileKind = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ProfileId = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? BlastRadiusKm = null,
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ProjectileHitResult? HitResult = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ProjectileHitResult? HitResult = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ImmutableArray<string>? DestroyedProjectileIds = null);

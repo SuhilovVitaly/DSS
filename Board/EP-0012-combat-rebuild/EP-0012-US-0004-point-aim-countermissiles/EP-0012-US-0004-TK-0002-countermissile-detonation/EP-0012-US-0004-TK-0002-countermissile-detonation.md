@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0004-point-aim-countermissiles"
 ticket: "EP-0012-US-0004-TK-0002-countermissile-detonation"
 title: "countermissile-detonation"
-stage: "draft"
-layer: "engine"
+stage: "implemented"
+layer: "engine-and-contracts"
 depends_on: ["EP-0012-US-0004-TK-0001-countermissile-point-launch"]
-files_touched: 4
+files_touched: 5
 serves: ["US4-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0004-TK-0002-countermissile-detonation
@@ -24,18 +24,21 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Актуальный allowlist 5 файлов, с Engine/Contracts и matching tests. Scheduler уже использует NextPointDetonationTime из point partial, поэтому расширение kinds/batch делается там. В исходном event DTO отсутствовал обязательный destroyed[] из US4-AC2: добавляется nullable список ID фактически сбитых снарядов без private данных, с отдельным transport test. Point factory получает независимый torpedoScatter argument для точных аналитических same-time fixtures на настоящем Engine, без ручной вставки projectile state.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs:8; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs:4; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs) | Shared point scheduler/resolver | Counter-before-torpedo batch, radius destruction, state cleanup. |
+| [src/DeepSpaceSaga.Contracts/CombatJournalEntry.cs](../../../../src/DeepSpaceSaga.Contracts/CombatJournalEntry.cs) | Event facts | Append optional DestroyedProjectileIds. |
+| `tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0004TK0002Tests.cs` | NEW | Empty/nonempty/absent destroyed IDs roundtrip without private data. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0004TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| [tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0004TK0001Tests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0004TK0001Tests.cs) | Point registry fixture | Explicit independent torpedo scatter parameter for exact-deadline scenarios. |
 
 ## Public API after the change
 
 No public API change; внутренние детали ограничены перечисленным scope.
+
+Execution API refinement: CombatJournalEntry appends ImmutableArray<string>? DestroyedProjectileIds=null, omitted when null, emitted as [] for an observed empty counter blast. Engine emits ordinal victim IDs, excluding the detonator itself, plus one ShotDown fact per victim; no child blast or interception RNG. All sides/kinds are eligible at <=R. Same-time counter ordinal order precedes remaining torpedoes; destroyed due counter/torpedo cannot detonate. Removing flights updates launcher/defense active IDs without resetting captured reload. Internal NPC shared launcher accepts explicit ProjectileKind for production-path fixtures/consumers.
 
 ## Implementation steps
 
@@ -74,4 +77,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 5 named / 346 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0004-tk0002-results.json).
+
+Counter-first ordinal batch удаляет все kinds/sides при <=R без chain blast, ship damage или interception/hit-location RNG. DestroyedProjectileIds содержит ordinal victim IDs без самого детонатора, ShotDown сохраняет victim identity и source counter correlation. Проверены5 реальных сценариев: all kinds/sides, radius boundary/outside, same-time1000ms, counter-vs-counter, partition equality. Launch reload и active IDs после удаления согласованы. Дополнительно [Contracts evidence](../../evidence/us0004-tk0002-contracts-results.json):3 named /254 full PASS, nullable absent/empty/nonempty ID lists roundtrip и privacy. Общая solution build PASS0 warnings/errors3.91s. Legacy auto-defense cleanup остаётся следующим тикетом, full Engine/Client gates OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

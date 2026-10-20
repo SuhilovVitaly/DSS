@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Combat;
 using DeepSpaceSaga.Motion;
@@ -29,14 +30,14 @@ public sealed partial class SimulationEngine
     }
 
     internal CommandStartOutcome TryStartHostilePointLaunch(string ownerId, string moduleId,
-        double x, double y, string profileId, long motionTimeMs)
+        double x, double y, string profileId, long motionTimeMs, ProjectileKind kind = ProjectileKind.Torpedo)
     {
         lock (_worldStateLock)
         {
             var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == ownerId &&
                 o.ObjectType == SpaceObjectType.NpcShip && !o.IsDestroyed);
             return owner is null ? CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject) :
-                TryLaunchPointProjectile(owner, moduleId, x, y, profileId, motionTimeMs, ProjectileKind.Torpedo);
+                TryLaunchPointProjectile(owner, moduleId, x, y, profileId, motionTimeMs, kind);
         }
     }
 
@@ -159,7 +160,7 @@ public sealed partial class SimulationEngine
     }
 
     private double NextPointDetonationTime() => _objects
-        .Where(o => o.InitialMotion.OwnProjectile is { Kind: ProjectileKind.Torpedo })
+        .Where(o => o.InitialMotion.OwnProjectile is not null)
         .Select(o => o.InitialMotion.OwnProjectile!.DetonationMotionTimeMs)
         .DefaultIfEmpty(double.PositiveInfinity).Min();
 
@@ -189,12 +190,19 @@ public sealed partial class SimulationEngine
             .ToDictionary(o => o.InitialMotion.ObjectId, o => CombatPath(o).Position(motionTimeMs), StringComparer.Ordinal);
         var deaths = new Dictionary<string, (string Cause, string Owner, string Projectile)>(StringComparer.Ordinal);
         var projectiles = manualProjectile is not null ? [manualProjectile] :
-            _objects.Where(o => o.InitialMotion.OwnProjectile is { Kind: ProjectileKind.Torpedo } point &&
-                point.DetonationMotionTimeMs == motionTimeMs).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray();
+            _objects.Where(o => o.InitialMotion.OwnProjectile is { } point && point.DetonationMotionTimeMs == motionTimeMs)
+                .OrderBy(o => o.InitialMotion.OwnProjectile!.Kind == ProjectileKind.Countermissile ? 0 : 1)
+                .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray();
         foreach (var projectile in projectiles)
         {
+            if (!_objects.Any(o => o.InitialMotion.ObjectId == projectile.InitialMotion.ObjectId)) continue;
             var flight = projectile.InitialMotion.OwnProjectile!;
             var position = CombatPath(projectile).Position(motionTimeMs);
+            if (flight.Kind == ProjectileKind.Countermissile)
+            {
+                ResolveCountermissileBlast(projectile, motionTimeMs, position);
+                continue;
+            }
             AppendCombatEvent(new(0, motionTimeMs, manualProjectile is null ? CombatEventType.TorpedoDetonated : CombatEventType.ManuallyDetonated, flight.OwnerObjectId,
                 string.Empty, projectile.InitialMotion.ObjectId, position.X, position.Y,
                 ProjectileKind: flight.Kind, ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm));
@@ -222,12 +230,66 @@ public sealed partial class SimulationEngine
                 if (result.StructureAfter == 0 && ShipDestroyReason(result.UpdatedShip, result.ModuleId) is { } cause)
                     deaths.TryAdd(target.InitialMotion.ObjectId, (cause, flight.OwnerObjectId, projectile.InitialMotion.ObjectId));
             }
-            _objects.Remove(projectile);
-            var key = (flight.OwnerObjectId, flight.LauncherModuleId);
-            if (_launcherCombat.TryGetValue(key, out var launcher))
-                _launcherCombat[key] = launcher with { ActiveTorpedoIds = launcher.ActiveTorpedoIds.Remove(projectile.InitialMotion.ObjectId) };
+            RemovePointFlight(projectile, motionTimeMs);
         }
         foreach (var (id, death) in deaths.OrderBy(pair => pair.Key, StringComparer.Ordinal))
             DestroyShip(id, death.Cause, motionTimeMs, death.Owner, death.Projectile, shipPositions[id]);
+    }
+
+    private void ResolveCountermissileBlast(SpaceObjectRuntime projectile, double motionTimeMs, (double X, double Y) centre)
+    {
+        var flight = projectile.InitialMotion.OwnProjectile!;
+        var victims = _objects.Where(o => o.InitialMotion.ObjectId != projectile.InitialMotion.ObjectId && !o.IsDestroyed &&
+                o.ObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure)
+            .Where(o =>
+            {
+                var p = CombatPath(o).Position(motionTimeMs);
+                double dx = (p.X - centre.X) / WorldUnitsPerKm, dy = (p.Y - centre.Y) / WorldUnitsPerKm;
+                return Math.Sqrt(dx * dx + dy * dy) <= flight.BlastRadiusKm;
+            }).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray();
+        AppendCombatEvent(new(0, motionTimeMs, CombatEventType.CountermissileDetonated, flight.OwnerObjectId,
+            string.Empty, projectile.InitialMotion.ObjectId, centre.X, centre.Y,
+            ProjectileKind: flight.Kind, ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm,
+            DestroyedProjectileIds: victims.Select(o => o.InitialMotion.ObjectId).ToImmutableArray()));
+        foreach (var victim in victims)
+        {
+            var point = CombatPath(victim).Position(motionTimeMs);
+            AppendCombatEvent(new(0, motionTimeMs, CombatEventType.ShotDown, flight.OwnerObjectId,
+                victim.InitialMotion.ObjectId, victim.InitialMotion.ObjectId, point.X, point.Y, Result: projectile.InitialMotion.ObjectId,
+                ProjectileKind: victim.InitialMotion.OwnProjectile?.Kind ??
+                    (victim.ObjectType == SpaceObjectType.Missile ? ProjectileKind.Torpedo : ProjectileKind.Countermissile),
+                ProfileId: victim.InitialMotion.OwnProjectile?.ProfileId,
+                BlastRadiusKm: victim.InitialMotion.OwnProjectile?.BlastRadiusKm, HitResult: ProjectileHitResult.ShotDown));
+            RemovePointFlight(victim, motionTimeMs);
+        }
+        RemovePointFlight(projectile, motionTimeMs);
+    }
+
+    private void RemovePointFlight(SpaceObjectRuntime projectile, double motionTimeMs)
+    {
+        string id = projectile.InitialMotion.ObjectId;
+        _objects.RemoveAll(o => o.InitialMotion.ObjectId == id);
+        _torpedoTargets.Remove(id);
+        _countermeasureTargetPlans.Remove(id);
+        string? owner = projectile.InitialMotion.OwnProjectile?.OwnerObjectId ?? projectile.InitialMotion.Torpedo?.OwnerObjectId ??
+            projectile.InitialMotion.Countermeasure?.OwnerObjectId;
+        string? module = projectile.InitialMotion.OwnProjectile?.LauncherModuleId ?? projectile.InitialMotion.Torpedo?.LauncherModuleId ??
+            projectile.InitialMotion.Countermeasure?.LauncherModuleId;
+        if (owner is null || module is null) return;
+        var key = (owner, module);
+        if (_launcherCombat.TryGetValue(key, out var launcher))
+            _launcherCombat[key] = launcher with { ActiveTorpedoIds = launcher.ActiveTorpedoIds.Remove(id) };
+        if (!_defenses.TryGetValue(key, out var defense)) return;
+        var active = (defense.ActiveProjectileIds ?? (defense.ActiveProjectileId is { } first ? [first] : [])).Remove(id);
+        double ready = defense.ReadyAtMotionTimeMs ?? defense.ReloadDueMotionTimeMs ?? motionTimeMs;
+        var state = ready > motionTimeMs ? DefenseState.Reloading : defense.Operator is null ? DefenseState.NoOperator : DefenseState.Ready;
+        if (projectile.InitialMotion.Countermeasure is not null && !active.IsEmpty) state = DefenseState.Guiding;
+        _defenses[key] = defense with
+        {
+            ActiveProjectileId = active.IsEmpty ? null : active[0],
+            ActiveProjectileIds = active,
+            State = state,
+            ReloadDueMotionTimeMs = ready > motionTimeMs ? ready : null
+        };
     }
 }

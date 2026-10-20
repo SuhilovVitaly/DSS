@@ -12,9 +12,9 @@ public sealed class PointCombatUS0004TK0001Tests
     private static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition =>
         Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
 
-    internal static GameDataRegistry CounterRegistry(double scatter = 0.08)
+    internal static GameDataRegistry CounterRegistry(double scatter = 0.08, double torpedoScatter = 0.02)
     {
-        var source = Registry();
+        var source = Registry(torpedoScatter);
         return GameDataRegistry.Create(All(source.ModuleCategories).Select(c => c.TypeId == "module.countermeasure.launcher"
                 ? c with { CommandTypeIds = [DefenseCommandTypes.Launch] } : c),
             All(source.ModuleTypes).Select(m => m.CategoryTypeId != "module.countermeasure.launcher" ? m : m with
@@ -40,14 +40,15 @@ public sealed class PointCombatUS0004TK0001Tests
             stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
     }
 
-    internal static SimulationEngine CreateCounter(Func<SpaceObjectData, SpaceObjectData>? configure = null, double scatter = 0.08)
+    internal static SimulationEngine CreateCounter(Func<SpaceObjectData, SpaceObjectData>? configure = null,
+        double scatter = 0.08, double torpedoScatter = 0.02)
     {
         var scenario = TorpedoImpactTests.Scenario(o =>
         {
             var value = o with { Ai = null, Crew = o.Crew?.Select(c => c with { AccuracySkill = 15 }).ToArray() };
             return configure?.Invoke(value) ?? value;
         });
-        var engine = new SimulationEngine(CounterRegistry(scatter));
+        var engine = new SimulationEngine(CounterRegistry(scatter, torpedoScatter));
         engine.LoadScenario(scenario);
         return engine;
     }

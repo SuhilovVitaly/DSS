@@ -47,7 +47,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 11 / US-0003-TK-0002-torpedo-point-launch | PASS 15 named / 242 bounded regression; build/format/diff PASS | `ce2dcf9d55c9656cd32a6158551647dcb002ec5d`, origin SHA verified |
 | 12 / US-0003-TK-0003-torpedo-area-detonation | PASS 13 named / 273 bounded regression; build/format/diff PASS | `e1e34582d43d87194c0352e8103f31d02572adca`, origin SHA verified |
 | 13 / US-0003-TK-0004-manual-detonation | PASS 4 named / 289 bounded regression; build/format/diff PASS | `40ded2cbb65ee98eca483b889238e465a1f041bf`, origin SHA verified |
-| 14 / US-0004-TK-0001-countermissile-point-launch | PASS 11 named / 341 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 14 / US-0004-TK-0001-countermissile-point-launch | PASS 11 named / 341 bounded regression; build/format/diff PASS | `8a92cac30bfae7e7c148362254fce9a51baf97fa`, origin SHA verified |
+| 15 / US-0004-TK-0002-countermissile-detonation | PASS 5 named / 346 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
