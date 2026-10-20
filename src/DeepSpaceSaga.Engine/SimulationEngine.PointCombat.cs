@@ -125,12 +125,12 @@ public sealed partial class SimulationEngine
             _defenses[key] = defense with
             {
                 AutoEnabled = false,
-                State = DefenseState.Reloading,
+                State = type.ReloadMs.Value > 0 ? DefenseState.Reloading : DefenseState.Ready,
                 ActiveProjectileId = active[0],
                 ActiveProjectileIds = active,
                 PendingBurstShots = [],
                 ReadyAtMotionTimeMs = motionTimeMs + (double)type.ReloadMs.Value,
-                ReloadDueMotionTimeMs = motionTimeMs + (double)type.ReloadMs.Value,
+                ReloadDueMotionTimeMs = type.ReloadMs.Value > 0 ? motionTimeMs + (double)type.ReloadMs.Value : null,
                 Operator = weaponOperator
             };
             _countermeasureSequence = sequence;

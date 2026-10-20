@@ -43,6 +43,16 @@ public sealed partial class SimulationEngine
         if (saved.Encounter.State == CombatEncounterState.Lost ||
             saved.Encounter.State == CombatEncounterState.Active && Enum.Parse<SimulationSpeed>(state.CurrentSpeed) > SimulationSpeed.Speed1)
             throw new ScenarioException("Invalid point combat save: defeated state or active speed.");
+        if (!UsesPointEncounters && !objects.SelectMany(o => o.Modules).Any(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).IsPointLauncher))
+            throw new ScenarioException("Invalid point combat save: no point combat content.");
+        foreach (var d in saved.DodgeThreats)
+        {
+            var owner = objects.FirstOrDefault(o => o.InitialMotion.ObjectId == d.OwnerId);
+            if (owner is null) continue;
+            var module = owner.Modules.FirstOrDefault(m => m.ModuleId == d.EngineModuleId);
+            if (module is null || !IsEngineCategory(_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex)))
+                throw new ScenarioException("Invalid point combat save: NPC dodge module is not an engine.");
+        }
         foreach (var row in saved.Projectiles)
         {
             int index = objects.FindIndex(o => o.InitialMotion.ObjectId == row.ObjectId);

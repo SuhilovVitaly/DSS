@@ -130,6 +130,14 @@ internal static class CombatSaveValidation
                 row.State.ReadyAtMotionTimeMs is null or >= 0 &&
                 (row.State.ReadyAtMotionTimeMs is null || double.IsFinite(row.State.ReadyAtMotionTimeMs.Value)),
                 "invalid launcher flight list or reload time.");
+            if (row.State.Profiles is { } profiles)
+                Require(state.PointCombatState is not null && PointCombatSaveValidation.ProfilesValid(profiles) &&
+                    row.State.RangeKm is > 0 && double.IsFinite(row.State.RangeKm.Value) &&
+                    row.State.ReloadDurationMs is >= 0 && double.IsFinite(row.State.ReloadDurationMs.Value) &&
+                    row.State.ScatterPercent is >= 0 && double.IsFinite(row.State.ScatterPercent.Value) &&
+                    row.State.Maneuverability is null && !row.State.IsBrokenUntilDock &&
+                    (row.State.ActiveTorpedoIds.IsEmpty || row.State.ReadyAtMotionTimeMs is not null),
+                    "invalid point launcher capabilities or readiness.");
         }
         var projectileIds = new HashSet<string>(StringComparer.Ordinal);
         foreach (var row in combat.Projectiles!)

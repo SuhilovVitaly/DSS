@@ -40,6 +40,15 @@ public sealed record EncounterSaveData([property: JsonRequired] CombatEncounterS
 
 internal static class PointCombatSaveValidation
 {
+    internal static bool ProfilesValid(IEnumerable<LaunchProfileSnapshot>? profiles)
+    {
+        var list = profiles?.ToArray();
+        return list is { Length: > 0 } && list.All(p => p is not null && !string.IsNullOrWhiteSpace(p.ProfileId) &&
+            p.ProfileId == p.ProfileId.Trim() && double.IsFinite(p.SpeedKmS) && p.SpeedKmS > 0 &&
+            double.IsFinite(p.BlastRadiusKm) && p.BlastRadiusKm > 0) &&
+            list.Select(p => p.ProfileId).Distinct(StringComparer.Ordinal).Count() == list.Length;
+    }
+
     internal static GameStateData NormalizeReferences(GameStateData state)
     {
         if (state.PointCombatState is not { } saved) return state;

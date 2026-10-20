@@ -128,6 +128,7 @@ public static class ScenarioLoader
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         normalizedState = PointCombatSaveValidation.NormalizeReferences(normalizedState);
         PointCombatSaveValidation.Validate(normalizedState.PointCombatState, normalizedState.MotionTimeMs);
+        PointCombatContinuationValidation.Validate(normalizedState, scenario.SaveFormatVersion);
         normalizedState = CombatSaveValidation.NormalizeReferences(normalizedState);
         normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);

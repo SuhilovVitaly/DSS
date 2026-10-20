@@ -54,6 +54,8 @@ public sealed partial class SimulationEngine
             var current = defenses[(row.OwnerObjectId, row.ModuleId)];
             if (current.Profiles is { IsDefaultOrEmpty: false })
             {
+                if (state.Profiles is not { IsDefaultOrEmpty: false })
+                    throw new ScenarioException("Invalid defense save: legacy state on a point module.");
                 defenses[(row.OwnerObjectId, row.ModuleId)] = current with
                 {
                     State = state.State,
@@ -64,6 +66,8 @@ public sealed partial class SimulationEngine
                 };
                 continue;
             }
+            if (state.Profiles is not null)
+                throw new ScenarioException("Invalid defense save: point capabilities on a legacy module.");
             if (state.ReadyAtMotionTimeMs is null)
             {
                 double? readyAt = state.ReloadDueMotionTimeMs;
@@ -128,10 +132,14 @@ public sealed partial class SimulationEngine
             var current = launchers[(launcher.OwnerObjectId, launcher.ModuleId)];
             if (current.Profiles is { IsDefaultOrEmpty: false })
             {
+                if (launcher.State.Profiles is not { IsDefaultOrEmpty: false })
+                    throw new ScenarioException("Invalid combat save: legacy state on a point module.");
                 launchers[(launcher.OwnerObjectId, launcher.ModuleId)] = current with
                 { ActiveTorpedoIds = launcher.State.ActiveTorpedoIds, ReadyAtMotionTimeMs = launcher.State.ReadyAtMotionTimeMs };
                 continue;
             }
+            if (launcher.State.Profiles is not null)
+                throw new ScenarioException("Invalid combat save: point capabilities on a legacy module.");
             try
             {
                 FireModeMath.Resolve(_registry, launcher.State.ModeId);

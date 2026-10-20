@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0009-scenarios-and-saves"
 ticket: "EP-0012-US-0009-TK-0005-save18-defense-validation"
 title: "save18-defense-validation"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0009-TK-0004-save18-capture-and-restore"]
-files_touched: 4
+files_touched: 9
 serves: ["US9-AC3", "US3-AC5"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0009-TK-0005-save18-defense-validation
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (9 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -32,6 +32,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/Scenario/CombatSaveData.cs](../../../../src/DeepSpaceSaga.Engine/Scenario/CombatSaveData.cs) | Существует: src/DeepSpaceSaga.Engine/Scenario/CombatSaveData.cs:9; public sealed record CombatStateData( | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs](../../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs) | Существует: src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs:11; public static class ScenarioLoader | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0005Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| `src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs` | Existing or bounded new validator | Cross-payload point geometry/identities/RNG/encounter/evasion validation before publication; point-versus-legacy content guard and zero-reload state consistency. |
+| `src/DeepSpaceSaga.Engine/Scenario/PointCombatContinuationValidation.cs` | Existing or bounded new validator | Cross-payload point geometry/identities/RNG/encounter/evasion validation before publication; point-versus-legacy content guard and zero-reload state consistency. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombatPersistence.cs` | Existing or bounded new validator | Cross-payload point geometry/identities/RNG/encounter/evasion validation before publication; point-versus-legacy content guard and zero-reload state consistency. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.CombatPersistence.cs` | Existing or bounded new validator | Cross-payload point geometry/identities/RNG/encounter/evasion validation before publication; point-versus-legacy content guard and zero-reload state consistency. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs` | Existing or bounded new validator | Cross-payload point geometry/identities/RNG/encounter/evasion validation before publication; point-versus-legacy content guard and zero-reload state consistency. |
 
 ## Public API after the change
 
@@ -73,4 +79,10 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 26 named / 851 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0009-tk0005-results.json).
+
+Actual corrupt file matrices and world/file atomicity PASS; original9 accepted corrupt states and2 accepted wrong catalog-family states preserved as failing baselines. Shared point geometry, RNG/counters, evasion/NPC/encounter/launcher coherence hardened without legacy interception/guidance dependency. Zero-reload overlapping/zero-distance flight roundtrip PASS.2330 non-budget Client PASS; canonical data, full Engine/strict budgets/native OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
+
+Scope correction before implementation: actual file-corruption baseline accepts9 invalid cases and rejects1 empty profile. Add independent point continuation validation using shared point geometry (no legacy guidance/interception) at the existing loader boundary, plus catalog-aware staging guards. Preserve captured in-flight weapons across catalog edits and genuine orphan-owner flights, original integration anchors, optional legacy continuation until cleanup and atomic failure. Counter reload0 is legal in schema and must project immediately Ready while preserving its active flights; fix that boundary in the real shared point launch executor.

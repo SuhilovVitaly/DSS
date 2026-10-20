@@ -45,7 +45,7 @@ Execution order задаётся ticket DAG, который допускает �
 |---|---|---|---|---:|
 | 47 / [EP-0012-US-0009-TK-0003-save-format-18](EP-0012-US-0009-TK-0003-save-format-18/EP-0012-US-0009-TK-0003-save-format-18.md) | contracts-engine | EP-0012-US-0016-TK-0001-combat-localization | US9-AC3 | 16 |
 | 48 / [EP-0012-US-0009-TK-0004-save18-capture-and-restore](EP-0012-US-0009-TK-0004-save18-capture-and-restore/EP-0012-US-0009-TK-0004-save18-capture-and-restore.md) | engine | EP-0012-US-0009-TK-0003-save-format-18 | US9-AC3 | 9 |
-| 49 / [EP-0012-US-0009-TK-0005-save18-defense-validation](EP-0012-US-0009-TK-0005-save18-defense-validation/EP-0012-US-0009-TK-0005-save18-defense-validation.md) | engine | EP-0012-US-0009-TK-0004-save18-capture-and-restore | US9-AC3, US3-AC5 | 4 |
+| 49 / [EP-0012-US-0009-TK-0005-save18-defense-validation](EP-0012-US-0009-TK-0005-save18-defense-validation/EP-0012-US-0009-TK-0005-save18-defense-validation.md) | engine | EP-0012-US-0009-TK-0004-save18-capture-and-restore | US9-AC3, US3-AC5 | 9 |
 | 56 / [EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3](EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3/EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3.md) | content-data | EP-0012-US-0019-TK-0005-maneuver-command-catalog | US9-AC1 | 2 |
 | 57 / [EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios](EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios/EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios.md) | content-data | EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3 | US9-AC2 | 3 |
 
@@ -60,3 +60,7 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 ## Decision / review log
 
 2026-10-20T07:48:46.640Z: создано по поручению пользователя. Разделение слоёв/<=5 файлов — техническая декомпозиция. Stage draft, implementation NOT STARTED, проверки кода не запускались.
+
+## Save18 subcomponent automated review
+
+US9-AC3 schema/capture/restore/hardening implemented:19 schema,16 real continuation,26 hardening cases;851 bounded Engine and2330 non-budget Client PASS. Save17 rejects before parsing and preserves file/world; exact scene/save/RNG continuation, captured parameters, NPC/evasion/orbit/encounter/receipts/reports and defeated-slot protection verified. Source catalog/scenario migration and full/native/strict budget acceptance remain OPEN; US9 remains in_progress until its other tickets and final gates. Self-review, not independent.

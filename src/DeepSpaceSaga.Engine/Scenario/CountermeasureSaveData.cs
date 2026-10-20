@@ -91,6 +91,10 @@ internal static class CountermeasureSaveValidation
             Require(Enum.IsDefined(d.State) && double.IsFinite(d.RangeKm) && d.RangeKm > 0, "invalid defense state");
             if (state.PointCombatState is not null && d.Profiles is { IsDefaultOrEmpty: false })
             {
+                Require(PointCombatSaveValidation.ProfilesValid(d.Profiles.Value) && d.ReloadDurationMs is >= 0 && double.IsFinite(d.ReloadDurationMs.Value) &&
+                    d.ScatterPercent is >= 0 && double.IsFinite(d.ScatterPercent.Value) && d.ManualRangeKm is null && d.Accuracy is null &&
+                    d.SpeedKmS is null && d.TurnRateDegPerSec is null && d.MaxFlightTimeMs is null && d.Barrels == 1,
+                    "invalid point defense capabilities or legacy fields");
                 Require(!d.AutoEnabled && d.State != DefenseState.Guiding && d.PendingBurstShots is { IsDefaultOrEmpty: true } &&
                     d.ActiveProjectileIds is { IsDefault: false } && d.ActiveProjectileId == d.ActiveProjectileIds.Value.FirstOrDefault(),
                     "invalid point defense state");
@@ -100,6 +104,17 @@ internal static class CountermeasureSaveValidation
                     "point defense flight ownership mismatch");
                 Require(d.ReadyAtMotionTimeMs is null || double.IsFinite(d.ReadyAtMotionTimeMs.Value) && d.ReadyAtMotionTimeMs >= 0,
                     "invalid point reload deadline");
+                bool reloading = d.ReadyAtMotionTimeMs > state.MotionTimeMs;
+                Require(d.State == (reloading ? DefenseState.Reloading : d.Operator is null ? DefenseState.NoOperator : DefenseState.Ready) &&
+                    d.ReloadDueMotionTimeMs == (reloading ? d.ReadyAtMotionTimeMs : null) &&
+                    (d.ActiveProjectileIds.Value.IsEmpty || d.ReadyAtMotionTimeMs is not null), "point reload/state mismatch");
+                if (d.Operator is { } pointOperator)
+                {
+                    ValidateOperator(pointOperator);
+                    Require(pointOperator.SkillType == WeaponSkillType.CountermeasureDefense && pointOperator.BaseRating == 0 &&
+                        pointOperator.Skill is >= 0 and <= 30 && module!.OperatorCrewId == pointOperator.CrewId &&
+                        owner.Crew?.Any(c => c.CrewId == pointOperator.CrewId) == true, "invalid point operator membership");
+                }
                 continue;
             }
             if (format >= 16)
@@ -211,7 +226,7 @@ internal static class CountermeasureSaveValidation
         var pointIds = state.PointCombatState?.Projectiles.Where(p => p.Flight.Kind == ProjectileKind.Countermissile)
             .Select(p => p.ObjectId).ToHashSet(StringComparer.Ordinal) ?? [];
         Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Countermeasure).All(o => ids.Contains(o.ObjectId) || pointIds.Contains(o.ObjectId)), "projectile without flight");
-        Require(saved.Launchers.Where(l => l.State.Profiles is not { IsDefaultOrEmpty: false }).All(l => l.State.ActiveProjectileIds is { } active
+        Require(saved.Launchers.Where(l => state.PointCombatState is null || l.State.Profiles is not { IsDefaultOrEmpty: false }).All(l => l.State.ActiveProjectileIds is { } active
             ? active.All(ids.Contains)
             : l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
         long lastId = 0; double lastTime = 0; ulong rolls = 0, torpedoRolls = 0, breakdownEvents = 0;
