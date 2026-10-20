@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Engine.Content;
 using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
@@ -8,20 +9,44 @@ public sealed class TradingEconomySaveSchemaTests
 {
     private static string Json<T>(T value) => JsonSerializer.Serialize(value);
 
-    internal static ScenarioFile WithoutNewContinuation(ScenarioFile source, int version) => source with
+    internal static ScenarioFile WithoutNewContinuation(ScenarioFile source, int version)
     {
-        SaveFormatVersion = version,
-        GameState = source.GameState with
+        if (version >= 18) return source with { SaveFormatVersion = version };
+        // Historical economy fixtures carry no retired weapon continuation. Their money,
+        // cargo, crew, navigation and market payloads remain the subject of these tests.
+        var weapons = (source.GameState.CombatState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? [])
+            .Concat(source.GameState.DefenseState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? []).ToHashSet();
+        return source with
         {
-            TradingEconomyContinuation = null,
-            VoyageLedgers = null,
-            VoyageFuelSettlements = null,
-            EngineIdentityCounters = null,
-            MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge,
-            HostileCombatState = source.GameState.HostileCombatState is { } hostile ? hostile with { Version = 2 } : null,
-            PointCombatState = null
-        }
-    };
+            SaveFormatVersion = version,
+            GameState = source.GameState with
+            {
+                TradingEconomyContinuation = null,
+                VoyageLedgers = null,
+                VoyageFuelSettlements = null,
+                EngineIdentityCounters = null,
+                MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge,
+                PointCombatState = null,
+                CombatState = version == 0 ? null : source.GameState.CombatState! with { Launchers = [], Projectiles = [] },
+                DefenseState = version == 0 ? null : source.GameState.DefenseState! with { Version = version == 16 ? 2 : 3, Launchers = [], Projectiles = [] },
+                HostileCombatState = null,
+                CombatReportsState = null,
+                SpaceObjects = version == 0 ? source.GameState.SpaceObjects : source.GameState.SpaceObjects.Select(o => o with
+                { Modules = o.Modules?.Where(m => !weapons.Contains((o.ObjectId, m.ModuleId))).ToArray() }).ToArray()
+            }
+        };
+    }
+
+    internal static GameDataRegistry HistoricalEconomyRegistry()
+    {
+        var source = QuotedTradeExecutionTests.RealRegistry();
+        static IEnumerable<T> All<T>(TypeRegistry<T> types) where T : ITypeDefinition => Enumerable.Range(0, types.Count).Select(types.GetDefinition);
+        // Economic normalization of retired versions is isolated from the current combat save contract.
+        return GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
+            All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
+            legacyCatalogFingerprint: source.LegacyCatalogFingerprint, stationMarketProfiles: All(source.StationMarketProfiles),
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+    }
 
     private static ScenarioFile Legacy(ScenarioFile current, int version)
     {

@@ -39,7 +39,13 @@ internal static class CombatReportsScenarioFixtures
             foreach (var module in current.InstalledModules.Where(m => m.LauncherCombat is not null))
             {
                 if (module.LauncherCombat!.IsBrokenUntilDock || module.LauncherCombat.ReadyAtMotionTimeMs > time) continue;
-                engine.ReceiveCommand(new($"proof-{++sequence}", sequence, Player, module.ModuleId, CombatCommandTypes.Fire, enemy.ObjectId));
+                var owner = current.Objects.Single(o => o.ObjectId == Player);
+                var profile = Assert.Single(module.LauncherCombat.Profiles!.Value, p => p.ProfileId == "fast");
+                var aim = ModuleCombatEndToEndTests.LinearAim(owner, enemy, profile.SpeedKmS);
+                double range = module.LauncherCombat.RangeKm!.Value;
+                if (Math.Pow((aim.X - owner.X) / 10, 2) + Math.Pow((aim.Y - owner.Y) / 10, 2) > range * range) continue;
+                engine.ReceiveCommand(new($"proof-{++sequence}", sequence, Player, module.ModuleId, CombatCommandTypes.Launch,
+                    TargetWorldX: aim.X, TargetWorldY: aim.Y, ProfileId: profile.ProfileId));
                 current = Capture(time);
             }
         }

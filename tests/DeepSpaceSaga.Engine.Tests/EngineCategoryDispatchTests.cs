@@ -27,8 +27,8 @@ public sealed class EngineCategoryDispatchTests
         var strizh = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.engine.strizh"));
         Assert.Equal("module.engine", strizh.CategoryTypeId);
         Assert.Equal(8000, strizh.MaxSpeedMps);
-        Assert.Equal(800, strizh.LinearInertiaMps2);
-        Assert.Equal(12, strizh.AngularInertiaDegPerSec);
+        Assert.Equal(1000, strizh.LinearInertiaMps2);
+        Assert.Equal(24, strizh.AngularInertiaDegPerSec);
         Assert.Equal(4000, strizh.MassKg);
         Assert.Equal(40m, strizh.Maneuverability);
         Assert.Contains(ShipEngineCommandTypes.Accelerate, strizh.CommandTypeIds);

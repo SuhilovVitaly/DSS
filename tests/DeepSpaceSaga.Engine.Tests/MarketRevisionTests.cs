@@ -287,7 +287,7 @@ public class MarketRevisionTests
         Assert.Equal(2, Revision(engine));
         var save = engine.CaptureSaveState();
         var missing = WithObject(save, StationId, o => o with { MarketRevision = null });
-        missing = missing with { SaveFormatVersion = 13, GameState = missing.GameState with { MarketKnowledge = null, TradingEconomyContinuation = null } };
+        missing = TradingEconomySaveSchemaTests.WithoutNewContinuation(missing, 13);
 
         // Historical scenario normalization remains independently testable, but real saves reject it.
         SimulationEngine HistoricalFixture(ScenarioFile legacy)

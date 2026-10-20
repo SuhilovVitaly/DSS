@@ -36,7 +36,7 @@ public sealed class MarketKnowledgeTests
     public void Unknown_station_gets_no_market_observation()
     {
         using var f = TradingVoyageFixture.Create();
-        var save = f.Save();
+        var save = TradingEconomySaveSchemaTests.WithoutNewContinuation(f.Save(), 0);
         string remote = f.Destination;
         var scenario = save with
         {
@@ -195,8 +195,8 @@ public sealed class MarketKnowledgeTests
     {
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
-        using var loaded = new SimulationEngine(QuotedTradeExecutionTests.RealRegistry());
-        var fixture = save with { SaveFormatVersion = 13, GameState = save.GameState with { MarketKnowledge = null, TradingEconomyContinuation = null } };
+        using var loaded = new SimulationEngine(TradingEconomySaveSchemaTests.HistoricalEconomyRegistry());
+        var fixture = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, 13);
         Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => loaded.LoadScenario(fixture, isSave: true)).Message);
         loaded.LoadScenario(fixture); // Internal historical fixture still tests unknown observations.
         var snapshot = loaded.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);

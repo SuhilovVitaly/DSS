@@ -834,6 +834,7 @@ public sealed class CargoCostPersistenceTests
                 }).ToArray()
                 }
             };
+        save = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, version);
         return save with { SaveFormatVersion = version, GameState = save.GameState with { MarketKnowledge = version < 14 ? null : save.GameState.MarketKnowledge, TradingEconomyContinuation = version < 15 ? null : save.GameState.TradingEconomyContinuation } };
     }
     private static CargoStackData Stack(SimulationEngine engine) => engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)

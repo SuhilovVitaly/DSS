@@ -200,7 +200,7 @@ public sealed class VoyageSaveLoadContinuityTests
     [Fact]
     public void Legacy_save_is_rejected_and_internal_history_fixture_keeps_unknown_cost()
     {
-        using var f = TradingVoyageFixture.Create(calendarRatio: 1);
+        using var f = TradingVoyageFixture.Create(calendarRatio: 1, registry: TradingEconomySaveSchemaTests.HistoricalEconomyRegistry());
         Depart(f);
         var legacy = TradingEconomySaveSchemaTests.WithoutNewContinuation(f.Save(), 14);
         string before = Json(f.Save());
@@ -209,7 +209,8 @@ public sealed class VoyageSaveLoadContinuityTests
         f.Engine.LoadScenario(legacy); f.Capture(); // Historical scenario fixture only.
         Assert.True(Assert.Single(f.Engine.VoyageFinancesForTests).HasUnknownCostOfGoodsSold);
         Assert.Null(f.Engine.VoyageFinancesForTests[0].NetProfitCredits);
-        using var loaded = f.Reload();
-        SameFinance(f.Save(), loaded.Save());
+        using var loaded = new SimulationEngine(TradingEconomySaveSchemaTests.HistoricalEconomyRegistry());
+        loaded.LoadScenario(f.Save(), true);
+        SameFinance(f.Save(), loaded.CaptureSaveState());
     }
 }

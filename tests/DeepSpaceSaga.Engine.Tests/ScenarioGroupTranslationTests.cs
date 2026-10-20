@@ -13,7 +13,9 @@ public sealed class ScenarioGroupTranslationTests
     [InlineData("Undocked")]
     [InlineData("MarketProfiles")]
     [InlineData("PlayerShipOnly")]
-    public void FiveScenarioIdentityMatrix(string name)
+    [InlineData("CombatMukha")]
+    [InlineData("CombatMukhaSingle")]
+    public void AllScenarioIdentityMatrix(string name)
     {
         var scenario = SeededWorldBootstrapTests.Scenario(name);
         var originalJson = ScenarioLoader.Serialize(scenario);

@@ -604,7 +604,8 @@ public class StationEconomyGenerationTests
         var registry = CreateProfileRegistry();
         using var engine = new SimulationEngine(registry);
         engine.LoadScenario(ScenarioLoader.LoadFromJson(ProfileScenarioJson(profileId: null)));
-        var captured = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        var captured = TradingEconomySaveSchemaTests.WithoutNewContinuation(
+            engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0), 6);
         var legacy = captured with
         {
             SaveFormatVersion = 6,
