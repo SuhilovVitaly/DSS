@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3"
 title: "scenario-combat-mukha-v3"
 stage: "draft"
 layer: "content-data"
-depends_on: ["EP-0012-US-0008-TK-0003-encounter-stats"]
+depends_on: ["EP-0012-US-0019-TK-0005-maneuver-command-catalog"]
 files_touched: 2
 serves: ["US9-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3
@@ -72,3 +72,5 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+2026-10-20 execution dependency correction: runtime precedes production catalog activation; see [DAG](../../Tickets.md#execution-correction-2026-10-20). Scope/AC unchanged.

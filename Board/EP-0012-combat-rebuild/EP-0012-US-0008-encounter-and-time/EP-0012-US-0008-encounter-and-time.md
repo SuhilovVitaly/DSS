@@ -32,15 +32,15 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0007-mukha-ai-v3. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0007-mukha-ai-v3. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 28 / [EP-0012-US-0008-TK-0001-encounter-state](EP-0012-US-0008-TK-0001-encounter-state/EP-0012-US-0008-TK-0001-encounter-state.md) | engine | EP-0012-US-0007-TK-0003-npc-evade-and-reaction | US8-AC1 | 4 |
-| 29 / [EP-0012-US-0008-TK-0002-combat-speed-lock](EP-0012-US-0008-TK-0002-combat-speed-lock/EP-0012-US-0008-TK-0002-combat-speed-lock.md) | engine | EP-0012-US-0008-TK-0001-encounter-state | US8-AC2 | 4 |
-| 30 / [EP-0012-US-0008-TK-0003-encounter-stats](EP-0012-US-0008-TK-0003-encounter-stats/EP-0012-US-0008-TK-0003-encounter-stats.md) | engine | EP-0012-US-0008-TK-0002-combat-speed-lock | US8-AC3 | 5 |
+| 22 / [EP-0012-US-0008-TK-0001-encounter-state](EP-0012-US-0008-TK-0001-encounter-state/EP-0012-US-0008-TK-0001-encounter-state.md) | engine | EP-0012-US-0007-TK-0003-npc-evade-and-reaction | US8-AC1 | 4 |
+| 23 / [EP-0012-US-0008-TK-0002-combat-speed-lock](EP-0012-US-0008-TK-0002-combat-speed-lock/EP-0012-US-0008-TK-0002-combat-speed-lock.md) | engine | EP-0012-US-0008-TK-0001-encounter-state | US8-AC2 | 4 |
+| 24 / [EP-0012-US-0008-TK-0003-encounter-stats](EP-0012-US-0008-TK-0003-encounter-stats/EP-0012-US-0008-TK-0003-encounter-stats.md) | engine | EP-0012-US-0008-TK-0002-combat-speed-lock | US8-AC3 | 5 |
 
 ## Decisions / Assumptions
 

@@ -39,16 +39,16 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0019-scenario-and-client-regressions, EP-0012-US-0018-legacy-combat-cleanup. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0019-scenario-and-client-regressions, EP-0012-US-0018-legacy-combat-cleanup. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 14 / [EP-0012-US-0003-TK-0001-blast-math](EP-0012-US-0003-TK-0001-blast-math/EP-0012-US-0003-TK-0001-blast-math.md) | motion | EP-0012-US-0019-TK-0005-maneuver-command-catalog | US3-AC1 | 2 |
-| 17 / [EP-0012-US-0003-TK-0002-torpedo-point-launch](EP-0012-US-0003-TK-0002-torpedo-point-launch/EP-0012-US-0003-TK-0002-torpedo-point-launch.md) | engine | EP-0012-US-0018-TK-0004-shared-point-forecast | US3-AC2 | 5 |
-| 18 / [EP-0012-US-0003-TK-0003-torpedo-area-detonation](EP-0012-US-0003-TK-0003-torpedo-area-detonation/EP-0012-US-0003-TK-0003-torpedo-area-detonation.md) | engine | EP-0012-US-0003-TK-0002-torpedo-point-launch | US3-AC3 | 4 |
-| 19 / [EP-0012-US-0003-TK-0004-manual-detonation](EP-0012-US-0003-TK-0004-manual-detonation/EP-0012-US-0003-TK-0004-manual-detonation.md) | engine | EP-0012-US-0003-TK-0003-torpedo-area-detonation | US3-AC4 | 3 |
+| 8 / [EP-0012-US-0003-TK-0001-blast-math](EP-0012-US-0003-TK-0001-blast-math/EP-0012-US-0003-TK-0001-blast-math.md) | motion | EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts | US3-AC1 | 2 |
+| 11 / [EP-0012-US-0003-TK-0002-torpedo-point-launch](EP-0012-US-0003-TK-0002-torpedo-point-launch/EP-0012-US-0003-TK-0002-torpedo-point-launch.md) | engine | EP-0012-US-0018-TK-0004-shared-point-forecast | US3-AC2 | 5 |
+| 12 / [EP-0012-US-0003-TK-0003-torpedo-area-detonation](EP-0012-US-0003-TK-0003-torpedo-area-detonation/EP-0012-US-0003-TK-0003-torpedo-area-detonation.md) | engine | EP-0012-US-0003-TK-0002-torpedo-point-launch | US3-AC3 | 4 |
+| 13 / [EP-0012-US-0003-TK-0004-manual-detonation](EP-0012-US-0003-TK-0004-manual-detonation/EP-0012-US-0003-TK-0004-manual-detonation.md) | engine | EP-0012-US-0003-TK-0003-torpedo-area-detonation | US3-AC4 | 3 |
 | 39 / [EP-0012-US-0003-TK-0005-remove-homing-roll-modes](EP-0012-US-0003-TK-0005-remove-homing-roll-modes/EP-0012-US-0003-TK-0005-remove-homing-roll-modes.md) | engine | EP-0012-US-0018-TK-0003-point-combat-forecasts | US3-AC5 | 4 |
 
 ## Decisions / Assumptions

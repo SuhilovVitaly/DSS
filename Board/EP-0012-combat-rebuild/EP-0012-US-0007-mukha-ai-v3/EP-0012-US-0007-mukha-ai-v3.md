@@ -32,15 +32,15 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0006-threats-and-evasion. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0006-threats-and-evasion. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 25 / [EP-0012-US-0007-TK-0001-orbit-lead-fix](EP-0012-US-0007-TK-0001-orbit-lead-fix/EP-0012-US-0007-TK-0001-orbit-lead-fix.md) | motion | EP-0012-US-0006-TK-0003-continuous-turn-in-combat | US7-AC1 | 2 |
-| 26 / [EP-0012-US-0007-TK-0002-npc-aim-and-fire](EP-0012-US-0007-TK-0002-npc-aim-and-fire/EP-0012-US-0007-TK-0002-npc-aim-and-fire.md) | engine | EP-0012-US-0007-TK-0001-orbit-lead-fix | US7-AC2 | 4 |
-| 27 / [EP-0012-US-0007-TK-0003-npc-evade-and-reaction](EP-0012-US-0007-TK-0003-npc-evade-and-reaction/EP-0012-US-0007-TK-0003-npc-evade-and-reaction.md) | engine | EP-0012-US-0007-TK-0002-npc-aim-and-fire | US7-AC3 | 4 |
+| 19 / [EP-0012-US-0007-TK-0001-orbit-lead-fix](EP-0012-US-0007-TK-0001-orbit-lead-fix/EP-0012-US-0007-TK-0001-orbit-lead-fix.md) | motion | EP-0012-US-0006-TK-0003-continuous-turn-in-combat | US7-AC1 | 2 |
+| 20 / [EP-0012-US-0007-TK-0002-npc-aim-and-fire](EP-0012-US-0007-TK-0002-npc-aim-and-fire/EP-0012-US-0007-TK-0002-npc-aim-and-fire.md) | engine | EP-0012-US-0007-TK-0001-orbit-lead-fix | US7-AC2 | 4 |
+| 21 / [EP-0012-US-0007-TK-0003-npc-evade-and-reaction](EP-0012-US-0007-TK-0003-npc-evade-and-reaction/EP-0012-US-0007-TK-0003-npc-evade-and-reaction.md) | engine | EP-0012-US-0007-TK-0002-npc-aim-and-fire | US7-AC3 | 4 |
 
 ## Decisions / Assumptions
 

@@ -37,13 +37,13 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0008-encounter-and-time. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0008-encounter-and-time. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 31 / [EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3](EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3/EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3.md) | content-data | EP-0012-US-0008-TK-0003-encounter-stats | US9-AC1 | 2 |
+| 31 / [EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3](EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3/EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3.md) | content-data | EP-0012-US-0019-TK-0005-maneuver-command-catalog | US9-AC1 | 2 |
 | 32 / [EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios](EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios/EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios.md) | content-data | EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3 | US9-AC2 | 3 |
 | 33 / [EP-0012-US-0009-TK-0003-save-format-18](EP-0012-US-0009-TK-0003-save-format-18/EP-0012-US-0009-TK-0003-save-format-18.md) | engine | EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios | US9-AC3 | 5 |
 | 34 / [EP-0012-US-0009-TK-0004-save18-capture-and-restore](EP-0012-US-0009-TK-0004-save18-capture-and-restore/EP-0012-US-0009-TK-0004-save18-capture-and-restore.md) | engine | EP-0012-US-0009-TK-0003-save-format-18 | US9-AC3 | 5 |

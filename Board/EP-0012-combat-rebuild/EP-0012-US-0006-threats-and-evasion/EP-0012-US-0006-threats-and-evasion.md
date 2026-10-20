@@ -38,15 +38,15 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0003-point-aim-torpedoes, EP-0012-US-0004-point-aim-countermissiles. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0003-point-aim-torpedoes, EP-0012-US-0004-point-aim-countermissiles. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 15 / [EP-0012-US-0006-TK-0001-blast-threat-math](EP-0012-US-0006-TK-0001-blast-threat-math/EP-0012-US-0006-TK-0001-blast-threat-math.md) | motion | EP-0012-US-0003-TK-0001-blast-math | US6-AC1 | 2 |
-| 23 / [EP-0012-US-0006-TK-0002-evade-command](EP-0012-US-0006-TK-0002-evade-command/EP-0012-US-0006-TK-0002-evade-command.md) | engine | EP-0012-US-0004-TK-0003-remove-auto-pd | US6-AC2 | 4 |
-| 24 / [EP-0012-US-0006-TK-0003-continuous-turn-in-combat](EP-0012-US-0006-TK-0003-continuous-turn-in-combat/EP-0012-US-0006-TK-0003-continuous-turn-in-combat.md) | engine | EP-0012-US-0006-TK-0002-evade-command | US6-AC3 | 3 |
+| 9 / [EP-0012-US-0006-TK-0001-blast-threat-math](EP-0012-US-0006-TK-0001-blast-threat-math/EP-0012-US-0006-TK-0001-blast-threat-math.md) | motion | EP-0012-US-0003-TK-0001-blast-math | US6-AC1 | 2 |
+| 17 / [EP-0012-US-0006-TK-0002-evade-command](EP-0012-US-0006-TK-0002-evade-command/EP-0012-US-0006-TK-0002-evade-command.md) | engine | EP-0012-US-0004-TK-0003-remove-auto-pd | US6-AC2 | 4 |
+| 18 / [EP-0012-US-0006-TK-0003-continuous-turn-in-combat](EP-0012-US-0006-TK-0003-continuous-turn-in-combat/EP-0012-US-0006-TK-0003-continuous-turn-in-combat.md) | engine | EP-0012-US-0006-TK-0002-evade-command | US6-AC3 | 3 |
 
 ## Decisions / Assumptions
 

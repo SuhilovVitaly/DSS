@@ -32,15 +32,15 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0003-point-aim-torpedoes. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0003-point-aim-torpedoes. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 20 / [EP-0012-US-0004-TK-0001-countermissile-point-launch](EP-0012-US-0004-TK-0001-countermissile-point-launch/EP-0012-US-0004-TK-0001-countermissile-point-launch.md) | engine | EP-0012-US-0003-TK-0004-manual-detonation | US4-AC1 | 4 |
-| 21 / [EP-0012-US-0004-TK-0002-countermissile-detonation](EP-0012-US-0004-TK-0002-countermissile-detonation/EP-0012-US-0004-TK-0002-countermissile-detonation.md) | engine | EP-0012-US-0004-TK-0001-countermissile-point-launch | US4-AC2 | 4 |
-| 22 / [EP-0012-US-0004-TK-0003-remove-auto-pd](EP-0012-US-0004-TK-0003-remove-auto-pd/EP-0012-US-0004-TK-0003-remove-auto-pd.md) | engine | EP-0012-US-0004-TK-0002-countermissile-detonation | US4-AC3 | 4 |
+| 14 / [EP-0012-US-0004-TK-0001-countermissile-point-launch](EP-0012-US-0004-TK-0001-countermissile-point-launch/EP-0012-US-0004-TK-0001-countermissile-point-launch.md) | engine | EP-0012-US-0003-TK-0004-manual-detonation | US4-AC1 | 4 |
+| 15 / [EP-0012-US-0004-TK-0002-countermissile-detonation](EP-0012-US-0004-TK-0002-countermissile-detonation/EP-0012-US-0004-TK-0002-countermissile-detonation.md) | engine | EP-0012-US-0004-TK-0001-countermissile-point-launch | US4-AC2 | 4 |
+| 16 / [EP-0012-US-0004-TK-0003-remove-auto-pd](EP-0012-US-0004-TK-0003-remove-auto-pd/EP-0012-US-0004-TK-0003-remove-auto-pd.md) | engine | EP-0012-US-0004-TK-0002-countermissile-detonation | US4-AC3 | 4 |
 
 ## Decisions / Assumptions
 

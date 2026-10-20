@@ -42,13 +42,13 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: нет. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: нет. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 1 / [EP-0012-US-0001-TK-0001-projectile-contracts](EP-0012-US-0001-TK-0001-projectile-contracts/EP-0012-US-0001-TK-0001-projectile-contracts.md) | contracts | none | US1-AC1 | 4 |
+| 1 / [EP-0012-US-0001-TK-0001-projectile-contracts](EP-0012-US-0001-TK-0001-projectile-contracts/EP-0012-US-0001-TK-0001-projectile-contracts.md) | contracts | baseline | US1-AC1 | 4 |
 | 2 / [EP-0012-US-0001-TK-0002-command-contracts](EP-0012-US-0001-TK-0002-command-contracts/EP-0012-US-0001-TK-0002-command-contracts.md) | contracts | EP-0012-US-0001-TK-0001-projectile-contracts | US1-AC2 | 5 |
 | 3 / [EP-0012-US-0001-TK-0003-encounter-contracts](EP-0012-US-0001-TK-0003-encounter-contracts/EP-0012-US-0001-TK-0003-encounter-contracts.md) | contracts | EP-0012-US-0001-TK-0002-command-contracts | US1-AC3 | 4 |
 | 4 / [EP-0012-US-0001-TK-0004-combat-rules-schema](EP-0012-US-0001-TK-0004-combat-rules-schema/EP-0012-US-0001-TK-0004-combat-rules-schema.md) | engine | EP-0012-US-0001-TK-0003-encounter-contracts | US1-AC4 | 9 |

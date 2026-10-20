@@ -33,7 +33,7 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 При исполнении prerequisite contract/schema US1 уже опубликован в пяти тикетах; его downstream legacy cleanup не является prerequisite добавления event DTO. Порядок сохраняется по точному ticket DAG. Closure всей US1 и всей US17 остаётся OPEN до интеграции, а не выводится из готовности отдельных contracts.
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0001-contracts-and-schema, EP-0012-US-0018-legacy-combat-cleanup, EP-0012-US-0005-snapshot-privacy. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0001-contracts-and-schema, EP-0012-US-0018-legacy-combat-cleanup, EP-0012-US-0005-snapshot-privacy. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 

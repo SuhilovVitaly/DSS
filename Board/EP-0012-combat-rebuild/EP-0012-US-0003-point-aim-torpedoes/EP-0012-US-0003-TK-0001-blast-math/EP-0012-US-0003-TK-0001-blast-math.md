@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0003-TK-0001-blast-math"
 title: "blast-math"
 stage: "draft"
 layer: "motion"
-depends_on: ["EP-0012-US-0019-TK-0005-maneuver-command-catalog"]
+depends_on: ["EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts"]
 files_touched: 2
 serves: ["US3-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0003-TK-0001-blast-math
@@ -74,3 +74,5 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+2026-10-20 execution dependency correction: runtime precedes production catalog activation; see [DAG](../../Tickets.md#execution-correction-2026-10-20). Scope/AC unchanged.
