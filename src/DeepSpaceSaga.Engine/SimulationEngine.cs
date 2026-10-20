@@ -2280,6 +2280,8 @@ public sealed partial class SimulationEngine : IDisposable
             return PlayerRelation.Self;
         if (obj.ObjectType == SpaceObjectType.NpcShip)
             return obj.RelationToPlayer ?? PlayerRelation.Neutral;
+        if (UsesPointEncounters && obj.ObjectType == SpaceObjectType.Wreck)
+            return obj.RelationToPlayer;
         return null;
     }
 

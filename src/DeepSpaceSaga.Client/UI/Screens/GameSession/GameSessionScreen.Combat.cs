@@ -266,6 +266,7 @@ public sealed partial class GameSessionScreen
         _combatEffects.PointStyles = CombatSettings.PointCombat;
         _combatEffects.ReceiveJournal(buffered?.Snapshot.CombatJournal ?? default, buffered?.ReceivedAtTimestamp ?? now);
         DrawPointEffects(canvas, now);
+        DrawPointHitFeedback(canvas);
         if (buffered is not null)
             _combatEffects.Receive(buffered.Snapshot.CombatImpacts, buffered.ReceivedAtTimestamp);
         else _combatEffects.Receive(default);
@@ -282,6 +283,75 @@ public sealed partial class GameSessionScreen
         }
     }
     private readonly HashSet<string> _combatImportantIds = new(StringComparer.Ordinal);
+    internal sealed record PointFeedbackLabel(SKRect Bounds, string Text);
+    internal readonly Dictionary<string, PointFeedbackLabel> EnemyStatusBadges = new(StringComparer.Ordinal);
+    internal readonly Dictionary<long, PointFeedbackLabel> PointHitLabels = new();
+
+    private void DrawPointHitFeedback(SKCanvas canvas)
+    {
+        EnemyStatusBadges.Clear(); PointHitLabels.Clear();
+        var available = AvailableMapRect();
+        if (available.Width <= 0 || available.Height <= 0) return;
+        var styles = CombatSettings.PointCombat;
+        using var text = new SKPaint { Color = styles.ForeignProfileText, TextSize = (float)styles.TextSizePx, IsAntialias = true };
+        using var background = new SKPaint { Color = new SKColor(0, 0, 0, 200) };
+        double multiplier = _buffer.CurrentSpeed.MotionTimeMultiplier();
+        if (multiplier <= 0) multiplier = .25;
+        foreach (var state in _renderStates)
+        {
+            if (state.Source is not { RelationToPlayer: PlayerRelation.Enemy, EnemyStatus: { } status } ||
+                state.Source.RenderObjectType is not (SpaceObjectType.NpcShip or SpaceObjectType.Wreck)) continue;
+            var point = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
+            if (point.X < 0 || point.Y < 0 || point.X > _viewportW || point.Y > _viewportH) continue;
+            var parts = new List<string>();
+            if (status.Destroyed) parts.Add(CombatText("EnemyDestroyed", "Уничтожен"));
+            else
+            {
+                if (status.Damaged) parts.Add(CombatText("EnemyDamaged", "Повреждён"));
+                if (status.ImmobilizedUntilMotionMs is { } until && until > DefensePresentationTime)
+                    parts.Add($"{CombatText("EnemyImmobilized", "Обездвижен")} {(until - DefensePresentationTime) / 1000d / multiplier:0.0} {CombatText("Seconds", "с")}");
+            }
+            if (parts.Count == 0) continue;
+            float x = point.X + 8, y = point.Y + 12;
+            if (_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var plaque))
+            { x = plaque.PlaqueRect.Left; y = plaque.PlaqueRect.Bottom + 4; }
+            EnemyStatusBadges[state.Source.ObjectId] = Draw(string.Join(" · ", parts), x, y);
+        }
+        var offsets = new Dictionary<string, int>(StringComparer.Ordinal);
+        foreach (var (entry, _) in _combatEffects.HitResults)
+        {
+            if (entry.HitResult is not { } result) continue;
+            var point = _camera.WorldToScreen(entry.X, entry.Y, _viewportW, _viewportH);
+            var target = _renderStates.FirstOrDefault(s => s.Source.ObjectId == entry.TargetObjectId &&
+                s.Source.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip or SpaceObjectType.Wreck);
+            if (target.Source is not null) point = _camera.WorldToScreen(target.Pose.X, target.Pose.Y, _viewportW, _viewportH);
+            if (point.X < 0 || point.Y < 0 || point.X > _viewportW || point.Y > _viewportH) continue;
+            string value = result switch
+            {
+                ProjectileHitResult.Core => CombatText("Hit.Core", "Ядро"),
+                ProjectileHitResult.Edge => CombatText("Hit.Edge", "Край"),
+                ProjectileHitResult.Miss => CombatText("Hit.Miss", "Мимо"),
+                ProjectileHitResult.ShotDown => CombatText("Hit.ShotDown", "Сбита"),
+                _ => "—"
+            };
+            string key = entry.TargetObjectId.Length > 0 ? entry.TargetObjectId : entry.ProjectileObjectId;
+            int offset = offsets.GetValueOrDefault(key); offsets[key] = offset + 1;
+            PointHitLabels[entry.EventId] = Draw(value, point.X + 10, point.Y - 24 - offset * (text.TextSize + 6));
+        }
+
+        PointFeedbackLabel Draw(string value, float x, float y)
+        {
+            while (value.Length > 1 && text.MeasureText(value) + 8 > available.Width) value = value[..^1];
+            float width = Math.Min(available.Width, text.MeasureText(value) + 8);
+            float height = Math.Min(available.Height, text.TextSize + 6);
+            x = Math.Clamp(x, available.Left, available.Right - width);
+            y = Math.Clamp(y, available.Top, available.Bottom - height);
+            var bounds = new SKRect(x, y, x + width, y + height);
+            canvas.Save(); canvas.ClipRect(bounds); canvas.DrawRect(bounds, background);
+            canvas.DrawText(value, x + 4, y + text.TextSize, text); canvas.Restore();
+            return new(bounds, value);
+        }
+    }
     private SKPaint? _combatCorePaint;
     private SKPaint? _combatHaloPaint;
     private SKMaskFilter? _combatBlur;

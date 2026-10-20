@@ -649,7 +649,8 @@ public sealed partial class SimulationEngine
         foreach (var key in _launcherCombat.Keys.Where(k => k.ObjectId == objectId).ToArray())
             _launcherCombat.Remove(key);
         _objects.Add(new(new(id, point.X, point.Y, 0, 0), SpaceObjectType.Wreck,
-            (long)Math.Floor(impactMotionTimeMs), [], Name: "Wreck", IsKnown: destroyed.IsKnown));
+            (long)Math.Floor(impactMotionTimeMs), [], Name: "Wreck", IsKnown: destroyed.IsKnown,
+            RelationToPlayer: UsesPointEncounters && destroyed.InitialMotion.ObjectId != PlayerShipObjectId ? GetRelationToPlayer(destroyed) : null));
         if (SelectedObjectId == objectId) SelectedObjectId = null;
         if (ActiveObjectId == objectId) ActiveObjectId = null;
         ClearDestroyedTargetNavigation(objectId, impactMotionTimeMs);

@@ -23,10 +23,13 @@ internal sealed class CombatEffectStore
     internal IReadOnlyList<(CombatJournalEntry Entry, long Started)> PointEffects => _pointEffects;
     internal PointCombatVisualSettings PointStyles { get; set; } = PointCombatVisualSettings.Default;
     internal IReadOnlyList<(CombatJournalEntry Entry, long Started)> Results => _results;
+    private readonly List<(CombatJournalEntry Entry, long Started)> _hitResults = [];
+    internal IReadOnlyList<(CombatJournalEntry Entry, long Started)> HitResults => _hitResults;
+    private bool _hitResultsInitialized;
     internal void ResetJournal(ImmutableArray<CombatJournalEntry> baseline = default)
     {
         _seenJournal.Clear(); _results.Clear(); _journalFloor = 0;
-        _pointEffects.Clear();
+        _pointEffects.Clear(); _hitResults.Clear(); _hitResultsInitialized = !baseline.IsDefault;
         _journalInitialized = !baseline.IsDefault;
         if (!baseline.IsDefaultOrEmpty) foreach (var entry in baseline) _seenJournal.Add(entry.EventId);
         PruneSeen(_seenJournal, ref _journalFloor);
@@ -34,17 +37,21 @@ internal sealed class CombatEffectStore
     internal void ReceiveJournal(ImmutableArray<CombatJournalEntry> entries, long receivedAt)
     {
         if (!_journalInitialized && !entries.IsDefault) { ResetJournal(entries); return; }
+        bool baselineHits = !_hitResultsInitialized && !entries.IsDefault;
+        if (!entries.IsDefault) _hitResultsInitialized = true;
         if (!entries.IsDefaultOrEmpty)
             foreach (var entry in entries)
                 if (entry.EventId > _journalFloor && _seenJournal.Add(entry.EventId))
                 {
                     long started = StartOnPresentation ? _timestampProvider() : receivedAt;
+                    if (!baselineHits && entry.HitResult is not null) _hitResults.Add((entry, started));
                     if (entry.Type is CombatEventType.Intercept or CombatEventType.Miss) _results.Add((entry, started));
                     if (entry.Type is CombatEventType.TorpedoDetonated or CombatEventType.CountermissileDetonated or
                         CombatEventType.ManuallyDetonated or CombatEventType.ShotDown) _pointEffects.Add((entry, started));
                 }
         PruneSeen(_seenJournal, ref _journalFloor);
         long now = _timestampProvider();
+        _hitResults.RemoveAll(e => (double)(now - e.Started) * 1000 / Stopwatch.Frequency >= LifetimeMs);
         _results.RemoveAll(e => (double)(now - e.Started) * 1000 / Stopwatch.Frequency >= LifetimeMs);
         _pointEffects.RemoveAll(e => PointProgress(e.Entry, e.Started, now) >= 1);
     }

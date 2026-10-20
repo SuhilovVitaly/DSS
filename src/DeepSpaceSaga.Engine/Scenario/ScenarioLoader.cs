@@ -409,7 +409,8 @@ public static class ScenarioLoader
             throw new ScenarioException($"Unknown objectType '{obj.ObjectType}' for '{obj.ObjectId}'.");
 
         if (obj.RelationToPlayer is { } relation &&
-            (!string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
+            (!(string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(obj.ObjectType, SpaceObjectType.Wreck, StringComparison.OrdinalIgnoreCase)) ||
              relation is not (PlayerRelation.Enemy or PlayerRelation.Friend or PlayerRelation.Neutral)))
             throw new ScenarioException($"Invalid relationToPlayer for '{obj.ObjectId}'.");
 

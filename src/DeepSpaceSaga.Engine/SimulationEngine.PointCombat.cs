@@ -154,8 +154,10 @@ public sealed partial class SimulationEngine
 
     private EnemyShipStatusSnapshot? ProjectPointEnemyStatus(SpaceObjectRuntime obj, long motionTimeMs)
     {
-        if (_registry.CombatRules?.IsPointAim != true || !obj.IsKnown || obj.ObjectType != SpaceObjectType.NpcShip ||
-            obj.InitialMotion.ObjectId == PlayerShipObjectId) return null;
+        if (_registry.CombatRules?.IsPointAim != true || !obj.IsKnown || obj.InitialMotion.ObjectId == PlayerShipObjectId) return null;
+        if (obj.ObjectType == SpaceObjectType.Wreck)
+            return GetRelationToPlayer(obj) == PlayerRelation.Enemy ? new(true, null, true) : null;
+        if (obj.ObjectType != SpaceObjectType.NpcShip) return null;
         bool damaged = obj.Modules.Any(m => m.Armor < m.ArmorMax || m.StructurePoints < _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).StructurePointsMax);
         double until = obj.Modules.Where(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).CategoryTypeId == "module.engine")
             .Select(m => m.DisabledUntilMotionTimeMs ?? 0).DefaultIfEmpty(0).Max();
@@ -210,6 +212,7 @@ public sealed partial class SimulationEngine
             AppendCombatEvent(new(0, motionTimeMs, manualProjectile is null ? CombatEventType.TorpedoDetonated : CombatEventType.ManuallyDetonated, flight.OwnerObjectId,
                 string.Empty, projectile.InitialMotion.ObjectId, position.X, position.Y,
                 ProjectileKind: flight.Kind, ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm));
+            bool anyHit = false;
             foreach (var target in _objects.Where(o => !o.IsDestroyed && o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
                          .OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray())
             {
@@ -221,6 +224,7 @@ public sealed partial class SimulationEngine
                 if (damage == 0) continue;
                 var hit = ApplyModuleHit(target, damage, flight.ArmorPiercingPercent, flight.ArmorDamagePercent, motionTimeMs, requireShipClass: false);
                 if (hit is not { } result) continue;
+                anyHit = true;
                 bool player = target.InitialMotion.ObjectId == PlayerShipObjectId;
                 var outcome = k == 1 ? ProjectileHitResult.Core : ProjectileHitResult.Edge;
                 AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Hit, flight.OwnerObjectId, target.InitialMotion.ObjectId,
@@ -235,6 +239,7 @@ public sealed partial class SimulationEngine
                     deaths.TryAdd(target.InitialMotion.ObjectId, (cause, flight.OwnerObjectId, projectile.InitialMotion.ObjectId));
                 EmitPointContactReport(projectile, target, motionTimeMs, result, outcome, fatal);
             }
+            if (!anyHit) AppendPointMiss(projectile, motionTimeMs, position);
             RemovePointFlight(projectile, motionTimeMs);
         }
         foreach (var (id, death) in deaths.OrderBy(pair => pair.Key, StringComparer.Ordinal))
@@ -257,6 +262,7 @@ public sealed partial class SimulationEngine
             string.Empty, projectile.InitialMotion.ObjectId, centre.X, centre.Y,
             ProjectileKind: flight.Kind, ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm,
             DestroyedProjectileIds: victims.Select(o => o.InitialMotion.ObjectId).ToImmutableArray()));
+        if (victims.Length == 0) AppendPointMiss(projectile, motionTimeMs, centre);
         foreach (var victim in victims)
         {
             var point = CombatPath(victim).Position(motionTimeMs);
@@ -269,6 +275,14 @@ public sealed partial class SimulationEngine
             RemovePointFlight(victim, motionTimeMs);
         }
         RemovePointFlight(projectile, motionTimeMs);
+    }
+
+    private void AppendPointMiss(SpaceObjectRuntime projectile, double time, (double X, double Y) position)
+    {
+        var flight = projectile.InitialMotion.OwnProjectile!;
+        AppendCombatEvent(new(0, time, CombatEventType.Miss, flight.OwnerObjectId, string.Empty,
+            projectile.InitialMotion.ObjectId, position.X, position.Y, ProjectileKind: flight.Kind,
+            ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm, HitResult: ProjectileHitResult.Miss));
     }
 
     private void RemovePointFlight(SpaceObjectRuntime projectile, double motionTimeMs)
