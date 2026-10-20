@@ -107,9 +107,10 @@ public static class HostileOrbitMath
         }
         else
         {
-            double relativeSpeed = Math.Max(0.001, maxSpeedKmS - target.SpeedKmS);
-            double leadSeconds = Math.Min(120, distanceKm / relativeSpeed);
             double targetRadians = target.Direction * Math.PI / 180;
+            double leadSeconds = ReachableOrbitLeadSeconds((target.X - ship.X) / 10, (target.Y - ship.Y) / 10,
+                target.SpeedKmS * Math.Sin(targetRadians), -target.SpeedKmS * Math.Cos(targetRadians),
+                maxSpeedKmS, standoffKm);
             double leadX = target.X + 10 * target.SpeedKmS * leadSeconds * Math.Sin(targetRadians);
             double leadY = target.Y - 10 * target.SpeedKmS * leadSeconds * Math.Cos(targetRadians);
             double leadBearing = Math.Atan2(leadX - ship.X, ship.Y - leadY) * 180 / Math.PI;
@@ -139,6 +140,24 @@ public static class HostileOrbitMath
             }
         };
         return SmoothAttack(attack, previous, accelerationKmS2, turnRateDegPerSec, maxSpeedKmS);
+    }
+
+    // Earliest |relativePosition + targetVelocity*t| = orbitRadius + shipSpeed*t.
+    // Equal/faster targets need a real reachable root, not an arbitrary long lead.
+    private static double ReachableOrbitLeadSeconds(double x, double y, double vx, double vy, double speed, double radius)
+    {
+        double c = x * x + y * y - radius * radius;
+        if (c <= 0) return 0;
+        double a = vx * vx + vy * vy - speed * speed;
+        double b = 2 * (x * vx + y * vy - radius * speed);
+        if (Math.Abs(a) <= 1e-12 * Math.Max(1, speed * speed + vx * vx + vy * vy))
+            return b < 0 ? -c / b : 0;
+        double discriminant = b * b - 4 * a * c;
+        if (discriminant < 0 || !double.IsFinite(discriminant)) return 0;
+        double q = -.5 * (b + Math.CopySign(Math.Sqrt(discriminant), b));
+        double first = q / a, second = q == 0 ? double.PositiveInfinity : c / q;
+        double result = Math.Min(first >= 0 ? first : double.PositiveInfinity, second >= 0 ? second : double.PositiveInfinity);
+        return double.IsFinite(result) ? result : 0;
     }
 
     private static HostileCombatSnapshot SmoothAttack(HostileCombatSnapshot plan, HostileCombatSnapshot? previous,

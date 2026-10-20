@@ -35,6 +35,10 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 No public API change; внутренние детали ограничены перечисленным scope.
 
+## Pursuit acceptance dependency
+
+US7-TK1 original scenario probe: 300 km starting distance cannot satisfy the <=60 physical second launch-range requirement against a directly receding max-speed player (lower bound 76.67 s). During v3 scenario migration choose a physically feasible combat-entry layout consistent with A01, then validate US7-AC1 with the actual deployed scenarios. A 100 km controller fixture is only component evidence.
+
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.

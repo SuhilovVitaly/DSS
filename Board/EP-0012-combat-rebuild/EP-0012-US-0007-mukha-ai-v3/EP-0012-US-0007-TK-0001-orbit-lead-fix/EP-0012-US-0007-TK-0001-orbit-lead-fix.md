@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0007-mukha-ai-v3"
 ticket: "EP-0012-US-0007-TK-0001-orbit-lead-fix"
 title: "orbit-lead-fix"
-stage: "draft"
+stage: "implemented"
 layer: "motion"
 depends_on: ["EP-0012-US-0006-TK-0003-continuous-turn-in-combat"]
-files_touched: 2
+files_touched: 3
 serves: ["US7-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0007-TK-0001-orbit-lead-fix
@@ -24,12 +24,18 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (2 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Motion/HostileOrbitMath.cs](../../../../src/DeepSpaceSaga.Motion/HostileOrbitMath.cs) | Существует: src/DeepSpaceSaga.Motion/HostileOrbitMath.cs:5; public readonly record struct HostileMotionSample(double X, double Y, double SpeedKmS, double Direction); | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0007TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0007TK0001Tests.cs` | NEW scenario acceptance | Actual Engine pursuit within 60 physical seconds from A01 100 km combat admission, with specified v3 engine/AI parameters. |
+
+A-LEAD-01: earliest interception of the orbit-radius circle at available maximum speed replaces relative-speed division; unreachable future intercept falls back to the current target position. The command/controller still respects actual acceleration and turn limits. Production engine/scenario data activates in its own tickets.
+
+A-LEAD-02 / integration gate: unmodified CombatMukhaSingle starts at 300 km; original scenario probe 2/4 passes, 2/4 fails. A receding 5 km/s player and 8 km/s NPC require at least (300-70)/(8-5)=76.67 physical seconds even with instantaneous acceleration. The controller regression starts at combatStartRangeKm=100 (A01), explicitly not an original-production-scenario PASS. Full US7-AC1 remains OPEN until US9 scenario migration and product/balance validation; no change to the 60 second target.
 
 ## Public API after the change
 
@@ -44,7 +50,7 @@ No public API change; внутренние детали ограничены п�
 
 ## Out of scope / Invariants
 
-Один production layer: motion; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
+Production layer: Motion; matching Motion tests plus a bounded Engine scenario acceptance check. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
 
 ## Tests
 
@@ -72,4 +78,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 6 named / 249 full owning tests (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0007-tk0001-results.json).
+
+Reachable orbit-circle intercept replaces the 120-second relative-speed lead; equal/unreachable speeds remain finite and flank sign is retained. Engine regression 507/507; A01 combat admission scenario 4/4. ORIGINAL 300 km production scenario probe 2 pass / 2 fail, preserved in evidence. US7-AC1 production scenario acceptance remains OPEN for US9 feasible layout migration; the 100 km fixture is explicitly component proof. No 60-second production acceptance claim.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

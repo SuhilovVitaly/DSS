@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0007-mukha-ai-v3"
 title: "ИИ Мухи v3"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0006-threats-and-evasion"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -38,7 +38,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 18 / [EP-0012-US-0007-TK-0001-orbit-lead-fix](EP-0012-US-0007-TK-0001-orbit-lead-fix/EP-0012-US-0007-TK-0001-orbit-lead-fix.md) | motion | EP-0012-US-0006-TK-0003-continuous-turn-in-combat | US7-AC1 | 2 |
+| 18 / [EP-0012-US-0007-TK-0001-orbit-lead-fix](EP-0012-US-0007-TK-0001-orbit-lead-fix/EP-0012-US-0007-TK-0001-orbit-lead-fix.md) | motion | EP-0012-US-0006-TK-0003-continuous-turn-in-combat | US7-AC1 | 3 |
 | 19 / [EP-0012-US-0007-TK-0002-npc-aim-and-fire](EP-0012-US-0007-TK-0002-npc-aim-and-fire/EP-0012-US-0007-TK-0002-npc-aim-and-fire.md) | engine | EP-0012-US-0007-TK-0001-orbit-lead-fix | US7-AC2 | 4 |
 | 20 / [EP-0012-US-0007-TK-0003-npc-evade-and-reaction](EP-0012-US-0007-TK-0003-npc-evade-and-reaction/EP-0012-US-0007-TK-0003-npc-evade-and-reaction.md) | engine | EP-0012-US-0007-TK-0002-npc-aim-and-fire | US7-AC3 | 4 |
 
