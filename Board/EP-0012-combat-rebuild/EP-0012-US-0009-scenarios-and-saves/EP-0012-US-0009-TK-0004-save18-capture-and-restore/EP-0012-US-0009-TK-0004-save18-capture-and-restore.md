@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0009-scenarios-and-saves"
 ticket: "EP-0012-US-0009-TK-0004-save18-capture-and-restore"
 title: "save18-capture-and-restore"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0009-TK-0003-save-format-18"]
-files_touched: 5
+files_touched: 9
 serves: ["US9-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0009-TK-0004-save18-capture-and-restore
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (9 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -34,9 +34,14 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs](../../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs) | Существует: src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs:11; public static class ScenarioLoader | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0004Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombatPersistence.cs` | Existing or bounded new runtime | Capture/stage/restore point continuation and minimal point-aware validation necessary for a real file roundtrip; legacy branch remains until cleanup. |
+| `src/DeepSpaceSaga.Engine/Scenario/CombatSaveData.cs` | Existing or bounded new runtime | Capture/stage/restore point continuation and minimal point-aware validation necessary for a real file roundtrip; legacy branch remains until cleanup. |
+| `src/DeepSpaceSaga.Engine/Scenario/CountermeasureSaveData.cs` | Existing or bounded new runtime | Capture/stage/restore point continuation and minimal point-aware validation necessary for a real file roundtrip; legacy branch remains until cleanup. |
+| `src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs` | Existing or bounded new runtime | Capture/stage/restore point continuation and minimal point-aware validation necessary for a real file roundtrip; legacy branch remains until cleanup. |
+
 ## Public API after the change
 
-No public API change; использовать контракт зависимых тикетов.
+GameStateData.PointCombatState is now populated/restored by real Engine Save18. EvasionSaveData adds nullable required IntegrationAnchor to preserve the original integration segment and exact saved continuation; runtime requires it for active evasion. Existing session/command APIs stay unchanged.
 
 ## Implementation steps
 
@@ -75,4 +80,10 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 16 named / 825 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0009-tk0004-results.json).
+
+Actual file Save18 continuation PASS: own/enemy/counter, exact original integration anchors, evasion/side change/orbit, NPC roll/no-reroll, future scatter, Won/Idle/orphan flight, case normalization, report baseline, held-turn load reset and real defeated slot protection. 2330 non-budget Client PASS. Initial missing payload and rounding/cursor failures preserved. TK5 corruption hardening, canonical data, full Engine/strict budgets/native OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
+
+Scope correction before implementation: the baseline actual Engine file test fails because PointCombatState is null. Real capture/restore necessarily also needs point-aware launcher/projectile/journal validation: Save17 rules reject zero turn rate, missing legacy countermissile ratings and area events without a target. Add those minimal valid-path branches here so the ticket can prove real continuation; TK5 retains corruption/reference/geometry hardening and the explicit no-interception dependency gate. New point state is staged and validated before the lock publishes any mutation. Preserve economic manifests, fractional time, command receipts, report high-water marks, no replay, captured weapons and named RNG. Held turn clears on load per existing contract.

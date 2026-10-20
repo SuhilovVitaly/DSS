@@ -120,7 +120,9 @@ internal static class CombatSaveValidation
             Require(objects.TryGetValue(row!.OwnerObjectId, out var owner) &&
                 owner.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
                 owner.Modules?.Any(m => m.ModuleId == row.ModuleId && m.ActiveCycle is null) == true, "orphan or cycling launcher.");
-            Require(row.State is not null && Parameters(row.State.SpeedKmS, row.State.TurnRateDegPerSec, row.State.Damage) &&
+            Require(row.State is not null && (state.PointCombatState is not null && row.State.Profiles is { IsDefaultOrEmpty: false }
+                ? double.IsFinite(row.State.SpeedKmS) && row.State.SpeedKmS > 0 && row.State.TurnRateDegPerSec == 0 && row.State.Damage > 0
+                : Parameters(row.State.SpeedKmS, row.State.TurnRateDegPerSec, row.State.Damage)) &&
                 launchers.TryAdd((row.OwnerObjectId, row.ModuleId), row.State), "invalid or duplicate launcher.");
             Require(!row.State!.ActiveTorpedoIds.IsDefault &&
                 row.State.ActiveTorpedoIds.All(id => !string.IsNullOrWhiteSpace(id)) &&
@@ -209,11 +211,14 @@ internal static class CombatSaveValidation
                     row.TargetBaselineMotionTimeMs >= f.LaunchMotionTimeMs && row.TargetBaselineMotionTimeMs <= state.MotionTimeMs,
                     "missing target guidance baseline.");
         }
-        Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Missile).All(o => projectileIds.Contains(o.ObjectId)), "missile without flight payload.");
+        Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Missile).All(o => projectileIds.Contains(o.ObjectId) ||
+            state.PointCombatState?.Projectiles.Any(p => p.ObjectId == o.ObjectId && p.Flight.Kind == ProjectileKind.Torpedo) == true), "missile without flight payload.");
         foreach (var launcher in launchers)
             foreach (var id in launcher.Value.ActiveTorpedoIds)
                 Require(combat.Projectiles!.Any(p => p.ObjectId == id && p.Flight.OwnerObjectId == launcher.Key.Item1 &&
-                    p.Flight.LauncherModuleId == launcher.Key.Item2), "busy launcher without matching flight.");
+                    p.Flight.LauncherModuleId == launcher.Key.Item2) || state.PointCombatState?.Projectiles.Any(p => p.ObjectId == id &&
+                    p.Flight.Kind == ProjectileKind.Torpedo && p.Flight.OwnerObjectId == launcher.Key.Item1 && p.Flight.LauncherModuleId == launcher.Key.Item2) == true,
+                    "busy launcher without matching flight.");
         if (projectileIds.Count > 0)
             Require(combat.NextGuidanceMotionTimeMs > state.MotionTimeMs &&
                 combat.NextGuidanceMotionTimeMs == (state.MotionTimeMs > long.MaxValue - 100 ? long.MaxValue : state.MotionTimeMs - state.MotionTimeMs % 100 + 100),

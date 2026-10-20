@@ -89,6 +89,19 @@ internal static class CountermeasureSaveValidation
             Require(module is not null && launchers.TryAdd((row.OwnerObjectId, row.ModuleId), row.State), "invalid or duplicate launcher");
             var d = row.State;
             Require(Enum.IsDefined(d.State) && double.IsFinite(d.RangeKm) && d.RangeKm > 0, "invalid defense state");
+            if (state.PointCombatState is not null && d.Profiles is { IsDefaultOrEmpty: false })
+            {
+                Require(!d.AutoEnabled && d.State != DefenseState.Guiding && d.PendingBurstShots is { IsDefaultOrEmpty: true } &&
+                    d.ActiveProjectileIds is { IsDefault: false } && d.ActiveProjectileId == d.ActiveProjectileIds.Value.FirstOrDefault(),
+                    "invalid point defense state");
+                Require(d.ActiveProjectileIds!.Value.Distinct(StringComparer.Ordinal).Count() == d.ActiveProjectileIds.Value.Length &&
+                    d.ActiveProjectileIds.Value.All(id => state.PointCombatState.Projectiles.Any(p => p.ObjectId == id &&
+                        p.Flight.Kind == ProjectileKind.Countermissile && p.Flight.OwnerObjectId == row.OwnerObjectId && p.Flight.LauncherModuleId == row.ModuleId)),
+                    "point defense flight ownership mismatch");
+                Require(d.ReadyAtMotionTimeMs is null || double.IsFinite(d.ReadyAtMotionTimeMs.Value) && d.ReadyAtMotionTimeMs >= 0,
+                    "invalid point reload deadline");
+                continue;
+            }
             if (format >= 16)
                 Require(d.ManualRangeKm is { } manual && double.IsFinite(manual) && manual > 0 &&
                     d.Accuracy is >= 0 and <= 100 && d.SpeedKmS is { } speed && double.IsFinite(speed) && speed > 0 &&
@@ -195,8 +208,10 @@ internal static class CountermeasureSaveValidation
                 Require(Near(end.X, obj.PositionX) && Near(end.Y, obj.PositionY), "trail endpoint mismatch");
             }
         }
-        Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Countermeasure).All(o => ids.Contains(o.ObjectId)), "projectile without flight");
-        Require(saved.Launchers.All(l => l.State.ActiveProjectileIds is { } active
+        var pointIds = state.PointCombatState?.Projectiles.Where(p => p.Flight.Kind == ProjectileKind.Countermissile)
+            .Select(p => p.ObjectId).ToHashSet(StringComparer.Ordinal) ?? [];
+        Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Countermeasure).All(o => ids.Contains(o.ObjectId) || pointIds.Contains(o.ObjectId)), "projectile without flight");
+        Require(saved.Launchers.Where(l => l.State.Profiles is not { IsDefaultOrEmpty: false }).All(l => l.State.ActiveProjectileIds is { } active
             ? active.All(ids.Contains)
             : l.State.ActiveProjectileId is null || ids.Contains(l.State.ActiveProjectileId)), "busy launcher without flight");
         long lastId = 0; double lastTime = 0; ulong rolls = 0, torpedoRolls = 0, breakdownEvents = 0;
@@ -205,7 +220,8 @@ internal static class CountermeasureSaveValidation
             Require(entry.EventId > lastId && entry.EventId <= saved.JournalSequence && Enum.IsDefined(entry.Type) &&
                 double.IsFinite(entry.MotionTimeMs) && entry.MotionTimeMs >= lastTime && entry.MotionTimeMs <= state.MotionTimeMs &&
                 double.IsFinite(entry.X) && double.IsFinite(entry.Y) && !string.IsNullOrWhiteSpace(entry.ProjectileObjectId) &&
-                !string.IsNullOrWhiteSpace(entry.ActorObjectId) && !string.IsNullOrWhiteSpace(entry.TargetObjectId), "invalid journal entry");
+                !string.IsNullOrWhiteSpace(entry.ActorObjectId) && (entry.ProjectileKind is not null && state.PointCombatState is not null ||
+                !string.IsNullOrWhiteSpace(entry.TargetObjectId)), "invalid journal entry");
             Require(entry.ChanceTenths is null or (>= 0 and <= 1000) && entry.Roll is null or (>= 1 and <= 1000) && entry.Damage is null or >= 0,
                 "invalid journal payload");
             if (format >= 16 && (entry.RatingBreakdown is not null || entry.LaunchMode is not null ||

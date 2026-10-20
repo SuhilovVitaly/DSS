@@ -25,7 +25,8 @@ public sealed record PointProjectileSaveData([property: JsonRequired] string Obj
 public sealed record EvasionSaveData([property: JsonRequired] string ObjectId,
     [property: JsonRequired] string EngineModuleId, [property: JsonRequired] long StartedAt,
     [property: JsonRequired] EvasionSnapshot Motion, [property: JsonRequired] ActiveCycleData? OrbitCycle,
-    [property: JsonRequired] long? LastTurnTime);
+    [property: JsonRequired] long? LastTurnTime,
+    [property: JsonRequired] ObjectMotionSnapshot? IntegrationAnchor = null);
 public sealed record NpcDodgeSaveData([property: JsonRequired] string OwnerId,
     [property: JsonRequired] string EngineModuleId, [property: JsonRequired] string ProjectileId,
     [property: JsonRequired] long DetectedAt, [property: JsonRequired] long DueAt,
@@ -39,6 +40,45 @@ public sealed record EncounterSaveData([property: JsonRequired] CombatEncounterS
 
 internal static class PointCombatSaveValidation
 {
+    internal static GameStateData NormalizeReferences(GameStateData state)
+    {
+        if (state.PointCombatState is not { } saved) return state;
+        var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
+        var ids = objects.Keys.ToDictionary(id => id, id => id, StringComparer.OrdinalIgnoreCase);
+        foreach (string id in (saved.Encounter?.EnemyIds ?? []).Concat(saved.Projectiles?.Where(p => p?.Flight is not null).Select(p => p.Flight.OwnerObjectId) ?? []))
+            if (!string.IsNullOrWhiteSpace(id)) ids.TryAdd(id, id);
+        string Canon(string id) => id is not null && ids.TryGetValue(id, out var value) ? value : id!;
+        string Module(string owner, string module) => owner is not null && objects.TryGetValue(owner, out var o)
+            ? o.Modules?.FirstOrDefault(m => string.Equals(m.ModuleId, module, StringComparison.OrdinalIgnoreCase))?.ModuleId ?? module : module;
+        ObjectMotionSnapshot? Motion(ObjectMotionSnapshot? motion) => motion is null ? null : motion with
+        { ObjectId = Canon(motion.ObjectId), NavigationTargetObjectId = motion.NavigationTargetObjectId is { } target ? Canon(target) : null };
+        return state with
+        {
+            PointCombatState = saved with
+            {
+                Projectiles = saved.Projectiles?.Select(p => p?.Flight is not { } f ? p! : p with
+                { ObjectId = Canon(p.ObjectId), Flight = f with { OwnerObjectId = Canon(f.OwnerObjectId), LauncherModuleId = Module(f.OwnerObjectId, f.LauncherModuleId) } }).ToArray()!,
+                Evasions = saved.Evasions?.Select(e => e?.Motion is not { } m ? e! : e with
+                {
+                    ObjectId = Canon(e.ObjectId),
+                    EngineModuleId = Module(e.ObjectId, e.EngineModuleId),
+                    Motion = m with { ThreatProjectileId = Canon(m.ThreatProjectileId), BaseMotion = Motion(m.BaseMotion)! },
+                    IntegrationAnchor = Motion(e.IntegrationAnchor),
+                    OrbitCycle = e.OrbitCycle is not { } c ? null : c with
+                    {
+                        ObjectId = c.ObjectId is { } owner ? Canon(owner) : null,
+                        ModuleId = c.ModuleId is { } module ? Module(e.ObjectId, module) : null,
+                        TargetObjectId = c.TargetObjectId is { } target ? Canon(target) : null
+                    }
+                }).ToArray()!,
+                DodgeThreats = saved.DodgeThreats?.Select(d => d is null ? d! : d with
+                { OwnerId = Canon(d.OwnerId), EngineModuleId = Module(d.OwnerId, d.EngineModuleId), ProjectileId = Canon(d.ProjectileId) }).ToArray()!,
+                Encounter = saved.Encounter is not { } encounter ? null! : encounter with
+                { EnemyIds = encounter.EnemyIds?.Select(Canon).ToArray()!, ProjectileIds = encounter.ProjectileIds?.Select(Canon).ToArray()! }
+            }
+        };
+    }
+
     internal static void Validate(PointCombatStateData? saved, long time)
     {
         // Absent on new-game and the transitional legacy combat path. Point runtime requires it on restore.
@@ -90,6 +130,9 @@ internal static class PointCombatSaveValidation
             Require(m.BaseMotion is { Evasion: null, OwnProjectile: null, ObservedProjectile: null } basis &&
                 basis.ObjectId == e.ObjectId && Finite(basis.X, basis.Y, basis.SpeedKmS, basis.Direction) && basis.SpeedKmS >= 0,
                 "invalid evasion base course.");
+            Require(e.IntegrationAnchor is null || e.IntegrationAnchor is { Evasion: null, OwnProjectile: null, ObservedProjectile: null } anchor &&
+                anchor.ObjectId == e.ObjectId && Finite(anchor.X, anchor.Y, anchor.SpeedKmS, anchor.Direction) && anchor.SpeedKmS >= 0,
+                "invalid evasion integration anchor.");
         }
         var threats = new HashSet<(string, string)>();
         foreach (var d in saved.DodgeThreats!)

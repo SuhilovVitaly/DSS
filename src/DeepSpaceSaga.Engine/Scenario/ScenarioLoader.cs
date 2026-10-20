@@ -126,6 +126,7 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        normalizedState = PointCombatSaveValidation.NormalizeReferences(normalizedState);
         PointCombatSaveValidation.Validate(normalizedState.PointCombatState, normalizedState.MotionTimeMs);
         normalizedState = CombatSaveValidation.NormalizeReferences(normalizedState);
         normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);

@@ -452,6 +452,7 @@ public sealed partial class SimulationEngine : IDisposable
         StageLegacyWeaponRatings(runtimeObjects);
         var defenses = BuildDefenseState(runtimeObjects);
         StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
+        StagePointCombatRestore(gs, loadingSave, runtimeObjects, combatState, defenses);
         var restoredReports = StageCombatReportsRestore(gs, loadingSave, runtimeObjects, combatState);
 
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
@@ -512,7 +513,8 @@ public sealed partial class SimulationEngine : IDisposable
             RestoreCombatReactions(gs);
             _hostileCombat.Clear();
             if (gs.HostileCombatState is { } hostile)
-                foreach (var row in hostile.Actors) _hostileCombat.Add(row.ObjectId, row.State);
+                foreach (var row in hostile.Actors) _hostileCombat.Add(row.ObjectId,
+                    row.State with { Segment = row.State.Segment with { ElapsedMs = 0 } });
             _nextHostileDecisionMs = gs.HostileCombatState?.NextDecisionMotionTimeMs ?? gs.MotionTimeMs;
             _torpedoSequence = 0;
             _combatImpactSequence = 0;
@@ -544,6 +546,7 @@ public sealed partial class SimulationEngine : IDisposable
             RestoreResourceSurveyCommandIds();
             RestoreCombatReports(restoredReports);
             ResetEncounter(gs.MotionTimeMs);
+            RestorePointCombatState(gs.PointCombatState);
 
         }
     }
@@ -1224,6 +1227,7 @@ public sealed partial class SimulationEngine : IDisposable
             VoyageState: _voyageState,
             CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
             HostileCombatState: CaptureHostileState(gameTimeMs), CombatReportsState: CaptureCombatReportsState(), CombatReactionDelays: CaptureCombatReactions(),
+            PointCombatState: CapturePointCombatState(gameTimeMs),
             MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
             LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),

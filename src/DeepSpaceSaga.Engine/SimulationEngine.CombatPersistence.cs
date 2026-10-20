@@ -51,6 +51,19 @@ public sealed partial class SimulationEngine
         foreach (var row in saved.Launchers)
         {
             var state = row.State;
+            var current = defenses[(row.OwnerObjectId, row.ModuleId)];
+            if (current.Profiles is { IsDefaultOrEmpty: false })
+            {
+                defenses[(row.OwnerObjectId, row.ModuleId)] = current with
+                {
+                    State = state.State,
+                    ActiveProjectileId = state.ActiveProjectileId,
+                    ActiveProjectileIds = state.ActiveProjectileIds,
+                    ReadyAtMotionTimeMs = state.ReadyAtMotionTimeMs,
+                    ReloadDueMotionTimeMs = state.ReloadDueMotionTimeMs
+                };
+                continue;
+            }
             if (state.ReadyAtMotionTimeMs is null)
             {
                 double? readyAt = state.ReloadDueMotionTimeMs;
@@ -112,6 +125,13 @@ public sealed partial class SimulationEngine
             throw new ScenarioException("Saved combat launchers do not match installed weapon modules.");
         foreach (var launcher in saved.Launchers)
         {
+            var current = launchers[(launcher.OwnerObjectId, launcher.ModuleId)];
+            if (current.Profiles is { IsDefaultOrEmpty: false })
+            {
+                launchers[(launcher.OwnerObjectId, launcher.ModuleId)] = current with
+                { ActiveTorpedoIds = launcher.State.ActiveTorpedoIds, ReadyAtMotionTimeMs = launcher.State.ReadyAtMotionTimeMs };
+                continue;
+            }
             try
             {
                 FireModeMath.Resolve(_registry, launcher.State.ModeId);
