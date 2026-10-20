@@ -10,6 +10,8 @@ public sealed partial class SimulationEngine
     private long? _encounterEndedAt;
     private long _encounterQuietSince;
     private readonly HashSet<string> _encounterEnemyIds = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _encounterProjectileIds = new(StringComparer.Ordinal);
+    private CombatEncounterStats _encounterStats = new();
     private SimulationSpeed? _encounterResumeSpeed;
     private bool _advancingPointClock;
     private bool UsesPointEncounters => _registry.CombatRules?.IsPointAim == true;
@@ -21,6 +23,8 @@ public sealed partial class SimulationEngine
         _encounterEndedAt = null;
         _encounterQuietSince = time;
         _encounterEnemyIds.Clear();
+        _encounterProjectileIds.Clear();
+        _encounterStats = new();
         _encounterResumeSpeed = null;
     }
 
@@ -33,6 +37,10 @@ public sealed partial class SimulationEngine
         _encounterState = CombatEncounterState.Active;
         _encounterStartedAt = time;
         _encounterEndedAt = null;
+        _encounterStats = new();
+        _encounterProjectileIds.Clear();
+        foreach (var flight in _objects.Where(o => o.InitialMotion.OwnProjectile is not null))
+            _encounterProjectileIds.Add(flight.InitialMotion.ObjectId);
         _encounterResumeSpeed = _dialogue.Active is not null ? _dialogue.ResumeSpeed ?? _clock.Speed : _clock.Speed;
         if (_encounterResumeSpeed > SimulationSpeed.Speed1)
         {
@@ -46,12 +54,78 @@ public sealed partial class SimulationEngine
 
     private void ObserveEncounterFact(CombatJournalEntry entry)
     {
-        if (!UsesPointEncounters || entry.Type != CombatEventType.Launch || entry.ProjectileKind != ProjectileKind.Torpedo) return;
-        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == entry.ActorObjectId && IsHostileActor(o));
-        if (owner is null) return;
-        long time = (long)Math.Ceiling(entry.MotionTimeMs);
-        if (_encounterState != CombatEncounterState.Active) StartEncounter(time, owner.InitialMotion.ObjectId);
-        _encounterEnemyIds.Add(owner.InitialMotion.ObjectId);
+        if (!UsesPointEncounters) return;
+        if (entry.Type == CombatEventType.Launch && entry.ProjectileKind == ProjectileKind.Torpedo)
+        {
+            var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == entry.ActorObjectId && IsHostileActor(o));
+            if (owner is not null)
+            {
+                if (_encounterState != CombatEncounterState.Active) StartEncounter((long)Math.Ceiling(entry.MotionTimeMs), owner.InitialMotion.ObjectId);
+                _encounterEnemyIds.Add(owner.InitialMotion.ObjectId);
+            }
+        }
+        ObserveEncounterStats(entry);
+    }
+
+    private bool HasLiveEncounterFlights => _objects.Any(o => o.InitialMotion.OwnProjectile is not null &&
+        _encounterProjectileIds.Contains(o.InitialMotion.ObjectId));
+
+    private bool TracksEncounterFact(string projectileId) => UsesPointEncounters &&
+        (_encounterState == CombatEncounterState.Active || _encounterProjectileIds.Contains(projectileId));
+
+    private void ObserveEncounterStats(CombatJournalEntry entry)
+    {
+        bool launch = entry.Type == CombatEventType.Launch;
+        if (!TracksEncounterFact(entry.ProjectileObjectId) && !(launch && HasLiveEncounterFlights)) return;
+        var stats = _encounterStats;
+        checked
+        {
+            if (launch)
+            {
+                _encounterProjectileIds.Add(entry.ProjectileObjectId);
+                if (entry.ActorObjectId == PlayerShipObjectId)
+                {
+                    if (entry.ProjectileKind == ProjectileKind.Torpedo) stats = stats with { TorpedoesLaunched = stats.TorpedoesLaunched + 1 };
+                    else if (entry.ProjectileKind == ProjectileKind.Countermissile) stats = stats with { CountermissilesLaunched = stats.CountermissilesLaunched + 1 };
+                }
+                else if (entry.ProjectileKind == ProjectileKind.Torpedo && _encounterEnemyIds.Contains(entry.ActorObjectId))
+                    stats = stats with { EnemyTorpedoesLaunched = stats.EnemyTorpedoesLaunched + 1 };
+            }
+            else if (entry.Type == CombatEventType.Hit)
+            {
+                if (entry.TargetObjectId == PlayerShipObjectId && entry.Damage is > 0)
+                    stats = stats with { PlayerHitsReceived = stats.PlayerHitsReceived + 1 };
+                else if (entry.ActorObjectId == PlayerShipObjectId &&
+                    _objects.Any(o => o.InitialMotion.ObjectId == entry.TargetObjectId && IsHostileActor(o)))
+                    stats = stats with { EnemyHitsDealt = stats.EnemyHitsDealt + 1 };
+            }
+            else if (entry.Type == CombatEventType.ModuleHit && entry.TargetObjectId == PlayerShipObjectId)
+                stats = stats with
+                {
+                    ArmorDamageTaken = stats.ArmorDamageTaken + Math.Max(0L, (long)(entry.ArmorBefore ?? 0) - (entry.ArmorAfter ?? 0)),
+                    StructureDamageTaken = stats.StructureDamageTaken + Math.Max(0L, (long)(entry.StructureBefore ?? 0) - (entry.StructureAfter ?? 0))
+                };
+            else if (entry.Type == CombatEventType.ShotDown && entry.ActorObjectId == PlayerShipObjectId && entry.ProjectileKind == ProjectileKind.Torpedo)
+            {
+                var victim = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == entry.ProjectileObjectId);
+                string? owner = victim?.InitialMotion.OwnProjectile?.OwnerObjectId ?? victim?.InitialMotion.Torpedo?.OwnerObjectId;
+                if (owner is not null && (_encounterEnemyIds.Contains(owner) || _objects.Any(o => o.InitialMotion.ObjectId == owner && IsHostileActor(o))))
+                    stats = stats with { TorpedoesIntercepted = stats.TorpedoesIntercepted + 1 };
+            }
+        }
+        _encounterStats = stats;
+    }
+
+    private void RecordEncounterEnemyDeath(SpaceObjectRuntime ship, string? projectileId)
+    {
+        if (TracksEncounterFact(projectileId ?? string.Empty) && IsHostileActor(ship))
+            _encounterStats = _encounterStats with { EnemiesDestroyed = checked(_encounterStats.EnemiesDestroyed + 1) };
+    }
+
+    private void RecordEncounterEvasion(string threatId)
+    {
+        if (TracksEncounterFact(threatId))
+            _encounterStats = _encounterStats with { PlayerEvasions = checked(_encounterStats.PlayerEvasions + 1) };
     }
 
     private void EvaluateEncounter(long time)
@@ -159,7 +233,7 @@ public sealed partial class SimulationEngine
     }
 
     private CombatEncounterSnapshot? CaptureEncounter(long time) => !UsesPointEncounters ? null : new(
-        _encounterState, _encounterStartedAt, _encounterEndedAt, new(),
+        _encounterState, _encounterStartedAt, _encounterEndedAt, _encounterStats,
         _encounterState == CombatEncounterState.Idle && _encounterEndedAt is null ? 0 :
             Math.Max(0, (_encounterEndedAt ?? time) - _encounterStartedAt) / 1000.0);
 }

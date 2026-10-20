@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0008-encounter-and-time"
 ticket: "EP-0012-US-0008-TK-0003-encounter-stats"
 title: "encounter-stats"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0008-TK-0002-combat-speed-lock"]
-files_touched: 5
+files_touched: 4
 serves: ["US8-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0008-TK-0003-encounter-stats
@@ -24,15 +24,16 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs:8; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| `src/DeepSpaceSaga.Engine/SimulationEngine.Evasion.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0008TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs` | Existing or bounded new tests | Actual encounter counters, death/evasion hooks and tests only. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs` | Existing or bounded new tests | Actual encounter counters, death/evasion hooks and tests only. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Evasion.cs` | Existing or bounded new tests | Actual encounter counters, death/evasion hooks and tests only. |
+| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0008TK0003Tests.cs` | Existing or bounded new tests | Actual encounter counters, death/evasion hooks and tests only. |
+
+A-STATS-01: count player launches, player counter interceptions of hostile torpedoes, positive-damage blast/ship hits, new player evade episodes and all enemy ship deaths. Damage totals are actual own armor/structure loss. Completed encounter flights continue to update their result after Won/ack; a new encounter resets counters and captures all live flights. Additional launches after Won belong to the prior encounter only while its flights are still live. Rejected/replayed commands and repeated frames do not emit new facts. Duration is physical time, capped at completion; idle before any encounter has zero duration. Save18 persists counters/live flight membership later.
 
 ## Public API after the change
 
@@ -41,7 +42,7 @@ No public API change; внутренние детали ограничены п�
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
-2.
+2. Update counters from committed launch/hit/shot-down facts, own module losses, actual enemy deaths and first player evade episode; retain result while captured flights resolve.
 3. Добавить/обновить named checks ниже одновременно с реализацией. Удаляемые legacy tests заменять проверками нового контракта, сохраняющиеся инварианты не выкидывать.
 4. Записать фактические команды/результаты при исполнении; сейчас всё NOT RUN.
 
@@ -75,4 +76,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 8 named / 696 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0008-tk0003-results.json).
+
+All10 counters derive from actual committed facts and first player-evasion episodes. Damage is own actual loss; enemy numeric health is not disclosed. Rejected/replayed commands and repeated frames do not count again. Captured live flights and defensive actions can update a completed result after Won/ack; new encounter resets all counters. Duration uses real injected clock, excludes a long pause and is capped at completion. Initial regression695/1 orbital pose mismatch retained; unchanged isolated1/1 and one full repeat696/696 PASS, trigger unresolved, no baseline-fix claim. Solution build0 warnings/errors. Save18 persistence and integrated production/native acceptance remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

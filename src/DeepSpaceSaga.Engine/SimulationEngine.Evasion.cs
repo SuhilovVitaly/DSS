@@ -79,7 +79,11 @@ public sealed partial class SimulationEngine
         };
         _objects[_objects.IndexOf(owner)] = owner with { InitialMotion = moving, StartGameTimeMs = time, Modules = modules };
         _evasions[owner.InitialMotion.ObjectId] = new(moduleId, previous?.StartedAt ?? time, schedule, orbit, previous?.LastTurnTime ?? engine.LastTurnGameTimeMs);
-        if (!continuing && owner.InitialMotion.ObjectId == PlayerShipObjectId) _playerEvasionEpisodes++;
+        if (!continuing && owner.InitialMotion.ObjectId == PlayerShipObjectId)
+        {
+            _playerEvasionEpisodes++;
+            RecordEncounterEvasion(threatId!);
+        }
         return CommandStartOutcome.Started;
     }
 

@@ -642,6 +642,7 @@ public sealed partial class SimulationEngine
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
         var point = positionOverride ?? CombatPath(destroyed).Position(impactMotionTimeMs);
         CancelEvasionState(objectId, (long)Math.Ceiling(impactMotionTimeMs), CommandReasonCodes.ModuleDestroyed);
+        RecordEncounterEnemyDeath(destroyed, projectileObjectId);
         _objects.Remove(destroyed);
         _hostileCombat.Remove(objectId);
         foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == objectId).ToArray()) _defenses.Remove(defenseKey);
