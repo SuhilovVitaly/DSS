@@ -157,16 +157,25 @@ public sealed partial class SimulationEngine : IDisposable
     }
 
     /// <summary>Set the authoritative simulation speed (e.g. Speed0 for pause).</summary>
-    public void SetSpeed(SimulationSpeed speed)
+    public void SetSpeed(SimulationSpeed speed) => TrySetSpeed(speed);
+
+    /// <summary>Apply a speed request atomically; null means accepted, otherwise the authoritative rejection reason.</summary>
+    public string? TrySetSpeed(SimulationSpeed speed)
     {
         lock (_worldStateLock)
         {
             CheckPresentationLease();
-            if (IsDefeated || (_automaticPresentationPause && speed != SimulationSpeed.Speed0)) return;
-            if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return; }
+            if (IsDefeated) return CommandReasonCodes.SessionDefeated;
+            if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
+            if (UsesPointEncounters) AdvancePointClockWorld();
+            if (IsDefeated) return CommandReasonCodes.SessionDefeated;
+            if (_encounterState == CombatEncounterState.Active && speed > SimulationSpeed.Speed1) return CommandReasonCodes.CombatSpeedLocked;
+            if (_automaticPresentationPause && speed != SimulationSpeed.Speed0) return null;
+            if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return null; }
             _presentationIntervalSpeed = _clock.Speed;
             if (speed == SimulationSpeed.Speed0) StopAllTurnHolds();
-            _clock.SetSpeed(speed);
+            if (UsesPointEncounters) _clock.SetSpeedAtProcessedBoundary(speed);
+            else _clock.SetSpeed(speed);
             if (_collectPresentation)
             {
                 var clock = _clock.Capture();
@@ -174,6 +183,7 @@ public sealed partial class SimulationEngine : IDisposable
                 _presentationIntervalSpeed = _clock.Speed;
                 CapturePresentationFrame(IsDefeated ? DefeatedClock.MotionTimeMs : clock.MotionTimeMs);
             }
+            return null;
         }
     }
 
@@ -636,7 +646,7 @@ public sealed partial class SimulationEngine : IDisposable
         // Clock capture and world advancement share the same session lock. A pause
         // or explicit time command cannot overtake a previously captured clock value.
         lock (_worldStateLock)
-            return BuildSnapshot(advanceClock ? _clock.UpdateAndCapture() : _clock.Capture());
+            return BuildSnapshot(advanceClock ? UsesPointEncounters ? AdvancePointClockWorld() : _clock.UpdateAndCapture() : _clock.Capture());
     }
 
     private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState, bool presentationOnly = false, bool prepareWorld = true)
@@ -800,6 +810,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             var installedModules = BuildInstalledModuleProjection(gameTimeMs);
 
+            if (UsesPointEncounters) clockState = clockState with { Speed = _clock.Speed };
             var snapshot = new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: clockState.GameTimeMs,

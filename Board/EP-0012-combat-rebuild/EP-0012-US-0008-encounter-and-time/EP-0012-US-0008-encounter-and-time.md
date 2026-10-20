@@ -39,7 +39,7 @@ Execution order задаётся ticket DAG, который допускает �
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
 | 21 / [EP-0012-US-0008-TK-0001-encounter-state](EP-0012-US-0008-TK-0001-encounter-state/EP-0012-US-0008-TK-0001-encounter-state.md) | engine | EP-0012-US-0007-TK-0003-npc-evade-and-reaction | US8-AC1 | 6 |
-| 22 / [EP-0012-US-0008-TK-0002-combat-speed-lock](EP-0012-US-0008-TK-0002-combat-speed-lock/EP-0012-US-0008-TK-0002-combat-speed-lock.md) | engine | EP-0012-US-0008-TK-0001-encounter-state | US8-AC2 | 4 |
+| 22 / [EP-0012-US-0008-TK-0002-combat-speed-lock](EP-0012-US-0008-TK-0002-combat-speed-lock/EP-0012-US-0008-TK-0002-combat-speed-lock.md) | engine | EP-0012-US-0008-TK-0001-encounter-state | US8-AC2 | 7 |
 | 23 / [EP-0012-US-0008-TK-0003-encounter-stats](EP-0012-US-0008-TK-0003-encounter-stats/EP-0012-US-0008-TK-0003-encounter-stats.md) | engine | EP-0012-US-0008-TK-0002-combat-speed-lock | US8-AC3 | 5 |
 
 ## Decisions / Assumptions

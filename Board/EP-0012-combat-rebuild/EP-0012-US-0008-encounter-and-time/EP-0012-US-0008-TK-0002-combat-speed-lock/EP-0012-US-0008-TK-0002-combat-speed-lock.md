@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0008-encounter-and-time"
 ticket: "EP-0012-US-0008-TK-0002-combat-speed-lock"
 title: "combat-speed-lock"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0008-TK-0001-encounter-state"]
-files_touched: 4
+files_touched: 7
 serves: ["US8-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0008-TK-0002-combat-speed-lock
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (7 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -33,9 +33,15 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | `src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0008TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Presentation.cs` | Existing | Same bounded clock/control policy for presentation updates and atomic rejection acknowledgement. |
+| `src/DeepSpaceSaga.Engine/Dialogue/SimulationEngine.Dialogue.cs` | Existing | Modal resume respects Active lock and preserves quarter remainder. |
+| `src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs` | Existing | Return immediate combat_speed_locked reason with confirmed speed. |
+
+A-SPEED-01: Engine.TrySetSpeed returns the rejection reason; SetSpeed keeps its existing void facade. High-speed point sessions consume a captured real interval in one-real-millisecond clock steps, so admission takes effect at the next real-millisecond boundary instead of advancing an entire high-speed snapshot interval. Quarter remainder is preserved; no Reset for encounter transitions. Active permits 0/1 only; prior speed restored on Won unless a watchdog/modal/terminal pause owns the clock. User-requested modal resume remains authoritative. Save18 persists restore state later.
+
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+Add Engine.TrySetSpeed and atomic SetPresentationSpeed/ResumePresentationControl; existing SetSpeed/ResumePresentation callers remain compatible.
 
 ## Implementation steps
 
@@ -46,7 +52,7 @@ No public API change; внутренние детали ограничены п�
 
 ## Out of scope / Invariants
 
-Один production layer: engine; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
+Bounded Engine plus LocalClient acknowledgement integration; matching Engine tests only. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
 
 ## Tests
 
@@ -74,4 +80,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 11 named / 688 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0008-tk0002-results.json).
+
+Active accepts Speed0/1 and rejects Speed2+ with combat_speed_locked. Engine and LocalClient return immediate atomic acknowledgement with confirmed speed. Prior speed restored on Won; terminal and watchdog pauses remain authoritative, dialogue resume is capped while Active. Bounded real clock intervals apply admission and victory restoration within the captured interval at integer real-ms resolution; x1=1 physical second per4 real seconds and quarter remainder survive pause/modal changes. A real docking dialogue is tested; initial fixture mismatched station/ship heading and was corrected without relaxing docking. Solution build 0 warnings/errors. Save18 restore-state persistence remains downstream.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

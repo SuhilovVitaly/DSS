@@ -101,6 +101,29 @@ public sealed class SimulationClock
         }
     }
 
+    internal long CaptureRealTime() => _realTimeMs();
+
+    /// <summary>Consume one bounded part of a fixed captured real interval, retaining the remainder for the next part.</summary>
+    internal (SimulationClockState State, bool More) AdvanceBounded(long realDeadline, long maxRealDeltaMs)
+    {
+        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxRealDeltaMs);
+        lock (_lock)
+        {
+            if (_terminalStopped) return (new(GameTimeMs, Speed, SimulationTimeMs, _motionQuarterRemainder), false);
+            long delta = Math.Max(0, realDeadline - _lastRealTick);
+            long step = Math.Min(delta, maxRealDeltaMs);
+            Advance(step);
+            _lastRealTick += step;
+            return (new(GameTimeMs, Speed, SimulationTimeMs, _motionQuarterRemainder), step < delta);
+        }
+    }
+
+    /// <summary>Change speed at an already processed real boundary without consuming pending elapsed time.</summary>
+    internal void SetSpeedAtProcessedBoundary(SimulationSpeed speed)
+    {
+        lock (_lock) { if (!_terminalStopped) Speed = speed; }
+    }
+
     /// <summary>
     /// Reset the clock to a known initial state for New Game.
     /// Sets GameTimeMs and Speed directly, without accumulating any real time.

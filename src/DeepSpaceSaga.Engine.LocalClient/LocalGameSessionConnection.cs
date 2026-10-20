@@ -131,8 +131,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _engine.ResumePresentation(speed);
-        return ValueTask.FromResult(_engine.CapturePresentationControl());
+        return ValueTask.FromResult(_engine.ResumePresentationControl(speed));
     }
 
     public ValueTask<SimulationControlAcknowledgement> SetPresentationSpeedAsync(SimulationSpeed speed,
@@ -140,8 +139,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _engine.SetSpeed(speed);
-        return ValueTask.FromResult(_engine.CapturePresentationControl());
+        return ValueTask.FromResult(_engine.SetPresentationSpeed(speed));
     }
 
     public ValueTask SendCommandAsync(
