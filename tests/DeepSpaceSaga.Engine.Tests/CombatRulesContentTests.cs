@@ -22,7 +22,7 @@ public sealed class CombatRulesContentTests : IDisposable
     {
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
             Path.Combine(ClientRoot, "Settings.json"), out _, out _);
-        Assert.Equal(50, registry.CombatRules!.Chance.Base);
+        Assert.Equal(50, Assert.IsType<CombatChanceRules>(registry.CombatRules!.Chance).Base);
         Assert.Equal(60000, registry.CombatRules.Damage.HitDisableMs);
         Assert.Equal(60, registry.CombatRules.ArmorClasses["light"]);
         Assert.Equal(["standard", "maneuverability", "overheat"],
@@ -83,12 +83,16 @@ public sealed class CombatRulesContentTests : IDisposable
         File.WriteAllText(settings, """{"typeData":{"combatRules":"missing.json"},"defaultScenario":"unused.json"}""");
         var missingPair = Assert.Throws<ContentException>(
             () => EngineContentLoader.LoadCombatRulesAndModes(settings));
-        Assert.Contains("settings.json", missingPair.Message);
-        Assert.Contains("typeData.fireModes", missingPair.Message);
+        Assert.Contains("missing.json", missingPair.Message);
         File.WriteAllText(settings, """{"typeData":{"combatRules":"missing.json","fireModes":"fire-modes.json"},"defaultScenario":"unused.json"}""");
         var missingFile = Assert.Throws<ContentException>(
             () => EngineContentLoader.LoadCombatRulesAndModes(settings));
         Assert.Contains("missing.json", missingFile.Message);
+        File.WriteAllText(settings, """{"typeData":{"combatRules":"combat-rules.json"},"defaultScenario":"unused.json"}""");
+        var legacyMissingModes = Assert.Throws<ContentException>(
+            () => EngineContentLoader.LoadCombatRulesAndModes(settings));
+        Assert.Contains("settings.json", legacyMissingModes.Message);
+        Assert.Contains("typeData.fireModes", legacyMissingModes.Message);
     }
 
     public void Dispose() => Directory.Delete(_directory, recursive: true);

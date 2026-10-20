@@ -70,7 +70,7 @@ public class DefeatTimeBoundaryTests
             All(source.ItemTypes), All(source.CommandDefinitions), factoryTypes: [new("factory.defeat", "Food", recipe)],
             shipClasses: All(source.ShipClasses), stationMarketProfiles: All(source.StationMarketProfiles),
             stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
+            combatRules: source.CombatRules! with { Chance = Assert.IsType<CombatChanceRules>(source.CombatRules.Chance) with { Base = 0 } },
             fireModes: source.FireModes);
         var scenario = PlayerDefeatTests.LethalScenario(150);
         scenario = scenario with

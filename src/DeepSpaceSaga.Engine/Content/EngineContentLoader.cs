@@ -206,10 +206,19 @@ public static class EngineContentLoader
         var paths = ReadJson<EngineSettingsFile>(settingsPath, "settings").TypeData;
         if (paths is null) throw new ContentException($"{settingsPath}: missing typeData.");
         if (paths.CombatRules is null && paths.FireModes is null) return (null, []);
-        if (string.IsNullOrWhiteSpace(paths.CombatRules) || string.IsNullOrWhiteSpace(paths.FireModes))
-            throw new ContentException($"{settingsPath}: typeData.combatRules and typeData.fireModes must both name files.");
+        if (string.IsNullOrWhiteSpace(paths.CombatRules))
+            throw new ContentException($"{settingsPath}: typeData.combatRules must name a file.");
         string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
-        return (LoadCombatRules(Resolve(root, paths.CombatRules)), LoadFireModes(Resolve(root, paths.FireModes)));
+        var rules = LoadCombatRules(Resolve(root, paths.CombatRules));
+        if (rules.IsPointAim)
+        {
+            if (paths.FireModes is not null)
+                throw new ContentException($"{settingsPath}: typeData.fireModes is not supported with point-aim rules.");
+            return (rules, []);
+        }
+        if (string.IsNullOrWhiteSpace(paths.FireModes))
+            throw new ContentException($"{settingsPath}: legacy typeData.fireModes must name a file.");
+        return (rules, LoadFireModes(Resolve(root, paths.FireModes)));
     }
 
     internal static ImmutableArray<FireModeDefinition> LoadFireModes(string path)

@@ -4,10 +4,31 @@ using System.Text.Json.Serialization;
 namespace DeepSpaceSaga.Engine.Content;
 
 internal sealed record CombatRulesDefinition(
-    [property: JsonPropertyName("chance"), JsonRequired] CombatChanceRules Chance,
+    [property: JsonPropertyName("chance")] CombatChanceRules? Chance,
     [property: JsonPropertyName("damage"), JsonRequired] CombatDamageRules Damage,
     [property: JsonPropertyName("shipDestruction"), JsonRequired] ShipDestructionRules ShipDestruction,
-    [property: JsonPropertyName("armorClasses"), JsonRequired] IReadOnlyDictionary<string, int> ArmorClasses);
+    [property: JsonPropertyName("armorClasses"), JsonRequired] IReadOnlyDictionary<string, int> ArmorClasses,
+    [property: JsonPropertyName("blast")] CombatBlastRules? Blast = null,
+    [property: JsonPropertyName("scatter")] CombatScatterRules? Scatter = null,
+    [property: JsonPropertyName("npc")] CombatNpcRules? Npc = null,
+    [property: JsonPropertyName("combatStartRangeKm")] double? CombatStartRangeKm = null)
+{
+    [JsonIgnore]
+    internal bool IsPointAim => Blast is not null || Scatter is not null || Npc is not null || CombatStartRangeKm.HasValue;
+}
+
+internal sealed record CombatBlastRules(
+    [property: JsonPropertyName("coreFraction"), JsonRequired] double CoreFraction);
+
+internal sealed record CombatScatterRules(
+    [property: JsonPropertyName("skillPivot"), JsonRequired] int SkillPivot,
+    [property: JsonPropertyName("skillSlope"), JsonRequired] double SkillSlope,
+    [property: JsonPropertyName("minMultiplier"), JsonRequired] double MinMultiplier);
+
+internal sealed record CombatNpcRules(
+    [property: JsonPropertyName("reactionBaseMs"), JsonRequired] long ReactionBaseMs,
+    [property: JsonPropertyName("reactionPerSkillMs"), JsonRequired] long ReactionPerSkillMs,
+    [property: JsonPropertyName("reactionMinMs"), JsonRequired] long ReactionMinMs);
 
 internal sealed record CombatChanceRules(
     [property: JsonPropertyName("base"), JsonRequired] decimal Base,
@@ -39,7 +60,9 @@ internal static class CombatContentValidation
     internal static CombatRulesDefinition Rules(CombatRulesDefinition? rules)
     {
         if (rules is null) throw new ContentException("combatRules: missing root.");
-        if (rules.Chance is null || rules.Chance.Base is < 0 or > 100 ||
+        if (rules.IsPointAim || rules.Chance is null)
+            ValidatePointAimRules(rules);
+        else if (rules.Chance.Base is < 0 or > 100 ||
             rules.Chance.Min is < 0 or > 100 || rules.Chance.Max is < 0 or > 100 ||
             rules.Chance.Min > rules.Chance.Max)
             throw new ContentException("combatRules.chance: base/min/max invalid.");
@@ -57,6 +80,32 @@ internal static class CombatContentValidation
             rules.ArmorClasses.Any(pair => string.IsNullOrWhiteSpace(pair.Key) || pair.Value < 0))
             throw new ContentException("combatRules.armorClasses contains missing/nonzero none or negative class.");
         return rules;
+    }
+
+    private static void ValidatePointAimRules(CombatRulesDefinition rules)
+    {
+        if (rules.Chance is not null)
+            throw new ContentException("combatRules.chance is not supported with point-aim rules.");
+        if (rules.Blast is null || !double.IsFinite(rules.Blast.CoreFraction) || rules.Blast.CoreFraction is <= 0 or >= 1)
+            throw new ContentException("combatRules.blast.coreFraction must be finite and inside (0,1).");
+        if (rules.Scatter is null)
+            throw new ContentException("combatRules.scatter is required.");
+        if (rules.Scatter.SkillPivot is < 0 or > 30)
+            throw new ContentException("combatRules.scatter.skillPivot must be inside [0,30].");
+        if (!double.IsFinite(rules.Scatter.SkillSlope) || rules.Scatter.SkillSlope < 0)
+            throw new ContentException("combatRules.scatter.skillSlope must be finite and nonnegative.");
+        if (!double.IsFinite(rules.Scatter.MinMultiplier) || rules.Scatter.MinMultiplier is <= 0 or > 1)
+            throw new ContentException("combatRules.scatter.minMultiplier must be finite and inside (0,1].");
+        if (rules.Npc is null)
+            throw new ContentException("combatRules.npc is required.");
+        if (rules.Npc.ReactionBaseMs <= 0)
+            throw new ContentException("combatRules.npc.reactionBaseMs must be positive.");
+        if (rules.Npc.ReactionPerSkillMs < 0 || rules.Npc.ReactionPerSkillMs > long.MaxValue / 30)
+            throw new ContentException("combatRules.npc.reactionPerSkillMs must be nonnegative and safe for skill 30.");
+        if (rules.Npc.ReactionMinMs < 0 || rules.Npc.ReactionMinMs > rules.Npc.ReactionBaseMs)
+            throw new ContentException("combatRules.npc.reactionMinMs must be between zero and reactionBaseMs.");
+        if (rules.CombatStartRangeKm is not > 0 || !double.IsFinite(rules.CombatStartRangeKm.Value))
+            throw new ContentException("combatRules.combatStartRangeKm must be positive and finite.");
     }
 
     internal static ImmutableArray<FireModeDefinition> Modes(FireModesFile? file)

@@ -104,6 +104,8 @@ internal sealed class GameDataRegistry
     {
         if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
         if (combatRules is not null) CombatContentValidation.Rules(combatRules);
+        if (combatRules?.IsPointAim == true && !fireModes.IsDefaultOrEmpty)
+            throw new ContentException("combatRules: fireModes is not supported with point-aim rules.");
         if (!fireModes.IsDefaultOrEmpty) CombatContentValidation.Modes(new(fireModes));
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
