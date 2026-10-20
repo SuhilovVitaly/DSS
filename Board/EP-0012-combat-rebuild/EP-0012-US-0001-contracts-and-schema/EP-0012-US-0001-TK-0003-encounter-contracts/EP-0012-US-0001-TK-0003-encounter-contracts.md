@@ -3,7 +3,7 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0001-contracts-and-schema"
 ticket: "EP-0012-US-0001-TK-0003-encounter-contracts"
 title: "encounter-contracts"
-stage: "draft"
+stage: "implemented"
 layer: "contracts"
 depends_on: ["EP-0012-US-0001-TK-0002-command-contracts"]
 files_touched: 4
@@ -37,6 +37,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 Proposed: enum CombatEncounterState { Idle, Active, Won, Lost }; CombatEncounterSnapshot(State, long StartedAtMotionMs, long? EndedAtMotionMs, CombatEncounterStats Stats); EnemyShipStatusSnapshot(bool Damaged, long? ImmobilizedUntilMotionMs, bool Destroyed). AuthoritativeSnapshot получает optional Encounter; ObjectMotionSnapshot — optional EnemyStatus. SessionOutcome не меняется.
 
+### Уточнение исполнения — 2026-10-20
+
+Dependency TK-0002 опубликован: `be0078caf61fe4f08ed92a081ce932f5a441f9d6`, remote SHA проверен. `DurationSeconds` добавляется в Encounter как explicit physical seconds, вычисляемые producer, а не от wall clock Client. Это закрывает требование длительности US1-AC3, отсутствовавшее в предложенной сигнатуре.
+
+**A-EXEC-01 (техническое допущение исполнителя):** исходные карточки требуют десять счётчиков без перечисления. Фиксируются long `TorpedoesLaunched`, `CountermissilesLaunched` (игрок), `EnemyTorpedoesLaunched`, `TorpedoesIntercepted` (торпеды, уничтоженные ПРО игрока, включая собственные), `PlayerHitsReceived`, `EnemyHitsDealt` (положительный урон торпед игрока по врагам, по одному на blast+ship), `PlayerEvasions`, `EnemiesDestroyed`, `ArmorDamageTaken`, `StructureDamageTaken` (фактические потери игрока). Попадание по игроку учитывается независимо от стороны снаряда. Нулевой damage не является hit. Числовой урон врагов отсутствует; это не новое решение пользователя. Счётчики и длительность вычисляются Engine в US-0008, сохраняются в US-0009 и только передаются DTO на этом шаге.
+
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
@@ -50,7 +56,7 @@ Proposed: enum CombatEncounterState { Idle, Active, Won, Lost }; CombatEncounter
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+План проверок; фактические результаты исполнения приведены в Status / Evidence.
 
 - **Encounter_roundtrip_preserves_state_deadlines_and_all_counters**: Idle/Active/Won/Lost и все десять счётчиков roundtrip.
 - **Enemy_status_has_no_module_collection**: только агрегированные признаки по US5-AC2.
@@ -74,4 +80,6 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: Contracts implementation и self-review выполнены. Добавлены четыре encounter states, десять long counters, explicit physical DurationSeconds, optional Encounter и агрегированный EnemyStatus. Named tests PASS 6/6; полный Contracts PASS 236/236 (0 failed/skipped); owning build 0 warnings/errors; scoped whitespace/full formatter и diff check PASS; hard timeout 300000 ms.
+
+[Команды и stdout](../../evidence/tk0003-results.json). Self-review проверил большие long counters, все четыре состояния, null compatibility, отсутствие module/damage members в enemy status и разделение Encounter/SessionOutcome. DTO не ведёт таймер и не принимает боевых решений. A-EXEC-01 явно записано в карточке/каноническом контракте как техническое допущение. Runtime encounter/statistics/privacy/save остаются OPEN до соответствующих тикетов. Review исполнителя не является независимым review; native/product/balance OPEN. Отдельный commit/push разрешён текущим поручением; SHA проверяется после коммита.

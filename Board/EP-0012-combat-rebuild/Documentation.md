@@ -188,6 +188,10 @@ HEAD: `c894925d187c90a658d1e25958feed69a45d7e41`. Рабочее дерево п
 
 ## Ownership и цепочка данных
 
+### Уточнение исполнения A-EXEC-01 — 2026-10-20
+
+В исходных AC сказано «десять счётчиков», но состав не перечислен. Исполнитель фиксирует минимальный набор для последующей реализации US-0008: пуски торпед и ПРО игрока, пуски вражеских торпед, торпеды уничтоженные ПРО игрока, полученные игроком попадания, попадания игрока по врагам, уклонения игрока, уничтоженные враги, фактические потери брони и структуры игрока. Точные имена и границы — в [US1-TK3](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0003-encounter-contracts/EP-0012-US-0001-TK-0003-encounter-contracts.md). Это техническое допущение исполнителя, не ответ пользователя. Encounter передаёт explicit DurationSeconds в физическом времени; номинальное x1 real время получается ×4. Enemy numeric damage в публичный DTO не добавляется.
+
 Content JSON → EngineContentLoader validation/registry → Engine captured projectiles, scheduler, RNG, evasion, encounter → player-view masking → Contracts full/compact/events → LocalClient → SnapshotBuffer display-admission → Client panels/render/preview. Engine save18 хранит полное authoritative состояние, а public DTO скрывает enemy endpoint/deadline/modules. Privacy также проверяется в events/journal/report payload, не только full snapshot.
 
 Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются.

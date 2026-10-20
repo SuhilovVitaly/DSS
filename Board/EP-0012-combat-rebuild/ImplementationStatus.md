@@ -34,7 +34,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | Шаг / тикет | Реализация и проверки | Публикация |
 |---|---|---|
 | 1 / US-0001-TK-0001 projectile-contracts | PASS 12 named / 224 Contracts; build/format/diff PASS | `090b3635822f100bbe11105e2840f585d1294ec8`, origin SHA verified |
-| 2 / US-0001-TK-0002 command-contracts | PASS 6 named / 230 Contracts; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 2 / US-0001-TK-0002 command-contracts | PASS 6 named / 230 Contracts; build/format/diff PASS | `be0078caf61fe4f08ed92a081ce932f5a441f9d6`, origin SHA verified |
+| 3 / US-0001-TK-0003 encounter-contracts | PASS 6 named / 236 Contracts; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

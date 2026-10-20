@@ -148,7 +148,10 @@ public sealed record ObjectMotionSnapshot(
     OwnProjectileSnapshot? OwnProjectile = null,
     /// <summary>Foreign point flight with no concealed endpoint, deadline or module data.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    ObservedProjectileSnapshot? ObservedProjectile = null);
+    ObservedProjectileSnapshot? ObservedProjectile = null,
+    /// <summary>Aggregate hostile ship status; full enemy module health is masked by the Engine.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    EnemyShipStatusSnapshot? EnemyStatus = null);
 
 /// <summary>Existing discrete engine command, not a proposed command or future AI decision.
 /// Acceleration is km/s²; the first speed delta includes elapsed inertia before this snapshot.

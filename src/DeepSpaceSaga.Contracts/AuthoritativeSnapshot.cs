@@ -75,7 +75,10 @@ public sealed record AuthoritativeSnapshot(
     /// <summary>New report deltas above a fixed bootstrap baseline, independent of SnapshotSequence.
     /// Null denotes a legacy producer and must not clear pending reports. Empty batches still carry
     /// the baseline/latest watermark; history from a loaded save is never replayed as new reports.</summary>
-    CombatReportBatchSnapshot? CombatReports = null)
+    CombatReportBatchSnapshot? CombatReports = null,
+    /// <summary>Confirmed encounter state, distinct from terminal session Outcome.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    CombatEncounterSnapshot? Encounter = null)
 {
     [JsonIgnore]
     public SessionOutcomeSnapshot EffectiveOutcome => Outcome ?? SessionOutcomeSnapshot.Running;
