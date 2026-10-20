@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0002-combat-catalog-v3"
 ticket: "EP-0012-US-0002-TK-0003-engines-v3"
 title: "engines-v3"
-stage: "draft"
+stage: "implemented"
 layer: "content-data"
 depends_on: ["EP-0012-US-0002-TK-0002-countermissile-launcher-v3"]
 files_touched: 2
 serves: ["US2-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0002-TK-0003-engines-v3
@@ -33,12 +33,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+No public API change. Dedicated Tetrarch and updated Strizh definitions are staged under Data/CombatV3; canonical activation belongs to US2-TK5. Basic is semantically identical to its independent original JSON definition.
 
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
-2. `Data/Modules/Engine/modules-engine.json`: новый `module.engine.tetrarch` с `combatRole: engine` и значения Стрижа по D12 (O9). Тест, что basic не изменился.
+2. `Data/CombatV3/Modules/Engine/modules-engine.json` (TK5 переносит committed bytes в canonical path): новый `module.engine.tetrarch` с `combatRole: engine` и значения Стрижа по D12 (O9). Тест, что basic не изменился.
 3. Добавить/обновить named checks ниже одновременно с реализацией. Удаляемые legacy tests заменять проверками нового контракта, сохраняющиеся инварианты не выкидывать.
 4. Записать фактические команды/результаты при исполнении; сейчас всё NOT RUN.
 
@@ -71,8 +71,14 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 2 named / 2336 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0002-tk0003-results.json).
+
+Staged source/deployed Tetrarch5000/600/20 and Strizh8000/1000/24 real-loader validation PASS. Complete basic JSON independently frozen and unchanged; default Engine coherent before activation. Cruise3/6km/s is scenario US9 scope.2336 non-budget Client PASS; atomic default v3 switch US2-TK5 and native/strict budget gates OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 ## Atomic catalog staging decision
 
 Before implementation: TK1–4 author real production JSON components under `Data/CombatV3`, outside the recursively loaded active Modules/Commands folders. Each component is validated through the real loader in source and deployed output, with independent expected constants. TK5 moves those exact committed components to canonical paths in one atomic switch with rules, module categories, Settings and mode removal. Before that switch, active default catalog remains coherent; component implementation does not close default-game integration/US2 acceptance. Tests select staged component while it exists in the source tree, and canonical component after activation. No numeric or product requirement is changed.
+
+Cruise3/6km/s belongs to scenario initial velocities (US9-AC1), not module capability schema; no invented cruise field is added.
