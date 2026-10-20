@@ -29,14 +29,14 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     }
 
     public static bool IsLinear(ObjectMotionSnapshot state) =>
-        state.Evasion is null && state.OwnProjectile is null && state.ObservedProjectile is null &&
+        state.TurnHoldRateDegPerSec is null && state.Evasion is null && state.OwnProjectile is null && state.ObservedProjectile is null &&
         state.Orbit is null && state.Torpedo is null && state.Countermeasure is null && state.HostileCombat is null && state.EngineManeuver is null &&
         state.ActiveEngineCommandType is not (NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit) &&
         (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0);
 
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
-        if (state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
+        if (state.TurnHoldRateDegPerSec is not null || state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
             return CurrentManeuverForecast.Sample(state, elapsedMs);
         if (state.Orbit is { } orbit)
             return OrbitalMotionMath.At(state, orbit, checked((state.OrbitSampleSimulationTimeMs ?? orbit.EpochSimulationTimeMs) + elapsedMs));

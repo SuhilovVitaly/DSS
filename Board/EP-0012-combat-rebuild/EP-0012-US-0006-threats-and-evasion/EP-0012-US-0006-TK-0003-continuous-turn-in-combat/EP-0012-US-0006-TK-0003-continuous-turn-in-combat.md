@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0006-threats-and-evasion"
 ticket: "EP-0012-US-0006-TK-0003-continuous-turn-in-combat"
 title: "continuous-turn-in-combat"
-stage: "draft"
-layer: "engine"
+stage: "implemented"
+layer: "contracts-motion-engine"
 depends_on: ["EP-0012-US-0006-TK-0002-evade-command"]
-files_touched: 3
+files_touched: 12
 serves: ["US6-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0006-TK-0003-continuous-turn-in-combat
@@ -24,13 +24,25 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (12 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Engine/SimulationEngine.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.cs:17; public sealed partial class SimulationEngine : IDisposable | Только изменения для scope этой карточки и served AC. |
 | `src/DeepSpaceSaga.Engine/SimulationEngine.Evasion.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0006TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| `src/DeepSpaceSaga.Contracts/ObjectMotionSnapshot.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `src/DeepSpaceSaga.Motion/CurrentManeuverForecast.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `src/DeepSpaceSaga.Motion/LinearMotionPredictor.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `src/DeepSpaceSaga.Engine/RuntimeMotion.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Presentation.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `src/DeepSpaceSaga.Engine/Dialogue/SimulationEngine.Dialogue.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.TurnHold.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+| `tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0006TK0003Tests.cs` | Bounded integration dependency | Continuous turn, cancellation, shared arc and regression only. |
+
+A-TURN-01: turnHold is an explicit continuous control; existing step commands remain unchanged outside combat. Encounter/UI routing is integrated by later owning tickets. Accepted turnHold exposes only the own signed rate; foreign controls remain masked. Pausing clears the latch at the last confirmed motion time. Save18 persistence belongs to US10.
 
 ## Public API after the change
 
@@ -45,7 +57,7 @@ Proposed команда engine.turnHold {direction,active}; payload/contracts г
 
 ## Out of scope / Invariants
 
-Один production layer: engine; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
+Bounded cross-layer prerequisite: Contracts own-control scalar, shared Motion arc and Engine execution; matching Engine tests exercise the shared implementation. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
 
 ## Tests
 
@@ -73,4 +85,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 7 named / 494 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0006-tk0003-results.json).
+
+TurnHold integrates at the engine signed angular rate and stops on matching release, pause/watchdog/dialogue, damage, session reset or accepted replacement. Wrong-key release, replay and invalid replacement preserve control. Shared Motion 3 named / 243 full PASS; solution build 0 warnings/errors. Existing outside-combat step semantics retained. Encounter/UI routing and Save18 remain downstream; explicit turnHold is accepted independently of encounter state. The first targeted run had 5 pass / 1 fail because the fixture used noncanonical engine.cancelAll; corrected to canonical maintainCourse without production workaround.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

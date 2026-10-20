@@ -107,6 +107,7 @@ public sealed partial class SimulationEngine
     private static ObjectMotionSnapshot ClearEvasionControls(ObjectMotionSnapshot pose) => pose with
     {
         Evasion = null,
+        TurnHoldRateDegPerSec = null,
         HostileCombat = null,
         EngineManeuver = null,
         Orbit = null,
@@ -184,7 +185,7 @@ public sealed partial class SimulationEngine
 
     private SpaceObjectRuntime InterruptDamagedEvasion(SpaceObjectRuntime ship, double time)
     {
-        if (ship.InitialMotion.Evasion is not { } evasion) return ship;
+        if (ship.InitialMotion.Evasion is not { } evasion) return InterruptDamagedTurnHold(ship, time);
         var pose = CurrentManeuverForecast.Sample(ship.InitialMotion, Math.Max(0, time - evasion.SampleMotionTimeMs));
         long anchor = (long)Math.Floor(time);
         var atAnchor = TorpedoGuidanceMath.PredictSegment(new(pose.X, pose.Y, pose.Direction, pose.SpeedKmS, 0, 0), anchor - time);

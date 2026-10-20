@@ -165,6 +165,7 @@ public sealed partial class SimulationEngine : IDisposable
             if (IsDefeated || (_automaticPresentationPause && speed != SimulationSpeed.Speed0)) return;
             if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return; }
             _presentationIntervalSpeed = _clock.Speed;
+            if (speed == SimulationSpeed.Speed0) StopAllTurnHolds();
             _clock.SetSpeed(speed);
             if (_collectPresentation)
             {
@@ -701,7 +702,7 @@ public sealed partial class SimulationEngine : IDisposable
                 // Project ordinary objects straight into the outgoing DTO: avoid
                 // allocating a full intermediate motion snapshot for every asteroid.
                 double x = 0, y = 0;
-                bool linear = obj.InitialMotion.Evasion is null && obj.InitialMotion.OwnProjectile is null && obj.InitialMotion.ObservedProjectile is null &&
+                bool linear = obj.InitialMotion.TurnHoldRateDegPerSec is null && obj.InitialMotion.Evasion is null && obj.InitialMotion.OwnProjectile is null && obj.InitialMotion.ObservedProjectile is null &&
                     cycleMotion.ApproachRoute is null && _motion is LinearMotionPredictor &&
                     LinearMotionPredictor.TryPredictLinearPosition(obj.InitialMotion, elapsed, out x, out y);
                 var motion = linear ? obj.InitialMotion : PredictMotion(obj, elapsed);
@@ -725,7 +726,8 @@ public sealed partial class SimulationEngine : IDisposable
                     OwnProjectile = motion.OwnProjectile?.OwnerObjectId == PlayerShipObjectId ? motion.OwnProjectile : null,
                     ObservedProjectile = ProjectObservedProjectile(motion),
                     Evasion = isPlayerShipRow ? motion.Evasion : null,
-                    ActiveEngineCommandType = isPlayerShipRow && motion.Evasion is not null ? ManeuverCommandTypes.Evade : cycleMotion.CommandType,
+                    TurnHoldRateDegPerSec = isPlayerShipRow ? motion.TurnHoldRateDegPerSec : null,
+                    ActiveEngineCommandType = isPlayerShipRow && motion.Evasion is not null ? ManeuverCommandTypes.Evade : isPlayerShipRow && motion.TurnHoldRateDegPerSec is not null ? ShipEngineCommandTypes.TurnHold : cycleMotion.CommandType,
                     EngineManeuver = known ? ProjectEngineManeuver(obj, gameTimeMs) : null,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
@@ -2442,7 +2444,7 @@ public sealed partial class SimulationEngine : IDisposable
             return quotedTrade ? RejectQuotedTrade(command, "dialogue_active") : CommandStartOutcome.Rejected("dialogue_active");
 
         if (command.CommandType is NavigationComputerCommandTypes.Dock or NavigationComputerCommandTypes.Undock)
-            return ExecuteEvasionOverride(command, gameTimeMs, () => TryStartNavigationCommand(command, gameTimeMs));
+            return ExecuteTurnHoldOverride(command, gameTimeMs, () => ExecuteEvasionOverride(command, gameTimeMs, () => TryStartNavigationCommand(command, gameTimeMs)));
 
         if (command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel)
             return TryStartTradeCommand(command, gameTimeMs);
@@ -2451,6 +2453,9 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartPointLaunch(command, gameTimeMs);
         if (command.CommandType == DefenseCommandTypes.Launch)
             return TryStartPointLaunch(command, gameTimeMs, ProjectileKind.Countermissile);
+        if (command.CommandType == ShipEngineCommandTypes.TurnHold)
+            return command.Active == false ? TryTurnHold(command, gameTimeMs) :
+                ExecuteEvasionOverride(command, gameTimeMs, () => TryTurnHold(command, gameTimeMs));
         if (command.CommandType == ManeuverCommandTypes.Evade)
             return TryStartEvade(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Detonate)
@@ -2466,7 +2471,7 @@ public sealed partial class SimulationEngine : IDisposable
         if (command.CommandType == CombatCommandTypes.SelfDestruct)
             return TrySelfDestruct(command, gameTimeMs);
 
-        return ExecuteEvasionOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs));
+        return ExecuteTurnHoldOverride(command, gameTimeMs, () => ExecuteEvasionOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs)));
     }
 
     /// <summary>1 world unit = 100 m (Documentation/00-Process/CLAUDE.md developer guide), so 1 km = 10 world units.</summary>

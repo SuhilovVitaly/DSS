@@ -41,6 +41,7 @@ public sealed partial class SimulationEngine
         if (_dialogue.Active is not null)
         {
             _dialogue.ResumeSpeed ??= _clock.Speed;
+            StopAllTurnHolds();
             _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, time, _clock.Capture().MotionQuarterRemainder);
         }
     }
@@ -64,6 +65,7 @@ public sealed partial class SimulationEngine
             crew?.PortraitImage, parameters);
         _dialogue.ResumeSpeed = _clock.Speed;
         // Freeze exactly at the command's authoritative time, including on save-before-snapshot.
+        StopAllTurnHolds();
         _clock.Reset(_processedWorldTimeMs, SimulationSpeed.Speed0, time, _clock.Capture().MotionQuarterRemainder);
         _dialogue.Emit(instance, "dialogue_started", time, commandId);
         return null;

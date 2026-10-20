@@ -73,6 +73,7 @@ public sealed partial class SimulationEngine
 
     private void PauseForPresentation(long? realDeadlineMs = null)
     {
+        StopAllTurnHolds();
         _automaticPresentationPause = true;
         // Dialogue/modal restoration must not resume a session paused by the watchdog.
         if (_dialogue.Active is not null) _dialogue.ResumeSpeed = SimulationSpeed.Speed0;

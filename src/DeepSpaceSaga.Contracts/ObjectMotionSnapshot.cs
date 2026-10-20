@@ -154,7 +154,10 @@ public sealed record ObjectMotionSnapshot(
     EnemyShipStatusSnapshot? EnemyStatus = null,
     /// <summary>Accepted own evasion and known return course; omitted for foreign ships.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    EvasionSnapshot? Evasion = null);
+    EvasionSnapshot? Evasion = null,
+    /// <summary>Accepted own held turn, signed degrees per physical second; omitted for foreign ships.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? TurnHoldRateDegPerSec = null);
 
 /// <summary>Existing discrete engine command, not a proposed command or future AI decision.
 /// Acceleration is km/s²; the first speed delta includes elapsed inertia before this snapshot.
