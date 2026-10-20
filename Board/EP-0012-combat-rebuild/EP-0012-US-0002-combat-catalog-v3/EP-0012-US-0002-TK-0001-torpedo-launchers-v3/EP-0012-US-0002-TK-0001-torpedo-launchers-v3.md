@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0002-TK-0001-torpedo-launchers-v3"
 title: "torpedo-launchers-v3"
 stage: "draft"
 layer: "content-data"
-depends_on: ["EP-0012-US-0016-TK-0001-combat-localization"]
+depends_on: ["EP-0012-US-0009-TK-0005-save18-defense-validation"]
 files_touched: 2
 serves: ["US2-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 3
+revision: 4
 ---
 
 # EP-0012-US-0002-TK-0001-torpedo-launchers-v3
@@ -76,3 +76,5 @@ Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/prod
 2026-10-20 execution dependency correction: runtime precedes production catalog activation; see [DAG](../../Tickets.md#execution-correction-2026-10-20). Scope/AC unchanged.
 
 2026-10-20 consumer prerequisite correction: point consumers precede production data activation; actual integration gates remain OPEN until activation/Save18. See [DAG](../../Tickets.md#consumer-prerequisite-correction).
+
+Save18 prerequisite correction: see [execution DAG](../../Tickets.md#save18-prerequisite-correction).

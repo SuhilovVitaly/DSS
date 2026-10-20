@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0009-TK-0003-save-format-18"
 title: "save-format-18"
 stage: "draft"
 layer: "engine"
-depends_on: ["EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios"]
+depends_on: ["EP-0012-US-0016-TK-0001-combat-localization"]
 files_touched: 5
 serves: ["US9-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0009-TK-0003-save-format-18
@@ -76,3 +76,5 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+Save18 prerequisite correction: see [execution DAG](../../Tickets.md#save18-prerequisite-correction).

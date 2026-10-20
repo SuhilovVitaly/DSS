@@ -52,6 +52,10 @@ No public API change; использовать контракт зависимы
 
 **Point_rules_activate_without_legacy_mode_path**: source and deployed Settings contain no fireModes entry, obsolete mode file is absent, strict point rules load and real Engine/Client point launch paths work.
 
+## Atomic activation check
+
+**Point_rules_activate_without_legacy_mode_path**: source and deployed Settings contain no fireModes entry, obsolete mode file is absent, strict point rules load and real Engine/Client point launch paths work.
+
 ## Tests
 
 Все ниже — **план**, не выполненные тесты.

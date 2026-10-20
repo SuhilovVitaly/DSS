@@ -36,17 +36,17 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0016-combat-localization. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0009-scenarios-and-saves. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 47 / [EP-0012-US-0002-TK-0001-torpedo-launchers-v3](EP-0012-US-0002-TK-0001-torpedo-launchers-v3/EP-0012-US-0002-TK-0001-torpedo-launchers-v3.md) | content-data | EP-0012-US-0016-TK-0001-combat-localization | US2-AC1 | 2 |
-| 48 / [EP-0012-US-0002-TK-0002-countermissile-launcher-v3](EP-0012-US-0002-TK-0002-countermissile-launcher-v3/EP-0012-US-0002-TK-0002-countermissile-launcher-v3.md) | content-data | EP-0012-US-0002-TK-0001-torpedo-launchers-v3 | US2-AC1 | 2 |
-| 49 / [EP-0012-US-0002-TK-0003-engines-v3](EP-0012-US-0002-TK-0003-engines-v3/EP-0012-US-0002-TK-0003-engines-v3.md) | content-data | EP-0012-US-0002-TK-0002-countermissile-launcher-v3 | US2-AC2 | 2 |
-| 50 / [EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands](EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands/EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands.md) | content-data | EP-0012-US-0002-TK-0003-engines-v3 | US2-AC3 | 3 |
-| 51 / [EP-0012-US-0002-TK-0005-combat-rules-v3](EP-0012-US-0002-TK-0005-combat-rules-v3/EP-0012-US-0002-TK-0005-combat-rules-v3.md) | content-data | EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands | US1-AC4, US2-AC1 | 4 |
+| 50 / [EP-0012-US-0002-TK-0001-torpedo-launchers-v3](EP-0012-US-0002-TK-0001-torpedo-launchers-v3/EP-0012-US-0002-TK-0001-torpedo-launchers-v3.md) | content-data | EP-0012-US-0009-TK-0005-save18-defense-validation | US2-AC1 | 2 |
+| 51 / [EP-0012-US-0002-TK-0002-countermissile-launcher-v3](EP-0012-US-0002-TK-0002-countermissile-launcher-v3/EP-0012-US-0002-TK-0002-countermissile-launcher-v3.md) | content-data | EP-0012-US-0002-TK-0001-torpedo-launchers-v3 | US2-AC1 | 2 |
+| 52 / [EP-0012-US-0002-TK-0003-engines-v3](EP-0012-US-0002-TK-0003-engines-v3/EP-0012-US-0002-TK-0003-engines-v3.md) | content-data | EP-0012-US-0002-TK-0002-countermissile-launcher-v3 | US2-AC2 | 2 |
+| 53 / [EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands](EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands/EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands.md) | content-data | EP-0012-US-0002-TK-0003-engines-v3 | US2-AC3 | 3 |
+| 54 / [EP-0012-US-0002-TK-0005-combat-rules-v3](EP-0012-US-0002-TK-0005-combat-rules-v3/EP-0012-US-0002-TK-0005-combat-rules-v3.md) | content-data | EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands | US1-AC4, US2-AC1 | 4 |
 
 ## Decisions / Assumptions
 

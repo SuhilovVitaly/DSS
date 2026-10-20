@@ -88,7 +88,7 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 43 / US-0013-TK-0003-enemy-badges-and-hit-labels | PASS 13 named / 2286 bounded regression; build/format/diff PASS | `7ca95b70d6708405b9792fc31dc66f42e4eef311`, origin SHA verified |
 | 44 / US-0013-TK-0004-journal-and-reports-v3 | PASS 21 named / 2307 bounded regression; build/format/diff PASS | `ff74e9bbe6a584b96e483fbd875fff862ff3f0df`, origin SHA verified |
 | 45 / US-0013-TK-0005-combat-start-timer-summary | PASS 15 named / 2322 bounded regression; build/format/diff PASS | `69c5d34090e3072fa35eedb8ce0d60be1bbb2ae9`, origin SHA verified |
-| 46 / US-0016-TK-0001-combat-localization | PASS 8 named / 2330 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 46 / US-0016-TK-0001-combat-localization | PASS 8 named / 2330 bounded regression; build/format/diff PASS | `d112cb2536790a7b65d4a98ea6f716a4a450023f`, origin SHA verified |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
@@ -107,3 +107,5 @@ US-0002-TK-0001: экспериментальные source/deployed catalog chec
 2026-10-20: уточнены реальные prerequisites legacy deletion по source consumers Save/forecasts/Client. Пять deletion/regression tickets отложены до завершения consumer migration, перед balance. Новый следующий шаг — evade-command, уже использует готовые public observed trace и BlastThreatMath; отсутствие legacy deletion не является его runtime prerequisite. Legacy-removal AC остаются OPEN, ничего не объявлено удалённым.
 
 2026-10-20: consumer prerequisite DAG correction before data activation; next Engine point-forecast integration, then real report/privacy/transport/Client consumers. US2 rules/Settings/modes switch kept atomic; all production activation, Save18, legacy-removal and native gates remain OPEN. See Tickets.md consumer correction.
+
+Save18 prerequisite correction: second catalog activation probe reverted; schema/capture/validation now follow localization before US2. Results preserved; no data ticket closed.
