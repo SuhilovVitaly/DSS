@@ -3,7 +3,7 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0017-event-and-command-integration"
 ticket: "EP-0012-US-0017-TK-0001-combat-event-contracts"
 title: "combat-event-contracts"
-stage: "draft"
+stage: "implemented"
 layer: "contracts"
 depends_on: ["EP-0012-US-0001-TK-0005-launcher-profile-schema"]
 files_touched: 4
@@ -37,6 +37,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 Proposed CombatEventType добавляет TorpedoDetonated, CountermissileDetonated, ShotDown, ManuallyDetonated; event payload position+projectile IDs+публичные итоги. При own damage можно передавать module детали; enemy damage numbers запрещены.
 
+### Уточнение исполнения — 2026-10-20
+
+Dependency US1-TK5 опубликован: `f06c235c84d5010d8497731b68be549930874b77`, remote SHA проверен. Новые enum values добавляются после прежних без перенумерации. Journal/report получают optional kind/profile/radius и typed Core/Edge/Miss/ShotDown outcome; X/Y и MotionTime — уже случившийся факт, не будущая точка/deadline. Reports сохраняют E01–E07 kind identities, без новых карточек.
+
+Nullable private module/damage/rating поля при отсутствии не сериализуются. Contracts не определяет права наблюдателя и не редактирует мир: named test проверяет roundtrip уже спроецированного публичного envelope и сохранение own damage; настоящая permission masking проверяется в US-0005, producers — US17-TK2. Старый enum/API сохраняется только до предусмотренной consumer migration. Новые факты проходят существующий CombatPresentationFrame.State, отдельный transport не вводится.
+
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
@@ -50,7 +56,7 @@ Proposed CombatEventType добавляет TorpedoDetonated, CountermissileDeto
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+План проверок; фактические результаты исполнения приведены в Status / Evidence.
 
 - **Combat_events_roundtrip_and_redact_enemy_details**: новый event envelope сериализуется; чужие module/damage поля отсутствуют.
 
@@ -73,4 +79,6 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: Contracts implementation и self-review выполнены. Named tests PASS 6/6; полный Contracts PASS 245/245 (0 failed/skipped); owning build 0 warnings/errors; scoped whitespace/full formatter и diff check PASS; hard cap 300000 ms.
+
+[Команды и stdout](../../evidence/us0017-tk0001-results.json). Self-review: old enum numeric identities/E01–E07 сохранены; точное physical fact time и явные removals проходят existing envelope; public projected journal/report JSON не содержит null private module/damage/chance keys; own damage roundtrip сохраняет детали. Нет future endpoint/deadline новых полей и нет permission/RNG/world logic в Contracts. Это не проверка реальной Engine redaction: US5 и producers/delivery gates OPEN. Review исполнителя не является независимым. Native/product/balance OPEN; SHA проверяется после отдельного commit/push.

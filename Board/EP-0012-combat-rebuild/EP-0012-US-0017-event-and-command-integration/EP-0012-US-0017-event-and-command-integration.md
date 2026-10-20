@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0017-event-and-command-integration"
 title: "Контракты событий, серверные доклады и доставка"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -30,6 +30,8 @@ revision: 1
 Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Scope этой истории ограничен её AC и allowlists; соседние истории не выполняются неявно. D-USER-02 имеет приоритет над исходным<=100ms projectile требованием.
 
 ## Dependencies
+
+При исполнении prerequisite contract/schema US1 уже опубликован в пяти тикетах; его downstream legacy cleanup не является prerequisite добавления event DTO. Порядок сохраняется по точному ticket DAG. Closure всей US1 и всей US17 остаётся OPEN до интеграции, а не выводится из готовности отдельных contracts.
 
 Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет полностью завершённые истории до начала этой; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0001-contracts-and-schema, EP-0012-US-0018-legacy-combat-cleanup, EP-0012-US-0005-snapshot-privacy. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
