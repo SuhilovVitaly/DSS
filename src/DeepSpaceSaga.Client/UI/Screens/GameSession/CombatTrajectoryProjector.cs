@@ -16,6 +16,27 @@ internal static class CombatTrajectoryProjector
         internal double EndMotionTimeMs { get; init; }
         internal double? EtaSeconds { get; init; }
         internal double HorizonSeconds { get; init; }
+        internal FutureTrajectoryPoint? Detonation { get; init; }
+        internal double? DetonationEtaSeconds { get; init; }
+        internal double? BlastRadiusKm { get; init; }
+        internal ProjectileKind? Kind { get; init; }
+        internal bool IsObserved { get; init; }
+    }
+
+    internal static Geometry FromPointForecast(CombatForecastResult result, ObjectMotionSnapshot projectile,
+        double now, Geometry? reuse = null)
+    {
+        var own = projectile.OwnProjectile;
+        var observed = projectile.ObservedProjectile;
+        if (own is null && observed is null) throw new ArgumentException("Expected a point projectile.", nameof(projectile));
+        return FromForecast(result, now, reuse) with
+        {
+            Detonation = own is null ? null : new(own.DetonationX, own.DetonationY),
+            DetonationEtaSeconds = own is null ? null : Math.Max(0, (own.DetonationMotionTimeMs - now) / 1000),
+            BlastRadiusKm = own?.BlastRadiusKm ?? observed!.BlastRadiusKm,
+            Kind = own?.Kind ?? observed!.Kind,
+            IsObserved = own is null
+        };
     }
 
     internal static Geometry Project(TorpedoSnapshot flight, ObjectMotionSnapshot? target,

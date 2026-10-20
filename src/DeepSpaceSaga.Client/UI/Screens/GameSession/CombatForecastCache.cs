@@ -44,6 +44,8 @@ internal sealed class CombatForecastCache
     internal Task? PendingWork => _worker;
     internal bool UseWorker { get; set; } = true;
     internal void CancelPending() => _cancellation?.Cancel();
+    private static bool IsPoint(ObjectMotionSnapshot obj) => obj.OwnProjectile is not null || obj.ObservedProjectile is not null;
+    private static bool IsFlight(ObjectMotionSnapshot obj) => IsPoint(obj) || obj.Torpedo is not null || obj.Countermeasure is not null;
 
     internal void Prepare(Guid? session, AuthoritativeSnapshot? snapshot, CombatForecastOptions options)
     {
@@ -96,7 +98,7 @@ internal sealed class CombatForecastCache
             Hits++;
             return;
         }
-        var flights = snapshot.Objects.Where(o => o.Torpedo is not null || o.Countermeasure is not null).ToArray();
+        var flights = snapshot.Objects.Where(IsFlight).ToArray();
         if (UseWorker && flights.Length is > 0 and <= MaxFullFlights &&
             flights.Where(o => o.Torpedo is not null).All(o => snapshot.Objects.Any(t =>
                 t.ObjectId == o.Torpedo!.TargetObjectId && CanPrepareImmediately(o, t))) &&
@@ -236,6 +238,15 @@ internal sealed class CombatForecastCache
             for (int i = 0; i < torpedoes.Length; i++) Torpedo(i);
             for (int i = 0; i < defenses.Length; i++) Defense(i);
         }
+        // A point flight has no guidance target. Its path uses only its own
+        // captured endpoint or the eight-field foreign observation, never AI controls.
+        int pointSlot = torpedoes.Length + defenses.Length;
+        foreach (var point in snapshot.Objects.Where(IsPoint).OrderBy(o => o.ObjectId, StringComparer.Ordinal)
+            .Take(MaxVisibleFlights - pointSlot))
+        {
+            results[point.ObjectId] = CombatForecast.PointProjectile(point, null, snapshot.MotionTimeMs,
+                Settings(pointSlot++), cancellationToken);
+        }
         return results.OrderBy(p => p.Key, StringComparer.Ordinal).ToDictionary(p => p.Key, p => p.Value, StringComparer.Ordinal);
 
         CombatForecastOptions Settings(int index) => index >= MaxFullFlights ? scene.Options with { MaxSteps = 1 } : scene.Options;
@@ -341,10 +352,13 @@ internal sealed class CombatForecastCache
             if (results.TryGetValue(result.TargetId, out var target)) chain[target.ProjectileId] = target;
             if (!Matches(source, current, chain, requireAllFlights: false)) continue;
             var ids = chain.Keys.Concat(chain.Values.Select(r => r.TargetId)).ToHashSet(StringComparer.Ordinal);
-            var compact = source with { Snapshot = source.Snapshot with
+            var compact = source with
             {
-                Objects = source.Snapshot.Objects.Where(o => ids.Contains(o.ObjectId)).ToImmutableArray()
-            } };
+                Snapshot = source.Snapshot with
+                {
+                    Objects = source.Snapshot.Objects.Where(o => ids.Contains(o.ObjectId)).ToImmutableArray()
+                }
+            };
             _ready[id] = new(compact, chain);
         }
     }
@@ -353,25 +367,33 @@ internal sealed class CombatForecastCache
     {
         if (baseline.Session != current.Session || baseline.Options != current.Options) return false;
         if (baseline.Snapshot.Objects == current.Snapshot.Objects && baseline.Snapshot.MotionTimeMs == current.Snapshot.MotionTimeMs) return true;
-        if (results.Count == 0) return !current.Snapshot.Objects.Any(o => o.Torpedo is not null || o.Countermeasure is not null);
+        if (results.Count == 0) return !current.Snapshot.Objects.Any(IsFlight);
         double now = current.Snapshot.MotionTimeMs;
         double delta = now - baseline.Snapshot.MotionTimeMs;
         if (delta < 0) return false;
         var needed = results.Keys.Concat(results.Values.Select(r => r.TargetId)).ToHashSet(StringComparer.Ordinal);
         var currentObjects = current.Snapshot.Objects.Where(o => needed.Contains(o.ObjectId)).ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
         var previous = baseline.Snapshot.Objects.Where(o => needed.Contains(o.ObjectId)).ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
-        if (requireAllFlights && current.Snapshot.Objects.Count(o => o.Torpedo is not null || o.Countermeasure is not null) != results.Count) return false;
+        if (requireAllFlights && current.Snapshot.Objects.Count(IsFlight) != results.Count) return false;
         // Reject a changed linear assumption before checking every dependent
         // defense route. Observed target headings can change on every frame.
         foreach (var (id, oldTarget) in previous)
-            if (oldTarget.Torpedo is null && oldTarget.Countermeasure is null && LinearMotionPredictor.IsLinear(oldTarget) &&
+            if (!IsFlight(oldTarget) && LinearMotionPredictor.IsLinear(oldTarget) &&
                 currentObjects.TryGetValue(id, out var target) &&
                 (!Angle(oldTarget.Direction, target.Direction) || !Close(oldTarget.SpeedKmS, target.SpeedKmS))) return false;
         foreach (var (id, result) in results)
         {
-            if ((now >= result.EndMotionTimeMs || result.Legs.IsEmpty) && delta != 0 ||
+            if ((now >= result.EndMotionTimeMs) && delta != 0 ||
                 !currentObjects.TryGetValue(id, out var obj) || !previous.TryGetValue(id, out var old)) return false;
             if (obj.IsDestroyed != old.IsDestroyed) return false;
+            if (IsPoint(obj) || IsPoint(old))
+            {
+                if (!SamePointCapture(obj, old)) return false;
+                var pointPose = result.ProjectilePose(now);
+                if (!Close(pointPose.X, obj.X) || !Close(pointPose.Y, obj.Y)) return false;
+                continue;
+            }
+            if (result.Legs.IsEmpty && delta != 0) return false;
             var expectedRoute = result.Legs.IsEmpty ? old.Torpedo?.Route ?? old.Countermeasure?.Route
                 : result.Legs.First(l => l.To > now || l == result.Legs[^1]).Route;
             var pose = result.Legs.IsEmpty ? (old.X, old.Y, old.Direction) : result.ProjectilePose(now);
@@ -438,6 +460,22 @@ internal sealed class CombatForecastCache
             else return false;
         }
         return true;
+    }
+
+    private static bool SamePointCapture(ObjectMotionSnapshot current, ObjectMotionSnapshot previous)
+    {
+        if (current.OwnProjectile is { } own && previous.OwnProjectile is { } old)
+            return own with
+            {
+                X = old.X,
+                Y = old.Y,
+                Reporter = old.Reporter,
+                OwnerPlayerRelationAtLaunch = old.OwnerPlayerRelationAtLaunch
+            } == old &&
+                current.ObservedProjectile == previous.ObservedProjectile;
+        return current.OwnProjectile is null && previous.OwnProjectile is null &&
+            current.ObservedProjectile is { } observed && previous.ObservedProjectile is { } prior &&
+            observed with { X = prior.X, Y = prior.Y } == prior;
     }
 
     private static bool CanPrepareImmediately(ObjectMotionSnapshot projectile, ObjectMotionSnapshot target) =>

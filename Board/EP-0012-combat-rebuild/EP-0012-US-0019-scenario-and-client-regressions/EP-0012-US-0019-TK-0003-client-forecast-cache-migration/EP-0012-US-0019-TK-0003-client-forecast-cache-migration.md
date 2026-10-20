@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0019-scenario-and-client-regressions"
 ticket: "EP-0012-US-0019-TK-0003-client-forecast-cache-migration"
 title: "client-forecast-cache-migration"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0017-TK-0003-local-client-delivery"]
 files_touched: 5
 serves: ["US19-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0019-TK-0003-client-forecast-cache-migration
@@ -19,6 +19,9 @@ revision: 2
 [Совместимость сценариев и старых клиентских поверхностей](../EP-0012-US-0019-scenario-and-client-regressions.md) · [Контракт D/A/G](../../Documentation.md) · [Execution DAG](../../Tickets.md). Результат: client-forecast-cache-migration; доказать US19-AC2 в границах этой карточки.
 
 ## Decisions / Assumptions
+
+A-POINT-CACHE: cached point geometry is the physical straight own flight to its captured endpoint or the observed foreign ray. It has no target identity, inferred foreign fuse or hit marker; conditional aim shadows remain the owning UI preview scope. Use shared Motion.PointProjectile and invalidate captured physical data (kind/speed/radius/damage/core/deadline), while identity-only reporter metadata can be ignored. Compact merge must copy Encounter. Validate display admission versus future received packets, explicit removal/duplicate/session reset, and actual Engine payload. Legacy model remains until planned cleanup; strict existing ForecastBudget gates stay OPEN unless actually passed.
+
 
 D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
 
@@ -74,6 +77,10 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 15 named / 2138 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0019-tk0003-results.json).
+
+Baseline3/3 failures reproduced: empty point cache and compact Encounter stuck at bootstrap state. Shared Motion now provides own endpoint path and foreign observed ray, projector carries own detonation/ETA/radius only, no target identity or foreign fuse. Physical capture keys invalidate independently; linear samples/identity-only reporter changes reuse geometry. Buffer admits scene before forecasts and propagates Encounter, explicit removal/duplicates/session reset verified. Actual Engine payload covered. Point UI prepare+geometry p99=0.0780ms for12 flights, n200 after20warmup, strict2ms PASS; headless only. Nonbudget Client2138/2138; prior legacy ForecastBudget gate remains OPEN. UI rendering/aim shadow and production catalog/Save18 integration are downstream.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 consumer prerequisite correction: point consumers precede production data activation; actual integration gates remain OPEN until activation/Save18. See [DAG](../../Tickets.md#consumer-prerequisite-correction).

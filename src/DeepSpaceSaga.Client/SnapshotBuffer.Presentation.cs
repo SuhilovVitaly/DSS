@@ -205,6 +205,7 @@ public sealed partial class SnapshotBuffer
             CombatImpacts = Recent(baseline.CombatImpacts, state.CombatImpacts),
             CombatJournal = Recent(baseline.CombatJournal, state.CombatJournal),
             CombatReports = state.CombatReports,
+            Encounter = state.Encounter,
             Outcome = state.Outcome,
             CommandResults = state.CommandResults,
             ShipEvents = state.ShipEvents,
