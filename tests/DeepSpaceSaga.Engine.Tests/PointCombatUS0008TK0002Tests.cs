@@ -97,6 +97,26 @@ public sealed class PointCombatUS0008TK0002Tests
     }
 
     [Fact]
+    public void Compact_frames_publish_confirmed_speed_after_high_speed_combat_admission()
+    {
+        long real = 0;
+        var clock = new SimulationClock(SimulationSpeed.Speed0, () => real);
+        using var engine = Battle(clock, SimulationSpeed.Speed4, distance: 101, npcSpeed: 1, remainder: 0);
+        engine.SetPresentationTimestampForTests(() => 0);
+        engine.EnablePresentationLease();
+        var initial = engine.CapturePresentationUpdate(fullSnapshot: true);
+        Assert.Equal(CombatEncounterState.Idle, initial.FullSnapshot!.Encounter!.State);
+        Assert.Equal(SimulationSpeed.Speed4, initial.FullSnapshot.CurrentSpeed);
+        real = 4000;
+        var update = engine.CapturePresentationUpdate(fullSnapshot: true);
+        Assert.Equal(1990, update.FullSnapshot!.MotionTimeMs);
+        var activeFrames = update.Frames.Where(f => f.State.Encounter!.State == CombatEncounterState.Active).ToArray();
+        Assert.NotEmpty(activeFrames);
+        Assert.All(activeFrames, f => Assert.Equal(SimulationSpeed.Speed1, f.State.CurrentSpeed));
+        Assert.Equal(SimulationSpeed.Speed1, update.FullSnapshot!.CurrentSpeed);
+    }
+
+    [Fact]
     public void Quarter_remainder_and_x1_pace_survive_pause_and_resume()
     {
         long real = 0;

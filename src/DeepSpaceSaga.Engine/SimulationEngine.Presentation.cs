@@ -140,7 +140,7 @@ public sealed partial class SimulationEngine
         }
         var state = BuildSnapshot(new(calendar, clock.Speed, (long)Math.Ceiling(time)),
             presentationOnly: true, prepareWorld: false);
-        state = state with { CurrentSpeed = IsDefeated ? SimulationSpeed.Speed0 : _presentationIntervalSpeed };
+        state = state with { CurrentSpeed = IsDefeated ? SimulationSpeed.Speed0 : UsesPointEncounters ? state.CurrentSpeed : _presentationIntervalSpeed };
         _presentationImpactCursor = _combatImpacts.Count;
         _presentationJournalCursor = _combatJournal.Count;
         AddPresentationFrame(time, state);

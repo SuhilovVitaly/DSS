@@ -20,6 +20,9 @@ revision: 3
 
 ## Decisions / Assumptions
 
+A-SPEED-FRAME-FIX: actual compact frames within high-speed admission must carry their confirmed point-encounter speed, rather than the publication interval starting speed. Existing Presentation.cs and named test scope covers the fix; legacy interval mapping remains unchanged. Reproduce with injected real clock and actual CapturePresentationUpdate before implementation.
+
+
 D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
 
 ## Code context
@@ -85,3 +88,5 @@ git diff --check
 Active accepts Speed0/1 and rejects Speed2+ with combat_speed_locked. Engine and LocalClient return immediate atomic acknowledgement with confirmed speed. Prior speed restored on Won; terminal and watchdog pauses remain authoritative, dialogue resume is capped while Active. Bounded real clock intervals apply admission and victory restoration within the captured interval at integer real-ms resolution; x1=1 physical second per4 real seconds and quarter remainder survive pause/modal changes. A real docking dialogue is tested; initial fixture mismatched station/ship heading and was corrected without relaxing docking. Solution build 0 warnings/errors. Save18 restore-state persistence remains downstream.
 
 Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
+
+2026-10-20 follow-up: reproduced5 of6 Active compact frames publishing Speed4 rather than confirmed Speed1. Fixed point frame projection; PASS12/12 named,782/782 bounded Engine, solution build0 warnings/errors, scoped formats/diff PASS. [Actual baseline and fixed results](../../evidence/compact-speed-fix-results.json).
