@@ -21,6 +21,11 @@ public sealed partial class SimulationEngine
     // Called only while holding the world lock, at the authoritative physical event.
     private void EmitCombatReport(BattleReportSnapshot report)
     {
+        if (UsesPointEncounters) report = report with
+        {
+            LauncherModuleId = report.SourceObjectId == PlayerShipObjectId ? report.LauncherModuleId : null,
+            Damage = report.Kind == BattleReportKind.PlayerShipDamaged ? report.Damage : null
+        };
         if (_pendingCombatReports.Count >= CombatReportBatchSnapshot.PendingLimit)
             throw new InvalidOperationException("Combat report outbox overflow: session cannot continue without losing reports.");
         if (!double.IsFinite(report.MotionTimeMs) || report.MotionTimeMs < 0)

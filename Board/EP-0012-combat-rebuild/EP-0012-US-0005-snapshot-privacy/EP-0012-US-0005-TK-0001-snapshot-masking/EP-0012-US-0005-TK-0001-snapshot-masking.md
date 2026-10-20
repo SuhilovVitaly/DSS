@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0005-snapshot-privacy"
 ticket: "EP-0012-US-0005-TK-0001-snapshot-masking"
 title: "snapshot-masking"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0017-TK-0002-engine-report-producers"]
 files_touched: 5
 serves: ["US5-AC1", "US5-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0005-TK-0001-snapshot-masking
@@ -33,6 +33,8 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs:4; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0005TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+A-PRIVACY-01: preserve the explicit O12 HostileCombat boundary exactly; its existing AI payload/links are an acknowledged exception and are not used to infer missile endpoints. Foreign point rows carry only the eight observed fields and never retain legacy flight payloads. Sanitize point journal facts at append and point reports at emission: only own target module/numeric losses survive; enemy launch-module/chance/rating fields are omitted. All full/compact frames use the same projector. Actual Engine scenes plus clearly identified mixed-state/extra-metadata boundary probes verify this; point Save18 validation remains its owning gate.
 
 ## Public API after the change
 
@@ -75,4 +77,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 5 named / 781 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0005-tk0001-results.json).
+
+Full/compact snapshots hide foreign projectile endpoints/deadlines and legacy flight payloads; point journal/report boundary removes enemy module and damage metadata. Two synthetic boundary probes fail on HEAD baseline and pass after fix; these are defense-in-depth probes, not claims of naturally produced invalid facts. Actual source scenarios cover own/foreign flights and public enemy status. O12 HostileCombat remains public, including its existing module links. Save18 roundtrip remains downstream OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

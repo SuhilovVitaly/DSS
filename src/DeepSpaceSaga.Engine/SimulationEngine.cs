@@ -740,6 +740,8 @@ public sealed partial class SimulationEngine : IDisposable
                     Y = linear ? y : motion.Y,
                     OwnProjectile = motion.OwnProjectile?.OwnerObjectId == PlayerShipObjectId ? motion.OwnProjectile : null,
                     ObservedProjectile = ProjectObservedProjectile(motion),
+                    Torpedo = motion.OwnProjectile is not null || motion.ObservedProjectile is not null ? null : motion.Torpedo,
+                    Countermeasure = motion.OwnProjectile is not null || motion.ObservedProjectile is not null ? null : motion.Countermeasure,
                     Evasion = isPlayerShipRow ? motion.Evasion : null,
                     TurnHoldRateDegPerSec = isPlayerShipRow ? motion.TurnHoldRateDegPerSec : null,
                     ActiveEngineCommandType = isPlayerShipRow && motion.Evasion is not null ? ManeuverCommandTypes.Evade : isPlayerShipRow && motion.TurnHoldRateDegPerSec is not null ? ShipEngineCommandTypes.TurnHold : cycleMotion.CommandType,
