@@ -1,4 +1,6 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
+using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Engine.Content;
 
@@ -58,4 +60,12 @@ internal sealed record ModuleTypeDefinition(
     int? Barrels = null,
     long? BurstIntervalMs = null,
     decimal? Maneuverability = null,
-    string? CombatRole = null) : ITypeDefinition;
+    string? CombatRole = null,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<LaunchProfileSnapshot>))]
+    ImmutableArray<LaunchProfileSnapshot> Profiles = default,
+    double? RangeKm = null,
+    long? ReloadMs = null,
+    double? ScatterPercent = null) : ITypeDefinition
+{
+    internal bool IsPointLauncher => !Profiles.IsDefault || RangeKm.HasValue || ReloadMs.HasValue || ScatterPercent.HasValue;
+}

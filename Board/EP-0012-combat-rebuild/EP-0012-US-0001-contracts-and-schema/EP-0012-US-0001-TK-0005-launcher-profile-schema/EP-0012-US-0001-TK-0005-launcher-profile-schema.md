@@ -3,10 +3,10 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0001-contracts-and-schema"
 ticket: "EP-0012-US-0001-TK-0005-launcher-profile-schema"
 title: "launcher-profile-schema"
-stage: "draft"
-layer: "engine"
+stage: "implemented"
+layer: "engine-and-contracts"
 depends_on: ["EP-0012-US-0001-TK-0004-combat-rules-schema"]
-files_touched: 4
+files_touched: 7
 serves: ["US1-AC4"]
 created: "2026-10-20T07:48:46.640Z"
 revision: 1
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Актуальный allowlist (7 файлов, включая matching tests двух слоёв); расширение обосновано ниже. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -32,10 +32,19 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs](../../../../src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs) | Существует: src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs:8; public static class EngineContentLoader | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs](../../../../src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs) | Существует: src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs:9; internal sealed class GameDataRegistry | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0001TK0005Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| `src/DeepSpaceSaga.Contracts/CombatSnapshot.cs` | Existing launcher DTO | Shared immutable LaunchProfileSnapshot and own launcher profile/scatter metadata. |
+| `src/DeepSpaceSaga.Contracts/CountermeasureSnapshot.cs` | Existing defense DTO | Own defense profile/scatter metadata. |
+| `tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0001TK0005ContractTests.cs` | **NEW** | Profile metadata roundtrip and missing legacy capabilities. |
 
 ## Public API after the change
 
 Proposed: profiles[{id,speedKmS,blastRadiusKm}], rangeKm, reloadMs, scatterPercent; torpedo damage/armorPiercingPercent. Все числа конечные, profile IDs непустые и уникальные; reloadMs >= 0. JSON DTO и mapping располагаются в существующем EngineContentLoader.
+
+### Уточнение исполнения — 2026-10-20
+
+Dependency TK-0004 опубликован: `c19dafdf185ac279133cb78afcdef795969912d5`, remote SHA проверен. Engine schema и общий DTO выполняются одним функциональным шагом по явно разрешённому расширению scope: Client не имеет доступа к internal ModuleTypeDefinition и должен получать profile choices от Engine, а не дублировать конфигурацию. Добавляется `LaunchProfileSnapshot(ProfileId, SpeedKmS, BlastRadiusKm)`; launcher/defense снапшоты получают immutable Profiles и nullable ScatterPercent. Engine content mapping использует этот чистый Contracts value type. Producer заполняется в runtime тикетах; отсутствие метаданных у legacy не заменяется кодовыми профилями. Новых зависимостей между проектами нет. Прежнее правило одного production layer ниже заменено этим явно ограниченным Engine/Contracts scope; архитектурное разделение сохраняется.
+
+Новые поля обязательны вместе для point launcher. Старые module fixtures временно загружаются прежней веткой до cleanup. Новый набор отвергает legacy guidance/chance/burst параметры. JSON сохраняет действующие имена `torpedoDamage`, `armorPiercingPercent`, `armorDamagePercent`; у ПРО damage/AP запрещены. На данном шаге не меняются production JSON и правила исполнения оружия. Общий Engine gate после предыдущего hard timeout остаётся OPEN; вместо повторения известного тяжёлого прогона выполняется bounded content/consumer regression, а весь корпус проверяется на интегрированной реализации.
 
 ## Implementation steps
 
@@ -50,12 +59,14 @@ Proposed: profiles[{id,speedKmS,blastRadiusKm}], rangeKm, reloadMs, scatterPerce
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+План проверок; фактические результаты исполнения приведены в Status / Evidence.
 
 - **Launcher_profiles_require_unique_ids_positive_speed_radius_and_range**: пустые/дублированные профили и NaN/Infinity отвергаются.
 - **Launcher_profile_schema_distinguishes_damage_from_countermissile**: у торпеды damage/AP, у ПРО нет урона кораблю.
 
 Matching project: `tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj`; proposed test class `PointCombatUS0001TK0005Tests`. Test process hard timeout5минут; баланс1000seed — batches с полным суммарным корпусом.
+
+Дополнительный matching project для общего DTO: `tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj`, class `PointCombatUS0001TK0005ContractTests`: captured profile roundtrip, отсутствие ship damage у ПРО, отсутствие выдуманных capabilities в legacy.
 
 ```powershell
 dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore --filter "FullyQualifiedName~PointCombatUS0001TK0005Tests"
@@ -74,4 +85,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. Engine named tests PASS 39/39; bounded content/save/consumer regression PASS 387/387; Contracts named PASS 3/3, полный Contracts PASS 239/239; owning builds и итоговая сборка всего решения 0 warnings/errors; scoped whitespace/full formatter двух слоёв и diff check PASS. Все процессы hard cap 300000 ms.
+
+[Engine команды/stdout и solution build](../../evidence/tk0005-results.json) · [Contracts команды/stdout](../../evidence/tk0005-contracts-results.json). В full Contracts сначала воспроизведён дефект совместимости: Defender_status_available_on_npc_snapshot, 238 PASS / 1 FAIL, default ImmutableArray отличался от Empty после JSON. Исправлен production DTO: Profiles nullable, отсутствующий legacy capability остаётся null; исходный assert не менялся. Затем полный Contracts 239/239 PASS.
+
+Self-review проверил atomic validation до публикации registry, полный набор required полей, null/empty/duplicates, ordinal IDs, finite speed/radius/range/scatter, zero reload/scatter, неверную category, missing/nonfinite file+field diagnostics, damage/AP только торпедам и запрет смешанных legacy fields. Это review исполнителя, не независимое review. Producer Profiles заполняется в runtime тикетах; типизация не подменяет интеграцию. Общий Engine gate OPEN после TK-0004 timeout; native/product/balance OPEN. Отдельный commit/push разрешён текущим поручением; SHA проверяется после коммита.

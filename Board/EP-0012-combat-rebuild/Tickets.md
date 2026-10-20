@@ -1,8 +1,8 @@
 ---
 epic: "EP-0012-combat-rebuild"
-stage: "draft"
+stage: "in_progress"
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # Порядок исполнения и coverage
@@ -14,9 +14,9 @@ revision: 1
 | 1 | [EP-0012-US-0001-TK-0001-projectile-contracts](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0001-projectile-contracts/EP-0012-US-0001-TK-0001-projectile-contracts.md) | contracts | 4 | baseline | US1-AC1 |
 | 2 | [EP-0012-US-0001-TK-0002-command-contracts](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0002-command-contracts/EP-0012-US-0001-TK-0002-command-contracts.md) | contracts | 5 | EP-0012-US-0001-TK-0001-projectile-contracts | US1-AC2 |
 | 3 | [EP-0012-US-0001-TK-0003-encounter-contracts](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0003-encounter-contracts/EP-0012-US-0001-TK-0003-encounter-contracts.md) | contracts | 4 | EP-0012-US-0001-TK-0002-command-contracts | US1-AC3 |
-| 4 | [EP-0012-US-0001-TK-0004-combat-rules-schema](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0004-combat-rules-schema/EP-0012-US-0001-TK-0004-combat-rules-schema.md) | engine | 4 | EP-0012-US-0001-TK-0003-encounter-contracts | US1-AC4 |
-| 5 | [EP-0012-US-0001-TK-0005-launcher-profile-schema](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0005-launcher-profile-schema/EP-0012-US-0001-TK-0005-launcher-profile-schema.md) | engine | 4 | EP-0012-US-0001-TK-0004-combat-rules-schema | US1-AC4 |
-| 6 | [EP-0012-US-0017-TK-0001-combat-event-contracts](EP-0012-US-0017-event-and-command-integration/EP-0012-US-0017-TK-0001-combat-event-contracts/EP-0012-US-0017-TK-0001-combat-event-contracts.md) | contracts | 4 | EP-0012-US-0001-TK-0005-launcher-profile-schema | US17-AC1 |
+| 4 | [EP-0012-US-0001-TK-0004-combat-rules-schema](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0004-combat-rules-schema/EP-0012-US-0001-TK-0004-combat-rules-schema.md) | engine | 9 | EP-0012-US-0001-TK-0003-encounter-contracts | US1-AC4 |
+| 5 | [EP-0012-US-0001-TK-0005-launcher-profile-schema](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0005-launcher-profile-schema/EP-0012-US-0001-TK-0005-launcher-profile-schema.md) | engine-and-contracts | 7 | EP-0012-US-0001-TK-0004-combat-rules-schema | US1-AC4 |
+| 6 | [EP-0012-US-0017-TK-0001-combat-event-contracts](EP-0012-US-0017-event-and-command-integration/EP-0012-US-0017-TK-0001-combat-event-contracts/EP-0012-US-0017-TK-0001-combat-event-contracts.md) | engine-and-contracts | 7 | EP-0012-US-0001-TK-0005-launcher-profile-schema | US17-AC1 |
 | 7 | [EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts](EP-0012-US-0017-event-and-command-integration/EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts/EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts.md) | contracts | 5 | EP-0012-US-0017-TK-0001-combat-event-contracts | US17-AC4 |
 | 8 | [EP-0012-US-0002-TK-0001-torpedo-launchers-v3](EP-0012-US-0002-combat-catalog-v3/EP-0012-US-0002-TK-0001-torpedo-launchers-v3/EP-0012-US-0002-TK-0001-torpedo-launchers-v3.md) | content-data | 2 | EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts | US2-AC1 |
 | 9 | [EP-0012-US-0002-TK-0002-countermissile-launcher-v3](EP-0012-US-0002-combat-catalog-v3/EP-0012-US-0002-TK-0002-countermissile-launcher-v3/EP-0012-US-0002-TK-0002-countermissile-launcher-v3.md) | content-data | 2 | EP-0012-US-0002-TK-0001-torpedo-launchers-v3 | US2-AC1 |

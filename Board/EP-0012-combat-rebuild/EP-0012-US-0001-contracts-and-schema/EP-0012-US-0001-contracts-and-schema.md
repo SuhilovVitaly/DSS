@@ -2,12 +2,12 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0001-contracts-and-schema"
 title: "Контракты и схема данных"
-stage: "draft"
+stage: "in_progress"
 dependencies: []
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
 current_review: "planning-structural-checked"
-revision: 1
+revision: 2
 ---
 
 # US-0001 — Контракты и схема данных
@@ -51,8 +51,8 @@ Execution order задаётся ticket DAG, который допускает �
 | 1 / [EP-0012-US-0001-TK-0001-projectile-contracts](EP-0012-US-0001-TK-0001-projectile-contracts/EP-0012-US-0001-TK-0001-projectile-contracts.md) | contracts | none | US1-AC1 | 4 |
 | 2 / [EP-0012-US-0001-TK-0002-command-contracts](EP-0012-US-0001-TK-0002-command-contracts/EP-0012-US-0001-TK-0002-command-contracts.md) | contracts | EP-0012-US-0001-TK-0001-projectile-contracts | US1-AC2 | 5 |
 | 3 / [EP-0012-US-0001-TK-0003-encounter-contracts](EP-0012-US-0001-TK-0003-encounter-contracts/EP-0012-US-0001-TK-0003-encounter-contracts.md) | contracts | EP-0012-US-0001-TK-0002-command-contracts | US1-AC3 | 4 |
-| 4 / [EP-0012-US-0001-TK-0004-combat-rules-schema](EP-0012-US-0001-TK-0004-combat-rules-schema/EP-0012-US-0001-TK-0004-combat-rules-schema.md) | engine | EP-0012-US-0001-TK-0003-encounter-contracts | US1-AC4 | 4 |
-| 5 / [EP-0012-US-0001-TK-0005-launcher-profile-schema](EP-0012-US-0001-TK-0005-launcher-profile-schema/EP-0012-US-0001-TK-0005-launcher-profile-schema.md) | engine | EP-0012-US-0001-TK-0004-combat-rules-schema | US1-AC4 | 4 |
+| 4 / [EP-0012-US-0001-TK-0004-combat-rules-schema](EP-0012-US-0001-TK-0004-combat-rules-schema/EP-0012-US-0001-TK-0004-combat-rules-schema.md) | engine | EP-0012-US-0001-TK-0003-encounter-contracts | US1-AC4 | 9 |
+| 5 / [EP-0012-US-0001-TK-0005-launcher-profile-schema](EP-0012-US-0001-TK-0005-launcher-profile-schema/EP-0012-US-0001-TK-0005-launcher-profile-schema.md) | engine-and-contracts | EP-0012-US-0001-TK-0004-combat-rules-schema | US1-AC4 | 7 |
 
 ## Decisions / Assumptions
 
@@ -63,5 +63,11 @@ D01–D18/O1–O12 входного документа и D-USER-01/02, A01–A0
 G-01–G-06 из Documentation. Все missing consumer references блокируют закрытие соответствующего тикета, без неограниченных проходов. Native/product проверяются отдельно; planning не даёт их evidence.
 
 ## Decision / review log
+
+### Исполнение и self-review — 2026-10-20
+
+Пять исходных contract/schema тикетов реализованы в их уточнённом scope; актуальные SHA и evidence — в [журнале](../ImplementationStatus.md). TK-0004 scope 9 файлов включает nullable Chance consumers; TK-0005 scope 7 файлов включает необходимый общий profile DTO и matching tests двух слоёв. Архитектурные направления зависимостей не менялись. Новый content loader и Contracts проверены: 39/39 profile Engine cases, 387/387 bounded Engine regression, 239/239 полный Contracts; solution build и scoped format PASS.
+
+История остаётся **in_progress**, а не полностью принятой: US1-AC2 требует окончательного удаления legacy команд после переноса consumers; new runtime, masking и encounter producers реализуются по interleaved DAG. Дополнительный full Engine test process превысил 300s, полный Engine gate OPEN до bounded integration checks. Native/product/balance OPEN. Self-review не является независимым одобрением. Исходная planning-запись ниже сохранена как история.
 
 2026-10-20T07:48:46.640Z: создано по поручению пользователя. Разделение слоёв/<=5 файлов — техническая декомпозиция. Stage draft, implementation NOT STARTED, проверки кода не запускались.

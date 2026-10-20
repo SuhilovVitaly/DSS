@@ -1,12 +1,12 @@
 ---
 epic: "EP-0012-combat-rebuild"
 title: "Ребилд тактического боя: point-aim, ПРО, уклонение и UI"
-stage: "draft"
+stage: "in_progress"
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Создать новый эпик со сторисами и тикетами по приложенному тексту; внешние ссылки игнорировать"
-revision: 1
+revision: 2
 baseline: "c894925d187c90a658d1e25958feed69a45d7e41"
-validation_status: "planning-only"
+validation_status: "partial-implementation"
 story_count: 19
 ticket_count: 73
 ---

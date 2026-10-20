@@ -45,7 +45,11 @@ public sealed record DefenseSnapshot(
     double? ReadyAtMotionTimeMs = null,
     /// <summary>Populated only for overlapping flights; the singular field remains the first active ID.</summary>
     ImmutableArray<string>? ActiveProjectileIds = null,
-    double? ReloadDurationMs = null);
+    double? ReloadDurationMs = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? ScatterPercent = null);
 
 /// <summary>
 /// Separate projectile type, never a torpedo fire target. All times use physical simulation

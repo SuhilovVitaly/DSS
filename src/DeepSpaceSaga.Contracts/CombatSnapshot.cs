@@ -6,6 +6,9 @@ namespace DeepSpaceSaga.Contracts;
 /// <summary>Point-aim projectile kind, independent of ownership and UI selection.</summary>
 public enum ProjectileKind { Torpedo, Countermissile }
 
+/// <summary>Engine-validated point-launch choice; speed km/s and physical blast radius km.</summary>
+public sealed record LaunchProfileSnapshot(string ProfileId, double SpeedKmS, double BlastRadiusKm);
+
 /// <summary>
 /// Captured flight information visible to the projectile's owner. Coordinates use world
 /// units (100 m), speed is km/s and radius is km. Times are absolute physical milliseconds;
@@ -103,7 +106,12 @@ public sealed record LauncherCombatSnapshot(
     bool IsBrokenUntilDock = false,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
     ImmutableArray<string> ActiveTorpedoIds = default,
-    double? ReloadDurationMs = null);
+    double? ReloadDurationMs = null,
+    /// <summary>Point-launch capabilities; null for legacy producers. No implicit profiles.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? ScatterPercent = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs

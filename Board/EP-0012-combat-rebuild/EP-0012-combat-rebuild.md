@@ -1,14 +1,14 @@
 ---
 epic: "EP-0012-combat-rebuild"
 title: "Ребилд тактического боя"
-stage: "draft"
+stage: "in_progress"
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Создать эпик, истории и тикеты по приложению, игнорируя внешние файлы"
-revision: 1
+revision: 2
 depends_on_epic: "EP-0011-short-fixes"
 story_count: 19
 ticket_count: 73
-validation_status: "planning-only"
+validation_status: "partial-implementation"
 ---
 
 # EP-0012 — Ребилд тактического боя
@@ -21,7 +21,7 @@ validation_status: "planning-only"
 
 [Полный контракт, D/A/G и grounding](Documentation.md) · [Порядок тикетов и трассировка](Tickets.md)
 
-**19 историй / 73 тикетов**, все draft. Созданы только planning-документы. Внешние файлы не требуются. UI feedback<=100мс; снаряд появляется на общих подтверждённых часах сцены (ответ пользователя «1»).
+**19 историй / 73 тикета**. Исходная декомпозиция была draft/planning-only; текущие частичные результаты — в журнале исполнения. Внешние файлы не требуются. UI feedback<=100мс; снаряд появляется на общих подтверждённых часах сцены (ответ пользователя «1»).
 
 ## Истории
 
@@ -51,4 +51,4 @@ validation_status: "planning-only"
 
 Базовая модель HP/брони/гибели, determinism, physical clock, EP10 reports и наблюдаемые NPC trajectories переиспользуются; оружие/AI/бой/save18/UI перепроектируются в пределах AC. Basic engine не меняется, Tetrarch получает отдельный; CombatShmel удаляется при реализации, CombatSim не меняется; HostileCombat пока не скрывается.
 
-Полномочия этого поручения — Board planning. Код, игра, build/test, commit/push не выполнялись. Implementation/automated/native/product/balance OPEN. Перед исполнением обязательна сверка всех breaking consumers по G-02; draft не объявляется полностью execution-ready.
+Полномочия исходного planning-поручения ограничивались Board; приведённые в исходных карточках NOT STARTED/NOT RUN относились к тому этапу. Новое поручение исполнения и фактические частичные результаты описаны выше и в журнале. Итоговые automated/native/product/balance gates OPEN. Breaking consumers сверяются по G-02 на каждом шаге; полный execution-ready статус не заявляется.
