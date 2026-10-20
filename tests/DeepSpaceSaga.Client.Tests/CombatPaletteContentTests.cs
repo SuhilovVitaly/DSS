@@ -9,27 +9,29 @@ public sealed class CombatPaletteContentTests
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
 
     [Fact]
-    public void Combat_palette_contains_all_eight_color_roles()
+    public void Combat_palette_contains_all_semantic_color_roles()
     {
         using var document = JsonDocument.Parse(File.ReadAllText(Path.Combine(ClientRoot, RelativePath)));
         var root = document.RootElement;
         Assert.Equal(1, root.GetProperty("schemaVersion").GetInt32());
         var expected = new Dictionary<string, string>
         {
-            ["torpedo"] = "#FFFF00FF",
-            ["trail"] = "#FFFF00FF",
-            ["prediction"] = "#FFFF0066",
-            ["intercept"] = "#FFFF00FF",
-            ["preview"] = "#808080FF",
-            ["hullHp"] = "#00FF00FF",
-            ["explosion"] = "#FF0000FF",
-            ["wreck"] = "#808080FF",
-            ["countermeasure"] = "#00CCFFFF",
-            ["countermeasureTrail"] = "#00CCFFFF",
-            ["countermeasurePrediction"] = "#00CCFF88",
-            ["countermeasureIntercept"] = "#00CCFFFF",
-            ["defenseRange"] = "#00CCFF55",
-            ["defenseText"] = "#99EEFFFF"
+            ["torpedo"] = "#EDB86AFF",
+            ["trail"] = "#EDB86AFF",
+            ["prediction"] = "#EDB86A80",
+            ["intercept"] = "#EDB86AFF",
+            ["preview"] = "#B7ABDF8C",
+            ["hullHp"] = "#8FBBA7D9",
+            ["explosion"] = "#EEA77AFF",
+            ["wreck"] = "#7C8998A6",
+            ["countermeasure"] = "#76D5DCFF",
+            ["countermeasureTrail"] = "#76D5DC66",
+            ["countermeasurePrediction"] = "#76D5DC8C",
+            ["countermeasureIntercept"] = "#76D5DCFF",
+            ["defenseRange"] = "#76D5DC2E",
+            ["defenseText"] = "#DCE6EEE6",
+            ["torpedoRange"] = "#EDB86A2E",
+            ["manualDefenseRange"] = "#76D5DC47"
         };
         Assert.Equal(expected.Count + 2, root.EnumerateObject().Count());
         Assert.Equal(200_000, root.GetProperty("forecastHorizonMs").GetInt64());

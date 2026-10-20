@@ -136,6 +136,14 @@ internal sealed class FutureTrajectoryProjector
         }
     }
 
+    // A private forecast input, never a confirmed scene pose or an AI command.
+    // Reuse the same constant-speed circular integral in the combat solver.
+    internal static ObjectMotionSnapshot ObservedNpcForecastState(ObjectMotionSnapshot state, double rate) =>
+        new(state.ObjectId, state.X, state.Y, state.SpeedKmS, state.Direction,
+            RenderObjectType: state.RenderObjectType, MaxSpeedKmS: state.MaxSpeedKmS, IsDestroyed: state.IsDestroyed,
+            HostileCombat: rate == 0 ? null : new("", "", "", 1, rate > 0, HostileCombatPhase.Pursuit,
+                new(0, long.MaxValue, 0, state.X, state.Y, state.SpeedKmS, state.Direction, 0, rate)));
+
     private bool TryProjectTurn(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points)
     {
         if (_predictor is not LinearMotionPredictor) return false;

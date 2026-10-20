@@ -48,7 +48,7 @@ public sealed class GridRenderer
         // Premix against the black map background. Shared parent boundaries must not
         // brighten by accumulating several translucent copies of the same line.
         byte Channel(double fine, double major) => (byte)Math.Round((fine + (major - fine) * weight) * opacity);
-        return new SKColor(Channel(18, 36), Channel(21, 41), Channel(24, 45));
+        return new SKColor(Channel(18, 35), Channel(23, 44), Channel(28, 52));
     }
 
     private static double SmoothStep(double value)

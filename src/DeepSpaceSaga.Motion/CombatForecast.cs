@@ -86,7 +86,7 @@ public static class CombatForecast
                 baseline = next;
                 baselineTime = time;
                 return TorpedoGuidanceMath.Plan(pose, next, flight.SpeedKmS, flight.TurnRateDegPerSec, time);
-            }, options, cancellationToken);
+            }, options, cancellationToken, sufficient && LinearMotionPredictor.IsLinear(target!));
     }
 
     public static CombatForecastResult Countermeasure(ObjectMotionSnapshot projectile, ObjectMotionSnapshot? target,
@@ -121,10 +121,11 @@ public static class CombatForecast
                 targetPlan = targetRoute.StartMotionTimeMs;
                 double deadline = flight.Mode == LaunchMode.Manual ? end :
                     targetRoute.StartMotionTimeMs + targetRoute.Segments.Sum(s => s.DurationMs);
-                return CountermeasureGuidanceMath.PlanManual(pose, targetRoute, time,
+                return CountermeasureGuidanceMath.PlanManualForForecast(pose, targetRoute, time,
                     Math.Max(1, (long)Math.Ceiling(expires!.Value - time)), flight.SpeedKmS!.Value,
                     flight.TurnRateDegPerSec!.Value, deadline).Route;
-            }, options, cancellationToken);
+            }, options, cancellationToken, targetAccelerationBound: target?.Torpedo is { } torpedo
+                ? torpedo.SpeedKmS * torpedo.TurnRateDegPerSec * Math.PI / 18_000_000 : null);
         // Engine resolves a hull contact before a simultaneous defense contact.
         if (guiding && targetForecast?.Status == CombatForecastStatus.Contact && result.EndMotionTimeMs >= targetForecast.EndMotionTimeMs)
             result = result with { Status = CombatForecastStatus.TargetTerminated };
@@ -140,7 +141,8 @@ public static class CombatForecast
     private static CombatForecastResult Calculate(string id, string targetId, TorpedoRoute initial, double now,
         double? expires, double speed, double turnRate, Func<double, (double X, double Y)>? target,
         double targetSpeedBound, CombatForecastStatus initialStatus,
-        Func<ObjectMotionSnapshot, TorpedoRoute, long, TorpedoRoute> replan, CombatForecastOptions? options, CancellationToken cancellationToken)
+        Func<ObjectMotionSnapshot, TorpedoRoute, long, TorpedoRoute> replan, CombatForecastOptions? options, CancellationToken cancellationToken,
+        bool linearTarget = false, double? targetAccelerationBound = null)
     {
         options ??= CombatForecastOptions.Default;
         if (options.HorizonMs <= 0 || options.MaxSteps <= 0 || options.MaxPoints < 2 ||
@@ -161,6 +163,13 @@ public static class CombatForecast
         var status = initialStatus;
         Add(now);
         int steps = 0;
+        bool guidanceValidated = false;
+        double routeEnd = 0;
+        TorpedoRoute? searchedRoute = null;
+        TorpedoContact? linearContact = null;
+        TorpedoRoute legRoute = route;
+        double legFrom = now;
+        bool hasLeg = false;
         while (cursor < end)
         {
             // Cancellation is a normal forecast budget/lifecycle limit. Return an
@@ -170,7 +179,17 @@ public static class CombatForecast
             if (steps++ >= options.MaxSteps || points.Count + 2 > options.MaxPoints)
             { status = CombatForecastStatus.CalculationLimited; break; }
             double next = Math.Min(end, CombatGuidanceRules.NextBoundary((long)Math.Floor(cursor)));
-            if (target is not null)
+            if (linearTarget && guidanceValidated && route.HasIntercept)
+            {
+                if (!ReferenceEquals(searchedRoute, route))
+                {
+                    linearContact = FirstLinearContact(route, cursor, end);
+                    searchedRoute = route;
+                }
+                if (linearContact is { } hit && hit.MotionTimeMs <= next)
+                { next = hit.MotionTimeMs; status = CombatForecastStatus.Contact; }
+            }
+            else if (target is not null)
             {
                 var activeRoute = route;
                 var path = new CollisionPath(t =>
@@ -178,24 +197,66 @@ public static class CombatForecast
                     var p = TorpedoGuidanceMath.PredictPose(activeRoute, t - activeRoute.StartMotionTimeMs);
                     return (p.X, p.Y);
                 }, speed / 100, speed / 100 * turnRate * Math.PI / 180_000);
-                var contact = TorpedoCollisionMath.FirstContact(path, new(target, targetSpeedBound), cursor, next);
+                var contact = TorpedoCollisionMath.FirstForecastContact(path, new(target, targetSpeedBound, targetAccelerationBound), cursor, next);
                 if (contact is { } hit) { next = hit.MotionTimeMs; status = CombatForecastStatus.Contact; }
             }
-            legs.Add(new(cursor, next, route));
+            if (!ReferenceEquals(legRoute, route))
+            {
+                if (hasLeg) legs.Add(new(legFrom, cursor, legRoute));
+                legFrom = cursor;
+                legRoute = route;
+            }
+            hasLeg = true;
             Add((cursor + next) / 2);
             Add(next);
             cursor = next;
             if (status == CombatForecastStatus.Contact || cursor >= end) break;
             if (steps >= options.MaxSteps || points.Count + 2 > options.MaxPoints)
             { status = CombatForecastStatus.CalculationLimited; break; }
-            if (target is not null)
+            if (target is not null && !(linearTarget && guidanceValidated && route.HasIntercept && cursor < routeEnd))
             {
                 var pose = TorpedoGuidanceMath.PredictPose(route, cursor - route.StartMotionTimeMs);
                 route = replan(new(id, pose.X, pose.Y, speed, pose.Direction), route, (long)cursor);
+                // After validating the aim once, constant-velocity target motion
+                // cannot change it before rendezvous. Keep the same guidance
+                // boundaries/points, without allocating identical sampled DTOs.
+                guidanceValidated = true;
+                if (linearTarget) routeEnd = route.StartMotionTimeMs + route.Segments.Sum(s => s.DurationMs);
             }
         }
+        if (hasLeg) legs.Add(new(legFrom, cursor, legRoute));
         if (cursor >= end && status == CombatForecastStatus.NoContact && expires <= end) status = CombatForecastStatus.Expired;
         return new(id, targetId, now, cursor, status, points.ToImmutable(), targets.ToImmutable(), legs.ToImmutable());
+
+        TorpedoContact? FirstLinearContact(TorpedoRoute active, double from, double to)
+        {
+            double start = active.StartMotionTimeMs;
+            var destination = new CollisionPath(target!, targetSpeedBound, 0);
+            foreach (var segment in active.Segments)
+            {
+                double finish = start + segment.DurationMs;
+                if (finish > from)
+                {
+                    var hit = Search(from, Math.Min(to, finish),
+                        Math.Abs(segment.SpeedKmS * segment.AngularVelocityDegPerSec) * Math.PI / 18_000_000);
+                    if (hit is not null) return hit;
+                    from = Math.Min(to, finish);
+                    if (from >= to) return null;
+                }
+                start = finish;
+            }
+            return Search(from, to, 0);
+
+            TorpedoContact? Search(double a, double b, double acceleration)
+            {
+                var path = new CollisionPath(t =>
+                {
+                    var p = TorpedoGuidanceMath.PredictPose(active, t - active.StartMotionTimeMs);
+                    return (p.X, p.Y);
+                }, speed / 100, acceleration);
+                return TorpedoCollisionMath.FirstForecastContact(path, destination, a, b);
+            }
+        }
 
         void Add(double time)
         {

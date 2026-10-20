@@ -29,6 +29,11 @@ public sealed partial class SnapshotBuffer
         lock (_sync) return _npcObservations.TurnRateDegPerSec(objectId);
     }
 
+    internal bool HasStableNpcMotion(string objectId)
+    {
+        lock (_sync) return _npcObservations.HasStableMotion(objectId);
+    }
+
     private void ObserveNpcScene(AuthoritativeSnapshot scene, double motionTimeMs)
     {
         var poses = scene.Objects.Where(o => o.RenderObjectType == SpaceObjectType.NpcShip && !o.IsDestroyed)

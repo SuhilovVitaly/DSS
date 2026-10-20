@@ -163,7 +163,13 @@ public sealed class TacticalMapSnapshotTests
         Assert.Equal(showForecast, saved.ShowTrajectoryPrediction);
         if (showForecast)
         {
-            var trajectory = Assert.Single(saved.State.Trajectories);
+            Assert.Equal(2, saved.State.Trajectories.Count);
+            var trajectory = Assert.Single(saved.State.Trajectories, t => t.Kind == "future");
+            var external = Assert.Single(saved.State.Trajectories, t => t.Kind == "external-linear");
+            Assert.Equal(10000.25, external.Points[0].X);
+            Assert.Equal(10000, external.Points[0].Y);
+            Assert.Equal(screen.ExternalPlayerTrajectory[^1].X, external.Points[^1].X);
+            Assert.Equal(screen.ExternalPlayerTrajectory[^1].Y, external.Points[^1].Y);
             Assert.Equal(screen.DisplayedPlayerTrajectoryEnd!.Value.X, trajectory.Points[^1].X);
             Assert.Equal(screen.DisplayedPlayerTrajectoryEnd.Value.Y, trajectory.Points[^1].Y);
         }

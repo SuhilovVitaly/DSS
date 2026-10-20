@@ -128,7 +128,7 @@ public sealed partial class GameSessionScreen
     {
         DrawManualDefensePreview(canvas, prediction, viewportResized);
         if (prediction is null || LaunchPreviewGeometry is null) return;
-        DrawCombatGeometry(canvas, LaunchPreviewGeometry, CombatSettings.Preview, CombatSettings.Preview);
+        DrawCombatGeometry(canvas, LaunchPreviewGeometry, CombatSettings.Preview, CombatSettings.Preview, _selectedObjectId);
     }
 
     private readonly Dictionary<string, CombatTrajectoryProjector.Geometry> _combatTrajectories = new(StringComparer.Ordinal);
@@ -149,7 +149,7 @@ public sealed partial class GameSessionScreen
             if (geometry is null) continue;
             AlignFlightStart(geometry, state);
             _combatTrajectories[state.Source.ObjectId] = geometry;
-            DrawCombatGeometry(canvas, geometry, CombatSettings.Prediction, CombatSettings.Intercept);
+            DrawCombatGeometry(canvas, geometry, CombatSettings.Prediction, CombatSettings.Intercept, state.Source.Torpedo?.TargetObjectId);
         }
     }
 
@@ -163,13 +163,14 @@ public sealed partial class GameSessionScreen
     }
 
     private void DrawCombatGeometry(SKCanvas canvas, CombatTrajectoryProjector.Geometry geometry,
-        SKColor prediction, SKColor intercept)
+        SKColor prediction, SKColor intercept, string? targetId = null)
     {
         _combatTrajectoryPaint ??= new SKPaint { Style = SKPaintStyle.Stroke, StrokeWidth = 1.5f, IsAntialias = true };
         _combatDash ??= SKPathEffect.CreateDash([6f, 4f], 0);
         _combatTrajectoryPath ??= new SKPath();
         DrawPath(geometry.Prediction, prediction, true);
-        DrawPath(geometry.Target, CombatSettings.DefenseText.WithAlpha(102), false);
+        var target = FindRenderStateById(targetId);
+        DrawPath(geometry.Target, CombatTargetPathColor(target?.Source, target?.IsPlayerShip == true), true);
         _combatTrajectoryPaint.PathEffect = null;
         _combatTrajectoryPaint.Color = intercept;
         if (geometry.Intercept is { } point)
@@ -201,7 +202,7 @@ public sealed partial class GameSessionScreen
             }
             if (x >= 0 && y >= 0 && x <= _viewportW && y <= _viewportH)
             {
-                using var text = new SKPaint { Color = intercept, TextSize = 12, IsAntialias = true };
+                using var text = new SKPaint { Color = CombatSettings.DefenseText, TextSize = 12, IsAntialias = true };
                 string label = geometry.EtaSeconds is { } eta
                     ? $"{CombatText("Forecast.Conditional", "Current maneuver")} · {eta:0.0} {CombatText("Seconds", "s")}"
                     : CombatText("Forecast." + geometry.Status, "Forecast limited") +
@@ -218,6 +219,19 @@ public sealed partial class GameSessionScreen
             CombatTrajectoryProjector.BuildPath(_combatTrajectoryPath, points, _camera, _viewportW, _viewportH);
             canvas.DrawPath(_combatTrajectoryPath, _combatTrajectoryPaint);
         }
+    }
+
+    internal SKColor CombatTargetPathColor(ObjectMotionSnapshot? target, bool isPlayer = false)
+    {
+        var color = target?.RenderObjectType switch
+        {
+            SpaceObjectType.Missile => CombatSettings.Torpedo,
+            SpaceObjectType.Countermeasure => CombatSettings.Countermeasure,
+            SpaceObjectType.Wreck => CombatSettings.Wreck,
+            _ => isPlayer ? SpaceMapColorResolver.PlayerShipColor :
+                SpaceMapColorResolver.GetColor(target?.RenderObjectType, target?.RelationToPlayer)
+        };
+        return color.WithAlpha(77);
     }
 
     private TorpedoInspectionData? BuildTorpedoInspection(ObjectRenderState state)
@@ -249,23 +263,7 @@ public sealed partial class GameSessionScreen
         foreach (var effect in _combatEffects.Active)
         {
             var (x, y) = _camera.WorldToScreen(effect.Impact.X, effect.Impact.Y, _viewportW, _viewportH);
-            if (!effect.TerminalTrail.IsDefaultOrEmpty)
-            {
-                using var trailPath = new SKPath();
-                var points = new List<FutureTrajectoryPoint>();
-                foreach (var trail in effect.TerminalTrail)
-                {
-                    int samples = Math.Max(1, (int)Math.Ceiling(trail.Segment.DurationMs / 25));
-                    for (int i = 0; i <= samples; i++)
-                    {
-                        var pose = TorpedoGuidanceMath.PredictSegment(trail.Segment, trail.Segment.DurationMs * i / samples);
-                        points.Add(new(pose.X, pose.Y));
-                    }
-                }
-                CombatTrajectoryProjector.BuildPath(trailPath, points, _camera, _viewportW, _viewportH);
-                _combatExplosionPaint.Color = CombatSettings.Torpedo.WithAlpha(effect.Alpha(now, CombatSettings.Torpedo.Alpha));
-                canvas.DrawPath(trailPath, _combatExplosionPaint);
-            }
+            // Historical torpedo data remains in the effect store; its trail stays hidden.
             float radius = effect.RadiusPx(now);
             if (radius <= 0 || x < -52 || y < -52 || x > _viewportW + 52 || y > _viewportH + 52) continue;
             _combatExplosionPaint.Color = CombatSettings.Explosion.WithAlpha(effect.Alpha(now, CombatSettings.Explosion.Alpha));

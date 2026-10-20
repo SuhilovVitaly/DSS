@@ -7,6 +7,35 @@ public sealed class NpcMotionObservationHistoryTests
         _history.ObserveScene(session, time, [new("npc", time, x, 0, 1, heading)]);
 
     [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    [InlineData(-10)]
+    public void StableMotionNeedsTwoPhysicalSecondsAndResetsOnSpeedOrObservedModelChange(double rate)
+    {
+        void Sample(double time, double heading, double speed = 1) =>
+            _history.ObserveScene(null, time, [new("npc", time, 0, 0, speed, heading)]);
+        Sample(0, 350);
+        Sample(1000, 350 + rate);
+        Sample(1999, 350 + rate * 1.999);
+        Assert.False(_history.HasStableMotion("npc"));
+        Sample(2000, 350 + rate * 2);
+        Assert.True(_history.HasStableMotion("npc"));
+        Sample(2100, 350 + rate * 2.1, 2);
+        Assert.False(_history.HasStableMotion("npc"));
+        Sample(3100, 350 + rate * 3.1, 2);
+        Sample(4099, 350 + rate * 4.099, 2);
+        Assert.False(_history.HasStableMotion("npc"));
+        Sample(4100, 350 + rate * 4.1, 2);
+        Assert.True(_history.HasStableMotion("npc"));
+        Sample(4200, 350 + rate * 4.2 + 1, 2);
+        Sample(5000, 350 + rate * 5 + 1, 2);
+        Assert.Equal(rate == 0, _history.HasStableMotion("npc"));
+        _history.ObserveScene(Guid.NewGuid(), 4200, [new("npc", 4200, 0, 0, 2, 0)]);
+        Assert.False(_history.HasStableMotion("npc"));
+        Assert.False(_history.HasStableMotion("missing"));
+    }
+
+    [Theory]
     [InlineData(10, 20, 30, 10)]
     [InlineData(30, 20, 10, -10)]
     public void TwoEqualTurnsConfirmRate(double a, double b, double c, double rate)

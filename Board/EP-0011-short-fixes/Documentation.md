@@ -45,3 +45,17 @@ D-03: «Да, создай EP-0011, юзерстори и тикеты без re
 ## Реализация 2026-10-18 — supersedes planning-only scope
 
 Первые разделы этого документа сохраняют исходный grounding timestamp и решения D-01–D-03. Текущий пользовательский запрос отдельно разрешил исполнение по EpicExecutionPrompt. Добавлена обязательная US-0002 документации; её scope включает уточнение EngineRequirements §22 и актуализацию всех затронутых текстов. A-01–A-08 сохранены; вместо прямого деления разности cos/sin на w используется эквивалентная sinc форма интеграла для устойчивости при малом w. Transport/API/Engine не меняются. Named tests, полные команды, публикация и отдельный native gate: [ImplementationStatus](ImplementationStatus.md). Текущая реализация: [инженерный контракт](../../Documentation/04-Engineering/NpcObservedTrajectories.md).
+
+## Расширение палитры — 2026-10-18T10:03:20Z
+
+Новый запрос: «сделай из этого тикет в боарде и последнем эпике». Добавлена [US-0003](EP-0011-US-0003-tactical-map-palette/EP-0011-US-0003-tactical-map-palette.md) и один [продуктовый draft-тикет](EP-0011-US-0003-tactical-map-palette/EP-0011-US-0003-TK-0001-tactical-map-color-redesign/EP-0011-US-0003-TK-0001-tactical-map-color-redesign.md) с полными таблицами RGB/HSL S/opacity из чата, правилами отображения, инвентаризацией source seams и AC/validation. A-P01: последний эпик по максимальному ID — EP-0011. Пользователь разрешил материализацию Board, не реализацию/публикацию/запуск игры.
+
+Текущий baseline: `f8846f055e16e19b0371f949ff41f3c02ef9a3e0`, имеются сторонние Client/Tests/scenario изменения; они сохранены. Gameplay/Engine source of truth и действующие design docs не изменены. Старые D-01–D-03/A-01–A-08 описывают прежний scope и не являются решениями по палитре. Новые D-P/A-P/G-P находятся в тикете.
+
+Readiness: один запрошенный продуктовый draft, перед execution нужна декомпозиция по лимиту пяти implementation files. Implementation NOT STARTED, automated/native/product NOT RUN; прежние evidence не доказывают готовность палитры.
+
+## Palette execution — 2026-10-18
+
+D-P03: пользователь разрешил подготовить исполнительные тикеты и немедленно реализовать их с проверками, без commit/push и запуска игры. Предыдущие planning-only ограничения US-0003 superseded. Полный продуктовый TK-0001 сохранён; четыре implementation tickets в US-0003 и три в связанной US-0004, каждый <=5 allowlisted files. Production layer Client, tests DeepSpaceSaga.Client.Tests; Engine/Contracts/Motion/save/AI/RNG/forecast math не изменены.
+
+Точные APIs/allowlists и dependency order: [Tickets](Tickets.md). Реализация DONE; focused175/175, full2085/2085, Client build0 warnings/errors, diff PASS. Scoped format остальных файлов PASS; 9 прежних diagnostics GridRendererTests lines22/23/60 подтверждены в HEAD, оставлены как baseline debt. [Execution commands и ограничения](ImplementationStatus.md#palette-execution--2026-10-18), [validation summary](evidence/palette-validation.json). Native screenshots/product readability/FPS OPEN/NOT RUN. Commit/push NOT RUN. Историческое evidence US-0001/US-0002 сохранено.

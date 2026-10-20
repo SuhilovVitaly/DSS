@@ -37,7 +37,7 @@ internal sealed class TacticalMapDepthRenderer
 
     private readonly SKPaint _focusIndicatorPaint = new()
     {
-        Color = new SKColor(75, 75, 75),
+        Color = new SKColor(151, 168, 184, 102),
         Style = SKPaintStyle.Stroke,
         StrokeWidth = 1.5f,
         IsAntialias = true
@@ -98,13 +98,13 @@ internal sealed class TacticalMapDepthRenderer
 
     private readonly SKPaint _engineFlameOuterPaint = new()
     {
-        Color = new SKColor(255, 90, 20, 140),
+        Color = new SKColor(127, 169, 199, 153),
         Style = SKPaintStyle.Fill,
         IsAntialias = true
     };
     private readonly SKPaint _engineFlameInnerPaint = new()
     {
-        Color = new SKColor(255, 220, 120, 200),
+        Color = new SKColor(127, 169, 199, 0),
         Style = SKPaintStyle.Fill,
         IsAntialias = true
     };
@@ -113,11 +113,11 @@ internal sealed class TacticalMapDepthRenderer
     private readonly SKPath _trajectoryPath = new();
     private readonly TrajectoryPaintSet _futureTrajectoryPaints = new(
         edgeColor: new SKColor(24, 24, 24, 235),
-        bodyColor: new SKColor(76, 76, 76, 220),
+        bodyColor: new SKColor(140, 185, 224, 140),
         highlightColor: new SKColor(158, 158, 158, 210));
     private readonly TrajectoryPaintSet _navigationTrajectoryPaints = new(
         edgeColor: new SKColor(32, 30, 26, 240),
-        bodyColor: new SKColor(100, 92, 72, 230),
+        bodyColor: new SKColor(140, 185, 224, 217),
         highlightColor: new SKColor(198, 184, 142, 220));
 
     // Antialiased strokes supply the soft edge without a new blurred mask of
@@ -136,14 +136,14 @@ internal sealed class TacticalMapDepthRenderer
     };
     private readonly SKPaint _courseAlignmentPaint = new()
     {
-        Color = new SKColor(126, 201, 215, 220),
+        Color = new SKColor(127, 174, 186, 230),
         Style = SKPaintStyle.Stroke,
         StrokeWidth = 1f,
         IsAntialias = true
     };
     private readonly SKPaint _courseAlignmentTextPaint = new()
     {
-        Color = new SKColor(126, 201, 215, 230),
+        Color = new SKColor(127, 174, 186, 230),
         TextSize = 11f,
         IsAntialias = true
     };
@@ -156,7 +156,7 @@ internal sealed class TacticalMapDepthRenderer
     };
     private readonly SKPaint _navigationTargetPaint = new()
     {
-        Color = new SKColor(198, 184, 142, 235),
+        Color = new SKColor(140, 185, 224),
         Style = SKPaintStyle.Fill,
         IsAntialias = true
     };
@@ -169,14 +169,14 @@ internal sealed class TacticalMapDepthRenderer
     };
     private readonly SKPaint _interceptPointRingPaint = new()
     {
-        Color = new SKColor(255, 150, 60, 170),
+        Color = new SKColor(140, 185, 224),
         Style = SKPaintStyle.Stroke,
         StrokeWidth = 1f,
         IsAntialias = true
     };
     private readonly SKPaint _interceptPointCorePaint = new()
     {
-        Color = new SKColor(255, 150, 60, 235),
+        Color = new SKColor(140, 185, 224),
         Style = SKPaintStyle.Fill,
         IsAntialias = true
     };
@@ -230,11 +230,11 @@ internal sealed class TacticalMapDepthRenderer
     {
         foreach ((float radiusMultiplier, byte alpha) in GlintHaloLayers)
         {
-            _glintHaloPaint.Color = MixWithWhite(baseColor, 0.55f, alpha);
+            _glintHaloPaint.Color = baseColor.WithAlpha((byte)Math.Round(alpha * baseColor.Alpha / 255d));
             canvas.DrawCircle(centerX, centerY, radius * radiusMultiplier, _glintHaloPaint);
         }
 
-        _glintCorePaint.Color = MixWithWhite(baseColor, 0.8f, 250);
+        _glintCorePaint.Color = baseColor;
         canvas.DrawCircle(centerX, centerY, Math.Max(0.9f, radius * 0.45f), _glintCorePaint);
     }
 
@@ -303,7 +303,7 @@ internal sealed class TacticalMapDepthRenderer
         float markerRadius,
         long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(226, 232, 238), GetSelectedReticleRotationDegrees(uiTimeMs), _selectedGlow);
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(231, 237, 244, 217), GetSelectedReticleRotationDegrees(uiTimeMs), _selectedGlow);
     }
 
     /// <summary>
@@ -317,7 +317,7 @@ internal sealed class TacticalMapDepthRenderer
         float markerRadius,
         long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(255, 165, 0), GetActiveReticleRotationDegrees(uiTimeMs), _activeGlow);
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, TacticalMapPalette.Target, GetActiveReticleRotationDegrees(uiTimeMs), _activeGlow);
     }
 
     private void DrawObjectReticle(
@@ -330,7 +330,7 @@ internal sealed class TacticalMapDepthRenderer
         ReticleGlow glow)
     {
         _selectionGlowPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 42);
-        _selectionPaint.Color = new SKColor(color.Red, color.Green, color.Blue, 125);
+        _selectionPaint.Color = color;
 
         float ringRadius = (markerRadius + 3.5f) * 2f;
         float crossExtent = ringRadius + 4f;
@@ -381,8 +381,8 @@ internal sealed class TacticalMapDepthRenderer
 
     /// <summary>
     /// Draws an animated engine-thrust flame behind the player ship, visible
-    /// only while the engine is actively accelerating. Flat-fill (no shaders
-    /// or blur), directional along the ship's heading, with a deterministic
+    /// only while the engine is actively accelerating. A fading fill,
+    /// directional along the ship's heading, with a deterministic
     /// sine-based flicker keyed to <paramref name="uiTimeMs"/> — mirrors the
     /// same normalization idiom as the reticle rotation animation. Must be
     /// drawn before (behind) <see cref="DrawPlayerShipGlyph"/> so the ship's
@@ -417,8 +417,13 @@ internal sealed class TacticalMapDepthRenderer
         // Half-width exceeds the ship glyph's own back-edge half-width (radius*5/7
         // ≈ radius*0.714) so the flame visibly flares past the ship's silhouette
         // on both sides instead of being fully covered by its opaque fill.
+        using var flameShader = SKShader.CreateLinearGradient(new SKPoint(baseX, baseY),
+            new SKPoint(baseX - dx * radius * 2.2f * flicker, baseY - dy * radius * 2.2f * flicker),
+            [new SKColor(127, 169, 199, 153), new SKColor(127, 169, 199, 0)], null, SKShaderTileMode.Clamp);
+        _engineFlameOuterPaint.Color = SKColors.White;
+        _engineFlameOuterPaint.Shader = flameShader;
         DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.9f, radius * 2.2f * flicker, _engineFlameOuterPaint);
-        DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.55f, radius * 1.5f * flicker, _engineFlameInnerPaint);
+        _engineFlameOuterPaint.Shader = null;
     }
 
     private void DrawFlameLayer(
@@ -463,8 +468,9 @@ internal sealed class TacticalMapDepthRenderer
     }
 
     public void DrawTargetTrajectory(SKCanvas canvas, IReadOnlyList<FutureTrajectoryPoint> points,
-        CameraState camera, int width, int height)
+        CameraState camera, int width, int height, SKColor? objectColor = null, byte opacity = 140)
     {
+        _targetTrajectoryPaint.Color = (objectColor ?? SpaceMapColorResolver.NpcNeutralColor).WithAlpha(opacity);
         if (points.Count < 2) return;
         _trajectoryPath.Reset();
         var (x, y) = camera.WorldToScreen(points[0].X, points[0].Y, width, height);
@@ -474,7 +480,6 @@ internal sealed class TacticalMapDepthRenderer
             (x, y) = camera.WorldToScreen(points[i].X, points[i].Y, width, height);
             _trajectoryPath.LineTo(x, y);
         }
-        canvas.DrawPath(_trajectoryPath, _targetTrajectoryHaloPaint);
         canvas.DrawPath(_trajectoryPath, _targetTrajectoryPaint);
     }
     public void DrawNavigationTrajectory(
@@ -544,15 +549,11 @@ internal sealed class TacticalMapDepthRenderer
             _trajectoryPath.LineTo(screenX, screenY);
         }
 
-        DrawTranslatedPath(
-            canvas,
-            _trajectoryPath,
-            TrajectoryShadowOffset,
-            TrajectoryShadowOffset,
-            paints.Shadow);
-        canvas.DrawPath(_trajectoryPath, paints.Edge);
+        using var dash = ReferenceEquals(paints, _futureTrajectoryPaints)
+            ? SKPathEffect.CreateDash([6f, 4f], 0) : null;
+        paints.Body.PathEffect = dash;
         canvas.DrawPath(_trajectoryPath, paints.Body);
-        DrawTranslatedPath(canvas, _trajectoryPath, LightOffsetX, LightOffsetY, paints.Highlight);
+        paints.Body.PathEffect = null;
     }
 
     private static void DrawTranslatedPath(

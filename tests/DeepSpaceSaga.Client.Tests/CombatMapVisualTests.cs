@@ -50,10 +50,10 @@ public sealed class CombatMapVisualTests
                 if (stage != "marker_geometry") return;
                 pixels = Enumerable.Range(-10, 21).SelectMany(y => Enumerable.Range(-10, 21)
                     .SelectMany(x => new[] { bitmap.GetPixel(1160 + x, 420 + y), bitmap.GetPixel(760 + x, 420 + y) })).ToArray();
-                double diameter = Enumerable.Range(-10, 21).Sum(x => bitmap.GetPixel(760 + x, 420).Alpha / 255.0);
+                double diameter = Enumerable.Range(-10, 21).Sum(x => bitmap.GetPixel(760 + x, 420).Alpha / (double)screen.CombatSettings.Wreck.Alpha);
                 Assert.InRange(diameter, 4.7, 5.1);
-                Assert.Equal(SKColors.Yellow, bitmap.GetPixel(1160, 420));
-                Assert.Equal(new SKColor(128, 128, 128), bitmap.GetPixel(760, 420));
+                Assert.Equal(screen.CombatSettings.Torpedo, bitmap.GetPixel(1160, 420));
+                Assert.Equal(screen.CombatSettings.Wreck.Alpha, bitmap.GetPixel(760, 420).Alpha);
                 Assert.True(bitmap.GetPixel(1165, 420).Alpha > 0); // blur beyond the 5px core
                 Assert.Equal(0, bitmap.GetPixel(765, 420).Alpha);
             };
@@ -101,7 +101,8 @@ public sealed class CombatMapVisualTests
     {
         var obj = Ship("player", 300, 200, hp);
         ObjectRenderState[] states = [new(obj, obj, true)];
-        var renderer = new ObjectLabelRenderer();
+        var hpColor = CombatVisualSettings.Default.HullHp.WithAlpha(255);
+        var renderer = new ObjectLabelRenderer(CombatVisualSettings.Default with { HullHp = hpColor });
         var camera = new CameraState(400, 300, 1);
         renderer.ComputeGeometries(states, .02, 800, 600, camera);
         using var bitmap = new SKBitmap(800, 600);
@@ -109,7 +110,7 @@ public sealed class CombatMapVisualTests
         renderer.DrawPlaques(canvas, states, 0, SimulationSpeed.Speed0, 800, 600, camera);
         var bar = ObjectLabelLayout.ModuleBarRect(renderer.Geometries["player"].PlaqueRect);
         int green = Enumerable.Range((int)Math.Ceiling(bar.Left), (int)bar.Width)
-            .Count(x => bitmap.GetPixel(x, (int)bar.MidY) == SKColors.Lime);
+            .Count(x => bitmap.GetPixel(x, (int)bar.MidY) == hpColor);
         Assert.InRange(green, bar.Width * fraction - 1, bar.Width * fraction + 1);
         Assert.Equal(0, ObjectLabelRenderer.ModuleBarFraction(obj with { ModuleHealth = [new("engine", "Engine", 0, 0, 0, 450, null, false)] }));
         Assert.False(ObjectLabelRenderer.HasModuleBar(obj with { RenderObjectType = SpaceObjectType.Wreck }));

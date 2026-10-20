@@ -82,6 +82,15 @@ public class GridRendererTests
         Assert.Equal(GridRenderer.LevelColor(1000, 1, settings), GridRenderer.LevelColor(1e15, 1, settings));
     }
 
+    [Fact]
+    public void Palette_endpoints_are_premixed_without_duplicate_major_lines()
+    {
+        var settings = new TacticalMapSettings();
+        Assert.Equal(new SKColor(35, 44, 52), GridRenderer.LevelColor(1000, 1, settings));
+        using var bitmap = RenderGrid(1);
+        Assert.Equal(new SKColor(35, 44, 52), bitmap.GetPixel(1000, 123));
+    }
+
     private static SKBitmap RenderGrid(double ppu, double worldLeft = 0)
     {
         const int size = 1200;

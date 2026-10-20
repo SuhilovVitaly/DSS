@@ -101,12 +101,12 @@ public sealed partial class GameSessionScreen
     private void DrawManualDefensePreview(SKCanvas canvas, SnapshotPrediction? prediction, bool resized)
     {
         if (ManualDefensePreviewGeometry is not { } geometry) return;
-        DrawCombatGeometry(canvas, geometry, CombatSettings.Preview, CombatSettings.Preview);
+        DrawCombatGeometry(canvas, geometry, CombatSettings.Preview, CombatSettings.Preview, _selectedObjectId);
         if (geometry.Intercept is { } intercept && ManualDefensePreviewWeapon is { } weapon &&
             DefenseModule(weapon)?.DefensePreview?.ChanceTenths is { } chance)
         {
             var (x, y) = _camera.WorldToScreen(intercept.X, intercept.Y, _viewportW, _viewportH);
-            using var text = new SKPaint { Color = CombatSettings.Preview, TextSize = 12, IsAntialias = true };
+            using var text = new SKPaint { Color = CombatSettings.DefenseText, TextSize = 12, IsAntialias = true };
             canvas.DrawText($"{chance / 10m:0.0}%", x + 8, y - 8, text);
         }
     }

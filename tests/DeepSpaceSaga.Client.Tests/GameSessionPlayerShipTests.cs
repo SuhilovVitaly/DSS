@@ -13,7 +13,7 @@ public class GameSessionPlayerShipTests
     private const int ScreenHeight = 1080;
 
     [Fact]
-    public void Player_ship_is_rendered_green()
+    public void Player_ship_is_rendered_blue()
     {
         var buffer = new SnapshotBuffer();
         var playerShip = new ObjectMotionSnapshot("player", 10000, 10000, SpeedKmS: 0, Direction: 0);
@@ -32,7 +32,7 @@ public class GameSessionPlayerShipTests
 
         var centerPixel = bitmap.GetPixel(ScreenWidth / 2, ScreenHeight / 2);
         Assert.True(centerPixel.Green > centerPixel.Red);
-        Assert.True(centerPixel.Green > centerPixel.Blue);
+        Assert.True(centerPixel.Blue > centerPixel.Green);
     }
 
     [Fact]
@@ -54,7 +54,7 @@ public class GameSessionPlayerShipTests
         screen.Render(canvas, ScreenWidth, ScreenHeight);
 
         var nosePixel = bitmap.GetPixel(ScreenWidth / 2, ScreenHeight / 2 - 5);
-        Assert.True(nosePixel.Green > nosePixel.Blue);
+        Assert.True(nosePixel.Blue > nosePixel.Green);
 
         var detachedMarkerPixel = bitmap.GetPixel(ScreenWidth / 2, ScreenHeight / 2 - 11);
         Assert.False(

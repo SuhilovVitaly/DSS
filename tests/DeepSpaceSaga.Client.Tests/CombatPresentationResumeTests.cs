@@ -13,10 +13,12 @@ public sealed class CombatPresentationResumeTests
     {
         await using var fixture = await CombatSessionFixture.Create();
         await fixture.Launch("active");
-        var before = await fixture.Advance(1000);
+        var before = await fixture.Advance(2000);
         var loaded = await fixture.SaveAndRestore();
         long now = 0;
         var buffer = new SnapshotBuffer(() => now);
+        buffer.Update(loaded with { SnapshotSequence = 0, SimulationTimeMs = 0 });
+        buffer.Update(loaded with { SnapshotSequence = 0, SimulationTimeMs = 1000 });
         buffer.Update(loaded);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => now);
         var flightObject = Assert.Single(loaded.Objects.Where(o => o.Torpedo is not null));

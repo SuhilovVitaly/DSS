@@ -22,10 +22,185 @@ public sealed class CombatTrajectoryTests
         [Player, Target, Torpedo, new("other", 300, 100, 0, 0)], "player", SimulationTimeMs: 2000);
     private static long Ticks(int ms) => Stopwatch.Frequency * ms / 1000;
 
+    private static void ObserveStableTarget(SnapshotBuffer buffer, AuthoritativeSnapshot snapshot)
+    {
+        // The geometry tests start after the target's observation window.
+        for (long time = 0; time < snapshot.MotionTimeMs; time += 1000)
+            buffer.Update(snapshot with { SnapshotSequence = 0, SimulationTimeMs = time });
+    }
+
+    [Fact]
+    public void Recorded_target_corrections_do_not_permanently_hide_player_flight()
+    {
+        // CombatMetrics 20261018-090739, SPC-MUKHA-02, motion 18000..21400.
+        (long Time, double X, double Y, double Heading, double Turn)[] samples =
+        [
+            (0, 1181.6233528884936, -1279.9823410557951, 212.3972785128924, -1.8238930773156428),
+            (100, 1177.3478179006984, -1273.2207031977337, 212.21488920516083, -0.9224544761639208),
+            (200, 1173.0884990523018, -1266.4488357209302, 212.12264375754444, 0.27754552383607933),
+            (300, 1168.8329915943173, -1259.6745715525085, 212.15039830992805, -0.9224544761639208),
+            (400, 1164.5812977105952, -1252.8979141689, 212.05815286231166, -1.5615032085304392),
+            (500, 1160.3443041605806, -1246.1120578453392, 211.90200254145861, -2.7615032085304394),
+            (600, 1156.132943352167, -1239.3102701208447, 211.62585222060557, -1.5615032085304392),
+            (700, 1151.9472696757002, -1232.492638841507, 211.46970189975252, -0.36150320853043905),
+            (800, 1147.7730416025624, -1225.6679910212679, 211.43355157889948, -0.23284724450832073),
+            (900, 1143.6023537808953, -1218.8411790117455, 211.41026685444865, 0.4770782466715673),
+            (1000, 1139.4302111353493, -1212.0152562135074, 211.45797467911575, -0.7229217533284329),
+            (1100, 1135.2595331681605, -1205.188438740962, 211.38568250378285, -1.5835803690140438),
+            (1200, 1131.102605724958, -1198.353242072923, 211.22732446688144, -0.3835803690140436),
+            (1300, 1126.9574169471098, -1191.5109173506064, 211.18896642998004, -1.5835803690140438),
+            (1400, 1122.8239815342474, -1184.6614888382035, 211.03060839307864, -0.3835803690140436),
+            (1500, 1118.702309190561, -1177.8049726163226, 210.99225035617724, -1.5835803690140438),
+            (1600, 1114.5924145322883, -1170.941392999481, 210.83389231927583, -0.3835803690140436),
+            (1700, 1110.4943072083522, -1164.0707661015097, 210.79553428237443, 0.8164196309859566),
+            (1800, 1106.3936052498402, -1157.201688097974, 210.87717624547304, -0.3835803690140436),
+            (1900, 1102.290308701141, -1150.3341590632297, 210.83881820857164, -1.350420333742477),
+            (2000, 1098.1974096695294, -1143.4604302433106, 210.7037761751974, -2.398308458818974),
+            (2100, 1094.1270211279095, -1136.5733522218493, 210.4639453293155, -1.1983084588189739),
+            (2200, 1090.0782664427406, -1129.6735288784137, 210.3441144834336, 0.0016915411810263237),
+            (2300, 1086.0367183349338, -1122.7694801465293, 210.3442836375517, -0.004269381070116651),
+            (2400, 1081.9951857584217, -1115.865422322851, 210.3438566994447, 0.5556360132612781),
+            (2500, 1077.9503318646312, -1108.963310185095, 210.39942030077077, -0.6443639867387221),
+            (2600, 1073.906012466533, -1102.0608849692278, 210.33498390209684, -1.004227036081602),
+            (2700, 1069.8716278460377, -1095.1526489896153, 210.23456119848868, 0.19577296391839827),
+            (2800, 1065.8421175575365, -1088.2415675827592, 210.25413849488052, -1.004227036081602),
+            (2900, 1061.8174845990354, -1081.32764589059, 210.15371579127236, -0.16535871397991286),
+            (3000, 1057.799909971741, -1074.4096191726674, 210.13717991987437, -1.365358713979913),
+            (3100, 1053.7915809811354, -1067.4862335545813, 210.00064404847637, -0.16535871397991286),
+            (3200, 1049.7925029105425, -1060.557498161952, 209.98410817707838, 0.6946827638512332),
+            (3300, 1045.7902249600634, -1053.6306111723354, 210.0535764534635, -0.505317236148767),
+            (3400, 1041.7868022627038, -1046.7043854643575, 210.00304472984863, -0.8251632086341942),
+        ];
+        var buffer = new SnapshotBuffer(() => 0);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        var origin = Player with { X = 200, Y = -280, SpeedKmS = 10, Direction = 74 };
+        var first = samples[0];
+        var target = Target with { X = first.X, Y = first.Y, Direction = first.Heading, SpeedKmS = 8, MaxSpeedKmS = 8 };
+        var route = TorpedoGuidanceMath.Plan(origin, target, 10, 90);
+        var projectile = origin with
+        {
+            ObjectId = "torpedo",
+            Torpedo = new("player", "launcher", "target", 0, 10, 90, 150, 0, route, ExpiresAtMotionTimeMs: 120000)
+        };
+        int visible = 0;
+        foreach (var sample in samples)
+        {
+            var current = target with
+            {
+                X = sample.X,
+                Y = sample.Y,
+                Direction = sample.Heading,
+                HostileCombat = new("player", "engine", "weapon", 50, false, HostileCombatPhase.FlankApproach,
+                    new(sample.Time, 100, 0, sample.X, sample.Y, 8, sample.Heading, 0, sample.Turn))
+            };
+            buffer.Update(new((ulong)sample.Time + 1, sample.Time, SimulationSpeed.Speed0,
+                [Player, current, new LinearMotionPredictor().Predict(projectile, sample.Time)], "player", SimulationTimeMs: sample.Time));
+            Render(screen);
+            if (sample.Time < 2000)
+            {
+                Assert.True(screen.CombatTrajectories["torpedo"].Prediction.Count >= 2);
+                Assert.Null(screen.CombatTrajectories["torpedo"].Intercept);
+                Assert.Null(screen.CombatTrajectories["torpedo"].EtaSeconds);
+                continue;
+            }
+            Assert.True(buffer.HasStableNpcMotion("target"));
+            Assert.Equal(0, buffer.GetNpcObservedTurnRate("target"));
+            var geometry = screen.CombatTrajectories["torpedo"];
+            Assert.NotNull(geometry.Intercept);
+            var expected = new LinearMotionPredictor().Predict(current with { HostileCombat = null },
+                (long)Math.Round(geometry.EndMotionTimeMs - sample.Time));
+            Assert.InRange(Math.Abs(expected.X - geometry.Target[^1].X), 0, .08);
+            Assert.InRange(Math.Abs(expected.Y - geometry.Target[^1].Y), 0, .08);
+            visible++;
+        }
+        Assert.Equal(15, visible);
+        screen.OnDeactivated();
+    }
+
+    [Fact]
+    public void Player_flight_remains_visible_but_contact_waits_for_stable_target()
+    {
+        long now = 0;
+        ulong sequence = 0;
+        var predictor = new LinearMotionPredictor();
+        var target = Target with { SpeedKmS = 1, Direction = 90 };
+        var route = TorpedoGuidanceMath.Plan(Player, target, 3, 90);
+        var torpedo = Torpedo with { X = Player.X, Y = Player.Y, Torpedo = Flight with { Route = route, Trail = [] } };
+        var enemy = torpedo with { ObjectId = "enemy-flight", Torpedo = torpedo.Torpedo! with { OwnerObjectId = "enemy" } };
+        var buffer = new SnapshotBuffer(() => now);
+        var screen = new GameSessionScreen(buffer, predictor, timestampProvider: () => now);
+        void Frame(long time, double speed = 1, double heading = 90)
+        {
+            buffer.Update(new(++sequence, time, SimulationSpeed.Speed0,
+                [Player, predictor.Predict(target, time) with { SpeedKmS = speed, Direction = heading },
+                    predictor.Predict(torpedo, time), predictor.Predict(enemy, time)], "player", SimulationTimeMs: time));
+            Render(screen);
+        }
+        void AssertProvisional()
+        {
+            var geometry = screen.CombatTrajectories["torpedo"];
+            Assert.True(geometry.Prediction.Count >= 2);
+            Assert.Null(geometry.Intercept);
+            Assert.Null(geometry.EtaSeconds);
+            Assert.Equal(CombatForecastStatus.InsufficientData, geometry.Status);
+        }
+        Frame(0);
+        AssertProvisional();
+        Assert.Contains("enemy-flight", screen.CombatTrajectories.Keys);
+        Frame(1000);
+        Frame(1999);
+        AssertProvisional();
+        now += Ticks(10000);
+        Render(screen); // Waiting on pause does not complete the physical-time window.
+        AssertProvisional();
+        Frame(2000);
+        Assert.NotNull(screen.CombatTrajectories["torpedo"].Intercept);
+        Frame(2100, speed: 2);
+        AssertProvisional();
+        Frame(3100, speed: 2);
+        Frame(4099, speed: 2);
+        AssertProvisional();
+        Frame(4100, speed: 2);
+        Assert.Contains("torpedo", screen.CombatTrajectories.Keys);
+        Frame(4200, speed: 2, heading: 91);
+        Assert.Contains("torpedo", screen.CombatTrajectories.Keys);
+        Frame(5000, speed: 2, heading: 99);
+        Frame(6000, speed: 2, heading: 108);
+        AssertProvisional();
+        Frame(0); // A replaced timeline cannot reuse the old stability window.
+        AssertProvisional();
+        screen.OnDeactivated();
+    }
+
+    [Fact]
+    public void Continually_accelerating_target_does_not_hide_player_torpedo_path()
+    {
+        var predictor = new LinearMotionPredictor();
+        var buffer = new SnapshotBuffer(() => 0);
+        var screen = new GameSessionScreen(buffer, predictor, timestampProvider: () => 0);
+        var target = Target with { SpeedKmS = 1, Direction = 90 };
+        var route = TorpedoGuidanceMath.Plan(Player, target, 3, 90);
+        var torpedo = Torpedo with { X = Player.X, Y = Player.Y, Torpedo = Flight with { Route = route, Trail = [] } };
+        for (long time = 0; time <= 3000; time += 100)
+        {
+            buffer.Update(new((ulong)(time + 1), time, SimulationSpeed.Speed0,
+                [Player, predictor.Predict(target, time) with { SpeedKmS = 1 + time / 10000d },
+                    predictor.Predict(torpedo, time)], "player", SimulationTimeMs: time));
+            Render(screen);
+            Assert.False(buffer.HasStableNpcMotion("target"));
+            var geometry = screen.CombatTrajectories["torpedo"];
+            Assert.True(geometry.Prediction.Count >= 2);
+            Assert.Null(geometry.Intercept);
+            Assert.Null(geometry.EtaSeconds);
+        }
+        screen.OnDeactivated();
+    }
+
     [Fact]
     public void Missing_torpedo_expiry_invalidates_a_previously_displayed_contact()
     {
         var buffer = new SnapshotBuffer(() => 0);
+        ObserveStableTarget(buffer, Snapshot);
         buffer.Update(Snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
         screen.ForecastCache.UseWorker = false;
@@ -58,10 +233,12 @@ public sealed class CombatTrajectoryTests
             HostileCombat = new("player", "engine", "weapon", 50, true, HostileCombatPhase.Pursuit,
                 new(0, 100, 0, Target.X, Target.Y, 1, 90, 0, 20))
         };
-        var route = TorpedoGuidanceMath.Plan(Player, target, 3, 90);
+        var route = TorpedoGuidanceMath.Plan(Player, target, 3, 90, 2000);
         var torpedo = Torpedo with { X = 0, Y = 0, Torpedo = Flight with { Route = route, Trail = [] } };
         var buffer = new SnapshotBuffer(() => now);
-        buffer.Update(new(1, 0, SimulationSpeed.Speed1, [Player, target, torpedo], "player", SimulationTimeMs: 0));
+        var initial = new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed1, [Player, target, torpedo], "player", SimulationTimeMs: 2000);
+        ObserveStableTarget(buffer, initial);
+        buffer.Update(initial);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => now);
         screen.ForecastCache.UseWorker = false;
         Render(screen);
@@ -71,8 +248,9 @@ public sealed class CombatTrajectoryTests
         var geometry = screen.CombatTrajectories["torpedo"];
         Assert.NotNull(geometry.Intercept);
         // Speed1 advances physical motion at 1/4 real time: 500 real ms = 125 motion ms.
-        double start = 500 * SimulationSpeed.Speed1.MotionTimeMultiplier();
-        var expected = CurrentManeuverForecast.Sample(displayed, geometry.EndMotionTimeMs - start);
+        double start = 2000 + 500 * SimulationSpeed.Speed1.MotionTimeMultiplier();
+        var observed = FutureTrajectoryProjector.ObservedNpcForecastState(displayed, buffer.GetNpcObservedTurnRate("target"));
+        var expected = CurrentManeuverForecast.Sample(observed, geometry.EndMotionTimeMs - start);
         Assert.Equal(expected.X, geometry.Target[^1].X, 6);
         Assert.Equal(expected.Y, geometry.Target[^1].Y, 6);
         Assert.Equal(start, screen.ForecastCache.Results["torpedo"].StartMotionTimeMs);
@@ -100,19 +278,21 @@ public sealed class CombatTrajectoryTests
         Assert.Equal(-101, screen.RenderStates.Single(s => s.Source.ObjectId == "target").Pose.Y);
         now = Ticks(1000 + predictionLeadMs);
         buffer.Update(Frame(2000, SimulationSpeed.Speed0, 2));
+        // Complete the observed constant-velocity window before checking geometry.
+        buffer.Update(Frame(3000, SimulationSpeed.Speed0, 3));
         Render(screen);
         CheckAlignment();
-        Assert.Equal(-102, screen.RenderStates.Single(s => s.Source.ObjectId == "target").Pose.Y);
+        Assert.Equal(-103, screen.RenderStates.Single(s => s.Source.ObjectId == "target").Pose.Y);
         // Ordinary map contacts retain the existing frozen visual anchor policy.
         Assert.Equal(-1, screen.RenderStates.Single(s => s.Source.ObjectId == "other").Pose.Y);
         now += Ticks(1000);
         Render(screen);
         CheckAlignment();
-        buffer.Update(Frame(2100, SimulationSpeed.Speed1, 3));
+        buffer.Update(Frame(3100, SimulationSpeed.Speed1, 4));
         Render(screen);
         CheckAlignment();
         now += Ticks(20);
-        buffer.Update(Frame(2400, SimulationSpeed.Speed1, 4));
+        buffer.Update(Frame(3400, SimulationSpeed.Speed1, 5));
         Render(screen);
         CheckAlignment();
         screen.OnDeactivated();
@@ -134,6 +314,7 @@ public sealed class CombatTrajectoryTests
     {
         long now = 0;
         var buffer = new SnapshotBuffer(() => now);
+        ObserveStableTarget(buffer, Snapshot);
         buffer.Update(Snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), showTrajectoryPrediction: false, timestampProvider: () => now);
         using var bitmap = new SKBitmap(1920, 1080);
@@ -326,6 +507,7 @@ public sealed class CombatTrajectoryTests
     public void Prediction_starts_at_current_pose_after_session_replacement()
     {
         var buffer = new SnapshotBuffer(() => 0);
+        ObserveStableTarget(buffer, Snapshot);
         buffer.Update(Snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
         Render(screen);
@@ -357,7 +539,7 @@ public sealed class CombatTrajectoryTests
             observed = true;
             var behind = bitmap.GetPixel(1060 + offsetX, 640 + offsetY);
             var ahead = bitmap.GetPixel(1060 - offsetX, 640 - offsetY);
-            Assert.True(behind.Red > behind.Green && behind.Alpha > 100, $"Expected orange exhaust, got {behind}");
+            Assert.True(behind.Blue > ahead.Blue && behind.Alpha > 0, $"Expected fading blue exhaust, got {behind}");
             Assert.True(behind.Alpha > ahead.Alpha, $"Exhaust must point behind the torpedo: {behind}, {ahead}");
         };
         screen.ForecastCache.UseWorker = false;

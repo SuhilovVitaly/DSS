@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client.UI;
 using SkiaSharp;
 namespace DeepSpaceSaga.Client.Tests;
@@ -11,9 +12,12 @@ public class CountermeasureVisualSettingsTests
         try
         {
             string json = File.ReadAllText(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
-            File.WriteAllText(path, json.Replace("#00CCFFFF", "#12345678"));
+            var node = JsonNode.Parse(json)!;
+            node["countermeasure"] = "#12345678";
+            File.WriteAllText(path, node.ToJsonString());
             Assert.Equal(new SKColor(0x12, 0x34, 0x56, 0x78), CombatVisualSettings.Load(path).Countermeasure);
-            File.WriteAllText(path, json.Replace("#00CCFFFF", "invalid"));
+            node["countermeasure"] = "invalid";
+            File.WriteAllText(path, node.ToJsonString());
             Assert.Equal(CombatVisualSettings.Default.Countermeasure, CombatVisualSettings.Load(path).Countermeasure);
         }
         finally { File.Delete(path); }

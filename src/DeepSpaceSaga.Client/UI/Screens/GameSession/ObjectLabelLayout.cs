@@ -10,20 +10,18 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal static class ObjectLabelLayout
 {
-    public const float MinPlaqueWidth = 120f;
-    public const float PlaqueHeight = 18f;
-    public const float ModuleBarHeight = 3f;
-    public const float ModuleBarSpace = 6f;
+    public const float PlaqueHeight = 16f;
+    public const float ModuleBarHeight = 2f;
+    public const float ModuleBarSpace = 2f;
 
     internal static SKRect ModuleBarRect(SKRect bounds) => new(bounds.Left, Math.Max(bounds.Top, bounds.Bottom - ModuleBarHeight), bounds.Right, bounds.Bottom);
-    public const float StripeHeight = 3f;
-    public const float StatusSquareSize = 8f;
-    public const float TextPaddingX = 12f;
+    public const float StatusSquareSize = 6f;
+    public const float TextPaddingX = 4f;
     public const float TextPaddingY = 3f;
-    public const float StatusTextGap = 6f;
+    public const float StatusTextGap = 4f;
 
     /// <summary>Horizontal offset applied to status square and text inside the plaque.</summary>
-    public const float ContentOffsetX = -8f;
+    public const float ContentOffsetX = 0f;
 
     /// <summary>Vertical offset of the status square relative to the plaque center.</summary>
     public const float StatusOffsetY = -1f;
@@ -61,8 +59,7 @@ internal static class ObjectLabelLayout
         bool hasModuleBar = false)
     {
         if (viewport.Width <= 0 || viewport.Height <= 0) return default;
-        float plaqueW = Math.Max(MinPlaqueWidth,
-            TextPaddingX + StatusSquareSize + StatusTextGap + textWidth + TextPaddingX);
+        float plaqueW = TextPaddingX + StatusSquareSize + StatusTextGap + Math.Max(0, textWidth) + TextPaddingX;
         plaqueW = Math.Min(plaqueW, Math.Max(0, viewport.Width - 2 * ViewportMargin));
         float plaqueH = Math.Min(PlaqueHeight + (hasModuleBar ? ModuleBarSpace : 0), Math.Max(0, viewport.Height - 2 * ViewportMargin));
         var plaqueSize = new SKSize(plaqueW, plaqueH);
@@ -83,7 +80,7 @@ internal static class ObjectLabelLayout
 
         // Status square — with its own vertical offset.
         float sqX = plaqueRect.Left + TextPaddingX + ContentOffsetX;
-        float sqY = plaqueRect.Top + (plaqueH - StatusSquareSize) / 2f + StatusOffsetY;
+        float sqY = plaqueRect.Top + (Math.Min(plaqueH, PlaqueHeight) - StatusSquareSize) / 2f + StatusOffsetY;
         var statusRect = new SKRect(sqX, sqY,
             sqX + StatusSquareSize, sqY + StatusSquareSize);
 

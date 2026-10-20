@@ -46,14 +46,20 @@ public sealed partial class GameSessionScreen
     private (string? Id, int Kind) PickMapItem(float x, float y)
     {
         var candidates = new List<(string Id, int Kind, int Priority, double Distance)>();
+        var labelCandidates = new List<(string Id, int Kind, int Priority, double Distance)>();
         foreach (var state in _renderStates)
         {
             if (_clusteredObjectIds.Contains(state.Pose.ObjectId)) continue;
             var p = _camera.WorldToScreen(state.Pose.X, state.Pose.Y, _viewportW, _viewportH);
             double distance = double.Hypot(p.X - x, p.Y - y);
-            if (ObjectLabelRenderer.HasModuleBar(state.Source) && _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y)) distance = 0;
-            if (distance <= ObjectHitTestRadiusPx) candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
+            if (distance <= ObjectHitTestRadiusPx)
+                candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
+            else if (ObjectLabelRenderer.HasModuleBar(state.Source) &&
+                _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
+                labelCandidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), 0));
         }
+        // A compact plaque may overlap another object: actual marker hits win.
+        if (candidates.Count == 0) candidates.AddRange(labelCandidates);
         if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest))
             foreach (var point in _poiGeometry)
             {
@@ -139,7 +145,7 @@ public sealed partial class GameSessionScreen
         foreach (var cluster in _mapClusters)
         {
             var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
-            _mapMarkerPaint.Color = new SKColor(22, 45, 60);
+            _mapMarkerPaint.Color = TacticalMapPalette.LabelBackground;
             canvas.DrawCircle(x, y, 15, _mapMarkerPaint);
             string count = cluster.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
             canvas.DrawText(count, x - _panelTextPaint.MeasureText(count) / 2, y + 4, _panelTextPaint);
@@ -312,7 +318,7 @@ public sealed partial class GameSessionScreen
             float x = rect.MidX + (float)(dx * scale), y = rect.MidY + (float)(dy * scale);
             float angle = (float)(Math.Atan2(dy, dx) * 180 / Math.PI);
             canvas.Save(); canvas.Translate(x, y); canvas.RotateDegrees(angle);
-            _mapMarkerPaint.Color = new SKColor(240, 175, 75);
+            _mapMarkerPaint.Color = TacticalMapPalette.Target;
             using var arrow = new SKPath(); arrow.MoveTo(8, 0); arrow.LineTo(-5, -5); arrow.LineTo(-5, 5); arrow.Close();
             canvas.DrawPath(arrow, _mapMarkerPaint); canvas.Restore();
             double meters = ship is null ? 0 : Math.Sqrt(Math.Pow(worldX - ship.X, 2) + Math.Pow(worldY - ship.Y, 2)) * 100;
@@ -389,7 +395,7 @@ public sealed partial class GameSessionScreen
         double nice = new[] { 1d, 2, 5 }.LastOrDefault(m => m * power <= meters, 1) * power;
         float rulerWidth = (float)(nice / 100 * _camera.PixelsPerWorldUnit / _uiScale);
         float rx = left + width - rulerWidth - 10, ry = top + 49 + layerRowHeight + wrappedRowHeight;
-        _mapMarkerPaint.Color = new SKColor(160, 175, 185); _mapMarkerPaint.StrokeWidth = 1;
+        _mapMarkerPaint.Color = TacticalMapPalette.Annotation; _mapMarkerPaint.StrokeWidth = 1;
         canvas.DrawLine(rx, ry, rx + rulerWidth, ry, _mapMarkerPaint);
         canvas.DrawLine(rx, ry - 3, rx, ry + 3, _mapMarkerPaint);
         canvas.DrawLine(rx + rulerWidth, ry - 3, rx + rulerWidth, ry + 3, _mapMarkerPaint);

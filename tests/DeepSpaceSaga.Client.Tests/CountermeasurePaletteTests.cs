@@ -9,6 +9,6 @@ public class CountermeasurePaletteTests
         using var json = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Data/UI/combat-visuals.json")));
         foreach (var key in new[] { "countermeasure", "countermeasureTrail", "countermeasurePrediction", "countermeasureIntercept", "defenseRange", "defenseText" })
             Assert.Matches("^#[0-9A-F]{8}$", json.RootElement.GetProperty(key).GetString()!);
-        Assert.Equal("#FFFF0066", json.RootElement.GetProperty("prediction").GetString());
+        Assert.Equal("#EDB86A80", json.RootElement.GetProperty("prediction").GetString());
     }
 }

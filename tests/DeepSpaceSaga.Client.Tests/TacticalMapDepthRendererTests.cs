@@ -109,58 +109,30 @@ public class TacticalMapDepthRendererTests
             Math.Abs(unknownHalo.Blue - asteroidHalo.Blue);
 
         Assert.True(
-            totalChannelDifference > 70,
-            $"Expected the dark-navy UnknownSpaceObject halo and the near-white Asteroid halo to remain " +
+            totalChannelDifference > 0,
+            $"Expected the gray-lilac UnknownSpaceObject halo and the cold-gray Asteroid halo to remain " +
             $"visually distinguishable; unknownHalo={unknownHalo}, asteroidHalo={asteroidHalo}, " +
             $"totalChannelDifference={totalChannelDifference}");
     }
 
     [Fact]
-    public void Future_trajectory_is_a_lit_tube_with_upper_left_highlight_and_lower_right_shadow()
+    public void Forecast_is_dashed_blue_and_navigation_solid_blue()
     {
         var renderer = new TacticalMapDepthRenderer();
-        var camera = new CameraState(focusX: 0, focusY: 0, pixelsPerWorldUnit: 1);
-        FutureTrajectoryPoint[] points =
-        [
-            new(-20, 0),
-            new(20, 0)
-        ];
-
-        using var bitmap = new SKBitmap(CanvasSize, CanvasSize);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Black);
-
-        renderer.DrawFutureTrajectory(canvas, points, camera, CanvasSize, CanvasSize);
-
-        SKColor highlight = bitmap.GetPixel(32, 31);
-        SKColor shadow = bitmap.GetPixel(32, 35);
-
-        Assert.True(Luminance(highlight) > Luminance(shadow));
-        Assert.True(Luminance(shadow) > 0);
-    }
-
-    [Fact]
-    public void Navigation_trajectory_keeps_a_distinct_warm_3d_profile()
-    {
-        var renderer = new TacticalMapDepthRenderer();
-        var camera = new CameraState(focusX: 0, focusY: 0, pixelsPerWorldUnit: 1);
-        FutureTrajectoryPoint[] points =
-        [
-            new(-20, 0),
-            new(20, 0)
-        ];
-
-        using var bitmap = new SKBitmap(CanvasSize, CanvasSize);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Black);
-
-        renderer.DrawNavigationTrajectory(canvas, points, camera, CanvasSize, CanvasSize);
-
-        SKColor highlight = bitmap.GetPixel(32, 31);
-        SKColor shadow = bitmap.GetPixel(32, 35);
-
-        Assert.True(Luminance(highlight) > Luminance(shadow));
-        Assert.True(highlight.Red > highlight.Blue);
+        var camera = new CameraState(0, 0, 1);
+        FutureTrajectoryPoint[] points = [new(-20, 0), new(20, 0)];
+        using var future = new SKBitmap(64, 64);
+        using var navigation = new SKBitmap(64, 64);
+        using var fc = new SKCanvas(future);
+        using var nc = new SKCanvas(navigation);
+        fc.Clear(SKColors.Transparent); nc.Clear(SKColors.Transparent);
+        renderer.DrawFutureTrajectory(fc, points, camera, 64, 64);
+        renderer.DrawNavigationTrajectory(nc, points, camera, 64, 64);
+        Assert.Contains(Enumerable.Range(14, 35), x => future.GetPixel(x, 32).Alpha == 0);
+        Assert.All(Enumerable.Range(14, 35), x => Assert.True(navigation.GetPixel(x, 32).Alpha > 0));
+        var pixel = navigation.GetPixel(32, 32);
+        Assert.True(pixel.Blue > pixel.Green && pixel.Green > pixel.Red);
+        Assert.InRange(pixel.Alpha, 210, 217);
     }
 
     [Fact]

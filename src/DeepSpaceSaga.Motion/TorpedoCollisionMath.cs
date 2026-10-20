@@ -76,6 +76,29 @@ public static class TorpedoCollisionMath
         }
     }
 
+    // Acceleration-bounded search can differ from the conservative speed-only
+    // search at an inclusive radius boundary by a floating-point ULP. Reuse the
+    // original search only in that rounding window; keep Engine's API unchanged.
+    internal static TorpedoContact? FirstForecastContact(CollisionPath projectile, CollisionPath target, double from, double to)
+    {
+        var hit = FirstContact(projectile, target, from, to);
+        if (hit is not null || projectile.MaxAcceleration is null || target.MaxAcceleration is null) return hit;
+        var c = projectile.Position(to); var d = target.Position(to);
+        double x = c.X - d.X, y = c.Y - d.Y;
+        double scale = Math.Max(1, Math.Max(Math.Max(Math.Abs(c.X), Math.Abs(c.Y)), Math.Max(Math.Abs(d.X), Math.Abs(d.Y))));
+        if (projectile.MaxAcceleration == 0 && target.MaxAcceleration == 0)
+        {
+            var a = projectile.Position(from); var b = target.Position(from);
+            double sx = a.X - b.X, sy = a.Y - b.Y, dx = x - sx, dy = y - sy;
+            double squared = dx * dx + dy * dy;
+            double t = squared == 0 ? 0 : Math.Clamp(-(sx * dx + sy * dy) / squared, 0, 1);
+            x = sx + t * dx; y = sy + t * dy;
+            scale = Math.Max(scale, Math.Max(Math.Max(Math.Abs(a.X), Math.Abs(a.Y)), Math.Max(Math.Abs(b.X), Math.Abs(b.Y))));
+        }
+        if (Math.Abs(Length(x, y) - (5 + DistanceTolerance)) > 64 * 2.220446049250313e-16 * scale) return null;
+        return FirstContact(projectile with { MaxAcceleration = null }, target with { MaxAcceleration = null }, from, to);
+    }
+
     private static double Length(double x, double y)
     {
         double scale = Math.Max(Math.Abs(x), Math.Abs(y));

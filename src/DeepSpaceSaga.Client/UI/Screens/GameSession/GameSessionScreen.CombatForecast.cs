@@ -31,6 +31,7 @@ public sealed partial class GameSessionScreen
                     ? _predictor.Predict(o, delta) : o).ToImmutableArray()
             };
         }
+        if (snapshot is not null) snapshot = WithObservedPlayerTargets(snapshot);
         _combatForecastCache.Prepare(_buffer.PresentationSessionId, snapshot,
             new CombatForecastOptions(CombatSettings.ForecastHorizonMs));
         _preparedForecastPrediction = prediction;
@@ -53,9 +54,34 @@ public sealed partial class GameSessionScreen
         PrepareManualDefenseForecast(prediction);
     }
 
+    private AuthoritativeSnapshot WithObservedPlayerTargets(AuthoritativeSnapshot snapshot)
+    {
+        HashSet<string>? targets = null;
+        foreach (var obj in snapshot.Objects)
+            if (obj.Torpedo is { } flight && flight.OwnerObjectId == snapshot.PlayerShipObjectId)
+                (targets ??= new(StringComparer.Ordinal)).Add(flight.TargetObjectId);
+        // Hover previews have no active flight. Avoid a collection pipeline and
+        // allocations on that frame-sensitive path.
+        if (targets is null) return snapshot;
+        return snapshot with
+        {
+            Objects = snapshot.Objects.Select(o => o.RenderObjectType == SpaceObjectType.NpcShip && targets.Contains(o.ObjectId)
+                ? FutureTrajectoryProjector.ObservedNpcForecastState(o, _buffer.GetNpcObservedTurnRate(o.ObjectId)) : o).ToImmutableArray()
+        };
+    }
+
     private CombatTrajectoryProjector.Geometry? PreparedFlight(string id, SnapshotPrediction? prediction)
     {
-        return prediction is not null && _preparedForecastGeometry.TryGetValue(id, out var geometry) ? geometry : null;
+        if (prediction is null || !_preparedForecastGeometry.TryGetValue(id, out var geometry)) return null;
+        // A changing target invalidates contact confidence, not the available
+        // conditional flight path. Keep the path visible while observations settle.
+        if (prediction.BufferedSnapshot.Snapshot is { } snapshot &&
+            snapshot.Objects.FirstOrDefault(o => o.ObjectId == id)?.Torpedo is { } flight &&
+            flight.OwnerObjectId == snapshot.PlayerShipObjectId &&
+            snapshot.Objects.Any(o => o.ObjectId == flight.TargetObjectId && o.RenderObjectType == SpaceObjectType.NpcShip) &&
+            !_buffer.HasStableNpcMotion(flight.TargetObjectId))
+            return geometry with { Intercept = null, EtaSeconds = null, Status = CombatForecastStatus.InsufficientData };
+        return geometry;
     }
 
     private void PrepareLaunchForecast(SnapshotPrediction? prediction)
@@ -69,6 +95,8 @@ public sealed partial class GameSessionScreen
         long delta = CombatPredictionDelta(prediction);
         var owner = _predictor.Predict(ownerSource, delta);
         var target = _predictor.Predict(targetSource, delta);
+        if (target.RenderObjectType == SpaceObjectType.NpcShip)
+            target = FutureTrajectoryProjector.ObservedNpcForecastState(target, _buffer.GetNpcObservedTurnRate(target.ObjectId));
         long time = snapshot.MotionTimeMs + delta;
         long? lifetime = FindLauncher()?.TorpedoMaxFlightTimeMs;
         var key = (owner, target, launcher, time, lifetime);

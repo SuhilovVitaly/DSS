@@ -57,6 +57,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     // Object paints
     private readonly SKPaint _trailPaint;
+    private readonly List<double> _trailLengths = new(256);
     private readonly ObjectTrailGeometry _trailGeometry = new();
     private readonly SKPath _playerShipGlyphPath = new();
 
@@ -992,6 +993,7 @@ public sealed partial class GameSessionScreen : IScreen
     {
         string? bestId = null;
         int bestPriority = int.MaxValue;
+        bool bestIsLabelOnly = false;
         double bestDistanceSq = double.MaxValue;
         const double radiusSq = (double)ObjectHitTestRadiusPx * ObjectHitTestRadiusPx;
 
@@ -1003,22 +1005,27 @@ public sealed partial class GameSessionScreen : IScreen
             double dx = x - sx;
             double dy = y - sy;
             double distanceSq = dx * dx + dy * dy;
-            if (ObjectLabelRenderer.HasModuleBar(state.Source) &&
-                _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
+            bool labelOnly = distanceSq > radiusSq;
+            if (labelOnly)
+            {
+                if (!ObjectLabelRenderer.HasModuleBar(state.Source) ||
+                    !_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
+                    continue;
                 distanceSq = 0;
-            if (distanceSq > radiusSq)
-                continue;
+            }
 
             int priority = GetClickPriority(state);
 
-            if (bestId is null ||
-                priority < bestPriority ||
-                (priority == bestPriority &&
-                 (distanceSq < bestDistanceSq ||
-                  (distanceSq == bestDistanceSq &&
-                   string.CompareOrdinal(state.Pose.ObjectId, bestId) < 0))))
+            if (bestId is null || (bestIsLabelOnly && !labelOnly) ||
+                (bestIsLabelOnly == labelOnly &&
+                 (priority < bestPriority ||
+                  (priority == bestPriority &&
+                   (distanceSq < bestDistanceSq ||
+                    (distanceSq == bestDistanceSq &&
+                     string.CompareOrdinal(state.Pose.ObjectId, bestId) < 0))))))
             {
                 bestId = state.Pose.ObjectId;
+                bestIsLabelOnly = labelOnly;
                 bestPriority = priority;
                 bestDistanceSq = distanceSq;
             }
@@ -1126,6 +1133,7 @@ public sealed partial class GameSessionScreen : IScreen
         _combatEffects.StartOnPresentation = _buffer.HasCombatPresentation;
         BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
+        _externalPlayerTrajectoryPoints.Clear();
         RenderStageCompleted?.Invoke("begin");
         _viewportW = width;
         _viewportH = height;
@@ -1230,6 +1238,7 @@ public sealed partial class GameSessionScreen : IScreen
             CompleteRenderStage("trails");
 
             // 3.5. Future trajectory (before objects, after historical trails)
+            DrawExternalPlayerTrajectory(canvas, width, height);
             DrawFutureTrajectories(canvas, width, height);
 
             // 3.55. Navigation trajectory (Ctrl+Click) — after future trajectory,
@@ -1248,7 +1257,7 @@ public sealed partial class GameSessionScreen : IScreen
             // DrawLeaders and DrawPlaques see the same positions.
             bool resetSmoothing = viewportResized;
             _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing,
-                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect());
+                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _activeObjectId);
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
@@ -1313,6 +1322,9 @@ public sealed partial class GameSessionScreen : IScreen
                     {
                         var markerColor = SpaceMapColorResolver.GetColor(
                             state.Pose.RenderObjectType, state.Pose.RelationToPlayer);
+                        if (state.Pose.RenderObjectType == SpaceObjectType.Planet && buffered?.Snapshot.SolarSystemMap is { } map &&
+                            map.Planets.FirstOrDefault(p => p.ObjectId == state.Pose.ObjectId) is { } planet)
+                            markerColor = SolarSystemLayerRenderer.PlanetColor(planet.Kind);
                         if (_camera.PixelsPerWorldUnit <= _mapSettings.CompactMarkerPpu && !IsImportantMapObject(state.Pose.ObjectId) &&
                             state.Pose.RenderObjectType is not (SpaceObjectType.Planet or SpaceObjectType.Sun))
                         {
@@ -1333,7 +1345,7 @@ public sealed partial class GameSessionScreen : IScreen
 
             // 4.5. Object label plaques (on top of objects, before UI panels)
             RenderStageCompleted?.Invoke("marker_geometry");
-            _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera);
+            _labelRenderer.DrawPlaques(canvas, _renderStates, uiTimeMs, _buffer.CurrentSpeed, width, height, _camera, buffered?.Snapshot.SolarSystemMap);
             if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)) AiMapPresentation.DrawSelectedPointLabel(canvas, _poiGeometry, _camera, width, height, _selectedPoiId);
             RenderStageCompleted?.Invoke("label_plaques");
             DrawOffscreenTargets(canvas);
@@ -1759,8 +1771,19 @@ public sealed partial class GameSessionScreen : IScreen
             // still have visible historical paths, including curved ones.
             if (right < -2 || bottom < -2 || left > width + 2 || top > height + 2)
                 continue;
-            bool isShip = kvp.Key == playerShipId;
+            var trailState = FindRenderStateById(kvp.Key);
+            bool isShip = kvp.Key == playerShipId || trailState?.Source.RenderObjectType == SpaceObjectType.NpcShip;
+            var trailColor = kvp.Key == playerShipId ? SpaceMapColorResolver.PlayerShipColor :
+                SpaceMapColorResolver.GetColor(trailState?.Source.RenderObjectType, trailState?.Source.RelationToPlayer);
             _trailGeometry.Build(points, _camera, width, height, isShip);
+            double totalLength = 0;
+            _trailLengths.Clear();
+            _trailLengths.Add(0);
+            for (int i = 1; i < _trailGeometry.Points.Count; i++)
+            {
+                totalLength += SKPoint.Distance(_trailGeometry.Points[i - 1], _trailGeometry.Points[i]);
+                _trailLengths.Add(totalLength);
+            }
             foreach (var segment in _trailGeometry.Segments)
             {
                 var from = _trailGeometry.Points[segment.Start];
@@ -1772,29 +1795,42 @@ public sealed partial class GameSessionScreen : IScreen
                 if (!((fromX < -2 && toX < -2) || (fromX > width + 2 && toX > width + 2) ||
                       (fromY < -2 && toY < -2) || (fromY > height + 2 && toY > height + 2)))
                 {
-                    float t = (float)segment.End / (points.Count - 1);
-                    _trailPaint.Color = GetTrailSegmentColor(t, isShip);
+                    float startT = totalLength > 0 ? (float)(_trailLengths[segment.Start] / totalLength) : 0;
+                    float endT = totalLength > 0 ? (float)(_trailLengths[segment.End] / totalLength) : 1;
+                    using var shader = SKShader.CreateLinearGradient(from, to,
+                        [GetTrailSegmentColor(startT, isShip, trailColor), GetTrailSegmentColor(endT, isShip, trailColor)],
+                        null, SKShaderTileMode.Clamp);
+                    _trailPaint.Color = SKColors.White;
+                    _trailPaint.Shader = shader;
                     canvas.DrawLine(fromX, fromY, toX, toY, _trailPaint);
+                    _trailPaint.Shader = null;
                 }
             }
         }
     }
 
-    /// <summary>
-    /// Trail color by position fraction t (0 = tail's far/oldest end, 1 = at the object).
-    /// For ships, the final third renders as fiery red (hot exhaust).
-    /// Non-ship objects render plain gray throughout.
-    /// Alpha fades from 40 at the tail to 160 at the object.
-    /// </summary>
-    internal static SKColor GetTrailSegmentColor(float t, bool isShip)
-    {
-        byte alpha = (byte)(40 + 120 * t);
-        return isShip && t > 2.0f / 3.0f
-            ? new SKColor(220, 30, 20, alpha)
-            : new SKColor(190, 190, 190, alpha);
-    }
+    /// <summary>Opacity by displayed length fraction: zero at the oldest end, one at the object.</summary>
+    internal static SKColor GetTrailSegmentColor(float t, bool isShip, SKColor? objectColor = null) =>
+        isShip ? TacticalMapPalette.Trail(objectColor ?? SpaceMapColorResolver.PlayerShipColor, t) :
+            TacticalMapPalette.Trail(TacticalMapPalette.OtherTrail, t, 25);
 
     // ── Future trajectory ────────────────────────────────────────
+
+    private readonly List<FutureTrajectoryPoint> _externalPlayerTrajectoryPoints = new(2);
+    internal IReadOnlyList<FutureTrajectoryPoint> ExternalPlayerTrajectory => _externalPlayerTrajectoryPoints;
+
+    private void DrawExternalPlayerTrajectory(SKCanvas canvas, int width, int height)
+    {
+        if (!_showTrajectoryPrediction || FindPlayerShip(_renderStates) is not { } player ||
+            player.Source.IsDestroyed || !(player.Pose.SpeedKmS > 0)) return;
+        // Guidance uses the target's instantaneous velocity, without its planned
+        // maneuver. Show that assumption separately from the player's own route.
+        _externalPlayerTrajectoryPoints.Add(new(player.Pose.X, player.Pose.Y));
+        TrajectoryViewportGeometry.ExtendToEdge(_externalPlayerTrajectoryPoints, player.Pose.Direction, _camera, width, height);
+        _depthRenderer.DrawTargetTrajectory(canvas, _externalPlayerTrajectoryPoints, _camera, width, height,
+            SpaceMapColorResolver.PlayerShipColor, opacity: 77);
+        CaptureDrawnTrajectory(player.Pose.ObjectId, "external-linear", _externalPlayerTrajectoryPoints, isPlayer: true);
+    }
 
     private void DrawFutureTrajectories(SKCanvas canvas, int width, int height)
     {
@@ -1804,7 +1840,8 @@ public sealed partial class GameSessionScreen : IScreen
         foreach (var state in _renderStates)
         {
             if (state.Source.Torpedo is not null || state.Source.Countermeasure is not null ||
-                _combatForecastCache.Results.Values.Any(r => r.TargetId == state.Source.ObjectId)) continue;
+                _combatForecastCache.Results.Values.Any(r => r.TargetId == state.Source.ObjectId &&
+                    PreparedFlight(r.ProjectileId, _preparedForecastPrediction) is not null)) continue;
             // The player ship always gets its own ballistic preview (subject to the
             // Approach exclusion below). A non-player object only gets one when it is
             // the current SelectedObjectId — e.g. the target of an active
@@ -1839,7 +1876,8 @@ public sealed partial class GameSessionScreen : IScreen
             }
             else
             {
-                _depthRenderer.DrawTargetTrajectory(canvas, points, _camera, width, height);
+                _depthRenderer.DrawTargetTrajectory(canvas, points, _camera, width, height,
+                    SpaceMapColorResolver.GetColor(state.Source.RenderObjectType, state.Source.RelationToPlayer));
             }
         }
     }

@@ -42,6 +42,7 @@ internal sealed class NpcMotionObservationHistory
     }
 
     internal double TurnRateDegPerSec(string objectId) => _tracks.TryGetValue(objectId, out var track) ? track.Rate : 0;
+    internal bool HasStableMotion(string objectId) => _tracks.TryGetValue(objectId, out var track) && track.StableMotion;
 
     private static double Delta(double from, double to) => ((to % 360 - from % 360 + 540) % 360 + 360) % 360 - 180;
 
@@ -50,6 +51,10 @@ internal sealed class NpcMotionObservationHistory
         internal readonly Queue<double> Headings = new(3);
         private NpcMotionObservation _raw;
         private double _nextSampleTime;
+        private double _stableSince;
+        private double? _observedModelRate;
+        private double _candidateSpeed;
+        internal bool StableMotion { get; private set; }
         internal double Rate { get; private set; }
 
         internal Track(NpcMotionObservation pose) => Reset(pose);
@@ -61,6 +66,10 @@ internal sealed class NpcMotionObservationHistory
             Headings.Clear();
             Headings.Enqueue(pose.Direction);
             Rate = 0;
+            _stableSince = pose.MotionTimeMs;
+            _observedModelRate = null;
+            _candidateSpeed = pose.SpeedKmS;
+            StableMotion = false;
         }
 
         internal void Observe(NpcMotionObservation pose)
@@ -77,6 +86,14 @@ internal sealed class NpcMotionObservationHistory
             {
                 Reset(pose);
                 return;
+            }
+            // Use the same one-second observations as the visible NPC path.
+            // Unconfirmed curvature falls back to straight motion; comparing
+            // every packet's instantaneous turn rate can starve this forever.
+            if (Math.Abs(pose.SpeedKmS - _candidateSpeed) > 1e-6)
+            {
+                _stableSince = pose.MotionTimeMs;
+                _candidateSpeed = pose.SpeedKmS;
             }
             // Interpolate only between admitted poses. A packet gap never invents samples.
             while (_nextSampleTime <= pose.MotionTimeMs)
@@ -95,6 +112,13 @@ internal sealed class NpcMotionObservationHistory
                         Math.Abs(a - b) <= AngleTolerance + 1e-12) Rate = (a + b) / 2;
                 }
             }
+            if (Headings.Count == 3)
+            {
+                if (_observedModelRate is { } previous && Math.Abs(previous - Rate) > AngleTolerance)
+                    _stableSince = pose.MotionTimeMs;
+                _observedModelRate = Rate;
+            }
+            StableMotion = pose.MotionTimeMs - _stableSince >= 2000 - TimeTolerance;
             _raw = pose;
         }
     }

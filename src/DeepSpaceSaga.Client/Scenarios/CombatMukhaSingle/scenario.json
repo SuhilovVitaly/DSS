@@ -1,0 +1,358 @@
+{
+  "scenarioMetadata": {
+    "scenarioId": "combat_mukha_single",
+    "name": "Tetrarch vs 1 Mukha",
+    "description": "The same encounter as Tetrarch vs 3 Mukha, with only Mukha 1 at its original position."
+  },
+  "gameState": {
+    "gameTimeMs": 0,
+    "currentSpeed": "Speed0",
+    "playerShipObjectId": "SPC-0001",
+    "playerTokens": 2000,
+    "focus": {
+      "mode": "Attached",
+      "objectId": "SPC-0001"
+    },
+    "spaceObjects": [
+      {
+        "objectId": "SPC-0001",
+        "objectType": "PlayerShip",
+        "shipClassId": "ship.tetrarch",
+        "persistenceType": "Permanent",
+        "name": "Player Ship",
+        "positionX": 0,
+        "positionY": 0,
+        "speedMps": 2000,
+        "directionDegrees": 0,
+        "movementType": "Linear",
+        "isKnown": true,
+        "hullLayout": {
+          "width": 9,
+          "height": 9,
+          "cells": [
+            {
+              "x": 4,
+              "y": 0
+            },
+            {
+              "x": 3,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 1
+            },
+            {
+              "x": 5,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 2
+            },
+            {
+              "x": 4,
+              "y": 3
+            },
+            {
+              "x": 4,
+              "y": 4
+            },
+            {
+              "x": 3,
+              "y": 5
+            },
+            {
+              "x": 4,
+              "y": 5
+            },
+            {
+              "x": 5,
+              "y": 5
+            },
+            {
+              "x": 3,
+              "y": 2
+            },
+            {
+              "y": 2,
+              "x": 5
+            }
+          ]
+        },
+        "modules": [
+          {
+            "moduleId": "MOD-PLAYER-BRIDGE-01",
+            "moduleTypeId": "module.bridge.navigation.computer.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 0
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "armorClass": "light"
+          },
+          {
+            "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
+            "moduleTypeId": "living.quarters.mk1.four-cabins",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 1
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "armorClass": "light"
+          },
+          {
+            "moduleId": "MOD-PLAYER-CARGO-01",
+            "moduleTypeId": "module.container.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 2
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [
+              {
+                "itemTypeId": "item.energy-cells",
+                "quantity": 1000
+              },
+              {
+                "itemTypeId": "item.food-rations",
+                "quantity": 200
+              }
+            ],
+            "armorClass": "light"
+          },
+          {
+            "moduleId": "MOD-PLAYER-SCANNER-01",
+            "moduleTypeId": "module.scanner.mk1",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 3
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "armorClass": "light"
+          },
+          {
+            "moduleId": "MOD-PLAYER-GENERATOR-01",
+            "moduleTypeId": "module.generator.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 4
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "armorClass": "light"
+          },
+          {
+            "moduleId": "MOD-PLAYER-ENGINE-01",
+            "moduleTypeId": "module.engine.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 5
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": 750,
+            "armorClass": "light",
+            "operatorCrewId": "CHR-PLAYER-PILOT"
+          },
+          {
+            "moduleId": "MOD-PLAYER-TORPEDO-01",
+            "moduleTypeId": "module.torpedo.launcher.basic",
+            "occupiedCells": [
+              {
+                "x": 3,
+                "y": 2
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "operatorCrewId": "CHR-0001",
+            "armorClass": "light"
+          },
+          {
+            "moduleId": "MOD-PLAYER-COUNTERMEASURE-01",
+            "moduleTypeId": "module.countermeasure.launcher.basic",
+            "occupiedCells": [
+              {
+                "y": 2,
+                "x": 5
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "operatorCrewId": "CHR-PLAYER-DEFENSE",
+            "autoDefenseEnabled": true,
+            "armorClass": "light"
+          },
+          {
+            "moduleId": "MOD-PLAYER-COUNTERMEASURE-02",
+            "moduleTypeId": "module.countermeasure.launcher.basic",
+            "occupiedCells": [
+              {
+                "x": 3,
+                "y": 1
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "operatorCrewId": "CHR-PLAYER-DEFENSE-02",
+            "autoDefenseEnabled": true,
+            "armorClass": "light"
+          }
+        ],
+        "crew": [
+          {
+            "crewId": "CHR-0001",
+            "displayName": "Dunkan Su",
+            "accuracySkill": 20,
+            "maneuverabilitySkill": 20
+          },
+          {
+            "crewId": "CHR-PLAYER-DEFENSE",
+            "displayName": "Defense operator",
+            "accuracySkill": 20,
+            "maneuverabilitySkill": 20
+          },
+          {
+            "crewId": "CHR-PLAYER-DEFENSE-02",
+            "displayName": "Second defense operator",
+            "accuracySkill": 20,
+            "maneuverabilitySkill": 20
+          },
+          {
+            "crewId": "CHR-PLAYER-PILOT",
+            "displayName": "Tetrarch pilot",
+            "accuracySkill": 20,
+            "maneuverabilitySkill": 20
+          }
+        ]
+      },
+      {
+        "objectId": "SPC-MUKHA-01",
+        "objectType": "NpcShip",
+        "shipClassId": "ship.mukha",
+        "persistenceType": "Permanent",
+        "name": "Mukha 1",
+        "positionX": 1800,
+        "positionY": -2400.0,
+        "speedMps": 3000,
+        "directionDegrees": 270,
+        "movementType": "Linear",
+        "isKnown": true,
+        "hullLayout": {
+          "width": 2,
+          "height": 1,
+          "cells": [
+            {
+              "x": 0,
+              "y": 0
+            },
+            {
+              "x": 1,
+              "y": 0
+            }
+          ]
+        },
+        "modules": [
+          {
+            "moduleId": "MOD-MUKHA-1-ENGINE",
+            "moduleTypeId": "module.engine.strizh",
+            "occupiedCells": [
+              {
+                "x": 0,
+                "y": 0
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": 750,
+            "armorClass": "none",
+            "operatorCrewId": "CHR-MUKHA-1-PILOT"
+          },
+          {
+            "moduleId": "MOD-MUKHA-1-TORPEDO",
+            "moduleTypeId": "module.torpedo.launcher.basic",
+            "occupiedCells": [
+              {
+                "x": 1,
+                "y": 0
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "operatorCrewId": "CHR-MUKHA-1-GUNNER",
+            "armorClass": "none"
+          }
+        ],
+        "crew": [
+          {
+            "crewId": "CHR-MUKHA-1-PILOT",
+            "displayName": "Mukha 1 pilot",
+            "accuracySkill": 20,
+            "maneuverabilitySkill": 20
+          },
+          {
+            "crewId": "CHR-MUKHA-1-GUNNER",
+            "displayName": "Mukha 1 gunner",
+            "accuracySkill": 20,
+            "maneuverabilitySkill": 20
+          }
+        ],
+        "relationToPlayer": "enemy",
+        "ai": {
+          "standoffKm": 50,
+          "bandKm": 10,
+          "flankOffsetDeg": -35
+        }
+      }
+    ]
+  }
+}
