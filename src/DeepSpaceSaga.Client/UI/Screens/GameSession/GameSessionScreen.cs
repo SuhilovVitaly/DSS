@@ -415,6 +415,7 @@ public sealed partial class GameSessionScreen : IScreen
     {
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         if (HandlePointAimMouse(x, y, button)) return ScreenEvent.None;
+        if (HandleThreatPanelClick(x, y, button)) return ScreenEvent.None;
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
@@ -581,6 +582,13 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
 
+        if (_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY))
+        {
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return true;
+        }
+
         if (_combatReportPanel.OnMouseMove(_uiMouseX, _uiMouseY))
         {
             _commandsPanel.OnMouseMove(-1, -1);
@@ -629,6 +637,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (_threatPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (HandlePointAimWheel(x, y, delta)) return ScreenEvent.None;
         if (_combatReportPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
@@ -1073,7 +1082,7 @@ public sealed partial class GameSessionScreen : IScreen
             _mouseX >= 0 && _mouseX <= _viewportW &&
             _mouseY >= 0 && _mouseY <= _viewportH;
 
-        string? candidate = cursorInViewport ? FindNearestObjectId(_mouseX, _mouseY) : null;
+        string? candidate = cursorInViewport && !_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY) ? FindNearestObjectId(_mouseX, _mouseY) : null;
         SetActiveObjectId(candidate);
     }
 
@@ -1115,6 +1124,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
+        if (_threatPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatReportPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatJournalPanel.Contains(uiX, uiY)) return true;
         if (_mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
@@ -1429,6 +1439,7 @@ public sealed partial class GameSessionScreen : IScreen
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
+        RenderThreatPanel(canvas);
         if (_panelVisible)
         {
             canvas.DrawRect(_lastCloseRect, _panelBgPaint);

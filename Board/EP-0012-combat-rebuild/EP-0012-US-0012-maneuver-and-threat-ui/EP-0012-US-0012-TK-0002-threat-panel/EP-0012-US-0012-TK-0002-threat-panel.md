@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0012-maneuver-and-threat-ui"
 ticket: "EP-0012-US-0012-TK-0002-threat-panel"
 title: "threat-panel"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0012-TK-0001-evade-input-and-threat-select"]
-files_touched: 4
+files_touched: 7
 serves: ["US12-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0012-TK-0002-threat-panel
@@ -24,14 +24,19 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Bounded scope (7 files), updated before code. Panel must participate in real mouse/scroll and available-map geometry; actions reuse actual authoritative command paths, and interception badges share the public-only predictor with aiming.
 
-| File | Current state | Allowed change |
-|---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ThreatPanel.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs:14; public sealed partial class GameSessionScreen : IScreen | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs:8; public sealed partial class GameSessionScreen | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| File | Allowed change |
+|---|---|
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ThreatPanel.cs` | NEW logical-coordinate, scrollable observed threat rows with select/CM/evade actions |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Actual panel draw, mouse/scroll interception and hit-test integration |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ThreatPanel.cs` | NEW current displayed threat data/action wiring and responsive panel bounds |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` | Exclude threat panel from available map/fit bounds |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Maneuver.cs` | Share actual evade submission between key release and panel actions |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CounterAimPreview.cs` | Share same public-only conditional interception badge predictor between aim and panel |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0002Tests.cs` | NEW sorting/filtering/layout/actual action and admitted-row latency checks |
+
+A-THREAT-PANEL: include only displayed foreign torpedoes whose observed closest distance is <= R+3 km; sort by observed entry time with ordinal ties, with unknown entry shown as unknown. Rows update in the same rendered admitted scene. Long lists scroll; compact rows wrap their actions. CM button selects that threat and enters point aim without auto-launch; arrow buttons execute one explicit evade for that row. Interception glyph is a conditional own-CM/observed-ray projection, never a confirmed kill.
 
 ## Public API after the change
 
@@ -74,4 +79,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 9 named / 2236 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0012-tk0002-results.json).
+
+Observed threat panel filters closest distance <=R+3 km, sorts entry time/ordinal IDs, shows profile/real deadline and shared conditional interception badge. Actual CM/left/right actions reach existing Engine submission paths; selection highlights the chosen object. Current scene admission to first row satisfies <=200ms; no row from unadmitted packet. Scroll/panel hit testing blocks zoom and objects behind UI, RMB still cancels aim; available-map/Fit excludes panel. Layout/action bounds pass at 100/150 percent; headless render inspected. Related input 98/98 PASS; strict legacy ForecastBudget, final catalog and native/product remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

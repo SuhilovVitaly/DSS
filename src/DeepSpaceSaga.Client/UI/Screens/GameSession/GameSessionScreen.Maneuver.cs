@@ -101,6 +101,7 @@ public sealed partial class GameSessionScreen
         RefreshManeuverInput();
         if (id is null || !PointThreats.Any(t => t.Id == id)) return;
         CurrentThreatId = id;
+        SetSelectedObjectId(id);
         if (_heldEvade is { } held) _heldEvade = (held.Key, held.Side, id);
         RefreshManeuverInput();
     }
@@ -164,13 +165,18 @@ public sealed partial class GameSessionScreen
         { _heldTurn = null; SendHeldTurn(turn.Owner, turn.Module, turn.Direction, false); }
         if (_heldEvade is not { } evade || evade.Key != key) return;
         _heldEvade = null; CurrentEvadePreview = null;
+        SubmitPointEvade(evade.ThreatId, evade.Side);
+    }
+
+    private void SubmitPointEvade(string threatId, EvadeSide side)
+    {
         RefreshManeuverInput();
         if (_handle is null || !ManeuverEngineReady(ManeuverEngine()) || ManeuverEngine() is not { } engine ||
             _buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated ||
-            !PointThreats.Any(t => t.Id == evade.ThreatId) || snapshot.PlayerShipObjectId is not { } owner) return;
+            !PointThreats.Any(t => t.Id == threatId) || snapshot.PlayerShipObjectId is not { } owner) return;
         try
         {
-            _maneuverSendTask = _handle.SendEvadeAsync(owner, engine.ModuleId, evade.ThreatId, evade.Side, out var id).AsTask();
+            _maneuverSendTask = _handle.SendEvadeAsync(owner, engine.ModuleId, threatId, side, out var id).AsTask();
             LastManeuverCommandId = id; ManeuverFeedback = CombatText("Sending", "Sending...");
         }
         catch (Exception) { ManeuverFeedback = PointLaunchReason("send_failed"); }

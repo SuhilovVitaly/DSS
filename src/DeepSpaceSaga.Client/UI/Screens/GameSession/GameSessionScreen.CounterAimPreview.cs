@@ -77,20 +77,28 @@ public sealed partial class GameSessionScreen
         bool ownWarning = ownRows.Any(o => o.OwnProjectile is { Kind: ProjectileKind.Torpedo } own &&
             own.DetonationMotionTimeMs >= nowMotionMs + seconds * 1000 && OwnAt(o, seconds, nowMotionMs) is var position &&
             double.Hypot(position.X - x, position.Y - y) / 10 <= profile.BlastRadiusKm);
-        var enroute = new List<string>();
-        foreach (var row in foreign.Where(o => o.ObservedProjectile!.Kind == ProjectileKind.Torpedo))
-            foreach (var ownRow in ownRows)
-            {
-                if (ownRow.OwnProjectile is not { Kind: ProjectileKind.Countermissile } own || own.DetonationMotionTimeMs < nowMotionMs) continue;
-                var future = ObservedAt(row, (own.DetonationMotionTimeMs - nowMotionMs) / 1000);
-                if (double.Hypot(future.X - own.DetonationX, future.Y - own.DetonationY) / 10 > own.BlastRadiusKm) continue;
-                enroute.Add(row.ObjectId); break;
-            }
+        var enroute = PredictPointInterceptions(displayed, player.ObjectId, nowMotionMs);
         bool missedSnapped = snapped is not null && ObservedAt(snapped, seconds) is var snappedAt &&
             double.Hypot(snappedAt.X - x, snappedAt.Y - y) / 10 > profile.BlastRadiusKm;
         bool unreachable = !double.IsFinite(seconds) || distanceKm > rangeKm || !late && missedSnapped;
         return new(player.X, player.Y, x, y, profile.BlastRadiusKm, seconds, seconds / multiplier, snapped?.ObjectId,
             arrival / multiplier, spare / multiplier, late, unreachable, count, ownWarning, selected.Threat, enroute);
+    }
+
+    internal static IReadOnlyList<string> PredictPointInterceptions(IReadOnlyList<ObjectMotionSnapshot> displayed, string playerId, double nowMotionMs)
+    {
+        var ownFlights = displayed.Where(o => !o.IsDestroyed && o.ObservedProjectile is null && o.OwnProjectile is { Kind: ProjectileKind.Countermissile } own &&
+            own.OwnerObjectId == playerId && own.DetonationMotionTimeMs >= nowMotionMs).ToArray();
+        var result = new List<string>();
+        foreach (var row in displayed.Where(o => !o.IsDestroyed && o.ObservedProjectile is { Kind: ProjectileKind.Torpedo }).OrderBy(o => o.ObjectId, StringComparer.Ordinal))
+            foreach (var ownRow in ownFlights)
+            {
+                var own = ownRow.OwnProjectile!;
+                var future = ObservedAt(row, (own.DetonationMotionTimeMs - nowMotionMs) / 1000);
+                if (double.Hypot(future.X - own.DetonationX, future.Y - own.DetonationY) / 10 > own.BlastRadiusKm) continue;
+                result.Add(row.ObjectId); break;
+            }
+        return result;
     }
 
     private static (double X, double Y) Unit(ObservedProjectileSnapshot observed)
