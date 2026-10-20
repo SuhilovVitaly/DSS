@@ -3,7 +3,7 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0001-contracts-and-schema"
 ticket: "EP-0012-US-0001-TK-0002-command-contracts"
 title: "command-contracts"
-stage: "draft"
+stage: "implemented"
 layer: "contracts"
 depends_on: ["EP-0012-US-0001-TK-0001-projectile-contracts"]
 files_touched: 5
@@ -38,6 +38,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 Proposed: PlayerCommand дополняется string? ProfileId = null, string? ThreatProjectileId = null, EvadeSide? EvadeSide = null. enum EvadeSide { Left, Right }. TargetWorldX/Y переиспользуются; конечные координаты обязательны. Константы новых команд и причин из US1-AC2; лишние старые поля убираются после consumer migration.
 
+### Уточнение исполнения — 2026-10-20
+
+Dependency TK-0001 опубликован: `090b3635822f100bbe11105e2840f585d1294ec8`, remote SHA проверен. Существующие optional command параметры сохраняются; старые constants остаются до переноса Engine/Client consumers и предусмотренного cleanup. На этом шаге Contracts не исполняет команды и не проверяет мир: runtime отсутствие side effects при отказе доказывается в тикетах пуска/уклонения, здесь проверяется сохранение Rejected и ReasonCode без подмены успехом.
+
+Новые коды пуска: `missing_profile`, `unknown_profile`, `launcher_reloading`, `no_weapon_operator`, `target_out_of_range`, `invalid_time`, `projectile_id_exhausted`; координаты используют существующий `invalid_target_coordinates`, ownership/модули — существующие общие коды. Подрыв: `not_own_projectile`, `stale_projectile`; уклонение: `unknown_threat`, `invalid_evade_side`, `engine_disabled`. Каждый код фиксируется явным expected в тестах. Реальная серверная валидация — последующие Engine тикеты.
+
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
@@ -51,7 +57,7 @@ Proposed: PlayerCommand дополняется string? ProfileId = null, string?
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+План проверок; фактические результаты исполнения приведены в Status / Evidence.
 
 - **Commands_roundtrip_preserves_explicit_point_profile_and_threat**: координаты, ProfileId, ThreatProjectileId и EvadeSide передаются без изменения.
 - **Reason_codes_are_unique_and_stable**: все перечисленные коды уникальны, отклонённый пуск не создаёт receipt успеха.
@@ -75,4 +81,6 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: Contracts implementation и self-review выполнены. Добавлены explicit ProfileId/ThreatProjectileId/EvadeSide, четыре command constants и стабильные reason codes. Named tests PASS 6/6; Contracts regression PASS 230/230 (0 failed/skipped); owning build 0 warnings/errors; scoped whitespace/full formatter и diff check PASS. Hard process timeout 300000 ms.
+
+[Фактические команды и stdout](../../evidence/tk0002-results.json). Self-review: старые constructors сохраняются, пропущенные поля остаются null, команды не берут implicit UI target, все CommandReasonCodes уникальны, Rejected roundtrip не превращается в Executed. Это не runtime side-effects test и не независимое review. Реальное исполнение и удаление legacy OPEN до соответствующих Engine/Client/cleanup тикетов. Native/product/balance OPEN. Отдельный commit/push разрешён текущим поручением; SHA проверяется после коммита.

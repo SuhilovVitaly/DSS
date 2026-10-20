@@ -48,9 +48,20 @@ public sealed record ObservedProjectileSnapshot(
     string ProfileId,
     double BlastRadiusKm);
 
-/// <summary>Combat commands addressed by owner object, launcher module and explicit target.</summary>
+/// <summary>Side relative to the threat's direction, not the evading ship's heading.</summary>
+public enum EvadeSide { Left, Right }
+
+public static class ManeuverCommandTypes
+{
+    public const string Evade = "maneuver.evade";
+}
+
+/// <summary>Combat commands addressed by owner object and launcher module.</summary>
 public static class CombatCommandTypes
 {
+    public const string Launch = "torpedo.launch";
+    public const string Detonate = "torpedo.detonate";
+    // Transitional consumers are migrated before these legacy identifiers are removed.
     public const string Fire = "torpedo.fire";
     public const string SelfDestruct = "torpedo.selfDestruct";
 }

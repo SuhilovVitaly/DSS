@@ -67,4 +67,10 @@ public sealed record PlayerCommand(
     /// </summary>
     long? MarketRevision = null,
     /// <summary>Requested fire mode for torpedo.setMode; validated by the Engine.</summary>
-    string? ModeId = null);
+    string? ModeId = null,
+    /// <summary>Explicit point-launch profile; the Engine validates availability on this launcher.</summary>
+    string? ProfileId = null,
+    /// <summary>Observed projectile selected for maneuver.evade, independent of UI selection.</summary>
+    string? ThreatProjectileId = null,
+    /// <summary>Evade direction relative to the selected threat's flight vector.</summary>
+    EvadeSide? EvadeSide = null);

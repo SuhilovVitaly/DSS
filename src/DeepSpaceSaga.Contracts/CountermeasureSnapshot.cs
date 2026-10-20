@@ -12,6 +12,8 @@ public sealed record PendingBurstShot(double DueMotionTimeMs, string TargetTorpe
 
 public static class DefenseCommandTypes
 {
+    public const string Launch = "defense.launch";
+    // Transitional consumers are migrated before these legacy identifiers are removed.
     public const string Fire = "defense.fire";
     public const string Enable = "defense.enable";
     public const string Disable = "defense.disable";
