@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0009-scenarios-and-saves"
 ticket: "EP-0012-US-0009-TK-0003-save-format-18"
 title: "save-format-18"
-stage: "draft"
-layer: "engine"
+stage: "implemented"
+layer: "contracts-engine"
 depends_on: ["EP-0012-US-0016-TK-0001-combat-localization"]
-files_touched: 5
+files_touched: 16
 serves: ["US9-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0009-TK-0003-save-format-18
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (16 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -34,9 +34,24 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs](../../../../src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs) | Существует: src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs:8; public sealed record HostileCombatSaveData( | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+| `src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+| `tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+| `tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveSchemaTests.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+| `tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+| `tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+| `tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+| `tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs` | Existing or bounded new schema | Point continuation schema/validation and current-version expectations; preserve old-version atomic rejection and independent behavior assertions. |
+
+| `src/DeepSpaceSaga.Contracts/CombatSnapshot.cs` | Existing captured flight DTO | Require serialized captured numeric fields so missing AP/core/time cannot silently become valid zero defaults in Save18. |
+
+| `tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs` | Existing | Preserve malformed current-save generic-error and retry test by emitting the actual current version, not historical17. |
+
+| `tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs` | Existing | Historical migration fixture must explicitly use historical hostile2 rather than retaining captured hostile3 under an older root envelope. |
+
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+SaveFormat.CurrentSaveFormatVersion=18; HostileCombatSaveData.CurrentVersion=3. GameStateData adds optional PointCombatState carrying versioned captured projectiles, evasion/base course, named RNG, NPC dodge and encounter/statistics records. OwnProjectileSnapshot captured numeric JSON members become required. Runtime capture/restore is the next ticket; schema-only evidence is not whole point Save/Load acceptance.
 
 ## Implementation steps
 
@@ -75,6 +90,12 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 19 named / 809 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0009-tk0003-results.json).
+
+Root Save18/hostile3 and versioned point continuation schema PASS; 256 Contracts and 2330 non-budget Client PASS. Old17 rejected before body parsing, file/world unchanged. Captured numeric JSON members required; acknowledged Idle keeps final stats. This is schema-only: actual point capture/restore and consistency remain next two tickets. Full Engine, strict forecast budgets and native gates OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 Save18 prerequisite correction: see [execution DAG](../../Tickets.md#save18-prerequisite-correction).
+
+Scope correction before code: add a distinct versioned PointCombatStateData payload containing captured own/enemy/counter flights, named RNG, evasion/base state, NPC dodge and encounter/stats continuation. Add structural validation at the existing loader boundary. Root version becomes18 and old17 is rejected before body parsing. Existing current-save assertions migrate to18; malformed future-version test moves18 to19. Runtime capture/restore and cross-payload consistency remain the following two tickets, not schema evidence.

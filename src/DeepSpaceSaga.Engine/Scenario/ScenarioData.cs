@@ -29,8 +29,9 @@ public static class SaveFormat
     /// Version 15 requires a versioned trading continuation manifest and complete voyage finance history.
     /// Version 16 requires phase-three combat continuation; earlier files are rejected by the save entrypoint.
     /// Version 17 requires module-combat continuation (defense 3, combat 2, hostile 2); older saves are rejected.
+    /// Version 18 adds point flights, scatter/dodge RNG, evasion and encounter continuation; Save17 is rejected.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 17;
+    public const int CurrentSaveFormatVersion = 18;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -105,7 +106,8 @@ public sealed record GameStateData(
     /// <summary>Fractional physical milliseconds, in quarters. Absent in older saves (zero).</summary>
     [property: JsonPropertyName("motionQuarterRemainder")] int MotionQuarterRemainder = 0,
     [property: JsonPropertyName("combatReportsState")] CombatReportsSaveData? CombatReportsState = null,
-    [property: JsonPropertyName("combatReactionDelays")] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null)
+    [property: JsonPropertyName("combatReactionDelays")] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null,
+    [property: JsonPropertyName("pointCombatState")] PointCombatStateData? PointCombatState = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]

@@ -39,6 +39,7 @@ public class WeaponOperatorRuntimeTests
                 TradingEconomyContinuation = null,
                 MarketKnowledge = null,
                 DefenseState = null,
+                HostileCombatState = saved.GameState.HostileCombatState! with { Version = 2 },
                 SpaceObjects = saved.GameState.SpaceObjects.Select(o => o with
                 {
                     Modules = o.Modules?.Select(m => m with { OperatorCrewId = null }).ToArray()
@@ -67,7 +68,11 @@ public class WeaponOperatorRuntimeTests
         var migrated = restored.CaptureSaveState();
         Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated), true, isSave: true));
         // Historical internal fixture still exercises migration; it cannot become a current save.
-        using var twice = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated with { SaveFormatVersion = 15 }), true));
+        using var twice = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated with
+        {
+            SaveFormatVersion = 15,
+            GameState = migrated.GameState with { HostileCombatState = migrated.GameState.HostileCombatState! with { Version = 2 } }
+        }), true));
         Assert.True(Assert.Single(At(twice, 0).Objects, o => o.Torpedo is not null).Torpedo!.RatingMigratedFromLegacySave);
         Assert.Equal(Target, Assert.Single(At(twice, 5000).CombatImpacts).HitObjectId);
         At(twice, 15000);

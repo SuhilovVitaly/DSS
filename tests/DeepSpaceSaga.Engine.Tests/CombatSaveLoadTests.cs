@@ -122,10 +122,10 @@ public sealed class CombatSaveLoadTests : IDisposable
         });
         using var engine = Create(scenario);
         var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        Assert.Equal(17, save.SaveFormatVersion);
+        Assert.Equal(18, save.SaveFormatVersion);
         Assert.Equal(3, save.GameState.DefenseState!.Version);
         Assert.Equal(2, save.GameState.CombatState!.Version);
-        Assert.Equal(2, save.GameState.HostileCombatState!.Version);
+        Assert.Equal(3, save.GameState.HostileCombatState!.Version);
         Assert.NotNull(save.GameState.CombatState.HitLocationRngState);
         Assert.NotNull(save.GameState.CombatState.TorpedoHitRngState);
         Assert.NotNull(save.GameState.CombatState.LauncherBreakdownRngState);

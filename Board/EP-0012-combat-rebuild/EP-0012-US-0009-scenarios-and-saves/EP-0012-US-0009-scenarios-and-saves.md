@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0009-scenarios-and-saves"
 title: "Сценарии и сохранения"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -43,7 +43,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 47 / [EP-0012-US-0009-TK-0003-save-format-18](EP-0012-US-0009-TK-0003-save-format-18/EP-0012-US-0009-TK-0003-save-format-18.md) | engine | EP-0012-US-0016-TK-0001-combat-localization | US9-AC3 | 5 |
+| 47 / [EP-0012-US-0009-TK-0003-save-format-18](EP-0012-US-0009-TK-0003-save-format-18/EP-0012-US-0009-TK-0003-save-format-18.md) | contracts-engine | EP-0012-US-0016-TK-0001-combat-localization | US9-AC3 | 16 |
 | 48 / [EP-0012-US-0009-TK-0004-save18-capture-and-restore](EP-0012-US-0009-TK-0004-save18-capture-and-restore/EP-0012-US-0009-TK-0004-save18-capture-and-restore.md) | engine | EP-0012-US-0009-TK-0003-save-format-18 | US9-AC3 | 5 |
 | 49 / [EP-0012-US-0009-TK-0005-save18-defense-validation](EP-0012-US-0009-TK-0005-save18-defense-validation/EP-0012-US-0009-TK-0005-save18-defense-validation.md) | engine | EP-0012-US-0009-TK-0004-save18-capture-and-restore | US9-AC3, US3-AC5 | 4 |
 | 56 / [EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3](EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3/EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3.md) | content-data | EP-0012-US-0019-TK-0005-maneuver-command-catalog | US9-AC1 | 2 |

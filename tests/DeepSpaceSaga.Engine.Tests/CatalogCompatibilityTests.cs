@@ -216,7 +216,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(17, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(18, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);

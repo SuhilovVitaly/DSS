@@ -1,0 +1,117 @@
+using System.Text.Json.Serialization;
+using System.Diagnostics.CodeAnalysis;
+using DeepSpaceSaga.Contracts;
+
+namespace DeepSpaceSaga.Engine.Scenario;
+
+/// <summary>Private authoritative point-combat continuation; never a presentation DTO.</summary>
+public sealed record PointCombatStateData(
+    [property: JsonRequired] int Version,
+    [property: JsonRequired] IReadOnlyList<PointProjectileSaveData> Projectiles,
+    [property: JsonRequired] IReadOnlyList<EvasionSaveData> Evasions,
+    [property: JsonRequired] NamedCombatRngSaveData LaunchScatter,
+    [property: JsonRequired] NamedCombatRngSaveData NpcDodge,
+    [property: JsonRequired] IReadOnlyList<NpcDodgeSaveData> DodgeThreats,
+    [property: JsonRequired] EncounterSaveData Encounter,
+    [property: JsonRequired] long PlayerEvasionEpisodes)
+{
+    public const int CurrentVersion = 1;
+}
+
+public sealed record NamedCombatRngSaveData([property: JsonRequired] int AlgorithmVersion,
+    [property: JsonRequired] ulong State, [property: JsonRequired] ulong Counter);
+public sealed record PointProjectileSaveData([property: JsonRequired] string ObjectId,
+    [property: JsonRequired] OwnProjectileSnapshot Flight);
+public sealed record EvasionSaveData([property: JsonRequired] string ObjectId,
+    [property: JsonRequired] string EngineModuleId, [property: JsonRequired] long StartedAt,
+    [property: JsonRequired] EvasionSnapshot Motion, [property: JsonRequired] ActiveCycleData? OrbitCycle,
+    [property: JsonRequired] long? LastTurnTime);
+public sealed record NpcDodgeSaveData([property: JsonRequired] string OwnerId,
+    [property: JsonRequired] string EngineModuleId, [property: JsonRequired] string ProjectileId,
+    [property: JsonRequired] long DetectedAt, [property: JsonRequired] long DueAt,
+    [property: JsonRequired] bool Evaluated, [property: JsonRequired] bool? RollSucceeded,
+    [property: JsonRequired] bool Evaded);
+public sealed record EncounterSaveData([property: JsonRequired] CombatEncounterState State,
+    [property: JsonRequired] long StartedAt, [property: JsonRequired] long? EndedAt,
+    [property: JsonRequired] long QuietSince, [property: JsonRequired] IReadOnlyList<string> EnemyIds,
+    [property: JsonRequired] IReadOnlyList<string> ProjectileIds,
+    [property: JsonRequired] CombatEncounterStats Stats, [property: JsonRequired] SimulationSpeed? ResumeSpeed);
+
+internal static class PointCombatSaveValidation
+{
+    internal static void Validate(PointCombatStateData? saved, long time)
+    {
+        // Absent on new-game and the transitional legacy combat path. Point runtime requires it on restore.
+        if (saved is null) return;
+        static void Require([DoesNotReturnIf(false)] bool condition, string reason)
+        {
+            if (!condition) throw new ScenarioException("Invalid point combat save: " + reason);
+        }
+        static bool Id(string? id) => !string.IsNullOrWhiteSpace(id) && id == id.Trim();
+        static bool Unique(IEnumerable<string>? ids) => ids is not null && ids.All(Id) &&
+            ids.Distinct(StringComparer.OrdinalIgnoreCase).Count() == ids.Count();
+        static bool Finite(params double[] values) => values.All(double.IsFinite);
+        Require(saved.Version == PointCombatStateData.CurrentVersion && time >= 0, "unsupported version or time.");
+        Require(saved.LaunchScatter is { AlgorithmVersion: 1 } && saved.LaunchScatter.Counter % 2 == 0 &&
+            saved.NpcDodge is { AlgorithmVersion: 1 }, "invalid named RNG.");
+        Require(saved.PlayerEvasionEpisodes >= 0 && saved.Projectiles is not null && saved.Evasions is not null &&
+            saved.DodgeThreats is not null && saved.Encounter is not null, "missing collections or counters.");
+        Require(saved.Projectiles!.All(p => p is not null && Id(p.ObjectId) && p.Flight is not null) &&
+            Unique(saved.Projectiles.Select(p => p.ObjectId)), "invalid or duplicate projectile.");
+        foreach (var row in saved.Projectiles)
+        {
+            var f = row.Flight;
+            Require(Enum.IsDefined(f.Kind) && Id(f.OwnerObjectId) && Id(f.LauncherModuleId) && Id(f.ProfileId) &&
+                f.OwnerObjectId != row.ObjectId && Finite(f.X, f.Y, f.StartX, f.StartY, f.DetonationX, f.DetonationY,
+                    f.DetonationMotionTimeMs, f.SpeedKmS, f.BlastRadiusKm, f.CoreFraction) && f.SpeedKmS > 0 &&
+                f.BlastRadiusKm > 0 && f.CoreFraction is > 0 and < 1, "invalid captured profile or geometry.");
+            Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= time &&
+                f.DetonationMotionTimeMs >= f.LaunchMotionTimeMs && f.DetonationMotionTimeMs >= time,
+                "invalid deadline.");
+            Require(f.Kind == ProjectileKind.Torpedo ? f.Damage > 0 : f.Damage == 0,
+                "invalid captured damage.");
+            Require(f.ArmorPiercingPercent is >= 0 and <= 100 && f.ArmorDamagePercent > 0 &&
+                f.OwnerPlayerRelationAtLaunch is PlayerRelation.Self or PlayerRelation.Enemy or PlayerRelation.Friend or PlayerRelation.Neutral,
+                "invalid captured armor or launch relation.");
+            Require(f.Reporter is null || Enum.IsDefined(f.Reporter.Role) &&
+                (f.Reporter.CrewId is null && f.Reporter.DisplayName is null || Id(f.Reporter.CrewId) &&
+                !string.IsNullOrWhiteSpace(f.Reporter.DisplayName)), "invalid captured reporter.");
+        }
+        Require(saved.Evasions!.All(e => e is not null && Id(e.ObjectId)) && Unique(saved.Evasions.Select(e => e.ObjectId)),
+            "invalid or duplicate evasion.");
+        foreach (var e in saved.Evasions)
+        {
+            Require(Id(e.EngineModuleId) && e.StartedAt >= 0 && e.StartedAt <= time && e.Motion is not null &&
+                e.LastTurnTime is null or >= 0, "invalid evasion owner or start.");
+            var m = e.Motion!;
+            Require(Finite(m.SampleMotionTimeMs, m.EndsAtMotionTimeMs) && m.SampleMotionTimeMs >= e.StartedAt &&
+                m.SampleMotionTimeMs <= time && m.EndsAtMotionTimeMs > time && Enum.IsDefined(m.Side) && Id(m.ThreatProjectileId),
+                "invalid evasion schedule.");
+            Require(m.BaseMotion is { Evasion: null, OwnProjectile: null, ObservedProjectile: null } basis &&
+                basis.ObjectId == e.ObjectId && Finite(basis.X, basis.Y, basis.SpeedKmS, basis.Direction) && basis.SpeedKmS >= 0,
+                "invalid evasion base course.");
+        }
+        var threats = new HashSet<(string, string)>();
+        foreach (var d in saved.DodgeThreats!)
+        {
+            Require(d is not null && Id(d.OwnerId) && Id(d.EngineModuleId) && Id(d.ProjectileId) &&
+                threats.Add((d.OwnerId.ToUpperInvariant(), d.ProjectileId.ToUpperInvariant())) &&
+                d.DetectedAt >= 0 && d.DetectedAt <= time && d.DueAt >= d.DetectedAt &&
+                (d.Evaluated ? d.DueAt <= time : d.DueAt >= time) && (d.RollSucceeded is null || d.Evaluated) &&
+                (!d.Evaded || d.RollSucceeded == true), "invalid NPC dodge episode.");
+        }
+        var encounter = saved.Encounter!;
+        Require(Enum.IsDefined(encounter.State) && encounter.StartedAt >= 0 && encounter.StartedAt <= time &&
+            encounter.QuietSince >= 0 && encounter.QuietSince <= time && encounter.EndedAt is null or >= 0 &&
+            (encounter.EndedAt is null || encounter.EndedAt >= encounter.StartedAt && encounter.EndedAt <= time) &&
+            (encounter.State is CombatEncounterState.Won or CombatEncounterState.Lost ? encounter.EndedAt is not null :
+                encounter.State != CombatEncounterState.Active || encounter.EndedAt is null) &&
+            (encounter.ResumeSpeed is null || Enum.IsDefined(encounter.ResumeSpeed.Value)), "invalid encounter timeline.");
+        Require(Unique(encounter.EnemyIds) && Unique(encounter.ProjectileIds) && encounter.Stats is not null,
+            "invalid encounter identities.");
+        var s = encounter.Stats!;
+        Require(new[] { s.TorpedoesLaunched, s.CountermissilesLaunched, s.EnemyTorpedoesLaunched, s.TorpedoesIntercepted,
+            s.PlayerHitsReceived, s.EnemyHitsDealt, s.PlayerEvasions, s.EnemiesDestroyed, s.ArmorDamageTaken,
+            s.StructureDamageTaken }.All(value => value >= 0), "invalid encounter statistics.");
+    }
+}

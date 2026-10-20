@@ -17,7 +17,9 @@ public sealed class TradingEconomySaveSchemaTests
             VoyageLedgers = null,
             VoyageFuelSettlements = null,
             EngineIdentityCounters = null,
-            MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge
+            MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge,
+            HostileCombatState = source.GameState.HostileCombatState is { } hostile ? hostile with { Version = 2 } : null,
+            PointCombatState = null
         }
     };
 
@@ -29,7 +31,9 @@ public sealed class TradingEconomySaveSchemaTests
             VoyageLedgers = null,
             VoyageFuelSettlements = null,
             EngineIdentityCounters = null,
-            MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge
+            MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge,
+            HostileCombatState = current.GameState.HostileCombatState is { } hostile ? hostile with { Version = 2 } : null,
+            PointCombatState = null
         };
         if (version <= 8) state = state with
         {
@@ -62,7 +66,7 @@ public sealed class TradingEconomySaveSchemaTests
     {
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
-        Assert.Equal(17, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(18, SaveFormat.CurrentSaveFormatVersion);
         var manifest = save.GameState.TradingEconomyContinuation!;
         Assert.Equal(1, manifest.SchemaVersion);
         Assert.Equal(64, manifest.ConfigurationFingerprint.Length);
