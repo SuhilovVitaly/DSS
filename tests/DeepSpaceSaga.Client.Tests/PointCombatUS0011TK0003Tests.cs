@@ -109,7 +109,7 @@ public sealed class PointCombatUS0011TK0003Tests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(12));
         async Task Wait(Func<bool> predicate)
         { while (true) { screen.Render(canvas, 1920, 1200); Assert.Null(handle.Failure); if (predicate()) return; await Task.Delay(10, timeout.Token); } }
-        await Wait(() => handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0);
+        await Wait(() => handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0 && screen.RenderStates.Any(o => o.IsPlayerShip));
         await world.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1); world.SetReal(40000);
         await world.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
         Assert.Equal(10000, world.Engine.CaptureSnapshot().MotionTimeMs);

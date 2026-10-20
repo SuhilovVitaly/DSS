@@ -432,5 +432,19 @@
   "Combat.Forecast.TargetLost": "Target lost",
   "Combat.Forecast.Expired": "Lifetime ends",
   "Combat.Forecast.MissedCoast": "Coasting after miss",
-  "Combat.Forecast.TargetTerminated": "Target flight ends"
+  "Combat.Forecast.TargetTerminated": "Target flight ends",
+  "Combat.Reason.missing_profile": "Choose a launch profile",
+  "Combat.Reason.unknown_profile": "Launch profile unavailable",
+  "Combat.Reason.launcher_reloading": "Launcher reloading",
+  "Combat.Reason.not_own_projectile": "Select your own torpedo",
+  "Combat.Reason.stale_projectile": "Projectile is no longer in flight",
+  "Combat.Reason.invalid_target_coordinates": "Choose a valid point on the map",
+  "Combat.Reason.unknown_command_type": "This launcher does not support this command",
+  "Combat.Reason.module_disabled": "Launcher temporarily disabled",
+  "Combat.Reason.module_destroyed": "Launcher destroyed",
+  "Combat.Reason.session_defeated": "Your ship has been destroyed",
+  "Combat.Reason.connection_unavailable": "Session connection unavailable",
+  "Combat.Reason.send_failed": "Could not send command",
+  "Combat.Reason.command_rejected": "Command rejected",
+  "Combat.Reason.friendly_fire_confirmation": "Will hit friendly: click again within 1 s"
 }

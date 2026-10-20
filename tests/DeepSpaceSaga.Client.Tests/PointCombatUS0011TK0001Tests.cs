@@ -31,7 +31,7 @@ public sealed class PointCombatUS0011TK0001Tests
         internal static async Task<Session> Create(CombatInputSettings? bindings = null)
         {
             var result = new Session(bindings);
-            await result.Wait(() => result.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0);
+            await result.Wait(() => result.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0 && result.Screen.RenderStates.Any(o => o.IsPlayerShip));
             return result;
         }
         internal void Render() => Screen.Render(_canvas, 1920, 1200);

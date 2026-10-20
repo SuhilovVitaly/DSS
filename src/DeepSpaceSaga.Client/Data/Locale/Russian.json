@@ -432,5 +432,19 @@
   "Combat.Forecast.TargetLost": "Цель потеряна",
   "Combat.Forecast.Expired": "Истекает время жизни",
   "Combat.Forecast.MissedCoast": "Полёт после промаха",
-  "Combat.Forecast.TargetTerminated": "Полёт цели завершён"
+  "Combat.Forecast.TargetTerminated": "Полёт цели завершён",
+  "Combat.Reason.missing_profile": "Выберите профиль пуска",
+  "Combat.Reason.unknown_profile": "Профиль пуска недоступен",
+  "Combat.Reason.launcher_reloading": "Аппарат перезаряжается",
+  "Combat.Reason.not_own_projectile": "Выберите свою торпеду",
+  "Combat.Reason.stale_projectile": "Снаряд уже не в полёте",
+  "Combat.Reason.invalid_target_coordinates": "Выберите допустимую точку на карте",
+  "Combat.Reason.unknown_command_type": "Аппарат не поддерживает эту команду",
+  "Combat.Reason.module_disabled": "Аппарат временно отключён",
+  "Combat.Reason.module_destroyed": "Аппарат уничтожен",
+  "Combat.Reason.session_defeated": "Ваш корабль уничтожен",
+  "Combat.Reason.connection_unavailable": "Нет соединения с сессией",
+  "Combat.Reason.send_failed": "Не удалось отправить команду",
+  "Combat.Reason.command_rejected": "Команда отклонена",
+  "Combat.Reason.friendly_fire_confirmation": "Заденет свой корабль: повторите клик в течение 1 с"
 }

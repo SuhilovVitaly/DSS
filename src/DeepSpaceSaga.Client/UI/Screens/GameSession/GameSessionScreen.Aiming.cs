@@ -19,6 +19,9 @@ public sealed partial class GameSessionScreen
         internal string CommandId = "";
         internal Task? SendTask;
         internal ulong StartRevision;
+        internal double? StartReadyAt;
+        internal double ReloadMs;
+        internal HashSet<string> ExistingFlights = new(StringComparer.Ordinal);
     }
     private readonly Dictionary<string, PointSubmission> _pointSubmissions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _pointErrors = new(StringComparer.Ordinal);
@@ -60,13 +63,22 @@ public sealed partial class GameSessionScreen
                 _ = submission.SendTask.Exception;
                 _pointErrors[id] = "send_failed"; _pointSubmissions.Remove(id); continue;
             }
+            if (_buffer.FindCommandAcceptance(submission.CommandId) is { Accepted: false })
+            { _pointErrors[id] = "command_rejected"; _pointSubmissions.Remove(id); continue; }
             if (_buffer.FindCommandResult(submission.CommandId) is not { } result || result.Status == CommandResultStatus.Deferred) continue;
             if (result.Status != CommandResultStatus.Executed)
             {
                 _pointErrors[id] = result.ReasonCode ?? "command_rejected";
                 _pointSubmissions.Remove(id);
             }
-            else if (snapshot is not null && snapshot.SnapshotSequence > submission.StartRevision)
+            else if (snapshot is not null && snapshot.SnapshotSequence > submission.StartRevision &&
+                ((!snapshot.CommandResults.IsDefaultOrEmpty && snapshot.CommandResults.Any(r => r.CommandId == submission.CommandId && r.Status == CommandResultStatus.Executed)) ||
+                 snapshot.Objects.Any(o => o.OwnProjectile is { } own && own.OwnerObjectId == result.ObjectId && own.LauncherModuleId == id &&
+                     !submission.ExistingFlights.Contains(o.ObjectId) && own.LaunchMotionTimeMs >= result.EffectiveGameTimeMs) ||
+                 PointAimModule(id) is { } admittedModule &&
+                     (admittedModule.LauncherCombat?.ReadyAtMotionTimeMs ?? admittedModule.Defense?.ReadyAtMotionTimeMs) is { } ready &&
+                     ready != submission.StartReadyAt && ready >= result.EffectiveGameTimeMs + submission.ReloadMs ||
+                 snapshot.MotionTimeMs > result.EffectiveGameTimeMs + submission.ReloadMs))
                 _pointSubmissions.Remove(id);
         }
     }
@@ -161,7 +173,13 @@ public sealed partial class GameSessionScreen
             double.Hypot(target.Item1 - player.Value.Pose.X, target.Item2 - player.Value.Pose.Y) / 10 > range.Value)
         { _pointErrors[module.ModuleId] = CommandReasonCodes.LaunchOutOfRange; return true; }
         if (aim.Kind == ProjectileKind.Torpedo && !ConfirmPointFriendlyFire(aim, target.Item1, target.Item2)) return true;
-        var submission = new PointSubmission { StartRevision = snapshot.SnapshotSequence };
+        var submission = new PointSubmission
+        {
+            StartRevision = snapshot.SnapshotSequence,
+            StartReadyAt = module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs,
+            ReloadMs = module.LauncherCombat?.ReloadDurationMs ?? module.Defense?.ReloadDurationMs ?? 0,
+            ExistingFlights = snapshot.Objects.Where(o => o.OwnProjectile?.LauncherModuleId == module.ModuleId).Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal)
+        };
         _pointSubmissions[module.ModuleId] = submission;
         _pointErrors.Remove(module.ModuleId);
         try
@@ -177,12 +195,22 @@ public sealed partial class GameSessionScreen
 
     private string PointWeaponStatus(InstalledModuleSnapshot module)
     {
-        if (_pointSubmissions.ContainsKey(module.ModuleId)) return CombatText("Sending", "Sending...");
-        if (_pointErrors.TryGetValue(module.ModuleId, out var error)) return CombatText("Reason." + error, error);
+        if (_pointSubmissions.TryGetValue(module.ModuleId, out var pending)) return
+            _buffer.FindCommandAcceptance(pending.CommandId) is { Accepted: true } || _buffer.FindCommandResult(pending.CommandId) is { Status: CommandResultStatus.Executed }
+                ? CombatText("Accepted", "Command accepted") : CombatText("Sending", "Sending...");
+        if (_pointErrors.TryGetValue(module.ModuleId, out var error))
+        {
+            if (error == CommandReasonCodes.LauncherReloading &&
+                (module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs) is { } ready && ready <= PointAimTime)
+                _pointErrors.Remove(module.ModuleId);
+            else return PointLaunchReason(error);
+        }
         if (PointReadyReason(module) is { } reason) return reason == CommandReasonCodes.LauncherReloading
-            ? CombatText("Reloading", "Reloading") : CombatText("Reason." + reason, reason);
+            ? CombatText("Reloading", "Reloading") : PointLaunchReason(reason);
         return CombatText("Ready", "Ready");
     }
+
+    internal static string PointLaunchReason(string reason) => CombatText("Reason." + reason, CombatText("CommandRejected", "Command rejected"));
 
     private InstalledModuleSnapshot? PointPanelModule(WeaponPanelInstance weapon) =>
         _buffer.Presented?.Snapshot.PlayerShipObjectId == weapon.OwnerObjectId ? PointAimModule(weapon.ModuleId) : null;

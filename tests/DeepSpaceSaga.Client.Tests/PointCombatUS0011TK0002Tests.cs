@@ -29,7 +29,7 @@ public sealed class PointCombatUS0011TK0002Tests
         }
         internal static async Task<Session> Create()
         {
-            var s = new Session(); await s.Wait(() => s.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0);
+            var s = new Session(); await s.Wait(() => s.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0 && s.Screen.RenderStates.Any(o => o.IsPlayerShip));
             for (int i = 0; i < 1; i++) s.Screen.OnKeyDown(Key.Minus);
             s.Render(); return s;
         }

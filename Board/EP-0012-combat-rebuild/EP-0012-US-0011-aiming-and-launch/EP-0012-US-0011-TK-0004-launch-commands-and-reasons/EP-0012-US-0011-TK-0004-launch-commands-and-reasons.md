@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0011-aiming-and-launch"
 ticket: "EP-0012-US-0011-TK-0004-launch-commands-and-reasons"
 title: "launch-commands-and-reasons"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0011-TK-0003-countermissile-aim-preview"]
-files_touched: 4
+files_touched: 7
 serves: ["US11-AC4"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0011-TK-0004-launch-commands-and-reasons
@@ -24,14 +24,19 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Bounded scope (7 files), updated before implementation. GameSessionHandle already sends exact point/profile/module through actual transport in TK0001; TK0004 validates it and completes state/reason handling, without rewriting the bridge. A-FIXTURE-RENDER: related regression exposed a real bootstrap race in test helpers: packet could arrive after Render but before the wait predicate, leaving camera at initial (10000,10000) and no rendered player. Helpers must wait for the actual rendered player, retaining every command/result assertion. This is render setup evidence, not a relaxed launch result.
 
-| File | Current state | Allowed change |
-|---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs:14; public sealed partial class GameSessionScreen : IScreen | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/GameSessionHandle.cs](../../../../src/DeepSpaceSaga.Client/GameSessionHandle.cs) | Существует: src/DeepSpaceSaga.Client/GameSessionHandle.cs:12; public sealed class GameSessionHandle : IAsyncDisposable | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| File | Allowed change |
+|---|---|
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs` | Bootstrap helper waits for actual rendered player |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs` | Same proven render/bootstrap helper race |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs` | Same actual transport/bootstrap readiness |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | Pending/accepted/admitted state and localized reason fallback; retain authoritative submission from TK0001 |
+| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Point-launch reasons and feedback strings |
+| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Matching Russian reason/feedback strings |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs` | NEW real transport command binding, immediate feedback, scene admission and rejection tests |
+
+A-LAUNCH-FEEDBACK: queue acceptance and execution receipts bypass delayed scene. A merely newer unrelated scene revision cannot prove launch admission. Pending feedback must remain until an admitted own launch fact/capability is visible; no speculative projectile or automatic retry. Locale edits for served AC4 belong here; full epic localization stays in US16.
 
 ## Public API after the change
 
@@ -40,7 +45,7 @@ No public API change; внутренние детали ограничены п�
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
-2.
+2. Validate actual point submission and finish localized feedback/receipt-to-scene admission state.
 3. Добавить/обновить named checks ниже одновременно с реализацией. Удаляемые legacy tests заменять проверками нового контракта, сохраняющиеся инварианты не выкидывать.
 4. Записать фактические команды/результаты при исполнении; сейчас всё NOT RUN.
 
@@ -75,4 +80,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 7 named / 2215 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0011-tk0004-results.json).
+
+Point commands retain exact point/profile/module binding across UI context changes; click/feedback <=100 ms with no speculative projectile. Pending accepted state survives unrelated newer scene revisions; negative control restoring the original guard fails expected Accepted vs actual Ready. Server reload refusal is localized and not retried, and clears after admitted readiness. Russian/English source/deployed launch-reason coverage and generic fallback PASS. Related bootstrap helpers now wait for rendered player after proven default-camera race; original assertions retained, input regression 77/77 PASS. Strict legacy ForecastBudget, native/product and final catalog integration remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
