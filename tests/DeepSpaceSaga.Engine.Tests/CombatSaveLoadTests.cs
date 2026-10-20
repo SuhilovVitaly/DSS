@@ -215,12 +215,12 @@ public sealed class CombatSaveLoadTests : IDisposable
         if (settings is not null)
             return EngineContentLoader.CreateEngineFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(settings), path);
         var restored = new SimulationEngine(Registry.Value);
-        restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        restored.LoadScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(path), allowNonZeroGameTime: true, isSave: true), isSave: true);
         return restored;
     }
     private static ScenarioFile RealScenario()
     {
-        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
+        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
         return scenario with
         {
             GameState = scenario.GameState with
@@ -259,7 +259,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         var settings = JsonNode.Parse(File.ReadAllText(Settings))!;
         foreach (var property in settings["typeData"]!.AsObject().ToArray())
             settings["typeData"]![property.Key] = Path.GetFullPath(Path.Combine(ClientRoot, property.Value!.GetValue<string>()));
-        settings["defaultScenario"] = Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json");
+        settings["defaultScenario"] = global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
         string modulesPath = Path.Combine(_directory, "Modules");
         string sourceModules = Path.Combine(Path.GetDirectoryName(Settings)!, "Data", "Modules");
         foreach (string source in Directory.GetFiles(sourceModules, "*.json", SearchOption.AllDirectories))
@@ -430,7 +430,7 @@ public sealed class CombatSaveLoadTests : IDisposable
         var settings = JsonNode.Parse(File.ReadAllText(Settings))!;
         foreach (var property in settings["typeData"]!.AsObject().ToArray())
             settings["typeData"]![property.Key] = Path.GetFullPath(Path.Combine(ClientRoot, property.Value!.GetValue<string>()));
-        settings["defaultScenario"] = Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json");
+        settings["defaultScenario"] = global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
         string classesPath = Path.Combine(_directory, "classes.json");
         File.WriteAllText(classesPath, "{\"shipClasses\":[{\"typeId\":\"ship.tetrarch\"},{\"typeId\":\"ship.mukha\"}]}");
         settings["typeData"]!["shipClasses"] = classesPath;

@@ -78,7 +78,7 @@ public class PhaseThreeSessionRoundtripTests
         string selected = before.Objects.First(o => o.Countermeasure is not null).ObjectId;
         f.Engine.SetObjectInteractionState(Fixture.Player, selected);
         await f.Handle.SaveAsync("both");
-        var saved = ScenarioLoader.LoadFromFile(Path.Combine(f.DirectoryPath, "both.json"), true, isSave: true);
+        var saved = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(f.DirectoryPath, "both.json")), true, isSave: true);
         await f.Route(ScreenEvent.OpenLoadWindow);
         await f.Route(ScreenEvent.LoadSlotRequested, "both");
         var fresh = Get<GameSessionHandle>(f.Window, "_session");
@@ -185,7 +185,7 @@ public class PhaseThreeSessionRoundtripTests
         {
             Directory.CreateDirectory(DirectoryPath);
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(Root, "Settings.json")), out _, out _);
-            var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
+            var scenario = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json")));
             Engine = new(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
             var prepared = scenario with
             {

@@ -353,7 +353,7 @@ public sealed class TorpedoPreviewTests(ITestOutputHelper output)
             _scale = scale;
             string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
-            var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json"));
+            var scenario = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json")));
             Engine = new SimulationEngine(registry);
             Engine.LoadScenario(scenario with
             {

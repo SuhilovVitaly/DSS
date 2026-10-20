@@ -36,8 +36,8 @@ public class PhaseThreeSaveVersionTests
     public void Version_zero_new_game_is_allowed_but_same_file_as_save_is_rejected()
     {
         string path = Path.Combine(ClientRoot, "Scenarios/PlayerShipOnly/scenario.json");
-        Assert.Equal(0, ScenarioLoader.LoadFromFile(path).SaveFormatVersion);
-        using var newGame = SimulationEngine.CreateFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path);
+        Assert.Equal(0, ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(path)).SaveFormatVersion);
+        using var newGame = SimulationEngine.CreateFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(path));
         Assert.Equal(SessionOutcomeState.Running, newGame.CaptureSnapshot().EffectiveOutcome.State);
         Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() =>
             SimulationEngine.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path)).Message);

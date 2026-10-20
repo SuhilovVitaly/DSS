@@ -16,11 +16,22 @@ internal static class LegacyCombatCatalog
 
     internal static string Root(string original) => Path.GetDirectoryName(Settings(original))!;
 
+    internal static string Scenario(string original)
+    {
+        string full = Path.GetFullPath(original);
+        string folder = Path.GetDirectoryName(full)!;
+        if (!string.Equals(Path.GetFileName(full), "scenario.json", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetFileName(folder), "PlayerShipOnly", StringComparison.OrdinalIgnoreCase)) return original;
+        string client = Path.GetFullPath(Path.Combine(folder, "..", ".."));
+        return Path.Combine(Root(Path.Combine(client, "Settings.json")), "Scenarios/PlayerShipOnly/scenario.json");
+    }
+
     private static string Create(string original)
     {
         string source = Path.GetDirectoryName(original)!;
         string fixture = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "tests/Support/LegacyCombatCatalog.json"));
-        var snapshot = JsonNode.Parse(File.ReadAllText(fixture))!["files"]!.AsObject();
+        var document = JsonNode.Parse(File.ReadAllText(fixture))!;
+        var snapshot = document["files"]!.AsObject();
         string directory = Directory.CreateTempSubdirectory("dss-legacy-characterization-").FullName;
         var settings = JsonNode.Parse(File.ReadAllText(original))!;
         var paths = settings["typeData"]!.AsObject();
@@ -43,6 +54,11 @@ internal static class LegacyCombatCatalog
         paths["commandDefinitions"] = Path.Combine(directory, "Data/Commands");
         paths["combatRules"] = Path.Combine(directory, "Data/Combat/combat-rules.json");
         paths["fireModes"] = Path.Combine(directory, "Data/Combat/fire-modes.json");
+        foreach (var pair in document["scenarios"]!.AsObject())
+        {
+            string destination = Path.Combine(directory, "Scenarios", pair.Key, "scenario.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!); File.WriteAllText(destination, pair.Value!.ToJsonString());
+        }
         string result = Path.Combine(directory, "Settings.json"); File.WriteAllText(result, settings.ToJsonString());
         AppDomain.CurrentDomain.ProcessExit += (_, _) =>
         {

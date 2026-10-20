@@ -27,7 +27,7 @@ public sealed class FullMapRenderEvidenceTests
             Ai = config.Ai! with { MinBases = 4, MaxBases = 4 }
         };
         using var engine = SimulationEngine.CreateFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(DefaultSystemContentTests.Settings));
-        var source = ScenarioLoader.LoadFromFile(Path.Combine(AppContext.BaseDirectory, "Scenarios/Default_500/scenario.json"));
+        var source = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(AppContext.BaseDirectory, "Scenarios/Default_500/scenario.json")));
         engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 1, CurrentSpeed = "Speed0" } }, generation: config);
         return engine.CaptureSnapshot();
     }

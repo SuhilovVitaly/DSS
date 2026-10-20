@@ -7,13 +7,13 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class CountermeasureBootstrapTests
 {
-    internal static ScenarioFile RealScenario() => ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+    internal static ScenarioFile RealScenario() => ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
 
     [Fact]
     public void Both_launchers_bootstrap_independently()
     {
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")),
-            Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(
+            Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         var defenses = At(engine, 0).InstalledModules.Where(m => m.Defense is not null).ToArray();
         Assert.Equal(2, defenses.Length);
         Assert.All(defenses, m => { Assert.True(m.Defense!.AutoEnabled); Assert.Equal(DefenseState.Ready, m.Defense.State); });
@@ -67,8 +67,8 @@ public class CountermeasureBootstrapTests
     [Fact]
     public void Generated_world_keeps_loadout()
     {
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")),
-            Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(
+            Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         var snapshot = At(engine, 0);
         Assert.Equal(3, snapshot.PlayerCrewCount);
         Assert.Equal(3, snapshot.InstalledModules.Sum(m => m.CabinesCount ?? 0));

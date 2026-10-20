@@ -38,6 +38,7 @@ public sealed class PointCombatUS0019TK0005Tests
             var module = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(identity));
             Assert.Equal(category.CommandTypeIds, module.CommandTypeIds);
         }
+        // Preserve independent Basic4deg/s compatibility; actual default Tetrarch20deg/s is covered by US19-TK1.
         var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
         scenario = scenario with
         {
@@ -53,7 +54,7 @@ public sealed class PointCombatUS0019TK0005Tests
                     SpeedMps = o.ObjectId == Player ? 1000 : 0,
                     MovementType = "Linear",
                     Ai = null,
-                    Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = false, PowerState = "On" }).ToArray()
+                    Modules = o.Modules!.Select(m => m with { ModuleTypeId = m.ModuleTypeId == "module.engine.tetrarch" ? "module.engine.basic" : m.ModuleTypeId, AutoDefenseEnabled = false, PowerState = "On" }).ToArray()
                 }).ToArray()
             }
         };

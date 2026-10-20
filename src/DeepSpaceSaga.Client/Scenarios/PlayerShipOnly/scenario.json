@@ -172,7 +172,7 @@
           },
           {
             "moduleId": "MOD-PLAYER-ENGINE-01",
-            "moduleTypeId": "module.engine.basic",
+            "moduleTypeId": "module.engine.tetrarch",
             "occupiedCells": [
               {
                 "x": 4,
@@ -219,8 +219,7 @@
             "operationalState": "Ready",
             "activeCycle": null,
             "cargo": [],
-            "operatorCrewId": "CHR-PLAYER-DEFENSE",
-            "autoDefenseEnabled": true
+            "operatorCrewId": "CHR-PLAYER-DEFENSE"
           },
           {
             "moduleId": "MOD-PLAYER-COUNTERMEASURE-02",
@@ -237,8 +236,7 @@
             "operationalState": "Ready",
             "activeCycle": null,
             "cargo": [],
-            "operatorCrewId": "CHR-PLAYER-DEFENSE-02",
-            "autoDefenseEnabled": true
+            "operatorCrewId": "CHR-PLAYER-DEFENSE-02"
           }
         ],
         "crew": [
@@ -420,7 +418,7 @@
           },
           {
             "moduleId": "MOD-PIRATE-ENGINE-01",
-            "moduleTypeId": "module.engine.basic",
+            "moduleTypeId": "module.engine.tetrarch",
             "occupiedCells": [
               {
                 "x": 4,
@@ -467,8 +465,7 @@
             "operationalState": "Ready",
             "activeCycle": null,
             "cargo": [],
-            "operatorCrewId": "CHR-PIRATE-DEFENSE",
-            "autoDefenseEnabled": true
+            "operatorCrewId": "CHR-PIRATE-DEFENSE"
           }
         ],
         "crew": [
@@ -485,7 +482,12 @@
             "displayName": "Defense operator"
           }
         ],
-        "relationToPlayer": "enemy"
+        "relationToPlayer": "enemy",
+        "ai": {
+          "standoffKm": 25,
+          "bandKm": 8,
+          "flankOffsetDeg": 35
+        }
       }
     ]
   }

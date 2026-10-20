@@ -187,8 +187,8 @@ public sealed class BasicCombatEndToEndTests
         }
     }
 
-    // Only the monotonic clock is controlled. Scenario positions, motion, modules and HP
-    // are loaded unchanged, with automatic defense explicitly disabled for the EP6 proof; every shot is a real PlayerCommand.
+    // Only the monotonic clock is controlled. The explicit historical Basic scenario supplies positions, motion, modules and HP
+    // unchanged, with automatic defense explicitly disabled for the EP6 proof; every shot is a real PlayerCommand.
     internal sealed class CombatRun : IDisposable
     {
         private long _now;
@@ -196,7 +196,7 @@ public sealed class BasicCombatEndToEndTests
         internal ScenarioFile Source { get; }
         internal CombatRun(string? savePath = null)
         {
-            Source = WithoutDefense(InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
+            Source = WithoutDefense(InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")))));
             Engine = new SimulationEngine(Registry.Value, clock: new SimulationClock(SimulationSpeed.Speed0, () => _now));
             Engine.LoadScenario(savePath is null
                 ? Source with { GameState = Source.GameState with { MasterSeed = 42 } }

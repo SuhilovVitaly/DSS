@@ -66,7 +66,7 @@ public sealed class PirateScenarioTests
         }
     }
     [Fact]
-    public void Pirate_initial_identity_is_preserved_and_motion_enters_hostile_pursuit()
+    public void Pirate_initial_identity_is_preserved_and_motion_enters_configured_flank_approach()
     {
         Assert.Contains(ScenarioRepository.ListScenarios(Path.Combine(ClientRoot, "Scenarios")), s => s.ScenarioPath == ScenarioPath);
         using var engine = Create();
@@ -105,7 +105,7 @@ public sealed class PirateScenarioTests
         var startingSave = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
         var moved = Pirate(engine.CaptureSnapshotForTests(1000));
         Assert.NotEqual((pirate.X, pirate.Y), (moved.X, moved.Y));
-        // Point AI pursues its 35km orbit (half the 70km launcher range) with the shared constrained step controller.
+        // Point AI pursues its explicit25km orbit with the shared constrained step controller.
         // Preserve a partitioned physics comparison instead of the removed legacy acceleration range.
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
         using var partitioned = new SimulationEngine(registry);
@@ -114,9 +114,9 @@ public sealed class PirateScenarioTests
         var split = Pirate(partitioned.CaptureSnapshotForTests(1000));
         Assert.Equal(moved.X, split.X, 6); Assert.Equal(moved.Y, split.Y, 6);
         Assert.Equal(moved.SpeedKmS, split.SpeedKmS, 6); Assert.Equal(moved.Direction, split.Direction, 6);
-        Assert.InRange(Math.Abs(moved.Direction - pirate.Direction), 0, 4.00000001);
-        Assert.Equal(HostileCombatPhase.Pursuit, moved.HostileCombat!.Phase);
-        Assert.Equal(35, moved.HostileCombat.DesiredRadiusKm);
+        Assert.InRange(Math.Abs(moved.Direction - pirate.Direction), 0, 20.00000001);
+        Assert.Equal(HostileCombatPhase.FlankApproach, moved.HostileCombat!.Phase);
+        Assert.Equal(25, moved.HostileCombat.DesiredRadiusKm);
         Assert.Null(moved.ActiveEngineCommandType);
     }
 
@@ -167,8 +167,8 @@ public sealed class PirateScenarioTests
             Assert.Equal(expected with { X = actual.X, Y = actual.Y, ModuleHealth = actual.ModuleHealth }, actual);
             restored.SetObjectInteractionState(null, pirate.ObjectId);
             Assert.Equal(pirate.ObjectId, restored.CaptureSnapshotForTests(2000).SelectedObjectId);
-            Assert.Equal(JsonSerializer.Serialize(save.GameState.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId).Modules),
-                JsonSerializer.Serialize(restored.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0).GameState.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId).Modules));
+            Assert.Equal(JsonSerializer.Serialize(engine.CaptureSaveStateForTests(2000, SimulationSpeed.Speed0).GameState.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId).Modules),
+                JsonSerializer.Serialize(restored.CaptureSaveStateForTests(2000, SimulationSpeed.Speed0).GameState.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId).Modules));
         }
         finally { File.Delete(path); }
     }

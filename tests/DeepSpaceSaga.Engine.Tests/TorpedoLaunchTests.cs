@@ -16,7 +16,7 @@ public sealed class TorpedoLaunchTests
     private static ObjectMotionSnapshot Projectile(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects.Where(o => o.Torpedo is not null));
     private static SimulationEngine Create(Func<SpaceObjectData, SpaceObjectData>? configure = null)
     {
-        var scenario = TorpedoImpactTests.WithoutDefense(TorpedoImpactTests.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
+        var scenario = TorpedoImpactTests.WithoutDefense(TorpedoImpactTests.InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")))));
         var engine = new SimulationEngine(Registry.Value);
         engine.LoadScenario(scenario with
         {

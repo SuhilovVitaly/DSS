@@ -26,7 +26,7 @@ public class PhaseThreeCombatUiFlowTests
         Directory.CreateDirectory(directory);
         long now = 0;
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json")));
         scenario = scenario with
         {
             GameState = scenario.GameState with

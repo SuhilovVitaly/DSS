@@ -175,7 +175,7 @@ public class DefeatNavigationTests
         private Fixture()
         {
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(Root, "Settings.json")), out _, out _);
-            var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
+            var scenario = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json")));
             scenario = scenario with
             {
                 GameState = scenario.GameState with

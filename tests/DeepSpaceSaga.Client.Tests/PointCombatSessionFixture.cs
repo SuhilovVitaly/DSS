@@ -6,7 +6,7 @@ using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Client.Tests;
 
-/// <summary>Real point executor and in-process bridge; only catalog configuration and wall clock are controlled.</summary>
+/// <summary>Real point executor/session over an explicit calibrated Basic6km/s,4deg/s scenario; current shipped scenario acceptance is US19-TK1.</summary>
 internal sealed class PointCombatSessionFixture : IAsyncDisposable
 {
     internal const string Player = "SPC-0001", Enemy = "SPC-0002", Torpedo = "MOD-PLAYER-TORPEDO-01";
@@ -77,7 +77,7 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
 
     internal PointCombatSessionFixture(GameDataRegistry? registry = null, bool engineEnabled = false, bool launchHostile = true, double enemyX = 400)
     {
-        var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var source = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
         Engine = new(registry ?? Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
         Engine.LoadScenario(source with
         {

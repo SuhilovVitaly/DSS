@@ -96,7 +96,7 @@ public class PhaseThreeCombatEndToEndTests
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings), out _, out _);
             Engine = new(registry, EngineContentLoader.LoadCrewPortraits(Settings), new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
             Engine.ConfigureStationResourceFields(JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Data/World/station-resource-fields.json")))!);
-            var source = SeededWorldBootstrapTests.Scenario("PlayerShipOnly");
+            var source = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Scenarios/PlayerShipOnly/scenario.json")));
             Engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = seed } }, generation: EngineContentLoader.LoadSolarSystemGenerationConfig(Settings));
             Connection = new(Engine, DirectoryPath);
         }

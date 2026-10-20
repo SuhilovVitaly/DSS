@@ -83,7 +83,7 @@ public class DefeatedSessionSaveTests
             Assert.True(snapshots.Current.EffectiveOutcome.CanSave);
             Assert.Contains(snapshots.Current.Objects, o => o.ObjectId == Player);
             await fresh.SaveAsync("restored");
-            Assert.NotNull(ScenarioLoader.LoadFromFile(Path.Combine(directory, "restored.json"), true));
+            Assert.NotNull(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(directory, "restored.json")), true));
             Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }

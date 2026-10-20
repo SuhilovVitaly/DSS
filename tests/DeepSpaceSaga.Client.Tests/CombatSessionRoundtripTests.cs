@@ -25,7 +25,7 @@ public sealed class CombatSessionRoundtripTests
         Assert.NotEmpty(Assert.Single(restored.Objects.Where(o => o.Torpedo is not null)).Torpedo!.Trail);
         await fixture.Restored!.SendCommandAsync(CombatSessionFixture.Fire("session-launch"));
         await fixture.Restored.SaveAsync("again");
-        var saved = ScenarioLoader.LoadFromFile(Path.Combine(fixture.DirectoryPath, "again.json"), true);
+        var saved = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(fixture.DirectoryPath, "again.json")), true);
         Assert.Single(saved.GameState.CombatState!.Projectiles);
         Assert.Equal(1, saved.GameState.CombatState.ProjectileSequence);
     }
@@ -64,7 +64,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
         Directory.CreateDirectory(DirectoryPath);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Settings), out _, out _);
         Engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
-        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
+        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"))));
         if (!defense) scenario = scenario with
         {
             GameState = scenario.GameState with

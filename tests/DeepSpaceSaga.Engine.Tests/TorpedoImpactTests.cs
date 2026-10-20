@@ -54,7 +54,7 @@ public sealed class TorpedoImpactTests
     internal static ScenarioFile Scenario(Func<SpaceObjectData, SpaceObjectData>? configure = null,
         params SpaceObjectData[] extras)
     {
-        var source = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var source = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
         return source with
         {
             GameState = source.GameState with
@@ -325,7 +325,7 @@ public sealed class TorpedoImpactTests
     [Fact]
     public void Real_pirate_scenario_contact_closes_arc_and_straight_history()
     {
-        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
+        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
         using var engine = Create(WithoutDefense(scenario));
         engine.ReceiveCommand(Fire("real-flight"));
         var launched = At(engine, 0);

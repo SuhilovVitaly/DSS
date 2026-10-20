@@ -174,7 +174,7 @@ public class WeaponOperatorRuntimeTests
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0)));
             using var loaded = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(20, 90));
-            loaded.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
+            loaded.LoadScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(path), allowNonZeroGameTime: true), isSave: true);
             var restored = Assert.Single(At(loaded, 1000).Objects, o => o.Countermeasure is not null).Countermeasure!;
             Assert.Equal(original.CapturedAccuracy, restored.CapturedAccuracy);
             Assert.Equal(original.CapturedTargetManeuverability, restored.CapturedTargetManeuverability);

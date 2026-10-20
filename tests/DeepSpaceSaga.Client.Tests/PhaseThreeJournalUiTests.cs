@@ -83,7 +83,7 @@ public class PhaseThreeJournalUiTests
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json"));
+        var scenario = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json")));
         using var engine = new SimulationEngine(registry);
         engine.LoadScenario(scenario with
         {
@@ -120,7 +120,7 @@ public class PhaseThreeJournalUiTests
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(4000, SimulationSpeed.Speed0)));
             using var restored = new SimulationEngine(registry);
-            restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
+            restored.LoadScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(path), allowNonZeroGameTime: true), isSave: true);
             var loaded = restored.CaptureSnapshotForTests(4000, SimulationSpeed.Speed0, 4000);
             Assert.Equal(JsonSerializer.Serialize(before.CombatJournal), JsonSerializer.Serialize(loaded.CombatJournal));
             long now = 0;
