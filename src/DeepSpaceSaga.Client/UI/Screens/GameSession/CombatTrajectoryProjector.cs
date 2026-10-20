@@ -7,6 +7,16 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// <summary>Projects prepared conditional paths for display; never changes the confirmed scene.</summary>
 internal static class CombatTrajectoryProjector
 {
+    internal static void BuildOwnPath(ObjectMotionSnapshot own, List<FutureTrajectoryPoint> points)
+    {
+        points.Clear();
+        for (int time = 0; time <= 5000; time += 100)
+        {
+            var pose = CurrentManeuverForecast.Sample(own, time);
+            points.Add(new(pose.X, pose.Y));
+        }
+    }
+
     internal sealed record Geometry(
         List<FutureTrajectoryPoint> Prediction,
         List<FutureTrajectoryPoint> Target,

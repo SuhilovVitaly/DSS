@@ -80,6 +80,7 @@ internal sealed class ObjectTrailStore
                 points = new ObjectTrailBuffer();
                 _trails[obj.ObjectId] = points;
                 bool shouldBootstrapObject = bootstrapMissingTrails &&
+                                             state.Source.Evasion is null && state.Source.TurnHoldRateDegPerSec is null &&
                                              (bootstrapObjectIds is null || bootstrapObjectIds.Contains(obj.ObjectId));
                 if (shouldBootstrapObject)
                 {

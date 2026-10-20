@@ -672,10 +672,12 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // Only ever arrives as Ctrl+F — KeyboardEdgeTracker gates the F edge on Ctrl,
-        // mirroring Ctrl+I above.
         if (key == Key.F)
-            return ScreenEvent.OpenFinance;
+        {
+            if (IsCtrlDown) return ScreenEvent.OpenFinance;
+            FitMapView(MapFitMode.Combat);
+            return ScreenEvent.None;
+        }
 
         // Only ever arrives as Ctrl+S — same gating as Ctrl+F/Ctrl+I above.
         if (key == Key.S)
@@ -1828,6 +1830,14 @@ public sealed partial class GameSessionScreen : IScreen
         // Guidance uses the target's instantaneous velocity, without its planned
         // maneuver. Show that assumption separately from the player's own route.
         _externalPlayerTrajectoryPoints.Add(new(player.Pose.X, player.Pose.Y));
+        if (HasActiveCombatPath)
+        {
+            double heading = player.Pose.Direction * Math.PI / 180;
+            _externalPlayerTrajectoryPoints.Add(new(player.Pose.X + Math.Sin(heading) * player.Pose.SpeedKmS * 10,
+                player.Pose.Y - Math.Cos(heading) * player.Pose.SpeedKmS * 10));
+            DrawOwnVelocity(canvas, width, height);
+            return;
+        }
         TrajectoryViewportGeometry.ExtendToEdge(_externalPlayerTrajectoryPoints, player.Pose.Direction, _camera, width, height);
         _depthRenderer.DrawTargetTrajectory(canvas, _externalPlayerTrajectoryPoints, _camera, width, height,
             SpaceMapColorResolver.PlayerShipColor, opacity: 77);
@@ -1841,7 +1851,8 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var state in _renderStates)
         {
-            if (state.Source.Torpedo is not null || state.Source.Countermeasure is not null ||
+            if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null ||
+                state.Source.Torpedo is not null || state.Source.Countermeasure is not null ||
                 _combatForecastCache.Results.Values.Any(r => r.TargetId == state.Source.ObjectId &&
                     PreparedFlight(r.ProjectileId, _preparedForecastPrediction) is not null)) continue;
             // The player ship always gets its own ballistic preview (subject to the
@@ -1855,6 +1866,12 @@ public sealed partial class GameSessionScreen : IScreen
 
             if (!state.IsPlayerShip && !isSelectedTarget)
                 continue;
+
+            if (state.IsPlayerShip && HasActiveCombatPath)
+            {
+                DrawOwnCombatPath(canvas, state, width, height);
+                continue;
+            }
 
             if (!(state.Pose.SpeedKmS > 0 || state.Pose.ActiveEngineCommandType is not null))
                 continue;
@@ -1905,6 +1922,13 @@ public sealed partial class GameSessionScreen : IScreen
                 continue;
 
             var predicted = state.Pose.ToSnapshot();
+            if (HasActiveCombatPath)
+            {
+                // Combat has one five-second own path; keep the confirmed goal marker.
+                if (predicted.NavigationTargetX is { } goalX && predicted.NavigationTargetY is { } goalY)
+                    DrawNavigationTargetMarker(canvas, goalX, goalY, width, height);
+                continue;
+            }
             if (predicted.NavigationTargetX is not null)
             {
                 // Draw the maneuver and its continuation as one continuous path.
@@ -1969,6 +1993,12 @@ public sealed partial class GameSessionScreen : IScreen
             {
                 if (!state.IsPlayerShip)
                     return Array.Empty<FutureTrajectoryPoint>();
+
+                if (HasActiveCombatPath)
+                {
+                    CombatTrajectoryProjector.BuildOwnPath(state.Pose.ToSnapshot(), _combatOwnPathPoints);
+                    return _combatOwnPathPoints;
+                }
 
                 return (state.Pose.SpeedKmS > 0 || state.Pose.ActiveEngineCommandType is not null)
                     ? _futureTrajectoryProjector.Project(state.Pose.ToSnapshot())

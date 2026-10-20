@@ -52,14 +52,13 @@ internal sealed class KeyboardEdgeTracker
         bool ctrlDown = keyboard.IsKeyPressed(Key.ControlLeft) || keyboard.IsKeyPressed(Key.ControlRight);
         AddBoth(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref p, released, ref r);
 
-        bool fDown = keyboard.IsKeyPressed(Key.F);
-        AddBoth(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref p, released, ref r);
 
         bool sDown = keyboard.IsKeyPressed(Key.S);
         AddBoth(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref p, released, ref r);
 
         AddBoth(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref p, released, ref r);
         AddBoth(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.F, keyboard.IsKeyPressed(Key.F), ref _prevFPressed, pressed, ref p, released, ref r);
 
         AddBoth(Key.Space, keyboard.IsKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref p, released, ref r);
         AddBoth(Key.Tab, keyboard.IsKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref p, released, ref r);
@@ -101,14 +100,13 @@ internal sealed class KeyboardEdgeTracker
         bool ctrlDown = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
         AddBoth(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref p, released, ref r);
 
-        bool fDown = isKeyPressed(Key.F);
-        AddBoth(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref p, released, ref r);
 
         bool sDown = isKeyPressed(Key.S);
         AddBoth(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref p, released, ref r);
 
         AddBoth(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref p, released, ref r);
         AddBoth(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
+        AddBoth(Key.F, isKeyPressed(Key.F), ref _prevFPressed, pressed, ref p, released, ref r);
 
         AddBoth(Key.Space, isKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref p, released, ref r);
         AddBoth(Key.Tab, isKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref p, released, ref r);
@@ -146,12 +144,11 @@ internal sealed class KeyboardEdgeTracker
         bool iDown = keyboard.IsKeyPressed(Key.I);
         bool ctrlDown = keyboard.IsKeyPressed(Key.ControlLeft) || keyboard.IsKeyPressed(Key.ControlRight);
         AddEdge(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref count);
-        bool fDown = keyboard.IsKeyPressed(Key.F);
-        AddEdge(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref count);
         bool sDown = keyboard.IsKeyPressed(Key.S);
         AddEdge(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref count);
         AddEdge(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
         AddEdge(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
+        AddEdge(Key.F, keyboard.IsKeyPressed(Key.F), ref _prevFPressed, pressed, ref count);
         AddEdge(Key.Space, keyboard.IsKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
         AddEdge(Key.Tab, keyboard.IsKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref count);
         AddEdge(Key.Enter, keyboard.IsKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref count);
@@ -185,12 +182,11 @@ internal sealed class KeyboardEdgeTracker
         bool iDown = isKeyPressed(Key.I);
         bool ctrlDown = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
         AddEdge(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref count);
-        bool fDown = isKeyPressed(Key.F);
-        AddEdge(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref count);
         bool sDown = isKeyPressed(Key.S);
         AddEdge(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref count);
         AddEdge(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
         AddEdge(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
+        AddEdge(Key.F, isKeyPressed(Key.F), ref _prevFPressed, pressed, ref count);
         AddEdge(Key.Space, isKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
         AddEdge(Key.Tab, isKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref count);
         AddEdge(Key.Enter, isKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref count);
@@ -277,8 +273,7 @@ internal sealed class KeyboardEdgeTracker
         _prevEscPressed = isKeyPressed(Key.Escape);
         _prevIPressed = isKeyPressed(Key.I)
             && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
-        _prevFPressed = isKeyPressed(Key.F)
-            && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
+        _prevFPressed = isKeyPressed(Key.F);
         _prevSPressed = isKeyPressed(Key.S)
             && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
         _prevCtrlLeftPressed = isKeyPressed(Key.ControlLeft);

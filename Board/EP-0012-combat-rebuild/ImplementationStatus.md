@@ -71,7 +71,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 29 / US-0019-TK-0003-client-forecast-cache-migration | PASS 15 named / 2138 bounded regression; build/format/diff PASS | `5a129a9bbf4780f9959a1ecc3ff512d73048414c`, origin SHA verified |
 | 30 / US-0010-TK-0001-combat-visuals-v3 | PASS 10 named / 2148 bounded regression; build/format/diff PASS | `a6dfe06add453668b0c3f3b95c9bef697b4c5168`, origin SHA verified |
 | 31 / US-0010-TK-0002-projectiles-and-blasts-render | PASS 11 named / 2159 bounded regression; build/format/diff PASS | `44a8c6fbc2ede01ed4b9852f8903238b82225ff9`, origin SHA verified |
-| 32 / US-0010-TK-0003-persistent-range-rings | PASS 4 named / 2163 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 32 / US-0010-TK-0003-persistent-range-rings | PASS 4 named / 2163 bounded regression; build/format/diff PASS | `dbee25bf9e0455003a0f6c2c1c875fc34cbee1f3`, origin SHA verified |
+| 33 / US-0010-TK-0004-own-path-forecast-and-fit | PASS 8 named / 2171 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
