@@ -371,7 +371,8 @@ public sealed partial class GameSessionScreen : IScreen
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
             IsPointOrLegacyWeaponCommandEnabled, SendPointOrLegacyWeaponCommand, GetPointOrLegacyWeaponStatus,
-            GetPointOrLegacyWeaponOperator, GetPointOrLegacyWeaponDetails, () => DefensePresentationTime);
+            GetPointOrLegacyWeaponOperator, GetPointOrLegacyWeaponDetails, () => DefensePresentationTime,
+            () => _buffer.CurrentSpeed.MotionTimeMultiplier(), PointWeaponButtonLabel);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 

@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0013-combat-state-and-feedback"
 ticket: "EP-0012-US-0013-TK-0002-weapon-panels-v3"
 title: "weapon-panels-v3"
-stage: "draft"
-layer: "client"
+stage: "implemented"
+layer: "contracts-engine-client"
 depends_on: ["EP-0012-US-0013-TK-0001-module-diagram"]
-files_touched: 5
+files_touched: 9
 serves: ["US13-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0013-TK-0002-weapon-panels-v3
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (9 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -34,9 +34,16 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Countermeasures.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Countermeasures.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Countermeasures.cs:6; public sealed partial class GameSessionScreen | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | Existing | Actual point-panel callback integration or own effective scatter projection. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Existing | Actual point-panel callback integration or own effective scatter projection. |
+| `src/DeepSpaceSaga.Contracts/CountermeasureSnapshot.cs` | Existing | Actual point-panel callback integration or own effective scatter projection. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs` | Existing | Actual point-panel callback integration or own effective scatter projection. |
+
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+DefenseSnapshot.EffectiveScatterPercent optional own field; CommandsPanel optional label and physical multiplier callbacks, appended geometry fields for reload ring and real countdown.
+
+Scope correction before code: callbacks live in Aiming.cs and are wired by GameSessionScreen.cs. Effective counter scatter must be projected by Engine using current operator/configured rules, matching torpedo projection; Client must not duplicate this formula. Ring progress uses confirmed readyAt and displayed physical interpolation, never optimistic launch state.
 
 ## Implementation steps
 
@@ -47,7 +54,7 @@ No public API change; внутренние детали ограничены п�
 
 ## Out of scope / Invariants
 
-Один production layer: client; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
+Production layers Contracts -> Engine -> Client; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
 
 ## Tests
 
@@ -74,4 +81,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 8 named / 2273 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0013-tk0002-results.json).
+
+Point weapon panels: circular confirmed reload progress with 0.1 real-second boundary, profile selection, operator accuracy, base/effective scatter, state, configured hotkeys, per-module range toggle, own-flight detonation. Counter sigma is an optional own Engine projection with nondefault-rule producer evidence. Real mouse selection -> panel command -> LocalClient -> Engine ManuallyDetonated and scene removal PASS. Contracts 256/256; actual-screen PNG inspected. Initial fixture cardinality and premature overlap selection failures retained, no assertion weakened. Canonical data/native/product and strict legacy budget OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

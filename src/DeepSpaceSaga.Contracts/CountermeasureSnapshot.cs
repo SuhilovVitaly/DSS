@@ -49,7 +49,10 @@ public sealed record DefenseSnapshot(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    double? ScatterPercent = null);
+    double? ScatterPercent = null,
+    /// <summary>Own current sigma per km under configured rules and assigned operator.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? EffectiveScatterPercent = null);
 
 /// <summary>
 /// Separate projectile type, never a torpedo fire target. All times use physical simulation

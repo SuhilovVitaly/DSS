@@ -457,12 +457,19 @@ public sealed partial class SimulationEngine
         .Select(m => ProjectModuleDefense(owner, m))
         .FirstOrDefault(d => d is not null);
 
-    private DefenseSnapshot? ProjectModuleDefense(SpaceObjectRuntime owner, InstalledModuleRuntime module) =>
-        _defenses.GetValueOrDefault((owner.InitialMotion.ObjectId, module.ModuleId)) is { } defense
-            ? defense with
-            {
-                ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex) is { IsPointLauncher: true } point
-                ? point.ReloadMs : _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CountermeasureReloadMs
-            }
-            : null;
+    private DefenseSnapshot? ProjectModuleDefense(SpaceObjectRuntime owner, InstalledModuleRuntime module)
+    {
+        if (_defenses.GetValueOrDefault((owner.InitialMotion.ObjectId, module.ModuleId)) is not { } defense) return null;
+        var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        var op = definition.IsPointLauncher ? ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense) : defense.Operator;
+        bool own = owner.InitialMotion.ObjectId == PlayerShipObjectId;
+        return defense with
+        {
+            Operator = op,
+            EffectiveScatterPercent = own && definition.IsPointLauncher && op is not null && _registry.CombatRules?.Scatter is { } scatter
+                ? BlastMath.ScatterSigma(1, definition.ScatterPercent!.Value, op.Skill,
+                    scatter.SkillPivot, scatter.SkillSlope, scatter.MinMultiplier) : null,
+            ReloadDurationMs = definition.IsPointLauncher ? definition.ReloadMs : definition.CountermeasureReloadMs
+        };
+    }
 }

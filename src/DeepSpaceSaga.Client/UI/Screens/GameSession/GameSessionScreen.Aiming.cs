@@ -230,12 +230,42 @@ public sealed partial class GameSessionScreen
         { if (_handle is not null) _ = _handle.SendCommandAsync(weapon.OwnerObjectId, weapon.ModuleId, commandType, _selectedObjectId); return; }
         EnterPointAim(module.LauncherCombat?.Profiles is not null ? ProjectileKind.Torpedo : ProjectileKind.Countermissile, module.ModuleId);
     }
-    private string? GetPointOrLegacyWeaponStatus(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module ? PointWeaponStatus(module) : GetDefenseInstanceStatus(weapon);
+    private string? GetPointOrLegacyWeaponStatus(WeaponPanelInstance weapon)
+    {
+        if (PointPanelModule(weapon) is not { } module) return GetDefenseInstanceStatus(weapon);
+        string status = PointWeaponStatus(module);
+        return status == CombatText("Reloading", "Reloading")
+            ? $"{status} {PointReloadRealSeconds(module):0.0} {CombatText("Seconds", "с")}" : status;
+    }
+    private double PointReloadRealSeconds(InstalledModuleSnapshot module)
+    {
+        double ready = module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs ?? 0;
+        double multiplier = _buffer.CurrentSpeed.MotionTimeMultiplier();
+        return Math.Max(0, ready - PointAimTime) / 1000 / (multiplier > 0 ? multiplier : .25);
+    }
+    private string? PointWeaponButtonLabel(WeaponPanelInstance weapon, string command)
+    {
+        if (PointPanelModule(weapon) is not { } module) return null;
+        return command == CombatCommandTypes.Detonate ? CombatText("Detonate", "Подрыв") :
+            $"{CombatText("Aim", "Прицел")} [{(module.LauncherCombat?.Profiles is not null ? CombatInputs.TorpedoAim : CombatInputs.CountermissileAim)}]";
+    }
     private string? GetPointOrLegacyWeaponOperator(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module
-        ? WeaponOperatorText(module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator) : GetDefenseInstanceOperatorText(weapon);
-    private IReadOnlyList<string> GetPointOrLegacyWeaponDetails(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module
-        ? PointProfiles(module).Select(p => $"{p.ProfileId} · {p.SpeedKmS:0.##} km/s · R {p.BlastRadiusKm:0.##} km").ToArray()
-        : GetDefenseInstanceDetails(weapon);
+        ? PointOperatorLabel(module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator) : GetDefenseInstanceOperatorText(weapon);
+    private static string PointOperatorLabel(WeaponOperatorSnapshot? op) => op is null ? CombatText("NoOperator", "Нет оператора") :
+        $"{op.DisplayName} · {CombatText("Accuracy", "Точность")} {op.Skill}";
+    private IReadOnlyList<string> GetPointOrLegacyWeaponDetails(WeaponPanelInstance weapon)
+    {
+        if (PointPanelModule(weapon) is not { } module) return GetDefenseInstanceDetails(weapon);
+        var lines = new List<string>();
+        var profiles = PointProfiles(module);
+        string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : profiles.FirstOrDefault()?.ProfileId;
+        foreach (var profile in profiles)
+            lines.Add($"{(profile.ProfileId == current ? "> " : "")}{profile.ProfileId} · {profile.SpeedKmS:0.##} km/s · R {profile.BlastRadiusKm:0.##} km");
+        double? scatter = module.LauncherCombat?.ScatterPercent ?? module.Defense?.ScatterPercent;
+        double? effective = module.LauncherCombat?.EffectiveScatterPercent ?? module.Defense?.EffectiveScatterPercent;
+        lines.Add($"{CombatText("Scatter", "Разброс")}: {(scatter is { } value ? (value * 100).ToString("0.##") + "%" : "—")} · σ {(effective is { } sigma ? (sigma * 100).ToString("0.##") + "%" : "—")}");
+        return lines;
+    }
 
     private void DrawPointAimFeedback(SKCanvas canvas)
     {

@@ -149,6 +149,8 @@ public sealed class CommandsPanel
     private readonly Func<WeaponPanelInstance, string?>? _weaponStatus;
     private readonly Func<WeaponPanelInstance, string?>? _weaponOperatorText;
     private readonly Func<WeaponPanelInstance, IReadOnlyList<string>>? _weaponDetails;
+    private readonly Func<WeaponPanelInstance, string, string?>? _weaponCommandLabel;
+    private readonly Func<double> _motionMultiplier;
     private readonly Func<double> _motionTime;
     private readonly HashSet<string> _visibleWeaponRanges = new(StringComparer.Ordinal);
     private readonly HashSet<string> _initializedPointRanges = new(StringComparer.Ordinal);
@@ -260,7 +262,8 @@ public sealed class CommandsPanel
         Func<WeaponPanelInstance, string?>? weaponStatus = null,
         Func<WeaponPanelInstance, string?>? weaponOperatorText = null,
         Func<WeaponPanelInstance, IReadOnlyList<string>>? weaponDetails = null,
-        Func<double>? motionTime = null)
+        Func<double>? motionTime = null, Func<double>? motionMultiplier = null,
+        Func<WeaponPanelInstance, string, string?>? weaponCommandLabel = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
@@ -273,6 +276,8 @@ public sealed class CommandsPanel
         _weaponOperatorText = weaponOperatorText;
         _weaponDetails = weaponDetails;
         _motionTime = motionTime ?? (() => 0);
+        _motionMultiplier = motionMultiplier ?? (() => .25);
+        _weaponCommandLabel = weaponCommandLabel;
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -654,9 +659,14 @@ public sealed class CommandsPanel
                 double remainingReload = Math.Max(0, (readyAt ?? 0) - _motionTime());
                 double reloadFraction = remainingReload <= 0 ? 1 : reloadDuration is > 0 ? Math.Clamp(1 - remainingReload / reloadDuration.Value, 0, 1) : 0;
                 if (weaponModule is { StructureMax: > 0, StructureCurrent: <= 0 } || weaponModule?.LauncherCombat?.IsBrokenUntilDock == true) reloadFraction = 0;
+                bool pointWeapon = weaponModule?.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false } || weaponModule?.Defense?.Profiles is { IsDefaultOrEmpty: false };
+                var reloadRing = pointWeapon ? new SKRect(captionRect.Left + 8, captionRect.MidY - 12, captionRect.Left + 32, captionRect.MidY + 12) : SKRect.Empty;
+                double multiplier = _motionMultiplier();
+                double remainingReal = remainingReload / 1000 / (multiplier > 0 ? multiplier : .25);
                 _panelRows.Add(new CommandPanelGeometry(
                     panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon, details[panel.Key],
-                    weaponModule?.ModuleId, toggle, weaponModule is not null && IsWeaponRangeVisible(weaponModule.ModuleId), reloadBar, reloadFraction));
+                    weaponModule?.ModuleId, toggle, weaponModule is not null && IsWeaponRangeVisible(weaponModule.ModuleId), pointWeapon ? SKRect.Empty : reloadBar, reloadFraction, reloadRing, remainingReal,
+                    panel.Weapon is { } operatorWeapon ? _weaponOperatorText?.Invoke(operatorWeapon) : _operatorText?.Invoke(panel.Name)));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -767,7 +777,7 @@ public sealed class CommandsPanel
             var metadata = panel.Weapon is { } weapon
                 ? FindCommandMetadataAcrossModules(modules.Where(m => m.ModuleId == weapon.ModuleId).ToArray(), commandTypeId)
                 : FindCommandMetadataAcrossModules(modules, commandTypeId);
-            string label = metadata?.DisplayName ?? commandTypeId;
+            string label = panel.Weapon is { } labelWeapon ? _weaponCommandLabel?.Invoke(labelWeapon, commandTypeId) ?? metadata?.DisplayName ?? commandTypeId : metadata?.DisplayName ?? commandTypeId;
             if (commandTypeId is DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable or TorpedoLauncherCommandTypes.SetMode)
                 label = GameSessionScreen.CombatText("Command." + commandTypeId, label);
 
@@ -779,7 +789,7 @@ public sealed class CommandsPanel
             var geometry = new CommandButtonGeometry(
                 commandTypeId,
                 new SKRect(x, y, x + CommandButtonWidth, y + CommandButtonHeight),
-                panel.Weapon is { } instance ? _weaponCommandEnabled?.Invoke(instance, commandTypeId) == true : _isCommandEnabled(commandTypeId), panel.Weapon);
+                panel.Weapon is { } instance ? _weaponCommandEnabled?.Invoke(instance, commandTypeId) == true : _isCommandEnabled(commandTypeId), panel.Weapon, label);
 
             builder.Add(geometry);
             _commandButtons.Add((label, geometry));
@@ -869,6 +879,14 @@ public sealed class CommandsPanel
     {
         DrawBeveledCaption(canvas, row.CaptionRect, _moduleCaptionBgPaint);
 
+        if (!row.ReloadRingRect.IsEmpty)
+        {
+            using var ring = new SKPaint { Color = XenonStyle.CyanBright.WithAlpha(60), Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
+            canvas.DrawOval(row.ReloadRingRect, ring);
+            ring.Color = XenonStyle.CyanBright;
+            using var arc = new SKPath(); arc.AddArc(row.ReloadRingRect, -90, (float)(360 * row.ReloadFraction));
+            canvas.DrawPath(arc, ring);
+        }
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;
         canvas.DrawText(TruncateLabel(row.Name, _moduleCaptionTextPaint,
@@ -900,7 +918,7 @@ public sealed class CommandsPanel
                 DrawCommandButton(canvas, _commandButtonDrawOrdinal++);
             }
 
-            if ((row.Weapon is { } weapon ? _weaponOperatorText?.Invoke(weapon) : _operatorText?.Invoke(row.Name)) is { } operatorText)
+            if (row.OperatorText is { } operatorText)
             {
                 using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
                 var rect = row.BodyRect;
@@ -1094,7 +1112,7 @@ public readonly record struct CommandPanelGeometry(
     WeaponPanelInstance? Weapon = null,
     ImmutableArray<string> DetailLines = default,
     string? RangeModuleId = null, SKRect RangeToggleRect = default, bool RangeVisible = false,
-    SKRect ReloadBarRect = default, double ReloadFraction = 1)
+    SKRect ReloadBarRect = default, double ReloadFraction = 1, SKRect ReloadRingRect = default, double RemainingReloadRealSeconds = 0, string? OperatorText = null)
 {
     public string Key => Weapon?.Key ?? Name;
 }
@@ -1103,4 +1121,4 @@ public readonly record struct CommandButtonGeometry(
     string CommandTypeId,
     SKRect Rect,
     bool Enabled,
-    WeaponPanelInstance? Weapon = null);
+    WeaponPanelInstance? Weapon = null, string? Label = null);
