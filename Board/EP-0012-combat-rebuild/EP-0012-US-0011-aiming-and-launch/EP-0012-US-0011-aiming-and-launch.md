@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0011-aiming-and-launch"
 title: "Прицеливание и пуск"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0003-point-aim-torpedoes", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0005-snapshot-privacy", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time", "EP-0012-US-0009-scenarios-and-saves", "EP-0012-US-0010-tactical-map", "EP-0012-US-0017-event-and-command-integration", "EP-0012-US-0018-legacy-combat-cleanup", "EP-0012-US-0019-scenario-and-client-regressions"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -55,7 +55,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 34 / [EP-0012-US-0011-TK-0001-aim-mode-and-input-map](EP-0012-US-0011-TK-0001-aim-mode-and-input-map/EP-0012-US-0011-TK-0001-aim-mode-and-input-map.md) | client | EP-0012-US-0010-TK-0004-own-path-forecast-and-fit | US11-AC1 | 5 |
+| 34 / [EP-0012-US-0011-TK-0001-aim-mode-and-input-map](EP-0012-US-0011-TK-0001-aim-mode-and-input-map/EP-0012-US-0011-TK-0001-aim-mode-and-input-map.md) | client | EP-0012-US-0010-TK-0004-own-path-forecast-and-fit | US11-AC1 | 9 |
 | 35 / [EP-0012-US-0011-TK-0002-torpedo-aim-preview](EP-0012-US-0011-TK-0002-torpedo-aim-preview/EP-0012-US-0011-TK-0002-torpedo-aim-preview.md) | client | EP-0012-US-0011-TK-0001-aim-mode-and-input-map | US11-AC2 | 4 |
 | 36 / [EP-0012-US-0011-TK-0003-countermissile-aim-preview](EP-0012-US-0011-TK-0003-countermissile-aim-preview/EP-0012-US-0011-TK-0003-countermissile-aim-preview.md) | client | EP-0012-US-0011-TK-0002-torpedo-aim-preview | US11-AC3 | 4 |
 | 37 / [EP-0012-US-0011-TK-0004-launch-commands-and-reasons](EP-0012-US-0011-TK-0004-launch-commands-and-reasons/EP-0012-US-0011-TK-0004-launch-commands-and-reasons.md) | client | EP-0012-US-0011-TK-0003-countermissile-aim-preview | US11-AC4 | 4 |

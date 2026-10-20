@@ -307,11 +307,13 @@ public sealed partial class GameSessionScreen : IScreen
         float uiScale = 1.0f,
         TacticalMapSettings? mapSettings = null,
         string? tacticalMapSnapshotDirectory = null,
-        CombatVisualSettings? combatSettings = null)
+        CombatVisualSettings? combatSettings = null,
+        CombatInputSettings? combatInputs = null)
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
+        CombatInputs = (combatInputs ?? CombatInputSettings.Default).Validate();
         _predictor = predictor;
         _handle = handle;
         InitializeCombatReports();
@@ -362,7 +364,8 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
-            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText, GetDefenseInstanceDetails, () => DefensePresentationTime);
+            IsPointOrLegacyWeaponCommandEnabled, SendPointOrLegacyWeaponCommand, GetPointOrLegacyWeaponStatus,
+            GetPointOrLegacyWeaponOperator, GetPointOrLegacyWeaponDetails, () => DefensePresentationTime);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -392,6 +395,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        CancelPointAim();
         _combatReportPanel.ClearFocus();
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
         ClearLaunchPreview();
@@ -408,6 +412,7 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (HandlePointAimMouse(x, y, button)) return ScreenEvent.None;
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
@@ -561,6 +566,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
+        if (PointAim is { } aim && (_mouseX != x || _mouseY != y)) _pointErrors.Remove(aim.ModuleId);
         if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
         // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
         // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
@@ -619,6 +625,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (HandlePointAimWheel(x, y, delta)) return ScreenEvent.None;
         if (_combatReportPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
@@ -633,6 +640,7 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnKeyDown(Key key)
     {
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (HandlePointAimKey(key)) return ScreenEvent.None;
         if (_combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
         {
@@ -1132,6 +1140,7 @@ public sealed partial class GameSessionScreen : IScreen
             PrepareCombatForecasts();
         }
         _presentationPrepared = false;
+        RefreshPointAiming();
         _combatEffects.StartOnPresentation = _buffer.HasCombatPresentation;
         BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
@@ -1252,6 +1261,7 @@ public sealed partial class GameSessionScreen : IScreen
                 _handle.CombatMetrics.RecordVisual(buffered.Snapshot, _renderStates, prediction?.EffectivePredictionDeltaMs ?? 0, _timestampProvider());
             RenderStageCompleted?.Invoke("combat_trajectories");
             DrawLaunchPreview(canvas, prediction, viewportResized);
+            DrawPointAimFeedback(canvas);
             RenderStageCompleted?.Invoke("launch_preview");
             CompleteRenderStage("forecasts");
 

@@ -635,7 +635,7 @@ public sealed class CommandsPanel
                     _hoveredCommandButtonIndex < rowEndOrdinalExclusive
                         ? _commandButtons[_hoveredCommandButtonIndex].Label
                         : null;
-                if (opened && panel.Name == "Torpedo Launcher") statusBarText = _launcherStatus?.Invoke() ?? statusBarText;
+                if (opened && panel.Weapon is null && panel.Name == "Torpedo Launcher") statusBarText = _launcherStatus?.Invoke() ?? statusBarText;
                 if (opened && panel.Weapon is null && panel.Name == "Countermeasure Launcher") statusBarText = _defenseStatus?.Invoke() ?? statusBarText;
                 if (opened && statusBarText is null && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon);
 
@@ -725,11 +725,26 @@ public sealed class CommandsPanel
         var builder = ImmutableArray.CreateBuilder<CommandPanelDefinition>();
         foreach (var panel in Panels)
         {
+            if (panel.Name == "Torpedo Launcher")
+            {
+                var pointTorpedoes = modules.Where(m => m.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false })
+                    .OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
+                if (pointTorpedoes.Length > 0)
+                {
+                    for (int i = 0; i < pointTorpedoes.Length; i++)
+                    {
+                        string caption = pointTorpedoes.Length == 1 ? panel.Name : panel.Name + " " + (i + 1);
+                        builder.Add(new(caption, [CombatCommandTypes.Launch, CombatCommandTypes.Detonate], new(owner, pointTorpedoes[i].ModuleId, caption)));
+                    }
+                    continue;
+                }
+            }
             if (panel.Name != "Countermeasure Launcher" || defense.Length == 0) { builder.Add(panel); continue; }
             for (int i = 0; i < defense.Length; i++)
             {
                 string caption = defense.Length == 1 ? panel.Name : panel.Name + " " + (i + 1);
-                builder.Add(new(caption, [DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable],
+                builder.Add(new(caption, defense[i].Defense?.Profiles is { IsDefaultOrEmpty: false }
+                    ? [DefenseCommandTypes.Launch] : [DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable],
                     new(owner, defense[i].ModuleId, caption)));
             }
         }

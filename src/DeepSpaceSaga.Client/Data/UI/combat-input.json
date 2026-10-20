@@ -1,0 +1,10 @@
+{
+    "schemaVersion": 1,
+    "torpedoAim": "Q",
+    "countermissileAim": "W",
+    "profiles": ["Number1", "Number2", "Number3"],
+    "cancel": "Escape",
+    "launchMouse": "Left",
+    "cancelMouse": "Right",
+    "wheelProfiles": true
+}

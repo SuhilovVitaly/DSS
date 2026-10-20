@@ -143,6 +143,17 @@ public sealed class GameSessionHandle : IAsyncDisposable
             await _connection.SendCommandAsync(command, cancellationToken);
     }
 
+    public ValueTask SendPointLaunchAsync(string objectId, string moduleId, ProjectileKind kind,
+        double x, double y, string profileId, out string commandId)
+    {
+        if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId,
+            kind == ProjectileKind.Torpedo ? CombatCommandTypes.Launch : DefenseCommandTypes.Launch,
+            TargetWorldX: x, TargetWorldY: y, ProfileId: profileId));
+    }
+
     public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
     {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);

@@ -34,6 +34,7 @@ public sealed class SkiaWindow : IDisposable
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
     private readonly CombatVisualSettings _combatSettings;
+    private readonly CombatInputSettings _combatInputs;
     private readonly ScreenStack _screens = new();
     private readonly WindowThreadContext _uiContext = new();
     private readonly SessionConnectionLoader _connectionLoader = new();
@@ -62,9 +63,9 @@ public sealed class SkiaWindow : IDisposable
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
-    private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[32]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
-    private readonly Key[] _keyboardReleasedKeys = new Key[32]; // PollBoth reports releases for every tracked key.
+    private readonly KeyboardEdgeTracker _keyboardEdges;
+    private readonly Key[] _keyboardPressedKeys = new Key[64]; // Includes remapped combat bindings.
+    private readonly Key[] _keyboardReleasedKeys = new Key[64];
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
@@ -95,6 +96,8 @@ public sealed class SkiaWindow : IDisposable
     {
         _sessionFactory = sessionFactory;
         _combatSettings = CombatVisualSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
+        _combatInputs = CombatInputSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatInputSettings.RelativePath));
+        _keyboardEdges = new(_combatInputs);
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
@@ -646,6 +649,14 @@ public sealed class SkiaWindow : IDisposable
                 $"printScreenDown={_keyboard.IsKeyPressed(Key.PrintScreen)}");
         }
 
+        if (_screens.Current is GameSessionScreen game)
+        {
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight));
+            bool aimPressed = Array.IndexOf(_keyboardPressedKeys, _combatInputs.TorpedoAim, 0, pressedCount) >= 0 ||
+                Array.IndexOf(_keyboardPressedKeys, _combatInputs.CountermissileAim, 0, pressedCount) >= 0;
+            if (aimPressed && _mouse is not null && !_keyboard.IsKeyPressed(Key.ControlLeft) && !_keyboard.IsKeyPressed(Key.ControlRight))
+                game.OnMouseMove(_mouse.Position.X, _mouse.Position.Y);
+        }
         for (int i = 0; i < pressedCount; i++)
             _handleKeyboardEdge(_keyboardPressedKeys[i]);
 
@@ -923,7 +934,7 @@ public sealed class SkiaWindow : IDisposable
             var predictor = new LinearMotionPredictor();
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings);
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs);
 
             _session = session;
             _gameSessionScreen = gameScreen;
@@ -1569,7 +1580,7 @@ public sealed class SkiaWindow : IDisposable
             var predictor = new LinearMotionPredictor();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings);
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)
