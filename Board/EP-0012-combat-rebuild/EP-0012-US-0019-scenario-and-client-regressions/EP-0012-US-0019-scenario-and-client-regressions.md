@@ -29,17 +29,17 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0017-event-and-command-integration, EP-0012-US-0002-combat-catalog-v3. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0002-combat-catalog-v3, EP-0012-US-0017-event-and-command-integration. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 45 / [EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios](EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios/EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios.md) | content-data | EP-0012-US-0017-TK-0003-local-client-delivery | US19-AC1, US9-AC2 | 3 |
-| 46 / [EP-0012-US-0019-TK-0002-scenario-engine-fixtures](EP-0012-US-0019-TK-0002-scenario-engine-fixtures/EP-0012-US-0019-TK-0002-scenario-engine-fixtures.md) | engine | EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios | US19-AC1 | 4 |
-| 47 / [EP-0012-US-0019-TK-0003-client-forecast-cache-migration](EP-0012-US-0019-TK-0003-client-forecast-cache-migration/EP-0012-US-0019-TK-0003-client-forecast-cache-migration.md) | client | EP-0012-US-0019-TK-0002-scenario-engine-fixtures | US19-AC2 | 5 |
-| 48 / [EP-0012-US-0019-TK-0004-client-combat-regressions](EP-0012-US-0019-TK-0004-client-combat-regressions/EP-0012-US-0019-TK-0004-client-combat-regressions.md) | client | EP-0012-US-0019-TK-0003-client-forecast-cache-migration | US19-AC1, US19-AC2 | 5 |
-| 30 / [EP-0012-US-0019-TK-0005-maneuver-command-catalog](EP-0012-US-0019-TK-0005-maneuver-command-catalog/EP-0012-US-0019-TK-0005-maneuver-command-catalog.md) | content-data | EP-0012-US-0002-TK-0005-combat-rules-v3 | US19-AC1, US6-AC2, US6-AC3, US8-AC1 | 4 |
+| 40 / [EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios](EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios/EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios.md) | content-data | EP-0012-US-0017-TK-0003-local-client-delivery | US19-AC1, US9-AC2 | 3 |
+| 41 / [EP-0012-US-0019-TK-0002-scenario-engine-fixtures](EP-0012-US-0019-TK-0002-scenario-engine-fixtures/EP-0012-US-0019-TK-0002-scenario-engine-fixtures.md) | engine | EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios | US19-AC1 | 4 |
+| 42 / [EP-0012-US-0019-TK-0003-client-forecast-cache-migration](EP-0012-US-0019-TK-0003-client-forecast-cache-migration/EP-0012-US-0019-TK-0003-client-forecast-cache-migration.md) | client | EP-0012-US-0019-TK-0002-scenario-engine-fixtures | US19-AC2 | 5 |
+| 43 / [EP-0012-US-0019-TK-0004-client-combat-regressions](EP-0012-US-0019-TK-0004-client-combat-regressions/EP-0012-US-0019-TK-0004-client-combat-regressions.md) | client | EP-0012-US-0019-TK-0003-client-forecast-cache-migration | US19-AC1, US19-AC2 | 5 |
+| 29 / [EP-0012-US-0019-TK-0005-maneuver-command-catalog](EP-0012-US-0019-TK-0005-maneuver-command-catalog/EP-0012-US-0019-TK-0005-maneuver-command-catalog.md) | content-data | EP-0012-US-0002-TK-0005-combat-rules-v3 | US19-AC1, US6-AC2, US6-AC3, US8-AC1 | 4 |
 
 ## Decisions / Assumptions
 

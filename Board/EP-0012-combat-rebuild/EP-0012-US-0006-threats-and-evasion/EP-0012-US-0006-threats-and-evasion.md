@@ -45,8 +45,8 @@ Execution order задаётся ticket DAG, который допускает �
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
 | 9 / [EP-0012-US-0006-TK-0001-blast-threat-math](EP-0012-US-0006-TK-0001-blast-threat-math/EP-0012-US-0006-TK-0001-blast-threat-math.md) | motion | EP-0012-US-0003-TK-0001-blast-math | US6-AC1 | 2 |
-| 17 / [EP-0012-US-0006-TK-0002-evade-command](EP-0012-US-0006-TK-0002-evade-command/EP-0012-US-0006-TK-0002-evade-command.md) | engine | EP-0012-US-0004-TK-0003-remove-auto-pd | US6-AC2 | 4 |
-| 18 / [EP-0012-US-0006-TK-0003-continuous-turn-in-combat](EP-0012-US-0006-TK-0003-continuous-turn-in-combat/EP-0012-US-0006-TK-0003-continuous-turn-in-combat.md) | engine | EP-0012-US-0006-TK-0002-evade-command | US6-AC3 | 3 |
+| 16 / [EP-0012-US-0006-TK-0002-evade-command](EP-0012-US-0006-TK-0002-evade-command/EP-0012-US-0006-TK-0002-evade-command.md) | engine | EP-0012-US-0004-TK-0002-countermissile-detonation | US6-AC2 | 4 |
+| 17 / [EP-0012-US-0006-TK-0003-continuous-turn-in-combat](EP-0012-US-0006-TK-0003-continuous-turn-in-combat/EP-0012-US-0006-TK-0003-continuous-turn-in-combat.md) | engine | EP-0012-US-0006-TK-0002-evade-command | US6-AC3 | 3 |
 
 ## Decisions / Assumptions
 

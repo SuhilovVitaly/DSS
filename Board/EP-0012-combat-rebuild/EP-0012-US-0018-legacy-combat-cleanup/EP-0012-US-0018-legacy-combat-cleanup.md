@@ -30,17 +30,17 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0009-scenarios-and-saves, EP-0012-US-0006-threats-and-evasion, EP-0012-US-0003-point-aim-torpedoes. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0003-point-aim-torpedoes, EP-0012-US-0004-point-aim-countermissiles, EP-0012-US-0006-threats-and-evasion, EP-0012-US-0009-scenarios-and-saves. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 36 / [EP-0012-US-0018-TK-0001-remove-interception-helper](EP-0012-US-0018-TK-0001-remove-interception-helper/EP-0012-US-0018-TK-0001-remove-interception-helper.md) | engine | EP-0012-US-0009-TK-0005-save18-defense-validation | US18-AC1 | 4 |
-| 37 / [EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests](EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests/EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests.md) | engine | EP-0012-US-0018-TK-0001-remove-interception-helper | US18-AC1, US18-AC3 | 4 |
-| 38 / [EP-0012-US-0018-TK-0003-point-combat-forecasts](EP-0012-US-0018-TK-0003-point-combat-forecasts/EP-0012-US-0018-TK-0003-point-combat-forecasts.md) | engine | EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests | US18-AC2 | 3 |
+| 62 / [EP-0012-US-0018-TK-0001-remove-interception-helper](EP-0012-US-0018-TK-0001-remove-interception-helper/EP-0012-US-0018-TK-0001-remove-interception-helper.md) | engine | EP-0012-US-0004-TK-0003-remove-auto-pd | US18-AC1 | 4 |
+| 63 / [EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests](EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests/EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests.md) | engine | EP-0012-US-0018-TK-0001-remove-interception-helper | US18-AC1, US18-AC3 | 4 |
+| 35 / [EP-0012-US-0018-TK-0003-point-combat-forecasts](EP-0012-US-0018-TK-0003-point-combat-forecasts/EP-0012-US-0018-TK-0003-point-combat-forecasts.md) | engine | EP-0012-US-0009-TK-0005-save18-defense-validation | US18-AC2 | 3 |
 | 10 / [EP-0012-US-0018-TK-0004-shared-point-forecast](EP-0012-US-0018-TK-0004-shared-point-forecast/EP-0012-US-0018-TK-0004-shared-point-forecast.md) | motion | EP-0012-US-0006-TK-0001-blast-threat-math | US18-AC2 | 3 |
-| 40 / [EP-0012-US-0018-TK-0005-module-combat-regressions](EP-0012-US-0018-TK-0005-module-combat-regressions/EP-0012-US-0018-TK-0005-module-combat-regressions.md) | engine | EP-0012-US-0003-TK-0005-remove-homing-roll-modes | US18-AC3, US3-AC5, US4-AC3 | 4 |
+| 65 / [EP-0012-US-0018-TK-0005-module-combat-regressions](EP-0012-US-0018-TK-0005-module-combat-regressions/EP-0012-US-0018-TK-0005-module-combat-regressions.md) | engine | EP-0012-US-0003-TK-0005-remove-homing-roll-modes | US18-AC3, US3-AC5, US4-AC3 | 4 |
 
 ## Decisions / Assumptions
 

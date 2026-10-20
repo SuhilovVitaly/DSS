@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0018-TK-0003-point-combat-forecasts"
 title: "point-combat-forecasts"
 stage: "draft"
 layer: "engine"
-depends_on: ["EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests"]
+depends_on: ["EP-0012-US-0009-TK-0005-save18-defense-validation"]
 files_touched: 3
 serves: ["US18-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0018-TK-0003-point-combat-forecasts
@@ -73,3 +73,5 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+2026-10-20 execution prerequisite correction: legacy removal follows Save18, forecast and Client migrations; see [current DAG](../../Tickets.md#migration-prerequisite-correction). AC/deletion requirements remain unchanged.

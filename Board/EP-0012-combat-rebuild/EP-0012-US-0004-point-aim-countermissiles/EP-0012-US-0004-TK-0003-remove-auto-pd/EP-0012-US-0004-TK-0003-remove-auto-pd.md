@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0004-TK-0003-remove-auto-pd"
 title: "remove-auto-pd"
 stage: "draft"
 layer: "engine"
-depends_on: ["EP-0012-US-0004-TK-0002-countermissile-detonation"]
+depends_on: ["EP-0012-US-0016-TK-0001-combat-localization"]
 files_touched: 4
 serves: ["US4-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0004-TK-0003-remove-auto-pd
@@ -74,3 +74,5 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+2026-10-20 execution prerequisite correction: legacy removal follows Save18, forecast and Client migrations; see [current DAG](../../Tickets.md#migration-prerequisite-correction). AC/deletion requirements remain unchanged.

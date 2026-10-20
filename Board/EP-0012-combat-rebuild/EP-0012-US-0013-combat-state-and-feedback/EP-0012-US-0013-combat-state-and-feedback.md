@@ -55,11 +55,11 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 60 / [EP-0012-US-0013-TK-0001-module-diagram](EP-0012-US-0013-TK-0001-module-diagram/EP-0012-US-0013-TK-0001-module-diagram.md) | client | EP-0012-US-0012-TK-0003-threat-alerts | US13-AC1 | 4 |
-| 61 / [EP-0012-US-0013-TK-0002-weapon-panels-v3](EP-0012-US-0013-TK-0002-weapon-panels-v3/EP-0012-US-0013-TK-0002-weapon-panels-v3.md) | client | EP-0012-US-0013-TK-0001-module-diagram | US13-AC2 | 5 |
-| 62 / [EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels](EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels/EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels.md) | client | EP-0012-US-0013-TK-0002-weapon-panels-v3 | US13-AC3 | 4 |
-| 63 / [EP-0012-US-0013-TK-0004-journal-and-reports-v3](EP-0012-US-0013-TK-0004-journal-and-reports-v3/EP-0012-US-0013-TK-0004-journal-and-reports-v3.md) | client | EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels | US13-AC4 | 5 |
-| 64 / [EP-0012-US-0013-TK-0005-combat-start-timer-summary](EP-0012-US-0013-TK-0005-combat-start-timer-summary/EP-0012-US-0013-TK-0005-combat-start-timer-summary.md) | client | EP-0012-US-0013-TK-0004-journal-and-reports-v3 | US13-AC5 | 5 |
+| 55 / [EP-0012-US-0013-TK-0001-module-diagram](EP-0012-US-0013-TK-0001-module-diagram/EP-0012-US-0013-TK-0001-module-diagram.md) | client | EP-0012-US-0012-TK-0003-threat-alerts | US13-AC1 | 4 |
+| 56 / [EP-0012-US-0013-TK-0002-weapon-panels-v3](EP-0012-US-0013-TK-0002-weapon-panels-v3/EP-0012-US-0013-TK-0002-weapon-panels-v3.md) | client | EP-0012-US-0013-TK-0001-module-diagram | US13-AC2 | 5 |
+| 57 / [EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels](EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels/EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels.md) | client | EP-0012-US-0013-TK-0002-weapon-panels-v3 | US13-AC3 | 4 |
+| 58 / [EP-0012-US-0013-TK-0004-journal-and-reports-v3](EP-0012-US-0013-TK-0004-journal-and-reports-v3/EP-0012-US-0013-TK-0004-journal-and-reports-v3.md) | client | EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels | US13-AC4 | 5 |
+| 59 / [EP-0012-US-0013-TK-0005-combat-start-timer-summary](EP-0012-US-0013-TK-0005-combat-start-timer-summary/EP-0012-US-0013-TK-0005-combat-start-timer-summary.md) | client | EP-0012-US-0013-TK-0004-journal-and-reports-v3 | US13-AC5 | 5 |
 
 ## Decisions / Assumptions
 

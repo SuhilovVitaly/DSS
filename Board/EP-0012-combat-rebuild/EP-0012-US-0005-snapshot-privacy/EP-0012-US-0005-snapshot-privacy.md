@@ -38,8 +38,8 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 42 / [EP-0012-US-0005-TK-0001-snapshot-masking](EP-0012-US-0005-TK-0001-snapshot-masking/EP-0012-US-0005-TK-0001-snapshot-masking.md) | engine | EP-0012-US-0017-TK-0002-engine-report-producers | US5-AC1, US5-AC2 | 5 |
-| 43 / [EP-0012-US-0005-TK-0002-hidden-fields-leak-test](EP-0012-US-0005-TK-0002-hidden-fields-leak-test/EP-0012-US-0005-TK-0002-hidden-fields-leak-test.md) | engine | EP-0012-US-0005-TK-0001-snapshot-masking | US5-AC3 | 2 |
+| 37 / [EP-0012-US-0005-TK-0001-snapshot-masking](EP-0012-US-0005-TK-0001-snapshot-masking/EP-0012-US-0005-TK-0001-snapshot-masking.md) | engine | EP-0012-US-0017-TK-0002-engine-report-producers | US5-AC1, US5-AC2 | 5 |
+| 38 / [EP-0012-US-0005-TK-0002-hidden-fields-leak-test](EP-0012-US-0005-TK-0002-hidden-fields-leak-test/EP-0012-US-0005-TK-0002-hidden-fields-leak-test.md) | engine | EP-0012-US-0005-TK-0001-snapshot-masking | US5-AC3 | 2 |
 
 ## Decisions / Assumptions
 

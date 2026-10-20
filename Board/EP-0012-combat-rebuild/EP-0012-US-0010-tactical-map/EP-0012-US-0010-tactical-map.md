@@ -46,10 +46,10 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 49 / [EP-0012-US-0010-TK-0001-combat-visuals-v3](EP-0012-US-0010-TK-0001-combat-visuals-v3/EP-0012-US-0010-TK-0001-combat-visuals-v3.md) | client | EP-0012-US-0019-TK-0004-client-combat-regressions | US10-AC4 | 3 |
-| 50 / [EP-0012-US-0010-TK-0002-projectiles-and-blasts-render](EP-0012-US-0010-TK-0002-projectiles-and-blasts-render/EP-0012-US-0010-TK-0002-projectiles-and-blasts-render.md) | client | EP-0012-US-0010-TK-0001-combat-visuals-v3 | US10-AC1 | 4 |
-| 51 / [EP-0012-US-0010-TK-0003-persistent-range-rings](EP-0012-US-0010-TK-0003-persistent-range-rings/EP-0012-US-0010-TK-0003-persistent-range-rings.md) | client | EP-0012-US-0010-TK-0002-projectiles-and-blasts-render | US10-AC2 | 4 |
-| 52 / [EP-0012-US-0010-TK-0004-own-path-forecast-and-fit](EP-0012-US-0010-TK-0004-own-path-forecast-and-fit/EP-0012-US-0010-TK-0004-own-path-forecast-and-fit.md) | client | EP-0012-US-0010-TK-0003-persistent-range-rings | US10-AC3 | 4 |
+| 44 / [EP-0012-US-0010-TK-0001-combat-visuals-v3](EP-0012-US-0010-TK-0001-combat-visuals-v3/EP-0012-US-0010-TK-0001-combat-visuals-v3.md) | client | EP-0012-US-0019-TK-0004-client-combat-regressions | US10-AC4 | 3 |
+| 45 / [EP-0012-US-0010-TK-0002-projectiles-and-blasts-render](EP-0012-US-0010-TK-0002-projectiles-and-blasts-render/EP-0012-US-0010-TK-0002-projectiles-and-blasts-render.md) | client | EP-0012-US-0010-TK-0001-combat-visuals-v3 | US10-AC1 | 4 |
+| 46 / [EP-0012-US-0010-TK-0003-persistent-range-rings](EP-0012-US-0010-TK-0003-persistent-range-rings/EP-0012-US-0010-TK-0003-persistent-range-rings.md) | client | EP-0012-US-0010-TK-0002-projectiles-and-blasts-render | US10-AC2 | 4 |
+| 47 / [EP-0012-US-0010-TK-0004-own-path-forecast-and-fit](EP-0012-US-0010-TK-0004-own-path-forecast-and-fit/EP-0012-US-0010-TK-0004-own-path-forecast-and-fit.md) | client | EP-0012-US-0010-TK-0003-persistent-range-rings | US10-AC3 | 4 |
 
 ## Decisions / Assumptions
 

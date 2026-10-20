@@ -48,7 +48,7 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 12 / US-0003-TK-0003-torpedo-area-detonation | PASS 13 named / 273 bounded regression; build/format/diff PASS | `e1e34582d43d87194c0352e8103f31d02572adca`, origin SHA verified |
 | 13 / US-0003-TK-0004-manual-detonation | PASS 4 named / 289 bounded regression; build/format/diff PASS | `40ded2cbb65ee98eca483b889238e465a1f041bf`, origin SHA verified |
 | 14 / US-0004-TK-0001-countermissile-point-launch | PASS 11 named / 341 bounded regression; build/format/diff PASS | `8a92cac30bfae7e7c148362254fce9a51baf97fa`, origin SHA verified |
-| 15 / US-0004-TK-0002-countermissile-detonation | PASS 5 named / 346 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 15 / US-0004-TK-0002-countermissile-detonation | PASS 5 named / 346 bounded regression; build/format/diff PASS | `d834c15e8341c273a82fda39375a3dd7fb27f280`, origin SHA verified |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
@@ -63,3 +63,5 @@ US-0002-TK-0001: экспериментальные source/deployed catalog chec
 После восстановления production JSON повторная сборка и настоящий scenario probe PASS 4/4, без failed/skipped. Восстановлен работавший путь загрузки; новый каталог ожидает Engine. Board validation: 19 stories / 73 tickets, 651 references, 0 errors.
 
 Служебная коррекция DAG опубликована `9de88536c6c311d0b464c622e6e73fe3c76ace9a`, origin SHA verified. Новая нумерация шагов соответствует текущему Tickets.md, идентичности тикетов сохранены.
+
+2026-10-20: уточнены реальные prerequisites legacy deletion по source consumers Save/forecasts/Client. Пять deletion/regression tickets отложены до завершения consumer migration, перед balance. Новый следующий шаг — evade-command, уже использует готовые public observed trace и BlastThreatMath; отсутствие legacy deletion не является его runtime prerequisite. Legacy-removal AC остаются OPEN, ничего не объявлено удалённым.

@@ -37,13 +37,13 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0016-combat-localization. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0018-legacy-combat-cleanup. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 66 / [EP-0012-US-0014-TK-0001-production-balance-harness](EP-0012-US-0014-TK-0001-production-balance-harness/EP-0012-US-0014-TK-0001-production-balance-harness.md) | engine | EP-0012-US-0016-TK-0001-combat-localization | US14-AC1 | 4 |
+| 66 / [EP-0012-US-0014-TK-0001-production-balance-harness](EP-0012-US-0014-TK-0001-production-balance-harness/EP-0012-US-0014-TK-0001-production-balance-harness.md) | engine | EP-0012-US-0018-TK-0005-module-combat-regressions | US14-AC1 | 4 |
 | 67 / [EP-0012-US-0014-TK-0002-tools-analyzer](EP-0012-US-0014-TK-0002-tools-analyzer/EP-0012-US-0014-TK-0002-tools-analyzer.md) | tooling | EP-0012-US-0014-TK-0001-production-balance-harness | US14-AC2 | 4 |
 | 68 / [EP-0012-US-0014-TK-0003-native-acceptance](EP-0012-US-0014-TK-0003-native-acceptance/EP-0012-US-0014-TK-0003-native-acceptance.md) | tooling | EP-0012-US-0014-TK-0002-tools-analyzer | US14-AC3 | 1 |
 

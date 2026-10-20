@@ -33,15 +33,15 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 При исполнении prerequisite contract/schema US1 уже опубликован в пяти тикетах; его downstream legacy cleanup не является prerequisite добавления event DTO. Порядок сохраняется по точному ticket DAG. Closure всей US1 и всей US17 остаётся OPEN до интеграции, а не выводится из готовности отдельных contracts.
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0001-contracts-and-schema, EP-0012-US-0018-legacy-combat-cleanup, EP-0012-US-0005-snapshot-privacy. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0001-contracts-and-schema, EP-0012-US-0005-snapshot-privacy, EP-0012-US-0018-legacy-combat-cleanup. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
 | 6 / [EP-0012-US-0017-TK-0001-combat-event-contracts](EP-0012-US-0017-TK-0001-combat-event-contracts/EP-0012-US-0017-TK-0001-combat-event-contracts.md) | contracts-and-localization | EP-0012-US-0001-TK-0005-launcher-profile-schema | US17-AC1 | 6 |
-| 41 / [EP-0012-US-0017-TK-0002-engine-report-producers](EP-0012-US-0017-TK-0002-engine-report-producers/EP-0012-US-0017-TK-0002-engine-report-producers.md) | engine | EP-0012-US-0018-TK-0005-module-combat-regressions | US17-AC2, US13-AC4 | 5 |
-| 44 / [EP-0012-US-0017-TK-0003-local-client-delivery](EP-0012-US-0017-TK-0003-local-client-delivery/EP-0012-US-0017-TK-0003-local-client-delivery.md) | local-client | EP-0012-US-0005-TK-0002-hidden-fields-leak-test | US17-AC3 | 3 |
+| 36 / [EP-0012-US-0017-TK-0002-engine-report-producers](EP-0012-US-0017-TK-0002-engine-report-producers/EP-0012-US-0017-TK-0002-engine-report-producers.md) | engine | EP-0012-US-0018-TK-0003-point-combat-forecasts | US17-AC2, US13-AC4 | 5 |
+| 39 / [EP-0012-US-0017-TK-0003-local-client-delivery](EP-0012-US-0017-TK-0003-local-client-delivery/EP-0012-US-0017-TK-0003-local-client-delivery.md) | local-client | EP-0012-US-0005-TK-0002-hidden-fields-leak-test | US17-AC3 | 3 |
 | 7 / [EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts](EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts/EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts.md) | contracts | EP-0012-US-0017-TK-0001-combat-event-contracts | US17-AC4 | 6 |
 
 ## Decisions / Assumptions
