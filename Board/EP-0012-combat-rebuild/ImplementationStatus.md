@@ -40,6 +40,7 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 5 / US-0001-TK-0005 launcher-profile-schema | PASS 39 Engine named / 387 bounded regression; 3 Contracts named / 239 full; solution build/format/diff PASS | `f06c235c84d5010d8497731b68be549930874b77`, origin SHA verified |
 | 6 / US-0017-TK-0001 combat-event-contracts | PASS 6 named / 245 full Contracts; build/format/diff PASS | `7abd93815e6765586f5cc684752cec887ca18c4e`, origin SHA verified |
 | 7 / US-0017-TK-0004 turn-and-summary-command-contracts | PASS 6 named / 251 full Contracts; build/format/diff PASS | `012963afb6a531e767d5e6ef531cc60c5ddd4ae8`, origin SHA verified |
+| 8 / US-0003-TK-0001 blast-math | PASS 32 named / 222 full Motion; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
@@ -52,3 +53,5 @@ US-0002-TK-0001: экспериментальные source/deployed catalog chec
 Полный Client experimental run: 1934 passed / 197 failed / 0 skipped, 110792 ms, без timeout. [Исходные команды и вывод](evidence/catalog-activation-ordering-probe.json). Отдельный scenario probe: 1 passed / 3 failed. Ни один failed run не назван PASS.
 
 После восстановления production JSON повторная сборка и настоящий scenario probe PASS 4/4, без failed/skipped. Восстановлен работавший путь загрузки; новый каталог ожидает Engine. Board validation: 19 stories / 73 tickets, 651 references, 0 errors.
+
+Служебная коррекция DAG опубликована `9de88536c6c311d0b464c622e6e73fe3c76ace9a`, origin SHA verified. Новая нумерация шагов соответствует текущему Tickets.md, идентичности тикетов сохранены.

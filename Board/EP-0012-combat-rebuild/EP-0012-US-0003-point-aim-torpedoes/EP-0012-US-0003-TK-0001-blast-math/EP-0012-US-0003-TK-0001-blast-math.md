@@ -3,7 +3,7 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0003-point-aim-torpedoes"
 ticket: "EP-0012-US-0003-TK-0001-blast-math"
 title: "blast-math"
-stage: "draft"
+stage: "implemented"
 layer: "motion"
 depends_on: ["EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts"]
 files_touched: 2
@@ -73,6 +73,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: Motion implementation и self-review выполнены. PASS 32 named / 222 full Motion (0 failed/skipped); owning build, scoped whitespace/full formatter и diff check PASS. Все 20 независимых fixtures Documentation покрыты, дополнительно проверены дробный deadline, произвольные направления, clamp progress, невалидные значения и overflow. Hard cap 300000 ms у каждого процесса.
+
+[Фактические команды и результаты](../../evidence/us0003-tk0001-results.json). ScatterSigma имеет также overload с skillPivot/skillSlope/minMultiplier для Engine combat-rules; короткий overload соответствует D05. PositionAt принимает общие coordinate units, остальные дистанции — km; deadline — physical ms без округления. Motion не потребляет RNG. Review исполнителя, не независимое. Engine integration/area damage/native/product остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 execution dependency correction: runtime precedes production catalog activation; see [DAG](../../Tickets.md#execution-correction-2026-10-20). Scope/AC unchanged.
