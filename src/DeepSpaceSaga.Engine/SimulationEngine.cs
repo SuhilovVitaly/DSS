@@ -480,6 +480,8 @@ public sealed partial class SimulationEngine : IDisposable
             ResetPresentationSession();
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
+            _evasions.Clear();
+            _playerEvasionEpisodes = 0;
             _launcherCombat = combatState;
             _defenses = defenses;
             _countermeasureSequence = 0;
@@ -699,7 +701,7 @@ public sealed partial class SimulationEngine : IDisposable
                 // Project ordinary objects straight into the outgoing DTO: avoid
                 // allocating a full intermediate motion snapshot for every asteroid.
                 double x = 0, y = 0;
-                bool linear = obj.InitialMotion.OwnProjectile is null && obj.InitialMotion.ObservedProjectile is null &&
+                bool linear = obj.InitialMotion.Evasion is null && obj.InitialMotion.OwnProjectile is null && obj.InitialMotion.ObservedProjectile is null &&
                     cycleMotion.ApproachRoute is null && _motion is LinearMotionPredictor &&
                     LinearMotionPredictor.TryPredictLinearPosition(obj.InitialMotion, elapsed, out x, out y);
                 var motion = linear ? obj.InitialMotion : PredictMotion(obj, elapsed);
@@ -722,7 +724,8 @@ public sealed partial class SimulationEngine : IDisposable
                     Y = linear ? y : motion.Y,
                     OwnProjectile = motion.OwnProjectile?.OwnerObjectId == PlayerShipObjectId ? motion.OwnProjectile : null,
                     ObservedProjectile = ProjectObservedProjectile(motion),
-                    ActiveEngineCommandType = cycleMotion.CommandType,
+                    Evasion = isPlayerShipRow ? motion.Evasion : null,
+                    ActiveEngineCommandType = isPlayerShipRow && motion.Evasion is not null ? ManeuverCommandTypes.Evade : cycleMotion.CommandType,
                     EngineManeuver = known ? ProjectEngineManeuver(obj, gameTimeMs) : null,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
@@ -2439,7 +2442,7 @@ public sealed partial class SimulationEngine : IDisposable
             return quotedTrade ? RejectQuotedTrade(command, "dialogue_active") : CommandStartOutcome.Rejected("dialogue_active");
 
         if (command.CommandType is NavigationComputerCommandTypes.Dock or NavigationComputerCommandTypes.Undock)
-            return TryStartNavigationCommand(command, gameTimeMs);
+            return ExecuteEvasionOverride(command, gameTimeMs, () => TryStartNavigationCommand(command, gameTimeMs));
 
         if (command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel)
             return TryStartTradeCommand(command, gameTimeMs);
@@ -2448,6 +2451,8 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartPointLaunch(command, gameTimeMs);
         if (command.CommandType == DefenseCommandTypes.Launch)
             return TryStartPointLaunch(command, gameTimeMs, ProjectileKind.Countermissile);
+        if (command.CommandType == ManeuverCommandTypes.Evade)
+            return TryStartEvade(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Detonate)
             return TryStartPointDetonation(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Fire)
@@ -2461,7 +2466,7 @@ public sealed partial class SimulationEngine : IDisposable
         if (command.CommandType == CombatCommandTypes.SelfDestruct)
             return TrySelfDestruct(command, gameTimeMs);
 
-        return TryStartEngineCommand(command, gameTimeMs);
+        return ExecuteEvasionOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs));
     }
 
     /// <summary>1 world unit = 100 m (Documentation/00-Process/CLAUDE.md developer guide), so 1 km = 10 world units.</summary>
@@ -3497,10 +3502,11 @@ public sealed partial class SimulationEngine : IDisposable
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
         if (IsDefeated) return;
+        CompleteEvasions(_combatProcessedTimeMs);
         EvaluateCombatReportRange(_combatProcessedTimeMs);
         if (gameTimeMs > _combatProcessedTimeMs)
             RefreshHostileCombat(_combatProcessedTimeMs);
-        if (!HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
@@ -3512,6 +3518,7 @@ public sealed partial class SimulationEngine : IDisposable
         while (true)
         {
             long next = gameTimeMs;
+            if (HasEvasionActivity) next = Math.Min(next, NextEvasionBoundary());
             if (HasActiveTorpedoes) next = Math.Min(next, _nextCombatGuidanceMs);
             if (HasHostileMotionCandidates) next = Math.Min(next, _nextHostileDecisionMs);
             if (NextHostileLaunch(_combatProcessedTimeMs, next) is { } hostileLaunch)
@@ -3531,6 +3538,7 @@ public sealed partial class SimulationEngine : IDisposable
             bool advanced = next > _combatProcessedTimeMs;
             AdvanceCombatTo(next);
             if (IsDefeated) return;
+            CompleteEvasions(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
             CompleteActiveEngineCycles(next);

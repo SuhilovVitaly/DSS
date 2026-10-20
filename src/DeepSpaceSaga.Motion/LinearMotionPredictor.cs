@@ -29,12 +29,15 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     }
 
     public static bool IsLinear(ObjectMotionSnapshot state) =>
+        state.Evasion is null && state.OwnProjectile is null && state.ObservedProjectile is null &&
         state.Orbit is null && state.Torpedo is null && state.Countermeasure is null && state.HostileCombat is null && state.EngineManeuver is null &&
         state.ActiveEngineCommandType is not (NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit) &&
         (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0);
 
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
+        if (state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
+            return CurrentManeuverForecast.Sample(state, elapsedMs);
         if (state.Orbit is { } orbit)
             return OrbitalMotionMath.At(state, orbit, checked((state.OrbitSampleSimulationTimeMs ?? orbit.EpochSimulationTimeMs) + elapsedMs));
         if (state.Countermeasure is not null)
@@ -160,7 +163,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         // Combined phase + step loop: fly straight segments, call Step at each
         // turn boundary (even if the remaining time is less than a full interval —
         // the Engine always runs the turn decision at the boundary).
-        while (remainingMs > 0)
+        while (remainingMs > 0 || untilNextTurnMs == 0)
         {
             // At a turn boundary, decide the turn via shared navigation math.
             // Must happen BEFORE flying the segment, matching Engine order (P1 fix).

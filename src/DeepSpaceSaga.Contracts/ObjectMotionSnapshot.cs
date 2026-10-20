@@ -151,7 +151,10 @@ public sealed record ObjectMotionSnapshot(
     ObservedProjectileSnapshot? ObservedProjectile = null,
     /// <summary>Aggregate hostile ship status; full enemy module health is masked by the Engine.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    EnemyShipStatusSnapshot? EnemyStatus = null);
+    EnemyShipStatusSnapshot? EnemyStatus = null,
+    /// <summary>Accepted own evasion and known return course; omitted for foreign ships.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    EvasionSnapshot? Evasion = null);
 
 /// <summary>Existing discrete engine command, not a proposed command or future AI decision.
 /// Acceleration is km/s²; the first speed delta includes elapsed inertia before this snapshot.

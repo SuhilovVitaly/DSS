@@ -379,6 +379,12 @@ public sealed partial class SimulationEngine
 
     internal static CollisionPath CombatPath(SpaceObjectRuntime obj)
     {
+        if (obj.InitialMotion.Evasion is { } evasion)
+            return new(t =>
+            {
+                var p = CurrentManeuverForecast.Sample(obj.InitialMotion, Math.Max(0, t - evasion.SampleMotionTimeMs));
+                return (p.X, p.Y);
+            }, Math.Max(obj.InitialMotion.SpeedKmS, evasion.BaseMotion.SpeedKmS) / 100);
         if (obj.InitialMotion.OwnProjectile is { } point)
             return new(t =>
             {
@@ -584,6 +590,7 @@ public sealed partial class SimulationEngine
             };
             updatedShip = updatedShip with { InitialMotion = pose, StartGameTimeMs = interruptTime };
         }
+        if (type.CategoryTypeId == "module.engine") updatedShip = InterruptDamagedEvasion(updatedShip, motionTimeMs);
         _objects[targetIndex] = updatedShip;
         if (selected.ActiveCycle is { } cycle)
         {
@@ -618,6 +625,7 @@ public sealed partial class SimulationEngine
             id = "wreck-" + checked(++_wreckSequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
         var point = positionOverride ?? CombatPath(destroyed).Position(impactMotionTimeMs);
+        CancelEvasionState(objectId, (long)Math.Ceiling(impactMotionTimeMs), CommandReasonCodes.ModuleDestroyed);
         _objects.Remove(destroyed);
         _hostileCombat.Remove(objectId);
         foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == objectId).ToArray()) _defenses.Remove(defenseKey);

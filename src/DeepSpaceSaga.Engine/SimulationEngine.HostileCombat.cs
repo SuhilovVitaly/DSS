@@ -30,6 +30,7 @@ public sealed partial class SimulationEngine
         foreach (var owner in _objects.Where(o => IsHostileActor(o) || o.InitialMotion.HostileCombat is not null)
             .OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray())
         {
+            if (owner.InitialMotion.Evasion is not null) continue;
             var weapon = owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal)
                 .FirstOrDefault(m => _launcherCombat.ContainsKey((owner.InitialMotion.ObjectId, m.ModuleId)));
             var engine = owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal)

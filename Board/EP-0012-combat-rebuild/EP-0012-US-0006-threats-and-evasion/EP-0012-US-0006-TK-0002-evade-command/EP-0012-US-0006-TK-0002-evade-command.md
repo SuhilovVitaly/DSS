@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0006-threats-and-evasion"
 ticket: "EP-0012-US-0006-TK-0002-evade-command"
 title: "evade-command"
-stage: "draft"
-layer: "engine"
+stage: "implemented"
+layer: "engine-contracts-motion"
 depends_on: ["EP-0012-US-0004-TK-0002-countermissile-detonation"]
-files_touched: 4
+files_touched: 12
 serves: ["US6-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0006-TK-0002-evade-command
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Актуальный allowlist 12 файлов. Для настоящего движения и возврата недостаточно private Engine dictionary: collision sampling и own forecasts должны пользоваться общей кусочной Motion-моделью. Добавляется owner-only Evasion snapshot; NPC metadata не публикуется. Scope расширен до перечисленных consumers до реализации.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -32,10 +32,20 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/SimulationEngine.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.cs:17; public sealed partial class SimulationEngine : IDisposable | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0006TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| `src/DeepSpaceSaga.Contracts/EvasionSnapshot.cs` | NEW | Owner-known current evasion schedule and captured base course/orbit. |
+| [src/DeepSpaceSaga.Contracts/ObjectMotionSnapshot.cs](../../../../src/DeepSpaceSaga.Contracts/ObjectMotionSnapshot.cs) | Existing transport | Optional owner-only Evasion. |
+| [src/DeepSpaceSaga.Motion/CurrentManeuverForecast.cs](../../../../src/DeepSpaceSaga.Motion/CurrentManeuverForecast.cs) | Shared conditional motion | Same piecewise evasion/base continuation as Engine. |
+| [src/DeepSpaceSaga.Motion/LinearMotionPredictor.cs](../../../../src/DeepSpaceSaga.Motion/LinearMotionPredictor.cs) | Shared interpolation dispatcher | Admit new point/evasion DTOs and exclude from linear fast path. |
+| [src/DeepSpaceSaga.Engine/RuntimeMotion.cs](../../../../src/DeepSpaceSaga.Engine/RuntimeMotion.cs) | Authoritative sampler | Use shared evasion model. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs) | Collision and damage consumers | Shared fractional sampling; engine damage interrupts return control. |
+| `tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0006TK0002Tests.cs` | NEW | Piecewise path/deadline/base orbit parity. |
+| `tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0006TK0002Tests.cs` | NEW | Own schedule roundtrip and null compatibility. |
 
 ## Public API after the change
 
 No public API change; внутренние детали ограничены перечисленным scope.
+
+Execution API refinement: EvasionSnapshot(SampleMotionTimeMs, EndsAtMotionTimeMs, ThreatProjectileId, Side, BaseMotion) optional on ObjectMotionSnapshot. BaseMotion has Evasion=null and captures only the actor's course/orbit continuation; published only for player ship. Engine maintains suspended orbit cycle and episode count, with Save18 capture/restore in US9. D11 applies full engine speed/perpendicular direction immediately; this is a direct maneuver control, without a second invented steering phase. t_star is captured from pre-evade relative velocity and observed direction/speed/R, never endpoint/deadline. Exact fractional evasion ends at t_star+.5s; integer-ms base command scheduling resumes on ceil(end), coasting on the base velocity across that sub-ms interval. Repeated evades preserve original base and count one active episode. Valid new engine input takes control; rejected input leaves evasion intact. Engine damage prevents an automatic return using an unavailable engine. These are implementation choices, not additional user decisions.
 
 ## Implementation steps
 
@@ -75,6 +85,10 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 14 named / 487 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0006-tk0002-results.json).
+
+D11 выполнен на настоящем Engine player/NPC path и общей piecewise Motion-модели. End=t_star+.5s по observed trace/relative velocity, без foreign endpoint/deadline. Полный ход/perpendicular, возврат к исходному курсу/paused orbit, повтор сохраняет base и считает один episode, rejected engine input atomic, accepted input берёт управление. Engine damage прерывает автовозврат; NPC schedule не публикуется. Закрыты воспроизведённые double-orbit-control и exact-turn-boundary defects. [Motion](../../evidence/us0006-tk0002-motion-results.json):3 named/240 full; [Contracts](../../evidence/us0006-tk0002-contracts-results.json):2 named/256 full; все PASS. Общая solution build0 warnings/errors. Client non-budget initial2122/1 timeout, isolated5/5, repeat2123/2123 PASS без ослабления assertions; причина initial timeout не установлена, оба run сохранены. ForecastBudget2 прежних FAIL остаются OPEN, как и full Engine gate. Save18 persistence/encounter stats/UI bindings — отдельные последующие тикеты.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 execution prerequisite correction: legacy removal follows Save18, forecast and Client migrations; see [current DAG](../../Tickets.md#migration-prerequisite-correction). AC/deletion requirements remain unchanged.
