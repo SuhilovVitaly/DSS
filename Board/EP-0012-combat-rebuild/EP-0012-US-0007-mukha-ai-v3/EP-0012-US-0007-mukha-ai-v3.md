@@ -40,7 +40,7 @@ Execution order задаётся ticket DAG, который допускает �
 |---|---|---|---|---:|
 | 18 / [EP-0012-US-0007-TK-0001-orbit-lead-fix](EP-0012-US-0007-TK-0001-orbit-lead-fix/EP-0012-US-0007-TK-0001-orbit-lead-fix.md) | motion | EP-0012-US-0006-TK-0003-continuous-turn-in-combat | US7-AC1 | 3 |
 | 19 / [EP-0012-US-0007-TK-0002-npc-aim-and-fire](EP-0012-US-0007-TK-0002-npc-aim-and-fire/EP-0012-US-0007-TK-0002-npc-aim-and-fire.md) | engine | EP-0012-US-0007-TK-0001-orbit-lead-fix | US7-AC2 | 5 |
-| 20 / [EP-0012-US-0007-TK-0003-npc-evade-and-reaction](EP-0012-US-0007-TK-0003-npc-evade-and-reaction/EP-0012-US-0007-TK-0003-npc-evade-and-reaction.md) | engine | EP-0012-US-0007-TK-0002-npc-aim-and-fire | US7-AC3 | 4 |
+| 20 / [EP-0012-US-0007-TK-0003-npc-evade-and-reaction](EP-0012-US-0007-TK-0003-npc-evade-and-reaction/EP-0012-US-0007-TK-0003-npc-evade-and-reaction.md) | engine | EP-0012-US-0007-TK-0002-npc-aim-and-fire | US7-AC3 | 7 |
 
 ## Decisions / Assumptions
 

@@ -19,6 +19,7 @@ public sealed partial class SimulationEngine
     private void RefreshHostileCombat(long time)
     {
         if (time < _nextHostileDecisionMs) return;
+        ObserveNpcDodgeThreats(time);
         long remainder = time % HostileOrbitMath.DecisionIntervalMs;
         long delta = HostileOrbitMath.DecisionIntervalMs - remainder;
         _nextHostileDecisionMs = time > long.MaxValue - delta ? long.MaxValue : time + delta;

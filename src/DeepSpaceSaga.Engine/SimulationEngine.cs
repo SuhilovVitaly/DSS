@@ -492,6 +492,8 @@ public sealed partial class SimulationEngine : IDisposable
             _countermeasureRng = new(resolvedMasterSeed);
             _moduleHitLocationRng = new(resolvedMasterSeed);
             _launchScatterRng = new(resolvedMasterSeed);
+            _npcDodgeRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed, RngStreamNames.NpcDodge), 0);
+            _npcDodgeThreats.Clear();
             _torpedoHitRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
                 RngStreamNames.CombatTorpedoHit), 0);
             _launcherBreakdownRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
@@ -3511,7 +3513,7 @@ public sealed partial class SimulationEngine : IDisposable
         EvaluateCombatReportRange(_combatProcessedTimeMs);
         if (gameTimeMs > _combatProcessedTimeMs)
             RefreshHostileCombat(_combatProcessedTimeMs);
-        if (!HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasPendingNpcDodge && !HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
@@ -3523,6 +3525,7 @@ public sealed partial class SimulationEngine : IDisposable
         while (true)
         {
             long next = gameTimeMs;
+            if (HasPendingNpcDodge) next = Math.Min(next, NextNpcDodgeTime);
             if (HasEvasionActivity) next = Math.Min(next, NextEvasionBoundary());
             if (HasActiveTorpedoes) next = Math.Min(next, _nextCombatGuidanceMs);
             if (HasHostileMotionCandidates) next = Math.Min(next, _nextHostileDecisionMs);

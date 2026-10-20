@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0007-mukha-ai-v3"
 ticket: "EP-0012-US-0007-TK-0003-npc-evade-and-reaction"
 title: "npc-evade-and-reaction"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0007-TK-0002-npc-aim-and-fire"]
-files_touched: 4
+files_touched: 7
 serves: ["US7-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0007-TK-0003-npc-evade-and-reaction
@@ -24,14 +24,19 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (7 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs](../../../../src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs) | Существует: src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs:9; internal static class RngStreamNames | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0007TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs` | Existing or bounded new partial/test | Exact physical reaction deadlines, one named-stream draw per threat, common evade executor and tests. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs` | Existing or bounded new partial/test | Exact physical reaction deadlines, one named-stream draw per threat, common evade executor and tests. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs` | Existing or bounded new partial/test | Exact physical reaction deadlines, one named-stream draw per threat, common evade executor and tests. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.cs` | Existing or bounded new partial/test | Exact physical reaction deadlines, one named-stream draw per threat, common evade executor and tests. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.NpcDodge.cs` | Existing or bounded new partial/test | Exact physical reaction deadlines, one named-stream draw per threat, common evade executor and tests. |
+| `src/DeepSpaceSaga.Engine/Rng/RngStreamNames.cs` | Existing or bounded new partial/test | Exact physical reaction deadlines, one named-stream draw per threat, common evade executor and tests. |
+| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0007TK0003Tests.cs` | Existing or bounded new partial/test | Exact physical reaction deadlines, one named-stream draw per threat, common evade executor and tests. |
+
+A-DODGE-01: discover live foreign torpedo ray threats on launch and fixed AI boundaries; (NPC ID, projectile ID) identifies an episode. At the exact reaction deadline, a still-live and relevant threat with an executable engine gets one npc_dodge draw; stale or disabled episodes resolve without a draw. No reroll. Choose the perpendicular side already farther from the trace; collinear tie uses Left. Simultaneous episodes order by due time, ordinal owner then projectile. Save18 persists this state in its owning migration.
 
 ## Public API after the change
 
@@ -74,4 +79,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 12 named / 627 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0007-tk0003-results.json).
+
+NPC reaction deadlines are exact physical times from content coefficients and pilot skill; one SplitMix bounded draw from independent npc_dodge per live relevant episode. Success invokes the shared Evade executor away from the observed ray; stale/disabled episodes resolve without RNG. Pause, known external RNG vectors, no reroll, partition determinism, masked foreign controls and session reset PASS. No legacy CombatReactions random delay on point AI. Save18 persistence remains OPEN for its owning tickets. Initial fixture failures (duplicate operator assignment and pre-reaction flank displacement) are retained; production validation was not relaxed.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

@@ -135,6 +135,7 @@ public sealed partial class SimulationEngine
         _launchScatterRng = random;
         AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Launch, owner.InitialMotion.ObjectId, string.Empty, id,
             origin.X, origin.Y, Result: torpedo ? "torpedo" : "countermissile", ProjectileKind: kind, ProfileId: profile.ProfileId, BlastRadiusKm: profile.BlastRadiusKm));
+        ObserveNpcDodgeThreats(motionTimeMs);
         return CommandStartOutcome.Started;
     }
 
