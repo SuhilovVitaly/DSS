@@ -100,7 +100,10 @@ public sealed partial class SimulationEngine
         var flight = new OwnProjectileSnapshot(kind, owner.InitialMotion.ObjectId, moduleId, origin.X, origin.Y,
             origin.X, origin.Y, endpointX, endpointY, motionTimeMs, deadline, profile.SpeedKmS,
             profile.ProfileId, profile.BlastRadiusKm, torpedo ? type.TorpedoDamage!.Value : 0,
-            torpedo ? type.ArmorPiercingPercent!.Value : 0, type.ArmorDamagePercent ?? 100, _registry.CombatRules.Blast!.CoreFraction);
+            torpedo ? type.ArmorPiercingPercent!.Value : 0, type.ArmorDamagePercent ?? 100, _registry.CombatRules.Blast!.CoreFraction,
+            owner.InitialMotion.ObjectId == PlayerShipObjectId ? CaptureReportIdentity(owner, moduleId,
+                torpedo ? BattleReportReporterRole.TorpedoOperator : BattleReportReporterRole.CountermeasureOperator) : null,
+            GetRelationToPlayer(owner));
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, profile.SpeedKmS, direction, OwnProjectile: flight);
         _objects.Add(new(motion, torpedo ? SpaceObjectType.Missile : SpaceObjectType.Countermeasure,
             motionTimeMs, [], Name: torpedo ? "Torpedo" : "Countermissile", IsKnown: true));
@@ -228,8 +231,9 @@ public sealed partial class SimulationEngine
                         projectile.InitialMotion.ObjectId, position.X, position.Y, Damage: damage, HitModuleId: result.ModuleId,
                         ArmorBefore: result.ArmorBefore, ArmorAfter: result.ArmorAfter,
                         StructureBefore: result.StructureBefore, StructureAfter: result.StructureAfter));
-                if (result.StructureAfter == 0 && ShipDestroyReason(result.UpdatedShip, result.ModuleId) is { } cause)
+                bool fatal = result.StructureAfter == 0 && ShipDestroyReason(result.UpdatedShip, result.ModuleId) is { } cause &&
                     deaths.TryAdd(target.InitialMotion.ObjectId, (cause, flight.OwnerObjectId, projectile.InitialMotion.ObjectId));
+                EmitPointContactReport(projectile, target, motionTimeMs, result, outcome, fatal);
             }
             RemovePointFlight(projectile, motionTimeMs);
         }

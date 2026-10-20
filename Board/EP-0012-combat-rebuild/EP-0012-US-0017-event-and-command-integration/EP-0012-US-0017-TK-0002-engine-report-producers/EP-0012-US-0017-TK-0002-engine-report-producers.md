@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0017-event-and-command-integration"
 ticket: "EP-0012-US-0017-TK-0002-engine-report-producers"
 title: "engine-report-producers"
-stage: "draft"
-layer: "engine"
+stage: "implemented"
+layer: "contracts-engine"
 depends_on: ["EP-0012-US-0018-TK-0003-point-combat-forecasts"]
-files_touched: 5
+files_touched: 7
 serves: ["US17-AC2", "US13-AC4"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0017-TK-0002-engine-report-producers
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (7 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -33,6 +33,11 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportIdentity.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportIdentity.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportIdentity.cs:5; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportPersistence.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportPersistence.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatReportPersistence.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0017TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| `src/DeepSpaceSaga.Contracts/CombatSnapshot.cs` | Existing | Captured own-flight reporter and launch-time owner-side metadata, omitted from foreign observation. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs` | Existing | Capture own reporter and emit actual point-contact outcomes after module damage, before removal; no enemy numeric facts. |
+
+A-REPORT-POINT-01: own weapon reporter is captured at launch in OwnProjectileSnapshot.Reporter and retained with the flight; OwnerPlayerRelationAtLaunch classifies old hostile flights after owner death/new encounters; foreign observed DTO remains unchanged. Enemy launch reports use the player scanner, never the enemy operator/module. E01 uses the current point range; E05 is one per hostile torpedo actually shot down by an own counter. E06 includes only own module loss; E07 omits enemy module/numeric damage and marks only the first queued fatal hit as Destroyed in a same-time batch. Full point Save18 replay/captured reporter restoration remains an explicit US9 gate; current once marks/sequence persistence is exercised only where actual current format permits, without fabricating a point Save17 pass.
 
 ## Public API after the change
 
@@ -47,7 +52,7 @@ No public API change; использовать контракт зависимы
 
 ## Out of scope / Invariants
 
-Один production layer: engine; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
+Bounded Contracts own-flight reporter plus Engine producers; matching Engine tests only. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
 
 ## Tests
 
@@ -74,6 +79,10 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 12 named / 775 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0017-tk0002-results.json).
+
+Actual point E01-E07 producers use70km range, captured own operator, launch profile/radius and resolved event coordinates. Enemy launch uses own scanner; no enemy module/operator or future endpoint. Own damage includes actual own module losses; enemy hit reports omit module/numeric damage and expose only public Core/Edge/Destroyed. E05 uses captured launch-side even after owner death/new encounter. Replays/repeated frames do not emit again; zero rounded damage has no hit report. Contracts256/256, Motion259/259, solution build0 warnings/errors. Initial nonlethal fixture HP was made explicit150/armor60; original10/1 retained. Full point Save18 replay/restore remains OPEN, not represented by current legacy save evidence.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 execution prerequisite correction: legacy removal follows Save18, forecast and Client migrations; see [current DAG](../../Tickets.md#migration-prerequisite-correction). AC/deletion requirements remain unchanged.

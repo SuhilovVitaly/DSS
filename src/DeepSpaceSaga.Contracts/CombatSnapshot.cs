@@ -33,7 +33,9 @@ public sealed record OwnProjectileSnapshot(
     int Damage,
     decimal ArmorPiercingPercent,
     decimal ArmorDamagePercent = 100,
-    double CoreFraction = 0.3);
+    double CoreFraction = 0.3,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] BattleReportReporterSnapshot? Reporter = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerPlayerRelationAtLaunch = null);
 
 /// <summary>
 /// Foreign projectile observation. The unit direction vector is measured in world axes;
