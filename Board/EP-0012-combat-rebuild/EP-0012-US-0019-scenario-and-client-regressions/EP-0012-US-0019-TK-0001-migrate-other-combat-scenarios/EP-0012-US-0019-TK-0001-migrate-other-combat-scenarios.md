@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios"
 title: "migrate-other-combat-scenarios"
 stage: "draft"
 layer: "content-data"
-depends_on: ["EP-0012-US-0017-TK-0003-local-client-delivery"]
+depends_on: ["EP-0012-US-0009-TK-0005-save18-defense-validation"]
 files_touched: 3
 serves: ["US19-AC1", "US9-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios
@@ -73,3 +73,5 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+2026-10-20 consumer prerequisite correction: point consumers precede production data activation; actual integration gates remain OPEN until activation/Save18. See [DAG](../../Tickets.md#consumer-prerequisite-correction).

@@ -56,7 +56,7 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 20 / US-0007-TK-0003-npc-evade-and-reaction | PASS 12 named / 627 bounded regression; build/format/diff PASS | `d340dccbfce90182d04f8f37c17e2252b8d75f9b`, origin SHA verified |
 | 21 / US-0008-TK-0001-encounter-state | PASS 13 named / 640 bounded regression; build/format/diff PASS | `a4a9acd31dce15ad17b5cce7ffb412723e229a8c`, origin SHA verified |
 | 22 / US-0008-TK-0002-combat-speed-lock | PASS 11 named / 688 bounded regression; build/format/diff PASS | `ca3eda12838d90908f6a64e4b53528eea059230c`, origin SHA verified |
-| 23 / US-0008-TK-0003-encounter-stats | PASS 8 named / 696 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 23 / US-0008-TK-0003-encounter-stats | PASS 8 named / 696 bounded regression; build/format/diff PASS | `1db6e9c3682b337ff2431152a819c1e6aa575552`, origin SHA verified |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
@@ -73,3 +73,5 @@ US-0002-TK-0001: экспериментальные source/deployed catalog chec
 Служебная коррекция DAG опубликована `9de88536c6c311d0b464c622e6e73fe3c76ace9a`, origin SHA verified. Новая нумерация шагов соответствует текущему Tickets.md, идентичности тикетов сохранены.
 
 2026-10-20: уточнены реальные prerequisites legacy deletion по source consumers Save/forecasts/Client. Пять deletion/regression tickets отложены до завершения consumer migration, перед balance. Новый следующий шаг — evade-command, уже использует готовые public observed trace и BlastThreatMath; отсутствие legacy deletion не является его runtime prerequisite. Legacy-removal AC остаются OPEN, ничего не объявлено удалённым.
+
+2026-10-20: consumer prerequisite DAG correction before data activation; next Engine point-forecast integration, then real report/privacy/transport/Client consumers. US2 rules/Settings/modes switch kept atomic; all production activation, Save18, legacy-removal and native gates remain OPEN. See Tickets.md consumer correction.

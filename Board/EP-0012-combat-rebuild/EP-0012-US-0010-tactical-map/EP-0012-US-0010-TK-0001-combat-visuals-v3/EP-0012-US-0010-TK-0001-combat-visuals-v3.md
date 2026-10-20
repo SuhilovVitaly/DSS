@@ -5,11 +5,11 @@ ticket: "EP-0012-US-0010-TK-0001-combat-visuals-v3"
 title: "combat-visuals-v3"
 stage: "draft"
 layer: "client"
-depends_on: ["EP-0012-US-0019-TK-0004-client-combat-regressions"]
+depends_on: ["EP-0012-US-0019-TK-0003-client-forecast-cache-migration"]
 files_touched: 3
 serves: ["US10-AC4"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0010-TK-0001-combat-visuals-v3
@@ -73,3 +73,5 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+2026-10-20 consumer prerequisite correction: point consumers precede production data activation; actual integration gates remain OPEN until activation/Save18. See [DAG](../../Tickets.md#consumer-prerequisite-correction).

@@ -34,7 +34,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 60 / [EP-0012-US-0016-TK-0001-combat-localization](EP-0012-US-0016-TK-0001-combat-localization/EP-0012-US-0016-TK-0001-combat-localization.md) | client | EP-0012-US-0013-TK-0005-combat-start-timer-summary | US16-AC1 | 5 |
+| 46 / [EP-0012-US-0016-TK-0001-combat-localization](EP-0012-US-0016-TK-0001-combat-localization/EP-0012-US-0016-TK-0001-combat-localization.md) | client | EP-0012-US-0013-TK-0005-combat-start-timer-summary | US16-AC1 | 5 |
 
 ## Decisions / Assumptions
 

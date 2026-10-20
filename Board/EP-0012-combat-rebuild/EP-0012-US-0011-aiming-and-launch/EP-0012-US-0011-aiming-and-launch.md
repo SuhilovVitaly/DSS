@@ -55,10 +55,10 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 48 / [EP-0012-US-0011-TK-0001-aim-mode-and-input-map](EP-0012-US-0011-TK-0001-aim-mode-and-input-map/EP-0012-US-0011-TK-0001-aim-mode-and-input-map.md) | client | EP-0012-US-0010-TK-0004-own-path-forecast-and-fit | US11-AC1 | 5 |
-| 49 / [EP-0012-US-0011-TK-0002-torpedo-aim-preview](EP-0012-US-0011-TK-0002-torpedo-aim-preview/EP-0012-US-0011-TK-0002-torpedo-aim-preview.md) | client | EP-0012-US-0011-TK-0001-aim-mode-and-input-map | US11-AC2 | 4 |
-| 50 / [EP-0012-US-0011-TK-0003-countermissile-aim-preview](EP-0012-US-0011-TK-0003-countermissile-aim-preview/EP-0012-US-0011-TK-0003-countermissile-aim-preview.md) | client | EP-0012-US-0011-TK-0002-torpedo-aim-preview | US11-AC3 | 4 |
-| 51 / [EP-0012-US-0011-TK-0004-launch-commands-and-reasons](EP-0012-US-0011-TK-0004-launch-commands-and-reasons/EP-0012-US-0011-TK-0004-launch-commands-and-reasons.md) | client | EP-0012-US-0011-TK-0003-countermissile-aim-preview | US11-AC4 | 4 |
+| 34 / [EP-0012-US-0011-TK-0001-aim-mode-and-input-map](EP-0012-US-0011-TK-0001-aim-mode-and-input-map/EP-0012-US-0011-TK-0001-aim-mode-and-input-map.md) | client | EP-0012-US-0010-TK-0004-own-path-forecast-and-fit | US11-AC1 | 5 |
+| 35 / [EP-0012-US-0011-TK-0002-torpedo-aim-preview](EP-0012-US-0011-TK-0002-torpedo-aim-preview/EP-0012-US-0011-TK-0002-torpedo-aim-preview.md) | client | EP-0012-US-0011-TK-0001-aim-mode-and-input-map | US11-AC2 | 4 |
+| 36 / [EP-0012-US-0011-TK-0003-countermissile-aim-preview](EP-0012-US-0011-TK-0003-countermissile-aim-preview/EP-0012-US-0011-TK-0003-countermissile-aim-preview.md) | client | EP-0012-US-0011-TK-0002-torpedo-aim-preview | US11-AC3 | 4 |
+| 37 / [EP-0012-US-0011-TK-0004-launch-commands-and-reasons](EP-0012-US-0011-TK-0004-launch-commands-and-reasons/EP-0012-US-0011-TK-0004-launch-commands-and-reasons.md) | client | EP-0012-US-0011-TK-0003-countermissile-aim-preview | US11-AC4 | 4 |
 
 ## Decisions / Assumptions
 

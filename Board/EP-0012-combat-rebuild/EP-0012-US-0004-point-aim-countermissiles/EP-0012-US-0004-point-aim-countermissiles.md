@@ -32,7 +32,7 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Dependencies
 
-Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0003-point-aim-torpedoes, EP-0012-US-0016-combat-localization. Нативные открытые gates EP11 не объявляются закрытыми EP12.
+Execution order задаётся ticket DAG, который допускает чередование слоёв между историями. Stories — тематические контейнеры, не атомарные build units; metadata dependencies перечисляет тематические зависимости; до начала тикета обязательна готовность его API/schema prerequisites по актуальному DAG; обязательные межслойные depends_on отдельных тикетов дополняют этот список. Входящие prerequisite stories: EP-0012-US-0003-point-aim-torpedoes, EP-0012-US-0019-scenario-and-client-regressions. Нативные открытые gates EP11 не объявляются закрытыми EP12.
 
 ## Ticket map
 
@@ -40,7 +40,7 @@ Execution order задаётся ticket DAG, который допускает �
 |---|---|---|---|---:|
 | 14 / [EP-0012-US-0004-TK-0001-countermissile-point-launch](EP-0012-US-0004-TK-0001-countermissile-point-launch/EP-0012-US-0004-TK-0001-countermissile-point-launch.md) | engine | EP-0012-US-0003-TK-0004-manual-detonation | US4-AC1 | 4 |
 | 15 / [EP-0012-US-0004-TK-0002-countermissile-detonation](EP-0012-US-0004-TK-0002-countermissile-detonation/EP-0012-US-0004-TK-0002-countermissile-detonation.md) | engine-and-contracts | EP-0012-US-0004-TK-0001-countermissile-point-launch | US4-AC2 | 5 |
-| 61 / [EP-0012-US-0004-TK-0003-remove-auto-pd](EP-0012-US-0004-TK-0003-remove-auto-pd/EP-0012-US-0004-TK-0003-remove-auto-pd.md) | engine | EP-0012-US-0016-TK-0001-combat-localization | US4-AC3 | 4 |
+| 61 / [EP-0012-US-0004-TK-0003-remove-auto-pd](EP-0012-US-0004-TK-0003-remove-auto-pd/EP-0012-US-0004-TK-0003-remove-auto-pd.md) | engine | EP-0012-US-0019-TK-0004-client-combat-regressions | US4-AC3 | 4 |
 
 ## Decisions / Assumptions
 
