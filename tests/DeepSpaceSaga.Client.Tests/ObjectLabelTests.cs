@@ -391,7 +391,7 @@ public class ObjectLabelTests
     [Fact]
     public void Unknown_object_label_is_neizvestny_obekt()
     {
-        Assert.Equal("Неизвестный объект",
+        Assert.Equal(Localization.Get("Combat.UnknownObject"),
             ObjectLabelText.Build(SpaceObjectType.UnknownSpaceObject, displayName: null, "AST-1"));
     }
 
@@ -426,9 +426,9 @@ public class ObjectLabelTests
     [Fact]
     public void Ship_without_name_falls_back_to_unknown_label()
     {
-        Assert.Equal("Неизвестный объект",
+        Assert.Equal(Localization.Get("Combat.UnknownObject"),
             ObjectLabelText.Build(SpaceObjectType.PlayerShip, displayName: null, "SPC-0001"));
-        Assert.Equal("Неизвестный объект",
+        Assert.Equal(Localization.Get("Combat.UnknownObject"),
             ObjectLabelText.Build(SpaceObjectType.NpcShip, displayName: null, "NPC-1"));
     }
 
@@ -443,14 +443,14 @@ public class ObjectLabelTests
     public void Sun_and_Planet_labels_use_display_name_with_fallback()
     {
         Assert.Equal("Sun", ObjectLabelText.Build(SpaceObjectType.Sun, "Sun", "SUN-1"));
-        Assert.Equal("Неизвестный объект", ObjectLabelText.Build(SpaceObjectType.Planet, null, "PL-1"));
+        Assert.Equal(Localization.Get("Combat.UnknownObject"), ObjectLabelText.Build(SpaceObjectType.Planet, null, "PL-1"));
     }
 
     [Fact]
     public void Null_render_type_uses_display_name_with_fallback()
     {
         Assert.Equal("Legacy", ObjectLabelText.Build(null, "Legacy", "L-1"));
-        Assert.Equal("Неизвестный объект", ObjectLabelText.Build(null, null, "L-1"));
+        Assert.Equal(Localization.Get("Combat.UnknownObject"), ObjectLabelText.Build(null, null, "L-1"));
     }
 
     [Fact]

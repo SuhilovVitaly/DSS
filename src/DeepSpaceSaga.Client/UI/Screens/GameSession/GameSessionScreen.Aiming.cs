@@ -260,7 +260,7 @@ public sealed partial class GameSessionScreen
         var profiles = PointProfiles(module);
         string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : profiles.FirstOrDefault()?.ProfileId;
         foreach (var profile in profiles)
-            lines.Add($"{(profile.ProfileId == current ? "> " : "")}{profile.ProfileId} · {profile.SpeedKmS:0.##} km/s · R {profile.BlastRadiusKm:0.##} km");
+            lines.Add($"{(profile.ProfileId == current ? "> " : "")}{CombatText("Profile." + profile.ProfileId, profile.ProfileId)} · {profile.SpeedKmS:0.##} {CombatText("KilometersPerSecond", "")} · R {profile.BlastRadiusKm:0.##} {CombatText("Kilometers", "")}");
         double? scatter = module.LauncherCombat?.ScatterPercent ?? module.Defense?.ScatterPercent;
         double? effective = module.LauncherCombat?.EffectiveScatterPercent ?? module.Defense?.EffectiveScatterPercent;
         lines.Add($"{CombatText("Scatter", "Разброс")}: {(scatter is { } value ? (value * 100).ToString("0.##") + "%" : "—")} · σ {(effective is { } sigma ? (sigma * 100).ToString("0.##") + "%" : "—")}");
@@ -284,6 +284,6 @@ public sealed partial class GameSessionScreen
         float radius = (float)styles.ReticleRadiusPx;
         canvas.DrawLine(x - radius, y, x + radius, y, line); canvas.DrawLine(x, y - radius, x, y + radius, line);
         using var text = new SKPaint { Color = styles.ForeignProfileText, IsAntialias = true, TextSize = (float)styles.TextSizePx };
-        canvas.DrawText($"{aim.ProfileId} · {PointAimFeedback}", x + radius, y + radius + text.TextSize, text);
+        canvas.DrawText($"{CombatText("Profile." + aim.ProfileId, aim.ProfileId)} · {PointAimFeedback}", x + radius, y + radius + text.TextSize, text);
     }
 }

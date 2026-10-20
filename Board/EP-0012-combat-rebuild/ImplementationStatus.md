@@ -87,7 +87,8 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 42 / US-0013-TK-0002-weapon-panels-v3 | PASS 8 named / 2273 bounded regression; build/format/diff PASS | `ce323d30fc8e999e2436f2ac814a56e07b42e5e4`, origin SHA verified |
 | 43 / US-0013-TK-0003-enemy-badges-and-hit-labels | PASS 13 named / 2286 bounded regression; build/format/diff PASS | `7ca95b70d6708405b9792fc31dc66f42e4eef311`, origin SHA verified |
 | 44 / US-0013-TK-0004-journal-and-reports-v3 | PASS 21 named / 2307 bounded regression; build/format/diff PASS | `ff74e9bbe6a584b96e483fbd875fff862ff3f0df`, origin SHA verified |
-| 45 / US-0013-TK-0005-combat-start-timer-summary | PASS 15 named / 2322 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 45 / US-0013-TK-0005-combat-start-timer-summary | PASS 15 named / 2322 bounded regression; build/format/diff PASS | `69c5d34090e3072fa35eedb8ce0d60be1bbb2ae9`, origin SHA verified |
+| 46 / US-0016-TK-0001-combat-localization | PASS 8 named / 2330 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

@@ -24,7 +24,7 @@ internal sealed class CombatReportFormatter(Func<string, string>? localize = nul
         string C(string key) => _localize("Combat." + key);
         var facts = new List<string>();
         if (report.ProjectileKind is { } kind) facts.Add($"{C("ProjectileKind")}: {C("Kind." + kind)}");
-        if (report.ProfileId is { } profile) facts.Add($"{C("Profile")}: {profile}");
+        if (report.ProfileId is { } profile) facts.Add($"{C("Profile")}: {Localization.Combat("Profile." + profile, _localize)}");
         if (report.BlastRadiusKm is { } radius) facts.Add($"{C("BlastRadius")}: {radius:0.##} {C("Kilometers")}");
         if (report.HitResult is { } result) facts.Add($"{C("HitResult")}: {C("Hit." + result)}");
         if (facts.Count > 0) message += "\n" + string.Join(" · ", facts);

@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0016-combat-localization"
 title: "Локализация боевого интерфейса"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0003-point-aim-torpedoes", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0005-snapshot-privacy", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time", "EP-0012-US-0009-scenarios-and-saves", "EP-0012-US-0010-tactical-map", "EP-0012-US-0011-aiming-and-launch", "EP-0012-US-0012-maneuver-and-threat-ui", "EP-0012-US-0013-combat-state-and-feedback", "EP-0012-US-0017-event-and-command-integration", "EP-0012-US-0018-legacy-combat-cleanup", "EP-0012-US-0019-scenario-and-client-regressions"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -34,7 +34,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 46 / [EP-0012-US-0016-TK-0001-combat-localization](EP-0012-US-0016-TK-0001-combat-localization/EP-0012-US-0016-TK-0001-combat-localization.md) | client | EP-0012-US-0013-TK-0005-combat-start-timer-summary | US16-AC1 | 5 |
+| 46 / [EP-0012-US-0016-TK-0001-combat-localization](EP-0012-US-0016-TK-0001-combat-localization/EP-0012-US-0016-TK-0001-combat-localization.md) | client | EP-0012-US-0013-TK-0005-combat-start-timer-summary | US16-AC1 | 18 |
 
 ## Decisions / Assumptions
 
@@ -47,3 +47,7 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 ## Decision / review log
 
 2026-10-20T07:48:46.640Z: создано по поручению пользователя. Разделение слоёв/<=5 файлов — техническая декомпозиция. Stage draft, implementation NOT STARTED, проверки кода не запускались.
+
+## Automated story review
+
+US16-AC1 automated RU/EN coverage PASS (8 named, 2330 non-budget Client). Source key audit and actual point screen 100/150 percent renders reviewed. IDs and captured/custom names preserved. Native acceptance NOT RUN; story remains in_progress until final integration/native gates.

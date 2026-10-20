@@ -114,7 +114,7 @@ public sealed partial class GameSessionScreen
             Color = preview.OutOfRange || preview.FriendlyFire ? styles.Danger : styles.ForeignProfileText
         };
         string number(double value) => value.ToString("0.0", CultureInfo.InvariantCulture);
-        string label = $"R {number(preview.RadiusKm)} km · σ {(preview.SigmaKm is { } s ? number(s) + " km" : "?")} · ETA {number(preview.RealSeconds)} {CombatText("Seconds", "s")}";
+        string label = $"R {number(preview.RadiusKm)} {CombatText("Kilometers", "")} · σ {(preview.SigmaKm is { } s ? number(s) + " " + CombatText("Kilometers", "") : "?")} · {CombatText("ETA", "")} {number(preview.RealSeconds)} {CombatText("Seconds", "s")}";
         if (preview.OutOfRange) label += " · " + CombatText("Aim.OutOfRange", "Out of range");
         if (preview.FriendlyFire) label += " · " + CombatText("Aim.FriendlyFire", "Will hit friendly — click again within 1 s");
         TorpedoAimLabelBounds = DrawPointAimLabel(canvas, label, new(end.X, end.Y), text);

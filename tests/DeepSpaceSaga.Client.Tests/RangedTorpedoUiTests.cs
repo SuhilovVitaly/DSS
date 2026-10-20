@@ -25,7 +25,7 @@ public class RangedTorpedoUiTests
         Assert.Equal(enabled, Button(f.Screen).Enabled);
         if (!enabled)
         {
-            Assert.Contains(range is null ? "Дальность неизвестна" : "Вне дальности", Status(f));
+            Assert.Contains(range is null ? Localization.Get("Combat.RangeUnknown") : Localization.Get("Combat.OutOfRange"), Status(f));
             ClickFire(f);
             Assert.Empty(f.Connection.Commands);
         }
@@ -66,7 +66,7 @@ public class RangedTorpedoUiTests
         f.Update(s => s with { CommandResults = [] }); // Coalesced snapshots still retain the matching receipt.
         Render(f.Screen);
         Assert.True(Button(f.Screen).Enabled);
-        Assert.Contains("Пуск отклонён", Status(f));
+        Assert.Contains(Localization.Get("Combat.LaunchRejectedOutOfRange"), Status(f));
         ClickFire(f);
         var second = f.Connection.Commands[1];
         Assert.NotEqual(first.CommandId, second.CommandId);

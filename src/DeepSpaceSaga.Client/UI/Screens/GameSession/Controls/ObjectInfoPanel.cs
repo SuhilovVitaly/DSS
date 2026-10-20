@@ -187,7 +187,7 @@ public sealed class ObjectInfoPanel
                 lines.Add(("Information", EnvironmentFieldRenderer.Notice));
                 return lines;
             }
-            lines.Add(("Speed", $"{d.SpeedKmS:0.###} km/s"));
+            lines.Add(("Speed", $"{d.SpeedKmS:0.###} {Localization.Combat("KilometersPerSecond")}"));
             if (d.Owner is { } owner)
             {
                 lines.Add(("Owner", owner));
@@ -207,8 +207,8 @@ public sealed class ObjectInfoPanel
             else if (d.Torpedo is { } torpedo)
             {
                 lines.Add(("Target", torpedo.Target));
-                lines.Add(("Travelled", $"{torpedo.TravelledKm:0.###} km"));
-                lines.Add(("ETA", torpedo.EtaSeconds is { } eta ? $"{eta:0.###} s" : "—"));
+                lines.Add(("Travelled", $"{torpedo.TravelledKm:0.###} {Localization.Combat("Kilometers")}"));
+                lines.Add(("ETA", torpedo.EtaSeconds is { } eta ? $"{eta:0.###} {Localization.Combat("Seconds")}" : "—"));
                 lines.Add(("Hit chance", $"{torpedo.HitChancePercent}%"));
             }
             else if (d.Survey is { } survey)
@@ -382,7 +382,7 @@ public sealed class ObjectInfoPanel
 
         float titleX = _hideShowButtonRect.Right + Padding + 2f;
         float titleY = _captionRect.MidY + _titlePaint.TextSize / 3f;
-        canvas.DrawText("Object Info", titleX, titleY, _titlePaint);
+        canvas.DrawText(Localization.Combat("Panel.ObjectInfo"), titleX, titleY, _titlePaint);
 
         float rowY = _captionRect.Bottom;
 
@@ -394,7 +394,7 @@ public sealed class ObjectInfoPanel
             for (int i = 0; i < RowNames.Length; i++)
             {
                 bool opened = IsRowOpen(i);
-                var sourceLines = BuildLines(rowData[i]);
+                var sourceLines = BuildLines(rowData[i]).Select(p => (Label: Localization.CombatFieldLabel(p.Label), p.Value)).ToList();
                 float valueOffset = ValueOffset(rowData[i], sourceLines);
                 var renderLines = BuildRenderLines(rowData[i], sourceLines, valueOffset);
                 float bodyHeight = Math.Max(_renderImageWidth * ImageHeight / ImageWidth + 2 * Padding, 2 * Padding + renderLines.Count * LineHeight);
@@ -420,7 +420,7 @@ public sealed class ObjectInfoPanel
                 _rowBodyRects[i] = bodyRect;
 
                 DrawBeveledCaption(canvas, captionRect, _rowCaptionBgPaint);
-                canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
+                canvas.DrawText(Localization.CombatPanelCaption(RowNames[i]), captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
                 if (opened)
                     DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset, i == 0 ? OwnModuleDiagram : null);

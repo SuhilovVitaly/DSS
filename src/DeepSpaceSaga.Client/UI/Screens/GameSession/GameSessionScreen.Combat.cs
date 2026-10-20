@@ -549,12 +549,12 @@ public sealed partial class GameSessionScreen
     {
         string status = LauncherModeStatus(launcher, _buffer.Presented?.Snapshot.MotionTimeMs ?? 0);
         if (_torpedoRejectedOutOfRange && _selectedObjectId == _pendingTorpedoTargetId)
-            return status + " · Пуск отклонён: цель вне дальности";
-        if (launcher.RangeKm is not { } range || !double.IsFinite(range) || range <= 0) return status + " · Дальность неизвестна";
+            return status + " · " + CombatText("LaunchRejectedOutOfRange", "");
+        if (launcher.RangeKm is not { } range || !double.IsFinite(range) || range <= 0) return status + " · " + CombatText("RangeUnknown", "");
         if (_buffer.Presented?.Snapshot is { } snapshot && _selectedObjectId is not null &&
             _selectedObjectId != snapshot.PlayerShipObjectId && snapshot.Objects.Any(o => o.ObjectId == _selectedObjectId) &&
             !IsSelectedTargetInTorpedoRange(snapshot, launcher))
-            return status + $" · Вне дальности ({range:0.##} км)";
+            return status + $" · {CombatText("OutOfRange", "")} ({range:0.##} {CombatText("Kilometers", "")})";
         return status;
     }
 
@@ -602,9 +602,9 @@ public sealed partial class GameSessionScreen
         {
             { LauncherCombat.IsBrokenUntilDock: true, LauncherCombat: { } launcher } =>
                 LauncherModeStatus(launcher, _buffer.Presented?.Snapshot.MotionTimeMs ?? 0),
-            { LauncherCombat.Operator: null } => "Нет оператора",
+            { LauncherCombat.Operator: null } => CombatText("NoOperator", ""),
             { PowerState: "On", OperationalState: "Ready", StructurePoints: > 0, LauncherCombat: { } launcher } => ReadyLauncherStatus(launcher),
-            { LauncherCombat: not null } => "Unavailable",
+            { LauncherCombat: not null } => CombatText("Unavailable", ""),
             _ => null
         };
     }

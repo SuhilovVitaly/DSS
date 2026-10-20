@@ -837,7 +837,7 @@ public sealed class CommandsPanel
 
         float textX = _hideShowButtonRect.Right + Padding + 2f;
         float textY = _captionRect.MidY + _titlePaint.TextSize / 3f;
-        canvas.DrawText("Command Panels", textX, textY, _titlePaint);
+        canvas.DrawText(Localization.Combat("Panel.Commands"), textX, textY, _titlePaint);
     }
 
     private void DrawButton(SKCanvas canvas, SKRect rect, int buttonIndex, SKBitmap? image)
@@ -889,7 +889,7 @@ public sealed class CommandsPanel
         }
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;
-        canvas.DrawText(TruncateLabel(row.Name, _moduleCaptionTextPaint,
+        canvas.DrawText(TruncateLabel(Localization.CombatPanelCaption(row.Name), _moduleCaptionTextPaint,
             (row.RangeToggleRect.IsEmpty ? row.CaptionRect.Right - 6 : row.RangeToggleRect.Left - 6) - textX), textX, textY, _moduleCaptionTextPaint);
         if (!row.RangeToggleRect.IsEmpty)
         {

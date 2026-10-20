@@ -203,12 +203,7 @@ public sealed partial class GameSessionScreen
         ? $"{op.DisplayName} · {CombatText("SkillMetadata", "Навык (справочно)")} {op.Skill}"
         : CombatText("NoOperator", "Нет оператора");
 
-    internal static string CombatText(string key, string fallback)
-    {
-        string fullKey = "Combat." + key;
-        string value = Localization.Get(fullKey);
-        return value == fullKey ? fallback : value;
-    }
+    internal static string CombatText(string key, string fallback) => Localization.Combat(key);
 
     internal static string DefenseReasonText(string reason) =>
         CombatText("Reason." + reason, CombatText("CommandRejected", "Command rejected"));

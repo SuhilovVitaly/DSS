@@ -34,7 +34,7 @@ internal sealed class ModuleDiagram
             }
         foreach (var id in _hits.Where(p => realMs - p.Value.Started >= 800).Select(p => p.Key).ToArray()) _hits.Remove(id);
         Tiles = modules.IsDefaultOrEmpty ? [] : modules.OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal)
-            .Select(m => new Tile(m.ModuleId, m.DisplayName, m.ArmorCurrent, m.ArmorMax, m.StructureCurrent,
+            .Select(m => new Tile(m.ModuleId, Localization.CombatModuleName(m.ModuleTypeId, m.DisplayName), m.ArmorCurrent, m.ArmorMax, m.StructureCurrent,
                 m.StructureMax, m.IsCritical, m.IsDestroyed,
                 Math.Max(0, (m.DisabledUntilMotionTimeMs ?? motionMs) - motionMs) / 1000 / (multiplier > 0 ? multiplier : .25),
                 _hits.TryGetValue(m.ModuleId, out var hit) ? hit.Damage : null)).ToArray();
@@ -60,9 +60,9 @@ internal sealed class ModuleDiagram
             canvas.DrawRect(box, border);
             canvas.Save(); canvas.ClipRect(new SKRect(box.Left + 3, box.Top, box.Right - 3, box.Bottom));
             canvas.DrawText(tile.Name, box.Left + 4, box.Top + 11, text);
-            canvas.DrawText($"A {tile.Armor}/{tile.ArmorMax}  S {tile.Structure}/{tile.StructureMax}", box.Left + 4, box.Top + 23, text);
+            canvas.DrawText($"{GameSessionScreen.CombatText("ArmorShort", "")} {tile.Armor}/{tile.ArmorMax}  {GameSessionScreen.CombatText("StructureShort", "")} {tile.Structure}/{tile.StructureMax}", box.Left + 4, box.Top + 23, text);
             string status = tile.Destroyed ? GameSessionScreen.CombatText("Destroyed", "Уничтожено") :
-                tile.DisabledRealSeconds > 0 ? $"{GameSessionScreen.CombatText("Disabled", "Отключён")} {tile.DisabledRealSeconds:0.0}s" : tile.Critical ? "!" : "";
+                tile.DisabledRealSeconds > 0 ? $"{GameSessionScreen.CombatText("Disabled", "Отключён")} {tile.DisabledRealSeconds:0.0} {GameSessionScreen.CombatText("Seconds", "")}" : tile.Critical ? "!" : "";
             canvas.DrawText(status, box.Left + 4, box.Top + 35, text);
             if (tile.HitDamage is { } damage) canvas.DrawText($"−{damage}, {tile.Name}", box.Left + 4, box.Top + 47, text);
             canvas.Restore();

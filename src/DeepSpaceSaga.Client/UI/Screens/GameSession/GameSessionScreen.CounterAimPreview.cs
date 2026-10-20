@@ -150,7 +150,7 @@ public sealed partial class GameSessionScreen
         }
         using var text = new SKPaint { IsAntialias = true, TextSize = (float)styles.TextSizePx, Color = styles.ForeignProfileText };
         string Number(double value) => value.ToString("0.0", CultureInfo.InvariantCulture);
-        string label = $"ETA {Number(preview.RealSeconds)} {CombatText("Seconds", "s")} · ×{preview.SalvoCount}";
+        string label = $"{CombatText("ETA", "")} {Number(preview.RealSeconds)} {CombatText("Seconds", "s")} · ×{preview.SalvoCount}";
         if (preview.ArrivalRealSeconds is { } arrival) label += " · " + CombatText("Aim.ArrivesIn", "Arrives in") + $" {Number(arrival)} {CombatText("Seconds", "s")}";
         if (preview.SpareRealSeconds is { } spare) label += " · " + CombatText("Aim.Spare", "Spare") + $" {Number(spare)} {CombatText("Seconds", "s")}";
         if (preview.Late) label += " · " + CombatText("Aim.Late", "Too late");
