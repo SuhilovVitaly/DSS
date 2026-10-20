@@ -1,6 +1,6 @@
-# EP-0011 — 2 истории / 4 тикета
+# EP-0011 — 4 истории / 12 документов тикетов
 
-Последовательный порядок реализации и публикации. Документация выполняется последней. Полные SHA и результаты: [execution](ImplementationStatus.md).
+TK-0001 US-0003 — полный продуктовый контракт, не отдельный implementation unit; семь точных исполнительных пакетов палитры ниже. Publication evidence прежнего scope сохраняется; новая палитра не публиковалась.
 
 | Порядок | Тикет | Зависимости | Статус |
 |---|---|---|---|
@@ -8,3 +8,11 @@
 | 2 | [EP-0011-US-0001-observed-npc-trajectories-TK-0002-map-forecast-integration](EP-0011-US-0001-observed-npc-trajectories/EP-0011-US-0001-observed-npc-trajectories-TK-0002-map-forecast-integration/EP-0011-US-0001-observed-npc-trajectories-TK-0002-map-forecast-integration.md) | TK-0001 | implementation/automated PASS; native OPEN |
 | 3 | [EP-0011-US-0001-observed-npc-trajectories-TK-0003-regression-coverage](EP-0011-US-0001-observed-npc-trajectories/EP-0011-US-0001-observed-npc-trajectories-TK-0003-regression-coverage/EP-0011-US-0001-observed-npc-trajectories-TK-0003-regression-coverage.md) | TK-0001, TK-0002 | implementation/automated PASS; native OPEN |
 | 4 | [EP-0011-US-0002-TK-0001-documentation-and-graph](EP-0011-US-0002-project-documentation/EP-0011-US-0002-TK-0001-documentation-and-graph/EP-0011-US-0002-TK-0001-documentation-and-graph.md) | US-0001, all functional tickets | implementation/automated PASS; native OPEN |
+| contract | [US-0003/TK-0001](EP-0011-US-0003-tactical-map-palette/EP-0011-US-0003-TK-0001-tactical-map-color-redesign/EP-0011-US-0003-TK-0001-tactical-map-color-redesign.md) | aggregate | approved; native/product OPEN |
+| 5 | [EP-0011-US-0003-TK-0002-object-and-combat-palette](EP-0011-US-0003-tactical-map-palette/EP-0011-US-0003-TK-0002-object-and-combat-palette/EP-0011-US-0003-TK-0002-object-and-combat-palette.md) | `[]` | implementation DONE; tests/build PASS; native/product OPEN |
+| 6 | [EP-0011-US-0004-TK-0001-background-layer-routing](EP-0011-US-0004-map-background-palette/EP-0011-US-0004-TK-0001-background-layer-routing/EP-0011-US-0004-TK-0001-background-layer-routing.md) | `[EP-0011-US-0003-TK-0002-object-and-combat-palette]` | implementation DONE; tests/build PASS; native/product OPEN |
+| 7 | [EP-0011-US-0003-TK-0003-navigation-and-trails](EP-0011-US-0003-tactical-map-palette/EP-0011-US-0003-TK-0003-navigation-and-trails/EP-0011-US-0003-TK-0003-navigation-and-trails.md) | `[EP-0011-US-0003-TK-0002-object-and-combat-palette, EP-0011-US-0004-TK-0001-background-layer-routing]` | implementation DONE; tests/build PASS; native/product OPEN |
+| 8 | [EP-0011-US-0003-TK-0004-combat-role-routing](EP-0011-US-0003-tactical-map-palette/EP-0011-US-0003-TK-0004-combat-role-routing/EP-0011-US-0003-TK-0004-combat-role-routing.md) | `[EP-0011-US-0003-TK-0002-object-and-combat-palette]` | implementation DONE; tests/build PASS; native/product OPEN |
+| 9 | [EP-0011-US-0003-TK-0005-labels-and-grid](EP-0011-US-0003-tactical-map-palette/EP-0011-US-0003-TK-0005-labels-and-grid/EP-0011-US-0003-TK-0005-labels-and-grid.md) | `[EP-0011-US-0003-TK-0002-object-and-combat-palette, EP-0011-US-0004-TK-0001-background-layer-routing]` | implementation DONE; tests/build PASS; native/product OPEN |
+| 10 | [EP-0011-US-0004-TK-0002-palette-compatibility-regressions](EP-0011-US-0004-map-background-palette/EP-0011-US-0004-TK-0002-palette-compatibility-regressions/EP-0011-US-0004-TK-0002-palette-compatibility-regressions.md) | `[EP-0011-US-0003-TK-0002-object-and-combat-palette]` | implementation DONE; tests/build PASS; native/product OPEN |
+| 11 | [EP-0011-US-0004-TK-0003-render-palette-regressions](EP-0011-US-0004-map-background-palette/EP-0011-US-0004-TK-0003-render-palette-regressions/EP-0011-US-0004-TK-0003-render-palette-regressions.md) | `[EP-0011-US-0003-TK-0003-navigation-and-trails, EP-0011-US-0003-TK-0004-combat-role-routing, EP-0011-US-0003-TK-0005-labels-and-grid]` | implementation DONE; tests/build PASS; native/product OPEN |

@@ -26,7 +26,7 @@ internal static class AiMapPresentation
 
     internal static void DrawPoints(SKCanvas canvas, IReadOnlyList<PoiGeometry> points, CameraState camera, int width, int height, string? selectedId)
     {
-        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(150, 215, 210), Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
+        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(127, 174, 186, 191), Style = SKPaintStyle.Stroke, StrokeWidth = 2 };
         foreach (var point in points)
         {
             var (x, y) = camera.WorldToScreen(point.X, point.Y, width, height);
@@ -49,13 +49,13 @@ internal static class AiMapPresentation
         if (point is null) return;
         var (x, y) = camera.WorldToScreen(point.X, point.Y, width, height);
         if (!float.IsFinite(x) || !float.IsFinite(y) || x < 0 || x > width || y < 0 || y > height) return;
-        using var paint = new SKPaint { IsAntialias = true, TextSize = 14, Color = new SKColor(170, 230, 225) };
+        using var paint = new SKPaint { IsAntialias = true, TextSize = 14, Color = TacticalMapPalette.Label };
         string name = point.Data.Name;
         while (name.Length > 1 && paint.MeasureText(name) > width - 24) name = name[..^1];
         float labelWidth = paint.MeasureText(name);
         float left = Math.Clamp(x + 18, 8, Math.Max(8, width - labelWidth - 8));
         float top = Math.Clamp(y + 18, 8, Math.Max(8, height - 24));
-        using var background = new SKPaint { Color = new SKColor(15, 25, 35, 240) };
+        using var background = new SKPaint { Color = TacticalMapPalette.LabelBackground };
         canvas.DrawRect(new SKRect(left - 4, top - 15, left + labelWidth + 4, top + 5), background);
         canvas.DrawText(name, left, top, paint);
     }
@@ -97,14 +97,15 @@ internal static class AiMapPresentation
             AddCircle(inner, x, y, innerRadius, width, height);
             if (outerRadius <= 1e8) contours.Add((x, y, (float)innerRadius, (float)outerRadius, row.Data.BaseObjectId == selectedId));
         }
-        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(255, 98, 80, 24) };
+        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(240, 128, 136, 13) };
         canvas.Save(); canvas.ClipRect(SKRect.Create(width, height));
         // One winding fill per radius class: overlap does not compound opacity.
-        canvas.DrawPath(outer, paint); paint.Color = new SKColor(255, 98, 80, 35); canvas.DrawPath(inner, paint);
+        using var union = outer.Op(inner, SKPathOp.Union);
+        canvas.DrawPath(union ?? outer, paint);
         paint.Style = SKPaintStyle.Stroke;
         foreach (var c in contours)
         {
-            paint.Color = new SKColor(255, 128, 104, c.Selected ? (byte)230 : (byte)100);
+            paint.Color = new SKColor(240, 128, 136, 64);
             paint.StrokeWidth = c.Selected ? 2 : 1;
             canvas.DrawCircle(c.X, c.Y, c.Outer, paint);
             canvas.DrawCircle(c.X, c.Y, c.Inner, paint);
@@ -127,7 +128,7 @@ internal static class AiMapPresentation
 
     internal static void DrawBase(SKCanvas canvas, AiBaseMapData data, float x, float y, float radius)
     {
-        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(255, 112, 96), StrokeWidth = 2, Style = SKPaintStyle.Stroke };
+        using var paint = new SKPaint { IsAntialias = true, Color = SpaceMapColorResolver.NpcEnemyColor, StrokeWidth = 2, Style = SKPaintStyle.Stroke };
         float r = Math.Max(radius, 8);
         using var path = new SKPath();
         path.MoveTo(x, y - r); path.LineTo(x + r, y); path.LineTo(x, y + r); path.LineTo(x - r, y); path.Close();

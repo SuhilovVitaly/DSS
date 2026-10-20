@@ -19,7 +19,6 @@ public sealed partial class GameSessionScreen
                 Style = SKPaintStyle.Stroke,
                 IsAntialias = true
             };
-            using var path = new SKPath();
             var points = new List<FutureTrajectoryPoint>();
             if (!flight.Trail.IsDefaultOrEmpty)
                 foreach (var segment in flight.Trail) Sample(segment.Segment, 0, segment.Segment.DurationMs);
@@ -35,13 +34,12 @@ public sealed partial class GameSessionScreen
             }
             var routeEnd = TorpedoGuidanceMath.PredictPose(flight.Route, flight.Route.ElapsedMs);
             points.Add(new(routeEnd.X, routeEnd.Y));
-            CombatTrajectoryProjector.BuildPath(path, points, _camera, _viewportW, _viewportH);
-            canvas.DrawPath(path, paint);
+            DrawCountermeasureTrail(canvas, points, paint);
             var geometry = PreparedFlight(state.Source.ObjectId, prediction);
             if (geometry is null) continue;
             AlignFlightStart(geometry, state);
             DefenseGeometry[state.Source.ObjectId] = geometry;
-            DrawCombatGeometry(canvas, geometry, CombatSettings.CountermeasurePrediction, CombatSettings.CountermeasureIntercept);
+            DrawCombatGeometry(canvas, geometry, CombatSettings.CountermeasurePrediction, CombatSettings.CountermeasureIntercept, flight.TargetTorpedoId);
 
             void Sample(TorpedoRouteSegment segment, double from, double to)
             {
@@ -56,6 +54,34 @@ public sealed partial class GameSessionScreen
     }
 
     internal readonly Dictionary<string, (SKPoint Projectile, SKPoint? Encounter, string Chance)> DefenseChanceLabels = new(StringComparer.Ordinal);
+    internal SKColor CountermeasureTrailColor(double fraction) =>
+        CombatSettings.CountermeasureTrail.WithAlpha((byte)Math.Floor(
+            CombatSettings.CountermeasureTrail.Alpha * (.25 + .75 * Math.Clamp(fraction, 0, 1)) + .5));
+
+    private void DrawCountermeasureTrail(SKCanvas canvas, IReadOnlyList<FutureTrajectoryPoint> points, SKPaint paint)
+    {
+        double total = 0;
+        for (int i = 1; i < points.Count; i++) total += Distance(points[i - 1], points[i]);
+        double travelled = 0;
+        for (int i = 1; i < points.Count; i++)
+        {
+            double next = travelled + Distance(points[i - 1], points[i]);
+            var a = _camera.WorldToScreen(points[i - 1].X, points[i - 1].Y, _viewportW, _viewportH);
+            var b = _camera.WorldToScreen(points[i].X, points[i].Y, _viewportW, _viewportH);
+            using var shader = SKShader.CreateLinearGradient(new SKPoint(a.X, a.Y), new SKPoint(b.X, b.Y),
+                [CountermeasureTrailColor(total > 0 ? travelled / total : 0),
+                 CountermeasureTrailColor(total > 0 ? next / total : 1)], null, SKShaderTileMode.Clamp);
+            paint.Color = SKColors.White;
+            paint.Shader = shader;
+            canvas.DrawLine(a.X, a.Y, b.X, b.Y, paint);
+            paint.Shader = null;
+            travelled = next;
+        }
+
+        static double Distance(FutureTrajectoryPoint a, FutureTrajectoryPoint b) =>
+            Math.Sqrt((a.X - b.X) * (a.X - b.X) + (a.Y - b.Y) * (a.Y - b.Y));
+    }
+
     internal sealed record FlightMapLabel(SKRect Bounds, string Text);
     internal readonly Dictionary<string, FlightMapLabel> DefenseFlightLabels = new(StringComparer.Ordinal);
     internal sealed record WeaponRangeRing(string ModuleId, string Kind, double RangeKm, SKPoint Center, float RadiusPx);
@@ -114,6 +140,7 @@ public sealed partial class GameSessionScreen
             double pixels = range * 10 * _camera.PixelsPerWorldUnit;
             if (!double.IsFinite(pixels) || pixels <= 0 || pixels > float.MaxValue) return;
             using var effect = dashed ? SKPathEffect.CreateDash([6, 4], 0) : null;
+            paint.Color = CombatSettings.RangeColor(kind);
             paint.PathEffect = effect;
             canvas.DrawCircle(x, y, (float)pixels, paint);
             paint.PathEffect = null;

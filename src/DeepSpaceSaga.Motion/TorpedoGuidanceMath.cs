@@ -21,6 +21,16 @@ public static class TorpedoGuidanceMath
         => Plan(new GuidancePose(projectilePose.X, projectilePose.Y, projectilePose.SpeedKmS, projectilePose.Direction),
             new GuidancePose(x, y, 0, 0), speedKmS, turnRateDegPerSec, startMotionTimeMs);
 
+    // Forecasts may use the analytic tangent directly. The authoritative planner
+    // retains its original root refinement and exact route doubles.
+    internal static TorpedoRoute PlanStationaryPointForForecast(ObjectMotionSnapshot origin, double x, double y,
+        double speed, double turnRate, long start)
+    {
+        var route = TryStationaryTarget(new(origin.X, origin.Y, origin.SpeedKmS, origin.Direction), new(x, y, 0, 0),
+            speed, turnRate, start, exactDoubles: false);
+        return route ?? PlanStationaryPoint(origin, x, y, speed, turnRate, start);
+    }
+
     private static TorpedoRoute Plan(GuidancePose projectilePose, GuidancePose targetPose,
         double speedKmS, double turnRateDegPerSec, long startMotionTimeMs)
     {
@@ -32,6 +42,14 @@ public static class TorpedoGuidanceMath
         if (targetPose.SpeedKmS == 0 && TryStationaryTarget(projectilePose, targetPose,
             speedKmS, turnRateDegPerSec, startMotionTimeMs) is { } stationary) return stationary;
 
+        // Cache only invariant terms; retain PredictSegment's operation order so
+        // authoritative route doubles and collision/event ordering stay identical.
+        double heading = projectilePose.Direction * Radians;
+        double originSin = Math.Sin(heading), originCos = Math.Cos(heading);
+        double targetSin = Math.Sin(targetPose.Direction * Radians), targetCos = Math.Cos(targetPose.Direction * Radians);
+        double worldSpeed = speedKmS * 10, targetWorldSpeed = targetPose.SpeedKmS * 10;
+        // Scan consumes the midpoint geometry immediately after Evaluate.
+        double lastDx = 0, lastDy = 0;
         double bestTime = double.PositiveInfinity;
         ImmutableArray<TorpedoRouteSegment> best = default;
         // Search the two single-turn families in canonical order. The residual is
@@ -64,6 +82,9 @@ public static class TorpedoGuidanceMath
                     for (int iteration = 0; iteration < 60; iteration++)
                     {
                         double mid = (low + high) / 2;
+                        // Adjacent doubles cannot refine further; all remaining
+                        // iterations would leave this same bracket unchanged.
+                        if (mid == low || mid == high) break;
                         double residual = Evaluate(mid, sign, false);
                         if (Math.Sign(residual) == Math.Sign(lowValue))
                         {
@@ -87,11 +108,8 @@ public static class TorpedoGuidanceMath
                 double value = Evaluate(angle, sign, false);
                 if (left != 0 && right != 0 && Math.Sign(left) == Math.Sign(right) && Math.Sign(value) == Math.Sign(left))
                 {
-                    double ms = angle / turnRateDegPerSec * 1000;
-                    var p = PredictSegment(projectilePose.X, projectilePose.Y, projectilePose.Direction, speedKmS, sign * turnRateDegPerSec, ms);
-                    var q = PredictSegment(targetPose.X, targetPose.Y, targetPose.Direction, targetPose.SpeedKmS, 0, ms);
                     double halfWidth = Math.Max(angle - from * .5, to * .5 - angle);
-                    double relativeDistance = Math.Sqrt(Math.Pow(q.X - p.X, 2) + Math.Pow(q.Y - p.Y, 2));
+                    double relativeDistance = Math.Sqrt(Math.Pow(lastDx, 2) + Math.Pow(lastDy, 2));
                     double distanceBound = relativeDistance + (speedKmS + targetPose.SpeedKmS) * 10 * halfWidth / turnRateDegPerSec;
                     // d cross(relative position, relative velocity)/d angle =
                     // cross(relative position, -d projectile velocity/d angle).
@@ -133,13 +151,17 @@ public static class TorpedoGuidanceMath
         double Evaluate(double angle, int sign, bool accept)
         {
             double turnMs = angle / turnRateDegPerSec * 1000;
-            var exit = PredictSegment(projectilePose.X, projectilePose.Y,
-                projectilePose.Direction, speedKmS, sign * turnRateDegPerSec, turnMs);
-            var target = PredictSegment(targetPose.X, targetPose.Y,
-                targetPose.Direction, targetPose.SpeedKmS, 0, turnMs);
-            double dx = target.X - exit.X, dy = target.Y - exit.Y;
-            double wx = 10 * (targetPose.SpeedKmS * Math.Sin(targetPose.Direction * Radians) - speedKmS * Math.Sin(exit.Direction * Radians));
-            double wy = 10 * (-targetPose.SpeedKmS * Math.Cos(targetPose.Direction * Radians) + speedKmS * Math.Cos(exit.Direction * Radians));
+            double seconds = turnMs / 1000;
+            double omega = sign * turnRateDegPerSec * Radians;
+            double end = heading + omega * seconds;
+            double exitX = projectilePose.X + (omega == 0 ? worldSpeed * seconds * originSin : worldSpeed / omega * (originCos - Math.Cos(end)));
+            double exitY = projectilePose.Y + (omega == 0 ? -worldSpeed * seconds * originCos : worldSpeed / omega * (originSin - Math.Sin(end)));
+            double exitDirection = ((projectilePose.Direction + sign * turnRateDegPerSec * seconds) % 360 + 360) % 360;
+            double dx = targetPose.X + targetWorldSpeed * seconds * targetSin - exitX;
+            double dy = targetPose.Y + -targetWorldSpeed * seconds * targetCos - exitY;
+            lastDx = dx; lastDy = dy;
+            double wx = 10 * (targetPose.SpeedKmS * targetSin - speedKmS * Math.Sin(exitDirection * Radians));
+            double wy = 10 * (-targetPose.SpeedKmS * targetCos + speedKmS * Math.Cos(exitDirection * Radians));
             double residual = dx * wy - dy * wx;
             if (!accept) return residual;
             double squared = wx * wx + wy * wy;
@@ -151,7 +173,7 @@ public static class TorpedoGuidanceMath
             {
                 bestTime = total;
                 best = [new(projectilePose.X, projectilePose.Y, projectilePose.Direction, speedKmS,
-                    sign * turnRateDegPerSec, turnMs), new(exit.X, exit.Y, exit.Direction, speedKmS, 0, straightSeconds * 1000)];
+                    sign * turnRateDegPerSec, turnMs), new(exitX, exitY, exitDirection, speedKmS, 0, straightSeconds * 1000)];
             }
             return residual;
         }
@@ -160,7 +182,7 @@ public static class TorpedoGuidanceMath
     /// <summary>Equivalent tangent construction for a fixed aim point. Countermeasure
     /// bracketing asks this question repeatedly; no angular search is necessary.</summary>
     private static TorpedoRoute? TryStationaryTarget(GuidancePose origin, GuidancePose target,
-        double speed, double turnRate, long start)
+        double speed, double turnRate, long start, bool exactDoubles = true)
     {
         double radius = speed * 10 / (turnRate * Radians);
         double heading = origin.Direction * Radians;
@@ -173,15 +195,19 @@ public static class TorpedoGuidanceMath
             double dx = target.X - cx, dy = target.Y - cy;
             double distance = Math.Sqrt(dx * dx + dy * dy);
             // Degenerate/tangent roots retain the original numerical search exactly.
-            if (distance <= radius * (1 + 1e-10)) return null;
+            if (distance <= radius * (1 + 1e-10))
+            {
+                if (exactDoubles || distance >= radius * (1 - 1e-10)) return null;
+                continue;
+            }
             double bearing = Math.Atan2(dy, dx);
-            double offset = Math.Acos(-sign * radius / distance);
+            double offset = Math.Acos(Math.Clamp(-sign * radius / distance, -1, 1));
             double first = Angle(bearing - offset), second = Angle(bearing + offset);
             if (first > second) (first, second) = (second, first);
             for (int candidate = 0; candidate < 2; candidate++)
             {
                 double angle = candidate == 0 ? first : second;
-                if (angle < 1e-8 || 360 - angle < 1e-8 || Math.Abs(angle * 2 - Math.Round(angle * 2)) < 1e-8) return null;
+                if (exactDoubles && (angle < 1e-8 || 360 - angle < 1e-8 || Math.Abs(angle * 2 - Math.Round(angle * 2)) < 1e-8)) return null;
                 double roughMs = angle / turnRate * 1000;
                 var rough = PredictSegment(origin.X, origin.Y, origin.Direction, speed, sign * turnRate, roughMs);
                 if ((target.X - rough.X) * Math.Sin(rough.Direction * Radians) -
@@ -189,17 +215,22 @@ public static class TorpedoGuidanceMath
                 // Use precisely the old half-degree bracket and bisection operations.
                 // This preserves the route doubles (and event ordering), not merely
                 // an approximately equal geometric tangent.
-                double low = Math.Floor(angle * 2) / 2, high = low + .5;
-                double lowValue = Residual(low);
-                if (Math.Sign(lowValue) == Math.Sign(Residual(high))) return null;
-                for (int iteration = 0; iteration < 60; iteration++)
+                double turnMs = roughMs;
+                if (exactDoubles)
                 {
-                    double mid = (low + high) / 2;
-                    double residual = Residual(mid);
-                    if (Math.Sign(residual) == Math.Sign(lowValue)) { low = mid; lowValue = residual; }
-                    else high = mid;
+                    double low = Math.Floor(angle * 2) / 2, high = low + .5;
+                    double lowValue = Residual(low);
+                    if (Math.Sign(lowValue) == Math.Sign(Residual(high))) return null;
+                    for (int iteration = 0; iteration < 60; iteration++)
+                    {
+                        double mid = (low + high) / 2;
+                        if (mid == low || mid == high) break;
+                        double residual = Residual(mid);
+                        if (Math.Sign(residual) == Math.Sign(lowValue)) { low = mid; lowValue = residual; }
+                        else high = mid;
+                    }
+                    turnMs = ((low + high) / 2) / turnRate * 1000;
                 }
-                double turnMs = ((low + high) / 2) / turnRate * 1000;
                 var arc = new TorpedoRouteSegment(origin.X, origin.Y, origin.Direction, speed, sign * turnRate, turnMs);
                 var exit = PredictSegment(arc, turnMs);
                 double wx = 10 * (0 - speed * Math.Sin(exit.Direction * Radians));

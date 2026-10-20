@@ -13,21 +13,21 @@ internal sealed class SolarSystemLayerRenderer
         using var visibleArc = new SKPath();
         canvas.Save();
         canvas.ClipRect(viewport);
-        paint.Color = new SKColor(145, 160, 170, 90);
+        paint.Color = new SKColor(169, 150, 133, 31);
         foreach (var belt in map.Belts)
         {
             Ring(belt.InnerRadius);
             Ring(belt.OuterRadius);
             DrawDecoration(canvas, belt, camera, viewport);
         }
-        paint.Color = new SKColor(105, 135, 160, 45);
+        paint.Color = new SKColor(127, 169, 199, 51);
         foreach (var orbit in showOrbits ? map.Orbits : [])
         {
             float a = (float)(orbit.Elements.SemiMajorAxis * camera.PixelsPerWorldUnit);
             float b = (float)(orbit.Elements.SemiMinorAxis * camera.PixelsPerWorldUnit);
             Ellipse(a, b);
         }
-        paint.Color = new SKColor(255, 210, 100);
+        paint.Color = SpaceMapColorResolver.SunColor;
         paint.StrokeWidth = 2;
         if (viewport.Contains(cx, cy)) canvas.DrawCircle(cx, cy, 8, paint);
         canvas.Restore();
@@ -110,7 +110,7 @@ internal sealed class SolarSystemLayerRenderer
     {
         int lod = (belt.OuterRadius - belt.InnerRadius) * camera.PixelsPerWorldUnit < 12 ? 0 : 1;
         var samples = Decoration(belt, lod);
-        using var paint = new SKPaint { IsAntialias = false, Color = new SKColor(150, 160, 165, 80), StrokeWidth = 1 };
+        using var paint = new SKPaint { IsAntialias = false, Color = new SKColor(169, 150, 133, 31), StrokeWidth = 1 };
         foreach (var (x, y) in samples)
         {
             var (sx, sy) = camera.WorldToScreen(x, y, (int)viewport.Width, (int)viewport.Height);
@@ -146,6 +146,13 @@ internal sealed class SolarSystemLayerRenderer
         return points;
     }
 
+    internal static SKColor PlanetColor(string? kind) => kind switch
+    {
+        "Icy" => new(159, 197, 214, 230),
+        "Gas" => new(213, 180, 151, 230),
+        _ => SpaceMapColorResolver.PlanetColor
+    };
+
     internal static void DrawPlanet(SKCanvas canvas, PlanetMapData planet, double x, double y,
         CameraState camera, int width, int height)
     {
@@ -157,7 +164,7 @@ internal sealed class SolarSystemLayerRenderer
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 2,
-            Color = planet.Kind switch { "Icy" => new SKColor(140, 220, 245), "Gas" => new SKColor(225, 175, 120), _ => new SKColor(185, 180, 170) }
+            Color = PlanetColor(planet.Kind)
         };
         canvas.DrawCircle(sx, sy, radius, paint);
         if (planet.Kind == "Gas") canvas.DrawOval(sx, sy, radius * 1.5f, radius * 0.35f, paint);

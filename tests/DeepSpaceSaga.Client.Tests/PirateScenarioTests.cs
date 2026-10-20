@@ -87,7 +87,7 @@ public sealed class PirateScenarioTests
         Assert.Equal((0.4d, 120d), (pirate.SpeedKmS, pirate.Direction));
         Assert.Equal(PlayerRelation.Enemy, pirate.RelationToPlayer);
         Assert.Equal(SpaceObjectType.NpcShip, pirate.RenderObjectType);
-        Assert.Equal(new SKColor(139, 0, 0), SpaceMapColorResolver.GetColor(pirate.RenderObjectType, pirate.RelationToPlayer));
+        Assert.Equal(new SKColor(240, 128, 136), SpaceMapColorResolver.GetColor(pirate.RenderObjectType, pirate.RelationToPlayer));
         Assert.False(string.IsNullOrWhiteSpace(pirate.DisplayName));
         Assert.False(string.IsNullOrWhiteSpace(pirate.CaptainDisplayName));
         Assert.False(string.IsNullOrWhiteSpace(pirate.CaptainPortraitImage));

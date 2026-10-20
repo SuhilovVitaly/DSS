@@ -56,12 +56,12 @@ internal sealed class EnvironmentFieldRenderer
                 x + radius < 0 || y + radius < 0 || x - radius > width || y - radius > height) continue;
             float outer = (float)radius, inner = (float)(data.InnerRadius * camera.PixelsPerWorldUnit);
             using var path = Sector(x, y, inner, outer, data.StartAngleDegrees, data.SweepDegrees);
-            var color = data.Kind switch { "Radiation" => new SKColor(220, 192, 100), "Dust" => new SKColor(150, 165, 200), _ => new SKColor(185, 160, 145) };
+            var (fill, border) = FieldColors(data.Kind, data.Intensity);
             canvas.Save(); canvas.ClipRect(SKRect.Create(width, height));
-            paint.Style = SKPaintStyle.Fill; paint.Color = color.WithAlpha((byte)(12 + data.Intensity * 22));
+            paint.Style = SKPaintStyle.Fill; paint.Color = fill;
             canvas.DrawPath(path, paint);
             canvas.Save(); canvas.ClipPath(path);
-            paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 1; paint.Color = color.WithAlpha(95);
+            paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 1; paint.Color = border;
             if (data.Kind == "Radiation")
             {
                 for (int i = 1; i <= 3; i++) canvas.DrawCircle(x, y, inner + (outer - inner) * i / 4, paint);
@@ -90,9 +90,23 @@ internal sealed class EnvironmentFieldRenderer
             }
             canvas.Restore();
             paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = data.Id == selectedId ? 2 : 1;
-            paint.Color = color.WithAlpha(data.Id == selectedId ? (byte)220 : (byte)90); canvas.DrawPath(path, paint);
+            paint.Color = border; canvas.DrawPath(path, paint);
             canvas.Restore();
         }
+    }
+
+    internal static (SKColor Fill, SKColor Border) FieldColors(string kind, double intensity)
+    {
+        var color = kind switch
+        {
+            "Radiation" => new SKColor(210, 180, 111),
+            "Dust" => new SKColor(164, 174, 196),
+            _ => new SKColor(169, 150, 133)
+        };
+        double t = double.IsFinite(intensity) ? Math.Clamp(intensity, 0, 1) : 0;
+        double alpha = kind == "Radiation" ? 6 + 6 * t : 5 + 5 * t;
+        return (color.WithAlpha(TacticalMapPalette.Alpha(alpha)),
+            color.WithAlpha(TacticalMapPalette.Alpha(kind == "Radiation" ? 25 : 20)));
     }
 
     private static (double Radius, double Angle)[] Pattern(ulong seed, int count)

@@ -83,6 +83,6 @@ public sealed class ScenarioGroupTranslationTests
     {
         var found = Directory.GetFiles(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Scenarios"), "scenario.json", SearchOption.AllDirectories)
             .Select(p => new DirectoryInfo(Path.GetDirectoryName(p)!).Name).Order().ToArray();
-        Assert.Equal(new[] { "CombatMukha", "CombatShmel", "Default", "Default_500", "Docked", "MarketProfiles", "PlayerShipOnly", "Undocked" }, found);
+        Assert.Equal(new[] { "CombatMukha", "CombatMukhaSingle", "CombatShmel", "Default", "Default_500", "Docked", "MarketProfiles", "PlayerShipOnly", "Undocked" }, found);
     }
 }

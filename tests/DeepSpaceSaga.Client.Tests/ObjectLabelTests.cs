@@ -259,14 +259,14 @@ public class ObjectLabelTests
     }
 
     [Fact]
-    public void Geometry_plaque_width_respects_minimum()
+    public void Short_label_width_follows_text_instead_of_a_fixed_minimum()
     {
         float textWidth = 5f;
         var objScreen = new SKPoint(400, 300);
 
         var geom = ObjectLabelLayout.Create(objScreen, directionDegrees: 90, textWidth, TestViewport, TestMarkerRadius);
 
-        Assert.Equal(ObjectLabelLayout.MinPlaqueWidth, geom.PlaqueRect.Width, precision: 3);
+        Assert.Equal(23f, geom.PlaqueRect.Width, precision: 3);
     }
 
     [Fact]
@@ -362,21 +362,15 @@ public class ObjectLabelTests
     // ── Plaque constants ─────────────────────────────────────────
 
     [Fact]
-    public void Min_plaque_width_is_120()
+    public void Plaque_height_is_16()
     {
-        Assert.Equal(120f, ObjectLabelLayout.MinPlaqueWidth);
+        Assert.Equal(16f, ObjectLabelLayout.PlaqueHeight);
     }
 
     [Fact]
-    public void Plaque_height_is_18()
+    public void Status_square_size_is_6px()
     {
-        Assert.Equal(18f, ObjectLabelLayout.PlaqueHeight);
-    }
-
-    [Fact]
-    public void Status_square_size_is_8px()
-    {
-        Assert.Equal(8f, ObjectLabelLayout.StatusSquareSize);
+        Assert.Equal(6f, ObjectLabelLayout.StatusSquareSize);
     }
 
     [Fact]
@@ -386,9 +380,9 @@ public class ObjectLabelTests
     }
 
     [Fact]
-    public void Status_text_gap_is_6px()
+    public void Status_text_gap_is_4px()
     {
-        Assert.Equal(6f, ObjectLabelLayout.StatusTextGap);
+        Assert.Equal(4f, ObjectLabelLayout.StatusTextGap);
     }
 
     // ── Label policy (ObjectLabelText) ─────────────────────────────
@@ -457,6 +451,32 @@ public class ObjectLabelTests
     {
         Assert.Equal("Legacy", ObjectLabelText.Build(null, "Legacy", "L-1"));
         Assert.Equal("Неизвестный объект", ObjectLabelText.Build(null, null, "L-1"));
+    }
+
+    [Fact]
+    public void Compact_label_uses_status_square_for_relation_without_a_bottom_accent()
+    {
+        var renderer = new ObjectLabelRenderer();
+        var enemy = new ObjectMotionSnapshot("enemy", 300, 200, 0, 0,
+            RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy, DisplayName: "Enemy");
+        ObjectRenderState[] states = [new(enemy, enemy, false)];
+        var camera = new DeepSpaceSaga.Client.UI.CameraState(400, 300, 1);
+        renderer.ComputeGeometries(states, .02, 800, 600, camera);
+        using var bitmap = new SKBitmap(800, 600);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+        renderer.DrawPlaques(canvas, states, 0, SimulationSpeed.Speed0, 800, 600, camera);
+        var rect = renderer.Geometries["enemy"].PlaqueRect;
+        var square = renderer.Geometries["enemy"].StatusRect;
+        var accent = bitmap.GetPixel((int)square.MidX, (int)square.MidY);
+        Assert.Equal(new SKColor(240, 128, 136), accent);
+        Assert.NotEqual(new SKColor(240, 128, 136), bitmap.GetPixel((int)rect.MidX, (int)rect.Bottom - 2));
+        var background = bitmap.GetPixel((int)rect.Right - 3, (int)rect.Top + 3);
+        Assert.InRange(background.Alpha, 234, 236);
+        Assert.InRange(background.Blue, 42, 44);
+        Assert.Contains(Enumerable.Range((int)rect.Left + 2, (int)rect.Width - 4),
+            x => Enumerable.Range((int)rect.Top + 2, (int)rect.Height - 4)
+                .Any(y => { var color = bitmap.GetPixel(x, y); return color.Blue > 200 && color.Green > 200 && color.Red > 190; }));
     }
 
     // ── Helpers ──────────────────────────────────────────────────

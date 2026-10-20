@@ -50,6 +50,32 @@ public sealed class TorpedoPreviewTests(ITestOutputHelper output)
         Assert.True(timings[197] <= 2, $"preview UI p99={timings[197]} ms");
     }
 
+    [Fact]
+    public async Task Hidden_npc_steering_does_not_change_the_observed_preview()
+    {
+        await using var f = new Fixture();
+        f.SelectTarget();
+        f.HoverFire();
+        var source = f.Buffer.Latest!.Snapshot;
+        for (int i = 0; i < 2; i++)
+        {
+            var previous = f.Screen.LaunchPreviewGeometry;
+            f.Buffer.Update(source with
+            {
+                SnapshotSequence = source.SnapshotSequence + (ulong)i + 1,
+                Objects = source.Objects.Select(o => o.ObjectId == "SPC-0002" ? o with
+                {
+                    SpeedKmS = 1,
+                    HostileCombat = new("SPC-0001", "engine", "launcher", 50, true, HostileCombatPhase.Pursuit,
+                        new(source.MotionTimeMs, 100, 0, o.X, o.Y, 1, o.Direction, 0, i == 0 ? 20 : -20))
+                } : o).ToImmutableArray()
+            });
+            f.Render();
+            Assert.NotNull(f.Screen.LaunchPreviewGeometry);
+            if (i == 1) Assert.Same(previous, f.Screen.LaunchPreviewGeometry);
+        }
+    }
+
     [Theory]
     [InlineData(null)]
     [InlineData(1L)]

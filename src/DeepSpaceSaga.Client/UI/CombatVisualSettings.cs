@@ -9,17 +9,25 @@ public sealed record CombatVisualSettings(
     SKColor Torpedo, SKColor Trail, SKColor Prediction, SKColor Intercept,
     SKColor Preview, SKColor HullHp, SKColor Explosion, SKColor Wreck)
 {
-    public SKColor Countermeasure { get; init; } = new(0, 204, 255);
-    public SKColor CountermeasureTrail { get; init; } = new(0, 204, 255);
-    public SKColor CountermeasurePrediction { get; init; } = new(0, 204, 255, 136);
-    public SKColor CountermeasureIntercept { get; init; } = new(0, 204, 255);
-    public SKColor DefenseRange { get; init; } = new(0, 204, 255, 85);
-    public SKColor DefenseText { get; init; } = new(153, 238, 255);
+    public SKColor Countermeasure { get; init; } = TacticalMapPalette.Countermeasure;
+    public SKColor CountermeasureTrail { get; init; } = TacticalMapPalette.Countermeasure.WithAlpha(102);
+    public SKColor CountermeasurePrediction { get; init; } = TacticalMapPalette.Countermeasure.WithAlpha(140);
+    public SKColor CountermeasureIntercept { get; init; } = TacticalMapPalette.Countermeasure;
+    public SKColor DefenseRange { get; init; } = TacticalMapPalette.Countermeasure.WithAlpha(46);
+    public SKColor DefenseText { get; init; } = TacticalMapPalette.Annotation;
+    public SKColor TorpedoRange { get; init; } = TacticalMapPalette.Torpedo.WithAlpha(46);
+    public SKColor ManualDefenseRange { get; init; } = TacticalMapPalette.Countermeasure.WithAlpha(71);
+    internal SKColor RangeColor(string kind) => kind switch
+    {
+        "torpedo" => TorpedoRange,
+        "manual" => ManualDefenseRange,
+        _ => DefenseRange
+    };
     public long ForecastHorizonMs { get; init; } = 200_000;
     public const string RelativePath = "Data/UI/combat-visuals.json";
     public static CombatVisualSettings Default { get; } = new(
-        SKColors.Yellow, SKColors.Yellow, new(255, 255, 0, 102), SKColors.Yellow,
-        new(128, 128, 128), SKColors.Lime, SKColors.Red, new(128, 128, 128));
+        TacticalMapPalette.Torpedo, TacticalMapPalette.Torpedo, TacticalMapPalette.Torpedo.WithAlpha(128), TacticalMapPalette.Torpedo,
+        TacticalMapPalette.Preview, new(143, 187, 167, 217), TacticalMapPalette.Explosion, TacticalMapPalette.Wreck);
 
     public static CombatVisualSettings Load(string path)
     {
@@ -44,6 +52,8 @@ public sealed record CombatVisualSettings(
                 CountermeasureIntercept = Optional("countermeasureIntercept", Default.CountermeasureIntercept),
                 DefenseRange = Optional("defenseRange", Default.DefenseRange),
                 DefenseText = Optional("defenseText", Default.DefenseText),
+                TorpedoRange = Optional("torpedoRange", Default.TorpedoRange),
+                ManualDefenseRange = Optional("manualDefenseRange", Default.ManualDefenseRange),
                 ForecastHorizonMs = root.TryGetProperty("forecastHorizonMs", out var horizon) &&
                     horizon.ValueKind == JsonValueKind.Number && horizon.TryGetInt64(out long ms) && ms is > 0 and <= 200_000 ? ms : 200_000
             };

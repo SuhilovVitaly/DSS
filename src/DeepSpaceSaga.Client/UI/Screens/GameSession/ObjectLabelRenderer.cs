@@ -65,7 +65,7 @@ internal sealed class ObjectLabelRenderer
 
         _plaqueBgPaint = new SKPaint
         {
-            Color = new SKColor(22, 22, 22),
+            Color = TacticalMapPalette.LabelBackground,
             Style = SKPaintStyle.Fill
         };
 
@@ -118,7 +118,9 @@ internal sealed class ObjectLabelRenderer
         TacticalMapSettings? mapSettings = null,
         Func<string, bool>? isImportant = null,
         IReadOnlySet<string>? clusteredIds = null,
-        SKRect? availableMap = null)
+        SKRect? availableMap = null,
+        string? selectedObjectId = null,
+        string? hoveredObjectId = null)
     {
         _geometries.Clear();
         _activeIds.Clear();
@@ -140,7 +142,10 @@ internal sealed class ObjectLabelRenderer
                 var predicted = state.Pose;
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
-                bool important = state.IsPlayerShip || HasModuleBar(state.Source) || state.Source.Torpedo is not null || isImportant?.Invoke(objectId) == true ||
+                bool focused = objectId == selectedObjectId || objectId == hoveredObjectId;
+                if (predicted.RenderObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure && !focused)
+                    continue;
+                bool important = focused || state.IsPlayerShip || HasModuleBar(state.Source) || isImportant?.Invoke(objectId) == true ||
                     predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
                 if (important != (pass == 0)) continue;
                 if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
@@ -289,7 +294,7 @@ internal sealed class ObjectLabelRenderer
         SimulationSpeed speed,
         int viewportW,
         int viewportH,
-        CameraState camera)
+        CameraState camera, SolarSystemMapSnapshot? solarMap = null)
     {
         for (int i = 0; i < renderStates.Count; i++)
         {
@@ -305,29 +310,26 @@ internal sealed class ObjectLabelRenderer
             if (hasModuleBar) plaqueRect.Bottom = Math.Max(plaqueRect.Top, plaqueRect.Bottom - ObjectLabelLayout.ModuleBarSpace);
 
             byte opacity = _opacity[objectId];
-            _plaqueBgPaint.Color = _plaqueBgPaint.Color.WithAlpha(opacity);
+            _plaqueBgPaint.Color = TacticalMapPalette.LabelBackground.WithAlpha((byte)Math.Round(235 * opacity / 255d));
             _plaqueBorderPaint.Color = _plaqueBorderPaint.Color.WithAlpha(opacity);
 
             SKColor objectColor = state.IsPlayerShip
                 ? SpaceMapColorResolver.PlayerShipColor
-                : SpaceMapColorResolver.GetColor(predicted.RenderObjectType, predicted.RelationToPlayer);
+                : predicted.RenderObjectType switch
+                {
+                    SpaceObjectType.Missile => _combatSettings.Torpedo,
+                    SpaceObjectType.Countermeasure => _combatSettings.Countermeasure,
+                    SpaceObjectType.Wreck => _combatSettings.Wreck,
+                    _ => SpaceMapColorResolver.GetColor(predicted.RenderObjectType, predicted.RelationToPlayer)
+                };
+
+            if (predicted.RenderObjectType == SpaceObjectType.Planet && solarMap is not null &&
+                solarMap.Planets.FirstOrDefault(p => p.ObjectId == objectId) is { } planet)
+                objectColor = SolarSystemLayerRenderer.PlanetColor(planet.Kind);
 
             // Plaque background + border
             canvas.DrawRect(plaqueRect, _plaqueBgPaint);
             canvas.DrawRect(plaqueRect, _plaqueBorderPaint);
-
-            // Bottom accent stripe
-            var stripeRect = new SKRect(
-                plaqueRect.Left,
-                plaqueRect.Bottom - ObjectLabelLayout.StripeHeight,
-                plaqueRect.Right,
-                plaqueRect.Bottom);
-
-            byte sr = (byte)((objectColor.Red + 52) / 3);
-            byte sg = (byte)((objectColor.Green + 52) / 3);
-            byte sb = (byte)((objectColor.Blue + 52) / 3);
-            _stripePaint.Color = new SKColor(sr, sg, sb, opacity);
-            canvas.DrawRect(stripeRect, _stripePaint);
 
             // Status square — blink driven by real/UI time, not game time
             if (StatusSquareAnimator.IsStatusSquareVisible(uiTimeMs, speed))
@@ -340,15 +342,8 @@ internal sealed class ObjectLabelRenderer
             string label = _labels[objectId].Text;
             bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
             var textPaint = isUnknown ? _unknownTextPaint : _textPaint;
-            if (!isUnknown)
-            {
-                textPaint.Color = new SKColor(
-                    (byte)Math.Min(255, objectColor.Red + 60),
-                    (byte)Math.Min(255, objectColor.Green + 60),
-                    (byte)Math.Min(255, objectColor.Blue + 60));
-            }
             float textY = geometry.TextOrigin.Y + textPaint.TextSize;
-            textPaint.Color = textPaint.Color.WithAlpha(opacity);
+            textPaint.Color = TacticalMapPalette.Label.WithAlpha((byte)Math.Round(242 * opacity / 255d));
             canvas.Save();
             canvas.ClipRect(plaqueRect);
             canvas.DrawText(label, geometry.TextOrigin.X, textY, textPaint);
@@ -357,7 +352,7 @@ internal sealed class ObjectLabelRenderer
             {
                 double fraction = ModuleBarFraction(state.Source)!.Value;
                 var bar = ObjectLabelLayout.ModuleBarRect(geometry.PlaqueRect);
-                _stripePaint.Color = new SKColor(24, 40, 24);
+                _stripePaint.Color = TacticalMapPalette.HpEmpty;
                 canvas.DrawRect(bar, _stripePaint);
                 bar.Right = bar.Left + bar.Width * (float)fraction;
                 _stripePaint.Color = _combatSettings.HullHp;

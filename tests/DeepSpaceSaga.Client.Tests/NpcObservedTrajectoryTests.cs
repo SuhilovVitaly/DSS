@@ -68,6 +68,31 @@ public sealed class NpcObservedTrajectoryTests
         Assert.True(points[4].Y > Npc.Y);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(10)]
+    [InlineData(-10)]
+    public void Combat_forecast_target_matches_the_visible_observed_model(double rate)
+    {
+        var hidden = Npc with
+        {
+            ActiveEngineCommandType = ShipEngineCommandTypes.Accelerate,
+            HostileCombat = new("player", "engine", "weapon", 50, true, HostileCombatPhase.Pursuit,
+                new(0, 100, 0, Npc.X, Npc.Y, 1, 90, 2, 20)),
+            MaxSpeedKmS = 8
+        };
+        var points = new FutureTrajectoryProjector(new RejectingPredictor()).Project(hidden, rate);
+        var input = FutureTrajectoryProjector.ObservedNpcForecastState(hidden, rate);
+        for (int i = 0; i < points.Count; i++)
+        {
+            var sample = CurrentManeuverForecast.Sample(input, i * FutureTrajectoryProjector.FutureTrajectorySampleIntervalMs);
+            Assert.Equal(points[i].X, sample.X, 6);
+            Assert.Equal(points[i].Y, sample.Y, 6);
+            Assert.Equal(hidden.SpeedKmS, sample.SpeedKmS);
+        }
+        Assert.Equal(20, hidden.HostileCombat!.Segment.TurnRateDegPerSec);
+    }
+
     [Fact]
     public void PresentedFramesOnlyAffectTrend()
     {
@@ -79,12 +104,14 @@ public sealed class NpcObservedTrajectoryTests
         buffer.UpdatePresentation(Update(3, State(2000, 90), true));
         buffer.Update(State(3000, 100)); // legacy full ingress must be ignored in presentation mode
         Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
+        Assert.False(buffer.HasStableNpcMotion("npc"));
         buffer.PreparePresentation();
         Assert.Equal(1000, buffer.Presented!.Snapshot.MotionTimeMs);
         Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
         now = Ticks(8150);
         buffer.PreparePresentation();
         Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
+        Assert.True(buffer.HasStableNpcMotion("npc"));
     }
 
     [Fact]

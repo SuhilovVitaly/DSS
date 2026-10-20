@@ -18,7 +18,7 @@ public sealed class CombatVisualSettingsTests
             json["torpedo"] = "#12345678";
             File.WriteAllText(path, json.ToJsonString());
             var restarted = CombatVisualSettings.Load(path);
-            Assert.Equal(SKColors.Yellow, first.Torpedo);
+            Assert.Equal(new SKColor(237, 184, 106), first.Torpedo);
             Assert.Equal(new SKColor(0x12, 0x34, 0x56, 0x78), restarted.Torpedo);
             Assert.Equal(first.HullHp, restarted.HullHp);
         });
@@ -70,6 +70,23 @@ public sealed class CombatVisualSettingsTests
             screen.OnMouseMove(600, 400);
             screen.Render(canvas, 1280, 720);
             Assert.Same(settings, screen.CombatSettings);
+        });
+    }
+
+    [Fact]
+    public void PaletteRgbaDefaults_match_production_and_optional_v1_fallback()
+    {
+        WithPalette(path =>
+        {
+            var loaded = CombatVisualSettings.Load(path);
+            Assert.Equal(CombatVisualSettings.Default, loaded);
+            Assert.Equal(new SKColor(237, 184, 106, 46), loaded.TorpedoRange);
+            Assert.Equal(new SKColor(183, 171, 223, 140), loaded.Preview);
+            var json = JsonNode.Parse(File.ReadAllText(path))!.AsObject();
+            json.Remove("torpedoRange");
+            json["manualDefenseRange"] = "invalid";
+            File.WriteAllText(path, json.ToJsonString());
+            Assert.Equal(loaded, CombatVisualSettings.Load(path));
         });
     }
 

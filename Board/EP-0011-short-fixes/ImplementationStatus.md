@@ -83,3 +83,43 @@ Graph verification: 878 source SHA256 and all recorded artifact hashes match; mi
 Final status: US-0001 implementation + automated regression delivered; US-0002 documentation + graph delivered. All ticket commits are published to origin/base-fight separately. Native/human acceptance remains OPEN / NOT RUN by explicit game-launch restriction; no claim of complete gameplay acceptance. A-08 combat/launch model alignment remains out of scope backlog.
 
 Final observed checks: Graphify --dry-run PASS (13620 nodes / 47142 edges, 0 missing sources/invalid locations). Query NpcMotionObservationHistory resolves 33 related nodes including SnapshotBuffer.GetNpcObservedTurnRate and ObserveNpcScene. Final Markdown checker PASS: 20 changed/new Markdown files, 143 relative references, 0 missing files; 4 unique ticket IDs / 2 stories (evidence/documentation-check.json). Source and artifact hash checks PASS (evidence/graph-check.json). Unstaged and staged diff checks PASS. Temporary root graphify-out/cache was created by the offline extractor and removed after validation; tracked graph remains src/graphify-out. Final documentation commit is identified by its unique full ticket ID in Git; final response reports its verified SHA.
+
+## Новое расширение US-0003 — 2026-10-18T10:03:20Z
+
+Все результаты и формулировки завершения выше относятся к прежним US-0001/US-0002, а не к новой палитре. Теперь EP-0011 содержит 3 истории / 5 тикетов. US-0003-TK-0001 tactical-map-color-redesign создан как продуктовый draft по прямому запросу пользователя: implementation NOT STARTED; automated/native/product NOT RUN; publication NOT REQUESTED. Полные таблицы и проверки находятся в [карте тикетов](Tickets.md).
+
+Перед исполнением палитры нужна декомпозиция на точные allowlists максимум по пять файлов. Старый documentation ticket не переоткрыт и не используется как разрешение на новые изменения. При текущем планировании production, tests, runtime assets и graph не менялись; игру не запускали.
+
+## Palette execution — 2026-10-18
+
+D-P03 supersedes planning-only ограничения предыдущего раздела: пользователь разрешил подготовить исполнительные тикеты и сразу реализовать их с проверками, без commit/push и запуска игры. Декомпозиция: US-0003/TK-0002–0005, US-0004/TK-0001–0003. [Карта](Tickets.md) и [машиночитаемое evidence](evidence/palette-validation.json). Все семь пакетов implementation DONE; stage approved не означает native/product acceptance. Полные RGB/opacity таблицы синхронизированы в Documentation/03-Design/TacticalMapSpecification.md.
+
+Разрешён31 уникальный файл execution allowlists; изменены30 из них и разрешённые Board artifacts. Один allowlisted selection test изменений не потребовал. Client-only semantic resolver, JSON/defaults, отдельные torpedo/auto/manual rings, navigation/forecasts/trails, labels/HP, backgrounds/fields/AI/planets. История торпед сохранена, включая self-destruct final trail, её линия скрыта. Поля используют clamp и установленную opacity; AI union исключает удвоение заливки.
+
+Observed commands from D:/DeepSpaceSaga/DSS:
+```powershell
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore -m:1 --filter "FullyQualifiedName~Palette|FullyQualifiedName~VisualSettings|FullyQualifiedName~GameSessionScreenTrailColorTests|FullyQualifiedName~TacticalMapDepthRendererTests|FullyQualifiedName~GridRendererTests|FullyQualifiedName~GameSessionPlayerShipTests|FullyQualifiedName~CombatMapVisualTests|FullyQualifiedName~CombatTrajectoryTests|FullyQualifiedName~PirateScenarioTests|FullyQualifiedName~ObjectLabelTests"
+# PASS 175/175
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore -m:1 --logger "trx;LogFileName=palette-client.trx" --results-directory D:/DeepSpaceSaga/.palette-validation
+# PASS 2085/2085, 0 skipped, duration2m1s. First earlier run had old palette expectations and preview p99=2.248ms; final full run all PASS.
+dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore -m:1
+# PASS 0 warnings, 0 errors
+$paletteFiles = Get-Content D:/DeepSpaceSaga/.palette-validation/allowlist.txt
+dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include $paletteFiles
+# BASELINE: 9 WHITESPACE diagnostics in unchanged lines22/23/60 GridRendererTests.cs; verified via git show HEAD.
+$paletteFiles = $paletteFiles | Where-Object { $_ -ne 'tests/DeepSpaceSaga.Client.Tests/GridRendererTests.cs' }
+dotnet format DeepSpaceSaga.sln --verify-no-changes --no-restore --include $paletteFiles
+# PASS for remaining scoped files; no formatter edits made.
+git diff --check
+# PASS
+```
+
+VSTest/Roslyn needed unsandboxed local pipe access; the first sandboxed tests aborted on testhost connection and formatter failed named pipe access. These were infrastructure attempts, not accepted validation. Successful commands used the same source with working local pipes. No game/native window launched.
+
+Graphify read-only BFS from SpaceMapColorResolver/CombatVisualSettings/ObjectLabelRenderer in existing src/graphify-out/graph.json confirms navigation seams; graph not rebuilt and is stale after palette edits. Source inspected directly. No Graphify generation/publication requested.
+
+Scope baseline contained unrelated Client/Tests/NPC forecast changes and CombatMukhaSingle scenario. Preserved; in shared GameSessionScreen.cs and CombatTrajectoryTests.cs only palette integration/expectations were added. Engine/Contracts/Motion/save/AI/RNG/forecast math untouched by this work.
+
+AC-01/03/04/05 automated roles/routing/regressions PASS; AC-02 raster evidence PASS, native readability OPEN; AC-06 automated evidence recorded, comparative screenshots/product decision OPEN. Native FPS NOT RUN. No full human acceptance claimed. Commit/push NOT RUN by explicit instruction. Format baseline debt remains outside this change.
+
+Final Board audit PASS:8 ticket documents в US-0003/US-0004 (1 aggregate+7 execution),22 valid local links, exact allowlists<=5, dependency DAG acyclic; no implementation changes outside allowlists after excluding pre-existing dirty files. TRX independently parsed:2085 executed/passed,0 failed/errors/aborted.

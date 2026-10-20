@@ -14,7 +14,7 @@ public sealed class TorpedoInspectionTests
     private static ObjectMotionSnapshot Target => new("target", 300, 100, 0, 0, DisplayName: "Pirate", RenderObjectType: SpaceObjectType.NpcShip);
     private static ObjectMotionSnapshot Torpedo => new("torpedo", 100, 100, 3, 0, RenderObjectType: SpaceObjectType.Missile,
         Torpedo: new("player", "launcher", "target", 0, 3, 90, 150, 90,
-            new(1000, 1, TorpedoRoutePhase.Straight, true, [new(100, 100, 0, 3, 0, 10000)]),
+            new(2000, 1, TorpedoRoutePhase.Straight, true, [new(100, 100, 0, 3, 0, 10000)]),
             PredictedImpactMotionTimeMs: 11000, ExpiresAtMotionTimeMs: 120_000));
 
     [Theory]
@@ -64,7 +64,9 @@ public sealed class TorpedoInspectionTests
         var buffer = new SnapshotBuffer(() => now);
         // Calendar time deliberately differs from physical time by many orders of magnitude.
         var snapshot = new AuthoritativeSnapshot(1, 9000000000, SimulationSpeed.Speed1,
-            [Player, Target, Torpedo], "player", SimulationTimeMs: 1000);
+            [Player, Target, Torpedo], "player", SimulationTimeMs: 2000);
+        buffer.Update(snapshot with { SnapshotSequence = 0, SimulationTimeMs = 0 });
+        buffer.Update(snapshot with { SnapshotSequence = 0, SimulationTimeMs = 1000 });
         buffer.Update(snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => now);
         Render(screen);
