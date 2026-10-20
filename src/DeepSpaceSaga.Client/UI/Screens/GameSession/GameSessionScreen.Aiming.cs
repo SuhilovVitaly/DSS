@@ -36,7 +36,7 @@ public sealed partial class GameSessionScreen
         _buffer.Presented?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } snapshot
             ? snapshot.InstalledModules.FirstOrDefault(m => m.ModuleId == id && !PointProfiles(m).IsDefaultOrEmpty) : null;
 
-    private void CancelPointAim() => PointAim = null;
+    private void CancelPointAim() { PointAim = null; CurrentTorpedoAimPreview = null; ResetPointFriendlyConfirmation(); }
 
     private void RefreshPointAiming()
     {
@@ -97,6 +97,7 @@ public sealed partial class GameSessionScreen
             .OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
         var module = modules.FirstOrDefault(m => !_pointSubmissions.ContainsKey(m.ModuleId) && PointReadyReason(m) is null) ?? modules.FirstOrDefault();
         if (module is null) return false;
+        ResetPointFriendlyConfirmation();
         PointAim = new(kind, module.ModuleId, PointProfiles(module)[0].ProfileId);
         _pointErrors.Remove(module.ModuleId); _isPanningMap = false;
         return true;
@@ -113,6 +114,7 @@ public sealed partial class GameSessionScreen
         int index = CombatInputs.Profiles.IndexOf(key);
         if (index >= 0)
         {
+            ResetPointFriendlyConfirmation();
             var profiles = PointProfiles(module);
             if (index < profiles.Length) PointAim = aim with { ProfileId = profiles[index].ProfileId };
             _pointErrors.Remove(module.ModuleId);
@@ -127,6 +129,7 @@ public sealed partial class GameSessionScreen
         if (!CombatInputs.WheelProfiles || PointAim is not { } aim || !float.IsFinite(delta) || delta == 0 ||
             IsClickOnUiPanel(x / _uiScale, y / _uiScale) || PointAimModule(aim.ModuleId) is not { } module) return false;
         var profiles = PointProfiles(module);
+        ResetPointFriendlyConfirmation();
         int index = Enumerable.Range(0, profiles.Length).First(i => profiles[i].ProfileId == aim.ProfileId);
         PointAim = aim with { ProfileId = profiles[(index + (delta > 0 ? 1 : profiles.Length - 1)) % profiles.Length].ProfileId };
         _pointErrors.Remove(module.ModuleId);
@@ -152,6 +155,7 @@ public sealed partial class GameSessionScreen
         if (player is null || !double.IsFinite(target.Item1) || !double.IsFinite(target.Item2) ||
             double.Hypot(target.Item1 - player.Value.Pose.X, target.Item2 - player.Value.Pose.Y) / 10 > range.Value)
         { _pointErrors[module.ModuleId] = CommandReasonCodes.LaunchOutOfRange; return true; }
+        if (aim.Kind == ProjectileKind.Torpedo && !ConfirmPointFriendlyFire(aim, target.Item1, target.Item2)) return true;
         var submission = new PointSubmission { StartRevision = snapshot.SnapshotSequence };
         _pointSubmissions[module.ModuleId] = submission;
         _pointErrors.Remove(module.ModuleId);
@@ -205,6 +209,7 @@ public sealed partial class GameSessionScreen
         RefreshPointAiming();
         if (PointAim is not { } aim) return;
         var styles = CombatSettings.PointCombat;
+        DrawTorpedoAimPreview(canvas);
         var rect = AvailableMapRect();
         float x = _hasMousePosition ? _mouseX : rect.MidX;
         float y = _hasMousePosition ? _mouseY : rect.Top + (float)styles.TextSizePx * 2;

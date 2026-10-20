@@ -114,7 +114,13 @@ public sealed record LauncherCombatSnapshot(
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    double? ScatterPercent = null);
+    double? ScatterPercent = null,
+    /// <summary>Current own-operator sigma per km, evaluated by Engine with current scatter rules.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? EffectiveScatterPercent = null,
+    /// <summary>Current own-launch blast core fraction; absent for legacy launchers.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? CoreFraction = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs

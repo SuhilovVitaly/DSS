@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0011-aiming-and-launch"
 ticket: "EP-0012-US-0011-TK-0002-torpedo-aim-preview"
 title: "torpedo-aim-preview"
-stage: "draft"
-layer: "client"
+stage: "implemented"
+layer: "contracts-engine-client"
 depends_on: ["EP-0012-US-0011-TK-0001-aim-mode-and-input-map"]
-files_touched: 4
+files_touched: 7
 serves: ["US11-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0011-TK-0002-torpedo-aim-preview
@@ -24,18 +24,23 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Bounded scope (7 files), updated before implementation under EpicExecutionPrompt authority. Actual pointer movement must invalidate confirmation even when it returns to the original point before another render.
 
-| File | Current state | Allowed change |
-|---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs:8; public sealed partial class GameSessionScreen | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CombatForecast.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CombatForecast.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CombatForecast.cs:7; public sealed partial class GameSessionScreen | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| File | Current state / Allowed change |
+|---|---|
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Actual pointer-move confirmation reset |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | Actual input and launch submission |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.TorpedoAimPreview.cs` | NEW actual preview geometry, rendering and friendly guard |
+| `src/DeepSpaceSaga.Contracts/CombatSnapshot.cs` | Own launcher effective scatter and core fraction, nullable legacy compatibility |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.WeaponOperators.cs` | Compute own current launcher preview capabilities using actual operator/rules |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs` | NEW independent geometry and real Engine/client input checks |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatSessionFixture.cs` | Optional real registry for nondefault-rule producer validation |
 
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+LauncherCombatSnapshot appends nullable EffectiveScatterPercent (sigma per km after current operator/rules) and CoreFraction for own preview. Existing ScatterPercent remains module base value. Foreign snapshots still omit launch capabilities; O12 HostileCombat unchanged.
+
+A-PREVIEW-PUBLIC: current client only has base scatter and no configurable blast core. Client must not duplicate Engine rule constants or read private config. Minimal cross-layer public capability is necessary for AC2; producer and actual client consumption are validated together. Scope does not change RNG, launch outcome or NPC forecast policy.
 
 ## Implementation steps
 
@@ -46,7 +51,7 @@ No public API change; внутренние детали ограничены п�
 
 ## Out of scope / Invariants
 
-Один production layer: client; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
+Production scope is the bounded public capability and its Engine/Client consumer; matching tests use actual Engine and Client. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
 
 ## Tests
 
@@ -74,4 +79,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 14 named / 2198 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0011-tk0002-results.json).
+
+Actual torpedo aim renders physical R/core/sigma/path, real ETA, each enemy linear shadow and out-of-range warning. Own current rule/operator capabilities cross Contracts/Engine/Client with no RNG draw. Friendly/self blast guard sends only on second click within one real second and resets on changed input. Headless render inspected; label fits 100/150 percent UI. Relevant Engine 785/785 and Contracts 256/256 PASS; full Engine, strict legacy ForecastBudget, native/product remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

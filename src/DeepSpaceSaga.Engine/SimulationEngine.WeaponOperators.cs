@@ -2,6 +2,7 @@ using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Combat;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine;
 
@@ -32,9 +33,16 @@ public sealed partial class SimulationEngine
     private LauncherCombatSnapshot? ProjectWeaponLauncher(SpaceObjectRuntime owner, InstalledModuleRuntime module)
     {
         var launcher = _launcherCombat.GetValueOrDefault((owner.InitialMotion.ObjectId, module.ModuleId));
-        return launcher is null ? null : launcher with
+        if (launcher is null) return null;
+        var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
+        var op = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack);
+        return launcher with
         {
-            Operator = ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack),
+            Operator = op,
+            EffectiveScatterPercent = definition.IsPointLauncher && op is not null && _registry.CombatRules?.Scatter is { } scatter
+                ? BlastMath.ScatterSigma(1, definition.ScatterPercent!.Value, op.Skill,
+                    scatter.SkillPivot, scatter.SkillSlope, scatter.MinMultiplier) : null,
+            CoreFraction = definition.IsPointLauncher ? _registry.CombatRules?.Blast?.CoreFraction : null,
             ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex) is { IsPointLauncher: true } point
                 ? point.ReloadMs : (double?)(_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).LauncherReloadMs *
                     FireModeMath.Resolve(_registry, launcher.ModeId).ReloadMultiplier)

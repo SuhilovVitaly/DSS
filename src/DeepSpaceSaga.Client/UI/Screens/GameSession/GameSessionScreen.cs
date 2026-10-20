@@ -566,7 +566,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        if (PointAim is { } aim && (_mouseX != x || _mouseY != y)) _pointErrors.Remove(aim.ModuleId);
+        if (PointAim is { } aim && (_mouseX != x || _mouseY != y))
+        { _pointErrors.Remove(aim.ModuleId); ResetPointFriendlyConfirmation(); }
         if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
         // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
         // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space

@@ -16,7 +16,7 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
     private long _realMs;
 
     private static IEnumerable<T> All<T>(TypeRegistry<T> source) where T : ITypeDefinition => Enumerable.Range(0, source.Count).Select(source.GetDefinition);
-    internal static GameDataRegistry Registry()
+    internal static GameDataRegistry Registry(double scatterPercent = 0, CombatRulesDefinition? rules = null)
     {
         var source = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
         var commands = new[]
@@ -48,7 +48,7 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
                     ArmorDamagePercent = 100,
                     RangeKm = 70,
                     ReloadMs = 10000,
-                    ScatterPercent = 0,
+                    ScatterPercent = scatterPercent,
                     Profiles = [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)]
                 },
                 "module.countermeasure.launcher" => m with
@@ -72,13 +72,13 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
             }), All(source.ItemTypes), All(source.CommandDefinitions).Concat(commands).GroupBy(c => c.TypeId).Select(g => g.Last()),
             All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules! with { Chance = null, Blast = new(.3), Scatter = new(15, .0333, .3), Npc = new(1400, 30, 200), CombatStartRangeKm = 100 });
+            combatRules: rules ?? source.CombatRules! with { Chance = null, Blast = new(.3), Scatter = new(15, .0333, .3), Npc = new(1400, 30, 200), CombatStartRangeKm = 100 });
     }
 
-    internal PointCombatSessionFixture()
+    internal PointCombatSessionFixture(GameDataRegistry? registry = null)
     {
         var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
-        Engine = new(Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
+        Engine = new(registry ?? Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
         Engine.LoadScenario(source with
         {
             GameState = source.GameState with
