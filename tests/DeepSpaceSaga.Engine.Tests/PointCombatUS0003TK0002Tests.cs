@@ -16,10 +16,10 @@ public sealed class PointCombatUS0003TK0002Tests
     {
         var source = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(TorpedoImpactTests.ClientRoot, "Settings.json"), out _, out _);
         return GameDataRegistry.Create(
-            All(source.ModuleCategories).Select(c => c.TypeId == "module.torpedo.launcher" ? c with { CommandTypeIds = [CombatCommandTypes.Launch] } : c),
+            All(source.ModuleCategories).Select(c => c.TypeId == "module.torpedo.launcher" ? c with { CommandTypeIds = [CombatCommandTypes.Launch, CombatCommandTypes.Detonate] } : c),
             All(source.ModuleTypes).Select(m => m.CategoryTypeId != "module.torpedo.launcher" ? m : m with
             {
-                CommandTypeIds = [CombatCommandTypes.Launch],
+                CommandTypeIds = [CombatCommandTypes.Launch, CombatCommandTypes.Detonate],
                 TorpedoManeuverability = null,
                 TorpedoRangeKm = null,
                 TorpedoSpeedKmS = null,
@@ -35,7 +35,9 @@ public sealed class PointCombatUS0003TK0002Tests
                 ScatterPercent = scatter,
                 Profiles = [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)]
             }),
-            All(source.ItemTypes), All(source.CommandDefinitions).Append(new(CombatCommandTypes.Launch, "Launch", Target: "point", Type: "module.torpedo.launcher")),
+            All(source.ItemTypes), All(source.CommandDefinitions)
+                .Append(new(CombatCommandTypes.Launch, "Launch", Target: "point", Type: "module.torpedo.launcher"))
+                .Append(new(CombatCommandTypes.Detonate, "Detonate", Target: "object", Type: "module.torpedo.launcher")),
             All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
             stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules! with

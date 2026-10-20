@@ -48,7 +48,7 @@ Execution order задаётся ticket DAG, который допускает �
 | 8 / [EP-0012-US-0003-TK-0001-blast-math](EP-0012-US-0003-TK-0001-blast-math/EP-0012-US-0003-TK-0001-blast-math.md) | motion | EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts | US3-AC1 | 2 |
 | 11 / [EP-0012-US-0003-TK-0002-torpedo-point-launch](EP-0012-US-0003-TK-0002-torpedo-point-launch/EP-0012-US-0003-TK-0002-torpedo-point-launch.md) | engine | EP-0012-US-0018-TK-0004-shared-point-forecast | US3-AC2 | 8 |
 | 12 / [EP-0012-US-0003-TK-0003-torpedo-area-detonation](EP-0012-US-0003-TK-0003-torpedo-area-detonation/EP-0012-US-0003-TK-0003-torpedo-area-detonation.md) | engine | EP-0012-US-0003-TK-0002-torpedo-point-launch | US3-AC3 | 4 |
-| 13 / [EP-0012-US-0003-TK-0004-manual-detonation](EP-0012-US-0003-TK-0004-manual-detonation/EP-0012-US-0003-TK-0004-manual-detonation.md) | engine | EP-0012-US-0003-TK-0003-torpedo-area-detonation | US3-AC4 | 3 |
+| 13 / [EP-0012-US-0003-TK-0004-manual-detonation](EP-0012-US-0003-TK-0004-manual-detonation/EP-0012-US-0003-TK-0004-manual-detonation.md) | engine | EP-0012-US-0003-TK-0003-torpedo-area-detonation | US3-AC4 | 4 |
 | 39 / [EP-0012-US-0003-TK-0005-remove-homing-roll-modes](EP-0012-US-0003-TK-0005-remove-homing-roll-modes/EP-0012-US-0003-TK-0005-remove-homing-roll-modes.md) | engine | EP-0012-US-0018-TK-0003-point-combat-forecasts | US3-AC5 | 4 |
 
 ## Decisions / Assumptions

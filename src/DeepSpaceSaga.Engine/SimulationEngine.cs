@@ -661,7 +661,13 @@ public sealed partial class SimulationEngine : IDisposable
                     gameTimeMs = clockState.MotionTimeMs;
                 }
                 ApplyPendingCommands(gameTimeMs);
-                if (IsDefeated) RejectDefeatedDialogueCommands(gameTimeMs);
+                if (IsDefeated)
+                {
+                    CommitDefeatBoundary();
+                    clockState = DefeatedClock;
+                    gameTimeMs = clockState.MotionTimeMs;
+                    RejectDefeatedDialogueCommands(gameTimeMs);
+                }
                 else
                 {
                     RefreshCombatGuidance(gameTimeMs);
@@ -2440,6 +2446,8 @@ public sealed partial class SimulationEngine : IDisposable
 
         if (command.CommandType == CombatCommandTypes.Launch)
             return TryStartPointLaunch(command, gameTimeMs);
+        if (command.CommandType == CombatCommandTypes.Detonate)
+            return TryStartPointDetonation(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Fire)
             return TryStartTorpedoFire(command, gameTimeMs);
         if (command.CommandType == TorpedoLauncherCommandTypes.SetMode)

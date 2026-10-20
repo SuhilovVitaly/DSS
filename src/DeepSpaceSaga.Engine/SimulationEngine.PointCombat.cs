@@ -136,19 +136,39 @@ public sealed partial class SimulationEngine
         .Select(o => o.InitialMotion.OwnProjectile!.DetonationMotionTimeMs)
         .DefaultIfEmpty(double.PositiveInfinity).Min();
 
-    private void ResolvePointDetonations(double motionTimeMs)
+    private CommandStartOutcome TryStartPointDetonation(PlayerCommand command, long motionTimeMs)
+    {
+        if (command.ObjectId != PlayerShipObjectId) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+        var projectile = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.TargetObjectId && !o.IsDestroyed);
+        if (projectile is null) return CommandStartOutcome.Rejected(CommandReasonCodes.StaleProjectile);
+        if (projectile.InitialMotion.OwnProjectile is not { } flight || flight.OwnerObjectId != command.ObjectId ||
+            flight.LauncherModuleId != command.ModuleId)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.NotOwnProjectile);
+        if (flight.Kind != ProjectileKind.Torpedo) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId && !o.IsDestroyed);
+        var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == command.ModuleId);
+        if (module is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+        if (!_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Detonate))
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
+        ResolvePointDetonations(motionTimeMs, projectile);
+        RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+        return CommandStartOutcome.Started;
+    }
+
+    private void ResolvePointDetonations(double motionTimeMs, SpaceObjectRuntime? manualProjectile = null)
     {
         // All simultaneous blasts observe the same physical ship positions, even if a preceding hit interrupts an engine.
         var shipPositions = _objects.Where(o => !o.IsDestroyed && o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
             .ToDictionary(o => o.InitialMotion.ObjectId, o => CombatPath(o).Position(motionTimeMs), StringComparer.Ordinal);
         var deaths = new Dictionary<string, (string Cause, string Owner, string Projectile)>(StringComparer.Ordinal);
-        var projectiles = _objects.Where(o => o.InitialMotion.OwnProjectile is { Kind: ProjectileKind.Torpedo } point &&
-            point.DetonationMotionTimeMs == motionTimeMs).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray();
+        var projectiles = manualProjectile is not null ? [manualProjectile] :
+            _objects.Where(o => o.InitialMotion.OwnProjectile is { Kind: ProjectileKind.Torpedo } point &&
+                point.DetonationMotionTimeMs == motionTimeMs).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray();
         foreach (var projectile in projectiles)
         {
             var flight = projectile.InitialMotion.OwnProjectile!;
             var position = CombatPath(projectile).Position(motionTimeMs);
-            AppendCombatEvent(new(0, motionTimeMs, CombatEventType.TorpedoDetonated, flight.OwnerObjectId,
+            AppendCombatEvent(new(0, motionTimeMs, manualProjectile is null ? CombatEventType.TorpedoDetonated : CombatEventType.ManuallyDetonated, flight.OwnerObjectId,
                 string.Empty, projectile.InitialMotion.ObjectId, position.X, position.Y,
                 ProjectileKind: flight.Kind, ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm));
             foreach (var target in _objects.Where(o => !o.IsDestroyed && o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
