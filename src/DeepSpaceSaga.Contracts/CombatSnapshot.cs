@@ -104,7 +104,7 @@ public sealed record LauncherCombatSnapshot(
     double? RangeKm = null,
     /// <summary>Module-owned interception resistance in 0..100, distinct from physical turn rate.</summary>
     decimal? Maneuverability = null,
-    string ModeId = "standard",
+    string ModeId = "",
     double? ReadyAtMotionTimeMs = null,
     bool IsBrokenUntilDock = false,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]

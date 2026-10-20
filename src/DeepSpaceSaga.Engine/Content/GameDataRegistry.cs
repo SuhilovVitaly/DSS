@@ -110,6 +110,8 @@ internal sealed class GameDataRegistry
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
         var moduleRegistry = TypeRegistry<ModuleTypeDefinition>.Create(moduleTypes, "module implementations");
+        if (!fireModes.IsDefaultOrEmpty && Enumerable.Range(0, moduleRegistry.Count).Any(i => moduleRegistry.GetDefinition(i).IsPointLauncher))
+            throw new ContentException("fireModes is not supported with point launcher modules.");
         for (int i = 0; i < moduleRegistry.Count; i++)
             ValidateWeaponRatings(moduleRegistry.GetDefinition(i));
         var shipClassRegistry = CreateShipClassRegistry(shipClasses ?? []);

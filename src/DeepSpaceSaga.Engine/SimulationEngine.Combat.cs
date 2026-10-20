@@ -836,6 +836,7 @@ public sealed partial class SimulationEngine
                     Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack),
                     RangeKm: definition.TorpedoRangeKm,
                     Maneuverability: definition.TorpedoManeuverability,
+                    ModeId: "standard",
                     ActiveTorpedoIds: []));
             }
         }

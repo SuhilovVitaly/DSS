@@ -2487,6 +2487,9 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartEvade(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Detonate)
             return TryStartPointDetonation(command, gameTimeMs);
+        if (UsesPointEncounters && command.CommandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or
+            "defense.fire" or "defense.enable" or "defense.disable")
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
         if (command.CommandType == CombatCommandTypes.Fire)
             return TryStartTorpedoFire(command, gameTimeMs);
         if (command.CommandType == TorpedoLauncherCommandTypes.SetMode)
