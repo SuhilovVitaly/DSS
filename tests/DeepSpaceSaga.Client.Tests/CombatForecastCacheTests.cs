@@ -33,31 +33,40 @@ public sealed class CombatForecastCacheTests(ITestOutputHelper output)
     }
 
     [Fact]
-    public async Task CombatForecast_worker_publishes_across_real_engine_updates()
+    public async Task CombatForecast_publishes_across_real_point_engine_updates()
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
         using var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
-        engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "CombatMukha", "scenario.json")));
+        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "CombatMukha", "scenario.json"));
+        engine.LoadScenario(scenario with { GameState = scenario.GameState with { MasterSeed = 42 } });
         engine.ReceiveCommand(new("forecast-turn", 1, "SPC-0001", "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.TurnRightUntilCancel));
         var cache = new CombatForecastCache();
         var session = Guid.NewGuid();
         int ready = 0, flights = 0, playerFlights = 0, defenses = 0;
+        // V3 can end the battle before the former19.2s warmup. Launch immediately and retain all subsequent live updates, including defeat.
         for (int i = 0; i < 1800; i++)
         {
-            if (i == 1200) engine.ReceiveCommand(new("forecast-live", 2, "SPC-0001", "MOD-PLAYER-TORPEDO-01", CombatCommandTypes.Fire, "SPC-MUKHA-01"));
+            if (i is 0 or 1)
+            {
+                var pose = engine.CaptureSnapshotForTests(i * 16, SimulationSpeed.Speed1, i * 16).Objects.Single(o => o.ObjectId == "SPC-0001");
+                engine.ReceiveCommand(i == 0
+                    ? new("forecast-live", 2, "SPC-0001", "MOD-PLAYER-TORPEDO-01", CombatCommandTypes.Launch,
+                        TargetWorldX: pose.X + 600, TargetWorldY: pose.Y, ProfileId: "fast")
+                    : new("forecast-defense", 3, "SPC-0001", "MOD-PLAYER-COUNTERMEASURE-01", DefenseCommandTypes.Launch,
+                        TargetWorldX: pose.X - 200, TargetWorldY: pose.Y, ProfileId: "wide"));
+            }
             var scene = engine.CaptureSnapshotForTests(i * 16, SimulationSpeed.Speed1, i * 16);
-            var targets = scene.Objects.Where(o => o.Torpedo?.OwnerObjectId == scene.PlayerShipObjectId).Select(o => o.Torpedo!.TargetObjectId).ToHashSet();
             scene = scene with
             {
-                Objects = scene.Objects.Select(o => targets.Contains(o.ObjectId)
+                Objects = scene.Objects.Select(o => o.ObjectType == SpaceObjectType.NpcShip
                 ? FutureTrajectoryProjector.ObservedNpcForecastState(o, 0) : o).ToImmutableArray()
             };
             cache.Prepare(session, scene, CombatForecastOptions.Default);
             ready += cache.Results.Values.Count(r => r.Status is not (CombatForecastStatus.Recalculating or CombatForecastStatus.CalculationLimited));
             flights += cache.Results.Count;
-            playerFlights += scene.Objects.Count(o => o.Torpedo?.OwnerObjectId == scene.PlayerShipObjectId);
-            defenses += scene.Objects.Count(o => o.Countermeasure is not null);
+            playerFlights += scene.Objects.Count(o => o.OwnProjectile?.Kind == ProjectileKind.Torpedo);
+            defenses += scene.Objects.Count(o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile || o.ObservedProjectile?.Kind == ProjectileKind.Countermissile);
             if (cache.PendingWork is { } worker) await worker;
         }
         cache.CancelPending();
