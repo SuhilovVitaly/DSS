@@ -23,9 +23,11 @@ public sealed partial class SimulationEngine
         foreach (var owner in _objects.Where(IsHostileActor).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal))
             foreach (var module in owner.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal))
             {
+                var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
                 if (!_launcherCombat.TryGetValue((owner.InitialMotion.ObjectId, module.ModuleId), out var launcher) ||
                     launcher.IsBrokenUntilDock || module.ActiveCycle is not null ||
-                !_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).CommandTypeIds.Contains(CombatCommandTypes.Fire) ||
+                    !definition.CommandTypeIds.Contains(definition.IsPointLauncher ? CombatCommandTypes.Launch : CombatCommandTypes.Fire) ||
+                    definition.IsPointLauncher && owner.AttackAi is null ||
                     ResolveWeaponOperator(owner, module, WeaponSkillType.TorpedoAttack) is null)
                 { ClearCombatReactions(owner.InitialMotion.ObjectId, module.ModuleId); continue; }
                 if (module.DisabledUntilMotionTimeMs > cursor || !CanExecuteModuleCommand(module, cursor) ||
@@ -44,6 +46,18 @@ public sealed partial class SimulationEngine
                     if (entry is null || entry.Value.MotionTimeMs > long.MaxValue) break;
                     long time = (long)Math.Ceiling(entry.Value.MotionTimeMs);
                     if (time > to) break;
+                    if (definition.IsPointLauncher)
+                    {
+                        if (FindNpcPointAim(owner, module, player, time) is not null)
+                        {
+                            if (first is null || time < first.Time) first = new(owner.InitialMotion.ObjectId, module.ModuleId, time);
+                            break;
+                        }
+                        long retry = NextGuidanceBoundary(time);
+                        if (retry <= time) break;
+                        earliest = retry;
+                        continue;
+                    }
                     var delayed = ReactionTime("hostile", owner.InitialMotion.ObjectId, module.ModuleId,
                         player.InitialMotion.ObjectId, time, launcher.ReadyAtMotionTimeMs ?? 0);
                     if (delayed is null || delayed > to) break;
@@ -93,6 +107,12 @@ public sealed partial class SimulationEngine
             var module = owner.Modules.FirstOrDefault(m => m.ModuleId == moduleId);
             if (module is null || !_launcherCombat.TryGetValue((ownerId, moduleId), out var launcher))
                 return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownModule);
+            if (_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).IsPointLauncher)
+            {
+                var aim = FindNpcPointAim(owner, module, player, motionTimeMs);
+                return aim is null ? CommandStartOutcome.Rejected("target_unreachable") :
+                    TryLaunchPointProjectile(owner, moduleId, aim.X, aim.Y, aim.ProfileId, motionTimeMs, ProjectileKind.Torpedo);
+            }
             if (!CanHostileIntercept(owner, module, player, launcher, motionTimeMs))
                 return CommandStartOutcome.Rejected("target_unreachable");
             var result = TryLaunchTorpedo(owner, moduleId, player.InitialMotion.ObjectId, motionTimeMs);

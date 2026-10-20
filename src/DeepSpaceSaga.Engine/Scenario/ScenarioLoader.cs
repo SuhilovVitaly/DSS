@@ -275,7 +275,9 @@ public static class ScenarioLoader
                 (!obj.ObjectType.Equals(SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
                  !double.IsFinite(ai.StandoffKm) || ai.StandoffKm <= 0 ||
                  !double.IsFinite(ai.BandKm) || ai.BandKm < 0 || ai.BandKm >= ai.StandoffKm ||
-                 !double.IsFinite(ai.FlankOffsetDeg) || Math.Abs(ai.FlankOffsetDeg) > 180))
+                 !double.IsFinite(ai.FlankOffsetDeg) || Math.Abs(ai.FlankOffsetDeg) > 180 ||
+                 !double.IsFinite(ai.FireThreshold) || ai.FireThreshold is < 0 or > 1 ||
+                 !double.IsFinite(ai.AssumedTargetDodge) || ai.AssumedTargetDodge is < 0 or > 1))
                 throw new ScenarioException($"Object '{obj.ObjectId}' has invalid NPC attack ai parameters.");
             foreach (var module in obj.Modules ?? [])
                 foreach (var stack in module.Cargo ?? []) ValidateCargoCostMetadata(stack, scenario.SaveFormatVersion);

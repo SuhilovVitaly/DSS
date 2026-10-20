@@ -330,7 +330,9 @@ public sealed record SpaceObjectData(
 public sealed record AttackAiData(
     [property: JsonRequired, JsonPropertyName("standoffKm")] double StandoffKm,
     [property: JsonRequired, JsonPropertyName("bandKm")] double BandKm,
-    [property: JsonRequired, JsonPropertyName("flankOffsetDeg")] double FlankOffsetDeg);
+    [property: JsonRequired, JsonPropertyName("flankOffsetDeg")] double FlankOffsetDeg,
+    [property: JsonPropertyName("fireThreshold")] double FireThreshold = 0.3,
+    [property: JsonPropertyName("assumedTargetDodge")] double AssumedTargetDodge = 0.25);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles

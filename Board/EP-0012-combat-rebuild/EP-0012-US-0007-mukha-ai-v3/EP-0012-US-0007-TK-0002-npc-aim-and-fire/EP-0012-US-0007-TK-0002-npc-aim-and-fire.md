@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0007-mukha-ai-v3"
 ticket: "EP-0012-US-0007-TK-0002-npc-aim-and-fire"
 title: "npc-aim-and-fire"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0007-TK-0001-orbit-lead-fix"]
-files_touched: 4
+files_touched: 5
 serves: ["US7-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0007-TK-0002-npc-aim-and-fire
@@ -24,14 +24,17 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [src/DeepSpaceSaga.Engine/SimulationEngine.HostileFire.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.HostileFire.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.HostileFire.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.HostileCombat.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs](../../../../src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs) | Существует: src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs:8; public sealed record HostileCombatSaveData( | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0007TK0002Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.HostileFire.cs` | Existing or new bounded partial/test | Point AI profile selection, shared launch path, scenario threshold/dodge validation only. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointAim.cs` | Existing or new bounded partial/test | Point AI profile selection, shared launch path, scenario threshold/dodge validation only. |
+| `src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs` | Existing or new bounded partial/test | Point AI profile selection, shared launch path, scenario threshold/dodge validation only. |
+| `src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs` | Existing or new bounded partial/test | Point AI profile selection, shared launch path, scenario threshold/dodge validation only. |
+| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0007TK0002Tests.cs` | Existing or new bounded partial/test | Point AI profile selection, shared launch path, scenario threshold/dodge validation only. |
+
+A-AIM-01: scenario ai.fireThreshold defaults to 0.3, ai.assumedTargetDodge defaults to 0.25; values finite in [0,1]. Expected miss = assumedTargetDodge * 0.5 * available target engine acceleration * max(0,tau-1)^2 + sigma. Coverage is D03 falloff at expected miss. Friendly future positions use their current velocity; include the shooter and other ships on the same side. Point AI requires the scenario ai block; it uses no CombatReactions draw. Original production scenario 60-second gate remains OPEN as recorded in US7-TK1 and US9.
 
 ## Public API after the change
 
@@ -74,4 +77,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 16 named / 523 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0007-tk0002-results.json).
+
+Point NPC AI uses finite linear intercept, per-profile expected miss and D03 coverage, AccuracySkill scatter, ordinal ties, scenario threshold/dodge parameters and future friendly/self exclusion. Shared point launch executor; no player receipt or legacy CombatReactions delay. Repeated evaluation consumes no launch RNG; scheduler partition and future friendly-position tests PASS. Exact mathematical threshold accepts one floating-point representable step. Original production scenario <=60s gate remains OPEN for US9 as recorded in preceding ticket. Solution build 0 warnings/errors.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
