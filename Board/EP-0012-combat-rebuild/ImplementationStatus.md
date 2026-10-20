@@ -96,7 +96,8 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 51 / US-0002-TK-0002-countermissile-launcher-v3 | PASS 2 named / 2334 bounded regression; build/format/diff PASS | `4c760ea66b7da27e6842a3d8fa77b61096a8f1ce`, origin SHA verified |
 | 52 / US-0002-TK-0003-engines-v3 | PASS 2 named / 2336 bounded regression; build/format/diff PASS | `5454d93d3c5791fe3b3f5886402732d22fed6670`, origin SHA verified |
 | 53 / US-0002-TK-0004-remove-modes-and-legacy-commands | PASS 2 named / 2338 bounded regression; build/format/diff PASS | `233774316c91175a35b3cf61cfa5f999364b4417`, origin SHA verified |
-| 54 / US-0002-TK-0005-combat-rules-v3 | PASS 4 named / 2342 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 54 / US-0002-TK-0005-combat-rules-v3 | PASS 4 named / 2342 bounded regression; build/format/diff PASS | `d251a5a384ba0ef8383bc1a04fb71ab15735fed1`, origin SHA verified |
+| 55 / US-0019-TK-0005-maneuver-command-catalog | PASS 2 named / 2344 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

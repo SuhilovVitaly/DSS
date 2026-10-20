@@ -27,7 +27,10 @@
         "engine.directionSynchronization",
         "engine.orbit",
         "navigation.approach",
-        "trade.refuel"
+        "trade.refuel",
+        "engine.turnHold",
+        "maneuver.evade",
+        "combat.acknowledgeResults"
       ]
     },
     {

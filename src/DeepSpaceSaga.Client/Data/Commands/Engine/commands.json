@@ -117,6 +117,36 @@
             "consumptionFactor": 1.0,
             "target": "none",
             "type": "module.engine"
+        },
+        {
+            "typeId": "engine.turnHold",
+            "displayName": "Turn hold",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine",
+            "activationEnergyCellsCost": 0
+        },
+        {
+            "typeId": "maneuver.evade",
+            "displayName": "Evade",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine",
+            "activationEnergyCellsCost": 0
+        },
+        {
+            "typeId": "combat.acknowledgeResults",
+            "displayName": "Continue",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine",
+            "activationEnergyCellsCost": 0
         }
     ]
 }

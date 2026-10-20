@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0019-scenario-and-client-regressions"
 ticket: "EP-0012-US-0019-TK-0005-maneuver-command-catalog"
 title: "maneuver-command-catalog"
-stage: "draft"
+stage: "implemented"
 layer: "content-data"
 depends_on: ["EP-0012-US-0002-TK-0005-combat-rules-v3"]
 files_touched: 4
 serves: ["US19-AC1", "US6-AC2", "US6-AC3", "US8-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0019-TK-0005-maneuver-command-catalog
@@ -35,7 +35,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Public API after the change
 
-No public API change; использовать контракт зависимых тикетов.
+No public API change. Register engine.turnHold, maneuver.evade and combat.acknowledgeResults as category-inherited Engine metadata. Typed command payloads retain authoritative dispatch; numeric engine definitions and all thirteen original commands unchanged.
 
 ## Implementation steps
 
@@ -73,4 +73,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 2 named / 2344 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0019-tk0005-results.json).
+
+Actual canonical source/deployed catalog resolves typed hold/evade/ack controls. Real Engine executes both step directions, inertia rejection, hold/release, foreign-trace evasion and active encounter acknowledgment; no module capability changes.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
