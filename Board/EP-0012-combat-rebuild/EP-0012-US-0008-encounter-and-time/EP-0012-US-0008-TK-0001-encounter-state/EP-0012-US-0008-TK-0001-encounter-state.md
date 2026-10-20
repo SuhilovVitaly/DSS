@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0008-encounter-and-time"
 ticket: "EP-0012-US-0008-TK-0001-encounter-state"
 title: "encounter-state"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0007-TK-0003-npc-evade-and-reaction"]
-files_touched: 4
+files_touched: 6
 serves: ["US8-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 3
 ---
 
 # EP-0012-US-0008-TK-0001-encounter-state
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (6 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -33,6 +33,11 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Engine/SimulationEngine.PlayerDefeat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.PlayerDefeat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.PlayerDefeat.cs:5; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0008TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs` | Existing | Observe actual hostile launch only; no UI-derived state. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs` | Existing | Evaluate victory after the whole same-time blast/death batch. |
+
+A-ENCOUNTER-01: inclusive range admission uses shared CombatRangeMath and earliest physical contact, matching launcher range conventions. Point-rule sessions expose encounter state; legacy catalog sessions retain the old optional-null boundary until content migration. All live hostile AI ships count towards victory; a hostile launcher without an AI block that actually starts the encounter also counts. Ack is an idempotent no-op outside Won, so a delayed old summary action cannot dismiss a new Active encounter. Lost dominates simultaneous victory and terminal SessionDefeated remains authoritative.
+
 ## Public API after the change
 
 No public API change; внутренние детали ограничены перечисленным scope.
@@ -40,7 +45,7 @@ No public API change; внутренние детали ограничены п�
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
-2.
+2. Implement independent encounter lifecycle, actual launch/range admission, post-batch victory, terminal defeat, acknowledgement and physical quiet deadline.
 3. Добавить/обновить named checks ниже одновременно с реализацией. Удаляемые legacy tests заменять проверками нового контракта, сохраняющиеся инварианты не выкидывать.
 4. Записать фактические команды/результаты при исполнении; сейчас всё NOT RUN.
 
@@ -74,4 +79,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 13 named / 640 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0008-tk0001-results.json).
+
+Point encounters are independent of terminal session state: inclusive 100km AI range admission or actual hostile launch; all hostile AI must die for Won; player death wins simultaneous ties and can override Won. Exact range contact and quiet-time boundaries are scheduler inputs. Won acknowledgement is idempotent; 60 physical seconds exclude pause. Live projectiles continue after Won; a new hostile launch starts another Active encounter and a delayed ack cannot dismiss it. Stats and speed restriction are separate following tickets; Save18 persistence remains downstream. Solution build 0 warnings/errors.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

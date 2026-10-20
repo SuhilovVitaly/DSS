@@ -53,7 +53,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 17 / US-0006-TK-0003-continuous-turn-in-combat | PASS 7 named / 494 bounded regression; build/format/diff PASS | `04e173b7f4fc3ac30380c53f6bdab45e8c70aaa3`, origin SHA verified |
 | 18 / US-0007-TK-0001-orbit-lead-fix | PASS 6 named / 249 full owning tests; build/format/diff PASS | `5db5347c9b628db31c5d16ca8bbf93926739e979`, origin SHA verified |
 | 19 / US-0007-TK-0002-npc-aim-and-fire | PASS 16 named / 523 bounded regression; build/format/diff PASS | `2cddcf035e23c8e29fbb67f0cbda9e4b9c4d47cf`, origin SHA verified |
-| 20 / US-0007-TK-0003-npc-evade-and-reaction | PASS 12 named / 627 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 20 / US-0007-TK-0003-npc-evade-and-reaction | PASS 12 named / 627 bounded regression; build/format/diff PASS | `d340dccbfce90182d04f8f37c17e2252b8d75f9b`, origin SHA verified |
+| 21 / US-0008-TK-0001-encounter-state | PASS 13 named / 640 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

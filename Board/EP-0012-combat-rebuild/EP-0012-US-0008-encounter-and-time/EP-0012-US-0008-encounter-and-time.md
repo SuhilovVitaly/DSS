@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0008-encounter-and-time"
 title: "Боевое столкновение и время"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -38,7 +38,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 21 / [EP-0012-US-0008-TK-0001-encounter-state](EP-0012-US-0008-TK-0001-encounter-state/EP-0012-US-0008-TK-0001-encounter-state.md) | engine | EP-0012-US-0007-TK-0003-npc-evade-and-reaction | US8-AC1 | 4 |
+| 21 / [EP-0012-US-0008-TK-0001-encounter-state](EP-0012-US-0008-TK-0001-encounter-state/EP-0012-US-0008-TK-0001-encounter-state.md) | engine | EP-0012-US-0007-TK-0003-npc-evade-and-reaction | US8-AC1 | 6 |
 | 22 / [EP-0012-US-0008-TK-0002-combat-speed-lock](EP-0012-US-0008-TK-0002-combat-speed-lock/EP-0012-US-0008-TK-0002-combat-speed-lock.md) | engine | EP-0012-US-0008-TK-0001-encounter-state | US8-AC2 | 4 |
 | 23 / [EP-0012-US-0008-TK-0003-encounter-stats](EP-0012-US-0008-TK-0003-encounter-stats/EP-0012-US-0008-TK-0003-encounter-stats.md) | engine | EP-0012-US-0008-TK-0002-combat-speed-lock | US8-AC3 | 5 |
 

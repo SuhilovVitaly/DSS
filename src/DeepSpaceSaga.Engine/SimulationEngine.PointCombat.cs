@@ -235,6 +235,7 @@ public sealed partial class SimulationEngine
         }
         foreach (var (id, death) in deaths.OrderBy(pair => pair.Key, StringComparer.Ordinal))
             DestroyShip(id, death.Cause, motionTimeMs, death.Owner, death.Projectile, shipPositions[id]);
+        EvaluateEncounter((long)Math.Ceiling(motionTimeMs));
     }
 
     private void ResolveCountermissileBlast(SpaceObjectRuntime projectile, double motionTimeMs, (double X, double Y) centre)

@@ -533,6 +533,7 @@ public sealed partial class SimulationEngine : IDisposable
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
             RestoreCombatReports(restoredReports);
+            ResetEncounter(gs.MotionTimeMs);
 
         }
     }
@@ -685,6 +686,8 @@ public sealed partial class SimulationEngine : IDisposable
 
             }
 
+            EvaluateEncounter(gameTimeMs);
+
             // Re-validate on every snapshot (not only when the client reports new
             // interaction state): if the selected/active object disappeared from the
             // world, the property and every subsequent snapshot must reflect that
@@ -826,7 +829,7 @@ public sealed partial class SimulationEngine : IDisposable
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: presentationOnly ? default : BuildVoyageFinanceProjection(),
                 StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
-                Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch());
+                Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch(), Encounter: CaptureEncounter(gameTimeMs));
             if (!presentationOnly) _pendingCombatReports.Clear();
             return snapshot;
         }
@@ -2434,6 +2437,8 @@ public sealed partial class SimulationEngine : IDisposable
                 (command.QuoteId is not null || command.MarketRevision is not null)
                     ? RejectQuotedTrade(command, CommandReasonCodes.SessionDefeated)
                     : CommandStartOutcome.Rejected(CommandReasonCodes.SessionDefeated);
+        if (command.CommandType == CombatEncounterCommandTypes.AcknowledgeResults)
+            return AcknowledgeEncounter(command, gameTimeMs);
         if (command.CommandType == ScannerCommandTypes.StructuralScan)
             return TryStartResourceSurvey(command, gameTimeMs);
 
@@ -3509,11 +3514,12 @@ public sealed partial class SimulationEngine : IDisposable
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
         if (IsDefeated) return;
+        EvaluateEncounter(_combatProcessedTimeMs);
         CompleteEvasions(_combatProcessedTimeMs);
         EvaluateCombatReportRange(_combatProcessedTimeMs);
         if (gameTimeMs > _combatProcessedTimeMs)
             RefreshHostileCombat(_combatProcessedTimeMs);
-        if (!HasPendingNpcDodge && !HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!UsesPointEncounters && !HasPendingNpcDodge && !HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
@@ -3543,9 +3549,11 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
+            next = NextEncounterBoundary(_combatProcessedTimeMs, next);
             bool advanced = next > _combatProcessedTimeMs;
             AdvanceCombatTo(next);
             if (IsDefeated) return;
+            EvaluateEncounter(next);
             CompleteEvasions(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);

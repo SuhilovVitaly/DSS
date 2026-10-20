@@ -9,6 +9,7 @@ public sealed partial class SimulationEngine
     {
         var committed = entry with { EventId = checked(++_combatJournalSequence) };
         _combatJournal.Add(committed);
+        ObserveEncounterFact(committed);
         ObserveCombatReportFact(committed);
     }
 
