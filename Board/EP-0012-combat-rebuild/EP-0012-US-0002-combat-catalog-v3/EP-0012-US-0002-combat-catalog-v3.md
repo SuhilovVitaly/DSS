@@ -45,8 +45,8 @@ Execution order задаётся ticket DAG, который допускает �
 | 50 / [EP-0012-US-0002-TK-0001-torpedo-launchers-v3](EP-0012-US-0002-TK-0001-torpedo-launchers-v3/EP-0012-US-0002-TK-0001-torpedo-launchers-v3.md) | content-data | EP-0012-US-0009-TK-0005-save18-defense-validation | US2-AC1 | 2 |
 | 51 / [EP-0012-US-0002-TK-0002-countermissile-launcher-v3](EP-0012-US-0002-TK-0002-countermissile-launcher-v3/EP-0012-US-0002-TK-0002-countermissile-launcher-v3.md) | content-data | EP-0012-US-0002-TK-0001-torpedo-launchers-v3 | US2-AC1 | 2 |
 | 52 / [EP-0012-US-0002-TK-0003-engines-v3](EP-0012-US-0002-TK-0003-engines-v3/EP-0012-US-0002-TK-0003-engines-v3.md) | content-data | EP-0012-US-0002-TK-0002-countermissile-launcher-v3 | US2-AC2 | 2 |
-| 53 / [EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands](EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands/EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands.md) | content-data | EP-0012-US-0002-TK-0003-engines-v3 | US2-AC3 | 3 |
-| 54 / [EP-0012-US-0002-TK-0005-combat-rules-v3](EP-0012-US-0002-TK-0005-combat-rules-v3/EP-0012-US-0002-TK-0005-combat-rules-v3.md) | content-data | EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands | US1-AC4, US2-AC1 | 4 |
+| 53 / [EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands](EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands/EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands.md) | content-data | EP-0012-US-0002-TK-0003-engines-v3 | US2-AC3 | 4 |
+| 54 / [EP-0012-US-0002-TK-0005-combat-rules-v3](EP-0012-US-0002-TK-0005-combat-rules-v3/EP-0012-US-0002-TK-0005-combat-rules-v3.md) | content-data | EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands | US1-AC4, US2-AC1 | 17 |
 
 ## Decisions / Assumptions
 

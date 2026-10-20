@@ -9,7 +9,7 @@ depends_on: ["EP-0012-US-0009-TK-0005-save18-defense-validation"]
 files_touched: 2
 serves: ["US2-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 4
+revision: 5
 ---
 
 # EP-0012-US-0002-TK-0001-torpedo-launchers-v3
@@ -28,8 +28,8 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [src/DeepSpaceSaga.Client/Data/Modules/TorpedoLauncher/modules-torpedolauncher.json](../../../../src/DeepSpaceSaga.Client/Data/Modules/TorpedoLauncher/modules-torpedolauncher.json) | Существует: src/DeepSpaceSaga.Client/Data/Modules/TorpedoLauncher/modules-torpedolauncher.json:1; { | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| `src/DeepSpaceSaga.Client/Data/CombatV3/Modules/TorpedoLauncher/modules-torpedolauncher.json` | Bounded staging/activation file or matching test | Prepare and validate actual v3 component with real loader; default activation is TK5. |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0001Tests.cs` | Bounded staging/activation file or matching test | Prepare and validate actual v3 component with real loader; default activation is TK5. |
 
 ## Public API after the change
 
@@ -78,3 +78,7 @@ Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/prod
 2026-10-20 consumer prerequisite correction: point consumers precede production data activation; actual integration gates remain OPEN until activation/Save18. See [DAG](../../Tickets.md#consumer-prerequisite-correction).
 
 Save18 prerequisite correction: see [execution DAG](../../Tickets.md#save18-prerequisite-correction).
+
+## Atomic catalog staging decision
+
+Before implementation: TK1–4 author real production JSON components under `Data/CombatV3`, outside the recursively loaded active Modules/Commands folders. Each component is validated through the real loader in source and deployed output, with independent expected constants. TK5 moves those exact committed components to canonical paths in one atomic switch with rules, module categories, Settings and mode removal. Before that switch, active default catalog remains coherent; component implementation does not close default-game integration/US2 acceptance. Tests select staged component while it exists in the source tree, and canonical component after activation. No numeric or product requirement is changed.

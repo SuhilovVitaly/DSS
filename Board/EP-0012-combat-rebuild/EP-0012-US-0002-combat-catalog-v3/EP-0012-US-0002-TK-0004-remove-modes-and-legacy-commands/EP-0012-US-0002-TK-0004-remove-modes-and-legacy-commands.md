@@ -6,10 +6,10 @@ title: "remove-modes-and-legacy-commands"
 stage: "draft"
 layer: "content-data"
 depends_on: ["EP-0012-US-0002-TK-0003-engines-v3"]
-files_touched: 3
+files_touched: 4
 serves: ["US2-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0002-TK-0004-remove-modes-and-legacy-commands
@@ -24,13 +24,14 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/Data/Commands/TorpedoLauncher/commands.json` | Existing or bounded new check | Canonical command preparation. |
-| `src/DeepSpaceSaga.Client/Data/Commands/CountermeasureLauncher/commands.json` | Existing or bounded new check | Canonical command preparation. |
-| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0004Tests.cs` | Existing or bounded new check | Canonical command preparation. |
+| `src/DeepSpaceSaga.Client/Data/CombatV3/Commands/TorpedoLauncher/commands.json` | Bounded staging/activation file or matching test | Prepare and validate actual v3 component with real loader; default activation is TK5. |
+| `src/DeepSpaceSaga.Client/Data/CombatV3/Commands/CountermeasureLauncher/commands.json` | Bounded staging/activation file or matching test | Prepare and validate actual v3 component with real loader; default activation is TK5. |
+| `src/DeepSpaceSaga.Client/Data/CombatV3/module-types.json` | Bounded staging/activation file or matching test | Prepare and validate actual v3 component with real loader; default activation is TK5. |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0004Tests.cs` | Bounded staging/activation file or matching test | Prepare and validate actual v3 component with real loader; default activation is TK5. |
 
 ## Public API after the change
 
@@ -73,3 +74,9 @@ git diff --check
 ## Status / Evidence
 
 Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+
+## Atomic catalog staging decision
+
+Before implementation: TK1–4 author real production JSON components under `Data/CombatV3`, outside the recursively loaded active Modules/Commands folders. Each component is validated through the real loader in source and deployed output, with independent expected constants. TK5 moves those exact committed components to canonical paths in one atomic switch with rules, module categories, Settings and mode removal. Before that switch, active default catalog remains coherent; component implementation does not close default-game integration/US2 acceptance. Tests select staged component while it exists in the source tree, and canonical component after activation. No numeric or product requirement is changed.
+
+Category command lists in Data/module-types.json must change together with command definitions: GameDataRegistry.Create rejects category references absent from command definitions. Stage the matching full category file in this ticket; TK5 activates it.

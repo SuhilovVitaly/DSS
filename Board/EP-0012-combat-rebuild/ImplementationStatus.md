@@ -91,7 +91,7 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 46 / US-0016-TK-0001-combat-localization | PASS 8 named / 2330 bounded regression; build/format/diff PASS | `d112cb2536790a7b65d4a98ea6f716a4a450023f`, origin SHA verified |
 | 47 / US-0009-TK-0003-save-format-18 | PASS 19 named / 809 bounded regression; build/format/diff PASS | `babcc7c6a4903e6271382a253c6fcba1b55908c4`, origin SHA verified |
 | 48 / US-0009-TK-0004-save18-capture-and-restore | PASS 16 named / 825 bounded regression; build/format/diff PASS | `d55a19b02a54f7f81b3f3fc9c902198f2155b81d`, origin SHA verified |
-| 49 / US-0009-TK-0005-save18-defense-validation | PASS 26 named / 851 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 49 / US-0009-TK-0005-save18-defense-validation | PASS 26 named / 851 bounded regression; build/format/diff PASS | `cc94ea5f8b403c71f1d9b918cb61f5d801351e0b`, origin SHA verified |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
@@ -112,3 +112,5 @@ US-0002-TK-0001: экспериментальные source/deployed catalog chec
 2026-10-20: consumer prerequisite DAG correction before data activation; next Engine point-forecast integration, then real report/privacy/transport/Client consumers. US2 rules/Settings/modes switch kept atomic; all production activation, Save18, legacy-removal and native gates remain OPEN. See Tickets.md consumer correction.
 
 Save18 prerequisite correction: second catalog activation probe reverted; schema/capture/validation now follow localization before US2. Results preserved; no data ticket closed.
+
+US2 atomic staging correction before component implementation: Data/CombatV3 components are source/deployed loader-verified but inactive until US2-TK5, which switches the complete catalog and category definitions. Full production integration remains OPEN until that switch and scenario/fixture migration.
