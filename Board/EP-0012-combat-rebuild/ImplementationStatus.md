@@ -40,7 +40,9 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 5 / US-0001-TK-0005 launcher-profile-schema | PASS 39 Engine named / 387 bounded regression; 3 Contracts named / 239 full; solution build/format/diff PASS | `f06c235c84d5010d8497731b68be549930874b77`, origin SHA verified |
 | 6 / US-0017-TK-0001 combat-event-contracts | PASS 6 named / 245 full Contracts; build/format/diff PASS | `7abd93815e6765586f5cc684752cec887ca18c4e`, origin SHA verified |
 | 7 / US-0017-TK-0004 turn-and-summary-command-contracts | PASS 6 named / 251 full Contracts; build/format/diff PASS | `012963afb6a531e767d5e6ef531cc60c5ddd4ae8`, origin SHA verified |
-| 8 / US-0003-TK-0001 blast-math | PASS 32 named / 222 full Motion; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 8 / US-0003-TK-0001 blast-math | PASS 32 named / 222 full Motion; build/format/diff PASS | `b197271fe27c121bb98bd31ad81d0b1af1c0ab2d`, origin SHA verified |
+
+| 9 / US-0006-TK-0001-blast-threat-math | PASS 8 named / 230 full; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

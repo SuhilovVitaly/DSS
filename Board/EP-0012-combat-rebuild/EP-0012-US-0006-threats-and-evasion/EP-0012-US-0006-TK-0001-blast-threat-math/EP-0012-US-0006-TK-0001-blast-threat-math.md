@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0006-threats-and-evasion"
 ticket: "EP-0012-US-0006-TK-0001-blast-threat-math"
 title: "blast-threat-math"
-stage: "draft"
+stage: "implemented"
 layer: "motion"
 depends_on: ["EP-0012-US-0003-TK-0001-blast-math"]
 files_touched: 2
 serves: ["US6-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0006-TK-0001-blast-threat-math
@@ -34,6 +34,8 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 ## Public API after the change
 
 Proposed public BlastThreatMath.Evaluate(double shipX,double shipY,double shipVelocityXKmS,double shipVelocityYKmS,double projectileX,double projectileY,double directionX,double directionY,double projectileSpeedKmS,double blastRadiusKm) -> BlastThreatResult с IsThreat, EntryAfterSeconds?, ClosestAfterSeconds, ClosestOffsetXKm/YKm, опасным интервалом; входные X/Y world units, производные расстояния км. Скрытые endpoint/deadline не используются.
+
+Execution API refinement: результат содержит также ExitAfterSeconds?, DangerStartX/Y?, DangerEndX/Y? (world units на наблюдаемой трассе). null exit/end обозначает неограниченный интервал при нулевой относительной скорости внутри зоны; это не Infinity. Порог A02 строгий: касание без проникновения не считается угрозой. Уже внутри зоны — entry=0, в том числе при удалении. Направление нормализуется; нулевое направление допустимо только при нулевой скорости снаряда. Числовые входы/производные должны быть конечны, speed/R неотрицательны; неверный вход отклоняется явно. Вектор closest направлен от корабля к снаряду. API не принимает foreign endpoint/deadline.
 
 ## Implementation steps
 
@@ -72,4 +74,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 8 named / 230 full owning tests (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0006-tk0001-results.json).
+
+A02 проверен аналитической хордой: entry4.25s, closest5s, exit5.75s при относительной скорости2km/s и поперечном расстоянии2km. Проверены world/km units, вращение/смещение, normalized direction, касание, нахождение внутри при удалении, stationary/parallel с null exit и invalid inputs. API не принимает скрытые endpoint/deadline. Engine/UI consumers выполняются отдельно.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
