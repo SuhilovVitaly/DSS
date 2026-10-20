@@ -9,7 +9,7 @@ depends_on: ["EP-0012-US-0011-TK-0003-countermissile-aim-preview"]
 files_touched: 7
 serves: ["US11-AC4"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0011-TK-0004-launch-commands-and-reasons
@@ -85,3 +85,5 @@ git diff --check
 Point commands retain exact point/profile/module binding across UI context changes; click/feedback <=100 ms with no speculative projectile. Pending accepted state survives unrelated newer scene revisions; negative control restoring the original guard fails expected Accepted vs actual Ready. Server reload refusal is localized and not retried, and clears after admitted readiness. Russian/English source/deployed launch-reason coverage and generic fallback PASS. Related bootstrap helpers now wait for rendered player after proven default-camera race; original assertions retained, input regression 77/77 PASS. Strict legacy ForecastBudget, native/product and final catalog integration remain OPEN.
 
 Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
+
+2026-10-20 dispatcher self-review follow-up: `dialogue_active` / `player_destroyed` also precede the point executor; added specific RU/EN messages and source/deployed assertions. PASS 7/7 named + scoped whitespace/full owning formatter; runtime unchanged. Evidence includes the separate follow-up checks.

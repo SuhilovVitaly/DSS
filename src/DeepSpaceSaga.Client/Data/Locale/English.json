@@ -446,5 +446,7 @@
   "Combat.Reason.connection_unavailable": "Session connection unavailable",
   "Combat.Reason.send_failed": "Could not send command",
   "Combat.Reason.command_rejected": "Command rejected",
-  "Combat.Reason.friendly_fire_confirmation": "Will hit friendly: click again within 1 s"
+  "Combat.Reason.friendly_fire_confirmation": "Will hit friendly: click again within 1 s",
+  "Combat.Reason.dialogue_active": "Finish the conversation before launching",
+  "Combat.Reason.player_destroyed": "Your ship has been destroyed"
 }

@@ -128,7 +128,7 @@ public sealed class PointCombatUS0011TK0004Tests
             CommandReasonCodes.ModuleUnavailable, CommandReasonCodes.ModuleDisabled, CommandReasonCodes.ModuleDestroyed, CommandReasonCodes.Busy,
             CommandReasonCodes.LauncherReloading, CommandReasonCodes.MissingProfile, CommandReasonCodes.UnknownProfile, CommandReasonCodes.InvalidTargetCoordinates,
             CommandReasonCodes.NoWeaponOperator, CommandReasonCodes.LaunchOutOfRange, CommandReasonCodes.InvalidTime, CommandReasonCodes.ProjectileIdExhausted,
-            CommandReasonCodes.SessionDefeated, "connection_unavailable", "send_failed", "command_rejected", "friendly_fire_confirmation"];
+            CommandReasonCodes.SessionDefeated, "dialogue_active", "player_destroyed", "connection_unavailable", "send_failed", "command_rejected", "friendly_fire_confirmation"];
         foreach (string reason in reasons)
         { Assert.True(strings.TryGetValue("Combat.Reason." + reason, out var text), reason); Assert.False(string.IsNullOrWhiteSpace(text)); Assert.NotEqual(reason, text); }
         Assert.True(strings.ContainsKey("Combat.CommandRejected"));

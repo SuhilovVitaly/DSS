@@ -195,5 +195,68 @@
     "All point-launch refusal reasons verified in Russian and English source/deployed files; unknown future code uses localized generic fallback.",
     "Related initial input regression failed 76/77 because test bootstrap could arrive between Render and predicate, leaving default camera 10000,10000. Diagnostic run confirmed Target out of range with that camera. Four test helpers now require an actually rendered player; all original command/result assertions retained.",
     "Self-review only; final catalog integration, strict budget, native/product gates remain OPEN."
-  ]
+  ],
+  "dispatcherLocaleFollowup": {
+    "checks": [
+      {
+        "args": [
+          "test",
+          "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+          "--no-restore",
+          "--filter",
+          "FullyQualifiedName~PointCombatUS0011TK0004Tests",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedMs": 12019,
+        "hardTimeoutMs": 300000,
+        "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 1 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "format",
+          "whitespace",
+          "DeepSpaceSaga.sln",
+          "--verify-no-changes",
+          "--no-restore",
+          "--include",
+          "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs"
+        ],
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedMs": 3585,
+        "hardTimeoutMs": 300000,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "format",
+          "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+          "--verify-no-changes",
+          "--no-restore",
+          "--include",
+          "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs"
+        ],
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedMs": 14964,
+        "hardTimeoutMs": 300000,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "scope": "Only English/Russian dialogue_active/player_destroyed entries and test coverage added after dispatcher self-review. Runtime unchanged. Previous 2215 Client regression remains historical gate at 76272384; this follow-up checks current packaged dictionaries with all seven named tests."
+  }
 }

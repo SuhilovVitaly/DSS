@@ -446,5 +446,7 @@
   "Combat.Reason.connection_unavailable": "Нет соединения с сессией",
   "Combat.Reason.send_failed": "Не удалось отправить команду",
   "Combat.Reason.command_rejected": "Команда отклонена",
-  "Combat.Reason.friendly_fire_confirmation": "Заденет свой корабль: повторите клик в течение 1 с"
+  "Combat.Reason.friendly_fire_confirmation": "Заденет свой корабль: повторите клик в течение 1 с",
+  "Combat.Reason.dialogue_active": "Завершите разговор перед пуском",
+  "Combat.Reason.player_destroyed": "Ваш корабль уничтожен"
 }
