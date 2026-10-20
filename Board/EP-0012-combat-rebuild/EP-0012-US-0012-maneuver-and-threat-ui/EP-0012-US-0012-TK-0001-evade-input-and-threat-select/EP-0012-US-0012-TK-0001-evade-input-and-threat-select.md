@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0012-maneuver-and-threat-ui"
 ticket: "EP-0012-US-0012-TK-0001-evade-input-and-threat-select"
 title: "evade-input-and-threat-select"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0011-TK-0004-launch-commands-and-reasons"]
-files_touched: 5
+files_touched: 8
 serves: ["US12-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0012-TK-0001-evade-input-and-threat-select
@@ -24,24 +24,29 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Bounded scope (8 files), updated before code under EpicExecutionPrompt authority. Existing native tracker and bridge must consume the data bindings and send explicit threat/side/direction/active payloads; pure visual helpers would not satisfy AC1.
 
-| File | Current state | Allowed change |
-|---|---|---|
-| [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs:14; public sealed partial class GameSessionScreen : IScreen | Только изменения для scope этой карточки и served AC. |
-| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Maneuver.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| `src/DeepSpaceSaga.Client/Data/UI/combat-input.json` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| File | Allowed change |
+|---|---|
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Actual key down/up, threat click, render and focus-loss hooks |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Maneuver.cs` | NEW observed threat selection, held evasion preview, release/turn/full-speed and visuals |
+| `src/DeepSpaceSaga.Client/CombatInputSettings.cs` | Load/validate/map maneuver bindings; optional additions preserve schema1 existing files |
+| `src/DeepSpaceSaga.Client/Data/UI/combat-input.json` | A/D, Tab, left/right and Shift bindings |
+| `src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs` | Shift modifier edges precede actions; mapped maneuver keys reach real native input |
+| `src/DeepSpaceSaga.Client/GameSessionHandle.cs` | Actual explicit evade and turnHold command payloads, existing authoritative submission |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatSessionFixture.cs` | Optional enabled-engine, distant-enemy/no-flight real fixture for maneuver vs noncombat tests; existing defaults retained |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0001Tests.cs` | NEW actual input/transport/Engine and pure observed-preview checks |
+
+A-MANEUVER-INPUT: Shift starts the existing cyclic engine.accelerate command toward engine maximum; it does not teleport velocity. Left/right hold uses engine.turnHold during Active combat or live observed torpedo danger, retaining legacy step controls outside combat. A/D preview uses only displayed projectile ray, own max speed and BlastThreatMath deadline; exit time is the conservative time to clear the R+0.5 km ray corridor at the commanded perpendicular maximum speed. The estimate must also fit the executor episode duration (observed closest-approach time + 0.5 physical seconds). No hidden fuse is assumed. Explicit click/Tab changes current threat; disappearance cancels a held evasion instead of sending against an automatic replacement. Focus loss/dialogue/pause/load clear held state.
 
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+GameSessionHandle exposes explicit point-maneuver submission methods using existing PlayerCommand fields; no Contracts/Engine changes. CombatInputSettings adds optional maneuver bindings; no simulation state.
 
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
-2.
+2. Implement actual data-driven maneuver input, observed preview and engine payloads; preserve authoritative motion and rejection semantics.
 3. Добавить/обновить named checks ниже одновременно с реализацией. Удаляемые legacy tests заменять проверками нового контракта, сохраняющиеся инварианты не выкидывать.
 4. Записать фактические команды/результаты при исполнении; сейчас всё NOT RUN.
 
@@ -75,4 +80,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 12 named / 2227 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0012-tk0001-results.json).
+
+Data-driven A/D hold previews public observed corridor exit; only release sends real evade. Current threat defaults to observed minimum entry time with ordinal ties; click/Tab switch explicitly. Continuous turn handles direction changes, release, focus loss, pause/load; outside combat arrows retain step commands. Shift starts existing cyclic acceleration without instantaneous speed changes. Actual bridge/Engine and remap tests PASS, 89 related input checks PASS. Own base-course arrow and disabled-engine countdown headless render inspected; timer freezes on pause and icon avoids own plaque. Strict legacy ForecastBudget, final data integration and native/product remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

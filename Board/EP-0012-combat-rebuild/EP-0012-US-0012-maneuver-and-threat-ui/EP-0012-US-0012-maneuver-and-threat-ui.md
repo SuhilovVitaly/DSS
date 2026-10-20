@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0012-maneuver-and-threat-ui"
 title: "Манёвр и угрозы в UI"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0003-point-aim-torpedoes", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0005-snapshot-privacy", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time", "EP-0012-US-0009-scenarios-and-saves", "EP-0012-US-0010-tactical-map", "EP-0012-US-0011-aiming-and-launch", "EP-0012-US-0017-event-and-command-integration", "EP-0012-US-0018-legacy-combat-cleanup", "EP-0012-US-0019-scenario-and-client-regressions"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -51,7 +51,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 38 / [EP-0012-US-0012-TK-0001-evade-input-and-threat-select](EP-0012-US-0012-TK-0001-evade-input-and-threat-select/EP-0012-US-0012-TK-0001-evade-input-and-threat-select.md) | client | EP-0012-US-0011-TK-0004-launch-commands-and-reasons | US12-AC1 | 5 |
+| 38 / [EP-0012-US-0012-TK-0001-evade-input-and-threat-select](EP-0012-US-0012-TK-0001-evade-input-and-threat-select/EP-0012-US-0012-TK-0001-evade-input-and-threat-select.md) | client | EP-0012-US-0011-TK-0004-launch-commands-and-reasons | US12-AC1 | 8 |
 | 39 / [EP-0012-US-0012-TK-0002-threat-panel](EP-0012-US-0012-TK-0002-threat-panel/EP-0012-US-0012-TK-0002-threat-panel.md) | client | EP-0012-US-0012-TK-0001-evade-input-and-threat-select | US12-AC2 | 4 |
 | 40 / [EP-0012-US-0012-TK-0003-threat-alerts](EP-0012-US-0012-TK-0003-threat-alerts/EP-0012-US-0012-TK-0003-threat-alerts.md) | client | EP-0012-US-0012-TK-0002-threat-panel | US12-AC3 | 5 |
 

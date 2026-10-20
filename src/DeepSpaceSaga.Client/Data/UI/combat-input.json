@@ -6,5 +6,11 @@
     "cancel": "Escape",
     "launchMouse": "Left",
     "cancelMouse": "Right",
-    "wheelProfiles": true
+    "wheelProfiles": true,
+    "evadeLeft": "A",
+    "evadeRight": "D",
+    "nextThreat": "Tab",
+    "turnLeft": "Left",
+    "turnRight": "Right",
+    "fullSpeed": ["ShiftLeft", "ShiftRight"]
 }

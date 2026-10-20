@@ -162,6 +162,24 @@ public sealed class GameSessionHandle : IAsyncDisposable
             TorpedoLauncherCommandTypes.SetMode, ModeId: modeId));
     }
 
+    public ValueTask SendEvadeAsync(string objectId, string moduleId, string threatProjectileId, EvadeSide side, out string commandId)
+    {
+        if (!Enum.IsDefined(side)) throw new ArgumentOutOfRangeException(nameof(side));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId, ManeuverCommandTypes.Evade,
+            ThreatProjectileId: threatProjectileId, EvadeSide: side));
+    }
+
+    public ValueTask SendTurnHoldAsync(string objectId, string moduleId, TurnDirection direction, bool active, out string commandId)
+    {
+        if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId, ShipEngineCommandTypes.TurnHold,
+            TurnDirection: direction, Active: active));
+    }
+
     /// <summary>Release the player ship from its current station through the authoritative navigation computer.</summary>
     public string? SendUndockCommand(string? destinationStationObjectId = null)
     {

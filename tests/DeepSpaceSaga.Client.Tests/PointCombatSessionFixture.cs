@@ -75,7 +75,7 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
             combatRules: rules ?? source.CombatRules! with { Chance = null, Blast = new(.3), Scatter = new(15, .0333, .3), Npc = new(1400, 30, 200), CombatStartRangeKm = 100 });
     }
 
-    internal PointCombatSessionFixture(GameDataRegistry? registry = null)
+    internal PointCombatSessionFixture(GameDataRegistry? registry = null, bool engineEnabled = false, bool launchHostile = true, double enemyX = 400)
     {
         var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
         Engine = new(registry ?? Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
@@ -87,7 +87,7 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
                 CurrentSpeed = "Speed0",
                 SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
                 {
-                    PositionX = o.ObjectId == Player ? 0 : 400,
+                    PositionX = o.ObjectId == Player ? 0 : enemyX,
                     PositionY = 0,
                     SpeedMps = 0,
                     MovementType = "Stationary",
@@ -96,13 +96,14 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
                     Modules = o.Modules!.Select(m => m with
                     {
                         AutoDefenseEnabled = false,
-                        PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On"
+                        PowerState = m.ModuleTypeId == "module.engine.basic" && !engineEnabled ? "Off" : "On"
                     }).ToArray()
                 }).ToArray()
             }
         });
         Engine.SetPresentationTimestampForTests(() => 0);
-        Assert.Equal(CommandStartDisposition.Started, Engine.TryStartHostilePointLaunch(Enemy, "MOD-PIRATE-TORPEDO-01", 700, 0, "slow", 0).Disposition);
+        if (launchHostile)
+            Assert.Equal(CommandStartDisposition.Started, Engine.TryStartHostilePointLaunch(Enemy, "MOD-PIRATE-TORPEDO-01", enemyX + 300, 0, "slow", 0).Disposition);
         Connection = new(Engine);
     }
 

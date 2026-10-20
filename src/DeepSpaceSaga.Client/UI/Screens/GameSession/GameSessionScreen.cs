@@ -395,6 +395,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        CancelManeuverInput();
         CancelPointAim();
         _combatReportPanel.ClearFocus();
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
@@ -512,6 +513,7 @@ public sealed partial class GameSessionScreen : IScreen
         string? hitObjectId = picked.Id;
         if (hitObjectId is not null)
         {
+            SelectPointThreat(hitObjectId);
             _selectedFieldId = null; _selectedPoiId = null;
             SetSelectedObjectId(hitObjectId);
 
@@ -642,6 +644,7 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnKeyDown(Key key)
     {
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (HandleManeuverKey(key)) return ScreenEvent.None;
         if (HandlePointAimKey(key)) return ScreenEvent.None;
         if (_combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
@@ -732,6 +735,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnKeyUp(Key key)
     {
+        ReleaseManeuverKey(key);
         if (key == Key.AltLeft) _pointAltLeft = false;
         else if (key == Key.AltRight) _pointAltRight = false;
         if (key == Key.ControlLeft)
@@ -1266,6 +1270,7 @@ public sealed partial class GameSessionScreen : IScreen
             RenderStageCompleted?.Invoke("combat_trajectories");
             DrawLaunchPreview(canvas, prediction, viewportResized);
             DrawPointAimFeedback(canvas);
+            DrawManeuverInput(canvas);
             RenderStageCompleted?.Invoke("launch_preview");
             CompleteRenderStage("forecasts");
 
