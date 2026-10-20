@@ -7,6 +7,7 @@ public sealed partial class SimulationEngine
 {
     private DefenseLaunchPreview? BuildDefensePreview(SpaceObjectRuntime owner, InstalledModuleRuntime module, long time)
     {
+        if (_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).IsPointLauncher) return null;
         string ownerId = owner.InitialMotion.ObjectId;
         if (!_defenses.ContainsKey((ownerId, module.ModuleId))) return null;
         var target = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == SelectedObjectId &&

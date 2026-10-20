@@ -1009,7 +1009,7 @@ public sealed partial class SimulationEngine : IDisposable
                 DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 IsDestroyed: module.Destroyed,
                 CombatRole: moduleType.CombatRole,
-                TorpedoMaxFlightTimeMs: moduleType.TorpedoDamage is not null ? TorpedoLifetimeMs(moduleType) : null));
+                TorpedoMaxFlightTimeMs: moduleType.TorpedoDamage is not null && !moduleType.IsPointLauncher ? TorpedoLifetimeMs(moduleType) : null));
         }
 
         return builder.MoveToImmutable();

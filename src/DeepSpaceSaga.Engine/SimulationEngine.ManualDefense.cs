@@ -71,7 +71,8 @@ public sealed partial class SimulationEngine
 
     private double? FirstPredictedTorpedoContact(SpaceObjectRuntime projectile, long time, long until)
     {
-        var flight = projectile.InitialMotion.Torpedo!;
+        if (projectile.InitialMotion.OwnProjectile is not null || projectile.InitialMotion.ObservedProjectile is not null ||
+            projectile.InitialMotion.Torpedo is not { } flight) return null;
         double? first = null;
         foreach (var target in _objects)
         {

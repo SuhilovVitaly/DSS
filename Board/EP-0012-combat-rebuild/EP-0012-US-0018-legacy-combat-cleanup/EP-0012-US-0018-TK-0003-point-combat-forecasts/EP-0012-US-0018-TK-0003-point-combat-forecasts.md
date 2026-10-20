@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0018-legacy-combat-cleanup"
 ticket: "EP-0012-US-0018-TK-0003-point-combat-forecasts"
 title: "point-combat-forecasts"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0008-TK-0003-encounter-stats"]
-files_touched: 3
+files_touched: 5
 serves: ["US18-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 3
+revision: 5
 ---
 
 # EP-0012-US-0018-TK-0003-point-combat-forecasts
@@ -24,13 +24,18 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| `src/DeepSpaceSaga.Engine/SimulationEngine.ManualDefense.cs` | Existing | Legacy centre-contact helper rejects point payloads instead of inferring private deadlines. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.cs` | Existing | Point launcher module projection has no legacy fixed lifetime. |
+
+A-FORECAST-ENGINE-01: shared ModelVersion3 and actual CombatPath parity were repaired/verified separately in published US18-TK4 fix. This owning Engine integration removes point consumers from legacy lifetime/chance/contact projections; own forecasts use captured endpoint/deadline and foreign forecasts only observed ray/horizon. Legacy-only branches remain for the inactive legacy catalog until its explicit cleanup ticket; no claim that source legacy symbols are already deleted.
 
 ## Public API after the change
 
@@ -72,7 +77,11 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 4 named / 709 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0018-tk0003-results.json).
+
+Reproduced3 failed /1 passed: point launchers incorrectly published legacy120000ms lifetime. Fixed projection to omit it; point defenses have no legacy chance preview, and legacy centre-contact helper refuses point payloads. All3 own profiles use captured deadlines and match actual Engine hit times/line positions. Two worlds differing only in hidden enemy endpoint produce identical observed-only forecasts with no contact ETA, target or guidance legs; no launch RNG consumed. Separate shared-runtime parity fix ebf66d65 remains linked, not claimed as new source deletion. Legacy-only helpers stay until explicit cleanup. Solution build0 warnings/errors; production data/Save18/Client/native integration remains OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 execution prerequisite correction: legacy removal follows Save18, forecast and Client migrations; see [current DAG](../../Tickets.md#migration-prerequisite-correction). AC/deletion requirements remain unchanged.
 
