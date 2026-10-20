@@ -142,7 +142,13 @@ public sealed record ObjectMotionSnapshot(
     ImmutableArray<ModuleHealthSnapshot> ModuleHealth = default,
     /// <summary>Player-visible execution phase, projected only; never stored in saves.</summary>
     [property: JsonPropertyName("engineManeuver"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    EngineManeuverSnapshot? EngineManeuver = null);
+    EngineManeuverSnapshot? EngineManeuver = null,
+    /// <summary>Full captured point flight, published only to its owner.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    OwnProjectileSnapshot? OwnProjectile = null,
+    /// <summary>Foreign point flight with no concealed endpoint, deadline or module data.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ObservedProjectileSnapshot? ObservedProjectile = null);
 
 /// <summary>Existing discrete engine command, not a proposed command or future AI decision.
 /// Acceleration is km/s²; the first speed delta includes elapsed inertia before this snapshot.

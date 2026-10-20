@@ -3,6 +3,51 @@ using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
 
+/// <summary>Point-aim projectile kind, independent of ownership and UI selection.</summary>
+public enum ProjectileKind { Torpedo, Countermissile }
+
+/// <summary>
+/// Captured flight information visible to the projectile's owner. Coordinates use world
+/// units (100 m), speed is km/s and radius is km. Times are absolute physical milliseconds;
+/// the detonation deadline may fall between whole milliseconds. The Engine supplies all
+/// values; this transport record performs no simulation or random draws.
+/// </summary>
+public sealed record OwnProjectileSnapshot(
+    ProjectileKind Kind,
+    string OwnerObjectId,
+    string LauncherModuleId,
+    double X,
+    double Y,
+    double StartX,
+    double StartY,
+    double DetonationX,
+    double DetonationY,
+    long LaunchMotionTimeMs,
+    double DetonationMotionTimeMs,
+    double SpeedKmS,
+    string ProfileId,
+    double BlastRadiusKm,
+    int Damage,
+    decimal ArmorPiercingPercent,
+    decimal ArmorDamagePercent = 100);
+
+/// <summary>
+/// Foreign projectile observation. The unit direction vector is measured in world axes;
+/// coordinates use world units, speed km/s and radius km. No endpoint, deadline, launch
+/// position, target, route, module or combat rating can be represented by this schema.
+/// Unknown JSON members are rejected even when the surrounding serializer skips them.
+/// </summary>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ObservedProjectileSnapshot(
+    ProjectileKind Kind,
+    double X,
+    double Y,
+    double DirectionX,
+    double DirectionY,
+    double SpeedKmS,
+    string ProfileId,
+    double BlastRadiusKm);
+
 /// <summary>Combat commands addressed by owner object, launcher module and explicit target.</summary>
 public static class CombatCommandTypes
 {

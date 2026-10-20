@@ -3,7 +3,7 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0001-contracts-and-schema"
 ticket: "EP-0012-US-0001-TK-0001-projectile-contracts"
 title: "projectile-contracts"
-stage: "draft"
+stage: "implemented"
 layer: "contracts"
 depends_on: []
 files_touched: 4
@@ -36,6 +36,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 ## Public API after the change
 
 Proposed: enum ProjectileKind { Torpedo, Countermissile }; OwnProjectileSnapshot и ObservedProjectileSnapshot — отдельные immutable records по US1-AC1. X/Y в world units, скорость км/с, R км, timestamps в физических мс. Существующий ObjectMotionSnapshot подключает новые DTO; старые TorpedoSnapshot/CountermeasureSnapshot удаляются только после переноса потребителей (G-02).
+
+### Уточнение исполнения — 2026-10-20
+
+Проверенные consumers: Engine combat/countermeasures и save validation, Motion guidance/forecast, Client forecast/cache/projector/inspection и соответствующие тесты. На этом шаге добавляются отдельные новые DTO и optional `OwnProjectile`/`ObservedProjectile` в конец `ObjectMotionSnapshot`, сохраняя существующие конструкторы. Legacy удаляется в предусмотренных шагах миграции, а не объявляется удалённым этим тикетом. Production scope остаётся Contracts; Engine privacy реализуется и проверяется отдельно в US-0005.
+
+Собственный DTO хранит kind, owner/module, текущую позицию, старт, точку, physical launch/deadline, speed/profile/R/damage/AP. Deadline имеет тип double: полёт distance/speed может завершаться между целыми миллисекундами. Наблюдаемый DTO содержит только kind, текущие X/Y, DirectionX/Y, SpeedKmS, ProfileId, BlastRadiusKm; не содержит owner module, target, route, chance, attack, старт или deadline. Unknown JSON members наблюдаемого DTO запрещены атрибутом типа, независимо от настроек вызывающего serializer. Геометрия и авторитетная валидация не вычисляются DTO.
 
 ## Implementation steps
 
@@ -74,4 +80,6 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. Добавлены immutable own/observed DTO и optional поля ObjectMotionSnapshot; legacy constructors сохранены до предусмотренной миграции. Named tests PASS 12/12; полный Contracts PASS 224/224 (0 failed/skipped); owning build PASS 0 warnings/errors; scoped whitespace и полный scoped formatter PASS; git diff --check PASS. Новый тестовый файл приведён к CRLF после первого замечания formatter. Каждый процесс ограничен 300000 ms с завершением дерева.
+
+[Фактические команды и stdout](../../evidence/tk0001-results.json). Self-review проверил единицы, дробный deadline, отсутствие скрытых членов observed и type-level unknown-field rejection, совместимость старых producers. Это review исполнителя, не независимое одобрение. Production privacy и полное удаление legacy OPEN до US-0005/US-0018/US-0019; native/product/balance OPEN. Полномочия commit/push получены текущим поручением; SHA проверяется после отдельного коммита.
