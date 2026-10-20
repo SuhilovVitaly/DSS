@@ -39,7 +39,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 6 / [EP-0012-US-0017-TK-0001-combat-event-contracts](EP-0012-US-0017-TK-0001-combat-event-contracts/EP-0012-US-0017-TK-0001-combat-event-contracts.md) | engine-and-contracts | EP-0012-US-0001-TK-0005-launcher-profile-schema | US17-AC1 | 7 |
+| 6 / [EP-0012-US-0017-TK-0001-combat-event-contracts](EP-0012-US-0017-TK-0001-combat-event-contracts/EP-0012-US-0017-TK-0001-combat-event-contracts.md) | contracts-and-localization | EP-0012-US-0001-TK-0005-launcher-profile-schema | US17-AC1 | 6 |
 | 41 / [EP-0012-US-0017-TK-0002-engine-report-producers](EP-0012-US-0017-TK-0002-engine-report-producers/EP-0012-US-0017-TK-0002-engine-report-producers.md) | engine | EP-0012-US-0018-TK-0005-module-combat-regressions | US17-AC2, US13-AC4 | 5 |
 | 44 / [EP-0012-US-0017-TK-0003-local-client-delivery](EP-0012-US-0017-TK-0003-local-client-delivery/EP-0012-US-0017-TK-0003-local-client-delivery.md) | local-client | EP-0012-US-0005-TK-0002-hidden-fields-leak-test | US17-AC3 | 3 |
 | 7 / [EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts](EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts/EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts.md) | contracts | EP-0012-US-0017-TK-0001-combat-event-contracts | US17-AC4 | 6 |

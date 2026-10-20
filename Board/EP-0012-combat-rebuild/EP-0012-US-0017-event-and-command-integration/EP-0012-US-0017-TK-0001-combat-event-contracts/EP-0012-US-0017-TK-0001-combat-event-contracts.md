@@ -4,12 +4,12 @@ story: "EP-0012-US-0017-event-and-command-integration"
 ticket: "EP-0012-US-0017-TK-0001-combat-event-contracts"
 title: "combat-event-contracts"
 stage: "implemented"
-layer: "contracts"
+layer: "contracts-and-localization"
 depends_on: ["EP-0012-US-0001-TK-0005-launcher-profile-schema"]
-files_touched: 4
+files_touched: 6
 serves: ["US17-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0017-TK-0001-combat-event-contracts
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Актуальный allowlist 6 файлов: исходные Contracts + matching tests и два locale consumer файла. 2026-10-20: полный Client run после расширения enum воспроизвёл missing Combat.Event.TorpedoDetonated (2128 passed / 1 failed). Scope расширен до RU/EN event labels до исправления; существующий PhaseThreeLocaleTests не ослабляется. Отдельный fix commit привязан к этому опубликованному тикету.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -32,6 +32,8 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs](../../../../src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs) | Существует: src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs:7; public enum BattleReportKind | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Contracts/CombatPresentationUpdate.cs](../../../../src/DeepSpaceSaga.Contracts/CombatPresentationUpdate.cs) | Существует: src/DeepSpaceSaga.Contracts/CombatPresentationUpdate.cs:12; public sealed record CombatPresentationUpdate( | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0017TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| [src/DeepSpaceSaga.Client/Data/Locale/English.json](../../../../src/DeepSpaceSaga.Client/Data/Locale/English.json) | Existing enum-to-label consumer | Four new event names. |
+| [src/DeepSpaceSaga.Client/Data/Locale/Russian.json](../../../../src/DeepSpaceSaga.Client/Data/Locale/Russian.json) | Existing enum-to-label consumer | Matching Russian labels. |
 
 ## Public API after the change
 
@@ -82,3 +84,5 @@ git diff --check
 2026-10-20: Contracts implementation и self-review выполнены. Named tests PASS 6/6; полный Contracts PASS 245/245 (0 failed/skipped); owning build 0 warnings/errors; scoped whitespace/full formatter и diff check PASS; hard cap 300000 ms.
 
 [Команды и stdout](../../evidence/us0017-tk0001-results.json). Self-review: old enum numeric identities/E01–E07 сохранены; точное physical fact time и явные removals проходят existing envelope; public projected journal/report JSON не содержит null private module/damage/chance keys; own damage roundtrip сохраняет детали. Нет future endpoint/deadline новых полей и нет permission/RNG/world logic в Contracts. Это не проверка реальной Engine redaction: US5 и producers/delivery gates OPEN. Review исполнителя не является независимым. Native/product/balance OPEN; SHA проверяется после отдельного commit/push.
+
+2026-10-20 corrective review: новые event enum values теперь покрыты English/Russian source и deployed JSON. Исходный full Client FAIL 2128/2129; после исправления существующий PhaseThreeLocaleTests PASS 3/3, без изменения assertions. [Reproduction/fix evidence](../../evidence/us0017-tk0001-locale-fix.json). Data-only correction; JSON duplicate/nonblank/source-output parity проверены самим тестом, owning compile PASS. Отдельный fix commit/push; полный Client повтор включён в текущий launch gate.
