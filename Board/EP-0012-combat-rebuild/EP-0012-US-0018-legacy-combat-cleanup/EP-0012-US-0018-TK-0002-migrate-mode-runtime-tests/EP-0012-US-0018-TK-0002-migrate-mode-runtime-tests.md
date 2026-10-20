@@ -5,7 +5,7 @@ ticket: "EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests"
 title: "migrate-mode-runtime-tests"
 stage: "draft"
 layer: "engine"
-depends_on: ["EP-0012-US-0018-TK-0001-remove-interception-helper"]
+depends_on: ["EP-0012-US-0019-TK-0004-client-combat-regressions"]
 files_touched: 4
 serves: ["US18-AC1", "US18-AC3"]
 created: "2026-10-20T07:48:46.640Z"

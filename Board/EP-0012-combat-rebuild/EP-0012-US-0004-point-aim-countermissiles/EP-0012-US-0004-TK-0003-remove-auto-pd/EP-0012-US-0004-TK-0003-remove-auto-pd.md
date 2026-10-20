@@ -5,7 +5,7 @@ ticket: "EP-0012-US-0004-TK-0003-remove-auto-pd"
 title: "remove-auto-pd"
 stage: "draft"
 layer: "engine"
-depends_on: ["EP-0012-US-0019-TK-0004-client-combat-regressions"]
+depends_on: ["EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests"]
 files_touched: 4
 serves: ["US4-AC3"]
 created: "2026-10-20T07:48:46.640Z"

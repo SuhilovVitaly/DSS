@@ -40,7 +40,7 @@ Execution order задаётся ticket DAG, который допускает �
 |---|---|---|---|---:|
 | 14 / [EP-0012-US-0004-TK-0001-countermissile-point-launch](EP-0012-US-0004-TK-0001-countermissile-point-launch/EP-0012-US-0004-TK-0001-countermissile-point-launch.md) | engine | EP-0012-US-0003-TK-0004-manual-detonation | US4-AC1 | 4 |
 | 15 / [EP-0012-US-0004-TK-0002-countermissile-detonation](EP-0012-US-0004-TK-0002-countermissile-detonation/EP-0012-US-0004-TK-0002-countermissile-detonation.md) | engine-and-contracts | EP-0012-US-0004-TK-0001-countermissile-point-launch | US4-AC2 | 5 |
-| 61 / [EP-0012-US-0004-TK-0003-remove-auto-pd](EP-0012-US-0004-TK-0003-remove-auto-pd/EP-0012-US-0004-TK-0003-remove-auto-pd.md) | engine | EP-0012-US-0019-TK-0004-client-combat-regressions | US4-AC3 | 4 |
+| 62 / [EP-0012-US-0004-TK-0003-remove-auto-pd](EP-0012-US-0004-TK-0003-remove-auto-pd/EP-0012-US-0004-TK-0003-remove-auto-pd.md) | engine | EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests | US4-AC3 | 4 |
 
 ## Decisions / Assumptions
 

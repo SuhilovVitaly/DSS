@@ -5,7 +5,7 @@ ticket: "EP-0012-US-0003-TK-0005-remove-homing-roll-modes"
 title: "remove-homing-roll-modes"
 stage: "draft"
 layer: "engine"
-depends_on: ["EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests"]
+depends_on: ["EP-0012-US-0018-TK-0001-remove-interception-helper"]
 files_touched: 4
 serves: ["US3-AC5"]
 created: "2026-10-20T07:48:46.640Z"
