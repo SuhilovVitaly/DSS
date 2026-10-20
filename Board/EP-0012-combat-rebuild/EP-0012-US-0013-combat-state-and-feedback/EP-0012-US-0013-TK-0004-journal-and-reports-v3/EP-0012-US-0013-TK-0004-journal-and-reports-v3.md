@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0013-combat-state-and-feedback"
 ticket: "EP-0012-US-0013-TK-0004-journal-and-reports-v3"
 title: "journal-and-reports-v3"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels"]
-files_touched: 5
+files_touched: 12
 serves: ["US13-AC4"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0013-TK-0004-journal-and-reports-v3
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (12 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -34,9 +34,20 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CombatReportPanel.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CombatReportPanel.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CombatReportPanel.cs:8; internal sealed class CombatReportPanel : IDisposable | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0004Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Existing | Pass own identity to journal or replace superseded chance/roll assertions with authoritative geometric/own-health expectations; preserve scrolling/history/reasons/captured identity. |
+| `tests/DeepSpaceSaga.Client.Tests/CombatJournalPanelTests.cs` | Existing | Pass own identity to journal or replace superseded chance/roll assertions with authoritative geometric/own-health expectations; preserve scrolling/history/reasons/captured identity. |
+| `tests/DeepSpaceSaga.Client.Tests/PhaseThreeJournalUiTests.cs` | Existing | Pass own identity to journal or replace superseded chance/roll assertions with authoritative geometric/own-health expectations; preserve scrolling/history/reasons/captured identity. |
+| `tests/DeepSpaceSaga.Client.Tests/PhaseThreeLocaleTests.cs` | Existing | Pass own identity to journal or replace superseded chance/roll assertions with authoritative geometric/own-health expectations; preserve scrolling/history/reasons/captured identity. |
+| `tests/DeepSpaceSaga.Client.Tests/CombatReportFormatterTests.cs` | Existing | Pass own identity to journal or replace superseded chance/roll assertions with authoritative geometric/own-health expectations; preserve scrolling/history/reasons/captured identity. |
+
+| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Existing | Localized public profile/radius/result labels used by this journal/report formatter. |
+| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Existing | Matching labels; broad combat localization audit remains US16. |
+
 ## Public API after the change
 
 No public API change; внутренние детали ограничены перечисленным scope.
+
+Scope correction before code: journal rendering must receive actual player object identity from the root Render call; do not infer ownership from actor/role. Several existing UI tests explicitly require retired chance/roll formatting. Replace those assertions with new public geometric facts and explicit absence, preserving independent history/scroll/reason/own-health/captured reporter checks. Report DamageDetails is permitted only for PlayerShipDamaged. No Engine producer changes.
 
 ## Implementation steps
 
@@ -74,4 +85,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 21 named / 2307 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0013-tk0004-results.json).
+
+Journal/report point kind, profile, blast radius, public result and shot-down IDs; retired chance/roll/rating text removed, legacy trial event rendered as neutral Weapon event. Own health requires actual player identity and cache invalidates on identity change; report health only PlayerShipDamaged. Captured speaker, reasons, scroll/collapse and 200-entry sequence-bound history retained. Baseline 15 failures/1 pass reproduced before fix. RU/EN and 100/150 percent actual report component render PASS; inspected PNG is component/headless evidence. Twelve shared localized labels added; full localization audit US16 pending. Native/product, Save18 and strict legacy budget OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

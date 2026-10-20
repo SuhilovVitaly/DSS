@@ -448,5 +448,17 @@
   "Combat.Reason.command_rejected": "Команда отклонена",
   "Combat.Reason.friendly_fire_confirmation": "Заденет свой корабль: повторите клик в течение 1 с",
   "Combat.Reason.dialogue_active": "Завершите разговор перед пуском",
-  "Combat.Reason.player_destroyed": "Ваш корабль уничтожен"
+  "Combat.Reason.player_destroyed": "Ваш корабль уничтожен",
+  "Combat.Profile": "Профиль",
+  "Combat.BlastRadius": "Радиус взрыва",
+  "Combat.ProjectileKind": "Снаряд",
+  "Combat.Kind.Torpedo": "Торпеда",
+  "Combat.Kind.Countermissile": "Противоракета",
+  "Combat.HitResult": "Результат",
+  "Combat.Hit.Core": "Ядро",
+  "Combat.Hit.Edge": "Край",
+  "Combat.Hit.Miss": "Мимо",
+  "Combat.Hit.ShotDown": "Сбита",
+  "Combat.InterceptedProjectiles": "Сбитые снаряды",
+  "Combat.Event.LegacyResolution": "Событие оружия"
 }

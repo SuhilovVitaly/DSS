@@ -448,5 +448,17 @@
   "Combat.Reason.command_rejected": "Command rejected",
   "Combat.Reason.friendly_fire_confirmation": "Will hit friendly: click again within 1 s",
   "Combat.Reason.dialogue_active": "Finish the conversation before launching",
-  "Combat.Reason.player_destroyed": "Your ship has been destroyed"
+  "Combat.Reason.player_destroyed": "Your ship has been destroyed",
+  "Combat.Profile": "Profile",
+  "Combat.BlastRadius": "Blast radius",
+  "Combat.ProjectileKind": "Projectile",
+  "Combat.Kind.Torpedo": "Torpedo",
+  "Combat.Kind.Countermissile": "Countermissile",
+  "Combat.HitResult": "Result",
+  "Combat.Hit.Core": "Core",
+  "Combat.Hit.Edge": "Edge",
+  "Combat.Hit.Miss": "Miss",
+  "Combat.Hit.ShotDown": "Shot down",
+  "Combat.InterceptedProjectiles": "Intercepted projectiles",
+  "Combat.Event.LegacyResolution": "Weapon event"
 }

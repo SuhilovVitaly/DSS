@@ -19,18 +19,25 @@ public class PhaseThreeJournalUiTests
         Accuracy: 30, TargetManeuverability: 5, TerminationKind: CountermeasureTerminationKind.LifetimeExpired);
 
     [Fact]
-    public void Mode_module_captured_stats_and_roll_are_present_without_recomputing_chance()
+    public void Own_module_and_public_profile_remain_without_retired_modes_or_probability()
     {
-        var manual = CombatJournalPanel.Format(Entry with { Type = CombatEventType.Miss, Roll = 801, TerminationKind = null });
-        var automatic = CombatJournalPanel.Format(Entry with { LaunchMode = LaunchMode.Auto });
+        var entry = Entry with
+        {
+            Type = CombatEventType.Miss,
+            Roll = 801,
+            TerminationKind = null,
+            ProfileId = "wide-profile",
+            ProjectileKind = ProjectileKind.Countermissile,
+            BlastRadiusKm = 1,
+            HitResult = ProjectileHitResult.Miss
+        };
+        var manual = CombatJournalPanel.Format(entry, "player");
+        var automatic = CombatJournalPanel.Format(entry with { LaunchMode = LaunchMode.Auto }, "player");
         Assert.Contains(manual, l => l.Contains("defense-two"));
-        Assert.Contains(manual, l => l.Contains(Localization.Get("Combat.Manual")));
-        Assert.Contains(automatic, l => l.Contains(Localization.Get("Combat.Auto")));
-        Assert.Contains(manual, l => l.Contains(Localization.Get("Combat.DefenseRating")) && l.Contains("30") &&
-            l.Contains(Localization.Get("Combat.Attack")) && l.Contains("5"));
-        Assert.Contains(manual, l => l.Contains(Localization.Get("Combat.InterceptFormula")));
-        Assert.Contains(manual, l => l.Contains($"{25m:0.0}%") && l.Contains("801/1000"));
-        Assert.DoesNotContain(manual, l => l.Contains("×") || l.Contains("/50"));
+        Assert.Contains(manual, l => l.Contains("wide-profile"));
+        Assert.Equal(manual, automatic);
+        Assert.DoesNotContain(manual, l => l.Contains(Localization.Get("Combat.DefenseRating")) || l.Contains("801/1000") || l.Contains("25.0%"));
+        Assert.DoesNotContain(manual, l => l.Contains(Localization.Get("Combat.InterceptFormula")) || l.Contains("×") || l.Contains("/50"));
     }
 
     [Theory]
@@ -43,7 +50,7 @@ public class PhaseThreeJournalUiTests
         var entry = Entry with { TerminationKind = kind };
         var lines = CombatJournalPanel.Format(entry);
         Assert.Contains(lines, l => l.Contains(Localization.Get("Combat.Reason." + key)));
-        Assert.Contains(lines, l => l.Contains(Localization.Get("Combat.NoRoll")));
+        Assert.DoesNotContain(lines, l => l.Contains(Localization.Get("Combat.NoRoll")));
         Assert.DoesNotContain(lines, l => l.StartsWith(Localization.Get("Combat.Damage")));
         var store = new CombatEffectStore(() => 0);
         store.ReceiveJournal([entry], 0);
@@ -58,16 +65,16 @@ public class PhaseThreeJournalUiTests
         var panel = new CombatJournalPanel();
         using var bitmap = new SKBitmap(640, 360);
         using var canvas = new SKCanvas(bitmap);
-        panel.Render(canvas, 640, 360, [entry]);
+        panel.Render(canvas, 640, 360, [entry], playerShipObjectId: "player");
         panel.Click(panel.Bounds.MidX, 60);
-        panel.Render(canvas, 640, 360, [entry]);
+        panel.Render(canvas, 640, 360, [entry], playerShipObjectId: "player");
         string reason = Localization.Get("Combat.Reason.lifetime_expired");
         Assert.DoesNotContain(reason, string.Concat(panel.VisibleLines));
         for (int i = 0; i < 500; i++) panel.Scroll(panel.Bounds.MidX, 100, 1);
-        panel.Render(canvas, 640, 360, [entry]);
+        panel.Render(canvas, 640, 360, [entry], playerShipObjectId: "player");
         Assert.Contains(reason, string.Concat(panel.VisibleLines));
         panel.Click(panel.Bounds.MidX, 60);
-        panel.Render(canvas, 640, 360, [entry]);
+        panel.Render(canvas, 640, 360, [entry], playerShipObjectId: "player");
         Assert.Equal(entry, Assert.Single(panel.Entries));
     }
 

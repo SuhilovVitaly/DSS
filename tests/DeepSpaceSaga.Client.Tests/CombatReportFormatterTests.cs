@@ -79,6 +79,7 @@ public sealed class CombatReportFormatterTests
         var locale = Localization.LoadLocaleFile("Russian")!;
         var report = Report(11) with
         {
+            Kind = BattleReportKind.EnemyShipHit,
             TargetDisplayName = "ÐœÑƒÑ…Ð°-2",
             Reporter = new(BattleReportReporterRole.TorpedoOperator, "crew", "Ð’ÐµÑ€Ð°"),
             Damage = new("module", "Ð”Ð²Ð¸Ð³Ð°Ñ‚ÐµÐ»ÑŒ", 60, 0, 100, 80)
@@ -86,8 +87,10 @@ public sealed class CombatReportFormatterTests
         var model = new CombatReportFormatter(key => locale[key]).Format(report);
         Assert.Contains("ÐœÑƒÑ…Ð°-2", model.Message);
         Assert.Equal(report.Reporter.DisplayName + "\n" + locale["CombatReports.Role.TorpedoOperator"], model.Reporter);
-        Assert.Contains("Ð”Ð²Ð¸Ð³Ð°Ñ‚ÐµÐ»ÑŒ", model.DamageDetails);
-        Assert.DoesNotContain("{", model.DamageDetails);
+        Assert.Null(model.DamageDetails);
+        var own = new CombatReportFormatter(key => locale[key]).Format(report with { Kind = BattleReportKind.PlayerShipDamaged });
+        Assert.Contains(report.Damage!.ModuleDisplayName!, own.DamageDetails);
+        Assert.DoesNotContain("{", own.DamageDetails);
     }
 
     [Fact]

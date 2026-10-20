@@ -73,8 +73,8 @@ public class PhaseThreeLocaleTests
             500, RatingBreakdown: new(op, 5), Damage: 0);
         var lines = CombatJournalPanel.Format(entry);
         Assert.Contains(lines, l => l.Contains(Localization.Get("Combat.Event.Expired")));
-        Assert.Contains(lines, l => l.Contains($"{50m:0.0}%") && l.Contains(Localization.Get("Combat.NoRoll")));
-        Assert.Contains(lines, l => l.Contains(Localization.Get("Combat.SkillMetadata")) && l.Contains("99"));
+        Assert.DoesNotContain(lines, l => l.Contains($"{50m:0.0}%") || l.Contains(Localization.Get("Combat.NoRoll")));
+        Assert.DoesNotContain(lines, l => l.Contains(Localization.Get("Combat.SkillMetadata")) || l.Contains("99"));
         Assert.DoesNotContain(lines, l => l.Contains("/50") || l.Contains("×"));
     }
 }

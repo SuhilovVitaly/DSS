@@ -1436,7 +1436,7 @@ public sealed partial class GameSessionScreen : IScreen
         var rightColumn = GameSessionRightColumnLayout.Create(_uiViewportW, _uiViewportH, PanelMargin,
             rightHudTop, ObjectInfoPanel.ResolveWidth(_uiViewportW, _uiViewportH));
         _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default,
-            rightColumn.Bounds.Left - PanelMargin);
+            rightColumn.Bounds.Left - PanelMargin, buffered?.Snapshot.PlayerShipObjectId);
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
