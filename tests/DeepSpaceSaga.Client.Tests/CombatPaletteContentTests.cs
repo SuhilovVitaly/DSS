@@ -33,7 +33,8 @@ public sealed class CombatPaletteContentTests
             ["torpedoRange"] = "#EDB86A2E",
             ["manualDefenseRange"] = "#76D5DC47"
         };
-        Assert.Equal(expected.Count + 2, root.EnumerateObject().Count());
+        Assert.Equal(expected.Count + 3, root.EnumerateObject().Count());
+        Assert.Equal(JsonValueKind.Object, root.GetProperty("pointCombat").ValueKind);
         Assert.Equal(200_000, root.GetProperty("forecastHorizonMs").GetInt64());
         foreach (var (key, value) in expected)
         {

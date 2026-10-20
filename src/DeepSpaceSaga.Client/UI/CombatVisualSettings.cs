@@ -17,6 +17,7 @@ public sealed record CombatVisualSettings(
     public SKColor DefenseText { get; init; } = TacticalMapPalette.Annotation;
     public SKColor TorpedoRange { get; init; } = TacticalMapPalette.Torpedo.WithAlpha(46);
     public SKColor ManualDefenseRange { get; init; } = TacticalMapPalette.Countermeasure.WithAlpha(71);
+    public PointCombatVisualSettings PointCombat { get; init; } = PointCombatVisualSettings.Default;
     internal SKColor RangeColor(string kind) => kind switch
     {
         "torpedo" => TorpedoRange,
@@ -54,9 +55,41 @@ public sealed record CombatVisualSettings(
                 DefenseText = Optional("defenseText", Default.DefenseText),
                 TorpedoRange = Optional("torpedoRange", Default.TorpedoRange),
                 ManualDefenseRange = Optional("manualDefenseRange", Default.ManualDefenseRange),
+                PointCombat = ReadPointCombat(),
                 ForecastHorizonMs = root.TryGetProperty("forecastHorizonMs", out var horizon) &&
                     horizon.ValueKind == JsonValueKind.Number && horizon.TryGetInt64(out long ms) && ms is > 0 and <= 200_000 ? ms : 200_000
             };
+
+            PointCombatVisualSettings ReadPointCombat()
+            {
+                if (!root.TryGetProperty("pointCombat", out var group)) return PointCombatVisualSettings.Default;
+                if (group.ValueKind != JsonValueKind.Object) throw Invalid("pointCombat", "expected an object");
+                var expected = typeof(PointCombatVisualSettings).GetProperties()
+                    .Where(p => p.GetMethod?.IsStatic == false).ToDictionary(p => JsonNamingPolicy.CamelCase.ConvertName(p.Name), StringComparer.Ordinal);
+                var names = new HashSet<string>(StringComparer.Ordinal);
+                foreach (var property in group.EnumerateObject())
+                {
+                    if (!names.Add(property.Name)) throw Invalid("pointCombat." + property.Name, "duplicate key");
+                    if (!expected.ContainsKey(property.Name)) throw Invalid("pointCombat." + property.Name, "unknown key");
+                }
+                var value = PointCombatVisualSettings.Default with { };
+                foreach (var (key, property) in expected)
+                {
+                    string fullKey = "pointCombat." + key;
+                    if (!group.TryGetProperty(key, out var element)) throw Invalid(fullKey, "required field");
+                    if (property.PropertyType == typeof(SKColor)) property.SetValue(value, ParseColor(element, fullKey));
+                    else
+                    {
+                        if (element.ValueKind != JsonValueKind.Number || !element.TryGetDouble(out double number) ||
+                            !double.IsFinite(number) || number <= 0 || number > 10000)
+                            throw Invalid(fullKey, "expected finite presentation value in (0,10000]");
+                        property.SetValue(value, number);
+                    }
+                }
+                if (value.MinimumBlastMarkerDiameterPx < 6)
+                    throw Invalid("pointCombat.minimumBlastMarkerDiameterPx", "expected at least 6px");
+                return value;
+            }
 
             // New fields remain compatible with v1 palettes. Invalid optional fields use the documented default.
             SKColor Optional(string key, SKColor fallback)
@@ -67,8 +100,13 @@ public sealed record CombatVisualSettings(
 
             SKColor Color(string key)
             {
-                if (!root.TryGetProperty(key, out var element) || element.ValueKind != JsonValueKind.String ||
-                    element.GetString() is not { Length: 9 } value || value[0] != '#' ||
+                if (!root.TryGetProperty(key, out var element)) throw Invalid(key, "expected #RRGGBBAA");
+                return ParseColor(element, key);
+            }
+
+            SKColor ParseColor(JsonElement element, string key)
+            {
+                if (element.ValueKind != JsonValueKind.String || element.GetString() is not { Length: 9 } value || value[0] != '#' ||
                     !uint.TryParse(value.AsSpan(1), NumberStyles.AllowHexSpecifier, CultureInfo.InvariantCulture, out uint rgba))
                     throw Invalid(key, "expected #RRGGBBAA");
                 return new((byte)(rgba >> 24), (byte)(rgba >> 16), (byte)(rgba >> 8), (byte)rgba);
@@ -82,4 +120,34 @@ public sealed record CombatVisualSettings(
         InvalidDataException Invalid(string key, string reason) =>
             new($"Combat palette '{path}', key '{key}': {reason}.");
     }
+}
+
+/// <summary>Presentation-only styles for point combat; no physical radius, damage or timing rules.</summary>
+public sealed record PointCombatVisualSettings
+{
+    public SKColor BlastFill { get; init; } = new(237, 184, 106, 32);
+    public SKColor BlastStroke { get; init; } = new(237, 184, 106, 170);
+    public SKColor BlastCoreFill { get; init; } = new(237, 184, 106, 64);
+    public SKColor CounterBlastFill { get; init; } = new(118, 213, 220, 40);
+    public SKColor CounterBlastStroke { get; init; } = new(118, 213, 220, 179);
+    public SKColor ShotDown { get; init; } = TacticalMapPalette.Countermeasure;
+    public SKColor OwnVelocity { get; init; } = SpaceMapColorResolver.PlayerShipColor;
+    public SKColor OwnPath { get; init; } = SpaceMapColorResolver.PlayerShipColor.WithAlpha(160);
+    public SKColor ForeignTrace { get; init; } = TacticalMapPalette.Torpedo.WithAlpha(128);
+    public SKColor ForeignProfileText { get; init; } = TacticalMapPalette.Annotation;
+    public SKColor TargetShadow { get; init; } = TacticalMapPalette.Preview.WithAlpha(140);
+    public SKColor Threat { get; init; } = new(238, 167, 122, 255);
+    public SKColor Danger { get; init; } = new(233, 134, 127, 255);
+    public SKColor Safe { get; init; } = new(143, 187, 167, 255);
+    public SKColor AimReticle { get; init; } = TacticalMapPalette.Preview;
+    public double LineWidthPx { get; init; } = 1.5;
+    public double DashLengthPx { get; init; } = 6;
+    public double DashGapPx { get; init; } = 4;
+    public double ProjectileMarkerRadiusPx { get; init; } = 3;
+    public double MinimumBlastMarkerDiameterPx { get; init; } = 6;
+    public double ReticleRadiusPx { get; init; } = 8;
+    public double BlastDurationRealMs { get; init; } = 600;
+    public double ShotDownDurationRealMs { get; init; } = 350;
+    public double ThreatPulsePeriodRealMs { get; init; } = 800;
+    public static PointCombatVisualSettings Default { get; } = new();
 }

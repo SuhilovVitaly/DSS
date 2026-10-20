@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0010-tactical-map"
 title: "Тактическая карта"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0003-point-aim-torpedoes", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0005-snapshot-privacy", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time", "EP-0012-US-0009-scenarios-and-saves", "EP-0012-US-0017-event-and-command-integration", "EP-0012-US-0018-legacy-combat-cleanup", "EP-0012-US-0019-scenario-and-client-regressions"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -46,7 +46,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 30 / [EP-0012-US-0010-TK-0001-combat-visuals-v3](EP-0012-US-0010-TK-0001-combat-visuals-v3/EP-0012-US-0010-TK-0001-combat-visuals-v3.md) | client | EP-0012-US-0019-TK-0003-client-forecast-cache-migration | US10-AC4 | 3 |
+| 30 / [EP-0012-US-0010-TK-0001-combat-visuals-v3](EP-0012-US-0010-TK-0001-combat-visuals-v3/EP-0012-US-0010-TK-0001-combat-visuals-v3.md) | client | EP-0012-US-0019-TK-0003-client-forecast-cache-migration | US10-AC4 | 4 |
 | 31 / [EP-0012-US-0010-TK-0002-projectiles-and-blasts-render](EP-0012-US-0010-TK-0002-projectiles-and-blasts-render/EP-0012-US-0010-TK-0002-projectiles-and-blasts-render.md) | client | EP-0012-US-0010-TK-0001-combat-visuals-v3 | US10-AC1 | 4 |
 | 32 / [EP-0012-US-0010-TK-0003-persistent-range-rings](EP-0012-US-0010-TK-0003-persistent-range-rings/EP-0012-US-0010-TK-0003-persistent-range-rings.md) | client | EP-0012-US-0010-TK-0002-projectiles-and-blasts-render | US10-AC2 | 4 |
 | 33 / [EP-0012-US-0010-TK-0004-own-path-forecast-and-fit](EP-0012-US-0010-TK-0004-own-path-forecast-and-fit/EP-0012-US-0010-TK-0004-own-path-forecast-and-fit.md) | client | EP-0012-US-0010-TK-0003-persistent-range-rings | US10-AC3 | 4 |

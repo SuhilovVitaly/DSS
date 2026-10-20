@@ -16,5 +16,31 @@
     "defenseRange": "#76D5DC2E",
     "defenseText": "#DCE6EEE6",
     "torpedoRange": "#EDB86A2E",
-    "manualDefenseRange": "#76D5DC47"
+    "manualDefenseRange": "#76D5DC47",
+    "pointCombat": {
+        "blastFill": "#EDB86A20",
+        "blastStroke": "#EDB86AAA",
+        "blastCoreFill": "#EDB86A40",
+        "counterBlastFill": "#76D5DC28",
+        "counterBlastStroke": "#76D5DCB3",
+        "shotDown": "#76D5DCFF",
+        "ownVelocity": "#8CB9E0FF",
+        "ownPath": "#8CB9E0A0",
+        "foreignTrace": "#EDB86A80",
+        "foreignProfileText": "#DCE6EEE6",
+        "targetShadow": "#B7ABDF8C",
+        "threat": "#EEA77AFF",
+        "danger": "#E9867FFF",
+        "safe": "#8FBBA7FF",
+        "aimReticle": "#B7ABDF8C",
+        "lineWidthPx": 1.5,
+        "dashLengthPx": 6,
+        "dashGapPx": 4,
+        "projectileMarkerRadiusPx": 3,
+        "minimumBlastMarkerDiameterPx": 6,
+        "reticleRadiusPx": 8,
+        "blastDurationRealMs": 600,
+        "shotDownDurationRealMs": 350,
+        "threatPulsePeriodRealMs": 800
+    }
 }

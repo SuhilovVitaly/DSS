@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0010-tactical-map"
 ticket: "EP-0012-US-0010-TK-0001-combat-visuals-v3"
 title: "combat-visuals-v3"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0019-TK-0003-client-forecast-cache-migration"]
-files_touched: 3
+files_touched: 4
 serves: ["US10-AC4"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0010-TK-0001-combat-visuals-v3
@@ -20,17 +20,22 @@ revision: 2
 
 ## Decisions / Assumptions
 
+A-VISUALS: extend the existing schema1 palette with a strict pointCombat group of presentation colors, stroke/dash/marker sizes and real effect durations. Preserve legacy schema1 fallback only when the whole new group is absent; malformed/missing/unknown fields inside a provided group must report file and key. Defaults match shipped JSON. Physical blast/core sizes come from projectile/gameplay contracts, never from visual config. Update existing exact root-key coverage test to assert the new group rather than deleting its completeness check. New rendering consumers belong to following tickets.
+
+
 D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
 
 ## Code context
 
-Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Client/UI/CombatVisualSettings.cs](../../../../src/DeepSpaceSaga.Client/UI/CombatVisualSettings.cs) | Существует: src/DeepSpaceSaga.Client/UI/CombatVisualSettings.cs:8; public sealed record CombatVisualSettings( | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Client/Data/UI/combat-visuals.json](../../../../src/DeepSpaceSaga.Client/Data/UI/combat-visuals.json) | Существует: src/DeepSpaceSaga.Client/Data/UI/combat-visuals.json:1; { | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0010TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| [tests/DeepSpaceSaga.Client.Tests/CombatPaletteContentTests.cs](../../../../tests/DeepSpaceSaga.Client.Tests/CombatPaletteContentTests.cs) | Existing exact palette property-count gate | Include pointCombat group and preserve all semantic color assertions. |
 
 ## Public API after the change
 
@@ -72,6 +77,10 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 10 named / 2148 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0010-tk0001-results.json).
+
+Point combat palette group exposes24 presentation-only colors/styles/durations, loaded once at startup, strict missing/invalid/duplicate/unknown group diagnostics with path/key. Shipped and deployed JSON match defaults; editing every group property changes loaded values without mutating defaults. Schema1 whole-group absence keeps legacy palette compatibility. Existing exact root completeness test extended, all original color assertions retained. Physical blast/core radius and physical fuse remain projectile contracts, not visual settings. Rendering consumers are next tickets. Client nonbudget2148/2148; strict legacy ForecastBudget remains OPEN; headless only.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 consumer prerequisite correction: point consumers precede production data activation; actual integration gates remain OPEN until activation/Save18. See [DAG](../../Tickets.md#consumer-prerequisite-correction).
