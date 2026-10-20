@@ -151,7 +151,22 @@ public sealed class CommandsPanel
     private readonly Func<WeaponPanelInstance, IReadOnlyList<string>>? _weaponDetails;
     private readonly Func<double> _motionTime;
     private readonly HashSet<string> _visibleWeaponRanges = new(StringComparer.Ordinal);
+    private readonly HashSet<string> _initializedPointRanges = new(StringComparer.Ordinal);
+    private Guid? _pointRangeSession;
+    private bool _hasPointRangeSession;
     internal bool IsWeaponRangeVisible(string moduleId) => _visibleWeaponRanges.Contains(moduleId);
+    internal void InitializePointWeaponRanges(Guid? session, IEnumerable<string> moduleIds)
+    {
+        if (!_hasPointRangeSession || _pointRangeSession != session)
+        {
+            foreach (string id in _initializedPointRanges) _visibleWeaponRanges.Remove(id);
+            _initializedPointRanges.Clear();
+            _pointRangeSession = session;
+            _hasPointRangeSession = true;
+        }
+        foreach (string id in moduleIds)
+            if (_initializedPointRanges.Add(id)) _visibleWeaponRanges.Add(id);
+    }
     private float _viewportHeight = float.PositiveInfinity;
     private float _scrollOffset;
     private float _maxScroll;

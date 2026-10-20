@@ -124,8 +124,18 @@ public sealed partial class GameSessionScreen
             hoveredModule = panel.Weapon?.ModuleId ?? (panel.Name == "Torpedo Launcher" ? FindLauncher()?.ModuleId : null);
         var modules = _buffer.Presented?.Snapshot.InstalledModules ?? default;
         if (modules.IsDefault) return;
+        static bool IsPointWeapon(InstalledModuleSnapshot module) =>
+            module.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false } || module.Defense?.Profiles is { IsDefaultOrEmpty: false };
+        _commandsPanel.InitializePointWeaponRanges(_buffer.PresentationSessionId, modules.Where(IsPointWeapon).Select(m => m.ModuleId));
         foreach (var module in modules)
         {
+            if (IsPointWeapon(module))
+            {
+                if (!_commandsPanel.IsWeaponRangeVisible(module.ModuleId)) continue;
+                if (module.LauncherCombat?.RangeKm is { } pointRange) Ring(module.ModuleId, "torpedo", pointRange, false, true);
+                else if (module.Defense is { } pointDefense) Ring(module.ModuleId, "counter", pointDefense.RangeKm, false, true);
+                continue;
+            }
             if (module.ModuleId != hoveredModule && !_commandsPanel.IsWeaponRangeVisible(module.ModuleId)) continue;
             if (module.Defense is { } defense)
             {
@@ -135,12 +145,13 @@ public sealed partial class GameSessionScreen
             else if (module.LauncherCombat?.RangeKm is { } range) Ring(module.ModuleId, "torpedo", range, false);
         }
 
-        void Ring(string module, string kind, double range, bool dashed)
+        void Ring(string module, string kind, double range, bool dashed, bool point = false)
         {
             double pixels = range * 10 * _camera.PixelsPerWorldUnit;
             if (!double.IsFinite(pixels) || pixels <= 0 || pixels > float.MaxValue) return;
             using var effect = dashed ? SKPathEffect.CreateDash([6, 4], 0) : null;
             paint.Color = CombatSettings.RangeColor(kind);
+            paint.StrokeWidth = point ? (float)CombatSettings.PointCombat.LineWidthPx : 1;
             paint.PathEffect = effect;
             canvas.DrawCircle(x, y, (float)pixels, paint);
             paint.PathEffect = null;

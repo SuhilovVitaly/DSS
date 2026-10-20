@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0010-tactical-map"
 ticket: "EP-0012-US-0010-TK-0003-persistent-range-rings"
 title: "persistent-range-rings"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0010-TK-0002-projectiles-and-blasts-render"]
-files_touched: 4
+files_touched: 5
 serves: ["US10-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0010-TK-0003-persistent-range-rings
@@ -20,11 +20,14 @@ revision: 1
 
 ## Decisions / Assumptions
 
+A-RANGE-STATE: actual checkbox visibility state lives in CommandsPanel.cs, so include it in bounded scope. Initialize point-profile launcher ranges once per module/session; clicks override defaults even under hover and hidden panels. Use authoritative captured RangeKm (production70/30), never hardcoded UI weapon constants. Same session module updates preserve choice; new presentation session or new screen resets defaults. Legacy hover/pin behavior remains until cleanup. Actual Engine payload and UI checkbox interactions required.
+
+
 D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -32,6 +35,8 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs:8; public sealed partial class GameSessionScreen | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/WeaponPanelInstance.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/WeaponPanelInstance.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/WeaponPanelInstance.cs:4; public sealed record WeaponPanelInstance(string OwnerObjectId, string ModuleId, string Caption) | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0010TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs` | Owns actual range checkbox state | Initialize point weapon defaults and reset on session identity, preserving user overrides. |
 
 ## Public API after the change
 
@@ -73,4 +78,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 4 named / 2163 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0010-tk0003-results.json).
+
+Baseline2/2 reproduced missing default rings (expected3,actual0). Actual Engine/UI tests now prove70/30/30km defaults, per-launcher checkbox off unaffected by hover, independent reenable, panel hiding preserves state, same-session revision preserves choices and new session resets defaults; DPI1/1.5. Separate public capability inputs80/17km at1/.1ppu prove geometry reads captured ranges rather than UI constants. Point stroke style comes from JSON. Existing legacy hover/pin tests preserved. Client nonbudget2163/2163; strict legacy ForecastBudget and native gates remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
