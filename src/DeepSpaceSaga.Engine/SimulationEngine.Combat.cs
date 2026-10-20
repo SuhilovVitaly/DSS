@@ -20,7 +20,7 @@ public sealed partial class SimulationEngine
     private readonly Dictionary<string, (ObjectMotionSnapshot Pose, long Time)> _torpedoTargets = new(StringComparer.Ordinal);
     private readonly HashSet<string> _processedLaunchCommandIds = new(StringComparer.Ordinal);
     private readonly HashSet<string> _processedModeCommandIds = new(StringComparer.Ordinal);
-    private bool HasActiveTorpedoes => _objects.Any(o => o.InitialMotion.Torpedo is not null);
+    private bool HasActiveTorpedoes => _objects.Any(o => o.InitialMotion.Torpedo is not null || o.InitialMotion.OwnProjectile is not null);
 
     private CommandStartOutcome TryStartTorpedoFire(PlayerCommand command, long motionTimeMs)
     {
@@ -257,6 +257,16 @@ public sealed partial class SimulationEngine
             eventTime = Math.Min(eventTime, hostileLaunch?.Time ?? double.PositiveInfinity);
             eventTime = Math.Min(eventTime, pendingBurst?.Shot.DueMotionTimeMs ?? double.PositiveInfinity);
             eventTime = Math.Min(eventTime, torpedoExpiryTime);
+            double pointTime = NextPointDetonationTime();
+            if (pointTime <= motionTimeMs && pointTime <= eventTime &&
+                (impact is null || pointTime <= impact.Value.Contact.MotionTimeMs))
+            {
+                ResolvePointDetonations(pointTime);
+                cursor = pointTime;
+                CapturePresentationFrame(cursor);
+                if (IsDefeated) return;
+                continue;
+            }
             if (impact is { } hit && hit.Contact.MotionTimeMs <= eventTime)
             {
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
@@ -369,6 +379,13 @@ public sealed partial class SimulationEngine
 
     internal static CollisionPath CombatPath(SpaceObjectRuntime obj)
     {
+        if (obj.InitialMotion.OwnProjectile is { } point)
+            return new(t =>
+            {
+                double duration = point.DetonationMotionTimeMs - point.LaunchMotionTimeMs;
+                return BlastMath.PositionAt(point.StartX, point.StartY, point.DetonationX, point.DetonationY,
+                    duration == 0 ? 1 : (t - point.LaunchMotionTimeMs) / duration);
+            }, point.SpeedKmS / 100, 0);
         if (obj.InitialMotion.HostileCombat is { Segment: var segment })
         {
             double maxSpeed = Math.Max(segment.StartSpeedKmS,
@@ -459,7 +476,7 @@ public sealed partial class SimulationEngine
         var finalFlight = CloseFlightHistory(projectile, contact.MotionTimeMs, flight);
         string? wreckId = null;
         string hitId = target.InitialMotion.ObjectId;
-        var moduleHit = ApplyModuleHit(target, flight, contact.MotionTimeMs);
+        var moduleHit = ApplyModuleHit(target, flight.Damage, flight.ArmorPiercingPercent, flight.ArmorDamagePercent, contact.MotionTimeMs);
         _objects.Remove(projectile);
         _torpedoTargets.Remove(projectile.InitialMotion.ObjectId);
         var key = (flight.OwnerObjectId, flight.LauncherModuleId);
@@ -510,13 +527,14 @@ public sealed partial class SimulationEngine
     private readonly record struct ModuleHitOutcome(SpaceObjectRuntime UpdatedShip, string ModuleId,
         int ArmorBefore, int ArmorAfter, int StructureBefore, int StructureAfter);
 
-    private ModuleHitOutcome? ApplyModuleHit(SpaceObjectRuntime target, TorpedoSnapshot flight, double motionTimeMs)
+    private ModuleHitOutcome? ApplyModuleHit(SpaceObjectRuntime target, int damage,
+        decimal armorPiercingPercent, decimal armorDamagePercent, double motionTimeMs, bool requireShipClass = true)
     {
         int targetIndex = _objects.FindIndex(o => o.InitialMotion.ObjectId == target.InitialMotion.ObjectId);
         if (targetIndex < 0) return null;
         target = _objects[targetIndex];
         if (target.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) ||
-            target.ShipClassId is null) return null;
+            requireShipClass && target.ShipClassId is null) return null;
         var candidates = target.Modules.Where(m => !m.Destroyed && m.StructurePoints > 0)
             .OrderBy(m => m.ModuleId, StringComparer.Ordinal)
             .Select(m => (Module: m, Mass: _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).MassKg))
@@ -538,8 +556,8 @@ public sealed partial class SimulationEngine
             draw -= (ulong)candidate.Mass;
         }
 
-        var result = ModuleDamageMath.Apply(flight.Damage, flight.ArmorPiercingPercent,
-            flight.ArmorDamagePercent, selected.Armor, selected.StructurePoints);
+        var result = ModuleDamageMath.Apply(damage, armorPiercingPercent,
+            armorDamagePercent, selected.Armor, selected.StructurePoints);
         double? disabledUntil = result.StructureAfter == 0 ? null : Math.Max(
             selected.DisabledUntilMotionTimeMs ?? 0,
             motionTimeMs + (_registry.CombatRules?.Damage.HitDisableMs ?? 60000));
@@ -591,7 +609,7 @@ public sealed partial class SimulationEngine
     }
 
     private string DestroyShip(string objectId, string cause, double impactMotionTimeMs,
-        string? actorObjectId = null, string? projectileObjectId = null)
+        string? actorObjectId = null, string? projectileObjectId = null, (double X, double Y)? positionOverride = null)
     {
         var destroyed = _objects.First(o => o.InitialMotion.ObjectId == objectId);
         string id;
@@ -599,7 +617,7 @@ public sealed partial class SimulationEngine
         {
             id = "wreck-" + checked(++_wreckSequence).ToString(System.Globalization.CultureInfo.InvariantCulture);
         } while (_objects.Any(o => string.Equals(o.InitialMotion.ObjectId, id, StringComparison.OrdinalIgnoreCase)));
-        var point = CombatPath(destroyed).Position(impactMotionTimeMs);
+        var point = positionOverride ?? CombatPath(destroyed).Position(impactMotionTimeMs);
         _objects.Remove(destroyed);
         _hostileCombat.Remove(objectId);
         foreach (var defenseKey in _defenses.Keys.Where(k => k.ObjectId == objectId).ToArray()) _defenses.Remove(defenseKey);
@@ -612,7 +630,8 @@ public sealed partial class SimulationEngine
         ClearDestroyedTargetNavigation(objectId, impactMotionTimeMs);
         AppendCombatEvent(new(0, impactMotionTimeMs, CombatEventType.ShipDestroyed,
             actorObjectId ?? objectId, objectId, projectileObjectId ?? string.Empty,
-            point.X, point.Y, Result: id, DestroyReason: cause));
+            point.X, point.Y, Result: id,
+            DestroyReason: objectId == PlayerShipObjectId || _registry.CombatRules?.IsPointAim != true ? cause : null));
         RecordPlayerDefeat(objectId, id, impactMotionTimeMs, _combatJournalSequence);
         return id;
     }

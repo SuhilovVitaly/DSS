@@ -119,4 +119,68 @@ public sealed partial class SimulationEngine
         return new(flight.Kind, motion.X, motion.Y, length == 0 ? 0 : dx / length,
             length == 0 ? -1 : dy / length, flight.SpeedKmS, flight.ProfileId, flight.BlastRadiusKm);
     }
+
+    private EnemyShipStatusSnapshot? ProjectPointEnemyStatus(SpaceObjectRuntime obj, long motionTimeMs)
+    {
+        if (_registry.CombatRules?.IsPointAim != true || !obj.IsKnown || obj.ObjectType != SpaceObjectType.NpcShip ||
+            obj.InitialMotion.ObjectId == PlayerShipObjectId) return null;
+        bool damaged = obj.Modules.Any(m => m.Armor < m.ArmorMax || m.StructurePoints < _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).StructurePointsMax);
+        double until = obj.Modules.Where(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).CategoryTypeId == "module.engine")
+            .Select(m => m.DisabledUntilMotionTimeMs ?? 0).DefaultIfEmpty(0).Max();
+        long? immobilized = until > motionTimeMs ? until >= long.MaxValue ? long.MaxValue : (long)Math.Ceiling(until) : null;
+        return new(damaged, immobilized, obj.IsDestroyed);
+    }
+
+    private double NextPointDetonationTime() => _objects
+        .Where(o => o.InitialMotion.OwnProjectile is { Kind: ProjectileKind.Torpedo })
+        .Select(o => o.InitialMotion.OwnProjectile!.DetonationMotionTimeMs)
+        .DefaultIfEmpty(double.PositiveInfinity).Min();
+
+    private void ResolvePointDetonations(double motionTimeMs)
+    {
+        // All simultaneous blasts observe the same physical ship positions, even if a preceding hit interrupts an engine.
+        var shipPositions = _objects.Where(o => !o.IsDestroyed && o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
+            .ToDictionary(o => o.InitialMotion.ObjectId, o => CombatPath(o).Position(motionTimeMs), StringComparer.Ordinal);
+        var deaths = new Dictionary<string, (string Cause, string Owner, string Projectile)>(StringComparer.Ordinal);
+        var projectiles = _objects.Where(o => o.InitialMotion.OwnProjectile is { Kind: ProjectileKind.Torpedo } point &&
+            point.DetonationMotionTimeMs == motionTimeMs).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray();
+        foreach (var projectile in projectiles)
+        {
+            var flight = projectile.InitialMotion.OwnProjectile!;
+            var position = CombatPath(projectile).Position(motionTimeMs);
+            AppendCombatEvent(new(0, motionTimeMs, CombatEventType.TorpedoDetonated, flight.OwnerObjectId,
+                string.Empty, projectile.InitialMotion.ObjectId, position.X, position.Y,
+                ProjectileKind: flight.Kind, ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm));
+            foreach (var target in _objects.Where(o => !o.IsDestroyed && o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
+                         .OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).ToArray())
+            {
+                var ship = shipPositions[target.InitialMotion.ObjectId];
+                double dx = (ship.X - position.X) / WorldUnitsPerKm, dy = (ship.Y - position.Y) / WorldUnitsPerKm;
+                double distance = Math.Sqrt(dx * dx + dy * dy);
+                double k = BlastMath.Falloff(distance, flight.BlastRadiusKm, _registry.CombatRules!.Blast!.CoreFraction);
+                int damage = (int)Math.Round(flight.Damage * k, MidpointRounding.AwayFromZero);
+                if (damage == 0) continue;
+                var hit = ApplyModuleHit(target, damage, flight.ArmorPiercingPercent, flight.ArmorDamagePercent, motionTimeMs, requireShipClass: false);
+                if (hit is not { } result) continue;
+                bool player = target.InitialMotion.ObjectId == PlayerShipObjectId;
+                var outcome = k == 1 ? ProjectileHitResult.Core : ProjectileHitResult.Edge;
+                AppendCombatEvent(new(0, motionTimeMs, CombatEventType.Hit, flight.OwnerObjectId, target.InitialMotion.ObjectId,
+                    projectile.InitialMotion.ObjectId, position.X, position.Y, Damage: player ? damage : null,
+                    ProjectileKind: flight.Kind, ProfileId: flight.ProfileId, BlastRadiusKm: flight.BlastRadiusKm, HitResult: outcome));
+                if (player)
+                    AppendCombatEvent(new(0, motionTimeMs, CombatEventType.ModuleHit, flight.OwnerObjectId, target.InitialMotion.ObjectId,
+                        projectile.InitialMotion.ObjectId, position.X, position.Y, Damage: damage, HitModuleId: result.ModuleId,
+                        ArmorBefore: result.ArmorBefore, ArmorAfter: result.ArmorAfter,
+                        StructureBefore: result.StructureBefore, StructureAfter: result.StructureAfter));
+                if (result.StructureAfter == 0 && ShipDestroyReason(result.UpdatedShip, result.ModuleId) is { } cause)
+                    deaths.TryAdd(target.InitialMotion.ObjectId, (cause, flight.OwnerObjectId, projectile.InitialMotion.ObjectId));
+            }
+            _objects.Remove(projectile);
+            var key = (flight.OwnerObjectId, flight.LauncherModuleId);
+            if (_launcherCombat.TryGetValue(key, out var launcher))
+                _launcherCombat[key] = launcher with { ActiveTorpedoIds = launcher.ActiveTorpedoIds.Remove(projectile.InitialMotion.ObjectId) };
+        }
+        foreach (var (id, death) in deaths.OrderBy(pair => pair.Key, StringComparer.Ordinal))
+            DestroyShip(id, death.Cause, motionTimeMs, death.Owner, death.Projectile, shipPositions[id]);
+    }
 }

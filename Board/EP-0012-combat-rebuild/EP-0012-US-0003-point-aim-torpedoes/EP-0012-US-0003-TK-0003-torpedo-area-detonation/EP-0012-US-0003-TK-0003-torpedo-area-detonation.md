@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0003-point-aim-torpedoes"
 ticket: "EP-0012-US-0003-TK-0003-torpedo-area-detonation"
 title: "torpedo-area-detonation"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0003-TK-0002-torpedo-point-launch"]
 files_touched: 4
 serves: ["US3-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0003-TK-0003-torpedo-area-detonation
@@ -24,18 +24,20 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Актуальный allowlist 4 файлов. После выделения point executor фактическая реализация подрыва живёт в тематическом partial. Нужны scheduler/общий damage helper и ранняя маскировка новых enemy damage facts; существующий PlayerDefeat используется без изменения.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatJournal.cs:4; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.PlayerDefeat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.PlayerDefeat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.PlayerDefeat.cs:5; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs) | Point projectile executor | Area resolution, ordinal same-time batch, private damage projection. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.cs) | Snapshot boundary | Point-mode foreign ModuleHealth/Defense masking and boolean EnemyStatus, required before applying real damage. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0003TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
 ## Public API after the change
 
 No public API change; внутренние детали ограничены перечисленным scope.
+
+Execution refinement: scheduler выбирает captured дробный deadline и обрабатывает все равновременные point-подрывы по ordinal ID, затем смерти. Нулевой rounded damage не вызывает RNG/disable. Общий ApplyModuleHit получает damage/AP/armorDamage параметрами, без поддельного legacy flight. Публичные numeric/module damage details разрешены только для player ship; enemy status — boolean facts. Legacy path сохраняется до cleanup. Counter blasts подключаются своим тикетом перед torpedo batch, без изменения этих правил.
 
 ## Implementation steps
 
@@ -75,4 +77,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 13 named / 273 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0003-tk0003-results.json).
+
+Проверены два enemy и владелец в R, корабль с modules без shipClassId, R-boundary/rounded-zero без hit-location draw, unchanged armor/destruction helper, midpoint AwayFromZero, physical disable8000ms, дробный deadline101.5625ms и движущийся корабль damage88. 12 simultaneous flights: ordinal IDs1,10,11,12,2..9; deaths follow all hits, terminal PlayerDefeat сохраняется. Same-time ship positions captured до damage/engine interruption. Enemy numeric/module/critical-cause details скрыты для point mode. Shared mass-weighted damage применяется без fake legacy flight. Full Engine и общий Client performance gate остаются OPEN по предыдущему evidence, не заменены bounded273.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

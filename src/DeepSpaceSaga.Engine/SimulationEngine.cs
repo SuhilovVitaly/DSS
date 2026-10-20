@@ -749,8 +749,10 @@ public sealed partial class SimulationEngine : IDisposable
                     DockOperatorDisplayName = dockOperator?.DisplayName,
                     DockOperatorPortraitImage = dockOperator?.PortraitImage,
                     IsDestroyed = obj.IsDestroyed,
-                    Defense = known ? ProjectDefense(obj) : null,
-                    ModuleHealth = known && obj.ObjectType is (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
+                    Defense = known && (isPlayerShipRow || _registry.CombatRules?.IsPointAim != true) ? ProjectDefense(obj) : null,
+                    EnemyStatus = ProjectPointEnemyStatus(obj, gameTimeMs),
+                    ModuleHealth = known && (isPlayerShipRow || _registry.CombatRules?.IsPointAim != true) &&
+                        obj.ObjectType is (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip)
                         ? obj.Modules.Select(m =>
                         {
                             var type = _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex);
