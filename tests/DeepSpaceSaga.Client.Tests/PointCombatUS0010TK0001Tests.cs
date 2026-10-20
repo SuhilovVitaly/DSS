@@ -29,7 +29,7 @@ public sealed class PointCombatUS0010TK0001Tests
         {
             var group = json["pointCombat"]!.AsObject();
             var properties = typeof(PointCombatVisualSettings).GetProperties().Where(p => p.GetMethod?.IsStatic == false).ToArray();
-            Assert.Equal(24, properties.Length);
+            Assert.Equal(25, properties.Length);
             Assert.Equal(properties.Length, group.Count);
             foreach (var property in properties)
             {

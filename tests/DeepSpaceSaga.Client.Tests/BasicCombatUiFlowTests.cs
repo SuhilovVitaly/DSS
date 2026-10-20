@@ -181,7 +181,7 @@ public sealed class BasicCombatUiFlowTests
             var engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
             engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } });
             Handle = new GameSessionHandle(new LocalGameSessionConnection(engine, DirectoryPath),
-                new SnapshotBuffer(() => Stopwatch.GetTimestamp() * 20));
+                new SnapshotBuffer(Stopwatch.GetTimestamp));
             Screen = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, timestampProvider: () => UiNow, uiScale: scale);
             _bitmap = new(width, height);
             _canvas = new(_bitmap);
@@ -299,7 +299,7 @@ public sealed class BasicCombatUiFlowTests
                 Handle.Buffer.PreparePresentation();
                 if (Handle.Buffer.Presented is { } buffered && predicate(buffered.Snapshot)) return buffered.Snapshot;
                 Assert.Null(Handle.Failure);
-                // Transport runs normally; the scene clock is accelerated independently of physical/effect clocks.
+                // Transport and its watchdog use real monotonic time; paused scenes admit their boundary after150ms.
                 await Task.Delay(10, timeout.Token);
             }
         }

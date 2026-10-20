@@ -19,10 +19,14 @@ internal sealed class CombatEffectStore
     private bool _journalInitialized = true;
     private readonly HashSet<long> _seenJournal = new();
     private readonly List<(CombatJournalEntry Entry, long Started)> _results = new();
+    private readonly List<(CombatJournalEntry Entry, long Started)> _pointEffects = new();
+    internal IReadOnlyList<(CombatJournalEntry Entry, long Started)> PointEffects => _pointEffects;
+    internal PointCombatVisualSettings PointStyles { get; set; } = PointCombatVisualSettings.Default;
     internal IReadOnlyList<(CombatJournalEntry Entry, long Started)> Results => _results;
     internal void ResetJournal(ImmutableArray<CombatJournalEntry> baseline = default)
     {
         _seenJournal.Clear(); _results.Clear(); _journalFloor = 0;
+        _pointEffects.Clear();
         _journalInitialized = !baseline.IsDefault;
         if (!baseline.IsDefaultOrEmpty) foreach (var entry in baseline) _seenJournal.Add(entry.EventId);
         PruneSeen(_seenJournal, ref _journalFloor);
@@ -32,12 +36,22 @@ internal sealed class CombatEffectStore
         if (!_journalInitialized && !entries.IsDefault) { ResetJournal(entries); return; }
         if (!entries.IsDefaultOrEmpty)
             foreach (var entry in entries)
-                if (entry.EventId > _journalFloor && _seenJournal.Add(entry.EventId) && entry.Type is CombatEventType.Intercept or CombatEventType.Miss)
-                    _results.Add((entry, StartOnPresentation ? _timestampProvider() : receivedAt));
+                if (entry.EventId > _journalFloor && _seenJournal.Add(entry.EventId))
+                {
+                    long started = StartOnPresentation ? _timestampProvider() : receivedAt;
+                    if (entry.Type is CombatEventType.Intercept or CombatEventType.Miss) _results.Add((entry, started));
+                    if (entry.Type is CombatEventType.TorpedoDetonated or CombatEventType.CountermissileDetonated or
+                        CombatEventType.ManuallyDetonated or CombatEventType.ShotDown) _pointEffects.Add((entry, started));
+                }
         PruneSeen(_seenJournal, ref _journalFloor);
         long now = _timestampProvider();
         _results.RemoveAll(e => (double)(now - e.Started) * 1000 / Stopwatch.Frequency >= LifetimeMs);
+        _pointEffects.RemoveAll(e => PointProgress(e.Entry, e.Started, now) >= 1);
     }
+
+    internal double PointProgress(CombatJournalEntry entry, long started, long now) => Math.Clamp(
+        (now - (double)started) * 1000 / Stopwatch.Frequency /
+        (entry.Type == CombatEventType.ShotDown ? PointStyles.ShotDownDurationRealMs : PointStyles.BlastDurationRealMs), 0, 1);
 
     internal CombatEffectStore(Func<long> timestampProvider, Func<long, long?>? receiptTimestampProvider = null)
     {

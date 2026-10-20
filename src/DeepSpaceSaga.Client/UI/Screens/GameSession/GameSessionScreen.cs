@@ -1275,7 +1275,9 @@ public sealed partial class GameSessionScreen : IScreen
                     // Marker radius from the shared policy (screen-space, zoom-independent).
                     // The player ship's render type comes from identity (IsPlayerShip), not
                     // the payload — legacy payloads without RenderObjectType still draw as a ship.
-                    float r = HasCombatMarker(state.Source) ? CombatMarkerRadius : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                    float r = state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null
+                        ? (float)CombatSettings.PointCombat.ProjectileMarkerRadiusPx
+                        : HasCombatMarker(state.Source) ? CombatMarkerRadius : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                         state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Pose.RenderObjectType);
                     // Include halo, reticle and engine flame extents, not just the core.
                     float margin = r * 5 + 4;

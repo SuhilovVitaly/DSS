@@ -101,6 +101,8 @@ public sealed partial class GameSessionScreen
         _combatPoseObjectIds.Clear();
         foreach (var obj in snapshot.Objects)
         {
+            if (obj.OwnProjectile is not null || obj.ObservedProjectile is not null)
+                _combatPoseObjectIds.Add(obj.ObjectId);
             if (obj.Countermeasure is { } defenseFlight)
             {
                 _combatPoseObjectIds.Add(obj.ObjectId);
@@ -141,9 +143,15 @@ public sealed partial class GameSessionScreen
     {
         var buffered = prediction?.BufferedSnapshot;
         _combatTrajectories.Clear();
+        PointProjectileVisuals.Clear();
         _combatEffects.Receive(buffered?.Snapshot.CombatImpacts ?? default, buffered?.ReceivedAtTimestamp);
         foreach (var state in _renderStates)
         {
+            if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null)
+            {
+                DrawPointProjectile(canvas, state, prediction);
+                continue;
+            }
             if (state.Pose.Motion.Torpedo is null) continue;
             var geometry = PreparedFlight(state.Source.ObjectId, prediction);
             if (geometry is null) continue;
@@ -255,6 +263,9 @@ public sealed partial class GameSessionScreen
 
     private void DrawCombatEffects(SKCanvas canvas, BufferedSnapshot? buffered, long now)
     {
+        _combatEffects.PointStyles = CombatSettings.PointCombat;
+        _combatEffects.ReceiveJournal(buffered?.Snapshot.CombatJournal ?? default, buffered?.ReceivedAtTimestamp ?? now);
+        DrawPointEffects(canvas, now);
         if (buffered is not null)
             _combatEffects.Receive(buffered.Snapshot.CombatImpacts, buffered.ReceivedAtTimestamp);
         else _combatEffects.Receive(default);
@@ -281,6 +292,8 @@ public sealed partial class GameSessionScreen
         _combatImportantIds.Clear();
         foreach (var state in _renderStates)
         {
+            if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null)
+                _combatImportantIds.Add(state.Source.ObjectId);
             if (ObjectLabelRenderer.HasModuleBar(state.Source)) _combatImportantIds.Add(state.Source.ObjectId);
             if (state.Source.Countermeasure is { } defenseFlight)
             {
@@ -294,13 +307,20 @@ public sealed partial class GameSessionScreen
     }
 
     internal static bool HasCombatMarker(ObjectMotionSnapshot source) =>
-        source.RenderObjectType == SpaceObjectType.Wreck ||
+        source.OwnProjectile is not null || source.ObservedProjectile is not null || source.RenderObjectType == SpaceObjectType.Wreck ||
         source is { RenderObjectType: SpaceObjectType.Missile, Torpedo: not null } or
         { RenderObjectType: SpaceObjectType.Countermeasure, Countermeasure: not null };
 
     private void DrawCombatMarker(SKCanvas canvas, ObjectRenderState state, float x, float y)
     {
         _combatCorePaint ??= new SKPaint { IsAntialias = true };
+        if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null)
+        {
+            var kind = state.Source.OwnProjectile?.Kind ?? state.Source.ObservedProjectile!.Kind;
+            _combatCorePaint.Color = kind == ProjectileKind.Countermissile ? CombatSettings.Countermeasure : CombatSettings.Torpedo;
+            canvas.DrawCircle(x, y, (float)CombatSettings.PointCombat.ProjectileMarkerRadiusPx, _combatCorePaint);
+            return;
+        }
         if (state.Source.Torpedo is not null || state.Source.Countermeasure is not null)
         {
             _combatBlur ??= SKMaskFilter.CreateBlur(SKBlurStyle.Normal, 2f);

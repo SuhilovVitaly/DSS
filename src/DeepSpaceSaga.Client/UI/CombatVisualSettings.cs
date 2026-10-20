@@ -141,6 +141,7 @@ public sealed record PointCombatVisualSettings
     public SKColor Safe { get; init; } = new(143, 187, 167, 255);
     public SKColor AimReticle { get; init; } = TacticalMapPalette.Preview;
     public double LineWidthPx { get; init; } = 1.5;
+    public double TextSizePx { get; init; } = 12;
     public double DashLengthPx { get; init; } = 6;
     public double DashGapPx { get; init; } = 4;
     public double ProjectileMarkerRadiusPx { get; init; } = 3;

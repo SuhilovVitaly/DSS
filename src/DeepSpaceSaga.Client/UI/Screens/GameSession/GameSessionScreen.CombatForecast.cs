@@ -45,7 +45,10 @@ public sealed partial class GameSessionScreen
                 var current = now > result.EndMotionTimeMs && result.Status == CombatForecastStatus.Contact
                     ? result with { Status = CombatForecastStatus.Recalculating } : result;
                 _preparedForecastGeometry.TryGetValue(id, out var previous);
-                _preparedForecastGeometry[id] = CombatTrajectoryProjector.FromForecast(current, now, previous);
+                var projectile = snapshot?.Objects.FirstOrDefault(o => o.ObjectId == id);
+                _preparedForecastGeometry[id] = projectile is not null && (projectile.OwnProjectile is not null || projectile.ObservedProjectile is not null)
+                    ? CombatTrajectoryProjector.FromPointForecast(current, projectile, now, previous)
+                    : CombatTrajectoryProjector.FromForecast(current, now, previous);
             }
             _preparedForecastResults = _combatForecastCache.Results;
             _preparedForecastTime = now;

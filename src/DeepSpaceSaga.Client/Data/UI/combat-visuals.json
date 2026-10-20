@@ -34,6 +34,7 @@
         "safe": "#8FBBA7FF",
         "aimReticle": "#B7ABDF8C",
         "lineWidthPx": 1.5,
+        "textSizePx": 12,
         "dashLengthPx": 6,
         "dashGapPx": 4,
         "projectileMarkerRadiusPx": 3,
