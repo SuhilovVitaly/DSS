@@ -32,6 +32,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
     private ulong _lastSnapshotBaselineSequence;
     private long _lastSnapshotBaselineGameTimeMs;
+    private readonly ModuleDiagram _moduleDiagram = new();
     private long _travelEstimateMotionTimeMs;
     private long _lastObservedForwardJumpMs;
     private bool _hasSnapshotBaseline;
@@ -1044,7 +1045,7 @@ public sealed partial class GameSessionScreen : IScreen
             bool labelOnly = distanceSq > radiusSq;
             if (labelOnly)
             {
-                if (!ObjectLabelRenderer.HasModuleBar(state.Source) ||
+                if (!ObjectLabelRenderer.HasSelectableShipLabel(state.Source) ||
                     !_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
                     continue;
                 distanceSq = 0;
@@ -1443,6 +1444,14 @@ public sealed partial class GameSessionScreen : IScreen
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         var playerShip = FindPlayerShip(_renderStates);
         // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
+        _objectInfoPanel.OwnModuleDiagram = null;
+        if (buffered?.Snapshot is { Encounter: not null } moduleSnapshot && playerShip is not null)
+        {
+            _moduleDiagram.Update(_buffer.PresentationSessionId, moduleSnapshot.SnapshotSequence, moduleSnapshot.PlayerShipObjectId!,
+                moduleSnapshot.InstalledModules, moduleSnapshot.CombatJournal, prediction is null ? moduleSnapshot.MotionTimeMs : GetPredictedGameTimeMs(prediction),
+                _buffer.CurrentSpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
+            _objectInfoPanel.OwnModuleDiagram = _moduleDiagram;
+        }
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
             ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, rightColumn.ObjectInfoMaximumBottom);
         CombatReportsBounds = rightColumn.ReportsAfter(_objectInfoPanel.Bounds);

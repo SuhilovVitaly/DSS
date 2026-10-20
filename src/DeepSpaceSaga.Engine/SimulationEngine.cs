@@ -1011,6 +1011,7 @@ public sealed partial class SimulationEngine : IDisposable
                 DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 IsDestroyed: module.Destroyed,
                 CombatRole: moduleType.CombatRole,
+                IsCritical: moduleType.CombatRole is { } role && _registry.CombatRules?.ShipDestruction.CriticalRoles.Contains(role) == true,
                 TorpedoMaxFlightTimeMs: moduleType.TorpedoDamage is not null && !moduleType.IsPointLauncher ? TorpedoLifetimeMs(moduleType) : null));
         }
 

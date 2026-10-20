@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0013-combat-state-and-feedback"
 ticket: "EP-0012-US-0013-TK-0001-module-diagram"
 title: "module-diagram"
-stage: "draft"
-layer: "client"
+stage: "implemented"
+layer: "contracts-engine-client"
 depends_on: ["EP-0012-US-0012-TK-0003-threat-alerts"]
-files_touched: 4
+files_touched: 11
 serves: ["US13-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0013-TK-0001-module-diagram
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (11 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -33,9 +33,20 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelRenderer.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelRenderer.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelRenderer.cs:12; internal sealed class ObjectLabelRenderer | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Contracts/InstalledModuleSnapshot.cs` | Existing | Own critical projection, embedded diagram, or replacement of obsolete aggregate HP assertions. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.cs` | Existing | Own critical projection, embedded diagram, or replacement of obsolete aggregate HP assertions. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs` | Existing | Own critical projection, embedded diagram, or replacement of obsolete aggregate HP assertions. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs` | Existing | Own critical projection, embedded diagram, or replacement of obsolete aggregate HP assertions. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` | Existing | Own critical projection, embedded diagram, or replacement of obsolete aggregate HP assertions. |
+| `tests/DeepSpaceSaga.Client.Tests/CombatMapVisualTests.cs` | Existing | Own critical projection, embedded diagram, or replacement of obsolete aggregate HP assertions. |
+
+| `tests/DeepSpaceSaga.Client.Tests/CompactObjectLabelTests.cs` | Existing | Replace superseded aggregate HP test with compact label/no-HP assertion; regression found 2263 pass / 1 obsolete HP expectation. |
+
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+InstalledModuleSnapshot.IsCritical: optional false, own projection only. Engine computes it from configured criticalRoles; Client does not duplicate rules.
+
+Scope correction before implementation: embed the schematic in the existing scrollable own-object row; remove HP-dependent label geometry/selection coupling while preserving known ship labels. Replace obsolete bar tests with absence/geometry checks. Cross-layer change is required because critical roles are configurable authoritative rules. No foreign module projection.
 
 ## Implementation steps
 
@@ -46,7 +57,7 @@ No public API change; внутренние детали ограничены п�
 
 ## Out of scope / Invariants
 
-Один production layer: client; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
+Production layers: Contracts -> Engine -> Client; matching tests только указанного проекта. Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются. Не переносить внешний симулятор, не менять CombatSim, не включать concealed enemy point/deadline/modules в UI/forecast/events. Не исполнять другие тикеты под видом consumer fixes.
 
 ## Tests
 
@@ -73,4 +84,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 7 named / 2265 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0013-tk0001-results.json).
+
+Own module schematic integrated in existing scrollable row; authoritative configurable IsCritical flag, armor/structure, disabled real countdown, destroyed N/3 and 125ms hit blink/800ms damage label. Aggregate map HP removed, ship-label selection retained. Contracts 256/256. Headless 100/150 percent and compact actual-screen PNG inspected; production catalog/native/product acceptance OPEN. Initial 5/6 viewport check and 2263/2264 obsolete HP expectation retained in evidence; assertions migrated to current contract. Strict legacy forecast budget remains OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

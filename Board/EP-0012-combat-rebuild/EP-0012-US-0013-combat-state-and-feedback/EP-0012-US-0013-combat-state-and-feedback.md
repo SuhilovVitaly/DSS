@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0013-combat-state-and-feedback"
 title: "Состояние, панели, обратная связь"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0003-point-aim-torpedoes", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0005-snapshot-privacy", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time", "EP-0012-US-0009-scenarios-and-saves", "EP-0012-US-0010-tactical-map", "EP-0012-US-0011-aiming-and-launch", "EP-0012-US-0012-maneuver-and-threat-ui", "EP-0012-US-0017-event-and-command-integration", "EP-0012-US-0018-legacy-combat-cleanup", "EP-0012-US-0019-scenario-and-client-regressions"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -55,7 +55,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 41 / [EP-0012-US-0013-TK-0001-module-diagram](EP-0012-US-0013-TK-0001-module-diagram/EP-0012-US-0013-TK-0001-module-diagram.md) | client | EP-0012-US-0012-TK-0003-threat-alerts | US13-AC1 | 4 |
+| 41 / [EP-0012-US-0013-TK-0001-module-diagram](EP-0012-US-0013-TK-0001-module-diagram/EP-0012-US-0013-TK-0001-module-diagram.md) | contracts-engine-client | EP-0012-US-0012-TK-0003-threat-alerts | US13-AC1 | 11 |
 | 42 / [EP-0012-US-0013-TK-0002-weapon-panels-v3](EP-0012-US-0013-TK-0002-weapon-panels-v3/EP-0012-US-0013-TK-0002-weapon-panels-v3.md) | client | EP-0012-US-0013-TK-0001-module-diagram | US13-AC2 | 5 |
 | 43 / [EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels](EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels/EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels.md) | client | EP-0012-US-0013-TK-0002-weapon-panels-v3 | US13-AC3 | 4 |
 | 44 / [EP-0012-US-0013-TK-0004-journal-and-reports-v3](EP-0012-US-0013-TK-0004-journal-and-reports-v3/EP-0012-US-0013-TK-0004-journal-and-reports-v3.md) | client | EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels | US13-AC4 | 5 |

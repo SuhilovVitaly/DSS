@@ -294,7 +294,7 @@ public sealed partial class GameSessionScreen
         {
             if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null)
                 _combatImportantIds.Add(state.Source.ObjectId);
-            if (ObjectLabelRenderer.HasModuleBar(state.Source)) _combatImportantIds.Add(state.Source.ObjectId);
+            if (ObjectLabelRenderer.HasSelectableShipLabel(state.Source)) _combatImportantIds.Add(state.Source.ObjectId);
             if (state.Source.Countermeasure is { } defenseFlight)
             {
                 _combatImportantIds.Add(state.Source.ObjectId);

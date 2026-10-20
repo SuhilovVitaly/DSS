@@ -96,7 +96,7 @@ public sealed partial class GameSessionScreen
             double distance = double.Hypot(p.X - x, p.Y - y);
             if (distance <= ObjectHitTestRadiusPx)
                 candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
-            else if (ObjectLabelRenderer.HasModuleBar(state.Source) &&
+            else if (ObjectLabelRenderer.HasSelectableShipLabel(state.Source) &&
                 _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
                 labelCandidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), 0));
         }

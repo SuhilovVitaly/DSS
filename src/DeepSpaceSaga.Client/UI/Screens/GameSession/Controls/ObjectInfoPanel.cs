@@ -152,6 +152,8 @@ public sealed class ObjectInfoPanel
 
     // ── Test seams ──────────────────────────────────────────────
 
+    internal ModuleDiagram? OwnModuleDiagram { get; set; }
+
     public ObjectInfoPanelState State => _state;
     public SKRect CaptionRect => _captionRect;
     public SKRect BodyRect => _bodyRect;
@@ -340,7 +342,8 @@ public sealed class ObjectInfoPanel
         for (int i = 0; i < _rowBodyRects.Length; i++)
         {
             if (!_rowBodyRects[i].Contains(x, y)) continue;
-            _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i] - Math.Sign(delta) * 3 * LineHeight, 0, _rowScrollLimits[i]);
+            float step = i == 0 && OwnModuleDiagram is not null ? LineHeight : 3 * LineHeight;
+            _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i] - Math.Sign(delta) * step, 0, _rowScrollLimits[i]);
             return true;
         }
         return false;
@@ -395,9 +398,11 @@ public sealed class ObjectInfoPanel
                 float valueOffset = ValueOffset(rowData[i], sourceLines);
                 var renderLines = BuildRenderLines(rowData[i], sourceLines, valueOffset);
                 float bodyHeight = Math.Max(_renderImageWidth * ImageHeight / ImageWidth + 2 * Padding, 2 * Padding + renderLines.Count * LineHeight);
+                if (i == 0 && OwnModuleDiagram is { } diagram) bodyHeight = diagram.PreferredHeight + 12;
                 float fullHeight = bodyHeight;
                 float available = Math.Max(0, panelBottom - Margin - rowY - (RowNames.Length - i) * RowCaptionHeight);
-                bodyHeight = Math.Min(bodyHeight, compact ? available / (RowNames.Length - i) : available);
+                bool ownDiagram = i == 0 && OwnModuleDiagram is not null;
+                bodyHeight = Math.Min(bodyHeight, compact && !ownDiagram ? available / (RowNames.Length - i) : available);
                 if (_rowObjectIds[i] != rowData[i]?.ObjectId)
                 {
                     _rowObjectIds[i] = rowData[i]?.ObjectId;
@@ -418,7 +423,7 @@ public sealed class ObjectInfoPanel
                 canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
                 if (opened)
-                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset);
+                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset, i == 0 ? OwnModuleDiagram : null);
 
                 rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
                 if (!opened && i < RowNames.Length - 1)
@@ -476,7 +481,7 @@ public sealed class ObjectInfoPanel
     }
 
     private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data, float scrollOffset, float scrollLimit,
-        List<(string Label, string Value)> lines, float valueOffset)
+        List<(string Label, string Value)> lines, float valueOffset, ModuleDiagram? diagram = null)
     {
         canvas.DrawRect(bodyRect, _panelBgPaint);
         canvas.DrawRect(bodyRect, _panelBorderPaint);
@@ -484,30 +489,37 @@ public sealed class ObjectInfoPanel
         canvas.Save();
         canvas.ClipRect(bodyRect);
 
-        float imgX = bodyRect.Left + Padding;
-        float imgY = bodyRect.Top + Padding - scrollOffset;
-        var imageRect = new SKRect(imgX, imgY, imgX + _renderImageWidth, imgY + _renderImageWidth * ImageHeight / ImageWidth);
-
-        var image = data is { } d ? ResolveObjectImage(d) : null;
-        if (image is not null)
+        if (diagram is not null)
         {
-            canvas.Save();
-            if (data is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy })
-                canvas.Scale(-1, 1, imageRect.MidX, imageRect.MidY);
-            canvas.DrawBitmap(image, imageRect, _imagePaint);
-            canvas.Restore();
+            diagram.Render(canvas, new SKRect(bodyRect.Left + Padding, bodyRect.Top + Padding - scrollOffset, bodyRect.Right - Padding, bodyRect.Top + Padding - scrollOffset + diagram.PreferredHeight));
         }
         else
-            canvas.DrawRect(imageRect, _imagePlaceholderPaint);
-        canvas.DrawRect(imageRect, _panelBorderPaint);
-
-        float textX = imageRect.Right + Padding;
-        float textY = imgY + LineHeight - 3f;
-        foreach (var (label, value) in lines)
         {
-            canvas.DrawText(label, textX, textY, _labelPaint);
-            canvas.DrawText(value, textX + valueOffset, textY, _valuePaint);
-            textY += LineHeight;
+            float imgX = bodyRect.Left + Padding;
+            float imgY = bodyRect.Top + Padding - scrollOffset;
+            var imageRect = new SKRect(imgX, imgY, imgX + _renderImageWidth, imgY + _renderImageWidth * ImageHeight / ImageWidth);
+
+            var image = data is { } d ? ResolveObjectImage(d) : null;
+            if (image is not null)
+            {
+                canvas.Save();
+                if (data is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy })
+                    canvas.Scale(-1, 1, imageRect.MidX, imageRect.MidY);
+                canvas.DrawBitmap(image, imageRect, _imagePaint);
+                canvas.Restore();
+            }
+            else
+                canvas.DrawRect(imageRect, _imagePlaceholderPaint);
+            canvas.DrawRect(imageRect, _panelBorderPaint);
+
+            float textX = imageRect.Right + Padding;
+            float textY = imgY + LineHeight - 3f;
+            foreach (var (label, value) in lines)
+            {
+                canvas.DrawText(label, textX, textY, _labelPaint);
+                canvas.DrawText(value, textX + valueOffset, textY, _valuePaint);
+                textY += LineHeight;
+            }
         }
         canvas.Restore();
         if (scrollLimit > 0 && bodyRect.Height > 0)

@@ -66,7 +66,7 @@ public sealed class CombatMapVisualTests
     }
 
     [Fact]
-    public void Known_ships_show_authoritative_module_health_below_labels()
+    public void Known_ship_labels_remain_visible_without_aggregate_health()
     {
         var palette = CombatVisualSettings.Default with { HullHp = new SKColor(20, 210, 100) };
         var renderer = new ObjectLabelRenderer(palette);
@@ -83,51 +83,46 @@ public sealed class CombatMapVisualTests
         foreach (var obj in known)
         {
             var geometry = renderer.Geometries[obj.ObjectId];
-            Assert.Equal(ObjectLabelLayout.PlaqueHeight + ObjectLabelLayout.ModuleBarSpace, geometry.PlaqueRect.Height);
-            var bar = ObjectLabelLayout.ModuleBarRect(geometry.PlaqueRect);
-            Assert.True(geometry.PlaqueRect.Contains(bar));
-            Assert.Equal(palette.HullHp, bitmap.GetPixel((int)bar.MidX, (int)bar.MidY));
+            Assert.Equal(ObjectLabelLayout.PlaqueHeight, geometry.PlaqueRect.Height);
+            Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(obj));
         }
-        foreach (var obj in new[] { unknown, legacy }) Assert.False(ObjectLabelRenderer.HasModuleBar(obj));
-        Assert.True(ObjectLabelRenderer.HasModuleBar(other));
+        Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(unknown));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(legacy));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(other));
+        Assert.DoesNotContain(palette.HullHp, bitmap.Pixels);
     }
 
     [Theory]
-    [InlineData(450, 1.0)]
-    [InlineData(300, 2.0 / 3)]
-    [InlineData(150, 1.0 / 3)]
-    [InlineData(900, 1.0)]
-    public void Hp_visual_progress_is_full_two_thirds_one_third(int hp, double fraction)
+    [InlineData(450)]
+    [InlineData(300)]
+    [InlineData(150)]
+    [InlineData(900)]
+    public void Health_changes_do_not_create_a_hull_bar(int hp)
     {
         var obj = Ship("player", 300, 200, hp);
         ObjectRenderState[] states = [new(obj, obj, true)];
-        var hpColor = CombatVisualSettings.Default.HullHp.WithAlpha(255);
+        var hpColor = new SKColor(123, 45, 67);
         var renderer = new ObjectLabelRenderer(CombatVisualSettings.Default with { HullHp = hpColor });
         var camera = new CameraState(400, 300, 1);
         renderer.ComputeGeometries(states, .02, 800, 600, camera);
         using var bitmap = new SKBitmap(800, 600);
         using var canvas = new SKCanvas(bitmap);
         renderer.DrawPlaques(canvas, states, 0, SimulationSpeed.Speed0, 800, 600, camera);
-        var bar = ObjectLabelLayout.ModuleBarRect(renderer.Geometries["player"].PlaqueRect);
-        int green = Enumerable.Range((int)Math.Ceiling(bar.Left), (int)bar.Width)
-            .Count(x => bitmap.GetPixel(x, (int)bar.MidY) == hpColor);
-        Assert.InRange(green, bar.Width * fraction - 1, bar.Width * fraction + 1);
-        Assert.Equal(0, ObjectLabelRenderer.ModuleBarFraction(obj with { ModuleHealth = [new("engine", "Engine", 0, 0, 0, 450, null, false)] }));
-        Assert.False(ObjectLabelRenderer.HasModuleBar(obj with { RenderObjectType = SpaceObjectType.Wreck }));
+        Assert.Equal(ObjectLabelLayout.PlaqueHeight, renderer.Geometries["player"].PlaqueRect.Height);
+        Assert.DoesNotContain(hpColor, bitmap.Pixels);
+        Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(obj with { RenderObjectType = SpaceObjectType.Wreck }));
     }
 
     [Fact]
-    public void Module_bar_aggregates_armor_and_structure_across_modules()
+    public void Per_module_health_does_not_change_label_selection_policy()
     {
         var ship = Ship("player", 0, 0) with
         {
-            ModuleHealth =
-            [
-                new("a", "A", 10, 20, 20, 40, null, false),
-                new("b", "B", 0, 20, 40, 80, null, false)
-            ]
+            ModuleHealth = [new("a", "A", 10, 20, 20, 40, null, false), new("b", "B", 0, 20, 40, 80, null, false)]
         };
-        Assert.Equal(70.0 / 160, ObjectLabelRenderer.ModuleBarFraction(ship));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship with { ModuleHealth = [] }));
+        Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(ship with { IsDestroyed = true }));
     }
 
     [Fact]
