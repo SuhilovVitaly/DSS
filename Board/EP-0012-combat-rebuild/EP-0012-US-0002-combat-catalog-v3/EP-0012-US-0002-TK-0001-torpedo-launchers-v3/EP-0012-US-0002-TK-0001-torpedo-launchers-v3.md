@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0002-combat-catalog-v3"
 ticket: "EP-0012-US-0002-TK-0001-torpedo-launchers-v3"
 title: "torpedo-launchers-v3"
-stage: "draft"
+stage: "implemented"
 layer: "content-data"
 depends_on: ["EP-0012-US-0009-TK-0005-save18-defense-validation"]
 files_touched: 2
 serves: ["US2-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 5
+revision: 6
 ---
 
 # EP-0012-US-0002-TK-0001-torpedo-launchers-v3
@@ -33,12 +33,12 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+No public API change. Real v3 module definitions are prepared under Data/CombatV3; canonical default activation belongs to US2-TK5. The same source/deployed component test selects canonical paths after that move.
 
 ## Implementation steps
 
 1. Проверить depends_on, baseline и конкретные consumer references. Если отсутствует зависимый API или требуется файл вне allowlist — не обходить зависимость и не закрывать тикет; конкретизировать bounded Board scope.
-2. `Data/Modules/TorpedoLauncher/modules-torpedolauncher.json` и тест каталога.
+2. Подготовить `Data/CombatV3/Modules/TorpedoLauncher/modules-torpedolauncher.json` и проверить real-loader source/deployed. TK5 атомарно перемещает эти committed bytes в canonical `Data/Modules/TorpedoLauncher/modules-torpedolauncher.json`.
 3. Добавить/обновить named checks ниже одновременно с реализацией. Удаляемые legacy tests заменять проверками нового контракта, сохраняющиеся инварианты не выкидывать.
 4. Записать фактические команды/результаты при исполнении; сейчас всё NOT RUN.
 
@@ -71,7 +71,11 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 2 named / 2332 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0002-tk0001-results.json).
+
+Staged v3 production component: source/deployed real module loader and weapon validation PASS; basic/light70km,10000/7250ms,damage200/AP20/scatter0.02/profiles6-R9,10-R5,16-R2.5; old rating/guidance fields absent. Active default source/deployed Engine still loads coherent legacy catalog. Atomic default activation remains US2-TK5, not claimed here.2332 non-budget Client PASS; strict budgets/native OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 execution dependency correction: runtime precedes production catalog activation; see [DAG](../../Tickets.md#execution-correction-2026-10-20). Scope/AC unchanged.
 

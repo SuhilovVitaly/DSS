@@ -92,6 +92,7 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 47 / US-0009-TK-0003-save-format-18 | PASS 19 named / 809 bounded regression; build/format/diff PASS | `babcc7c6a4903e6271382a253c6fcba1b55908c4`, origin SHA verified |
 | 48 / US-0009-TK-0004-save18-capture-and-restore | PASS 16 named / 825 bounded regression; build/format/diff PASS | `d55a19b02a54f7f81b3f3fc9c902198f2155b81d`, origin SHA verified |
 | 49 / US-0009-TK-0005-save18-defense-validation | PASS 26 named / 851 bounded regression; build/format/diff PASS | `cc94ea5f8b403c71f1d9b918cb61f5d801351e0b`, origin SHA verified |
+| 50 / US-0002-TK-0001-torpedo-launchers-v3 | PASS 2 named / 2332 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
