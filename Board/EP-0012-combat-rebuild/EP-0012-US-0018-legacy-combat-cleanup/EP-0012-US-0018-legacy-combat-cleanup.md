@@ -39,7 +39,7 @@ Execution order задаётся ticket DAG, который допускает �
 | 10 / [EP-0012-US-0018-TK-0004-shared-point-forecast](EP-0012-US-0018-TK-0004-shared-point-forecast/EP-0012-US-0018-TK-0004-shared-point-forecast.md) | contracts-motion-engine | EP-0012-US-0006-TK-0001-blast-threat-math | US18-AC2 | 6 |
 | 24 / [EP-0012-US-0018-TK-0003-point-combat-forecasts](EP-0012-US-0018-TK-0003-point-combat-forecasts/EP-0012-US-0018-TK-0003-point-combat-forecasts.md) | engine | EP-0012-US-0008-TK-0003-encounter-stats | US18-AC2 | 5 |
 | 61 / [EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests](EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests/EP-0012-US-0018-TK-0002-migrate-mode-runtime-tests.md) | contracts-engine | EP-0012-US-0019-TK-0004-client-combat-regressions | US18-AC1, US18-AC3 | 9 |
-| 63 / [EP-0012-US-0018-TK-0001-remove-interception-helper](EP-0012-US-0018-TK-0001-remove-interception-helper/EP-0012-US-0018-TK-0001-remove-interception-helper.md) | engine | EP-0012-US-0004-TK-0003-remove-auto-pd | US18-AC1 | 4 |
+| 63 / [EP-0012-US-0018-TK-0001-remove-interception-helper](EP-0012-US-0018-TK-0001-remove-interception-helper/EP-0012-US-0018-TK-0001-remove-interception-helper.md) | engine | EP-0012-US-0004-TK-0003-remove-auto-pd | US18-AC1 | 5 |
 | 65 / [EP-0012-US-0018-TK-0005-module-combat-regressions](EP-0012-US-0018-TK-0005-module-combat-regressions/EP-0012-US-0018-TK-0005-module-combat-regressions.md) | engine | EP-0012-US-0003-TK-0005-remove-homing-roll-modes | US18-AC3, US3-AC5, US4-AC3 | 4 |
 
 ## Decisions / Assumptions

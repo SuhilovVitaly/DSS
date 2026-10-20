@@ -176,13 +176,7 @@ internal static class CountermeasureSaveValidation
                     Require(entry.TerminationKind is CountermeasureTerminationKind.LifetimeExpired or CountermeasureTerminationKind.MissedCoastExpired,
                         "invalid expiry reason");
             }
-            if (entry.RatingBreakdown is { } rating)
-            {
-                ValidateOperator(rating.DefenseOperator);
-                if (rating.TorpedoOperator is { } attack) ValidateOperator(attack);
-                Require(rating.TorpedoRating >= 0 && entry.ChanceTenths is { } chance && CapturedChanceMatches(
-                    rating.DefenseOperator!.EffectiveRating, rating.TorpedoRating, chance), "journal chance mismatch");
-            }
+            Require(entry.RatingBreakdown is null, "retired interception rating facts");
             if (entry.TorpedoOperator is { } op) ValidateOperator(op);
             bool resolution = entry.Type == CombatEventType.Intercept ||
                 entry.Type == CombatEventType.Miss && entry.RatingBreakdown is not null;
@@ -253,11 +247,6 @@ internal static class CountermeasureSaveValidation
             (op.EffectiveRating == op.BaseRating || op.EffectiveRating == op.BaseRating + op.Skill), "rating mismatch");
     }
 
-    // v16 has no captured chance-rules revision. Preserve EP-0008 base-zero saves and the
-    // shipped EP-0009 base-fifty rules until v17 records the exact rule identity.
-    private static bool CapturedChanceMatches(decimal attack, decimal defense, int chance) =>
-        chance == InterceptionMath.ChanceTenths(attack, defense) ||
-        chance == CombatChanceMath.ChanceTenths(attack, defense, CombatChanceMath.DefaultRules);
     internal static bool SequenceWithin(string id, string prefix, long sequence) =>
         id.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) &&
         long.TryParse(id.AsSpan(prefix.Length), System.Globalization.NumberStyles.None,

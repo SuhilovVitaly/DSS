@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0018-legacy-combat-cleanup"
 ticket: "EP-0012-US-0018-TK-0001-remove-interception-helper"
 title: "remove-interception-helper"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0004-TK-0003-remove-auto-pd"]
-files_touched: 4
+files_touched: 5
 serves: ["US18-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0018-TK-0001-remove-interception-helper
@@ -24,18 +24,20 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [src/DeepSpaceSaga.Engine/Combat/InterceptionMath.cs](../../../../src/DeepSpaceSaga.Engine/Combat/InterceptionMath.cs) | Существует: src/DeepSpaceSaga.Engine/Combat/InterceptionMath.cs:3; public static class InterceptionMath | Только изменения для scope этой карточки и served AC. |
-| [tests/DeepSpaceSaga.Engine.Tests/InterceptionChanceTests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/InterceptionChanceTests.cs) | Существует: tests/DeepSpaceSaga.Engine.Tests/InterceptionChanceTests.cs:7; public class InterceptionChanceTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
+| `src/DeepSpaceSaga.Engine/Combat/InterceptionMath.cs` (deleted) | Существует: src/DeepSpaceSaga.Engine/Combat/InterceptionMath.cs:3; public static class InterceptionMath | Только изменения для scope этой карточки и served AC. |
+| `tests/DeepSpaceSaga.Engine.Tests/InterceptionChanceTests.cs` (deleted) | Существует: tests/DeepSpaceSaga.Engine.Tests/InterceptionChanceTests.cs:7; public class InterceptionChanceTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
 | [tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs) | Существует: tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs:9; public class WeaponOperatorRuntimeTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0001Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Engine/Scenario/CountermeasureSaveData.cs` | Last production consumer found by rg | Remove historical base-zero interception probability fallback and reject retired interception rating facts; current point journal is already strictly probability-free. Retain unrelated legacy torpedo journal validation until US3-TK5. |
+
 ## Public API after the change
 
-No public API change; использовать контракт зависимых тикетов.
+Retired public `InterceptionMath` is removed without a replacement probability API. Current point commands, live operator/scatter projection and captured flight contracts remain authoritative.
 
 ## Implementation steps
 
@@ -73,6 +75,12 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-21: implementation и self-review выполнены. PASS 4 named / 1273 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0018-tk0001-results.json).
+
+Deleted InterceptionMath and InterceptionChanceTests; the last production consumer now rejects retired interception rating facts rather than duplicating the old formula. Actual point operator migration18PASS preserves live independent skills, absent-operator no side effects, captured geometry/reporter versus crew edits, real source Settings file load, future catalog changes, old-save atomic rejection and privacy. Rebuilt Client bounded2326PASS excluding five documented legacy defense consumers and ForecastBudget. Full Engine/Client legacy integration remains OPEN for US3-TK5 and US18-TK5; no full-suite/native/balance PASS claim.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
 
 2026-10-20 execution prerequisite correction: legacy removal follows Save18, forecast and Client migrations; see [current DAG](../../Tickets.md#migration-prerequisite-correction). AC/deletion requirements remain unchanged.
+
+2026-10-21 source audit: the only remaining InterceptionMath caller is historical defense-save journal validation; reject this retired continuation instead of recreating its formula elsewhere. Migrate every WeaponOperatorRuntimeTests case to actual source point catalog and Save18, preserving operator identity/absence, live skill projection versus captured geometry, catalog edits, public privacy and atomic old-save rejection. Delete InterceptionChanceTests because probability rules are retired; current launch-scatter stream continuation and legal operator bounds remain covered directly.

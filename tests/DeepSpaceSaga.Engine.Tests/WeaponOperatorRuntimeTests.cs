@@ -1,215 +1,144 @@
 using System.Text.Json;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
-using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
+using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
 public class WeaponOperatorRuntimeTests
 {
+    private static PlayerCommand Launch(bool counter, string id = "launch") => counter ? Point.Shot(id, x: 150, y: 0) :
+        new(id, 1, Point.Player, Point.Torpedo, CombatCommandTypes.Launch, TargetWorldX: 150, TargetWorldY: 0, ProfileId: "medium");
+    private static string Module(bool counter) => counter ? Point.Counter : Point.Torpedo;
+    private static InstalledModuleSnapshot Module(AuthoritativeSnapshot snapshot, bool counter) =>
+        snapshot.InstalledModules.Single(m => m.ModuleId == Module(counter));
+    private static string Json<T>(T value) => JsonSerializer.Serialize(value);
+    private static SpaceObjectData Skill(SpaceObjectData o, int skill) => o.ObjectId != Point.Player ? o : o with
+    { Crew = o.Crew!.Select(c => c with { AccuracySkill = skill, ManeuverabilitySkill = 1 }).ToArray() };
+
     [Fact]
-    public void Both_weapon_families_project_their_own_operator_skill()
+    public void Both_point_weapon_families_project_their_own_accuracy_operator()
     {
-        var scenario = TorpedoImpactTests.Scenario();
-        using var engine = Create(scenario);
-        var modules = At(engine, 0).InstalledModules;
-        var attack = modules.Single(m => m.ModuleId == Launcher).Operator!;
-        var defense = modules.Single(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01").Operator!;
+        using var engine = Point.Create(configure: o => o.ObjectId != Point.Player ? o : o with
+        { Crew = o.Crew!.Select(c => c with { AccuracySkill = c.CrewId == o.Modules!.Single(m => m.ModuleId == Point.Torpedo).OperatorCrewId ? 15 : 30, ManeuverabilitySkill = 1 }).ToArray() });
+        var snapshot = Point.At(engine); var attack = Module(snapshot, false).Operator!; var defense = Module(snapshot, true).Operator!;
         Assert.NotEqual(attack.CrewId, defense.CrewId);
-        Assert.Equal(WeaponSkillType.TorpedoAttack, attack.SkillType);
-        Assert.Equal(WeaponSkillType.CountermeasureDefense, defense.SkillType);
-        Assert.Equal(5m, attack.EffectiveRating);
-        Assert.Equal(55m, defense.EffectiveRating);
-        Assert.Null(modules.Single(m => m.ModuleId == "MOD-PLAYER-ENGINE-01").Operator);
-    }
-    [Fact]
-    public void Legacy_active_torpedo_migrates_rating_without_assigning_operator()
-    {
-        using var engine = Create(WeaponOperatorSchemaTests.Assigned());
-        engine.ReceiveCommand(Fire("old-launch"));
-        At(engine, 0);
-        var saved = engine.CaptureSaveState();
-        var combat = saved.GameState.CombatState!;
-        saved = saved with
-        {
-            SaveFormatVersion = 10,
-            GameState = saved.GameState with
-            {
-                TradingEconomyContinuation = null,
-                MarketKnowledge = null,
-                DefenseState = null,
-                HostileCombatState = saved.GameState.HostileCombatState! with { Version = 2 },
-                SpaceObjects = saved.GameState.SpaceObjects.Select(o => o with
-                {
-                    Modules = o.Modules?.Select(m => m with { OperatorCrewId = null }).ToArray()
-                }).ToArray(),
-                CombatState = combat with
-                {
-                    Launchers = combat.Launchers.Select(l => l with { State = l.State with { Operator = null } }).ToArray(),
-                    Projectiles = combat.Projectiles.Select(p => p with
-                    {
-                        Flight = p.Flight with
-                        {
-                            TorpedoRating = null,
-                            RatingBreakdown = null,
-                            CapturedManeuverability = null,
-                            OwnerPlayerRelationAtLaunch = null
-                        }
-                    }).ToArray()
-                }
-            }
-        };
-        using var restored = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true));
-        var flight = Assert.Single(At(restored, 0).Objects, o => o.Torpedo is not null).Torpedo!;
-        Assert.Equal(30m, flight.TorpedoRating);
-        Assert.True(flight.RatingMigratedFromLegacySave);
-        Assert.Null(flight.RatingBreakdown);
-        var migrated = restored.CaptureSaveState();
-        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated), true, isSave: true));
-        // Historical internal fixture still exercises migration; it cannot become a current save.
-        using var twice = Create(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(migrated with
-        {
-            SaveFormatVersion = 15,
-            GameState = migrated.GameState with { HostileCombatState = migrated.GameState.HostileCombatState! with { Version = 2 } }
-        }), true));
-        Assert.True(Assert.Single(At(twice, 0).Objects, o => o.Torpedo is not null).Torpedo!.RatingMigratedFromLegacySave);
-        Assert.Equal(Target, Assert.Single(At(twice, 5000).CombatImpacts).HitObjectId);
-        At(twice, 15000);
-        twice.ReceiveCommand(Fire("new-launch"));
-        Assert.Equal("no_weapon_operator", At(twice, 15000).CommandResults.Single(r => r.CommandId == "new-launch").ReasonCode);
+        Assert.Equal(WeaponSkillType.TorpedoAttack, attack.SkillType); Assert.Equal(WeaponSkillType.CountermeasureDefense, defense.SkillType);
+        Assert.Equal(15, attack.Skill); Assert.Equal(30, defense.Skill);
+        Assert.Equal(0, attack.BaseRating); Assert.Equal(15, attack.EffectiveRating);
+        Assert.Equal(0, defense.BaseRating); Assert.Equal(30, defense.EffectiveRating);
+        Assert.Null(snapshot.InstalledModules.Single(m => m.ModuleId == "MOD-PLAYER-ENGINE-01").Operator);
     }
 
-    [Fact]
-    public void Missing_operator_blocks_fire_without_side_effects()
+    [Theory]
+    [InlineData(1)]
+    [InlineData(10)]
+    [InlineData(15)]
+    [InlineData(17)]
+    public void Historical_save_versions_are_rejected_atomically_instead_of_inventing_a_migrated_rating(int version)
     {
-        using var engine = Create(TorpedoImpactTests.Scenario(o => o with
-        {
-            Modules = o.Modules?.Select(m => m with { OperatorCrewId = null }).ToArray()
-        }));
-        var before = engine.CaptureSaveState();
-        engine.ReceiveCommand(Fire("no-operator"));
-        var snapshot = At(engine, 0);
-        Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
-        Assert.Equal("no_weapon_operator", Assert.Single(snapshot.CommandResults).ReasonCode);
-        var after = engine.CaptureSaveState();
-        Assert.Equal(JsonSerializer.Serialize(before.GameState.CombatState), JsonSerializer.Serialize(after.GameState.CombatState));
-        Assert.Equal(JsonSerializer.Serialize(before.GameState.SpaceObjects), JsonSerializer.Serialize(after.GameState.SpaceObjects));
-        Assert.Equal(JsonSerializer.Serialize(before.GameState.DialogueState), JsonSerializer.Serialize(after.GameState.DialogueState));
-        Assert.Equal(JsonSerializer.Serialize(before.GameState.TradingMap?.RngStreams), JsonSerializer.Serialize(after.GameState.TradingMap?.RngStreams));
+        using var engine = Point.Create(); engine.ReceiveCommand(Launch(false)); Point.At(engine);
+        var save = Point.Save(engine); var old = save with { SaveFormatVersion = version };
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(old, true));
+        Assert.Equal(ScenarioLoader.Serialize(save), ScenarioLoader.Serialize(Point.Save(engine)));
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(old), true, isSave: true));
     }
 
-    [Fact]
-    public void Torpedo_rating_is_captured_at_launch()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Missing_operator_blocks_current_launch_without_side_effects(bool counter)
     {
-        var scenario = WeaponOperatorSchemaTests.Assigned();
-        scenario = scenario with
+        using var engine = Point.Create(configure: o => o with { Modules = o.Modules!.Select(m => m with { OperatorCrewId = null }).ToArray() });
+        var before = Point.Save(engine); engine.ReceiveCommand(Launch(counter)); var snapshot = Point.At(engine);
+        Assert.Equal(CommandReasonCodes.NoWeaponOperator, Assert.Single(snapshot.CommandResults).ReasonCode);
+        Assert.DoesNotContain(snapshot.Objects, o => o.OwnProjectile is not null);
+        var after = Point.Save(engine);
+        Assert.Equal(Json(before.GameState.PointCombatState), Json(after.GameState.PointCombatState));
+        Assert.Equal(Json(before.GameState.CombatState), Json(after.GameState.CombatState));
+        Assert.Equal(Json(before.GameState.DefenseState), Json(after.GameState.DefenseState));
+        Assert.Equal(Json(before.GameState.SpaceObjects), Json(after.GameState.SpaceObjects));
+        Assert.Equal(Json(before.GameState.DialogueState), Json(after.GameState.DialogueState));
+        Assert.Equal(Json(before.GameState.TradingMap?.RngStreams), Json(after.GameState.TradingMap?.RngStreams));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Captured_point_geometry_and_reporter_survive_file_load_with_live_operator_skill_changes(bool counter)
+    {
+        using var engine = Point.Create(configure: o => Skill(o, 20), scatter: null, torpedoScatter: null, enemyX: 600);
+        engine.ReceiveCommand(Launch(counter)); Point.At(engine); var original = Point.Flight(Point.At(engine, 100), Module(counter));
+        var save = Point.Save(engine, 100);
+        save = save with
         {
-            GameState = scenario.GameState with
+            GameState = save.GameState with
             {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
-                { Crew = o.Crew?.Select(c => c with { ManeuverabilitySkill = 20 }).ToArray() }).ToArray()
+                SpaceObjects = save.GameState.SpaceObjects.Select(o =>
+            o.ObjectId != Point.Player ? o : o with { Crew = o.Crew!.Select(c => c with { AccuracySkill = 1, DisplayName = "Changed" }).ToArray() }).ToArray()
             }
         };
-        using var engine = Create(scenario);
-        engine.ReceiveCommand(Fire("capture"));
-        var launched = Assert.Single(At(engine, 0).Objects, o => o.Torpedo is not null).Torpedo!;
-        Assert.Equal(25m, launched.TorpedoRating);
-        Assert.Equal(20, launched.RatingBreakdown!.Skill);
-        var saved = engine.CaptureSaveState();
-        saved = saved with
-        {
-            GameState = saved.GameState with
-            {
-                SpaceObjects = saved.GameState.SpaceObjects.Select(o => o with
-                {
-                    Crew = o.Crew?.Select(c => c with { ManeuverabilitySkill = 1, DisplayName = "Changed" }).ToArray()
-                }).ToArray()
-            }
-        };
-        string path = Path.Combine(Path.GetTempPath(), "operator-flight-" + Guid.NewGuid().ToString("N") + ".json");
+        string path = Path.Combine(Path.GetTempPath(), "point-operator-" + Guid.NewGuid().ToString("N") + ".json");
         try
         {
-            File.WriteAllText(path, ScenarioLoader.Serialize(saved));
-            using var restored = EngineContentLoader.CreateEngineFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")), path);
-            var snapshot = At(restored, 100);
-            var flight = Assert.Single(snapshot.Objects, o => o.Torpedo is not null).Torpedo!;
-            Assert.Equal(25m, flight.TorpedoRating);
-            Assert.Equal(launched.RatingBreakdown, flight.RatingBreakdown);
-            Assert.Equal(51m, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Operator!.EffectiveRating);
-            Assert.Equal(Target, Assert.Single(At(restored, 5000).CombatImpacts).HitObjectId);
+            File.WriteAllText(path, ScenarioLoader.Serialize(save));
+            using var loaded = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(Point.Root, "Settings.json"), path);
+            var resumed = Point.At(loaded, 100); Assert.Equal(original, Point.Flight(resumed, Module(counter)));
+            var op = Module(resumed, counter).Operator!; Assert.Equal(1, op.Skill); Assert.Equal("Changed", op.DisplayName);
+            Assert.Equal(1, op.EffectiveRating); Assert.Equal(0, op.BaseRating);
+            Assert.NotEqual("Changed", original.Reporter!.DisplayName);
+            double expected = counter ? .117296 : .029324;
+            Assert.Equal(expected, counter ? Module(resumed, true).Defense!.EffectiveScatterPercent!.Value : Module(resumed, false).LauncherCombat!.EffectiveScatterPercent!.Value, 8);
+            Assert.Equal(2ul, loaded.CaptureLaunchScatterState().Counter);
         }
         finally { File.Delete(path); }
     }
 
-    [Fact]
-    public void Zero_new_skills_keep_base_weapon_chance()
+    [Theory]
+    [InlineData(false, .02999)]
+    [InlineData(true, .11996)]
+    public void Zero_accuracy_skill_changes_scatter_without_interception_probability_or_roll(bool counter, double scatter)
     {
-        using var engine = Create(AutomaticDefenseTests.DefenseScenario());
-        engine.ReceiveCommand(Fire("skill"));
-        var flight = Assert.Single(At(engine, 0).Objects, o => o.Torpedo is not null).Torpedo!;
-        Assert.Equal(5m, flight.TorpedoRating);
-        Assert.NotNull(flight.RatingBreakdown);
-        Assert.Equal(5m, flight.CapturedManeuverability);
-        Assert.Equal(500, DeepSpaceSaga.Engine.Combat.InterceptionMath.ChanceTenths(55, flight.CapturedManeuverability!.Value));
-        var interception = Assert.Single(At(engine, 1000).Objects, o => o.Countermeasure is not null).Countermeasure!;
-        Assert.Equal(55m, interception.CapturedAccuracy);
-        Assert.Equal(500, interception.FrozenChanceTenths);
-        Assert.Equal(0, interception.RatingBreakdown.DefenseOperator.Skill);
+        using var engine = Point.Create(configure: o => Skill(o, 0), scatter: null, torpedoScatter: null, enemyX: 600);
+        var module = Module(Point.At(engine), counter); Assert.Equal(0, module.Operator!.Skill); Assert.Equal(0, module.Operator.BaseRating);
+        Assert.Equal(scatter, counter ? module.Defense!.EffectiveScatterPercent!.Value : module.LauncherCombat!.EffectiveScatterPercent!.Value, 8);
+        engine.ReceiveCommand(Launch(counter)); Point.At(engine); var snapshot = Point.At(engine, 3000);
+        Assert.All(snapshot.CombatJournal, e => { Assert.Null(e.Roll); Assert.Null(e.ChanceTenths); Assert.Null(e.RatingBreakdown); });
+        Assert.Equal(2ul, engine.CaptureLaunchScatterState().Counter); Assert.Equal(0ul, Point.Save(engine, 3000).GameState.DefenseState!.RngCounter);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Active_captured_profile_survives_future_catalog_speed_and_scatter_changes(bool counter)
+    {
+        using var engine = Point.Create(scatter: null, torpedoScatter: null, enemyX: 600);
+        engine.ReceiveCommand(Launch(counter)); Point.At(engine); var original = Point.Flight(Point.At(engine, 100), Module(counter)); var save = Point.Save(engine, 100);
+        var source = Point.Registry(scatter: null, torpedoScatter: null);
+        static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
+        var changed = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Select(m => !m.IsPointLauncher ? m : m with
+        { ScatterPercent = .5, Profiles = m.Profiles.Select(p => p with { SpeedKmS = 7, BlastRadiusKm = 2 }).ToImmutableArray() }),
+            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
+            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
+        using var loaded = new SimulationEngine(changed); loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, isSave: true), true);
+        Assert.Equal(original, Point.Flight(Point.At(loaded, 100), Module(counter)));
+        long ready = counter ? 12500 : 10000; Point.At(loaded, ready); loaded.ReceiveCommand(Launch(counter, "future"));
+        var next = Point.Flight(Point.At(loaded, ready), Module(counter)); Assert.Equal(7, next.SpeedKmS); Assert.Equal(2, next.BlastRadiusKm);
+        Assert.Equal(4ul, loaded.CaptureLaunchScatterState().Counter);
     }
 
     [Fact]
-    public void Frozen_values_survive_catalog_changes()
+    public void Own_operator_projection_is_authoritative_and_unknown_enemy_crew_stays_private()
     {
-        using var engine = Create(AutomaticDefenseTests.DefenseScenario());
-        engine.ReceiveCommand(Fire("frozen"));
-        At(engine, 0);
-        var snapshot = At(engine, 1000);
-        var original = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null).Countermeasure!;
-        Assert.Equal(55m, original.CapturedAccuracy);
-        Assert.Equal(5m, original.CapturedTargetManeuverability);
-        Assert.Equal(500, original.FrozenChanceTenths);
-        string path = Path.Combine(Path.GetTempPath(), $"frozen-weapons-{Guid.NewGuid():N}.json");
-        try
-        {
-            File.WriteAllText(path, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0)));
-            using var loaded = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(20, 90));
-            loaded.LoadScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(path), allowNonZeroGameTime: true), isSave: true);
-            var restored = Assert.Single(At(loaded, 1000).Objects, o => o.Countermeasure is not null).Countermeasure!;
-            Assert.Equal(original.CapturedAccuracy, restored.CapturedAccuracy);
-            Assert.Equal(original.CapturedTargetManeuverability, restored.CapturedTargetManeuverability);
-            Assert.Equal(original.FrozenChanceTenths, restored.FrozenChanceTenths);
-            Assert.Equal(5m, Assert.Single(At(loaded, 1000).Objects, o => o.Torpedo is not null).Torpedo!.CapturedManeuverability);
-            var result = Assert.Single(At(loaded, 5000).CombatJournal, e => e.Roll is not null);
-            Assert.Equal(500, result.ChanceTenths);
-            Assert.Equal(801, result.Roll);
-        }
-        finally { File.Delete(path); }
-    }
-
-    [Fact]
-    public void Operator_projection_is_authoritative()
-    {
-        var source = WeaponOperatorSchemaTests.Assigned();
-        source = source with
-        {
-            GameState = source.GameState with
-            {
-                SpaceObjects = source.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with { IsKnown = false } : o with
-                { Crew = o.Crew?.Select(c => c with { ManeuverabilitySkill = 20 }).ToArray() }).ToArray()
-            }
-        };
-        using var engine = Create(source);
-        var snapshot = At(engine, 0);
-        var weaponOperator = snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Operator!;
-        Assert.Equal("operator-" + Player, weaponOperator.CrewId);
-        Assert.Equal(WeaponSkillType.TorpedoAttack, weaponOperator.SkillType);
-        Assert.Equal(20, weaponOperator.Skill);
-        Assert.Equal(5m, weaponOperator.BaseRating);
-        Assert.Equal(25m, weaponOperator.EffectiveRating);
-        var unknown = snapshot.Objects.Single(o => o.ObjectId == Target);
-        Assert.Null(unknown.HullCombat);
-        Assert.Null(unknown.Defense);
-        Assert.DoesNotContain("operator-" + Target, JsonSerializer.Serialize(snapshot));
+        using var engine = Point.Create(configure: o => o.ObjectId == Point.Enemy ? o with { IsKnown = false } : Skill(o, 20));
+        var save = Point.Save(engine); var snapshot = Point.At(engine); var op = Module(snapshot, false).Operator!;
+        var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == Point.Player);
+        Assert.Equal(player.Modules!.Single(m => m.ModuleId == Point.Torpedo).OperatorCrewId, op.CrewId);
+        Assert.Equal(20, op.Skill); Assert.Equal(0, op.BaseRating); Assert.Equal(20, op.EffectiveRating);
+        var unknown = snapshot.Objects.Single(o => o.ObjectId == Point.Enemy); Assert.Null(unknown.HullCombat); Assert.Null(unknown.Defense);
+        string serialized = Json(snapshot);
+        foreach (var crew in save.GameState.SpaceObjects.Single(o => o.ObjectId == Point.Enemy).Crew!) Assert.DoesNotContain(crew.CrewId, serialized);
     }
 }
