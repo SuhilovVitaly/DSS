@@ -42,7 +42,7 @@ Execution order задаётся ticket DAG, который допускает �
 | 6 / [EP-0012-US-0017-TK-0001-combat-event-contracts](EP-0012-US-0017-TK-0001-combat-event-contracts/EP-0012-US-0017-TK-0001-combat-event-contracts.md) | contracts-and-localization | EP-0012-US-0001-TK-0005-launcher-profile-schema | US17-AC1 | 6 |
 | 7 / [EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts](EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts/EP-0012-US-0017-TK-0004-turn-and-summary-command-contracts.md) | contracts | EP-0012-US-0017-TK-0001-combat-event-contracts | US17-AC4 | 6 |
 | 25 / [EP-0012-US-0017-TK-0002-engine-report-producers](EP-0012-US-0017-TK-0002-engine-report-producers/EP-0012-US-0017-TK-0002-engine-report-producers.md) | contracts-engine | EP-0012-US-0018-TK-0003-point-combat-forecasts | US17-AC2, US13-AC4 | 7 |
-| 28 / [EP-0012-US-0017-TK-0003-local-client-delivery](EP-0012-US-0017-TK-0003-local-client-delivery/EP-0012-US-0017-TK-0003-local-client-delivery.md) | local-client | EP-0012-US-0005-TK-0002-hidden-fields-leak-test | US17-AC3 | 3 |
+| 28 / [EP-0012-US-0017-TK-0003-local-client-delivery](EP-0012-US-0017-TK-0003-local-client-delivery/EP-0012-US-0017-TK-0003-local-client-delivery.md) | local-client | EP-0012-US-0005-TK-0002-hidden-fields-leak-test | US17-AC3 | 4 |
 
 ## Decisions / Assumptions
 

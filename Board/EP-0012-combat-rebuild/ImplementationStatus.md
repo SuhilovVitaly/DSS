@@ -66,7 +66,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 26 / US-0005-TK-0001-snapshot-masking | PASS 5 named / 781 bounded regression; build/format/diff PASS | `479fef0765e7981c0a078cea2f9b00e7f419ac57`, origin SHA verified |
 
 | fix / US-0008-TK-0002 | Reproduced Active compact frames Speed4 vs1; PASS12 named /782 bounded Engine; solution/format/diff PASS | `6842980485c140e2b3328b722e8186065f396a36`, origin SHA verified |
-| 27 / US-0005-TK-0002-hidden-fields-leak-test | PASS 3 named / 785 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 27 / US-0005-TK-0002-hidden-fields-leak-test | PASS 3 named / 785 bounded regression; build/format/diff PASS | `533db328038655df67260e15582d391de1fc5ecf`, origin SHA verified |
+| 28 / US-0017-TK-0003-local-client-delivery | PASS 1 named / 2124 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

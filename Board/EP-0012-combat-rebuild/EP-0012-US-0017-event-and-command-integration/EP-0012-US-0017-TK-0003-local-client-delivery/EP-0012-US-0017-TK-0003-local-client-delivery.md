@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0017-event-and-command-integration"
 ticket: "EP-0012-US-0017-TK-0003-local-client-delivery"
 title: "local-client-delivery"
-stage: "draft"
+stage: "implemented"
 layer: "local-client"
 depends_on: ["EP-0012-US-0005-TK-0002-hidden-fields-leak-test"]
-files_touched: 3
+files_touched: 4
 serves: ["US17-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0017-TK-0003-local-client-delivery
@@ -20,17 +20,22 @@ revision: 1
 
 ## Decisions / Assumptions
 
+A-TRANSPORT: add reusable real Engine point-catalog/scenario fixture in Client.Tests, since production catalog activation is intentionally downstream. Fixture changes registry weapon fields but does not mock execution, transport, events or removal. Read actual local connection updates and acknowledgements; deliberately ignore coarse full snapshots while verifying every ordered frame and explicit removal. Existing generic transport already carries new DTOs, so change production bridge only if an observed defect requires it. Native rendering and Save18 remain separate gates.
+
+
 D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
 
 ## Code context
 
-Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | [src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs](../../../../src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs) | Существует: src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs:13; public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombatPresentationConnection | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine.LocalClient/SnapshotMailbox.cs](../../../../src/DeepSpaceSaga.Engine.LocalClient/SnapshotMailbox.cs) | Существует: src/DeepSpaceSaga.Engine.LocalClient/SnapshotMailbox.cs:8; internal sealed class SnapshotMailbox | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0017TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatSessionFixture.cs` | NEW reusable fixture with real Engine/content and deterministic real clock | Point catalog setup and actual local transport integration. |
 
 ## Public API after the change
 
@@ -72,4 +77,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 1 named / 2124 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0017-tk0003-results.json).
+
+Real point Engine/LocalClient create-submit-read proves own/observed/encounter, strictly ordered update sequences, actual reports, immediate combat_speed_locked acknowledgement, paused manual detonation, explicit compact removal without coarse snapshots, replay receipt without repeated physical fact, and mailbox coalescing without resurrection/lost receipt/report. Generic bridge already transports new immutable DTOs and required no production rewrite. Client bounded set excludes separately OPEN ForecastBudget gate; this is not full-Client acceptance. Initial extra test wrongly expected cumulative history in a delta; actual failed run and correction are retained. Point catalog fixture prepares downstream activation; Save18/native remain OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
