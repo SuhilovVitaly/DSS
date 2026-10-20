@@ -9,7 +9,7 @@ depends_on: ["EP-0012-US-0008-TK-0002-combat-speed-lock"]
 files_touched: 4
 serves: ["US8-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 3
+revision: 4
 ---
 
 # EP-0012-US-0008-TK-0003-encounter-stats
@@ -81,3 +81,9 @@ git diff --check
 All10 counters derive from actual committed facts and first player-evasion episodes. Damage is own actual loss; enemy numeric health is not disclosed. Rejected/replayed commands and repeated frames do not count again. Captured live flights and defensive actions can update a completed result after Won/ack; new encounter resets all counters. Duration uses real injected clock, excludes a long pause and is capped at completion. Initial regression695/1 orbital pose mismatch retained; unchanged isolated1/1 and one full repeat696/696 PASS, trigger unresolved, no baseline-fix claim. Solution build0 warnings/errors. Save18 persistence and integrated production/native acceptance remain OPEN.
 
 Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
+
+## Repair scope: captured hostile side after previous-owner death
+
+2026-10-20: the US17-TK2 real report scenario revealed that the stats counter still looks up the owner in the current encounter. A hostile torpedo can outlive its owner and continue into a new encounter. Reproduce using the actual published scenario fixture, then update only SimulationEngine.Encounter.cs and PointCombatUS0008TK0003Tests.cs (both already allowed) to use the captured launch-side metadata published by US17-TK2. Preserve actual failed evidence and publish a separate fix. No lifetime/physics/RNG change.
+
+Repair result: reproduced1 failed (E05 confirms intercepted hostile torpedo but TorpedoesIntercepted=0 after owner death/new encounter). Captured launch-side metadata now determines hostility; current-owner lookup is fallback only for older payloads without it. PASS21 relevant stats/report cases,776 bounded Engine regression, solution build0 warnings/errors, scoped format/diff PASS. [Reproduction and checks](../../evidence/intercept-stats-fix-results.json). Separate fixing commit/push follows; no change to physics or RNG.

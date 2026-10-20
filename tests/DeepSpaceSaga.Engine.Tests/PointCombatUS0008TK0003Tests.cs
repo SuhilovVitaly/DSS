@@ -157,4 +157,13 @@ public sealed class PointCombatUS0008TK0003Tests
         real += 100000;
         Assert.Equal(won, engine.CaptureSnapshot(advanceClock: true).Encounter);
     }
+
+    [Fact]
+    public void Intercept_counter_uses_captured_hostility_after_owner_death_and_new_encounter()
+    {
+        using var engine = PointCombatUS0017TK0002Tests.OldEnemyFlightAcrossNewEncounter();
+        var result = At(engine, 3700);
+        Assert.Single(result.CombatReports!.Reports, r => r.Kind == BattleReportKind.EnemyTorpedoIntercepted);
+        Assert.Equal(new CombatEncounterStats(CountermissilesLaunched: 1, EnemyTorpedoesLaunched: 1, TorpedoesIntercepted: 1), result.Encounter!.Stats);
+    }
 }

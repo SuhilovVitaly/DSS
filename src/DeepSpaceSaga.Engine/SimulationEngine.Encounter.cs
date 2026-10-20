@@ -109,7 +109,10 @@ public sealed partial class SimulationEngine
             {
                 var victim = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == entry.ProjectileObjectId);
                 string? owner = victim?.InitialMotion.OwnProjectile?.OwnerObjectId ?? victim?.InitialMotion.Torpedo?.OwnerObjectId;
-                if (owner is not null && (_encounterEnemyIds.Contains(owner) || _objects.Any(o => o.InitialMotion.ObjectId == owner && IsHostileActor(o))))
+                string? relation = victim?.InitialMotion.OwnProjectile?.OwnerPlayerRelationAtLaunch ?? victim?.InitialMotion.Torpedo?.OwnerPlayerRelationAtLaunch;
+                bool hostile = relation is not null ? relation == PlayerRelation.Enemy : owner is not null &&
+                    (_encounterEnemyIds.Contains(owner) || _objects.Any(o => o.InitialMotion.ObjectId == owner && IsHostileActor(o)));
+                if (hostile)
                     stats = stats with { TorpedoesIntercepted = stats.TorpedoesIntercepted + 1 };
             }
         }
