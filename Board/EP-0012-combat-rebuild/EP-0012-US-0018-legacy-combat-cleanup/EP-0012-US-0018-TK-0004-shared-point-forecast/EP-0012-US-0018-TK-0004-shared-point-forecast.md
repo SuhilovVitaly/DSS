@@ -4,12 +4,12 @@ story: "EP-0012-US-0018-legacy-combat-cleanup"
 ticket: "EP-0012-US-0018-TK-0004-shared-point-forecast"
 title: "shared-point-forecast"
 stage: "implemented"
-layer: "motion"
+layer: "contracts-motion-engine"
 depends_on: ["EP-0012-US-0006-TK-0001-blast-threat-math"]
-files_touched: 3
+files_touched: 6
 serves: ["US18-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 3
 ---
 
 # EP-0012-US-0018-TK-0004-shared-point-forecast
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (6 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -32,11 +32,17 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Motion/CurrentManeuverForecast.cs](../../../../src/DeepSpaceSaga.Motion/CurrentManeuverForecast.cs) | Существует: src/DeepSpaceSaga.Motion/CurrentManeuverForecast.cs:6; public static class CurrentManeuverForecast | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0018TK0004Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Contracts/CombatSnapshot.cs` | Existing | Capture optional own CoreFraction, default0.3; never add it to foreign observed payload. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs` | Existing | Capture coreFraction at launch and use captured value for actual blast. |
+| `tests/DeepSpaceSaga.Engine.Tests/PointForecastRuntimeParityTests.cs` | NEW | Actual Engine/Motion near-edge, target-kind and captured-rules parity. |
+
+2026-10-20 published-ticket repair scope: runtime review found shared contact ignored rounded-zero damage and allowed the wrong target kinds (counter vs ships, torpedo vs projectiles). Same-time counter ordinal must match Engine. Own core fraction must be captured to evaluate the same configurable falloff. Reproduce before repair, publish a separate fix, retain initial evidence. Initial Motion-only layer restriction is expanded only for this captured-rule integration.
+
 ## Public API after the change
 
 No public API change; использовать контракт зависимых тикетов.
 
-Execution refinement: добавить CombatForecast.PointProjectile с существующими options/cancellation/result и dispatch новых DTO из существующих Torpedo/Countermeasure. ProjectilePose поддерживает прямые point samples без legacy guidance legs; ModelVersion увеличивается. CurrentManeuverForecast.Sample/CreateSampler обрабатывают OwnProjectile/ObservedProjectile до legacy motion. Own forecast ограничен captured deadline, area-contact проверяется только в момент подрыва; foreign forecast — только наблюдаемая прямая, InsufficientData без целевой точки/ETA подрыва и без target prediction. Временная legacy ветвь нужна текущим consumers до US-0018 cleanup и не считается итоговым удалением guidance. Scope остаётся 3 файла.
+Execution refinement: добавить CombatForecast.PointProjectile с существующими options/cancellation/result и dispatch новых DTO из существующих Torpedo/Countermeasure. ProjectilePose поддерживает прямые point samples без legacy guidance legs; ModelVersion увеличивается. CurrentManeuverForecast.Sample/CreateSampler обрабатывают OwnProjectile/ObservedProjectile до legacy motion. Own forecast ограничен captured deadline, area-contact проверяется только в момент подрыва; foreign forecast — только наблюдаемая прямая, InsufficientData без целевой точки/ETA подрыва и без target prediction. Временная legacy ветвь нужна текущим consumers до US-0018 cleanup и не считается итоговым удалением guidance. Initial published scope was 3 files; the bounded parity repair below expands it.
 
 ## Implementation steps
 
@@ -79,3 +85,7 @@ git diff --check
 Новые DTO проходят реальные shared Torpedo/Countermeasure entrypoints. Own route строго до captured дробного deadline; contact определяется областью только в detonation time, не пересечением корпуса раньше. Foreign route не имеет target/endpoint/Contact ETA. Проверены finite horizon, cancellation, point/step budgets, expiry и early target detonation. Общая сборка решения PASS, 0 warnings/errors, 5.57s. Legacy ветви сохраняются до explicit consumer cleanup; это не итоговая интеграционная приёмка.
 
 Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
+
+## Published-ticket parity repair 2026-10-20
+
+Reproduced 4 failed / 9 passed (rounded-zero, counter-vs-ship, torpedo-vs-projectile, same-time ordinal); additional station/wreck/asteroid probe3/3 failed. Repair PASS17 named /259 full Motion,9 named /705 bounded Engine regression,256 full Contracts with rebuild. Solution build0 warnings/errors; scoped format/diff PASS. Own CoreFraction is captured at launch and used by runtime and pure forecast; default0.3, never added to foreign observation. Only ship targets receive torpedo damage; only projectiles can be counter targets. Earlier counter ordinal wins equal-time blasts. ModelVersion3 invalidates old forecast cache results. [Full evidence](../../evidence/point-forecast-parity-results.json), [Engine evidence](../../evidence/point-forecast-parity-engine-results.json). Save18 and Client cache-key migration must retain captured CoreFraction; their integration remains OPEN. Separate fixing commit/push follows; initial implementation results remain historical.

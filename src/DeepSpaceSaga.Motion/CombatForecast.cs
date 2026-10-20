@@ -18,7 +18,7 @@ public sealed record CombatForecastResult(string ProjectileId, string TargetId, 
     double EndMotionTimeMs, CombatForecastStatus Status, ImmutableArray<CombatForecastPoint> Projectile,
     ImmutableArray<CombatForecastPoint> Target, ImmutableArray<CombatForecastLeg> Legs)
 {
-    public const int ModelVersion = 2;
+    public const int ModelVersion = 3;
     public double? ContactMotionTimeMs => Status == CombatForecastStatus.Contact ? EndMotionTimeMs : null;
 
     public (double X, double Y, double Direction) ProjectilePose(double time)
@@ -172,16 +172,22 @@ public static class CombatForecast
             throw new ArgumentException("Expected a point projectile.", nameof(projectile));
         if (own is not null && (!double.IsFinite(own.DetonationMotionTimeMs) ||
                 own.LaunchMotionTimeMs < 0 || own.DetonationMotionTimeMs < own.LaunchMotionTimeMs || own.SpeedKmS <= 0 ||
-                !double.IsFinite(own.SpeedKmS) || own.BlastRadiusKm <= 0 || !double.IsFinite(own.BlastRadiusKm)))
+                !double.IsFinite(own.SpeedKmS) || own.BlastRadiusKm <= 0 || !double.IsFinite(own.BlastRadiusKm) ||
+                !double.IsFinite(own.CoreFraction) || own.CoreFraction is <= 0 or >= 1))
             throw new ArgumentException("Invalid captured projectile.", nameof(projectile));
         bool knownTarget = own is not null && target is { IsDestroyed: false } &&
-            target.RenderObjectType != SpaceObjectType.UnknownSpaceObject && CurrentManeuverForecast.HasRequiredData(target);
+            target.ObjectId != projectile.ObjectId && target.RenderObjectType != SpaceObjectType.UnknownSpaceObject &&
+            CurrentManeuverForecast.HasRequiredData(target) &&
+            (own.Kind == ProjectileKind.Countermissile ? IsProjectile(target) :
+                !IsProjectile(target) && (target.ObjectType ?? target.RenderObjectType) is null or SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip);
         var sampler = knownTarget ? CurrentManeuverForecast.CreateSampler(target!) : null;
         var points = ImmutableArray.CreateBuilder<CombatForecastPoint>();
         var targets = ImmutableArray.CreateBuilder<CombatForecastPoint>();
         double end = own is null ? now + options.HorizonMs : Math.Max(now, Math.Min(now + options.HorizonMs, own.DetonationMotionTimeMs));
         double? targetEnds = knownTarget && own!.Kind == ProjectileKind.Countermissile && target!.OwnProjectile is { } targetOwn &&
-            targetOwn.DetonationMotionTimeMs < own.DetonationMotionTimeMs ? targetOwn.DetonationMotionTimeMs : null;
+            (targetOwn.DetonationMotionTimeMs < own.DetonationMotionTimeMs ||
+             targetOwn.DetonationMotionTimeMs == own.DetonationMotionTimeMs && targetOwn.Kind == ProjectileKind.Countermissile &&
+             string.CompareOrdinal(target.ObjectId, projectile.ObjectId) < 0) ? targetOwn.DetonationMotionTimeMs : null;
         if (targetEnds is { } targetEnd) end = Math.Max(now, Math.Min(end, targetEnd));
         double cursor = now;
         var status = own is null ? CombatForecastStatus.InsufficientData : CombatForecastStatus.NoContact;
@@ -210,7 +216,8 @@ public static class CombatForecast
                 var q = targets[^1];
                 double dx = (p.X - q.X) / 10, dy = (p.Y - q.Y) / 10;
                 double distance = Math.Sqrt(dx * dx + dy * dy);
-                bool contact = own.Kind == ProjectileKind.Countermissile ? distance <= own.BlastRadiusKm : distance < own.BlastRadiusKm;
+                bool contact = own.Kind == ProjectileKind.Countermissile ? distance <= own.BlastRadiusKm :
+                    Math.Round(own.Damage * BlastMath.Falloff(distance, own.BlastRadiusKm, own.CoreFraction), MidpointRounding.AwayFromZero) > 0;
                 if (contact) status = CombatForecastStatus.Contact;
             }
         }
@@ -235,6 +242,9 @@ public static class CombatForecast
             if (sampler is not null) { var q = sampler(time - now); targets.Add(new(time, q.X, q.Y)); }
         }
     }
+
+    private static bool IsProjectile(ObjectMotionSnapshot target) => target.OwnProjectile is not null || target.ObservedProjectile is not null ||
+        target.Torpedo is not null || target.Countermeasure is not null || target.ObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure;
 
     private static CombatForecastResult Calculate(string id, string targetId, TorpedoRoute initial, double now,
         double? expires, double speed, double turnRate, Func<double, (double X, double Y)>? target,

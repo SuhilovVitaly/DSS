@@ -32,7 +32,8 @@ public sealed record OwnProjectileSnapshot(
     double BlastRadiusKm,
     int Damage,
     decimal ArmorPiercingPercent,
-    decimal ArmorDamagePercent = 100);
+    decimal ArmorDamagePercent = 100,
+    double CoreFraction = 0.3);
 
 /// <summary>
 /// Foreign projectile observation. The unit direction vector is measured in world axes;

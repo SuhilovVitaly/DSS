@@ -100,7 +100,7 @@ public sealed partial class SimulationEngine
         var flight = new OwnProjectileSnapshot(kind, owner.InitialMotion.ObjectId, moduleId, origin.X, origin.Y,
             origin.X, origin.Y, endpointX, endpointY, motionTimeMs, deadline, profile.SpeedKmS,
             profile.ProfileId, profile.BlastRadiusKm, torpedo ? type.TorpedoDamage!.Value : 0,
-            torpedo ? type.ArmorPiercingPercent!.Value : 0, type.ArmorDamagePercent ?? 100);
+            torpedo ? type.ArmorPiercingPercent!.Value : 0, type.ArmorDamagePercent ?? 100, _registry.CombatRules.Blast!.CoreFraction);
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, profile.SpeedKmS, direction, OwnProjectile: flight);
         _objects.Add(new(motion, torpedo ? SpaceObjectType.Missile : SpaceObjectType.Countermeasure,
             motionTimeMs, [], Name: torpedo ? "Torpedo" : "Countermissile", IsKnown: true));
@@ -213,7 +213,7 @@ public sealed partial class SimulationEngine
                 var ship = shipPositions[target.InitialMotion.ObjectId];
                 double dx = (ship.X - position.X) / WorldUnitsPerKm, dy = (ship.Y - position.Y) / WorldUnitsPerKm;
                 double distance = Math.Sqrt(dx * dx + dy * dy);
-                double k = BlastMath.Falloff(distance, flight.BlastRadiusKm, _registry.CombatRules!.Blast!.CoreFraction);
+                double k = BlastMath.Falloff(distance, flight.BlastRadiusKm, flight.CoreFraction);
                 int damage = (int)Math.Round(flight.Damage * k, MidpointRounding.AwayFromZero);
                 if (damage == 0) continue;
                 var hit = ApplyModuleHit(target, damage, flight.ArmorPiercingPercent, flight.ArmorDamagePercent, motionTimeMs, requireShipClass: false);

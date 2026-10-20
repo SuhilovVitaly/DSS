@@ -44,8 +44,10 @@ public sealed class PointCombatUS0018TK0004Tests
         Assert.Equal(CombatForecastStatus.Contact, core.Status);
         Assert.Equal(10000, core.ContactMotionTimeMs);
         Assert.Equal(CombatForecastStatus.Expired, CombatForecast.PointProjectile(Own(), crossing with { X = 690 }, 0).Status);
+        var targetProjectile = new ObjectMotionSnapshot("foreign-shot", 590, 0, 1, 90,
+            ObservedProjectile: new(ProjectileKind.Torpedo, 590, 0, 1, 0, 1, "slow", 1));
         Assert.Equal(CombatForecastStatus.Contact, CombatForecast.Countermeasure(
-            Own(ProjectileKind.Countermissile), crossing with { X = 690 }, null, 0).Status);
+            Own(ProjectileKind.Countermissile), targetProjectile, null, 0).Status);
     }
 
     [Fact]
@@ -119,5 +121,62 @@ public sealed class PointCombatUS0018TK0004Tests
         Assert.Throws<ArgumentOutOfRangeException>(() => CombatForecast.PointProjectile(Own(), null, double.NaN));
         Assert.Throws<ArgumentOutOfRangeException>(() => CombatForecast.PointProjectile(Own(), null, 0, new(MaxPoints: 1)));
         Assert.Throws<ArgumentException>(() => CombatForecast.PointProjectile(new("ship", 0, 0, 0, 0), null, 0));
+    }
+
+    [Theory]
+    [InlineData(689.99, CombatForecastStatus.Expired)]
+    [InlineData(689.8, CombatForecastStatus.Contact)]
+    public void Torpedo_contact_requires_positive_rounded_damage(double x, CombatForecastStatus expected)
+    {
+        Assert.Equal(expected, CombatForecast.PointProjectile(Own(), new("ship", x, 0, 0, 0), 0).Status);
+    }
+
+    [Fact]
+    public void Countermissile_forecast_never_damages_ships()
+    {
+        var result = CombatForecast.PointProjectile(Own(ProjectileKind.Countermissile), new("ship", 600, 0, 0, 0), 0);
+        Assert.Equal(CombatForecastStatus.Expired, result.Status);
+        Assert.Null(result.ContactMotionTimeMs);
+        Assert.Empty(result.TargetId);
+    }
+
+    [Fact]
+    public void Torpedo_blast_does_not_damage_projectiles()
+    {
+        var target = new ObjectMotionSnapshot("enemy-shot", 500, 0, 1, 90,
+            ObservedProjectile: new(ProjectileKind.Torpedo, 500, 0, 1, 0, 1, "slow", 1));
+        var result = CombatForecast.PointProjectile(Own(), target, 0);
+        Assert.Equal(CombatForecastStatus.Expired, result.Status);
+        Assert.Null(result.ContactMotionTimeMs);
+    }
+
+    [Theory]
+    [InlineData("countermeasure-1", "countermeasure-2", CombatForecastStatus.Contact)]
+    [InlineData("countermeasure-2", "countermeasure-1", CombatForecastStatus.TargetTerminated)]
+    public void Simultaneous_counters_follow_ordinal_detonation_priority(string id, string targetId, CombatForecastStatus expected)
+    {
+        var shot = Own(ProjectileKind.Countermissile) with { ObjectId = id };
+        var target = Own(ProjectileKind.Countermissile) with { ObjectId = targetId };
+        Assert.Equal(expected, CombatForecast.PointProjectile(shot, target, 0).Status);
+    }
+
+    [Fact]
+    public void Rounded_damage_uses_the_captured_core_fraction()
+    {
+        var shot = Own();
+        var target = new ObjectMotionSnapshot("ship", 689.9, 0, 0, 0);
+        Assert.Equal(CombatForecastStatus.Expired, CombatForecast.PointProjectile(shot, target, 0).Status);
+        shot = shot with { OwnProjectile = shot.OwnProjectile! with { CoreFraction = .8 } };
+        Assert.Equal(CombatForecastStatus.Contact, CombatForecast.PointProjectile(shot, target, 0).Status);
+    }
+
+    [Theory]
+    [InlineData(SpaceObjectType.Station)]
+    [InlineData(SpaceObjectType.Wreck)]
+    [InlineData(SpaceObjectType.Asteroid)]
+    public void Torpedo_blast_does_not_forecast_damage_to_non_ship_objects(string type)
+    {
+        var target = new ObjectMotionSnapshot("object", 600, 0, 0, 0, ObjectType: type, RenderObjectType: type);
+        Assert.Equal(CombatForecastStatus.Expired, CombatForecast.PointProjectile(Own(), target, 0).Status);
     }
 }

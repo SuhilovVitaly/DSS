@@ -58,6 +58,8 @@ Baseline: `c894925d187c90a658d1e25958feed69a45d7e41`. Исходная ветк�
 | 22 / US-0008-TK-0002-combat-speed-lock | PASS 11 named / 688 bounded regression; build/format/diff PASS | `ca3eda12838d90908f6a64e4b53528eea059230c`, origin SHA verified |
 | 23 / US-0008-TK-0003-encounter-stats | PASS 8 named / 696 bounded regression; build/format/diff PASS | `1db6e9c3682b337ff2431152a819c1e6aa575552`, origin SHA verified |
 
+| fix / US-0018-TK-0004 | Reproduced4 failures +nonship3; PASS17/259 Motion,9/705 bounded Engine,256 Contracts; solution/format/diff PASS | SHA и remote проверяются сразу после коммита |
+
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
 Automated epic acceptance OPEN; native/product/balance NOT RUN / OPEN. Игра не запускалась. Исторические результаты исходных документов не считаются результатами этого исполнения.
