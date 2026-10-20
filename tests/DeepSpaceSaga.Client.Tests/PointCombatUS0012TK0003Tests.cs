@@ -225,7 +225,9 @@ public sealed class PointCombatUS0012TK0003Tests
         Assert.DoesNotContain(buffer.Presented!.Snapshot.Objects, o => o.ObservedProjectile is not null); Assert.Empty(audio); Assert.Equal(0, screen.LaunchFlashCount);
         tick = Stopwatch.Frequency * 150 / 1000; screen.Render(canvas, 1920, 1200);
         Assert.Contains(buffer.Presented.Snapshot.Objects, o => o.ObservedProjectile is not null);
-        var cue = Assert.Single(audio); Assert.Equal(CombatAlertKind.EnemyLaunch, cue.Kind); Assert.Equal(880, cue.FrequencyHz); Assert.Equal(1, cue.Pulses);
+        Assert.Equal(2, audio.Count);
+        var cue = Assert.Single(audio, c => c.Kind == CombatAlertKind.EnemyLaunch); Assert.Equal(880, cue.FrequencyHz); Assert.Equal(1, cue.Pulses);
+        Assert.Single(audio, c => c.Kind == CombatAlertKind.CombatStarted);
         Assert.Equal(1, screen.LaunchFlashCount); Assert.Contains(PointCombatSessionFixture.Enemy, screen.ThreatOffscreenIndicators.Keys);
         screen.OnDeactivated();
     }

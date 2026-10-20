@@ -3,17 +3,17 @@ using System.Diagnostics;
 
 namespace DeepSpaceSaga.Client.UI;
 
-public enum CombatAlertKind { EnemyLaunch, Danger, Urgent }
+public enum CombatAlertKind { EnemyLaunch, Danger, Urgent, CombatStarted }
 public sealed record CombatAlertCue(CombatAlertKind Kind, int FrequencyHz, int DurationMs, int Pulses, int PulseGapMs, int MinimumIntervalMs = 1500);
 
 internal sealed class CombatAudioPlaybackGate
 {
-    private long? _launchAt, _warningAt;
+    private long? _launchAt, _warningAt, _combatAt;
     internal bool TryStart(CombatAlertKind kind, long now, long frequency, int minimumIntervalMs)
     {
-        long? previous = kind == CombatAlertKind.EnemyLaunch ? _launchAt : _warningAt;
+        long? previous = kind switch { CombatAlertKind.EnemyLaunch => _launchAt, CombatAlertKind.CombatStarted => _combatAt, _ => _warningAt };
         if (previous is { } last && (now - last) * (1000d / frequency) < Math.Max(1500, minimumIntervalMs)) return false;
-        if (kind == CombatAlertKind.EnemyLaunch) _launchAt = now; else _warningAt = now;
+        if (kind == CombatAlertKind.EnemyLaunch) _launchAt = now; else if (kind == CombatAlertKind.CombatStarted) _combatAt = now; else _warningAt = now;
         return true;
     }
 }

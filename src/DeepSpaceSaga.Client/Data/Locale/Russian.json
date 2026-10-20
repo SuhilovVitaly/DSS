@@ -460,5 +460,20 @@
   "Combat.Hit.Miss": "Мимо",
   "Combat.Hit.ShotDown": "Сбита",
   "Combat.InterceptedProjectiles": "Сбитые снаряды",
-  "Combat.Event.LegacyResolution": "Событие оружия"
+  "Combat.Event.LegacyResolution": "Событие оружия",
+  "Combat.Battle": "БОЙ",
+  "Combat.BattleSummary": "Бой завершён",
+  "Combat.Continue": "Продолжить",
+  "Combat.Duration": "Длительность",
+  "Combat.Reason.combat_speed_locked": "Во время боя доступны только пауза и x1",
+  "Combat.Stats.TorpedoesLaunched": "Выпущено торпед",
+  "Combat.Stats.CountermissilesLaunched": "Выпущено противоракет",
+  "Combat.Stats.EnemyTorpedoesLaunched": "Торпед выпущено врагом",
+  "Combat.Stats.TorpedoesIntercepted": "Перехвачено торпед",
+  "Combat.Stats.PlayerHitsReceived": "Получено попаданий",
+  "Combat.Stats.EnemyHitsDealt": "Попаданий по врагам",
+  "Combat.Stats.PlayerEvasions": "Уклонений",
+  "Combat.Stats.EnemiesDestroyed": "Уничтожено врагов",
+  "Combat.Stats.ArmorDamageTaken": "Потеряно своей брони",
+  "Combat.Stats.StructureDamageTaken": "Потеряно своей структуры"
 }

@@ -312,13 +312,14 @@ public sealed partial class GameSessionScreen : IScreen
         CombatInputSettings? combatInputs = null,
         Action<CombatAlertCue>? alertAudio = null,
         Action? activateAudio = null,
-        Action? deactivateAudio = null)
+        Action? deactivateAudio = null, bool playInitialCombatStart = false)
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         CombatInputs = (combatInputs ?? CombatInputSettings.Default).Validate();
         _alertAudio = alertAudio;
+        _playInitialCombatStart = playInitialCombatStart;
         _activateAlertAudio = activateAudio; _deactivateAlertAudio = deactivateAudio;
         _predictor = predictor;
         _handle = handle;
@@ -435,6 +436,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (button == MouseButton.Left)
         {
+            if (HandleEncounterClick(uiX, uiY)) return ScreenEvent.None;
             if (_combatReportPanel.OnMouseDown(uiX, uiY)) return ScreenEvent.None;
         }
         else
@@ -593,6 +595,13 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
 
+        if (_combatSummaryPanel.Bounds.Contains(_uiMouseX, _uiMouseY))
+        {
+            _panLastScreenX = x; _panLastScreenY = y;
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return _combatSummaryPanel.CanContinue && _combatSummaryPanel.ContinueRect.Contains(_uiMouseX, _uiMouseY);
+        }
         if (_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY))
         {
             _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
@@ -648,6 +657,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (_combatSummaryPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_threatPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (HandlePointAimWheel(x, y, delta)) return ScreenEvent.None;
         if (_combatReportPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
@@ -771,7 +781,7 @@ public sealed partial class GameSessionScreen : IScreen
         var current = _buffer.CurrentSpeed;
         if (current == SimulationSpeed.Speed0)
         {
-            ApplySpeed(_lastNonPauseSpeed);
+            ApplySpeed(CombatIsActive ? SimulationSpeed.Speed1 : _lastNonPauseSpeed);
         }
         else
         {
@@ -782,6 +792,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void ApplySpeed(SimulationSpeed speed)
     {
+        if (!IsCombatSpeedEnabled(speed)) return;
         if (speed != SimulationSpeed.Speed0)
             _lastNonPauseSpeed = speed;
 
@@ -1135,6 +1146,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
+        if (_combatSummaryPanel.Bounds.Contains(uiX, uiY) || CombatBannerRect.Contains(uiX, uiY)) return true;
         if (_threatPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatReportPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatJournalPanel.Contains(uiX, uiY)) return true;
@@ -1463,6 +1475,8 @@ public sealed partial class GameSessionScreen : IScreen
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
         RenderThreatPanel(canvas);
+        DrawEncounterHud(canvas, buffered, prediction);
+        DrawCombatSpeedTooltip(canvas);
         if (_panelVisible)
         {
             canvas.DrawRect(_lastCloseRect, _panelBgPaint);
@@ -2143,6 +2157,7 @@ public sealed partial class GameSessionScreen : IScreen
         float btnY = _lastSpeedPanelRect.Top + SpeedPanelPadY;
 
         var currentSpeed = _buffer.CurrentSpeed;
+        using var disabled = new SKPaint { Color = new SKColor(24, 24, 24, 150) };
         int activeIdx = Array.IndexOf(SpeedValues, currentSpeed);
         if (activeIdx < 0) activeIdx = 0;
 
@@ -2151,12 +2166,16 @@ public sealed partial class GameSessionScreen : IScreen
             var btnRect = new SKRect(btnX, btnY, btnX + SpeedBtnW, btnY + SpeedBtnH);
             _speedButtonRects[i] = btnRect;
 
-            bool isActive = (i == activeIdx);
-            canvas.DrawRect(btnRect, isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
+            bool enabled = IsCombatSpeedEnabled(SpeedValues[i]);
+            bool isActive = (i == activeIdx) && enabled;
+            canvas.DrawRect(btnRect, !enabled ? disabled : isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
             canvas.DrawRect(btnRect, _panelBorderPaint);
 
             float textY = btnY + SpeedBtnH / 2f + _speedBtnTextPaint.TextSize / 3f;
+            var color = _speedBtnTextPaint.Color;
+            if (!enabled) _speedBtnTextPaint.Color = color.WithAlpha(70);
             canvas.DrawText(SpeedLabels[i], btnX + SpeedBtnW / 2f, textY, _speedBtnTextPaint);
+            _speedBtnTextPaint.Color = color;
 
             // Green indicator under active button
             if (isActive)

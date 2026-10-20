@@ -940,7 +940,7 @@ public sealed class SkiaWindow : IDisposable
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
-                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate);
+                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate, playInitialCombatStart: true);
 
             _session = session;
             _gameSessionScreen = gameScreen;
@@ -1627,7 +1627,7 @@ public sealed class SkiaWindow : IDisposable
         // The root may already be inactive under an overlay; ReplaceAll deactivates only Current.
         _gameSessionScreen?.DisposeCombatReports();
         _gameSessionScreen = null;
-        _screens.ReplaceAll(new DefeatScreen((float)GetUiScale()));
+        _screens.ReplaceAll(new DefeatScreen((float)GetUiScale(), _session.Buffer.Presented?.Snapshot.Encounter));
         return true;
     }
 

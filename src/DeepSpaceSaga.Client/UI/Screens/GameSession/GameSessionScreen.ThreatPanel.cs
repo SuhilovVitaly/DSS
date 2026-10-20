@@ -28,7 +28,7 @@ public sealed partial class GameSessionScreen
         bool canCounter = _handle is not null && !snapshot.InstalledModules.IsDefaultOrEmpty && snapshot.InstalledModules.Any(m => !m.IsDestroyed && m.Defense?.Profiles is { IsDefaultOrEmpty: false });
         var rows = MakeThreatRows(PointThreats, predicted, CurrentThreatId, multiplier > 0 ? multiplier : .25,
             canCounter, _handle is not null && ManeuverEngineReady(ManeuverEngine()));
-        var free = AvailableMapRect(includeThreatPanel: false);
+        var free = AvailableMapRect(includeThreatPanel: false, includeEncounterHud: false);
         var logical = new SKRect(free.Left / _uiScale, free.Top / _uiScale, free.Right / _uiScale, free.Bottom / _uiScale);
         _threatPanel.Render(canvas, logical, rows, CombatSettings.PointCombat);
     }

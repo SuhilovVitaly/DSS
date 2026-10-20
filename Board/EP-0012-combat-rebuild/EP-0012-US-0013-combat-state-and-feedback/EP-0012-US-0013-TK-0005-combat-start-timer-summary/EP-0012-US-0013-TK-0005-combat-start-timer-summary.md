@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0013-combat-state-and-feedback"
 ticket: "EP-0012-US-0013-TK-0005-combat-start-timer-summary"
 title: "combat-start-timer-summary"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: ["EP-0012-US-0013-TK-0004-journal-and-reports-v3"]
-files_touched: 5
+files_touched: 13
 serves: ["US13-AC5"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0013-TK-0005-combat-start-timer-summary
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (13 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -34,9 +34,21 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | [src/DeepSpaceSaga.Client/UI/Screens/Defeat/DefeatLayout.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Defeat/DefeatLayout.cs) | Существует: src/DeepSpaceSaga.Client/UI/Screens/Defeat/DefeatLayout.cs:6; internal readonly record struct DefeatLayout(SKRect Panel, SKRect Load, SKRect MainMenu, float Scale) | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0005Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Encounter.cs` | NEW | Actual encounter HUD, hit/fit integration, session-bound start cue, native defeat/new-game/load wiring or localized summary labels. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs` | Existing | Actual encounter HUD, hit/fit integration, session-bound start cue, native defeat/new-game/load wiring or localized summary labels. |
+| `src/DeepSpaceSaga.Client/UI/CombatAlertAudio.cs` | Existing | Actual encounter HUD, hit/fit integration, session-bound start cue, native defeat/new-game/load wiring or localized summary labels. |
+| `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` | Existing | Actual encounter HUD, hit/fit integration, session-bound start cue, native defeat/new-game/load wiring or localized summary labels. |
+| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Existing | Actual encounter HUD, hit/fit integration, session-bound start cue, native defeat/new-game/load wiring or localized summary labels. |
+| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Existing | Actual encounter HUD, hit/fit integration, session-bound start cue, native defeat/new-game/load wiring or localized summary labels. |
+
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ThreatPanel.cs` | Existing | Regression found reciprocal layout dependency: threat panel measured last banner, banner measured threat panel. Measure threat from common base without encounter HUD, then place HUD around current threat panel. Keep old no-click-through test intact. |
+| `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0003Tests.cs` | Existing | Admission test now expects explicit EnemyLaunch plus CombatStarted cues; preserve pre-admission silence, exact launch cue, flash and offscreen indicator checks. |
+
 ## Public API after the change
 
-No public API change; внутренние детали ограничены перечисленным scope.
+GameSessionScreen optional playInitialCombatStart flag (native new game true, load false); DefeatScreen optional captured CombatEncounterSnapshot; append CombatStarted audio cue. Other details internal.
+
+Scope correction before code: keep encounter presentation in a partial, include summary/banner in hit testing and map obstacles. Wire existing concrete audio session and actual SkiaWindow defeat transition; constructor-only stats would not satisfy integration. Timer is authoritative physical DurationSeconds times four (nominal x1 real, excluding pauses), plus displayed Active interpolation; completed duration freezes. Won Continue sends existing acknowledgement and waits for admission, never mutates encounter locally. Broad localization audit remains US16.
 
 ## Implementation steps
 
@@ -75,4 +87,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 15 named / 2322 bounded regression (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0013-tk0005-results.json).
+
+Admitted Active banner/frame and x1 real timer, one-shot configured native CombatStarted cue (new game opt-in, load baseline silent), nonmodal scrollable Won stats/Continue, captured Defeat stats through actual SkiaWindow transition, disabled x5+ and localized reason. Actual hostile encounter -> real own launch/death/Won -> aiming stays available -> double-click Continue sends one executed acknowledgement, no local state mutation or underlying launch. Related threat/HUD 58/58 PASS. Fixed reciprocal threat/banner layout found by regression; original no-click-through assertions retained. Initial audio assertion updated to explicitly check both admitted cue kinds. Headless layouts/scroll/100-150 percent images inspected; native/heard audio NOT RUN. Story automated review recorded; canonical data/native/product/strict budget OPEN.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.

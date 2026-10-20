@@ -214,7 +214,7 @@ public sealed partial class GameSessionScreen
         }
     }
 
-    internal SKRect AvailableMapRect(bool includeThreatPanel = true)
+    internal SKRect AvailableMapRect(bool includeThreatPanel = true, bool includeEncounterHud = true)
     {
         _mapObstacles.Clear();
         void Add(SKRect r)
@@ -226,6 +226,7 @@ public sealed partial class GameSessionScreen
         Add(CombatReportsBounds);
         Add(_combatJournalPanel.Bounds);
         if (includeThreatPanel) Add(_threatPanel.Bounds);
+        if (includeEncounterHud) { Add(_combatSummaryPanel.Bounds); Add(CombatBannerRect); }
         if (_panelVisible) Add(_lastPanelRect);
         Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect); Add(_lastGameTimeRect);
         var hash = new HashCode(); hash.Add(_viewportW); hash.Add(_viewportH);

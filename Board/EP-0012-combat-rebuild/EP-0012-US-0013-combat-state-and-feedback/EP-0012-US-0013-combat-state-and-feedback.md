@@ -59,7 +59,7 @@ Execution order задаётся ticket DAG, который допускает �
 | 42 / [EP-0012-US-0013-TK-0002-weapon-panels-v3](EP-0012-US-0013-TK-0002-weapon-panels-v3/EP-0012-US-0013-TK-0002-weapon-panels-v3.md) | contracts-engine-client | EP-0012-US-0013-TK-0001-module-diagram | US13-AC2 | 9 |
 | 43 / [EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels](EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels/EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels.md) | engine-client | EP-0012-US-0013-TK-0002-weapon-panels-v3 | US13-AC3 | 8 |
 | 44 / [EP-0012-US-0013-TK-0004-journal-and-reports-v3](EP-0012-US-0013-TK-0004-journal-and-reports-v3/EP-0012-US-0013-TK-0004-journal-and-reports-v3.md) | client | EP-0012-US-0013-TK-0003-enemy-badges-and-hit-labels | US13-AC4 | 12 |
-| 45 / [EP-0012-US-0013-TK-0005-combat-start-timer-summary](EP-0012-US-0013-TK-0005-combat-start-timer-summary/EP-0012-US-0013-TK-0005-combat-start-timer-summary.md) | client | EP-0012-US-0013-TK-0004-journal-and-reports-v3 | US13-AC5 | 5 |
+| 45 / [EP-0012-US-0013-TK-0005-combat-start-timer-summary](EP-0012-US-0013-TK-0005-combat-start-timer-summary/EP-0012-US-0013-TK-0005-combat-start-timer-summary.md) | client | EP-0012-US-0013-TK-0004-journal-and-reports-v3 | US13-AC5 | 13 |
 
 ## Decisions / Assumptions
 
@@ -72,3 +72,11 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 ## Decision / review log
 
 2026-10-20T07:48:46.640Z: создано по поручению пользователя. Разделение слоёв/<=5 файлов — техническая декомпозиция. Stage draft, implementation NOT STARTED, проверки кода не запускались.
+
+## Story execution review — 2026-10-20
+
+Все пять implementation-тикетов US13 реализованы и проверены на текущем переходном point runtime. Финальная небюджетная Client regression: 2322/2322, solution build и scoped format PASS. Это self-review, не независимое review и не native/product acceptance.
+
+Проверена цепочка собственная схема модулей -> панели/профили/перезарядка -> подрыв через реальный transport; публичные enemy status и actual wreck -> geometric labels -> журнал/отчёты без чужих числовых повреждений; реальный hostile encounter -> уничтожение NPC -> немодальная Won сводка -> одна подтверждённая команда Continue. Прокрутка и геометрия совместных threat/HUD, собственный контекст журнала, захваченный докладчик и терминальные кнопки Defeat сохранены. [Фактические команды, результаты и ограничения](../evidence/us0013-tk0005-results.json).
+
+Приёмка остаётся OPEN: native window/GPU/input/heard audio NOT RUN; канонические production JSON/сценарии активируются следующими US2/US9; полное point Save18 выполняется соответствующими тикетами, а не подменяется проверкой одного wreck-поля; строгий legacy ForecastBudget и полный Engine gate ещё не закрыты. Поэтому stage истории остаётся in_progress.

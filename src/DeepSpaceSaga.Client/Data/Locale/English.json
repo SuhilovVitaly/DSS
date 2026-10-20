@@ -460,5 +460,20 @@
   "Combat.Hit.Miss": "Miss",
   "Combat.Hit.ShotDown": "Shot down",
   "Combat.InterceptedProjectiles": "Intercepted projectiles",
-  "Combat.Event.LegacyResolution": "Weapon event"
+  "Combat.Event.LegacyResolution": "Weapon event",
+  "Combat.Battle": "COMBAT",
+  "Combat.BattleSummary": "Combat complete",
+  "Combat.Continue": "Continue",
+  "Combat.Duration": "Duration",
+  "Combat.Reason.combat_speed_locked": "Only pause and x1 are available during combat",
+  "Combat.Stats.TorpedoesLaunched": "Torpedoes launched",
+  "Combat.Stats.CountermissilesLaunched": "Countermissiles launched",
+  "Combat.Stats.EnemyTorpedoesLaunched": "Enemy torpedoes launched",
+  "Combat.Stats.TorpedoesIntercepted": "Torpedoes intercepted",
+  "Combat.Stats.PlayerHitsReceived": "Hits received",
+  "Combat.Stats.EnemyHitsDealt": "Hits on enemies",
+  "Combat.Stats.PlayerEvasions": "Evades",
+  "Combat.Stats.EnemiesDestroyed": "Enemies destroyed",
+  "Combat.Stats.ArmorDamageTaken": "Own armor lost",
+  "Combat.Stats.StructureDamageTaken": "Own structure lost"
 }
