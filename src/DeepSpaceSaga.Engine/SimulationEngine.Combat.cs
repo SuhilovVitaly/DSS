@@ -191,7 +191,6 @@ public sealed partial class SimulationEngine
             o.InitialMotion.Torpedo is { } flight && flight.OwnerObjectId == command.ObjectId && flight.LauncherModuleId == command.ModuleId);
         if (projectile is null) return CommandStartOutcome.Rejected("stale_projectile");
         TerminateTorpedo(projectile, motionTimeMs, TorpedoTerminationKind.SelfDestruct);
-        RemoveLostCountermeasures(motionTimeMs);
         RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
         return CommandStartOutcome.Started;
     }
@@ -240,24 +239,14 @@ public sealed partial class SimulationEngine
         while (true)
         {
             var impact = FindFirstImpact(cursor, motionTimeMs);
-            var launch = NextDefenseLaunch(cursor, motionTimeMs);
-            var pendingBurst = NextPendingBurst(motionTimeMs);
             var hostileLaunch = NextHostileLaunch(cursor, motionTimeMs);
             var npcDodge = NextNpcDodge(cursor, motionTimeMs);
-            var intercept = FindFirstIntercept(cursor, motionTimeMs);
-            var expiry = _objects.Where(o => o.InitialMotion.Countermeasure is not null)
-                .OrderBy(o => CountermeasureExpiry(o.InitialMotion.Countermeasure!))
-                .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).FirstOrDefault();
-            double expiryTime = expiry is null ? double.PositiveInfinity : CountermeasureExpiry(expiry.InitialMotion.Countermeasure!);
             var torpedoExpiry = _objects.Where(o => o.InitialMotion.Torpedo?.ExpiresAtMotionTimeMs is not null)
                 .OrderBy(o => o.InitialMotion.Torpedo!.ExpiresAtMotionTimeMs)
                 .ThenBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal).FirstOrDefault();
             double torpedoExpiryTime = torpedoExpiry?.InitialMotion.Torpedo?.ExpiresAtMotionTimeMs ?? double.PositiveInfinity;
-            double eventTime = Math.Min(launch?.Time ?? double.PositiveInfinity,
-                Math.Min(intercept?.Contact.MotionTimeMs ?? double.PositiveInfinity, expiryTime));
-            eventTime = Math.Min(eventTime, hostileLaunch?.Time ?? double.PositiveInfinity);
+            double eventTime = hostileLaunch?.Time ?? double.PositiveInfinity;
             eventTime = Math.Min(eventTime, npcDodge?.DueAt ?? double.PositiveInfinity);
-            eventTime = Math.Min(eventTime, pendingBurst?.Shot.DueMotionTimeMs ?? double.PositiveInfinity);
             eventTime = Math.Min(eventTime, torpedoExpiryTime);
             double pointTime = NextPointDetonationTime();
             if (pointTime <= motionTimeMs && pointTime <= eventTime &&
@@ -273,30 +262,13 @@ public sealed partial class SimulationEngine
             {
                 ApplyImpact(hit.Projectile, hit.Target, hit.Contact);
                 cursor = hit.Contact.MotionTimeMs;
-                RemoveLostCountermeasures(cursor);
                 CapturePresentationFrame(cursor);
                 if (IsDefeated) return;
-                continue;
-            }
-            if (intercept is { } encounter && encounter.Contact.MotionTimeMs <= eventTime)
-            {
-                ResolveFirstIntercept(encounter.Projectile, encounter.Target, encounter.Contact);
-                cursor = encounter.Contact.MotionTimeMs;
-                RemoveLostCountermeasures(cursor);
-                CapturePresentationFrame(cursor);
-                continue;
-            }
-            if (expiry is not null && expiryTime <= eventTime && expiryTime <= motionTimeMs)
-            {
-                ExpireCountermeasure(expiry, expiryTime);
-                cursor = expiryTime;
-                CapturePresentationFrame(cursor);
                 continue;
             }
             if (torpedoExpiry is not null && torpedoExpiryTime <= eventTime && torpedoExpiryTime <= motionTimeMs)
             {
                 TerminateTorpedo(torpedoExpiry, torpedoExpiryTime, TorpedoTerminationKind.Expired);
-                RemoveLostCountermeasures(torpedoExpiryTime);
                 cursor = torpedoExpiryTime;
                 CapturePresentationFrame(cursor);
                 continue;
@@ -305,20 +277,6 @@ public sealed partial class SimulationEngine
             {
                 ExecuteNpcDodge(npcDodge);
                 cursor = npcDodge.DueAt;
-                CapturePresentationFrame(cursor);
-                continue;
-            }
-            if (pendingBurst is { } burst && burst.Shot.DueMotionTimeMs <= eventTime)
-            {
-                ProcessPendingBurst(burst.Key, burst.Shot);
-                cursor = burst.Shot.DueMotionTimeMs;
-                CapturePresentationFrame(cursor);
-                continue;
-            }
-            if (launch is not null && launch.Time <= eventTime)
-            {
-                LaunchCountermeasure(launch);
-                cursor = launch.Time;
                 CapturePresentationFrame(cursor);
                 continue;
             }
@@ -338,17 +296,6 @@ public sealed partial class SimulationEngine
         for (int i = 0; i < _objects.Count; i++)
         {
             var obj = _objects[i];
-            if (obj.InitialMotion.Countermeasure is { } defenseFlight && motionTimeMs > obj.StartGameTimeMs)
-            {
-                var predictedDefense = CountermeasureGuidanceMath.Predict(obj.InitialMotion, motionTimeMs - obj.StartGameTimeMs);
-                _objects[i] = obj with
-                {
-                    InitialMotion = predictedDefense with
-                    { Countermeasure = predictedDefense.Countermeasure! with { Trail = CloseCountermeasureHistory(obj, motionTimeMs) } },
-                    StartGameTimeMs = motionTimeMs
-                };
-                continue;
-            }
             if (obj.InitialMotion.Torpedo is not { } flight || motionTimeMs <= obj.StartGameTimeMs) continue;
             long elapsed = motionTimeMs - obj.StartGameTimeMs;
             var predicted = TorpedoGuidanceMath.Predict(obj.InitialMotion, elapsed);

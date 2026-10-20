@@ -10,9 +10,7 @@ public sealed partial class SimulationEngine
         Combat.CountermeasureRng.AlgorithmVersion, _countermeasureRng.State, _countermeasureRng.Counter, _combatJournalSequence,
         _defenses.OrderBy(p => p.Key.ObjectId, StringComparer.Ordinal).ThenBy(p => p.Key.ModuleId, StringComparer.Ordinal)
             .Select(p => new DefenseLauncherSaveData(p.Key.ObjectId, p.Key.ModuleId, p.Value)).ToArray(),
-        _objects.Where(o => o.InitialMotion.Countermeasure is not null).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal)
-            .Select(o => new CountermeasureProjectileSaveData(o.InitialMotion.ObjectId, o.InitialMotion.Countermeasure!,
-                _countermeasureTargetPlans.GetValueOrDefault(o.InitialMotion.ObjectId))).ToArray(),
+        [],
         _combatJournal.ToArray(),
         _objects.Any(o => o.InitialMotion.ObjectId == SelectedObjectId && o.InitialMotion.Countermeasure is not null) ? SelectedObjectId : null);
 
@@ -99,7 +97,6 @@ public sealed partial class SimulationEngine
         _combatJournalSequence = saved.JournalSequence;
         _combatJournal.AddRange(saved.Journal);
         SelectedObjectId = saved.SelectedProjectileId;
-        foreach (var row in saved.Projectiles) _countermeasureTargetPlans.Add(row.ObjectId, row.TargetPlanStartMotionTimeMs);
     }
 
     private CombatStateData CaptureCombatState(long motionTimeMs) => new(

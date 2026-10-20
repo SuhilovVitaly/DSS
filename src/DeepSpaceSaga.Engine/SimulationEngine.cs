@@ -499,7 +499,6 @@ public sealed partial class SimulationEngine : IDisposable
             _countermeasureSequence = 0;
             _combatJournal.Clear();
             _combatJournalSequence = 0;
-            _countermeasureTargetPlans.Clear();
             _countermeasureRng = new(resolvedMasterSeed);
             _moduleHitLocationRng = new(resolvedMasterSeed);
             _launchScatterRng = new(resolvedMasterSeed);
@@ -1006,7 +1005,6 @@ public sealed partial class SimulationEngine : IDisposable
                     ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
                     : moduleType.CountermeasureAccuracy is not null || moduleType.IsPointLauncher && moduleType.CategoryTypeId == "module.countermeasure.launcher"
                         ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null,
-                DefensePreview: moduleType.IsPointLauncher ? null : BuildDefensePreview(ship, module, motionTimeMs),
                 ArmorCurrent: module.Armor,
                 ArmorMax: module.ArmorMax,
                 StructureCurrent: module.StructurePoints,
@@ -2487,6 +2485,8 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartEvade(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Detonate)
             return TryStartPointDetonation(command, gameTimeMs);
+        if (command.CommandType is "defense.fire" or "defense.enable" or "defense.disable")
+            return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
         if (UsesPointEncounters && command.CommandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or
             "defense.fire" or "defense.enable" or "defense.disable")
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
@@ -2494,10 +2494,6 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartTorpedoFire(command, gameTimeMs);
         if (command.CommandType == TorpedoLauncherCommandTypes.SetMode)
             return TrySetFireMode(command, gameTimeMs);
-        if (command.CommandType == DefenseCommandTypes.Fire)
-            return TryManualDefenseFire(command, gameTimeMs);
-        if (command.CommandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
-            return TrySetDefense(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.SelfDestruct)
             return TrySelfDestruct(command, gameTimeMs);
 
@@ -3583,7 +3579,6 @@ public sealed partial class SimulationEngine : IDisposable
             CompleteActiveEngineCycles(next);
             if (advanced && next >= _nextHostileDecisionMs) RefreshHostileCombat(next);
             RefreshCombatGuidance(next);
-            RefreshCountermeasureGuidance(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             EvaluateCombatReportRange(next);

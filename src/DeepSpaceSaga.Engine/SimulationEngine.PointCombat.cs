@@ -19,6 +19,12 @@ public sealed partial class SimulationEngine
         var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == command.ObjectId &&
             o.InitialMotion.ObjectId == PlayerShipObjectId && o.ObjectType == SpaceObjectType.PlayerShip && !o.IsDestroyed);
         if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
+        // A durable successful launch identity outlives the bounded receipt window.
+        if (_processedLaunchCommandIds.Contains(command.CommandId))
+        {
+            RecordCommandResult(command, CommandResultStatus.Executed, motionTimeMs);
+            return CommandStartOutcome.Started;
+        }
         var result = TryLaunchPointProjectile(owner, command.ModuleId, command.TargetWorldX, command.TargetWorldY,
             command.ProfileId, motionTimeMs, kind);
         if (result.Disposition == CommandStartDisposition.Started)
@@ -290,7 +296,6 @@ public sealed partial class SimulationEngine
         string id = projectile.InitialMotion.ObjectId;
         _objects.RemoveAll(o => o.InitialMotion.ObjectId == id);
         _torpedoTargets.Remove(id);
-        _countermeasureTargetPlans.Remove(id);
         string? owner = projectile.InitialMotion.OwnProjectile?.OwnerObjectId ?? projectile.InitialMotion.Torpedo?.OwnerObjectId ??
             projectile.InitialMotion.Countermeasure?.OwnerObjectId;
         string? module = projectile.InitialMotion.OwnProjectile?.LauncherModuleId ?? projectile.InitialMotion.Torpedo?.LauncherModuleId ??

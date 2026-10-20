@@ -53,11 +53,10 @@ public sealed partial class SimulationEngine
         var seen = new HashSet<(string, string, string, string)>();
         foreach (var r in state.CombatReactionDelays ?? [])
         {
-            if (r is null || r.Kind is not ("hostile" or "defense") || string.IsNullOrWhiteSpace(r.OwnerId) ||
+            if (r is null || r.Kind != "hostile" || string.IsNullOrWhiteSpace(r.OwnerId) ||
                 string.IsNullOrWhiteSpace(r.ModuleId) || string.IsNullOrWhiteSpace(r.TargetId) ||
                 r.EligibleAt < 0 || r.EligibleAt > state.MotionTimeMs || !double.IsFinite(r.ReadyAt) || r.ReadyAt < 0 || r.ReadyAt > r.EligibleAt ||
                 r.DueAt < r.EligibleAt || r.DueAt - r.EligibleAt is < 500 or > 1250 ||
-                r.Kind == "defense" && r.OwnerId != state.PlayerShipObjectId ||
                 !seen.Add((r.Kind, r.OwnerId, r.ModuleId, r.TargetId)) ||
                 !state.SpaceObjects.Any(o => o.ObjectId == r.OwnerId && !o.IsDestroyed &&
                     o.Modules?.Any(m => m.ModuleId == r.ModuleId) == true) ||

@@ -35,16 +35,4 @@ public sealed partial class SimulationEngine
         DestroyReason = entry.TargetObjectId == PlayerShipObjectId ? entry.DestroyReason : null
     };
 
-    private void AppendCountermeasureEvent(SpaceObjectRuntime projectile, double time, CombatEventType type,
-        string result, int? roll = null, CountermeasureTerminationKind? termination = null)
-    {
-        var flight = projectile.InitialMotion.Countermeasure!;
-        var point = CombatPath(projectile).Position(time);
-        AppendCombatEvent(new(0, time, type, flight.OwnerObjectId, flight.TargetTorpedoId,
-            projectile.InitialMotion.ObjectId, point.X, point.Y, flight.FrozenChanceTenths, roll,
-            flight.RatingBreakdown, Damage: 0, Result: result, LauncherModuleId: flight.LauncherModuleId,
-            LaunchMode: flight.Mode, Accuracy: flight.CapturedAccuracy ?? flight.RatingBreakdown.DefenseOperator.EffectiveRating,
-            TargetManeuverability: flight.CapturedTargetManeuverability ?? flight.RatingBreakdown.TorpedoRating,
-            TerminationKind: termination));
-    }
 }

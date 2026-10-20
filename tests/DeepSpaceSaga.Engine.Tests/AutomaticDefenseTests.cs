@@ -1,30 +1,15 @@
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
+using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
+
 namespace DeepSpaceSaga.Engine.Tests;
 
 public class AutomaticDefenseTests
 {
-    [Fact]
-    public void Automatic_launcher_aims_toward_intercept_when_carrier_faces_away()
-    {
-        var scenario = DefenseScenario();
-        scenario = scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with { DirectionDegrees = 0 } : o).ToArray()
-            }
-        };
-        using var engine = Create(scenario);
-        engine.ReceiveCommand(Fire("fire"));
-        At(engine, 0);
-        var projectile = Assert.Single(At(engine, 100).Objects, o => o.Countermeasure is not null);
-        var launch = projectile.Countermeasure!.Route.Segments[0];
-        Assert.InRange(launch.Direction, 179, 181);
-        Assert.InRange(projectile.Countermeasure.Route.Segments.Sum(s => Math.Abs(s.AngularVelocityDegPerSec) * s.DurationMs / 1000), 0, .01);
-    }
-
+    // Temporary historical helpers for the remaining consumers being migrated in this ticket.
     internal static DeepSpaceSaga.Engine.Content.GameDataRegistry WeaponRegistry(decimal accuracy, decimal maneuverability)
     {
         var source = Registry.Value;
@@ -40,109 +25,83 @@ public class AutomaticDefenseTests
             combatRules: source.CombatRules! with { Chance = Assert.IsType<DeepSpaceSaga.Engine.Content.CombatChanceRules>(source.CombatRules.Chance) with { Base = 0 } },
             fireModes: source.FireModes);
     }
-    [Theory]
-    [InlineData(45)]
-    [InlineData(120)]
-    public void Replanning_preserves_configured_countermeasure_speed_and_turn_rate(double turnRate)
-    {
-        var source = Registry.Value;
-        static IEnumerable<T> All<T>(DeepSpaceSaga.Engine.Content.TypeRegistry<T> registry)
-            where T : DeepSpaceSaga.Engine.Content.ITypeDefinition => Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
-        var registry = DeepSpaceSaga.Engine.Content.GameDataRegistry.Create(All(source.ModuleCategories),
-            All(source.ModuleTypes).Select(m => m.CountermeasureAccuracy is null ? m :
-                m with { CountermeasureSpeedKmS = 8, CountermeasureTurnRateDegPerSec = turnRate }),
-            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
-            All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses));
-        using var engine = new SimulationEngine(registry);
-        engine.LoadScenario(DefenseScenario());
-        engine.ReceiveCommand(Fire("fire")); At(engine, 0); At(engine, 1000);
-        var save = engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0);
-        var defense = save.GameState.DefenseState!;
-        Assert.Single(defense.Projectiles);
-        // A stale target-plan baseline requires an authoritative replan on the next guidance boundary.
-        save = save with
-        {
-            GameState = save.GameState with
-            {
-                DefenseState = defense with
-                { Projectiles = defense.Projectiles.Select(p => p with { TargetPlanStartMotionTimeMs = 1 }).ToArray() }
-            }
-        };
-        using var resumed = new SimulationEngine(registry);
-        resumed.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), isSave: true);
-        var pr = Assert.Single(At(resumed, 1100).Objects, o => o.Countermeasure is not null);
-        Assert.Equal(1100, pr.Countermeasure!.Route.StartMotionTimeMs);
-        Assert.All(pr.Countermeasure.Route.Segments, s =>
-        {
-            Assert.Equal(8, s.SpeedKmS);
-            Assert.InRange(Math.Abs(s.AngularVelocityDegPerSec), 0, turnRate);
-        });
-        var replanned = resumed.CaptureSaveStateForTests(1100, SimulationSpeed.Speed0);
-        using var roundtripped = new SimulationEngine(registry);
-        roundtripped.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(replanned), true), isSave: true);
-        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(At(resumed, 25000).CombatJournal),
-            System.Text.Json.JsonSerializer.Serialize(At(roundtripped, 25000).CombatJournal));
-    }
-
     internal static ScenarioFile DefenseScenario(double distance = 600) => TorpedoImpactTests.Scenario(o => o with
     {
         PositionY = o.ObjectId == Player ? 0 : -distance,
         DirectionDegrees = o.ObjectId == Player ? 0 : 180,
         Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = true }).ToArray()
     });
-    [Fact]
-    public void Defense_fires_only_after_time_advances_and_reserves_once()
+
+    [Theory]
+    [InlineData(0d)]
+    [InlineData(90d)]
+    [InlineData(180d)]
+    [InlineData(270d)]
+    public void Explicit_point_ray_ignores_carrier_bearing_and_never_replans(double bearing)
     {
-        using var engine = Create(DefenseScenario());
-        engine.ReceiveCommand(Fire("fire"));
-        Assert.DoesNotContain(At(engine, 0).Objects, o => o.Countermeasure is not null);
-        Assert.DoesNotContain(At(engine, 0, 1000).Objects, o => o.Countermeasure is not null);
-        var snapshot = At(engine, 100, 1100);
-        var pr = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(500, pr.Countermeasure!.FrozenChanceTenths);
-        Assert.Equal(Assert.Single(snapshot.Objects, o => o.Torpedo is not null).ObjectId,
-            pr.Countermeasure.TargetTorpedoId);
-        Assert.Equal(12, pr.SpeedKmS);
-        Assert.Equal(DefenseState.Guiding, snapshot.Objects.Single(o => o.ObjectId == Target).Defense!.State);
+        using var engine = Point.Create(configure: o => o.ObjectId == Point.Player ? o with { DirectionDegrees = bearing } : o);
+        engine.ReceiveCommand(Point.Shot(x: 150, y: 0)); var state = Point.At(engine); var flight = Point.Flight(state);
+        Assert.Equal(bearing, state.Objects.Single(o => o.ObjectId == Point.Player).Direction);
+        Assert.Equal(90, state.Objects.Single(o => o.OwnProjectile is not null).Direction);
+        var middle = Point.Flight(Point.At(engine, 500)); Assert.Equal(75, middle.X, 8); Assert.Equal(0, middle.Y);
+        Assert.Equal(flight.DetonationMotionTimeMs, middle.DetonationMotionTimeMs);
+        Assert.Equal((150d, 0d), (middle.DetonationX, middle.DetonationY));
+        Assert.DoesNotContain(Point.At(engine, 1001).Objects, o => o.OwnProjectile is not null);
     }
+
     [Fact]
-    public void Range_entry_is_found_inside_large_interval()
+    public void Active_counter_keeps_captured_profile_when_future_catalog_values_change()
     {
-        using var engine = Create(DefenseScenario(1500));
-        engine.ReceiveCommand(Fire("fire")); At(engine, 0);
-        Assert.DoesNotContain(At(engine, 16000).Objects, o => o.Countermeasure is not null);
-        var pr = Assert.Single(At(engine, 18000).Objects, o => o.Countermeasure is not null);
-        Assert.Equal(16667, pr.Countermeasure!.LaunchMotionTimeMs);
+        using var original = Point.Create(); original.ReceiveCommand(Point.Shot(profile: "fast", x: 250, y: 0)); Point.At(original);
+        var save = Point.Save(original, 400); var source = Point.Registry();
+        static IEnumerable<T> All<T>(TypeRegistry<T> types) where T : ITypeDefinition => Enumerable.Range(0, types.Count).Select(types.GetDefinition);
+        var changed = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Select(m => m.TypeId == "module.countermeasure.launcher.basic"
+            ? m with { Profiles = [new("wide", 15, 1), new("fast", 7, 2)] } : m), All(source.ItemTypes), All(source.CommandDefinitions),
+            All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
+        using var loaded = new SimulationEngine(changed); loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        var flight = Point.Flight(Point.At(loaded, 999)); Assert.Equal(25, flight.SpeedKmS); Assert.Equal(.5, flight.BlastRadiusKm);
+        Assert.Equal(1000, flight.DetonationMotionTimeMs); Assert.Equal(249.75, flight.X, 8);
+        Assert.DoesNotContain(Point.At(loaded, 1001).Objects, o => o.OwnProjectile is not null);
+        Point.At(loaded, 12500); loaded.ReceiveCommand(Point.Shot("next", profile: "fast", x: 250, y: 0));
+        var next = Point.Flight(Point.At(loaded, 12500)); Assert.Equal(7, next.SpeedKmS); Assert.Equal(2, next.BlastRadiusKm);
+        Assert.Equal(12500 + 250 / 70d * 1000, next.DetonationMotionTimeMs, 8);
     }
+
     [Fact]
-    public void Zero_chance_does_not_consume_attempt()
+    public void Real_incoming_torpedo_crosses_counter_range_without_automatic_launch_or_attempt()
     {
-        using var engine = new SimulationEngine(WeaponRegistry(0, 100));
-        engine.LoadScenario(DefenseScenario(600));
-        engine.ReceiveCommand(Fire("fire")); At(engine, 0);
-        var snapshot = At(engine, 1000);
-        Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.Single(snapshot.Objects, o => o.Torpedo is not null);
+        using var engine = Point.Create(enemyArmed: true, enemyX: 600);
+        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(Point.Enemy, Point.EnemyTorpedo, 0, 0, "slow", 0).Disposition);
+        var before = engine.CaptureLaunchScatterState();
+        foreach (long time in new long[] { 0, 4900, 5000, 5100, 6000 })
+        {
+            var state = Point.At(engine, time); Assert.Contains(state.Objects, o => o.ObservedProjectile is not null);
+            Assert.DoesNotContain(state.Objects, o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile);
+            Assert.DoesNotContain(state.CombatJournal, e => e.Type == CombatEventType.Launch && e.ProjectileKind == ProjectileKind.Countermissile);
+            Assert.Equal(before, engine.CaptureLaunchScatterState()); Assert.Equal(0UL, Point.Save(engine, time).GameState.DefenseState!.RngCounter);
+        }
     }
+
     [Fact]
-    public void Disable_blocks_future_launches()
+    public void Historical_auto_flags_and_enable_command_cannot_activate_point_defense()
     {
-        using var engine = Create(DefenseScenario());
-        var module = Assert.Single(At(engine, 0).InstalledModules, m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01");
-        engine.ReceiveCommand(new("disable", 1, Player, module.ModuleId, DefenseCommandTypes.Disable));
-        Assert.False(At(engine, 0).InstalledModules.Single(m => m.ModuleId == module.ModuleId).Defense!.AutoEnabled);
+        using var engine = Point.Create(configure: o => o with { Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = true }).ToArray() });
+        engine.ReceiveCommand(new("enable", 1, Point.Player, Point.Counter, "defense.enable")); var state = Point.At(engine);
+        Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(state.CommandResults).ReasonCode);
+        Assert.All(Point.Save(engine).GameState.DefenseState!.Launchers, l => Assert.False(l.State.AutoEnabled));
+        Assert.DoesNotContain(Point.At(engine, 1000).Objects, o => o.OwnProjectile is not null);
+        Assert.Equal(0UL, engine.CaptureLaunchScatterState().Counter);
     }
+
     [Fact]
-    public void Direct_fire_at_countermeasure_is_rejected_before_side_effects()
+    public void Retired_target_fire_cannot_replace_or_mutate_an_existing_area_counter()
     {
-        using var engine = Create(DefenseScenario());
-        engine.ReceiveCommand(Fire("fire")); At(engine, 0);
-        var snapshot = At(engine, 100);
-        string pr = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null).ObjectId;
-        // The launcher is also busy; either guard leaves the original flight and attempt intact.
-        engine.ReceiveCommand(Fire("illegal", pr));
-        snapshot = At(engine, 100);
-        Assert.Equal(CommandResultStatus.Rejected, Assert.Single(snapshot.CommandResults).Status);
-        Assert.Single(snapshot.Objects, o => o.Torpedo is not null);
+        using var engine = Point.Create(); engine.ReceiveCommand(Point.Shot()); var state = Point.At(engine);
+        var original = Point.Flight(state); string id = state.Objects.Single(o => o.OwnProjectile is not null).ObjectId;
+        var before = engine.CaptureLaunchScatterState();
+        engine.ReceiveCommand(new("retired-target", 2, Point.Player, Point.Torpedo, "torpedo.fire", id));
+        var rejected = Point.At(engine); Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(rejected.CommandResults).ReasonCode);
+        Assert.Equal(original, Point.Flight(rejected)); Assert.Equal(before, engine.CaptureLaunchScatterState());
     }
 }

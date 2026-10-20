@@ -28,7 +28,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs` (retired by US4-TK3) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.DefensePreview.cs:6; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | [src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
