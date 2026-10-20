@@ -11,6 +11,8 @@ public static class CurrentManeuverForecast
 
     internal static Func<double, Pose> CreateSampler(ObjectMotionSnapshot state)
     {
+        if (state.OwnProjectile is not null || state.ObservedProjectile is not null)
+            return ms => { var p = Sample(state, ms); return new(p.X, p.Y, p.SpeedKmS, p.Direction); };
         if (state.HostileCombat is { Segment: var controls })
         {
             double a = controls.AccelerationKmS2;
@@ -47,6 +49,7 @@ public static class CurrentManeuverForecast
     }
 
     public static bool HasRequiredData(ObjectMotionSnapshot state) =>
+        state.OwnProjectile is not null || state.ObservedProjectile is not null ||
         state.HostileCombat is { Segment.AccelerationKmS2: 0 } ||
         state.HostileCombat is not null && state.MaxSpeedKmS is > 0 ||
         state.HostileCombat is null && (ValidEngineManeuver(state) || state.ActiveEngineCommandType is not
@@ -64,6 +67,27 @@ public static class CurrentManeuverForecast
     public static ObjectMotionSnapshot Sample(ObjectMotionSnapshot state, double elapsedMs)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(elapsedMs);
+        if (!double.IsFinite(elapsedMs)) throw new ArgumentOutOfRangeException(nameof(elapsedMs));
+        if (state.OwnProjectile is { } own)
+        {
+            if (!double.IsFinite(own.SpeedKmS) || own.SpeedKmS <= 0) throw new ArgumentException("Invalid own projectile speed.", nameof(state));
+            double dx = own.DetonationX - own.X, dy = own.DetonationY - own.Y;
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+            double progress = distance == 0 ? 1 : elapsedMs * own.SpeedKmS / 100 / distance;
+            var p = BlastMath.PositionAt(own.X, own.Y, own.DetonationX, own.DetonationY, progress);
+            return state with { X = p.X, Y = p.Y, OwnProjectile = own with { X = p.X, Y = p.Y } };
+        }
+        if (state.ObservedProjectile is { } observed)
+        {
+            if (!double.IsFinite(observed.SpeedKmS) || observed.SpeedKmS <= 0) throw new ArgumentException("Invalid observed projectile speed.", nameof(state));
+            double length = Math.Sqrt(observed.DirectionX * observed.DirectionX + observed.DirectionY * observed.DirectionY);
+            if (length == 0 || !double.IsFinite(length)) throw new ArgumentException("Invalid observed projectile direction.", nameof(state));
+            double distance = observed.SpeedKmS * elapsedMs / 100;
+            double x = observed.X + observed.DirectionX / length * distance;
+            double y = observed.Y + observed.DirectionY / length * distance;
+            if (!double.IsFinite(x) || !double.IsFinite(y)) throw new ArgumentOutOfRangeException(nameof(elapsedMs));
+            return state with { X = x, Y = y, ObservedProjectile = observed with { X = x, Y = y } };
+        }
         if (!HasRequiredData(state)) return state;
         if (state.EngineManeuver is { } command && ValidEngineManeuver(state))
             return SampleEngineCommand(state, command, elapsedMs);

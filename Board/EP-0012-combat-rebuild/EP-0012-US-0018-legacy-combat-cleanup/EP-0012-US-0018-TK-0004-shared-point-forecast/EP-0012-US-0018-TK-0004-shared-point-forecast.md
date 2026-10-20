@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0018-legacy-combat-cleanup"
 ticket: "EP-0012-US-0018-TK-0004-shared-point-forecast"
 title: "shared-point-forecast"
-stage: "draft"
+stage: "implemented"
 layer: "motion"
 depends_on: ["EP-0012-US-0006-TK-0001-blast-threat-math"]
 files_touched: 3
 serves: ["US18-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0018-TK-0004-shared-point-forecast
@@ -35,6 +35,8 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 ## Public API after the change
 
 No public API change; использовать контракт зависимых тикетов.
+
+Execution refinement: добавить CombatForecast.PointProjectile с существующими options/cancellation/result и dispatch новых DTO из существующих Torpedo/Countermeasure. ProjectilePose поддерживает прямые point samples без legacy guidance legs; ModelVersion увеличивается. CurrentManeuverForecast.Sample/CreateSampler обрабатывают OwnProjectile/ObservedProjectile до legacy motion. Own forecast ограничен captured deadline, area-contact проверяется только в момент подрыва; foreign forecast — только наблюдаемая прямая, InsufficientData без целевой точки/ETA подрыва и без target prediction. Временная legacy ветвь нужна текущим consumers до US-0018 cleanup и не считается итоговым удалением guidance. Scope остаётся 3 файла.
 
 ## Implementation steps
 
@@ -72,4 +74,8 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-20: implementation и self-review выполнены. PASS 7 named / 237 full owning tests (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0018-tk0004-results.json).
+
+Новые DTO проходят реальные shared Torpedo/Countermeasure entrypoints. Own route строго до captured дробного deadline; contact определяется областью только в detonation time, не пересечением корпуса раньше. Foreign route не имеет target/endpoint/Contact ETA. Проверены finite horizon, cancellation, point/step budgets, expiry и early target detonation. Общая сборка решения PASS, 0 warnings/errors, 5.57s. Legacy ветви сохраняются до explicit consumer cleanup; это не итоговая интеграционная приёмка.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
