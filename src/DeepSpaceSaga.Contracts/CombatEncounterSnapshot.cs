@@ -5,6 +5,11 @@ namespace DeepSpaceSaga.Contracts;
 /// <summary>One encounter's state; independent of the session's terminal outcome.</summary>
 public enum CombatEncounterState { Idle, Active, Won, Lost }
 
+public static class CombatEncounterCommandTypes
+{
+    public const string AcknowledgeResults = "combat.acknowledgeResults";
+}
+
 /// <summary>
 /// Authoritative encounter counters. Launches, interceptions and evades concern the player;
 /// enemy launches count hostile torpedoes. Hits require positive damage, one per blast and

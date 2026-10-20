@@ -136,6 +136,8 @@ public static class CommandReasonCodes
     public const string UnknownThreat = "unknown_threat";
     public const string InvalidEvadeSide = "invalid_evade_side";
     public const string EngineDisabled = "engine_disabled";
+    public const string CombatSpeedLocked = "combat_speed_locked";
+    public const string InvalidTurnPayload = "invalid_turn_payload";
 
     /// <summary>The player was defeated; gameplay commands and world saves are unavailable.</summary>
     public const string SessionDefeated = "session_defeated";

@@ -73,4 +73,8 @@ public sealed record PlayerCommand(
     /// <summary>Observed projectile selected for maneuver.evade, independent of UI selection.</summary>
     string? ThreatProjectileId = null,
     /// <summary>Evade direction relative to the selected threat's flight vector.</summary>
-    EvadeSide? EvadeSide = null);
+    EvadeSide? EvadeSide = null,
+    /// <summary>Explicit direction for engine.turnHold; null is not a default direction.</summary>
+    TurnDirection? TurnDirection = null,
+    /// <summary>True starts/holds a turn; false releases it. Null is an incomplete payload.</summary>
+    bool? Active = null);

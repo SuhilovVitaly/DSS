@@ -1,5 +1,8 @@
 namespace DeepSpaceSaga.Contracts;
 
+/// <summary>Explicit continuous-turn direction, separate from the evade side.</summary>
+public enum TurnDirection { Left, Right }
+
 /// <summary>Stable command type IDs for the first player ship engine module.</summary>
 public static class ShipEngineCommandTypes
 {
@@ -10,6 +13,7 @@ public static class ShipEngineCommandTypes
     public const string TurnRightStep = "engine.turnRightStep";
     public const string TurnLeftUntilCancel = "engine.turnLeftUntilCancel";
     public const string TurnRightUntilCancel = "engine.turnRightUntilCancel";
+    public const string TurnHold = "engine.turnHold";
     public const string MaintainCourse = "engine.maintainCourse";
     public const string SpeedSynchronization = "engine.speedSynchronization";
     public const string DirectionSynchronization = "engine.directionSynchronization";
