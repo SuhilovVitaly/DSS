@@ -1,0 +1,14 @@
+{
+  "commandDefinitions": [
+    {
+      "typeId": "defense.launch",
+      "displayName": "Пуск ПРО",
+      "timeFactor": 1,
+      "complexityFactor": 1,
+      "consumptionFactor": 1,
+      "target": "point",
+      "activationEnergyCellsCost": 0,
+      "type": "module.countermeasure.launcher"
+    }
+  ]
+}
