@@ -89,12 +89,14 @@ public sealed class PointCombatUS0018TK0005Tests
             configure: o => o.ObjectId == Point.Enemy ? o with { Ai = new(25, 8, 35) } : FatalPlayer(o));
         Point.At(engine, 1);
         var flight = Assert.Single(Point.Save(engine, 1).GameState.PointCombatState!.Projectiles).Flight;
-        Assert.Equal(16, flight.SpeedKmS); Assert.Equal(200, flight.Damage); Assert.Equal(20, flight.ArmorPiercingPercent);
-        Assert.Equal(969.75, flight.DetonationMotionTimeMs, 10);
-        Assert.Equal(SessionOutcomeState.Running, Point.At(engine, 969).EffectiveOutcome.State);
-        var final = Point.At(engine, 970);
+        Assert.Equal("slow", flight.ProfileId);
+        Assert.Equal(6, flight.SpeedKmS); Assert.Equal(200, flight.Damage); Assert.Equal(20, flight.ArmorPiercingPercent);
+        const double fuse = 1 + 15500d / 6; // 15.5 km at the first equal-coverage catalog profile, launched at 1 ms
+        Assert.Equal(fuse, flight.DetonationMotionTimeMs, 10);
+        Assert.Equal(SessionOutcomeState.Running, Point.At(engine, 2584).EffectiveOutcome.State);
+        var final = Point.At(engine, 2585);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
-        Assert.Equal(969.75, final.EffectiveOutcome.DeathMotionTimeMs);
+        Assert.Equal(fuse, final.EffectiveOutcome.DeathMotionTimeMs);
         Assert.Contains(final.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Point.Player && e.StructureAfter == 0);
         Assert.Single(final.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
         Assert.All(final.CombatJournal, e => { Assert.Null(e.Roll); Assert.Null(e.ChanceTenths); });

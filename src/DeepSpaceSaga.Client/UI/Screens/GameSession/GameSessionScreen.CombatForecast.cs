@@ -18,14 +18,13 @@ public sealed partial class GameSessionScreen
         var snapshot = prediction?.BufferedSnapshot.Snapshot;
         if (snapshot is not null && prediction is not null && CombatPredictionDelta(prediction) is > 0 and var delta)
         {
-            UpdateCombatPoseObjects(snapshot);
             // Forecast starts at the same permitted pose as the displayed scene,
             // including a hostile segment clamped at its confirmed endpoint.
             snapshot = snapshot with
             {
                 SimulationTimeMs = snapshot.MotionTimeMs + delta,
-                Objects = snapshot.Objects.Select(o => _combatPoseObjectIds.Contains(o.ObjectId)
-                    ? _predictor.Predict(o, delta) : o).ToImmutableArray()
+                Objects = snapshot.Objects.Where(o => o.OwnProjectile is not null || o.ObservedProjectile is not null)
+                    .Select(o => _predictor.Predict(o, delta)).ToImmutableArray()
             };
         }
         _combatForecastCache.Prepare(_buffer.PresentationSessionId, snapshot,

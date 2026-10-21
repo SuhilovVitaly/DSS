@@ -17,7 +17,7 @@ public sealed partial class GameSessionScreen
     }
     internal TorpedoAimPreview? CurrentTorpedoAimPreview { get; private set; }
     internal SKRect TorpedoAimLabelBounds { get; private set; }
-    private (Guid? Session, PointAimState Aim, double X, double Y)? _friendlyConfirmation;
+    private (Guid? Session, PointAimState Aim, float ScreenX, float ScreenY, double Ppu, double? FixedX, double? FixedY)? _friendlyConfirmation;
     private long _friendlyConfirmationAt;
 
     private void ResetPointFriendlyConfirmation() { _friendlyConfirmation = null; }
@@ -62,7 +62,10 @@ public sealed partial class GameSessionScreen
         var preview = BuildTorpedoAimPreview(x, y);
         if (preview is null) { _pointErrors[aim.ModuleId] = CommandReasonCodes.ModuleUnavailable; return false; }
         if (preview is not { FriendlyFire: true }) { ResetPointFriendlyConfirmation(); return true; }
-        var key = (_buffer.PresentationSessionId, aim, x, y);
+        // Following the ship moves the world point beneath a stationary cursor.
+        // Confirm the player's unchanged screen aim, while detached aim remains world-fixed.
+        var key = (_buffer.PresentationSessionId, aim, _mouseX, _mouseY, _camera.PixelsPerWorldUnit,
+            _isFocusAttachedToPlayer ? (double?)null : x, _isFocusAttachedToPlayer ? (double?)null : y);
         long now = _timestampProvider();
         double elapsed = (now - _friendlyConfirmationAt) / (double)Stopwatch.Frequency;
         if (_friendlyConfirmation == key && elapsed is >= 0 and <= 1)
@@ -82,7 +85,10 @@ public sealed partial class GameSessionScreen
         var target = _camera.ScreenToWorld(_mouseX, _mouseY, _viewportW, _viewportH);
         if (BuildTorpedoAimPreview(target.Item1, target.Item2) is not { } preview) return;
         CurrentTorpedoAimPreview = preview;
-        if (_friendlyConfirmation is { } confirmation && (confirmation.X != preview.X || confirmation.Y != preview.Y))
+        if (_friendlyConfirmation is { } confirmation && (confirmation.ScreenX != _mouseX || confirmation.ScreenY != _mouseY ||
+            confirmation.Ppu != _camera.PixelsPerWorldUnit ||
+            confirmation.FixedX != (_isFocusAttachedToPlayer ? (double?)null : preview.X) ||
+            confirmation.FixedY != (_isFocusAttachedToPlayer ? (double?)null : preview.Y)))
             ResetPointFriendlyConfirmation();
         var styles = CombatSettings.PointCombat;
         var start = _camera.WorldToScreen(preview.StartX, preview.StartY, _viewportW, _viewportH);

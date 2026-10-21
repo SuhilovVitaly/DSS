@@ -71,11 +71,23 @@ public sealed class PointCombatUS0007TK0002Tests
     }
 
     [Fact]
-    public void Npc_ties_use_ordinal_profile_id()
+    public void Npc_ties_preserve_catalog_profile_order()
     {
         using var engine = Battle(distance: 30, scatter: 0, assumedDodge: 0,
             profiles: [new("z", 10, 5), new("a", 10, 5)]);
-        Assert.Equal("a", engine.CaptureNpcPointAim(Target, NpcLauncher, 0)!.ProfileId);
+        Assert.Equal("z", engine.CaptureNpcPointAim(Target, NpcLauncher, 0)!.ProfileId);
+    }
+
+    [Theory]
+    [InlineData(17)]
+    [InlineData(25)]
+    [InlineData(33)]
+    public void Npc_equal_core_coverage_prefers_slow_profile(double distance)
+    {
+        using var engine = Battle(distance: distance, scatter: 0, assumedDodge: 0);
+        var aim = engine.CaptureNpcPointAim(Target, NpcLauncher, 0)!;
+        Assert.Equal(1, aim.Coverage);
+        Assert.Equal("slow", aim.ProfileId);
     }
 
     [Theory]
@@ -169,7 +181,7 @@ public sealed class PointCombatUS0007TK0002Tests
         var before = engine.CaptureLaunchScatterState();
         var snapshot = At(engine, 1);
         var shot = Assert.Single(snapshot.Objects, o => o.ObservedProjectile is not null);
-        Assert.Equal("fast", shot.ObservedProjectile!.ProfileId);
+        Assert.Equal("medium", shot.ObservedProjectile!.ProfileId); // medium and fast both cover the core here
         Assert.Null(shot.OwnProjectile);
         Assert.Null(shot.Torpedo);
         Assert.Empty(snapshot.CommandResults);

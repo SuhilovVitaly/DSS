@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
+using System.Reflection;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
@@ -17,6 +18,24 @@ public sealed class PointCombatUS0019TK0003Tests(ITestOutputHelper output)
     private static AuthoritativeSnapshot Scene(ulong revision = 1, long time = 0, params ObjectMotionSnapshot[] objects) =>
         new(revision, time * 300, SimulationSpeed.Speed1, (objects.Length == 0 ? new[] { Own(), Foreign() } : objects).ToImmutableArray(),
             SimulationTimeMs: time, Encounter: new(CombatEncounterState.Active, 0, null, new(), time / 1000d));
+
+    [Fact]
+    public void Forecast_preparation_does_not_copy_the_noncombat_world_every_frame()
+    {
+        long ticks = 0;
+        var buffer = new SnapshotBuffer(() => ticks);
+        buffer.Update(Scene(objects: Enumerable.Range(0, 5000)
+            .Select(i => new ObjectMotionSnapshot($"asteroid-{i}", i, 0, 0, 0, RenderObjectType: SpaceObjectType.Asteroid)).ToArray()));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => ticks);
+        var prepare = typeof(GameSessionScreen).GetMethod("PrepareCombatForecasts", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        for (int i = 1; i <= 10; i++) { ticks = Stopwatch.Frequency * i / 1000; prepare.Invoke(screen, null); }
+        long before = GC.GetAllocatedBytesForCurrentThread();
+        for (int i = 11; i <= 20; i++) { ticks = Stopwatch.Frequency * i / 1000; prepare.Invoke(screen, null); }
+        long bytes = GC.GetAllocatedBytesForCurrentThread() - before;
+        output.WriteLine($"Ten forecast frames with 5000 noncombat objects: {bytes} bytes");
+        Assert.True(bytes < 50000, $"Forecast preparation copied the peaceful world: {bytes} bytes");
+        screen.OnDeactivated();
+    }
 
     [Fact]
     public void Point_cache_prepares_own_and_foreign_paths_and_invalidates_physical_capture()

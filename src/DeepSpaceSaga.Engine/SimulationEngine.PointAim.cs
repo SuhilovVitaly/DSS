@@ -34,7 +34,8 @@ public sealed partial class SimulationEngine
             .Where(p => CanExecuteEngineCommand(p.Module, p.Type, time))
             .Select(p => (p.Type.LinearInertiaMps2 ?? 0) / 1000.0).DefaultIfEmpty(0).Max();
         NpcPointAim? best = null;
-        foreach (var profile in type.Profiles.OrderBy(p => p.ProfileId, StringComparer.Ordinal))
+        // Equal coverage preserves the launcher's declared preference order.
+        foreach (var profile in type.Profiles)
         {
             double? flight = PointInterceptSeconds(x, y, vx, vy, profile.SpeedKmS);
             if (flight is not { } tau || tau * 1000 >= long.MaxValue - (double)time) continue;

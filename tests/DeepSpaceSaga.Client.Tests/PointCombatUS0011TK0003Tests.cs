@@ -125,7 +125,7 @@ public sealed class PointCombatUS0011TK0003Tests
         var pressed = new Key[64]; var released = new Key[64];
         var (count, _) = tracker.PollBoth(down.Contains, pressed, released);
         for (int i = 0; i < count; i++) screen.OnKeyDown(pressed[i]);
-        float x = (float)(960 + (250 - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
+        float x = (float)(960 + (200 - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
         float y = (float)(600 + (11 - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit);
         screen.OnMouseMove(x, y); screen.Render(canvas, 1920, 1200);
         Assert.Equal(alt ? null : foreign.ObjectId, screen.CurrentCounterAimPreview!.SnappedObjectId);
@@ -136,12 +136,31 @@ public sealed class PointCombatUS0011TK0003Tests
         await Wait(() => handle.Buffer.FindCommandResult(id) is { Status: CommandResultStatus.Executed } &&
             handle.Buffer.Presented!.Snapshot.Objects.Any(o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile));
         var launched = Assert.Single(handle.Buffer.Presented!.Snapshot.Objects, o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile).OwnProjectile!;
-        Assert.Equal(250, launched.DetonationX, 6); Assert.Equal(alt ? 11 : 0, launched.DetonationY, 6);
+        Assert.Equal(200, launched.DetonationX, 6); Assert.Equal(alt ? 11 : 0, launched.DetonationY, 6);
         if (alt)
         {
             screen.OnKeyUp(Key.AltLeft); screen.Render(canvas, 1920, 1200);
             Assert.Equal(foreign.ObjectId, screen.CurrentCounterAimPreview!.SnappedObjectId);
         }
         screen.OnDeactivated(); Assert.Null(screen.CurrentCounterAimPreview);
+    }
+
+    [Fact]
+    public async Task Unreachable_snapped_aim_does_not_submit_countermissile()
+    {
+        await using var f = await PointCombatUiFixture.Create(hostileShots: 1);
+        var foreign = f.Presented.Objects.Single(o => o.ObservedProjectile is not null);
+        var flight = foreign.ObservedProjectile!;
+        double targetX = foreign.X + flight.DirectionX * 100, targetY = foreign.Y + flight.DirectionY * 100;
+        f.Expose(targetX, targetY); f.Aim(counter: true, profile: 1);
+        // The counter explodes before the incoming projectile reaches this chosen point.
+        var pixel = f.Pixel(targetX, targetY);
+        f.Screen.OnMouseMove(pixel.X, pixel.Y); f.Render();
+        Assert.NotNull(f.Screen.CurrentCounterAimPreview!.SnappedObjectId);
+        Assert.True(f.Screen.CurrentCounterAimPreview.Unreachable);
+        int before = f.Engine.ReceivedCommandCount;
+        f.Screen.OnMouseDown(pixel.X, pixel.Y);
+        Assert.Equal(before, f.Engine.ReceivedCommandCount);
+        Assert.Null(f.Screen.LastPointCommandId);
     }
 }

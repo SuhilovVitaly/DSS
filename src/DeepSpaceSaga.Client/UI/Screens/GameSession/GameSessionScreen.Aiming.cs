@@ -164,7 +164,10 @@ public sealed partial class GameSessionScreen
         if (_handle is null) { _pointErrors[module.ModuleId] = "connection_unavailable"; return true; }
         var target = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         if (aim.Kind == ProjectileKind.Countermissile && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
+        {
+            if (counter.Unreachable) return true;
             target = (counter.X, counter.Y);
+        }
         var player = FindPlayerShip(_renderStates);
         double? range = module.LauncherCombat?.RangeKm ?? module.Defense?.RangeKm;
         if (range is not > 0 || !double.IsFinite(range.Value))

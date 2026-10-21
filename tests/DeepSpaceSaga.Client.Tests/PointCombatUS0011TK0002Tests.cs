@@ -161,6 +161,26 @@ public sealed class PointCombatUS0011TK0002Tests
     }
 
     [Fact]
+    public async Task Stationary_cursor_can_confirm_friendly_fire_while_camera_follows_moving_ship()
+    {
+        await using var f = await PointCombatUiFixture.Create();
+        await f.Handle.SendCommandAsync(PointCombatUiFixture.Player, "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.Accelerate);
+        await f.AdvanceTo(1000);
+        f.Expose(10); f.Aim();
+        var pixel = f.Pixel(f.Screen.CameraFocusX + 10, f.Screen.CameraFocusY);
+        f.Screen.OnMouseMove(pixel.X, pixel.Y); f.Render();
+        Assert.True(f.Screen.CurrentTorpedoAimPreview!.FriendlyFire);
+        f.Screen.OnMouseDown(pixel.X, pixel.Y);
+        Assert.Null(f.Screen.LastPointCommandId);
+        double firstX = f.Screen.CurrentTorpedoAimPreview.X;
+        await f.AdvanceTo(1100);
+        Assert.NotEqual(firstX, f.Screen.CurrentTorpedoAimPreview!.X);
+        f.Screen.OnMouseDown(pixel.X, pixel.Y);
+        Assert.NotNull(f.Screen.LastPointCommandId);
+        await f.Wait(() => f.Handle.Buffer.FindCommandResult(f.Screen.LastPointCommandId!) is { Status: CommandResultStatus.Executed });
+    }
+
+    [Fact]
     public async Task Every_visible_enemy_has_its_own_linear_shadow()
     {
         await using var world = new PointCombatSessionFixture();
