@@ -1,4 +1,6 @@
 using Xunit.Abstractions;
+using System.Text.Json;
+using DeepSpaceSaga.CombatAcceptance;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -7,6 +9,40 @@ public sealed class CombatBalanceReport
     private readonly ITestOutputHelper _output;
 
     public CombatBalanceReport(ITestOutputHelper output) => _output = output;
+
+    public static IEnumerable<object[]> ProductionBatches()
+    {
+        foreach (string policy in new[] { "dodge", "static" })
+            for (int first = 3001; first <= 4000; first += 50) yield return [policy, first];
+    }
+
+    [Theory]
+    [Trait("Category", "Balance")]
+    [MemberData(nameof(ProductionBatches))]
+    public void Production_balance_1000_seeds_reports_corridors(string policy, int firstSeed)
+    {
+        var harness = new ProductionCombatBalanceHarness(TorpedoImpactTests.ClientRoot);
+        string root = Environment.GetEnvironmentVariable("DSS_BALANCE_OUTPUT") ?? Path.Combine(AppContext.BaseDirectory, "balance-results");
+        Directory.CreateDirectory(root);
+        string path = Path.Combine(root, $"{policy}-{firstSeed}-{firstSeed + 49}.jsonl"), temporary = path + ".tmp";
+        var results = new List<ProductionCombatBalanceHarness.RunResult>();
+        using (var writer = new StreamWriter(temporary, false))
+            for (int seed = firstSeed; seed < firstSeed + 50; seed++)
+            {
+                var result = harness.Run((ulong)seed, policy);
+                Assert.Equal(0, result.LegacyChanceFacts);
+                Assert.True(double.IsFinite(result.RealDurationMs));
+                Assert.Equal(result.PhysicalDurationMs * 4, result.RealDurationMs);
+                if (policy == "static") Assert.Equal(0, result.Evades);
+                Assert.Equal(result.Commands.Length, result.Commands.Select(c => c.Command.CommandId).Distinct().Count());
+                writer.WriteLine(JsonSerializer.Serialize(result)); results.Add(result);
+            }
+        File.Move(temporary, path, true);
+        _output.WriteLine($"policy={policy};seeds={firstSeed}..{firstSeed + 49};count={results.Count};" +
+            $"wins={results.Count(r => r.Outcome == "victory")};unfinished={results.Count(r => r.Outcome == "unfinished")};" +
+            $"raw={path};corridorAcceptance=DEFERRED_TO_COMPLETE_1000_SEED_AGGREGATE;policy={ProductionCombatBalanceHarness.PolicyVersion}");
+        Assert.Equal(50, results.Count);
+    }
 
     [Theory]
     [Trait("Category", "Balance")]

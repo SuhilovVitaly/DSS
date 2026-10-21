@@ -2,7 +2,7 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0014-balance-and-acceptance"
 title: "Приёмка и баланс"
-stage: "draft"
+stage: "in_progress"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0003-point-aim-torpedoes", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0005-snapshot-privacy", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time", "EP-0012-US-0009-scenarios-and-saves", "EP-0012-US-0010-tactical-map", "EP-0012-US-0011-aiming-and-launch", "EP-0012-US-0012-maneuver-and-threat-ui", "EP-0012-US-0013-combat-state-and-feedback", "EP-0012-US-0016-combat-localization", "EP-0012-US-0017-event-and-command-integration", "EP-0012-US-0018-legacy-combat-cleanup", "EP-0012-US-0019-scenario-and-client-regressions"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
@@ -43,7 +43,7 @@ Execution order задаётся ticket DAG, который допускает �
 
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
-| 66 / [EP-0012-US-0014-TK-0001-production-balance-harness](EP-0012-US-0014-TK-0001-production-balance-harness/EP-0012-US-0014-TK-0001-production-balance-harness.md) | engine | EP-0012-US-0018-TK-0005-module-combat-regressions | US14-AC1 | 4 |
+| 66 / [EP-0012-US-0014-TK-0001-production-balance-harness](EP-0012-US-0014-TK-0001-production-balance-harness/EP-0012-US-0014-TK-0001-production-balance-harness.md) | engine | EP-0012-US-0018-TK-0005-module-combat-regressions | US14-AC1 | 3 |
 | 67 / [EP-0012-US-0014-TK-0002-tools-analyzer](EP-0012-US-0014-TK-0002-tools-analyzer/EP-0012-US-0014-TK-0002-tools-analyzer.md) | tooling | EP-0012-US-0014-TK-0001-production-balance-harness | US14-AC2 | 4 |
 | 68 / [EP-0012-US-0014-TK-0003-native-acceptance](EP-0012-US-0014-TK-0003-native-acceptance/EP-0012-US-0014-TK-0003-native-acceptance.md) | tooling | EP-0012-US-0014-TK-0002-tools-analyzer | US14-AC3 | 1 |
 
