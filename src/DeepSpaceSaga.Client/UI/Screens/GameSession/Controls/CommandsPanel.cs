@@ -609,7 +609,7 @@ public sealed class CommandsPanel
                 {
                     if (!panels.Any(p => p.Key == name)) continue;
                     if (_panelOpenedByName.TryGetValue(name, out bool requested) && !requested) continue;
-                    if (remaining < BodyHeight(name) && name != _preferredOpenedPanel && visibleBodies.Count > 0) continue;
+                    if (remaining < BodyHeight(name) && name != _preferredOpenedPanel && (visibleBodies.Count > 0 || OwnModuleDiagram is null)) continue;
                     visibleBodies.Add(name);
                     remaining -= BodyHeight(name);
                 }
