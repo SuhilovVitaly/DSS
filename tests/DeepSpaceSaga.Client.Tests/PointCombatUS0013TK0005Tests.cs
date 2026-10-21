@@ -5,6 +5,9 @@ using DeepSpaceSaga.Client.UI.Screens.Defeat;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine;
+using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Input;
 using SkiaSharp;
@@ -42,6 +45,31 @@ public sealed class PointCombatUS0013TK0005Tests
             using var file = File.Create(Path.Combine(directory, name)); png.SaveTo(file);
         }
         public void Dispose() { Screen.OnDeactivated(); _canvas.Dispose(); _bitmap.Dispose(); }
+    }
+
+    [Theory]
+    [InlineData(1.5f)]
+    [InlineData(1.2f)]
+    public void Won_summary_remains_visible_with_production_modules_and_short_space_control_panel(float scale)
+    {
+        string client = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(client, "Settings.json"), out _, out _);
+        using var engine = new SimulationEngine(registry);
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(client, "Scenarios/CombatMukha/scenario.json")));
+        // Explicit UI-only Won fixture over the actual production module projection. Native evidence uses a real completed battle.
+        var initial = engine.CaptureSnapshot();
+        var report = new BattleReportSnapshot(1, 0, BattleReportKind.PlayerTorpedoLaunch, "ui-layout", new(BattleReportReporterRole.TorpedoOperator));
+        var scene = initial with { Encounter = new(CombatEncounterState.Won, 0, 1000, Stats, 1), CombatJournal = [], CombatReports = new(0, 1, [report]) };
+        using var v = new View(scene, scale, width: 1280, height: 720);
+        foreach (var row in v.Screen.CommandsPanel.CommandPanelRows.Where(r => r.Weapon is null && r.Opened).ToArray())
+            v.Screen.CommandsPanel.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        v.Render();
+        var space = v.Screen.CommandsPanel.CommandPanelRows.First(r => r.Weapon is null && r.Name.Contains("space", StringComparison.OrdinalIgnoreCase));
+        if (!space.Opened) v.Screen.CommandsPanel.OnMouseDown(space.CaptionRect.MidX, space.CaptionRect.MidY);
+        v.Render(); v.Render();
+        Assert.False(v.Screen.CombatSummary.Bounds.IsEmpty, $"scale={scale},largest={v.Screen.AvailableMapRect(includeEncounterHud: false)}");
+        Assert.True(v.Screen.CombatSummary.Bounds.Contains(v.Screen.CombatSummary.ContinueRect));
+        Assert.True(new SKRect(0, 0, 1280 / scale, 720 / scale).Contains(v.Screen.CombatSummary.Bounds));
     }
 
     [Fact]

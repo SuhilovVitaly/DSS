@@ -25,6 +25,43 @@ public sealed class PointCombatUS0010TK0002Tests
         TrailDetailPpu = ppu
     };
 
+    [Theory]
+    [InlineData(1280, 720, 1.5f)]
+    [InlineData(1920, 1080, 1f)]
+    public void Own_countdown_and_foreign_profile_labels_remain_inside_physical_viewport(int width, int height, float uiScale)
+    {
+        double edgeX = width / 2d - 2, edgeY = height / 2d - 2;
+        var own = Own() with
+        {
+            OwnProjectile = Own().OwnProjectile! with
+            {
+                DetonationX = edgeX,
+                DetonationY = 0,
+                DetonationMotionTimeMs = double.Hypot(edgeX, 120) / 60 * 1000
+            }
+        };
+        var foreign = Foreign() with
+        {
+            X = edgeX,
+            Y = edgeY,
+            ObservedProjectile = Foreign().ObservedProjectile! with { X = edgeX, Y = edgeY }
+        };
+        var buffer = new SnapshotBuffer(() => 0); buffer.Update(Scene(own, foreign));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0,
+            mapSettings: Map(1), uiScale: uiScale);
+        using var bitmap = new SKBitmap(width, height); using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, width, height);
+        foreach (string id in new[] { "own", "foreign" })
+        {
+            var visual = screen.PointProjectileVisuals[id];
+            Assert.False(visual.LabelBounds.IsEmpty);
+            Assert.True(new SKRect(0, 0, width, height).Contains(visual.LabelBounds), $"{id}: {visual.LabelBounds}");
+        }
+        Assert.NotNull(screen.PointProjectileVisuals["own"].RemainingRealSeconds);
+        Assert.Null(screen.PointProjectileVisuals["foreign"].RemainingRealSeconds);
+        screen.OnDeactivated();
+    }
+
     [Fact]
     public void Projectile_visuals_use_own_or_observed_schema()
     {

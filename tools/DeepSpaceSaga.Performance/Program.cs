@@ -17,7 +17,10 @@ if (args.Contains("--reports-window"))
 }
 
 if (args.Contains("--combat-window"))
-    throw new ArgumentException("The guided-combat --combat-window script was retired by EP-0012.");
+{
+    Environment.ExitCode = PointCombatNativeEvidence.Run(args);
+    return;
+}
 
 if (args.Contains("--solar-window"))
 {

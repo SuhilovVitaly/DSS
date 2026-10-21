@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 public sealed partial class GameSessionScreen
 {
     internal sealed record PointProjectileVisual(string Profile, double? PhysicalRadiusPx, double? CoreRadiusPx,
-        SKPoint? DetonationCenter, double? RemainingRealSeconds, bool HasMinimumMarker, string Label);
+        SKPoint? DetonationCenter, double? RemainingRealSeconds, bool HasMinimumMarker, string Label, SKRect LabelBounds = default);
     internal readonly Dictionary<string, PointProjectileVisual> PointProjectileVisuals = new(StringComparer.Ordinal);
 
     private void DrawPointProjectile(SKCanvas canvas, ObjectRenderState state, SnapshotPrediction? prediction)
@@ -69,9 +69,17 @@ public sealed partial class GameSessionScreen
         var anchor = center ?? new SKPoint(marker.X, marker.Y);
         // Map labels are physical screen pixels; DPI scaling belongs to the UI overlay pass.
         using var text = new SKPaint { Color = styles.ForeignProfileText, TextSize = (float)styles.TextSizePx, IsAntialias = true };
+        var labelBounds = SKRect.Empty;
         if (anchor.X >= 0 && anchor.Y >= 0 && anchor.X <= _viewportW && anchor.Y <= _viewportH)
-            canvas.DrawText(label, anchor.X + (float)styles.ReticleRadiusPx, anchor.Y - (float)styles.ReticleRadiusPx, text);
-        PointProjectileVisuals[state.Source.ObjectId] = new(profile, radius, coreRadius, center, seconds, minimum, label);
+        {
+            float width = text.MeasureText(label);
+            float labelX = Math.Clamp(anchor.X + (float)styles.ReticleRadiusPx, 4, Math.Max(4, _viewportW - width - 4));
+            float baseline = Math.Clamp(anchor.Y - (float)styles.ReticleRadiusPx, 4 - text.FontMetrics.Ascent,
+                Math.Max(4 - text.FontMetrics.Ascent, _viewportH - text.FontMetrics.Descent - 4));
+            labelBounds = new(labelX, baseline + text.FontMetrics.Ascent, labelX + width, baseline + text.FontMetrics.Descent);
+            canvas.DrawText(label, labelX, baseline, text);
+        }
+        PointProjectileVisuals[state.Source.ObjectId] = new(profile, radius, coreRadius, center, seconds, minimum, label, labelBounds);
     }
 
     private void DrawPointBlast(SKCanvas canvas, SKPoint center, double radius, double coreFraction,

@@ -10,6 +10,8 @@ public sealed partial class GameSessionScreen
     private readonly CombatSummaryPanel _combatSummaryPanel = new();
     private readonly bool _playInitialCombatStart;
     private bool _combatHudInitialized;
+    private int? _summaryViewportHash;
+    private SKRect _summaryViewport;
     private Guid? _combatHudSession;
     private ulong _combatHudSequence;
     private CombatEncounterState? _previousEncounterState;
@@ -50,6 +52,17 @@ public sealed partial class GameSessionScreen
             ? Math.Max(0, GetPredictedGameTimeMs(prediction) - snapshot.MotionTimeMs) / 1000d : 0;
         CombatElapsedRealSeconds = Math.Max(0, encounter.DurationSeconds + extra) * 4;
         var map = AvailableMapRect(includeEncounterHud: false);
+        // The largest free area can be a shallow strip. A result panel needs both
+        // dimensions; prefer another unobstructed rectangle over hiding Continue.
+        if (encounter.State == CombatEncounterState.Won && (map.Width < 90 * _uiScale || map.Height < 100 * _uiScale))
+        {
+            if (_summaryViewportHash != _freeViewportHash)
+            {
+                _summaryViewport = MapViewGeometry.FreeViewport(_viewportW, _viewportH, _mapObstacles, 90 * _uiScale, 100 * _uiScale);
+                _summaryViewportHash = _freeViewportHash;
+            }
+            map = _summaryViewport;
+        }
         var logical = new SKRect(map.Left / _uiScale, map.Top / _uiScale, map.Right / _uiScale, map.Bottom / _uiScale);
         if (encounter.State == CombatEncounterState.Active)
         {

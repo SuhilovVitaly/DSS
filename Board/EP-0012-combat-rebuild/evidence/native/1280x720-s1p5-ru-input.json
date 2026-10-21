@@ -1,0 +1,1085 @@
+{
+  "schemaVersion": 1,
+  "localizedBattle": "\u0411\u041E\u0419",
+  "localizedSlowProfile": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439",
+  "passed": true,
+  "failure": null,
+  "completed": true,
+  "mode": "input",
+  "seed": 3001,
+  "frame": 63,
+  "actualWindowSeconds": 2.3628301,
+  "requested": {
+    "width": 1280,
+    "height": 720,
+    "scale": 1.5,
+    "language": "ru"
+  },
+  "actual": {
+    "actualWidth": 1280,
+    "actualHeight": 720,
+    "framebufferWidth": 1280,
+    "framebufferHeight": 720
+  },
+  "graphicsRenderer": "Intel(R) Arc(TM) 140V GPU (16GB)",
+  "graphicsVersion": "3.3.0 - Build 32.0.101.8860",
+  "checks": {
+    "actualUiScaleMatchesRequest": true,
+    "localeBattleLabel": true,
+    "nativeOpenGlContext": true,
+    "activeBannerAndSpeedLock": true,
+    "ranges70And30": true,
+    "torpedoAimSlowAndRealEta": true,
+    "torpedoAimLabelContained": true,
+    "outOfRangePreview": true,
+    "outOfRangeDoesNotSend": true,
+    "pointCommandSent": true,
+    "noProjectileBeforeAuthoritativeSnapshot": true,
+    "ownPhysicalRadiusAndCore": true,
+    "foreignHasNoEndpointOrDeadlineVisual": true,
+    "weaponRowsCurrentOnly": true,
+    "visibleProjectileLabelsContained": true,
+    "reloadAimDoesNotSend": true,
+    "wheelChangesProfileNotZoom": true,
+    "profileKeysDidNotChangeSpeed": true,
+    "rangeToggleSessionState": true,
+    "counterPreviewAndTraceSnap": true,
+    "counterAimLabelContained": true,
+    "actualCountermissileConfirmed": true,
+    "heldEvadePreview": true,
+    "evadeConfirmedAndBaseCourse": true,
+    "authoritativePauseFreezesMotionAndReload": true,
+    "minimumMarkerSeparateFromPhysicalRadius": true,
+    "counterDetonationActualJournal": true,
+    "heldTurnChangesAuthoritativeHeading": true,
+    "shiftSendsFullSpeedCommand": true,
+    "manualDetonationActualJournal": true
+  },
+  "notRun": {
+    "physicalAltFreeAim": "Native window polls hardware modifier state each frame; single managed modifier injection does not prove held physical Alt. Native OS keyboard control is unavailable; headless Alt coverage is separate."
+  },
+  "captures": [
+    "1280x720-s1p5-ru-input.torpedo-aim.png",
+    "1280x720-s1p5-ru-input.out-of-range.png",
+    "1280x720-s1p5-ru-input.confirmed-flights.png",
+    "1280x720-s1p5-ru-input.counter-aim.png",
+    "1280x720-s1p5-ru-input.counter-flight.png",
+    "1280x720-s1p5-ru-input.evade-preview.png",
+    "1280x720-s1p5-ru-input.paused.png",
+    "1280x720-s1p5-ru-input.minimum-markers.png",
+    "1280x720-s1p5-ru-input.counter-blast.png",
+    "1280x720-s1p5-ru-input.manual-blast.png"
+  ],
+  "captureStates": [
+    {
+      "label": "torpedo-aim",
+      "file": "1280x720-s1p5-ru-input.torpedo-aim.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -4765.811156035287,
+      "CameraFocusY": -1966.8592836435964,
+      "CameraPixelsPerWorldUnit": 0.1199882482506889,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1229.6934,
+            "Top": 654.6803,
+            "Right": 1276,
+            "Bottom": 670.64124
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        }
+      ]
+    },
+    {
+      "label": "out-of-range",
+      "file": "1280x720-s1p5-ru-input.out-of-range.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -23038.76376003078,
+      "CameraFocusY": -11251.494660808874,
+      "CameraPixelsPerWorldUnit": 0.02423749540343572,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1212.7444,
+            "Top": 627.84393,
+            "Right": 1259.051,
+            "Bottom": 643.8049
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        }
+      ]
+    },
+    {
+      "label": "confirmed-flights",
+      "file": "1280x720-s1p5-ru-input.confirmed-flights.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -4765.811156035287,
+      "CameraFocusY": -1966.8592836435964,
+      "CameraPixelsPerWorldUnit": 0.1199882482506889,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1229.6934,
+            "Top": 654.6803,
+            "Right": 1276,
+            "Bottom": 670.64124
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-2",
+          "Profile": "slow",
+          "Label": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439 \u00B7 34.2 \u0441",
+          "labelBounds": {
+            "Left": 1172.7871,
+            "Top": 619.5477,
+            "Right": 1276,
+            "Bottom": 635.50867
+          },
+          "PhysicalRadiusPx": 10.798942342562002,
+          "CoreRadiusPx": 3.2396827027686004,
+          "HasMinimumMarker": false,
+          "centerX": 1262.9365,
+          "centerY": 640.49695,
+          "sourceOwn": {
+            "Kind": 0,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-TORPEDO-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 425.83447494425803,
+            "DetonationY": 370.84432732638135,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 10942.773924480707,
+            "SpeedKmS": 6,
+            "ProfileId": "slow",
+            "BlastRadiusKm": 9,
+            "Damage": 200,
+            "ArmorPiercingPercent": 20,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 1,
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        }
+      ]
+    },
+    {
+      "label": "counter-aim",
+      "file": "1280x720-s1p5-ru-input.counter-aim.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -4765.811156035287,
+      "CameraFocusY": -1966.8592836435964,
+      "CameraPixelsPerWorldUnit": 0.1199882482506889,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1229.6934,
+            "Top": 654.6803,
+            "Right": 1276,
+            "Bottom": 670.64124
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-2",
+          "Profile": "slow",
+          "Label": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439 \u00B7 34.2 \u0441",
+          "labelBounds": {
+            "Left": 1172.7871,
+            "Top": 619.5477,
+            "Right": 1276,
+            "Bottom": 635.50867
+          },
+          "PhysicalRadiusPx": 10.798942342562002,
+          "CoreRadiusPx": 3.2396827027686004,
+          "HasMinimumMarker": false,
+          "centerX": 1262.9365,
+          "centerY": 640.49695,
+          "sourceOwn": {
+            "Kind": 0,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-TORPEDO-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 425.83447494425803,
+            "DetonationY": 370.84432732638135,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 10942.773924480707,
+            "SpeedKmS": 6,
+            "ProfileId": "slow",
+            "BlastRadiusKm": 9,
+            "Damage": 200,
+            "ArmorPiercingPercent": 20,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 1,
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        }
+      ]
+    },
+    {
+      "label": "counter-flight",
+      "file": "1280x720-s1p5-ru-input.counter-flight.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -4765.811156035287,
+      "CameraFocusY": -1966.8592836435964,
+      "CameraPixelsPerWorldUnit": 0.1199882482506889,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1229.6934,
+            "Top": 654.6803,
+            "Right": 1276,
+            "Bottom": 670.64124
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-2",
+          "Profile": "slow",
+          "Label": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439 \u00B7 34.2 \u0441",
+          "labelBounds": {
+            "Left": 1172.7871,
+            "Top": 619.5477,
+            "Right": 1276,
+            "Bottom": 635.50867
+          },
+          "PhysicalRadiusPx": 10.798942342562002,
+          "CoreRadiusPx": 3.2396827027686004,
+          "HasMinimumMarker": false,
+          "centerX": 1262.9365,
+          "centerY": 640.49695,
+          "sourceOwn": {
+            "Kind": 0,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-TORPEDO-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 425.83447494425803,
+            "DetonationY": 370.84432732638135,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 10942.773924480707,
+            "SpeedKmS": 6,
+            "ProfileId": "slow",
+            "BlastRadiusKm": 9,
+            "Damage": 200,
+            "ArmorPiercingPercent": 20,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 1,
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        },
+        {
+          "id": "countermeasure-1",
+          "Profile": "wide",
+          "Label": "\u0448\u0438\u0440\u043E\u043A\u0438\u0439 \u00B7 6.6 \u0441",
+          "labelBounds": {
+            "Left": 1191.8887,
+            "Top": 590.8421,
+            "Right": 1276,
+            "Bottom": 606.80304
+          },
+          "PhysicalRadiusPx": 1.199882482506889,
+          "CoreRadiusPx": 0,
+          "HasMinimumMarker": true,
+          "centerX": 1245.3744,
+          "centerY": 611.7913,
+          "sourceOwn": {
+            "Kind": 1,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 279.4700220043325,
+            "DetonationY": 131.60712280128124,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 4037.942405750577,
+            "SpeedKmS": 15,
+            "ProfileId": "wide",
+            "BlastRadiusKm": 1,
+            "Damage": 0,
+            "ArmorPiercingPercent": 0,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 2,
+              "CrewId": "CHR-PLAYER-DEFENSE",
+              "DisplayName": "Defense operator",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        }
+      ]
+    },
+    {
+      "label": "evade-preview",
+      "file": "1280x720-s1p5-ru-input.evade-preview.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -4765.811156035287,
+      "CameraFocusY": -1966.8592836435964,
+      "CameraPixelsPerWorldUnit": 0.1199882482506889,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1229.6934,
+            "Top": 654.6803,
+            "Right": 1276,
+            "Bottom": 670.64124
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-2",
+          "Profile": "slow",
+          "Label": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439 \u00B7 34.2 \u0441",
+          "labelBounds": {
+            "Left": 1172.7871,
+            "Top": 619.5477,
+            "Right": 1276,
+            "Bottom": 635.50867
+          },
+          "PhysicalRadiusPx": 10.798942342562002,
+          "CoreRadiusPx": 3.2396827027686004,
+          "HasMinimumMarker": false,
+          "centerX": 1262.9365,
+          "centerY": 640.49695,
+          "sourceOwn": {
+            "Kind": 0,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-TORPEDO-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 425.83447494425803,
+            "DetonationY": 370.84432732638135,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 10942.773924480707,
+            "SpeedKmS": 6,
+            "ProfileId": "slow",
+            "BlastRadiusKm": 9,
+            "Damage": 200,
+            "ArmorPiercingPercent": 20,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 1,
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        },
+        {
+          "id": "countermeasure-1",
+          "Profile": "wide",
+          "Label": "\u0448\u0438\u0440\u043E\u043A\u0438\u0439 \u00B7 6.6 \u0441",
+          "labelBounds": {
+            "Left": 1191.8887,
+            "Top": 590.8421,
+            "Right": 1276,
+            "Bottom": 606.80304
+          },
+          "PhysicalRadiusPx": 1.199882482506889,
+          "CoreRadiusPx": 0,
+          "HasMinimumMarker": true,
+          "centerX": 1245.3744,
+          "centerY": 611.7913,
+          "sourceOwn": {
+            "Kind": 1,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 279.4700220043325,
+            "DetonationY": 131.60712280128124,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 4037.942405750577,
+            "SpeedKmS": 15,
+            "ProfileId": "wide",
+            "BlastRadiusKm": 1,
+            "Damage": 0,
+            "ArmorPiercingPercent": 0,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 2,
+              "CrewId": "CHR-PLAYER-DEFENSE",
+              "DisplayName": "Defense operator",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        }
+      ]
+    },
+    {
+      "label": "paused",
+      "file": "1280x720-s1p5-ru-input.paused.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -4765.811156035287,
+      "CameraFocusY": -1966.8592836435964,
+      "CameraPixelsPerWorldUnit": 0.1199882482506889,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1229.6934,
+            "Top": 654.6803,
+            "Right": 1276,
+            "Bottom": 670.64124
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-2",
+          "Profile": "slow",
+          "Label": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439 \u00B7 34.2 \u0441",
+          "labelBounds": {
+            "Left": 1172.7871,
+            "Top": 619.5477,
+            "Right": 1276,
+            "Bottom": 635.50867
+          },
+          "PhysicalRadiusPx": 10.798942342562002,
+          "CoreRadiusPx": 3.2396827027686004,
+          "HasMinimumMarker": false,
+          "centerX": 1262.9365,
+          "centerY": 640.49695,
+          "sourceOwn": {
+            "Kind": 0,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-TORPEDO-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 425.83447494425803,
+            "DetonationY": 370.84432732638135,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 10942.773924480707,
+            "SpeedKmS": 6,
+            "ProfileId": "slow",
+            "BlastRadiusKm": 9,
+            "Damage": 200,
+            "ArmorPiercingPercent": 20,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 1,
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        },
+        {
+          "id": "countermeasure-1",
+          "Profile": "wide",
+          "Label": "\u0448\u0438\u0440\u043E\u043A\u0438\u0439 \u00B7 6.6 \u0441",
+          "labelBounds": {
+            "Left": 1191.8887,
+            "Top": 590.8421,
+            "Right": 1276,
+            "Bottom": 606.80304
+          },
+          "PhysicalRadiusPx": 1.199882482506889,
+          "CoreRadiusPx": 0,
+          "HasMinimumMarker": true,
+          "centerX": 1245.3744,
+          "centerY": 611.7913,
+          "sourceOwn": {
+            "Kind": 1,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 279.4700220043325,
+            "DetonationY": 131.60712280128124,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 4037.942405750577,
+            "SpeedKmS": 15,
+            "ProfileId": "wide",
+            "BlastRadiusKm": 1,
+            "Damage": 0,
+            "ArmorPiercingPercent": 0,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 2,
+              "CrewId": "CHR-PLAYER-DEFENSE",
+              "DisplayName": "Defense operator",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        }
+      ]
+    },
+    {
+      "label": "minimum-markers",
+      "file": "1280x720-s1p5-ru-input.minimum-markers.png",
+      "MotionTimeMs": 2400,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -30608.78705013844,
+      "CameraFocusY": -15097.884873079794,
+      "CameraPixelsPerWorldUnit": 0.018215576600929866,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1210.3234,
+            "Top": 626.1561,
+            "Right": 1256.63,
+            "Bottom": 642.11707
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-2",
+          "Profile": "slow",
+          "Label": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439 \u00B7 34.2 \u0441",
+          "labelBounds": {
+            "Left": 1172.7871,
+            "Top": 620.82263,
+            "Right": 1276,
+            "Bottom": 636.78357
+          },
+          "PhysicalRadiusPx": 1.6394018940836879,
+          "CoreRadiusPx": 0.49182056822510634,
+          "HasMinimumMarker": true,
+          "centerX": 1205.3135,
+          "centerY": 641.77185,
+          "sourceOwn": {
+            "Kind": 0,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-TORPEDO-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 425.83447494425803,
+            "DetonationY": 370.84432732638135,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 10942.773924480707,
+            "SpeedKmS": 6,
+            "ProfileId": "slow",
+            "BlastRadiusKm": 9,
+            "Damage": 200,
+            "ArmorPiercingPercent": 20,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 1,
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        },
+        {
+          "id": "countermeasure-1",
+          "Profile": "wide",
+          "Label": "\u0448\u0438\u0440\u043E\u043A\u0438\u0439 \u00B7 6.6 \u0441",
+          "labelBounds": {
+            "Left": 1191.8887,
+            "Top": 616.4648,
+            "Right": 1276,
+            "Bottom": 632.4257
+          },
+          "PhysicalRadiusPx": 0.18215576600929867,
+          "CoreRadiusPx": 0,
+          "HasMinimumMarker": true,
+          "centerX": 1202.6475,
+          "centerY": 637.414,
+          "sourceOwn": {
+            "Kind": 1,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+            "X": 72,
+            "Y": -4.408728476930472E-15,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 279.4700220043325,
+            "DetonationY": 131.60712280128124,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 4037.942405750577,
+            "SpeedKmS": 15,
+            "ProfileId": "wide",
+            "BlastRadiusKm": 1,
+            "Damage": 0,
+            "ArmorPiercingPercent": 0,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 2,
+              "CrewId": "CHR-PLAYER-DEFENSE",
+              "DisplayName": "Defense operator",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        }
+      ]
+    },
+    {
+      "label": "counter-blast",
+      "file": "1280x720-s1p5-ru-input.counter-blast.png",
+      "MotionTimeMs": 4100,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -5554.024178296106,
+      "CameraFocusY": -2431.9254059259906,
+      "CameraPixelsPerWorldUnit": 0.10016707714856297,
+      "points": [
+        {
+          "id": "torpedo-1",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1229.6934,
+            "Top": 632.0966,
+            "Right": 1276,
+            "Bottom": 648.05756
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-2",
+          "Profile": "slow",
+          "Label": "\u043C\u0435\u0434\u043B\u0435\u043D\u043D\u044B\u0439 \u00B7 27.4 \u0441",
+          "labelBounds": {
+            "Left": 1172.7871,
+            "Top": 619.796,
+            "Right": 1276,
+            "Bottom": 635.75696
+          },
+          "PhysicalRadiusPx": 9.015036943370667,
+          "CoreRadiusPx": 2.7045110830112002,
+          "HasMinimumMarker": false,
+          "centerX": 1238.985,
+          "centerY": 640.74524,
+          "sourceOwn": {
+            "Kind": 0,
+            "OwnerObjectId": "SPC-0001",
+            "LauncherModuleId": "MOD-PLAYER-TORPEDO-01",
+            "X": 142.41256302961375,
+            "Y": 73.79749973813931,
+            "StartX": 72,
+            "StartY": -4.408728476930472E-15,
+            "DetonationX": 425.83447494425803,
+            "DetonationY": 370.84432732638135,
+            "LaunchMotionTimeMs": 2400,
+            "DetonationMotionTimeMs": 10942.773924480707,
+            "SpeedKmS": 6,
+            "ProfileId": "slow",
+            "BlastRadiusKm": 9,
+            "Damage": 200,
+            "ArmorPiercingPercent": 20,
+            "ArmorDamagePercent": 100,
+            "CoreFraction": 0.3,
+            "Reporter": {
+              "Role": 1,
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "PortraitImage": null
+            },
+            "OwnerPlayerRelationAtLaunch": "self"
+          }
+        },
+        {
+          "id": "torpedo-3",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1185.899,
+            "Top": 645.5668,
+            "Right": 1232.2057,
+            "Bottom": 661.5277
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        }
+      ]
+    },
+    {
+      "label": "manual-blast",
+      "file": "1280x720-s1p5-ru-input.manual-blast.png",
+      "MotionTimeMs": 10200,
+      "freeMap": {
+        "Left": 1110,
+        "Top": 564,
+        "Right": 1280,
+        "Bottom": 720
+      },
+      "CameraFocusX": -5554.024178296106,
+      "CameraFocusY": -2431.9254059259906,
+      "CameraPixelsPerWorldUnit": 0.10016707714856297,
+      "points": [
+        {
+          "id": "torpedo-3",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1170.7051,
+            "Top": 586.38416,
+            "Right": 1217.0117,
+            "Bottom": 602.3451
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-4",
+          "Profile": "medium",
+          "Label": "\u0441\u0440\u0435\u0434\u043D\u0438\u0439",
+          "labelBounds": {
+            "Left": 1173.558,
+            "Top": 582.91223,
+            "Right": 1219.8646,
+            "Bottom": 598.87317
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-5",
+          "Profile": "fast",
+          "Label": "\u0431\u044B\u0441\u0442\u0440\u044B\u0439",
+          "labelBounds": {
+            "Left": 1190.8413,
+            "Top": 598.57806,
+            "Right": 1239.31,
+            "Bottom": 614.539
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        }
+      ]
+    }
+  ],
+  "authoritativeMotionMs": 10200,
+  "outcome": "Running",
+  "encounter": {
+    "State": 1,
+    "StartedAtMotionMs": 0,
+    "EndedAtMotionMs": null,
+    "Stats": {
+      "TorpedoesLaunched": 1,
+      "CountermissilesLaunched": 1,
+      "EnemyTorpedoesLaunched": 4,
+      "TorpedoesIntercepted": 0,
+      "PlayerHitsReceived": 0,
+      "EnemyHitsDealt": 0,
+      "PlayerEvasions": 1,
+      "EnemiesDestroyed": 0,
+      "ArmorDamageTaken": 0,
+      "StructureDamageTaken": 0
+    },
+    "DurationSeconds": 10.2
+  },
+  "managedDispatchMs": [
+    0.1123,
+    1.8054,
+    0.0225,
+    0.1261
+  ],
+  "commands": [
+    {
+      "CommandId": "CMD-00000001-e2c1021ad4c541b1b9cb7097840c40d1",
+      "ClientSequence": 1,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-TORPEDO-01",
+      "CommandType": "torpedo.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 426.36398680352886,
+      "TargetWorldY": 383.37087732036207,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "slow",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "CMD-00000002-55e5d546aa4048b0a0bb0a15ee8846bb",
+      "ClientSequence": 2,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+      "CommandType": "defense.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 260.05983971294626,
+      "TargetWorldY": 149.40783929401448,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "wide",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "CMD-00000003-b7db1d30131f4ff7aed580b7fd9ddafc",
+      "ClientSequence": 3,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-ENGINE-01",
+      "CommandType": "maneuver.evade",
+      "TargetObjectId": null,
+      "TargetWorldX": null,
+      "TargetWorldY": null,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": null,
+      "ThreatProjectileId": "torpedo-1",
+      "EvadeSide": 0,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "CMD-00000004-e3dda351f5dd42b9bd7a8be0ac70ce58",
+      "ClientSequence": 4,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-ENGINE-01",
+      "CommandType": "engine.turnHold",
+      "TargetObjectId": null,
+      "TargetWorldX": null,
+      "TargetWorldY": null,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": null,
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": 1,
+      "Active": true
+    },
+    {
+      "CommandId": "CMD-00000005-565371eb650648d8ac24f18e2b568f2d",
+      "ClientSequence": 5,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-ENGINE-01",
+      "CommandType": "engine.turnHold",
+      "TargetObjectId": null,
+      "TargetWorldX": null,
+      "TargetWorldY": null,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": null,
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": 1,
+      "Active": false
+    },
+    {
+      "CommandId": "CMD-00000006-bf795786a82f492aaf4cba4884c7bafe",
+      "ClientSequence": 6,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-ENGINE-01",
+      "CommandType": "engine.accelerate",
+      "TargetObjectId": null,
+      "TargetWorldX": null,
+      "TargetWorldY": null,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": null,
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    }
+  ],
+  "audio": {
+    "enabled": false,
+    "requestedProductionCues": [],
+    "auditoryAcceptance": "NOT RUN: no human hearing verification"
+  },
+  "clock": "Controlled production Engine clock and matching renderer timestamp; terminal modes replay actual public-command policy tapes. No fabricated combat snapshots/outcomes.",
+  "input": "Managed screen callbacks; physical OS keyboard/mouse and end-to-end input-to-photon latency NOT RUN because native CUA surfaces are unavailable.",
+  "humanAcceptance": "OPEN; native rendering and managed callbacks do not establish human, auditory or deuteranopia acceptance"
+}

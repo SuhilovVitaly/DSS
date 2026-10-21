@@ -1,0 +1,275 @@
+{
+  "schemaVersion": 1,
+  "localizedBattle": "COMBAT",
+  "localizedSlowProfile": "slow",
+  "passed": true,
+  "failure": null,
+  "completed": true,
+  "mode": "defeat",
+  "seed": 3001,
+  "frame": 32,
+  "actualWindowSeconds": 1.3569132,
+  "requested": {
+    "width": 1920,
+    "height": 1080,
+    "scale": 1,
+    "language": "en"
+  },
+  "actual": {
+    "actualWidth": 1920,
+    "actualHeight": 1080,
+    "framebufferWidth": 1920,
+    "framebufferHeight": 1080
+  },
+  "graphicsRenderer": "Intel(R) Arc(TM) 140V GPU (16GB)",
+  "graphicsVersion": "3.3.0 - Build 32.0.101.8860",
+  "checks": {
+    "actualUiScaleMatchesRequest": true,
+    "localeBattleLabel": true,
+    "nativeOpenGlContext": true,
+    "actualPlayerHitFrameCaptured": true,
+    "actualOutcomeMatchesProductionTape": true,
+    "realWindowDefeatTransition": true
+  },
+  "notRun": {},
+  "captures": [
+    "1920x1080-s1-en-defeat.player-hit.png",
+    "1920x1080-s1-en-defeat.defeat.png"
+  ],
+  "captureStates": [
+    {
+      "label": "player-hit",
+      "file": "1920x1080-s1-en-defeat.player-hit.png",
+      "MotionTimeMs": 9200,
+      "freeMap": {
+        "Left": 368,
+        "Top": 176,
+        "Right": 1416,
+        "Bottom": 852
+      },
+      "CameraFocusX": 85,
+      "CameraFocusY": 500,
+      "CameraPixelsPerWorldUnit": 0.8,
+      "points": [
+        {
+          "id": "torpedo-3",
+          "Profile": "fast",
+          "Label": "fast",
+          "labelBounds": {
+            "Left": 1094.5613,
+            "Top": 168.14392,
+            "Right": 1113.5808,
+            "Bottom": 184.10486
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        }
+      ]
+    },
+    {
+      "label": "defeat",
+      "file": "1920x1080-s1-en-defeat.defeat.png",
+      "MotionTimeMs": 21792,
+      "freeMap": {
+        "Left": 368,
+        "Top": 216,
+        "Right": 1416,
+        "Bottom": 852
+      },
+      "CameraFocusX": 85,
+      "CameraFocusY": 500,
+      "CameraPixelsPerWorldUnit": 0.8,
+      "points": [
+        {
+          "id": "torpedo-9",
+          "Profile": "fast",
+          "Label": "fast",
+          "labelBounds": {
+            "Left": 1355.769,
+            "Top": 120.697296,
+            "Right": 1374.7886,
+            "Bottom": 136.65823
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        },
+        {
+          "id": "torpedo-10",
+          "Profile": "fast",
+          "Label": "fast",
+          "labelBounds": {
+            "Left": 1384.1654,
+            "Top": 182.13531,
+            "Right": 1403.1849,
+            "Bottom": 198.09625
+          },
+          "PhysicalRadiusPx": null,
+          "CoreRadiusPx": null,
+          "HasMinimumMarker": false,
+          "centerX": null,
+          "centerY": null,
+          "sourceOwn": null
+        }
+      ]
+    }
+  ],
+  "authoritativeMotionMs": 21792,
+  "outcome": "Defeated",
+  "encounter": {
+    "State": 3,
+    "StartedAtMotionMs": 0,
+    "EndedAtMotionMs": 21792,
+    "Stats": {
+      "TorpedoesLaunched": 2,
+      "CountermissilesLaunched": 4,
+      "EnemyTorpedoesLaunched": 8,
+      "TorpedoesIntercepted": 0,
+      "PlayerHitsReceived": 7,
+      "EnemyHitsDealt": 1,
+      "PlayerEvasions": 0,
+      "EnemiesDestroyed": 0,
+      "ArmorDamageTaken": 360,
+      "StructureDamageTaken": 738
+    },
+    "DurationSeconds": 21.792
+  },
+  "managedDispatchMs": [],
+  "commands": [
+    {
+      "CommandId": "static-3001-1",
+      "ClientSequence": 1,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-TORPEDO-01",
+      "CommandType": "torpedo.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 93.73114483423888,
+      "TargetWorldY": 688.1896202721324,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "fast",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "static-3001-2",
+      "ClientSequence": 2,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+      "CommandType": "defense.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 266.8691166936782,
+      "TargetWorldY": 265.27992469399305,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "wide",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "static-3001-3",
+      "ClientSequence": 3,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-COUNTERMEASURE-02",
+      "CommandType": "defense.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 94.5761216748061,
+      "TargetWorldY": 253.9190699844349,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "wide",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "static-3001-4",
+      "ClientSequence": 4,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-TORPEDO-01",
+      "CommandType": "torpedo.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 474.93648971397397,
+      "TargetWorldY": 190.5405344656761,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "fast",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "static-3001-5",
+      "ClientSequence": 5,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+      "CommandType": "defense.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 462.4231991761734,
+      "TargetWorldY": 27.25810492605292,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "wide",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    },
+    {
+      "CommandId": "static-3001-6",
+      "ClientSequence": 6,
+      "ObjectId": "SPC-0001",
+      "ModuleId": "MOD-PLAYER-COUNTERMEASURE-02",
+      "CommandType": "defense.launch",
+      "TargetObjectId": null,
+      "TargetWorldX": 529.6417213010354,
+      "TargetWorldY": 3.1860697317979585,
+      "ItemTypeId": null,
+      "Quantity": null,
+      "QuoteId": null,
+      "MarketRevision": null,
+      "ModeId": null,
+      "ProfileId": "wide",
+      "ThreatProjectileId": null,
+      "EvadeSide": null,
+      "TurnDirection": null,
+      "Active": null
+    }
+  ],
+  "audio": {
+    "enabled": false,
+    "requestedProductionCues": [],
+    "auditoryAcceptance": "NOT RUN: no human hearing verification"
+  },
+  "clock": "Controlled production Engine clock and matching renderer timestamp; terminal modes replay actual public-command policy tapes. No fabricated combat snapshots/outcomes.",
+  "input": "Managed screen callbacks; physical OS keyboard/mouse and end-to-end input-to-photon latency NOT RUN because native CUA surfaces are unavailable.",
+  "humanAcceptance": "OPEN; native rendering and managed callbacks do not establish human, auditory or deuteranopia acceptance"
+}
