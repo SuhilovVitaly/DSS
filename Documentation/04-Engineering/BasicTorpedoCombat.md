@@ -1,5 +1,13 @@
 # EP-0006: проверка базового торпедного боя
 
+## Current EP-0012 contract — 2026-10-21
+
+EP-0012 now supplies point-aim projectiles, geometric blast damage, manual point-PRO, evasion and Save18. Guided contact/roll/mode/auto/burst and Save17 statements below are historical. Module armor/structure and deterministic ownership remain. Current balance and human/native limitations are explicitly open. [Point-aim combat contract](PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 ## Текущие правила после EP-0009
 
 Этот отчёт фиксирует исторические этапы EP-0006/0008. Актуальны [модульный бой](ModuleCombat.md), [требования](../01-Requirements/EngineRequirements.md#phase-four-module-combat) и Save17: бросок попадания с навыками, несколько летящих торпед и урон модулей. Старые Hull HP, шанс и версия сохранения ниже не описывают текущий writer.

@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0015-project-documentation"
 ticket: "EP-0012-US-0015-TK-0001-update-documents-1"
 title: "update-documents-1"
-stage: "draft"
+stage: "implemented"
 layer: "documentation"
 depends_on: ["EP-0012-US-0014-TK-0003-native-acceptance"]
 files_touched: 5
 serves: ["US15-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0015-TK-0001-update-documents-1
@@ -20,19 +20,19 @@ revision: 1
 
 ## Decisions / Assumptions
 
-D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
+D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Current implementation sources are linked; historical planning assumptions remain identified.
 
 ## Code context
 
-Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (5 файлов). Current baseline `cec1c54cdf21c2a8f5b70fb8d30e39413e985e6b`. Scope уточнён до редактирования по EpicExecutionPrompt§6: актуальные контракты, историческая точность и все связанные документы. Evidence/Board metadata являются обязательным результатом.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `Documentation/04-Engineering/PointAimCombat.md` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
-| [Documentation/04-Engineering/BasicTorpedoCombat.md](../../../../Documentation/04-Engineering/BasicTorpedoCombat.md) | Существует: Documentation/04-Engineering/BasicTorpedoCombat.md:1; # EP-0006: проверка базового торпедного боя | Только изменения для scope этой карточки и served AC. |
-| [Documentation/04-Engineering/CountermeasureCombat.md](../../../../Documentation/04-Engineering/CountermeasureCombat.md) | Существует: Documentation/04-Engineering/CountermeasureCombat.md:69; `GameStateData.DefenseState` / `CountermeasureStateData` v1 сохраняет launchers, PR flights/routes/trails, attempted torpedo IDs, frozen ratings/chance, miss/reload deadlines, RNG v1 state/counter, projectile/journal sequences, журнал и SelectedProjectileId. JSON record-поля DefenseState используют имена C# (Version, Launchers и т.д.). Loader нормализует ссылки с OrdinalIgnoreCase и отклоняет неизвестные версии, orphan/duplicate IDs, несогласованные фазы/busy, шанс, маршрут/след и RNG counter. Валидация выполняется до замены мира. | Только изменения для scope этой карточки и served AC. |
-| [Documentation/04-Engineering/ModuleCombat.md](../../../../Documentation/04-Engineering/ModuleCombat.md) | Существует: Documentation/04-Engineering/ModuleCombat.md:1; # Module combat — EP-0009 current contract | Только изменения для scope этой карточки и served AC. |
-| [Documentation/04-Engineering/ModuleCombatDocumentation.md](../../../../Documentation/04-Engineering/ModuleCombatDocumentation.md) | Существует: Documentation/04-Engineering/ModuleCombatDocumentation.md:1; # EP-0009 documentation impact inventory — 2026-10-12 | Только изменения для scope этой карточки и served AC. |
+| `Documentation/04-Engineering/PointAimCombat.md` | NEW | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/04-Engineering/BasicTorpedoCombat.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/04-Engineering/CountermeasureCombat.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/04-Engineering/ModuleCombat.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/04-Engineering/ModuleCombatDocumentation.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
 
 ## Public API after the change
 
@@ -51,7 +51,7 @@ No public API change; использовать контракт зависимы
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+Documentation checks executed; actual results below.
 
 - **Documentation_links_and_numeric_contract_match_implementation**: каждый старый термин либо исторический с пометкой, либо исправлен; фактические NOT RUN сохранены.
 
@@ -67,4 +67,4 @@ No public API change; использовать контракт зависимы
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-21: documentation and self-review complete. PASS 51 relative path references across 5 scoped files, diff check. [Evidence](../../evidence/us0015-tk0001-results.json). New central contract covers public commands, numeric rules, event order, privacy, saves/scenarios and actual failed/open acceptance; earlier engineering records explicitly historical. Runtime tests not rerun for prose-only changes. Human/product/balance OPEN. Separate commit/push follows.

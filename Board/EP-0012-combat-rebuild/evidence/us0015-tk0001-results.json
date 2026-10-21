@@ -1,0 +1,9 @@
+{
+  "files": 5,
+  "links": 51,
+  "missing": [],
+  "ticket": "EP-0012-US-0015-TK-0001-update-documents-1",
+  "review": "Implementer self-review, not independent",
+  "runtimeRerun": "NOT RUN: documentation-only changes; latest gates are linked, not remeasured",
+  "note": "New central contract covers public commands, numeric rules, event order, privacy, saves/scenarios and actual failed/open acceptance; earlier engineering records explicitly historical."
+}

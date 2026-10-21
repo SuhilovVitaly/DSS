@@ -1,5 +1,13 @@
 # Module combat — EP-0009 current contract
 
+## Current EP-0012 contract — 2026-10-21
+
+EP-0012 now supplies point-aim projectiles, geometric blast damage, manual point-PRO, evasion and Save18. Guided contact/roll/mode/auto/burst and Save17 statements below are historical. Module armor/structure and deterministic ownership remain. Current balance and human/native limitations are explicitly open. [Point-aim combat contract](PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 Implemented on `base-fight` after EP-0008. The [canonical Engine requirements](../01-Requirements/EngineRequirements.md#phase-four-module-combat) and [EP-0009 specification](../../Board/EP-0009-battle/EP-0009-module-combat.md) define the rules; this page describes the shipped boundaries and evidence. Earlier [basic torpedo](BasicTorpedoCombat.md), [countermeasure](CountermeasureCombat.md) and [EP-0008](PhaseThreeCombatAcceptance.md) reports remain dated history.
 
 ## Runtime and content

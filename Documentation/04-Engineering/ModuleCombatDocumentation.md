@@ -1,5 +1,13 @@
 # EP-0009 documentation impact inventory — 2026-10-12
 
+## Current EP-0012 contract — 2026-10-21
+
+EP-0012 now supplies point-aim projectiles, geometric blast damage, manual point-PRO, evasion and Save18. Guided contact/roll/mode/auto/burst and Save17 statements below are historical. Module armor/structure and deterministic ownership remain. Current balance and human/native limitations are explicitly open. [Point-aim combat contract](PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 This inventory is based on the final module-combat contracts and searches for Hull HP, EP-0008 hit formula, operator skills, one-flight/auto-attempt rules, Tetrarch-only damage, Save16 and historical range/speed constants. The current source of truth is [EngineRequirements §Phase Four](../01-Requirements/EngineRequirements.md#phase-four-module-combat); the concise engineering description is [ModuleCombat](ModuleCombat.md). Dated EP-0006/0007/0008 results are retained as history rather than rewritten as newly measured outcomes.
 
 | Document / group | Disposition |
