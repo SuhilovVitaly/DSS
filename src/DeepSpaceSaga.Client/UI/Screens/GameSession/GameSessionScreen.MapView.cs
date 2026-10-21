@@ -234,7 +234,9 @@ public sealed partial class GameSessionScreen
         int value = hash.ToHashCode();
         if (value != _freeViewportHash || _freeViewport.IsEmpty)
         {
-            _freeViewport = MapViewGeometry.FreeViewport(_viewportW, _viewportH, _mapObstacles);
+            _freeViewport = MapViewGeometry.FreeViewport(_viewportW, _viewportH, _mapObstacles, 100, 100);
+            if (_freeViewport.IsEmpty)
+                _freeViewport = MapViewGeometry.FreeViewport(_viewportW, _viewportH, _mapObstacles);
             _freeViewportHash = value;
         }
         return _freeViewport;

@@ -45,7 +45,7 @@ public sealed class PointCombatUS0012TK0002Tests
         Assert.All(panel.Actions, h => Assert.True(panel.Bounds.Contains(h.Rect), $"{panel.Bounds} must contain {h.Rect}"));
         var physical = new SKRect(panel.Bounds.Left * scale, panel.Bounds.Top * scale, panel.Bounds.Right * scale, panel.Bounds.Bottom * scale);
         Assert.False(screen.AvailableMapRect().IntersectsWith(physical));
-        Assert.True(screen.AvailableMapRect().Width >= 100 && screen.AvailableMapRect().Height >= 100);
+        Assert.True(screen.AvailableMapRect().Width >= 100 && screen.AvailableMapRect().Height >= 100, $"free={screen.AvailableMapRect()} commands={screen.CommandsPanel.BodyRect} threats={panel.Bounds} info={screen.ObjectInfoPanel.Bounds}");
         if (Environment.GetEnvironmentVariable("DSS_POINT_RENDER_ARTIFACT_DIRECTORY") is { Length: > 0 } directory && scale == 1)
         {
             Directory.CreateDirectory(directory); using var image = SKImage.FromBitmap(bitmap); using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -174,3 +174,4 @@ public sealed class PointCombatUS0012TK0002Tests
         screen.OnDeactivated();
     }
 }
+
