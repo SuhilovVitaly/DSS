@@ -12,6 +12,7 @@ public sealed partial class GameSessionScreen
     internal sealed record PointAimState(ProjectileKind Kind, string ModuleId, string ProfileId);
     internal PointAimState? PointAim { get; private set; }
     internal string? LastPointCommandId { get; private set; }
+    private string? _lastPointModuleId;
     private Guid? _pointInputSession;
     private bool _pointInputSessionInitialized;
     private sealed class PointSubmission
@@ -29,7 +30,7 @@ public sealed partial class GameSessionScreen
         module.LauncherCombat?.Profiles ?? module.Defense?.Profiles ?? [];
     private double PointAimTime => _buffer.LatestPrediction is { } prediction
         ? prediction.BufferedSnapshot.Snapshot.MotionTimeMs + CombatPredictionDelta(prediction) : 0;
-    internal string? PointAimFeedback => PointAim is { } aim && PointAimModule(aim.ModuleId) is { } module
+    internal string? PointAimFeedback => (PointAim?.ModuleId ?? _lastPointModuleId) is { } moduleId && PointAimModule(moduleId) is { } module
         ? PointWeaponStatus(module) : null;
 
     private bool _pointAltLeft, _pointAltRight;
@@ -49,7 +50,7 @@ public sealed partial class GameSessionScreen
         {
             CancelPointAim(); _pointInputSession = session; _pointInputSessionInitialized = true;
             foreach (var pending in _pointSubmissions.Values) _ = pending.SendTask?.Exception;
-            _pointSubmissions.Clear(); _pointErrors.Clear(); LastPointCommandId = null;
+            _pointSubmissions.Clear(); _pointErrors.Clear(); LastPointCommandId = null; _lastPointModuleId = null;
         }
         var snapshot = _buffer.Presented?.Snapshot;
         if (snapshot is null || snapshot.ActiveDialogue is not null || snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
@@ -190,6 +191,8 @@ public sealed partial class GameSessionScreen
             submission.SendTask = _handle.SendPointLaunchAsync(snapshot.PlayerShipObjectId!, module.ModuleId, aim.Kind,
                 target.Item1, target.Item2, aim.ProfileId, out submission.CommandId).AsTask();
             LastPointCommandId = submission.CommandId;
+            _lastPointModuleId = module.ModuleId;
+            if (aim.Kind == ProjectileKind.Torpedo) CancelPointAim();
         }
         catch (Exception)
         { _pointSubmissions.Remove(module.ModuleId); _pointErrors[module.ModuleId] = "send_failed"; }

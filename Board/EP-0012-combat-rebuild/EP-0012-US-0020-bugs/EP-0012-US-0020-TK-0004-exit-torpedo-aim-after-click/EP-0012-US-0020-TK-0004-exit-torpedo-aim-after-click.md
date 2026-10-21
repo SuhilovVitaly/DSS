@@ -67,3 +67,9 @@ Native: повторить исходный пользовательский с�
 ## Definition of Done
 
 US20-AC4 доказан named tests; owning build/scoped format/diff проходят. Ручной результат и ограничения записаны отдельно. Сейчас implementation NOT STARTED; automated/native/product NOT RUN. Текущее поручение — только planning, без игры и commit/push.
+
+## Execution — 2026-10-21
+
+Successful torpedo send setup immediately clears PointAim and both previews. Pending/errors remain associated with the last submitted module and displayed by its weapon panel; no automatic reentry. Invalid/range/reload/friendly confirmation paths retain aiming. Countermissile behavior unchanged. Self-review completed.
+
+Validation: Client tests filter `FullyQualifiedName~PointCombatUS0020TK0004Tests|FullyQualifiedName~PointCombatUS0011|FullyQualifiedName~BasicCombatUiFlowTests`: 56/56 passed (4 new; existing real rejection, delayed admission, reload, friendly-fire and full UI flow retained). Client build passed. Scoped format exit 0; diff check exit 0. Hard cap 300000ms. Native/product NOT RUN/OPEN.
