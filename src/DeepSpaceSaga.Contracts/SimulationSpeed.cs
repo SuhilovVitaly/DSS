@@ -12,6 +12,12 @@ public enum SimulationSpeed
     /// <summary>Base pace — 75 calendar seconds per real second.</summary>
     Speed1 = 1,
 
+    /// <summary>2× the base pace.</summary>
+    SpeedDouble = 2,
+
+    /// <summary>10× the base pace.</summary>
+    SpeedTen = 10,
+
     /// <summary>5× the base pace (375 calendar seconds per real second).</summary>
     Speed2 = 5,
 
@@ -25,6 +31,9 @@ public enum SimulationSpeed
 public static class SimulationSpeedExtensions
 {
     public const int BaseGameSecondsPerRealSecond = 300;
+
+    public static bool IsAllowedInCombat(this SimulationSpeed speed) => speed is SimulationSpeed.Speed0 or
+        SimulationSpeed.Speed1 or SimulationSpeed.SpeedDouble or SimulationSpeed.Speed2 or SimulationSpeed.SpeedTen;
 
     /// <summary>Physical motion and ship-cycle seconds per real second.</summary>
     public static double MotionTimeMultiplier(this SimulationSpeed speed) => (int)speed / 4.0;

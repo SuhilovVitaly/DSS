@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class PointCombatUS0008TK0002Tests
 {
     private static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition => Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
-    private static SimulationEngine Battle(SimulationClock clock, SimulationSpeed initial = SimulationSpeed.Speed3,
+    internal static SimulationEngine Battle(SimulationClock clock, SimulationSpeed initial = SimulationSpeed.Speed3,
         double distance = 40, double npcSpeed = 0, int remainder = 3, bool station = false)
     {
         var source = Registry(scatter: 0);
@@ -53,7 +53,7 @@ public sealed class PointCombatUS0008TK0002Tests
         var active = engine.CaptureSnapshot();
         Assert.Equal(CombatEncounterState.Active, active.Encounter!.State);
         Assert.Equal(SimulationSpeed.Speed1, active.CurrentSpeed);
-        foreach (var forbidden in new[] { SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 })
+        foreach (var forbidden in new[] { SimulationSpeed.Speed3, SimulationSpeed.Speed4 })
         {
             Assert.Equal(CommandReasonCodes.CombatSpeedLocked, engine.TrySetSpeed(forbidden));
             Assert.Equal(SimulationSpeed.Speed1, engine.CurrentSpeed);
@@ -75,7 +75,7 @@ public sealed class PointCombatUS0008TK0002Tests
         using var engine = Battle(clock, SimulationSpeed.Speed0);
         Assert.Equal(CombatEncounterState.Active, engine.CaptureSnapshot().Encounter!.State);
         Assert.Equal(SimulationSpeed.Speed0, engine.CurrentSpeed);
-        Assert.Equal(CommandReasonCodes.CombatSpeedLocked, engine.TrySetSpeed(SimulationSpeed.Speed2));
+        Assert.Equal(CommandReasonCodes.CombatSpeedLocked, engine.TrySetSpeed(SimulationSpeed.Speed3));
         Assert.Null(engine.TrySetSpeed(SimulationSpeed.Speed1));
     }
 

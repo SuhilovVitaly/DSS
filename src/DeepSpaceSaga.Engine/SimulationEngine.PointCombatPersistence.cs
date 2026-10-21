@@ -41,7 +41,7 @@ public sealed partial class SimulationEngine
             return;
         }
         if (saved.Encounter.State == CombatEncounterState.Lost ||
-            saved.Encounter.State == CombatEncounterState.Active && Enum.Parse<SimulationSpeed>(state.CurrentSpeed) > SimulationSpeed.Speed1)
+            saved.Encounter.State == CombatEncounterState.Active && !Enum.Parse<SimulationSpeed>(state.CurrentSpeed).IsAllowedInCombat())
             throw new ScenarioException("Invalid point combat save: defeated state or active speed.");
         if (!UsesPointEncounters && !objects.SelectMany(o => o.Modules).Any(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex).IsPointLauncher))
             throw new ScenarioException("Invalid point combat save: no point combat content.");

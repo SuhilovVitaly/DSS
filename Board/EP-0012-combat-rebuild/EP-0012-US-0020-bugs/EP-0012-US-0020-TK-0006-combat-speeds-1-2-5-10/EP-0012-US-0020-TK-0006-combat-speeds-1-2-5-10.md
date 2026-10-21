@@ -77,3 +77,19 @@ Native: начать бой, последовательно выбрать 1×/2
 ## Definition of Done
 
 US20-AC6 покрыт named tests и документацией; build/scoped format/diff проходят, save/load и совместимость проверены. Сейчас draft; implementation NOT STARTED; automated/native/product NOT RUN. Planning не разрешает запуск игры или commit/push.
+
+## Execution scope correction
+
+Scenario/ScenarioLoader.cs owns the explicit serialized speed-name allowlist and ParseSpeed switch; include it for real Save/Load. Aim preview and SimulationClock already use general numeric multipliers; verify without unnecessary changes. Combat shows exactly pause/1/2/5/10; outside keeps original levels and exposes added values when a loaded confirmed value requires them.
+
+Scope: adapt existing Engine PointCombatUS0008TK0002Tests and Client PointCombatUS0013TK0005Tests from obsolete x1-only contract to exact allowed set, preserving restoration/pause checks.
+
+Native probe scope: tools/DeepSpaceSaga.Performance/PointCombatNativeEvidence.cs. Update stale x1-only assertion to exact allowed set; add ship/left-module, aim exit and observed-forward-geometry assertions. Correct test actions: counter aim5km before player instead of unreachable15km; advance controlled animation timestamp after zoom; request manual detonation before waiting out evasion (original projectile otherwise expires). These are fixture changes, no gameplay rules changed. Preserve failed initial native report.
+
+## Execution result — 2026-10-21
+
+Added stable SpeedDouble=2/SpeedTen=10; shared exact combat allowed set {0,1,2,5,10}. Engine request, dialogue restore and Save18 validation use that set; scenario JSON recognizes both new names. Active encounter clock boundaries convert physical deadline using actual speed and retained quarter remainder. Entry/restoration policy preserved. Client combat controls show five options pause/1/2/5/10; resume retains chosen allowed pace, old peace levels remain available and new loaded peace values render correctly. Existing aim/reload ETA already uses MotionTimeMultiplier, so no duplicate time conversion added.
+
+Automated: Engine named+clock/encounter59/59; expanded point/save/report/clock404/404; Client speed+encounter/localization30/30; full Contracts261/261. Client full runs exposed panel/reliable-delivery regressions corrected in separate TK2/TK5 commits; final rerun belongs to US15. Build/scoped format passed for affected Contracts/Engine/Client. Every check capped300000ms. Self-review completed.
+
+Native: actual Intel Arc OpenGL3.3 window1920x1080/RU ran managed input. Updated harness33 assertions,31 passed,2 failed (actualCountermissileConfirmed/counterDetonationActualJournal). New US20 checks for allowed speeds, ship card/left modules, aim exit and no forward foreign geometry passed. Overall native scenario remains FAILED; no auditory/human/physical-input PASS. Original and final raw JSON plus final PNGs retained in sibling evidence. Counter fixture still chooses a point marked unreachable by actual preview; no gameplay validation was relaxed. Native speed selection/timing beyond enabled-set inspection, US20 maneuver physical input and reload audible acceptance remain OPEN.

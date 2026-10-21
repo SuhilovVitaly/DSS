@@ -169,7 +169,7 @@ public sealed partial class SimulationEngine : IDisposable
             if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
             if (UsesPointEncounters) AdvancePointClockWorld();
             if (IsDefeated) return CommandReasonCodes.SessionDefeated;
-            if (_encounterState == CombatEncounterState.Active && speed > SimulationSpeed.Speed1) return CommandReasonCodes.CombatSpeedLocked;
+            if (_encounterState == CombatEncounterState.Active && !speed.IsAllowedInCombat()) return CommandReasonCodes.CombatSpeedLocked;
             if (_automaticPresentationPause && speed != SimulationSpeed.Speed0) return null;
             if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return null; }
             _presentationIntervalSpeed = _clock.Speed;

@@ -190,13 +190,13 @@ public sealed partial class SimulationEngine
                 // Only an encounter-capable enemy can require a mid-interval speed clamp.
                 // With none present, World advancement still processes calendar/motion deadlines,
                 // and a long peaceful real-time gap must not become millions of1ms updates.
-                long limit = _clock.Speed > SimulationSpeed.Speed1 && _objects.Any(EncounterEnemy) ? 1 : long.MaxValue;
-                // A blast can end the encounter inside an x1 interval and restore a faster pace.
+                long limit = _encounterState != CombatEncounterState.Active && _clock.Speed > SimulationSpeed.Speed1 && _objects.Any(EncounterEnemy) ? 1 : long.MaxValue;
+                // A blast can end the encounter inside this interval and restore the previous pace.
                 // Stop the clock interval at that event so its remaining real time uses the restored speed.
-                if (_clock.Speed == SimulationSpeed.Speed1 && _encounterState == CombatEncounterState.Active)
+                if (_clock.Speed != SimulationSpeed.Speed0 && _encounterState == CombatEncounterState.Active)
                 {
                     var current = _clock.Capture();
-                    double untilBlast = Math.Ceiling((NextPointDetonationTime() - current.MotionTimeMs) * 4 - current.MotionQuarterRemainder);
+                    double untilBlast = Math.Ceiling(((NextPointDetonationTime() - current.MotionTimeMs) * 4 - current.MotionQuarterRemainder) / (int)_clock.Speed);
                     if (double.IsFinite(untilBlast) && untilBlast < long.MaxValue) limit = Math.Max(1, (long)untilBlast);
                 }
                 var next = _clock.AdvanceBounded(deadline, limit);

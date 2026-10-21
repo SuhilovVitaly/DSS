@@ -112,7 +112,7 @@ public sealed partial class GameSessionScreen : IScreen
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
     private SKRect _lastSpeedPanelRect;
-    private readonly SKRect[] _speedButtonRects = new SKRect[5];
+    private readonly SKRect[] _speedButtonRects = new SKRect[7];
 
     // Scale state
     private SKRect _lastScalePanelRect;
@@ -226,8 +226,18 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private const float ObjectHitTestRadiusPx = 30f;
 
-    private static readonly string[] SpeedLabels = { "II", "1x", "5x", "20x", "100x" };
-    private static readonly SimulationSpeed[] SpeedValues =
+    private static readonly string[] CombatSpeedLabels = ["II", "1x", "2x", "5x", "10x"];
+    private static readonly SimulationSpeed[] CombatSpeedValues = [SimulationSpeed.Speed0, SimulationSpeed.Speed1,
+        SimulationSpeed.SpeedDouble, SimulationSpeed.Speed2, SimulationSpeed.SpeedTen];
+    private static readonly string[] ExtendedSpeedLabels = ["II", "1x", "2x", "5x", "10x", "20x", "100x"];
+    private static readonly SimulationSpeed[] ExtendedSpeedValues = [SimulationSpeed.Speed0, SimulationSpeed.Speed1,
+        SimulationSpeed.SpeedDouble, SimulationSpeed.Speed2, SimulationSpeed.SpeedTen, SimulationSpeed.Speed3, SimulationSpeed.Speed4];
+    private bool HasExtendedPeaceSpeed => _buffer.CurrentSpeed is SimulationSpeed.SpeedDouble or SimulationSpeed.SpeedTen;
+    private string[] SpeedLabels => CombatIsActive ? CombatSpeedLabels : HasExtendedPeaceSpeed ? ExtendedSpeedLabels : PeaceSpeedLabels;
+    private SimulationSpeed[] SpeedValues => CombatIsActive ? CombatSpeedValues : HasExtendedPeaceSpeed ? ExtendedSpeedValues : PeaceSpeedValues;
+    internal IReadOnlyList<SimulationSpeed> SpeedOptions => SpeedValues;
+    private static readonly string[] PeaceSpeedLabels = { "II", "1x", "5x", "20x", "100x" };
+    private static readonly SimulationSpeed[] PeaceSpeedValues =
         { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 };
     private static readonly string[] ScaleLabels = { "M0.5", "M1", "M10", "M100", "M1000" };
     private readonly double[] ScaleTargets;
@@ -244,7 +254,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal SKRect LastCloseRect => _lastCloseRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
-    internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
+    internal IReadOnlyList<SKRect> SpeedButtonRects => new ArraySegment<SKRect>(_speedButtonRects, 0, SpeedValues.Length);
     internal SKRect LastScalePanelRect => _lastScalePanelRect;
     internal IReadOnlyList<SKRect> ScaleButtonRects => _scaleButtonRects;
     internal SKRect LastMechanicsPanelRect => _lastMechanicsPanelRect;
@@ -778,7 +788,7 @@ public sealed partial class GameSessionScreen : IScreen
         var current = _buffer.CurrentSpeed;
         if (current == SimulationSpeed.Speed0)
         {
-            ApplySpeed(CombatIsActive ? SimulationSpeed.Speed1 : _lastNonPauseSpeed);
+            ApplySpeed(CombatIsActive && !_lastNonPauseSpeed.IsAllowedInCombat() ? SimulationSpeed.Speed1 : _lastNonPauseSpeed);
         }
         else
         {
@@ -801,7 +811,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private int HitTestSpeedPanel(float x, float y)
     {
-        for (int i = 0; i < _speedButtonRects.Length; i++)
+        for (int i = 0; i < SpeedValues.Length; i++)
         {
             if (_speedButtonRects[i].Contains(x, y))
                 return i;

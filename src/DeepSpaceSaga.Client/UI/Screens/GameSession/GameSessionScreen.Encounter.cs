@@ -25,7 +25,7 @@ public sealed partial class GameSessionScreen
     internal string? CombatSpeedTooltip { get; private set; }
     internal string? LastEncounterAcknowledgementCommandId { get; private set; }
     private bool CombatIsActive => _buffer.Presented?.Snapshot.Encounter?.State == CombatEncounterState.Active;
-    internal bool IsCombatSpeedEnabled(SimulationSpeed speed) => !CombatIsActive || speed <= SimulationSpeed.Speed1;
+    internal bool IsCombatSpeedEnabled(SimulationSpeed speed) => !CombatIsActive || speed.IsAllowedInCombat();
 
     private void DrawEncounterHud(SKCanvas canvas, BufferedSnapshot? buffered, SnapshotPrediction? prediction)
     {
@@ -108,7 +108,7 @@ public sealed partial class GameSessionScreen
         CombatSpeedTooltip = null;
         if (!CombatIsActive || !_hasMousePosition) return;
         int index = HitTestSpeedPanel(_uiMouseX, _uiMouseY);
-        if (index < 2) return;
+        if (index < 0 || IsCombatSpeedEnabled(SpeedValues[index])) return;
         CombatSpeedTooltip = CombatText("Reason.combat_speed_locked", "Во время боя доступны пауза и x1");
         using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12, IsAntialias = true };
         float width = Math.Min(_uiViewportW - 16, paint.MeasureText(CombatSpeedTooltip) + 12);

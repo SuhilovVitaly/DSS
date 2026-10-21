@@ -17,7 +17,7 @@ public static class ScenarioLoader
         { "Permanent", "Temporary" };
 
     private static readonly HashSet<string> KnownSpeeds = new(StringComparer.OrdinalIgnoreCase)
-        { "Speed0", "Speed1", "Speed2", "Speed3", "Speed4" };
+        { "Speed0", "Speed1", "SpeedDouble", "Speed2", "SpeedTen", "Speed3", "Speed4" };
 
     private static readonly HashSet<string> KnownPowerStates = new(StringComparer.OrdinalIgnoreCase)
         { "On", "Off" };
@@ -193,6 +193,8 @@ public static class ScenarioLoader
         {
             "Speed0" => SimulationSpeed.Speed0,
             "Speed1" => SimulationSpeed.Speed1,
+            "SpeedDouble" => SimulationSpeed.SpeedDouble,
+            "SpeedTen" => SimulationSpeed.SpeedTen,
             "Speed2" => SimulationSpeed.Speed2,
             "Speed3" => SimulationSpeed.Speed3,
             "Speed4" => SimulationSpeed.Speed4,

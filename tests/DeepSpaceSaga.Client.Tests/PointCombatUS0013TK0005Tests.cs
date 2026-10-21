@@ -155,25 +155,27 @@ public sealed class PointCombatUS0013TK0005Tests
     [InlineData(2)]
     [InlineData(3)]
     [InlineData(4)]
-    public void Combat_speed_buttons_are_disabled_with_reason(int index)
+    public void Combat_speed_buttons_show_exact_allowed_set(int index)
     {
         using var v = new View(Scene(CombatEncounterState.Active));
-        var speed = new[] { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 }[index];
-        Assert.False(v.Screen.IsCombatSpeedEnabled(speed)); Assert.True(v.Screen.IsCombatSpeedEnabled(SimulationSpeed.Speed0));
-        Assert.True(v.Screen.IsCombatSpeedEnabled(SimulationSpeed.Speed1));
+        var speed = new[] { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.SpeedDouble, SimulationSpeed.Speed2, SimulationSpeed.SpeedTen }[index];
+        Assert.True(v.Screen.IsCombatSpeedEnabled(speed));
+        Assert.False(v.Screen.IsCombatSpeedEnabled(SimulationSpeed.Speed3));
+        Assert.False(v.Screen.IsCombatSpeedEnabled(SimulationSpeed.Speed4));
+        Assert.Equal(5, v.Screen.SpeedOptions.Count);
         var rect = v.Screen.SpeedButtonRects[index]; v.Screen.OnMouseMove(rect.MidX, rect.MidY); v.Render();
-        Assert.Equal(Localization.Get("Combat.Reason.combat_speed_locked"), v.Screen.CombatSpeedTooltip);
-        v.Screen.OnMouseDown(rect.MidX, rect.MidY); Assert.Equal(SimulationSpeed.Speed1, v.Buffer.CurrentSpeed);
+        Assert.Null(v.Screen.CombatSpeedTooltip);
+        v.Screen.OnMouseDown(rect.MidX, rect.MidY); Assert.Equal(speed, v.Buffer.CurrentSpeed);
     }
 
     [Fact]
-    public void Space_resumes_active_combat_at_x1_even_if_previous_peace_speed_was_x5()
+    public void Space_resumes_allowed_x5_after_combat_admission_while_paused()
     {
         using var v = new View(Scene(CombatEncounterState.Idle, speed: SimulationSpeed.Speed2));
         v.Screen.OnKeyDown(Key.Space); Assert.Equal(SimulationSpeed.Speed0, v.Buffer.CurrentSpeed);
         v.Screen.OnKeyUp(Key.Space);
         v.Buffer.Update(Scene(CombatEncounterState.Active, speed: SimulationSpeed.Speed0) with { SnapshotSequence = 2 }); v.Render();
-        v.Screen.OnKeyDown(Key.Space); Assert.Equal(SimulationSpeed.Speed1, v.Buffer.CurrentSpeed);
+        v.Screen.OnKeyDown(Key.Space); Assert.Equal(SimulationSpeed.Speed2, v.Buffer.CurrentSpeed);
     }
 
     [Theory]

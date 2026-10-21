@@ -210,7 +210,7 @@ public sealed partial class SimulationEngine
         _dialogue.Active = null;
         var speed = _dialogue.ResumeSpeed ?? SimulationSpeed.Speed0;
         _dialogue.ResumeSpeed = null;
-        if (_encounterState == CombatEncounterState.Active && speed > SimulationSpeed.Speed1) speed = SimulationSpeed.Speed1;
+        if (_encounterState == CombatEncounterState.Active && !speed.IsAllowedInCombat()) speed = SimulationSpeed.Speed1;
         _clock.Reset(_processedWorldTimeMs, speed, time, _clock.Capture().MotionQuarterRemainder);
     }
 

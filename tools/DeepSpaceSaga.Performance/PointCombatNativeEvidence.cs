@@ -111,7 +111,8 @@ internal static class PointCombatNativeEvidence
                 {
                     case 0:
                         Tap(Key.F);
-                        checks["activeBannerAndSpeedLock"] = screen.CombatBorderVisible && !screen.CombatBannerRect.IsEmpty && !screen.IsCombatSpeedEnabled(SimulationSpeed.Speed2);
+                        checks["activeBannerAndAllowedSpeeds"] = screen.CombatBorderVisible && !screen.CombatBannerRect.IsEmpty && screen.IsCombatSpeedEnabled(SimulationSpeed.SpeedDouble) && screen.IsCombatSpeedEnabled(SimulationSpeed.Speed2) && screen.IsCombatSpeedEnabled(SimulationSpeed.SpeedTen) && !screen.IsCombatSpeedEnabled(SimulationSpeed.Speed3) && !screen.IsCombatSpeedEnabled(SimulationSpeed.Speed4);
+                        checks["shipCardAndLeftModules"] = screen.ObjectInfoPanel.OwnModuleDiagram is null && screen.CommandsPanel.OwnModuleDiagram is not null;
                         checks["ranges70And30"] = screen.WeaponRangeRings.Any(r => r.RangeKm == 70) && screen.WeaponRangeRings.Count(r => r.RangeKm == 30) == 2;
                         Tap(Key.Q); Tap(Key.Number1); aim = ChooseAim(40, 65); Move(aim); break;
                     case 1:
@@ -128,6 +129,7 @@ internal static class PointCombatNativeEvidence
                     case 5:
                         before = connection.Commands.Count; MapClick(aim);
                         checks["pointCommandSent"] = connection.Commands.Count == before + 1 && connection.Commands.Last().CommandType == CombatCommandTypes.Launch;
+                        checks["torpedoClickExitsAiming"] = screen.PointAim is null && screen.CurrentTorpedoAimPreview is null;
                         checks["noProjectileBeforeAuthoritativeSnapshot"] = !buffer.Presented!.Snapshot.Objects.Any(o => o.OwnProjectile is not null);
                         Publish(); if (args.Contains("--clean-flight")) Tap(Key.Escape); break;
                     case 6:
@@ -137,6 +139,7 @@ internal static class PointCombatNativeEvidence
                             Math.Abs(visual.CoreRadiusPx!.Value - visual.PhysicalRadiusPx.Value * .3) <= 1;
                         checks["foreignHasNoEndpointOrDeadlineVisual"] = world.Objects.Where(o => o.ObservedProjectile is not null).All(o =>
                             screen.PointProjectileVisuals.TryGetValue(o.ObjectId, out var v) && v.DetonationCenter is null && v.RemainingRealSeconds is null && v.PhysicalRadiusPx is null);
+                        checks["foreignHasNoForwardGeometry"] = screen.CombatTrajectories.Where(p => p.Value.IsObserved).All(p => p.Value.Prediction.Count == 0 && p.Value.Target.Count == 0);
                         checks["weaponRowsCurrentOnly"] = screen.CommandsPanel.CommandPanelRows.Where(r => r.Weapon is not null).All(r =>
                             !r.ReloadRingRect.IsEmpty && r.ReloadBarRect.IsEmpty && r.OperatorText is not null &&
                             r.Buttons.All(b => b.CommandTypeId is not (CombatCommandTypes.Fire or CombatCommandTypes.SelfDestruct or DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)));
@@ -161,10 +164,22 @@ internal static class PointCombatNativeEvidence
                         }
                         else notRun["rangeToggleNativeClick"] = "No weapon range toggle currently visible without scrolling in this viewport; unit scroll/range coverage remains separate.";
                         Tap(Key.W);
-                        var observed = world.Objects.First(o => o.ObservedProjectile is not null).ObservedProjectile!;
-                        var player = world.Objects.Single(o => o.ObjectId == world.PlayerShipObjectId);
-                        double along = Math.Max(0, (player.X - observed.X) * observed.DirectionX + (player.Y - observed.Y) * observed.DirectionY - 150);
-                        aim = (observed.X + observed.DirectionX * along, observed.Y + observed.DirectionY * along); Move(aim); break;
+                        var observedPose = screen.RenderStates.First(o => o.Source.ObservedProjectile is not null).Pose.ToSnapshot();
+                        var observed = observedPose.ObservedProjectile! with { X = observedPose.X, Y = observedPose.Y };
+                        var player = screen.RenderStates.Single(o => o.IsPlayerShip).Pose.ToSnapshot();
+                        double along = Math.Max(0, (player.X - observed.X) * observed.DirectionX + (player.Y - observed.Y) * observed.DirectionY - 50);
+                        aim = (observed.X + observed.DirectionX * along, observed.Y + observed.DirectionY * along);
+                        var defenseProfile = world.InstalledModules.First(m => m.Defense is not null).Defense!.Profiles!.Value[0];
+                        for (double seconds = .01; seconds < 20; seconds += .01)
+                        {
+                            var candidate = (X: observed.X + observed.DirectionX * observed.SpeedKmS * 10 * seconds,
+                                Y: observed.Y + observed.DirectionY * observed.SpeedKmS * 10 * seconds);
+                            var preview = GameSessionScreen.ProjectCounterAim(player, screen.RenderStates.Select(s => s.Pose.ToSnapshot()).ToArray(), defenseProfile, 30,
+                                candidate.X, candidate.Y, screen.CameraPixelsPerWorldUnit, false, world.MotionTimeMs, .25);
+                            if (!preview.Unreachable && !preview.Late && preview.SnappedObjectId is not null)
+                            { aim = candidate; break; }
+                        }
+                        Move(aim); break;
                     case 9:
                         checks["counterPreviewAndTraceSnap"] = screen.CurrentCounterAimPreview?.SnappedObjectId is not null;
                         checks["counterAimLabelContained"] = screen.AvailableMapRect().Contains(screen.CounterAimLabelBounds);
@@ -191,7 +206,7 @@ internal static class PointCombatNativeEvidence
                     case 16:
                         checks["authoritativePauseFreezesMotionAndReload"] = world.MotionTimeMs == pausedMotion && Math.Abs(Reload() - pausedReload) < .1;
                         Capture(surface, "paused"); handle.SetSpeedAsync(SimulationSpeed.Speed1).AsTask().GetAwaiter().GetResult(); Publish();
-                        Tap(Key.Escape); free = screen.AvailableMapRect(); screen.OnMouseWheel(free.MidX, free.MidY, -24); break;
+                        Tap(Key.Escape); free = screen.AvailableMapRect(); screen.OnMouseWheel(free.MidX, free.MidY, -24); real += 1000; break;
                     case 17:
                         checks["minimumMarkerSeparateFromPhysicalRadius"] = screen.PointProjectileVisuals.Values.Any(v => v.HasMinimumMarker && v.PhysicalRadiusPx < 6);
                         Capture(surface, "minimum-markers"); Tap(Key.F);
@@ -201,13 +216,6 @@ internal static class PointCombatNativeEvidence
                     case 18:
                         checks["counterDetonationActualJournal"] = world.CombatJournal.Any(e => e.Type == CombatEventType.CountermissileDetonated);
                         Capture(surface, "counter-blast");
-                        while (world.Objects.Single(o => o.ObjectId == world.PlayerShipObjectId).Evasion is not null && !handle.IsDefeated) Advance(100);
-                        double heading = world.Objects.Single(o => o.ObjectId == world.PlayerShipObjectId).Direction;
-                        screen.OnKeyDown(Key.Right); Publish(); Advance(500);
-                        checks["heldTurnChangesAuthoritativeHeading"] = Math.Abs(world.Objects.Single(o => o.ObjectId == world.PlayerShipObjectId).Direction - heading) > .01;
-                        screen.OnKeyUp(Key.Right); Publish(); Advance(100);
-                        screen.OnKeyDown(Key.ShiftLeft); Publish(); screen.OnKeyUp(Key.ShiftLeft);
-                        checks["shiftSendsFullSpeedCommand"] = connection.Commands.Any(c => c.CommandType == ShipEngineCommandTypes.Accelerate);
                         if (ownId is not null && world.Objects.FirstOrDefault(o => o.ObjectId == ownId)?.OwnProjectile is { } flight)
                         {
                             long target = (long)Math.Min(flight.DetonationMotionTimeMs - 100, flight.LaunchMotionTimeMs + 3500);
@@ -217,6 +225,13 @@ internal static class PointCombatNativeEvidence
                                 engine.ReceiveCommand(new("native-manual", 999999, scenario.GameState.PlayerShipObjectId!, flight.LauncherModuleId, CombatCommandTypes.Detonate, ownId)); Publish();
                             }
                         }
+                        while (world.Objects.Single(o => o.ObjectId == world.PlayerShipObjectId).Evasion is not null && !handle.IsDefeated) Advance(100);
+                        double heading = world.Objects.Single(o => o.ObjectId == world.PlayerShipObjectId).Direction;
+                        screen.OnKeyDown(Key.Right); Publish(); Advance(500);
+                        checks["heldTurnChangesAuthoritativeHeading"] = Math.Abs(world.Objects.Single(o => o.ObjectId == world.PlayerShipObjectId).Direction - heading) > .01;
+                        screen.OnKeyUp(Key.Right); Publish(); Advance(100);
+                        screen.OnKeyDown(Key.ShiftLeft); Publish(); screen.OnKeyUp(Key.ShiftLeft);
+                        checks["shiftSendsFullSpeedCommand"] = connection.Commands.Any(c => c.CommandType == ShipEngineCommandTypes.Accelerate);
                         break;
                     case 19:
                         checks["manualDetonationActualJournal"] = world.CombatJournal.Any(e => e.Type == CombatEventType.ManuallyDetonated);

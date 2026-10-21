@@ -465,7 +465,7 @@
   "Combat.BattleSummary": "Бой завершён",
   "Combat.Continue": "Продолжить",
   "Combat.Duration": "Длительность",
-  "Combat.Reason.combat_speed_locked": "Во время боя доступны только пауза и x1",
+  "Combat.Reason.combat_speed_locked": "Во время боя доступны пауза и 1×, 2×, 5×, 10×",
   "Combat.Stats.TorpedoesLaunched": "Выпущено торпед",
   "Combat.Stats.CountermissilesLaunched": "Выпущено противоракет",
   "Combat.Stats.EnemyTorpedoesLaunched": "Торпед выпущено врагом",
