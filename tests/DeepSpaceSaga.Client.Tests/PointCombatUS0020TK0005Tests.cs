@@ -16,11 +16,27 @@ public class PointCombatUS0020TK0005Tests
         f.Expose(300); f.Aim(); f.Click(300);
         await f.Wait(() => f.Presented.Objects.Any(o => o.OwnProjectile is not null));
         await f.AdvanceTo(10000);
-        await f.Wait(() =>
+        try
         {
-            f.Screen.PrepareCombatReports();
-            return f.Screen.ReportStore.Reports.Any(r => r.Kind == BattleReportKind.PlayerTorpedoReloadCompleted);
-        });
+            await f.Wait(() =>
+            {
+                f.Screen.PrepareCombatReports();
+                return f.Screen.ReportStore.Reports.Any(r => r.Kind == BattleReportKind.PlayerTorpedoReloadCompleted);
+            });
+        }
+        catch (OperationCanceledException)
+        {
+            var actual = f.Engine.CaptureSnapshot();
+            throw new InvalidOperationException(System.Text.Json.JsonSerializer.Serialize(new
+            {
+                actual.MotionTimeMs,
+                Events = actual.CombatJournal.Where(e => e.Type == CombatEventType.TorpedoReloadCompleted),
+                actual.CombatReports,
+                PresentedReports = f.Presented.CombatReports,
+                Reports = f.Screen.ReportStore.Reports,
+                Launcher = actual.InstalledModules.Single(m => m.ModuleId == PointCombatUiFixture.Torpedo).LauncherCombat
+            }));
+        }
         Assert.Single(f.Screen.ReportStore.Reports, r => r.Kind == BattleReportKind.PlayerTorpedoReloadCompleted);
         Assert.Single(f.Screen.RecentAlertSignals, s => s.Kind == CombatAlertKind.TorpedoReloadCompleted);
         f.Screen.PrepareCombatReports(); f.Render();

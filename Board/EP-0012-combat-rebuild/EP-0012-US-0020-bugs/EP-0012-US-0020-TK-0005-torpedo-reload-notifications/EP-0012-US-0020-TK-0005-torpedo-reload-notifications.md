@@ -3,7 +3,7 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0020-bugs"
 ticket: "EP-0012-US-0020-TK-0005-torpedo-reload-notifications"
 title: "Звук, журнал и Combat report о завершении перезарядки"
-stage: "draft"
+stage: "implemented"
 layer: "contracts-engine-client"
 depends_on: []
 files_touched: 17
@@ -11,6 +11,9 @@ serves: ["US20-AC5"]
 created: "2026-10-21T12:18:30.532Z"
 revision: 1
 ---
+
+Current execution: implemented/published; native/product acceptance OPEN. Earlier planning-only statements below record the prior request. See [execution report](../ExecutionStatus.md).
+
 
 # TK-0005 — Звук, журнал и Combat report о завершении перезарядки
 
@@ -93,3 +96,24 @@ Appended stable enum values; own reload is one authoritative journal fact with m
 
 Validation: Engine reload+Save18+report filter 52/52; Client reload+localization+report+audio filter 90/90 (includes real Engine/local transport/admitted report/audio enqueue); Contracts reload+US17+report filter 10/10. Earlier contract report batch also18/18. Owning projects built in tests; scoped formatter applied to changed Engine/Client source. Checks capped300000ms. Self-review complete. Native audible playback and human UI acceptance NOT RUN/OPEN; headless enqueue is not audible evidence.
 Full Client regression correction: actual scene admission can precede reliable report receipt. Integration test now awaits the report through the production PrepareCombatReports consumer before asserting one report and one sound. Targeted35/35 passed; no assertion removed.
+
+## Actual implementation file scope
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`
+- `src/DeepSpaceSaga.Client/Data/Locale/Russian.json`
+- `src/DeepSpaceSaga.Client/UI/CombatAlertAudio.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportFormatter.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CombatJournalPanel.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CombatReports.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ThreatAlerts.cs`
+- `src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs`
+- `src/DeepSpaceSaga.Contracts/CombatJournalEntry.cs`
+- `src/DeepSpaceSaga.Engine/Scenario/CountermeasureSaveData.cs`
+- `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs`
+- `src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs`
+- `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0005Tests.cs`
+- `tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0017TK0001Tests.cs`
+- `tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0020TK0005Tests.cs`
+- `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0020TK0005Tests.cs`
+Final full-suite evidence: Client2256/2256 passed in87s after retaining detailed timeout diagnostics. Earlier verified run2255/2256 timed out waiting for reload report; no production delivery defect was proved by that intermittent run. Diagnostics now preserve actual engine reload deadline/journal/report and admitted state if it recurs. Test assertions remain unchanged.
