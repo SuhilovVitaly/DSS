@@ -68,3 +68,9 @@ Native: повторить исходный пользовательский с�
 ## Definition of Done
 
 US20-AC1 доказан named tests; owning build/scoped format/diff проходят. Ручной результат и ограничения записаны отдельно. Сейчас implementation NOT STARTED; automated/native/product NOT RUN. Текущее поручение — только planning, без игры и commit/push.
+
+## Execution — 2026-10-21
+
+Current authorization: user invokes EpicExecutionPrompt; earlier planning-only limitations are historical. Implemented full selected Orbit trajectory via shared predictor at steering boundaries and shared arrival test for analytic locked leg, followed by viewport continuation. Non-navigation own forecast retains five seconds. Client-only, no rules/save changes. Self-review: escape phases remain sampled, never treated as final course; malformed/nonconvergent steering bounded at 20000 iterations.
+
+Validation: `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter "FullyQualifiedName~TrajectoryViewportTests|FullyQualifiedName~NavigationTrajectory|FullyQualifiedName~PointCombatUS0020TK0001Tests"`: 41 passed (including 3 named new tests). Client and dependency builds succeeded as part of test. Scoped `dotnet format ... --verify-no-changes --no-restore --include <three changed Client files>`: exit 0. `git diff --check`: exit 0. Each check bounded at 300000ms. Native/product: NOT RUN, human visual acceptance OPEN.

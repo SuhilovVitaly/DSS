@@ -14,7 +14,7 @@ public sealed partial class GameSessionScreen
 
     private void DrawOwnCombatPath(SKCanvas canvas, ObjectRenderState player, int width, int height)
     {
-        CombatTrajectoryProjector.BuildOwnPath(player.Pose.ToSnapshot(), _combatOwnPathPoints);
+        CombatTrajectoryProjector.BuildOwnViewportPath(player.Pose.ToSnapshot(), _combatOwnPathPoints, _camera, width, height);
         using var path = new SKPath();
         using var paint = new SKPaint
         {
@@ -26,7 +26,7 @@ public sealed partial class GameSessionScreen
         CombatTrajectoryProjector.BuildPath(path, _combatOwnPathPoints, _camera, width, height);
         canvas.DrawPath(path, paint);
         DisplayedPlayerTrajectoryEnd = _combatOwnPathPoints[^1];
-        CaptureDrawnTrajectory(player.Pose.ObjectId, "combat-own-five-seconds", _combatOwnPathPoints, isPlayer: true);
+        CaptureDrawnTrajectory(player.Pose.ObjectId, "combat-own-maneuver", _combatOwnPathPoints, isPlayer: true);
     }
 
     private void DrawOwnVelocity(SKCanvas canvas, int width, int height)

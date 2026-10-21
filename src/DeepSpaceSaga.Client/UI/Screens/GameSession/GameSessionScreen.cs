@@ -1965,7 +1965,7 @@ public sealed partial class GameSessionScreen : IScreen
             var predicted = state.Pose.ToSnapshot();
             if (HasActiveCombatPath)
             {
-                // Combat has one five-second own path; keep the confirmed goal marker.
+                // Combat draws the full selected maneuver; keep the confirmed goal marker.
                 if (predicted.NavigationTargetX is { } goalX && predicted.NavigationTargetY is { } goalY)
                     DrawNavigationTargetMarker(canvas, goalX, goalY, width, height);
                 continue;
@@ -2037,7 +2037,7 @@ public sealed partial class GameSessionScreen : IScreen
 
                 if (HasActiveCombatPath)
                 {
-                    CombatTrajectoryProjector.BuildOwnPath(state.Pose.ToSnapshot(), _combatOwnPathPoints);
+                    CombatTrajectoryProjector.BuildOwnViewportPath(state.Pose.ToSnapshot(), _combatOwnPathPoints, _camera, _viewportW, _viewportH);
                     return _combatOwnPathPoints;
                 }
 
