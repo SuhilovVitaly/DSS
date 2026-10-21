@@ -1,5 +1,13 @@
 # ТЗ: синхронизация боевой сцены и результатов попаданий
 
+## Current EP-0012 contract — 2026-10-21
+
+The implemented point pipeline preserves common displayed-scene time, explicit RemovedObjectIds, bounded scene sequencing and command receipts bypassing playback. D-USER-02 requires immediate UI feedback, then authoritative projectile birth on scene time; no client ghost projectile. Point blast/interception events replace guided contact/roll semantics. An omission in a compact snapshot is not removal. Pause freezes prediction and does not advance AI/reload; restoring history does not resume physics. The dated initial diagnosis and proposed guided cases below are historical. Normal transport/input-to-photon native acceptance remains OPEN. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 **Цель:** обеспечить согласованное отображение полёта торпед и ПРО, попаданий, промахов, взрывов и последствий боя без изменения баланса и без дополнительной задержки команд.
 
 Дата: 2026-10-17.

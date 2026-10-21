@@ -1,5 +1,13 @@
 # EP-0008 documentation impact inventory
 
+## Current EP-0012 contract — 2026-10-21
+
+EP8 implementation inventory is historical. Current point combat, Save18, public projection and measured limits are described in the new contract. [Point-aim combat contract](PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 2026-10-12, US-0013-TK-0001, baseline d13afd05e5a26d53492fcc98a96744cdb7ab7976. Inventory derives from final combat changes, actual schema/content, document searches and the Q01–Q51 review. Canonical requirements were updated first. This ticket changes Markdown only; Graphify follows in TK-0002.
 
 | Document | Required update / disposition |

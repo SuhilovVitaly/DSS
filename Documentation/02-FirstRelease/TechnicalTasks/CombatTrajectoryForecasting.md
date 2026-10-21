@@ -1,5 +1,13 @@
 # ТЗ: прогноз траекторий торпед и ПРО с учётом текущего манёвра цели
 
+## Current EP-0012 contract — 2026-10-21
+
+The guided target-contact/automatic-PRO forecast specification below is superseded. Current own point flights project the captured straight route to their exact deadline; foreign missiles expose only observed vector/profile, never endpoint/deadline/target/chance. A foreign extended trace is an observation-based aid, not an inferred fuse. Torpedo/CM launch previews use point/radius/scatter and real ETA; own5s forecast follows current commanded motion. NPC forecast uses display-admitted observations with two equal physical one-second turns, otherwise straight. No hidden AI controls or future undisplayed snapshots. Deadline/cancellation and common displayed-scene time invariants remain. Historical guided p99 failures remain failed results; passing current point workload is a different measurement. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 Дата: 2026-10-17.
 
 Статус: согласованные требования к реализации; реализация и игровая приёмка не выполнены.
@@ -39,12 +47,12 @@
 
 ## 3. Текущее устройство и причина дефекта
 
-- [TorpedoGuidanceMath](../../../src/DeepSpaceSaga.Motion/TorpedoGuidanceMath.cs), `Plan`, уже учитывает время упреждения для цели с постоянными скоростью и курсом. Получающийся маршрут содержит поворот и прямой участок.
+- [TorpedoGuidanceMath](https://github.com/SuhilovVitaly/DSS/blob/c894925d187c90a658d1e25958feed69a45d7e41/src/DeepSpaceSaga.Motion/TorpedoGuidanceMath.cs), `Plan`, уже учитывает время упреждения для цели с постоянными скоростью и курсом. Получающийся маршрут содержит поворот и прямой участок.
 - [SimulationEngine.Combat](../../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs), `RefreshCombatGuidance`, пересчитывает фактическое наведение на сетке 100 физических мс при изменении движения цели. Будущие такие пересчёты сейчас не входят в отображаемый прогноз.
 - [HostileOrbitMath](../../../src/DeepSpaceSaga.Motion/HostileOrbitMath.cs), `Predict`, останавливает выборку на конце подтверждённого AI-сегмента. Это правильно для подтверждённой сцены, но недостаточно для условного прогноза на время подлёта.
-- [CountermeasureGuidanceMath](../../../src/DeepSpaceSaga.Motion/CountermeasureGuidanceMath.cs) ищет встречу с текущим криволинейным маршрутом торпеды, но не с последовательностью её будущих перенаведений.
+- [CountermeasureGuidanceMath](https://github.com/SuhilovVitaly/DSS/blob/c894925d187c90a658d1e25958feed69a45d7e41/src/DeepSpaceSaga.Motion/CountermeasureGuidanceMath.cs) ищет встречу с текущим криволинейным маршрутом торпеды, но не с последовательностью её будущих перенаведений.
 - [CombatTrajectoryProjector](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatTrajectoryProjector.cs) отображает текущий маршрут и проверяет его конец по прогнозу цели. При расхождении встреча скрывается. Локальная незакоммиченная правка продолжает неподтверждённый маршрут по касательной к краю экрана; это не требуемый прогноз.
-- [GameSessionScreen.Countermeasures](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Countermeasures.cs) и [GameSessionScreen.ManualDefense](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs) имеют отдельные пути построения геометрии, которые необходимо согласовать.
+- [GameSessionScreen.Countermeasures](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Countermeasures.cs) и [GameSessionScreen.ManualDefense](https://github.com/SuhilovVitaly/DSS/blob/c894925d187c90a658d1e25958feed69a45d7e41/src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs) имеют отдельные пути построения геометрии, которые необходимо согласовать.
 
 На момент подготовки документа в рабочем дереве уже изменены `CombatTrajectoryProjector.cs` и `CombatTrajectoryTests.cs`. Это предыдущая локальная попытка исправить отображение, а не завершённая реализация настоящего ТЗ. При реализации сохранить нужные регрессии и заменить противоречащее этому ТЗ продолжение до края viewport; не выполнять слепой reset файлов.
 

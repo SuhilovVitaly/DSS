@@ -1,6 +1,10 @@
 # Боевые доклады экипажа — EP-0010
 
-Актуальная реализация 2026-10-16. [Продуктовый контракт R01–R24 / E01–E07](../02-FirstRelease/TechnicalTasks/TacticalCombatReports.md), [Board](../../Board/EP-0010-combat-reports/EP-0010-combat-reports.md), [результаты и публикация](../../Board/EP-0010-combat-reports/ImplementationStatus.md). Это расширение [модульного боя](ModuleCombat.md). Native/human/FPS acceptance OPEN. Пользователь запретил самостоятельный запуск игры; агентам разрешены headless тесты и сборки, но запрещён запуск игрового окна и native/performance harness без нового явного поручения пользователя.
+## Current EP-0012 contract — 2026-10-21
+
+Current producers consume actual point launch, torpedo/CM detonation, interception and module-hit facts. CM fires one projectile per successful manual launch, with no queued burst/automatic roll. E02 means an observed enemy point launch, not a hidden target binding. E06 is geometric enemy hit/destruction; no chance/roll. Only own player-damage reports carry numeric damage; enemy module detail/endpoint/deadline is stripped. RootSave18 retains the versioned report baseline/once marks; loading does not replay UI history. Sequence/outbox/mailbox/inbox/gap/dedup/200-card lifecycle below remains applicable. Historical EP10 test/native counts are not new measurements. EP12 has explicit native authorization and measured24+1 GPU cases; human acceptance remains OPEN. [Point-aim combat contract](PointAimCombat.md).
+
+Историческая исходная реализация EP10 — 2026-10-16. [Продуктовый контракт R01–R24 / E01–E07](../02-FirstRelease/TechnicalTasks/TacticalCombatReports.md), [Board](../../Board/EP-0010-combat-reports/EP-0010-combat-reports.md), [результаты и публикация](../../Board/EP-0010-combat-reports/ImplementationStatus.md). Это расширение [модульного боя](ModuleCombat.md). Native/human/FPS acceptance OPEN. Пользователь запретил самостоятельный запуск игры; агентам разрешены headless тесты и сборки, но запрещён запуск игрового окна и native/performance harness без нового явного поручения пользователя.
 
 ## Авторитетные факты
 
@@ -11,9 +15,9 @@
 | E01 EnemyInRange | Первый вход известного живого enemy в configured range рабочего player launcher, при рабочем сканере; inclusive boundary, stable target order | Оператор сканера |
 | E02 EnemyTorpedoLaunch | Фактический пуск известного enemy по игроку, видимый рабочему сканеру | Оператор сканера |
 | E03 PlayerTorpedoLaunch | Реальный торпедный projectile после успешного пуска | Захваченный оператор пусковой |
-| E04 PlayerCountermeasureLaunch | Каждый фактический projectile очереди ПРО | Захваченный оператор ПРО |
+| E04 PlayerCountermeasureLaunch | Один фактический point projectile ручного пуска ПРО | Захваченный оператор ПРО |
 | E05 EnemyTorpedoIntercepted | Подтверждённый успешный перехват вражеской торпеды player ПРО до удаления projectile | Захваченный оператор ПРО |
-| E06 EnemyShipHit | Один итог после полного контакта player torpedo с enemy; Hit/Destroyed, включая допустимое нулевое воздействие | Захваченный оператор торпеды |
+| E06 EnemyShipHit | Один итог после геометрического blast-hit player torpedo по enemy; Hit/Destroyed, включая допустимое нулевое воздействие | Захваченный оператор торпеды |
 | E07 PlayerShipDamaged | Реальная потеря Armor/Structure модулей игрока; Captain фиксируется до Defeated | Капитан |
 
 Рабочий launcher для E01 означает отсутствие поломки/disable; reload и остаток ammo не меняют configured дальность. Только уже известные цели; выбор/hover не влияет. CrewMemberRuntime не содержит portrait: отсутствующее изображение даёт role fallback, выдуманные NPC не создаются. Имена/ID неизвестных участников и модулей скрываются в Engine. Formatter использует только captured facts и RU/EN catalog, не читает текущий мир.

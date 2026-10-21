@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0015-project-documentation"
 ticket: "EP-0012-US-0015-TK-0002-update-documents-2"
 title: "update-documents-2"
-stage: "draft"
+stage: "implemented"
 layer: "documentation"
 depends_on: ["EP-0012-US-0015-TK-0001-update-documents-1"]
-files_touched: 4
+files_touched: 6
 serves: ["US15-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0015-TK-0002-update-documents-2
@@ -20,18 +20,20 @@ revision: 1
 
 ## Decisions / Assumptions
 
-D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
+D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Current implementation sources are linked; historical planning assumptions remain identified.
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (6 файлов). Current baseline `31291a2c5147e3ddf7ab996adb44b470da002c0d`. Scope уточнён до редактирования по EpicExecutionPrompt§6: актуальные контракты, историческая точность и все связанные документы. Evidence/Board metadata являются обязательным результатом.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [Documentation/04-Engineering/PhaseThreeCombatAcceptance.md](../../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md) | Существует: Documentation/04-Engineering/PhaseThreeCombatAcceptance.md:1; # Phase Three Combat Acceptance — EP-0008 | Только изменения для scope этой карточки и served AC. |
-| [Documentation/04-Engineering/CombatReports.md](../../../../Documentation/04-Engineering/CombatReports.md) | Существует: Documentation/04-Engineering/CombatReports.md:1; # Боевые доклады экипажа — EP-0010 | Только изменения для scope этой карточки и served AC. |
-| [Documentation/02-FirstRelease/TechnicalTasks/CombatTrajectoryForecasting.md](../../../../Documentation/02-FirstRelease/TechnicalTasks/CombatTrajectoryForecasting.md) | Существует: Documentation/02-FirstRelease/TechnicalTasks/CombatTrajectoryForecasting.md:1; # ТЗ: прогноз траекторий торпед и ПРО с учётом текущего манёвра цели | Только изменения для scope этой карточки и served AC. |
-| [Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) | Существует: Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md:1; # Панель боевых докладов на тактическом экране | Только изменения для scope этой карточки и served AC. |
+| `Documentation/04-Engineering/PhaseThreeCombatAcceptance.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/04-Engineering/CombatReports.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/02-FirstRelease/TechnicalTasks/CombatTrajectoryForecasting.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/04-Engineering/PhaseThreeCombatDocumentation.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/02-FirstRelease/TechnicalTasks/CombatPresentationSynchronization.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
 
 ## Public API after the change
 
@@ -50,7 +52,7 @@ No public API change; использовать контракт зависимы
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+Documentation checks executed; actual results below.
 
 - **Documentation_links_and_numeric_contract_match_implementation**: каждый старый термин либо исторический с пометкой, либо исправлен; фактические NOT RUN сохранены.
 
@@ -66,4 +68,4 @@ No public API change; использовать контракт зависимы
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-21: documentation and self-review complete. PASS 72 relative path references across 6 scoped files, diff check. [Evidence](../../evidence/us0015-tk0002-results.json). Report delivery preserved; point producers/privacy/save and forecasts synchronized; retired source links pin verified historical baseline. Historical measurements and OPEN gates preserved. Runtime tests not rerun for prose-only changes. Human/product/balance OPEN. Separate commit/push follows.

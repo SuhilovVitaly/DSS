@@ -1,5 +1,13 @@
 # Phase Three Combat Acceptance — EP-0008
 
+## Current EP-0012 contract — 2026-10-21
+
+This dated EP8 result remains historical; it does not establish EP12 acceptance. Current production balance fails the dodge win-rate/P90 corridor. Native24+1 actual GPU runs establish only their enumerated checks; physical/human/audio/accessibility remain OPEN. [Point-aim combat contract](PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 Execution date:2026-10-12 (Asia/Jerusalem). This is implementation/self-review evidence, not user APPROVED or product/balance acceptance.
 
 ## Automated evidence
@@ -18,7 +26,7 @@ Full generated-world tests do not relocate objects or alter HP during a running 
 
 ## Native method and limits
 
-Runner: [CombatNativeEvidence.cs](../../tools/DeepSpaceSaga.Performance/CombatNativeEvidence.cs), reproduction: [performance README](../../tools/DeepSpaceSaga.Performance/README.md#ep-0008-combat-native-evidence).
+Runner: [CombatNativeEvidence.cs](https://github.com/SuhilovVitaly/DSS/blob/c894925d187c90a658d1e25958feed69a45d7e41/tools/DeepSpaceSaga.Performance/CombatNativeEvidence.cs), reproduction: [performance README](../../tools/DeepSpaceSaga.Performance/README.md#ep-0008-combat-native-evidence).
 
 Actual Skia/OpenGL window, production content, real Engine/LocalSession/ScreenStack and mouse/keyboard handlers. Custom starting fixture has8 Enemy NPCs; all launch automatically toward the player. The script toggles one defense independently, hovers/selects/fires both manual modules, compares frozen preview route to actual launch, changes zoom/speed/pause and scrolls journal. Recovery waits for the actual rendered Defeat screen, uses Load/cancel/reopen/selected pre-death slot, and checks the fresh running session with both PR. Separate no-solution cases use0 accuracy,0.01km/s and1000ms TTL to prove the enabled manual button and honest absent encounter marker.
 

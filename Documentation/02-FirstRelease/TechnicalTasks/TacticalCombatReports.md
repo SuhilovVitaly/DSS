@@ -1,10 +1,14 @@
 # Панель боевых докладов на тактическом экране
 
-Дата: 2026-10-16. Статус: **реализовано и проверено headless; native/human/FPS acceptance OPEN**. Исполнение и публикация — по отдельному поручению EpicExecutionPrompt; исходный planning baseline сохранён в Board.
+## Current EP-0012 contract — 2026-10-21
+
+R01–R24 layout, captured reporters, reliable sequence delivery and bounded history remain in force. Producer semantics are updated for point aim: E02 public observed launch (no hidden target), E04 actual single manual CM launch, E05 actual area interception without roll, E06 geometric hit/destruction. Reports never expose foreign endpoint/deadline/module details or numeric enemy damage. RootSave18 stores continuation/baseline, not UI history. Old rootSave17 and guided/queued wording below describes the EP10 baseline only. Current execution authorization came from the user's explicit EpicExecutionPrompt; prior dated launch prohibitions are historical, not a new policy. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
+Дата: 2026-10-16. Статус исходного EP10: **реализовано и проверено headless; native/human/FPS acceptance OPEN**. Исполнение и публикация — по отдельному поручению EpicExecutionPrompt; исходный planning baseline сохранён в Board.
 Источник: обсуждение интерфейса и запрос пользователя «Сохрани это ТЗ в документацию и создай по нему эпик в Board с пользовательскими историями и тикетами.»
 Пользователь разрешил подготовку без requirements-engineer. Сохранение и декомпозиция не являются поручением выполнить тикеты или опубликовать код.
 
-Связи: [эпик EP-0010](../../../Board/EP-0010-combat-reports/EP-0010-combat-reports.md), [карта тикетов](../../../Board/EP-0010-combat-reports/Tickets.md), [текущая модель боя](../../01-Requirements/EngineRequirements.md#phase-four-module-combat), [экран GameSession](../Screens/GameSession.md).
+Связи: [эпик EP-0010](../../../Board/EP-0010-combat-reports/EP-0010-combat-reports.md), [карта тикетов](../../../Board/EP-0010-combat-reports/Tickets.md), [текущая модель боя](../../04-Engineering/PointAimCombat.md), [экран GameSession](../Screens/GameSession.md).
 
 ## 1. Назначение
 
@@ -132,4 +136,4 @@
 
 ## 12. Трассировка
 
-Полная карта R01–R24 → истории → тикеты — в [Tickets.md](../../../Board/EP-0010-combat-reports/Tickets.md). Критерии приёмки историй находятся в их канонических файлах. Исходный planning baseline: HEAD `af594de8465421f45cd362e82c6c1dbfdd8631ed`. Текущая реализация и границы приёмки описаны в [engineering contract](../../04-Engineering/CombatReports.md), опубликованные SHA и evidence — в [ImplementationStatus](../../../Board/EP-0010-combat-reports/ImplementationStatus.md). Технические A01–A09 приняты как реализационные решения, не дополнительные ответы пользователя. Root Save17 с optional child Version1 реализован.
+Полная карта R01–R24 → истории → тикеты — в [Tickets.md](../../../Board/EP-0010-combat-reports/Tickets.md). Критерии приёмки историй находятся в их канонических файлах. Исходный planning baseline: HEAD `af594de8465421f45cd362e82c6c1dbfdd8631ed`. Текущая реализация и границы приёмки описаны в [engineering contract](../../04-Engineering/CombatReports.md), опубликованные SHA и evidence — в [ImplementationStatus](../../../Board/EP-0010-combat-reports/ImplementationStatus.md). Технические A01–A09 приняты как реализационные решения, не дополнительные ответы пользователя. Исторический EP10 использовал Root Save17 с optional child Version1; текущий writer Save18.
