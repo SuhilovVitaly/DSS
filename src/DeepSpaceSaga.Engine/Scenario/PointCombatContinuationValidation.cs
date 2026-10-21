@@ -104,6 +104,9 @@ internal static class PointCombatContinuationValidation
                     e.Motion.BaseMotion.ActiveEngineCommandType == ShipEngineCommandTypes.Orbit, "invalid suspended orbit identity.");
             else Require(e.Motion.BaseMotion.ActiveEngineCommandType is null, "base course contains an unsaved command.");
         }
+        // Dodge history spans the session; encounter membership resets at each new battle.
+        var npcDeaths = defense.Journal.Where(e => e.Type == CombatEventType.ShipDestroyed &&
+            e.TargetObjectId != state.PlayerShipObjectId).ToLookup(e => e.TargetObjectId, StringComparer.OrdinalIgnoreCase);
         foreach (var d in point.DodgeThreats)
         {
             var launch = launchById.GetValueOrDefault(d.ProjectileId);
@@ -112,7 +115,7 @@ internal static class PointCombatContinuationValidation
             if (objects.TryGetValue(d.OwnerId, out var owner))
                 Require(owner.ObjectType == SpaceObjectType.NpcShip && !owner.IsDestroyed && owner.Ai is not null &&
                     owner.Modules?.Any(m => m.ModuleId == d.EngineModuleId) == true, "invalid NPC dodge actor/engine.");
-            else Require(point.Encounter.EnemyIds.Contains(d.OwnerId), "unknown historical NPC dodge actor.");
+            else Require(npcDeaths[d.OwnerId].Any(e => e.MotionTimeMs >= d.DetectedAt), "unknown historical NPC dodge actor.");
         }
         Require(point.PlayerEvasionEpisodes >= point.Encounter.Stats.PlayerEvasions &&
             (point.Encounter.State == CombatEncounterState.Active || point.Encounter.ResumeSpeed is null) &&

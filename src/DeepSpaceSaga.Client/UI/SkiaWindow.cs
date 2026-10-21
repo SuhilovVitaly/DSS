@@ -517,6 +517,7 @@ public sealed class SkiaWindow : IDisposable
             $"DIAG FocusChanged isFocused={isFocused} screen={_screens.Current.GetType().Name} " +
             $"depth={_screens.Count} printScreenDown={printScreenDown}");
 
+        bool focusChanged = _isFocused != isFocused;
         _isFocused = isFocused;
 
         // Only cover the taskbar (see WindowOptions.TopMost above) while the game
@@ -529,6 +530,13 @@ public sealed class SkiaWindow : IDisposable
         {
             _focusRegainedAtMs = Environment.TickCount64;
             _keyboardEdges.ResyncToCurrentState(_keyboard);
+        }
+        // Polling stops while unfocused and resync intentionally discards missed key releases.
+        // Release server-side held controls now, before that release edge can be lost.
+        if (focusChanged && _screens.Count > 0 && _screens.Current is GameSessionScreen game)
+        {
+            if (isFocused) game.OnActivated();
+            else game.OnDeactivated();
         }
     }
 

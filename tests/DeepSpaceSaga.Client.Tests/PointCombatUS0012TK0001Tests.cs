@@ -1,16 +1,82 @@
 using System.Collections.Immutable;
+using System.Reflection;
 using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using Silk.NET.Input;
+using Silk.NET.Windowing;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class PointCombatUS0012TK0001Tests
 {
+    public class WindowProxy : DispatchProxy
+    {
+        protected override object? Invoke(MethodInfo? method, object?[]? args) => method!.Name switch
+        {
+            "set_TopMost" or "Dispose" => null,
+            _ => throw new NotSupportedException(method.Name)
+        };
+    }
+
+    public class KeyboardProxy : DispatchProxy
+    {
+        internal readonly HashSet<Key> Down = [];
+        protected override object? Invoke(MethodInfo? method, object?[]? args) => method!.Name switch
+        {
+            "IsKeyPressed" => Down.Contains((Key)args![0]!),
+            "add_KeyChar" or "remove_KeyChar" => null,
+            _ => throw new NotSupportedException(method.Name)
+        };
+    }
+
+    [Theory]
+    [InlineData(Key.Left)]
+    [InlineData(Key.Right)]
+    [InlineData(Key.A)]
+    [InlineData(Key.D)]
+    public async Task Native_focus_loss_clears_input_before_keyboard_resync(Key key)
+    {
+        await using var f = await PointCombatUiFixture.Create(hostileShots: 1);
+        using var window = new SkiaWindow(f.Screen, f, null, createNativeWindow: false);
+        typeof(SkiaWindow).GetField("_window", BindingFlags.Instance | BindingFlags.NonPublic)!
+            .SetValue(window, DispatchProxy.Create<IWindow, WindowProxy>());
+        var keyboard = DispatchProxy.Create<IKeyboard, KeyboardProxy>();
+        var down = ((KeyboardProxy)(object)keyboard).Down;
+        typeof(SkiaWindow).GetField("_keyboard", BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(window, keyboard);
+        void Invoke(string name, params object[] args) => typeof(SkiaWindow)
+            .GetMethod(name, BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(window, args);
+
+        f.Render(); down.Add(key); Invoke("PollKeyboard"); f.Render();
+        bool turn = key is Key.Left or Key.Right;
+        if (turn)
+        {
+            await f.Wait(() => f.Handle.Buffer.FindCommandResult(f.Screen.LastManeuverCommandId!) is { Status: CommandResultStatus.Executed });
+            Assert.NotNull(f.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatUiFixture.Player).TurnHoldRateDegPerSec);
+        }
+        else Assert.NotNull(f.Screen.CurrentEvadePreview);
+
+        Invoke("OnFocusChanged", false);
+        down.Clear(); Invoke("PollKeyboard");
+        if (turn)
+        {
+            await f.Wait(() => f.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatUiFixture.Player).TurnHoldRateDegPerSec is null);
+        }
+        Assert.Null(f.Screen.CurrentEvadePreview);
+        int commands = f.Engine.ReceivedCommandCount;
+        Invoke("OnFocusChanged", true); Invoke("PollKeyboard"); f.Render();
+        Assert.Equal(commands, f.Engine.ReceivedCommandCount);
+        Assert.Null(f.Screen.CurrentEvadePreview);
+
+        // A fresh edge after regaining focus still works.
+        down.Add(key); Invoke("PollKeyboard"); f.Render();
+        if (turn) await f.Wait(() => f.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatUiFixture.Player).TurnHoldRateDegPerSec is not null);
+        else Assert.NotNull(f.Screen.CurrentEvadePreview);
+    }
+
     private sealed class Session : IAsyncDisposable
     {
         internal readonly PointCombatSessionFixture World;

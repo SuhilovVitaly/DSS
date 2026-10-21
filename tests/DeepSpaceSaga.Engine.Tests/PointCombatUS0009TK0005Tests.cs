@@ -29,6 +29,44 @@ public sealed class PointCombatUS0009TK0005Tests
     private static ScenarioFile Save(SimulationEngine engine) => engine.CaptureSaveStateForTests(400, SimulationSpeed.Speed0, 100);
 
     [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Historical_npc_dodge_survives_a_second_encounter_and_save_reload(bool acknowledge)
+    {
+        using var engine = PointCombatUS0008TK0001Tests.Battle(extraEnemy: true, extraHasAi: false);
+        var won = PointCombatUS0008TK0001Tests.Win(engine);
+        Assert.Equal(CombatEncounterState.Won, won.Encounter!.State);
+        Assert.Equal(Target, Assert.Single(engine.CaptureNpcDodgeThreats()).OwnerId);
+        if (acknowledge)
+        {
+            engine.ReceiveCommand(new("ack", 1, Player, "", CombatEncounterCommandTypes.AcknowledgeResults));
+            Assert.Equal(CombatEncounterState.Idle, At(engine, 2500).Encounter!.State);
+        }
+        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(
+            "other-enemy", "other-MOD-PIRATE-TORPEDO-01", 1700, 0, "slow", 2500).Disposition);
+        Assert.Equal(CombatEncounterState.Active, At(engine, 2500).Encounter!.State);
+        var save = engine.CaptureSaveStateForTests(10000, SimulationSpeed.Speed0, 2500);
+        Assert.DoesNotContain(Target, save.GameState.PointCombatState!.Encounter.EnemyIds);
+        var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true);
+
+        var source = Registry(scatter: 0);
+        var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
+            All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
+            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules! with
+            { ShipDestruction = source.CombatRules.ShipDestruction with { DestroyedModuleFraction = .01m } });
+        using var restored = new SimulationEngine(registry);
+        restored.LoadScenario(loaded, true);
+        foreach (long time in new long[] { 2500, 3500, 8000 })
+        {
+            At(engine, time); At(restored, time);
+            Assert.Equal(ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(time * 4, SimulationSpeed.Speed0, time)),
+                ScenarioLoader.Serialize(restored.CaptureSaveStateForTests(time * 4, SimulationSpeed.Speed0, time)));
+            Assert.Equal(engine.CaptureNpcDodgeRngState(), restored.CaptureNpcDodgeRngState());
+        }
+    }
+
+    [Theory]
     [InlineData("position")]
     [InlineData("deadline")]
     [InlineData("speed")]
