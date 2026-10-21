@@ -81,3 +81,4 @@ Validation: Client `--filter "FullyQualifiedName~PointCombatUS0020TK0002Tests|Fu
 
 Follow-up scope: GameSessionScreen.MapView.cs and PointCombatUS0012TK0002Tests.cs. Expanded regression exposed area maximization selecting a 48px strip at 1280x720/150%. Prefer a free rectangle with both dimensions >=100px when one exists, retaining fallback on smaller windows. Preserve the size assertion; add geometry diagnostics.
 Correction validation: targeted UI/available-map tests 13/13 passed; Client build and diff check passed.
+Full Client regression correction: when health details make the first-priority group taller than the available budget, retain one open group and scroll its content. This restores real Approach button access in a peaceful ship without launchers. Targeted Approach/US20/threat checks35/35 passed; no size/assertion weakening.
