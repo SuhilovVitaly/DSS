@@ -176,7 +176,7 @@ public sealed record PointCombatVisualSettings
     public SKColor ShotDown { get; init; } = TacticalMapPalette.Countermeasure;
     public SKColor OwnVelocity { get; init; } = SpaceMapColorResolver.PlayerShipColor;
     public SKColor OwnPath { get; init; } = SpaceMapColorResolver.PlayerShipColor.WithAlpha(160);
-    public SKColor ForeignTrace { get; init; } = TacticalMapPalette.Torpedo.WithAlpha(128);
+    public SKColor ForeignTrace { get; init; } = new(8, 8, 8, 90);
     public SKColor ForeignProfileText { get; init; } = TacticalMapPalette.Annotation;
     public SKColor TargetShadow { get; init; } = TacticalMapPalette.Preview.WithAlpha(140);
     public SKColor Threat { get; init; } = new(238, 167, 122, 255);

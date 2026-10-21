@@ -12,6 +12,11 @@ public sealed partial class GameSessionScreen
 
     private void DrawPointProjectile(SKCanvas canvas, ObjectRenderState state, SnapshotPrediction? prediction)
     {
+        if (state.Source.ObservedProjectile is not null)
+        {
+            DrawObservedProjectile(canvas, state);
+            return;
+        }
         var geometry = PreparedFlight(state.Source.ObjectId, prediction);
         if (geometry is null) return;
         AlignFlightStart(geometry, state);
@@ -82,6 +87,38 @@ public sealed partial class GameSessionScreen
         PointProjectileVisuals[state.Source.ObjectId] = new(profile, radius, coreRadius, center, seconds, minimum, label, labelBounds);
     }
 
+    private readonly ObservedProjectileTrail _observedProjectileTrail = new();
+    internal ObservedProjectileTrail ObservedTrails => _observedProjectileTrail;
+
+    internal static double ObservedTailPixels(double speedKmS, double ppu) =>
+        Math.Clamp(speedKmS * 10 * ppu * .2, 0, 18);
+
+    private void DrawObservedProjectile(SKCanvas canvas, ObjectRenderState state)
+    {
+        var observed = state.Source.ObservedProjectile!;
+        using var path = new SKPath();
+        using var line = new SKPaint
+        {
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            IsAntialias = true,
+            Color = CombatSettings.PointCombat.ForeignTrace
+        };
+        CombatTrajectoryProjector.BuildPath(path, _observedProjectileTrail.Get(state.Source.ObjectId), _camera, _viewportW, _viewportH);
+        canvas.DrawPath(path, line);
+        double length = ObservedTailPixels(observed.SpeedKmS, _camera.PixelsPerWorldUnit) / _camera.PixelsPerWorldUnit;
+        double norm = double.Hypot(observed.DirectionX, observed.DirectionY);
+        if (norm > 0 && length > 0)
+        {
+            line.Color = ObservedThreatVisuals.TryGetValue(state.Source.ObjectId, out var threat) ? threat.Color : CombatSettings.Torpedo;
+            CombatTrajectoryProjector.BuildPath(path, [new(state.Pose.X - observed.DirectionX / norm * length,
+                state.Pose.Y - observed.DirectionY / norm * length), new(state.Pose.X, state.Pose.Y)], _camera, _viewportW, _viewportH);
+            canvas.DrawPath(path, line);
+        }
+        _combatTrajectories[state.Source.ObjectId] = new([], [], null) { IsObserved = true, Kind = observed.Kind };
+        PointProjectileVisuals[state.Source.ObjectId] = new(observed.ProfileId, null, null, null, null, false, string.Empty);
+    }
+
     private void DrawPointBlast(SKCanvas canvas, SKPoint center, double radius, double coreFraction,
         ProjectileKind kind, double alphaFraction, SKPaint line)
     {
@@ -123,6 +160,31 @@ public sealed partial class GameSessionScreen
                 if (double.IsFinite(radius) && radius < float.MaxValue)
                     DrawPointBlast(canvas, center, radius, 0, entry.ProjectileKind ?? ProjectileKind.Torpedo, 1 - progress, line);
             }
+        }
+    }
+}
+
+// Stores only positions from the display-admitted scene, never forecasts or future receipts.
+internal sealed class ObservedProjectileTrail
+{
+    private readonly Dictionary<string, List<FutureTrajectoryPoint>> _paths = new(StringComparer.Ordinal);
+    private Guid? _session;
+    private ulong _sequence;
+    private long _motion;
+    internal IReadOnlyList<FutureTrajectoryPoint> Get(string id) => _paths.TryGetValue(id, out var path) ? path : [];
+    internal void Update(Guid? session, AuthoritativeSnapshot? scene)
+    {
+        if (scene is null) { _paths.Clear(); return; }
+        if (_session != session || scene.SnapshotSequence < _sequence || scene.MotionTimeMs < _motion) _paths.Clear();
+        _session = session; _sequence = scene.SnapshotSequence; _motion = scene.MotionTimeMs;
+        var ids = scene.Objects.Where(o => o.ObservedProjectile is not null).Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
+        foreach (var id in _paths.Keys.Where(id => !ids.Contains(id)).ToArray()) _paths.Remove(id);
+        foreach (var obj in scene.Objects.Where(o => o.ObservedProjectile is not null))
+        {
+            if (!_paths.TryGetValue(obj.ObjectId, out var path)) _paths[obj.ObjectId] = path = [];
+            var point = new FutureTrajectoryPoint(obj.X, obj.Y);
+            if (path.Count == 0 || path[^1] != point) path.Add(point);
+            if (path.Count > 4096) path.RemoveAt(0);
         }
     }
 }

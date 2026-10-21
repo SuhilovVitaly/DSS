@@ -33,6 +33,7 @@ public sealed partial class GameSessionScreen
     private void DrawCombatTrajectories(SKCanvas canvas, SnapshotPrediction? prediction)
     {
         _combatTrajectories.Clear(); PointProjectileVisuals.Clear();
+        _observedProjectileTrail.Update(_buffer.PresentationSessionId, _buffer.Presented?.Snapshot);
         foreach (var state in _renderStates)
             if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null) DrawPointProjectile(canvas, state, prediction);
     }

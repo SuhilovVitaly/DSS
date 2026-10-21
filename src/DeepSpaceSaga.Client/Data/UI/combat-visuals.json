@@ -26,7 +26,7 @@
         "shotDown": "#76D5DCFF",
         "ownVelocity": "#8CB9E0FF",
         "ownPath": "#8CB9E0A0",
-        "foreignTrace": "#EDB86A80",
+        "foreignTrace": "#0808085A",
         "foreignProfileText": "#DCE6EEE6",
         "targetShadow": "#B7ABDF8C",
         "threat": "#EEA77AFF",

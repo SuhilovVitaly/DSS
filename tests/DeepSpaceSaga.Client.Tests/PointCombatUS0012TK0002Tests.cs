@@ -174,4 +174,3 @@ public sealed class PointCombatUS0012TK0002Tests
         screen.OnDeactivated();
     }
 }
-

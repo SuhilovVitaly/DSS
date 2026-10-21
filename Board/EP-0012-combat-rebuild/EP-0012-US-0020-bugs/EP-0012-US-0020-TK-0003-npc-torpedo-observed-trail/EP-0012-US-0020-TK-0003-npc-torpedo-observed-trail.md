@@ -69,3 +69,11 @@ Native: повторить исходный пользовательский с�
 ## Definition of Done
 
 US20-AC3 доказан named tests; owning build/scoped format/diff проходят. Ручной результат и ограничения записаны отдельно. Сейчас implementation NOT STARTED; automated/native/product NOT RUN. Текущее поручение — только planning, без игры и commit/push.
+
+## Execution scope update
+
+Include Data/UI/combat-visuals.json (production override of ForeignTrace) and existing PointCombatUS0010TK0002Tests.cs (old foreign profile labels replaced by point-only presentation).
+
+Execution: displayed NPC geometry is empty forward path plus a speed-scaled rear tail (0–18px), no profile/ETA labels, dark confirmed trail with bounded 4096 positions per live object. History resets on session/sequence/time rollback or disappearance; no pre-launch bootstrap. Threat classification retained.
+
+Client scoped tests: 87/87 passed including 4 new cases and US10/US12 regressions. Build succeeded. Formatter initially found new initializer whitespace; corrected scoped. Native/product NOT RUN/OPEN. Self-review completed. Minor scope extension: trim trailing blank lines introduced in two directly related TK2 tests; prior TK2 diff-check statement was inaccurate (one trailing blank line), corrected here.

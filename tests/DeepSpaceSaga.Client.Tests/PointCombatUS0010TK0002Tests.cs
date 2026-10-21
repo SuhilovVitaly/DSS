@@ -51,7 +51,7 @@ public sealed class PointCombatUS0010TK0002Tests
             mapSettings: Map(1), uiScale: uiScale);
         using var bitmap = new SKBitmap(width, height); using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, width, height);
-        foreach (string id in new[] { "own", "foreign" })
+        foreach (string id in new[] { "own" })
         {
             var visual = screen.PointProjectileVisuals[id];
             Assert.False(visual.LabelBounds.IsEmpty);
@@ -84,7 +84,7 @@ public sealed class PointCombatUS0010TK0002Tests
         Assert.Equal(20, own.RemainingRealSeconds); Assert.NotNull(own.DetonationCenter);
         var foreign = screen.PointProjectileVisuals["foreign"];
         Assert.Null(foreign.PhysicalRadiusPx); Assert.Null(foreign.DetonationCenter); Assert.Null(foreign.RemainingRealSeconds);
-        Assert.DoesNotContain("20.0", foreign.Label); Assert.Contains("slow", foreign.Label);
+        Assert.Empty(foreign.Label); Assert.True(foreign.LabelBounds.IsEmpty);
         Assert.Equal(10, screen.PointProjectileVisuals["counter"].PhysicalRadiusPx);
         Assert.Equal(0, screen.PointProjectileVisuals["counter"].CoreRadiusPx);
         Assert.All(screen.PointProjectileVisuals.Values, v => Assert.DoesNotContain("%", v.Label));

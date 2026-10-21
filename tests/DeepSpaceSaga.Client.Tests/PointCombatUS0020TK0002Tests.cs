@@ -50,4 +50,3 @@ public class PointCombatUS0020TK0002Tests
         Assert.True(f.Screen.CombatReportsBounds.Height > 0);
     }
 }
-
