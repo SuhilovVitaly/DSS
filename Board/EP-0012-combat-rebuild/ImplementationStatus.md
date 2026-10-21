@@ -112,7 +112,8 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 67 / US-0014-TK-0002-tools-analyzer | PASS build/solution/format/diff;16 self-test checks;2000 recorded +50 live rows; expected exits0/1/2; balance OPEN | `ee6763f43963ca990d651820bfe82e9b699ee22f`, origin SHA verified |
 | 68 / US-0014-TK-0003-native-acceptance | PASS 30 named / 2225 full owning tests; build/format/diff PASS | `cec1c54cdf21c2a8f5b70fb8d30e39413e985e6b`, origin SHA verified |
 | 69 / US-0015-TK-0001 | Documentation paths 51 PASS; diff PASS; runtime not rerun | `31291a2c5147e3ddf7ab996adb44b470da002c0d`, origin SHA verified |
-| 70 / US-0015-TK-0002 | Documentation paths 72 PASS; diff PASS; runtime not rerun | SHA и remote проверяются сразу после коммита |
+| 70 / US-0015-TK-0002 | Documentation paths 72 PASS; diff PASS; runtime not rerun | `a6e676ec7cf0f8b26efc6d38833ac661d3fabc74`, origin SHA verified |
+| 71 / US-0015-TK-0003 | Documentation paths 77 PASS; diff PASS; runtime not rerun | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

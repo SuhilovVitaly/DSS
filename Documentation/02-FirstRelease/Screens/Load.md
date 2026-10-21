@@ -1,5 +1,9 @@
 # Load
 
+## Current EP-0012 contract — 2026-10-21
+
+Current writer is SaveFormatVersion18. A real Save17 or earlier is rejected atomically without migration/current-world replacement; NewGame scenario version0 is a separate path. Point flights, reload/captured operators, named scatter/dodge RNG, evasion/AI/encounter and fractional motion remainder survive load. Defeated sessions cannot overwrite a slot; error/cancel remains recoverable. Version17/16/15 text below records earlier stages. Existing modal pause, file IO and menu navigation semantics remain applicable. Headless continuation/rejection passed; native physical Save/Load menu acceptance is NOT RUN. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0009 — 2026-10-12
 
 Load принимает только SaveFormatVersion17; версии16 и ниже отклоняются без миграции до замены мира. Валидируются defense3/combat2/hostile2, состояния модулей, очереди, полёты, AI и RNG. Успешная загрузка из Defeat создаёт Running-сессию на паузе. Указания Save16/15/11 ниже сохранены как история. [Требования](../../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [проверки](../../04-Engineering/ModuleCombat.md).

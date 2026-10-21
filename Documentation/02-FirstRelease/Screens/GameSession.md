@@ -1,5 +1,9 @@
 # GameSession
 
+## Current EP-0012 contract — 2026-10-21
+
+The active tactical session shows point aim/CM, threats, own armor/structure tiles, public enemy badges, journal/report facts and encounter status. Enemy module details/numeric damage and foreign projectile endpoint/deadline/target are never displayed. Active locks x5+, banner/frame and real-time timer; Won is nonmodal with Continue acknowledgement; Lost freezes Engine and routes actual statistics to Defeat. UI responds immediately; projectile birth waits for authoritative display-admitted scene, with no ghost. Observed NPC forecast is now reused by current point preview consumers. Native24/24 matrix plus clean probe passed only stated checks; physical OS input, normal transport latency, hearing, deuteranopia and manual usability remain OPEN. Historical combat summaries below do not override this contract. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
 ## Будущая линия NPC — 2026-10-18
 
 [Наблюдаемый прогноз](../../04-Engineering/NpcObservedTrajectories.md) использует три подтверждённые позы на секундной физической сетке: два равных поворота дают дугу, иначе прямую от отображаемой позы. History не зависит от выбора/камеры. Старые правила отображения выбранной цели, цвета и player navigation сохранены. Combat/launch forecasts не переведены на эту модель. Headless draw проверен; настоящее окно/GPU/input NOT RUN.

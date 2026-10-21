@@ -1,5 +1,9 @@
 # Наблюдаемый прогноз будущей линии NPC — EP-0011
 
+## Current EP-0012 contract — 2026-10-21
+
+The observed-motion admission rule remains authoritative for player-visible prediction. EP12 replaces guided weapons with captured own straight point flights and public foreign flight-vector traces; current launch/point forecast consumers reuse the admitted observation model, with no hidden AI controls. Previous statements that weapon forecasts remain on the old model are historical. Native screenshots demonstrate limited current rendering only; EP11 human/palette acceptance remains OPEN. [Point-aim combat contract](PointAimCombat.md).
+
 Дата реализации: 2026-10-18. Client-only; реализация и headless validation завершены, native/human acceptance OPEN / NOT RUN. [Board](../../Board/EP-0011-short-fixes/EP-0011-short-fixes.md) · [команды, SHA и evidence](../../Board/EP-0011-short-fixes/ImplementationStatus.md).
 
 ## Пользовательский результат

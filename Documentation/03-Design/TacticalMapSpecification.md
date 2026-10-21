@@ -1,5 +1,9 @@
 # Tactical Map Specification
 
+## Current EP-0012 contract — 2026-10-21
+
+Combat visuals and inputs come from Data/UI/combat-visuals.json and combat-inputs.json, with RU/EN Localization. Current point circles use exact physical R (0.3R core) and independent minimum6px marker; own ETA is real time, foreign endpoint/deadline/target is private. Threat danger/near/miss use thickness/dash as well as color. Own path forecast spans5physical seconds; CM snapping/frontier and evasion are geometric, without chance/contact-roll markers. Point-specific data takes precedence over the historical missile/PRO palette/contact design passages below. Labels for visible projectiles stay inside viewport; Won chooses a sufficiently tall free rectangle, preserving map framing. EP11 palette, human deuteranopia/usability and FPS gates remain OPEN; EP12 native matrix is limited to enumerated assertions. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).
+
 ## Внешний линейный прогноз игрока — 2026-10-18
 
 По запросу пользователя карта дополнительно показывает тёмную пунктирную прямую от текущей отображаемой позы корабля игрока по его текущему курсу до края viewport. Это модель постоянной текущей скорости, используемая TorpedoGuidanceMath.Plan на одной итерации планирования: только X/Y/SpeedKmS/Direction, без будущего навигационного маршрута или EngineManeuver. Семантический RGB #8CB9E0, opacity30% (alpha77). Основной светлый прогноз/подтверждённый маршрут игрока сохраняется; тёмная линия рисуется под ним, без собственного маркера встречи или ETA.

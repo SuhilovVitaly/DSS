@@ -1,5 +1,9 @@
 # Defeat
 
+## Current EP-0012 contract — 2026-10-21
+
+Actual SessionOutcome.Defeated/encounter Lost freezes world/AI and forbids save or later actions; already captured immutable saves can finish. DefeatScreen displays authoritative encounter duration (real x1=physical×4), launches/intercepts/hits/evades/deaths. Load/Main Menu remain available; cancel/error returns to Defeat, successful prior-save load creates a new Running session. Native actual defeat statistics were captured in RU/EN at two viewport/scale pairs; physical Load-menu/OS-input acceptance remains NOT RUN. Critical module/fraction death rule remains; no hull HP pool. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0009 — 2026-10-12
 
 Defeated теперь наступает по порогу уничтоженных модулей или критическому bridge/engine, без Hull HP. Однократный терминальный переход, остановка часов и запрет Save подтверждены headless Engine-тестами; реальное окно NOT RUN. [Требования](../../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [нативная матрица](../../../Board/EP-0009-battle/evidence/native.md).

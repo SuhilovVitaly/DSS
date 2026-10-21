@@ -1,5 +1,9 @@
 # Командные панели корабля
 
+## Current EP-0012 contract — 2026-10-21
+
+Each point torpedo/CM module has Aim[Q/W], profile choices, operator/accuracy/scatter/state, reload ring and range toggle; own torpedoes expose manual Detonate. Fire/SelfDestruct/SetMode/Enable/Disable/auto/burst/chance controls are retired. Keyboard1–3 and wheel select profiles in aim mode rather than speed; specific module button binds that launcher, W chooses ready CM. Preview is allowed during reload, launch is not. Navigation/trade/scanner/production commands below retain their separate contracts. Any old torpedo/PRO command tables below are historical compatibility records, not supported runtime actions. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0009 — 2026-10-12
 
 Аппарат имеет authoritative режим `standard`/`maneuverability`/`overheat`, готовность, поломку и список активных торпед; больше не действует ограничение одной летящей торпеды. ПРО сохраняет идентичность модуля и очереди. Headless проверки команд выполнены, реальное окно/ввод NOT RUN. [Текущие правила](../../04-Engineering/ModuleCombat.md).

@@ -1,5 +1,9 @@
 # Tetrarch Class
 
+## Current EP-0012 contract — 2026-10-21
+
+The canonical CombatMukha player is51t with9 modules, light armor60/structure150, four crew with all ten skills20 and dedicated module.engine.tetrarch (5km/s,600m/s²,20°/s, cruise3km/s). Two manual CM launchers and one point torpedo launcher use current profile/reload catalog values. CombatMukhaSingle retains the same player and SPC-MUKHA-01 only. CombatShmel has been removed. PlayerShipOnly keeps its own geometry/crew and receives current point loadout/Tetrarch engine; Default500 content remains unchanged. Hull grid geometry below remains applicable; old scenario counts/skills50/basic-engine/EP8 weapon statements are historical, not current loadout requirements. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0009 — 2026-10-12
 
 В `CombatMukha` и `CombatShmel` Тетрарх имеет9 модулей с `light` бронёй, четыре члена экипажа/каюты и назначения пилота и трёх операторов оружия. Он больше не использует Hull HP450 как правило гибели: важны структура модулей, критические роли и порог уничтожения. Остальные сценарии сохраняют собственные комплектации EP-0008; таблица ниже является датированным срезом. [Текущие требования](../../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [реальные данные](../../04-Engineering/ModuleCombat.md).
