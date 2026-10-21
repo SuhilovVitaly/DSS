@@ -74,7 +74,7 @@ public sealed class PointCombatUS0016TK0001Tests
             }
             Assert.Contains(row.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch && b.Label == locale["Combat.Aim"] + " [Q]");
             Assert.True(screen.AvailableMapRect().Contains(screen.TorpedoAimLabelBounds));
-            foreach (var tile in screen.ObjectInfoPanel.OwnModuleDiagram!.Tiles)
+            foreach (var tile in screen.CommandsPanel.OwnModuleDiagram!.Tiles)
             {
                 var module = scene.InstalledModules.Single(m => m.ModuleId == tile.Id);
                 Assert.Equal(locale["Combat.Module." + module.ModuleTypeId], tile.Name);

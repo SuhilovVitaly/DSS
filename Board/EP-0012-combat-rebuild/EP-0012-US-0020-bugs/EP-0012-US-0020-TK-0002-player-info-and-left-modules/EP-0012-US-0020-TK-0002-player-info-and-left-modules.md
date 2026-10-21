@@ -68,3 +68,13 @@ Native: повторить исходный пользовательский с�
 ## Definition of Done
 
 US20-AC2 доказан named tests; owning build/scoped format/diff проходят. Ручной результат и ограничения записаны отдельно. Сейчас implementation NOT STARTED; automated/native/product NOT RUN. Текущее поручение — только planning, без игры и commit/push.
+
+## Scope update — execution 2026-10-21
+
+Include existing Client tests PointCombatUS0013TK0001Tests.cs and PointCombatUS0016TK0001Tests.cs: their old right-side diagram assertions must verify left-side details and right-side ship instead. Current authorization supersedes planning-only restrictions.
+
+## Execution result — 2026-10-21
+
+Right Player Ship now uses the existing image/BuildLines card. Presented module information is updated before left command panels: each module retains name, armor/structure, critical warning, disabled countdown, destruction and transient hit damage; Navigation carries destruction summary and modules without dedicated controls. Weapon profile/operator/reload details remain. Detail text wraps and the whole left panel scrolls; body sizing accounts for details and command rows.
+
+Validation: Client `--filter "FullyQualifiedName~PointCombatUS0020TK0002Tests|FullyQualifiedName~PointCombatUS0013TK0001Tests|FullyQualifiedName~PointCombatUS0016TK0001Tests|FullyQualifiedName~CommandsPanelTests"`: 19/19 passed, including 4 new parameterized cases; dependencies/Client build passed. Scoped format for the two changed production files exit 0; diff check exit 0. Checks capped at 300000ms. Self-review completed. Native/product visual acceptance NOT RUN/OPEN.

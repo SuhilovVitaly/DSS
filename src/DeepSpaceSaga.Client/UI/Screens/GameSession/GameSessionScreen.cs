@@ -1414,6 +1414,15 @@ public sealed partial class GameSessionScreen : IScreen
         if (_panelVisible) LayoutInfoPanel(buffered);
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
+        var playerShip = FindPlayerShip(_renderStates);
+        _commandsPanel.OwnModuleDiagram = null;
+        if (buffered?.Snapshot is { Encounter: not null } moduleSnapshot && playerShip is not null)
+        {
+            _moduleDiagram.Update(_buffer.PresentationSessionId, moduleSnapshot.SnapshotSequence, moduleSnapshot.PlayerShipObjectId!,
+                moduleSnapshot.InstalledModules, moduleSnapshot.CombatJournal, prediction is null ? moduleSnapshot.MotionTimeMs : GetPredictedGameTimeMs(prediction),
+                _buffer.CurrentSpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
+            _commandsPanel.OwnModuleDiagram = _moduleDiagram;
+        }
         _commandsPanel.Render(canvas,
             buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom,
             buffered?.Snapshot.PlayerShipObjectId);
@@ -1430,16 +1439,7 @@ public sealed partial class GameSessionScreen : IScreen
             DrawInfoPanel(canvas, buffered);
 
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
-        var playerShip = FindPlayerShip(_renderStates);
         // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
-        _objectInfoPanel.OwnModuleDiagram = null;
-        if (buffered?.Snapshot is { Encounter: not null } moduleSnapshot && playerShip is not null)
-        {
-            _moduleDiagram.Update(_buffer.PresentationSessionId, moduleSnapshot.SnapshotSequence, moduleSnapshot.PlayerShipObjectId!,
-                moduleSnapshot.InstalledModules, moduleSnapshot.CombatJournal, prediction is null ? moduleSnapshot.MotionTimeMs : GetPredictedGameTimeMs(prediction),
-                _buffer.CurrentSpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
-            _objectInfoPanel.OwnModuleDiagram = _moduleDiagram;
-        }
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
             ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, rightColumn.ObjectInfoMaximumBottom);
         CombatReportsBounds = rightColumn.ReportsAfter(_objectInfoPanel.Bounds);

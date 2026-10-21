@@ -14,6 +14,33 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 /// </summary>
 public sealed class CommandsPanel
 {
+    internal ModuleDiagram? OwnModuleDiagram { get; set; }
+
+    internal static IReadOnlyList<string> ModuleDetails(string panel, string? moduleId,
+        IReadOnlyList<InstalledModuleSnapshot> modules, ModuleDiagram? diagram)
+    {
+        if (diagram is null) return [];
+        List<string> lines = [];
+        if (panel == "Navigation")
+            lines.Add($"{GameSessionScreen.CombatText("DestroyedModules", "")}: {diagram.DestroyedCount}/3");
+        foreach (var tile in diagram.Tiles)
+        {
+            var module = modules.FirstOrDefault(m => m.ModuleId == tile.Id);
+            if (module is null) continue;
+            string group = module.LauncherCombat is not null ? "Torpedo Launcher" : module.Defense is not null ? "Countermeasure Launcher" :
+                !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId.StartsWith("engine.", StringComparison.Ordinal)) ? "Engine" :
+                !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId.StartsWith("scanner.", StringComparison.Ordinal)) ? "Space Control" : "Navigation";
+            if (moduleId is not null ? tile.Id != moduleId : panel != group) continue;
+            lines.Add(tile.Name + (tile.Critical ? " !" : ""));
+            lines.Add($"{GameSessionScreen.CombatText("ArmorShort", "")}: {tile.Armor}/{tile.ArmorMax}  {GameSessionScreen.CombatText("StructureShort", "")}: {tile.Structure}/{tile.StructureMax}");
+            lines.Add(tile.Destroyed ? GameSessionScreen.CombatText("Destroyed", "") :
+                tile.DisabledRealSeconds > 0 ? $"{GameSessionScreen.CombatText("Disabled", "")} {tile.DisabledRealSeconds:0.0} {GameSessionScreen.CombatText("Seconds", "")}" :
+                GameSessionScreen.CombatText("Ready", ""));
+            if (tile.HitDamage is { } damage) lines.Add($"−{damage}");
+        }
+        return lines;
+    }
+
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
     private const float XenonBodySliceInset = 12f;
     private const float XenonButtonSliceInset = 8f;
@@ -530,8 +557,8 @@ public sealed class CommandsPanel
     public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight = float.PositiveInfinity,
         string? ownerObjectId = null)
     {
-        if (modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: true } ||
-            !modules.Any(m => m.LauncherCombat is not null || m.Defense is not null)) viewportHeight = float.PositiveInfinity;
+        if (OwnModuleDiagram is null && (modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: true } ||
+            !modules.Any(m => m.LauncherCombat is not null || m.Defense is not null))) viewportHeight = float.PositiveInfinity;
         _viewportHeight = viewportHeight;
         LayoutButtons();
 
@@ -553,12 +580,13 @@ public sealed class CommandsPanel
             var panels = BuildPanels(safeModules, ownerObjectId);
             using var detailPaint = new SKPaint { TextSize = 12f, IsAntialias = true };
             var details = panels.ToDictionary(p => p.Key, p => WrapDetails(
-                p.Weapon is { } w ? _weaponDetails?.Invoke(w) ?? [] : [], detailPaint), StringComparer.Ordinal);
+                (p.Weapon is { } w ? _weaponDetails?.Invoke(w) ?? [] : [])
+                    .Concat(ModuleDetails(p.Name, p.Weapon?.ModuleId, safeModules, OwnModuleDiagram)).ToArray(), detailPaint), StringComparer.Ordinal);
 
             // Reserve every caption so all five groups remain reachable. Give an
             // explicitly opened group priority, then the installed launcher.
             HashSet<string>? visibleBodies = null;
-            bool hasLauncher = safeModules.Any(m => m.LauncherCombat is not null || m.Defense is not null);
+            bool hasLauncher = OwnModuleDiagram is not null || safeModules.Any(m => m.LauncherCombat is not null || m.Defense is not null);
             float captionHeight = hasLauncher && viewportHeight < MinimumExpandedHeight
                 ? Math.Clamp((viewportHeight - rowY - 128 - (panels.Length - 1) * CollapsedPanelGap) / panels.Length, 18f, 28f)
                 : PanelCaptionHeight;
@@ -908,9 +936,9 @@ public sealed class CommandsPanel
             {
                 using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
                 canvas.Save();
-                canvas.ClipRect(new SKRect(row.BodyRect.Left + 8, row.BodyRect.Top + 84, row.BodyRect.Right - 8, row.StatusBarRect.Top));
+                canvas.ClipRect(new SKRect(row.BodyRect.Left + 8, row.BodyRect.Top + 4, row.BodyRect.Right - 8, row.StatusBarRect.Top));
                 for (int i = 0; i < row.DetailLines.Length; i++)
-                    canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, row.BodyRect.Top + 96 + i * 16, paint);
+                    canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, Math.Max(row.BodyRect.Top + (row.Weapon is null ? 16 : 96), row.Buttons.IsDefaultOrEmpty ? 0 : row.Buttons.Max(b => b.Rect.Bottom) + 16) + i * 16, paint);
                 canvas.Restore();
             }
             if (!row.ReloadBarRect.IsEmpty)

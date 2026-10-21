@@ -80,7 +80,7 @@ public sealed class PointCombatUS0013TK0001Tests
     [InlineData(1f, 1920, 1080)]
     [InlineData(1.5f, 1920, 1080)]
     [InlineData(1.5f, 1280, 720)]
-    public void Actual_screen_embeds_own_diagram_in_scrollable_info_row(float scale, int width, int height)
+    public void Actual_screen_moves_module_details_to_left_panels(float scale, int width, int height)
     {
         var snapshot = new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
             [new("player", 0, 0, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip)], "player",
@@ -89,20 +89,11 @@ public sealed class PointCombatUS0013TK0001Tests
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0, uiScale: scale);
         using var bitmap = new SKBitmap(width, height); using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, width, height);
-        Assert.Equal(9, screen.ObjectInfoPanel.OwnModuleDiagram!.Tiles.Count);
-        var body = screen.ObjectInfoPanel.RowBodyRects[0];
-        Assert.True(body.Height >= 64);
-        if (width == 1280)
-        {
-            for (int i = 0; i < 5; i++) screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, -1);
-            screen.Render(canvas, width, height);
-        }
-        for (int i = 0; i < 10 && !bitmap.Pixels.Contains(SKColors.Orange); i++)
-        {
-            screen.OnMouseWheel(body.MidX * scale, body.MidY * scale, -1);
-            screen.Render(canvas, width, height);
-        }
-        Assert.Contains(SKColors.Orange, bitmap.Pixels);
+        Assert.Equal(9, screen.CommandsPanel.OwnModuleDiagram!.Tiles.Count);
+        Assert.Null(screen.ObjectInfoPanel.OwnModuleDiagram);
+        Assert.Equal(9, screen.CommandsPanel.OwnModuleDiagram!.Tiles.Count);
+        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains("20/40"));
+        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains(" !"));
         if (Environment.GetEnvironmentVariable("DSS_POINT_RENDER_ARTIFACT_DIRECTORY") is { Length: > 0 } directory)
         {
             Directory.CreateDirectory(directory); using var image = SKImage.FromBitmap(bitmap); using var png = image.Encode(SKEncodedImageFormat.Png, 100);
