@@ -78,3 +78,17 @@ Native: выстрелить своим аппаратом, дождаться �
 ## Definition of Done
 
 US20-AC5 покрыт named tests и документацией; build/scoped format/diff проходят, save/load и совместимость проверены. Сейчас draft; implementation NOT STARTED; automated/native/product NOT RUN. Planning не разрешает запуск игры или commit/push.
+
+## Execution scope correction
+
+Include SimulationEngine.Combat.cs (actual ordered scheduler), BattleReportSnapshot.cs (actual enum DTO), no BattleReportKind.cs exists. Existing saved launcher deadline and processed physical cursor define unfinished reload; no new persisted flag/schema required. Reload notification is delivered through reliable scene-admitted reports, with sound dedup by session/sequence.
+
+Save/load probe reproduced strict journal rejection of new reload fact. Scope now includes Scenario/CountermeasureSaveData.cs to admit only own reload entries without a projectile, while preserving all validation of projectile facts.
+
+Scope: migrate PointCombatUS0017TK0001Tests enum-count expectation to explicit stable numeric IDs plus appended reload kind.
+
+## Execution result — 2026-10-21
+
+Appended stable enum values; own reload is one authoritative journal fact with module identity/name at the exact deadline and one captured reliable report, without a fake projectile. Deadline is processed in chronological combat scheduler before equal-time launch work. Existing saved ReadyAtMotionTimeMs and processed physical cursor preserve pending/completed cycles without schema bump. Strict Save18 validation explicitly admits own reload facts. NPC cycles never emit this fact. Client localized journal/report text uses captured name; scene-admitted reports enqueue sound once by session/sequence, including two simultaneous completions, without threat-audio throttling. Audio queue preserves readiness cues; mute/session lifecycle still apply.
+
+Validation: Engine reload+Save18+report filter 52/52; Client reload+localization+report+audio filter 90/90 (includes real Engine/local transport/admitted report/audio enqueue); Contracts reload+US17+report filter 10/10. Earlier contract report batch also18/18. Owning projects built in tests; scoped formatter applied to changed Engine/Client source. Checks capped300000ms. Self-review complete. Native audible playback and human UI acceptance NOT RUN/OPEN; headless enqueue is not audible evidence.

@@ -43,6 +43,14 @@ public sealed partial class SimulationEngine
             double eventTime = Math.Min(hostileLaunch?.Time ?? double.PositiveInfinity,
                 npcDodge?.DueAt ?? double.PositiveInfinity);
             double pointTime = NextPointDetonationTime();
+            double reloadTime = NextPlayerTorpedoReloadTime(cursor);
+            if (reloadTime <= motionTimeMs && reloadTime <= eventTime && reloadTime <= pointTime)
+            {
+                CompletePlayerTorpedoReloads(reloadTime);
+                cursor = reloadTime;
+                CapturePresentationFrame(cursor);
+                continue;
+            }
             if (pointTime <= motionTimeMs && pointTime <= eventTime)
             {
                 ResolvePointDetonations(pointTime);

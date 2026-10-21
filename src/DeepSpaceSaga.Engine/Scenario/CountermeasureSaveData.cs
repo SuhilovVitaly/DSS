@@ -115,12 +115,16 @@ internal static class CountermeasureSaveValidation
                 "retired probability or guidance facts in point journal");
             Require(e.Type is CombatEventType.Launch or CombatEventType.Miss or CombatEventType.Hit or CombatEventType.ModuleHit or
                 CombatEventType.ModuleDestroyed or CombatEventType.ShipDestroyed or CombatEventType.TorpedoDetonated or
-                CombatEventType.CountermissileDetonated or CombatEventType.ShotDown or CombatEventType.ManuallyDetonated,
+                CombatEventType.CountermissileDetonated or CombatEventType.ShotDown or CombatEventType.ManuallyDetonated or CombatEventType.TorpedoReloadCompleted,
                 "retired or invalid event type");
             Require(e.EventId > lastId && e.EventId <= saved.JournalSequence && double.IsFinite(e.MotionTimeMs) &&
                 e.MotionTimeMs >= lastTime && e.MotionTimeMs <= state.MotionTimeMs && double.IsFinite(e.X) && double.IsFinite(e.Y) &&
-                !string.IsNullOrWhiteSpace(e.ProjectileObjectId) && !string.IsNullOrWhiteSpace(e.ActorObjectId) &&
-                (e.ProjectileKind is not null && state.PointCombatState is not null || !string.IsNullOrWhiteSpace(e.TargetObjectId)) &&
+                !string.IsNullOrWhiteSpace(e.ActorObjectId) &&
+                (e.Type == CombatEventType.TorpedoReloadCompleted
+                    ? e.ActorObjectId == state.PlayerShipObjectId && !string.IsNullOrWhiteSpace(e.LauncherModuleId) &&
+                      string.IsNullOrEmpty(e.ProjectileObjectId) && e.ProjectileKind is null
+                    : !string.IsNullOrWhiteSpace(e.ProjectileObjectId) &&
+                      (e.ProjectileKind is not null && state.PointCombatState is not null || !string.IsNullOrWhiteSpace(e.TargetObjectId))) &&
                 e.Damage is null or >= 0, $"invalid journal entry ({e.Type}/{e.EventId})");
             lastId = e.EventId; lastTime = e.MotionTimeMs;
         }

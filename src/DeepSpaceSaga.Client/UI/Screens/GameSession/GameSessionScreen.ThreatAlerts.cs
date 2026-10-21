@@ -25,6 +25,17 @@ public sealed partial class GameSessionScreen
     private double _alertBaselineAt;
     private double? _lastLaunchSignalAt, _lastWarningSignalAt;
 
+    private readonly ReloadReportNotificationCursor _reloadNotifications = new();
+    private void NotifyReloadReports(IEnumerable<BattleReportSnapshot> reports)
+    {
+        foreach (var report in _reloadNotifications.Take(_buffer.PresentationSessionId, reports))
+        {
+            if (_alertsInactive || !CombatSettings.ThreatAlerts.SoundEnabled) continue;
+            RecentAlertSignals.Add(new(CombatAlertKind.TorpedoReloadCompleted, _timestampProvider() * (1000d / Stopwatch.Frequency)));
+            _alertAudio?.Invoke(new(CombatAlertKind.TorpedoReloadCompleted, 880, 100, 1, 0, 0));
+        }
+    }
+
     internal static ThreatVisual ClassifyThreat(PointThreat threat, PointCombatVisualSettings point, ThreatAlertVisualSettings alerts)
     {
         var kind = threat.Assessment.IsThreat ? ObservedThreatClass.Dangerous :
@@ -165,6 +176,22 @@ public sealed partial class GameSessionScreen
             canvas.Save(); canvas.Translate(x, y); canvas.RotateDegrees((float)(Math.Atan2(dy, dx) * 180 / Math.PI));
             using var path = new SKPath(); path.MoveTo(radius, 0); path.LineTo(-radius, -radius / 2); path.LineTo(-radius, radius / 2); path.Close();
             canvas.DrawPath(path, fill); canvas.Restore();
+        }
+    }
+}
+
+internal sealed class ReloadReportNotificationCursor
+{
+    private Guid? _session;
+    private long _sequence;
+    internal IEnumerable<BattleReportSnapshot> Take(Guid? session, IEnumerable<BattleReportSnapshot> reports)
+    {
+        if (_session != session) { _session = session; _sequence = 0; }
+        foreach (var report in reports.OrderBy(r => r.Sequence))
+        {
+            if (report.Sequence <= _sequence) continue;
+            _sequence = report.Sequence;
+            if (report.Kind == BattleReportKind.PlayerTorpedoReloadCompleted) yield return report;
         }
     }
 }

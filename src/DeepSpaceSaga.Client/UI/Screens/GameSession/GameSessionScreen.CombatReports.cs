@@ -24,7 +24,9 @@ public sealed partial class GameSessionScreen
         _presentationPrepared = true;
         PrepareCombatForecasts();
         if (_combatReportDisposed) return;
-        _combatReportStore.Receive(_buffer.DrainCombatReports());
+        var reports = _buffer.DrainCombatReports().ToArray();
+        NotifyReloadReports(reports);
+        _combatReportStore.Receive(reports);
         var expanded = _combatReportStore.Reports.FirstOrDefault(r => r.Sequence == _combatReportStore.ExpandedSequence);
         _combatReportAssets.Prepare(expanded is null ? [] : [expanded]);
     }

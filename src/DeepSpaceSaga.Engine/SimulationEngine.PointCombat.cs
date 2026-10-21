@@ -171,6 +171,26 @@ public sealed partial class SimulationEngine
         return new(damaged, immobilized, obj.IsDestroyed);
     }
 
+    private double NextPlayerTorpedoReloadTime(double cursor) => _launcherCombat
+        .Where(p => p.Key.ObjectId == PlayerShipObjectId && p.Value.ReadyAtMotionTimeMs > cursor)
+        .Select(p => p.Value.ReadyAtMotionTimeMs ?? double.PositiveInfinity).DefaultIfEmpty(double.PositiveInfinity).Min();
+
+    private void CompletePlayerTorpedoReloads(double time)
+    {
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+        if (owner is null) return;
+        foreach (var row in _launcherCombat.Where(p => p.Key.ObjectId == PlayerShipObjectId && p.Value.ReadyAtMotionTimeMs == time)
+            .OrderBy(p => p.Key.ModuleId, StringComparer.Ordinal))
+        {
+            var module = owner.Modules.FirstOrDefault(m => m.ModuleId == row.Key.ModuleId);
+            if (module is null) continue;
+            var pose = RuntimeMotion.At(owner, (long)Math.Ceiling(time));
+            string name = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).DisplayName;
+            AppendCombatEvent(new(0, time, CombatEventType.TorpedoReloadCompleted, PlayerShipObjectId!, string.Empty,
+                string.Empty, pose.X, pose.Y, Result: name, LauncherModuleId: module.ModuleId));
+        }
+    }
+
     private double NextPointDetonationTime() => _objects
         .Where(o => o.InitialMotion.OwnProjectile is not null)
         .Select(o => o.InitialMotion.OwnProjectile!.DetonationMotionTimeMs)

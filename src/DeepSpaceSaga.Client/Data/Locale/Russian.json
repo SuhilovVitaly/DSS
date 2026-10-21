@@ -550,5 +550,9 @@
   "Combat.Reason.engine_disabled": "Двигатель отключён",
   "Combat.Reason.invalid_evade_side": "Неверная сторона уклонения",
   "Combat.Reason.invalid_turn_payload": "Некорректная команда поворота",
-  "Combat.Reason.unknown_threat": "Угроза недоступна"
+  "Combat.Reason.unknown_threat": "Угроза недоступна",
+  "Combat.ReloadCompleted": "Торпедный аппарат {launcher} перезаряжен",
+  "Combat.Event.TorpedoReloadCompleted": "Перезарядка завершена",
+  "CombatReports.player-torpedo-reloaded.Title": "Перезарядка завершена",
+  "CombatReports.player-torpedo-reloaded.Body": "Торпедный аппарат {launcher} перезаряжен"
 }

@@ -550,5 +550,9 @@
   "Combat.Reason.engine_disabled": "Engine disabled",
   "Combat.Reason.invalid_evade_side": "Invalid evade direction",
   "Combat.Reason.invalid_turn_payload": "Invalid turn command",
-  "Combat.Reason.unknown_threat": "Threat unavailable"
+  "Combat.Reason.unknown_threat": "Threat unavailable",
+  "Combat.ReloadCompleted": "Torpedo launcher {launcher} reloaded",
+  "Combat.Event.TorpedoReloadCompleted": "Reload completed",
+  "CombatReports.player-torpedo-reloaded.Title": "Reload completed",
+  "CombatReports.player-torpedo-reloaded.Body": "Torpedo launcher {launcher} reloaded"
 }

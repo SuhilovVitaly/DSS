@@ -17,7 +17,8 @@ internal sealed class CombatReportFormatter(Func<string, string>? localize = nul
         string source = report.SourceDisplayName ?? Text("UnknownContact");
         string target = report.TargetDisplayName ?? Text("UnknownContact");
         string Fill(string text) => text.Replace("{source}", source, StringComparison.Ordinal)
-            .Replace("{target}", target, StringComparison.Ordinal);
+            .Replace("{target}", target, StringComparison.Ordinal)
+            .Replace("{launcher}", report.LauncherDisplayName ?? report.LauncherModuleId ?? Text("UnknownContact"), StringComparison.Ordinal);
         string message = Fill(Text(visual + ".Body"));
         if (report.Kind == BattleReportKind.EnemyTorpedoLaunch && report.TargetObjectId is not null)
             message += " " + Fill(Text("EnemyLaunchTarget"));
@@ -50,6 +51,7 @@ internal sealed class CombatReportFormatter(Func<string, string>? localize = nul
 
     internal static string VisualKey(BattleReportSnapshot report) => report.Kind switch
     {
+        BattleReportKind.PlayerTorpedoReloadCompleted => "player-torpedo-reloaded",
         BattleReportKind.EnemyInRange => "enemy-in-range",
         BattleReportKind.EnemyTorpedoLaunch => "enemy-torpedo-launch",
         BattleReportKind.PlayerTorpedoLaunch => "player-torpedo-launch",

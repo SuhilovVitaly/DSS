@@ -7,7 +7,7 @@ public enum CombatEventType
 {
     Launch, Intercept, Miss, Hit, Destroyed, SelfDestruct, TargetLost, Expired,
     TorpedoHitRoll, ModuleHit, ModuleDestroyed, ShipDestroyed, BurstShotSkipped, LauncherBreakdown,
-    TorpedoDetonated, CountermissileDetonated, ShotDown, ManuallyDetonated
+    TorpedoDetonated, CountermissileDetonated, ShotDown, ManuallyDetonated, TorpedoReloadCompleted
 }
 
 /// <summary>Public geometric result; no hit chance, RNG roll or hidden module health.</summary>

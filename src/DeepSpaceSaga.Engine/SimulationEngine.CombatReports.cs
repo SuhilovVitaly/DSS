@@ -60,6 +60,16 @@ public sealed partial class SimulationEngine
 
     private void ObserveCombatReportFact(CombatJournalEntry entry)
     {
+        if (entry.Type == CombatEventType.TorpedoReloadCompleted && entry.ActorObjectId == PlayerShipObjectId)
+        {
+            var owner = _objects.First(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+            EmitCombatReport(new(0, entry.MotionTimeMs, BattleReportKind.PlayerTorpedoReloadCompleted,
+                FormattableString.Invariant($"reload:{entry.LauncherModuleId}:{entry.MotionTimeMs:R}"),
+                CaptureReportIdentity(owner, entry.LauncherModuleId, BattleReportReporterRole.TorpedoOperator),
+                SourceObjectId: PlayerShipObjectId, SourceDisplayName: owner.Name,
+                LauncherModuleId: entry.LauncherModuleId, LauncherDisplayName: entry.Result));
+            return;
+        }
         if (entry.Type == CombatEventType.ShotDown && entry.ProjectileKind == ProjectileKind.Torpedo)
         {
             ObservePointInterceptReport(entry);

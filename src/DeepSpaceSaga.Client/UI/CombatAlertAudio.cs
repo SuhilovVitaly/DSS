@@ -3,7 +3,7 @@ using System.Diagnostics;
 
 namespace DeepSpaceSaga.Client.UI;
 
-public enum CombatAlertKind { EnemyLaunch, Danger, Urgent, CombatStarted }
+public enum CombatAlertKind { EnemyLaunch, Danger, Urgent, CombatStarted, TorpedoReloadCompleted }
 public sealed record CombatAlertCue(CombatAlertKind Kind, int FrequencyHz, int DurationMs, int Pulses, int PulseGapMs, int MinimumIntervalMs = 1500);
 
 internal sealed class CombatAudioPlaybackGate
@@ -11,6 +11,7 @@ internal sealed class CombatAudioPlaybackGate
     private long? _launchAt, _warningAt, _combatAt;
     internal bool TryStart(CombatAlertKind kind, long now, long frequency, int minimumIntervalMs)
     {
+        if (kind == CombatAlertKind.TorpedoReloadCompleted) return true;
         long? previous = kind switch { CombatAlertKind.EnemyLaunch => _launchAt, CombatAlertKind.CombatStarted => _combatAt, _ => _warningAt };
         if (previous is { } last && (now - last) * (1000d / frequency) < Math.Max(1500, minimumIntervalMs)) return false;
         if (kind == CombatAlertKind.EnemyLaunch) _launchAt = now; else if (kind == CombatAlertKind.CombatStarted) _combatAt = now; else _warningAt = now;
@@ -34,8 +35,7 @@ internal static class CombatAlertAudio
 {
     private sealed record QueuedCue(long Epoch, CombatAlertCue Cue);
     private static readonly CombatAudioSessionEpoch Sessions = new();
-    private static readonly Channel<QueuedCue> Queue = Channel.CreateBounded<QueuedCue>(new BoundedChannelOptions(4)
-    { SingleReader = true, FullMode = BoundedChannelFullMode.DropOldest });
+    private static readonly Channel<QueuedCue> Queue = Channel.CreateUnbounded<QueuedCue>(new UnboundedChannelOptions { SingleReader = true });
     private static readonly Task Worker = Task.Run(PlayLoop);
     private static bool _reportedUnavailable;
 

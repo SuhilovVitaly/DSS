@@ -68,6 +68,7 @@ public class PointCombatUS0017TK0001Tests
         Assert.Equal(15, (int)CombatEventType.CountermissileDetonated);
         Assert.Equal(16, (int)CombatEventType.ShotDown);
         Assert.Equal(17, (int)CombatEventType.ManuallyDetonated);
-        Assert.Equal(7, Enum.GetValues<BattleReportKind>().Length);
+        Assert.Equal(6, (int)BattleReportKind.PlayerShipDamaged);
+        Assert.Equal(7, (int)BattleReportKind.PlayerTorpedoReloadCompleted);
     }
 }

@@ -80,6 +80,8 @@ internal sealed class CombatJournalPanel
 
     internal static IReadOnlyList<string> Format(CombatJournalEntry entry, string? playerShipObjectId = null)
     {
+        if (entry.Type == CombatEventType.TorpedoReloadCompleted)
+            return [T("ReloadCompleted").Replace("{launcher}", entry.Result ?? entry.LauncherModuleId ?? string.Empty, StringComparison.Ordinal)];
         bool ownActor = playerShipObjectId is not null && entry.ActorObjectId == playerShipObjectId;
         bool ownTarget = playerShipObjectId is not null && entry.TargetObjectId == playerShipObjectId;
         string type = T(entry.Type == CombatEventType.TorpedoHitRoll ? "Event.LegacyResolution" : "Event." + entry.Type);
