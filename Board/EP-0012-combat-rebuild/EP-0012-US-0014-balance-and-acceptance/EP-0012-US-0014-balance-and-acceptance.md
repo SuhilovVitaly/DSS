@@ -44,7 +44,7 @@ Execution order задаётся ticket DAG, который допускает �
 | Order / Ticket | Layer | Depends on | Serves | Files |
 |---|---|---|---|---:|
 | 66 / [EP-0012-US-0014-TK-0001-production-balance-harness](EP-0012-US-0014-TK-0001-production-balance-harness/EP-0012-US-0014-TK-0001-production-balance-harness.md) | engine | EP-0012-US-0018-TK-0005-module-combat-regressions | US14-AC1 | 3 |
-| 67 / [EP-0012-US-0014-TK-0002-tools-analyzer](EP-0012-US-0014-TK-0002-tools-analyzer/EP-0012-US-0014-TK-0002-tools-analyzer.md) | tooling | EP-0012-US-0014-TK-0001-production-balance-harness | US14-AC2 | 4 |
+| 67 / [EP-0012-US-0014-TK-0002-tools-analyzer](EP-0012-US-0014-TK-0002-tools-analyzer/EP-0012-US-0014-TK-0002-tools-analyzer.md) | tooling-engine | EP-0012-US-0014-TK-0001-production-balance-harness | US14-AC2 | 5 |
 | 68 / [EP-0012-US-0014-TK-0003-native-acceptance](EP-0012-US-0014-TK-0003-native-acceptance/EP-0012-US-0014-TK-0003-native-acceptance.md) | tooling | EP-0012-US-0014-TK-0002-tools-analyzer | US14-AC3 | 1 |
 
 ## Decisions / Assumptions

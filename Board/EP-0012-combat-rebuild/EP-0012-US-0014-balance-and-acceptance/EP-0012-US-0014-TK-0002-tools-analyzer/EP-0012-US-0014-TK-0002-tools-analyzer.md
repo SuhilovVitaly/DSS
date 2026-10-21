@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0014-balance-and-acceptance"
 ticket: "EP-0012-US-0014-TK-0002-tools-analyzer"
 title: "tools-analyzer"
-stage: "draft"
-layer: "tooling"
+stage: "implemented"
+layer: "tooling-engine"
 depends_on: ["EP-0012-US-0014-TK-0001-production-balance-harness"]
-files_touched: 4
+files_touched: 5
 serves: ["US14-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0014-TK-0002-tools-analyzer
@@ -24,18 +24,19 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (5 файлов, включая tests); всё вне списка запрещено. Baseline e4a50aac64878719a238a6a5098d0b7709b4e3cd. Shared input policy source is already implemented in prerequisite US14-TK1; link it into this tool without copying or changing gameplay rules.
 
 | File | Current state | Allowed change |
 |---|---|---|
 | `tools/DeepSpaceSaga.CombatAnalyzer/DeepSpaceSaga.CombatAnalyzer.csproj` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
 | `tools/DeepSpaceSaga.CombatAnalyzer/Program.cs` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
 | `tools/DeepSpaceSaga.CombatAnalyzer/README.md` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
+| `src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj` | Existing friend assemblies for Performance/EconomyBalance/tests | Add Analyzer friend for internal production registry/constructor bootstrap; no gameplay or public API changes. |
 | `global.json` | **NEW — proposed**, сейчас отсутствует | Только изменения для scope этой карточки и served AC. |
 
 ## Public API after the change
 
-Proposed CLI: dotnet run --project tools/DeepSpaceSaga.CombatAnalyzer -- --seeds 3001:4000 --policy dodge|static --output <path>; --self-test. SDK в global.json выбирается из реально установленного dotnet --list-sdks на момент исполнения, не из вымышленной версии.
+CLI: dotnet run --project tools/DeepSpaceSaga.CombatAnalyzer -- --seeds 3001:4000 --policy dodge|static --output <csv-path>; --self-test. Optional --input <balance-jsonl-or-gzip> validates and analyzes recorded production runs; --root <repo> selects checkout for live runs. Output CSV + summary JSON + raw command/outcome JSONL gzip. Exit0 valid accepted/full or explicitly non-evaluated partial cohort,2 complete corpus outside corridor,1 malformed input/protocol. Self-test distinguishes synthetic statistics checks from a real production integrity probe. No balance retuning. SDK10.0.400 is actually installed and currently selected; pin latestPatch with prereleases disabled. SDK в global.json выбирается из реально установленного dotnet --list-sdks на момент исполнения, не из вымышленной версии.
 
 ## Implementation steps
 
@@ -50,7 +51,7 @@ Proposed CLI: dotnet run --project tools/DeepSpaceSaga.CombatAnalyzer -- --seeds
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+Named CLI self-test and integration checks completed; balance acceptance is reported independently.
 
 - **Analyzer_self_test_checks_seed_count_columns_and_exit_status**: built-in --self-test; отчёт не меняет параметры баланса.
 
@@ -70,4 +71,6 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-21: implementation и self-review PASS. Analyzer build + whole solution0 warnings/errors; self-test16 checks PASS; scoped whitespace/full formatter/diff PASS. All2000 recorded rows and16 CSV columns match source;50 live production rows including entire command tapes match exactly. Expected exits: dodge complete corpus2, static0, invalid range1, attempted input overwrite1; partial live50 is explicitly NOT_EVALUATED_PARTIAL_CORPUS. SDK10.0.400 verified. [Commands/results and initial bootstrap correction](../../evidence/us0014-tk0002-results.json). No independent review or native claim. Dodge balance acceptance remains OPEN; no tuning. SHA checked after immediate push.
+
+Bootstrap boundary correction: initial analyzer build failed CS0122 because GameDataRegistry and the configured Engine constructor are internal. Existing tools use InternalsVisibleTo; add only DeepSpaceSaga.CombatAnalyzer to this established boundary. The bot still uses public clock/snapshot/ReceiveCommand during execution, and never private combat state. No copied loader/reflection workaround. Initial failure retained in evidence.
