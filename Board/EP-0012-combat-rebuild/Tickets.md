@@ -2,12 +2,12 @@
 epic: "EP-0012-combat-rebuild"
 stage: "in_progress"
 created: "2026-10-20T07:48:46.640Z"
-revision: 2
+revision: 4
 ---
 
 # Порядок исполнения и coverage
 
-Строгий ticket DAG: каждый шаг зависит от предыдущего. Истории могут чередоваться из-за границ слоёв; числовой порядок story folders не является execution order. Внешних prerequisites нет; EP11 требует проверки уже используемых наблюдаемых NPC lines, не закрытия его native gates.
+Для исходных 73 тикетов действует строгий ticket DAG: каждый шаг зависит от предыдущего. Новые шаги 74–79 опираются на текущий baseline без новых API dependencies; выполнять последовательно из-за общих файлов. Истории могут чередоваться из-за границ слоёв; числовой порядок story folders не является execution order. Внешних prerequisites нет; EP11 требует проверки уже используемых наблюдаемых NPC lines, не закрытия его native gates.
 
 | Step | Ticket | Layer | Files | Depends on | Serves |
 |---:|---|---|---:|---|---|
@@ -84,6 +84,12 @@ revision: 2
 | 71 | [EP-0012-US-0015-TK-0003-update-documents-3](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0003-update-documents-3/EP-0012-US-0015-TK-0003-update-documents-3.md) | documentation | 10 | EP-0012-US-0015-TK-0002-update-documents-2 | US15-AC1 |
 | 72 | [EP-0012-US-0015-TK-0004-update-documents-4](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0004-update-documents-4/EP-0012-US-0015-TK-0004-update-documents-4.md) | documentation | 14 | EP-0012-US-0015-TK-0003-update-documents-3 | US15-AC1 |
 | 73 | [EP-0012-US-0015-TK-0005-refresh-graph-and-links](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0005-refresh-graph-and-links/EP-0012-US-0015-TK-0005-refresh-graph-and-links.md) | tooling | 58 | EP-0012-US-0015-TK-0004-update-documents-4 | US15-AC2 |
+| 74 | [EP-0012-US-0020-TK-0001-maneuver-trajectory-to-point](EP-0012-US-0020-bugs/EP-0012-US-0020-TK-0001-maneuver-trajectory-to-point/EP-0012-US-0020-TK-0001-maneuver-trajectory-to-point.md) | client | 5 | baseline | US20-AC1 |
+| 75 | [EP-0012-US-0020-TK-0002-player-info-and-left-modules](EP-0012-US-0020-bugs/EP-0012-US-0020-TK-0002-player-info-and-left-modules/EP-0012-US-0020-TK-0002-player-info-and-left-modules.md) | client | 5 | baseline | US20-AC2 |
+| 76 | [EP-0012-US-0020-TK-0003-npc-torpedo-observed-trail](EP-0012-US-0020-bugs/EP-0012-US-0020-TK-0003-npc-torpedo-observed-trail/EP-0012-US-0020-TK-0003-npc-torpedo-observed-trail.md) | client | 5 | baseline | US20-AC3 |
+| 77 | [EP-0012-US-0020-TK-0004-exit-torpedo-aim-after-click](EP-0012-US-0020-bugs/EP-0012-US-0020-TK-0004-exit-torpedo-aim-after-click/EP-0012-US-0020-TK-0004-exit-torpedo-aim-after-click.md) | client | 3 | baseline | US20-AC4 |
+| 78 | [EP-0012-US-0020-TK-0005-torpedo-reload-notifications](EP-0012-US-0020-bugs/EP-0012-US-0020-TK-0005-torpedo-reload-notifications/EP-0012-US-0020-TK-0005-torpedo-reload-notifications.md) | contracts-engine-client | 17 | baseline | US20-AC5 |
+| 79 | [EP-0012-US-0020-TK-0006-combat-speeds-1-2-5-10](EP-0012-US-0020-bugs/EP-0012-US-0020-TK-0006-combat-speeds-1-2-5-10/EP-0012-US-0020-TK-0006-combat-speeds-1-2-5-10.md) | contracts-engine-client | 16 | baseline | US20-AC6 |
 
 ## Source trace
 
@@ -117,3 +123,9 @@ Following the two preserved failed activation probes and completed Save18 prereq
 ## Итог DAG — 2026-10-21
 
 73/73 technical tickets implemented, including finalUS15. All61story AC remain traceable through Serves; acceptance differs from implementation: US14 balance and human/native subcriteria OPEN. See [publication ledger](PublicationStatus.md) and [actual final checks](ImplementationStatus.md). Historical ordering corrections above record discovered prerequisites and do not describe pending runtime migration.
+
+## Дополнение US20 — 2026-10-21
+
+Добавлены шаги 74–79, по одному на US20-AC1–4. Всего 79 тикетов; новые шесть draft/NOT STARTED. Итог 73/73 выше относится к исходному набору. US15 была завершающей историей исходного исполнения; новая история багов добавлена по прямому запросу.
+
+Дополнение: шаги 78/79 — перезарядка и скорости боя, US20-AC5/6. Это два сквозных feature tickets с конечными allowlists и matching tests каждого слоя; новые prerequisite tickets не добавлены.
