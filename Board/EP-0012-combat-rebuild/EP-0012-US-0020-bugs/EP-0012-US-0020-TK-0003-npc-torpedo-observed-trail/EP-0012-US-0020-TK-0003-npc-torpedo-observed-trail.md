@@ -3,14 +3,17 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0020-bugs"
 ticket: "EP-0012-US-0020-TK-0003-npc-torpedo-observed-trail"
 title: "NPC-торпеда: точка, короткий хвост и тёмный пройденный след"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: []
-files_touched: 5
+files_touched: 8
 serves: ["US20-AC3"]
 created: "2026-10-21T12:02:46.488Z"
 revision: 1
 ---
+
+Current execution: implemented/published; native/product acceptance OPEN. Earlier planning-only statements below record the prior request. See [execution report](../ExecutionStatus.md).
+
 
 # TK-0003 — NPC-торпеда: точка, короткий хвост и тёмный пройденный след
 
@@ -77,3 +80,14 @@ Include Data/UI/combat-visuals.json (production override of ForeignTrace) and ex
 Execution: displayed NPC geometry is empty forward path plus a speed-scaled rear tail (0–18px), no profile/ETA labels, dark confirmed trail with bounded 4096 positions per live object. History resets on session/sequence/time rollback or disappearance; no pre-launch bootstrap. Threat classification retained.
 
 Client scoped tests: 87/87 passed including 4 new cases and US10/US12 regressions. Build succeeded. Formatter initially found new initializer whitespace; corrected scoped. Native/product NOT RUN/OPEN. Self-review completed. Minor scope extension: trim trailing blank lines introduced in two directly related TK2 tests; prior TK2 diff-check statement was inaccurate (one trailing blank line), corrected here.
+
+## Actual implementation file scope
+
+- `src/DeepSpaceSaga.Client/Data/UI/combat-visuals.json`
+- `src/DeepSpaceSaga.Client/UI/CombatVisualSettings.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.PointProjectiles.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0010TK0002Tests.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0002Tests.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0002Tests.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0003Tests.cs`

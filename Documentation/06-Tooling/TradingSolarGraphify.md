@@ -71,3 +71,7 @@ Set-Location D:/DeepSpaceSaga/DSS
 ### Final graph integrity — 2026-10-21
 
 Fresh offline export:792code +311Markdown =1103source SHA256 verified;16038nodes/50778edges/514communities. All21artifact hashes verified;0missing sources/invalid line locations/dangling edges/self-loops. Source canonicalization produced794self-loops, explicitly audited/pruned from derived graph;1112unresolved AST edges and2886reference-only symbols remain explicit limitations. Selective EP12 semantics:21inputs/3host-agent chunks,52nodes/58edges, token usage null/unmeasured. Actual CLI OwnProjectileSnapshot query succeeds (131BFS nodes, explicit700token truncation). Canonical/current Board/tool docs:1324local links and65anchors verified. JSON has full graph; HTML is an aggregated view. Generated audit/status/navigation documents are excluded from graph input hashes to avoid circular results; graph navigation does not establish runtime or human acceptance.
+
+### Current US20 graph integrity — 2026-10-21
+
+Fresh offline US20 graph: 806code +319Markdown = 1125 hashed source files; 16275nodes/51378edges/529communities. All input hashes and 21 artifact hashes verified. Missing sources/invalid line locations/dangling edges/self-loops:0. Explicit limitations: 1144 unresolved AST edges excluded, 2926 reference-only nodes, 808 canonical self-loops audited/pruned. Selective US20 semantics14nodes/7edges in13source files; tokens unmeasured. Full JSON and aggregated HTML remain local ignored outputs; committed builder and semantic fragment reproduce them.

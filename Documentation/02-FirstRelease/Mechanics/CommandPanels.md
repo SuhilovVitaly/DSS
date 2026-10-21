@@ -1,5 +1,9 @@
 # Командные панели корабля
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
 Each point torpedo/CM module has Aim[Q/W], profile choices, operator/accuracy/scatter/state, reload ring and range toggle; own torpedoes expose manual Detonate. Fire/SelfDestruct/SetMode/Enable/Disable/auto/burst/chance controls are retired. Keyboard1–3 and wheel select profiles in aim mode rather than speed; specific module button binds that launcher, W chooses ready CM. Preview is allowed during reload, launch is not. Navigation/trade/scanner/production commands below retain their separate contracts. Any old torpedo/PRO command tables below are historical compatibility records, not supported runtime actions. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).

@@ -3,14 +3,17 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0020-bugs"
 ticket: "EP-0012-US-0020-TK-0001-maneuver-trajectory-to-point"
 title: "Прогноз манёвра до точки и дальше за экран"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: []
-files_touched: 5
+files_touched: 4
 serves: ["US20-AC1"]
 created: "2026-10-21T12:02:46.488Z"
 revision: 1
 ---
+
+Current execution: implemented/published; native/product acceptance OPEN. Earlier planning-only statements below record the prior request. See [execution report](../ExecutionStatus.md).
+
 
 # TK-0001 — Прогноз манёвра до точки и дальше за экран
 
@@ -74,3 +77,10 @@ US20-AC1 доказан named tests; owning build/scoped format/diff прохо�
 Current authorization: user invokes EpicExecutionPrompt; earlier planning-only limitations are historical. Implemented full selected Orbit trajectory via shared predictor at steering boundaries and shared arrival test for analytic locked leg, followed by viewport continuation. Non-navigation own forecast retains five seconds. Client-only, no rules/save changes. Self-review: escape phases remain sampled, never treated as final course; malformed/nonconvergent steering bounded at 20000 iterations.
 
 Validation: `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter "FullyQualifiedName~TrajectoryViewportTests|FullyQualifiedName~NavigationTrajectory|FullyQualifiedName~PointCombatUS0020TK0001Tests"`: 41 passed (including 3 named new tests). Client and dependency builds succeeded as part of test. Scoped `dotnet format ... --verify-no-changes --no-restore --include <three changed Client files>`: exit 0. `git diff --check`: exit 0. Each check bounded at 300000ms. Native/product: NOT RUN, human visual acceptance OPEN.
+
+## Actual implementation file scope
+
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatTrajectoryProjector.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0001Tests.cs`

@@ -1,0 +1,103 @@
+{
+  "EP-0012-US-0020-TK-0001": {
+    "commits": [
+      "faafbf0a8664bdee976e491c2eee110a4f8199c0"
+    ],
+    "files": [
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatTrajectoryProjector.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0001Tests.cs"
+    ]
+  },
+  "EP-0012-US-0020-TK-0002": {
+    "commits": [
+      "b99e6e8f5bc7fa4d173be809b6546dc7f49bdd3f",
+      "34ba1d41e00c4c76a93de3611d0fe0028b4117f2",
+      "10bac8e00ade8bec857c2244665809c7cc265e3e",
+      "ad6df12f51991ab6d8e2416f254dba11d9d00ac2"
+    ],
+    "files": [
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0002Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0001Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0016TK0001Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0002Tests.cs"
+    ]
+  },
+  "EP-0012-US-0020-TK-0003": {
+    "commits": [
+      "7c4720d5cd9e8a686cc0f35d7fc24eada9da7282"
+    ],
+    "files": [
+      "src/DeepSpaceSaga.Client/Data/UI/combat-visuals.json",
+      "src/DeepSpaceSaga.Client/UI/CombatVisualSettings.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.PointProjectiles.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0010TK0002Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0002Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0002Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0003Tests.cs"
+    ]
+  },
+  "EP-0012-US-0020-TK-0004": {
+    "commits": [
+      "03632713178269bcc0c86a27535f4f831719ecbb"
+    ],
+    "files": [
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0004Tests.cs"
+    ]
+  },
+  "EP-0012-US-0020-TK-0005": {
+    "commits": [
+      "5bef37c6ed4c7696aea62814b447b40a3026fa25",
+      "747ea814f2bfa296393e1262c23179fa8f963020",
+      "1686d59522f4dc7b0ec5ffa13e712c5696c96fa0"
+    ],
+    "files": [
+      "src/DeepSpaceSaga.Client/Data/Locale/English.json",
+      "src/DeepSpaceSaga.Client/Data/Locale/Russian.json",
+      "src/DeepSpaceSaga.Client/UI/CombatAlertAudio.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportFormatter.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CombatJournalPanel.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CombatReports.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ThreatAlerts.cs",
+      "src/DeepSpaceSaga.Contracts/BattleReportSnapshot.cs",
+      "src/DeepSpaceSaga.Contracts/CombatJournalEntry.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/CountermeasureSaveData.cs",
+      "src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs",
+      "src/DeepSpaceSaga.Engine/SimulationEngine.CombatReports.cs",
+      "src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0005Tests.cs",
+      "tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0017TK0001Tests.cs",
+      "tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0020TK0005Tests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0020TK0005Tests.cs"
+    ]
+  },
+  "EP-0012-US-0020-TK-0006": {
+    "commits": [
+      "e134a2ca0f14ccc90da454a1273bc4465ed7562f"
+    ],
+    "files": [
+      "src/DeepSpaceSaga.Client/Data/Locale/English.json",
+      "src/DeepSpaceSaga.Client/Data/Locale/Russian.json",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Encounter.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs",
+      "src/DeepSpaceSaga.Contracts/SimulationSpeed.cs",
+      "src/DeepSpaceSaga.Engine/Dialogue/SimulationEngine.Dialogue.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs",
+      "src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs",
+      "src/DeepSpaceSaga.Engine/SimulationEngine.PointCombatPersistence.cs",
+      "src/DeepSpaceSaga.Engine/SimulationEngine.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0005Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0006Tests.cs",
+      "tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0020TK0006Tests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0008TK0002Tests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0020TK0006Tests.cs",
+      "tools/DeepSpaceSaga.Performance/PointCombatNativeEvidence.cs"
+    ]
+  }
+}

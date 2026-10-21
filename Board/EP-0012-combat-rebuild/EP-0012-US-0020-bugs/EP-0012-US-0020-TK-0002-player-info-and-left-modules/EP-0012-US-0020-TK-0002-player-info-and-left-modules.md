@@ -3,14 +3,17 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0020-bugs"
 ticket: "EP-0012-US-0020-TK-0002-player-info-and-left-modules"
 title: "Вернуть информацию о корабле и перенести модули влево"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: []
-files_touched: 5
+files_touched: 7
 serves: ["US20-AC2"]
 created: "2026-10-21T12:02:46.488Z"
 revision: 1
 ---
+
+Current execution: implemented/published; native/product acceptance OPEN. Earlier planning-only statements below record the prior request. See [execution report](../ExecutionStatus.md).
+
 
 # TK-0002 — Вернуть информацию о корабле и перенести модули влево
 
@@ -83,3 +86,13 @@ Follow-up scope: GameSessionScreen.MapView.cs and PointCombatUS0012TK0002Tests.c
 Correction validation: targeted UI/available-map tests 13/13 passed; Client build and diff check passed.
 Full Client regression correction: when health details make the first-priority group taller than the available budget, retain one open group and scroll its content. This restores real Approach button access in a peaceful ship without launchers. Targeted Approach/US20/threat checks35/35 passed; no size/assertion weakening.
 Additional regression: restrict forced first-group expansion to the new module-diagram mode. Standalone legacy command panels retain prior short-viewport behavior. PhaseThreeCombatInfo/DualDefensePanelLayout/Approach/US20 checks36/36 passed.
+
+## Actual implementation file scope
+
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0012TK0002Tests.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0001Tests.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0016TK0001Tests.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0002Tests.cs`

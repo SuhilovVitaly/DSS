@@ -8,7 +8,7 @@ revision: 4
 depends_on_epic: "EP-0011-short-fixes"
 story_count: 20
 ticket_count: 80
-validation_status: "base-implemented-bugfixes-planned-acceptance-open"
+validation_status: "us20-implemented-acceptance-open"
 ---
 
 # EP-0012 — Ребилд тактического боя
@@ -25,7 +25,7 @@ validation_status: "base-implemented-bugfixes-planned-acceptance-open"
 
 [Полный контракт, D/A/G и grounding](Documentation.md) · [Порядок тикетов и трассировка](Tickets.md)
 
-**20 историй / 79 тикетов**. Шесть тикетов US20 — draft. Исходная декомпозиция была draft/planning-only; текущие частичные результаты — в журнале исполнения. Внешние файлы не требуются. UI feedback<=100мс; снаряд появляется на общих подтверждённых часах сцены (ответ пользователя «1»).
+**20 историй / 80 тикетов**. Шесть тикетов US20 реализованы; US15-TK6 актуализирует документацию последним. Исходная декомпозиция была draft/planning-only; текущие частичные результаты — в журнале исполнения. Внешние файлы не требуются. UI feedback<=100мс; снаряд появляется на общих подтверждённых часах сцены (ответ пользователя «1»).
 
 ## Истории
 
@@ -45,7 +45,7 @@ validation_status: "base-implemented-bugfixes-planned-acceptance-open"
 | [US-0012](EP-0012-US-0012-maneuver-and-threat-ui/EP-0012-US-0012-maneuver-and-threat-ui.md) | Манёвр и угрозы в UI | 3 |
 | [US-0013](EP-0012-US-0013-combat-state-and-feedback/EP-0012-US-0013-combat-state-and-feedback.md) | Состояние, панели, обратная связь | 5 |
 | [US-0014](EP-0012-US-0014-balance-and-acceptance/EP-0012-US-0014-balance-and-acceptance.md) | Приёмка и баланс | 3 |
-| [US-0015](EP-0012-US-0015-project-documentation/EP-0012-US-0015-project-documentation.md) | Документация (обязательная завершающая история) | 5 |
+| [US-0015](EP-0012-US-0015-project-documentation/EP-0012-US-0015-project-documentation.md) | Документация (обязательная завершающая история) | 6 |
 | [US-0016](EP-0012-US-0016-combat-localization/EP-0012-US-0016-combat-localization.md) | Локализация боевого интерфейса | 1 |
 | [US-0017](EP-0012-US-0017-event-and-command-integration/EP-0012-US-0017-event-and-command-integration.md) | Контракты событий, серверные доклады и доставка | 4 |
 | [US-0018](EP-0012-US-0018-legacy-combat-cleanup/EP-0012-US-0018-legacy-combat-cleanup.md) | Удаление старой боевой модели и регрессии | 5 |
@@ -70,3 +70,7 @@ validation_status: "base-implemented-bugfixes-planned-acceptance-open"
 В активном бою доступны пауза и скорости 1×, 2×, 5×, 10×. Это реальные множители базового темпа: за 4 реальные секунды продвигается соответственно 1/2/5/10 физических секунд. Engine принимает эти значения, UI показывает выбранное подтверждённое значение; 20× и 100× в бою недоступны. Пауза не продвигает бой, AI и перезарядку. Переключение не меняет физические длительности/правила боя и порядок событий; countdown/ETA пересчитываются по текущему множителю. Загрузка боя с любой разрешённой скоростью корректна. После боя сохраняется прежнее правило восстановления добоевой скорости.
 
 Это заменяет прежние O2/D15 и AC о pause/x1-only. Точное сохранение старых enum IDs обязательно. Физическая статистика боя сохраняет единицы; physical×4 допустимо только как эквивалент x1, а не фактически прошедшее реальное время при смене скоростей. Имеющиеся итоговые balance/native evidence относятся к старому поведению и не подтверждают новые скорости/звук. Добавлены два сквозных тикета в US20 по прямому запросу; шесть тикетов в истории, всего 79 в эпике.
+
+## US20 current execution — 2026-10-21
+
+Six bug fixes implemented/published; final US15-TK6 documentation follows them. [Current execution, validation, publication and remaining acceptance](EP-0012-US-0020-bugs/ExecutionStatus.md). The preceding73-ticket records are historical base delivery, not proof of US20.

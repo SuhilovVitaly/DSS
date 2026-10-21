@@ -1,5 +1,9 @@
 # Боевые доклады экипажа — EP-0010
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
 Current producers consume actual point launch, torpedo/CM detonation, interception and module-hit facts. CM fires one projectile per successful manual launch, with no queued burst/automatic roll. E02 means an observed enemy point launch, not a hidden target binding. E06 is geometric enemy hit/destruction; no chance/roll. Only own player-damage reports carry numeric damage; enemy module detail/endpoint/deadline is stripped. RootSave18 retains the versioned report baseline/once marks; loading does not replay UI history. Sequence/outbox/mailbox/inbox/gap/dedup/200-card lifecycle below remains applicable. Historical EP10 test/native counts are not new measurements. EP12 has explicit native authorization and measured24+1 GPU cases; human acceptance remains OPEN. [Point-aim combat contract](PointAimCombat.md).

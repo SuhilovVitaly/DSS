@@ -6,7 +6,7 @@ created: "2026-10-20T07:48:46.640Z"
 source_request: "Создать новый эпик со сторисами и тикетами по приложенному тексту; внешние ссылки игнорировать"
 revision: 4
 baseline: "c894925d187c90a658d1e25958feed69a45d7e41"
-validation_status: "base-implemented-bugfixes-planned-acceptance-open"
+validation_status: "us20-implemented-acceptance-open"
 story_count: 20
 ticket_count: 80
 ---
@@ -293,3 +293,7 @@ C1 operator progression, C2 pilot overload, aim assistance/autointercept, нас
 В активном бою доступны пауза и скорости 1×, 2×, 5×, 10×. Это реальные множители базового темпа: за 4 реальные секунды продвигается соответственно 1/2/5/10 физических секунд. Engine принимает эти значения, UI показывает выбранное подтверждённое значение; 20× и 100× в бою недоступны. Пауза не продвигает бой, AI и перезарядку. Переключение не меняет физические длительности/правила боя и порядок событий; countdown/ETA пересчитываются по текущему множителю. Загрузка боя с любой разрешённой скоростью корректна. После боя сохраняется прежнее правило восстановления добоевой скорости.
 
 Это заменяет прежние O2/D15 и AC о pause/x1-only. Точное сохранение старых enum IDs обязательно. Физическая статистика боя сохраняет единицы; physical×4 допустимо только как эквивалент x1, а не фактически прошедшее реальное время при смене скоростей. Имеющиеся итоговые balance/native evidence относятся к старому поведению и не подтверждают новые скорости/звук. Добавлены два сквозных тикета в US20 по прямому запросу; шесть тикетов в истории, всего 79 в эпике.
+
+## US20 current execution — 2026-10-21
+
+Six bug fixes implemented/published; final US15-TK6 documentation follows them. [Current execution, validation, publication and remaining acceptance](EP-0012-US-0020-bugs/ExecutionStatus.md). The preceding73-ticket records are historical base delivery, not proof of US20.

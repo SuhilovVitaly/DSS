@@ -1,5 +1,9 @@
 # CLAUDE.md
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
 Use .NET SDK10.0.400 pinned by global.json; targetnet8.0. Current writerSave18, point launch/detonation/manual-CM/evasion/encounter; no guided hit chance, fire modes, automatic/burst defense or CombatShmel. Production module catalogs contain profiles; Data/Combat/combat-rules.json owns blast/scatter/NPC rules. Client settings own combat-visuals.json and combat-input.json. Engine remains graphics-free; tooling/tests may bootstrap its internal registry via explicit friend assemblies, not a Client gameplay dependency. New point forecasts reuse display-admitted NPC motion. Test processes must be bounded to300000ms with tree termination; partition long corpus by exact test identity. Source-guided docs and failed/open gates below remain historical where superseded; prior game-launch prohibitions describe their dated sessions, not standing new approval requirements for an explicitly authorized epic. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).

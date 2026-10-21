@@ -3,14 +3,17 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0020-bugs"
 ticket: "EP-0012-US-0020-TK-0004-exit-torpedo-aim-after-click"
 title: "Завершать выбор точки торпеды после клика пуска"
-stage: "draft"
+stage: "implemented"
 layer: "client"
 depends_on: []
-files_touched: 3
+files_touched: 2
 serves: ["US20-AC4"]
 created: "2026-10-21T12:02:46.488Z"
 revision: 1
 ---
+
+Current execution: implemented/published; native/product acceptance OPEN. Earlier planning-only statements below record the prior request. See [execution report](../ExecutionStatus.md).
+
 
 # TK-0004 — Завершать выбор точки торпеды после клика пуска
 
@@ -73,3 +76,8 @@ US20-AC4 доказан named tests; owning build/scoped format/diff прохо�
 Successful torpedo send setup immediately clears PointAim and both previews. Pending/errors remain associated with the last submitted module and displayed by its weapon panel; no automatic reentry. Invalid/range/reload/friendly confirmation paths retain aiming. Countermissile behavior unchanged. Self-review completed.
 
 Validation: Client tests filter `FullyQualifiedName~PointCombatUS0020TK0004Tests|FullyQualifiedName~PointCombatUS0011|FullyQualifiedName~BasicCombatUiFlowTests`: 56/56 passed (4 new; existing real rejection, delayed admission, reload, friendly-fire and full UI flow retained). Client build passed. Scoped format exit 0; diff check exit 0. Hard cap 300000ms. Native/product NOT RUN/OPEN.
+
+## Actual implementation file scope
+
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0004Tests.cs`

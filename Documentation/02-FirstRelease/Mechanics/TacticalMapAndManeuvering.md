@@ -1,8 +1,12 @@
 # Тактическая карта и маневрирование
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
-Current combat uses point aim, manual CM and engine evasion. Own traces/R/core/deadline are public; foreign extended traces/profile never reveal fuse point/time. NPC trajectory uses display-admitted motion only: two equal physical one-second turns confirm an arc, otherwise straight at current speed/course. This admitted model is now also used by point launch/forecast consumers. Persistent range rings70/30km and session module toggles replace hover-only combat ranges. Q/W aim,1–3/wheel profile, click launch, Esc/right-click cancel; A/D hold preview/release evade, Tab selects threat, arrows hold turn, Shift full speed, F fits combat. Pause freezes physical forecasts/reload. The dated EP8/9 combat subsections below are historical; other navigation/economy rules remain applicable. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+Current combat uses point aim, manual CM and engine evasion. Own traces/R/core/deadline are public; foreign markers/rear tails/admitted past trails never reveal fuse point/time. NPC trajectory uses display-admitted motion only: two equal physical one-second turns confirm an arc, otherwise straight at current speed/course. This admitted model is now also used by point launch/forecast consumers. Persistent range rings70/30km and session module toggles replace hover-only combat ranges. Q/W aim,1–3/wheel profile, click launch, Esc/right-click cancel; A/D hold preview/release evade, Tab selects threat, arrows hold turn, Shift full speed, F fits combat. Pause freezes physical forecasts/reload. The dated EP8/9 combat subsections below are historical; other navigation/economy rules remain applicable. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
 
 ## Наблюдаемый прогноз NPC — 2026-10-18
 

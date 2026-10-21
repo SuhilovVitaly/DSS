@@ -1,5 +1,9 @@
 # Панель боевых докладов на тактическом экране
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
 R01–R24 layout, captured reporters, reliable sequence delivery and bounded history remain in force. Producer semantics are updated for point aim: E02 public observed launch (no hidden target), E04 actual single manual CM launch, E05 actual area interception without roll, E06 geometric hit/destruction. Reports never expose foreign endpoint/deadline/module details or numeric enemy damage. RootSave18 stores continuation/baseline, not UI history. Old rootSave17 and guided/queued wording below describes the EP10 baseline only. Current execution authorization came from the user's explicit EpicExecutionPrompt; prior dated launch prohibitions are historical, not a new policy. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).

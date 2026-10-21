@@ -1,5 +1,9 @@
 # GameSession
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
 The active tactical session shows point aim/CM, threats, own armor/structure tiles, public enemy badges, journal/report facts and encounter status. Enemy module details/numeric damage and foreign projectile endpoint/deadline/target are never displayed. Active locks x5+, banner/frame and real-time timer; Won is nonmodal with Continue acknowledgement; Lost freezes Engine and routes actual statistics to Defeat. UI responds immediately; projectile birth waits for authoritative display-admitted scene, with no ghost. Observed NPC forecast is now reused by current point preview consumers. Native24/24 matrix plus clean probe passed only stated checks; physical OS input, normal transport latency, hearing, deuteranopia and manual usability remain OPEN. Historical combat summaries below do not override this contract. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).

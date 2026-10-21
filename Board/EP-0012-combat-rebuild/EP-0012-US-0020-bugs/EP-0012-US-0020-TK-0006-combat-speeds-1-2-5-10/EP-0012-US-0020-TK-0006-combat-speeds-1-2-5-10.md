@@ -3,7 +3,7 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0020-bugs"
 ticket: "EP-0012-US-0020-TK-0006-combat-speeds-1-2-5-10"
 title: "Скорости боя 1×, 2×, 5× и 10×"
-stage: "draft"
+stage: "implemented"
 layer: "contracts-engine-client"
 depends_on: []
 files_touched: 16
@@ -11,6 +11,9 @@ serves: ["US20-AC6"]
 created: "2026-10-21T12:18:30.532Z"
 revision: 1
 ---
+
+Current execution: implemented/published; native/product acceptance OPEN. Earlier planning-only statements below record the prior request. See [execution report](../ExecutionStatus.md).
+
 
 # TK-0006 — Скорости боя 1×, 2×, 5× и 10×
 
@@ -93,3 +96,22 @@ Added stable SpeedDouble=2/SpeedTen=10; shared exact combat allowed set {0,1,2,5
 Automated: Engine named+clock/encounter59/59; expanded point/save/report/clock404/404; Client speed+encounter/localization30/30; full Contracts261/261. Client full runs exposed panel/reliable-delivery regressions corrected in separate TK2/TK5 commits; final rerun belongs to US15. Build/scoped format passed for affected Contracts/Engine/Client. Every check capped300000ms. Self-review completed.
 
 Native: actual Intel Arc OpenGL3.3 window1920x1080/RU ran managed input. Updated harness33 assertions,31 passed,2 failed (actualCountermissileConfirmed/counterDetonationActualJournal). New US20 checks for allowed speeds, ship card/left modules, aim exit and no forward foreign geometry passed. Overall native scenario remains FAILED; no auditory/human/physical-input PASS. Original and final raw JSON plus final PNGs retained in sibling evidence. Counter fixture still chooses a point marked unreachable by actual preview; no gameplay validation was relaxed. Native speed selection/timing beyond enabled-set inspection, US20 maneuver physical input and reload audible acceptance remain OPEN.
+
+## Actual implementation file scope
+
+- `src/DeepSpaceSaga.Client/Data/Locale/English.json`
+- `src/DeepSpaceSaga.Client/Data/Locale/Russian.json`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Encounter.cs`
+- `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs`
+- `src/DeepSpaceSaga.Contracts/SimulationSpeed.cs`
+- `src/DeepSpaceSaga.Engine/Dialogue/SimulationEngine.Dialogue.cs`
+- `src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs`
+- `src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs`
+- `src/DeepSpaceSaga.Engine/SimulationEngine.PointCombatPersistence.cs`
+- `src/DeepSpaceSaga.Engine/SimulationEngine.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0005Tests.cs`
+- `tests/DeepSpaceSaga.Client.Tests/PointCombatUS0020TK0006Tests.cs`
+- `tests/DeepSpaceSaga.Contracts.Tests/PointCombatUS0020TK0006Tests.cs`
+- `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0008TK0002Tests.cs`
+- `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0020TK0006Tests.cs`
+- `tools/DeepSpaceSaga.Performance/PointCombatNativeEvidence.cs`

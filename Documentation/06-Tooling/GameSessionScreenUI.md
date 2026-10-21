@@ -1,5 +1,9 @@
 # Tactical button assets
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
 Current combat uses the point harness and public own/observed DTOs. Guided/manual-defense example references below belong to earlier UI extraction work. Current native reproduction is documented in tools/DeepSpaceSaga.Performance/README.md and Board EP12 evidence/native.md. Managed screen callbacks/GPU captures do not prove physical OS input or user acceptance. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).

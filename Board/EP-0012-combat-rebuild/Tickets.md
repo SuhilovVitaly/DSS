@@ -133,3 +133,5 @@ Following the two preserved failed activation probes and completed Save18 prereq
 ## US20 execution
 
 Steps 74–79 execute sequentially with separate commit and immediate push. Step 80: US15-TK-0006 final project documentation. Total: 20 stories, 80 tickets. Prior planning-only statements are historical.
+
+Step80: [US15-TK0006 documentation](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0006-us20-documentation/EP-0012-US-0015-TK-0006-us20-documentation.md), after steps74–79. Total80; all six US20 technical implementations published; acceptance remains OPEN.

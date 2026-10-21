@@ -1,5 +1,9 @@
 # Tactical Map Specification
 
+## US20 current behavior — 2026-10-21
+
+Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.
+
 ## Current EP-0012 contract — 2026-10-21
 
 Combat visuals and inputs come from Data/UI/combat-visuals.json and combat-input.json, with RU/EN Localization. Current point circles use exact physical R (0.3R core) and independent minimum6px marker; own ETA is real time, foreign endpoint/deadline/target is private. Threat danger/near/miss use thickness/dash as well as color. Own path forecast spans5physical seconds; CM snapping/frontier and evasion are geometric, without chance/contact-roll markers. Point-specific data takes precedence over the historical missile/PRO palette/contact design passages below. Labels for visible projectiles stay inside viewport; Won chooses a sufficiently tall free rectangle, preserving map framing. EP11 palette, human deuteranopia/usability and FPS gates remain OPEN; EP12 native matrix is limited to enumerated assertions. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).

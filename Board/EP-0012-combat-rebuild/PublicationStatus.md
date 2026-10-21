@@ -171,3 +171,7 @@ a6e676ec7cf0f8b26efc6d38833ac661d3fabc74 EP-0012 US0015 TK0002: synchronize repo
 296c2d58eeb7d67d94b75bbd267e1c705efb49a1 EP-0012 US0015 TK0004: synchronize canonical requirements and project-wide combat guidance
 60418af19fdf2634f4d7bb27ecb2d075c28882b3 EP-0012 US0019 TK0001 fix: preserve point combat rules in economy registry variants
 ```
+
+## US20 addition — 2026-10-21
+
+Six technical fixes individually published, followed by US15-TK0006 documentation. [Current implementation, exact SHA ledger, checks and residual gates](EP-0012-US-0020-bugs/ExecutionStatus.md). Historical73-ticket records above remain unchanged.

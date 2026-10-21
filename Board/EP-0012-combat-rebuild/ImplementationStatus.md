@@ -167,3 +167,7 @@ US2 atomic staging correction before component implementation: Data/CombatV3 com
 ### Final graph integrity — 2026-10-21
 
 Fresh offline export:792code +311Markdown =1103source SHA256 verified;16038nodes/50778edges/514communities. All21artifact hashes verified;0missing sources/invalid line locations/dangling edges/self-loops. Source canonicalization produced794self-loops, explicitly audited/pruned from derived graph;1112unresolved AST edges and2886reference-only symbols remain explicit limitations. Selective EP12 semantics:21inputs/3host-agent chunks,52nodes/58edges, token usage null/unmeasured. Actual CLI OwnProjectileSnapshot query succeeds (131BFS nodes, explicit700token truncation). Canonical/current Board/tool docs:1324local links and65anchors verified. JSON has full graph; HTML is an aggregated view. Generated audit/status/navigation documents are excluded from graph input hashes to avoid circular results; graph navigation does not establish runtime or human acceptance.
+
+## US20 addition — 2026-10-21
+
+Six technical fixes individually published, followed by US15-TK0006 documentation. [Current implementation, exact SHA ledger, checks and residual gates](EP-0012-US-0020-bugs/ExecutionStatus.md). Historical73-ticket records above remain unchanged.
