@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0018-legacy-combat-cleanup"
 ticket: "EP-0012-US-0018-TK-0005-module-combat-regressions"
 title: "module-combat-regressions"
-stage: "draft"
+stage: "implemented"
 layer: "engine"
 depends_on: ["EP-0012-US-0003-TK-0005-remove-homing-roll-modes"]
-files_touched: 4
+files_touched: 5
 serves: ["US18-AC3", "US3-AC5", "US4-AC3"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0018-TK-0005-module-combat-regressions
@@ -24,14 +24,15 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (4 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (5 файлов, включая tests). Baseline fc72732e5fa357eb127d0e29a2a2d13268b7bf23. Сначала воспроизвести порядок §3.4 на настоящем Engine; менять только необходимую границу scheduler, не вводить новую физическую сетку. Полный Engine corpus выполняется bounded partitions с проверкой полного списка cases.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs) | Существует: tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs:8; public sealed class BasicCombatEndToEndTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
-| `tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs` (removed by US3-TK5) | Существует: tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs:9; public class PhaseThreeCombatEndToEndTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
-| [tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs) | Существует: tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs:9; public sealed class ModuleCombatEndToEndTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
-| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0005Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.cs` | Current point implementation | Preserve current damage/defeat/kinematics and exact same-time order; Fix reproduced endpoint order; retained invariants remain unchanged. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs` | Current point implementation | Preserve current damage/defeat/kinematics and exact same-time order; Fix reproduced endpoint order; retained invariants remain unchanged. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs` | Current point implementation | Preserve current damage/defeat/kinematics and exact same-time order; Fix reproduced endpoint order; retained invariants remain unchanged. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.EconomyTime.cs` | Current point implementation | Preserve current damage/defeat/kinematics and exact same-time order; Fix reproduced endpoint order; retained invariants remain unchanged. |
+| `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0005Tests.cs` | NEW | Preserve current damage/defeat/kinematics and exact same-time order; Fix reproduced endpoint order; retained invariants remain unchanged. |
 
 ## Public API after the change
 
@@ -50,16 +51,20 @@ No public API change; использовать контракт зависимы
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+Ниже — named regression coverage; фактические команды и результаты приведены в Status / Evidence.
 
-- **New_combat_preserves_module_damage_and_defeat**: fixed seeds и независимые геометрические expected outcomes без chance assertions.
+- **New_combat_preserves_module_damage_and_defeat**: seeds1/42/ulong.MaxValue, независимый deadline969.75ms, module hit/defeat/frozen terminal state без chance assertions.
+- **Same_timestamp_player_launch_precedes_npc_launch_and_scatter_consumption**: порядок player/NPC и точное потребление launch_scatter.
+- **Player_manual_detonation_can_defeat_the_player_before_same_timestamp_npc_launch**: manual blast подавляет NPC launch после defeat.
+- **Scheduled_blast_death_precedes_the_queued_player_launch_at_the_same_timestamp**: scheduled detonation/death остаются раньше player command.
+- **Real_clock_snapshot_and_explicit_save_preserve_player_before_npc_boundary_order**: real clock и explicit save seam (CaptureSaveState сам real clock не продвигает).
 
 Matching project: `tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj`; proposed test class `PointCombatUS0018TK0005Tests`. Test process hard timeout5минут; баланс1000seed — batches с полным суммарным корпусом.
 
 ```powershell
 dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore --filter "FullyQualifiedName~PointCombatUS0018TK0005Tests"
 dotnet build tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj --no-restore
-dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0005Tests.cs
+dotnet format whitespace DeepSpaceSaga.sln --verify-no-changes --no-restore --include src/DeepSpaceSaga.Engine/SimulationEngine.cs src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs src/DeepSpaceSaga.Engine/SimulationEngine.EconomyTime.cs src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0005Tests.cs
 git diff --check
 ```
 
@@ -73,4 +78,10 @@ git diff --check
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-21: implementation и self-review выполнены. PASS 8 named / 2331 full owning tests (0 failed/skipped); owning build/scoped whitespace/full formatter/diff check PASS. Все процессы hard cap 300000 ms. [Команды и фактические результаты](../../evidence/us0018-tk0005-results.json).
+
+Full Engine gate PASS: exact discovery multiset2331 cases /2331 distinct TestIds; 2192 broad +139 corpus cases in25 bounded processes, no failures/skips. Full Client2221 PASS; whole solution0 warnings/errors. Reproduced and corrected equal-time player/NPC ordering without changing physics mesh or persisted state. Initial reproduction2 failed/3 passed, final8 passed. Balance1000 seeds and native acceptance remain US14.
+
+Review исполнителя, не независимое. Downstream integration/native/product/balance остаются OPEN до соответствующих тикетов. SHA проверяется после commit/push.
+
+Execution scope2026-10-21: all legacy consumers were migrated and published in prerequisite US3-TK5. This final integration ticket checks retained invariants and all2331 discovered Engine cases (2323 prerequisite +8 new scheduler/damage cases), including138 long corpus cases and the100-seed Category=Balance smoke; the1000-seed acceptance remains US14. Scheduler endpoint ordering is audited against Documentation§3.4: detonation/death, player commands, NPC dodge/launch, movement. Source changes require a failing runtime reproduction first. Native/product gates remain separate.

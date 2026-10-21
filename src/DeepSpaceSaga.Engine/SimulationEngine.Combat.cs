@@ -31,10 +31,11 @@ public sealed partial class SimulationEngine
         return false;
     }
 
-    private void AdvanceCombatTo(long motionTimeMs)
+    private void AdvanceCombatTo(long motionTimeMs, bool processPlayerBeforeNpc = false)
     {
         if (IsDefeated || motionTimeMs <= _combatProcessedTimeMs) return;
         double cursor = _combatProcessedTimeMs;
+        bool processedPlayerBoundary = false;
         while (true)
         {
             var hostileLaunch = NextHostileLaunch(cursor, motionTimeMs);
@@ -47,6 +48,17 @@ public sealed partial class SimulationEngine
                 ResolvePointDetonations(pointTime);
                 cursor = pointTime;
                 CapturePresentationFrame(cursor);
+                if (IsDefeated) return;
+                continue;
+            }
+            // Commands already queued for this update precede NPC actions at its
+            // endpoint. Earlier NPC deadlines and scheduled blasts/deaths above
+            // retain their physical order. Recompute candidates after commands:
+            // a manual blast can remove the actor or end the session immediately.
+            if (processPlayerBeforeNpc && !processedPlayerBoundary && eventTime == motionTimeMs)
+            {
+                processedPlayerBoundary = true;
+                ApplyPendingCommands(motionTimeMs);
                 if (IsDefeated) return;
                 continue;
             }

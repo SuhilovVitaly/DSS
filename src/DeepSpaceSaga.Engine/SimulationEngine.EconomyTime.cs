@@ -9,7 +9,7 @@ public sealed partial class SimulationEngine
     private long _processedWorldTimeMs;
     private long _processedSimulationTimeMs;
 
-    private void AdvanceWorldTo(long gameTimeMs, long simulationTimeMs)
+    private void AdvanceWorldTo(long gameTimeMs, long simulationTimeMs, bool processPlayerAtEndpoint = true)
     {
         if (CommitDefeatBoundary()) return;
         PrepareDefeatTimeMapping(new(gameTimeMs, SimulationSpeed.Speed0, simulationTimeMs));
@@ -57,7 +57,7 @@ public sealed partial class SimulationEngine
 
             // Keep equal-time effects ordered: start above, motion, completion, market hour,
             // pending unload, meal, fee, deadline, then commit the calendar cursor.
-            AdvanceMotionTo(MotionAt(next), SurveyCalendarAt);
+            AdvanceMotionTo(MotionAt(next), SurveyCalendarAt, processPlayerAtEndpoint ? simulationTimeMs : null);
             if (CommitDefeatBoundary()) return;
             CompleteResourceSurveys(next);
             CompleteProduction(next);
@@ -70,7 +70,7 @@ public sealed partial class SimulationEngine
             CommitChangedMarketRevisions(next);
             _processedWorldTimeMs = next;
         }
-        AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
+        AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt, processPlayerAtEndpoint ? simulationTimeMs : null);
         if (CommitDefeatBoundary()) return;
         SynchronizeOrbitalBindings(_objects, simulationTimeMs);
         _processedSimulationTimeMs = simulationTimeMs;

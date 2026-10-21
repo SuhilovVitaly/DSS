@@ -106,7 +106,8 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 61 / US-0018-TK-0002-migrate-mode-runtime-tests | PASS 11 named / 1284 bounded regression; build/format/diff PASS | `c640d3b8aaef326ee73c2007faa28ba8754dc7dc`, origin SHA verified |
 | 62 / US-0004-TK-0003-remove-auto-pd | PASS 8 named / 1255 bounded regression; build/format/diff PASS | `77436b16d1821a42de1d85f190bb1e776f4a859c`, origin SHA verified |
 | 63 / US-0018-TK-0001-remove-interception-helper | PASS 4 named / 1273 bounded regression; build/format/diff PASS | `9aaa48f198fa57aea56d922ec36cc21faef86f5e`, origin SHA verified |
-| 64 / US-0003-TK-0005-remove-homing-roll-modes | PASS 7 named / 2184 bounded regression; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
+| 64 / US-0003-TK-0005-remove-homing-roll-modes | PASS 7 named / 2184 bounded regression; build/format/diff PASS | `fc72732e5fa357eb127d0e29a2a2d13268b7bf23`, origin SHA verified |
+| 65 / US-0018-TK-0005-module-combat-regressions | PASS 8 named / 2331 full owning tests; build/format/diff PASS | SHA и remote проверяются сразу после коммита |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 

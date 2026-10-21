@@ -203,7 +203,7 @@ public sealed partial class SimulationEngine
                 more = next.More;
                 // Explicit test snapshots can be ahead of the injected clock; never rewind a processed world.
                 if (next.State.MotionTimeMs >= _combatProcessedTimeMs && next.State.GameTimeMs >= _processedWorldTimeMs)
-                    AdvanceWorldTo(next.State.GameTimeMs, next.State.MotionTimeMs);
+                    AdvanceWorldTo(next.State.GameTimeMs, next.State.MotionTimeMs, processPlayerAtEndpoint: !more);
                 EvaluateEncounter(_combatProcessedTimeMs);
             } while (more && !IsDefeated);
             return _clock.Capture();

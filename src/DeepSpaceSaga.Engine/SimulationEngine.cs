@@ -3516,7 +3516,7 @@ public sealed partial class SimulationEngine : IDisposable
         return default;
     }
 
-    private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
+    private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt, long? playerCommandBoundary = null)
     {
         if (IsDefeated) return;
         EvaluateEncounter(_combatProcessedTimeMs);
@@ -3555,7 +3555,7 @@ public sealed partial class SimulationEngine : IDisposable
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
             next = NextEncounterBoundary(_combatProcessedTimeMs, next);
             bool advanced = next > _combatProcessedTimeMs;
-            AdvanceCombatTo(next);
+            AdvanceCombatTo(next, processPlayerBeforeNpc: next == playerCommandBoundary);
             if (IsDefeated) return;
             EvaluateEncounter(next);
             CompleteEvasions(next);
