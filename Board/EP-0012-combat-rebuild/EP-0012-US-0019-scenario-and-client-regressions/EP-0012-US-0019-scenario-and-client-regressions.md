@@ -37,7 +37,7 @@ Execution order задаётся ticket DAG, который допускает �
 |---|---|---|---|---:|
 | 29 / [EP-0012-US-0019-TK-0003-client-forecast-cache-migration](EP-0012-US-0019-TK-0003-client-forecast-cache-migration/EP-0012-US-0019-TK-0003-client-forecast-cache-migration.md) | client | EP-0012-US-0017-TK-0003-local-client-delivery | US19-AC2 | 5 |
 | 55 / [EP-0012-US-0019-TK-0005-maneuver-command-catalog](EP-0012-US-0019-TK-0005-maneuver-command-catalog/EP-0012-US-0019-TK-0005-maneuver-command-catalog.md) | content-data | EP-0012-US-0002-TK-0005-combat-rules-v3 | US19-AC1, US6-AC2, US6-AC3, US8-AC1 | 4 |
-| 58 / [EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios](EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios/EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios.md) | content-data | EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios | US19-AC1, US9-AC2 | 35 |
+| 58 / [EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios](EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios/EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios.md) | content-data-and-tooling-consumer | EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios | US19-AC1, US9-AC2 | 37 |
 | 59 / [EP-0012-US-0019-TK-0002-scenario-engine-fixtures](EP-0012-US-0019-TK-0002-scenario-engine-fixtures/EP-0012-US-0019-TK-0002-scenario-engine-fixtures.md) | engine | EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios | US19-AC1 | 17 |
 | 60 / [EP-0012-US-0019-TK-0004-client-combat-regressions](EP-0012-US-0019-TK-0004-client-combat-regressions/EP-0012-US-0019-TK-0004-client-combat-regressions.md) | client | EP-0012-US-0019-TK-0002-scenario-engine-fixtures | US19-AC1, US19-AC2 | 8 |
 

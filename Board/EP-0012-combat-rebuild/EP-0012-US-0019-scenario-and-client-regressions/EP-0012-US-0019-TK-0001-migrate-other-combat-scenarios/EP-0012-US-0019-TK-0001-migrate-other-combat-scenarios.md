@@ -4,12 +4,12 @@ story: "EP-0012-US-0019-scenario-and-client-regressions"
 ticket: "EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios"
 title: "migrate-other-combat-scenarios"
 stage: "implemented"
-layer: "content-data"
+layer: "content-data-and-tooling-consumer"
 depends_on: ["EP-0012-US-0009-TK-0002-remove-shmel-and-migrate-scenarios"]
-files_touched: 35
+files_touched: 37
 serves: ["US19-AC1", "US9-AC2"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 4
+revision: 5
 ---
 
 # EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios
@@ -24,7 +24,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 ## Code context
 
-Точный allowlist (35 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (37 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
 
 | File | Current state | Allowed change |
 |---|---|---|
@@ -96,6 +96,9 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 
 | `tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs` | Remaining3 failures share nested historical CombatRun source reader | Use explicit pre-activation Basic scenario; retain live clock, command, hit/RNG, damage and continuation assertions. |
 
+| `tools/DeepSpaceSaga.EconomyBalance/ClusterBalanceRun.cs` | Final gate13FAIL: cargo registry copy drops CombatRules | Preserve actual production point rules in cargo-configured registry; no balance/catalog retuning. |
+| `tests/DeepSpaceSaga.EconomyBalance.Tests/LongVoyageRunnerTests.cs` | Owning59 tests include13 load failures | Add starter/upgrade actual point-scene Save18 reload regression, then rerun owning suite bounded. |
+
 ## Public API after the change
 
 No public API change. All eight shipped scenarios use current point data without serialized automatic-PD flags; Pirate uses dedicated Tetrarch engines and explicit AI. Single-Mukha remains one. Historical Basic specimens are explicit test-only calibration, not default-game acceptance.
@@ -149,3 +152,8 @@ Save18 prerequisite correction: see [execution DAG](../../Tickets.md#save18-prer
 Before implementation: PlayerShipOnly retains original identities, counts, positions, initial motion, crew and module geometry; both Tetrarch-class ships use dedicated Tetrarch engine, basic point launchers remain appropriate for their class, NPC gets explicit25/8/35 AI. CombatMukhaSingle retains metadata/id and one SPC-MUKHA-01 using the matching v3 CombatMukha player/enemy data; no new1v1 balance gate. Remove stale automatic-PD fields from every remaining shipped scenario while preserving all unrelated data. Current default source/deployed acceptance uses actual registry; calibrated component/historical fixtures may require bounded explicit migration after reproduced failures.
 
 Before fixture changes: actual default source/deployed scenario2/2PASS; broad reproduction Client78failed/2282passed and Engine346failed/505passed. Historical registries lack new Tetrarch IDs; low-level Basic6km/s/4deg/s tests must retain their independently calibrated scenario. Add explicit historical PlayerShipOnly snapshot to existing test-only catalog, never use it for current scenario acceptance. Current Tetrarch scenario tests instead assert new20deg/s/AI25/8/35. Fix an existing Pirate test that requests a past1000ms save after advancing2000ms: compare both uninterrupted/restored module states at the same2000ms; no runtime rewind support is added. Protect Default_500 with an independently derived new LF-normalized hash after removing only its retired flag. Single-Mukha pursuit test now uses actual approved spawn and real5/8km/s registry, removing the obsolete300km-to100km synthetic scaling.
+
+
+2026-10-21 corrective scope BEFORE edits: final all-project gate found13/59 EconomyBalance failures, Point launcher requires current combatRules. ConfigureCargo copied modules and catalogs but omitted CombatRules. Fix only this consumer registry copy and meaningful actual scene/load regression. Documentation/graph finalization resumes after separate repair publication.
+
+Corrective result: actual focused2FAIL before→2PASS after; whole61/61 exact disjoint case IDs/discovery multiset PASS in bounded partitions. Initial13FAIL/46PASS and full300s timeout preserved, not averaged/relabelled. Solution build/scoped formatter/diff PASS. [Evidence](../../evidence/economy-consumer-repair-results.json). Separate corrective commit/push follows; final documentation/graph resumes afterward.

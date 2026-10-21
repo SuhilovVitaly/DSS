@@ -1,0 +1,730 @@
+{
+  "ticket": "EP-0012-US-0019-TK-0001-migrate-other-combat-scenarios",
+  "kind": "corrective publication after final all-project gate",
+  "baseline": "296c2d58eeb7d67d94b75bbd267e1c705efb49a1",
+  "defect": "ConfigureCargo recreated registry without CombatRules; production point launcher cannot load",
+  "fix": "Pass through original CombatRules; no runtime/catalog/balance tuning",
+  "initialFull": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--verbosity",
+      "minimal",
+      "--logger",
+      "trx;LogFileName=economy.trx",
+      "--results-directory",
+      "D:\\DeepSpaceSaga\\ep12-preflight\\us0015-tk0005-final-trx"
+    ],
+    "exitCode": 1,
+    "timedOut": false,
+    "elapsedMs": 5151,
+    "hardTimeoutMs": 300000
+  },
+  "initialCounts": {
+    "passed": 46,
+    "failed": 13
+  },
+  "focusedBefore": {
+    "failed": 2,
+    "passed": 0
+  },
+  "focusedAfter": {
+    "passed": 2,
+    "failed": 0
+  },
+  "initialTestCompileCorrection": "New regression first used incorrect DTO property names; corrected before real2FAIL red run. Original compiler log retained externally.",
+  "fullAttempt": "Hard timeout300081ms, killed process tree; not a PASS",
+  "coverage": {
+    "discovered": 61,
+    "passed": 61,
+    "failed": 0,
+    "skipped": 0,
+    "disjointCaseIds": true,
+    "discoveryMultisetMatched": true,
+    "results": [
+      {
+        "id": "e4b5fe79-bf37-ecd5-4d93-fda50b604876",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Legacy_price_event_preserves_actual_item_category_and_all_item_scope(scope: \"category\")",
+        "outcome": "Passed",
+        "file": "balance-0.trx"
+      },
+      {
+        "id": "e03336dd-b517-bb3f-f3b8-b3c6e1578da5",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Legacy_price_event_preserves_actual_item_category_and_all_item_scope(scope: \"item\")",
+        "outcome": "Passed",
+        "file": "balance-0.trx"
+      },
+      {
+        "id": "004dc19a-d67b-a176-0523-956ba501c91d",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Legacy_price_event_preserves_actual_item_category_and_all_item_scope(scope: \"neutral\")",
+        "outcome": "Passed",
+        "file": "balance-0.trx"
+      },
+      {
+        "id": "65a61070-110a-55a1-9cf6-9036a1cebae7",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Matrix_rejects_duplicate_seed_id_nonpositive_multiplier_or_misaligned_time",
+        "outcome": "Passed",
+        "file": "balance-0.trx"
+      },
+      {
+        "id": "d6cbd548-03a6-2498-92fc-7bc381edf163",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Legacy_price_event_preserves_actual_item_category_and_all_item_scope(scope: \"all\")",
+        "outcome": "Passed",
+        "file": "balance-0.trx"
+      },
+      {
+        "id": "ca22affd-9b6e-fa9d-e003-b48eb6deb7eb",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.One_seed_two_configs_collect_0_through_240_hour_samples_in_canonical_order",
+        "outcome": "Passed",
+        "file": "balance-1.trx"
+      },
+      {
+        "id": "17c564a5-a6b3-2d83-ea68-d642b8c56bcb",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Cargo_upgrade_increases_authoritative_capacity_quote_and_executed_batch",
+        "outcome": "Passed",
+        "file": "balance-1.trx"
+      },
+      {
+        "id": "6d922cb0-1f64-9f84-235a-f337db62e93c",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Strategy_evidence_uses_quote_receipt_route_and_matching_authoritative_ledger",
+        "outcome": "Passed",
+        "file": "balance-2.trx"
+      },
+      {
+        "id": "97187adb-0907-a3de-6d99-902da3b4edd4",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Passive_and_strategy_branches_are_isolated_clones",
+        "outcome": "Passed",
+        "file": "balance-2.trx"
+      },
+      {
+        "id": "2ffcb3d6-421b-9b69-1b09-9fa07a75f9be",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Continuous_and_midpoint_save_load_hashes_match",
+        "outcome": "Passed",
+        "file": "balance-3.trx"
+      },
+      {
+        "id": "7c9a4567-c37c-919e-5e26-5362c08c21ac",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Repeated_and_reordered_runs_are_sequence_equal",
+        "outcome": "Passed",
+        "file": "balance-3.trx"
+      },
+      {
+        "id": "12fbdbf7-3a3a-0680-1546-9fdc24c639f7",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Rejected_partial_and_unknown_cogs_results_remain_contextual_evidence",
+        "outcome": "Passed",
+        "file": "balance-4.trx"
+      },
+      {
+        "id": "7da4e253-58d9-537e-c3f1-1f92098f72eb",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Shipped_default_free_flight_is_docked_through_commands_before_buy",
+        "outcome": "Passed",
+        "file": "balance-4.trx"
+      },
+      {
+        "id": "9deb3010-383f-4401-1cfd-a9613ca9e93d",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Only_item_scoped_active_event_samples_leave_zero_stock_denominator",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "7e705b89-8c02-0a34-20b9-33b48b4fc550",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageDiagnosticsTests.MissingThresholdIsNotPass",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "7d028d12-f7b3-38b5-29fd-88d1962ae4c0",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Stock_and_budget_outside_authoritative_bounds_are_reported",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "da0e8f62-c2b0-632d-4f6c-b5ea3042e2ef",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Healthy_five_station_ten_day_case_has_no_violations",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "d60d8d19-4b80-1ede-fa15-2cc57ffbe8e9",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Null_default_and_changed_flow_evidence_does_not_throw",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "c34b8398-b667-128e-d558-ac2f799d1481",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.All_event_affected_supply_has_explicit_empty_denominator_violation",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "03bb425a-e576-89c1-d4e2-eadbe471f35a",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Short_fifty_and_one_fifty_and_medium_one_fifty_and_three_fifty_are_inclusive(shortNet: 150, mediumNet: 350)",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "dcc405d3-bb9d-5c11-49b2-39437f1accc4",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Malformed_times_keys_targets_and_missing_rows_return_contextual_violations",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "0c9be027-d04f-b75e-b3cd-87f28d61f2df",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Missing_duplicate_or_extra_matrix_dimensions_never_produce_pass",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "9d435970-7ec5-2631-3abb-37d0b8ec05ef",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Unknown_property_duplicate_seed_or_changed_default_threshold_is_code_two",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "a68f92b3-08b8-9f43-ff0a-33cba3c7376a",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Short_fifty_and_one_fifty_and_medium_one_fifty_and_three_fifty_are_inclusive(shortNet: 50, mediumNet: 150)",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "94b9a2ca-aad1-7480-d800-ad64c6cb2b11",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Same_evidence_serializes_byte_identically_without_machine_or_time_fields",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "c40527ef-0091-6a15-3eda-cd75133dd2f2",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Unavailable_bridge_reports_sorted_unreachable_stations_but_restricted_route_connects",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "0e418eef-80f1-a901-6239-34a8f9f97270",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Safe_short_margin_uses_actual_departure_risk_after_positioning(becameElevated: False)",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "810292ca-9b04-2c86-b3f3-c574a934d185",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Margin_rounding_and_extreme_components_do_not_overflow_evaluator",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "81141bbc-401d-c4b5-09dc-0f8a579424f3",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Replayed_command_stale_quote_and_duplicate_posting_cannot_add_profit",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "f45e2b62-6824-55a1-9ba9-be9b7b7c5385",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Save_load_hash_mismatch_does_not_hide_other_violations",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "95993311-51b3-a4bb-fe33-bd2e46b5415f",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Unknown_or_zero_cogs_is_reported_incomparable_without_division",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "8efffe3e-8174-1d85-aa68-432b7b630d90",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Event_state_changes_leader_and_unavailable_routes_do_not_compete",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "6ac5bc31-37e1-4ace-9572-6ee4af5d2781",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Reduced_matrix_requires_explicit_option_and_never_has_release_status",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "0c67da05-9eff-449f-2be5-b3a7a2f63c40",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Safe_short_margin_uses_actual_departure_risk_after_positioning(becameElevated: True)",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "df9627c2-26f3-84a1-f667-a74d6d5d251f",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Twenty_four_hour_positive_stock_gap_reports_first_unrecovered_window",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "2b73ec3d-e1e7-9f72-759c-bbc4416e2bae",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Balance_failure_is_code_one_and_collects_health_and_strategy_violations",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "850902a5-bd17-1959-7752-98fadff96754",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Solution_build_discovers_tool_and_matching_tests",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "1adba2fb-58c5-44f7-b563-3c1a95e4ca28",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Maximum_equal_to_twice_median_passes_and_one_permille_above_fails",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "4acf8038-fc1e-0a57-f4b1-d9f4af577ab0",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Atomic_replace_failure_preserves_previous_bytes_and_cleans_temporary_sibling",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "7627b5af-1e33-8859-993e-74bc967c78ff",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Published_ledger_identity_is_audited_without_using_player_credit_delta",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "fa70410c-023e-c8ec-df08-48c562631639",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageDiagnosticsTests.NegativeProfitIsNotRewritten",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "a8ba78b2-074a-60df-c119-173cfe3a73f6",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Even_median_and_tie_winner_are_canonical_under_reordered_input",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "2a2e7dc8-279f-9ae5-582b-d87fb83e0b98",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Runtime_failure_is_code_two_and_preserves_existing_output",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "79a8e55e-faa6-e702-0022-fe9c67907d18",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Violation_report_contains_seed_config_route_item_ledger_expected_and_observed",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "8573e23e-4c0d-3f31-db15-258b558c6878",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Reduced_fixture_writes_schema_complete_diagnostic_report_but_not_release_pass",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "8a4c9508-0dfc-7bcb-2af5-94f0bd194334",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageDiagnosticsTests.HoursDaysMismatchIsReported",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "8962523c-af1b-1f3b-3b92-1b57adb8b296",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Six_real_bound_legs_are_required_for_three_round_trip_proof",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "9daa4932-caa8-6c74-69b6-18031f5bedd4",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Violation_order_and_text_are_input_order_independent",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "82eff178-4848-5a97-e90f-a662d85f12e1",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Unchanged_market_revision_requires_zero_new_realized_profit",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "848df049-9e5f-4cde-6691-04ca7555a729",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Zero_stock_at_exactly_twenty_five_percent_passes_and_one_more_sample_fails",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "5e4d7271-ef3f-2455-5faa-1001a2d20165",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.One_route_winning_every_normal_and_event_state_is_reported",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "c52ede56-2064-4ab3-e702-64981a43b444",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Strict_arguments_and_protected_inputs_fail_before_runner",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "c6fba1d5-c245-3030-4d19-ba7933bc5644",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.MarketHealthEvaluatorTests.Missing_buy_or_sell_reports_station_and_exact_hour",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "515d11a3-eeca-7e5e-a530-ed7bc8a781e1",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.StrategyBalanceEvaluatorTests.Same_long_route_crosses_from_nonpositive_starter_to_positive_cargo_upgrade",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "bdb89288-7df8-35a2-b56a-26d17e66f54f",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.BalanceReportTests.Packaged_matrix_is_exact_acceptance_corpus",
+        "outcome": "Passed",
+        "file": "rest.trx"
+      },
+      {
+        "id": "cd97021c-f3bf-c7b0-6a53-7f9f471c4e23",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageRunnerTests.ClusterRunCompletesReturnBeyondHundredDays",
+        "outcome": "Passed",
+        "file": "voyage-heavy-1.trx"
+      },
+      {
+        "id": "b673d4d4-604e-eedb-4184-76c624b2b850",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageRunnerTests.HourlyEconomyAndLedgerAreAuthoritative",
+        "outcome": "Passed",
+        "file": "voyage-heavy-2.trx"
+      },
+      {
+        "id": "34116774-0b9d-5f6a-2de9-d064585aff1e",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageRunnerTests.CargoUpgradeIsAppliedOnceToAuthoritativeAndAnalyticalCapacity",
+        "outcome": "Passed",
+        "file": "voyage-heavy-3.trx"
+      },
+      {
+        "id": "80ea6629-f682-c018-3bb7-126165d3fe25",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageRunnerTests.ConfiguredCargoRetainsProductionPointContinuation(cargoMultiplier: 2000)",
+        "outcome": "Passed",
+        "file": "voyage.trx"
+      },
+      {
+        "id": "f6d89782-a34b-7826-4e86-ca14af81f281",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageRunnerTests.LegacyMatrixUnchanged",
+        "outcome": "Passed",
+        "file": "voyage.trx"
+      },
+      {
+        "id": "1daaf0a4-ecf3-ef71-1085-62823a759e27",
+        "name": "DeepSpaceSaga.EconomyBalance.Tests.LongVoyageRunnerTests.ConfiguredCargoRetainsProductionPointContinuation(cargoMultiplier: 1000)",
+        "outcome": "Passed",
+        "file": "voyage.trx"
+      }
+    ]
+  },
+  "commands": {
+    "economy-consumer-repair-after": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~ConfiguredCargoRetainsProductionPointContinuation",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 3493,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-balance-0": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Legacy_price_event_preserves_actual_item_category_and_all_item_scope|FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Matrix_rejects_duplicate_seed_id_nonpositive_multiplier_or_misaligned_time",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=balance-0.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1332,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-balance-1": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.One_seed_two_configs_collect_0_through_240_hour_samples_in_canonical_order|FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Cargo_upgrade_increases_authoritative_capacity_quote_and_executed_batch",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=balance-1.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 137504,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-balance-2": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Passive_and_strategy_branches_are_isolated_clones|FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Strategy_evidence_uses_quote_receipt_route_and_matching_authoritative_ledger",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=balance-2.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 105248,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-balance-3": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Continuous_and_midpoint_save_load_hashes_match|FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Repeated_and_reordered_runs_are_sequence_equal",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=balance-3.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 278742,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-balance-4": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Rejected_partial_and_unknown_cogs_results_remain_contextual_evidence|FullyQualifiedName=DeepSpaceSaga.EconomyBalance.Tests.BalanceRunTests.Shipped_default_free_flight_is_docked_through_commands_before_buy",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=balance-4.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 60636,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-balance": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~BalanceRunTests",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=balance.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": -1,
+      "timedOut": true,
+      "elapsedMs": 300088,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-before": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~ConfiguredCargoRetainsProductionPointContinuation",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 1,
+      "timedOut": false,
+      "elapsedMs": 3193,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-build": {
+      "args": [
+        "build",
+        "DeepSpaceSaga.sln",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 3367,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-discovery": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--list-tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1065,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-format": {
+      "args": [
+        "format",
+        "DeepSpaceSaga.sln",
+        "--no-restore",
+        "--verify-no-changes",
+        "--include",
+        "tools/DeepSpaceSaga.EconomyBalance/ClusterBalanceRun.cs",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/LongVoyageRunnerTests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 7446,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-full": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=economy.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-trx"
+      ],
+      "exitCode": -1,
+      "timedOut": true,
+      "elapsedMs": 300081,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-rest": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName!~LongVoyageRunnerTests&FullyQualifiedName!~BalanceRunTests",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=rest.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 20283,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-voyage-heavy-1": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~LongVoyageRunnerTests.ClusterRunCompletesReturnBeyondHundredDays",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=voyage-heavy-1.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 121614,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-voyage-heavy-2": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~LongVoyageRunnerTests.HourlyEconomyAndLedgerAreAuthoritative",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=voyage-heavy-2.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 111123,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-voyage-heavy-3": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~LongVoyageRunnerTests.CargoUpgradeIsAppliedOnceToAuthoritativeAndAnalyticalCapacity",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=voyage-heavy-3.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 39254,
+      "hardTimeoutMs": 300000
+    },
+    "economy-consumer-repair-voyage": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.EconomyBalance.Tests/DeepSpaceSaga.EconomyBalance.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~LongVoyageRunnerTests&FullyQualifiedName!~ClusterRunCompletesReturnBeyondHundredDays&FullyQualifiedName!~HourlyEconomyAndLedgerAreAuthoritative&FullyQualifiedName!~CargoUpgradeIsAppliedOnceToAuthoritativeAndAnalyticalCapacity",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=voyage.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\economy-consumer-repair-partition-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 31286,
+      "hardTimeoutMs": 300000
+    }
+  },
+  "review": "Implementer self-review, not independent",
+  "humanBalance": "OPEN, unchanged"
+}

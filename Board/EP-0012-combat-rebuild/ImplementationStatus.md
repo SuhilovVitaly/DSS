@@ -116,6 +116,8 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 71 / US-0015-TK-0003 | Documentation paths 77 PASS; diff PASS; runtime not rerun | `294df70ce3445ca6bed2aaff956bc7f96da55f92`, origin SHA verified |
 | 72 / US-0015-TK-0004 | Documentation paths 163 PASS; diff PASS; runtime not rerun | SHA и remote проверяются сразу после коммита |
 
+| Fix / US-0019-TK-0001 economy consumer | ConfigureCargo retains CombatRules;2FAIL→2PASS;61/61 exact bounded corpus;build/format/diff PASS | Corrective SHA verified immediately after publication |
+
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
 Automated epic acceptance OPEN; native/product/balance NOT RUN / OPEN. Игра не запускалась. Исторические результаты исходных документов не считаются результатами этого исполнения.
