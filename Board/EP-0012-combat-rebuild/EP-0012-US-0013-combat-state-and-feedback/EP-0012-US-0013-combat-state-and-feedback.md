@@ -2,11 +2,11 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0013-combat-state-and-feedback"
 title: "Состояние, панели, обратная связь"
-stage: "in_progress"
+stage: "implemented"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0003-point-aim-torpedoes", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0005-snapshot-privacy", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time", "EP-0012-US-0009-scenarios-and-saves", "EP-0012-US-0010-tactical-map", "EP-0012-US-0011-aiming-and-launch", "EP-0012-US-0012-maneuver-and-threat-ui", "EP-0012-US-0017-event-and-command-integration", "EP-0012-US-0018-legacy-combat-cleanup", "EP-0012-US-0019-scenario-and-client-regressions"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
-current_review: "planning-structural-checked"
+current_review: "implementation-self-reviewed-acceptance-separate"
 revision: 1
 ---
 
@@ -80,3 +80,8 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 Проверена цепочка собственная схема модулей -> панели/профили/перезарядка -> подрыв через реальный transport; публичные enemy status и actual wreck -> geometric labels -> журнал/отчёты без чужих числовых повреждений; реальный hostile encounter -> уничтожение NPC -> немодальная Won сводка -> одна подтверждённая команда Continue. Прокрутка и геометрия совместных threat/HUD, собственный контекст журнала, захваченный докладчик и терминальные кнопки Defeat сохранены. [Фактические команды, результаты и ограничения](../evidence/us0013-tk0005-results.json).
 
 Приёмка остаётся OPEN: native window/GPU/input/heard audio NOT RUN; канонические production JSON/сценарии активируются следующими US2/US9; полное point Save18 выполняется соответствующими тикетами, а не подменяется проверкой одного wreck-поля; строгий legacy ForecastBudget и полный Engine gate ещё не закрыты. Поэтому stage истории остаётся in_progress.
+
+
+## Итог технического исполнения — 2026-10-21
+
+Все дочерние тикеты реализованы и опубликованы отдельными коммитами; [общий ledger](../PublicationStatus.md) и [фактические проверки/ограничения](../ImplementationStatus.md). Это technical implemented/self-review, не независимое review или user acceptance. Применимые human/native/product gates остаются в итоговом отчёте; эта отметка не закрывает их зелёными unit tests.

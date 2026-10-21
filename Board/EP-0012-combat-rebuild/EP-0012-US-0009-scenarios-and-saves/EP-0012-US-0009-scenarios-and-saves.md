@@ -2,11 +2,11 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0009-scenarios-and-saves"
 title: "Сценарии и сохранения"
-stage: "in_progress"
+stage: "implemented"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0006-threats-and-evasion", "EP-0012-US-0007-mukha-ai-v3", "EP-0012-US-0008-encounter-and-time"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
-current_review: "planning-structural-checked"
+current_review: "implementation-self-reviewed-acceptance-separate"
 revision: 1
 ---
 
@@ -64,3 +64,8 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 ## Save18 subcomponent automated review
 
 US9-AC3 schema/capture/restore/hardening implemented:19 schema,16 real continuation,26 hardening cases;851 bounded Engine and2330 non-budget Client PASS. Save17 rejects before parsing and preserves file/world; exact scene/save/RNG continuation, captured parameters, NPC/evasion/orbit/encounter/receipts/reports and defeated-slot protection verified. Source catalog/scenario migration and full/native/strict budget acceptance remain OPEN; US9 remains in_progress until its other tickets and final gates. Self-review, not independent.
+
+
+## Итог технического исполнения — 2026-10-21
+
+Все дочерние тикеты реализованы и опубликованы отдельными коммитами; [общий ledger](../PublicationStatus.md) и [фактические проверки/ограничения](../ImplementationStatus.md). Это technical implemented/self-review, не независимое review или user acceptance. Применимые human/native/product gates остаются в итоговом отчёте; эта отметка не закрывает их зелёными unit tests.

@@ -1,11 +1,12 @@
 {
-  "nodes": 13620,
-  "edges": 47142,
-  "communities": 419,
-  "extraction_nodes": 14355,
-  "extraction_edges": 49506,
-  "code_files": 735,
-  "markdown_files": 143,
-  "pruned_unresolved_edges": 1027,
-  "unlocated_reference_nodes": 2606
+  "nodes": 16038,
+  "edges": 50778,
+  "communities": 514,
+  "extraction_nodes": 16835,
+  "extraction_edges": 54313,
+  "code_files": 792,
+  "markdown_files": 311,
+  "pruned_unresolved_edges": 1112,
+  "canonical_selfloops_pruned": 794,
+  "unlocated_reference_nodes": 2886
 }

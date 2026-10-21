@@ -2,11 +2,11 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0007-mukha-ai-v3"
 title: "ИИ Мухи v3"
-stage: "in_progress"
+stage: "implemented"
 dependencies: ["EP-0012-US-0001-contracts-and-schema", "EP-0012-US-0002-combat-catalog-v3", "EP-0012-US-0004-point-aim-countermissiles", "EP-0012-US-0006-threats-and-evasion"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
-current_review: "planning-structural-checked"
+current_review: "implementation-self-reviewed-acceptance-separate"
 revision: 1
 ---
 
@@ -57,3 +57,8 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 ## US7-AC1 integration resolution — 2026-10-20
 
 Exact approved CombatMukha geometry is active in US9-TK1. Actual production registry, player maximum5km/s, each of three NPC starts, all four cardinal player headings:12/12 enter70km within60physical seconds. The isolated diagnostic disables weapons only; no module/AI/geometry overrides beyond requested maximum player motion. Source/deployed full scenario also loads and performs real point launch. [Evidence](../evidence/us0009-tk0001-results.json). Original300km2/4 failure remains historical and is not relabelled PASS. US7-AC1 automated integration now PASS; native/product/remaining cleanup gates stay separate.
+
+
+## Итог технического исполнения — 2026-10-21
+
+Все дочерние тикеты реализованы и опубликованы отдельными коммитами; [общий ledger](../PublicationStatus.md) и [фактические проверки/ограничения](../ImplementationStatus.md). Это technical implemented/self-review, не независимое review или user acceptance. Применимые human/native/product gates остаются в итоговом отчёте; эта отметка не закрывает их зелёными unit tests.

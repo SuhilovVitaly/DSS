@@ -2,11 +2,11 @@
 epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0001-contracts-and-schema"
 title: "Контракты и схема данных"
-stage: "in_progress"
+stage: "implemented"
 dependencies: []
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
-current_review: "planning-structural-checked"
+current_review: "implementation-self-reviewed-acceptance-separate"
 revision: 2
 ---
 
@@ -71,3 +71,8 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 История остаётся **in_progress**, а не полностью принятой: US1-AC2 требует окончательного удаления legacy команд после переноса consumers; new runtime, masking и encounter producers реализуются по interleaved DAG. Дополнительный full Engine test process превысил 300s, полный Engine gate OPEN до bounded integration checks. Native/product/balance OPEN. Self-review не является независимым одобрением. Исходная planning-запись ниже сохранена как история.
 
 2026-10-20T07:48:46.640Z: создано по поручению пользователя. Разделение слоёв/<=5 файлов — техническая декомпозиция. Stage draft, implementation NOT STARTED, проверки кода не запускались.
+
+
+## Итог технического исполнения — 2026-10-21
+
+Все дочерние тикеты реализованы и опубликованы отдельными коммитами; [общий ledger](../PublicationStatus.md) и [фактические проверки/ограничения](../ImplementationStatus.md). Это technical implemented/self-review, не независимое review или user acceptance. Применимые human/native/product gates остаются в итоговом отчёте; эта отметка не закрывает их зелёными unit tests.

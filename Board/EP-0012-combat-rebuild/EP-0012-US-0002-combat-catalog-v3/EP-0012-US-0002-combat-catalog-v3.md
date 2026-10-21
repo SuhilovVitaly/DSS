@@ -6,7 +6,7 @@ stage: "implemented"
 dependencies: ["EP-0012-US-0001-contracts-and-schema"]
 created: "2026-10-20T07:48:46.640Z"
 source_request: "Приложенное ТЗ EP-0012 revision2; внешние ссылки исключены"
-current_review: "planning-structural-checked"
+current_review: "implementation-self-reviewed-acceptance-separate"
 revision: 1
 ---
 
@@ -63,3 +63,8 @@ G-01–G-06 из Documentation. Все missing consumer references блокир�
 ## Automated story acceptance — 2026-10-20
 
 US2-AC1/2: actual canonical source/deployed tests check approved torpedo/counter/engine numbers and independent original Basic JSON. US2-AC3: legacy weapon command definitions, mode Settings path and source/deployed mode file absent; new command/category links verified. Unmodified catalog launches both projectile kinds through local session and file Save18 roundtrips exactly. PASS68 current-content/4 dedicated integration,851 bounded Engine,2342 non-budget Client; builds/formats/diff PASS. [Evidence](../evidence/us0002-tk0005-results.json). Self-review only. Scenario cruise/layout, legacy runtime cleanup, native, balance and strict budgets remain subsequent-story gates.
+
+
+## Итог технического исполнения — 2026-10-21
+
+Все дочерние тикеты реализованы и опубликованы отдельными коммитами; [общий ledger](../PublicationStatus.md) и [фактические проверки/ограничения](../ImplementationStatus.md). Это technical implemented/self-review, не независимое review или user acceptance. Применимые human/native/product gates остаются в итоговом отчёте; эта отметка не закрывает их зелёными unit tests.

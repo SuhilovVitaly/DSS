@@ -1,5 +1,13 @@
 # DSS Graphify — актуальная перестройка EP-0010
 
+## Current EP-0012 contract — 2026-10-21
+
+Current offline rebuild is EP12 at src/graphify-out/rebuild.py, over fresh .cs/.py AST, Documentation/related Board Markdown structure and explicitly selective current EP12 host-agent semantics. Retired code paths in the dated graph reports below are historical references, not current nodes. See final PointCombatDocumentation inventory and current GRAPH_REPORT/counts/verification. Input hashes, missing paths/line locations, edge endpoints and token-usage limits are checked; no game or external API is invoked. Graph navigation is not acceptance. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 ## Текущая перестройка EP-0011 — 2026-10-18
 
 Ниже сохранены датированные предыдущие перестройки. Текущий граф: 13620 узлов, 47142 связи, 419 сообществ; корпус 735 code / 143 Markdown. Добавлены новые NPC observations и Board EP-0011, обновлены реальные source locations. HTML агрегирован (более 5000 узлов); полный JSON доступен. [Контракт](../04-Engineering/NpcObservedTrajectories.md) · [текущий execution/evidence](../../Board/EP-0011-short-fixes/ImplementationStatus.md) · [проверка хешей и целостности](../../Board/EP-0011-short-fixes/evidence/graph-check.json).
@@ -58,3 +66,8 @@ Set-Location D:/DeepSpaceSaga/DSS
 Граф проверен: нет dangling/self-loop edges, отсутствующих source files или выходящих за границы locations. 777 unresolved edges вынесены в pruned-unresolved-edges.json; 2118 reference nodes не имеют declaration location и не считаются доказанными символами.
 
 Прежние output artifacts сохранены вне репозитория в `D:/DeepSpaceSaga/review-ep1-4-work/previous-graphify-out`, чтобы старые counts/traces не выдавались за результат новой сборки.
+
+
+### Final graph integrity — 2026-10-21
+
+Fresh offline export:792code +311Markdown =1103source SHA256 verified;16038nodes/50778edges/514communities. All21artifact hashes verified;0missing sources/invalid line locations/dangling edges/self-loops. Source canonicalization produced794self-loops, explicitly audited/pruned from derived graph;1112unresolved AST edges and2886reference-only symbols remain explicit limitations. Selective EP12 semantics:21inputs/3host-agent chunks,52nodes/58edges, token usage null/unmeasured. Actual CLI OwnProjectileSnapshot query succeeds (131BFS nodes, explicit700token truncation). Canonical/current Board/tool docs:1324local links and65anchors verified. JSON has full graph; HTML is an aggregated view. Generated audit/status/navigation documents are excluded from graph input hashes to avoid circular results; graph navigation does not establish runtime or human acceptance.

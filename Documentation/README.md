@@ -73,3 +73,8 @@ Operational skill files that must be discovered in-place, such as the character-
 - [EP-0004 Graphify](06-Tooling/AiMapGraphify.md) — текущий код, документы, hash manifest и ограничения AST.
 
 Graphify обновлён2026-10-16 в завершающей истории EP10: [corpus, rebuild и ограничения](06-Tooling/TradingSolarGraphify.md). AST охватывает текущий код, семантика документов выборочная; граф служит навигации и не доказывает runtime/native acceptance. Отмена2026-10-12 относится к прежнему запуску.
+
+
+### Final graph integrity — 2026-10-21
+
+Fresh offline export:792code +311Markdown =1103source SHA256 verified;16038nodes/50778edges/514communities. All21artifact hashes verified;0missing sources/invalid line locations/dangling edges/self-loops. Source canonicalization produced794self-loops, explicitly audited/pruned from derived graph;1112unresolved AST edges and2886reference-only symbols remain explicit limitations. Selective EP12 semantics:21inputs/3host-agent chunks,52nodes/58edges, token usage null/unmeasured. Actual CLI OwnProjectileSnapshot query succeeds (131BFS nodes, explicit700token truncation). Canonical/current Board/tool docs:1324local links and65anchors verified. JSON has full graph; HTML is an aggregated view. Generated audit/status/navigation documents are excluded from graph input hashes to avoid circular results; graph navigation does not establish runtime or human acceptance.

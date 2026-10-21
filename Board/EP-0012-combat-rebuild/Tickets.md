@@ -83,7 +83,7 @@ revision: 2
 | 70 | [EP-0012-US-0015-TK-0002-update-documents-2](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0002-update-documents-2/EP-0012-US-0015-TK-0002-update-documents-2.md) | documentation | 6 | EP-0012-US-0015-TK-0001-update-documents-1 | US15-AC1 |
 | 71 | [EP-0012-US-0015-TK-0003-update-documents-3](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0003-update-documents-3/EP-0012-US-0015-TK-0003-update-documents-3.md) | documentation | 10 | EP-0012-US-0015-TK-0002-update-documents-2 | US15-AC1 |
 | 72 | [EP-0012-US-0015-TK-0004-update-documents-4](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0004-update-documents-4/EP-0012-US-0015-TK-0004-update-documents-4.md) | documentation | 14 | EP-0012-US-0015-TK-0003-update-documents-3 | US15-AC1 |
-| 73 | [EP-0012-US-0015-TK-0005-refresh-graph-and-links](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0005-refresh-graph-and-links/EP-0012-US-0015-TK-0005-refresh-graph-and-links.md) | tooling | 3 | EP-0012-US-0015-TK-0004-update-documents-4 | US15-AC2 |
+| 73 | [EP-0012-US-0015-TK-0005-refresh-graph-and-links](EP-0012-US-0015-project-documentation/EP-0012-US-0015-TK-0005-refresh-graph-and-links/EP-0012-US-0015-TK-0005-refresh-graph-and-links.md) | tooling | 58 | EP-0012-US-0015-TK-0004-update-documents-4 | US15-AC2 |
 
 ## Source trace
 
@@ -112,3 +112,8 @@ Following the two preserved failed activation probes and completed Save18 prereq
 ## Legacy consumer migration before runtime deletion
 
 2026-10-21, after published step60: move US18-TK2 to61, then remove auto-PD at62, InterceptionMath at63 and homing/roll/modes at64. Existing historical Engine/Client fixtures still exercise the retired runtime even though the active catalog/UI use point commands. Migrate the directly affected mode/default consumers first. Each subsequent runtime-deletion ticket migrates its matching automatic-defense/homing tests and preserves their retained ownership, replay, save/load, damage, clock and presentation invariants through point equivalents; US18-TK5 remains the complete integration gate. This avoids knowingly publishing deleted runtime while its test consumers still require it. No ticket IDs are added or dropped; all73 remain, US15 stays last. Full Engine corpus checks remain explicit and bounded per process.
+
+
+## Итог DAG — 2026-10-21
+
+73/73 technical tickets implemented, including finalUS15. All61story AC remain traceable through Serves; acceptance differs from implementation: US14 balance and human/native subcriteria OPEN. See [publication ledger](PublicationStatus.md) and [actual final checks](ImplementationStatus.md). Historical ordering corrections above record discovered prerequisites and do not describe pending runtime migration.

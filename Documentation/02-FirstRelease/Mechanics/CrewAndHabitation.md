@@ -1,5 +1,9 @@
 # Экипаж, пассажиры и жилой модуль
 
+## Current EP-0012 contract — 2026-10-21
+
+Operator assignment and skill0 remain valid. Current canonical CombatMukha/Single has four crew with all ten skills20; point scatter uses accuracy, NPC reaction uses pilot skill. PlayerShipOnly retains its scenario-specific crew. Weapon attack/defense chance ratings and the old fixed scenario count below describe historical EP8/9; they are not current point formulas. Generic cabins/habitation/dialogue rules remain applicable. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0008 — 2026-10-12
 
 Стартовый экипаж зависит от сценария: PlayerShipOnly —3 отдельных оператора (торпеда и две ПРО),3 занятые каюты; остальные пять сценариев —2 оператора,2 занятые каюты. Оператор обязателен, навык0 допустим. Точность/манёвренность оружия определяются модулем; навыки больше не умножают рейтинг в формуле EP-0008.

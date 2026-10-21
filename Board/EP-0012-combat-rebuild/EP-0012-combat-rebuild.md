@@ -8,14 +8,18 @@ revision: 2
 depends_on_epic: "EP-0011-short-fixes"
 story_count: 19
 ticket_count: 73
-validation_status: "partial-implementation"
+validation_status: "implemented-acceptance-open"
 ---
 
 # EP-0012 — Ребилд тактического боя
 
+## Current execution status — 2026-10-21
+
+73/73 technical implementations and final documentation/graph work recorded in [ImplementationStatus](ImplementationStatus.md); publication ledger is [PublicationStatus](PublicationStatus.md). Production dodge balance96.6%/P907.4933realmin fails72–88%/<=5.5min. Native24+1instrumented GPU checks passed their stated assertions; physical/human/audio/accessibility/transport-latency gates remain OPEN. Historical planning statements and baseline source observations below do not override actual execution authorization, currentSave18 or measured results.
+
 ## Исполнение — 2026-10-20
 
-По новому прямому поручению начато автономное исполнение по [EpicExecutionPrompt](../EpicExecutionPrompt.md). Текущие проверки, ограничения и публикации ведутся в [журнале исполнения](ImplementationStatus.md). Исходные planning-записи ниже сохраняют исторический статус подготовки; они не отменяют новых полномочий. Реализация частичная, приёмка OPEN.
+По новому прямому поручению начато автономное исполнение по [EpicExecutionPrompt](../EpicExecutionPrompt.md). Текущие проверки, ограничения и публикации ведутся в [журнале исполнения](ImplementationStatus.md). Исходные planning-записи ниже сохраняют исторический статус подготовки; они не отменяют новых полномочий. Все73 технических тикета реализованы; итоговая документация и граф завершены. Баланс и ручная приёмка OPEN; эпик полностью принятым не объявляется.
 
 Торпеды и противоракеты летят в выбранную точку; исход определяют геометрия взрыва, ручная ПРО и уклонение. Новый UI даёт прицеливание, панель угроз, состояние модулей и итоги боя.
 
@@ -51,4 +55,4 @@ validation_status: "partial-implementation"
 
 Базовая модель HP/брони/гибели, determinism, physical clock, EP10 reports и наблюдаемые NPC trajectories переиспользуются; оружие/AI/бой/save18/UI перепроектируются в пределах AC. Basic engine не меняется, Tetrarch получает отдельный; CombatShmel удаляется при реализации, CombatSim не меняется; HostileCombat пока не скрывается.
 
-Полномочия исходного planning-поручения ограничивались Board; приведённые в исходных карточках NOT STARTED/NOT RUN относились к тому этапу. Новое поручение исполнения и фактические частичные результаты описаны выше и в журнале. Итоговые automated/native/product/balance gates OPEN. Breaking consumers сверяются по G-02 на каждом шаге; полный execution-ready статус не заявляется.
+Полномочия исходного planning-поручения ограничивались Board; приведённые в исходных карточках NOT STARTED/NOT RUN относились к тому этапу. Новое поручение исполнения и фактические частичные результаты описаны выше и в журнале. Исторический planning status: automated/native/product/balance gates были OPEN. Фактические итоговые automated/native проверки и отдельные balance/human ограничения находятся в ImplementationStatus.md. Breaking consumers сверяются по G-02 на каждом шаге; полный execution-ready статус не заявляется.

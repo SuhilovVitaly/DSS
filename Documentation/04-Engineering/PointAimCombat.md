@@ -54,7 +54,7 @@ Player module tiles show armor/structure/disabled/destroyed/critical state and N
 
 ## Scenarios and save contract
 
-CombatMukha is the canonical Tetrarch vs3Mukha case: player51t, each Mukha6t, crew skills20, exact canonical geometry. CombatMukhaSingle is the same scenario retaining SPC-MUKHA-01 only. CombatShmel is removed from source/discovery/deployment. PlayerShipOnly retains generated-map geometry/crew and adopts current point launcher/Tetrarch engine with AI25/8/35. Default500 scenario content hash remains unchanged; production deployment/discovery is tested separately from source presence.
+CombatMukha is the canonical Tetrarch vs3Mukha case: player51t, each Mukha6t, crew skills20, exact canonical geometry. CombatMukhaSingle is the same scenario retaining SPC-MUKHA-01 only. CombatShmel is removed from source/discovery/deployment. PlayerShipOnly retains generated-map geometry/crew and adopts current point launcher/Tetrarch engine with AI25/8/35. Default500 normalized noncombat content hash remains unchanged (only the retired autoDefenseEnabled flag was removed); production deployment/discovery is tested separately from source presence.
 
 SaveFormatVersion18 writes versioned point flights, captured parameters, scatter/dodge RNG/counters, launcher reload/identities, evasion/AI/encounter/statistics and fractional clock remainder. Real Save17 files are rejected atomically without migration or current-world/file replacement; NewGame scenario version0 is a separate input. Full validation precedes installation. Restored reports keep delivery baseline without replaying old UI history. Defeated sessions cannot overwrite a save slot. [Save format source](../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs).
 

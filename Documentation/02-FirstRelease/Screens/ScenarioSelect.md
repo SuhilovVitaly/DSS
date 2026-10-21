@@ -1,5 +1,9 @@
 # ScenarioSelect
 
+## Current EP-0012 contract — 2026-10-21
+
+Current discovery includes CombatMukha (canonical3enemies) and CombatMukhaSingle (same world retaining SPC-MUKHA-01 only), and excludes removed CombatShmel. Scenario names/descriptions remain content; saves are not scenario-picker entries. Source and deployed output/discovery were separately tested. Default500 noncombat content is preserved; retired autoDefenseEnabled flag removal is not a raw byte/hash equality claim. Native physical scenario-menu acceptance is NOT RUN. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).
+
 ## Сверка реализации — 2026-10-10
 
 Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.

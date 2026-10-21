@@ -1,5 +1,13 @@
 # EP-0007 — полный rebuild Graphify
 
+## Current EP-0012 contract — 2026-10-21
+
+Current offline rebuild is EP12 at src/graphify-out/rebuild.py, over fresh .cs/.py AST, Documentation/related Board Markdown structure and explicitly selective current EP12 host-agent semantics. Retired code paths in the dated graph reports below are historical references, not current nodes. See final PointCombatDocumentation inventory and current GRAPH_REPORT/counts/verification. Input hashes, missing paths/line locations, edge endpoints and token-usage limits are checked; no game or external API is invoked. Graph navigation is not acceptance. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).
+
+## Historical record (superseded combat rules)
+
+All combat formulas, saves, commands, conclusions and permissions below describe their original dated stage. They are not the current writer/runtime or fresh acceptance. Non-combat invariants remain applicable.
+
 ## Сверка реализации — 2026-10-10
 
 Обновление после исправлений: F01–F05 закрыты кодом и регрессиями; EP-0004 включён в текущий рабочий набор. Баланс, 80 FPS и человеческая приёмка остаются открытыми. Текущий статус — `Documentation/04-Engineering/EpicReview20261010/Fixes.md`.

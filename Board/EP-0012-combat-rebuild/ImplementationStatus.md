@@ -1,6 +1,27 @@
 # EP-0012 — журнал автономного исполнения
 
-Дата начала: 2026-10-20. Состояние: последовательная реализация по ticket DAG; эпик не завершён.
+Дата начала: 2026-10-20. Итог реализации:73/73 тикета, включая последнюю историю документации/Graphify; продуктовая приёмка эпика OPEN. Текущий статус ниже, далее сохранён хронологический журнал.
+
+
+## Итог исполнения — 2026-10-21
+
+Все73 технических тикета реализованы; последняя US15 синхронизирует весь найденный документационный impact и перестраивает Graphify после кода/текстов. **Эпик не принят полностью:** production dodge balance вне обязательных коридоров, ручные критерии остаются OPEN. US14 сохраняется in_progress;18 остальных историй technical implemented, не user-approved. Self-review исполнителя не является независимым review.
+
+Результат: прямые point-aim торпеды/ручная ПРО/геометрические взрывы/уклонение, скрытые чужие fuse endpoints/deadlines и модули, модульные повреждения, Encounter/statistics, новый RU/EN tactical UI, Save18 и текущие сценарии. Legacy guided runtime/roll/modes/auto/burst удалены; reserved wire DTOs допускаются для rejection, не compatibility execution. CombatSim не изменялся. Default500 сохраняет normalized noncombat content; raw JSON изменён удалением autoDefenseEnabled.
+
+| Gate | Фактический итог |
+|---|---|
+| Whole solution | Build0warnings/errors; отдельный Analyzer build PASS; scoped formatting/diff PASS |
+| Engine |2331/2331 полный disjoint corpus PASS на шаге65; после harness2374cases covered:2236fresh +138unchanged retained. Не заявлен повтор138; Engine gameplay после gate не менялся. [Evidence](evidence/us0014-tk0001-results.json)|
+| Client |2225/2225 PASS после двух подтверждённых native UI repairs. [Evidence](evidence/us0014-tk0003-results.json)|
+| Other suites |Contracts256, Motion234, Performance9 PASS в финальном bounded запуске. EconomyBalance61PASS после corrective registry consumer repair (сначала13FAIL/46PASS, focused2FAIL→2PASS). [Final audit](evidence/final-validation.json)|
+| Balance |2000battles complete,37593actual commands Executed. Dodge966/1000=96.6%, P907.4933realmin **FAIL72–88%/<=5.5min**; static59/1000=5.9% PASS<=10%. [Protocol/raw evidence](evidence/balance.md)|
+| Native |24/24 actual GPU matrix +clean-flight probe PASS только enumerated assertions. [All UI subcriteria and NOT RUN reasons](evidence/native.md)|
+| Docs/graph |[Impact inventory](../../Documentation/04-Engineering/PointCombatDocumentation.md), [current combat](../../Documentation/04-Engineering/PointAimCombat.md), [Graph audit](../../src/graphify-out/verification.json). Graph navigation не является runtime/product evidence. |
+
+Физический OS keyboard/mouse/heldAlt, input-to-photon/normal session transport latency, hearing/urgency cadence, deuteranopia perception, human gameplay/usability и отмеченные native variants NOT RUN. EP11 palette/native/performance gates не закрыты. Точные вне-коридорные цифры переданы автору; параметры не подгонялись. Внешний reference tape не предоставлен, побитовое равенство симулятору не заявляется.
+
+Отдельные публикации1–73 и corrective commits: [PublicationStatus](PublicationStatus.md). Таблица ниже сохраняет измерения на момент каждого шага; прежние failures/timeouts не переименованы в PASS. Собственный SHA73 задаётся как HEAD в его коммите и проверяется после push, чтобы не создавать невозможную self-reference.
 
 ## Полномочия и исходное состояние
 
@@ -114,13 +135,15 @@ US11 TK0004 dispatcher locale follow-up: PASS 7 named/scoped format; runtime unc
 | 69 / US-0015-TK-0001 | Documentation paths 51 PASS; diff PASS; runtime not rerun | `31291a2c5147e3ddf7ab996adb44b470da002c0d`, origin SHA verified |
 | 70 / US-0015-TK-0002 | Documentation paths 72 PASS; diff PASS; runtime not rerun | `a6e676ec7cf0f8b26efc6d38833ac661d3fabc74`, origin SHA verified |
 | 71 / US-0015-TK-0003 | Documentation paths 77 PASS; diff PASS; runtime not rerun | `294df70ce3445ca6bed2aaff956bc7f96da55f92`, origin SHA verified |
-| 72 / US-0015-TK-0004 | Documentation paths 163 PASS; diff PASS; runtime not rerun | SHA и remote проверяются сразу после коммита |
+| 72 / US-0015-TK-0004 | Documentation paths 163 PASS; diff PASS; runtime not rerun | `296c2d58eeb7d67d94b75bbd267e1c705efb49a1`, origin SHA verified |
 
-| Fix / US-0019-TK-0001 economy consumer | ConfigureCargo retains CombatRules;2FAIL→2PASS;61/61 exact bounded corpus;build/format/diff PASS | Corrective SHA verified immediately after publication |
+| Fix / US-0019-TK-0001 economy consumer | ConfigureCargo retains CombatRules;2FAIL→2PASS;61/61 exact bounded corpus;build/format/diff PASS | `60418af19fdf2634f4d7bb27ecb2d075c28882b3`, origin SHA verified |
+
+| 73 / US-0015-TK-0005 | Final docs/links/Graphify integrity: see machine evidence; human/balance OPEN | HEAD containing this row; exact SHA verified after commit/push |
 
 Публикация следующего тикета начинается только после проверки SHA предыдущего. Собственный SHA текущего коммита заранее не записывается.
 
-Automated epic acceptance OPEN; native/product/balance NOT RUN / OPEN. Игра не запускалась. Исторические результаты исходных документов не считаются результатами этого исполнения.
+Исторический промежуточный статус до нативных проверок: automated gates/native/product/balance были OPEN/NOT RUN. Текущие фактические результаты приведены в итоговом разделе; старые failed/aborted результаты сохраняются.
 
 ## Catalog activation ordering correction
 
@@ -139,3 +162,8 @@ US-0002-TK-0001: экспериментальные source/deployed catalog chec
 Save18 prerequisite correction: second catalog activation probe reverted; schema/capture/validation now follow localization before US2. Results preserved; no data ticket closed.
 
 US2 atomic staging correction before component implementation: Data/CombatV3 components are source/deployed loader-verified but inactive until US2-TK5, which switches the complete catalog and category definitions. Full production integration remains OPEN until that switch and scenario/fixture migration.
+
+
+### Final graph integrity — 2026-10-21
+
+Fresh offline export:792code +311Markdown =1103source SHA256 verified;16038nodes/50778edges/514communities. All21artifact hashes verified;0missing sources/invalid line locations/dangling edges/self-loops. Source canonicalization produced794self-loops, explicitly audited/pruned from derived graph;1112unresolved AST edges and2886reference-only symbols remain explicit limitations. Selective EP12 semantics:21inputs/3host-agent chunks,52nodes/58edges, token usage null/unmeasured. Actual CLI OwnProjectileSnapshot query succeeds (131BFS nodes, explicit700token truncation). Canonical/current Board/tool docs:1324local links and65anchors verified. JSON has full graph; HTML is an aggregated view. Generated audit/status/navigation documents are excluded from graph input hashes to avoid circular results; graph navigation does not establish runtime or human acceptance.

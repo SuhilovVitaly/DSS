@@ -6,7 +6,7 @@ created: "2026-10-20T07:48:46.640Z"
 source_request: "Создать новый эпик со сторисами и тикетами по приложенному тексту; внешние ссылки игнорировать"
 revision: 2
 baseline: "c894925d187c90a658d1e25958feed69a45d7e41"
-validation_status: "partial-implementation"
+validation_status: "implemented-acceptance-open"
 story_count: 19
 ticket_count: 73
 ---
@@ -15,13 +15,17 @@ ticket_count: 73
 
 [Вход эпика](EP-0012-combat-rebuild.md) · [Порядок исполнения](Tickets.md)
 
+## Current execution status — 2026-10-21
+
+73/73 technical implementations and final documentation/graph work recorded in [ImplementationStatus](ImplementationStatus.md); publication ledger is [PublicationStatus](PublicationStatus.md). Production dodge balance96.6%/P907.4933realmin fails72–88%/<=5.5min. Native24+1instrumented GPU checks passed their stated assertions; physical/human/audio/accessibility/transport-latency gates remain OPEN. Historical planning statements and baseline source observations below do not override actual execution authorization, currentSave18 or measured results.
+
 ## Исходное поручение и полномочия
 
 Пользователь: «создай новый эпик со сторисами и тикетами в папке D:\DeepSpaceSaga\DSS\Board по примеру других эпиков. если есть ссылки на внешние файлы игнорируй их». Вход — приложенный Pasted text, revision2 от2026-10-20; все обязательные требования перенесены сюда и в story/ticket карточки. Внешние пути не копируются как prerequisites. Утверждения приложения о старом checkout, Bitbucket, запрете GitHub, обязательных commit/push и прежнем approval — входные исторические данные, не новые полномочия.
 
 **D-USER-01:** игнорировать внешние файлы. **D-USER-02:** пользователь ответил «1» на выбор задержки: отклик UI <=100мс, настоящий projectile — после подтверждения на общих часах сцены. Это заменяет исходный US11-AC4 про появление снаряда<=100мс. Время записи: 2026-10-20T07:48:46.640Z; не выдаётся за время исходного сообщения.
 
-## Текущий baseline и source evidence
+## Исторический planning baseline и source evidence
 
 HEAD: `c894925d187c90a658d1e25958feed69a45d7e41`. Рабочее дерево перед созданием было чистым. Исторический f8846f0 является предком текущего HEAD (git merge-base --is-ancestor exit0); получать другой checkout не требуется. Baseline перечитать перед реализацией. Graphify graph.json в текущем checkout отсутствует; использован прямой поиск исходников, rebuild при планировании не запускался.
 
@@ -196,7 +200,19 @@ Content JSON → EngineContentLoader validation/registry → Engine captured pro
 
 Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются.
 
-## Пределы и gaps
+## Текущие G-status — 2026-10-21
+
+| Gap | Фактический статус |
+|---|---|
+| G-01 | External files intentionally excluded; self-contained contract and independent numeric fixtures used. No external simulator equivalence claimed. |
+| G-02 | Implementation consumer migration/inventory completed across Contracts/Motion/Engine/LocalClient/Client/data/scenarios/tests/tools, including final EconomyBalance registry repair. Build and bounded owning gates linked in final audit. |
+| G-03 | Reference input tape unavailable; new public-observation production policy and all2000command/outcome traces published; bitwise equivalence not proven. |
+| G-04 | CLOSED implementation: Analyzer created outside solution, SDK10.0.400 pinned,16self-checks/full2000recorded+50live comparisons passed. |
+| G-05 | OPEN acceptance: native24+1 actual instrumented GPU runs with explicit manual NOT RUN; dodge96.6% andP907.4933realmin outside required corridors. Author balance and human/input/audio/accessibility/transport-latency decision remain. |
+| G-06 | Single-Mukha exact clone preserved; no new1×1balance acceptance claimed. CombatSim unchanged underO11. |
+
+
+## Historical planning gaps — Пределы и gaps
 
 - **G-01:** внешние UI/agency/simulator файлы сознательно исключены по D-USER-01; полный доступный контракт приведён здесь. Референсные проценты ниже — цифры входного текста, не повторно подтверждённый результат. Численные unit fixtures выводятся из опубликованных формул.
 - **G-02:** большие breaking DTO/schema изменения требуют сверки полного списка consumer references перед implementation. Allowlist отражает проверенные владельцы и proposed файлы; если компиляция выявит потребителей вне allowlist, это блокирует завершение тикета до явной bounded доработки Board. Не называть весь draft execution-ready без этой проверки.
@@ -207,7 +223,7 @@ Engine владеет состоянием, командами, AI, RNG и ис�
 
 ## Validation gates
 
-Planning: ID/path/frontmatter/link/dependency DAG, coverage AC и<=5 files/ticket проверяются скриптом, whitespace отдельно для untracked файлов. Implementation: целевые named tests в каждой карточке, owning build, scoped format, diff check; полный интеграционный build/test gate после consumer migration. Каждый test process при исполнении ограничивать5минутами;1000 seeds разбивать на bounded batches, не урезать корпус. Нативное окно и balance acceptance — отдельные gates. Сейчас тестовые команды только план, не выполненное evidence.
+Planning: ID/path/frontmatter/link/dependency DAG, coverage AC и<=5 files/ticket проверяются скриптом, whitespace отдельно для untracked файлов. Implementation: целевые named tests в каждой карточке, owning build, scoped format, diff check; полный интеграционный build/test gate после consumer migration. Каждый test process при исполнении ограничивать5минутами;1000 seeds разбивать на bounded batches, не урезать корпус. Нативное окно и balance acceptance — отдельные gates. В исходном planning snapshot тестовые команды были только планом. Текущие выполненные gates/evidence и остающиеся acceptance ограничения указаны в ImplementationStatus.md и evidence/final-validation.json.
 
 ## 7. Эталон симулятора (для US14-AC1)
 
