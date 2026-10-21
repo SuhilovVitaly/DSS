@@ -45,7 +45,7 @@ Execution order задаётся ticket DAG, который допускает �
 | 69 / [EP-0012-US-0015-TK-0001-update-documents-1](EP-0012-US-0015-TK-0001-update-documents-1/EP-0012-US-0015-TK-0001-update-documents-1.md) | documentation | EP-0012-US-0014-TK-0003-native-acceptance | US15-AC1 | 5 |
 | 70 / [EP-0012-US-0015-TK-0002-update-documents-2](EP-0012-US-0015-TK-0002-update-documents-2/EP-0012-US-0015-TK-0002-update-documents-2.md) | documentation | EP-0012-US-0015-TK-0001-update-documents-1 | US15-AC1 | 6 |
 | 71 / [EP-0012-US-0015-TK-0003-update-documents-3](EP-0012-US-0015-TK-0003-update-documents-3/EP-0012-US-0015-TK-0003-update-documents-3.md) | documentation | EP-0012-US-0015-TK-0002-update-documents-2 | US15-AC1 | 10 |
-| 72 / [EP-0012-US-0015-TK-0004-update-documents-4](EP-0012-US-0015-TK-0004-update-documents-4/EP-0012-US-0015-TK-0004-update-documents-4.md) | documentation | EP-0012-US-0015-TK-0003-update-documents-3 | US15-AC1 | 3 |
+| 72 / [EP-0012-US-0015-TK-0004-update-documents-4](EP-0012-US-0015-TK-0004-update-documents-4/EP-0012-US-0015-TK-0004-update-documents-4.md) | documentation | EP-0012-US-0015-TK-0003-update-documents-3 | US15-AC1 | 14 |
 | 73 / [EP-0012-US-0015-TK-0005-refresh-graph-and-links](EP-0012-US-0015-TK-0005-refresh-graph-and-links/EP-0012-US-0015-TK-0005-refresh-graph-and-links.md) | tooling | EP-0012-US-0015-TK-0004-update-documents-4 | US15-AC2 | 3 |
 
 ## Decisions / Assumptions

@@ -1,5 +1,9 @@
 # Deep Space Saga - требования к первому релизу
 
+## Current EP-0012 contract — 2026-10-21
+
+Current release combat uses explicit point aim/radius/scatter/manual CM/evasion, own module health and public enemy badges, encounter Won/Lost and Save18. CombatMukha/Single and PlayerShipOnly current point scenarios replace CombatShmel. Modes, guided rolls and automatic defense described in historical EP8/9 sections are superseded. Economy/navigation/crew requirements retain their own scope. Balance and human acceptance remain OPEN; current native matrix is limited to its documented assertions. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0009 — 2026-10-12
 
 Текущий бой использует здоровье модулей вместо Hull HP, навыки операторов, новые режимы и формулу `50 + атака − защита`. Сохранение имеет формат17; версии16 и ниже отклоняются. `CombatMukha` и `CombatShmel` добавлены к сценариям, старые сценарии сохраняют отдельные комплектации. [Текущий контракт](EngineRequirements.md#phase-four-module-combat) · [Инженерные детали и открытая приёмка](../04-Engineering/ModuleCombat.md). Раздел EP-0008 ниже является историческим срезом.

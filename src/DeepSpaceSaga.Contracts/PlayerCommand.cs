@@ -20,7 +20,7 @@ public sealed record PlayerCommand(
     /// </summary>
     string? TargetObjectId = null,
     /// <summary>
-    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.Orbit"/>
+    /// Explicit world-coordinate target for point launch or <see cref="ShipEngineCommandTypes.Orbit"/>
     /// (world units, same coordinate system as <see cref="ObjectMotionSnapshot.X"/>).
     /// Both coordinates are required and must be finite for orbit; the engine
     /// validates this authoritatively and rejects the command with
@@ -29,7 +29,7 @@ public sealed record PlayerCommand(
     /// </summary>
     double? TargetWorldX = null,
     /// <summary>
-    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.Orbit"/>
+    /// Explicit world-coordinate target for point launch or <see cref="ShipEngineCommandTypes.Orbit"/>
     /// (world units). See <see cref="TargetWorldX"/>.
     /// </summary>
     double? TargetWorldY = null,
@@ -66,7 +66,7 @@ public sealed record PlayerCommand(
     /// Null for legacy/non-trade commands (null means "no revision", not revision zero).
     /// </summary>
     long? MarketRevision = null,
-    /// <summary>Requested fire mode for torpedo.setMode; validated by the Engine.</summary>
+    /// <summary>Reserved legacy payload slot for deterministic rejection of retired torpedo.setMode; not a current point-launch mode.</summary>
     string? ModeId = null,
     /// <summary>Explicit point-launch profile; the Engine validates availability on this launcher.</summary>
     string? ProfileId = null,

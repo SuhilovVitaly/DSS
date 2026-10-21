@@ -1,5 +1,9 @@
 # Deep Space Saga Documentation
 
+## Current EP-0012 contract — 2026-10-21
+
+Start current combat work at the new point-aim contract and EngineRequirements PointAim section. WriterSave18; EP9/EP10/EP11 sections below are dated implementation/navigation history. Combat and launch forecasts now reuse admitted observed NPC motion. Current implementation/evidence/publication is in Board/EP-0012-combat-rebuild; balance and human acceptance OPEN. Graph rebuild follows final texts in US15TK5. [Point-aim combat contract](04-Engineering/PointAimCombat.md).
+
 ## Наблюдаемые будущие линии NPC — 2026-10-18
 
 [Контракт и покрытие EP-0011](04-Engineering/NpcObservedTrajectories.md) · [Board и публикация](../Board/EP-0011-short-fixes/ImplementationStatus.md). NPC future line продолжает подтверждённые два равных секундных поворота; иначе прямая. Combat/launch forecasts сохраняют прежнюю модель. Automated PASS; native/human OPEN, игру не запускали.
@@ -8,7 +12,7 @@
 
 [ТЗ: панель боевых докладов](02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [эпик, истории и тикеты](../Board/EP-0010-combat-reports/EP-0010-combat-reports.md). Реализованы E01–E07,200-card accordion, Save17 continuation, надёжная доставка и8 иллюстраций. [Текущая архитектура](04-Engineering/CombatReports.md) · [проверки и отдельные SHA/push](../Board/EP-0010-combat-reports/ImplementationStatus.md). Native/human/FPS acceptance OPEN. Самостоятельный запуск игры агентом запрещён пользователем.
 
-## Актуальный бой EP-0009 — 2026-10-12
+## Исторический бой EP-0009 — 2026-10-12
 
 [Модульный бой](04-Engineering/ModuleCombat.md) · [канонические требования](01-Requirements/EngineRequirements.md#phase-four-module-combat) · [100 сидов Engine](../Board/EP-0009-battle/evidence/balance.md) · [открытая нативная матрица](../Board/EP-0009-battle/evidence/native.md). Текущий SaveFormatVersion17; EP-0008 и Save16 ниже — историческая запись. Native/human приёмка EP9 остаётся открытой; Graphify повторно перестроен в EP10 (см. ниже).
 
@@ -37,10 +41,10 @@ This folder is the single home for DSS project documentation.
 - [Approach requirements](01-Requirements/EngineRequirements.md#approach-shortest-route) - shortest rendezvous, captured trailing-point fallback, and planner version 3 (2026-09-20).
 - [Approach implementation](04-Engineering/ApproachRoutes.md) - solver, numerical tolerances, prediction, and save compatibility.
 
-- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — исторический EP-0007/0008; текущие правила и Save17 описаны в [ModuleCombat](04-Engineering/ModuleCombat.md).
+- [Countermeasure combat](04-Engineering/CountermeasureCombat.md) — исторический EP-0007/0008; текущие правила и Save18 описаны в [PointAimCombat](04-Engineering/PointAimCombat.md).
 - [Countermeasure Graphify](06-Tooling/CountermeasureGraphify.md) — корпус, перестройка и проверка графа.
 
-- [AI map environment](04-Engineering/AiMapEnvironment.md) — EP-0004: контракты, конфигурация, исторический Save15 (текущий17), слои и открытая FPS acceptance.
+- [AI map environment](04-Engineering/AiMapEnvironment.md) — EP-0004: контракты, конфигурация, исторический Save15 (текущий18), слои и открытая FPS acceptance.
 - [Solar-system concept](02-FirstRelease/Mechanics/SolarSystemMapConcept.md) — продуктовый контракт карты.
 - [EP-0002 implementation](04-Engineering/EP-0002-Implementation.md) и [EP-0003 evidence](Validation/EP-0003-Implementation.md) — датированные поставки предшественников.
 

@@ -67,18 +67,18 @@ public static class CombatCommandTypes
 {
     public const string Launch = "torpedo.launch";
     public const string Detonate = "torpedo.detonate";
-    // Transitional consumers are migrated before these legacy identifiers are removed.
+    // Reserved legacy identifiers retain wire identity for explicit rejection; EP12 does not execute these commands.
     public const string Fire = "torpedo.fire";
     public const string SelfDestruct = "torpedo.selfDestruct";
 }
 
-/// <summary>Torpedo launcher command identifiers; mode selection is addressed to one launcher.</summary>
+/// <summary>Reserved legacy torpedo mode identifier; EP12 uses per-launch ProfileId and rejects setMode.</summary>
 public static class TorpedoLauncherCommandTypes
 {
     public const string SetMode = "torpedo.setMode";
 }
 
-/// <summary>Origin of a launch; independent of the launcher's current automatic-defense toggle.</summary>
+/// <summary>Reserved historical launch origin values; EP12 point defense is manual and has no automatic toggle.</summary>
 public enum LaunchMode { Auto, Manual }
 
 /// <summary>Why a countermeasure flight ended. Only a resolved contact consumes an interception roll.</summary>
@@ -167,7 +167,7 @@ public sealed record TorpedoSnapshot(
     string? OwnerPlayerRelationAtLaunch = null,
     /// <summary>Captured attack contribution for the contact-time hit roll.</summary>
     decimal? CapturedAttack = null,
-    /// <summary>Authoritative chance in tenths of one percent; populated by EP-0009 runtime.</summary>
+    /// <summary>Historical EP-0009 chance slot in tenths of one percent; current point runtime does not populate it.</summary>
     int? HitChanceTenths = null,
     /// <summary>Armor piercing captured at launch, independent of later catalog edits.</summary>
     decimal ArmorPiercingPercent = 0,

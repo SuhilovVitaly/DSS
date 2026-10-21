@@ -1,0 +1,9 @@
+{
+  "files": 14,
+  "links": 163,
+  "missing": [],
+  "ticket": "EP-0012-US-0015-TK-0004-update-documents-4",
+  "review": "Implementer self-review, not independent",
+  "runtimeRerun": "NOT RUN: documentation-only changes; latest gates are linked, not remeasured",
+  "note": "Canonical EP12 requirements, current writer/data/tooling and release navigation synchronized. Prior epics explicitly superseded; source changes are XML/comments only, no executable behavior. Corrected combat-input.json path from source."
+}

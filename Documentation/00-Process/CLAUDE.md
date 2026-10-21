@@ -1,12 +1,16 @@
 # CLAUDE.md
 
+## Current EP-0012 contract — 2026-10-21
+
+Use .NET SDK10.0.400 pinned by global.json; targetnet8.0. Current writerSave18, point launch/detonation/manual-CM/evasion/encounter; no guided hit chance, fire modes, automatic/burst defense or CombatShmel. Production module catalogs contain profiles; Data/Combat/combat-rules.json owns blast/scatter/NPC rules. Client settings own combat-visuals.json and combat-input.json. Engine remains graphics-free; tooling/tests may bootstrap its internal registry via explicit friend assemblies, not a Client gameplay dependency. New point forecasts reuse display-admitted NPC motion. Test processes must be bounded to300000ms with tree termination; partition long corpus by exact test identity. Source-guided docs and failed/open gates below remain historical where superseded; prior game-launch prohibitions describe their dated sessions, not standing new approval requirements for an explicitly authorized epic. [Point-aim combat contract](../04-Engineering/PointAimCombat.md).
+
 ## NPC future line — 2026-10-18
 
 [Наблюдаемый прогноз](../04-Engineering/NpcObservedTrajectories.md): SnapshotBuffer собирает physical-second headings только из display-admitted confirmed frames. FutureTrajectoryProjector для NpcShip использует measured rate и текущую скорость, без hidden predictor или terminal extension. Текущая render pose, player/orbital motion и combat/launch forecasts сохраняют прежние правила. Client 2057/2057, Engine forecast 47/47; native NOT RUN.
 
-## Актуализация EP-0009 — 2026-10-12
+## Историческая актуализация EP-0009 — 2026-10-12
 
-Current combat writer: SaveFormatVersion17 (defense3, combat2, hostile2); save16 and older reject atomically. Production `Data/Combat/combat-rules.json` and `fire-modes.json`, module/ship catalogs and CombatMukha/CombatShmel scenarios define configurable combat data. Engine owns module damage, operator rolls, modes, queues, AI and terminal outcome; Client renders snapshots and journal. [Current contract](../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [Implementation and evidence](../04-Engineering/ModuleCombat.md). EP-0008/Save16 text below remains dated history. Game/native checks and Graphify rebuild are deferred by user instruction.
+Historical EP9 writer: SaveFormatVersion17 (defense3, combat2, hostile2); save16 and older reject atomically. Production `Data/Combat/combat-rules.json` and `fire-modes.json`, module/ship catalogs and CombatMukha/CombatShmel scenarios define configurable combat data. Engine owns module damage, operator rolls, modes, queues, AI and terminal outcome; Client renders snapshots and journal. [Current contract](../01-Requirements/EngineRequirements.md#phase-four-module-combat) · [Implementation and evidence](../04-Engineering/ModuleCombat.md). EP-0008/Save16 text below remains dated history. Game/native checks and Graphify rebuild are deferred by user instruction.
 
 ## Актуализация EP-0008 — 2026-10-12
 
@@ -33,7 +37,7 @@ Deep Space Saga (DSS) — 2D sci-fi simulation of Solar System development. .NET
 
 ```bash
 dotnet build DeepSpaceSaga.sln          # Build all projects
-dotnet test DeepSpaceSaga.sln           # Run all tests (xUnit)
+dotnet test <owning-project> --no-restore --filter <scope> # Use a hard300000ms process-tree cap; partition long corpus
 dotnet run --project src/DeepSpaceSaga.Client  # Launch the client window
 ```
 

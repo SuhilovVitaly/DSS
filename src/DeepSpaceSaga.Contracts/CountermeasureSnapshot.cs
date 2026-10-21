@@ -6,20 +6,20 @@ namespace DeepSpaceSaga.Contracts;
 public enum CountermeasurePhase { Guiding, MissedCoast }
 public enum DefenseState { Ready, Guiding, Reloading, NoOperator }
 
-/// <summary>Physical-time commitment to the next barrel of one defense burst.</summary>
+/// <summary>Historical burst payload retained for explicit old-state validation/rejection; EP12 schedules no defense burst.</summary>
 public sealed record PendingBurstShot(double DueMotionTimeMs, string TargetTorpedoId, int BarrelNumber,
     LaunchMode Mode = LaunchMode.Auto);
 
 public static class DefenseCommandTypes
 {
     public const string Launch = "defense.launch";
-    // Transitional consumers are migrated before these legacy identifiers are removed.
+    // Reserved legacy identifiers retain wire identity for explicit rejection; EP12 does not execute these commands.
     public const string Fire = "defense.fire";
     public const string Enable = "defense.enable";
     public const string Disable = "defense.disable";
 }
 
-/// <summary>Captured opposing ratings; the Engine supplies ChanceTenths in 0..1000.</summary>
+/// <summary>Historical opposing-rating DTO retained for wire identity; current point Engine does not publish interception chance.</summary>
 public sealed record InterceptionRatingBreakdown(
     WeaponOperatorSnapshot DefenseOperator,
     decimal TorpedoRating,

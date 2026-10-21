@@ -3,13 +3,13 @@ epic: "EP-0012-combat-rebuild"
 story: "EP-0012-US-0015-project-documentation"
 ticket: "EP-0012-US-0015-TK-0004-update-documents-4"
 title: "update-documents-4"
-stage: "draft"
+stage: "implemented"
 layer: "documentation"
 depends_on: ["EP-0012-US-0015-TK-0003-update-documents-3"]
-files_touched: 3
+files_touched: 14
 serves: ["US15-AC1"]
 created: "2026-10-20T07:48:46.640Z"
-revision: 1
+revision: 2
 ---
 
 # EP-0012-US-0015-TK-0004-update-documents-4
@@ -20,17 +20,28 @@ revision: 1
 
 ## Decisions / Assumptions
 
-D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Proposed файлы/API ещё не существуют.
+D-USER-01: внешние файлы игнорируются. D-USER-02: UI feedback<=100мс, authoritative projectile на scene clock. Правила профиль/радиус/урон/разброс берутся из Documentation и story AC. A01–A06/A-PLAN — assumptions, не дополнительное согласование. Current implementation sources are linked; historical planning assumptions remain identified.
 
 ## Code context
 
-Точный allowlist (3 файлов, включая tests); всё вне списка запрещено. Baseline c894925d187c90a658d1e25958feed69a45d7e41.
+Точный allowlist (14 файлов). Current baseline `294df70ce3445ca6bed2aaff956bc7f96da55f92`. Scope уточнён до редактирования по EpicExecutionPrompt§6: актуальные контракты, историческая точность и все связанные документы. Evidence/Board metadata являются обязательным результатом.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| [Documentation/01-Requirements/EngineRequirements.md](../../../../Documentation/01-Requirements/EngineRequirements.md) | Существует: Documentation/01-Requirements/EngineRequirements.md:3113; - при необходимости можно добавить небольшой helper/class внутри папки `GameSession` | Только изменения для scope этой карточки и served AC. |
-| [Documentation/00-Process/CLAUDE.md](../../../../Documentation/00-Process/CLAUDE.md) | Существует: Documentation/00-Process/CLAUDE.md:46; The defining architectural invariant: the **engine is a pure .NET library with zero graphics dependencies**. The client/renderer communicates with the engine exclusively through a single async interface boundary. | Только изменения для scope этой карточки и served AC. |
-| [Board/EP-0009-battle/ImplementationStatus.md](../../../EP-0009-battle/ImplementationStatus.md) | Существует: Board/EP-0009-battle/ImplementationStatus.md:89; TK-0005 f7eb4c4a8a694227c39bca25600239d0e961649a published/remote verified. US-0001 story review recorded partial AC2/AC3 until later catalog/runtime migration. Weapon catalog now contains EP-0009 launcher and defense values plus the new single-barrel defense variant. Historical EP-0008 combat fixtures pin their original weapon values; shipped data is checked separately in Client tests. New locale keys cover previously added combat event enum values. Focused Client catalog19/19; Engine non-corpus1944/1944; Client full1857/1857; solution build0 warnings/errors; scoped format/diff PASS. Initial Engine88/Client30 failures came from old fixed catalog assumptions, addressed in tests/fixtures. Runtime multiflight/burst behavior still follows in later tickets. Separate publication follows. Graphify/game/native NOT RUN per user. | Только изменения для scope этой карточки и served AC. |
+| `Documentation/01-Requirements/EngineRequirements.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/00-Process/CLAUDE.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Board/EP-0009-battle/ImplementationStatus.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/01-Requirements/FirstReleaseRequirements.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/README.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `tools/DeepSpaceSaga.Performance/README.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/06-Tooling/GameSessionScreenUI.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `src/DeepSpaceSaga.Contracts/PlayerCommand.cs` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `src/DeepSpaceSaga.Contracts/CombatSnapshot.cs` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `src/DeepSpaceSaga.Contracts/CountermeasureSnapshot.cs` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Documentation/03-Design/TacticalMapSpecification.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Board/EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Board/EP-0010-combat-reports/ImplementationStatus.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
+| `Board/EP-0011-short-fixes/ImplementationStatus.md` | Exists | Current EP12 contract, supersession or bounded evidence; preserve dated results. |
 
 ## Public API after the change
 
@@ -49,7 +60,7 @@ No public API change; использовать контракт зависимы
 
 ## Tests
 
-Все ниже — **план**, не выполненные тесты.
+Documentation checks executed; actual results below.
 
 - **Documentation_links_and_numeric_contract_match_implementation**: каждый старый термин либо исторический с пометкой, либо исправлен; фактические NOT RUN сохранены.
 
@@ -65,4 +76,4 @@ No public API change; использовать контракт зависимы
 
 ## Status / Evidence
 
-Planning-only / draft. Implementation NOT STARTED; commands NOT RUN; native/product OPEN.
+2026-10-21: documentation and self-review complete. PASS 163 relative path references across 14 scoped files, diff check. [Evidence](../../evidence/us0015-tk0004-results.json). Canonical EP12 requirements, current writer/data/tooling and release navigation synchronized. Prior epics explicitly superseded; source changes are XML/comments only, no executable behavior. Corrected combat-input.json path from source. Runtime tests not rerun for prose-only changes. Human/product/balance OPEN. Separate commit/push follows.

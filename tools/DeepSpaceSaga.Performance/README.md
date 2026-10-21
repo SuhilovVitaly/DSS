@@ -1,5 +1,9 @@
 # GPU/window probe
 
+## Current EP-0012 contract — 2026-10-21
+
+Current --combat-window routes PointCombatNativeEvidence, a real SkiaWindow/OpenGL run over actual production Engine snapshots. Command: `dotnet run --no-build --project tools/DeepSpaceSaga.Performance -- <repo> <report.json> --combat-window <0.8|1|1.2|1.5> <1280x720|1920x1080> <ru|en> <input|win|defeat> [--audio] [--clean-flight]`. Build first; hard process cap300000ms, internal3min guard. Output includes PNGs, actual locale/scale/GPU, checks, public commands and explicit NOT RUN limits. Terminal replays use unchanged shared production input policy. Tool temporarily changes deployed Settings and restores bytes. Clean-flight cancels overlapping preview before independent radius sampling. Managed callbacks/controlled clocks are not physical keyboard/mouse, normal transport, input-to-photon or auditory acceptance. Old CombatNativeEvidence/guided arguments below are historical, while unrelated map/report/performance commands retain their scope. [Point-aim combat contract](../../Documentation/04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0008 — 2026-10-12
 
 EP-0008 final review and recorded native matrix are linked below. The user currently defers all game/native launches: do not execute the native combat harness until that restriction is lifted. Historical13/14 completed interactions and failed frame-time target are not full acceptance. Automated solution tests and headless performance checks remain distinct from native evidence.
