@@ -134,8 +134,12 @@ internal static class PointCombatSaveValidation
                 e.LastTurnTime is null or >= 0, "invalid evasion owner or start.");
             var m = e.Motion!;
             Require(Finite(m.SampleMotionTimeMs, m.EndsAtMotionTimeMs) && m.SampleMotionTimeMs >= e.StartedAt &&
-                m.SampleMotionTimeMs <= time && m.EndsAtMotionTimeMs > time && Enum.IsDefined(m.Side) && Id(m.ThreatProjectileId),
+                m.SampleMotionTimeMs <= time && Math.Ceiling(DeepSpaceSaga.Motion.EvasionMotionMath.CompletionTime(m)) > time && Enum.IsDefined(m.Side) && Id(m.ThreatProjectileId),
                 "invalid evasion schedule.");
+            Require(m.Steering is null || m.Steering is { } steering && Finite(steering.Direction, steering.MaxSpeedKmS, steering.TurnRateDegPerSec,
+                steering.AccelerationKmS2, steering.ReturnsAtMotionTimeMs) && steering.MaxSpeedKmS > 0 && steering.TurnRateDegPerSec > 0 &&
+                steering.AccelerationKmS2 > 0 && steering.ReturnsAtMotionTimeMs >= m.EndsAtMotionTimeMs && steering.ReturnsAtMotionTimeMs < long.MaxValue,
+                "invalid evasion steering.");
             Require(m.BaseMotion is { Evasion: null, OwnProjectile: null, ObservedProjectile: null } basis &&
                 basis.ObjectId == e.ObjectId && Finite(basis.X, basis.Y, basis.SpeedKmS, basis.Direction) && basis.SpeedKmS >= 0,
                 "invalid evasion base course.");

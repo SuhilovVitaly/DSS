@@ -190,6 +190,7 @@ public static class CurrentManeuverForecast
 
     private static ObjectMotionSnapshot SampleEvasion(ObjectMotionSnapshot state, EvasionSnapshot evasion, double elapsed)
     {
+        if (evasion.Steering is not null) return EvasionMotionMath.Sample(state, evasion, elapsed);
         if (!double.IsFinite(evasion.SampleMotionTimeMs) || evasion.SampleMotionTimeMs < 0 ||
             !double.IsFinite(evasion.EndsAtMotionTimeMs) || evasion.EndsAtMotionTimeMs < 0 ||
             evasion.BaseMotion is null || evasion.BaseMotion.Evasion is not null || evasion.BaseMotion.ObjectId != state.ObjectId)

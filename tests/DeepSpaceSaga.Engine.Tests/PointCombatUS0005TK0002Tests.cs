@@ -63,8 +63,8 @@ public sealed class PointCombatUS0005TK0002Tests
         foreach (var row in foreign)
         {
             Assert.False(row.TryGetProperty("OwnProjectile", out _));
-            Assert.Equal(JsonValueKind.Null, row.GetProperty("Torpedo").ValueKind);
-            Assert.Equal(JsonValueKind.Null, row.GetProperty("Countermeasure").ValueKind);
+            Assert.False(row.TryGetProperty("Torpedo", out _));
+            Assert.False(row.TryGetProperty("Countermeasure", out _));
             var observed = row.GetProperty("ObservedProjectile");
             Assert.Equal(new[] { "BlastRadiusKm", "DirectionX", "DirectionY", "Kind", "ProfileId", "SpeedKmS", "X", "Y" },
                 observed.EnumerateObject().Select(p => p.Name).Order(StringComparer.Ordinal));

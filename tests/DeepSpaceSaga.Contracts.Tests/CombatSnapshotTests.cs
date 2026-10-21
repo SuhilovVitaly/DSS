@@ -76,7 +76,7 @@ public class CombatSnapshotTests
             Accuracy: 55m, TargetManeuverability: 5.125m,
             TerminationKind: CountermeasureTerminationKind.LifetimeExpired);
         var restoredEntry = JsonSerializer.Deserialize<CombatJournalEntry>(JsonSerializer.Serialize(entry))!;
-        Assert.Equal(entry, restoredEntry);
+        Assert.Equal(entry with { ChanceTenths = null, LaunchMode = null, Accuracy = null, TargetManeuverability = null, TerminationKind = null }, restoredEntry);
         Assert.Null(restoredEntry.Roll);
         Assert.Null(restoredEntry.Damage);
     }
@@ -119,7 +119,10 @@ public class CombatSnapshotTests
         Assert.Equal(hull, restored.Objects[0].HullCombat);
         Assert.Equal("Wreck", restored.Objects[2].ObjectType);
         Assert.Equal("Missile", restored.Objects[1].ObjectType);
-        var restoredTorpedo = Assert.IsType<TorpedoSnapshot>(restored.Objects[1].Torpedo);
+        Assert.Null(restored.Objects[1].Torpedo);
+        Assert.False(JsonDocument.Parse(json).RootElement.GetProperty("Objects")[1].TryGetProperty("Torpedo", out _));
+        // Standalone historical geometry remains readable for source compatibility, outside the public motion envelope.
+        var restoredTorpedo = JsonSerializer.Deserialize<TorpedoSnapshot>(JsonSerializer.Serialize(torpedo))!;
         Assert.Equal("ship-1", restoredTorpedo.OwnerObjectId);
         Assert.Equal("launcher-1", restoredTorpedo.LauncherModuleId);
         Assert.Equal("ship-2", restoredTorpedo.TargetObjectId);
@@ -166,7 +169,7 @@ public class CombatSnapshotTests
         using var document = JsonDocument.Parse(JsonSerializer.Serialize(restored));
         var motionJson = document.RootElement.GetProperty("Objects")[0];
         Assert.Equal(JsonValueKind.Null, motionJson.GetProperty("HullCombat").ValueKind);
-        Assert.Equal(JsonValueKind.Null, motionJson.GetProperty("Torpedo").ValueKind);
+        Assert.False(motionJson.TryGetProperty("Torpedo", out _));
         Assert.Equal(JsonValueKind.Null,
             document.RootElement.GetProperty("InstalledModules")[0].GetProperty("LauncherCombat").ValueKind);
     }

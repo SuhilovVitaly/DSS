@@ -80,4 +80,8 @@ public sealed record InstalledModuleSnapshot(
     long? TorpedoMaxFlightTimeMs = null,
     /// <summary>Own module criticality under the authoritative configured destruction rules.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    bool IsCritical = false);
+    bool IsCritical = false,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    EngineMotionLimitsSnapshot? EngineMotion = null);
+
+public sealed record EngineMotionLimitsSnapshot(double MaxSpeedKmS, double AccelerationKmS2, double TurnRateDegPerSec);

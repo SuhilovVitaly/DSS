@@ -4,7 +4,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed partial class GameSessionScreen
 {
-    internal sealed record WeaponRangeRing(string ModuleId, string Kind, double RangeKm, SKPoint Center, float RadiusPx);
+    internal sealed record WeaponRangeRing(string ModuleId, string Kind, double RangeKm, SKPoint Center, float RadiusPx, bool Highlighted = false);
     internal readonly List<WeaponRangeRing> WeaponRangeRings = new();
     private void DrawDefenseAnnotations(SKCanvas canvas)
     {
@@ -41,10 +41,13 @@ public sealed partial class GameSessionScreen
             using var effect = dashed ? SKPathEffect.CreateDash([6, 4], 0) : null;
             paint.Color = CombatSettings.RangeColor(kind);
             paint.StrokeWidth = point ? (float)CombatSettings.PointCombat.LineWidthPx : 1;
+            bool highlighted = _hasMousePosition && _commandsPanel.CommandPanelRows.Any(r => r.RangeModuleId == module &&
+                (r.CaptionRect.Contains(_uiMouseX, _uiMouseY) || r.BodyRect.Contains(_uiMouseX, _uiMouseY)));
+            if (highlighted) { paint.StrokeWidth *= 2; paint.Color = paint.Color.WithAlpha(255); }
             paint.PathEffect = effect;
             canvas.DrawCircle(x, y, (float)pixels, paint);
             paint.PathEffect = null;
-            WeaponRangeRings.Add(new(module, kind, range, new(x, y), (float)pixels));
+            WeaponRangeRings.Add(new(module, kind, range, new(x, y), (float)pixels, highlighted));
         }
     }
 

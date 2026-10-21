@@ -86,7 +86,8 @@ public sealed class PointCombatUS0019TK0005Tests
             ThreatProjectileId: threat, EvadeSide: EvadeSide.Left));
         var evading = At(engine, 1750);
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(evading.CommandResults).Status);
-        Assert.NotNull(Ship(evading).Evasion); Assert.Equal(6, Ship(evading).SpeedKmS);
+        Assert.NotNull(Ship(evading).Evasion); Assert.Equal(Ship(rightDone).SpeedKmS, Ship(evading).SpeedKmS);
+        Assert.Equal(Ship(rightDone).Direction, Ship(evading).Direction);
         engine.ReceiveCommand(new("catalog-ack", 6, Player, "", CombatEncounterCommandTypes.AcknowledgeResults));
         var ack = At(engine, 1750);
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(ack.CommandResults).Status);

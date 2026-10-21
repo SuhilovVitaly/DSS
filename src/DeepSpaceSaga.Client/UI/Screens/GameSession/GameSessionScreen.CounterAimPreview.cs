@@ -20,7 +20,8 @@ public sealed partial class GameSessionScreen
             FindPlayerShip(_renderStates) is not { } player ||
             PointProfiles(module).FirstOrDefault(p => p.ProfileId == aim.ProfileId) is not { } profile) return null;
         double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
-        return ProjectCounterAim(player.Pose.ToSnapshot(), _renderStates.Where(s => !s.Source.IsDestroyed).Select(s => s.Pose.ToSnapshot()).ToArray(),
+        return ProjectCounterAim(player.Pose.ToSnapshot(), _renderStates.Where(s => !s.Source.IsDestroyed &&
+            (s.Source.OwnProjectile is not null || s.Source.ObservedProjectile is not null)).Select(s => s.Pose.ToSnapshot()).ToArray(),
             profile, module.Defense!.RangeKm, x, y, _camera.PixelsPerWorldUnit, _pointAltLeft || _pointAltRight,
             PointAimTime, multiplier > 0 ? multiplier : .25);
     }

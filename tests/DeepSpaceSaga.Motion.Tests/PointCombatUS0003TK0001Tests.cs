@@ -4,6 +4,24 @@ namespace DeepSpaceSaga.Motion.Tests;
 
 public sealed class PointCombatUS0003TK0001Tests
 {
+    [Fact]
+    public void All_twenty_canonical_control_points_are_explicit_independent_values()
+    {
+        (double Distance, double Value)[] falloff = [(0, 1), (1, 1), (3, 1), (4, 6d / 7), (5, 5d / 7),
+            (6.5, .5), (9, 1d / 7), (10, 0), (11, 0)];
+        foreach (var p in falloff) Assert.Equal(p.Value, BlastMath.Falloff(p.Distance, 10, .3), 9);
+        Assert.Equal(1.4995, BlastMath.ScatterSigma(50, .02, 0), 9);
+        Assert.Equal(1, BlastMath.ScatterSigma(50, .02, 15), 9);
+        Assert.Equal(.5005, BlastMath.ScatterSigma(50, .02, 30), 9);
+        Assert.Equal(4, BlastMath.ScatterSigma(50, .08, 15), 9);
+        Assert.Equal(0, BlastMath.ScatterSigma(0, .02, 15));
+        Assert.Equal(0, BlastMath.ScatterSigma(50, 0, 15));
+        Assert.Equal((0d, 0d), BlastMath.PositionAt(0, 0, 600, 0, 0));
+        Assert.Equal((300d, 0d), BlastMath.PositionAt(0, 0, 600, 0, .5));
+        Assert.Equal((600d, 0d), BlastMath.PositionAt(0, 0, 600, 0, 1));
+        Assert.Equal(10000, BlastMath.DetonationTimeMs(0, 60, 6));
+        Assert.Equal(5000, BlastMath.DetonationTimeMs(1000, 40, 10));
+    }
     [Theory]
     [InlineData(0, 1)]
     [InlineData(1, 1)]

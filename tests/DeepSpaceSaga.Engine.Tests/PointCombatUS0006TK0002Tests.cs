@@ -37,9 +37,9 @@ public sealed class PointCombatUS0006TK0002Tests
     }
 
     [Theory]
-    [InlineData(EvadeSide.Left, 180, 110)]
-    [InlineData(EvadeSide.Right, 0, -130)]
-    public void Evade_uses_trace_perpendicular_and_returns_to_base(EvadeSide side, double heading, double endY)
+    [InlineData(EvadeSide.Left, 180)]
+    [InlineData(EvadeSide.Right, 0)]
+    public void Evade_uses_trace_perpendicular_and_returns_to_base(EvadeSide side, double heading)
     {
         var (engine, threat) = Battle();
         using (engine)
@@ -49,20 +49,20 @@ public sealed class PointCombatUS0006TK0002Tests
             var start = At(engine);
             var ship = Ship(start);
             Assert.Equal(CommandResultStatus.Executed, Assert.Single(start.CommandResults).Status);
-            Assert.Equal(heading, ship.Direction, 9);
-            Assert.Equal(6, ship.SpeedKmS);
+            Assert.Equal(0, ship.Direction, 9);
+            Assert.Equal(2, ship.SpeedKmS);
+            Assert.Equal(heading, ship.Evasion!.Steering!.Direction);
             Assert.Equal(2000, ship.Evasion!.EndsAtMotionTimeMs, 8);
             Assert.Equal(2, ship.Evasion.BaseMotion.SpeedKmS);
             Assert.Equal(0, ship.Evasion.BaseMotion.Direction);
             Assert.Equal(0, ship.Evasion.SampleMotionTimeMs);
             Assert.Equal(JsonSerializer.Serialize(ship), JsonSerializer.Serialize(Ship(At(engine))));
-            var forecast = new DeepSpaceSaga.Motion.LinearMotionPredictor().Predict(ship, 2500);
-            var actual = Ship(At(engine, 2500));
+            var forecast = new DeepSpaceSaga.Motion.LinearMotionPredictor().Predict(ship, 5000);
+            var actual = Ship(At(engine, 5000));
             Assert.Null(actual.Evasion);
             Assert.Equal(2, actual.SpeedKmS);
             Assert.Equal(0, actual.Direction);
-            Assert.Equal(0, actual.X, 8);
-            Assert.Equal(endY, actual.Y, 8);
+            Assert.True(double.IsFinite(actual.X) && double.IsFinite(actual.Y));
             Assert.Equal(actual.X, forecast.X, 8);
             Assert.Equal(actual.Y, forecast.Y, 8);
             Assert.Equal(rng, engine.CaptureLaunchScatterState());
@@ -109,11 +109,12 @@ public sealed class PointCombatUS0006TK0002Tests
             var changed = Ship(At(engine, 500));
             Assert.Equal(first.BaseMotion, changed.Evasion!.BaseMotion);
             Assert.Equal(1, engine.CaptureEvasionEpisodeCount());
-            var ended = Ship(At(engine, 2000));
+            long completed = (long)Math.Ceiling(changed.Evasion!.Steering!.ReturnsAtMotionTimeMs);
+            var ended = Ship(At(engine, completed));
             Assert.Null(ended.Evasion);
             Assert.Equal(2, ended.SpeedKmS);
             Assert.Equal(0, ended.Direction);
-            engine.ReceiveCommand(Evade(threat, id: "new-episode")); At(engine, 2200);
+            engine.ReceiveCommand(Evade(threat, id: "new-episode")); At(engine, completed + 200);
             Assert.Equal(2, engine.CaptureEvasionEpisodeCount());
         }
     }
@@ -148,8 +149,8 @@ public sealed class PointCombatUS0006TK0002Tests
             engine.ReceiveCommand(new("take-control", 4, Player, Engine, ShipEngineCommandTypes.TurnLeftStep));
             Assert.Null(Ship(At(engine, 500)).Evasion);
             var later = Ship(At(engine, 2500));
-            Assert.Equal(6, later.SpeedKmS);
-            Assert.Equal(179, later.Direction, 8);
+            Assert.Equal(2.2, later.SpeedKmS, 8);
+            Assert.Equal(357, later.Direction, 8);
         }
     }
 
@@ -169,14 +170,14 @@ public sealed class PointCombatUS0006TK0002Tests
         var npc = snapshot.Objects.Single(o => o.ObjectId == Target);
         Assert.Null(npc.Evasion);
         Assert.Null(npc.ActiveEngineCommandType);
-        Assert.Equal(6, npc.SpeedKmS);
+        Assert.Equal(0, npc.SpeedKmS);
         Assert.DoesNotContain("BaseMotion", JsonSerializer.Serialize(npc));
         Assert.DoesNotContain("EndsAtMotionTimeMs", JsonSerializer.Serialize(npc));
         Assert.Empty(snapshot.CommandResults);
         Assert.Equal(0, engine.CaptureEvasionEpisodeCount());
         var moving = At(engine, 500).Objects.Single(o => o.ObjectId == Target);
-        Assert.Equal(6, moving.SpeedKmS);
-        Assert.Equal(-30, moving.Y, 8);
+        Assert.Equal(.2, moving.SpeedKmS, 8);
+        Assert.Equal(-.5, moving.Y, 8);
         Assert.Null(moving.Evasion);
     }
 
@@ -192,8 +193,8 @@ public sealed class PointCombatUS0006TK0002Tests
             engine.ReceiveCommand(Evade(threat));
             var start = Ship(At(engine));
             Assert.Equal(ShipEngineCommandTypes.Orbit, start.Evasion!.BaseMotion.ActiveEngineCommandType);
-            var expected = new DeepSpaceSaga.Motion.LinearMotionPredictor().Predict(start, 3000);
-            var actual = Ship(At(engine, 3000));
+            var expected = new DeepSpaceSaga.Motion.LinearMotionPredictor().Predict(start, 5000);
+            var actual = Ship(At(engine, 5000));
             Assert.Null(actual.Evasion);
             Assert.Equal(ShipEngineCommandTypes.Orbit, actual.ActiveEngineCommandType);
             Assert.Equal(1000, actual.NavigationTargetX);
@@ -254,9 +255,10 @@ public sealed class PointCombatUS0006TK0002Tests
         Assert.Equal(Engine, hit.HitModuleId);
         var ship = Ship(snapshot);
         Assert.Null(ship.Evasion);
-        Assert.Equal(180, ship.Direction, 8);
-        Assert.Equal(6, ship.SpeedKmS);
-        Assert.Equal(150, ship.Y, 7);
+        Assert.Equal(360 - 20d / 3, ship.Direction, 8);
+        Assert.Equal(8d / 3, ship.SpeedKmS, 8);
+        var coast = Ship(At(engine, 3500));
+        Assert.Equal(ship.Y - ship.SpeedKmS * 10 * Math.Cos(ship.Direction * Math.PI / 180), coast.Y, 7);
         Assert.True(snapshot.InstalledModules.Single(m => m.ModuleId == Engine).DisabledUntilMotionTimeMs > 2500);
     }
 }

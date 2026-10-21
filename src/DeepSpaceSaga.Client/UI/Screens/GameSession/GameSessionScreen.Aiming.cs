@@ -165,7 +165,7 @@ public sealed partial class GameSessionScreen
         var target = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         if (aim.Kind == ProjectileKind.Countermissile && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
         {
-            if (counter.Unreachable) return true;
+            if (counter.Unreachable) { _pointErrors[module.ModuleId] = "aim_unreachable"; return true; }
             target = (counter.X, counter.Y);
         }
         var player = FindPlayerShip(_renderStates);
@@ -213,7 +213,8 @@ public sealed partial class GameSessionScreen
         return CombatText("Ready", "Ready");
     }
 
-    internal static string PointLaunchReason(string reason) => CombatText("Reason." + reason, CombatText("CommandRejected", "Command rejected"));
+    internal static string PointLaunchReason(string reason) => reason == "aim_unreachable" ? CombatText("Aim.Unreachable", "Unreachable") :
+        CombatText("Reason." + reason, CombatText("CommandRejected", "Command rejected"));
 
     private InstalledModuleSnapshot? PointPanelModule(WeaponPanelInstance weapon) =>
         _buffer.Presented?.Snapshot.PlayerShipObjectId == weapon.OwnerObjectId ? PointAimModule(weapon.ModuleId) : null;

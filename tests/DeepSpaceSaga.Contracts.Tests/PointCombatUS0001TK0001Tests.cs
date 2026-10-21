@@ -7,6 +7,17 @@ namespace DeepSpaceSaga.Contracts.Tests;
 
 public class PointCombatUS0001TK0001Tests
 {
+    [Fact]
+    public void Retired_roll_and_auto_fields_cannot_be_serialized_even_when_nonnull()
+    {
+        var entry = new CombatJournalEntry(1, 0, CombatEventType.Hit, "a", "b", "p", 0, 0,
+            ChanceTenths: 999, Roll: 1, LaunchMode: LaunchMode.Auto, Accuracy: 50, Attack: 50, Defense: 50);
+        var json = JsonSerializer.SerializeToElement(entry);
+        foreach (string field in new[] { "ChanceTenths", "Roll", "LaunchMode", "Accuracy", "Attack", "Defense" })
+            Assert.False(json.TryGetProperty(field, out _));
+        var defense = JsonSerializer.SerializeToElement(new DefenseSnapshot(true, null, DefenseState.Ready));
+        Assert.False(defense.TryGetProperty("AutoEnabled", out _));
+    }
     [Theory]
     [InlineData(ProjectileKind.Torpedo)]
     [InlineData(ProjectileKind.Countermissile)]

@@ -6,4 +6,8 @@ namespace DeepSpaceSaga.Contracts;
 /// Foreign ships publish observed movement rather than this control schedule.
 /// </summary>
 public sealed record EvasionSnapshot(double SampleMotionTimeMs, double EndsAtMotionTimeMs,
-    string ThreatProjectileId, EvadeSide Side, ObjectMotionSnapshot BaseMotion);
+    string ThreatProjectileId, EvadeSide Side, ObjectMotionSnapshot BaseMotion, EvasionSteeringSnapshot? Steering = null);
+
+/// <summary>Captured physical engine limits, including completion of the bounded return to base course.</summary>
+public sealed record EvasionSteeringSnapshot(double Direction, double MaxSpeedKmS,
+    double TurnRateDegPerSec, double AccelerationKmS2, double ReturnsAtMotionTimeMs);

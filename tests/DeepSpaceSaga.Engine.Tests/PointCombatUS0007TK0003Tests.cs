@@ -1,11 +1,35 @@
 using System.Text.Json;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Content;
 using static DeepSpaceSaga.Engine.Tests.PointCombatUS0003TK0002Tests;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class PointCombatUS0007TK0003Tests
 {
+    [Theory]
+    [InlineData(0, false)]
+    [InlineData(1, true)]
+    public void Npc_dodge_probability_is_read_from_content(double chance, bool expected)
+    {
+        var source = Registry(scatter: 0);
+        static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
+        var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
+            All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
+            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
+            combatRules: source.CombatRules! with { Npc = source.CombatRules.Npc! with { DodgeChance = chance } });
+        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId != Target ? o : o with
+        {
+            PositionX = 200,
+            PositionY = 0,
+            Ai = new(25, 8, 35),
+            Modules = o.Modules!.Select(m => m with { PowerState = m.ModuleId == NpcEngine ? "On" : "Off" }).ToArray()
+        });
+        using var engine = new SimulationEngine(registry); engine.LoadScenario(scenario);
+        engine.ReceiveCommand(Launch()); At(engine); At(engine, 1400);
+        Assert.Equal(expected, Assert.Single(engine.CaptureNpcDodgeThreats()).RollSucceeded);
+        Assert.Equal(1UL, engine.CaptureNpcDodgeRngState().Counter);
+    }
     private const string NpcEngine = "MOD-PIRATE-ENGINE-01";
     private static AuthoritativeSnapshot At(SimulationEngine engine, long time = 0) => engine.CaptureSnapshotForTests(time * 4, simulationTimeMs: time);
     private static SimulationEngine Battle(int skill = 20, ulong seed = 1, string enginePower = "On", string profile = "slow")
@@ -71,20 +95,20 @@ public sealed class PointCombatUS0007TK0003Tests
     public void Npc_evade_uses_shared_executor_without_exposing_return_control()
     {
         using var engine = Battle();
+        var before = At(engine, 799).Objects.Single(o => o.ObjectId == Target);
         var snapshot = At(engine, 800);
         var npc = snapshot.Objects.Single(o => o.ObjectId == Target);
         var episode = Assert.Single(engine.CaptureNpcDodgeThreats());
         Assert.True(episode.Evaded);
-        Assert.Equal(6, npc.SpeedKmS);
-        Assert.True(npc.Y > 0); // The NPC has already moved south of the eastbound trace.
-        Assert.Equal(180, npc.Direction, 8); // Continue away from the trace.
+        Assert.InRange(Math.Abs(npc.SpeedKmS - before.SpeedKmS), 0, .000401);
+        Assert.InRange(Math.Abs((npc.Direction - before.Direction + 540) % 360 - 180), 0, .00401);
         Assert.Null(npc.Evasion);
         Assert.Null(npc.ActiveEngineCommandType);
         Assert.Null(npc.HostileCombat);
         Assert.DoesNotContain("BaseMotion", JsonSerializer.Serialize(npc));
         var moved = At(engine, 900).Objects.Single(o => o.ObjectId == Target);
-        Assert.Equal(npc.X, moved.X, 8);
-        Assert.Equal(npc.Y + 6, moved.Y, 8);
+        Assert.InRange(Math.Abs(moved.SpeedKmS - npc.SpeedKmS), 0, .04001);
+        Assert.InRange(Math.Abs((moved.Direction - npc.Direction + 540) % 360 - 180), 0, .40001);
         Assert.Empty(snapshot.CommandResults);
     }
 

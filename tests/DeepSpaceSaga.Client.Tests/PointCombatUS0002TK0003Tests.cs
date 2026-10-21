@@ -34,6 +34,7 @@ public sealed class PointCombatUS0002TK0003Tests
         Assert.Equal((5000, 600, 20), (tetrarch.MaxSpeedMps, tetrarch.LinearInertiaMps2, tetrarch.AngularInertiaDegPerSec));
         Assert.Equal(5000, tetrarch.MassKg); Assert.Equal(150, tetrarch.StructurePointsMax); Assert.Equal(1, tetrarch.SlotSize);
         var strizh = Assert.Single(modules, m => m.TypeId == "module.engine.strizh");
+        Assert.Equal(5000, strizh.MassKg);
         Assert.Equal((8000, 1000, 24), (strizh.MaxSpeedMps, strizh.LinearInertiaMps2, strizh.AngularInertiaDegPerSec));
         Assert.Equal("engine", strizh.CombatRole);
         var basic = Assert.Single(modules, m => m.TypeId == "module.engine.basic");

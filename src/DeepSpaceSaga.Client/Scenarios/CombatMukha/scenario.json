@@ -23,7 +23,7 @@
         "positionX": 0,
         "positionY": 0,
         "speedMps": 3000,
-        "directionDegrees": 90,
+        "directionDegrees": 0,
         "movementType": "Linear",
         "isKnown": true,
         "hullLayout": {
@@ -274,9 +274,9 @@
         "persistenceType": "Permanent",
         "name": "Mukha 1",
         "positionX": -400,
-        "positionY": 750,
+        "positionY": -750,
         "speedMps": 6000,
-        "directionDegrees": 270,
+        "directionDegrees": 180,
         "movementType": "Linear",
         "isKnown": true,
         "hullLayout": {
@@ -348,7 +348,7 @@
         "ai": {
           "standoffKm": 25,
           "bandKm": 8,
-          "flankOffsetDeg": 35
+          "flankOffsetDeg": -35
         }
       },
       {
@@ -358,9 +358,9 @@
         "persistenceType": "Permanent",
         "name": "Mukha 2",
         "positionX": 0,
-        "positionY": 850,
+        "positionY": -850,
         "speedMps": 6000,
-        "directionDegrees": 270,
+        "directionDegrees": 180,
         "movementType": "Linear",
         "isKnown": true,
         "hullLayout": {
@@ -432,7 +432,7 @@
         "ai": {
           "standoffKm": 25,
           "bandKm": 8,
-          "flankOffsetDeg": 35
+          "flankOffsetDeg": 0
         }
       },
       {
@@ -442,9 +442,9 @@
         "persistenceType": "Permanent",
         "name": "Mukha 3",
         "positionX": 400,
-        "positionY": 750,
+        "positionY": -750,
         "speedMps": 6000,
-        "directionDegrees": 270,
+        "directionDegrees": 180,
         "movementType": "Linear",
         "isKnown": true,
         "hullLayout": {

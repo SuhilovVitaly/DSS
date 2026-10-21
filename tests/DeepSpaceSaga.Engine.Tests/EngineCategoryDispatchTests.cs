@@ -29,7 +29,7 @@ public sealed class EngineCategoryDispatchTests
         Assert.Equal(8000, strizh.MaxSpeedMps);
         Assert.Equal(1000, strizh.LinearInertiaMps2);
         Assert.Equal(24, strizh.AngularInertiaDegPerSec);
-        Assert.Equal(4000, strizh.MassKg);
+        Assert.Equal(5000, strizh.MassKg);
         Assert.Equal(40m, strizh.Maneuverability);
         Assert.Contains(ShipEngineCommandTypes.Accelerate, strizh.CommandTypeIds);
 

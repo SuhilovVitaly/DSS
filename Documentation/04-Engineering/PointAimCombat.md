@@ -10,7 +10,7 @@ Engine owns motion, launch validation, authoritative projectiles, scatter/dodge 
 
 `PlayerCommand` retains ObjectId/ModuleId/CommandId/ClientSequence and explicit world-coordinate fields TargetWorldX/TargetWorldY; ProfileId selects a launch profile. Commands are `torpedo.launch`, `defense.launch`, `torpedo.detonate` (own ProjectileId binding through command target), `maneuver.evade` (ThreatProjectileId/EvadeSide), `engine.turnHold` (TurnDirection/Active), `combat.acknowledgeResults`. CommandId retry is idempotent. World units are100m; range/speed profile values are km and km/s. No implicit selected target or aim clamp. Invalid/nonfinite/missing payload, range, profile, module readiness, ownership and session state produce authoritative reason codes; modern UI localizes them.
 
-Legacy `torpedo.fire/selfDestruct/setMode` and `defense.fire/enable/disable`, guided route solvers, contact chance, automatic interception/burst/overheat are retired. Reserved DTO/enum fields retain wire identity and reject invalid old payloads; their presence is not an executable compatibility mode.
+Legacy `torpedo.fire/selfDestruct/setMode` and `defense.fire/enable/disable`, guided route solvers, contact chance, automatic interception/burst/overheat are retired. Reserved identifiers and source-only compatibility members remain for historical consumers. Legacy motion/roll/automatic-defense members are excluded from the public JSON contract even when populated; they are not an executable compatibility mode.
 
 Sources: [PlayerCommand](../../src/DeepSpaceSaga.Contracts/PlayerCommand.cs), [point runtime](../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs), [Motion](../../src/DeepSpaceSaga.Motion/DeepSpaceSaga.Motion.csproj). No `CombatSim` code is executed or modified for EP12 production evidence.
 
@@ -38,9 +38,9 @@ Motion tick100ms bounds integration; analytical deadlines remain exact inside it
 
 x1 means one physical second per four real seconds. Calendar, motion and presentation remain separate; pause advances none of combat/AI/reload. Active combat permits only paused/x1 speeds, with higher-speed requests rejected. Encounter Idle/Active/Won/Lost is separate from SessionOutcome Running/Defeated. Won uses nonmodal statistics and explicit acknowledgement; Lost routes to DefeatScreen. Duration statistics store physical time; real x1 display multiplies by4.
 
-Evade selects an observed projectile and left/right relative to its flight vector. Engine executes full-speed perpendicular escape until closest-approach time+0.5physical s, then returns to base course. Held arrow rotation and Shift acceleration are explicit commands. Disabled/destroyed engines cannot maneuver.
+Evade selects an observed projectile and left/right relative to its flight vector. Engine steers toward perpendicular escape and full speed until closest-approach time+0.5 physical s, respecting captured angular-speed and acceleration limits. It then steers and decelerates back to the base course under the same limits. EvasionSteeringSnapshot records both the escape deadline and return completion; save/load and conditional Motion sampling share this continuation. Held arrow rotation and Shift acceleration are explicit commands. Disabled/destroyed engines cannot maneuver.
 
-Tetrarch dedicated engine: max5km/s, acceleration600m/s², turn20°/s, cruise3km/s. Strizh:8km/s,1000m/s²,24°/s, cruise6km/s. Shared basic stays6km/s,400m/s²,4°/s. Mukha orbit25±8km, flank−35/0/+35. Reaction=max(200,1400−30×pilotSkill)ms physical; dodge10% once per threat; launch chooses expected blast coverage>=0.3 and friendly clearanceR+1km. AI may read authoritative world; player forecast may not.
+Tetrarch dedicated engine: max5km/s, acceleration600m/s², turn20°/s, cruise3km/s. Strizh:8km/s,1000m/s²,24°/s, cruise6km/s. Shared basic stays6km/s,400m/s²,4°/s. Mukha orbit25±8km, flank−35/0/+35. Reaction=max(200,1400−30×pilotSkill)ms physical; dodge chance from combat-rules.json npc.dodgeChance (default0.1), once per threat; launch chooses expected blast coverage>=0.3 and friendly clearanceR+1km. AI may read authoritative world; player forecast may not.
 
 ## Privacy and presentation
 
@@ -54,13 +54,15 @@ Player module tiles show armor/structure/disabled/destroyed/critical state and N
 
 ## Scenarios and save contract
 
-CombatMukha is the canonical Tetrarch vs3Mukha case: player51t, each Mukha6t, crew skills20, exact canonical geometry. CombatMukhaSingle is the same scenario retaining SPC-MUKHA-01 only. CombatShmel is removed from source/discovery/deployment. PlayerShipOnly retains generated-map geometry/crew and adopts current point launcher/Tetrarch engine with AI25/8/35. Default500 normalized noncombat content hash remains unchanged (only the retired autoDefenseEnabled flag was removed); production deployment/discovery is tested separately from source presence.
+CombatMukha is the canonical Tetrarch vs3Mukha case: player51t, each Mukha7t, crew skills20. Mathematical input (x,y,angle) is converted to world (10x,-10y,(90-angle) mod360): player course0�, enemies at(-400,-750)/(0,-850)/(400,-750), course180�, with flank offsets-35/0/+35. Strizh mass is5000kg. CombatMukhaSingle is the same scenario retaining SPC-MUKHA-01 only. CombatShmel is removed from source/discovery/deployment. PlayerShipOnly retains generated-map geometry/crew and adopts current point launcher/Tetrarch engine with AI25/8/35. Default500 normalized noncombat content hash remains unchanged (only the retired autoDefenseEnabled flag was removed); production deployment/discovery is tested separately from source presence.
 
 SaveFormatVersion18 writes versioned point flights, captured parameters, scatter/dodge RNG/counters, launcher reload/identities, evasion/AI/encounter/statistics and fractional clock remainder. Real Save17 files are rejected atomically without migration or current-world/file replacement; NewGame scenario version0 is a separate input. Full validation precedes installation. Restored reports keep delivery baseline without replaying old UI history. Defeated sessions cannot overwrite a save slot. [Save format source](../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs).
 
+Review corrections exclude the balance policy and its rerun. The balance measurements below are historical, before the corrected geometry and bounded evasion; they do not establish current balance acceptance. Generated src/graphify-out artifacts stay local and ignored by Git.
+
 ## Reproduction and measured gates
 
-Use pinned .NET SDK10.0.400, targetnet8.0. Build `dotnet build DeepSpaceSaga.sln --no-restore`. Focused correctness tests and each corpus process are hard-capped at300000ms with process-tree termination. Whole-suite Engine discovery is partitioned by exact test identity, not display-name sets (four collisions exist).
+Use .NET SDK8.0.100 or a later installed stable SDK (global.json latestMajor roll-forward), targetnet8.0. Build `dotnet build DeepSpaceSaga.sln --no-restore`. Focused correctness tests and each corpus process are hard-capped at300000ms with process-tree termination. Whole-suite Engine discovery is partitioned by exact test identity, not display-name sets (four collisions exist).
 
 | Gate | Evidence/result |
 |---|---|

@@ -18,7 +18,7 @@ public sealed class CombatEventTests
     }
 
     [Fact]
-    public void Journal_roll_breakdown_roundtrip()
+    public void Journal_retains_damage_but_omits_retired_roll_fields()
     {
         var fact = new CombatJournalEntry(4, 120.25, CombatEventType.ModuleHit,
             "actor", "target", "torpedo-1", 1, 2,
@@ -28,8 +28,8 @@ public sealed class CombatEventTests
             StructureAfter: 60, DestroyReason: "critical:bridge-1");
 
         var copy = JsonSerializer.Deserialize<CombatJournalEntry>(JsonSerializer.Serialize(fact))!;
-        Assert.Equal(fact, copy);
-        Assert.Equal((60m, 60m, 317, "bridge-1"),
+        Assert.Equal(fact with { ChanceTenths = null, Roll = null, Accuracy = null, TargetManeuverability = null, Attack = null, Defense = null }, copy);
+        Assert.Equal(((decimal?)null, (decimal?)null, (int?)null, "bridge-1"),
             (copy.Attack, copy.Defense, copy.Roll, copy.HitModuleId));
         Assert.Equal("critical:bridge-1", copy.DestroyReason);
         var previous = JsonSerializer.Deserialize<CombatJournalEntry>(

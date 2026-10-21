@@ -118,6 +118,17 @@ public sealed class PointCombatUS0012TK0001Tests
         RenderObjectType: SpaceObjectType.Missile, ObservedProjectile: new(ProjectileKind.Torpedo, x, 0, -1, 0, 6, "slow", 9));
 
     [Fact]
+    public void Physical_preview_does_not_assume_instant_full_speed_or_turn()
+    {
+        var threat = GameSessionScreen.AssessPointThreats(Player, [Foreign("incoming", 200)])[0];
+        var preview = GameSessionScreen.PreviewEvade(Player, threat, EvadeSide.Left, .25, new(6, .4, 4));
+        Assert.False(preview.CanEscape);
+        Assert.NotNull(preview.Path);
+        Assert.True(double.IsPositiveInfinity(preview.ExitPhysicalSeconds));
+        Assert.Equal(17, preview.Path.Count);
+    }
+
+    [Fact]
     public void Default_threat_is_earliest_observed_deadline_and_exit_preview_is_bounded()
     {
         var threats = GameSessionScreen.AssessPointThreats(Player, [Foreign("later", 300), Foreign("first", 200)]);

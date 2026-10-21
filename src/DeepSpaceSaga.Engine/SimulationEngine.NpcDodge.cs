@@ -66,7 +66,11 @@ public sealed partial class SimulationEngine
         if (owner is null || projectile is null || engine is null || owner.IsDocked ||
             !CanExecuteEngineCommand(engine, _registry.ModuleTypes.GetDefinition(engine.ModuleTypeIndex), episode.DueAt) ||
             !NpcRayThreat(owner, projectile, episode.DueAt)) return;
-        bool success = _npcDodgeRng.NextBelow(10) == 0;
+        ulong numerator = (ulong)Math.Round(_registry.CombatRules!.Npc!.DodgeChance * 1_000_000), denominator = 1_000_000;
+        ulong a = numerator, b = denominator;
+        while (b != 0) { ulong remainder = a % b; a = b; b = remainder; }
+        // Reduce the fraction: the default 0.1 preserves the existing seeded 1-in-10 stream.
+        bool success = _npcDodgeRng.NextBelow(denominator / a) < numerator / a;
         _npcDodgeThreats[key] = episode with { Evaluated = true, RollSucceeded = success };
         if (!success) return;
         var ship = RuntimeMotion.At(owner, episode.DueAt); var shot = RuntimeMotion.At(projectile, episode.DueAt);

@@ -25,7 +25,8 @@
   "npc": {
     "reactionBaseMs": 1400,
     "reactionPerSkillMs": 30,
-    "reactionMinMs": 200
+    "reactionMinMs": 200,
+    "dodgeChance": 0.1
   },
   "combatStartRangeKm": 100
 }

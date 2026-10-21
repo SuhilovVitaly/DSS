@@ -98,7 +98,9 @@ public sealed partial class SimulationEngine
             {
                 var p = CurrentManeuverForecast.Sample(obj.InitialMotion, Math.Max(0, t - evasion.SampleMotionTimeMs));
                 return (p.X, p.Y);
-            }, Math.Max(obj.InitialMotion.SpeedKmS, evasion.BaseMotion.SpeedKmS) / 100);
+            }, Math.Max(Math.Max(obj.InitialMotion.SpeedKmS, evasion.BaseMotion.SpeedKmS), evasion.Steering?.MaxSpeedKmS ?? 0) / 100,
+                evasion.Steering is { } steering ? steering.AccelerationKmS2 / 100_000 + steering.MaxSpeedKmS / 100 *
+                    steering.TurnRateDegPerSec * Math.PI / 180_000 : 0);
         if (obj.InitialMotion.OwnProjectile is { } point)
             return new(t =>
             {

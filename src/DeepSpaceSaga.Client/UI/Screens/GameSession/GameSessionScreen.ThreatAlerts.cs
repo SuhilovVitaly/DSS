@@ -45,7 +45,8 @@ public sealed partial class GameSessionScreen
         if (!_pointAlertsEnabled || snapshot is null || FindPlayerShip(_renderStates) is not { } player) return;
         double now = timestamp * (1000d / Stopwatch.Frequency);
         var settings = CombatSettings.ThreatAlerts;
-        var threats = AssessPointThreats(player.Pose.ToSnapshot(), _renderStates.Select(s => s.Pose.ToSnapshot()));
+        var threats = AssessPointThreats(player.Pose.ToSnapshot(), _renderStates
+            .Where(s => !s.Source.IsDestroyed && s.Source.ObservedProjectile is { Kind: ProjectileKind.Torpedo }).Select(s => s.Pose.ToSnapshot()));
         double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
         if (multiplier <= 0) multiplier = .25;
         foreach (var threat in threats) ObservedThreatVisuals[threat.Id] = ClassifyThreat(threat, CombatSettings.PointCombat, settings);

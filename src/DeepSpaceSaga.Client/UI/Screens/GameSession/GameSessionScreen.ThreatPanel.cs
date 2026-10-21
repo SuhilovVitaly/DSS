@@ -24,7 +24,8 @@ public sealed partial class GameSessionScreen
             snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
         { _threatPanel.Clear(); return; }
         double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
-        var predicted = PredictPointInterceptions(_renderStates.Select(s => s.Pose.ToSnapshot()).ToArray(), player.Source.ObjectId, PointAimTime);
+        var predicted = PredictPointInterceptions(_renderStates.Where(s => s.Source.OwnProjectile is not null || s.Source.ObservedProjectile is not null)
+            .Select(s => s.Pose.ToSnapshot()).ToArray(), player.Source.ObjectId, PointAimTime);
         bool canCounter = _handle is not null && !snapshot.InstalledModules.IsDefaultOrEmpty && snapshot.InstalledModules.Any(m => !m.IsDestroyed && m.Defense?.Profiles is { IsDefaultOrEmpty: false });
         var rows = MakeThreatRows(PointThreats, predicted, CurrentThreatId, multiplier > 0 ? multiplier : .25,
             canCounter, _handle is not null && ManeuverEngineReady(ManeuverEngine()));

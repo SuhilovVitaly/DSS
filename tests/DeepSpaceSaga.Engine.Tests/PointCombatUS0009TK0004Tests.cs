@@ -73,13 +73,13 @@ public sealed class PointCombatUS0009TK0004Tests
         var save = Save(engine, 457);
         using var restored = new SimulationEngine(CounterRegistry());
         restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), true);
-        foreach (long time in new long[] { 457, 913, 1801, 6000, 10600, 12000 })
+        foreach (long time in new long[] { 457, 913, 1801, 6000, 10600, 12000, 25000 })
         {
             Assert.Equal(JsonSerializer.Serialize(At(engine, time).Objects), JsonSerializer.Serialize(At(restored, time).Objects));
             Assert.Equal(ScenarioLoader.Serialize(Save(engine, time)), ScenarioLoader.Serialize(Save(restored, time)));
         }
         Assert.Equal(1, restored.CaptureEvasionEpisodeCount());
-        Assert.Null(At(restored, 12000).Objects.Single(o => o.ObjectId == Player).Evasion);
+        Assert.Null(At(restored, 25000).Objects.Single(o => o.ObjectId == Player).Evasion);
     }
 
     [Theory]
@@ -230,12 +230,12 @@ public sealed class PointCombatUS0009TK0004Tests
         engine.ReceiveCommand(new("evade", 1, Player, "MOD-PLAYER-ENGINE-01", ManeuverCommandTypes.Evade, ThreatProjectileId: threat, EvadeSide: EvadeSide.Left)); At(engine);
         var save = Save(engine, 1113); Assert.NotNull(Assert.Single(save.GameState.PointCombatState!.Evasions).OrbitCycle);
         using var restored = new SimulationEngine(CounterRegistry()); restored.LoadScenario(save, true);
-        foreach (long time in new long[] { 1113, 5000, 12000, 13001 })
+        foreach (long time in new long[] { 1113, 5000, 12000, 13001, 25000 })
         {
             Assert.Equal(JsonSerializer.Serialize(At(engine, time).Objects), JsonSerializer.Serialize(At(restored, time).Objects));
             Assert.Equal(ScenarioLoader.Serialize(Save(engine, time)), ScenarioLoader.Serialize(Save(restored, time)));
         }
-        Assert.Equal("orbit", Save(restored, 13001).GameState.SpaceObjects.Single(o => o.ObjectId == Player)
+        Assert.Equal("orbit", Save(restored, 25000).GameState.SpaceObjects.Single(o => o.ObjectId == Player)
             .Modules!.Single(m => m.ModuleId == "MOD-PLAYER-ENGINE-01").ActiveCycle!.CommandId);
     }
 

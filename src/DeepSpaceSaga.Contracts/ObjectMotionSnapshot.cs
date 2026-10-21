@@ -128,8 +128,8 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     HullCombatSnapshot? HullCombat = null,
     /// <summary>Confirmed flight state for a torpedo using <see cref="SpaceObjectType.Missile"/>.</summary>
-    TorpedoSnapshot? Torpedo = null,
-    CountermeasureSnapshot? Countermeasure = null,
+    [property: JsonIgnore] TorpedoSnapshot? Torpedo = null,
+    [property: JsonIgnore] CountermeasureSnapshot? Countermeasure = null,
     DefenseSnapshot? Defense = null,
     [property: JsonPropertyName("orbit")] OrbitalElements? Orbit = null,
     [property: JsonPropertyName("orbitSampleSimulationTimeMs")] long? OrbitSampleSimulationTimeMs = null,

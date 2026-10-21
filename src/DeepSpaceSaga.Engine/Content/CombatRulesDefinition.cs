@@ -28,7 +28,8 @@ internal sealed record CombatScatterRules(
 internal sealed record CombatNpcRules(
     [property: JsonPropertyName("reactionBaseMs"), JsonRequired] long ReactionBaseMs,
     [property: JsonPropertyName("reactionPerSkillMs"), JsonRequired] long ReactionPerSkillMs,
-    [property: JsonPropertyName("reactionMinMs"), JsonRequired] long ReactionMinMs);
+    [property: JsonPropertyName("reactionMinMs"), JsonRequired] long ReactionMinMs,
+    [property: JsonPropertyName("dodgeChance")] double DodgeChance = 0.1);
 
 internal sealed record CombatChanceRules(
     [property: JsonPropertyName("base"), JsonRequired] decimal Base,
@@ -99,6 +100,9 @@ internal static class CombatContentValidation
             throw new ContentException("combatRules.npc.reactionPerSkillMs must be nonnegative and safe for skill 30.");
         if (rules.Npc.ReactionMinMs < 0 || rules.Npc.ReactionMinMs > rules.Npc.ReactionBaseMs)
             throw new ContentException("combatRules.npc.reactionMinMs must be between zero and reactionBaseMs.");
+        if (!double.IsFinite(rules.Npc.DodgeChance) || rules.Npc.DodgeChance is < 0 or > 1 ||
+            Math.Abs(rules.Npc.DodgeChance * 1_000_000 - Math.Round(rules.Npc.DodgeChance * 1_000_000)) > 1e-8)
+            throw new ContentException("combatRules.npc.dodgeChance must be in [0,1] with at most six decimal places.");
         if (rules.CombatStartRangeKm is not > 0 || !double.IsFinite(rules.CombatStartRangeKm.Value))
             throw new ContentException("combatRules.combatStartRangeKm must be positive and finite.");
     }

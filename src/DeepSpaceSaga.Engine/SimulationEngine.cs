@@ -1005,7 +1005,9 @@ public sealed partial class SimulationEngine : IDisposable
                 DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 IsDestroyed: module.Destroyed,
                 CombatRole: moduleType.CombatRole,
-                IsCritical: moduleType.CombatRole is { } role && _registry.CombatRules?.ShipDestruction.CriticalRoles.Contains(role) == true));
+                IsCritical: moduleType.CombatRole is { } role && _registry.CombatRules?.ShipDestruction.CriticalRoles.Contains(role) == true,
+                EngineMotion: IsEngineCategory(moduleType) ? new(moduleType.MaxSpeedMps!.Value / 1000.0,
+                    moduleType.LinearInertiaMps2!.Value / 1000.0, moduleType.AngularInertiaDegPerSec!.Value) : null));
         }
 
         return builder.MoveToImmutable();

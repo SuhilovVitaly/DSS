@@ -58,7 +58,11 @@ public sealed partial class SimulationEngine
             return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidTime);
         var basis = previous?.Motion.BaseMotion ?? CaptureEvasionBase(owner, engine, pose, time);
         var orbit = previous?.OrbitCycle ?? (engine.ActiveCycle?.CommandType == ShipEngineCommandTypes.Orbit ? engine.ActiveCycle : null);
-        var schedule = new EvasionSnapshot(time, until, threatId!, side.Value, basis);
+        double direction = (observed.Direction + (side == EvadeSide.Left ? -90 : 90) + 360) % 360;
+        var schedule = EvasionMotionMath.Plan(pose, basis, time, until, threatId!, side.Value, direction,
+            type.MaxSpeedMps!.Value / 1000.0, type.AngularInertiaDegPerSec!.Value, type.LinearInertiaMps2!.Value / 1000.0);
+        if (!double.IsFinite(EvasionMotionMath.CompletionTime(schedule)) || EvasionMotionMath.CompletionTime(schedule) >= long.MaxValue)
+            return CommandStartOutcome.Rejected(CommandReasonCodes.InvalidTime);
         var modules = owner.Modules;
         for (int i = 0; i < modules.Length; i++)
         {
@@ -69,11 +73,8 @@ public sealed partial class SimulationEngine
             if (cycle != orbit) RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, time);
             modules = modules.SetItem(i, module with { ActiveCycle = null });
         }
-        double direction = (observed.Direction + (side == EvadeSide.Left ? -90 : 90) + 360) % 360;
         var moving = ClearEvasionControls(pose) with
         {
-            Direction = direction,
-            SpeedKmS = type.MaxSpeedMps!.Value / 1000.0,
             MaxSpeedKmS = type.MaxSpeedMps.Value / 1000.0,
             Evasion = schedule
         };
@@ -134,14 +135,14 @@ public sealed partial class SimulationEngine
         NavigationTargetObjectId = null
     };
 
-    private long NextEvasionBoundary() => _evasions.Values.Select(e => (long)Math.Ceiling(e.Motion.EndsAtMotionTimeMs))
+    private long NextEvasionBoundary() => _evasions.Values.Select(e => (long)Math.Ceiling(EvasionMotionMath.CompletionTime(e.Motion)))
         .DefaultIfEmpty(long.MaxValue).Min();
 
     private void CompleteEvasions(long time)
     {
         foreach (var (id, state) in _evasions.OrderBy(p => p.Key, StringComparer.Ordinal).ToArray())
         {
-            long due = (long)Math.Ceiling(state.Motion.EndsAtMotionTimeMs);
+            long due = (long)Math.Ceiling(EvasionMotionMath.CompletionTime(state.Motion));
             if (due > time) continue;
             int index = _objects.FindIndex(o => o.InitialMotion.ObjectId == id);
             if (index < 0) { _evasions.Remove(id); continue; }

@@ -42,7 +42,7 @@ public sealed class CombatScenariosContentTests
         Assert.Equal("Speed0", scene.GameState.CurrentSpeed);
         var player = scene.GameState.SpaceObjects.Single(o => o.ObjectId == scene.GameState.PlayerShipObjectId);
         Assert.Equal("ship.tetrarch", player.ShipClassId);
-        Assert.Equal((0d, 0d, 3000d, 90d), (player.PositionX, player.PositionY, player.SpeedMps, player.DirectionDegrees));
+        Assert.Equal((0d, 0d, 3000d, 0d), (player.PositionX, player.PositionY, player.SpeedMps, player.DirectionDegrees));
         Assert.Equal(9, player.Modules!.Count);
         Assert.All(player.Modules, m => Assert.Equal("light", m.ArmorClass));
         Assert.Equal(4, player.Crew!.Count);
@@ -54,7 +54,7 @@ public sealed class CombatScenariosContentTests
             registry.ModuleTypes.GetIndex(m.ModuleTypeId)).CabinesCount ?? 0));
         var hostiles = scene.GameState.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.NpcShip).ToArray();
         Assert.Equal(3, hostiles.Length);
-        var expected = new (double X, double Y)[] { (-400, 750), (0, 850), (400, 750) };
+        var expected = new (double X, double Y)[] { (-400, -750), (0, -850), (400, -750) };
         for (int i = 0; i < hostiles.Length; i++)
         {
             var ship = hostiles[i];
@@ -62,12 +62,12 @@ public sealed class CombatScenariosContentTests
             Assert.Equal(PlayerRelation.Enemy, ship.RelationToPlayer);
             Assert.Equal(expected[i].X, ship.PositionX);
             Assert.Equal(6000, ship.SpeedMps);
-            Assert.Equal(270, ship.DirectionDegrees);
+            Assert.Equal(180, ship.DirectionDegrees);
             var launcher = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.torpedo.launcher.light"));
             Assert.Equal(expected[i].Y, ship.PositionY);
             Assert.True(Math.Sqrt(ship.PositionX * ship.PositionX + ship.PositionY * ship.PositionY) / 10 <= 100);
             Assert.Equal(70, launcher.RangeKm); Assert.Equal(7250, launcher.ReloadMs);
-            Assert.Equal(new AttackAiData(25, 8, 35), ship.Ai);
+            Assert.Equal(new AttackAiData(25, 8, (i - 1) * 35), ship.Ai);
             Assert.Equal(new[] { "module.engine.strizh", "module.torpedo.launcher.light" },
                 ship.Modules!.Select(m => m.ModuleTypeId));
             Assert.All(ship.Modules!, m => Assert.Equal("none", m.ArmorClass));

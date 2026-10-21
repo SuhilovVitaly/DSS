@@ -27,7 +27,7 @@ public sealed record InterceptionRatingBreakdown(
 
 /// <summary>Immutable defense status; ReloadDueMotionTimeMs is an absolute physical deadline.</summary>
 public sealed record DefenseSnapshot(
-    bool AutoEnabled,
+    [property: JsonIgnore] bool AutoEnabled,
     WeaponOperatorSnapshot? Operator,
     DefenseState State,
     string? ActiveProjectileId = null,

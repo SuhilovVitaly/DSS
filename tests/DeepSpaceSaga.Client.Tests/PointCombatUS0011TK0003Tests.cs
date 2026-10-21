@@ -162,5 +162,6 @@ public sealed class PointCombatUS0011TK0003Tests
         f.Screen.OnMouseDown(pixel.X, pixel.Y);
         Assert.Equal(before, f.Engine.ReceivedCommandCount);
         Assert.Null(f.Screen.LastPointCommandId);
+        Assert.Equal(GameSessionScreen.CombatText("Aim.Unreachable", "Unreachable"), f.Screen.PointAimFeedback);
     }
 }

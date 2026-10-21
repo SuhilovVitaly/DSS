@@ -87,6 +87,13 @@ internal static class PointCombatContinuationValidation
                 owner.Modules?.Any(m => m.ModuleId == e.EngineModuleId && m.ActiveCycle is null) == true,
                 "missing evasion actor/engine/anchor.");
             var anchor = e.IntegrationAnchor;
+            if (e.Motion.Steering is { } steering)
+            {
+                var expected = EvasionMotionMath.Plan(anchor, e.Motion.BaseMotion, e.Motion.SampleMotionTimeMs,
+                    e.Motion.EndsAtMotionTimeMs, e.Motion.ThreatProjectileId, e.Motion.Side, steering.Direction,
+                    steering.MaxSpeedKmS, steering.TurnRateDegPerSec, steering.AccelerationKmS2);
+                Require(Near(steering.ReturnsAtMotionTimeMs, expected.Steering!.ReturnsAtMotionTimeMs), "evasion return deadline mismatch.");
+            }
             Require(anchor.Torpedo is null && anchor.Countermeasure is null && anchor.TurnHoldRateDegPerSec is null && anchor.HostileCombat is null &&
                 anchor.Orbit is null && anchor.EngineManeuver is null && anchor.ActiveEngineCommandType is null,
                 "evasion anchor contains incompatible controls.");

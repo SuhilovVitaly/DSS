@@ -14,7 +14,8 @@ public sealed partial class GameSessionScreen
         internal double ClosestKm => double.Hypot(Assessment.ClosestOffsetXKm, Assessment.ClosestOffsetYKm);
     }
     internal sealed record EvadeInputPreview(string ThreatId, EvadeSide Side, double ExitPhysicalSeconds,
-        double ExitRealSeconds, bool CanEscape, double DirectionX, double DirectionY, double MaxSpeedKmS);
+        double ExitRealSeconds, bool CanEscape, double DirectionX, double DirectionY, double MaxSpeedKmS,
+        IReadOnlyList<FutureTrajectoryPoint>? Path = null);
     internal IReadOnlyList<PointThreat> PointThreats { get; private set; } = [];
     internal string? CurrentThreatId { get; private set; }
     internal EvadeInputPreview? CurrentEvadePreview { get; private set; }
@@ -43,7 +44,8 @@ public sealed partial class GameSessionScreen
             .ThenBy(t => t.Id, StringComparer.Ordinal).ToArray();
     }
 
-    internal static EvadeInputPreview PreviewEvade(ObjectMotionSnapshot player, PointThreat threat, EvadeSide side, double multiplier)
+    internal static EvadeInputPreview PreviewEvade(ObjectMotionSnapshot player, PointThreat threat, EvadeSide side, double multiplier,
+        EngineMotionLimitsSnapshot? limits = null)
     {
         var flight = threat.Motion.ObservedProjectile!;
         var direction = Unit(flight);
@@ -52,9 +54,29 @@ public sealed partial class GameSessionScreen
         double offset = ((player.X - threat.Motion.X) * nx + (player.Y - threat.Motion.Y) * ny) / 10;
         double speed = player.MaxSpeedKmS ?? 0;
         double seconds = speed > 0 ? Math.Max(0, (flight.BlastRadiusKm + .5 - offset) / speed) : double.PositiveInfinity;
+        List<FutureTrajectoryPoint>? path = null;
+        if (limits is not null && speed > 0)
+        {
+            double heading = (Math.Atan2(nx, -ny) * 180 / Math.PI + 360) % 360;
+            double end = threat.Assessment.ClosestAfterSeconds + .5;
+            ObjectMotionSnapshot Sample(double t) => EvasionMotionMath.Steer(player, heading, limits.MaxSpeedKmS,
+                limits.TurnRateDegPerSec, limits.AccelerationKmS2, t * 1000);
+            bool Outside(double t) { var p = Sample(t); return ((p.X - threat.Motion.X) * nx + (p.Y - threat.Motion.Y) * ny) / 10 >= flight.BlastRadiusKm + .5; }
+            if (Outside(0)) seconds = 0;
+            else if (!Outside(end)) seconds = double.PositiveInfinity;
+            else
+            {
+                double lo = 0, hi = end;
+                for (int i = 0; i < 40; i++) { double mid = (lo + hi) / 2; if (Outside(mid)) hi = mid; else lo = mid; }
+                seconds = hi;
+            }
+            path = new(17);
+            double duration = double.IsFinite(seconds) ? seconds : end;
+            for (int i = 0; i <= 16; i++) { var p = Sample(duration * i / 16); path.Add(new(p.X, p.Y)); }
+        }
         bool safe = double.IsFinite(seconds) && seconds <= threat.Assessment.ClosestAfterSeconds + .5 && (!threat.Assessment.IsThreat ||
             threat.Assessment.EntryAfterSeconds is { } deadline && seconds <= deadline);
-        return new(threat.Id, side, seconds, seconds / multiplier, safe, nx, ny, speed);
+        return new(threat.Id, side, seconds, seconds / multiplier, safe, nx, ny, speed, path);
     }
 
     private InstalledModuleSnapshot? ManeuverEngine() => _buffer.Presented?.Snapshot.InstalledModules is { IsDefaultOrEmpty: false } modules
@@ -83,7 +105,8 @@ public sealed partial class GameSessionScreen
         if (_buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || FindPlayerShip(_renderStates) is not { } player ||
             snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
         { CancelManeuverInput(); PointThreats = []; return; }
-        PointThreats = AssessPointThreats(player.Pose.ToSnapshot(), _renderStates.Select(s => s.Pose.ToSnapshot()));
+        PointThreats = AssessPointThreats(player.Pose.ToSnapshot(), _renderStates
+            .Where(s => !s.Source.IsDestroyed && s.Source.ObservedProjectile is { Kind: ProjectileKind.Torpedo }).Select(s => s.Pose.ToSnapshot()));
         if (_heldEvade is { } held && !PointThreats.Any(t => t.Id == held.ThreatId)) _heldEvade = null;
         if (CurrentThreatId is null || !PointThreats.Any(t => t.Id == CurrentThreatId)) CurrentThreatId = PointThreats.FirstOrDefault()?.Id;
         CurrentEvadePreview = null;
@@ -92,7 +115,7 @@ public sealed partial class GameSessionScreen
             double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
             var pose = player.Pose.ToSnapshot();
             if (!ManeuverEngineReady(ManeuverEngine())) pose = pose with { MaxSpeedKmS = null };
-            CurrentEvadePreview = PreviewEvade(pose, threat, preview.Side, multiplier > 0 ? multiplier : .25);
+            CurrentEvadePreview = PreviewEvade(pose, threat, preview.Side, multiplier > 0 ? multiplier : .25, ManeuverEngine()?.EngineMotion);
         }
     }
 
@@ -224,7 +247,12 @@ public sealed partial class GameSessionScreen
             string label = preview.CanEscape ? CombatText("Maneuver.ExitIn", "Exit in") + " " + preview.ExitRealSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " " + CombatText("Seconds", "s")
                 : CombatText("Maneuver.TooLate", "Cannot escape in time");
             line.Color = preview.CanEscape ? styles.Safe : styles.Danger;
-            if (double.IsFinite(preview.ExitPhysicalSeconds))
+            if (preview.Path is { } points)
+            {
+                using var path = new SKPath();
+                CombatTrajectoryProjector.BuildPath(path, points, _camera, _viewportW, _viewportH); canvas.DrawPath(path, line);
+            }
+            else if (double.IsFinite(preview.ExitPhysicalSeconds))
             {
                 double distance = preview.MaxSpeedKmS * 10 * preview.ExitPhysicalSeconds;
                 var end = _camera.WorldToScreen(player.Pose.X + preview.DirectionX * distance, player.Pose.Y + preview.DirectionY * distance, _viewportW, _viewportH);

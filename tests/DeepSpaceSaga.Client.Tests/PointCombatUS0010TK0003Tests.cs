@@ -66,6 +66,11 @@ public sealed class PointCombatUS0010TK0003Tests
             screen.OnMouseDown(row.CaptionRect.MidX * scale, row.CaptionRect.MidY * scale); Render();
         }
         var ids = screen.WeaponRangeRings.Select(r => r.ModuleId).ToArray();
+        var hovered = screen.CommandsPanel.CommandPanelRows.Single(r => r.RangeModuleId == ids[0]);
+        double radius = screen.WeaponRangeRings.Single(r => r.ModuleId == ids[0]).RadiusPx;
+        screen.OnMouseMove(hovered.CaptionRect.MidX * scale, hovered.CaptionRect.MidY * scale); Render();
+        Assert.True(screen.WeaponRangeRings.Single(r => r.ModuleId == ids[0]).Highlighted);
+        Assert.Equal(radius, screen.WeaponRangeRings.Single(r => r.ModuleId == ids[0]).RadiusPx);
         foreach (string id in ids)
         {
             var row = Assert.Single(screen.CommandsPanel.CommandPanelRows, r => r.RangeModuleId == id);

@@ -50,11 +50,11 @@ public sealed class PointCombatUS0019TK0001Tests
         var mukha = Assert.Single(single.GameState.SpaceObjects, o => o.ObjectType == SpaceObjectType.NpcShip);
         Assert.Equal("SPC-MUKHA-01", mukha.ObjectId);
         Assert.Equal(new[] { "module.engine.strizh", "module.torpedo.launcher.light" }, mukha.Modules!.Select(m => m.ModuleTypeId));
-        Assert.Equal((-400d, 750d, 6000d, 270d), (mukha.PositionX, mukha.PositionY, mukha.SpeedMps, mukha.DirectionDegrees));
-        Assert.Equal(new AttackAiData(25, 8, 35), mukha.Ai);
+        Assert.Equal((-400d, -750d, 6000d, 180d), (mukha.PositionX, mukha.PositionY, mukha.SpeedMps, mukha.DirectionDegrees));
+        Assert.Equal(new AttackAiData(25, 8, -35), mukha.Ai);
         var singlePlayer = single.GameState.SpaceObjects.Single(o => o.ObjectId == single.GameState.PlayerShipObjectId);
         Assert.Equal(9, singlePlayer.Modules!.Count);
-        Assert.Equal((0d, 0d, 3000d, 90d), (singlePlayer.PositionX, singlePlayer.PositionY, singlePlayer.SpeedMps, singlePlayer.DirectionDegrees));
+        Assert.Equal((0d, 0d, 3000d, 0d), (singlePlayer.PositionX, singlePlayer.PositionY, singlePlayer.SpeedMps, singlePlayer.DirectionDegrees));
 
         var pirate = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
         var player = pirate.GameState.SpaceObjects.Single(o => o.ObjectType == SpaceObjectType.PlayerShip);
