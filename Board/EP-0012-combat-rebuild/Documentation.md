@@ -8,7 +8,7 @@ revision: 4
 baseline: "c894925d187c90a658d1e25958feed69a45d7e41"
 validation_status: "base-implemented-bugfixes-planned-acceptance-open"
 story_count: 20
-ticket_count: 79
+ticket_count: 80
 ---
 
 # EP-0012 — Канонический контракт и grounding

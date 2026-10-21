@@ -7,7 +7,7 @@ source_request: "Создать эпик, истории и тикеты по п
 revision: 4
 depends_on_epic: "EP-0011-short-fixes"
 story_count: 20
-ticket_count: 79
+ticket_count: 80
 validation_status: "base-implemented-bugfixes-planned-acceptance-open"
 ---
 

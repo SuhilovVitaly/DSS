@@ -129,3 +129,7 @@ Following the two preserved failed activation probes and completed Save18 prereq
 Добавлены шаги 74–79, по одному на US20-AC1–4. Всего 79 тикетов; новые шесть draft/NOT STARTED. Итог 73/73 выше относится к исходному набору. US15 была завершающей историей исходного исполнения; новая история багов добавлена по прямому запросу.
 
 Дополнение: шаги 78/79 — перезарядка и скорости боя, US20-AC5/6. Это два сквозных feature tickets с конечными allowlists и matching tests каждого слоя; новые prerequisite tickets не добавлены.
+
+## US20 execution
+
+Steps 74–79 execute sequentially with separate commit and immediate push. Step 80: US15-TK-0006 final project documentation. Total: 20 stories, 80 tickets. Prior planning-only statements are historical.
