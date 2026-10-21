@@ -48,7 +48,10 @@ public static class CurrentManeuverForecast
         return ms => { var p = Sample(state, ms); return new(p.X, p.Y, p.SpeedKmS, p.Direction); };
     }
 
-    public static bool HasRequiredData(ObjectMotionSnapshot state) =>
+    private static bool HasUnscheduledStep(ObjectMotionSnapshot state) =>
+        state.EngineManeuver?.CompletesOnMotionUpdate == true || state.Evasion?.BaseMotion.EngineManeuver?.CompletesOnMotionUpdate == true;
+
+    public static bool HasRequiredData(ObjectMotionSnapshot state) => !HasUnscheduledStep(state) && (
         state.TurnHoldRateDegPerSec is not null || state.Evasion is not null ||
         state.OwnProjectile is not null || state.ObservedProjectile is not null ||
         state.HostileCombat is { Segment.AccelerationKmS2: 0 } ||
@@ -56,7 +59,7 @@ public static class CurrentManeuverForecast
         state.HostileCombat is null && (ValidEngineManeuver(state) || state.ActiveEngineCommandType is not
             (ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake or
              ShipEngineCommandTypes.SpeedSynchronization or ShipEngineCommandTypes.DirectionSynchronization or
-             ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnRightStep));
+             ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnRightStep)));
 
     internal static bool ValidEngineManeuver(ObjectMotionSnapshot state) => state.EngineManeuver is { } m &&
         m.CommandType == state.ActiveEngineCommandType && double.IsFinite(m.CycleRemainingMs) &&
@@ -97,6 +100,13 @@ public static class CurrentManeuverForecast
             if (!double.IsFinite(x) || !double.IsFinite(y)) throw new ArgumentOutOfRangeException(nameof(elapsedMs));
             return state with { X = x, Y = y, ObservedProjectile = observed with { X = x, Y = y } };
         }
+        if (state.EngineManeuver is { CompletesOnMotionUpdate: true } pending && ValidEngineManeuver(state))
+        {
+            // A forecast sample is not an authoritative motion update. Continue
+            // the confirmed course without inventing the pending step's deadline.
+            var pose = Advance(state with { EngineManeuver = null }, elapsedMs);
+            return pose with { EngineManeuver = pending with { MotionSampleTimeMs = pending.MotionSampleTimeMs + elapsedMs } };
+        }
         if (!HasRequiredData(state)) return state;
         if (state.EngineManeuver is { } command && ValidEngineManeuver(state))
             return SampleEngineCommand(state, command, elapsedMs);
@@ -132,30 +142,6 @@ public static class CurrentManeuverForecast
 
     private static ObjectMotionSnapshot SampleEngineCommand(ObjectMotionSnapshot state, EngineManeuverSnapshot m, double elapsed)
     {
-        if (m.CompletesOnMotionUpdate)
-        {
-            if (elapsed == 0) return state;
-            // This advance visits the physical guidance boundaries and its own
-            // endpoint, just like Engine. The endpoint may precede the next tick;
-            // do not publish a fictitious command deadline in the snapshot.
-            double updateEpoch = m.MotionSampleTimeMs!.Value;
-            double untilUpdate = Math.Min(elapsed, CombatGuidanceRules.NextBoundary((long)Math.Floor(updateEpoch)) - updateEpoch);
-            var scheduled = m with
-            {
-                CompletesOnMotionUpdate = false,
-                CycleRemainingMs = untilUpdate,
-                CycleIntervalMs = CombatGuidanceRules.IntervalMs,
-                FirstSpeedDeltaKmS = m.FirstSpeedDeltaKmS + m.AccelerationKmS2 * untilUpdate / 1000
-            };
-            var result = SampleEngineCommand(state, scheduled, elapsed);
-            if (!m.Repeats) return result;
-            double updateTail = (elapsed - untilUpdate) % CombatGuidanceRules.IntervalMs;
-            return result with
-            {
-                SpeedKmS = Math.Clamp(result.SpeedKmS + m.AccelerationKmS2 * updateTail / 1000, 0, state.MaxSpeedKmS!.Value),
-                EngineManeuver = m with { FirstSpeedDeltaKmS = 0, MotionSampleTimeMs = updateEpoch + elapsed }
-            };
-        }
         double until = m.CycleRemainingMs;
         if (elapsed < until) return Advance(state, elapsed);
         var pose = Advance(state, until);

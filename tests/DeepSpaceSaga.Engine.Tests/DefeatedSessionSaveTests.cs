@@ -74,7 +74,7 @@ public class DefeatedSessionSaveTests
                 await connection.SaveAsync("before");
                 Assert.Equal(SessionOutcomeState.Defeated, At(engine, 6000).EffectiveOutcome.State);
             }
-            await using var fresh = LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(ClientRoot, "Settings.json")),
+            await using var fresh = LocalGameSessionConnection.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"),
                 Path.Combine(directory, "before.json"), directory);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
             await using var snapshots = fresh.ReadSnapshotsAsync(timeout.Token).GetAsyncEnumerator();
@@ -83,7 +83,7 @@ public class DefeatedSessionSaveTests
             Assert.True(snapshots.Current.EffectiveOutcome.CanSave);
             Assert.Contains(snapshots.Current.Objects, o => o.ObjectId == Player);
             await fresh.SaveAsync("restored");
-            Assert.NotNull(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(directory, "restored.json")), true));
+            Assert.NotNull(ScenarioLoader.LoadFromFile(Path.Combine(directory, "restored.json"), true));
             Assert.Empty(Directory.GetFiles(directory, "*.tmp"));
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }

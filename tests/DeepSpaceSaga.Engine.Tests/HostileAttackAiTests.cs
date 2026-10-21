@@ -50,11 +50,11 @@ public class HostileAttackAiTests
     }
 
     [Fact]
-    public void Missing_ai_block_retains_ep8_radius_and_phase()
+    public void Missing_ai_block_uses_half_current_launcher_range_and_pursuit()
     {
         using var engine = Create(HostileOrbitRuntimeTests.Scene());
         var state = At(engine, 1).Objects.Single(o => o.ObjectId == Target).HostileCombat!;
-        Assert.Equal(100, state.DesiredRadiusKm);
+        Assert.Equal(35, state.DesiredRadiusKm);
         Assert.Equal(HostileCombatPhase.Pursuit, state.Phase);
     }
 

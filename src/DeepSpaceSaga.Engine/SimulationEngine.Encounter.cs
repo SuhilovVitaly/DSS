@@ -108,8 +108,8 @@ public sealed partial class SimulationEngine
             else if (entry.Type == CombatEventType.ShotDown && entry.ActorObjectId == PlayerShipObjectId && entry.ProjectileKind == ProjectileKind.Torpedo)
             {
                 var victim = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == entry.ProjectileObjectId);
-                string? owner = victim?.InitialMotion.OwnProjectile?.OwnerObjectId ?? victim?.InitialMotion.Torpedo?.OwnerObjectId;
-                string? relation = victim?.InitialMotion.OwnProjectile?.OwnerPlayerRelationAtLaunch ?? victim?.InitialMotion.Torpedo?.OwnerPlayerRelationAtLaunch;
+                string? owner = victim?.InitialMotion.OwnProjectile?.OwnerObjectId;
+                string? relation = victim?.InitialMotion.OwnProjectile?.OwnerPlayerRelationAtLaunch;
                 bool hostile = relation is not null ? relation == PlayerRelation.Enemy : owner is not null &&
                     (_encounterEnemyIds.Contains(owner) || _objects.Any(o => o.InitialMotion.ObjectId == owner && IsHostileActor(o)));
                 if (hostile)

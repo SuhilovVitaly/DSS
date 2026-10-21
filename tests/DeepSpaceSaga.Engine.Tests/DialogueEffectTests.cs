@@ -18,7 +18,7 @@ public class DialogueEffectTests
             [baseRegistry.ModuleTypes.GetDefinition(0) with { CargoCapacityKg = 20 }],
             [new ItemTypeDefinition("item.test", "Test", 2)],
             Enumerable.Range(0, baseRegistry.CommandDefinitions.Count).Select(baseRegistry.CommandDefinitions.GetDefinition),
-            dialogues: [definition], quests: [new("quest.test", ["first", "second"])]);
+            dialogues: [definition], quests: [new("quest.test", ["first", "second"])], combatRules: baseRegistry.CombatRules);
         using var original = DockCommandTests.CreateEngine();
         var engine = new SimulationEngine(registry);
         // This fixture deliberately defines a different catalog from the docking fixture.

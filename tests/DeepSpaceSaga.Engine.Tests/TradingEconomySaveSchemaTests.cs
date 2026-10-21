@@ -12,7 +12,8 @@ public sealed class TradingEconomySaveSchemaTests
     internal static ScenarioFile WithoutNewContinuation(ScenarioFile source, int version)
     {
         if (version >= 18) return source with { SaveFormatVersion = version };
-        // Historical economy fixtures carry no retired weapon continuation. Their money,
+        // Internal historical-economy scenarios carry no point weapon continuation.
+        // Public old saves are still rejected before deserialization. Their money,
         // cargo, crew, navigation and market payloads remain the subject of these tests.
         var weapons = (source.GameState.CombatState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? [])
             .Concat(source.GameState.DefenseState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? []).ToHashSet();
@@ -45,7 +46,7 @@ public sealed class TradingEconomySaveSchemaTests
         return GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
             All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint, stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
     }
 
     private static ScenarioFile Legacy(ScenarioFile current, int version)

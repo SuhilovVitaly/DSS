@@ -49,17 +49,6 @@ internal static class CombatTrajectoryProjector
         };
     }
 
-    internal static Geometry Project(TorpedoSnapshot flight, ObjectMotionSnapshot? target,
-        IMotionPredictor predictor, CameraState camera, int width, int height)
-    {
-        if (flight.Route.Segments.IsDefaultOrEmpty)
-            return new([], [], null) { Status = CombatForecastStatus.InsufficientData };
-        var pose = TorpedoGuidanceMath.PredictPose(flight.Route, flight.Route.ElapsedMs);
-        double now = flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs;
-        var result = CombatForecast.Torpedo(new("preview", pose.X, pose.Y, flight.SpeedKmS, pose.Direction, Torpedo: flight), target, now);
-        return FromForecast(result, now);
-    }
-
     internal static Geometry FromForecast(CombatForecastResult result, double now, Geometry? reuse = null)
     {
         now = Math.Clamp(now, result.StartMotionTimeMs, result.EndMotionTimeMs);

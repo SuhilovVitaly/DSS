@@ -295,12 +295,8 @@ public sealed partial class SimulationEngine
     {
         string id = projectile.InitialMotion.ObjectId;
         _objects.RemoveAll(o => o.InitialMotion.ObjectId == id);
-        _torpedoTargets.Remove(id);
-        string? owner = projectile.InitialMotion.OwnProjectile?.OwnerObjectId ?? projectile.InitialMotion.Torpedo?.OwnerObjectId ??
-            projectile.InitialMotion.Countermeasure?.OwnerObjectId;
-        string? module = projectile.InitialMotion.OwnProjectile?.LauncherModuleId ?? projectile.InitialMotion.Torpedo?.LauncherModuleId ??
-            projectile.InitialMotion.Countermeasure?.LauncherModuleId;
-        if (owner is null || module is null) return;
+        var flight = projectile.InitialMotion.OwnProjectile ?? throw new InvalidOperationException("Missing captured point flight.");
+        string owner = flight.OwnerObjectId, module = flight.LauncherModuleId;
         var key = (owner, module);
         if (_launcherCombat.TryGetValue(key, out var launcher))
             _launcherCombat[key] = launcher with { ActiveTorpedoIds = launcher.ActiveTorpedoIds.Remove(id) };
@@ -308,7 +304,6 @@ public sealed partial class SimulationEngine
         var active = (defense.ActiveProjectileIds ?? (defense.ActiveProjectileId is { } first ? [first] : [])).Remove(id);
         double ready = defense.ReadyAtMotionTimeMs ?? defense.ReloadDueMotionTimeMs ?? motionTimeMs;
         var state = ready > motionTimeMs ? DefenseState.Reloading : defense.Operator is null ? DefenseState.NoOperator : DefenseState.Ready;
-        if (projectile.InitialMotion.Countermeasure is not null && !active.IsEmpty) state = DefenseState.Guiding;
         _defenses[key] = defense with
         {
             ActiveProjectileId = active.IsEmpty ? null : active[0],

@@ -9,22 +9,17 @@ namespace DeepSpaceSaga.Client.Tests;
 public class PhaseThreeLocaleTests
 {
     [Fact]
-    public void Hovered_defense_command_exposes_localized_name_instead_of_catalog_text()
+    public async Task Hovered_point_command_uses_actual_localized_screen_label()
     {
-        var module = new InstalledModuleSnapshot("pr", "module.countermeasure.launcher.basic", "Defense", 1,
-            [DefenseCommandTypes.Fire], Commands: [new(DefenseCommandTypes.Fire, "Catalog text", "object")],
-            Defense: new(false, null, DefenseState.Ready));
-        var panel = new CommandsPanel(weaponCommandEnabled: (_, _) => true, weaponStatus: _ => "Ready state");
-        using var bitmap = new SKBitmap(400, 2000);
-        using var canvas = new SKCanvas(bitmap);
-        panel.Render(canvas, [module], 2000, "player");
-        var button = Assert.Single(panel.AllCommandButtons, b => b.CommandTypeId == DefenseCommandTypes.Fire);
-        panel.OnMouseMove(button.Rect.MidX, button.Rect.MidY);
-        panel.Render(canvas, [module], 2000, "player");
-        Assert.Equal(Localization.Get("Combat.Command.defense.fire"), panel.CommandPanelRows.Single(r => r.Weapon is not null).StatusBarText);
-        panel.OnMouseMove(500, 0);
-        panel.Render(canvas, [module], 2000, "player");
-        Assert.Equal("Ready state", panel.CommandPanelRows.Single(r => r.Weapon is not null).StatusBarText);
+        await using var world = await PointCombatUiFixture.Create();
+        const string id = "MOD-PLAYER-COUNTERMEASURE-01";
+        var row = world.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == id);
+        if (!row.Opened) { world.Screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY); world.Render(); }
+        var button = world.Screen.CommandsPanel.AllCommandButtons.Single(b => b.Weapon?.ModuleId == id && b.CommandTypeId == DefenseCommandTypes.Launch);
+        world.Screen.OnMouseMove(button.Rect.MidX, button.Rect.MidY); world.Render();
+        string expected = Localization.Get("Combat.Aim") + " [" + world.Screen.CombatInputs.CountermissileAim + "]";
+        Assert.Equal(expected, world.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == id).StatusBarText);
+        Assert.Null(world.Screen.LastPointCommandId); Assert.Equal(0, world.Engine.ReceivedCommandCount);
     }
 
     [Fact]
@@ -53,10 +48,6 @@ public class PhaseThreeLocaleTests
                 "missing_target", "unknown_target", "target_not_hostile", "target_out_of_range", "invalid_time", "projectile_id_exhausted" })
                 Assert.Contains("Combat.Reason." + reason, keys);
         }
-        Assert.Contains("accuracy − maneuverability", english["Combat.ChanceFormula"]);
-        Assert.Contains("точность − манёвренность", russian["Combat.ChanceFormula"]);
-        Assert.DoesNotContain("50", english["Combat.ChanceFormula"]);
-        Assert.DoesNotContain("50", russian["Combat.ChanceFormula"]);
     }
 
     [Fact]
@@ -64,10 +55,6 @@ public class PhaseThreeLocaleTests
     {
         Assert.Equal(Localization.Get("Combat.Reason.target_out_of_range"), GameSessionScreen.DefenseReasonText("target_out_of_range"));
         Assert.Equal(Localization.Get("Combat.CommandRejected"), GameSessionScreen.DefenseReasonText("future_reason"));
-        string status = GameSessionScreen.DefenseStatusText(new(true, null, DefenseState.Reloading, ReloadDueMotionTimeMs: 6000), 1000);
-        Assert.Contains(Localization.Get("Combat.Reloading"), status);
-        Assert.Contains(Localization.Get("Combat.AutoOn"), status);
-        Assert.Contains($"{5m:0.0}", status);
         var op = new WeaponOperatorSnapshot("crew", "Alex", WeaponSkillType.CountermeasureDefense, 99, 55, 55);
         var entry = new CombatJournalEntry(1, 1000, CombatEventType.Expired, "ship", "torpedo", "pr", 0, 0,
             500, RatingBreakdown: new(op, 5), Damage: 0);

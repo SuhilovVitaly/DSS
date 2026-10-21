@@ -9,29 +9,6 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class AutomaticDefenseTests
 {
-    // Temporary historical helpers for the remaining consumers being migrated in this ticket.
-    internal static DeepSpaceSaga.Engine.Content.GameDataRegistry WeaponRegistry(decimal accuracy, decimal maneuverability)
-    {
-        var source = Registry.Value;
-        static IEnumerable<T> All<T>(DeepSpaceSaga.Engine.Content.TypeRegistry<T> registry)
-            where T : DeepSpaceSaga.Engine.Content.ITypeDefinition => Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
-        return DeepSpaceSaga.Engine.Content.GameDataRegistry.Create(All(source.ModuleCategories),
-            All(source.ModuleTypes).Select(m => m.CountermeasureAccuracy is not null
-                ? m with { CountermeasureAccuracy = accuracy }
-                : m.TorpedoManeuverability is not null ? m with { TorpedoManeuverability = maneuverability } : m),
-            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
-            All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules! with { Chance = Assert.IsType<DeepSpaceSaga.Engine.Content.CombatChanceRules>(source.CombatRules.Chance) with { Base = 0 } },
-            fireModes: source.FireModes);
-    }
-    internal static ScenarioFile DefenseScenario(double distance = 600) => TorpedoImpactTests.Scenario(o => o with
-    {
-        PositionY = o.ObjectId == Player ? 0 : -distance,
-        DirectionDegrees = o.ObjectId == Player ? 0 : 180,
-        Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = true }).ToArray()
-    });
-
     [Theory]
     [InlineData(0d)]
     [InlineData(90d)]

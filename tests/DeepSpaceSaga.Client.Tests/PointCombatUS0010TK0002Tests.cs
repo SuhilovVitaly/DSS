@@ -50,7 +50,7 @@ public sealed class PointCombatUS0010TK0002Tests
         Assert.DoesNotContain("20.0", foreign.Label); Assert.Contains("slow", foreign.Label);
         Assert.Equal(10, screen.PointProjectileVisuals["counter"].PhysicalRadiusPx);
         Assert.Equal(0, screen.PointProjectileVisuals["counter"].CoreRadiusPx);
-        Assert.Empty(screen.DefenseChanceLabels);
+        Assert.All(screen.PointProjectileVisuals.Values, v => Assert.DoesNotContain("%", v.Label));
         now = Stopwatch.Frequency * 10; screen.Render(canvas, 1920, 1080);
         Assert.Equal(20, screen.PointProjectileVisuals["own"].RemainingRealSeconds); // pause freezes physical countdown
         screen.OnDeactivated();

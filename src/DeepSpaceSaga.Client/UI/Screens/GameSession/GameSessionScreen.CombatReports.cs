@@ -33,13 +33,9 @@ public sealed partial class GameSessionScreen
     {
         if (_combatVisualSession == _buffer.PresentationSessionId) return;
         _combatVisualSession = _buffer.PresentationSessionId;
-        _combatEffects.Reset(_buffer.Presented?.Snapshot.CombatImpacts ?? default);
         _combatEffects.ResetJournal(_buffer.Presented?.Snapshot.CombatJournal ?? default);
         _combatReportStore.Reset();
         _combatTrajectories.Clear();
-        _launchPreviewKey = null;
-        LaunchPreviewGeometry = null;
-        LaunchPreviewRoute = null;
     }
 
     private void RenderCombatReports(SKCanvas canvas)

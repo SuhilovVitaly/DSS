@@ -211,15 +211,9 @@ public static class EngineContentLoader
             throw new ContentException($"{settingsPath}: typeData.combatRules must name a file.");
         string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
         var rules = LoadCombatRules(Resolve(root, paths.CombatRules));
-        if (rules.IsPointAim)
-        {
-            if (paths.FireModes is not null)
-                throw new ContentException($"{settingsPath}: typeData.fireModes is not supported with point-aim rules.");
-            return (rules, []);
-        }
-        if (string.IsNullOrWhiteSpace(paths.FireModes))
-            throw new ContentException($"{settingsPath}: legacy typeData.fireModes must name a file.");
-        return (rules, LoadFireModes(Resolve(root, paths.FireModes)));
+        if (paths.FireModes is not null)
+            throw new ContentException($"{settingsPath}: typeData.fireModes is retired.");
+        return (rules, []);
     }
 
     internal static ImmutableArray<FireModeDefinition> LoadFireModes(string path)

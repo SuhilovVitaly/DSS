@@ -236,7 +236,7 @@ public sealed class VoyageProfitAccountingTests
             quests: Enumerable.Range(0, original.Quests.Count).Select(original.Quests.GetDefinition),
             stationMarketProfiles: Enumerable.Range(0, original.StationMarketProfiles.Count).Select(original.StationMarketProfiles.GetDefinition),
             shipClasses: Enumerable.Range(0, original.ShipClasses.Count).Select(original.ShipClasses.GetDefinition),
-            stationMarketEvents: Enumerable.Range(0, original.StationMarketEvents.Count).Select(original.StationMarketEvents.GetDefinition));
+            stationMarketEvents: Enumerable.Range(0, original.StationMarketEvents.Count).Select(original.StationMarketEvents.GetDefinition), combatRules: original.CombatRules);
         using var f = TradingVoyageFixture.Create(calendarRatio: 1, registry: registry, adjust: save => save with
         {
             GameState = save.GameState with

@@ -329,9 +329,7 @@ public sealed partial class GameSessionScreen : IScreen
         _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
         _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
-        _combatEffects = new CombatEffectStore(_timestampProvider,
-            _buffer.HasCombatPresentation ? null : _buffer.FindCombatImpactReceivedAtTimestamp);
-        _combatEffects.Reset(_buffer.Presented?.Snapshot.CombatImpacts ?? default);
+        _combatEffects = new CombatEffectStore(_timestampProvider);
         _combatEffects.ResetJournal(_buffer.Presented?.Snapshot.CombatJournal ?? default);
 
         _mapSettings = (mapSettings ?? new()).Validate();
@@ -370,9 +368,9 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55), Style = SKPaintStyle.Fill };
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
-        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
-            IsPointOrLegacyWeaponCommandEnabled, SendPointOrLegacyWeaponCommand, GetPointOrLegacyWeaponStatus,
-            GetPointOrLegacyWeaponOperator, GetPointOrLegacyWeaponDetails, () => DefensePresentationTime,
+        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel,
+            IsPointWeaponCommandEnabled, SendPointWeaponCommand, GetPointWeaponStatus,
+            GetPointWeaponOperator, GetPointWeaponDetails, () => DefensePresentationTime,
             () => _buffer.CurrentSpeed.MotionTimeMultiplier(), PointWeaponButtonLabel);
         _objectInfoPanel = new ObjectInfoPanel();
     }
@@ -411,8 +409,7 @@ public sealed partial class GameSessionScreen : IScreen
         CancelPointAim();
         _combatReportPanel.ClearFocus();
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
-        ClearLaunchPreview();
-        _combatForecastCache.CancelPending();
+        _combatForecastCache.Clear();
         ReleaseCombatPaints();
         _zoomTransition.Cancel();
         _isPanningMap = false;
@@ -836,11 +833,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal bool IsModuleCommandEnabled(string commandType)
     {
         if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return false;
-        if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
-        if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
-        if (commandType == TorpedoLauncherCommandTypes.SetMode) return IsFireModeEnabled();
-        if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
-            return IsDefenseToggleEnabled(commandType);
+        if (commandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or "defense.fire" or "defense.enable" or "defense.disable") return false;
         var snapshot = _buffer.Presented?.Snapshot;
         if (commandType == NavigationComputerCommandTypes.Dock && AiMapPresentation.Base(snapshot, _selectedObjectId) is not null)
             return false;
@@ -889,24 +882,8 @@ public sealed partial class GameSessionScreen : IScreen
     {
         if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return;
         if (commandType == NavigationComputerCommandTypes.Dock && !IsModuleCommandEnabled(commandType)) return;
-        if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable && !IsDefenseToggleEnabled(commandType)) return;
-        if (commandType == CombatCommandTypes.SelfDestruct)
-        {
-            SendSelfDestruct();
-            return;
-        }
-        if (commandType == TorpedoLauncherCommandTypes.SetMode)
-        {
-            SendNextFireMode();
-            return;
-        }
-        if (commandType == CombatCommandTypes.Fire)
-        {
-            SendTorpedoFire();
-            return;
-        }
-        if (commandType is ScannerCommandTypes.StructuralScan or CombatCommandTypes.Fire && !IsModuleCommandEnabled(commandType))
-            return;
+        if (commandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or "defense.fire" or "defense.enable" or "defense.disable") return;
+        if (commandType == ScannerCommandTypes.StructuralScan && !IsModuleCommandEnabled(commandType)) return;
 
         string? moduleId = ResolveModuleId(commandType);
         if (moduleId is null)
@@ -1298,11 +1275,9 @@ public sealed partial class GameSessionScreen : IScreen
             // painted last so the solid Approach covers the target forecast at overlaps.
             DrawNavigationTrajectories(canvas, width, height);
             DrawCombatTrajectories(canvas, prediction);
-            DrawCountermeasureTrajectories(canvas, prediction);
             if (_handle is not null && buffered is not null)
                 _handle.CombatMetrics.RecordVisual(buffered.Snapshot, _renderStates, prediction?.EffectivePredictionDeltaMs ?? 0, _timestampProvider());
             RenderStageCompleted?.Invoke("combat_trajectories");
-            DrawLaunchPreview(canvas, prediction, viewportResized);
             DrawPointAimFeedback(canvas);
             DrawManeuverInput(canvas);
             DrawThreatAlertOverlays(canvas, now);
@@ -1364,7 +1339,7 @@ public sealed partial class GameSessionScreen : IScreen
                     { DrawObservedThreatMarker(canvas, state, sx, sy, r, now); continue; }
                     if (HasCombatMarker(state.Source))
                     {
-                        if (state.Source.Torpedo is not null)
+                        if (state.Source.OwnProjectile is { Kind: ProjectileKind.Torpedo })
                             _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
                         DrawCombatMarker(canvas, state, sx, sy);
                         continue;
@@ -1919,7 +1894,6 @@ public sealed partial class GameSessionScreen : IScreen
         foreach (var state in _renderStates)
         {
             if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null ||
-                state.Source.Torpedo is not null || state.Source.Countermeasure is not null ||
                 _combatForecastCache.Results.Values.Any(r => r.TargetId == state.Source.ObjectId &&
                     PreparedFlight(r.ProjectileId, _preparedForecastPrediction) is not null)) continue;
             // The player ship always gets its own ballistic preview (subject to the
@@ -2437,7 +2411,9 @@ public sealed partial class GameSessionScreen : IScreen
         // At small logical heights put the info panel beside the command column
         // when there is room, preserving all captions plus the launcher controls.
         float besideX = CommandsPanel.PanelWidth + PanelMargin * 2;
-        if (FindLauncher()?.LauncherCombat is not null && panelY - PanelMargin < CommandsPanel.MinimumExpandedHeight &&
+        bool hasPointLauncher = _buffer.Presented?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } moduleSnapshot &&
+            moduleSnapshot.InstalledModules.Any(m => m.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false });
+        if (hasPointLauncher && panelY - PanelMargin < CommandsPanel.MinimumExpandedHeight &&
             besideX + panelW + PanelMargin <= _uiViewportW)
             panelX = besideX;
 
@@ -2581,7 +2557,7 @@ public sealed partial class GameSessionScreen : IScreen
         var resource = ClusterMapPresentation.Resource(_buffer.Presented?.Snapshot, p.ObjectId);
         var resourceCluster = resource is null ? null : _buffer.Presented?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), p.Motion.Countermeasure, market,
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, null, null, market,
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,

@@ -29,7 +29,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 | File | Current state | Allowed change |
 |---|---|---|
 | [tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs) | Существует: tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs:8; public sealed class BasicCombatEndToEndTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
-| [tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs) | Существует: tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs:9; public class PhaseThreeCombatEndToEndTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
+| `tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs` (removed by US3-TK5) | Существует: tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs:9; public class PhaseThreeCombatEndToEndTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
 | [tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs](../../../../tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs) | Существует: tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs:9; public sealed class ModuleCombatEndToEndTests | Перенос релевантных legacy assertions/fixtures без ослабления остающихся инвариантов. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0005Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 

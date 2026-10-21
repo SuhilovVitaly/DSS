@@ -27,7 +27,7 @@ public sealed class CatalogCompatibilityTests
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
                 .Select(source.StationMarketProfiles.GetDefinition).Select(profile => profileChange?.Invoke(profile) ?? profile),
             shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition),
-            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition));
+            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition), combatRules: source.CombatRules);
 
     private static ItemTypeDefinition[] Items(GameDataRegistry registry) =>
         Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition).ToArray();
@@ -936,7 +936,7 @@ public sealed class CargoCostPersistenceTests
             Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
             [new ItemTypeDefinition("item.ice", "Ice", 1)],
             Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), combatRules: source.CombatRules);
         var save = Template(0, new("item.ice", 3));
         var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId);
         save = save with

@@ -192,7 +192,7 @@ public sealed partial class SimulationEngine
         if (ship.InitialMotion.Evasion is not { } evasion) return InterruptDamagedTurnHold(ship, time);
         var pose = CurrentManeuverForecast.Sample(ship.InitialMotion, Math.Max(0, time - evasion.SampleMotionTimeMs));
         long anchor = (long)Math.Floor(time);
-        var atAnchor = TorpedoGuidanceMath.PredictSegment(new(pose.X, pose.Y, pose.Direction, pose.SpeedKmS, 0, 0), anchor - time);
+        var atAnchor = LinearMotionPredictor.PredictStraightPose(pose.X, pose.Y, pose.Direction, pose.SpeedKmS, anchor - time);
         CancelEvasionState(ship.InitialMotion.ObjectId, (long)Math.Ceiling(time), CommandReasonCodes.ModuleDisabled);
         return ship with { InitialMotion = ClearEvasionControls(pose) with { X = atAnchor.X, Y = atAnchor.Y, MaxSpeedKmS = null }, StartGameTimeMs = anchor };
     }

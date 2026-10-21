@@ -18,7 +18,4 @@
     <Delete Files="$(TargetDir)Scenarios/CombatShmel/scenario.json" Condition="!Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Scenarios/CombatShmel/scenario.json')" />
     <Delete Files="$(PublishDir)Scenarios/CombatShmel/scenario.json" Condition="'$(PublishDir)' != '' And !Exists('$(MSBuildThisFileDirectory)src/DeepSpaceSaga.Client/Scenarios/CombatShmel/scenario.json')" />
   </Target>
-  <ItemGroup Condition="'$(MSBuildProjectName)' == 'DeepSpaceSaga.Engine.Tests' Or '$(MSBuildProjectName)' == 'DeepSpaceSaga.Client.Tests'">
-    <Compile Include="$(MSBuildThisFileDirectory)tests/Support/LegacyCombatCatalog.cs" Link="Support/LegacyCombatCatalog.cs" />
-  </ItemGroup>
 </Project>

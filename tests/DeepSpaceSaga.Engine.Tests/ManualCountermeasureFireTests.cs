@@ -10,15 +10,6 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class ManualCountermeasureFireTests
 {
     internal const string Defense1 = "MOD-PLAYER-COUNTERMEASURE-01", Defense2 = "MOD-PLAYER-COUNTERMEASURE-02";
-    internal static PlayerCommand Manual(string id, string target, string module = Defense1) => new(id, 1, Player, module, DefenseCommandTypes.Fire, target);
-    // Establish the hostile projectile directly: these fixtures test manual interception, not AI reaction timing.
-    internal static string LaunchEnemy(SimulationEngine engine)
-    {
-        if (!engine.RuntimeObjects.Any(o => o.InitialMotion.Torpedo is not null))
-            Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1).Disposition);
-        return At(engine, 1).Objects.Single(o => o.Torpedo is not null).ObjectId;
-    }
-
     [Theory]
     [InlineData("defense.enable")]
     [InlineData("defense.disable")]

@@ -8,7 +8,7 @@ public sealed class ModuleHealthProjectionTests
     [Fact]
     public void Known_ships_project_authoritative_module_values_and_unknown_ship_is_masked()
     {
-        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId != Target ? o : o with
+        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId != Player ? o : o with
         {
             IsKnown = true,
             Modules = o.Modules!.Select((m, i) => i == 0 ? m with
@@ -20,19 +20,20 @@ public sealed class ModuleHealthProjectionTests
         });
         using var knownEngine = Create(scenario);
         var known = At(knownEngine, 0);
-        foreach (string id in new[] { Player, Target })
+        foreach (string id in new[] { Player })
         {
             var ship = known.Objects.Single(o => o.ObjectId == id);
             var source = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == id);
             Assert.Equal(source.Modules!.Count, ship.ModuleHealth.Length);
             Assert.Equal(source.Modules!.Select(m => m.ModuleId), ship.ModuleHealth.Select(m => m.ModuleId));
         }
-        var configured = known.Objects.Single(o => o.ObjectId == Target).ModuleHealth[0];
+        var configured = known.Objects.Single(o => o.ObjectId == Player).ModuleHealth[0];
         Assert.Equal(0, configured.ArmorCurrent);
         Assert.Equal(12, configured.StructureCurrent);
         Assert.Equal(5000, configured.DisabledUntilMotionTimeMs);
         Assert.False(configured.IsDestroyed);
 
+        Assert.Empty(known.Objects.Single(o => o.ObjectId == Target).ModuleHealth);
         var hiddenScenario = TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with { IsKnown = false } : o);
         using var hiddenEngine = Create(hiddenScenario);
         var hidden = At(hiddenEngine, 0).Objects.Single(o => o.ObjectId == Target);

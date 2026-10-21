@@ -1,0 +1,965 @@
+{
+  "baseline": "9aaa48f198fa57aea56d922ec36cc21faef86f5e",
+  "entries": [
+    {
+      "file": "tests/DeepSpaceSaga.Motion.Tests/TorpedoGuidanceTests.cs",
+      "previousMethods": [
+        "Torpedo_intercepts_linear_target_from_carrier_heading",
+        "Planner_optimization_preserves_exact_routes_and_encounter_times",
+        "Torpedo_turn_rate_and_speed_are_bounded",
+        "Torpedo_endpoint_has_no_trail_offset_or_heading_match",
+        "No_intercept_returns_null_eta_without_stopping_motion",
+        "Guidance_is_time_partition_invariant"
+      ],
+      "retired": "Future moving-target intercept solving, heading-dependent guided arcs, airborne replan, guided lifetime and missed-coast horizon are deliberately removed.",
+      "retained": "Generic circle/arc contact remains in TorpedoCollisionTests.Moving_obstacle_and_arc_first_contact_are_detected using current held-turn sampling and its independent trigonometric oracle. Generic quarter-turn, speed, fractional anchoring and partition invariants are retained in PointCombatLegacyRemovalKinematicsTests. Actual no-replan carrier bearings/captured parameters are AutomaticDefenseTests.Explicit_point_ray_ignores_carrier_bearing_and_never_replans and Active_counter_keeps_captured_profile_when_future_catalog_values_change. Physical/fractional fuse and partition/file continuation are CountermeasureLifetimeTests. Real launch/readiness/range/empty-space/all-sides/no-ship/no-roll coverage remains ManualCountermeasureFireTests and point US3/US4 tests. Current point contact only at detonation is PointCombatUS0018TK0004Tests.Area_contact_occurs_only_at_detonation_and_excludes_zero_damage_edge."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Motion.Tests/CountermeasureGuidanceTests.cs",
+      "previousMethods": [
+        "Launcher_aims_at_future_encounter_independently_of_carrier_heading",
+        "Recorded_loop_case_launches_without_a_circle_but_airborne_replan_keeps_heading",
+        "Curved_torpedo_path_has_consistent_intercept",
+        "Prediction_is_partition_invariant"
+      ],
+      "retired": "Future moving-target intercept solving, heading-dependent guided arcs, airborne replan, guided lifetime and missed-coast horizon are deliberately removed.",
+      "retained": "Generic circle/arc contact remains in TorpedoCollisionTests.Moving_obstacle_and_arc_first_contact_are_detected using current held-turn sampling and its independent trigonometric oracle. Generic quarter-turn, speed, fractional anchoring and partition invariants are retained in PointCombatLegacyRemovalKinematicsTests. Actual no-replan carrier bearings/captured parameters are AutomaticDefenseTests.Explicit_point_ray_ignores_carrier_bearing_and_never_replans and Active_counter_keeps_captured_profile_when_future_catalog_values_change. Physical/fractional fuse and partition/file continuation are CountermeasureLifetimeTests. Real launch/readiness/range/empty-space/all-sides/no-ship/no-roll coverage remains ManualCountermeasureFireTests and point US3/US4 tests. Current point contact only at detonation is PointCombatUS0018TK0004Tests.Area_contact_occurs_only_at_detonation_and_excludes_zero_damage_edge."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Motion.Tests/ManualCountermeasureGuidanceTests.cs",
+      "previousMethods": [
+        "Manual_unreachable_target_still_has_bounded_flight_and_unknown_eta",
+        "Manual_horizon_uses_captured_remaining_lifetime_and_not_hull_deadline",
+        "Manual_plan_uses_curved_target_and_actual_contact",
+        "Earlier_obstacle_contact_suppresses_false_encounter_cross",
+        "Short_remaining_fallback_segment_does_not_extend_lifetime"
+      ],
+      "retired": "Future moving-target intercept solving, heading-dependent guided arcs, airborne replan, guided lifetime and missed-coast horizon are deliberately removed.",
+      "retained": "Generic circle/arc contact remains in TorpedoCollisionTests.Moving_obstacle_and_arc_first_contact_are_detected using current held-turn sampling and its independent trigonometric oracle. Generic quarter-turn, speed, fractional anchoring and partition invariants are retained in PointCombatLegacyRemovalKinematicsTests. Actual no-replan carrier bearings/captured parameters are AutomaticDefenseTests.Explicit_point_ray_ignores_carrier_bearing_and_never_replans and Active_counter_keeps_captured_profile_when_future_catalog_values_change. Physical/fractional fuse and partition/file continuation are CountermeasureLifetimeTests. Real launch/readiness/range/empty-space/all-sides/no-ship/no-roll coverage remains ManualCountermeasureFireTests and point US3/US4 tests. Current point contact only at detonation is PointCombatUS0018TK0004Tests.Area_contact_occurs_only_at_detonation_and_excludes_zero_damage_edge."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatForecastTests.cs",
+      "previousMethods": [
+        "CombatForecast_continues_current_controls_and_retains_contact_centres",
+        "CombatForecast_acceleration_clamps_without_reversing",
+        "CombatForecast_fractional_start_keeps_absolute_grid_and_fractional_contact",
+        "CombatForecast_replans_new_linear_course_at_next_absolute_boundary",
+        "CombatForecast_has_explicit_work_horizon_and_data_limits",
+        "CombatForecast_no_contact_from_spatial_crossing_at_different_times",
+        "CombatForecast_defense_uses_dependent_torpedo_and_captured_lifetime",
+        "CombatForecast_publishes_launch_lifetime_without_adding_it_to_save_state",
+        "CombatForecast_matches_independent_Engine_flight_and_does_not_change_rng",
+        "CombatForecast_defense_chain_matches_independent_Engine_contact",
+        "CombatForecast_headless_preparation_cost"
+      ],
+      "retired": "Homing and dependent-intercept solving/replanning, old 5-world-unit collision, arbitrary guided lifetime/coasting, full curved trail and old stationary planner optimization oracle are retired. Old prep telemetry was not a strict performance acceptance gate.",
+      "retained": "Current fixed/fractional detonation, no early spatial-crossing contact, expiry/target priority, bounded horizons/cancellation and unsupported data are PointCombatUS0018TK0004Tests (all13 method groups). Actual forecast/Engine geometry, rounded core damage, no ship damage by counters and ordinal area priority remain PointForecastRuntimeParityTests. Captured straight history, physical/calendar partition equality, persistent facts, source-data scenario and obstacle/no-legacy-class behavior are now TorpedoImpactTests. Current control acceleration clamp is preserved separately in PointCombatLegacyRemovalKinematicsTests; no curved target interception is recreated. Existing current point ForecastBudget cases remain unchanged and must pass strict2ms separately."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatForecastLifetimeTests.cs",
+      "previousMethods": [
+        "CombatForecast_missing_torpedo_expiry_cannot_predict_contact_or_dependent_interception",
+        "CombatForecast_torpedo_contact_before_at_and_after_expiry",
+        "CombatForecast_defense_contact_before_at_and_after_torpedo_expiry"
+      ],
+      "retired": "Homing and dependent-intercept solving/replanning, old 5-world-unit collision, arbitrary guided lifetime/coasting, full curved trail and old stationary planner optimization oracle are retired. Old prep telemetry was not a strict performance acceptance gate.",
+      "retained": "Current fixed/fractional detonation, no early spatial-crossing contact, expiry/target priority, bounded horizons/cancellation and unsupported data are PointCombatUS0018TK0004Tests (all13 method groups). Actual forecast/Engine geometry, rounded core damage, no ship damage by counters and ordinal area priority remain PointForecastRuntimeParityTests. Captured straight history, physical/calendar partition equality, persistent facts, source-data scenario and obstacle/no-legacy-class behavior are now TorpedoImpactTests. Current control acceleration clamp is preserved separately in PointCombatLegacyRemovalKinematicsTests; no curved target interception is recreated. Existing current point ForecastBudget cases remain unchanged and must pass strict2ms separately."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatForecastStationaryGuidanceTests.cs",
+      "previousMethods": [
+        "CombatForecast_stationary_shortcut_preserves_original_guidance_vectors"
+      ],
+      "retired": "Homing and dependent-intercept solving/replanning, old 5-world-unit collision, arbitrary guided lifetime/coasting, full curved trail and old stationary planner optimization oracle are retired. Old prep telemetry was not a strict performance acceptance gate.",
+      "retained": "Current fixed/fractional detonation, no early spatial-crossing contact, expiry/target priority, bounded horizons/cancellation and unsupported data are PointCombatUS0018TK0004Tests (all13 method groups). Actual forecast/Engine geometry, rounded core damage, no ship damage by counters and ordinal area priority remain PointForecastRuntimeParityTests. Captured straight history, physical/calendar partition equality, persistent facts, source-data scenario and obstacle/no-legacy-class behavior are now TorpedoImpactTests. Current control acceleration clamp is preserved separately in PointCombatLegacyRemovalKinematicsTests; no curved target interception is recreated. Existing current point ForecastBudget cases remain unchanged and must pass strict2ms separately."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/TorpedoHistoryTests.cs",
+      "previousMethods": [
+        "History_is_complete_and_independent_of_snapshot_frequency",
+        "Replan_preserves_executed_path_without_jump",
+        "Final_history_stops_at_selected_target_contact",
+        "Long_straight_flight_does_not_add_per_tick_samples"
+      ],
+      "retired": "Homing and dependent-intercept solving/replanning, old 5-world-unit collision, arbitrary guided lifetime/coasting, full curved trail and old stationary planner optimization oracle are retired. Old prep telemetry was not a strict performance acceptance gate.",
+      "retained": "Current fixed/fractional detonation, no early spatial-crossing contact, expiry/target priority, bounded horizons/cancellation and unsupported data are PointCombatUS0018TK0004Tests (all13 method groups). Actual forecast/Engine geometry, rounded core damage, no ship damage by counters and ordinal area priority remain PointForecastRuntimeParityTests. Captured straight history, physical/calendar partition equality, persistent facts, source-data scenario and obstacle/no-legacy-class behavior are now TorpedoImpactTests. Current control acceleration clamp is preserved separately in PointCombatLegacyRemovalKinematicsTests; no curved target interception is recreated. Existing current point ForecastBudget cases remain unchanged and must pass strict2ms separately."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/TorpedoImpactTests.cs",
+      "previousMethods": [
+        "Legacy_fixtures_explicitly_disable_defense",
+        "Initial_overlap_waits_for_physical_advance_through_repeated_paused_snapshots",
+        "Three_contacts_destroy_modules_with_isolated_rng_draws",
+        "Intermediate_obstacle_is_ignored_and_target_contact_releases_launcher",
+        "Owner_is_ignored_for_entire_flight",
+        "Equal_time_non_targets_are_ignored_and_target_is_hit_once",
+        "Snapshot_coalescing_does_not_lose_impact_fact",
+        "Calendar_boundaries_do_not_change_combat_result",
+        "Moving_non_target_does_not_intercept_torpedo_between_boundary_endpoints",
+        "Non_target_ship_is_ignored_on_way_to_selected_asteroid",
+        "Real_pirate_scenario_contact_closes_arc_and_straight_history",
+        "Tetrarch_sprite_without_class_is_invulnerable_and_unknown_hull_stays_masked"
+      ],
+      "retired": "Selected-target collision, owner/non-target immunity, invulnerable unclassified sprite and curved history are deliberately replaced by all-ship area geometry at the captured point. No old target command is converted to a new launch.",
+      "retained": "Current source registry and controlled Basic engine calibration; no early contact; exact fuse/reload/location RNG; intermediate moving/static obstacles do not detonate a point flight; physical/calendar partition equality; durable coalesced events/replay/session identity; O(1) captured straight history; real damage without ship class while public health stays masked. All-sides/self damage is directly covered by point US3 blast tests and actual ManualCountermeasureFireTests area cases."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/TorpedoHitRollTests.cs",
+      "previousMethods": [
+        "Fifty_percent_example_and_miss_no_damage",
+        "Disabled_engine_target_easier",
+        "Partition_invariance",
+        "Hit_stream_continues_after_save_load"
+      ],
+      "retired": "Hit/interception chance and hit RNG are removed, so disabled engine cannot change a probabilistic attack rating.",
+      "retained": "PointCombatUS0003TK0005Tests.Torpedo_resolution_has_no_hit_roll_or_mode_rng asserts actual geometric core hits and only scatter/location draws across three master seeds. Physical/calendar partition and file continuation remain TorpedoImpactTests and current point US9 suites; actual nonlethal module interruption/recovery remains DisabledModuleTests using an unchanged canonical200damage edge blast."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/CombatForecastCacheTests.cs",
+      "previousMethods": [
+        "CombatForecast_publishes_across_real_point_engine_updates",
+        "CombatForecast_changing_observed_linear_targets_obey_UI_budget",
+        "CombatForecast_defense_replans_match_the_authoritative_planner",
+        "CombatForecast_tangent_defense_preserves_the_authoritative_route_branch",
+        "CombatForecast_changing_linear_target_keeps_the_dependent_defense_current",
+        "CombatForecast_unreachable_linear_target_stays_off_the_UI_thread",
+        "CombatForecast_zero_duration_command_at_speed_limit_does_not_restart_forever",
+        "CombatForecast_linear_contact_at_expiry_stays_inclusive",
+        "CombatForecast_zero_duration_completion_invalidates_the_entire_cached_future",
+        "CombatForecast_paused_fresh_revision_publishes_bounded_missing_data",
+        "CombatForecast_changed_independent_target_cannot_starve_a_torpedo_and_its_defense",
+        "CombatForecast_unrelated_control_changes_do_not_cancel_valid_work",
+        "CombatForecast_continuous_changes_bound_recalculating_without_publishing_old_contacts",
+        "CombatForecast_cancellation_returns_limited_geometry_without_throwing",
+        "CombatForecast_canceled_worker_completes_without_throwing_and_cannot_publish",
+        "CombatForecast_worker_preserves_genuine_calculation_errors",
+        "CombatForecast_cache_invalidates_the_entire_chain_on_paused_control_change",
+        "CombatForecast_worker_discards_old_revision_and_session",
+        "CombatForecast_cache_reuses_equivalent_fresh_module_health_and_ui_projections",
+        "CombatForecast_maneuver_recalculation_keeps_planned_paths_without_a_stale_contact",
+        "CombatForecast_provisional_paths_respect_expiry_and_point_budget",
+        "CombatForecast_cache_reuses_continuation_without_flicker",
+        "CombatForecast_cache_records_headless_miss_and_hit_cost",
+        "CombatForecast_headless_Release_budget_200_batches",
+        "CombatForecast_headless_30_seconds_of_presented_updates_do_not_starve_worker"
+      ],
+      "retainedMethods": [
+        "CombatForecast_publishes_across_real_point_engine_updates",
+        "CombatForecast_changing_observed_linear_targets_obey_UI_budget",
+        "Captured_point_path_reuses_across_unrelated_actor_controls_and_rebuilds_for_a_changed_capture",
+        "Time_rewind_session_options_and_clear_invalidate_current_results",
+        "New_removed_and_corrected_foreign_observations_replace_stale_paths",
+        "Work_is_bounded_to_visible_flights_and_full_geometry_slots",
+        "Genuine_invalid_point_payload_errors_are_not_swallowed"
+      ],
+      "retired": "Tangent routes, dependent homing chains, replan contacts and async workers were used only by the deleted homing model. The current point path already ran synchronously. No no-op worker compatibility property is retained.",
+      "retained": "The actual1800-update source-world point exercise and both strict2ms changing-observation budgets remain. Current no-target capture reuse, unrelated/unscheduled actor changes, changed endpoint, rewind, session/options identity, reset, stale observation correction/removal, finite visible/full work limits and genuine error propagation are explicit point cases. Motion cancellation remains directly tested in PointCombatUS0018TK0004Tests.Cancellation_and_budgets_return_bounded_calculation_limited_results."
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/DefenseMapAnnotationsTests.cs",
+      "retired_methods": [
+        "Only_intercept_point_shows_chance_without_flight_labels_or_tooltip"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0010TK0002Tests",
+        "PointCombatUS0010TK0003Tests",
+        "PointCombatUS0010TK0004Tests",
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "retained generic checks in current source"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/PhaseThreeMapTests.cs",
+      "retired_methods": [
+        "Only_hovered_panel_shows_its_world_space_ranges",
+        "Calculation_labels_stay_hidden_through_pause_and_resume",
+        "Coincident_countermeasures_do_not_display_calculation_labels",
+        "Offscreen_projectiles_do_not_move_their_labels_to_viewport_edges"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0010TK0002Tests",
+        "PointCombatUS0010TK0003Tests",
+        "PointCombatUS0010TK0004Tests",
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "retained generic checks in current source"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/CountermeasureRenderingTests.cs",
+      "retired_methods": [
+        "Countermeasure_route_matches_snapshot_and_is_selectable_marker",
+        "Miss_text_expires_in_real_time_and_never_replays"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0010TK0002Tests",
+        "PointCombatUS0010TK0003Tests",
+        "PointCombatUS0010TK0004Tests",
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "retained generic checks in current source"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/DefenseCommandPanelTests.cs",
+      "retired_methods": [
+        "Two_defense_panels_show_own_barrels_pending_second_shot_and_reload",
+        "Auto_toggle_sends_only_disable_and_preserves_authoritative_flight",
+        "Countermeasure_selectable_but_fire_disabled",
+        "Operator_zero_skill_is_a_person_and_breakdown_is_frozen",
+        "Update"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0010TK0002Tests",
+        "PointCombatUS0010TK0003Tests",
+        "PointCombatUS0010TK0004Tests",
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "retained generic checks in current source"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/TacticalPaletteRoutingTests.cs",
+      "retired_methods": [
+        "PaletteRenderRoleRouting_uses_custom_settings_and_distinct_range_roles"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0010TK0002Tests",
+        "PointCombatUS0010TK0003Tests",
+        "PointCombatUS0010TK0004Tests",
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "retained generic checks in current source"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/CombatTrajectoryTests.cs",
+      "retired_methods": [
+        "Recorded_target_corrections_do_not_permanently_hide_player_flight",
+        "Player_flight_remains_visible_but_contact_waits_for_stable_target",
+        "Continually_accelerating_target_does_not_hide_player_torpedo_path",
+        "Missing_torpedo_expiry_invalidates_a_previously_displayed_contact",
+        "Forecast_starts_from_the_displayed_clamped_hostile_pose_not_an_older_conditional_pose",
+        "Combat_target_marker_and_line_share_pose_through_pause_and_reconciliation",
+        "Flight_lines_survive_selection_change_and_pause",
+        "Target_line_ends_at_same_predicted_encounter",
+        "Impact_hides_all_trajectories_while_explosion_lives_two_real_seconds",
+        "Unknown_target_does_not_disclose_conditional_hostile_motion",
+        "No_contact_keeps_both_lines_to_a_physical_horizon",
+        "Turning_target_replaces_old_aim_with_a_conditional_contact",
+        "Conditional_forecast_continues_beyond_confirmed_AI_watermark",
+        "Zoom_changes_screen_geometry_not_flight_state",
+        "Prediction_starts_at_current_pose_after_session_replacement",
+        "Torpedo_draws_ship_engine_flame_behind_its_current_heading"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0010TK0002Tests",
+        "PointCombatUS0010TK0003Tests",
+        "PointCombatUS0010TK0004Tests",
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "retained generic checks in current source"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/PhaseThreeCombatInfoTests.cs",
+      "retired_methods": [
+        "Each_panel_uses_own_authoritative_preview_and_active_frozen_chance",
+        "Flight_and_reload_timers_are_not_confused",
+        "Selected_projectile_uses_captured_facts_and_physical_remaining_lifetime",
+        "Long_details_wrap_and_remain_scrollable"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0010TK0002Tests",
+        "retained generic details wrapping and scrolling theory"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/TorpedoInspectionTests.cs",
+      "retired_methods": [
+        "Rendered_hit_chance_value_has_clear_gap_after_label",
+        "Selected_torpedo_shows_target_speed_distance_eta_and_100_percent",
+        "Wreck_is_selectable_and_can_be_targeted",
+        "Unknown_target_name_is_not_leaked",
+        "Unreachable_target_has_no_eta_and_does_not_invent_impact",
+        "Destroyed_projectile_does_not_leave_stale_info"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0010TK0002Tests",
+        "PointCombatUS0011TK0002Tests",
+        "PointCombatUS0013TK0002Tests",
+        "retained generic label-value spacing rendered at three scales"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/ManualDefensePreviewTests.cs",
+      "retired_methods": [
+        "Manual_defense_preview_preparation_obeys_UI_budget",
+        "Missing_captured_parameters_show_an_explicit_data_status",
+        "Hover_preview_matches_real_launch_geometry_without_rng_or_busy_side_effects",
+        "Unreachable_preview_has_no_false_cross_and_zero_chance_remains_enabled",
+        "Hover_switch_uses_each_modules_constraints_and_clears_on_stale_target_or_overlay",
+        "Preview_draws_configured_gray_geometry_on_real_screen"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0011TK0002Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "PointCombatUS0013TK0002Tests",
+        "ManualDefensePreviewTests.Current_point_preview_preparation_obeys_strict_UI_budget.cs"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/TorpedoPreviewTests.cs",
+      "retired_methods": [
+        "Moving_launch_preview_preparation_obeys_UI_budget",
+        "Hidden_npc_steering_does_not_change_the_observed_preview",
+        "Preview_requires_published_torpedo_lifetime_and_never_draws_contact_after_expiry",
+        "Moving_maneuver_preview_uses_each_frames_launch_state_without_permanent_recalculation",
+        "Paused_preview_matches_authoritative_launch_after_visual_reconciliation",
+        "Hover_preview_matches_launch_from_same_state",
+        "Preview_uses_gray_config_color",
+        "Hover_has_no_authoritative_side_effects",
+        "Busy_or_no_target_has_no_launch_preview",
+        "Preview_refreshes_when_selected_target_changes",
+        "Unreachable_preview_has_no_encounter_cross",
+        "Preview_updates_current_pose_and_clears_on_modal_or_mouse_leave"
+      ],
+      "reason": "Retired target-homing, frozen hit/interception chance, auto/burst or hover-to-target commands; no gameplay compatibility adapter.",
+      "retained_current_coverage": [
+        "PointCombatUS0011TK0002Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "PointCombatUS0013TK0002Tests",
+        "TorpedoPreviewTests.Current_point_preview_preparation_obeys_strict_UI_budget.cs"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/TorpedoLaunchTests.cs",
+      "previousMethods": [
+        "Paused_launch_creates_one_stationary_projectile",
+        "Second_launch_and_duplicate_command_do_not_create_projectile",
+        "Missing_self_or_invalid_target_is_rejected_without_effect",
+        "Carrier_maneuver_does_not_retarget_torpedo",
+        "Motion_clock_controls_torpedo_under_all_speeds",
+        "Flight_and_history_are_independent_of_snapshot_partitions",
+        "Lost_target_continues_heading_without_freeing_launcher"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0002Tests",
+        "PointCombatUS0003TK0004Tests",
+        "PointCombatUS0009TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0018TK0002Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/RangedTorpedoLaunchTests.cs",
+      "previousMethods": [
+        "Both_sides_use_configured_module_range",
+        "Range_uses_physical_launch_pose",
+        "Both_sides_obey_inclusive_range",
+        "Forged_npc_player_command_rejected",
+        "Active_torpedo_survives_range_exit",
+        "Non_enemy_internal_actor_cannot_launch"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0002Tests",
+        "PointCombatUS0003TK0004Tests",
+        "PointCombatUS0009TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0018TK0002Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/LauncherCooldownTests.cs",
+      "previousMethods": [
+        "Second_launch_after_15s_while_first_flying_and_command_id_is_idempotent",
+        "Npc_fires_on_cooldown_while_first_flight_is_active"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0002Tests",
+        "PointCombatUS0003TK0004Tests",
+        "PointCombatUS0009TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0018TK0002Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/TorpedoSelfDestructTests.cs",
+      "previousMethods": [
+        "Paused_self_destruct_is_immediate_and_harmless",
+        "Duplicate_or_stale_command_does_not_destroy_next_launch"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0002Tests",
+        "PointCombatUS0003TK0004Tests",
+        "PointCombatUS0009TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0018TK0002Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs",
+      "previousMethods": [
+        "Case_variant_existing_id_does_not_break_save_reload",
+        "Real_combat_with_save_mid_second_flight_matches_continuous_run",
+        "Dispose",
+        "Format17_roundtrips_module_durability_ai_and_combat_continuation",
+        "Format17_accepts_a_bounded_captured_hit_chance_instead_of_only_100",
+        "Invalid_format17_continuation_is_rejected_before_replacing_world",
+        "Format17_rejects_removed_legacy_combat_fields",
+        "Fractional_content_speed_survives_file_roundtrip_and_rejects_corrupt_speed",
+        "Wreck_movement_type_preserves_case_insensitive_file_compatibility",
+        "File_roundtrip_midflight_matches_continuous_three_hit_run",
+        "Save_after_enqueue_preserves_exactly_one_launch",
+        "Save_at_contact_does_not_duplicate_damage_or_wreck",
+        "Saved_module_and_weapon_values_survive_content_edit",
+        "Busy_and_full_trail_restore_without_new_rng_draw",
+        "Combat_restore_preserves_named_world_rng_states_and_next_draws",
+        "Launch_identity_survives_receipt_eviction_and_file_reload",
+        "Unreachable_replanning_flight_resumes_between_guidance_boundaries"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0002Tests",
+        "PointCombatUS0003TK0004Tests",
+        "PointCombatUS0009TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0018TK0002Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatSaveSchemaTests.cs",
+      "previousMethods": [
+        "Combat_schema_rejects_orphan_duplicate_and_nonfinite_state",
+        "Unknown_saved_launcher_fire_mode_is_rejected_before_replacing_world",
+        "Current_save_rejects_invalid_module_and_flight_state",
+        "Legacy_v9_save_is_rejected_but_internal_scenario_fixture_remains_readable",
+        "Future_combat_route_version_is_rejected",
+        "Current_combat_requires_explicit_identity_and_clock_fields"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0002Tests",
+        "PointCombatUS0003TK0004Tests",
+        "PointCombatUS0009TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0018TK0002Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs",
+      "previousMethods": [
+        "Old_save_versions_are_rejected_without_mutation",
+        "Version_zero_new_game_is_allowed_but_same_file_as_save_is_rejected",
+        "Save_gate_runs_before_historical_payload_deserialization",
+        "Current_version_file_roundtrip_preserves_the_world"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0002Tests",
+        "PointCombatUS0003TK0004Tests",
+        "PointCombatUS0009TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0018TK0002Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CountermeasureSaveSchemaTests.cs",
+      "previousMethods": [
+        "Invalid_captured_torpedo_rating_is_rejected_atomically",
+        "Malformed_active_defense_is_rejected",
+        "Unknown_rng_version_rejected"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0004TK0001Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0004TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0009TK0005Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CountermeasureSaveLoadTests.cs",
+      "previousMethods": [
+        "All_phases_resume_exactly_through_real_serializer_loader",
+        "Invalid_load_does_not_replace_running_world"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0004TK0001Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0004TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0009TK0005Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/DualDefenseArbitrationTests.cs",
+      "previousMethods": [
+        "Earlier_encounter_wins_over_higher_chance",
+        "Equal_encounter_prefers_chance_then_ordinal_module_id",
+        "No_solution_candidate_does_not_hide_valid_second_module",
+        "Rejected_candidates_do_not_reserve_attempt_or_draw",
+        "Manual_first_consumes_shared_auto_attempt_but_allows_additional_manual",
+        "Simultaneous_manual_contacts_draw_once_per_resolved_projectile",
+        "Earliest_hull_threat_retains_priority_before_module_arbitration"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0004TK0001Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0004TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0009TK0005Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CountermeasureResolutionTests.cs",
+      "previousMethods": [
+        "Intercept_58_example_uses_direct_operator_skills",
+        "Successful_intercept_removes_both_once_and_no_module_damage",
+        "Miss_coasts_straight_then_retries_after_launch_based_reload",
+        "Target_loss_before_contact_aborts_but_after_miss_preserves_coast",
+        "Large_step_and_partitions_produce_same_resolution"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0004TK0001Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0004TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0009TK0005Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CountermeasureEndToEndTests.cs",
+      "previousMethods": [
+        "Real_scenario_success_and_miss",
+        "Three_launches_with_repeat_defense_match_after_save_load"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0004TK0001Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0004TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0009TK0005Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/PdBurstTests.cs",
+      "previousMethods": [
+        "Manual_burst_can_restart_after_reload_while_older_countermeasures_are_guiding",
+        "Second_barrel_fires_after_two_seconds_and_survives_save_load",
+        "Single_barrel_has_no_second_shot",
+        "Second_barrel_is_skipped_after_target_is_intercepted"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0004TK0001Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0004TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0009TK0005Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/PdReloadTests.cs",
+      "previousMethods": [
+        "Reload_is_due_14500_ms_after_first_barrel_not_after_intercept"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0004TK0001Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0004TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "PointCombatUS0009TK0005Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/HostileTorpedoFireTests.cs",
+      "previousMethods": [
+        "All_enemy_ships_fire_neutrals_do_not",
+        "Pause_has_no_auto_fire",
+        "Range_entry_inside_large_interval_waits_for_reaction",
+        "Unavailable_hostile_weapon_does_not_launch",
+        "Finishing_torpedo_allows_next_shot",
+        "Large_interval_matches_partitioned_fire",
+        "Exhausted_projectile_ids_do_not_fault_or_spin_scheduler",
+        "Player_defense_responds_to_real_hostile_launch",
+        "Actual_hostile_flight_file_roundtrip_preserves_next_shots"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0007TK0002Tests",
+        "PointCombatUS0007TK0003Tests",
+        "PointCombatUS0009TK0004Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/NpcTorpedoLifetimeTests.cs",
+      "previousMethods": [
+        "Reachable_hostile_waits_for_reload_and_reaction",
+        "Hostile_does_not_fire_at_unreachable_intercept_even_inside_range",
+        "Torpedo_expires_at_captured_120_seconds_and_resume_matches"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0007TK0002Tests",
+        "PointCombatUS0007TK0003Tests",
+        "PointCombatUS0009TK0004Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatReactionDelayTests.cs",
+      "previousMethods": [
+        "Hostile_waits_after_range_entry_and_again_after_cooldown",
+        "Player_automatic_defense_waits_but_manual_shot_does_not",
+        "Pending_delay_survives_pause_file_roundtrip_and_partitioning",
+        "Player_defense_pending_deadline_resumes_identically",
+        "Different_seeds_sample_different_delays_and_bad_save_is_atomic"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0007TK0002Tests",
+        "PointCombatUS0007TK0003Tests",
+        "PointCombatUS0009TK0004Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeDeterminismTests.cs",
+      "previousMethods": [
+        "Single_step_and_partitioned_battle_match"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0007TK0002Tests",
+        "PointCombatUS0007TK0003Tests",
+        "PointCombatUS0009TK0004Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeMultiHostileTests.cs",
+      "previousMethods": [
+        "Multiple_hostiles_share_no_player_authority"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0007TK0002Tests",
+        "PointCombatUS0007TK0003Tests",
+        "PointCombatUS0009TK0004Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatJournalTests.cs",
+      "previousMethods": [
+        "Each_transition_logged_once_in_deterministic_order"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0017TK0001Tests",
+        "PointCombatUS0017TK0002Tests",
+        "PointCombatUS0017TK0003Tests",
+        "PointCombatUS0017TK0004Tests",
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0008TK0003Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatReportRangeTests.cs",
+      "previousMethods": [
+        "ThreeMukhaHaveIndependentRangeReports",
+        "BoundaryUsesConfiguredRange",
+        "ReloadAndSelectionDoNotAffectRange",
+        "UnknownDestroyedAndDisabledAreExcluded",
+        "ReentryDoesNotRepeat",
+        "NewGameInRangeEmitsOnce"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0017TK0001Tests",
+        "PointCombatUS0017TK0002Tests",
+        "PointCombatUS0017TK0003Tests",
+        "PointCombatUS0017TK0004Tests",
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0008TK0003Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatReportInterceptTests.cs",
+      "previousMethods": [
+        "OnlySuccessfulPlayerInterceptCreatesE05",
+        "ForeignAndFriendlyInterceptExcluded",
+        "RemovedProjectileStillHasCapturedReporter"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0017TK0001Tests",
+        "PointCombatUS0017TK0002Tests",
+        "PointCombatUS0017TK0003Tests",
+        "PointCombatUS0017TK0004Tests",
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0008TK0003Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatReportDamageTests.cs",
+      "previousMethods": [
+        "LethalHitCreatesOneDestroyedReport",
+        "NonlethalHitCreatesOneHitReport",
+        "ArmorOnlyDamageCreatesCaptainReport",
+        "ZeroDamageDoesNotCreateE07",
+        "SameTimeProjectilesRemainSeparate",
+        "DefeatDoesNotWaitForReportPresentation"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0017TK0001Tests",
+        "PointCombatUS0017TK0002Tests",
+        "PointCombatUS0017TK0003Tests",
+        "PointCombatUS0017TK0004Tests",
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0008TK0003Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatReportLaunchTests.cs",
+      "previousMethods": [
+        "EnemyPlayerAndCountermeasureLaunches",
+        "BurstCreatesOneReportPerActualShot",
+        "RejectedAndSkippedLaunchesHaveNoReport",
+        "EnemyNpcBattleAndUnknownLaunchAreExcluded",
+        "DisabledScannerDoesNotReplayLaunches"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0017TK0001Tests",
+        "PointCombatUS0017TK0002Tests",
+        "PointCombatUS0017TK0003Tests",
+        "PointCombatUS0017TK0004Tests",
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0008TK0003Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatReportsEndToEndTests.cs",
+      "previousMethods": [
+        "CombatMukhaUsesProductionScenario",
+        "EveryReportKindHasDeterministicProof",
+        "SameSeedReportsAreIdentical",
+        "ReportProjectionDoesNotChangeCombatOutcome",
+        "SaveLoadAndTerminalReportMatrix"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0017TK0001Tests",
+        "PointCombatUS0017TK0002Tests",
+        "PointCombatUS0017TK0003Tests",
+        "PointCombatUS0017TK0004Tests",
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0008TK0003Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeCombatEndToEndTests.cs",
+      "previousMethods": [
+        "Real_battle_exercises_auto_and_manual_defense_then_defeat_and_file_recovery"
+      ],
+      "retired": "The six-stage target command, homing route, hit/intercept roll, autonomous/burst defense or format-17 continuation no longer exists. Its old catalog is removed, not restored as a compatibility model.",
+      "currentCoverage": [
+        "PointCombatUS0003TK0003Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0008TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "BasicCombatEndToEndTests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/BasicCombatEndToEndTests.cs",
+      "previousMethods": [
+        "Three_module_kills_destroy_ship_at_threshold",
+        "Combat_results_are_equal_under_pause_speed_and_time_partitions",
+        "Dispose"
+      ],
+      "retired": "Guided flight/contact and old 150 damage/60000 ms disable assumptions are replaced by explicit point launches; generic math, damage RNG, wreck, world and file continuation checks retained.",
+      "currentCoverage": [
+        "BasicCombatEndToEndTests",
+        "PointCombatUS0003TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "DisabledModuleTests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/ModuleDamageTests.cs",
+      "previousMethods": [
+        "Damage_split_150_vs_light",
+        "Unarmored_dies_one_hit",
+        "Hit_location_by_mass_deterministic",
+        "Hit_location_rng_continues_after_save_load",
+        "Light_module_hit_disables_for_one_minute"
+      ],
+      "retired": "Guided flight/contact and old 150 damage/60000 ms disable assumptions are replaced by explicit point launches; generic math, damage RNG, wreck, world and file continuation checks retained.",
+      "currentCoverage": [
+        "ModuleDamageTests",
+        "PointCombatUS0003TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "DisabledModuleTests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatWreckTests.cs",
+      "previousMethods": [
+        "Third_hit_creates_one_new_stationary_wreck",
+        "Destroyed_target_references_are_cleared",
+        "Wreck_is_invulnerable_to_followup_torpedo",
+        "World_continues_after_pirate_destruction",
+        "Wreck_survives_file_load_without_replaying_impacts",
+        "Loader_rejects_invalid_wreck_and_unbacked_missile",
+        "Wreck_id_skips_existing_objects",
+        "Destruction_does_not_shift_station_market_boundary_commits",
+        "Original_scenario_three_real_launches_destroy_moving_pirate"
+      ],
+      "retired": "Guided flight/contact and old 150 damage/60000 ms disable assumptions are replaced by explicit point launches; generic math, damage RNG, wreck, world and file continuation checks retained.",
+      "currentCoverage": [
+        "CombatWreckTests",
+        "PointCombatUS0003TK0003Tests",
+        "PointCombatUS0009TK0004Tests",
+        "DisabledModuleTests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/ManualDefenseUiFlowTests.cs",
+      "previousMethods": [
+        "Double_click_only_blocks_its_module_and_results_match_command_identity",
+        "Selection_change_preserves_sent_target_and_stale_preview_disables_fire",
+        "Transport_failure_releases_only_the_affected_module",
+        "Toggle_addresses_second_module_without_target_or_first_module_pending",
+        "Stale_enabled_button_rechecks_authoritative_preview_and_module",
+        "Panel_click_preserves_map_selection_and_foreground_overlay_consumes_it",
+        "Two_paused_clicks_launch_two_modules_through_real_local_session"
+      ],
+      "retired": "Target selection, legacy toggle, hover-authoritative preview and removal-only self-destruct flows are replaced by explicit point/profile aiming and blast detonation.",
+      "currentCoverage": [
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0002Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "PointCombatUS0013TK0002Tests",
+        "PointCombatUS0013TK0003Tests",
+        "PointCombatUS0013TK0004Tests",
+        "PhaseThreeSessionRoundtripTests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/RangedTorpedoUiTests.cs",
+      "previousMethods": [
+        "Out_of_range_fire_is_disabled",
+        "Selection_change_does_not_retarget_pending_fire",
+        "Boundary_rejection_clears_only_matching_pending"
+      ],
+      "retired": "Target selection, legacy toggle, hover-authoritative preview and removal-only self-destruct flows are replaced by explicit point/profile aiming and blast detonation.",
+      "currentCoverage": [
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0002Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "PointCombatUS0013TK0002Tests",
+        "PointCombatUS0013TK0003Tests",
+        "PointCombatUS0013TK0004Tests",
+        "PhaseThreeSessionRoundtripTests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/TorpedoSelfDestructUiTests.cs",
+      "previousMethods": [
+        "Self_destruct_button_uses_launcher_active_id_on_pause",
+        "Self_destruct_terminal_trail_lives_two_real_seconds",
+        "Update"
+      ],
+      "retired": "Target selection, legacy toggle, hover-authoritative preview and removal-only self-destruct flows are replaced by explicit point/profile aiming and blast detonation.",
+      "currentCoverage": [
+        "PointCombatUS0011TK0001Tests",
+        "PointCombatUS0011TK0002Tests",
+        "PointCombatUS0011TK0003Tests",
+        "PointCombatUS0011TK0004Tests",
+        "PointCombatUS0013TK0002Tests",
+        "PointCombatUS0013TK0003Tests",
+        "PointCombatUS0013TK0004Tests",
+        "PhaseThreeSessionRoundtripTests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/TorpedoCommandPanelTests.cs",
+      "previousMethods": [
+        "Busy_and_pending_launcher_disable_fire",
+        "Paused_fire_uses_selected_target_not_hover",
+        "Rejected_submission_returns_panel_to_authoritative_state",
+        "Transport_failure_releases_pending_submission",
+        "Information_overlay_consumes_reported_click_and_never_covers_launcher",
+        "Launcher_panel_requires_selected_nonself_target",
+        "Launcher_requires_actual_ready_capability"
+      ],
+      "retired": "Old object-target command submission/enablement is replaced by current point Q/W/Launch flows. Generic profile and viewport tests remain.",
+      "currentCoverage": [
+        "PointCombatUS0011TK0004Tests",
+        "PointCombatUS0013TK0002Tests",
+        "PointCombatUS0013TK0003Tests",
+        "PointCombatUS0013TK0004Tests"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Engine.Tests/CombatPresentationTests.cs",
+      "previousMethods": [
+        "Intercept_or_miss_is_recorded_at_contact_with_the_actual_post_contact_flight",
+        "Destroyed_target_rejection_does_not_change_rng_reload_or_projectile_sequence",
+        "Countermeasure_trails_never_extend_beyond_their_frame_time",
+        "Living_static_target_leaves_compact_set_without_a_removal_after_flight_expiry"
+      ],
+      "retired": "Guided contact/missed-coast/target-bound lifetime no longer exists; an explicit point launch has no required target object.",
+      "currentCoverage": [
+        "PointCombatUS0005TK0002Tests",
+        "PointCombatUS0004TK0002Tests",
+        "PointCombatUS0009TK0004Tests",
+        "CombatPresentationTests.Flight_between_full_snapshots_retains_launch_contact_geometry_and_consequences"
+      ]
+    },
+    {
+      "file": "tests/DeepSpaceSaga.Client.Tests/CombatMetricsWriterTests.cs",
+      "previousMethods": [
+        "Records_authoritative_geometry_events_and_throttled_visuals_without_mutating_snapshot"
+      ],
+      "retired": "Guided countermeasure/frozenChance transport fields are replaced by current own/observed point payloads in metrics schema2. Geometry, event deduplication, visual throttling, immutability and real file checks remain.",
+      "currentCoverage": [
+        "CombatMetricsWriterTests.Records_authoritative_geometry_events_and_throttled_visuals_without_mutating_snapshot",
+        "CombatMetricsWriterTests.Actual_point_flights_are_logged_from_public_own_and_observed_payloads_without_legacy_fields"
+      ]
+    }
+  ],
+  "note": "Per-class legacy concept retirement and retained current coverage; actual executed commands and results are in us0003-tk0005-results.json."
+}

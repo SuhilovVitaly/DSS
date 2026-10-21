@@ -47,7 +47,7 @@ public sealed class PointCombatUS0018TK0004Tests
         var targetProjectile = new ObjectMotionSnapshot("foreign-shot", 590, 0, 1, 90,
             ObservedProjectile: new(ProjectileKind.Torpedo, 590, 0, 1, 0, 1, "slow", 1));
         Assert.Equal(CombatForecastStatus.Contact, CombatForecast.Countermeasure(
-            Own(ProjectileKind.Countermissile), targetProjectile, null, 0).Status);
+            Own(ProjectileKind.Countermissile), targetProjectile, 0).Status);
     }
 
     [Fact]

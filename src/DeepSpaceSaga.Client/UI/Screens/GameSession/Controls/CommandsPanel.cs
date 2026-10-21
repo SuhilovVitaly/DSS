@@ -75,8 +75,8 @@ public sealed class CommandsPanel
         new CommandPanelDefinition("Space Control", ImmutableArray.Create(
             ScannerCommandTypes.GeneralScan,
             ScannerCommandTypes.StructuralScan)),
-        new CommandPanelDefinition("Torpedo Launcher", ImmutableArray.Create(CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode)),
-        new CommandPanelDefinition("Countermeasure Launcher", ImmutableArray.Create(DefenseCommandTypes.Enable, DefenseCommandTypes.Disable)));
+        new CommandPanelDefinition("Torpedo Launcher", ImmutableArray.Create(CombatCommandTypes.Launch, CombatCommandTypes.Detonate)),
+        new CommandPanelDefinition("Countermeasure Launcher", ImmutableArray.Create(DefenseCommandTypes.Launch)));
 
     /// <summary>
     /// Per-command icon files under Images/UI/GameSessionScreenUI/commands-panel/.
@@ -141,9 +141,6 @@ public sealed class CommandsPanel
     // ── Hooks (ТЗ-04, injected by the screen) ───────────────────
     private readonly Func<string, bool> _isCommandEnabled;
     private readonly Action<string> _commandClicked;
-    private readonly Func<string?>? _launcherStatus;
-    private readonly Func<string?>? _defenseStatus;
-    private readonly Func<string, string?>? _operatorText;
     private readonly Func<WeaponPanelInstance, string, bool>? _weaponCommandEnabled;
     private readonly Action<WeaponPanelInstance, string>? _weaponCommandClicked;
     private readonly Func<WeaponPanelInstance, string?>? _weaponStatus;
@@ -256,7 +253,6 @@ public sealed class CommandsPanel
     public CommandsPanel(
         Func<string, bool>? isCommandEnabled = null,
         Action<string>? commandClicked = null,
-        Func<string?>? launcherStatus = null, Func<string?>? defenseStatus = null, Func<string, string?>? operatorText = null,
         Func<WeaponPanelInstance, string, bool>? weaponCommandEnabled = null,
         Action<WeaponPanelInstance, string>? weaponCommandClicked = null,
         Func<WeaponPanelInstance, string?>? weaponStatus = null,
@@ -267,9 +263,6 @@ public sealed class CommandsPanel
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
-        _launcherStatus = launcherStatus;
-        _defenseStatus = defenseStatus;
-        _operatorText = operatorText;
         _weaponCommandEnabled = weaponCommandEnabled;
         _weaponCommandClicked = weaponCommandClicked;
         _weaponStatus = weaponStatus;
@@ -640,8 +633,6 @@ public sealed class CommandsPanel
                     _hoveredCommandButtonIndex < rowEndOrdinalExclusive
                         ? _commandButtons[_hoveredCommandButtonIndex].Label
                         : null;
-                if (opened && panel.Weapon is null && panel.Name == "Torpedo Launcher") statusBarText = _launcherStatus?.Invoke() ?? statusBarText;
-                if (opened && panel.Weapon is null && panel.Name == "Countermeasure Launcher") statusBarText = _defenseStatus?.Invoke() ?? statusBarText;
                 if (opened && statusBarText is null && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon);
 
                 var weaponModule = panel.Weapon is { } instance
@@ -666,7 +657,7 @@ public sealed class CommandsPanel
                 _panelRows.Add(new CommandPanelGeometry(
                     panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon, details[panel.Key],
                     weaponModule?.ModuleId, toggle, weaponModule is not null && IsWeaponRangeVisible(weaponModule.ModuleId), pointWeapon ? SKRect.Empty : reloadBar, reloadFraction, reloadRing, remainingReal,
-                    panel.Weapon is { } operatorWeapon ? _weaponOperatorText?.Invoke(operatorWeapon) : _operatorText?.Invoke(panel.Name)));
+                    panel.Weapon is { } operatorWeapon ? _weaponOperatorText?.Invoke(operatorWeapon) : null));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -730,32 +721,19 @@ public sealed class CommandsPanel
 
     private static ImmutableArray<CommandPanelDefinition> BuildPanels(IReadOnlyList<InstalledModuleSnapshot> modules, string? owner)
     {
-        if (string.IsNullOrWhiteSpace(owner)) return Panels; // Ownerless template rendering for non-session callers.
-        var defense = modules.Where(m => m.Defense is not null).OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
+        if (string.IsNullOrWhiteSpace(owner)) return Panels;
         var builder = ImmutableArray.CreateBuilder<CommandPanelDefinition>();
         foreach (var panel in Panels)
         {
-            if (panel.Name == "Torpedo Launcher")
+            bool torpedo = panel.Name == "Torpedo Launcher", counter = panel.Name == "Countermeasure Launcher";
+            if (!torpedo && !counter) { builder.Add(panel); continue; }
+            var weapons = modules.Where(m => torpedo ? m.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false }
+                : m.Defense?.Profiles is { IsDefaultOrEmpty: false }).OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
+            for (int i = 0; i < weapons.Length; i++)
             {
-                var pointTorpedoes = modules.Where(m => m.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false })
-                    .OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
-                if (pointTorpedoes.Length > 0)
-                {
-                    for (int i = 0; i < pointTorpedoes.Length; i++)
-                    {
-                        string caption = pointTorpedoes.Length == 1 ? panel.Name : panel.Name + " " + (i + 1);
-                        builder.Add(new(caption, [CombatCommandTypes.Launch, CombatCommandTypes.Detonate], new(owner, pointTorpedoes[i].ModuleId, caption)));
-                    }
-                    continue;
-                }
-            }
-            if (panel.Name != "Countermeasure Launcher" || defense.Length == 0) { builder.Add(panel); continue; }
-            for (int i = 0; i < defense.Length; i++)
-            {
-                string caption = defense.Length == 1 ? panel.Name : panel.Name + " " + (i + 1);
-                builder.Add(new(caption, defense[i].Defense?.Profiles is { IsDefaultOrEmpty: false }
-                    ? [DefenseCommandTypes.Launch] : [DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable],
-                    new(owner, defense[i].ModuleId, caption)));
+                string caption = weapons.Length == 1 ? panel.Name : panel.Name + " " + (i + 1);
+                builder.Add(new(caption, torpedo ? [CombatCommandTypes.Launch, CombatCommandTypes.Detonate] : [DefenseCommandTypes.Launch],
+                    new(owner, weapons[i].ModuleId, caption)));
             }
         }
         return builder.ToImmutable();
@@ -778,8 +756,6 @@ public sealed class CommandsPanel
                 ? FindCommandMetadataAcrossModules(modules.Where(m => m.ModuleId == weapon.ModuleId).ToArray(), commandTypeId)
                 : FindCommandMetadataAcrossModules(modules, commandTypeId);
             string label = panel.Weapon is { } labelWeapon ? _weaponCommandLabel?.Invoke(labelWeapon, commandTypeId) ?? metadata?.DisplayName ?? commandTypeId : metadata?.DisplayName ?? commandTypeId;
-            if (commandTypeId is DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable or TorpedoLauncherCommandTypes.SetMode)
-                label = GameSessionScreen.CombatText("Command." + commandTypeId, label);
 
             int col = i % (int)CommandButtonColumns;
             int rowIdx = i / (int)CommandButtonColumns;

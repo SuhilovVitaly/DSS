@@ -448,11 +448,16 @@ public sealed partial class SimulationEngine : IDisposable
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
         StageCombatRestore(gs.CombatState, runtimeObjects, combatState);
         StageHostileRestore(gs.HostileCombatState, runtimeObjects, gs.MotionTimeMs);
-        ValidateCombatReactions(gs);
-        StageLegacyWeaponRatings(runtimeObjects);
+        if (gs.CombatReactionDelays is { Count: > 0 })
+            throw new ScenarioException("Retired randomized combat reaction continuation is unsupported.");
         var defenses = BuildDefenseState(runtimeObjects);
         StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
-        StagePointCombatRestore(gs, loadingSave, runtimeObjects, combatState, defenses);
+        // The scenario-authoring API also accepts historical unarmed economic worlds.
+        // Only those start a fresh point subsystem; every actual save and every
+        // captured point weapon continuation must retain the complete Save18 state.
+        bool requirePointContinuation = loadingSave && (isSave || scenario.SaveFormatVersion >= 18 ||
+            combatState.Count > 0 || defenses.Count > 0);
+        StagePointCombatRestore(gs, requirePointContinuation, runtimeObjects, combatState, defenses);
         var restoredReports = StageCombatReportsRestore(gs, loadingSave, runtimeObjects, combatState);
 
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
@@ -499,17 +504,11 @@ public sealed partial class SimulationEngine : IDisposable
             _countermeasureSequence = 0;
             _combatJournal.Clear();
             _combatJournalSequence = 0;
-            _countermeasureRng = new(resolvedMasterSeed);
             _moduleHitLocationRng = new(resolvedMasterSeed);
             _launchScatterRng = new(resolvedMasterSeed);
             _npcDodgeRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed, RngStreamNames.NpcDodge), 0);
             _npcDodgeThreats.Clear();
-            _torpedoHitRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
-                RngStreamNames.CombatTorpedoHit), 0);
-            _launcherBreakdownRng = new(RngStreamSeedDerivation.DeriveStreamSeed(resolvedMasterSeed,
-                RngStreamNames.CombatLauncherBreakdown), 0);
             _combatProcessedTimeMs = gs.MotionTimeMs;
-            RestoreCombatReactions(gs);
             _hostileCombat.Clear();
             if (gs.HostileCombatState is { } hostile)
                 foreach (var row in hostile.Actors) _hostileCombat.Add(row.ObjectId,
@@ -519,8 +518,6 @@ public sealed partial class SimulationEngine : IDisposable
             _combatImpactSequence = 0;
             _wreckSequence = 0;
             _combatImpacts.Clear();
-            _torpedoTargets.Clear();
-            _nextCombatGuidanceMs = long.MaxValue;
             RestoreCombatState(gs.CombatState);
             RestoreDefenseState(gs.DefenseState);
             _processedWorldTimeMs = gs.GameTimeMs;
@@ -688,7 +685,6 @@ public sealed partial class SimulationEngine : IDisposable
                 }
                 else
                 {
-                    RefreshCombatGuidance(gameTimeMs);
                     ApplyPendingDialogueCommands(gameTimeMs);
                     ReconcileVoyageAfterDialogue();
                     SynchronizeOrbitalBindings(_objects, gameTimeMs);
@@ -708,12 +704,9 @@ public sealed partial class SimulationEngine : IDisposable
             SelectedObjectId = NormalizeObjectId(SelectedObjectId);
 
             var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>();
-            var combatTargets = presentationOnly ? _objects
-                .Where(o => o.InitialMotion.Torpedo is not null)
-                .Select(o => o.InitialMotion.Torpedo!.TargetObjectId).ToHashSet(StringComparer.Ordinal) : null;
             foreach (var obj in _objects)
             {
-                if (presentationOnly && !IsPresentationObject(obj) && !combatTargets!.Contains(obj.InitialMotion.ObjectId)) continue;
+                if (presentationOnly && !IsPresentationObject(obj)) continue;
                 long elapsed = gameTimeMs - obj.StartGameTimeMs;
                 var cycleMotion = GetActiveEngineCycleMotion(obj, gameTimeMs);
                 // Project ordinary objects straight into the outgoing DTO: avoid
@@ -742,8 +735,8 @@ public sealed partial class SimulationEngine : IDisposable
                     Y = linear ? y : motion.Y,
                     OwnProjectile = motion.OwnProjectile?.OwnerObjectId == PlayerShipObjectId ? motion.OwnProjectile : null,
                     ObservedProjectile = ProjectObservedProjectile(motion),
-                    Torpedo = motion.OwnProjectile is not null || motion.ObservedProjectile is not null ? null : motion.Torpedo,
-                    Countermeasure = motion.OwnProjectile is not null || motion.ObservedProjectile is not null ? null : motion.Countermeasure,
+                    Torpedo = null,
+                    Countermeasure = null,
                     Evasion = isPlayerShipRow ? motion.Evasion : null,
                     TurnHoldRateDegPerSec = isPlayerShipRow ? motion.TurnHoldRateDegPerSec : null,
                     ActiveEngineCommandType = isPlayerShipRow && motion.Evasion is not null ? ManeuverCommandTypes.Evade : isPlayerShipRow && motion.TurnHoldRateDegPerSec is not null ? ShipEngineCommandTypes.TurnHold : cycleMotion.CommandType,
@@ -1001,9 +994,9 @@ public sealed partial class SimulationEngine : IDisposable
                 CargoCapacityKg: moduleType.CargoCapacityKg,
                 LauncherCombat: ProjectWeaponLauncher(ship, module),
                 Defense: ProjectModuleDefense(ship, module),
-                Operator: moduleType.TorpedoDamage is not null
+                Operator: moduleType.IsPointLauncher && moduleType.CategoryTypeId == "module.torpedo.launcher"
                     ? ResolveWeaponOperator(ship, module, WeaponSkillType.TorpedoAttack)
-                    : moduleType.CountermeasureAccuracy is not null || moduleType.IsPointLauncher && moduleType.CategoryTypeId == "module.countermeasure.launcher"
+                    : moduleType.IsPointLauncher && moduleType.CategoryTypeId == "module.countermeasure.launcher"
                         ? ResolveWeaponOperator(ship, module, WeaponSkillType.CountermeasureDefense) : null,
                 ArmorCurrent: module.Armor,
                 ArmorMax: module.ArmorMax,
@@ -1012,8 +1005,7 @@ public sealed partial class SimulationEngine : IDisposable
                 DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 IsDestroyed: module.Destroyed,
                 CombatRole: moduleType.CombatRole,
-                IsCritical: moduleType.CombatRole is { } role && _registry.CombatRules?.ShipDestruction.CriticalRoles.Contains(role) == true,
-                TorpedoMaxFlightTimeMs: moduleType.TorpedoDamage is not null && !moduleType.IsPointLauncher ? TorpedoLifetimeMs(moduleType) : null));
+                IsCritical: moduleType.CombatRole is { } role && _registry.CombatRules?.ShipDestruction.CriticalRoles.Contains(role) == true));
         }
 
         return builder.MoveToImmutable();
@@ -1132,7 +1124,6 @@ public sealed partial class SimulationEngine : IDisposable
         // Applying it here, in the same order BuildSnapshot uses (cycles, then commands),
         // makes "continue after F9" match "continue without saving" for this case too.
         ApplyPendingCommands(gameTimeMs);
-        RefreshCombatGuidance(gameTimeMs);
         ApplyPendingDialogueCommands(gameTimeMs);
         ReconcileVoyageAfterDialogue();
         SynchronizeOrbitalBindings(_objects, gameTimeMs);
@@ -1224,7 +1215,7 @@ public sealed partial class SimulationEngine : IDisposable
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
             CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
-            HostileCombatState: CaptureHostileState(gameTimeMs), CombatReportsState: CaptureCombatReportsState(), CombatReactionDelays: CaptureCombatReactions(),
+            HostileCombatState: CaptureHostileState(gameTimeMs), CombatReportsState: CaptureCombatReportsState(), CombatReactionDelays: [],
             PointCombatState: CapturePointCombatState(gameTimeMs),
             MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
             LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
@@ -2487,15 +2478,10 @@ public sealed partial class SimulationEngine : IDisposable
             return TryStartPointDetonation(command, gameTimeMs);
         if (command.CommandType is "defense.fire" or "defense.enable" or "defense.disable")
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
-        if (UsesPointEncounters && command.CommandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or
+        if (command.CommandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or
             "defense.fire" or "defense.enable" or "defense.disable")
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
-        if (command.CommandType == CombatCommandTypes.Fire)
-            return TryStartTorpedoFire(command, gameTimeMs);
-        if (command.CommandType == TorpedoLauncherCommandTypes.SetMode)
-            return TrySetFireMode(command, gameTimeMs);
-        if (command.CommandType == CombatCommandTypes.SelfDestruct)
-            return TrySelfDestruct(command, gameTimeMs);
+
 
         return ExecuteTurnHoldOverride(command, gameTimeMs, () => ExecuteEvasionOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs)));
     }
@@ -3552,7 +3538,6 @@ public sealed partial class SimulationEngine : IDisposable
             long next = gameTimeMs;
             if (HasPendingNpcDodge) next = Math.Min(next, NextNpcDodgeTime);
             if (HasEvasionActivity) next = Math.Min(next, NextEvasionBoundary());
-            if (HasActiveTorpedoes) next = Math.Min(next, _nextCombatGuidanceMs);
             if (HasHostileMotionCandidates) next = Math.Min(next, _nextHostileDecisionMs);
             if (NextHostileLaunch(_combatProcessedTimeMs, next) is { } hostileLaunch)
                 next = Math.Min(next, hostileLaunch.Time);
@@ -3578,7 +3563,6 @@ public sealed partial class SimulationEngine : IDisposable
             UpdateStationSecurity(next);
             CompleteActiveEngineCycles(next);
             if (advanced && next >= _nextHostileDecisionMs) RefreshHostileCombat(next);
-            RefreshCombatGuidance(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             EvaluateCombatReportRange(next);

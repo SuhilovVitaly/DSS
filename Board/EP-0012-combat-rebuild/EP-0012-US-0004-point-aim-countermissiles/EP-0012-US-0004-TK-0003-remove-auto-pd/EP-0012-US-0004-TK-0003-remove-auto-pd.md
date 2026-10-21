@@ -30,7 +30,7 @@ D-USER-01: внешние файлы игнорируются. D-USER-02: UI fee
 |---|---|---|
 | [src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.Countermeasures.cs:8; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `src/DeepSpaceSaga.Engine/SimulationEngine.ManualDefense.cs` (retired by US4-TK3) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.ManualDefense.cs:7; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
-| [src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs](../../../../src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
+| `src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs` (removed by US3-TK5) | Существует: src/DeepSpaceSaga.Engine/SimulationEngine.CombatReactions.cs:9; public sealed partial class SimulationEngine | Только изменения для scope этой карточки и served AC. |
 | `tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0004TK0003Tests.cs` | **NEW — proposed**, сейчас отсутствует | Named cases ниже; независимые expected значения. |
 
 | `src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs` | Production reference found during retirement audit | Remove scheduled automatic launches, burst/intercept/expiry/coast branches and legacy counter prediction; retain point detonation, NPC dodge/launch ordering and reload completion. |

@@ -550,7 +550,7 @@ public class EconomyTimeContinuityTests
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
                 .Select(source.StationMarketProfiles.GetDefinition).Where(p => p.TypeId != profile.TypeId).Append(profile),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), stationMarketEvents: marketEvents);
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), stationMarketEvents: marketEvents, combatRules: source.CombatRules);
     }
 
     /// <summary>

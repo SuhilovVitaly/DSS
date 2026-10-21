@@ -40,7 +40,7 @@ public class PhaseThreeSaveContinuationTests
     {
         using var continuous = Create(orbit ? HostileCombatPathTests.OrbitScene(true) : HostileOrbitRuntimeTests.Scene());
         At(continuous, 100);
-        if (orbit) { continuous.ReceiveCommand(Fire("saved-attack")); At(continuous, 100); }
+        if (orbit) { continuous.ReceiveCommand(LaunchAt("saved-attack")); At(continuous, 100); }
         var save = Save(continuous, checkpoint);
         var actor = Assert.Single(save.GameState.HostileCombatState!.Actors);
         Assert.True(actor.ActiveMotion);
@@ -101,14 +101,11 @@ public class PhaseThreeSaveContinuationTests
     public void Hostile_next_fire_boundary_survives_real_file_load()
     {
         using var continuous = Create(PlayerDefeatTests.LethalScenario());
-        var save = Save(continuous, 5000);
-        Assert.Single(save.GameState.CombatState!.Projectiles);
-        using var restored = Roundtrip(save);
-        Same(continuous, restored, 5001);
-        Same(continuous, restored, 17501);
-        var next = Assert.Single(Save(restored, 17501).GameState.CombatState!.Projectiles);
-        Assert.InRange(next.Flight.LaunchMotionTimeMs, 16001, 17501);
-        Same(continuous, restored, 20000);
+        var save = Save(continuous, 501); var launch = Assert.Single(save.GameState.PointCombatState!.Projectiles).Flight;
+        double ready = save.GameState.CombatState!.Launchers.Single(l => l.OwnerObjectId == Target).State.ReadyAtMotionTimeMs!.Value;
+        Assert.Equal(launch.LaunchMotionTimeMs + 10000, ready);
+        using var restored = Roundtrip(save); Same(continuous, restored, 502); Same(continuous, restored, 900);
+        Assert.Equal(At(continuous, 901).Objects.Single(o => o.ObservedProjectile is not null), At(restored, 901).Objects.Single(o => o.ObservedProjectile is not null));
     }
 
     [Fact]

@@ -13,9 +13,6 @@ public sealed partial class SimulationEngine
         return owner is null ? new(role) : CaptureReportIdentity(owner, flight.LauncherModuleId, role);
     }
 
-    private static BattleReportReporterSnapshot CaptureWeaponReportIdentity(WeaponOperatorSnapshot? captured,
-        BattleReportReporterRole role) => new(role, captured?.CrewId, captured?.DisplayName);
-
     private BattleReportReporterSnapshot CaptureReportIdentity(SpaceObjectRuntime owner, string? moduleId,
         BattleReportReporterRole role)
     {

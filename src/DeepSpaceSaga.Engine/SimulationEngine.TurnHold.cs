@@ -85,7 +85,7 @@ public sealed partial class SimulationEngine
         if (ship.InitialMotion.TurnHoldRateDegPerSec is null) return ship;
         var pose = CurrentManeuverForecast.Sample(ship.InitialMotion, Math.Max(0, time - ship.StartGameTimeMs));
         long anchor = (long)Math.Floor(time);
-        var p = TorpedoGuidanceMath.PredictSegment(new(pose.X, pose.Y, pose.Direction, pose.SpeedKmS, 0, 0), anchor - time);
+        var p = LinearMotionPredictor.PredictStraightPose(pose.X, pose.Y, pose.Direction, pose.SpeedKmS, anchor - time);
         return ship with
         {
             InitialMotion = ClearEvasionControls(pose) with { X = p.X, Y = p.Y },

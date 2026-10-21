@@ -214,25 +214,25 @@ public sealed partial class GameSessionScreen
 
     private InstalledModuleSnapshot? PointPanelModule(WeaponPanelInstance weapon) =>
         _buffer.Presented?.Snapshot.PlayerShipObjectId == weapon.OwnerObjectId ? PointAimModule(weapon.ModuleId) : null;
-    private bool IsPointOrLegacyWeaponCommandEnabled(WeaponPanelInstance weapon, string commandType)
+    private bool IsPointWeaponCommandEnabled(WeaponPanelInstance weapon, string commandType)
     {
-        if (PointPanelModule(weapon) is not { } module) return IsDefenseCommandEnabled(weapon, commandType);
+        if (PointPanelModule(weapon) is not { } module) return false;
         if (_buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || FindPlayerShipMotion(snapshot) is not { IsDestroyed: false }) return false;
         if (commandType is CombatCommandTypes.Launch or DefenseCommandTypes.Launch) return !module.IsDestroyed;
         return commandType == CombatCommandTypes.Detonate && _selectedObjectId is { } id && snapshot.Objects.Any(o =>
             o.ObjectId == id && o.OwnProjectile is { Kind: ProjectileKind.Torpedo } point && point.LauncherModuleId == module.ModuleId && point.OwnerObjectId == weapon.OwnerObjectId);
     }
-    private void SendPointOrLegacyWeaponCommand(WeaponPanelInstance weapon, string commandType)
+    private void SendPointWeaponCommand(WeaponPanelInstance weapon, string commandType)
     {
-        if (PointPanelModule(weapon) is not { } module) { SendDefenseCommand(weapon, commandType); return; }
-        if (!IsPointOrLegacyWeaponCommandEnabled(weapon, commandType)) return;
+        if (PointPanelModule(weapon) is not { } module) return;
+        if (!IsPointWeaponCommandEnabled(weapon, commandType)) return;
         if (commandType == CombatCommandTypes.Detonate)
         { if (_handle is not null) _ = _handle.SendCommandAsync(weapon.OwnerObjectId, weapon.ModuleId, commandType, _selectedObjectId); return; }
         EnterPointAim(module.LauncherCombat?.Profiles is not null ? ProjectileKind.Torpedo : ProjectileKind.Countermissile, module.ModuleId);
     }
-    private string? GetPointOrLegacyWeaponStatus(WeaponPanelInstance weapon)
+    private string? GetPointWeaponStatus(WeaponPanelInstance weapon)
     {
-        if (PointPanelModule(weapon) is not { } module) return GetDefenseInstanceStatus(weapon);
+        if (PointPanelModule(weapon) is not { } module) return null;
         string status = PointWeaponStatus(module);
         return status == CombatText("Reloading", "Reloading")
             ? $"{status} {PointReloadRealSeconds(module):0.0} {CombatText("Seconds", "с")}" : status;
@@ -249,13 +249,13 @@ public sealed partial class GameSessionScreen
         return command == CombatCommandTypes.Detonate ? CombatText("Detonate", "Подрыв") :
             $"{CombatText("Aim", "Прицел")} [{(module.LauncherCombat?.Profiles is not null ? CombatInputs.TorpedoAim : CombatInputs.CountermissileAim)}]";
     }
-    private string? GetPointOrLegacyWeaponOperator(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module
-        ? PointOperatorLabel(module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator) : GetDefenseInstanceOperatorText(weapon);
+    private string? GetPointWeaponOperator(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module
+        ? PointOperatorLabel(module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator) : null;
     private static string PointOperatorLabel(WeaponOperatorSnapshot? op) => op is null ? CombatText("NoOperator", "Нет оператора") :
         $"{op.DisplayName} · {CombatText("Accuracy", "Точность")} {op.Skill}";
-    private IReadOnlyList<string> GetPointOrLegacyWeaponDetails(WeaponPanelInstance weapon)
+    private IReadOnlyList<string> GetPointWeaponDetails(WeaponPanelInstance weapon)
     {
-        if (PointPanelModule(weapon) is not { } module) return GetDefenseInstanceDetails(weapon);
+        if (PointPanelModule(weapon) is not { } module) return [];
         var lines = new List<string>();
         var profiles = PointProfiles(module);
         string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : profiles.FirstOrDefault()?.ProfileId;

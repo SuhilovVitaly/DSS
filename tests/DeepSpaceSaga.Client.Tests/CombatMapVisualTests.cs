@@ -16,13 +16,12 @@ public sealed class CombatMapVisualTests
 
     private static ObjectMotionSnapshot Missile(double x, double y) =>
         new("torpedo", x, y, 3, 0, RenderObjectType: SpaceObjectType.Missile,
-            Torpedo: new("player", "launcher", "target", 0, 3, 90, 150, 0,
-                new(0, 1, TorpedoRoutePhase.Straight, false, [new(x, y, 0, 3, 0, 1000)])));
+            OwnProjectile: new(ProjectileKind.Torpedo, "player", "launcher", x, y, x, y, x, y - 600, 0, 10000, 6, "slow", 9, 200, 20));
 
     [Theory]
     [InlineData(1f)]
     [InlineData(1.5f)]
-    public void Torpedo_and_wreck_remain_five_pixels_across_zoom(float uiScale)
+    public void Configured_point_marker_and_five_pixel_wreck_remain_constant_across_zoom(float uiScale)
     {
         SKColor[]? reference = null;
         foreach (double ppu in new[] { 1.0, .1, .001, .00001 })
@@ -54,7 +53,7 @@ public sealed class CombatMapVisualTests
                 Assert.InRange(diameter, 4.7, 5.1);
                 Assert.Equal(screen.CombatSettings.Torpedo, bitmap.GetPixel(1160, 420));
                 Assert.Equal(screen.CombatSettings.Wreck.Alpha, bitmap.GetPixel(760, 420).Alpha);
-                Assert.True(bitmap.GetPixel(1165, 420).Alpha > 0); // blur beyond the 5px core
+                Assert.Equal(0, bitmap.GetPixel(1165, 420).Alpha); // current point marker has no legacy impact glow
                 Assert.Equal(0, bitmap.GetPixel(765, 420).Alpha);
             };
             screen.Render(canvas, 1920, 1080);
@@ -144,7 +143,7 @@ public sealed class CombatMapVisualTests
         screen.Render(canvas, 1920, 1080);
         Assert.Equal(1, screen.MapClusterCount);
         var field = typeof(GameSessionScreen).GetField("_clusteredObjectIds", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        Assert.Equal(new[] { "a", "b" }, ((HashSet<string>)field.GetValue(screen)!).Order(StringComparer.Ordinal));
+        Assert.Equal(new[] { "a", "b", "target" }, ((HashSet<string>)field.GetValue(screen)!).Order(StringComparer.Ordinal));
         Assert.Null(screen.SelectedObjectId);
         screen.OnDeactivated();
     }

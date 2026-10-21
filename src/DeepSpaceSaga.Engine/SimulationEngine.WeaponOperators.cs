@@ -8,8 +8,6 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private CombatChanceRules ChanceRules => _registry.CombatRules?.Chance ?? CombatChanceMath.DefaultRules;
-
     private WeaponOperatorSnapshot? ResolveWeaponOperator(
         SpaceObjectRuntime owner, InstalledModuleRuntime module, WeaponSkillType skillType)
     {
@@ -17,17 +15,9 @@ public sealed partial class SimulationEngine
         var crew = owner.Crew.FirstOrDefault(c => string.Equals(c.Id, id, StringComparison.Ordinal));
         if (crew is null) return null;
         var definition = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-        if (definition.IsPointLauncher)
-            return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, crew.AccuracySkill, 0, crew.AccuracySkill);
-        int skill = skillType == WeaponSkillType.TorpedoAttack
-            ? crew.ManeuverabilitySkill : crew.AccuracySkill;
-        decimal baseRating = skillType == WeaponSkillType.TorpedoAttack
-            ? definition.TorpedoManeuverability ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks torpedoManeuverability.")
-            : definition.CountermeasureAccuracy ?? throw new ScenarioException($"Module '{module.ModuleId}' lacks countermeasureAccuracy.");
-        // Torpedo hit accuracy is captured separately. This rating is the
-        // projectile's interception resistance, including its operator's skill.
-        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, skill,
-            baseRating, baseRating + skill);
+        if (!definition.IsPointLauncher)
+            throw new ScenarioException($"Module '{module.ModuleId}' uses a retired guided weapon definition.");
+        return new WeaponOperatorSnapshot(crew.Id, crew.DisplayName, skillType, crew.AccuracySkill, 0, crew.AccuracySkill);
     }
 
     private LauncherCombatSnapshot? ProjectWeaponLauncher(SpaceObjectRuntime owner, InstalledModuleRuntime module)
@@ -39,33 +29,12 @@ public sealed partial class SimulationEngine
         return launcher with
         {
             Operator = op,
-            EffectiveScatterPercent = definition.IsPointLauncher && op is not null && _registry.CombatRules?.Scatter is { } scatter
+            EffectiveScatterPercent = op is not null && _registry.CombatRules?.Scatter is { } scatter
                 ? BlastMath.ScatterSigma(1, definition.ScatterPercent!.Value, op.Skill,
                     scatter.SkillPivot, scatter.SkillSlope, scatter.MinMultiplier) : null,
             CoreFraction = definition.IsPointLauncher ? _registry.CombatRules?.Blast?.CoreFraction : null,
-            ReloadDurationMs = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex) is { IsPointLauncher: true } point
-                ? point.ReloadMs : (double?)(_registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).LauncherReloadMs *
-                    FireModeMath.Resolve(_registry, launcher.ModeId).ReloadMultiplier)
+            ReloadDurationMs = definition.ReloadMs
         };
-    }
-
-    private static void StageLegacyWeaponRatings(List<SpaceObjectRuntime> objects)
-    {
-        for (int i = 0; i < objects.Count; i++)
-        {
-            var obj = objects[i];
-            if (obj.InitialMotion.Torpedo is not { } flight) continue;
-            if (flight.TorpedoRating is < 0)
-                throw new ScenarioException("Captured torpedo rating must be nonnegative.");
-            if (flight.TorpedoRating is not null) continue;
-            objects[i] = obj with
-            {
-                InitialMotion = obj.InitialMotion with
-                {
-                    Torpedo = flight with { TorpedoRating = 30m, RatingBreakdown = null, RatingMigratedFromLegacySave = true }
-                }
-            };
-        }
     }
 
     internal static void ValidateWeaponAssignments(SpaceObjectData obj)

@@ -18,6 +18,20 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 {
     private const double UnitsPerKmS = 10.0; // 1 km/s → 10 world units/s
 
+    /// <summary>Fractional straight motion, including negative offsets for integer-clock anchoring.</summary>
+    public static (double X, double Y, double Direction) PredictStraightPose(double startX, double startY,
+        double direction, double speedKmS, double elapsedMs)
+    {
+        if (!double.IsFinite(startX) || !double.IsFinite(startY) || !double.IsFinite(direction) ||
+            !double.IsFinite(speedKmS) || speedKmS < 0 || !double.IsFinite(elapsedMs))
+            throw new ArgumentOutOfRangeException(nameof(elapsedMs));
+        double radians = Math.PI / 180;
+        double seconds = elapsedMs / 1000, heading = direction * radians;
+        double speed = speedKmS * 10;
+        return (startX + speed * seconds * Math.Sin(heading),
+            startY - speed * seconds * Math.Cos(heading), ((direction % 360) + 360) % 360);
+    }
+
     /// <summary>Allocation-free coordinates for the common constant-velocity case.</summary>
     public static bool TryPredictLinearPosition(ObjectMotionSnapshot state, long elapsedMs, out double x, out double y)
     {
@@ -40,10 +54,8 @@ public sealed class LinearMotionPredictor : IMotionPredictor
             return CurrentManeuverForecast.Sample(state, elapsedMs);
         if (state.Orbit is { } orbit)
             return OrbitalMotionMath.At(state, orbit, checked((state.OrbitSampleSimulationTimeMs ?? orbit.EpochSimulationTimeMs) + elapsedMs));
-        if (state.Countermeasure is not null)
-            return CountermeasureGuidanceMath.Predict(state, elapsedMs);
-        if (state.Torpedo is not null)
-            return TorpedoGuidanceMath.Predict(state, elapsedMs);
+        if (state.Countermeasure is not null || state.Torpedo is not null)
+            throw new ArgumentException("Retired guided projectile snapshots are unsupported.", nameof(state));
         if (state.HostileCombat is not null)
             return HostileOrbitMath.Predict(state, elapsedMs);
         if (elapsedMs >= 0 && CurrentManeuverForecast.ValidEngineManeuver(state))

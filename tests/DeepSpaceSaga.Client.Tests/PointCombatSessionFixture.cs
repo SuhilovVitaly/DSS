@@ -77,7 +77,7 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
 
     internal PointCombatSessionFixture(GameDataRegistry? registry = null, bool engineEnabled = false, bool launchHostile = true, double enemyX = 400)
     {
-        var source = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
+        var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
         Engine = new(registry ?? Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
         Engine.LoadScenario(source with
         {
@@ -95,8 +95,8 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
                     IsKnown = true,
                     Modules = o.Modules!.Select(m => m with
                     {
-                        AutoDefenseEnabled = false,
-                        PowerState = m.ModuleTypeId == "module.engine.basic" && !engineEnabled ? "Off" : "On"
+                        ModuleTypeId = m.ModuleTypeId.StartsWith("module.engine.") ? "module.engine.basic" : m.ModuleTypeId,
+                        PowerState = m.ModuleTypeId.StartsWith("module.engine.") && !engineEnabled ? "Off" : "On"
                     }).ToArray()
                 }).ToArray()
             }

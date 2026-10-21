@@ -174,8 +174,8 @@ public class DefeatNavigationTests
         internal ScreenStack Screens => Get<ScreenStack>(Window, "_screens");
         private Fixture()
         {
-            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(Root, "Settings.json")), out _, out _);
-            var scenario = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json")));
+            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
+            var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
             scenario = scenario with
             {
                 GameState = scenario.GameState with
@@ -188,9 +188,9 @@ public class DefeatNavigationTests
                         DirectionDegrees = o.ObjectId == "SPC-0001" ? 0 : 180,
                         SpeedMps = 0,
                         MovementType = "Stationary",
-                        HullHitPoints = o.ObjectId == "SPC-0001" ? 150 : o.HullHitPoints,
-                        Modules = o.Modules!.Select(m => m with
-                        { AutoDefenseEnabled = false, PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On" }).ToArray()
+                        Ai = o.ObjectId == "SPC-0001" ? null : new(25, 8, 35),
+                        Modules = o.Modules!.Where(m => o.ObjectId != "SPC-0001" || m.ModuleTypeId.StartsWith("module.engine.")).Select(m => m with
+                        { ArmorClass = "none", PowerState = m.ModuleTypeId.StartsWith("module.engine.") ? "Off" : "On" }).ToArray()
                     }).ToArray()
                 }
             };
@@ -219,8 +219,8 @@ public class DefeatNavigationTests
             }
         }
         internal Task Route(ScreenEvent action, string? payload = null) => (Task)Invoke(Window, "HandleScreenEvent", action, payload)!;
-        public IGameSessionConnection CreateSessionFromSave(string slotId) => LocalGameSessionConnection.CreateFromSaveFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(
-            Path.Combine(Root, "Settings.json")), Path.Combine(DirectoryPath, slotId + ".json"), DirectoryPath);
+        public IGameSessionConnection CreateSessionFromSave(string slotId) => LocalGameSessionConnection.CreateFromSaveFile(
+            Path.Combine(Root, "Settings.json"), Path.Combine(DirectoryPath, slotId + ".json"), DirectoryPath);
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromScenario(string path) => throw new NotSupportedException();
         public ScenarioInfo[] ListScenarios() => [];

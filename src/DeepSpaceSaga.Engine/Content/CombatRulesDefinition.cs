@@ -60,12 +60,7 @@ internal static class CombatContentValidation
     internal static CombatRulesDefinition Rules(CombatRulesDefinition? rules)
     {
         if (rules is null) throw new ContentException("combatRules: missing root.");
-        if (rules.IsPointAim || rules.Chance is null)
-            ValidatePointAimRules(rules);
-        else if (rules.Chance.Base is < 0 or > 100 ||
-            rules.Chance.Min is < 0 or > 100 || rules.Chance.Max is < 0 or > 100 ||
-            rules.Chance.Min > rules.Chance.Max)
-            throw new ContentException("combatRules.chance: base/min/max invalid.");
+        ValidatePointAimRules(rules);
         if (rules.Damage is null || rules.Damage.HitDisableMs < 0)
             throw new ContentException("combatRules.damage.hitDisableMs must be nonnegative.");
         if (rules.Damage.HitLocationWeighting != "mass")
@@ -108,26 +103,6 @@ internal static class CombatContentValidation
             throw new ContentException("combatRules.combatStartRangeKm must be positive and finite.");
     }
 
-    internal static ImmutableArray<FireModeDefinition> Modes(FireModesFile? file)
-    {
-        if (file is null || file.FireModes.IsDefaultOrEmpty || file.FireModes.Any(mode => mode is null))
-            throw new ContentException("fireModes must be a nonempty array.");
-        var modes = file.FireModes;
-        if (modes.Select(mode => mode.ModeId).Distinct(StringComparer.Ordinal).Count() != modes.Length ||
-            !modes.Any(mode => mode.ModeId == "standard"))
-            throw new ContentException("fireModes.modeId must be unique and include standard.");
-        foreach (var mode in modes)
-        {
-            if (string.IsNullOrWhiteSpace(mode.ModeId) || string.IsNullOrWhiteSpace(mode.DisplayName) ||
-                mode.BreakdownChancePercent is < 0 or > 100 || mode.ReloadMultiplier <= 0 ||
-                mode.AppliesTo.IsDefaultOrEmpty ||
-                mode.AppliesTo.Distinct(StringComparer.Ordinal).Count() != mode.AppliesTo.Length ||
-                mode.AppliesTo.Any(category => category is not ("module.torpedo.launcher" or "module.countermeasure.launcher")) ||
-                (mode.ModeId == "standard" && (!mode.AppliesTo.Contains("module.torpedo.launcher") ||
-                    !mode.AppliesTo.Contains("module.countermeasure.launcher"))) ||
-                (mode.ModeId != "standard" && mode.AppliesTo.Contains("module.countermeasure.launcher")))
-                throw new ContentException($"fireModes.{mode.ModeId}: invalid mode or appliesTo category.");
-        }
-        return modes;
-    }
+    internal static ImmutableArray<FireModeDefinition> Modes(FireModesFile? file) =>
+        throw new ContentException("fireModes is retired; point launchers use captured profiles.");
 }

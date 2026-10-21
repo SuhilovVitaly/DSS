@@ -117,6 +117,12 @@ public sealed class FullMapCorrectnessCorpusTests
                     var a = full.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed0, motion);
                     var b = control.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed0, motion);
                     Assert.Equal(JsonSerializer.Serialize(b), JsonSerializer.Serialize(a with { AiMap = b.AiMap }));
+                    if (a.EffectiveOutcome.State == SessionOutcomeState.Defeated)
+                    {
+                        Assert.Equal(CommandReasonCodes.SessionDefeated, Assert.Throws<InvalidOperationException>(() => full.CaptureSaveState()).Message);
+                        Assert.Equal(CommandReasonCodes.SessionDefeated, Assert.Throws<InvalidOperationException>(() => control.CaptureSaveState()).Message);
+                        continue;
+                    }
                     var x = full.CaptureSaveStateForTests(motion * 300, SimulationSpeed.Speed0, motion).GameState;
                     var y = control.CaptureSaveStateForTests(motion * 300, SimulationSpeed.Speed0, motion).GameState;
                     Assert.Equal(JsonSerializer.Serialize(y), JsonSerializer.Serialize(x with { AiMap = y.AiMap }));

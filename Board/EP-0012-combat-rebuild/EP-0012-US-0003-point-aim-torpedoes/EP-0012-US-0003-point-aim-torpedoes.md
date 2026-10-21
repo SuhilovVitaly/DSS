@@ -49,7 +49,7 @@ Execution order задаётся ticket DAG, который допускает �
 | 11 / [EP-0012-US-0003-TK-0002-torpedo-point-launch](EP-0012-US-0003-TK-0002-torpedo-point-launch/EP-0012-US-0003-TK-0002-torpedo-point-launch.md) | engine | EP-0012-US-0018-TK-0004-shared-point-forecast | US3-AC2 | 8 |
 | 12 / [EP-0012-US-0003-TK-0003-torpedo-area-detonation](EP-0012-US-0003-TK-0003-torpedo-area-detonation/EP-0012-US-0003-TK-0003-torpedo-area-detonation.md) | engine | EP-0012-US-0003-TK-0002-torpedo-point-launch | US3-AC3 | 4 |
 | 13 / [EP-0012-US-0003-TK-0004-manual-detonation](EP-0012-US-0003-TK-0004-manual-detonation/EP-0012-US-0003-TK-0004-manual-detonation.md) | engine | EP-0012-US-0003-TK-0003-torpedo-area-detonation | US3-AC4 | 4 |
-| 64 / [EP-0012-US-0003-TK-0005-remove-homing-roll-modes](EP-0012-US-0003-TK-0005-remove-homing-roll-modes/EP-0012-US-0003-TK-0005-remove-homing-roll-modes.md) | engine | EP-0012-US-0018-TK-0001-remove-interception-helper | US3-AC5 | 4 |
+| 64 / [EP-0012-US-0003-TK-0005-remove-homing-roll-modes](EP-0012-US-0003-TK-0005-remove-homing-roll-modes/EP-0012-US-0003-TK-0005-remove-homing-roll-modes.md) | motion-engine-client-tools | EP-0012-US-0018-TK-0001-remove-interception-helper | US3-AC5 | 159 |
 
 ## Decisions / Assumptions
 

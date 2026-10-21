@@ -21,17 +21,19 @@ public sealed class CombatPresentationResumeTests
         buffer.Update(loaded with { SnapshotSequence = 0, SimulationTimeMs = 1000 });
         buffer.Update(loaded);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => now);
-        var flightObject = Assert.Single(loaded.Objects.Where(o => o.Torpedo is not null));
+        var flightObject = Assert.Single(loaded.Objects.Where(o => o.OwnProjectile is not null));
         for (int reopen = 0; reopen < 3; reopen++)
         {
             screen.OnActivated();
             Render(screen);
+            var row = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher");
+            if (!row.Opened) { screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY); Render(screen); }
             Assert.Contains("Reloading", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
-            Assert.False(screen.CommandsPanel.AllCommandButtons.Single(b => b.CommandTypeId == CombatCommandTypes.Fire).Enabled);
-            Assert.Empty(screen.CombatEffects.Active);
+            Assert.True(screen.CommandsPanel.AllCommandButtons.Single(b => b.CommandTypeId == CombatCommandTypes.Launch).Enabled); // aim remains selectable; authoritative reload forbids submission
+            Assert.Empty(screen.CombatEffects.PointEffects);
             var path = screen.CombatTrajectories[flightObject.ObjectId].Prediction;
             Assert.NotEmpty(path);
-            Assert.Equal(before.Objects.Single(o => o.Torpedo is not null).Torpedo!.Trail.ToArray(), flightObject.Torpedo!.Trail.ToArray());
+            Assert.Equal(before.Objects.Single(o => o.OwnProjectile is not null).OwnProjectile, flightObject.OwnProjectile);
             Assert.Equal(flightObject.X, path[0].X, 6);
             Assert.Equal(flightObject.Y, path[0].Y, 6);
             screen.OnDeactivated();
@@ -48,10 +50,10 @@ public sealed class CombatPresentationResumeTests
         for (int shot = 1; shot <= hits; shot++)
         {
             var launched = await fixture.Launch("hit-" + shot);
-            var flight = Assert.Single(launched.Objects.Where(o => o.Torpedo is not null)).Torpedo!;
-            before = await fixture.Advance(flight.PredictedImpactMotionTimeMs!.Value - launched.MotionTimeMs + 1000);
+            var flight = Assert.Single(launched.Objects.Where(o => o.OwnProjectile is not null)).OwnProjectile!;
+            before = await fixture.Advance((long)Math.Ceiling(flight.DetonationMotionTimeMs) - launched.MotionTimeMs + 1000);
         }
-        Assert.Single(before.CombatImpacts);
+        Assert.Contains(before.CombatJournal, e => e.Type == CombatEventType.TorpedoDetonated);
         var loaded = await fixture.SaveAndRestore();
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(loaded);
@@ -60,23 +62,17 @@ public sealed class CombatPresentationResumeTests
         {
             screen.OnActivated();
             Render(screen);
-            Assert.Empty(screen.CombatEffects.Active);
+            Assert.Empty(screen.CombatEffects.PointEffects);
             Assert.Empty(screen.CombatTrajectories);
+            var row = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher");
+            if (!row.Opened) { screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY); Render(screen); }
             Assert.Contains("Reloading", screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
             screen.OnDeactivated();
         }
         Assert.All(loaded.Objects, o => Assert.Null(o.HullCombat));
-        Assert.Contains(loaded.CombatJournal, e => e.Type == CombatEventType.TorpedoHitRoll && e.TargetObjectId == CombatSessionFixture.Target);
-        // A new post-load fact is displayed once and expires on monotonic UI time.
-        long now = 0;
-        var effects = new CombatEffectStore(() => now);
-        effects.Reset(loaded.CombatImpacts);
-        var newImpact = before.CombatImpacts[^1] with { EventId = hits + 1 };
-        effects.Receive([newImpact]);
-        Assert.Single(effects.Active);
-        now = Stopwatch.Frequency * 2;
-        effects.Receive([newImpact]);
-        Assert.Empty(effects.Active);
+        Assert.Contains(loaded.CombatJournal, e => e.Type == CombatEventType.TorpedoDetonated);
+        Assert.DoesNotContain(loaded.CombatJournal, e => e.Type == CombatEventType.TorpedoHitRoll || e.Roll is not null);
+
     }
 
     private static void Render(GameSessionScreen screen)

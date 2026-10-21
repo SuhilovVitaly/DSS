@@ -200,18 +200,7 @@ public sealed class ObjectInfoPanel
                     lines.Add(("Territory", AiMapPresentation.TerritoryNotice));
                 }
             }
-            if (d.Countermeasure is { } countermeasure)
-            {
-                lines.AddRange(CountermeasureLines(countermeasure));
-            }
-            else if (d.Torpedo is { } torpedo)
-            {
-                lines.Add(("Target", torpedo.Target));
-                lines.Add(("Travelled", $"{torpedo.TravelledKm:0.###} {Localization.Combat("Kilometers")}"));
-                lines.Add(("ETA", torpedo.EtaSeconds is { } eta ? $"{eta:0.###} {Localization.Combat("Seconds")}" : "—"));
-                lines.Add(("Hit chance", $"{torpedo.HitChancePercent}%"));
-            }
-            else if (d.Survey is { } survey)
+            if (d.Survey is { } survey)
             {
                 lines.Add(("Mass", $"{survey.MassKg} kg"));
                 lines.Add(("Composition", survey.CompositionKnown ? survey.CompositionType ?? "Unknown" : "Unknown"));
@@ -277,29 +266,6 @@ public sealed class ObjectInfoPanel
         }
 
         return lines;
-    }
-
-    public static List<(string Label, string Value)> CountermeasureLines(CountermeasureSnapshot flight)
-    {
-        var defense = flight.RatingBreakdown.DefenseOperator;
-        var attack = flight.RatingBreakdown.TorpedoOperator;
-        string T(string key, string fallback) => GameSessionScreen.CombatText(key, fallback);
-        return [
-            (T("LaunchMode", "Режим пуска"), flight.Mode == LaunchMode.Manual ? T("Manual", "Ручной") : T("Auto", "Автоматический")),
-            (T("Owner", "Носитель"), flight.OwnerObjectId),
-            (T("Module", "Аппарат"), flight.LauncherModuleId),
-            (T("Target", "Цель"), flight.TargetTorpedoId),
-            (T("State", "Состояние"), flight.Phase == CountermeasurePhase.Guiding ? T("Guiding", "Наведение") : T("MissedCoast", "Полёт после промаха")),
-            (T("FrozenChance", "Шанс активной ПРО"), $"{flight.FrozenChanceTenths / 10m:0.0}%"),
-            (T("Accuracy", "Точность"), $"{flight.CapturedAccuracy ?? defense.EffectiveRating:0.##}"),
-            (T("Maneuverability", "манёвренность"), $"{flight.CapturedTargetManeuverability ?? flight.RatingBreakdown.TorpedoRating:0.##}"),
-            (T("Formula", "Формула"), T("ChanceFormula", "clamp(точность − манёвренность, 0, 100)")),
-            (T("RemainingFlight", "Осталось полёта"), GameSessionScreen.RemainingFlightText(flight, flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs)),
-            (T("MaxFlight", "Лимит полёта"), flight.MaxFlightTimeMs is { } lifetime ? $"{lifetime / 1000.0:0.0} " + T("Seconds", "с") : "—"),
-            (T("DefenseOperator", "Оператор ПРО"), defense.DisplayName),
-            (T("SkillMetadata", "Навык (справочно)"), defense.Skill.ToString()),
-            (T("TorpedoOperator", "Торпедист"), attack?.DisplayName ?? "—")
-        ];
     }
 
     // ── Input ───────────────────────────────────────────────────
@@ -401,8 +367,8 @@ public sealed class ObjectInfoPanel
                 if (i == 0 && OwnModuleDiagram is { } diagram) bodyHeight = diagram.PreferredHeight + 12;
                 float fullHeight = bodyHeight;
                 float available = Math.Max(0, panelBottom - Margin - rowY - (RowNames.Length - i) * RowCaptionHeight);
-                bool ownDiagram = i == 0 && OwnModuleDiagram is not null;
-                bodyHeight = Math.Min(bodyHeight, compact && !ownDiagram ? available / (RowNames.Length - i) : available);
+                bool onlyOwnDiagram = i == 0 && OwnModuleDiagram is not null && selectedOrActive is null;
+                bodyHeight = Math.Min(bodyHeight, compact && !onlyOwnDiagram ? available / (RowNames.Length - i) : available);
                 if (_rowObjectIds[i] != rowData[i]?.ObjectId)
                 {
                     _rowObjectIds[i] = rowData[i]?.ObjectId;

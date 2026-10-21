@@ -8,8 +8,6 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class CountermeasureBootstrapTests
 {
-    // Historical scenario accessor remains only for explicitly pending legacy consumers.
-    internal static ScenarioFile RealScenario() => ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
     [Fact]
     public void Independent_launchers_resume_separate_launch_based_deadlines_through_real_file_load()
     {

@@ -53,7 +53,6 @@ public class CompactObjectLabelTests
             [new("player", 0, 0, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip),
              new("projectile", -200, -100, 0, 0, RenderObjectType: type, DisplayName: "Projectile")], "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
-        screen.ForecastCache.UseWorker = false;
         using var bitmap = new SKBitmap(1280, 720);
         using var canvas = new SKCanvas(bitmap);
         void Render() => screen.Render(canvas, 1280, 720);
@@ -102,7 +101,6 @@ public class CompactObjectLabelTests
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(new(1, 0, SimulationSpeed.Speed0, [player], "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
-        screen.ForecastCache.UseWorker = false;
         using var bitmap = new SKBitmap(1280, 720);
         using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, 1280, 720);

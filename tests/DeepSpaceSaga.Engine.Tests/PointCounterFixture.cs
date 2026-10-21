@@ -23,7 +23,7 @@ internal static class PointCounterFixture
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
     }
     internal static SimulationEngine Create(bool enemyArmed = false, Func<SpaceObjectData, SpaceObjectData>? configure = null,
-        double? scatter = 0, double? torpedoScatter = 0, double enemyX = 200)
+        double? scatter = 0, double? torpedoScatter = 0, double enemyX = 200, ulong seed = 42)
     {
         var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
         var registry = Registry(scatter, torpedoScatter);
@@ -31,7 +31,7 @@ internal static class PointCounterFixture
         {
             GameState = source.GameState with
             {
-                MasterSeed = 42,
+                MasterSeed = seed,
                 CurrentSpeed = "Speed0",
                 SpaceObjects = source.GameState.SpaceObjects.Select(o =>
                 {

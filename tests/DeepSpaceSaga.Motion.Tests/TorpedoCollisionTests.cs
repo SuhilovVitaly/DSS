@@ -30,10 +30,10 @@ public sealed class TorpedoCollisionTests
     public void Moving_obstacle_and_arc_first_contact_are_detected()
     {
         Assert.Equal(47.5, TorpedoCollisionMath.FirstContact(Line(-100, 0, 1), Line(0, 0, -1), 0, 100)!.Value.MotionTimeMs, 5);
-        var segment = new TorpedoRouteSegment(0, 0, 0, 3, 90, 4000);
+        var turningShip = new ObjectMotionSnapshot("turning-ship", 0, 0, 3, 0, TurnHoldRateDegPerSec: 90);
         var arc = new CollisionPath(t =>
         {
-            var p = TorpedoGuidanceMath.PredictSegment(segment, t);
+            var p = CurrentManeuverForecast.Sample(turningShip, t);
             return (p.X, p.Y);
         }, .03, .03 * Math.PI / 2000);
         double r = 60 / Math.PI;

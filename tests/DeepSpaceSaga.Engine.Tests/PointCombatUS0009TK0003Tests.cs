@@ -68,7 +68,7 @@ public sealed class PointCombatUS0009TK0003Tests
             "statistics" => p with { Encounter = p.Encounter with { Stats = p.Encounter.Stats with { ArmorDamageTaken = -1 } } },
             _ => p with { Encounter = p.Encounter with { State = CombatEncounterState.Won } }
         };
-        using var engine = TorpedoImpactTests.Create(); var before = engine.CaptureSaveStateForTests(100, SimulationSpeed.Speed0);
+        using var engine = PointCounterFixture.Create(); var before = engine.CaptureSaveStateForTests(100, SimulationSpeed.Speed0);
         var corrupt = before with { GameState = before.GameState with { PointCombatState = p } };
         Assert.Contains("Invalid point combat save", Assert.Throws<ScenarioException>(() => engine.LoadScenario(corrupt, true)).Message);
         Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(100, SimulationSpeed.Speed0)));
@@ -106,7 +106,7 @@ public sealed class PointCombatUS0009TK0003Tests
     [Fact]
     public void Save17_is_rejected_before_deserialization_without_changing_world_or_file()
     {
-        using var engine = TorpedoImpactTests.Create(); var before = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        using var engine = PointCounterFixture.Create(); var before = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
         Assert.Equal(18, before.SaveFormatVersion);
         Assert.Equal(3, before.GameState.HostileCombatState!.Version);
         string path = Path.Combine(Path.GetTempPath(), "dss-save17-" + Guid.NewGuid().ToString("N") + ".json");

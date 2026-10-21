@@ -75,7 +75,7 @@ public sealed class VoyageFuelAccountingTests
             Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
             price is null ? [] : [new ItemTypeDefinition("item.fuel", "Fuel", 1, price, TradeUnit: TradeUnit.Kilogram, StorageKind: ItemStorageKind.FuelTank)],
             Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), combatRules: source.CombatRules);
         var template = QuotedTradeExecutionTests.MarketTemplate();
         var ship = template.GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId);
         template = template with

@@ -133,9 +133,9 @@ public sealed class PointCombatUS0005TK0001Tests
     {
         var time = new Time(); using var engine = Scene(time);
         Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(Target, ForeignTorpedo, 700, 0, "slow", 0).Disposition);
-        using var legacy = new SimulationEngine(TorpedoImpactTests.LegacyWeaponRegistry(100, 0));
-        legacy.LoadScenario(TorpedoImpactTests.Scenario()); legacy.ReceiveCommand(TorpedoImpactTests.Fire("legacy"));
-        var old = legacy.CaptureSnapshotForTests().Objects.Single(o => o.Torpedo is not null).Torpedo!;
+        // Deliberately malformed internal transport data; no retired runtime/catalog is needed.
+        var old = new TorpedoSnapshot(Target, ForeignTorpedo, Player, 0, 6, 90, 200, 0,
+            new(0, 1, TorpedoRoutePhase.Straight, false, [new(0, 0, 0, 6, 0, 0)]));
         var objects = (List<SpaceObjectRuntime>)typeof(SimulationEngine).GetField("_objects", BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(engine)!;
         int index = objects.FindIndex(o => o.InitialMotion.OwnProjectile is not null);
         objects[index] = objects[index] with { InitialMotion = objects[index].InitialMotion with { Torpedo = old } };

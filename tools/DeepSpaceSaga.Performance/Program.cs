@@ -17,10 +17,7 @@ if (args.Contains("--reports-window"))
 }
 
 if (args.Contains("--combat-window"))
-{
-    Environment.ExitCode = CombatNativeEvidence.Run(args);
-    return;
-}
+    throw new ArgumentException("The guided-combat --combat-window script was retired by EP-0012.");
 
 if (args.Contains("--solar-window"))
 {

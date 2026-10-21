@@ -52,26 +52,4 @@ internal static class CombatReportsScenarioFixtures
         return (current, reports.ToArray());
     }
 
-    internal static BattleReportSnapshot[] AttackReports()
-    {
-        using var engine = Create(); var reports = new List<BattleReportSnapshot>();
-        for (int i = 0; i < 3; i++)
-        {
-            long time = i * 15000; engine.ReceiveCommand(Fire($"hit-{i}"));
-            reports.AddRange(At(engine, time).CombatReports!.Reports);
-            reports.AddRange(At(engine, time + 5000).CombatReports!.Reports);
-        }
-        return reports.ToArray();
-    }
-
-    internal static BattleReportSnapshot[] InterceptReports()
-    {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario(), AutomaticDefenseTests.WeaponRegistry(100, 0));
-        engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1);
-        var reports = At(engine, 1).CombatReports!.Reports.ToList();
-        string target = engine.RuntimeObjects.Single(o => o.InitialMotion.Torpedo is not null).InitialMotion.ObjectId;
-        engine.ReceiveCommand(ManualCountermeasureFireTests.Manual("intercept", target));
-        reports.AddRange(At(engine, 1).CombatReports!.Reports); reports.AddRange(At(engine, 12000).CombatReports!.Reports);
-        return reports.ToArray();
-    }
 }

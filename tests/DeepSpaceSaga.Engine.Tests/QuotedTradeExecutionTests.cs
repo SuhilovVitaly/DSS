@@ -90,7 +90,7 @@ public class QuotedTradeExecutionTests
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
                 .Select(source.StationMarketProfiles.GetDefinition).Append(profile),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), combatRules: source.CombatRules);
     }
 
     internal static ScenarioFile MarketTemplate(IReadOnlyList<StationInventoryItemData>? stock = null)

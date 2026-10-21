@@ -160,12 +160,48 @@ public sealed class PointCombatUS0009TK0005Tests
     public void Point_catalog_rejects_legacy_launcher_state_before_replacing_world(bool defense)
     {
         using var engine = CreateCounter(); var before = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0);
-        using var historical = TorpedoImpactTests.Create(); var legacy = historical.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0);
         var wrong = before with
         {
             GameState = defense
-            ? before.GameState with { DefenseState = legacy.GameState.DefenseState }
-            : before.GameState with { CombatState = legacy.GameState.CombatState }
+            ? before.GameState with
+            {
+                DefenseState = before.GameState.DefenseState! with
+                {
+                    Launchers = before.GameState.DefenseState!.Launchers.Select(l => l with
+                    {
+                        State = l.State with
+                        {
+                            Profiles = null,
+                            ManualRangeKm = 200,
+                            Accuracy = 55,
+                            SpeedKmS = 12,
+                            TurnRateDegPerSec = 90,
+                            MaxFlightTimeMs = 60000,
+                            ReloadDurationMs = null,
+                            ScatterPercent = null
+                        }
+                    }).ToArray()
+                }
+            }
+            : before.GameState with
+            {
+                CombatState = before.GameState.CombatState! with
+                {
+                    Launchers = before.GameState.CombatState!.Launchers.Select(l => l with
+                    {
+                        State = l.State with
+                        {
+                            Profiles = null,
+                            SpeedKmS = 3,
+                            TurnRateDegPerSec = 90,
+                            ModeId = "standard",
+                            Maneuverability = 5,
+                            ReloadDurationMs = null,
+                            ScatterPercent = null
+                        }
+                    }).ToArray()
+                }
+            }
         };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(wrong, true));
         Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0)));

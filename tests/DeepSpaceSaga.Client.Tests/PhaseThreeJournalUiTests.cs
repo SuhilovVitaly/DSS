@@ -54,8 +54,8 @@ public class PhaseThreeJournalUiTests
         Assert.DoesNotContain(lines, l => l.StartsWith(Localization.Get("Combat.Damage")));
         var store = new CombatEffectStore(() => 0);
         store.ReceiveJournal([entry], 0);
-        Assert.Empty(store.Results);
-        Assert.Empty(store.Active);
+        Assert.Empty(store.PointEffects);
+        Assert.Empty(store.PointEffects);
     }
 
     [Fact]
@@ -82,8 +82,8 @@ public class PhaseThreeJournalUiTests
     public void Real_file_load_keeps_expiry_history_without_replaying_old_effects()
     {
         string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Settings(Path.Combine(root, "Settings.json")), out _, out _);
-        var scenario = ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json")));
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
+        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json"));
         using var engine = new SimulationEngine(registry);
         engine.LoadScenario(scenario with
         {
@@ -92,7 +92,7 @@ public class PhaseThreeJournalUiTests
                 MasterSeed = 42,
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
                 {
-                    ShipClassId = o.ObjectId == "SPC-0001" ? null : o.ShipClassId,
+                    Ai = null,
                     PositionX = 0,
                     PositionY = o.ObjectId == "SPC-0001" ? 0 : -200,
                     DirectionDegrees = o.ObjectId == "SPC-0001" ? 0 : 180,
@@ -101,26 +101,23 @@ public class PhaseThreeJournalUiTests
                     Modules = o.Modules!.Select(m => m with
                     {
                         AutoDefenseEnabled = false,
-                        PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On"
+                        PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != "SPC-0001" ? "Off" : "On"
                     }).ToArray()
                 }).ToArray()
             }
         });
-        // This fixture tests journal restoration with an already launched threat, not AI reaction timing.
-        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1).Disposition);
-        string target = Assert.Single(engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1).Objects, o => o.Torpedo is not null).ObjectId;
-        engine.ReceiveCommand(new("manual", 1, "SPC-0001", "MOD-PLAYER-COUNTERMEASURE-01", DefenseCommandTypes.Fire, target));
-        engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1);
+        engine.ReceiveCommand(new("point-journal", 1, "SPC-0001", "MOD-PLAYER-COUNTERMEASURE-01", DefenseCommandTypes.Launch,
+            TargetWorldX: 150, TargetWorldY: 0, ProfileId: "wide"));
+        engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0, 0);
         var before = engine.CaptureSnapshotForTests(4000, SimulationSpeed.Speed0, 4000);
-        var expired = Assert.Single(before.CombatJournal, e => e.Type == CombatEventType.Expired);
-        Assert.Equal(CountermeasureTerminationKind.MissedCoastExpired, expired.TerminationKind);
+        var expired = Assert.Single(before.CombatJournal, e => e.Type == CombatEventType.CountermissileDetonated);
         Assert.Null(expired.Roll);
         string path = Path.Combine(Path.GetTempPath(), "dss-journal-" + Guid.NewGuid().ToString("N") + ".json");
         try
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(4000, SimulationSpeed.Speed0)));
             using var restored = new SimulationEngine(registry);
-            restored.LoadScenario(ScenarioLoader.LoadFromFile(global::DeepSpaceSaga.TestSupport.LegacyCombatCatalog.Scenario(path), allowNonZeroGameTime: true), isSave: true);
+            restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
             var loaded = restored.CaptureSnapshotForTests(4000, SimulationSpeed.Speed0, 4000);
             Assert.Equal(JsonSerializer.Serialize(before.CombatJournal), JsonSerializer.Serialize(loaded.CombatJournal));
             long now = 0;
@@ -129,7 +126,7 @@ public class PhaseThreeJournalUiTests
             for (int i = 0; i < 3; i++)
             {
                 screen.OnActivated(); TorpedoCommandPanelTests.Render(screen);
-                Assert.Empty(screen.CombatEffects.Results); Assert.Empty(screen.CombatEffects.Active);
+                Assert.Empty(screen.CombatEffects.HitResults); Assert.Empty(screen.CombatEffects.PointEffects);
                 screen.OnDeactivated(); now += Stopwatch.Frequency * 3;
             }
             var panel = new CombatJournalPanel();

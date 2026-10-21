@@ -34,7 +34,7 @@ public sealed class PhaseThreeCombatUiFlowTests
         }
         Assert.Equal(0, f.Presented.MotionTimeMs); Assert.Equal(SimulationSpeed.Speed0, f.Presented.CurrentSpeed);
         Assert.Equal(2, f.Presented.CombatJournal.Count(e => e.Type == CombatEventType.Launch));
-        Assert.Empty(f.Screen.DefenseChanceLabels); Assert.Empty(f.Screen.DefenseFlightLabels);
+        Assert.All(f.Screen.PointProjectileVisuals.Values, v => Assert.DoesNotContain("%", v.Label));
         Assert.Equal(2, f.Presented.Objects.Select(o => o.OwnProjectile?.LauncherModuleId).Where(x => x is not null).Distinct().Count());
     }
 }

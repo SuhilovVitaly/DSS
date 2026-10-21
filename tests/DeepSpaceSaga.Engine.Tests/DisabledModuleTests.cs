@@ -1,154 +1,96 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Scenario;
+using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
-
 namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class DisabledModuleTests
 {
-    [Fact]
-    public void Disabled_launcher_rejects_fire_then_recovers_at_deadline()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Disabled_point_launchers_reject_then_recover_exactly_at_deadline(bool counter)
     {
-        var scenario = TorpedoImpactTests.Scenario(obj => obj.ObjectId == Player ? obj with
-        {
-            Modules = obj.Modules!.Select(module => module.ModuleId == Launcher
-                ? module with { DisabledUntilMotionTimeMs = 60_000 } : module).ToArray()
-        } : obj);
-        using var engine = Create(scenario);
-        engine.ReceiveCommand(Fire("too-early"));
-        var blocked = At(engine, 0);
-        Assert.Equal(CommandReasonCodes.ModuleDisabled,
-            Assert.Single(blocked.CommandResults, result => result.CommandId == "too-early").ReasonCode);
-        Assert.DoesNotContain(blocked.Objects, obj => obj.Torpedo is not null);
+        string module = counter ? Point.Counter : Point.Torpedo;
+        using var engine = Point.Create(configure: o => o.ObjectId != Point.Player ? o : o with
+        { Modules = o.Modules!.Select(m => m.ModuleId == module ? m with { DisabledUntilMotionTimeMs = 60000 } : m).ToArray() });
+        PlayerCommand Shot(string id) => counter ? Point.Shot(id) : new(id, 1, Point.Player, module, CombatCommandTypes.Launch, TargetWorldX: 150, TargetWorldY: 30, ProfileId: "medium");
+        engine.ReceiveCommand(Shot("early")); var before = Point.At(engine);
+        Assert.Equal(CommandReasonCodes.ModuleDisabled, Assert.Single(before.CommandResults).ReasonCode);
+        Assert.Empty(Point.Save(engine).GameState.PointCombatState!.Projectiles); Assert.Equal(0ul, engine.CaptureLaunchScatterState().Counter);
+        Point.At(engine, 59999); engine.ReceiveCommand(Shot("still-early"));
+        Assert.Equal(CommandReasonCodes.ModuleDisabled, Assert.Single(Point.At(engine, 59999).CommandResults).ReasonCode);
+        Point.At(engine, 60000); engine.ReceiveCommand(Shot("ready")); var ready = Point.At(engine, 60000);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(ready.CommandResults).Status);
+        Assert.Single(ready.Objects, o => o.OwnProjectile is not null); Assert.Equal(2ul, engine.CaptureLaunchScatterState().Counter);
+    }
 
-        At(engine, 60_000);
-        engine.ReceiveCommand(Fire("ready"));
-        var launched = At(engine, 60_000);
-        Assert.Equal(CommandResultStatus.Executed,
-            Assert.Single(launched.CommandResults, result => result.CommandId == "ready").Status);
-        Assert.Single(launched.Objects, obj => obj.Torpedo is not null);
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Destroyed_point_launcher_has_a_distinct_reason_and_no_random_effect(bool counter)
+    {
+        string module = counter ? Point.Counter : Point.Torpedo;
+        using var engine = Point.Create(configure: o => o.ObjectId != Point.Player ? o : o with
+        { Modules = o.Modules!.Select(m => m.ModuleId == module ? m with { StructurePoints = 0, Destroyed = true } : m).ToArray() });
+        engine.ReceiveCommand(counter ? Point.Shot() : new("destroyed", 1, Point.Player, module, CombatCommandTypes.Launch, TargetWorldX: 100, TargetWorldY: 0, ProfileId: "slow"));
+        Assert.Equal(CommandReasonCodes.ModuleDestroyed, Assert.Single(Point.At(engine).CommandResults).ReasonCode);
+        Assert.Equal(0ul, engine.CaptureLaunchScatterState().Counter);
     }
 
     [Fact]
-    public void Destroyed_launcher_has_distinct_rejection_reason()
+    public void Disabled_engine_coasts_and_recovers_current_point_ai_at_deadline()
     {
-        var scenario = TorpedoImpactTests.Scenario(obj => obj.ObjectId == Player ? obj with
+        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId != Target ? o : o with
         {
-            Modules = obj.Modules!.Select(module => module.ModuleId == Launcher
-                ? module with { StructurePoints = 0, Destroyed = true } : module).ToArray()
-        } : obj);
-        using var engine = Create(scenario);
-        engine.ReceiveCommand(Fire("destroyed"));
-        Assert.Equal(CommandReasonCodes.ModuleDestroyed,
-            Assert.Single(At(engine, 0).CommandResults, result => result.CommandId == "destroyed").ReasonCode);
-    }
-
-    [Fact]
-    public void Disabled_pd_rejects_toggle()
-    {
-        const string defense = "MOD-PLAYER-COUNTERMEASURE-01";
-        var scenario = TorpedoImpactTests.Scenario(obj => obj.ObjectId == Player ? obj with
-        {
-            Modules = obj.Modules!.Select(module => module.ModuleId == defense
-                ? module with { DisabledUntilMotionTimeMs = 60_000 } : module).ToArray()
-        } : obj);
-        using var engine = Create(scenario);
-        engine.ReceiveCommand(new("disabled-pd", 1, Player, defense, DefenseCommandTypes.Enable));
-        Assert.Equal(CommandReasonCodes.ModuleDisabled,
-            Assert.Single(At(engine, 0).CommandResults, result => result.CommandId == "disabled-pd").ReasonCode);
-    }
-
-    [Fact]
-    public void Disabled_engine_coasts_without_ai_maneuver()
-    {
-        var scenario = TorpedoImpactTests.Scenario(obj => obj.ObjectId == Target ? obj with
-        {
-            PositionY = -1_000,
-            SpeedMps = 1_000,
+            Ai = new(25, 8, 35),
+            PositionY = -1000,
+            SpeedMps = 1000,
             MovementType = "Linear",
-            Modules = obj.Modules!.Select(module => module.ModuleTypeId == "module.engine.basic"
-                ? module with { PowerState = "On", DisabledUntilMotionTimeMs = 60_000 } : module).ToArray()
-        } : obj);
-        using var engine = Create(scenario);
-        var before = At(engine, 0).Objects.Single(obj => obj.ObjectId == Target);
-        var during = At(engine, 1_000).Objects.Single(obj => obj.ObjectId == Target);
-        Assert.Null(during.HostileCombat);
-        Assert.Equal(before.Direction, during.Direction);
-        Assert.Equal(before.SpeedKmS, during.SpeedKmS);
+            Modules = o.Modules!.Select(m => m.ModuleTypeId == "module.engine.basic"
+                ? m with { PowerState = "On", DisabledUntilMotionTimeMs = 60000 } : m).ToArray()
+        }));
+        var before = At(engine, 0).Objects.Single(o => o.ObjectId == Target); var during = At(engine, 1000).Objects.Single(o => o.ObjectId == Target);
+        Assert.Null(during.HostileCombat); Assert.Equal(before.Direction, during.Direction); Assert.Equal(before.SpeedKmS, during.SpeedKmS);
         Assert.Equal(before.Y - 10, during.Y, 6);
-        var recovered = At(engine, 61_000).Objects.Single(obj => obj.ObjectId == Target);
-        Assert.NotNull(recovered.HostileCombat);
+        Assert.NotNull(At(engine, 60100).Objects.Single(o => o.ObjectId == Target).HostileCombat);
     }
 
     [Fact]
-    public void Combat_hit_interrupts_active_engine_cycle_and_preserves_coasting()
+    public void Real_nonlethal_edge_hit_interrupts_current_engine_cycle_then_coasts_for_eight_seconds()
     {
-        const string engineModule = "MOD-PLAYER-ENGINE-01";
-        var scenario = PlayerDefeatTests.LethalScenario(150);
-        scenario = scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(obj => obj.ObjectId == Player ? obj with
-                {
-                    SpeedMps = 1_000,
-                    MovementType = "Linear",
-                    Modules = obj.Modules!.Select(module => module with
-                    { PowerState = "On", ArmorClass = "light" }).ToArray()
-                } : obj).ToArray()
-            }
-        };
-        using var engine = Create(scenario, LegacyWeaponRegistry(100, 100));
-        engine.ReceiveCommand(new("turn-before-hit", 1, Player, engineModule,
-            ShipEngineCommandTypes.TurnRightUntilCancel));
-        var started = At(engine, 1);
-        Assert.Equal(ShipEngineCommandTypes.TurnRightUntilCancel,
-            started.InstalledModules.Single(module => module.ModuleId == engineModule).ActiveCommandType);
-        var hit = At(engine, 6_000);
-        Assert.Equal(SessionOutcomeState.Running, hit.EffectiveOutcome.State);
-        Assert.Contains(hit.CombatJournal, entry => entry.Type == CombatEventType.ModuleHit && entry.TargetObjectId == Player);
-        var saved = engine.CaptureSaveState();
-        var player = saved.GameState.SpaceObjects.Single(obj => obj.ObjectId == Player);
-        var module = Assert.Single(player.Modules!);
-        Assert.Null(module.ActiveCycle);
-        Assert.True(module.DisabledUntilMotionTimeMs > hit.MotionTimeMs);
-        var pose = hit.Objects.Single(obj => obj.ObjectId == Player);
-        Assert.Null(pose.ActiveEngineCommandType);
-        Assert.Null(pose.HostileCombat);
-        engine.ReceiveCommand(new("turn-disabled", 2, Player, engineModule,
-            ShipEngineCommandTypes.TurnRightStep));
-        Assert.Equal(CommandReasonCodes.ModuleDisabled,
-            Assert.Single(At(engine, 6_000).CommandResults, result => result.CommandId == "turn-disabled").ReasonCode);
+        const string module = "MOD-PLAYER-ENGINE-01";
+        using var engine = Point.Create(enemyArmed: true, configure: o => o.ObjectId != Point.Player ? o : o with
+        { SpeedMps = 1000, MovementType = "Linear", Modules = o.Modules!.Where(m => m.ModuleId == module).Select(m => m with { PowerState = "On", ArmorClass = "light" }).ToArray() });
+        engine.ReceiveCommand(new("turn-before-hit", 1, Point.Player, module, ShipEngineCommandTypes.TurnRightUntilCancel)); Point.At(engine);
+        Assert.Equal(ShipEngineCommandTypes.TurnRightUntilCancel, Point.At(engine, 1).InstalledModules.Single().ActiveCommandType);
+        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(Point.Enemy, Point.EnemyTorpedo, 80, 0, "slow", 1).Disposition);
+        var hit = Point.At(engine, 2001); Assert.Equal(SessionOutcomeState.Running, hit.EffectiveOutcome.State);
+        var fact = Assert.Single(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Point.Player);
+        Assert.True(fact.StructureAfter > 0); Assert.True(fact.StructureAfter < fact.StructureBefore);
+        var saved = Point.Save(engine, 2001); var ship = saved.GameState.SpaceObjects.Single(o => o.ObjectId == Point.Player); var damaged = Assert.Single(ship.Modules!);
+        Assert.Null(damaged.ActiveCycle); Assert.Equal(fact.MotionTimeMs + 8000, damaged.DisabledUntilMotionTimeMs);
+        var pose = hit.Objects.Single(o => o.ObjectId == Point.Player); Assert.Null(pose.ActiveEngineCommandType); Assert.Null(pose.HostileCombat);
+        engine.ReceiveCommand(new("disabled", 2, Point.Player, module, ShipEngineCommandTypes.TurnRightStep));
+        Assert.Equal(CommandReasonCodes.ModuleDisabled, Assert.Single(Point.At(engine, 2001).CommandResults).ReasonCode);
+        var coast = Point.At(engine, 3001).Objects.Single(o => o.ObjectId == Point.Player);
+        Assert.Equal(pose.Direction, coast.Direction); Assert.Equal(pose.SpeedKmS, coast.SpeedKmS);
+        Assert.Equal(10 * pose.SpeedKmS, double.Hypot(coast.X - pose.X, coast.Y - pose.Y), 6);
     }
 
     [Fact]
-    public void Disabled_pd_cancels_pending_burst_shots()
+    public void Retired_pending_burst_is_rejected_atomically_instead_of_being_resumed_after_disable()
     {
-        var scenario = TorpedoImpactTests.Scenario(obj => obj.ObjectId == Target ? obj with
+        using var engine = Point.Create(); var before = Point.Save(engine);
+        var bad = before with
         {
-            Modules = obj.Modules!.Where(module => module.ModuleTypeId == "module.countermeasure.launcher.basic")
-                .Select(module => module with { ArmorClass = "light", StructurePoints = 150 }).ToArray()
-        } : obj);
-        using var initial = Create(scenario);
-        var saved = initial.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        var defenses = saved.GameState.DefenseState!;
-        var pending = new PendingBurstShot(10_000, "torpedo-1", 2);
-        var prepared = saved with
-        {
-            GameState = saved.GameState with
+            GameState = before.GameState with
             {
-                DefenseState = defenses with
-                {
-                    Launchers = defenses.Launchers.Select(row => row.OwnerObjectId == Target
-                        ? row with { State = row.State with { Barrels = 2, PendingBurstShots = [pending], ReadyAtMotionTimeMs = 14_500 } } : row).ToArray()
-                }
+                DefenseState = before.GameState.DefenseState! with
+                { Launchers = before.GameState.DefenseState!.Launchers.Select(l => l with { State = l.State with { PendingBurstShots = [new(10000, "torpedo-1", 2)] } }).ToArray() }
             }
         };
-        using var engine = Create(prepared);
-        engine.ReceiveCommand(Fire("hit-defense"));
-        At(engine, 0);
-        var hit = At(engine, 5_000);
-        Assert.Contains(hit.CombatJournal, entry => entry.Type == CombatEventType.ModuleHit && entry.TargetObjectId == Target);
-        var after = engine.CaptureSaveStateForTests(5_000, SimulationSpeed.Speed0).GameState.DefenseState!;
-        Assert.Empty(after.Launchers.Single(row => row.OwnerObjectId == Target).State.PendingBurstShots!.Value);
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(bad, true));
+        Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(Point.Save(engine)));
     }
 }

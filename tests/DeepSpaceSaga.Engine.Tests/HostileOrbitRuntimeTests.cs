@@ -29,7 +29,7 @@ public class HostileOrbitRuntimeTests
         Assert.Null(moved.DisplayName);
         Assert.True(moved.Y > paused.Y);
         Assert.Equal(0.4, moved.SpeedKmS, 9);
-        Assert.Equal(100, moved.HostileCombat!.DesiredRadiusKm);
+        Assert.Equal(35, moved.HostileCombat!.DesiredRadiusKm);
         Assert.Equal(HostileCombatPhase.Pursuit, moved.HostileCombat.Phase);
         Assert.Equal(1000, moved.HostileCombat.Segment.EpochMs);
         Assert.Empty(snapshot.CommandResults);
@@ -135,7 +135,7 @@ public class HostileOrbitRuntimeTests
             GameState = scenario.GameState with
             {
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == Target ? o with { PositionY = -1400, DirectionDegrees = 359 } : o).ToArray()
+            o.ObjectId == Target ? o with { PositionY = -490, DirectionDegrees = 359 } : o).ToArray()
             }
         };
         using var engine = Create(scenario);
@@ -144,7 +144,7 @@ public class HostileOrbitRuntimeTests
         var held = At(engine, 500000).Objects.Single(o => o.ObjectId == Target);
         Assert.Equal(HostileCombatPhase.OrbitHold, held.HostileCombat!.Phase);
         Assert.Equal(first.Clockwise, held.HostileCombat.Clockwise);
-        Assert.InRange(Math.Sqrt(held.X * held.X + held.Y * held.Y), 950, 1050);
+        Assert.InRange(Math.Sqrt(held.X * held.X + held.Y * held.Y), 332.5, 367.5);
     }
 
     [Fact]
