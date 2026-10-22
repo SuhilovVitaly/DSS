@@ -77,4 +77,7 @@ public sealed record PlayerCommand(
     /// <summary>Explicit direction for engine.turnHold; null is not a default direction.</summary>
     TurnDirection? TurnDirection = null,
     /// <summary>True starts/holds a turn; false releases it. Null is an incomplete payload.</summary>
-    bool? Active = null);
+    bool? Active = null,
+    /// <summary>Atomic debug catalog overlay, applied in the player-command phase.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    DebugTuningPatch? DebugTuning = null);
