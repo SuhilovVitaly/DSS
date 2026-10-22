@@ -1,6 +1,6 @@
 # EP-0013 ticket order
 
-Original US5-TK5 docs becomes final US7-TK1. No push under epic section9.
+Original US5-TK5 docs becomes final US7-TK1. Push immediately after every commit under the updated epic section9; verify the target branch and remote, then confirm the remote branch SHA matches local HEAD.
 - [EP-0013-US-0001-TK-0001-contracts](EP-0013-US-0001-contracts-and-state/EP-0013-US-0001-TK-0001-contracts/EP-0013-US-0001-TK-0001-contracts.md) — Contracts
 - [EP-0013-US-0001-TK-0002-tuning-state](EP-0013-US-0001-contracts-and-state/EP-0013-US-0001-TK-0002-tuning-state/EP-0013-US-0001-TK-0002-tuning-state.md) — Engine
 - [EP-0013-US-0001-TK-0003-apply-command](EP-0013-US-0001-contracts-and-state/EP-0013-US-0001-TK-0003-apply-command/EP-0013-US-0001-TK-0003-apply-command.md) — Engine

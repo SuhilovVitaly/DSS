@@ -10,7 +10,11 @@ validation_status: implementation-in-progress
 
 # EP-0013
 
-Implementation authority: user's complete revision 2 specification in the execution conversation (2026-10-22), plus `Board/EpicExecutionPrompt.md`. No push: explicit §9 overrides the general publication rule. Each completed ticket receives a separate local commit. Draft status does not block execution.
+[Вход в эпик и истории](EP-0013-debug-tuning-panel.md) · [Полный исходный материал revision 2](SourceSpecification.md) · [Тикеты](Tickets.md)
+
+Дополнение Board от 2026-10-22 по запросу «создай эпик 13 в боарде»: существующий пакет сохранён; приложение записано полностью, включая точные AC. Историческое утверждение ниже об отсутствии пакета относится к его первоначальному созданию. Текущее поручение касается оформления Board.
+
+Implementation authority: user's complete revision 2 specification in the execution conversation (2026-10-22), plus `Board/EpicExecutionPrompt.md`. Publication rule updated by the user on 2026-10-22: each completed ticket receives a separate commit, followed immediately by push. After every commit, verify the target branch and remote, push, then confirm the remote branch SHA matches local HEAD. Draft status does not block execution.
 
 ## Grounding and corrections
 
@@ -79,4 +83,4 @@ Shared Motion integrates constant a and omega using HostileOrbitMath.Sample geom
 
 ## Quality gates
 
-Per ticket: named tests + affected regression, zero-warning build, scoped format, diff check, evidence, separate local commit. All test processes hard-capped300000ms with process-tree termination; partition long suites. Balance tests optional. Whole solution build before completion. Independent review is distinct from self-review; native/GPU/physical-input/human acceptance must be labeled NOT RUN if unavailable. Final story updates all relevant project docs, status/links and Graphify. No push under §9.
+Per ticket: named tests + affected regression, zero-warning build, scoped format, diff check, evidence, separate commit followed immediately by push and remote-SHA verification. All test processes hard-capped300000ms with process-tree termination; partition long suites. Balance tests optional. Whole solution build before completion. Independent review is distinct from self-review; native/GPU/physical-input/human acceptance must be labeled NOT RUN if unavailable. Final story updates all relevant project docs, status/links and Graphify. Push immediately after every commit under the updated §9; verify the remote branch SHA matches local HEAD.
