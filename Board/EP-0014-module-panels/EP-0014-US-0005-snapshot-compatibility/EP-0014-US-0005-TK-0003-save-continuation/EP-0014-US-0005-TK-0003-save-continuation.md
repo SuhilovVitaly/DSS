@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0005-snapshot-compatibility
 ticket: EP-0014-US-0005-TK-0003-save-continuation
 title: save-continuation
-stage: approved
+stage: implemented
 layer: engine
 depends_on: [EP-0014-US-0005-TK-0002-legacy-defense-fields]
 files_touched: 1
@@ -48,3 +48,12 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Grounded continuation matrix before implementation
+Add cases in ModulePanelProjectionTests.cs using PointCounterFixture real executor: Save19 with and without tuning, Save18 without tuning migrated through ScenarioLoader.LoadFromFile. Save midflight with both projectile kinds and pending reloads; replay command identity after load; compare captured flights, RNG, final combat/defense/point state and own module limit. Reject retired save mode atomically. Temporary files use this task's absolute evidence run directory and are deleted in finally. Existing DebugTuningSave/PhaseThreeSaveSchema tests cover retimed original-flight provenance and malformed save fields.
+
+## Implementation evidence
+
+Verify Save18 and Save19 active-flight continuation and atomic legacy rejection
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/engine-panel-continuation.trx and engine-panel-continuation-format.log. Owning build, scoped format and diff checks passed. Diff self-reviewed against ticket and invariants. Native, human acceptance and independent review are not claimed.
