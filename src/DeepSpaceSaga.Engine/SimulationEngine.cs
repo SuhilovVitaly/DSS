@@ -502,6 +502,8 @@ public sealed partial class SimulationEngine : IDisposable
             ResetPresentationSession();
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
+            _debugOriginalFlights.Clear();
+            _debugProjectileTypes.Clear();
             _evasions.Clear();
             _playerEvasionEpisodes = 0;
             _launcherCombat = combatState;

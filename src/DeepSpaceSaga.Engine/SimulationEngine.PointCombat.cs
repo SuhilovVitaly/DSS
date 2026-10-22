@@ -113,6 +113,7 @@ public sealed partial class SimulationEngine
         var motion = new ObjectMotionSnapshot(id, origin.X, origin.Y, profile.SpeedKmS, direction, OwnProjectile: flight);
         _objects.Add(new(motion, torpedo ? SpaceObjectType.Missile : SpaceObjectType.Countermeasure,
             motionTimeMs, [], Name: torpedo ? "Torpedo" : "Countermissile", IsKnown: true));
+        _debugProjectileTypes[id] = type.TypeId;
         if (torpedo)
         {
             var active = launcher!.ActiveTorpedoIds.IsDefault ? [] : launcher.ActiveTorpedoIds;
@@ -315,6 +316,8 @@ public sealed partial class SimulationEngine
     {
         string id = projectile.InitialMotion.ObjectId;
         _objects.RemoveAll(o => o.InitialMotion.ObjectId == id);
+        _debugOriginalFlights.Remove(id);
+        _debugProjectileTypes.Remove(id);
         var flight = projectile.InitialMotion.OwnProjectile ?? throw new InvalidOperationException("Missing captured point flight.");
         string owner = flight.OwnerObjectId, module = flight.LauncherModuleId;
         var key = (owner, module);
