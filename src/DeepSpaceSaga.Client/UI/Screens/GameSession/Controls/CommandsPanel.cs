@@ -15,14 +15,32 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 public sealed class CommandsPanel
 {
     internal ModuleDiagram? OwnModuleDiagram { get; set; }
+    internal int? DestroyedModuleLimit { get; set; }
+    internal long PresentationRevision { get; set; }
+    private SKPicture? _cachedPicture;
+    private InstalledModuleSnapshot[] _cachedModules = [];
+    private object? _cachedTiles;
+    private string? _cachedOwner;
+    private float _cachedHeight;
+    private double _cachedTime, _cachedMultiplier;
+    private long _cachedRevision, _inputRevision, _cachedInputRevision;
+    private int? _cachedLimit;
+
+    internal void ReleasePresentationCache()
+    {
+        _cachedPicture?.Dispose();
+        _cachedPicture = null;
+        _cachedModules = [];
+        _cachedTiles = null;
+    }
 
     internal static IReadOnlyList<string> ModuleDetails(string panel, string? moduleId,
-        IReadOnlyList<InstalledModuleSnapshot> modules, ModuleDiagram? diagram)
+        IReadOnlyList<InstalledModuleSnapshot> modules, ModuleDiagram? diagram, int? destroyedLimit = null)
     {
         if (diagram is null) return [];
         List<string> lines = [];
         if (panel == "Navigation")
-            lines.Add($"{GameSessionScreen.CombatText("DestroyedModules", "")}: {diagram.DestroyedCount}/3");
+            lines.Add($"{Localization.Combat("Panel.DestroyedModules")}: {diagram.DestroyedCount} / {destroyedLimit?.ToString() ?? Localization.Combat("Panel.UnknownValue")}");
         foreach (var tile in diagram.Tiles)
         {
             var module = modules.FirstOrDefault(m => m.ModuleId == tile.Id);
@@ -31,14 +49,23 @@ public sealed class CommandsPanel
                 !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId.StartsWith("engine.", StringComparison.Ordinal)) ? "Engine" :
                 !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId.StartsWith("scanner.", StringComparison.Ordinal)) ? "Space Control" : "Navigation";
             if (moduleId is not null ? tile.Id != moduleId : panel != group) continue;
-            lines.Add(tile.Name + (tile.Critical ? " !" : ""));
-            lines.Add($"{GameSessionScreen.CombatText("ArmorShort", "")}: {tile.Armor}/{tile.ArmorMax}  {GameSessionScreen.CombatText("StructureShort", "")}: {tile.Structure}/{tile.StructureMax}");
-            lines.Add(tile.Destroyed ? GameSessionScreen.CombatText("Destroyed", "") :
-                tile.DisabledRealSeconds > 0 ? $"{GameSessionScreen.CombatText("Disabled", "")} {tile.DisabledRealSeconds:0.0} {GameSessionScreen.CombatText("Seconds", "")}" :
-                GameSessionScreen.CombatText("Ready", ""));
+            lines.Add(tile.Name + (tile.Critical ? " " + Localization.Combat("Panel.CriticalIcon") : ""));
+            lines.Add($"{Localization.Combat("Panel.Armor")} {HealthBar(tile.Armor, tile.ArmorMax)} {tile.Armor}   {Localization.Combat("Panel.Structure")} {HealthBar(tile.Structure, tile.StructureMax)} {tile.Structure}");
+            if (tile.Destroyed) lines.Add(GameSessionScreen.CombatText("Destroyed", ""));
+            else if (tile.DisabledRealSeconds > 0)
+                lines.Add($"{GameSessionScreen.CombatText("Disabled", "")} {PanelTime.Format(tile.DisabledRealSeconds)} {GameSessionScreen.CombatText("Seconds", "")}");
+            else if (module.LauncherCombat is null && module.Defense is null) lines.Add(GameSessionScreen.CombatText("Ready", ""));
             if (tile.HitDamage is { } damage) lines.Add($"−{damage}");
         }
         return lines;
+    }
+
+    private static string HealthBar(int current, int maximum)
+    {
+        int filled = maximum > 0 ? (int)Math.Round(Math.Clamp((double)current / maximum, 0, 1) * 6) : 0;
+        return Localization.Combat("Panel.BarLeft") +
+            string.Concat(Enumerable.Repeat(Localization.Combat("Panel.BarFull"), filled)) +
+            string.Concat(Enumerable.Repeat(Localization.Combat("Panel.BarEmpty"), 6 - filled)) + Localization.Combat("Panel.BarRight");
     }
 
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
@@ -461,6 +488,7 @@ public sealed class CommandsPanel
 
     public bool OnMouseDown(float x, float y)
     {
+        _inputRevision++;
         // Toggle button — hide (save state) or show (restore).
         if (_hideShowButtonRect.Contains(x, y))
         {
@@ -527,6 +555,7 @@ public sealed class CommandsPanel
 
     public bool OnMouseMove(float x, float y)
     {
+        if (_pointerX != x || _pointerY != y) _inputRevision++;
         _pointerX = x;
         _pointerY = y;
         HoveredWeaponPanel = RowsContain(x, y) ? _panelRows.FirstOrDefault(r =>
@@ -550,17 +579,50 @@ public sealed class CommandsPanel
 
     public void OnMouseUp(float x, float y)
     {
+        _inputRevision++;
         _pressedButtonIndex = -1;
         _pressedCommandButtonIndex = -1;
     }
 
     private float _pointerX = -1, _pointerY = -1;
     internal string? CurrentTimeTooltip { get; private set; }
+    internal string? CurrentHealthTooltip { get; private set; }
 
     // ── Render ──────────────────────────────────────────────────
 
     public void Render(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight = float.PositiveInfinity,
         string? ownerObjectId = null)
+    {
+        if (modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: true }) modules = Array.Empty<InstalledModuleSnapshot>();
+        double time = _motionTime(), multiplier = _motionMultiplier();
+        bool same = _cachedPicture is not null && _cachedModules.Length == modules.Count &&
+            _cachedHeight == viewportHeight && _cachedOwner == ownerObjectId && _cachedTime == time &&
+            _cachedMultiplier == multiplier && _cachedRevision == PresentationRevision &&
+            _cachedInputRevision == _inputRevision && _cachedLimit == DestroyedModuleLimit &&
+            ReferenceEquals(_cachedTiles, OwnModuleDiagram?.Tiles);
+        if (same)
+            for (int i = 0; i < modules.Count; i++)
+                if (!ReferenceEquals(_cachedModules[i], modules[i])) { same = false; break; }
+        if (!same)
+        {
+            _cachedPicture?.Dispose();
+            _cachedPicture = null;
+            using var recorder = new SKPictureRecorder();
+            var recording = recorder.BeginRecording(new SKRect(0, 0, PanelWidth + Margin * 2,
+                float.IsFinite(viewportHeight) ? Math.Max(1, viewportHeight) : 100000));
+            RenderCore(recording, modules, viewportHeight, ownerObjectId);
+            _cachedPicture = recorder.EndRecording();
+            _cachedModules = modules.ToArray();
+            _cachedTiles = OwnModuleDiagram?.Tiles;
+            _cachedHeight = viewportHeight; _cachedOwner = ownerObjectId;
+            _cachedTime = time; _cachedMultiplier = multiplier; _cachedRevision = PresentationRevision;
+            _cachedInputRevision = _inputRevision; _cachedLimit = DestroyedModuleLimit;
+        }
+        canvas.DrawPicture(_cachedPicture!);
+    }
+
+    private void RenderCore(SKCanvas canvas, IReadOnlyList<InstalledModuleSnapshot> modules, float viewportHeight,
+        string? ownerObjectId)
     {
         if (OwnModuleDiagram is null && (modules is ImmutableArray<InstalledModuleSnapshot> { IsDefault: true } ||
             !modules.Any(m => m.LauncherCombat is not null || m.Defense is not null))) viewportHeight = float.PositiveInfinity;
@@ -586,7 +648,7 @@ public sealed class CommandsPanel
             using var detailPaint = new SKPaint { TextSize = 12f, IsAntialias = true };
             var details = panels.ToDictionary(p => p.Key, p => WrapDetails(
                 (p.Weapon is { } w ? _weaponDetails?.Invoke(w) ?? [] : [])
-                    .Concat(ModuleDetails(p.Name, p.Weapon?.ModuleId, safeModules, OwnModuleDiagram)).ToArray(), detailPaint), StringComparer.Ordinal);
+                    .Concat(ModuleDetails(p.Name, p.Weapon?.ModuleId, safeModules, OwnModuleDiagram, DestroyedModuleLimit)).ToArray(), detailPaint), StringComparer.Ordinal);
 
             // Reserve every caption so all five groups remain reachable. Give an
             // explicitly opened group priority, then the installed launcher.
@@ -704,7 +766,7 @@ public sealed class CommandsPanel
         if (_scrollOffset > _maxScroll)
         {
             _scrollOffset = _maxScroll;
-            Render(canvas, modules, viewportHeight, ownerObjectId);
+            RenderCore(canvas, modules, viewportHeight, ownerObjectId);
             return;
         }
         float bodyBottom = Math.Min(rowY, viewportHeight);
@@ -719,6 +781,7 @@ public sealed class CommandsPanel
         foreach (var row in _panelRows)
             DrawCommandPanel(canvas, row);
         CurrentTimeTooltip = null;
+        CurrentHealthTooltip = null;
         foreach (var row in _panelRows)
         {
             if (row.TimeTooltip is not { } tooltip || !row.ReloadRingRect.Contains(_pointerX, _pointerY)) continue;
@@ -726,6 +789,26 @@ public sealed class CommandsPanel
             float top = Math.Min(_pointerY + 18, viewportHeight - 24);
             canvas.DrawRect(new SKRect(Margin, top, Margin + PanelWidth, top + 24), _panelBgPaint);
             canvas.DrawText(tooltip, Margin + 4, top + 16, _moduleCaptionTextPaint);
+        }
+        foreach (var row in _panelRows)
+        {
+            if (!row.Opened || !row.BodyRect.Contains(_pointerX, _pointerY) || OwnModuleDiagram is null) continue;
+            var tooltips = new List<string>();
+            foreach (var tile in OwnModuleDiagram.Tiles)
+            {
+                if (row.Weapon is { } weapon && weapon.ModuleId != tile.Id) continue;
+                if (!row.DetailLines.Any(line => line.StartsWith(tile.Name, StringComparison.Ordinal))) continue;
+                tooltips.Add($"{tile.Name}: {Localization.Combat("Panel.Armor")} {tile.Armor}/{tile.ArmorMax}; {Localization.Combat("Panel.Structure")} {tile.Structure}/{tile.StructureMax}");
+                if (tile.Critical) tooltips.Add(Localization.Combat("Panel.CriticalTooltip"));
+                if (tile.DisabledRealSeconds > 0) tooltips.Add(PanelTime.Tooltip(tile.DisabledRealSeconds * _motionMultiplier(),
+                    (SimulationSpeed)(int)Math.Round(_motionMultiplier() * 4)));
+            }
+            CurrentHealthTooltip = tooltips.Count == 0 ? null : string.Join("\n", tooltips);
+            float top = Math.Min(_pointerY + 18, viewportHeight - tooltips.Count * 18 - 4);
+            if (tooltips.Count > 0)
+                canvas.DrawRect(new SKRect(Margin, top, Margin + PanelWidth, top + tooltips.Count * 18 + 4), _panelBgPaint);
+            for (int i = 0; i < tooltips.Count; i++)
+                canvas.DrawText(tooltips[i], Margin + 4, top + 16 + i * 18, _moduleCaptionTextPaint);
         }
         canvas.Restore();
     }
@@ -754,6 +837,7 @@ public sealed class CommandsPanel
 
     public bool OnMouseWheel(float x, float y, float delta)
     {
+        _inputRevision++;
         if (!float.IsFinite(delta) || delta == 0 || _state == CommandsPanelState.Closed || !RowsContain(x, y) || _maxScroll == 0) return false;
         _scrollOffset = Math.Clamp(_scrollOffset - delta * 48, 0, _maxScroll);
         return true;
@@ -959,7 +1043,11 @@ public sealed class CommandsPanel
                 canvas.Save();
                 canvas.ClipRect(new SKRect(row.BodyRect.Left + 8, row.BodyRect.Top + 4, row.BodyRect.Right - 8, row.StatusBarRect.Top));
                 for (int i = 0; i < row.DetailLines.Length; i++)
+                {
+                    paint.Color = row.Name == "Navigation" && i == 0 && DestroyedModuleLimit is { } limit &&
+                        OwnModuleDiagram is { } diagram && diagram.DestroyedCount >= limit - 1 ? SKColors.IndianRed : XenonStyle.CyanBright;
                     canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, Math.Max(row.BodyRect.Top + (row.Weapon is null ? 16 : 96), row.Buttons.IsDefaultOrEmpty ? 0 : row.Buttons.Max(b => b.Rect.Bottom) + 16) + i * 16, paint);
+                }
                 canvas.Restore();
             }
             if (!row.ReloadBarRect.IsEmpty)

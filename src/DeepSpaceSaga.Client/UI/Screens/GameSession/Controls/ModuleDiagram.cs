@@ -18,11 +18,16 @@ internal sealed class ModuleDiagram
     private bool _initialized;
     private double _realMs;
     private readonly Dictionary<string, (int Damage, double Started)> _hits = new(StringComparer.Ordinal);
+    private ImmutableArray<InstalledModuleSnapshot> _lastModules;
+    private double _lastMotion, _lastMultiplier;
 
     internal void Update(Guid? session, ulong sequence, string owner, ImmutableArray<InstalledModuleSnapshot> modules,
         ImmutableArray<CombatJournalEntry> journal, double motionMs, double multiplier, double realMs)
     {
         bool baseline = !_initialized || _session != session || sequence < _sequence;
+        if (!baseline && sequence == _sequence && modules == _lastModules && motionMs == _lastMotion &&
+            multiplier == _lastMultiplier && _hits.Count == 0) return;
+        _lastModules = modules; _lastMotion = motionMs; _lastMultiplier = multiplier;
         if (baseline) { _hits.Clear(); _cursor = journal.IsDefaultOrEmpty ? 0 : journal.Max(e => e.EventId); }
         _initialized = true; _session = session; _sequence = sequence; _realMs = realMs;
         if (!journal.IsDefaultOrEmpty)

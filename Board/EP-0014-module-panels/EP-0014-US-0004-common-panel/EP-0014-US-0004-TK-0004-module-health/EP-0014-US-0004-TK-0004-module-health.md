@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0004-common-panel
 ticket: EP-0014-US-0004-TK-0004-module-health
 title: module-health
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0014-US-0004-TK-0003-priority-and-time]
 files_touched: 4
@@ -51,3 +51,10 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Scope refinement before implementation
+Include Data/Locale/English.json, Russian.json and existing PointCombatUS0020TK0002Tests.cs to replace superseded health-text assertions. Cache CommandsPanel.Render into an SKPicture with explicit presentation revision, module identity, times, viewport, UI input and diagram content invalidation; dispose retained picture on deactivation. Health bar glyphs are localized presentation tokens, with full numeric tooltip. Destroyed threshold comes only from snapshot. Allocation test targets warmed real CommandsPanel.Render, not a formatter.
+
+## Implementation evidence
+
+Module rows use localized armor/structure bars and current values, full ratios/critical explanation/disabled physical-time hover, no duplicate weapon Ready. Navigation uses authoritative n/L and warns atL-1. CommandsPanel caches retained Skia drawing with module, revision, time, speed, viewport, input and health invalidation; session deactivation releases cache. ModuleDiagram avoids rebuilding stable data. Initial allocation test measured56 bytes per draw from SnapshotBuffer.LatestPrediction callback; fixed by supplying already prepared screen time. Unchanged assertion now measures0 bytes over100 warmed actual panel Render calls. Final affected111/111 tests PASS, owning build/scoped format/diff check PASS. Initial2 failures preserved separately. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-health-fixed.trx, client-health.trx, client-health-format.log. Self-review checked cache invalidation and ownership; full-screen allocations, native and human acceptance not claimed.

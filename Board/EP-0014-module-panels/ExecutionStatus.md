@@ -13,3 +13,5 @@ Destination: origin https://github.com/SuhilovVitaly/DSS, upstream codex/ep-0013
 Evidence root: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/. Contracts focused2/2, owning regression271/271; Engine focused3/3, PointCombat/DebugTuning417/417. Scoped formatter and diff checks passed. Original sandbox Contracts run aborted on testhost connection; successful reruns are separate evidence.
 
 TK-0002 published55b508cdb5bfbc2ec38a82cce863e51a050b4093; remote SHA verified. TK-0003 validated109 Client tests; publication follows this commit.
+
+TK-0003 published60233559ad4faeb8a27c48cac581aad29ed33cb8, remote verified. TK-0004 passed111 panel checks and0 allocations on its declared warmed boundary.

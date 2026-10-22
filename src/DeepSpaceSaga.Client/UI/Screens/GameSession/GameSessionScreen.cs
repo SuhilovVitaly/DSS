@@ -111,6 +111,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
+    private double _panelMotionTime;
     private SKRect _lastSpeedPanelRect;
     private readonly SKRect[] _speedButtonRects = new SKRect[7];
 
@@ -381,7 +382,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel,
             IsPointWeaponCommandEnabled, SendPointWeaponCommand, GetPointWeaponStatus,
-            GetPointWeaponOperator, GetPointWeaponDetails, () => DefensePresentationTime,
+            GetPointWeaponOperator, GetPointWeaponDetails, () => _panelMotionTime,
             () => PanelDisplaySpeed.MotionTimeMultiplier(), PointWeaponButtonLabel);
         _objectInfoPanel = new ObjectInfoPanel();
     }
@@ -414,6 +415,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _commandsPanel.ReleasePresentationCache();
         _alertsInactive = true; _launchFlashes.Clear();
         _deactivateAlertAudio?.Invoke();
         CancelManeuverInput();
@@ -1425,12 +1427,16 @@ public sealed partial class GameSessionScreen : IScreen
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
         var playerShip = FindPlayerShip(_renderStates);
+        _panelMotionTime = prediction is null ? buffered?.Snapshot.MotionTimeMs ?? 0 : GetPredictedGameTimeMs(prediction);
+        _commandsPanel.DestroyedModuleLimit = buffered?.Snapshot.DestroyedModuleLimit;
+        _commandsPanel.PresentationRevision = HashCode.Combine(buffered?.Snapshot.SnapshotSequence, _mouseX, _mouseY,
+            PointAim, _pointSubmissions.Count, _pointErrors.Count, _selectedObjectId);
         _commandsPanel.OwnModuleDiagram = null;
         if (buffered?.Snapshot is { Encounter: not null } moduleSnapshot && playerShip is not null)
         {
             _moduleDiagram.Update(_buffer.PresentationSessionId, moduleSnapshot.SnapshotSequence, moduleSnapshot.PlayerShipObjectId!,
                 moduleSnapshot.InstalledModules, moduleSnapshot.CombatJournal, prediction is null ? moduleSnapshot.MotionTimeMs : GetPredictedGameTimeMs(prediction),
-                _buffer.CurrentSpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
+                PanelDisplaySpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
             _commandsPanel.OwnModuleDiagram = _moduleDiagram;
         }
         _commandsPanel.Render(canvas,
