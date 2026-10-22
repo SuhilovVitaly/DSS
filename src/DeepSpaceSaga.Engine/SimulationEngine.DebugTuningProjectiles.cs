@@ -32,11 +32,21 @@ public sealed partial class SimulationEngine
             var type = candidate.ModuleTypes.GetDefinition(candidate.ModuleTypes.GetIndex(typeId));
             if (type.Profiles.IsDefault) continue;
             var profile = type.Profiles.FirstOrDefault(p => p.ProfileId == flight.ProfileId);
-            if (profile is null || profile.SpeedKmS == flight.SpeedKmS && profile.BlastRadiusKm == flight.BlastRadiusKm) continue;
+            var oldType = _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(typeId));
+            var oldProfile = oldType.Profiles.IsDefault ? null : oldType.Profiles.FirstOrDefault(p => p.ProfileId == flight.ProfileId);
+            if (profile is null || oldProfile is null) continue;
+            bool speedChanged = profile.SpeedKmS != oldProfile.SpeedKmS;
+            bool radiusChanged = profile.BlastRadiusKm != oldProfile.BlastRadiusKm;
+            if (!speedChanged && !radiusChanged) continue;
             originals.TryAdd(id, flight);
             var pose = RuntimeMotion.At(projectile, time);
-            var replacement = flight with { X = pose.X, Y = pose.Y, BlastRadiusKm = profile.BlastRadiusKm };
-            if (profile.SpeedKmS != flight.SpeedKmS)
+            var replacement = flight with
+            {
+                X = pose.X,
+                Y = pose.Y,
+                BlastRadiusKm = radiusChanged ? profile.BlastRadiusKm : flight.BlastRadiusKm
+            };
+            if (speedChanged)
             {
                 double distance = double.Hypot(flight.DetonationX - pose.X, flight.DetonationY - pose.Y) / WorldUnitsPerKm;
                 double deadline = BlastMath.DetonationTimeMs(time, distance, profile.SpeedKmS);
@@ -51,7 +61,7 @@ public sealed partial class SimulationEngine
                 };
             }
             // Radius-only changes keep the original integration anchor to avoid numerical drift.
-            var anchor = profile.SpeedKmS == flight.SpeedKmS ? projectile.InitialMotion : pose;
+            var anchor = speedChanged ? pose : projectile.InitialMotion;
             objects[i] = projectile with
             {
                 StartGameTimeMs = replacement.LaunchMotionTimeMs,

@@ -80,13 +80,25 @@ public static class ScenarioLoader
             throw new ScenarioException($"Invalid scenario JSON: {ex.Message}", ex);
         }
 
+        if (isSave) scenario = UpgradeSave18(scenario);
         return ValidateAndNormalize(scenario, allowNonZeroGameTime);
     }
 
     internal static void RequireCurrentSaveVersion(int version)
     {
-        if (version != SaveFormat.CurrentSaveFormatVersion)
+        if (version != 18 && version != SaveFormat.CurrentSaveFormatVersion)
             throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
+    }
+
+    internal static ScenarioFile UpgradeSave18(ScenarioFile scenario)
+    {
+        RequireCurrentSaveVersion(scenario.SaveFormatVersion);
+        if (scenario.SaveFormatVersion != 18) return scenario;
+        if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
+        if (scenario.GameState.DebugTuning is not null || scenario.GameState.PointCombatState?.Projectiles?.Any(
+            p => p.LauncherModuleTypeId is not null || p.OriginalFlight is not null) == true)
+            throw new ScenarioException("Invalid Save18: debug tuning/provenance requires Save19. Save was not modified.");
+        return scenario with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion };
     }
 
     internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime,

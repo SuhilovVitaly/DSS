@@ -20,6 +20,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private readonly SimulationClock _clock;
     private GameDataRegistry _registry;
+    private readonly GameDataRegistry _catalogRegistry;
     private DebugTuningState _debugTuning;
     private bool _hasLoadedScenario;
     private long _lastDebugPresentationRevision = -1;
@@ -138,6 +139,7 @@ public sealed partial class SimulationEngine : IDisposable
     internal SimulationEngine(GameDataRegistry registry, ImmutableArray<string> femaleCrewPortraits = default, SimulationClock? clock = null)
     {
         _registry = registry;
+        _catalogRegistry = registry;
         _debugTuning = new(registry);
         _femaleCrewPortraits = femaleCrewPortraits.IsDefaultOrEmpty ? [CharacterPortraits.DefaultFemale] : femaleCrewPortraits;
         _clock = clock ?? new SimulationClock(SimulationSpeed.Speed1);
@@ -236,6 +238,30 @@ public sealed partial class SimulationEngine : IDisposable
     /// Sets the clock speed and game time from scenario data.
     /// </summary>
     public void LoadScenario(ScenarioFile scenario, bool isSave = false, SolarSystemGenerationConfig? generation = null)
+    {
+        if (isSave) scenario = ScenarioLoader.UpgradeSave18(scenario);
+        if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
+        var tuning = new DebugTuningState(_catalogRegistry);
+        if (scenario.GameState.DebugTuning is { } values && !tuning.TryApply(new([.. values]), out tuning, out var reason))
+            throw new ScenarioException("Invalid debug tuning save: " + reason);
+        lock (_worldStateLock)
+        {
+            var previous = _registry;
+            try
+            {
+                _registry = tuning.Registry;
+                LoadScenarioCore(scenario, isSave, generation);
+                _debugTuning = tuning;
+            }
+            catch
+            {
+                _registry = previous;
+                throw;
+            }
+        }
+    }
+
+    private void LoadScenarioCore(ScenarioFile scenario, bool isSave, SolarSystemGenerationConfig? generation)
     {
         if (isSave) ScenarioLoader.RequireCurrentSaveVersion(scenario.SaveFormatVersion);
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true,
@@ -1227,7 +1253,7 @@ public sealed partial class SimulationEngine : IDisposable
             VoyageState: _voyageState,
             CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
             HostileCombatState: CaptureHostileState(gameTimeMs), CombatReportsState: CaptureCombatReportsState(), CombatReactionDelays: [],
-            PointCombatState: CapturePointCombatState(gameTimeMs),
+            PointCombatState: CapturePointCombatState(gameTimeMs), DebugTuning: CaptureDebugTuningOverlay(),
             MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
             LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),

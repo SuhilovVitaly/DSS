@@ -107,7 +107,7 @@ public sealed class PointCombatUS0009TK0003Tests
     public void Save17_is_rejected_before_deserialization_without_changing_world_or_file()
     {
         using var engine = PointCounterFixture.Create(); var before = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        Assert.Equal(18, before.SaveFormatVersion);
+        Assert.Equal(19, before.SaveFormatVersion);
         Assert.Equal(3, before.GameState.HostileCombatState!.Version);
         string path = Path.Combine(Path.GetTempPath(), "dss-save17-" + Guid.NewGuid().ToString("N") + ".json");
         try

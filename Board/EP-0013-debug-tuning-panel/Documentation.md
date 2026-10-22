@@ -61,6 +61,12 @@ Reload retiming: `readyAtNew = readyAtOld - oldReload + newReload`, clamp comple
 
 Save optional `debugTuning` contains current nondefault overlay. Restore catalog + saved overlay **before projectile validation**, then apply startup file as a normal tuning command with live retiming. New scenario uses catalog + startup file. Decide Save18 vs Save19 from actual strict loader behavior and document in US3-TK1. Holds never persist: loaded ship keeps its sampled course/speed, with input released.
 
+US3-TK1 decision2026-10-22: strict unknown-member rejection requires writerSave19.
+Save18 migrates explicitly with no tuning/provenance; Save17 and older remain
+rejected. Retimed flights retain private original launch facts/type identity,
+separate from their current integration anchor. Catalog edits preserve captured
+flight parameters; a debug command retimes only profile fields it changes.
+
 Path: `AppContext.BaseDirectory/DebugTuning/`. UTF-8, two spaces, invariant decimal numbers. `debug-tuning.json` schemaVersion 1 includes writtenAtUtc and ships/launchers/profiles nested by type/profile IDs exactly as the table. Partial files fill absent values from catalog. Unknown keys, wrong types, nonfinite/out-of-range values or schema !=1 reject the **entire** file; log path/reason and show a red first-open panel message. Read only at session startup, not live. Allow optional `source: catalog` so the defaults file can be copied over the current file.
 
 Client writes all current values after confirmed snapshot revisions, atomically via temp/replace, at most once/250ms with final revision guaranteed. Reset-all applies one complete defaults patch then deletes the current file. Every application start writes `debug-tuning.defaults.json` from original catalog with `source: catalog`; game never reads this file.

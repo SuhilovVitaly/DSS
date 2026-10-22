@@ -21,7 +21,9 @@ public sealed record PointCombatStateData(
 public sealed record NamedCombatRngSaveData([property: JsonRequired] int AlgorithmVersion,
     [property: JsonRequired] ulong State, [property: JsonRequired] ulong Counter);
 public sealed record PointProjectileSaveData([property: JsonRequired] string ObjectId,
-    [property: JsonRequired] OwnProjectileSnapshot Flight);
+    [property: JsonRequired] OwnProjectileSnapshot Flight,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? LauncherModuleTypeId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] OwnProjectileSnapshot? OriginalFlight = null);
 public sealed record EvasionSaveData([property: JsonRequired] string ObjectId,
     [property: JsonRequired] string EngineModuleId, [property: JsonRequired] long StartedAt,
     [property: JsonRequired] EvasionSnapshot Motion, [property: JsonRequired] ActiveCycleData? OrbitCycle,
@@ -66,7 +68,12 @@ internal static class PointCombatSaveValidation
             PointCombatState = saved with
             {
                 Projectiles = saved.Projectiles?.Select(p => p?.Flight is not { } f ? p! : p with
-                { ObjectId = Canon(p.ObjectId), Flight = f with { OwnerObjectId = Canon(f.OwnerObjectId), LauncherModuleId = Module(f.OwnerObjectId, f.LauncherModuleId) } }).ToArray()!,
+                {
+                    ObjectId = Canon(p.ObjectId),
+                    Flight = f with { OwnerObjectId = Canon(f.OwnerObjectId), LauncherModuleId = Module(f.OwnerObjectId, f.LauncherModuleId) },
+                    OriginalFlight = p.OriginalFlight is not { } original ? null : original with
+                    { OwnerObjectId = Canon(original.OwnerObjectId), LauncherModuleId = Module(original.OwnerObjectId, original.LauncherModuleId) }
+                }).ToArray()!,
                 Evasions = saved.Evasions?.Select(e => e?.Motion is not { } m ? e! : e with
                 {
                     ObjectId = Canon(e.ObjectId),

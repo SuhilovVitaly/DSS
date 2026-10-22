@@ -14,7 +14,7 @@ public sealed class CombatReportsSaveSchemaTests
         var save = engine.CaptureSaveState();
         save = save with { GameState = save.GameState with { CombatReportsState = new(1, long.MaxValue, [Target]) } };
         var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true);
-        Assert.Equal(18, loaded.SaveFormatVersion);
+        Assert.Equal(19, loaded.SaveFormatVersion);
         Assert.Equal(long.MaxValue, loaded.GameState.CombatReportsState!.Sequence);
         Assert.Equal(new[] { Target }, loaded.GameState.CombatReportsState.ReportedRangeTargetIds);
     }

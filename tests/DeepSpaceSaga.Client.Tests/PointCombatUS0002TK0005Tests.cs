@@ -102,7 +102,7 @@ public sealed class PointCombatUS0002TK0005Tests
             await connection.SaveAsync("catalog", timeout.Token);
             string path = Path.Combine(directory, "catalog.json");
             var saved = ScenarioLoader.LoadFromFile(path, true, true);
-            Assert.Equal(18, saved.SaveFormatVersion); Assert.Equal(2, saved.GameState.PointCombatState!.Projectiles.Count);
+            Assert.Equal(19, saved.SaveFormatVersion); Assert.Equal(2, saved.GameState.PointCombatState!.Projectiles.Count);
             using var restored = SimulationEngine.CreateFromSaveFile(settings, path);
             var a = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0);
             var b = restored.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0);

@@ -68,9 +68,24 @@ internal static class PointCombatContinuationValidation
             var pose = CurrentManeuverForecast.Sample(start, state.MotionTimeMs - f.LaunchMotionTimeMs);
             Require(Pose(obj, pose) && Near(f.X, pose.X) && Near(f.Y, pose.Y), "captured position/speed/course mismatch.");
             var launch = launchById.GetValueOrDefault(row.ObjectId);
+            var original = row.OriginalFlight ?? f;
+            if (row.OriginalFlight is not null)
+            {
+                double od = double.Hypot(original.DetonationX - original.StartX, original.DetonationY - original.StartY) / 10;
+                Require(format >= 19 && !string.IsNullOrWhiteSpace(row.LauncherModuleTypeId) &&
+                    original.Kind == f.Kind && original.OwnerObjectId == f.OwnerObjectId && original.LauncherModuleId == f.LauncherModuleId &&
+                    original.ProfileId == f.ProfileId && original.DetonationX == f.DetonationX && original.DetonationY == f.DetonationY &&
+                    original.Damage == f.Damage && original.ArmorPiercingPercent == f.ArmorPiercingPercent &&
+                    original.ArmorDamagePercent == f.ArmorDamagePercent && original.CoreFraction == f.CoreFraction &&
+                    original.Reporter == f.Reporter && original.OwnerPlayerRelationAtLaunch == f.OwnerPlayerRelationAtLaunch &&
+                    original.LaunchMotionTimeMs >= 0 && original.LaunchMotionTimeMs <= f.LaunchMotionTimeMs &&
+                    double.IsFinite(original.SpeedKmS) && original.SpeedKmS > 0 && double.IsFinite(original.BlastRadiusKm) && original.BlastRadiusKm > 0 &&
+                    Near(original.DetonationMotionTimeMs, BlastMath.DetonationTimeMs(original.LaunchMotionTimeMs, od, original.SpeedKmS)),
+                    "invalid retimed launch provenance.");
+            }
             Require(launch is not null && launch.ActorObjectId.Equals(f.OwnerObjectId, StringComparison.OrdinalIgnoreCase) &&
-                launch.ProjectileKind == f.Kind && launch.ProfileId == f.ProfileId && launch.BlastRadiusKm == f.BlastRadiusKm &&
-                launch.MotionTimeMs == f.LaunchMotionTimeMs && Near(launch.X, f.StartX) && Near(launch.Y, f.StartY),
+                launch.ProjectileKind == f.Kind && launch.ProfileId == f.ProfileId && launch.BlastRadiusKm == original.BlastRadiusKm &&
+                launch.MotionTimeMs == original.LaunchMotionTimeMs && Near(launch.X, original.StartX) && Near(launch.Y, original.StartY),
                 "captured flight does not match its launch fact.");
             bool own = f.OwnerObjectId == state.PlayerShipObjectId;
             Require(own == (f.OwnerPlayerRelationAtLaunch == PlayerRelation.Self) && (own
@@ -89,10 +104,16 @@ internal static class PointCombatContinuationValidation
             var anchor = e.IntegrationAnchor;
             if (e.Motion.Steering is { } steering)
             {
-                var expected = EvasionMotionMath.Plan(anchor, e.Motion.BaseMotion, e.Motion.SampleMotionTimeMs,
-                    e.Motion.EndsAtMotionTimeMs, e.Motion.ThreatProjectileId, e.Motion.Side, steering.Direction,
-                    steering.MaxSpeedKmS, steering.TurnRateDegPerSec, steering.AccelerationKmS2);
-                Require(Near(steering.ReturnsAtMotionTimeMs, expected.Steering!.ReturnsAtMotionTimeMs), "evasion return deadline mismatch.");
+                double expected;
+                if (e.Motion.SampleMotionTimeMs <= e.Motion.EndsAtMotionTimeMs)
+                    expected = EvasionMotionMath.Plan(anchor, e.Motion.BaseMotion, e.Motion.SampleMotionTimeMs,
+                        e.Motion.EndsAtMotionTimeMs, e.Motion.ThreatProjectileId, e.Motion.Side, steering.Direction,
+                        steering.MaxSpeedKmS, steering.TurnRateDegPerSec, steering.AccelerationKmS2).Steering!.ReturnsAtMotionTimeMs;
+                else
+                    expected = e.Motion.SampleMotionTimeMs + Math.Max(
+                        Math.Abs((e.Motion.BaseMotion.Direction - anchor.Direction + 540) % 360 - 180) / steering.TurnRateDegPerSec,
+                        Math.Abs(e.Motion.BaseMotion.SpeedKmS - anchor.SpeedKmS) / steering.AccelerationKmS2) * 1000;
+                Require(Near(steering.ReturnsAtMotionTimeMs, expected), "evasion return deadline mismatch.");
             }
             Require(anchor.Torpedo is null && anchor.Countermeasure is null && anchor.TurnHoldRateDegPerSec is null && anchor.HostileCombat is null &&
                 anchor.Orbit is null && anchor.EngineManeuver is null && anchor.ActiveEngineCommandType is null,

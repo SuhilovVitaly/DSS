@@ -30,8 +30,9 @@ public static class SaveFormat
     /// Version 16 requires phase-three combat continuation; earlier files are rejected by the save entrypoint.
     /// Version 17 requires module-combat continuation (defense 3, combat 2, hostile 2); older saves are rejected.
     /// Version 18 adds point flights, scatter/dodge RNG, evasion and encounter continuation; Save17 is rejected.
+    /// Version19 adds optional debug tuning and retimed flight provenance; Save18 migrates explicitly.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 18;
+    public const int CurrentSaveFormatVersion = 19;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -107,7 +108,9 @@ public sealed record GameStateData(
     [property: JsonPropertyName("motionQuarterRemainder")] int MotionQuarterRemainder = 0,
     [property: JsonPropertyName("combatReportsState")] CombatReportsSaveData? CombatReportsState = null,
     [property: JsonPropertyName("combatReactionDelays")] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null,
-    [property: JsonPropertyName("pointCombatState")] PointCombatStateData? PointCombatState = null)
+    [property: JsonPropertyName("pointCombatState")] PointCombatStateData? PointCombatState = null,
+    [property: JsonPropertyName("debugTuning"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    IReadOnlyList<DeepSpaceSaga.Contracts.DebugTuningValue>? DebugTuning = null)
 {
     /// <summary>Absent in legacy saves, whose motion baselines used GameTimeMs.</summary>
     [JsonIgnore]

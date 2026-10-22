@@ -12,7 +12,9 @@ public sealed partial class SimulationEngine
             !_defenses.Values.Any(d => d.Profiles is { IsDefaultOrEmpty: false })) return null;
         return new(1,
             _objects.Where(o => o.InitialMotion.OwnProjectile is not null).OrderBy(o => o.InitialMotion.ObjectId, StringComparer.Ordinal)
-                .Select(o => new PointProjectileSaveData(o.InitialMotion.ObjectId, RuntimeMotion.At(o, time).OwnProjectile!)).ToArray(),
+                .Select(o => new PointProjectileSaveData(o.InitialMotion.ObjectId, RuntimeMotion.At(o, time).OwnProjectile!,
+                    _debugProjectileTypes.GetValueOrDefault(o.InitialMotion.ObjectId),
+                    _debugOriginalFlights.GetValueOrDefault(o.InitialMotion.ObjectId))).ToArray(),
             _evasions.OrderBy(p => p.Key, StringComparer.Ordinal).Select(p => new EvasionSaveData(p.Key,
                 p.Value.EngineModuleId, p.Value.StartedAt, p.Value.Motion,
                 p.Value.OrbitCycle, p.Value.LastTurnTime,
@@ -57,10 +59,26 @@ public sealed partial class SimulationEngine
         {
             int index = objects.FindIndex(o => o.InitialMotion.ObjectId == row.ObjectId);
             var f = row.Flight;
+            if (row.LauncherModuleTypeId is { } typeId)
+            {
+                if (!_registry.ModuleTypes.Contains(typeId))
+                    throw new ScenarioException("Invalid point combat save: unknown launch module type.");
+                var type = _registry.ModuleTypes.GetDefinition(_registry.ModuleTypes.GetIndex(typeId));
+                if (!type.IsPointLauncher || type.CategoryTypeId != (f.Kind == ProjectileKind.Torpedo
+                    ? "module.torpedo.launcher" : "module.countermeasure.launcher"))
+                    throw new ScenarioException("Invalid point combat save: invalid launch module type.");
+                if (state.DebugTuning?.Any(v => v.ModuleTypeId == typeId && v.ProfileId == f.ProfileId &&
+                    (v.Field == "speedKmS" && v.Value != f.SpeedKmS || v.Field == "blastRadiusKm" && v.Value != f.BlastRadiusKm)) == true)
+                    throw new ScenarioException("Invalid point combat save: captured profile does not match effective tuning.");
+            }
             if (index < 0 || objects[index].ObjectType != (f.Kind == ProjectileKind.Torpedo ? SpaceObjectType.Missile : SpaceObjectType.Countermeasure))
                 throw new ScenarioException("Invalid point combat save: missing projectile object or kind mismatch.");
             var key = (f.OwnerObjectId, f.LauncherModuleId);
             var owner = objects.FirstOrDefault(o => o.InitialMotion.ObjectId == f.OwnerObjectId);
+            var module = owner?.Modules.FirstOrDefault(m => m.ModuleId == f.LauncherModuleId);
+            if (module is not null && row.LauncherModuleTypeId is { } capturedType &&
+                _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).TypeId != capturedType)
+                throw new ScenarioException("Invalid point combat save: launch module type identity mismatch.");
             if (owner is not null && (f.Kind == ProjectileKind.Torpedo
                 ? !launchers.TryGetValue(key, out var launcher) || !launcher.ActiveTorpedoIds.Contains(row.ObjectId)
                 : !defenses.TryGetValue(key, out var defense) || defense.ActiveProjectileIds?.Contains(row.ObjectId) != true))
@@ -98,6 +116,17 @@ public sealed partial class SimulationEngine
     private void RestorePointCombatState(PointCombatStateData? saved)
     {
         if (saved is null) return;
+        foreach (var p in saved.Projectiles)
+        {
+            if (p.OriginalFlight is { } original) _debugOriginalFlights[p.ObjectId] = original;
+            if (p.LauncherModuleTypeId is { } type) _debugProjectileTypes[p.ObjectId] = type;
+            else
+            {
+                var module = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == p.Flight.OwnerObjectId)?.Modules
+                    .FirstOrDefault(m => m.ModuleId == p.Flight.LauncherModuleId);
+                if (module is not null) _debugProjectileTypes[p.ObjectId] = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex).TypeId;
+            }
+        }
         _launchScatterRng = new(saved.LaunchScatter.State, saved.LaunchScatter.Counter);
         _npcDodgeRng = new(saved.NpcDodge.State, saved.NpcDodge.Counter);
         _playerEvasionEpisodes = saved.PlayerEvasionEpisodes;
