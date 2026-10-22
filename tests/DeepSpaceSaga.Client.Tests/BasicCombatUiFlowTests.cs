@@ -29,7 +29,7 @@ public sealed class BasicCombatUiFlowTests
             Assert.Equal("medium", flight.ProfileId); Assert.Equal(10, flight.SpeedKmS); Assert.Equal(5, flight.BlastRadiusKm);
             Assert.Equal((0d, 0d), (flight.StartX, flight.StartY)); Assert.Null(missile.Torpedo);
             Assert.Equal(SimulationSpeed.Speed0, f.Presented.CurrentSpeed);
-            Assert.Equal(GameSessionScreen.CombatText("Reloading", "Reloading"), f.Screen.PointAimFeedback);
+            Assert.Equal(GameSessionScreen.CombatText("Reloading", "Reloading") + " 40 " + Localization.Combat("Panel.Seconds"), f.Screen.PointAimFeedback);
             var end = await f.AdvanceTo((long)Math.Ceiling(flight.DetonationMotionTimeMs) + 1);
             Assert.DoesNotContain(end.Objects, o => o.ObjectId == missile.ObjectId);
             Assert.Contains(end.CombatJournal, e => e.Type == CombatEventType.TorpedoDetonated && e.ProjectileObjectId == missile.ObjectId);

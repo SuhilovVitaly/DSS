@@ -32,7 +32,7 @@ public sealed partial class GameSessionScreen
     private double PointAimTime => _buffer.LatestPrediction is { } prediction
         ? prediction.BufferedSnapshot.Snapshot.MotionTimeMs + CombatPredictionDelta(prediction) : 0;
     internal string? PointAimFeedback => (PointAim?.ModuleId ?? _lastPointModuleId) is { } moduleId && PointAimModule(moduleId) is { } module
-        ? PointWeaponStatus(module) : null;
+        ? PointWeaponStatusWithTime(module) : null;
 
     private bool _pointAltLeft, _pointAltRight;
     internal void SynchronizeModifiers(bool controlLeft, bool controlRight, bool altLeft = false, bool altRight = false)
@@ -107,7 +107,7 @@ public sealed partial class GameSessionScreen
         if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty || snapshot.ActiveDialogue is not null ||
             FindPlayerShipMotion(snapshot) is not { IsDestroyed: false }) return false;
         var modules = snapshot.InstalledModules.Where(m => !PointProfiles(m).IsDefaultOrEmpty &&
-            (kind == ProjectileKind.Torpedo ? m.LauncherCombat?.Profiles is not null : m.Defense?.Profiles is not null) && !m.IsDestroyed)
+            (kind == ProjectileKind.Torpedo ? m.LauncherCombat?.Profiles is not null : m.Defense?.Profiles is not null))
             .Where(m => moduleId is null || m.ModuleId == moduleId)
             .OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
         var module = modules.FirstOrDefault(m => !_pointSubmissions.ContainsKey(m.ModuleId) && PointReadyReason(m) is null) ?? modules.FirstOrDefault();
@@ -167,7 +167,8 @@ public sealed partial class GameSessionScreen
         _mouseX = x; _mouseY = y; _uiMouseX = x / _uiScale; _uiMouseY = y / _uiScale; _hasMousePosition = true;
         if (PointAimModule(aim.ModuleId) is not { } module || _buffer.Presented?.Snapshot is not { } snapshot) return true;
         if (_pointSubmissions.ContainsKey(module.ModuleId)) return true;
-        if (PointReadyReason(module) is not null) { _pointErrors.Remove(module.ModuleId); return true; }
+        if (PointReadyReason(module) is not null)
+        { _pointErrors.Remove(module.ModuleId); _lastPointModuleId = module.ModuleId; return true; }
         if (_handle is null) { _pointErrors[module.ModuleId] = "connection_unavailable"; return true; }
         var target = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         if (aim.Kind == ProjectileKind.Countermissile && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
@@ -215,15 +216,21 @@ public sealed partial class GameSessionScreen
             if (error == CommandReasonCodes.LauncherReloading &&
                 (module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs) is { } ready && ready <= PointAimTime)
                 _pointErrors.Remove(module.ModuleId);
-            else return PointLaunchReason(error);
+            else if (error != PointReadyReason(module)) return PointLaunchReason(error);
+            else _pointErrors.Remove(module.ModuleId);
         }
-        if (PointReadyReason(module) is { } reason) return reason == CommandReasonCodes.LauncherReloading
-            ? CombatText("Reloading", "Reloading") : PointLaunchReason(reason);
+        if (PointReadyReason(module) is { } reason)
+        {
+            if (reason == CommandReasonCodes.LauncherReloading) return CombatText("Reloading", "Reloading");
+            if (reason == CommandReasonCodes.ModuleDisabled && module.DisabledUntilMotionTimeMs is { } until)
+                return PointLaunchReason(reason) + " " + PanelTime.Format(PanelTime.RealSeconds((until - PointAimTime) / 1000, PanelDisplaySpeed)) + " " + Localization.Combat("Panel.Seconds");
+            return PointLaunchReason(reason);
+        }
         return CombatText("Ready", "Ready");
     }
 
     internal static string PointLaunchReason(string reason) => reason == "aim_unreachable" ? CombatText("Aim.Unreachable", "Unreachable") :
-        CombatText("Reason." + reason, CombatText("CommandRejected", "Command rejected"));
+        CombatText("Panel.Reason." + reason, CombatText("CommandRejected", "Command rejected"));
 
     private InstalledModuleSnapshot? PointPanelModule(WeaponPanelInstance weapon) =>
         _buffer.Presented?.Snapshot.PlayerShipObjectId == weapon.OwnerObjectId ? PointAimModule(weapon.ModuleId) : null;
@@ -231,7 +238,7 @@ public sealed partial class GameSessionScreen
     {
         if (PointPanelModule(weapon) is not { } module) return false;
         if (_buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || FindPlayerShipMotion(snapshot) is not { IsDestroyed: false }) return false;
-        if (commandType is CombatCommandTypes.Launch or DefenseCommandTypes.Launch) return !module.IsDestroyed;
+        if (commandType is CombatCommandTypes.Launch or DefenseCommandTypes.Launch) return true;
         return commandType == CombatCommandTypes.Detonate && _selectedObjectId is { } id && snapshot.Objects.Any(o =>
             o.ObjectId == id && o.OwnProjectile is { Kind: ProjectileKind.Torpedo } point && point.LauncherModuleId == module.ModuleId && point.OwnerObjectId == weapon.OwnerObjectId);
     }
@@ -246,10 +253,21 @@ public sealed partial class GameSessionScreen
     private string? GetPointWeaponStatus(WeaponPanelInstance weapon)
     {
         if (PointPanelModule(weapon) is not { } module) return null;
+        return PointWeaponStatusWithTime(module);
+    }
+
+    private string PointWeaponStatusWithTime(InstalledModuleSnapshot module)
+    {
         string status = PointWeaponStatus(module);
         return status == CombatText("Reloading", "Reloading")
-            ? $"{status} {PointReloadRealSeconds(module):0.0} {CombatText("Seconds", "с")}" : status;
+            ? $"{status} {PanelTime.Format(PointReloadRealSeconds(module))} {Localization.Combat("Panel.Seconds")}" : status;
     }
+
+    private bool IsPointPanelBlocked(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module &&
+        (PointReadyReason(module) is not null || _pointErrors.ContainsKey(module.ModuleId));
+
+    internal bool PointAimFeedbackIsError => PointAim is { } aim && PointAimModule(aim.ModuleId) is { } module &&
+        (PointReadyReason(module) is not null || _pointErrors.ContainsKey(module.ModuleId));
     private double PointReloadRealSeconds(InstalledModuleSnapshot module)
     {
         double ready = module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs ?? 0;
@@ -267,8 +285,9 @@ public sealed partial class GameSessionScreen
     private string? PointWeaponButtonLabel(WeaponPanelInstance weapon, string command)
     {
         if (PointPanelModule(weapon) is not { } module) return null;
+        if (command != CombatCommandTypes.Detonate && PointReadyReason(module) is not null) return GetPointWeaponStatus(weapon);
         return command == CombatCommandTypes.Detonate ? CombatText("Detonate", "Подрыв") :
-            $"{CombatText("Aim", "Прицел")} [{(module.LauncherCombat?.Profiles is not null ? CombatInputs.TorpedoAim : CombatInputs.CountermissileAim)}]";
+            $"{CombatText("Aim", "Прицел")} {PanelKeyLabel(module.LauncherCombat?.Profiles is not null ? CombatInputs.TorpedoAim : CombatInputs.CountermissileAim)}";
     }
     private string? GetPointWeaponOperator(WeaponPanelInstance weapon)
     {
@@ -379,7 +398,7 @@ public sealed partial class GameSessionScreen
         using var line = new SKPaint { Color = styles.AimReticle, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)styles.LineWidthPx };
         float radius = (float)styles.ReticleRadiusPx;
         canvas.DrawLine(x - radius, y, x + radius, y, line); canvas.DrawLine(x, y - radius, x, y + radius, line);
-        using var text = new SKPaint { Color = styles.ForeignProfileText, IsAntialias = true, TextSize = (float)styles.TextSizePx };
+        using var text = new SKPaint { Color = PointAimFeedbackIsError ? styles.Danger : styles.ForeignProfileText, IsAntialias = true, TextSize = (float)styles.TextSizePx };
         canvas.DrawText($"{CombatText("Profile." + aim.ProfileId, aim.ProfileId)} · {PointAimFeedback}", x + radius, y + radius + text.TextSize, text);
     }
 }

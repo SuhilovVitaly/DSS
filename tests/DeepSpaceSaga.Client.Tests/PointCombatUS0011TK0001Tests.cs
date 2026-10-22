@@ -116,7 +116,7 @@ public sealed class PointCombatUS0011TK0001Tests
         int received = s.World.Engine.ReceivedCommandCount;
         s.Tap(Key.Q); Assert.NotNull(s.Screen.PointAim);
         s.Click(300, 0); Assert.Equal(received, s.World.Engine.ReceivedCommandCount);
-        Assert.Equal(GameSessionScreen.CombatText("Reloading", "Reloading"), s.Screen.PointAimFeedback);
+        Assert.Equal(GameSessionScreen.CombatText("Reloading", "Reloading") + " 40 " + Localization.Combat("Panel.Seconds"), s.Screen.PointAimFeedback);
         await s.Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);
         s.World.SetReal(40000);
         await s.Handle.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);

@@ -90,7 +90,7 @@ public sealed class PointCombatUS0011TK0004Tests
         await s.Handle.SetSpeedAsync(SimulationSpeed.Speed0);
         await Task.Delay(150); s.UiMs = 350;
         await s.Wait(() => s.Handle.Buffer.Presented!.Snapshot.Objects.Any(o => o.OwnProjectile is not null));
-        Assert.Equal(GameSessionScreen.CombatText("Reloading", "Reloading"), s.Screen.PointAimFeedback);
+        Assert.Equal(GameSessionScreen.CombatText("Reloading", "Reloading") + " 40 " + Localization.Combat("Panel.Seconds"), s.Screen.PointAimFeedback);
     }
 
     [Fact]

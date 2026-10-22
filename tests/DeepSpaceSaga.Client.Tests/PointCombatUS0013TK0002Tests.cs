@@ -43,15 +43,15 @@ public sealed class PointCombatUS0013TK0002Tests
         foreach (var row in rows)
         {
             Assert.False(row.ReloadRingRect.IsEmpty); Assert.NotNull(row.OperatorText);
-            Assert.Contains(GameSessionScreen.CombatText("Accuracy", "Точность"), row.OperatorText);
-            Assert.Contains(row.DetailLines, line => line.Contains("σ"));
+            Assert.Contains(Localization.Combat("Panel.Accuracy"), row.OperatorText);
+            Assert.Contains(Localization.Combat("Panel.Sigma"), row.OperatorText);
             Assert.DoesNotContain(row.DetailLines, line => line.Contains("шанс", StringComparison.OrdinalIgnoreCase) || line.Contains("chance", StringComparison.OrdinalIgnoreCase) || line.Contains("roll", StringComparison.OrdinalIgnoreCase));
             Assert.DoesNotContain(row.Buttons, b => b.CommandTypeId is CombatCommandTypes.Fire or CombatCommandTypes.SelfDestruct or DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable);
         }
         screen.OnKeyDown(Key.Q); screen.OnKeyDown(Key.Number2); screen.Render(canvas, 1920, 1800);
         var torpedo = Assert.Single(screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatSessionFixture.Torpedo);
-        Assert.Contains(torpedo.DetailLines, line => line.StartsWith("> medium", StringComparison.Ordinal));
-        Assert.Contains(torpedo.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch && b.Label!.Contains("[Q]"));
+        Assert.Contains(torpedo.DetailLines, line => line.StartsWith("2" + Localization.Combat("Panel.Selected") + "\tmedium", StringComparison.Ordinal));
+        Assert.Contains(torpedo.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch && b.Label!.EndsWith(" Q"));
         Assert.Contains(torpedo.Buttons, b => b.CommandTypeId == CombatCommandTypes.Detonate && b.Label == GameSessionScreen.CombatText("Detonate", "Подрыв"));
         var toggle = torpedo.RangeToggleRect; Assert.True(torpedo.RangeVisible);
         screen.CommandsPanel.OnMouseDown(toggle.MidX, toggle.MidY); screen.Render(canvas, 1920, 1800);

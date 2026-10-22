@@ -57,3 +57,7 @@ Draft; human approval отсутствует. Решения и точные с�
 ## Execution ticket map2026-10-22
 
 Execution authorized through epic-executor; see [current ticket map](../Tickets.md). Earlier planning-only/no-tickets statements above are historical. Stage remains distinct from human acceptance. Final US-0006 must audit and update all impacted project documentation and rebuild Graphify after final code and text.
+
+## Story verification2026-10-22
+
+Five functional tickets implemented. Final affected165/165 tests pass, including explicit bindings, per-launcher profile memory, calibrated skill20 sigma,25/80km cursor cases, exact penetration, reload ring/hover, all four preparation blocks and unchanged command/RNG state. Full Client2307 run exposed17 failures; intentional text/layout/schema expectations were repaired, one report timing failure passes in isolation and trading timeout did not reproduce in focused rerun. Full integrated regression must be rerun before final evidence. Native/human and independent review remain open. Self-review covers local launch guard, Engine ownership and no hidden future data.

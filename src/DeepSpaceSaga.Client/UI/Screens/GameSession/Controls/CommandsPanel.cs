@@ -203,6 +203,7 @@ public sealed class CommandsPanel
     private readonly Func<WeaponPanelInstance, string, string?>? _weaponCommandLabel;
     private readonly Func<double> _motionMultiplier;
     private readonly Func<WeaponPanelInstance, string?>? _weaponTimeTooltip;
+    private readonly Func<WeaponPanelInstance, bool>? _weaponBlocked;
     private readonly Func<double> _motionTime;
     private readonly HashSet<string> _visibleWeaponRanges = new(StringComparer.Ordinal);
     private readonly HashSet<string> _initializedPointRanges = new(StringComparer.Ordinal);
@@ -314,7 +315,8 @@ public sealed class CommandsPanel
         Func<WeaponPanelInstance, IReadOnlyList<string>>? weaponDetails = null,
         Func<double>? motionTime = null, Func<double>? motionMultiplier = null,
         Func<WeaponPanelInstance, string, string?>? weaponCommandLabel = null,
-        Func<WeaponPanelInstance, string?>? weaponTimeTooltip = null)
+        Func<WeaponPanelInstance, string?>? weaponTimeTooltip = null,
+        Func<WeaponPanelInstance, bool>? weaponBlocked = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
@@ -327,6 +329,7 @@ public sealed class CommandsPanel
         _motionMultiplier = motionMultiplier ?? (() => .25);
         _weaponCommandLabel = weaponCommandLabel;
         _weaponTimeTooltip = weaponTimeTooltip;
+        _weaponBlocked = weaponBlocked;
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -655,7 +658,7 @@ public sealed class CommandsPanel
             HashSet<string>? visibleBodies = null;
             bool hasLauncher = OwnModuleDiagram is not null || safeModules.Any(m => m.LauncherCombat is not null || m.Defense is not null);
             float captionHeight = hasLauncher && viewportHeight < MinimumExpandedHeight
-                ? Math.Clamp((viewportHeight - rowY - 128 - (panels.Length - 1) * CollapsedPanelGap) / panels.Length, 18f, 28f)
+                ? Math.Clamp((viewportHeight - rowY - 144 - (panels.Length - 1) * CollapsedPanelGap) / panels.Length, 18f, 28f)
                 : PanelCaptionHeight;
             float BodyHeight(string name)
             {
@@ -756,7 +759,8 @@ public sealed class CommandsPanel
                         panel.Weapon is { } timeWeapon ? _weaponTimeTooltip?.Invoke(timeWeapon) : null,
                     weaponModule?.LauncherCombat?.RangeKm ?? weaponModule?.Defense?.RangeKm,
                     remainingReal > 0 ? PanelTime.Format(remainingReal) + " " + Localization.Combat("Panel.Seconds") : null,
-                    panel.Weapon is not null ? hoveredText : null));
+                    panel.Weapon is not null ? hoveredText : null,
+                    panel.Weapon is { } statusWeapon && _weaponBlocked?.Invoke(statusWeapon) == true));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -902,7 +906,8 @@ public sealed class CommandsPanel
             var geometry = new CommandButtonGeometry(
                 commandTypeId,
                 new SKRect(x, y, x + CommandButtonWidth, y + CommandButtonHeight),
-                panel.Weapon is { } instance ? _weaponCommandEnabled?.Invoke(instance, commandTypeId) == true : _isCommandEnabled(commandTypeId), panel.Weapon, label);
+                panel.Weapon is { } instance ? _weaponCommandEnabled?.Invoke(instance, commandTypeId) == true : _isCommandEnabled(commandTypeId), panel.Weapon, label,
+                commandTypeId is CombatCommandTypes.Launch or DefenseCommandTypes.Launch && panel.Weapon is { } blockedWeapon && _weaponBlocked?.Invoke(blockedWeapon) == true);
 
             builder.Add(geometry);
             _commandButtons.Add((label, geometry));
@@ -1041,7 +1046,7 @@ public sealed class CommandsPanel
 
             if (row.OperatorText is { } operatorText)
             {
-                using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
+                using var paint = new SKPaint { Color = operatorText == Localization.Combat("Panel.NoOperator") ? SKColors.IndianRed : XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
                 var rect = row.BodyRect;
                 canvas.Save();
                 canvas.ClipRect(new SKRect(rect.Left + 8, rect.Top + 58, rect.Right - 8, row.StatusBarRect.Top));
@@ -1107,7 +1112,10 @@ public sealed class CommandsPanel
         canvas.DrawRect(row.StatusBarRect, _statusBarBorderPaint);
 
         float textY = row.StatusBarRect.MidY + _statusBarTextPaint.TextSize / 3f;
+        var normalColor = _statusBarTextPaint.Color;
+        if (row.StatusIsError) _statusBarTextPaint.Color = SKColors.IndianRed;
         canvas.DrawText(TruncateLabel(row.StatusBarText, _statusBarTextPaint, row.StatusBarRect.Width - 12), row.StatusBarRect.MidX, textY, _statusBarTextPaint);
+        _statusBarTextPaint.Color = normalColor;
     }
 
     private void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint)
@@ -1127,6 +1135,7 @@ public sealed class CommandsPanel
     private void DrawCommandButton(SKCanvas canvas, int index)
     {
         var (label, button) = _commandButtons[index];
+        if (button.PreparationOnly) button = button with { Enabled = false };
 
         var iconPair = _commandIcons.GetValueOrDefault(button.CommandTypeId);
         var icon = iconPair.Normal;
@@ -1254,7 +1263,7 @@ public readonly record struct CommandPanelGeometry(
     ImmutableArray<string> DetailLines = default,
     string? RangeModuleId = null, SKRect RangeToggleRect = default, bool RangeVisible = false,
     SKRect ReloadBarRect = default, double ReloadFraction = 1, SKRect ReloadRingRect = default, double RemainingReloadRealSeconds = 0, string? OperatorText = null,
-    string? TimeTooltip = null, double? RangeKm = null, string? ReloadTimerText = null, string? HoverText = null)
+    string? TimeTooltip = null, double? RangeKm = null, string? ReloadTimerText = null, string? HoverText = null, bool StatusIsError = false)
 {
     public string Key => Weapon?.Key ?? Name;
 }
@@ -1263,4 +1272,4 @@ public readonly record struct CommandButtonGeometry(
     string CommandTypeId,
     SKRect Rect,
     bool Enabled,
-    WeaponPanelInstance? Weapon = null, string? Label = null);
+    WeaponPanelInstance? Weapon = null, string? Label = null, bool PreparationOnly = false);

@@ -8,6 +8,50 @@ namespace DeepSpaceSaga.Client.Tests;
 [Collection("InterfaceLog")]
 public sealed class ModulePanelProfileTests
 {
+    [Theory]
+    [InlineData("reload", "launcher_reloading")]
+    [InlineData("disabled", "module_disabled")]
+    [InlineData("operator", "no_weapon_operator")]
+    [InlineData("destroyed", "module_destroyed")]
+    public async Task Blocked_weapon_can_prepare_aim_but_map_click_sends_no_launch(string kind, string reason)
+    {
+        await using var f = await PointCombatUiFixture.Create(configure: o => o.ObjectId != PointCombatUiFixture.Player ? o : o with
+        {
+            Modules = o.Modules!.Select(m => m.ModuleId != PointCombatUiFixture.Torpedo ? m : m with
+            {
+                OperatorCrewId = kind == "operator" ? null : m.OperatorCrewId,
+                DisabledUntilMotionTimeMs = kind == "disabled" ? 5000 : m.DisabledUntilMotionTimeMs,
+                Destroyed = kind == "destroyed" || m.Destroyed,
+                StructurePoints = kind == "destroyed" ? 0 : m.StructurePoints
+            }).ToArray()
+        });
+        if (kind == "reload")
+        {
+            await f.Launch(x: 300);
+            await f.Wait(() => f.Presented.InstalledModules.Single(m => m.ModuleId == PointCombatUiFixture.Torpedo).LauncherCombat?.ReadyAtMotionTimeMs is > 0);
+        }
+        f.Expose(200);
+        var previous = f.Screen.LastPointCommandId;
+        int received = f.Engine.ReceivedCommandCount;
+        var rng = f.Engine.CaptureLaunchScatterState();
+        int flights = f.Presented.Objects.Count(o => o.OwnProjectile is not null);
+        f.Screen.OnKeyDown(Key.Q); f.Render();
+        Assert.NotNull(f.Screen.PointAim);
+        var row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        var button = Assert.Single(row.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch);
+        Assert.True(button.Enabled);
+        Assert.True(button.PreparationOnly);
+        f.Click(200); f.Render();
+        Assert.Equal(previous, f.Screen.LastPointCommandId);
+        Assert.Equal(received, f.Engine.ReceivedCommandCount);
+        Assert.Equal(flights, f.Presented.Objects.Count(o => o.OwnProjectile is not null));
+        Assert.Equal(rng, f.Engine.CaptureLaunchScatterState());
+        Assert.True(f.Screen.PointAimFeedbackIsError);
+        Assert.Contains(kind == "reload" ? Localization.Combat("Reloading") : GameSessionScreen.PointLaunchReason(reason), f.Screen.PointAimFeedback);
+        row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.True(row.StatusIsError);
+    }
+
     [Fact]
     public async Task Reload_ring_number_and_status_remain_visible_on_button_hover()
     {
