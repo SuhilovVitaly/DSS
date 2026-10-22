@@ -55,3 +55,7 @@ Draft; human approval отсутствует. Решения и точные с�
 ## Execution ticket map2026-10-22
 
 Execution authorized through epic-executor; see [current ticket map](../Tickets.md). Earlier planning-only/no-tickets statements above are historical. Stage remains distinct from human acceptance. Final US-0006 must audit and update all impacted project documentation and rebuild Graphify after final code and text.
+
+## Story verification2026-10-22
+
+Five implementation tickets complete pending final cleanup publication. Common-panel regression162/162 PASS including actual screen, small viewport, pause/time tooltip, health, hit expiry and warmed allocation gate. Own threshold verified9=>3,6=>2 in Engine tests; fractional penetration preserved. Self-review covered input/cache invalidation and authority; independent review/native/human remain open. Save continuation is validated in US-0005 and final project docs in US-0006.

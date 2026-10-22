@@ -223,7 +223,6 @@ public sealed class CommandsPanel
     private float _viewportHeight = float.PositiveInfinity;
     private float _scrollOffset;
     private float _maxScroll;
-    internal WeaponPanelInstance? HoveredWeaponPanel { get; private set; }
     private string? _preferredOpenedPanel;
     internal string? HoveredCommandTypeId => _hoveredCommandButtonIndex >= 0 &&
         _hoveredCommandButtonIndex < _allCommandButtons.Count
@@ -558,8 +557,6 @@ public sealed class CommandsPanel
         if (_pointerX != x || _pointerY != y) _inputRevision++;
         _pointerX = x;
         _pointerY = y;
-        HoveredWeaponPanel = RowsContain(x, y) ? _panelRows.FirstOrDefault(r =>
-            r.CaptionRect.Contains(x, y) || (r.Opened && r.BodyRect.Contains(x, y))).Weapon : null;
         _hoveredButtonIndex = _hideShowButtonRect.Contains(x, y) ? 0 : -1;
 
         _hoveredCommandButtonIndex = -1;
@@ -691,8 +688,6 @@ public sealed class CommandsPanel
                 bool opened = !_panelOpenedByName.TryGetValue(panel.Key, out bool o) || o;
                 if (visibleBodies is not null) opened &= visibleBodies.Contains(panel.Key);
 
-                if (_state == CommandsPanelState.ActivePanels && !opened)
-                    continue;
 
                 var captionRect = new SKRect(
                     Margin, rowY,
@@ -1200,8 +1195,7 @@ public sealed class CommandsPanel
 public enum CommandsPanelState
 {
     AllPanels,
-    ActivePanels,
-    Closed,
+    Closed = 2,
 }
 
 /// <summary>

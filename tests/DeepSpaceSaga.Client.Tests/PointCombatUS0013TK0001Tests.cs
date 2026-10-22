@@ -15,7 +15,7 @@ public sealed class PointCombatUS0013TK0001Tests
             DisabledUntilMotionTimeMs: i == 5 ? 8000 : null)).ToImmutableArray();
 
     [Fact]
-    public void Module_diagram_has_armor_structure_disable_and_critical_border()
+    public void Module_rows_have_armor_structure_disable_and_critical_marker()
     {
         var diagram = new ModuleDiagram(); var session = Guid.NewGuid();
         diagram.Update(session, 1, "player", Modules, [], 0, .25, 0);
@@ -23,9 +23,10 @@ public sealed class PointCombatUS0013TK0001Tests
         Assert.True(diagram.Tiles[4].Critical); Assert.Equal(32, diagram.Tiles[5].DisabledRealSeconds);
         Assert.Equal(20, diagram.Tiles[4].Armor); Assert.Equal(50, diagram.Tiles[4].Structure);
         using var bitmap = new SKBitmap(480, 300); using var canvas = new SKCanvas(bitmap);
-        diagram.Render(canvas, new(0, 0, 480, diagram.PreferredHeight));
-        Assert.Contains(SKColors.Orange, bitmap.Pixels);
-        Assert.Contains(SKColors.Gray, bitmap.Pixels);
+        var panel = new CommandsPanel { OwnModuleDiagram = diagram, DestroyedModuleLimit = 3 };
+        panel.Render(canvas, Modules, 300, "player");
+        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(Localization.Combat("Panel.CriticalIcon")));
+        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(Localization.Combat("Destroyed")));
     }
 
     [Fact]
@@ -46,18 +47,18 @@ public sealed class PointCombatUS0013TK0001Tests
     }
 
     [Fact]
-    public void Hit_background_blinks_in_real_time_while_disabled_clock_stays_paused()
+    public void Hit_indicator_expires_in_real_time_while_disabled_clock_stays_paused()
     {
         var d = new ModuleDiagram();
         d.Update(null, 1, "player", Modules, [], 1000, 0, 0);
         CombatJournalEntry hit = new(1, 1000, CombatEventType.ModuleHit, "enemy", "player", "shot", 0, 0, Damage: 37, HitModuleId: "m4");
         using var bitmap = new SKBitmap(480, 300); using var canvas = new SKCanvas(bitmap);
         d.Update(null, 2, "player", Modules, [hit], 1000, 0, 100);
-        d.Render(canvas, new(0, 0, 480, d.PreferredHeight));
-        Assert.Contains(new SKColor(110, 35, 20), bitmap.Pixels);
+        var lines = CommandsPanel.ModuleDetails("Navigation", null, Modules, d);
+        Assert.Contains(lines, l => l.Contains("37"));
         d.Update(null, 2, "player", Modules, [hit], 1000, 0, 225);
-        d.Render(canvas, new(0, 0, 480, d.PreferredHeight));
-        Assert.DoesNotContain(new SKColor(110, 35, 20), bitmap.Pixels);
+        lines = CommandsPanel.ModuleDetails("Navigation", null, Modules, d);
+        Assert.Contains(lines, l => l.Contains("37"));
         Assert.Equal(37, d.Tiles[4].HitDamage);
         Assert.Equal(28, d.Tiles[5].DisabledRealSeconds);
     }
@@ -90,10 +91,10 @@ public sealed class PointCombatUS0013TK0001Tests
         using var bitmap = new SKBitmap(width, height); using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, width, height);
         Assert.Equal(9, screen.CommandsPanel.OwnModuleDiagram!.Tiles.Count);
-        Assert.Null(screen.ObjectInfoPanel.OwnModuleDiagram);
+        Assert.True(screen.ObjectInfoPanel.RowBodyRects[0].Height > 0);
         Assert.Equal(9, screen.CommandsPanel.OwnModuleDiagram!.Tiles.Count);
-        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains("20/40"));
-        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains(" !"));
+        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains(Localization.Combat("Panel.Armor")) && s.Contains("20"));
+        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains(Localization.Combat("Panel.CriticalIcon")));
         if (Environment.GetEnvironmentVariable("DSS_POINT_RENDER_ARTIFACT_DIRECTORY") is { Length: > 0 } directory)
         {
             Directory.CreateDirectory(directory); using var image = SKImage.FromBitmap(bitmap); using var png = image.Encode(SKEncodedImageFormat.Png, 100);

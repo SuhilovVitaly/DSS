@@ -11,7 +11,7 @@ public class PointCombatUS0020TK0002Tests
     public async Task Player_info_restores_ship_image_and_fields()
     {
         await using var f = await PointCombatUiFixture.Create();
-        Assert.Null(f.Screen.ObjectInfoPanel.OwnModuleDiagram);
+        Assert.True(f.Screen.ObjectInfoPanel.RowBodyRects[0].Height > 0);
         var lines = ObjectInfoPanel.BuildLines(new("ship", "Ship", 5, 90, SpaceObjectType.PlayerShip));
         Assert.Contains(lines, l => l.Label == "Name");
         Assert.Contains(lines, l => l.Label == "Speed");
@@ -46,7 +46,7 @@ public class PointCombatUS0020TK0002Tests
         using var bitmap = new SKBitmap(width + 100, height + 100);
         using var canvas = new SKCanvas(bitmap);
         f.Screen.Render(canvas, width + 100, height + 100);
-        Assert.Null(f.Screen.ObjectInfoPanel.OwnModuleDiagram);
+        Assert.True(f.Screen.ObjectInfoPanel.RowBodyRects[0].Height > 0);
         Assert.True(f.Screen.CombatReportsBounds.Height > 0);
     }
 }
