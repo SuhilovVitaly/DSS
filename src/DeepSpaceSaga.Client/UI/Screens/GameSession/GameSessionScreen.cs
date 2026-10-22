@@ -114,6 +114,7 @@ public sealed partial class GameSessionScreen : IScreen
     private double _panelMotionTime;
     private SKRect _lastSpeedPanelRect;
     private readonly SKRect[] _speedButtonRects = new SKRect[7];
+    private SimulationSpeed[] _renderedSpeedValues = PeaceSpeedValues;
 
     // Scale state
     private SKRect _lastScalePanelRect;
@@ -255,7 +256,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal SKRect LastCloseRect => _lastCloseRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
-    internal IReadOnlyList<SKRect> SpeedButtonRects => new ArraySegment<SKRect>(_speedButtonRects, 0, SpeedValues.Length);
+    internal IReadOnlyList<SKRect> SpeedButtonRects => new ArraySegment<SKRect>(_speedButtonRects, 0, _renderedSpeedValues.Length);
     internal SKRect LastScalePanelRect => _lastScalePanelRect;
     internal IReadOnlyList<SKRect> ScaleButtonRects => _scaleButtonRects;
     internal SKRect LastMechanicsPanelRect => _lastMechanicsPanelRect;
@@ -502,7 +503,7 @@ public sealed partial class GameSessionScreen : IScreen
         int speedIdx = HitTestSpeedPanel(uiX, uiY);
         if (speedIdx >= 0)
         {
-            ApplySpeed(SpeedValues[speedIdx]);
+            ApplySpeed(_renderedSpeedValues[speedIdx]);
             return ScreenEvent.None;
         }
 
@@ -814,7 +815,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private int HitTestSpeedPanel(float x, float y)
     {
-        for (int i = 0; i < SpeedValues.Length; i++)
+        for (int i = 0; i < _renderedSpeedValues.Length; i++)
         {
             if (_speedButtonRects[i].Contains(x, y))
                 return i;
@@ -2140,7 +2141,13 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void DrawSpeedPanel(SKCanvas canvas)
     {
-        int btnCount = SpeedLabels.Length;
+        // An admitted snapshot can change while drawing. Keep values and labels
+        // from the same option set, including the mapping used by mouse input.
+        var values = SpeedValues;
+        var labels = ReferenceEquals(values, CombatSpeedValues) ? CombatSpeedLabels :
+            ReferenceEquals(values, ExtendedSpeedValues) ? ExtendedSpeedLabels : PeaceSpeedLabels;
+        _renderedSpeedValues = values;
+        int btnCount = values.Length;
         _lastSpeedPanelRect = ComputeSpeedPanelRect();
         canvas.DrawRect(_lastSpeedPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastSpeedPanelRect, _panelBorderPaint);
@@ -2150,7 +2157,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         var currentSpeed = _buffer.CurrentSpeed;
         using var disabled = new SKPaint { Color = new SKColor(24, 24, 24, 150) };
-        int activeIdx = Array.IndexOf(SpeedValues, currentSpeed);
+        int activeIdx = Array.IndexOf(values, currentSpeed);
         if (activeIdx < 0) activeIdx = 0;
 
         for (int i = 0; i < btnCount; i++)
@@ -2158,7 +2165,7 @@ public sealed partial class GameSessionScreen : IScreen
             var btnRect = new SKRect(btnX, btnY, btnX + SpeedBtnW, btnY + SpeedBtnH);
             _speedButtonRects[i] = btnRect;
 
-            bool enabled = IsCombatSpeedEnabled(SpeedValues[i]);
+            bool enabled = IsCombatSpeedEnabled(values[i]);
             bool isActive = (i == activeIdx) && enabled;
             canvas.DrawRect(btnRect, !enabled ? disabled : isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
             canvas.DrawRect(btnRect, _panelBorderPaint);
@@ -2166,7 +2173,7 @@ public sealed partial class GameSessionScreen : IScreen
             float textY = btnY + SpeedBtnH / 2f + _speedBtnTextPaint.TextSize / 3f;
             var color = _speedBtnTextPaint.Color;
             if (!enabled) _speedBtnTextPaint.Color = color.WithAlpha(70);
-            canvas.DrawText(SpeedLabels[i], btnX + SpeedBtnW / 2f, textY, _speedBtnTextPaint);
+            canvas.DrawText(labels[i], btnX + SpeedBtnW / 2f, textY, _speedBtnTextPaint);
             _speedBtnTextPaint.Color = color;
 
             // Green indicator under active button

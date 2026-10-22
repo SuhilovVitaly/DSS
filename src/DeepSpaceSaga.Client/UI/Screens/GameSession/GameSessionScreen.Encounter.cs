@@ -108,7 +108,7 @@ public sealed partial class GameSessionScreen
         CombatSpeedTooltip = null;
         if (!CombatIsActive || !_hasMousePosition) return;
         int index = HitTestSpeedPanel(_uiMouseX, _uiMouseY);
-        if (index < 0 || IsCombatSpeedEnabled(SpeedValues[index])) return;
+        if (index < 0 || IsCombatSpeedEnabled(_renderedSpeedValues[index])) return;
         CombatSpeedTooltip = CombatText("Reason.combat_speed_locked", "Во время боя доступны пауза и x1");
         using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12, IsAntialias = true };
         float width = Math.Min(_uiViewportW - 16, paint.MeasureText(CombatSpeedTooltip) + 12);

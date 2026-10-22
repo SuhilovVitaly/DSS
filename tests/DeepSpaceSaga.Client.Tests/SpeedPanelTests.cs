@@ -11,6 +11,35 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class SpeedPanelTests
 {
+    [Fact]
+    public async Task Concurrent_authoritative_speed_transitions_preserve_render_and_mouse_mapping()
+    {
+        var (buffer, screen) = CreateScreen();
+        using var stop = new CancellationTokenSource();
+        var publisher = Task.Run(() =>
+        {
+            ulong sequence = 1;
+            while (!stop.IsCancellationRequested)
+            {
+                var speed = sequence % 2 == 0 ? SimulationSpeed.SpeedDouble : SimulationSpeed.Speed0;
+                buffer.Update(new AuthoritativeSnapshot(sequence++, 0, speed, []));
+                Thread.Yield();
+            }
+        });
+        try
+        {
+            for (int i = 0; i < 100; i++) Render(screen);
+        }
+        finally { stop.Cancel(); await publisher; }
+        buffer.Update(new AuthoritativeSnapshot(long.MaxValue - 1, 0, SimulationSpeed.SpeedDouble, []));
+        Render(screen);
+        var last = screen.SpeedButtonRects[6];
+        buffer.Update(new AuthoritativeSnapshot(long.MaxValue, 0, SimulationSpeed.Speed0, []));
+        screen.OnMouseDown(last.MidX, last.MidY);
+        Assert.Equal(SimulationSpeed.Speed4, buffer.CurrentSpeed);
+        screen.OnDeactivated();
+    }
+
     private const int ScreenWidth = 1920;
     private const int ScreenHeight = 1080;
 
