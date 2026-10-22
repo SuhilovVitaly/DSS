@@ -83,7 +83,7 @@ public sealed class PointCombatUS0004TK0001Tests
         Assert.Equal(random.Counter + 2, engine.CaptureLaunchScatterState().Counter);
         var module = snapshot.InstalledModules.Single(m => m.ModuleId == Defense);
         var defense = module.Defense!;
-        Assert.False(defense.AutoEnabled);
+        Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled"));
         Assert.Equal(DefenseState.Reloading, defense.State);
         Assert.Equal(12500, defense.ReadyAtMotionTimeMs);
         Assert.Equal(12500, defense.ReloadDueMotionTimeMs);
@@ -91,7 +91,7 @@ public sealed class PointCombatUS0004TK0001Tests
         Assert.Equal(30, defense.RangeKm);
         Assert.Equal(0.08, defense.ScatterPercent);
         Assert.Equal(new[] { "wide", "fast" }, defense.Profiles!.Value.Select(p => p.ProfileId));
-        Assert.Empty(defense.PendingBurstShots!.Value);
+        Assert.Null(typeof(DefenseSnapshot).GetProperty("PendingBurstShots"));
         Assert.Null(module.DefensePreview);
         Assert.Equal(15, module.Operator!.Skill);
         Assert.Equal(projectile, Flight(At(engine)));

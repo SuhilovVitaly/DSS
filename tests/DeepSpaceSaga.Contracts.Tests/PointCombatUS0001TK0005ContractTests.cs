@@ -19,7 +19,7 @@ public class PointCombatUS0001TK0005ContractTests
     [Fact]
     public void Countermissile_profiles_have_no_ship_damage()
     {
-        var defense = new DefenseSnapshot(false, null, DefenseState.Ready, RangeKm: 30,
+        var defense = new DefenseSnapshot(null, DefenseState.Ready, RangeKm: 30,
             Profiles: [new("wide", 15, 1), new("fast", 25, 0.5)], ScatterPercent: 0.08);
         var restored = JsonSerializer.Deserialize<DefenseSnapshot>(JsonSerializer.Serialize(defense))!;
         Assert.Equal(defense.Profiles!.Value.ToArray(), restored.Profiles!.Value.ToArray());

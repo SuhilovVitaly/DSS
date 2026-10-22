@@ -32,7 +32,7 @@ public sealed class CombatScenariosContentTests
         Assert.All(snapshot.InstalledModules.Where(m => m.LauncherCombat is not null), m =>
             Assert.Equal(new[] { "slow", "medium", "fast" }, m.LauncherCombat!.Profiles!.Value.Select(p => p.ProfileId)));
         Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m =>
-        { Assert.False(m.Defense!.AutoEnabled); Assert.Equal(new[] { "wide", "fast" }, m.Defense.Profiles!.Value.Select(p => p.ProfileId)); });
+        { Assert.NotNull(m.Defense); Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled")); Assert.Equal(new[] { "wide", "fast" }, m.Defense.Profiles!.Value.Select(p => p.ProfileId)); });
     }
 
     [Fact]

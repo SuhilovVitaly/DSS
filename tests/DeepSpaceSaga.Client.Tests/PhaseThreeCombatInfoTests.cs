@@ -9,7 +9,7 @@ public class PhaseThreeCombatInfoTests
     private static InstalledModuleSnapshot Module(string id, decimal unusedAccuracy, int unusedChance) => new(id,
         "module.countermeasure.launcher.basic", "Countermissile", id == "defense-1" ? 2 : 3, [DefenseCommandTypes.Launch],
         "On", "Ready", 60, Commands: [new(DefenseCommandTypes.Launch, "Launch", "point")],
-        Defense: new(false, null, DefenseState.Ready, Profiles: [new("wide", 15, 1), new("fast", 25, .5)], RangeKm: 30));
+        Defense: new(null, DefenseState.Ready, Profiles: [new("wide", 15, 1), new("fast", 25, .5)], RangeKm: 30));
     [Theory]
     [InlineData(200)]
     [InlineData(480)]

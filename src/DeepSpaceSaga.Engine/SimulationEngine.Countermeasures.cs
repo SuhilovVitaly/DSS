@@ -54,9 +54,9 @@ public sealed partial class SimulationEngine
                     if (owner.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip))
                         throw new ScenarioException($"Defense module '{module.ModuleId}' must be installed on a ship.");
                     var op = ResolveWeaponOperator(owner, module, WeaponSkillType.CountermeasureDefense);
-                    result.Add((owner.InitialMotion.ObjectId, module.ModuleId), new(false, op,
+                    result.Add((owner.InitialMotion.ObjectId, module.ModuleId), new(op,
                         op is null ? DefenseState.NoOperator : DefenseState.Ready, RangeKm: type.RangeKm!.Value,
-                        PendingBurstShots: [], ActiveProjectileIds: [], ReloadDurationMs: type.ReloadMs,
+                        ActiveProjectileIds: [], ReloadDurationMs: type.ReloadMs,
                         Profiles: type.Profiles, ScatterPercent: type.ScatterPercent));
                     continue;
                 }

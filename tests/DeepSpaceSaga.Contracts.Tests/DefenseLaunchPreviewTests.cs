@@ -24,7 +24,7 @@ public class DefenseLaunchPreviewTests
     public void Preview_is_bound_to_module_and_target()
     {
         var first = new InstalledModuleSnapshot("defense-1", "type", "Defense", 1, [DefenseCommandTypes.Fire],
-            Defense: new(true, null, DefenseState.Ready, RangeKm: 100, ManualRangeKm: 200, Accuracy: 55),
+            Defense: new(null, DefenseState.Ready, RangeKm: 100),
             DefensePreview: new("owner", "defense-1", "torpedo-a", 0, true, Accuracy: 55, TargetManeuverability: 100));
         var second = first with
         {
@@ -41,7 +41,7 @@ public class DefenseLaunchPreviewTests
         Assert.False(restored[1].DefensePreview!.CanFire);
         Assert.Equal("busy", restored[1].DefensePreview!.Reason);
         Assert.Equal(100, restored[0].Defense!.RangeKm);
-        Assert.Equal(200, restored[0].Defense!.ManualRangeKm);
+        Assert.Null(typeof(DefenseSnapshot).GetProperty("ManualRangeKm"));
     }
 
     [Fact]

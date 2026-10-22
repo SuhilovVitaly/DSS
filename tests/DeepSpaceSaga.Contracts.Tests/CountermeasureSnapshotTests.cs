@@ -68,18 +68,18 @@ public class CountermeasureSnapshotTests
     public void Reload_uses_physical_deadline()
     {
         var module = new InstalledModuleSnapshot("module", "type", "Defense", 0, [],
-            Defense: new(true, null, DefenseState.Reloading, ReloadDueMotionTimeMs: 12345));
+            Defense: new(null, DefenseState.Reloading, ReloadDueMotionTimeMs: 12345));
         var restored = JsonSerializer.Deserialize<InstalledModuleSnapshot>(JsonSerializer.Serialize(module))!;
         Assert.Equal(12345, restored.Defense!.ReloadDueMotionTimeMs);
         Assert.Null(restored.Defense.ActiveProjectileId);
-        Assert.False(restored.Defense.AutoEnabled);
+        Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled"));
         Assert.DoesNotContain("AutoEnabled", JsonSerializer.Serialize(module));
     }
 
     [Fact]
     public void Defender_status_available_on_npc_snapshot()
     {
-        var npc = new ObjectMotionSnapshot("npc", 0, 0, 0, 0, Defense: new(false, null, DefenseState.NoOperator));
+        var npc = new ObjectMotionSnapshot("npc", 0, 0, 0, 0, Defense: new(null, DefenseState.NoOperator));
         var restored = JsonSerializer.Deserialize<ObjectMotionSnapshot>(JsonSerializer.Serialize(npc))!;
         Assert.Equal(npc.Defense, restored.Defense);
         var legacy = JsonSerializer.Deserialize<ObjectMotionSnapshot>("""{"ObjectId":"old","X":0,"Y":0,"SpeedKmS":0,"Direction":0}""")!;

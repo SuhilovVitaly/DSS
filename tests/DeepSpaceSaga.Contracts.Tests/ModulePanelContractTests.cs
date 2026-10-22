@@ -6,6 +6,19 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class ModulePanelContractTests
 {
     [Fact]
+    public void Retired_defense_members_are_absent_from_wire_and_public_snapshot()
+    {
+        var defense = new DefenseSnapshot(null, DefenseState.Ready, Profiles: [new("wide", 15, 1)]);
+        using var document = JsonDocument.Parse(JsonSerializer.Serialize(defense));
+        foreach (string name in new[] { "AutoEnabled", "Accuracy", "SpeedKmS", "TurnRateDegPerSec", "MaxFlightTimeMs", "Barrels", "PendingBurstShots", "ManualRangeKm" })
+        {
+            Assert.Null(typeof(DefenseSnapshot).GetProperty(name));
+            Assert.False(document.RootElement.TryGetProperty(name, out _));
+        }
+        Assert.True(document.RootElement.TryGetProperty("Profiles", out _));
+    }
+
+    [Fact]
     public void Retired_launcher_members_are_absent_from_wire_and_public_snapshot()
     {
         var launcher = new LauncherCombatSnapshot(200, Profiles: [new("medium", 10, 5)]);

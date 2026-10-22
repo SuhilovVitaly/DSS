@@ -15,7 +15,43 @@ public sealed record CountermeasureStateData(
     [property: JsonRequired] IReadOnlyList<CountermeasureProjectileSaveData> Projectiles,
     [property: JsonRequired] IReadOnlyList<CombatJournalEntry> Journal,
     string? SelectedProjectileId = null);
-public sealed record DefenseLauncherSaveData(string OwnerObjectId, string ModuleId, DefenseSnapshot State);
+public sealed record DefenseLauncherSaveData(string OwnerObjectId, string ModuleId, DefenseCombatSaveState State);
+/// <summary>Save-only envelope preserves retired auto/burst validation without live snapshot members.</summary>
+public sealed record DefenseCombatSaveState(
+    [property: JsonIgnore] bool AutoEnabled,
+    WeaponOperatorSnapshot? Operator,
+    DefenseState State,
+    string? ActiveProjectileId = null,
+    double? ReloadDueMotionTimeMs = null,
+    double RangeKm = 100,
+    /// <summary>Independent inclusive manual launch range in km.</summary>
+    double? ManualRangeKm = null,
+    decimal? Accuracy = null,
+    double? SpeedKmS = null,
+    double? TurnRateDegPerSec = null,
+    long? MaxFlightTimeMs = null,
+    int Barrels = 1,
+    /// <summary>Null in pre-migration snapshots; an empty array means no queued barrel shots.</summary>
+    ImmutableArray<PendingBurstShot>? PendingBurstShots = null,
+    double? ReadyAtMotionTimeMs = null,
+    /// <summary>Populated only for overlapping flights; the singular field remains the first active ID.</summary>
+    ImmutableArray<string>? ActiveProjectileIds = null,
+    double? ReloadDurationMs = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? ScatterPercent = null,
+    /// <summary>Own current sigma per km under configured rules and assigned operator.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? EffectiveScatterPercent = null)
+{
+    public static implicit operator DefenseCombatSaveState(DefenseSnapshot state) => new(
+        false, state.Operator, state.State, ActiveProjectileId: state.ActiveProjectileId,
+        ReloadDueMotionTimeMs: state.ReloadDueMotionTimeMs, RangeKm: state.RangeKm,
+        PendingBurstShots: [], ReadyAtMotionTimeMs: state.ReadyAtMotionTimeMs,
+        ActiveProjectileIds: state.ActiveProjectileIds, ReloadDurationMs: state.ReloadDurationMs,
+        Profiles: state.Profiles, ScatterPercent: state.ScatterPercent, EffectiveScatterPercent: state.EffectiveScatterPercent);
+}
 public sealed record CountermeasureProjectileSaveData(string ObjectId, CountermeasureSnapshot Flight, long TargetPlanStartMotionTimeMs);
 
 internal static class CountermeasureSaveValidation
@@ -65,7 +101,7 @@ internal static class CountermeasureSaveValidation
                 }
             }).ToArray()
         };
-        var launchers = new Dictionary<(string, string), DefenseSnapshot>();
+        var launchers = new Dictionary<(string, string), DefenseCombatSaveState>();
         foreach (var row in saved.Launchers)
         {
             Require(objects.TryGetValue(row.OwnerObjectId, out var owner) && owner.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip,

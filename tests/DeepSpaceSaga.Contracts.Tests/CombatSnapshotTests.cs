@@ -28,16 +28,13 @@ public class CombatSnapshotTests
     }
 
     [Fact]
-    public void Defense_burst_queue_roundtrip()
+    public void Defense_point_deadline_and_overlapping_flights_roundtrip()
     {
-        var defense = new DefenseSnapshot(true, null, DefenseState.Guiding,
-            Barrels: 2, PendingBurstShots: [new(3000.25, "torpedo-a", 2)],
-            ReadyAtMotionTimeMs: 15500.25);
+        var defense = new DefenseSnapshot(null, DefenseState.Reloading,
+            ActiveProjectileId: "counter-a", ActiveProjectileIds: ["counter-a", "counter-b"], ReadyAtMotionTimeMs: 15500.25);
         var copy = JsonSerializer.Deserialize<DefenseSnapshot>(JsonSerializer.Serialize(defense))!;
-        Assert.Equal(2, copy.Barrels);
-        var shot = Assert.Single(copy.PendingBurstShots!.Value);
-        Assert.Equal((3000.25, "torpedo-a", 2),
-            (shot.DueMotionTimeMs, shot.TargetTorpedoId, shot.BarrelNumber));
+        Assert.Equal("counter-a", copy.ActiveProjectileId);
+        Assert.Equal(new[] { "counter-a", "counter-b" }, copy.ActiveProjectileIds!.Value.ToArray());
         Assert.Equal(15500.25, copy.ReadyAtMotionTimeMs);
     }
 

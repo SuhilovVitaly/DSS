@@ -45,7 +45,7 @@ public class CountermeasureBootstrapTests
         Assert.NotEqual(counters[0].Operator!.CrewId, counters[1].Operator!.CrewId);
         Assert.All(counters, m =>
         {
-            Assert.False(m.Defense!.AutoEnabled); Assert.Equal(DefenseState.Ready, m.Defense.State); Assert.Equal(30, m.Defense.RangeKm);
+            Assert.NotNull(m.Defense); Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled")); Assert.Equal(DefenseState.Ready, m.Defense.State); Assert.Equal(30, m.Defense.RangeKm);
             Assert.Equal(12500, m.Defense.ReloadDurationMs); Assert.Equal(new[] { "wide", "fast" }, m.Defense.Profiles!.Value.Select(p => p.ProfileId)); Assert.Null(m.DefensePreview);
         });
         var player = snapshot.Objects.Single(o => o.ObjectId == Point.Player); var enemy = snapshot.Objects.Single(o => o.ObjectId == Point.Enemy);

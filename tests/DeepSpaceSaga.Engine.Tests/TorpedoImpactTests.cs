@@ -86,7 +86,7 @@ public sealed class TorpedoImpactTests
         using var engine = Create(); var snapshot = At(engine, 0);
         Assert.Equal(2, snapshot.InstalledModules.Count(m => m.Defense is not null));
         Assert.Equal(new[] { "slow", "medium", "fast" }, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Profiles!.Value.Select(p => p.ProfileId));
-        Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.False(m.Defense!.AutoEnabled));
+        Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.NotNull(m.Defense));
         Assert.Equal("module.engine.basic", snapshot.InstalledModules.Single(m => m.ModuleId == "MOD-PLAYER-ENGINE-01").ModuleTypeId);
     }
 

@@ -15,10 +15,10 @@ public sealed class WeaponHudControlsTests
         new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [CombatCommandTypes.Launch],
             LauncherCombat: new(150, RangeKm: 150, ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000,Profiles:[new("slow",6,9)])),
         new("one", "module.countermeasure.launcher.basic", "Defense 1", 2, [DefenseCommandTypes.Launch],
-            Defense: new(true, null, DefenseState.Reloading, ReloadDueMotionTimeMs: 11000, RangeKm: 50, ManualRangeKm: 100,
+            Defense: new(null, DefenseState.Reloading, ReloadDueMotionTimeMs: 11000, RangeKm: 50,
                 ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000,Profiles:[new("wide",15,1)])),
         new("two", "module.countermeasure.launcher.basic", "Defense 2", 3, [DefenseCommandTypes.Launch],
-            Defense: new(true, null, DefenseState.Ready, RangeKm: 70, ManualRangeKm: 110, ReloadDurationMs: 10000,Profiles:[new("wide",15,1)]))
+            Defense: new(null, DefenseState.Ready, RangeKm: 70, ReloadDurationMs: 10000,Profiles:[new("wide",15,1)]))
     ];
 
     [Theory]
