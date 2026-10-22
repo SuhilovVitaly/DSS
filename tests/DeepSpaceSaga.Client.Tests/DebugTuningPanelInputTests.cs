@@ -90,7 +90,7 @@ public sealed class DebugTuningPanelInputTests
             await handle.FlushDebugTuningAsync(); screen.PrepareDebugTuning();
             Assert.False(File.Exists(handle.DebugTuningFiles.CurrentPath)); Assert.True(handle.DebugTuningFiles.Status.Deleted);
             Assert.Equal(reference, File.ReadAllText(Path.Combine(directory, "debug-tuning.defaults.json")));
-            Assert.Equal("Debug.ResetComplete", screen.DebugPanel.StatusText);
+            Assert.Equal(Localization.Get("Debug.ResetComplete"), screen.DebugPanel.StatusText);
             screen.DebugPanel.Scroll(screen.DebugPanel.Bounds.MidX, screen.DebugPanel.Bounds.MidY, 1000);
             row = screen.DebugPanel.RowBounds(0);
             screen.OnMouseDown((row.Right - 45) * scale, row.MidY * scale);
@@ -104,7 +104,7 @@ public sealed class DebugTuningPanelInputTests
             });
             screen.PrepareDebugTuning();
             Assert.Null(screen.DebugPanel.GetRow(0).PendingValue); Assert.Equal(5, screen.DebugPanel.GetRow(0).Value.Value);
-            Assert.Equal("Debug.debug_value_out_of_range", screen.DebugPanel.StatusText);
+            Assert.Equal(Localization.Get("Debug.debug_value_out_of_range"), screen.DebugPanel.StatusText);
             screen.OnKeyDown(Key.Escape); Assert.False(screen.DebugPanel.Visible);
             screen.OnKeyDown(Key.F11); screen.OnKeyDown(Key.F11); Assert.False(screen.DebugPanel.Visible);
             await handle.DisposeAsync(); Assert.True(screen.DebugPanel.IsDisposed);

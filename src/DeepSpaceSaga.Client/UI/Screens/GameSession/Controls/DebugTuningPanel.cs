@@ -22,7 +22,7 @@ internal sealed class DebugTuningPanel : IDisposable
     private readonly bool[] _collapsed = new bool[5];
     private readonly SKRect[] _sectionBounds = new SKRect[5];
     private readonly List<Row> _rows = [];
-    private readonly SKTextBlob _title, _minus, _plus, _reset, _resetAll, _folder, _help, _confirmReset;
+    private readonly SKTextBlob _title, _minus, _plus, _resetAll, _folder, _help, _confirmReset;
     private readonly SKTextBlob[] _helpLines;
     private SKTextBlob[] _statusLines = [];
     private string? _feedbackKey, _startupError;
@@ -61,7 +61,7 @@ internal sealed class DebugTuningPanel : IDisposable
         _italicFont = new(_italicTypeface, 12);
         _text = text ?? Localization.Get;
         _title = Blob(_text("Debug.Title"));
-        _minus = Blob("−"); _plus = Blob("+"); _reset = Blob("↺"); _help = Blob("?");
+        _minus = Blob("−"); _plus = Blob("+"); _help = Blob("?");
         _resetAll = Blob(_text("Debug.ResetAll")); _folder = Blob(_text("Debug.OpenFolder"));
         _confirmReset = Blob(_text("Debug.ConfirmReset"));
         _helpLines = Wrap(_text("Debug.HelpOrbit") + "\n" + _text("Debug.HelpTorpedoes"));
@@ -244,7 +244,7 @@ internal sealed class DebugTuningPanel : IDisposable
             var (min, max, _, _) = Limits(row.Value);
             Button(canvas, _minus, new(rect.Right - 88, rect.Top + 5, rect.Right - 64, rect.Bottom - 5), row.DisplayValue > min);
             Button(canvas, _plus, new(rect.Right - 58, rect.Top + 5, rect.Right - 34, rect.Bottom - 5), row.DisplayValue < max);
-            Button(canvas, _reset, new(rect.Right - 28, rect.Top + 5, rect.Right - 4, rect.Bottom - 5), row.DisplayValue != row.Default);
+            ResetButton(canvas, new(rect.Right - 28, rect.Top + 5, rect.Right - 4, rect.Bottom - 5), row.DisplayValue != row.Default);
         }
         if (_helpVisible)
             for (int i = 0; i < _helpLines.Length; i++)
@@ -261,6 +261,17 @@ internal sealed class DebugTuningPanel : IDisposable
     {
         Fill(canvas, rect, enabled ? new SKColor(35, 49, 59) : new SKColor(19, 26, 31));
         Draw(canvas, blob, rect.MidX - blob.Bounds.Width / 2, rect.MidY + 4, enabled ? MenuStyle.ColorText : MenuStyle.ColorTextDim);
+    }
+    private void ResetButton(SKCanvas canvas, SKRect rect, bool enabled)
+    {
+        Fill(canvas, rect, enabled ? new SKColor(35, 49, 59) : new SKColor(19, 26, 31));
+        _paint.Color = enabled ? MenuStyle.ColorText : MenuStyle.ColorTextDim;
+        _paint.Style = SKPaintStyle.Stroke; _paint.StrokeWidth = 1.2f;
+        float x = rect.MidX, y = rect.MidY;
+        canvas.DrawArc(new(x - 5, y - 5, x + 5, y + 5), -60, 295, false, _paint);
+        canvas.DrawLine(x - 3, y - 4, x - 6, y - 4, _paint);
+        canvas.DrawLine(x - 6, y - 4, x - 6, y - 1, _paint);
+        _paint.Style = SKPaintStyle.Fill;
     }
     private SKTextBlob[] Wrap(string text)
     {
@@ -298,7 +309,7 @@ internal sealed class DebugTuningPanel : IDisposable
         if (_disposed) return;
         _disposed = true; ClearRows();
         foreach (var section in _sections) section.Dispose();
-        _title.Dispose(); _minus.Dispose(); _plus.Dispose(); _reset.Dispose(); _resetAll.Dispose(); _folder.Dispose(); _help.Dispose();
+        _title.Dispose(); _minus.Dispose(); _plus.Dispose(); _resetAll.Dispose(); _folder.Dispose(); _help.Dispose();
         _confirmReset.Dispose();
         foreach (var line in _helpLines) line.Dispose();
         foreach (var line in _statusLines) line.Dispose();
