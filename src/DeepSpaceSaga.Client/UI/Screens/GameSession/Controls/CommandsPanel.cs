@@ -527,6 +527,8 @@ public sealed class CommandsPanel
 
     public bool OnMouseMove(float x, float y)
     {
+        _pointerX = x;
+        _pointerY = y;
         HoveredWeaponPanel = RowsContain(x, y) ? _panelRows.FirstOrDefault(r =>
             r.CaptionRect.Contains(x, y) || (r.Opened && r.BodyRect.Contains(x, y))).Weapon : null;
         _hoveredButtonIndex = _hideShowButtonRect.Contains(x, y) ? 0 : -1;
@@ -551,6 +553,9 @@ public sealed class CommandsPanel
         _pressedButtonIndex = -1;
         _pressedCommandButtonIndex = -1;
     }
+
+    private float _pointerX = -1, _pointerY = -1;
+    internal string? CurrentTimeTooltip { get; private set; }
 
     // ── Render ──────────────────────────────────────────────────
 
@@ -604,8 +609,8 @@ public sealed class CommandsPanel
                 visibleBodies = new(StringComparer.Ordinal);
                 float remaining = viewportHeight - rowY - panels.Length * captionHeight -
                     (panels.Length - 1) * CollapsedPanelGap;
-                foreach (string name in new[] { _preferredOpenedPanel, "Torpedo Launcher", "Navigation", "Space Control" }
-                    .Concat(panels.Select(p => p.Key)).OfType<string>().Distinct(StringComparer.Ordinal))
+                foreach (string name in panels.OrderBy(p => p.Key == _preferredOpenedPanel ? -1 : ExpansionPriority(p))
+                    .Select(p => p.Key))
                 {
                     if (!panels.Any(p => p.Key == name)) continue;
                     if (_panelOpenedByName.TryGetValue(name, out bool requested) && !requested) continue;
@@ -685,7 +690,9 @@ public sealed class CommandsPanel
                 _panelRows.Add(new CommandPanelGeometry(
                     panel.Name, opened, captionRect, bodyRect, buttons, statusBarRect, statusBarText, panel.Weapon, details[panel.Key],
                     weaponModule?.ModuleId, toggle, weaponModule is not null && IsWeaponRangeVisible(weaponModule.ModuleId), pointWeapon ? SKRect.Empty : reloadBar, reloadFraction, reloadRing, remainingReal,
-                    panel.Weapon is { } operatorWeapon ? _weaponOperatorText?.Invoke(operatorWeapon) : null));
+                    panel.Weapon is { } operatorWeapon ? _weaponOperatorText?.Invoke(operatorWeapon) : null,
+                    remainingReload > 0 ? PanelTime.Tooltip(remainingReload / 1000,
+                        (SimulationSpeed)(int)Math.Round((multiplier > 0 ? multiplier : .25) * 4)) : null));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -711,6 +718,15 @@ public sealed class CommandsPanel
         canvas.ClipRect(new SKRect(Margin, _captionRect.Bottom, Margin + PanelWidth, float.IsFinite(viewportHeight) ? viewportHeight : float.MaxValue));
         foreach (var row in _panelRows)
             DrawCommandPanel(canvas, row);
+        CurrentTimeTooltip = null;
+        foreach (var row in _panelRows)
+        {
+            if (row.TimeTooltip is not { } tooltip || !row.ReloadRingRect.Contains(_pointerX, _pointerY)) continue;
+            CurrentTimeTooltip = tooltip;
+            float top = Math.Min(_pointerY + 18, viewportHeight - 24);
+            canvas.DrawRect(new SKRect(Margin, top, Margin + PanelWidth, top + 24), _panelBgPaint);
+            canvas.DrawText(tooltip, Margin + 4, top + 16, _moduleCaptionTextPaint);
+        }
         canvas.Restore();
     }
 
@@ -766,6 +782,11 @@ public sealed class CommandsPanel
         }
         return builder.ToImmutable();
     }
+
+    internal static int ExpansionPriority(CommandPanelDefinition panel) =>
+        panel.CommandTypeIds.Contains(CombatCommandTypes.Launch) ? 0 :
+        panel.CommandTypeIds.Contains(DefenseCommandTypes.Launch) ? 1 :
+        panel.Name == "Navigation" ? 2 : panel.Name == "Engine" ? 3 : panel.Name == "Space Control" ? 4 : 5;
 
     /// <summary>
     /// One button per the panel's fixed CommandTypeIds, in declaration order, laid
@@ -1116,7 +1137,8 @@ public readonly record struct CommandPanelGeometry(
     WeaponPanelInstance? Weapon = null,
     ImmutableArray<string> DetailLines = default,
     string? RangeModuleId = null, SKRect RangeToggleRect = default, bool RangeVisible = false,
-    SKRect ReloadBarRect = default, double ReloadFraction = 1, SKRect ReloadRingRect = default, double RemainingReloadRealSeconds = 0, string? OperatorText = null)
+    SKRect ReloadBarRect = default, double ReloadFraction = 1, SKRect ReloadRingRect = default, double RemainingReloadRealSeconds = 0, string? OperatorText = null,
+    string? TimeTooltip = null)
 {
     public string Key => Weapon?.Key ?? Name;
 }

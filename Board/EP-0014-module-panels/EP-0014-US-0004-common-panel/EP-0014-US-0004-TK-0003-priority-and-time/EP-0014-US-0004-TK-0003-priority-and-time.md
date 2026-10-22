@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0004-common-panel
 ticket: EP-0014-US-0004-TK-0003-priority-and-time
 title: priority-and-time
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0014-US-0004-TK-0002-panel-projection]
 files_touched: 4
@@ -51,3 +51,10 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Scope refinement before implementation
+Add GameSessionScreen.cs to inject remembered speed into panel callbacks, and Data/Locale/English.json plus Russian.json for localized time tooltip. Seven implementation files are necessary for one coherent Client presentation change and permitted by EpicExecutionPrompt scope authority. Exact APIs: CommandsPanel.Render/BuildPanels/CommandPanelDefinition.CommandTypeIds, GameSessionScreen._lastNonPauseSpeed and PointReloadRealSeconds. Priority follows command type identity, never localized captions. Shared PanelTime owns display conversion only.
+
+## Implementation evidence
+
+Priority uses launch command IDs, so module instance keys and localization cannot hide weapons. Shared PanelTime converts physical to real seconds, remembers last active speed, and provides localized reload-ring hover tooltip. Tests include actual1280x720 scale1.5 Render and live launch,2x,pause,hover. Focused7/7 before tooltip extension; final affected regression109/109 PASS, owning build PASS, scoped format PASS, git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-time-regression.trx and client-time-format.log. Self-review completed; native/human and independent review remain unclaimed. Other duration tooltips are supplied with subsequent owning panel rows.

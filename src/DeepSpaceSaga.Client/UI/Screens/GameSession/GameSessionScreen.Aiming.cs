@@ -247,8 +247,16 @@ public sealed partial class GameSessionScreen
     private double PointReloadRealSeconds(InstalledModuleSnapshot module)
     {
         double ready = module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs ?? 0;
-        double multiplier = _buffer.CurrentSpeed.MotionTimeMultiplier();
-        return Math.Max(0, ready - PointAimTime) / 1000 / (multiplier > 0 ? multiplier : .25);
+        return PanelTime.RealSeconds((ready - PointAimTime) / 1000, PanelDisplaySpeed);
+    }
+
+    private SimulationSpeed PanelDisplaySpeed
+    {
+        get
+        {
+            if (_buffer.CurrentSpeed != SimulationSpeed.Speed0) _lastNonPauseSpeed = _buffer.CurrentSpeed;
+            return PanelTime.EffectiveSpeed(_buffer.CurrentSpeed, _lastNonPauseSpeed);
+        }
     }
     private string? PointWeaponButtonLabel(WeaponPanelInstance weapon, string command)
     {

@@ -1,4 +1,5 @@
 {
+  "Combat.Panel.TimeTooltip": "real seconds at x{0}; physical: {1} s",
   "Map.Orbits": "Orbits",
   "Map.Belt": "Next belt",
   "Map.Cluster": "Cluster",
