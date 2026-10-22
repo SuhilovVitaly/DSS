@@ -51,3 +51,7 @@ Draft; human approval отсутствует. Решения и точные с�
 ## Execution ticket map2026-10-22
 
 Execution authorized through epic-executor; see [current ticket map](../Tickets.md). Earlier planning-only/no-tickets statements above are historical. Stage remains distinct from human acceptance. Final US-0006 must audit and update all impacted project documentation and rebuild Graphify after final code and text.
+
+## Story verification2026-10-22
+
+126/126 affected tests pass, including current3.0/3.2 speeds,5km/s maximum,.6km/s2 acceleration,20deg/s turn,13/12/18 real-second examples,2x then paused6.7/9.0s, snapshot limit update and disabled zero-rate handling. Skia paints/path are reused across cache rebuilds and released on deactivation. Existing manual command/input regressions remain green; no synchronous Engine call added. Native/human and independent review remain open.

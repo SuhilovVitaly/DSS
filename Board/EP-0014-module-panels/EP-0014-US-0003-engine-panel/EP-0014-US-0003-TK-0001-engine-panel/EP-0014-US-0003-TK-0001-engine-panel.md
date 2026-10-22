@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0003-engine-panel
 ticket: EP-0014-US-0003-TK-0001-engine-panel
 title: engine-panel
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0014-US-0002-TK-0001-countermissile-panel]
 files_touched: 3
@@ -50,3 +50,14 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Scope refinement before implementation
+Add new GameSessionScreen.EnginePanel.cs partial for bounded EngineMotion presentation; include Data/Locale RU/EN. Six implementation files. CommandsPanel gets optional group-detail/time-tooltip callbacks, uses snapshot availability for dimming, and retains existing manual command controls. No engine simulation or balance changes. Zero/negative denominators display unknown; speed above maximum gives nonnegative acceleration duration.
+
+Self-review refinement within CommandsPanel scope: reusable detail/ring/timer/check/progress paints and arc path are initialized once per active panel lifetime, reused on data changes, and released with presentation cache on deactivation. This closes the source performance requirement beyond merely caching stable draws.
+
+## Implementation evidence
+
+Render snapshot engine speed limits and maneuver durations with reusable panel resources;126 checks pass
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-engine-resources.trx and client-engine-resources-format.log. Owning build, scoped format and diff checks passed. Diff self-reviewed against ticket and invariants. Native, human acceptance and independent review are not claimed.

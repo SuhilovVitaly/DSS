@@ -383,7 +383,8 @@ public sealed partial class GameSessionScreen : IScreen
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel,
             IsPointWeaponCommandEnabled, SendPointWeaponCommand, GetPointWeaponStatus,
             GetPointWeaponOperator, GetPointWeaponDetails, () => _panelMotionTime,
-            () => PanelDisplaySpeed.MotionTimeMultiplier(), PointWeaponButtonLabel, GetPointPanelTimeTooltip, IsPointPanelBlocked);
+            () => PanelDisplaySpeed.MotionTimeMultiplier(), PointWeaponButtonLabel, GetPointPanelTimeTooltip, IsPointPanelBlocked,
+            GetEnginePanelDetails, GetEnginePanelTimeTooltip);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
