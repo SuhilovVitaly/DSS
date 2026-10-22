@@ -78,7 +78,10 @@ public sealed record AuthoritativeSnapshot(
     CombatReportBatchSnapshot? CombatReports = null,
     /// <summary>Confirmed encounter state, distinct from terminal session Outcome.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    CombatEncounterSnapshot? Encounter = null)
+    CombatEncounterSnapshot? Encounter = null,
+    /// <summary>Confirmed debug overlay; omitted from compact frames when its revision is unchanged.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    DebugTuningSnapshot? DebugTuning = null)
 {
     [JsonIgnore]
     public SessionOutcomeSnapshot EffectiveOutcome => Outcome ?? SessionOutcomeSnapshot.Running;

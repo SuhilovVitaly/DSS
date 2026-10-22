@@ -19,7 +19,10 @@ public sealed partial class SimulationEngine : IDisposable
     public const int SnapshotIntervalMs = 1000;
 
     private readonly SimulationClock _clock;
-    private readonly GameDataRegistry _registry;
+    private GameDataRegistry _registry;
+    private DebugTuningState _debugTuning;
+    private bool _hasLoadedScenario;
+    private long _lastDebugPresentationRevision = -1;
     private readonly ImmutableArray<string> _femaleCrewPortraits;
     private readonly LinearMotionPredictor _motion = new();
     private readonly List<SpaceObjectRuntime> _objects = new();
@@ -135,6 +138,7 @@ public sealed partial class SimulationEngine : IDisposable
     internal SimulationEngine(GameDataRegistry registry, ImmutableArray<string> femaleCrewPortraits = default, SimulationClock? clock = null)
     {
         _registry = registry;
+        _debugTuning = new(registry);
         _femaleCrewPortraits = femaleCrewPortraits.IsDefaultOrEmpty ? [CharacterPortraits.DefaultFemale] : femaleCrewPortraits;
         _clock = clock ?? new SimulationClock(SimulationSpeed.Speed1);
         ResetQuoteSession();
@@ -464,6 +468,7 @@ public sealed partial class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             PlayerShipObjectId = gs.PlayerShipObjectId;
+            _hasLoadedScenario = true;
             // Session-interaction state (§54) — never carried over from the previous
             // world, and never read from scenario/save data. Every New Game and Quick
             // Load starts with both null; the first snapshot of the new session reports
@@ -837,7 +842,8 @@ public sealed partial class SimulationEngine : IDisposable
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: presentationOnly ? default : BuildVoyageFinanceProjection(),
                 StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
-                Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch(), Encounter: CaptureEncounter(gameTimeMs));
+                Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch(), Encounter: CaptureEncounter(gameTimeMs),
+                DebugTuning: CaptureDebugTuning(presentationOnly));
             if (!presentationOnly) _pendingCombatReports.Clear();
             return snapshot;
         }
@@ -1006,8 +1012,9 @@ public sealed partial class SimulationEngine : IDisposable
                 IsDestroyed: module.Destroyed,
                 CombatRole: moduleType.CombatRole,
                 IsCritical: moduleType.CombatRole is { } role && _registry.CombatRules?.ShipDestruction.CriticalRoles.Contains(role) == true,
-                EngineMotion: IsEngineCategory(moduleType) ? new(moduleType.MaxSpeedMps!.Value / 1000.0,
-                    moduleType.LinearInertiaMps2!.Value / 1000.0, moduleType.AngularInertiaDegPerSec!.Value) : null));
+                EngineMotion: IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is { } maxSpeed &&
+                    moduleType.LinearInertiaMps2 is { } acceleration && moduleType.AngularInertiaDegPerSec is { } turnRate
+                    ? new(maxSpeed / 1000.0, acceleration / 1000.0, turnRate) : null));
         }
 
         return builder.MoveToImmutable();
@@ -2443,6 +2450,8 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     private CommandStartOutcome TryStartCommand(PlayerCommand command, long gameTimeMs)
     {
+        if (command.CommandType == DebugTuningCommandTypes.Apply)
+            return TryApplyDebugTuning(command, gameTimeMs);
         if (IsDefeated)
             return command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel &&
                 (command.QuoteId is not null || command.MarketRevision is not null)

@@ -34,6 +34,7 @@ public sealed partial class SimulationEngine
         _presentationWorldObjectIds.Clear();
         _automaticPresentationPause = false;
         _presentationBootstrap = true;
+        _lastDebugPresentationRevision = -1;
         _presentationProgressAt = _presentationTimestamp();
     }
 

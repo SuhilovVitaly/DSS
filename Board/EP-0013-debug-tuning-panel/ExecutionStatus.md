@@ -17,6 +17,7 @@ per-ticket publication. They are retained as the current execution inputs.
 | Ticket | Existing implementation SHA | Publication |
 |---|---|---|
 | EP-0013-US-0001-TK-0001 | `1c44dc54205af369cb214f3964e33475154aa7e0` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0001-TK-0002 | `67f6c6ab53edc70bf969dd1f0f3cc6e8543a9828` | Pushed; remote SHA verified identical on 2026-10-22 |
 
 The existing preparatory commit `2a63be54` was published with the same branch.
 No empty replacement implementation commit was created.
@@ -41,11 +42,13 @@ No empty replacement implementation commit was created.
 Mandatory reading complete: all 90 Markdown documents under Documentation, the
 entire target epic and execution prompt; semantic evidence is retained at
 `D:/DeepSpaceSaga/artifacts/validation/ep0013/reading/ep13-doc-semantics-{1,2,3,4}.json`.
-US1-TK2 implementation/checks complete (93/93 affected regression; zero-warning
-Engine build; scoped format PASS). Commit/push verification follows immediately.
+US1-TK2 published. US1-TK3 implementation/checks complete: Engine affected
+regression112/112; Client transport23/23; solution build0warnings/0errors;
+solution scoped format PASS. US1 self-review/AC coverage complete; TK3 commit/push
+verification follows immediately. Its SHA will be recorded after creation.
 Final US7 exists
 and was expanded before main implementation to cover all six documentation
-outcomes required by the execution prompt. US1-TK3 and later tickets remain pending.
+outcomes required by the execution prompt. US2 and later stories remain pending.
 
 Graph source navigation is the existing ignored `src/graphify-out` export. It is
 historical EP12 navigation, not verification of EP13. Fresh semantic reading is
