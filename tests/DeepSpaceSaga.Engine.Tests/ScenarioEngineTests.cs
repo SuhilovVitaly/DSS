@@ -511,7 +511,8 @@ public class ScenarioEngineTests
         Assert.Equal("point", fireCommand.Target);
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
-        Assert.Equal(16, engineType.CommandTypeIds.Length);
+        Assert.Equal(17, engineType.CommandTypeIds.Length);
+        Assert.Contains(ShipEngineCommandTypes.SpeedHold, engineType.CommandTypeIds);
         Assert.Contains(ShipEngineCommandTypes.Orbit, engineType.CommandTypeIds);
         Assert.Contains(ShipEngineCommandTypes.TurnHold, engineType.CommandTypeIds);
         Assert.Contains(ManeuverCommandTypes.Evade, engineType.CommandTypeIds);

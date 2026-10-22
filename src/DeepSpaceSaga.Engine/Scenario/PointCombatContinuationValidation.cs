@@ -115,7 +115,7 @@ internal static class PointCombatContinuationValidation
                         Math.Abs(e.Motion.BaseMotion.SpeedKmS - anchor.SpeedKmS) / steering.AccelerationKmS2) * 1000;
                 Require(Near(steering.ReturnsAtMotionTimeMs, expected), "evasion return deadline mismatch.");
             }
-            Require(anchor.Torpedo is null && anchor.Countermeasure is null && anchor.TurnHoldRateDegPerSec is null && anchor.HostileCombat is null &&
+            Require(anchor.Torpedo is null && anchor.Countermeasure is null && anchor.TurnHoldRateDegPerSec is null && anchor.SpeedHoldAccelerationKmS2 is null && !anchor.SpeedHoldLatched && anchor.HostileCombat is null &&
                 anchor.Orbit is null && anchor.EngineManeuver is null && anchor.ActiveEngineCommandType is null,
                 "evasion anchor contains incompatible controls.");
             ObjectMotionSnapshot pose;

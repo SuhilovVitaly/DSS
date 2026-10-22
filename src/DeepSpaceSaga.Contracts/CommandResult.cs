@@ -138,6 +138,7 @@ public static class CommandReasonCodes
     public const string EngineDisabled = "engine_disabled";
     public const string CombatSpeedLocked = "combat_speed_locked";
     public const string InvalidTurnPayload = "invalid_turn_payload";
+    public const string InvalidSpeedPayload = "invalid_speed_payload";
 
     /// <summary>The player was defeated; gameplay commands and world saves are unavailable.</summary>
     public const string SessionDefeated = "session_defeated";

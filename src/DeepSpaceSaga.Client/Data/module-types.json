@@ -29,6 +29,7 @@
         "navigation.approach",
         "trade.refuel",
         "engine.turnHold",
+        "engine.speedHold",
         "maneuver.evade",
         "combat.acknowledgeResults"
       ]

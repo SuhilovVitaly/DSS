@@ -84,7 +84,9 @@ Client126/126, build0warnings/errors, scoped format PASS;
 RU/EN strict coverage, zero allocation and inspected raster proof. US5 automated
 coverage/self-review complete. US6-TK1 published
 `2e9be5f85d720e40156cda87e713cf5dd334ce86`: contracts269/269, solution0warnings/errors,
-scoped format PASS. US6-TK2 Motion251/251, solution0warnings/errors, format PASS.
+scoped format PASS. US6-TK2 published `55fb71314fb16440a4e681cb8b8dcae356ea60ae`:
+Motion251/251, solution0warnings/errors, format PASS.
+US6-TK3 Engine304/304, Client149/149, solution0warnings/errors, format PASS.
 US6–US7 remain pending. US1–US5 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 

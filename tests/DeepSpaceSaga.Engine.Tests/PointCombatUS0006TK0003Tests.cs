@@ -55,14 +55,14 @@ public sealed class PointCombatUS0006TK0003Tests
     }
 
     [Fact]
-    public void Turn_hold_stops_on_pause_and_session_reset()
+    public void Turn_hold_survives_pause_and_stops_on_session_reset()
     {
         using var engine = Battle();
         engine.ReceiveCommand(Hold()); At(engine); At(engine, 500);
         engine.SetSpeed(SimulationSpeed.Speed0);
-        Assert.Null(Ship(At(engine, 500)).TurnHoldRateDegPerSec);
+        Assert.Equal(4, Ship(At(engine, 500)).TurnHoldRateDegPerSec);
         engine.SetSpeed(SimulationSpeed.Speed1);
-        Assert.Equal(2, Ship(At(engine, 1000)).Direction, 10);
+        Assert.Equal(4, Ship(At(engine, 1000)).Direction, 10);
         engine.ReceiveCommand(Hold("again")); At(engine, 1000);
         engine.LoadScenario(TorpedoImpactTests.Scenario(o => o));
         Assert.Null(Ship(At(engine)).TurnHoldRateDegPerSec);
@@ -99,7 +99,7 @@ public sealed class PointCombatUS0006TK0003Tests
     }
 
     [Fact]
-    public void Turn_hold_stops_on_engine_damage_and_keeps_inertial_motion()
+    public void Both_holds_stop_on_engine_damage_and_keep_inertial_motion()
     {
         var source = Registry(scatter: 0);
         static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition => Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
@@ -123,14 +123,18 @@ public sealed class PointCombatUS0006TK0003Tests
         engine.LoadScenario(scenario);
         Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(Target, "MOD-PIRATE-TORPEDO-01", 0, 0, "slow", 0).Disposition);
         string threat = Assert.Single(At(engine).Objects, o => o.ObservedProjectile is not null).ObjectId;
-        engine.ReceiveCommand(Hold()); At(engine);
+        engine.ReceiveCommand(Hold());
+        engine.ReceiveCommand(new("speed", 1, Player, Engine, ShipEngineCommandTypes.SpeedHold,
+            SpeedDirection: SpeedDirection.Brake, Active: true));
+        var accepted = Ship(At(engine));
         var snapshot = At(engine, 2500);
         var hit = Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Player);
         Assert.Equal(Engine, hit.HitModuleId);
         var ship = Ship(snapshot);
         Assert.Null(ship.TurnHoldRateDegPerSec);
+        Assert.Null(ship.SpeedHoldAccelerationKmS2); Assert.False(ship.SpeedHoldLatched);
         Assert.Equal(4 * hit.MotionTimeMs / 1000, ship.Direction, 7);
-        Assert.Equal(2, ship.SpeedKmS);
+        Assert.Equal(CurrentManeuverForecast.Sample(accepted, hit.MotionTimeMs).SpeedKmS, ship.SpeedKmS, 8);
         Assert.Equal(ship.Direction, Ship(At(engine, 3000)).Direction, 8);
         Assert.True(snapshot.InstalledModules.Single(m => m.ModuleId == Engine).DisabledUntilMotionTimeMs > 2500);
     }

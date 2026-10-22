@@ -179,7 +179,6 @@ public sealed partial class SimulationEngine : IDisposable
             if (_automaticPresentationPause && speed != SimulationSpeed.Speed0) return null;
             if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return null; }
             _presentationIntervalSpeed = _clock.Speed;
-            if (speed == SimulationSpeed.Speed0) StopAllTurnHolds();
             if (UsesPointEncounters) _clock.SetSpeedAtProcessedBoundary(speed);
             else _clock.SetSpeed(speed);
             if (_collectPresentation)
@@ -746,7 +745,7 @@ public sealed partial class SimulationEngine : IDisposable
                 // Project ordinary objects straight into the outgoing DTO: avoid
                 // allocating a full intermediate motion snapshot for every asteroid.
                 double x = 0, y = 0;
-                bool linear = obj.InitialMotion.TurnHoldRateDegPerSec is null && obj.InitialMotion.Evasion is null && obj.InitialMotion.OwnProjectile is null && obj.InitialMotion.ObservedProjectile is null &&
+                bool linear = obj.InitialMotion.SpeedHoldAccelerationKmS2 is null && obj.InitialMotion.TurnHoldRateDegPerSec is null && obj.InitialMotion.Evasion is null && obj.InitialMotion.OwnProjectile is null && obj.InitialMotion.ObservedProjectile is null &&
                     cycleMotion.ApproachRoute is null && _motion is LinearMotionPredictor &&
                     LinearMotionPredictor.TryPredictLinearPosition(obj.InitialMotion, elapsed, out x, out y);
                 var motion = linear ? obj.InitialMotion : PredictMotion(obj, elapsed);
@@ -773,7 +772,9 @@ public sealed partial class SimulationEngine : IDisposable
                     Countermeasure = null,
                     Evasion = isPlayerShipRow ? motion.Evasion : null,
                     TurnHoldRateDegPerSec = isPlayerShipRow ? motion.TurnHoldRateDegPerSec : null,
-                    ActiveEngineCommandType = isPlayerShipRow && motion.Evasion is not null ? ManeuverCommandTypes.Evade : isPlayerShipRow && motion.TurnHoldRateDegPerSec is not null ? ShipEngineCommandTypes.TurnHold : cycleMotion.CommandType,
+                    SpeedHoldAccelerationKmS2 = isPlayerShipRow ? motion.SpeedHoldAccelerationKmS2 : null,
+                    SpeedHoldLatched = isPlayerShipRow && motion.SpeedHoldLatched,
+                    ActiveEngineCommandType = isPlayerShipRow && motion.Evasion is not null ? ManeuverCommandTypes.Evade : isPlayerShipRow && motion.TurnHoldRateDegPerSec is not null ? ShipEngineCommandTypes.TurnHold : isPlayerShipRow && motion.SpeedHoldAccelerationKmS2 is not null ? ShipEngineCommandTypes.SpeedHold : cycleMotion.CommandType,
                     EngineManeuver = known ? ProjectEngineManeuver(obj, gameTimeMs) : null,
                     TurnStepDegrees = cycleMotion.TurnStepDegrees,
                     TurnStepRemainingMs = cycleMotion.TurnStepRemainingMs,
@@ -2497,7 +2498,8 @@ public sealed partial class SimulationEngine : IDisposable
         if (_objects.Any(o => o.InitialMotion.ObjectId == command.ObjectId && o.IsDestroyed))
             return quotedTrade ? RejectQuotedTrade(command, "player_destroyed") : CommandStartOutcome.Rejected("player_destroyed");
         if (_dialogue.Active is not null)
-            return quotedTrade ? RejectQuotedTrade(command, "dialogue_active") : CommandStartOutcome.Rejected("dialogue_active");
+            return quotedTrade ? RejectQuotedTrade(command, "dialogue_active") : CommandStartOutcome.Rejected(
+                command.CommandType is ShipEngineCommandTypes.TurnHold or ShipEngineCommandTypes.SpeedHold ? CommandReasonCodes.EngineDisabled : "dialogue_active");
 
         if (command.CommandType is NavigationComputerCommandTypes.Dock or NavigationComputerCommandTypes.Undock)
             return ExecuteTurnHoldOverride(command, gameTimeMs, () => ExecuteEvasionOverride(command, gameTimeMs, () => TryStartNavigationCommand(command, gameTimeMs)));
@@ -2512,6 +2514,9 @@ public sealed partial class SimulationEngine : IDisposable
         if (command.CommandType == ShipEngineCommandTypes.TurnHold)
             return command.Active == false ? TryTurnHold(command, gameTimeMs) :
                 ExecuteEvasionOverride(command, gameTimeMs, () => TryTurnHold(command, gameTimeMs));
+        if (command.CommandType == ShipEngineCommandTypes.SpeedHold)
+            return command.Active == false ? TrySpeedHold(command, gameTimeMs) :
+                ExecuteEvasionOverride(command, gameTimeMs, () => TrySpeedHold(command, gameTimeMs));
         if (command.CommandType == ManeuverCommandTypes.Evade)
             return TryStartEvade(command, gameTimeMs);
         if (command.CommandType == CombatCommandTypes.Detonate)

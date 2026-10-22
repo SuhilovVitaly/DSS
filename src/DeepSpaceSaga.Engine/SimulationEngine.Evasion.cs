@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine;
 public sealed partial class SimulationEngine
 {
     private sealed record EvasionState(string EngineModuleId, long StartedAt, EvasionSnapshot Motion,
-        ActiveCycleData? OrbitCycle, long? LastTurnTime);
+        ActiveCycleData? OrbitCycle, long? LastTurnTime, PlayerCommand? Command = null);
     private readonly Dictionary<string, EvasionState> _evasions = new(StringComparer.Ordinal);
     private long _playerEvasionEpisodes;
     private bool HasEvasionActivity => _evasions.Count != 0;
@@ -21,7 +21,10 @@ public sealed partial class SimulationEngine
         if (owner is null) return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownObject);
         var outcome = TryEvade(owner, command.ModuleId, command.ThreatProjectileId, command.EvadeSide, time);
         if (outcome.Disposition == CommandStartDisposition.Started)
+        {
+            _evasions[command.ObjectId] = _evasions[command.ObjectId] with { Command = command };
             RecordCommandResult(command, CommandResultStatus.Executed, time);
+        }
         return outcome;
     }
 
@@ -113,6 +116,8 @@ public sealed partial class SimulationEngine
     {
         Evasion = null,
         TurnHoldRateDegPerSec = null,
+        SpeedHoldAccelerationKmS2 = null,
+        SpeedHoldLatched = false,
         HostileCombat = null,
         EngineManeuver = null,
         Orbit = null,
@@ -184,8 +189,9 @@ public sealed partial class SimulationEngine
 
     private void CancelEvasionState(string id, long time, string? reason = null)
     {
-        if (_evasions.Remove(id, out var state) && state.OrbitCycle is { } cycle)
-            RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, time, reason);
+        if (!_evasions.Remove(id, out var state)) return;
+        if (state.OrbitCycle is { } cycle) RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, time, reason);
+        if (state.Command is { } command) RecordCommandResult(command, CommandResultStatus.Cancelled, time, reason);
     }
 
     private SpaceObjectRuntime InterruptDamagedEvasion(SpaceObjectRuntime ship, double time)

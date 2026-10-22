@@ -119,6 +119,16 @@
             "type": "module.engine"
         },
         {
+            "typeId": "engine.speedHold",
+            "displayName": "Speed hold",
+            "timeFactor": 1.0,
+            "complexityFactor": 1.0,
+            "consumptionFactor": 1.0,
+            "target": "none",
+            "type": "module.engine",
+            "activationEnergyCellsCost": 0
+        },
+        {
             "typeId": "engine.turnHold",
             "displayName": "Turn hold",
             "timeFactor": 1.0,

@@ -94,13 +94,14 @@ public sealed partial class SimulationEngine
 
     internal static CollisionPath CombatPath(SpaceObjectRuntime obj)
     {
-        if (obj.InitialMotion.TurnHoldRateDegPerSec is { } heldRate)
+        if (HasManualHolds(obj.InitialMotion))
             return new(t =>
             {
                 var p = CurrentManeuverForecast.Sample(obj.InitialMotion, Math.Max(0, t - obj.StartGameTimeMs));
                 return (p.X, p.Y);
-            }, obj.InitialMotion.SpeedKmS / 100,
-                obj.InitialMotion.SpeedKmS / 100 * Math.Abs(heldRate) * Math.PI / 180_000);
+            }, Math.Max(obj.InitialMotion.SpeedKmS, obj.InitialMotion.MaxSpeedKmS ?? 0) / 100,
+                Math.Abs(obj.InitialMotion.SpeedHoldAccelerationKmS2 ?? 0) / 100_000 +
+                Math.Max(obj.InitialMotion.SpeedKmS, obj.InitialMotion.MaxSpeedKmS ?? 0) / 100 * Math.Abs(obj.InitialMotion.TurnHoldRateDegPerSec ?? 0) * Math.PI / 180_000);
         if (obj.InitialMotion.Evasion is { } evasion)
             return new(t =>
             {

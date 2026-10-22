@@ -27,7 +27,12 @@ public sealed partial class SimulationEngine
         {
             if (owner.IsDocked || !CanExecuteEngineCommand(module, type, time) || type.AngularInertiaDegPerSec is not > 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.EngineDisabled);
-            var pose = ClearEvasionControls(RuntimeMotion.At(owner, time));
+            var sampled = RuntimeMotion.At(owner, time);
+            var pose = ClearEvasionControls(sampled) with
+            {
+                SpeedHoldAccelerationKmS2 = sampled.SpeedHoldAccelerationKmS2,
+                SpeedHoldLatched = sampled.SpeedHoldLatched
+            };
             var modules = owner.Modules;
             for (int i = 0; i < modules.Length; i++)
             {
@@ -58,7 +63,7 @@ public sealed partial class SimulationEngine
         var owner = _objects[index];
         _objects[index] = owner with
         {
-            InitialMotion = ClearEvasionControls(RuntimeMotion.At(owner, time)),
+            InitialMotion = RuntimeMotion.At(owner, time) with { TurnHoldRateDegPerSec = null },
             StartGameTimeMs = time
         };
     }
@@ -66,15 +71,15 @@ public sealed partial class SimulationEngine
     private void StopAllTurnHolds()
     {
         for (int i = 0; i < _objects.Count; i++)
-            if (_objects[i].InitialMotion.TurnHoldRateDegPerSec is not null) StopTurnHold(i, _combatProcessedTimeMs);
+            if (HasManualHolds(_objects[i].InitialMotion)) StopManualHolds(i, _combatProcessedTimeMs);
     }
 
     private CommandStartOutcome ExecuteTurnHoldOverride(PlayerCommand command, long time, Func<CommandStartOutcome> execute)
     {
         int index = _objects.FindIndex(o => o.InitialMotion.ObjectId == command.ObjectId);
-        if (index < 0 || _objects[index].InitialMotion.TurnHoldRateDegPerSec is null) return execute();
+        if (index < 0 || !HasManualHolds(_objects[index].InitialMotion)) return execute();
         var original = _objects[index];
-        StopTurnHold(index, time);
+        StopManualHolds(index, time);
         var result = execute();
         if (result.Disposition != CommandStartDisposition.Started) _objects[index] = original;
         return result;
@@ -82,7 +87,7 @@ public sealed partial class SimulationEngine
 
     private static SpaceObjectRuntime InterruptDamagedTurnHold(SpaceObjectRuntime ship, double time)
     {
-        if (ship.InitialMotion.TurnHoldRateDegPerSec is null) return ship;
+        if (!HasManualHolds(ship.InitialMotion)) return ship;
         var pose = CurrentManeuverForecast.Sample(ship.InitialMotion, Math.Max(0, time - ship.StartGameTimeMs));
         long anchor = (long)Math.Floor(time);
         var p = LinearMotionPredictor.PredictStraightPose(pose.X, pose.Y, pose.Direction, pose.SpeedKmS, anchor - time);

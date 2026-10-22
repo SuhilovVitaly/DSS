@@ -35,6 +35,8 @@ public sealed partial class SimulationEngine
                 MaxSpeedKmS = maxSpeed,
                 TurnHoldRateDegPerSec = pose.TurnHoldRateDegPerSec is { } turn
                     ? Math.CopySign(type.AngularInertiaDegPerSec!.Value, turn) : null,
+                SpeedHoldAccelerationKmS2 = pose.SpeedHoldAccelerationKmS2 is { } heldAcceleration
+                    ? Math.CopySign(type.LinearInertiaMps2!.Value / 1000.0, heldAcceleration) : null,
                 HostileCombat = null
             };
             var modules = owner.Modules;
