@@ -1,11 +1,11 @@
 ---
 epic: EP-0014-module-panels
 title: "Панели модулей: данные для боя по точке и исправление раскладки"
-stage: executing
+stage: implementation-complete
 created: 2026-10-22T18:16:48.4377981Z
 source_request: "Вызов epic-writer с приложенным ТЗ EP-0014-module-panels от 2026-10-22"
-current_review: US-0004-review
-validation_status: execution-started
+current_review: final-self-review
+validation_status: automated-and-native-verified-human-open
 baseline: "codex/ep-0013-debug-tuning-panel @ 87ebd2c4de47256dc20ea2b404dd303ac8e7a969"
 ---
 
@@ -13,8 +13,10 @@ baseline: "codex/ep-0013-debug-tuning-panel @ 87ebd2c4de47256dc20ea2b404dd303ac8
 
 ## Execution authorization2026-10-22
 
-User explicitly invoked epic-executor for this Board epic. Draft implementation, necessary scope updates, per-ticket commit and immediate push are authorized by EpicExecutionPrompt. [Tickets](Tickets.md) is the current17-ticket map and supersedes the historical18-ticket proposal below. No human acceptance is asserted. G-02: preparation aim also permitted for destroyed modules; launch remains blocked. G-04: display core=authoritative R times fraction. G-05: decimal penetration. G-06: stable warmed CommandsPanel.Render allocation boundary. Existing graph found at src/graphify-out; prior G-08 absence claim is superseded. Final US6 includes full project impact audit and Graphify rebuild.
+User explicitly invoked epic-executor for this Board epic. Draft implementation, necessary scope updates, per-ticket commit and immediate push are authorized by EpicExecutionPrompt. [Tickets](Tickets.md) is the current20-ticket map and supersedes the historical18-ticket proposal below. No human acceptance is asserted. G-02: preparation aim also permitted for destroyed modules; launch remains blocked. G-04: display core=authoritative R times fraction. G-05: decimal penetration. G-06: stable warmed CommandsPanel.Render allocation boundary. Existing graph found at src/graphify-out; prior G-08 absence claim is superseded. Final US6 includes full project impact audit and Graphify rebuild.
 
+
+## Historical planning record
 
 Черновик эпика и шести пользовательских историй. Реализация, тестирование продукта,
 native/product acceptance и публикация не выполнялись. Human approval отсутствует.
@@ -34,7 +36,7 @@ native/product acceptance и публикация не выполнялись. H
 или push. Применяются инструкции репозитория и epic-writer. Нормативная
 Documentation в рамках этого поручения не изменяется.
 
-## Grounding — проверенные факты
+## Historical baseline grounding
 
 Пути ниже относительно DSS; номера строк относятся к указанному текущему baseline.
 
@@ -141,7 +143,7 @@ EP13 — текущие input/tuning/save контракты; отдельног
   историй не получено. Первая история для review — US-0004.
 - Входные M-решения и proposed tickets сохранены как source evidence, без approval.
 
-## Epic review log
+## Historical epic planning review log
 
 Согласование состава эпика ещё не запрашивалось: индивидуальный review впереди.
 Эпик остаётся draft. Никакие пользовательские approvals не синтезированы.
@@ -169,6 +171,12 @@ Save19/migration18. Статические tests, независимое review,
 каталожных defaults оружия, AI и всего UI вне панелей не входит в эпик.
 Назначения клавиш schema2 и debug overrides сохраняются.
 
+## Current delivery
+
+All20 canonical tickets are implemented. Final documentation publication is verified after its commit. Functional tickets are individually committed and pushed. The extra three corrective/validation cards preserve original IDs and cover snapshot consistency, native panel evidence and report startup. Source material below remains historical input; outer metadata and linked evidence define current status. The mechanically duplicated execution authorization inside the source section was removed; product specification prose is retained.
+
+[Publication and residual gates](ExecutionStatus.md) · [Validation and story coverage](FinalValidation.md) · [Documentation impact](DocumentationImpact.md).
+
 ## Полный входной материал
 
 Далее дословный исходник. Его старый baseline, число18 тикетов и формулировки
@@ -187,11 +195,6 @@ design_source: "встроено в этот файл: текущее состо
 ---
 
 # EP-0014 — Панели модулей
-
-## Execution authorization2026-10-22
-
-User explicitly invoked epic-executor for this Board epic. Draft implementation, necessary scope updates, per-ticket commit and immediate push are authorized by EpicExecutionPrompt. [Tickets](Tickets.md) is the current17-ticket map and supersedes the historical18-ticket proposal below. No human acceptance is asserted. G-02: preparation aim also permitted for destroyed modules; launch remains blocked. G-04: display core=authoritative R times fraction. G-05: decimal penetration. G-06: stable warmed CommandsPanel.Render allocation boundary. Existing graph found at src/graphify-out; prior G-08 absence claim is superseded. Final US6 includes full project impact audit and Graphify rebuild.
-
 
 Статус: **planning-only / draft**, revision 1, 2026-10-22. 6 историй, 18 тикетов. Внешние документы не нужны: ссылки ведут только на код репозитория.
 

@@ -16,6 +16,14 @@ Save18 с полями, принадлежащими Save19, отвергает�
 не означает разрешение игнорировать остальные invariants. Проверка выполняется
 до замены сессии; повреждённый источник не переписывается.
 
+Live LauncherCombatSnapshot/DefenseSnapshot очищены от retired guided/mode/burst
+параметров. LauncherCombatSaveState и DefenseCombatSaveState в ScenarioData
+сохраняют прежнюю форму Save19/18 и строгую проверку устаревших значений;
+они не являются DTO для UI. Переход не повышает версию writer и не удаляет
+validation некорректных старых полей. Active flights, captured geometry,
+reload deadlines, command receipts, debug tuning и named RNG продолжаются
+после Load; повтор команды не создаёт второй projectile.
+
 Program использует `Saves` рядом с executable, SaveSlotNaming задаёт имена файлов.
 Local file Load запускает продолжение на паузе. UI Save/Load не изменяет Engine
 самостоятельно и не выдаёт stale callback за разрешение перезаписать слот после Defeat.

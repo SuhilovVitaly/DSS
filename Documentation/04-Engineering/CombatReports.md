@@ -15,4 +15,11 @@ Combat report panel позволяет читать собственные бо�
 незавершённый deadline сообщает при достижении. Наличие audio cue в коде
 не доказывает физически слышимое воспроизведение — это отдельная UI-проверка.
 
+LocalGameSessionConnection выбирает snapshot либо combat transport при первом
+reader. Producer начинает CapturePresentationUpdate после этого выбора,
+чтобы не потерять bootstrap и первые report sequences до подписки Client.
+Один connection имеет одного transport owner; смешение режимов отвергается.
+Dispose отменяет ожидание и без подписчика. Inbox продолжает ждать реальные
+sequence gaps, а не пропускает отсутствующие доклады ради продвижения cursor.
+
 Источники: [DeepSpaceSaga.Contracts](../../src/DeepSpaceSaga.Contracts), [GameSession](../../src/DeepSpaceSaga.Client/UI/Screens/GameSession), [SimulationEngine.PointCombat.cs](../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs).

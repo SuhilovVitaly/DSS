@@ -24,6 +24,13 @@ Contracts не зависит от игровых проектов; графич
 SnapshotBuffer хранит историю представления, подготовленные кадры питают UI.
 Клиентское предсказание не меняет авторитетный мир и не раскрывает скрытые планы NPC.
 
+Модульный UI использует очищенные live combat DTO и собственный nullable
+DestroyedModuleLimit. Legacy wire compatibility изолирована в save DTO Engine.
+CommandsPanel кеширует подготовленную геометрию/ресурсы; panel profile memory
+принадлежит owner/module в текущей сессии. Правила real-time и blocked aim —
+в [PointAimCombat](../04-Engineering/PointAimCombat.md#панели-модулей).
+Локальный producer ждёт выбора snapshot/combat reader, сохраняя report bootstrap.
+
 ## Запуск и content
 
 Проекты нацелены на `net8.0`. `global.json`: SDK `8.0.100`,

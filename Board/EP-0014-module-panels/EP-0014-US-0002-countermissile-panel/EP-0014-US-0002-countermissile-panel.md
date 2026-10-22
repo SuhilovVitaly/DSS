@@ -2,7 +2,7 @@
 epic: EP-0014-module-panels
 story: EP-0014-US-0002-countermissile-panel
 title: "Пусковая ПРО: профили и оценка перехвата"
-stage: draft
+stage: implementation-complete
 dependencies: [EP-0014-US-0004, EP-0014-US-0001]
 ---
 
@@ -46,7 +46,7 @@ Engine не вызывается из Render; скрытые NPC данные н
 Проверки при реализации имеют process-tree cap300000ms и абсолютные
 output paths в D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/<unique-run>/.
 
-## Review
+## Historical planning review
 
 Draft; human approval отсутствует. Решения и точные сообщения согласования
 будут записаны в review log эпика.
@@ -57,3 +57,6 @@ Execution authorized through epic-executor; see [current ticket map](../Tickets.
 ## Story verification2026-10-22
 
 56/56 affected tests pass, including live observed common-point arrival, unreachable profile, no-track handling, calibrated10km sigma, no core,50/25s reload, shared profile memory and existing countermeasure flows. Common blocked-input paths were verified in US1. Snapshot data and observed trace only; no concealed future endpoint is read. Native/human and independent review remain open.
+
+## Current implementation and acceptance
+Implementation is complete under the explicit epic-executor authorization. The earlier draft/no-ticket/approval passages are historical planning records, not current execution restrictions. Canonical tickets and per-ticket publication: [Tickets](../Tickets.md), [ExecutionStatus](../ExecutionStatus.md). Automated and actual native evidence, story coverage and open physical/human/independent gates: [FinalValidation](../FinalValidation.md). No human product approval is synthesized.

@@ -119,6 +119,16 @@ cue после допуска в Client. Начальная готовность
 Load молчат; незавершённый сохранённый цикл уведомляет при фактическом завершении.
 Информация не раскрывает перезарядку NPC.
 
+Панель аппарата отображает admitted snapshot-параметры, профиль, оператора,
+рассеивание и real-time reload. Подготовка прицела разрешена при блокировке
+пуска, но не создаёт команду или RNG draw. Current/max engine speed, acceleration,
+turn rate и времена манёвра используют общую границу physical/real time.
+Броня/структура и n/L различимы; nullable DestroyedModuleLimit вычисляет Engine
+только для собственного корабля. Live DTO не переносят retired guided/mode/burst
+поля; совместимость Save19/18 принадлежит отдельным save DTO.
+Правила приоритета, pause, округления и profile memory заданы в
+[панелях модулей](../04-Engineering/PointAimCombat.md#панели-модулей).
+
 Клиентские прогнозы используют только допущенные наблюдения; отменённый worker
 не публикует результат другой сессии. NPC torpedo на карте имеет текущую точку,
 короткий хвост и тёмный наблюдённый след, без передней траектории и profile label.
@@ -139,9 +149,9 @@ continuation и необязательные debug overrides. Новая сес�
 Crew hiring, пассажирские контракты и Ship overview пока представлены UI-shell;
 их нельзя описывать как завершённые игровые системы. Принятые решения питания
 и электричества не доказывают наличие полного runtime контура.
-EP-0013 выполняется: поддержка DebugTuning в Engine/сохранении не означает
-готовую панель, файловый экспорт или приёмку всего эпика. Фактический остаток —
-в Board. Automated tests, native UI, производительность и баланс — отдельные
+Наличие DebugTuning и панелей в коде не означает продуктовую приёмку эпика;
+фактическая публикация и остаточные gates находятся в Board.
+Automated tests, native UI, производительность и баланс — отдельные
 gates; этот документ не хранит результаты отдельных запусков.
 
 Источники: [SimulationSpeed.cs](../../src/DeepSpaceSaga.Contracts/SimulationSpeed.cs), [SimulationClock.cs](../../src/DeepSpaceSaga.Engine/SimulationClock.cs), [ScenarioData.cs](../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs), [ScenarioLoader.cs](../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs), [SimulationEngine.PointCombat.cs](../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs), [TradeQuoteCalculator.cs](../../src/DeepSpaceSaga.Engine/TradeQuoteCalculator.cs).

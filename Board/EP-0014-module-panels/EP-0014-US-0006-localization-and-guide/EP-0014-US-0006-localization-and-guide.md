@@ -2,7 +2,7 @@
 epic: EP-0014-module-panels
 story: EP-0014-US-0006-localization-and-guide
 title: "Панели на русском и английском и актуальное руководство"
-stage: draft
+stage: implementation-complete
 dependencies: [EP-0014-US-0001, EP-0014-US-0002, EP-0014-US-0003, EP-0014-US-0004, EP-0014-US-0005]
 ---
 
@@ -44,10 +44,13 @@ Engine не вызывается из Render; скрытые NPC данные н
 Проверки при реализации имеют process-tree cap300000ms и абсолютные
 output paths в D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/<unique-run>/.
 
-## Review
+## Historical planning review
 
 Draft; human approval отсутствует. Решения и точные сообщения согласования
 будут записаны в review log эпика.
 ## Execution ticket map2026-10-22
 
 Execution authorized through epic-executor; see [current ticket map](../Tickets.md). Earlier planning-only/no-tickets statements above are historical. Stage remains distinct from human acceptance. Final US-0006 must audit and update all impacted project documentation and rebuild Graphify after final code and text.
+
+## Current implementation and acceptance
+Implementation is complete under the explicit epic-executor authorization. The earlier draft/no-ticket/approval passages are historical planning records, not current execution restrictions. Canonical tickets and per-ticket publication: [Tickets](../Tickets.md), [ExecutionStatus](../ExecutionStatus.md). Automated and actual native evidence, story coverage and open physical/human/independent gates: [FinalValidation](../FinalValidation.md). No human product approval is synthesized.

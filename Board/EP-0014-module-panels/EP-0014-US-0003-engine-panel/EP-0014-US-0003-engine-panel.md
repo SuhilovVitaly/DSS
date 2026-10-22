@@ -2,7 +2,7 @@
 epic: EP-0014-module-panels
 story: EP-0014-US-0003-engine-panel
 title: "Двигатель: скорость, лимиты и время манёвра"
-stage: draft
+stage: implementation-complete
 dependencies: [EP-0014-US-0004]
 ---
 
@@ -44,7 +44,7 @@ Engine не вызывается из Render; скрытые NPC данные н
 Проверки при реализации имеют process-tree cap300000ms и абсолютные
 output paths в D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/<unique-run>/.
 
-## Review
+## Historical planning review
 
 Draft; human approval отсутствует. Решения и точные сообщения согласования
 будут записаны в review log эпика.
@@ -55,3 +55,6 @@ Execution authorized through epic-executor; see [current ticket map](../Tickets.
 ## Story verification2026-10-22
 
 126/126 affected tests pass, including current3.0/3.2 speeds,5km/s maximum,.6km/s2 acceleration,20deg/s turn,13/12/18 real-second examples,2x then paused6.7/9.0s, snapshot limit update and disabled zero-rate handling. Skia paints/path are reused across cache rebuilds and released on deactivation. Existing manual command/input regressions remain green; no synchronous Engine call added. Native/human and independent review remain open.
+
+## Current implementation and acceptance
+Implementation is complete under the explicit epic-executor authorization. The earlier draft/no-ticket/approval passages are historical planning records, not current execution restrictions. Canonical tickets and per-ticket publication: [Tickets](../Tickets.md), [ExecutionStatus](../ExecutionStatus.md). Automated and actual native evidence, story coverage and open physical/human/independent gates: [FinalValidation](../FinalValidation.md). No human product approval is synthesized.

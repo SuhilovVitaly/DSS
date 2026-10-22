@@ -1,7 +1,9 @@
 # Навигационный граф
 
 Поддерживаемый offline rebuild находится в tools/graphify/rebuild.py;
-результат выводится в `src/graphify-out`, вне Documentation.
+новый результат выводится в уникальный workspace artifacts/validation/graphify
+либо абсолютный DSS_GRAPH_OUTPUT, вне Documentation. Исторический src/graphify-out
+не заменяется автоматически.
 Скрипт поддерживает --prepare-ast, --dry-run и --force; последнее разрешает
 намеренное уменьшение графа, а не скрывает потерю coverage.
 Зависимости берутся из локального окружения Graphify, не загружаются игрой.

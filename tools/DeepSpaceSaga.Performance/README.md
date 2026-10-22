@@ -1,5 +1,21 @@
 # GPU/window probe
 
+## Module panel native validation
+
+`DeepSpaceSaga.Performance <DSS root> <absolute report.json> --module-panels-window <scale> <WxH> <ru|en>`
+opens the actual Skia/OpenGL window over a paused production PlayerShipOnly
+fixture. It checks profile/operator/stat rows, caption priority/bounds, admitted
+launch, reload text surviving hover, blocked preparation clicks and engine times.
+Four PNGs are GPU surface captures. The mode restores its output Settings.json
+and uses the report directory for disposable runtime outputs. Scale cases are
+0.8/1/1.2/1.5; the small case is1280x720 at1.5.
+
+This is managed screen input and actual Engine execution. Physical keyboard,
+mouse, human visual acceptance, sound and input-to-photon latency remain separate.
+Run only within an explicit user-authorized native/epic execution workflow and
+write reports under D:/DeepSpaceSaga/artifacts/validation/<task>/<unique-run>/.
+Current evidence belongs to [EP-0014](../../Board/EP-0014-module-panels/FinalValidation.md).
+
 ## Current EP-0012 contract — 2026-10-21
 
 Current --combat-window routes PointCombatNativeEvidence, a real SkiaWindow/OpenGL run over actual production Engine snapshots. Command: `dotnet run --no-build --project tools/DeepSpaceSaga.Performance -- <repo> <report.json> --combat-window <0.8|1|1.2|1.5> <1280x720|1920x1080> <ru|en> <input|win|defeat> [--audio] [--clean-flight]`. Build first; hard process cap300000ms, internal3min guard. Output includes PNGs, actual locale/scale/GPU, checks, public commands and explicit NOT RUN limits. Terminal replays use unchanged shared production input policy. Tool temporarily changes deployed Settings and restores bytes. Clean-flight cancels overlapping preview before independent radius sampling. Managed callbacks/controlled clocks are not physical keyboard/mouse, normal transport, input-to-photon or auditory acceptance. Old CombatNativeEvidence/guided arguments below are historical, while unrelated map/report/performance commands retain their scope. [Point-aim combat contract](../../Documentation/04-Engineering/PointAimCombat.md).

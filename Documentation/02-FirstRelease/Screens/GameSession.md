@@ -4,6 +4,12 @@
 
 Карта, скорость/пауза, команды модулей, цели, состояние корабля, journal и combat reports. Слева — команды и module health, справа — данные/изображение выбранного объекта. Клиентский preview не является подтверждённым действием. Карта и последствия попаданий используют согласованную допущенную сцену.
 
+[Панели модулей](../../04-Engineering/PointAimCombat.md#панели-модулей) содержат
+таблицы профилей, operator/scatter, damage/penetration, real-time reload и engine
+характеристики. В малом viewport раскрытое оружие имеет приоритет, остальные
+заголовки остаются достижимы; длинные тела прокручиваются. Переключение
+authoritative speed не меняет соответствие уже нарисованных кнопок их значениям.
+
 См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
 
 Источники: [GameSessionScreen.cs](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs).

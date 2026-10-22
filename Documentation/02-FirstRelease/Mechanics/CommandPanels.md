@@ -10,4 +10,14 @@
 Правила point aiming, manual countermeasure, reload и выход из aiming заданы
 в [PointAimCombat](../../04-Engineering/PointAimCombat.md).
 
+При нехватке места оружие получает приоритет перед Navigation; явно выбранная
+группа и ручные сворачивания сохраняются. Заголовки с дальностью и числом reload
+остаются доступны. Profile selection принадлежит отдельному owner/module и
+сбрасывается при новой сессии. Подготовительный прицел доступен и у временно
+неработающего аппарата; блокирующая причина запрещает отправку пуска.
+Armor/Structure имеют подписанные полосы и current/max tooltip, critical marker
+объясняется при наведении, n/L использует предел собственного корабля из Engine.
+Длительности, включая engine times и прогноз подлёта, выражены в real seconds
+при текущем K либо последнем K перед паузой. Hover не замещает readiness/reload.
+
 Источники: [GameSession](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession), [Commands](../../../src/DeepSpaceSaga.Client/Data/Commands).

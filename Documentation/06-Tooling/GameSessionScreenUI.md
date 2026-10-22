@@ -12,4 +12,14 @@ DTO и локальными UI-состояниями, не с прямым вы
 копировать в несколько документов. Слои, геометрия и UI hit-test должны
 использовать общий подготовленный кадр и актуальный viewport.
 
+CommandsPanel сохраняет SKPicture, detail font/paints и reload path до изменения
+входов; деактивация освобождает presentation cache. Ключи Combat.Panel.* покрывают
+RU/EN, единицы, состояния и символы. Detail font должен содержать одновременно
+кириллицу, bar cells и маркеры; проверять только наличие строки в JSON недостаточно.
+ModuleDiagram хранит данные левых групп, отдельного правого renderer нет.
+Настройки defaultTorpedoProfile/defaultCountermissileProfile находятся в
+Data/UI/combat-visuals.json; это UI defaults, а не изменение боевого каталога.
+Нативный режим --module-panels-window описан в [Performance README](../../tools/DeepSpaceSaga.Performance/README.md#module-panel-native-validation).
+Он проверяет реальный OpenGL и managed callbacks, сохраняя hardware/human gates отдельно.
+
 Источники: [Export-TacticalButtonAssets.ps1](../../tools/Export-TacticalButtonAssets.ps1), [Settings.json](../../src/DeepSpaceSaga.Client/Settings.json), [UI](../../src/DeepSpaceSaga.Client/Data/UI).

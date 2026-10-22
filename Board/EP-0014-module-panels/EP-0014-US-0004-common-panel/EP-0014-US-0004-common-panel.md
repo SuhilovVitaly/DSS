@@ -2,7 +2,7 @@
 epic: EP-0014-module-panels
 story: EP-0014-US-0004-common-panel
 title: "Общая панель: приоритет, время и состояние модулей"
-stage: draft
+stage: implementation-complete
 dependencies: []
 ---
 
@@ -48,7 +48,7 @@ Engine не вызывается из Render; скрытые NPC данные н
 Проверки при реализации имеют process-tree cap300000ms и абсолютные
 output paths в D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/<unique-run>/.
 
-## Review
+## Historical planning review
 
 Draft; human approval отсутствует. Решения и точные сообщения согласования
 будут записаны в review log эпика.
@@ -59,3 +59,6 @@ Execution authorized through epic-executor; see [current ticket map](../Tickets.
 ## Story verification2026-10-22
 
 Five implementation tickets complete pending final cleanup publication. Common-panel regression162/162 PASS including actual screen, small viewport, pause/time tooltip, health, hit expiry and warmed allocation gate. Own threshold verified9=>3,6=>2 in Engine tests; fractional penetration preserved. Self-review covered input/cache invalidation and authority; independent review/native/human remain open. Save continuation is validated in US-0005 and final project docs in US-0006.
+
+## Current implementation and acceptance
+Implementation is complete under the explicit epic-executor authorization. The earlier draft/no-ticket/approval passages are historical planning records, not current execution restrictions. Canonical tickets and per-ticket publication: [Tickets](../Tickets.md), [ExecutionStatus](../ExecutionStatus.md). Automated and actual native evidence, story coverage and open physical/human/independent gates: [FinalValidation](../FinalValidation.md). No human product approval is synthesized.
