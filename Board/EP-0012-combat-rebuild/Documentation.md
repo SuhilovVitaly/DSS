@@ -1,0 +1,301 @@
+---
+epic: "EP-0012-combat-rebuild"
+title: "Ребилд тактического боя: point-aim, ПРО, уклонение и UI"
+stage: "in_progress"
+created: "2026-10-20T07:48:46.640Z"
+source_request: "Создать новый эпик со сторисами и тикетами по приложенному тексту; внешние ссылки игнорировать"
+revision: 4
+baseline: "c894925d187c90a658d1e25958feed69a45d7e41"
+validation_status: "us20-implemented-acceptance-open"
+story_count: 20
+ticket_count: 80
+---
+
+> **Контракт EP-0013.** Замена контрактов22.10.2026: EP-0013 расширяет этот point-combat baseline отладочным overlay/retiming и независимыми ручными осями. Текущие требования: [панель](../../Documentation/04-Engineering/DebugTuningPanel.md), [маневрирование](../../Documentation/04-Engineering/ManualManeuver.md). Датированные результаты EP-0012 остаются историческими и не являются проверкой EP-0013.
+
+# EP-0012 — Канонический контракт и grounding
+
+[Вход эпика](EP-0012-combat-rebuild.md) · [Порядок исполнения](Tickets.md)
+
+## Current execution status — 2026-10-21
+
+73/73 technical implementations and final documentation/graph work recorded in [ImplementationStatus](ImplementationStatus.md); publication ledger is [PublicationStatus](PublicationStatus.md). Production dodge balance96.6%/P907.4933realmin fails72–88%/<=5.5min. Native24+1instrumented GPU checks passed their stated assertions; physical/human/audio/accessibility/transport-latency gates remain OPEN. Historical planning statements and baseline source observations below do not override actual execution authorization, currentSave18 or measured results.
+
+## Исходное поручение и полномочия
+
+Пользователь: «создай новый эпик со сторисами и тикетами в папке D:\DeepSpaceSaga\DSS\Board по примеру других эпиков. если есть ссылки на внешние файлы игнорируй их». Вход — приложенный Pasted text, revision2 от2026-10-20; все обязательные требования перенесены сюда и в story/ticket карточки. Внешние пути не копируются как prerequisites. Утверждения приложения о старом checkout, Bitbucket, запрете GitHub, обязательных commit/push и прежнем approval — входные исторические данные, не новые полномочия.
+
+**D-USER-01:** игнорировать внешние файлы. **D-USER-02:** пользователь ответил «1» на выбор задержки: отклик UI <=100мс, настоящий projectile — после подтверждения на общих часах сцены. Это заменяет исходный US11-AC4 про появление снаряда<=100мс. Время записи: 2026-10-20T07:48:46.640Z; не выдаётся за время исходного сообщения.
+
+## Исторический planning baseline и source evidence
+
+HEAD: `c894925d187c90a658d1e25958feed69a45d7e41`. Рабочее дерево перед созданием было чистым. Исторический f8846f0 является предком текущего HEAD (git merge-base --is-ancestor exit0); получать другой checkout не требуется. Baseline перечитать перед реализацией. Graphify graph.json в текущем checkout отсутствует; использован прямой поиск исходников, rebuild при планировании не запускался.
+
+| Source | Проверенный факт |
+|---|---|
+| [src/DeepSpaceSaga.Engine/SimulationClock.cs:43](../../src/DeepSpaceSaga.Engine/SimulationClock.cs) | x1: одна физическая секунда за четыре реальные; остаток четвертей сохраняется. |
+| [src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs:33](../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs) | CurrentSaveFormatVersion=17; новый save18 пока проектируется. |
+| [src/DeepSpaceSaga.Contracts/PlayerCommand.cs:6](../../src/DeepSpaceSaga.Contracts/PlayerCommand.cs) | Текущий PlayerCommand содержит TargetWorldX/Y и ModeId; новых launch/evade полей ещё нет. |
+| [src/DeepSpaceSaga.Contracts/CombatSnapshot.cs:7](../../src/DeepSpaceSaga.Contracts/CombatSnapshot.cs) | Публичные legacy команды torpedo.fire/selfDestruct и старые DTO. |
+| [src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs:25](../../src/DeepSpaceSaga.Engine/SimulationEngine.Combat.cs) | TryStartTorpedoFire — текущая точка запуска; AdvanceCombatTo на232, ApplyModuleHit на513. |
+| [src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs:197](../../src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs) | LoadCombatRules/LoadCombatRulesAndModes на203 пока связывают rules и modes. |
+| [src/DeepSpaceSaga.Engine/Content/ModuleTypeDefinition.cs:5](../../src/DeepSpaceSaga.Engine/Content/ModuleTypeDefinition.cs) | Текущая module schema содержит guided projectile, chance, barrels и burst поля. |
+| [src/DeepSpaceSaga.Client/SnapshotBuffer.Presentation.cs:110](../../src/DeepSpaceSaga.Client/SnapshotBuffer.Presentation.cs) | Подтверждённая сцена имеет150ms real presentation delay; ответы команд обходят playback. |
+| [tests/DeepSpaceSaga.Client.Tests/CombatScenariosContentTests.cs:15](../../tests/DeepSpaceSaga.Client.Tests/CombatScenariosContentTests.cs) | Discovery и production loader тестируют боевые scenarios; existing test содержит Shmel fixtures. |
+| [Documentation/01-Requirements/EngineRequirements.md:5474](../../Documentation/01-Requirements/EngineRequirements.md) | Phase Four Module Combat — действующий baseline; EP12 пока лишь предлагаемый superseding контракт. |
+
+## 1. Цель
+
+Заменить боевую модель EP-0006…EP-0009 («самонаводящаяся торпеда + бросок шанса») на модель, где исход решают геометрия и действия игрока. Модель согласована с автором 2026-10-19…20 и проверена симулятором `CombatDesign-v3`.
+
+Что меняется:
+- **Торпеда летит в точку** (B1). Игрок выбирает точку подрыва и профиль скорости. Чем быстрее торпеда, тем меньше радиус. Взрыв бьёт по площади: урон убывает от центра. Самонаведения и броска попадания больше нет.
+- **ПРО — аппарат того же типа** (B2). Противоракета тоже наводится в точку, у неё малая дальность и малый радиус, и она поражает только ракеты. Сбитая торпеда не взрывается. Защитник видит трассу и скорость вражеской торпеды, но не точку подрыва.
+- **Уклонение — главный навык.** Есть отдельная команда уклонения. Мухи тоже уклоняются, с вероятностью 10 %.
+- **Сокрытие информации.** Точку подрыва чужих торпед и модули врагов сервер клиенту не передаёт.
+- **Новый боевой UI:** прицеливание за 2 ввода, панель угроз, схема модулей, итоги боя.
+
+Целевой результат, эталон `CombatDesign-v3` (1000 боёв на сидах, которые не участвовали в подборе):
+
+| Метрика | Эталон |
+|---|---|
+| Тетрарх против 3 Мух, игрок уклоняется | 80,4 % побед |
+| То же, без манёвра | 3,7 % |
+| Длительность боя (реальное время, x1) | медиана 3,2 мин, P90 5,0 мин |
+| Темп игрока | ≈ 1 действие в 11 с |
+
+## 2. Что EP-0012 делает с текущим боем
+
+### 2.1 Переопределяется
+
+| Историческая модель приложения; текущие точки сверены ниже | После EP-0012 | История |
+|---|---|---|
+| `torpedo.fire` по выбранному объекту; самонаведение `TorpedoGuidanceMath.Plan`, перепланирование маршрута (`SimulationEngine.Combat.cs:25-163, 710-751`) | `torpedo.launch {x, y, profileId}`; полёт по прямой в точку подрыва (с разбросом) | US-0003 |
+| Контакт 500 м с целью пуска, затем бросок `CombatChanceMath` (`:341-368, 436-456`) | Подрыв в точке; урон всем кораблям в радиусе R, включая свои; без броска | US-0003 |
+| Режимы аппарата standard / maneuverability / overheat (`fire-modes.json`, `torpedo.setMode`), поломка от перегрева | Удалены. Их роль берут профили скорости, выбираемые при пуске | US-0002, US-0003 |
+| ПРО: авто-перехват, арбитраж двух ПРО, очередь из 2 стволов, замороженный шанс перехвата, `defense.fire/enable/disable` (`SimulationEngine.Countermeasures.cs`, `.ManualDefense.cs`) | `defense.launch {x, y, profileId}`; подрыв в точке уничтожает все ракеты в R. Автоматики нет | US-0004 |
+| Отключение модуля после попадания — 60 с (`combat-rules.json`, `hitDisableMs`) | 8 с | US-0002 |
+| Урон торпеды 150, дальность 150 км, 10 км/с, перезарядка 15 с | Урон 200 в ядре, дальность 70 км, профили 6 / 10 / 16 км/с; перезарядка 10 с у Тетрарха, 7,25 с у Мухи | US-0002 |
+| ПРО: 20 км/с, дальность 150 км, перезарядка 14,5 с, 2 ствола | Профили 15 / 25 км/с с R 1,0 / 0,5 км, дальность 30 км, перезарядка 12,5 с, один выстрел | US-0002 |
+| Двигатели: basic 6 км/с, 400 м/с², 4 °/с; strizh 8 км/с, 800 м/с², 12 °/с | Тетрарх 5 км/с, 600 м/с², 20 °/с; Стриж 8 км/с, 1000 м/с², 24 °/с | US-0002 |
+| ИИ: орбита 50 ± 10 км; пуск, если перехват ≤ 0,8 × время жизни; задержка реакции 500–1250 мс из ГСЧ | Орбита 25 ± 8 км; пуск по ожидаемому накрытию ≥ 0,3; реакция 1400 − 30 × навык пилота, мс; уклонение 10 % | US-0007 |
+| Снапшот отдаёт клиенту маршрут, цель, прогноз удара и шанс любой торпеды, а также модули врагов (`SimulationEngine.cs:683-760`) | Слой сокрытия: о чужих торпедах только позиция, направление, скорость и профиль; о врагах только значки состояния | US-0005 |
+| Исход сессии `{Running, Defeated}`, победы нет | Состояние боевого столкновения `{Idle, Active, Won, Lost}` со статистикой; `SessionOutcome` не меняется | US-0008 |
+| Сохранения формата 17 | Формат **18**; формат 17 отвергается без миграции | US-0009 |
+| Сценарий «Тетрарх против 3 Шмелей» (`Client/Scenarios/CombatShmel`) | Удалён (O10) | US-0009 |
+| Тетрарх летит на общем `module.engine.basic` | Отдельный `module.engine.tetrarch`; basic не меняется, потому что используется вне боя (O9) | US-0002 |
+
+### 2.2 Переиспользуется без изменения смысла
+
+- Модульная модель HP EP-0009: броня none 0 / light 60, структура 150, выбор модуля по массе (`ModuleHitLocationRng`), `ModuleDamageMath` (бронепробитие и поглощение бронёй), правило гибели `ShipDestructionMath` (мостик или двигатель, либо ⌈N × 0,3333⌉ модулей), обломок, `RecordPlayerDefeat`.
+- Экипаж и навыки 0..30 из сценария.
+- Именованные потоки ГСЧ SplitMix64 из `MasterSeed`, сохранение состояний и счётчиков ГСЧ.
+- Сетка 100 мс, порядок событий по времени, разрешение ничьих по ordinal ID.
+- Журнал боя (`SimulationEngine.CombatJournal.cs`) и боевые отчёты EP-0010 — с новыми типами событий.
+- `HostileOrbitMath` (орбита и фланговый заход) — с исправлением упреждения.
+- Наблюдаемые траектории NPC EP-0011.
+- `DefeatScreen`, часы (x1 = 1 с физики за 4 с реального времени, `SimulationClock.cs:43`), пауза Speed0.
+
+### 2.3 Статус EP-0009 после EP-0012
+
+Правила бросков, режимов и ПРО из EP-0009 становятся superseded. Модульная модель HP остаётся в силе. В `Board/EP-0009-battle/ImplementationStatus.md` добавляется раздел «Superseded by EP-0012» (US-0015).
+
+## 3. Решения
+
+Источник — приложенный текст revision2; внешние материалы не используются.
+
+### 3.1 Механика
+
+| ID | Решение |
+|---|---|
+| D01 | Торпеда летит по прямой от позиции корабля в момент пуска к точке подрыва и взрывается в момент `t_det = t0 + дистанция / скорость`. Цель не нужна |
+| D02 | Профили торпеды: slow 6 км/с R 9 км; medium 10 км/с R 5 км; fast 16 км/с R 2,5 км. Профиль выбирается при пуске |
+| D03 | Урон взрыва: `damage × k`, где k = 1 при промахе ≤ 0,3 R, далее линейно до 0 при промахе R. Урон 200, бронепробитие 20 %. Попадание уходит в один модуль, выбранный по массе, и отключает его на 8 с |
+| D04 | Взрыв торпеды бьёт по всем кораблям в R, включая свои |
+| D05 | Разброс точки подрыва: гауссово смещение по x и y с σ = `scatterPercent` × дистанция × m, где m = max(0,3; 1 − (навык − 15) × 0,0333) по `AccuracySkill` оператора. Торпеда 2 %, противоракета 8 % |
+| D06 | Дальность пуска торпеды 70 км, проверяется по точке прицела до разброса. Перезарядка считается от пуска: Тетрарх 10 с, Муха 7,25 с |
+| D07 | Противоракета: профили wide 15 км/с R 1,0 км и fast 25 км/с R 0,5 км; дальность 30 км; перезарядка 12,5 с на аппарат |
+| D08 | Подрыв противоракеты уничтожает все ракеты в R (торпеды и противоракеты, свои и чужие). Корабли не повреждает. Сбитая торпеда исчезает без взрыва |
+| D09 | Защитник знает о чужой торпеде позицию, направление, скорость и профиль (R выводится из профиля). Точку и время подрыва знает только владелец |
+| D10 | Ручной подрыв своей торпеды (`torpedo.detonate`) — немедленный взрыв в текущей позиции с правилами D03–D04 (решение O8) |
+| D11 | Уклонение (`maneuver.evade {threatId, side}`) выполняет сервер. Корабль идёт полным ходом перпендикулярно трассе выбранной угрозы, влево или вправо относительно её направления, пока не наступит `t_star + 0,5 с` (t_star — момент наибольшего сближения). Потом автоматически возвращается к базовому курсу (O6, O7) |
+| D12 | Двигатели. Тетрарх — новый модуль `module.engine.tetrarch` (O9): 5 км/с, 0,6 км/с², 20 °/с, крейсерская 3 км/с, `combatRole: engine`. `module.engine.basic` не меняется. Стриж: 8 км/с, 1,0 км/с², 24 °/с, крейсерская 6 км/с |
+| D13 | ИИ Мухи: орбита 25 ± 8 км, фланг 35°. Упреждение линейное. Профиль выбирается по максимуму ожидаемого накрытия; пуск, если накрытие ≥ 0,3; не стреляет, если свой корабль окажется ближе R + 1 км к точке |
+| D14 | ИИ Мухи уклоняется: после реакции `1400 − 30 × pilot` мс (не меньше 200) на каждую новую угрозу делается бросок 10 %; при успехе — манёвр D11 в сторону от трассы |
+| D15 | Обновлено D20-06: в бою пауза и 1×/2×/5×/10×. После боя восстанавливается прежняя скорость |
+| D16 | Модули врага клиенту не раскрываются. Видны только «повреждён», «обездвижен до t» и «уничтожен» |
+| D17 | Режимы аппарата, бросок попадания, бросок перехвата, авто-ПРО, очередь стволов, поломка от перегрева и замороженные шансы удаляются из движка и UI |
+| D18 | Темп игры: одно действие в 10 с реального времени. UI не требует ввода чаще |
+
+### 3.2 Интерфейс
+
+Обязательные решения UI перечислены в историях US10–US13 и US16. Закрытые решения:
+- **O1** снято: x1 уже равно 1 : 4.
+- **O2:** заменено D20-06: в бою доступны 1×/2×/5×/10× и пауза.
+- **O3:** пауза разрешена.
+- **O4:** тень цели линейная.
+- **O5:** пуск во время перезарядки не ставится в очередь.
+- **O6:** после уклонения корабль автоматически возвращается на курс.
+- **O7:** уклонение — серверная команда.
+- **O8:** ручной подрыв остаётся.
+- Кольца дальности включаются переключателями в панелях модулей.
+
+### 3.3 Технические допущения (из симулятора; автор явно не утверждал)
+
+| ID | Допущение |
+|---|---|
+| A01 | Бой становится `Active`, когда враждебный корабль с ИИ оказывается ближе `combatStartRangeKm` (по умолчанию 100 км, задаётся в сценарии) или делает первый пуск |
+| A02 | Порог угрозы: трасса проходит ближе R + 0,5 км к кораблю (расчёт по относительной скорости, как `threat()` в симуляторе) |
+| A03 | Время жизни противоракеты определяется точкой подрыва. Отдельного таймаута нет |
+| A04 | Базовый курс — последняя команда курса или орбиты игрока до уклонения. Без такой команды — курс и скорость в момент начала уклонения |
+| A05 | Новые потоки ГСЧ: `launch_scatter` (разброс торпед и противоракет) и `npc_dodge`. Потоки `intercept`, `torpedo_hit` и `launcher_breakdown` удаляются |
+| A06 | Торпеда и противоракета стартуют из центра корабля. Курс носителя на старт не влияет |
+
+### 3.4 Порядок событий в одно физическое время
+
+1. Подрывы противоракет (по ordinal ID).
+2. Подрывы торпед (по ordinal ID). Торпеда, сбитая на шаге 1, не взрывается.
+3. Гибель кораблей и смена состояния боя.
+4. Команды игрока (`launch`, `detonate`, `evade`).
+5. Решения ИИ: уклонение, затем пуск.
+6. Шаг движения.
+
+Так совпадает с симулятором (`detonate` сортирует противоракеты раньше торпед).
+
+### 3.5 Решения автора по открытым вопросам (закрыты 2026-10-20)
+
+| ID | Вопрос | Решение |
+|---|---|---|
+| O9 | Параметры Тетрарха: отдельный двигатель или правка `module.engine.basic` | `module.engine.basic` используется вне боя, поэтому Тетрарх получает отдельный модуль `module.engine.tetrarch`. basic не меняется |
+| O10 | Сценарий «Тетрарх против 3 Шмелей» | **удалить** сценарий и ссылки на него. Шмели в новой механике не настраиваются |
+| O11 | Перенос эталонного симулятора v3 в репозиторий, удаление `src/DeepSpaceSaga.CombatSim` | **не делать.** Эталон в этот эпик не переносится; `src/DeepSpaceSaga.CombatSim` эпик не трогает |
+| O12 | Скрывать ли от клиента состояние ИИ (`HostileCombat` в `ObjectMotionSnapshot`) | **пока нет.** Состояние ИИ передаётся как сейчас; скрываются только точка и время подрыва чужих снарядов и модули врагов |
+
+
+
+## Уточнения при переносе
+
+Истории1–15 сохраняют соответствие исходному заданию. Локализация вынесена из US13-TK6 в US16 (лимит5). US17 явно покрывает missing contracts/Engine report producers/LocalClient delivery; US18 отделяет legacy cleanup и общий Motion forecast; US19 — другие scenarios и consumer regressions. Документация разделена на четыре ограниченных пакета и один Graphify тикет. Табличные files/inventory исходника заменены точными allowlists. Все proposed APIs — проект, не существующая реализация.
+
+## Технические предположения
+
+- **A-PLAN-01:** Это draft декомпозиция, а не разрешение реализации. Перед исполнением повторить grounding на фактическом HEAD и проверить потребителей изменяемого API. Нельзя считать все промежуточные breaking contracts уже интегрированными.
+- **A-PLAN-02:** A01–A06 приложения сохраняются как технические допущения, отдельно от D01–D18. Внешние файлы не являются зависимостями; аналитические fixtures заменяют ссылки на них.
+- **A-PLAN-03:** scatterPercent хранится как доля: 0.02/0.08; в UI это 2%/8%. Дальность проверяется до разброса; вычисленный endpoint после разброса не обрезается.
+- **A-PLAN-04:** X/Y контрактов и сценариев — world units (1 единица=100м); исходные позиции в км умножить на10. Скорость API км/с, module content m/s по текущей схеме; timestamps физические ms.
+- **A-PLAN-05:** k=0 на границе R означает отсутствие damage/disable/RNG hit-location; round damage выполняется MidpointRounding.AwayFromZero. Проекты не меняют damage/armor/destruction сверх нового damage input.
+- **A-PLAN-06:** Gaussian scatter получает две независимые нормальные компоненты из launch_scatter, без System.Random.Shared; алгоритм/порядок потребления фиксируются тестом и сохраняемыми counters.
+- **A-PLAN-07:** Physical blast circle масштабируется точно, а minimum6px — отдельный marker, не изменение реального R. Время ETA/рубежа/disable/reload в UI — реальные секунды при текущем множителе скорости (physical / MotionTimeMultiplier; при x1 physical×4); pause замораживает симуляционные countdown.
+- **A-PLAN-08:** Сигналы и задержки UI измеряются monotonic real clock; панель угроз появляется <=200мс после display-admitted launch. Engine timestamp не обходит scene clock.
+- **A-PLAN-09:** Ack итогов — предложенная команда combat.acknowledgeResults; direction/active continuous turn — предложенные поля PlayerCommand. Проверять target/action ownership на сервере.
+- **A-PLAN-10:** Исполнитель не расширяет allowlist скрытыми проходами. При новых references — точная корректировка draft декомпозиции; не объявлять тикет готовым при broken build. Временный совместимый adapter допустим только в allowlist и удаляется до epic integration gate.
+- **A-PLAN-11:** Полёт не зависит от поворота носителя, все снаряды из центра; двойной friendly-fire click в течение1реальной секунды сбрасывается при смене aim/profile/launcher и cancel/load.
+- **A-PLAN-12:** Restore прежней скорости выполняется только для живой Running-сессии. Terminal defeat остаётся Speed0. Новая угроза после Won не даёт авто-игнорирования живых снарядов; при terminal player death приоритет Lost/Defeated.
+
+## Ownership и цепочка данных
+
+### Уточнение исполнения A-EXEC-01 — 2026-10-20
+
+В исходных AC сказано «десять счётчиков», но состав не перечислен. Исполнитель фиксирует минимальный набор для последующей реализации US-0008: пуски торпед и ПРО игрока, пуски вражеских торпед, торпеды уничтоженные ПРО игрока, полученные игроком попадания, попадания игрока по врагам, уклонения игрока, уничтоженные враги, фактические потери брони и структуры игрока. Точные имена и границы — в [US1-TK3](EP-0012-US-0001-contracts-and-schema/EP-0012-US-0001-TK-0003-encounter-contracts/EP-0012-US-0001-TK-0003-encounter-contracts.md). Это техническое допущение исполнителя, не ответ пользователя. Encounter передаёт explicit DurationSeconds в физическом времени; номинальное x1 real время получается ×4. Enemy numeric damage в публичный DTO не добавляется.
+
+Content JSON → EngineContentLoader validation/registry → Engine captured projectiles, scheduler, RNG, evasion, encounter → player-view masking → Contracts full/compact/events → LocalClient → SnapshotBuffer display-admission → Client panels/render/preview. Engine save18 хранит полное authoritative состояние, а public DTO скрывает enemy endpoint/deadline/modules. Privacy также проверяется в events/journal/report payload, не только full snapshot.
+
+Engine владеет состоянием, командами, AI, RNG и исходами. Client использует только публичную границу и уже отображаемые подтверждённые данные. Пауза не продвигает физику/AI/reload; часы real/calendar/motion различаются. Save/Load атомарен; CommandId идемпотентен; ties — ordinal ID. Во время планирования код, игра, commit/push не выполняются.
+
+## Текущие G-status — 2026-10-21
+
+| Gap | Фактический статус |
+|---|---|
+| G-01 | External files intentionally excluded; self-contained contract and independent numeric fixtures used. No external simulator equivalence claimed. |
+| G-02 | Implementation consumer migration/inventory completed across Contracts/Motion/Engine/LocalClient/Client/data/scenarios/tests/tools, including final EconomyBalance registry repair. Build and bounded owning gates linked in final audit. |
+| G-03 | Reference input tape unavailable; new public-observation production policy and all2000command/outcome traces published; bitwise equivalence not proven. |
+| G-04 | CLOSED implementation: Analyzer created outside solution, SDK10.0.400 pinned,16self-checks/full2000recorded+50live comparisons passed. |
+| G-05 | OPEN acceptance: native24+1 actual instrumented GPU runs with explicit manual NOT RUN; dodge96.6% andP907.4933realmin outside required corridors. Author balance and human/input/audio/accessibility/transport-latency decision remain. |
+| G-06 | Single-Mukha exact clone preserved; no new1×1balance acceptance claimed. CombatSim unchanged underO11. |
+
+
+## Historical planning gaps — Пределы и gaps
+
+- **G-01:** внешние UI/agency/simulator файлы сознательно исключены по D-USER-01; полный доступный контракт приведён здесь. Референсные проценты ниже — цифры входного текста, не повторно подтверждённый результат. Численные unit fixtures выводятся из опубликованных формул.
+- **G-02:** большие breaking DTO/schema изменения требуют сверки полного списка consumer references перед implementation. Allowlist отражает проверенные владельцы и proposed файлы; если компиляция выявит потребителей вне allowlist, это блокирует завершение тикета до явной bounded доработки Board. Не называть весь draft execution-ready без этой проверки.
+- **G-03:** алгоритм игрока для1000-seed баланса описан политиками/реакцией0.5физической секунды, но внешнего reference tape нет. Новый production бот не доказывает побитового равенства внешнему симулятору. Отчёт обязан публиковать seeds/policy/commands/исходы; параметры не подбирать автоматически.
+- **G-04:** global.json выбирается по установленному SDK при исполнении; Analyzer отсутствует и создаётся локально, без внешнего исходника.
+- **G-05:** native/UI/product/balance NOT RUN. Требование игрового темпа — цель user playtest, не доказано cooldown числами. Реализация, публикация и принятие эпика не разрешены этим поручением.
+- **G-06:** single-Mukha scenario сохраняется как существующий сценарий, его новая балансная приёмка исключена. CombatSim не меняется, исторические Shmel references в нём допускаются.
+
+## Validation gates
+
+Planning: ID/path/frontmatter/link/dependency DAG, coverage AC и<=5 files/ticket проверяются скриптом, whitespace отдельно для untracked файлов. Implementation: целевые named tests в каждой карточке, owning build, scoped format, diff check; полный интеграционный build/test gate после consumer migration. Каждый test process при исполнении ограничивать5минутами;1000 seeds разбивать на bounded batches, не урезать корпус. Нативное окно и balance acceptance — отдельные gates. В исходном planning snapshot тестовые команды были только планом. Текущие выполненные gates/evidence и остающиеся acceptance ограничения указаны в ImplementationStatus.md и evidence/final-validation.json.
+
+## 7. Эталон симулятора (для US14-AC1)
+
+исходный внешний материал (ссылка исключена), сиды 3001–4000, все операторы 20, реакция игрока 0,5 с физики.
+
+| Политика | Победы | Медиана, мин | P90, мин | Торпед игрока | Противоракет | Торпед Мух | Взрывов по Тетрарху | Уклонений |
+|---|---:|---:|---:|---:|---:|---:|---:|---:|
+| уклонение + ПРО + огонь | 80,4 % | 3,2 | 5,0 | 5,4 | 5,3 | 15,0 | 3,8 | 7,1 |
+| без манёвра | 3,7 % | 1,2 | 2,2 | 2,5 | 3,6 | 8,6 | 7,4 | 0 |
+| уклонение без ПРО | 73,3 % | 3,1 | 4,9 | 5,2 | 0 | 14,7 | 4,6 | 6,9 |
+
+Ожидаемые причины расхождения движка с эталоном:
+- в движке `HostileOrbitMath`, а не орбитальный контроллер симулятора;
+- сетка 100 мс у обоих, но разные интеграторы движения;
+- в симуляторе торпеды летят без разворота, а корабли — в 2D без инерции бокового скольжения;
+- бот игрока в движке пишется заново.
+
+
+
+## Non-goals
+
+C1 operator progression, C2 pilot overload, aim assistance/autointercept, настройка Шмелей, скрытие HostileCombat, перенос внешнего симулятора и любые правки src/DeepSpaceSaga.CombatSim, новый баланс1×1/1×2.
+
+## Review / decision log
+
+2026-10-20T07:48:46.640Z: материализация Board по прямому поручению; D-USER-01/02 применены. Planning structural review выполнен локальным валидатором; current_review не означает review кода. Все истории/tickets draft, NOT STARTED; implementation/automated/native/product gates OPEN. Source D01–D18 и O1–O12 обозначают решения входного документа; A01–A06 не переименованы в решения пользователя.
+
+## Независимые контрольные точки Motion
+
+Эти 20 fixtures заменяют внешние ссылки в US3-AC1. Коэффициенты вычислены непосредственно из D03/D05, не из тестируемого helper. Для double absolute tolerance1e-9. Position в world units, время в физических ms. Gaussian sample проверяется отдельно seeded reproducibility/distribution, а не сравнением с отсутствующим симулятором.
+
+| # | Вход | Ожидается |
+|---:|---|---|
+| 1 | Falloff R10,core0.3,d0 | 1 |
+| 2 | Falloff R10,core0.3,d1 | 1 |
+| 3 | Falloff R10,core0.3,d3 | 1 |
+| 4 | Falloff R10,core0.3,d4 | 6/7 |
+| 5 | Falloff R10,core0.3,d5 | 5/7 |
+| 6 | Falloff R10,core0.3,d6.5 | 0.5 |
+| 7 | Falloff R10,core0.3,d9 | 1/7 |
+| 8 | Falloff R10,core0.3,d10 | 0 |
+| 9 | Falloff R10,core0.3,d11 | 0 |
+| 10 | Sigma range50,p0.02,skill0 | 1.4995км |
+| 11 | Sigma range50,p0.02,skill15 | 1км |
+| 12 | Sigma range50,p0.02,skill30 | 0.5005км |
+| 13 | Sigma range50,p0.08,skill15 | 4км |
+| 14 | Sigma range0,p0.02,skill15 | 0км |
+| 15 | Sigma range50,p0,skill15 | 0км |
+| 16 | Position start(0,0),end(600,0),progress0 | (0,0) |
+| 17 | Position start(0,0),end(600,0),progress0.5 | (300,0) |
+| 18 | Position start(0,0),end(600,0),progress1 | (600,0) |
+| 19 | Deadline launched0,distance60км,speed6км/с | 10000мс |
+| 20 | Deadline launched1000мс,distance40км,speed10км/с | 5000мс |
+
+## Проверка planning-пакета
+
+Локальный структурный валидатор:95 Markdown файлов,19 историй,73 тикета,61 критерий приёмки,635 разрешённых локальных ссылок. Все ID/path/frontmatter согласованы; ticket DAG и story DAG ацикличны; каждый AC покрыт тикетом; у каждой истории1–5 тикетов, в allowlist не больше5 файлов одного production layer с matching tests. Новые файлы явно proposed. Проверены trailing whitespace новых untracked документов и git diff --check. Build, игровые/unit tests, native, баланс, commit/push не выполнялись: это planning, а не runtime acceptance. G-02 про перепроверку breaking consumers перед implementation остаётся открытым.
+
+## Дополнение D-USER-20 — Баги, 2026-10-21
+
+По прямому запросу добавлена [US-0020 «Баги»](EP-0012-US-0020-bugs/EP-0012-US-0020-bugs.md) с шестью draft тикетами. Всего 20 историй / 79 тикетов; исходные 73 имеют записанные результаты, новые 6 NOT STARTED. D20-01–04 и US20-AC1–4 задают полный выбранный манёвр до точки с прямым продолжением за viewport, возврат карточки корабля/перенос всех модульных сведений влево, NPC-торпеду точкой с коротким хвостом и тёмной наблюдённой историей без будущей линии, выход из aiming после отправки. В этих границах US20 приоритетна над конфликтующими прежними UI AC; остальная механика сохраняется. Подробные assumptions/gaps, evidence и allowlists находятся в истории. Исторические 73/73 и acceptance evidence не распространяются на US20. Текущее поручение — только Board planning.
+
+## D20-05/06 — дополнение требований, 2026-10-21
+
+**План, ещё не реализовано.** По завершении каждого цикла перезарядки торпедного аппарата игрока Engine формирует подтверждённое событие с идентификатором аппарата и физическим временем завершения. Игрок один раз слышит звуковой сигнал и получает сообщение «Торпедный аппарат <имя> перезаряжен» в боевом журнале и Combat reports. Событие не повторяется при новых кадрах, повторах доставки, паузе или загрузке уже завершённого цикла. Незавершённый сохранённый цикл уведомляет один раз после завершения. Готовность аппарата при старте новой игры сама по себе не является завершением перезарядки. Уведомления не раскрывают перезарядку NPC.
+
+В активном бою доступны пауза и скорости 1×, 2×, 5×, 10×. Это реальные множители базового темпа: за 4 реальные секунды продвигается соответственно 1/2/5/10 физических секунд. Engine принимает эти значения, UI показывает выбранное подтверждённое значение; 20× и 100× в бою недоступны. Пауза не продвигает бой, AI и перезарядку. Переключение не меняет физические длительности/правила боя и порядок событий; countdown/ETA пересчитываются по текущему множителю. Загрузка боя с любой разрешённой скоростью корректна. После боя сохраняется прежнее правило восстановления добоевой скорости.
+
+Это заменяет прежние O2/D15 и AC о pause/x1-only. Точное сохранение старых enum IDs обязательно. Физическая статистика боя сохраняет единицы; physical×4 допустимо только как эквивалент x1, а не фактически прошедшее реальное время при смене скоростей. Имеющиеся итоговые balance/native evidence относятся к старому поведению и не подтверждают новые скорости/звук. Добавлены два сквозных тикета в US20 по прямому запросу; шесть тикетов в истории, всего 79 в эпике.
+
+## US20 current execution — 2026-10-21
+
+Six bug fixes implemented/published; final US15-TK6 documentation follows them. [Current execution, validation, publication and remaining acceptance](EP-0012-US-0020-bugs/ExecutionStatus.md). The preceding73-ticket records are historical base delivery, not proof of US20.

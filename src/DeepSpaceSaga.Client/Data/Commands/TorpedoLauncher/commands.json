@@ -1,32 +1,22 @@
 {
   "commandDefinitions": [
     {
-      "typeId": "torpedo.fire",
-      "displayName": "Fire",
+      "typeId": "torpedo.launch",
+      "displayName": "Пуск",
+      "timeFactor": 1,
+      "complexityFactor": 1,
+      "consumptionFactor": 1,
+      "target": "point",
+      "activationEnergyCellsCost": 0,
+      "type": "module.torpedo.launcher"
+    },
+    {
+      "typeId": "torpedo.detonate",
+      "displayName": "Подрыв",
       "timeFactor": 1,
       "complexityFactor": 1,
       "consumptionFactor": 1,
       "target": "object",
-      "activationEnergyCellsCost": 0,
-      "type": "module.torpedo.launcher"
-    },
-    {
-      "typeId": "torpedo.selfDestruct",
-      "displayName": "Самоуничтожение",
-      "timeFactor": 1,
-      "complexityFactor": 1,
-      "consumptionFactor": 1,
-      "target": "none",
-      "activationEnergyCellsCost": 0,
-      "type": "module.torpedo.launcher"
-    },
-    {
-      "typeId": "torpedo.setMode",
-      "displayName": "Режим аппарата",
-      "timeFactor": 1,
-      "complexityFactor": 1,
-      "consumptionFactor": 1,
-      "target": "none",
       "activationEnergyCellsCost": 0,
       "type": "module.torpedo.launcher"
     }

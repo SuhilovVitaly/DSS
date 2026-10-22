@@ -1,0 +1,300 @@
+{
+  "date": "2026-10-20",
+  "ticket": "EP-0012-US-0009-TK-0003-save-format-18",
+  "checks": [
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS0009TK0003Tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 6353,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    19, Skipped:     0, Total:    19, Duration: 430 ms - DeepSpaceSaga.Engine.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--no-restore",
+        "--no-build",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS|FullyQualifiedName~TorpedoLaunchTests|FullyQualifiedName~RangedTorpedoLaunchTests|FullyQualifiedName~WeaponOperatorRuntimeTests|FullyQualifiedName~PhaseThreeJournalTests|FullyQualifiedName~PhaseThreeSave|FullyQualifiedName~CountermeasureBootstrapTests|FullyQualifiedName~CombatRulesContentTests|FullyQualifiedName~HostileTorpedoFireTests|FullyQualifiedName~TorpedoImpactTests|FullyQualifiedName~DefeatTimeBoundaryTests|FullyQualifiedName~ModuleDamage|FullyQualifiedName~ShipDestruction|FullyQualifiedName~ModuleHitLocation|FullyQualifiedName~TorpedoHitRoll|FullyQualifiedName~TorpedoSelfDestruct|FullyQualifiedName~PhaseThreeCombatEndToEndTests|FullyQualifiedName~Defeat|FullyQualifiedName~CommandIdentity|FullyQualifiedName~CommandReceipt|FullyQualifiedName~CommandReplay|FullyQualifiedName~ManualCountermeasureFireTests|FullyQualifiedName~AutomaticDefenseTests|FullyQualifiedName~DefensePreviewProjectionTests|FullyQualifiedName~CountermeasureBarrel|FullyQualifiedName~CountermeasureRuntime|FullyQualifiedName~EngineCommandTests|FullyQualifiedName~AuthoritativeOrbitRuntimeTests|FullyQualifiedName~HostileOrbitRuntimeTests|FullyQualifiedName~OrbitalSynchronizationTests|FullyQualifiedName~OrbitalDockingDepartureTests|FullyQualifiedName~HostileAttackAiTests|FullyQualifiedName~ScenarioLoaderTests|FullyQualifiedName~CombatSaveLoadTests|FullyQualifiedName~Rng|FullyQualifiedName~SimulationClockTests|FullyQualifiedName~DialogueTests|FullyQualifiedName~CombatPresentation|FullyQualifiedName~PresentationLease|FullyQualifiedName~LocalGameSessionConnection|FullyQualifiedName~CatalogCompatibilityTests|FullyQualifiedName~CombatReportsSaveSchemaTests|FullyQualifiedName~TradingEconomySaveSchemaTests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 10066,
+      "hardTimeoutMs": 300000,
+      "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:   809, Skipped:     0, Total:   809, Duration: 8 s - DeepSpaceSaga.Engine.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "build",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1190,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:00.93\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "whitespace",
+        "DeepSpaceSaga.sln",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Contracts/CombatSnapshot.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs",
+        "tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveSchemaTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0003Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 3560,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Contracts/CombatSnapshot.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs",
+        "tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveSchemaTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs",
+        "src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0003Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 11564,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "review": "self-review, not independent",
+  "native": "NOT RUN",
+  "integration": "Root Save18 and hostile3 plus structural point payload schema. Actual point capture/restore and cross-payload integrity remain the next two tickets; this is not midflight continuation evidence.",
+  "fullEngineGate": "OPEN: preceding TK0004 full suite exceeded five-minute hard cap; current bounded regression is not full-suite evidence",
+  "solutionBuild": {
+    "args": [
+      "build",
+      "DeepSpaceSaga.sln",
+      "--no-restore",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 2710,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Contracts.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Contracts.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.Tests.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Motion.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Motion.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.Tests.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.EconomyBalance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.EconomyBalance\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\n  DeepSpaceSaga.EconomyBalance.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.EconomyBalance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.Tests.dll\n  DeepSpaceSaga.Performance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.dll\n  DeepSpaceSaga.Performance.Tests -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.Tests.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:02.50\n",
+    "stderr": ""
+  },
+  "clientRegression": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--filter",
+      "Category!=ForecastBudget",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 110513,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:  2330, Skipped:     0, Total:  2330, Duration: 1 m 47 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+    "stderr": ""
+  },
+  "contractsRegression": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 1291,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Contracts.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:   256, Skipped:     0, Total:   256, Duration: 185 ms - DeepSpaceSaga.Contracts.Tests.dll (net8.0)\n",
+    "stderr": ""
+  },
+  "owningEngineFormat": {
+    "args": [
+      "format",
+      "src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj",
+      "--verify-no-changes",
+      "--no-restore",
+      "--include",
+      "src/DeepSpaceSaga.Contracts/CombatSnapshot.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs",
+      "tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveSchemaTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0003Tests.cs"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 10916,
+    "hardTimeoutMs": 300000,
+    "stdout": "",
+    "stderr": ""
+  },
+  "owningContractsFormat": {
+    "args": [
+      "format",
+      "src/DeepSpaceSaga.Contracts/DeepSpaceSaga.Contracts.csproj",
+      "--verify-no-changes",
+      "--no-restore",
+      "--include",
+      "src/DeepSpaceSaga.Contracts/CombatSnapshot.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs",
+      "tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveSchemaTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0003Tests.cs"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 4005,
+    "hardTimeoutMs": 300000,
+    "stdout": "",
+    "stderr": ""
+  },
+  "clientTestsFormat": {
+    "args": [
+      "format",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--verify-no-changes",
+      "--no-restore",
+      "--include",
+      "src/DeepSpaceSaga.Contracts/CombatSnapshot.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs",
+      "tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PhaseThreeSessionRoundtripTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveSchemaTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatSaveLoadTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PhaseThreeSaveVersionTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorRuntimeTests.cs",
+      "src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0003Tests.cs"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 12575,
+    "hardTimeoutMs": 300000,
+    "stdout": "",
+    "stderr": ""
+  },
+  "observedInitialClientFailure": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-build",
+      "--no-restore",
+      "--filter",
+      "Category!=ForecastBudget",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 1,
+    "timedOut": false,
+    "elapsedMs": 116114,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n  Failed DeepSpaceSaga.Client.Tests.PhaseThreeSessionRoundtripTests.Malformed_current_save_shows_generic_error_and_can_retry [226 ms]\n  Error Message:\n   Assert.Equal() Failure: Strings differ\n           ↓ (pos 0)\nExpected: \"Could not load this save. Choose another \"···\nActual:   \"This save is incompatible. Choose another\"···\n           ↑ (pos 0)\n  Stack Trace:\n     at DeepSpaceSaga.Client.Tests.PhaseThreeSessionRoundtripTests.Malformed_current_save_shows_generic_error_and_can_retry() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PhaseThreeSessionRoundtripTests.cs:line 57\n   at DeepSpaceSaga.Client.Tests.PhaseThreeSessionRoundtripTests.Malformed_current_save_shows_generic_error_and_can_retry() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PhaseThreeSessionRoundtripTests.cs:line 61\n--- End of stack trace from previous location ---\n\nFailed!  - Failed:     1, Passed:  2329, Skipped:     0, Total:  2330, Duration: 1 m 53 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+    "stderr": "[xUnit.net 00:00:38.75]     DeepSpaceSaga.Client.Tests.PhaseThreeSessionRoundtripTests.Malformed_current_save_shows_generic_error_and_can_retry [FAIL]\n"
+  },
+  "observedInitialEngineFailure": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+      "--no-restore",
+      "--no-build",
+      "--filter",
+      "FullyQualifiedName~PointCombatUS|FullyQualifiedName~TorpedoLaunchTests|FullyQualifiedName~RangedTorpedoLaunchTests|FullyQualifiedName~WeaponOperatorRuntimeTests|FullyQualifiedName~PhaseThreeJournalTests|FullyQualifiedName~PhaseThreeSave|FullyQualifiedName~CountermeasureBootstrapTests|FullyQualifiedName~CombatRulesContentTests|FullyQualifiedName~HostileTorpedoFireTests|FullyQualifiedName~TorpedoImpactTests|FullyQualifiedName~DefeatTimeBoundaryTests|FullyQualifiedName~ModuleDamage|FullyQualifiedName~ShipDestruction|FullyQualifiedName~ModuleHitLocation|FullyQualifiedName~TorpedoHitRoll|FullyQualifiedName~TorpedoSelfDestruct|FullyQualifiedName~PhaseThreeCombatEndToEndTests|FullyQualifiedName~Defeat|FullyQualifiedName~CommandIdentity|FullyQualifiedName~CommandReceipt|FullyQualifiedName~CommandReplay|FullyQualifiedName~ManualCountermeasureFireTests|FullyQualifiedName~AutomaticDefenseTests|FullyQualifiedName~DefensePreviewProjectionTests|FullyQualifiedName~CountermeasureBarrel|FullyQualifiedName~CountermeasureRuntime|FullyQualifiedName~EngineCommandTests|FullyQualifiedName~AuthoritativeOrbitRuntimeTests|FullyQualifiedName~HostileOrbitRuntimeTests|FullyQualifiedName~OrbitalSynchronizationTests|FullyQualifiedName~OrbitalDockingDepartureTests|FullyQualifiedName~HostileAttackAiTests|FullyQualifiedName~ScenarioLoaderTests|FullyQualifiedName~CombatSaveLoadTests|FullyQualifiedName~Rng|FullyQualifiedName~SimulationClockTests|FullyQualifiedName~DialogueTests|FullyQualifiedName~CombatPresentation|FullyQualifiedName~PresentationLease|FullyQualifiedName~LocalGameSessionConnection|FullyQualifiedName~CatalogCompatibilityTests|FullyQualifiedName~CombatReportsSaveSchemaTests|FullyQualifiedName~TradingEconomySaveSchemaTests",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 1,
+    "timedOut": false,
+    "elapsedMs": 10612,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n  Failed DeepSpaceSaga.Engine.Tests.WeaponOperatorRuntimeTests.Legacy_active_torpedo_migrates_rating_without_assigning_operator [9 ms]\n  Error Message:\n   DeepSpaceSaga.Engine.Scenario.ScenarioException : Invalid hostile combat save: invalid version, cursor or actors\n  Stack Trace:\n     at DeepSpaceSaga.Engine.Scenario.HostileCombatSaveValidation.<ValidateAndNormalize>g__Require|0_0(Boolean condition, String reason) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\HostileCombatSaveData.cs:line 27\n   at DeepSpaceSaga.Engine.Scenario.HostileCombatSaveValidation.ValidateAndNormalize(GameStateData state, Int32 format) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\HostileCombatSaveData.cs:line 31\n   at DeepSpaceSaga.Engine.Scenario.ScenarioLoader.ValidateAndNormalize(ScenarioFile scenario, Boolean allowNonZeroGameTime, IReadOnlyDictionary`2 armorClasses) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\ScenarioLoader.cs:line 133\n   at DeepSpaceSaga.Engine.Scenario.ScenarioLoader.LoadFromJson(String json, Boolean allowNonZeroGameTime, Boolean isSave) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\ScenarioLoader.cs:line 83\n   at DeepSpaceSaga.Engine.Tests.WeaponOperatorRuntimeTests.Legacy_active_torpedo_migrates_rating_without_assigning_operator() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\WeaponOperatorRuntimeTests.cs:line 62\n   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n  Failed DeepSpaceSaga.Engine.Tests.EngineCommandTests.Legacy_save_keeps_saved_positions_and_uses_new_calendar_pace_only_for_future_time [3 ms]\n  Error Message:\n   DeepSpaceSaga.Engine.Scenario.ScenarioException : Invalid hostile combat save: invalid version, cursor or actors\n  Stack Trace:\n     at DeepSpaceSaga.Engine.Scenario.HostileCombatSaveValidation.<ValidateAndNormalize>g__Require|0_0(Boolean condition, String reason) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\HostileCombatSaveData.cs:line 27\n   at DeepSpaceSaga.Engine.Scenario.HostileCombatSaveValidation.ValidateAndNormalize(GameStateData state, Int32 format) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\HostileCombatSaveData.cs:line 31\n   at DeepSpaceSaga.Engine.Scenario.ScenarioLoader.ValidateAndNormalize(ScenarioFile scenario, Boolean allowNonZeroGameTime, IReadOnlyDictionary`2 armorClasses) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\ScenarioLoader.cs:line 133\n   at DeepSpaceSaga.Engine.Scenario.ScenarioLoader.LoadFromJson(String json, Boolean allowNonZeroGameTime, Boolean isSave) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Scenario\\ScenarioLoader.cs:line 83\n   at DeepSpaceSaga.Engine.Tests.EngineCommandTests.Legacy_save_keeps_saved_positions_and_uses_new_calendar_pace_only_for_future_time() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\EngineCommandTests.cs:line 178\n   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n  Failed DeepSpaceSaga.Engine.Tests.CombatSaveLoadTests.Format17_roundtrips_module_durability_ai_and_combat_continuation [13 ms]\n  Error Message:\n   Assert.Equal() Failure: Values differ\nExpected: 2\nActual:   3\n  Stack Trace:\n     at DeepSpaceSaga.Engine.Tests.CombatSaveLoadTests.Format17_roundtrips_module_durability_ai_and_combat_continuation() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\CombatSaveLoadTests.cs:line 128\n   at System.RuntimeMethodHandle.InvokeMethod(Object target, Void** arguments, Signature sig, Boolean isConstructor)\n   at System.Reflection.MethodBaseInvoker.InvokeWithNoArgs(Object obj, BindingFlags invokeAttr)\n\nFailed!  - Failed:     3, Passed:   806, Skipped:     0, Total:   809, Duration: 9 s - DeepSpaceSaga.Engine.Tests.dll (net8.0)\n",
+    "stderr": "[xUnit.net 00:00:01.85]     DeepSpaceSaga.Engine.Tests.WeaponOperatorRuntimeTests.Legacy_active_torpedo_migrates_rating_without_assigning_operator [FAIL]\n[xUnit.net 00:00:03.40]     DeepSpaceSaga.Engine.Tests.EngineCommandTests.Legacy_save_keeps_saved_positions_and_uses_new_calendar_pace_only_for_future_time [FAIL]\n[xUnit.net 00:00:03.60]     DeepSpaceSaga.Engine.Tests.CombatSaveLoadTests.Format17_roundtrips_module_durability_ai_and_combat_continuation [FAIL]\n"
+  },
+  "reviewNotes": [
+    "19 named schema cases: own/enemy torpedo and countermissile captured geometry/profile/report identity, fractional deadline, RNG, evasion/base course, dodge episode, encounter stats roundtrip; malformed schema is rejected before the current world changes.",
+    "Save17 rejected before old body deserialization, bytes and world preserved. All historical envelope versions 0..17 are still covered; malformed future-version fixture now uses19.",
+    "OwnProjectileSnapshot numeric fields are required JSON members, including zero-capable AP/start time, so omissions do not silently become different valid captured parameters. Reporter service null identities remain permitted.",
+    "Hostile save wrapper version3 identifies Save18 continuation; historical helper fixtures explicitly carry hostile2. Original migration and world-clock assertions retained.",
+    "Idle after Won acknowledgement legitimately retains ended time and final counters. Structural validator and independent case preserve this production state.",
+    "Initial Client regression2329/1 exposed a hardcoded17 malformed-current fixture, corrected to actual current version while retaining generic error/session/retry assertions. Initial Engine806/3 exposed historical hostile wrappers/current version assertion; preserved failures and repaired fixtures, no assertion removed.",
+    "PASS809 bounded Engine,256 Contracts,2330 non-budget Client, full solution build and scoped owning format. Full Engine and strict forecast budgets remain OPEN. Self-review only; native NOT RUN."
+  ]
+}

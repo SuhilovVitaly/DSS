@@ -18,7 +18,7 @@ validation_status: automated-passed
 
 ## Why
 
-Сделать доклад ПРО точным отражением успешного перехвата. [История](../EP-0010-US-0004-combat-result-reports.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R10, R11, R12, R16, R21.
+Сделать доклад ПРО точным отражением успешного перехвата. [История](../EP-0010-US-0004-combat-result-reports.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R10, R11, R12, R16, R21.
 
 ## Decisions
 

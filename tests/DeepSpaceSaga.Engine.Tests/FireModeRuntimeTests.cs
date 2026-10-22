@@ -1,112 +1,46 @@
 using DeepSpaceSaga.Contracts;
-using DeepSpaceSaga.Engine.Scenario;
-using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
+using static DeepSpaceSaga.Engine.Tests.PointCombatUS0018TK0002Tests;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
+/// <summary>Retired mode bonuses/breakdown replaced by immutable per-launch point profiles.</summary>
 public sealed class FireModeRuntimeTests
 {
-    private static SimulationEngine CreateInMode(string modeId, ulong seed)
+    [Theory]
+    [InlineData(0UL)]
+    [InlineData(1UL)]
+    [InlineData(42UL)]
+    [InlineData(99UL)]
+    public void Profiles_never_enable_breakdown_or_hit_rolls_and_capture_only_launch_scatter(ulong seed)
     {
-        var scenario = TorpedoImpactTests.Scenario();
-        scenario = scenario with { GameState = scenario.GameState with { MasterSeed = seed } };
-        var engine = Create(scenario);
-        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        var combat = save.GameState.CombatState!;
-        engine.LoadScenario(save with
+        foreach (string profile in new[] { "slow", "medium", "fast" })
         {
-            GameState = save.GameState with
-            {
-                CombatState = combat with
-                {
-                    Launchers = combat.Launchers.Select(row => row.ModuleId == Launcher
-                        ? row with { State = row.State with { ModeId = modeId } } : row).ToArray()
-                }
-            }
-        }, isSave: true);
-        return engine;
-    }
-
-    [Fact]
-    public void Maneuverability_mode_is_captured_and_reloads_at_18750()
-    {
-        using var engine = CreateInMode("maneuverability", 42);
-        engine.ReceiveCommand(Fire("mode-flight"));
-        var launched = At(engine, 0);
-        var flight = Assert.Single(launched.Objects, o => o.Torpedo is not null).Torpedo!;
-        Assert.Equal("maneuverability", flight.ModeId);
-        Assert.Equal(flight.RatingBreakdown!.EffectiveRating + 10, flight.CapturedManeuverability);
-        Assert.Equal(10, flight.ModeManeuverabilityBonus);
-        Assert.Equal(18750, launched.InstalledModules.Single(m => m.ModuleId == Launcher)
-            .LauncherCombat!.ReadyAtMotionTimeMs);
-        Assert.Equal(18750, launched.InstalledModules.Single(m => m.ModuleId == Launcher)
-            .LauncherCombat!.ReloadDurationMs);
-        ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(
-            engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)), true);
-    }
-
-    [Fact]
-    public void Maneuverability_mode_lowers_production_intercept_chance_to_48_percent()
-    {
-        var registry = DeepSpaceSaga.Engine.Content.EngineContentLoader.LoadRegistryFromSettingsFile(
-            Path.Combine(ClientRoot, "Settings.json"), out _, out _);
-        using var engine = Create(AutomaticDefenseTests.DefenseScenario(), registry);
-        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        var combat = save.GameState.CombatState!;
-        engine.LoadScenario(save with
-        {
-            GameState = save.GameState with
-            {
-                CombatState = combat with
-                {
-                    Launchers = combat.Launchers.Select(row => row.ModuleId == Launcher
-                        ? row with { State = row.State with { ModeId = "maneuverability" } } : row).ToArray()
-                }
-            }
-        }, isSave: true);
-        engine.ReceiveCommand(Fire("mode-defense"));
-        At(engine, 0);
-        var snapshot = At(engine, 100);
-        var flight = Assert.Single(snapshot.Objects, o => o.Torpedo is not null).Torpedo!;
-        var defense = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null).Countermeasure!;
-        Assert.Equal(60, flight.CapturedManeuverability);
-        Assert.Equal(480, defense.FrozenChanceTenths);
-    }
-
-    [Fact]
-    public void Overheat_breakdown_is_deterministic_and_persists_until_dock()
-    {
-        bool found = false;
-        for (ulong seed = 0; seed < 100 && !found; seed++)
-        {
-            using var engine = CreateInMode("overheat", seed);
-            engine.ReceiveCommand(Fire("overheat"));
-            var launched = At(engine, 0);
-            Assert.Single(launched.Objects, o => o.Torpedo is not null);
-            Assert.Equal(18750, launched.InstalledModules.Single(m => m.ModuleId == Launcher)
-                .LauncherCombat!.ReadyAtMotionTimeMs);
-            var combat = engine.CaptureSaveState().GameState.CombatState!;
-            Assert.Equal(1UL, combat.LauncherBreakdownRngCounter);
-            if (launched.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.IsBrokenUntilDock)
-            {
-                found = true;
-                var breakdown = Assert.Single(launched.CombatJournal, e => e.Type == CombatEventType.LauncherBreakdown);
-                Assert.Equal(100, breakdown.ChanceTenths);
-                Assert.InRange(breakdown.Roll!.Value, 1, 100);
-                var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(
-                    engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)), true);
-                using var restored = new SimulationEngine(Registry.Value);
-                restored.LoadScenario(save, isSave: true);
-                Assert.True(restored.CaptureSnapshot().InstalledModules.Single(m => m.ModuleId == Launcher)
-                    .LauncherCombat!.IsBrokenUntilDock);
-                Assert.Equal(combat.LauncherBreakdownRngState,
-                    restored.CaptureSaveState().GameState.CombatState!.LauncherBreakdownRngState);
-                At(restored, 18750);
-                restored.ReceiveCommand(Fire("broken"));
-                Assert.Equal("launcher_broken_until_dock", At(restored, 18750).CommandResults
-                    .Single(r => r.CommandId == "broken").ReasonCode);
-            }
+            using var engine = Create(seed); var before = engine.CaptureLaunchScatterState();
+            engine.ReceiveCommand(Launch(profile: profile)); var state = At(engine);
+            var flight = Assert.Single(state.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
+            Assert.Equal(profile, flight.ProfileId); Assert.Equal(before.Counter + 2, engine.CaptureLaunchScatterState().Counter);
+            var launcher = state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
+            Assert.Empty(launcher.ModeId); Assert.False(launcher.IsBrokenUntilDock); Assert.Equal(10000, launcher.ReadyAtMotionTimeMs);
+            Assert.Equal(0UL, engine.CaptureSaveState().GameState.CombatState!.LauncherBreakdownRngCounter);
+            Assert.DoesNotContain(state.CombatJournal, e => e.ChanceTenths is not null || e.Roll is not null);
         }
-        Assert.True(found, "At least one of the first 100 deterministic seeds must break the overheat launcher.");
+    }
+
+    [Fact]
+    public void Torpedo_and_counter_profiles_capture_independent_geometry_and_reload_without_intercept_ratings()
+    {
+        using var engine = Create(); engine.ReceiveCommand(Launch()); At(engine);
+        engine.ReceiveCommand(new("counter", 2, Player, "MOD-PLAYER-COUNTERMEASURE-01", DefenseCommandTypes.Launch,
+            TargetWorldX: 200, TargetWorldY: 100, ProfileId: "wide"));
+        var state = At(engine); Assert.All(state.CommandResults, r => Assert.Equal(CommandResultStatus.Executed, r.Status));
+        var torpedo = Assert.Single(state.Objects, o => o.OwnProjectile?.Kind == ProjectileKind.Torpedo).OwnProjectile!;
+        var counter = Assert.Single(state.Objects, o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile).OwnProjectile!;
+        Assert.Equal(("slow", 6d, 9d), (torpedo.ProfileId, torpedo.SpeedKmS, torpedo.BlastRadiusKm));
+        Assert.Equal(("wide", 15d, 1d), (counter.ProfileId, counter.SpeedKmS, counter.BlastRadiusKm));
+        Assert.Equal(10000, state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
+        Assert.Equal(12500, state.InstalledModules.Single(m => m.ModuleId == counter.LauncherModuleId).Defense!.ReadyAtMotionTimeMs);
+        Assert.Equal(4UL, engine.CaptureLaunchScatterState().Counter);
+        Assert.DoesNotContain(state.Objects, o => o.Torpedo is not null || o.Countermeasure is not null);
+        Assert.DoesNotContain(state.CombatJournal, e => e.Roll is not null || e.ChanceTenths is not null);
     }
 }

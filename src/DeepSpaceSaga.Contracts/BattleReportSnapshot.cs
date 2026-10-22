@@ -12,7 +12,8 @@ public enum BattleReportKind
     PlayerCountermeasureLaunch,
     EnemyTorpedoIntercepted,
     EnemyShipHit,
-    PlayerShipDamaged
+    PlayerShipDamaged,
+    PlayerTorpedoReloadCompleted
 }
 
 public enum BattleReportVariant { None, Hit, Destroyed }
@@ -37,9 +38,18 @@ public sealed record BattleReportSnapshot(long Sequence, double MotionTimeMs, Ba
     string EpisodeId, BattleReportReporterSnapshot Reporter,
     string? SourceObjectId = null, string? SourceDisplayName = null,
     string? TargetObjectId = null, string? TargetDisplayName = null,
-    string? ProjectileObjectId = null, string? LauncherModuleId = null,
+    string? ProjectileObjectId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? LauncherModuleId = null,
     BattleReportVariant Variant = BattleReportVariant.None,
-    BattleReportDamageSnapshot? Damage = null);
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] BattleReportDamageSnapshot? Damage = null,
+    /// <summary>Position of an already resolved event, never a future aim point.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? X = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? Y = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ProjectileKind? ProjectileKind = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ProfileId = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] double? BlastRadiusKm = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] ProjectileHitResult? HitResult = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? LauncherDisplayName = null);
 
 /// <summary>
 /// Session report delta. BaselineSequence is fixed before the first advance (also after Load);

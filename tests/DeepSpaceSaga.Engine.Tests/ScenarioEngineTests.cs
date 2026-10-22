@@ -236,7 +236,8 @@ public class ScenarioEngineTests
         // Module type registry order follows the deterministic (ordinal) sort of
         // Data/Modules/**/*.json file paths, not the historical flat module-types.json order.
         Assert.Equal(2, cargoModule.ModuleTypeIndex);
-        Assert.Equal(6, engineModule.ModuleTypeIndex);
+        var actualRegistry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
+        Assert.Equal("module.engine.basic", actualRegistry.ModuleTypes.GetDefinition(engineModule.ModuleTypeIndex).TypeId);
         Assert.Null(engineModule.ActiveCycle);
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-BRIDGE-01");
         Assert.Single(playerShip.Modules, m => m.ModuleId == "MOD-PLAYER-LIVING-QUARTERS-01");
@@ -487,28 +488,34 @@ public class ScenarioEngineTests
             .Where(t => t.CommandTypeIds.Length > 0)
             .ToArray();
 
-        Assert.Equal(9, activeTypes.Length); // two engines + scanner + bridge + drilling + container + torpedo + two defense variants
+        Assert.Equal(new[] { "module.bridge.navigation.computer.basic", "module.container.basic", "module.countermeasure.launcher.basic",
+            "module.drilling.unit.basic", "module.engine.basic", "module.engine.strizh", "module.engine.tetrarch", "module.scanner.mk1",
+            "module.torpedo.launcher.basic", "module.torpedo.launcher.light" }, activeTypes.Select(t => t.TypeId).Order(StringComparer.Ordinal));
 
         var launcherType = Assert.Single(activeTypes, t => t.TypeId == "module.torpedo.launcher.basic");
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, launcherType.CommandTypeIds);
-        var cancel = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.SelfDestruct));
+        Assert.Equal(new[] { CombatCommandTypes.Launch, CombatCommandTypes.Detonate }, launcherType.CommandTypeIds);
+        var cancel = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(CombatCommandTypes.Detonate));
         Assert.Equal("module.torpedo.launcher", cancel.Type);
-        Assert.Equal("none", cancel.Target);
+        Assert.Equal("object", cancel.Target);
         var defenseType = Assert.Single(activeTypes, t => t.TypeId == "module.countermeasure.launcher.basic");
-        Assert.Equal(new[] { DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable }, defenseType.CommandTypeIds);
+        Assert.Equal(new[] { DefenseCommandTypes.Launch }, defenseType.CommandTypeIds);
         foreach (var id in defenseType.CommandTypeIds)
         {
             var command = registry.CommandDefinitions.GetDefinition(registry.CommandDefinitions.GetIndex(id));
             Assert.Equal("module.countermeasure.launcher", command.Type);
-            Assert.Equal(id == DefenseCommandTypes.Fire ? "object" : "none", command.Target);
+            Assert.Equal("point", command.Target);
         }
         var fireCommand = registry.CommandDefinitions.GetDefinition(
-            registry.CommandDefinitions.GetIndex(CombatCommandTypes.Fire));
+            registry.CommandDefinitions.GetIndex(CombatCommandTypes.Launch));
         Assert.Equal("module.torpedo.launcher", fireCommand.Type);
-        Assert.Equal("object", fireCommand.Target);
+        Assert.Equal("point", fireCommand.Target);
 
         var engineType = Assert.Single(activeTypes, t => t.TypeId == "module.engine.basic");
-        Assert.Equal(13, engineType.CommandTypeIds.Length); // + navigation.approach (story-20260827-083137, Batch 3)
+        Assert.Equal(17, engineType.CommandTypeIds.Length);
+        Assert.Contains(ShipEngineCommandTypes.SpeedHold, engineType.CommandTypeIds);
+        Assert.Contains(ShipEngineCommandTypes.Orbit, engineType.CommandTypeIds);
+        Assert.Contains(ShipEngineCommandTypes.TurnHold, engineType.CommandTypeIds);
+        Assert.Contains(ManeuverCommandTypes.Evade, engineType.CommandTypeIds);
         Assert.Equal(100, engineType.BaseSuccessChancePercent);
         foreach (string commandTypeId in engineType.CommandTypeIds)
         {

@@ -52,7 +52,7 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
 
     internal void Record(AuthoritativeSnapshot snapshot)
     {
-        if (snapshot.Objects.Any(o => o.Torpedo is not null || o.Countermeasure is not null) ||
+        if (snapshot.Objects.Any(o => o.OwnProjectile is not null || o.ObservedProjectile is not null) ||
             (!snapshot.InstalledModules.IsDefaultOrEmpty && snapshot.InstalledModules.Any(m => m.LauncherCombat is not null || m.Defense is not null)))
             Volatile.Write(ref _combatEnabled, 1);
         if (Volatile.Read(ref _combatEnabled) == 0) return;
@@ -70,8 +70,8 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
             o.Y,
             o.SpeedKmS,
             o.Direction,
-            o.Torpedo,
-            o.Countermeasure,
+            o.OwnProjectile,
+            o.ObservedProjectile,
             o.HostileCombat
         }).ToArray();
         var modules = snapshot.InstalledModules.IsDefaultOrEmpty ? [] : snapshot.InstalledModules
@@ -121,7 +121,7 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
         });
     }
 
-    private static bool IsCombatContact(ObjectMotionSnapshot o) => o.Torpedo is not null || o.Countermeasure is not null ||
+    private static bool IsCombatContact(ObjectMotionSnapshot o) => o.OwnProjectile is not null || o.ObservedProjectile is not null ||
         o.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip or SpaceObjectType.Wreck;
 
     private void Enqueue(object record)
@@ -154,7 +154,7 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
                     string? header = writer is null ? JsonSerializer.Serialize(new
                     {
                         Kind = "session",
-                        SchemaVersion = 1,
+                        SchemaVersion = 2,
                         Utc = DateTimeOffset.UtcNow,
                         Build = typeof(CombatMetricsWriter).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion,
                         TimestampFrequency = Stopwatch.Frequency,
@@ -229,6 +229,6 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _records.Writer.TryComplete();
-        await _worker;
+        await _worker.ConfigureAwait(false);
     }
 }

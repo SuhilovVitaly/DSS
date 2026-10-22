@@ -12,7 +12,7 @@ validation_status: automated-pass; native-open
 
 ## Актуализация EP-0008 — 2026-10-12
 
-Функциональные тикеты реализованы, проверены и опубликованы; self-review завершено. [Фактическое evidence](../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
+Функциональные тикеты реализованы, проверены и опубликованы; self-review завершено. [Фактическое evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
 
 
 # Ограниченный полёт и согласованная автоматика двух установок

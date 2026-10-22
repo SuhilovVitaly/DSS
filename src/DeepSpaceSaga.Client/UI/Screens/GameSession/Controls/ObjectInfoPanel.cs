@@ -152,6 +152,8 @@ public sealed class ObjectInfoPanel
 
     // ── Test seams ──────────────────────────────────────────────
 
+    internal ModuleDiagram? OwnModuleDiagram { get; set; }
+
     public ObjectInfoPanelState State => _state;
     public SKRect CaptionRect => _captionRect;
     public SKRect BodyRect => _bodyRect;
@@ -185,7 +187,7 @@ public sealed class ObjectInfoPanel
                 lines.Add(("Information", EnvironmentFieldRenderer.Notice));
                 return lines;
             }
-            lines.Add(("Speed", $"{d.SpeedKmS:0.###} km/s"));
+            lines.Add(("Speed", $"{d.SpeedKmS:0.###} {Localization.Combat("KilometersPerSecond")}"));
             if (d.Owner is { } owner)
             {
                 lines.Add(("Owner", owner));
@@ -198,18 +200,7 @@ public sealed class ObjectInfoPanel
                     lines.Add(("Territory", AiMapPresentation.TerritoryNotice));
                 }
             }
-            if (d.Countermeasure is { } countermeasure)
-            {
-                lines.AddRange(CountermeasureLines(countermeasure));
-            }
-            else if (d.Torpedo is { } torpedo)
-            {
-                lines.Add(("Target", torpedo.Target));
-                lines.Add(("Travelled", $"{torpedo.TravelledKm:0.###} km"));
-                lines.Add(("ETA", torpedo.EtaSeconds is { } eta ? $"{eta:0.###} s" : "—"));
-                lines.Add(("Hit chance", $"{torpedo.HitChancePercent}%"));
-            }
-            else if (d.Survey is { } survey)
+            if (d.Survey is { } survey)
             {
                 lines.Add(("Mass", $"{survey.MassKg} kg"));
                 lines.Add(("Composition", survey.CompositionKnown ? survey.CompositionType ?? "Unknown" : "Unknown"));
@@ -277,29 +268,6 @@ public sealed class ObjectInfoPanel
         return lines;
     }
 
-    public static List<(string Label, string Value)> CountermeasureLines(CountermeasureSnapshot flight)
-    {
-        var defense = flight.RatingBreakdown.DefenseOperator;
-        var attack = flight.RatingBreakdown.TorpedoOperator;
-        string T(string key, string fallback) => GameSessionScreen.CombatText(key, fallback);
-        return [
-            (T("LaunchMode", "Режим пуска"), flight.Mode == LaunchMode.Manual ? T("Manual", "Ручной") : T("Auto", "Автоматический")),
-            (T("Owner", "Носитель"), flight.OwnerObjectId),
-            (T("Module", "Аппарат"), flight.LauncherModuleId),
-            (T("Target", "Цель"), flight.TargetTorpedoId),
-            (T("State", "Состояние"), flight.Phase == CountermeasurePhase.Guiding ? T("Guiding", "Наведение") : T("MissedCoast", "Полёт после промаха")),
-            (T("FrozenChance", "Шанс активной ПРО"), $"{flight.FrozenChanceTenths / 10m:0.0}%"),
-            (T("Accuracy", "Точность"), $"{flight.CapturedAccuracy ?? defense.EffectiveRating:0.##}"),
-            (T("Maneuverability", "манёвренность"), $"{flight.CapturedTargetManeuverability ?? flight.RatingBreakdown.TorpedoRating:0.##}"),
-            (T("Formula", "Формула"), T("ChanceFormula", "clamp(точность − манёвренность, 0, 100)")),
-            (T("RemainingFlight", "Осталось полёта"), GameSessionScreen.RemainingFlightText(flight, flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs)),
-            (T("MaxFlight", "Лимит полёта"), flight.MaxFlightTimeMs is { } lifetime ? $"{lifetime / 1000.0:0.0} " + T("Seconds", "с") : "—"),
-            (T("DefenseOperator", "Оператор ПРО"), defense.DisplayName),
-            (T("SkillMetadata", "Навык (справочно)"), defense.Skill.ToString()),
-            (T("TorpedoOperator", "Торпедист"), attack?.DisplayName ?? "—")
-        ];
-    }
-
     // ── Input ───────────────────────────────────────────────────
 
     public bool OnMouseDown(float x, float y)
@@ -340,7 +308,8 @@ public sealed class ObjectInfoPanel
         for (int i = 0; i < _rowBodyRects.Length; i++)
         {
             if (!_rowBodyRects[i].Contains(x, y)) continue;
-            _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i] - Math.Sign(delta) * 3 * LineHeight, 0, _rowScrollLimits[i]);
+            float step = i == 0 && OwnModuleDiagram is not null ? LineHeight : 3 * LineHeight;
+            _rowScrollOffsets[i] = Math.Clamp(_rowScrollOffsets[i] - Math.Sign(delta) * step, 0, _rowScrollLimits[i]);
             return true;
         }
         return false;
@@ -379,7 +348,7 @@ public sealed class ObjectInfoPanel
 
         float titleX = _hideShowButtonRect.Right + Padding + 2f;
         float titleY = _captionRect.MidY + _titlePaint.TextSize / 3f;
-        canvas.DrawText("Object Info", titleX, titleY, _titlePaint);
+        canvas.DrawText(Localization.Combat("Panel.ObjectInfo"), titleX, titleY, _titlePaint);
 
         float rowY = _captionRect.Bottom;
 
@@ -391,13 +360,15 @@ public sealed class ObjectInfoPanel
             for (int i = 0; i < RowNames.Length; i++)
             {
                 bool opened = IsRowOpen(i);
-                var sourceLines = BuildLines(rowData[i]);
+                var sourceLines = BuildLines(rowData[i]).Select(p => (Label: Localization.CombatFieldLabel(p.Label), p.Value)).ToList();
                 float valueOffset = ValueOffset(rowData[i], sourceLines);
                 var renderLines = BuildRenderLines(rowData[i], sourceLines, valueOffset);
                 float bodyHeight = Math.Max(_renderImageWidth * ImageHeight / ImageWidth + 2 * Padding, 2 * Padding + renderLines.Count * LineHeight);
+                if (i == 0 && OwnModuleDiagram is { } diagram) bodyHeight = diagram.PreferredHeight + 12;
                 float fullHeight = bodyHeight;
                 float available = Math.Max(0, panelBottom - Margin - rowY - (RowNames.Length - i) * RowCaptionHeight);
-                bodyHeight = Math.Min(bodyHeight, compact ? available / (RowNames.Length - i) : available);
+                bool onlyOwnDiagram = i == 0 && OwnModuleDiagram is not null && selectedOrActive is null;
+                bodyHeight = Math.Min(bodyHeight, compact && !onlyOwnDiagram ? available / (RowNames.Length - i) : available);
                 if (_rowObjectIds[i] != rowData[i]?.ObjectId)
                 {
                     _rowObjectIds[i] = rowData[i]?.ObjectId;
@@ -415,10 +386,10 @@ public sealed class ObjectInfoPanel
                 _rowBodyRects[i] = bodyRect;
 
                 DrawBeveledCaption(canvas, captionRect, _rowCaptionBgPaint);
-                canvas.DrawText(RowNames[i], captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
+                canvas.DrawText(Localization.CombatPanelCaption(RowNames[i]), captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
                 if (opened)
-                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset);
+                    DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset, i == 0 ? OwnModuleDiagram : null);
 
                 rowY += opened ? (RowCaptionHeight + bodyHeight) : RowCaptionHeight;
                 if (!opened && i < RowNames.Length - 1)
@@ -476,7 +447,7 @@ public sealed class ObjectInfoPanel
     }
 
     private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data, float scrollOffset, float scrollLimit,
-        List<(string Label, string Value)> lines, float valueOffset)
+        List<(string Label, string Value)> lines, float valueOffset, ModuleDiagram? diagram = null)
     {
         canvas.DrawRect(bodyRect, _panelBgPaint);
         canvas.DrawRect(bodyRect, _panelBorderPaint);
@@ -484,30 +455,37 @@ public sealed class ObjectInfoPanel
         canvas.Save();
         canvas.ClipRect(bodyRect);
 
-        float imgX = bodyRect.Left + Padding;
-        float imgY = bodyRect.Top + Padding - scrollOffset;
-        var imageRect = new SKRect(imgX, imgY, imgX + _renderImageWidth, imgY + _renderImageWidth * ImageHeight / ImageWidth);
-
-        var image = data is { } d ? ResolveObjectImage(d) : null;
-        if (image is not null)
+        if (diagram is not null)
         {
-            canvas.Save();
-            if (data is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy })
-                canvas.Scale(-1, 1, imageRect.MidX, imageRect.MidY);
-            canvas.DrawBitmap(image, imageRect, _imagePaint);
-            canvas.Restore();
+            diagram.Render(canvas, new SKRect(bodyRect.Left + Padding, bodyRect.Top + Padding - scrollOffset, bodyRect.Right - Padding, bodyRect.Top + Padding - scrollOffset + diagram.PreferredHeight));
         }
         else
-            canvas.DrawRect(imageRect, _imagePlaceholderPaint);
-        canvas.DrawRect(imageRect, _panelBorderPaint);
-
-        float textX = imageRect.Right + Padding;
-        float textY = imgY + LineHeight - 3f;
-        foreach (var (label, value) in lines)
         {
-            canvas.DrawText(label, textX, textY, _labelPaint);
-            canvas.DrawText(value, textX + valueOffset, textY, _valuePaint);
-            textY += LineHeight;
+            float imgX = bodyRect.Left + Padding;
+            float imgY = bodyRect.Top + Padding - scrollOffset;
+            var imageRect = new SKRect(imgX, imgY, imgX + _renderImageWidth, imgY + _renderImageWidth * ImageHeight / ImageWidth);
+
+            var image = data is { } d ? ResolveObjectImage(d) : null;
+            if (image is not null)
+            {
+                canvas.Save();
+                if (data is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy })
+                    canvas.Scale(-1, 1, imageRect.MidX, imageRect.MidY);
+                canvas.DrawBitmap(image, imageRect, _imagePaint);
+                canvas.Restore();
+            }
+            else
+                canvas.DrawRect(imageRect, _imagePlaceholderPaint);
+            canvas.DrawRect(imageRect, _panelBorderPaint);
+
+            float textX = imageRect.Right + Padding;
+            float textY = imgY + LineHeight - 3f;
+            foreach (var (label, value) in lines)
+            {
+                canvas.DrawText(label, textX, textY, _labelPaint);
+                canvas.DrawText(value, textX + valueOffset, textY, _valuePaint);
+                textY += LineHeight;
+            }
         }
         canvas.Restore();
         if (scrollLimit > 0 && bodyRect.Height > 0)

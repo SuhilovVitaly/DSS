@@ -8,31 +8,31 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public class PlayerDefeatTests
 {
+    // Actual point NPC and current source profiles; hp150 selects a single fatal engine.
     internal static ScenarioFile LethalScenario(int hp = 450) => TorpedoImpactTests.Scenario(o => o with
     {
         PositionY = o.ObjectId == Player ? 0 : -155,
         DirectionDegrees = o.ObjectId == Player ? 0 : 180,
+        Ai = o.ObjectId == Target ? new(25, 8, 35) : null,
         Modules = o.Modules!.Where(m => o.ObjectId != Player || hp != 150 || m.ModuleTypeId == "module.engine.basic")
             .Select(m => m with
             {
                 AutoDefenseEnabled = false,
+                ArmorClass = "none",
                 PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On"
             }).ToArray()
     });
 
     [Fact]
-    public void Three_actual_hits_defeat_player_once_and_final_snapshot_has_wreck_identity()
+    public void Actual_point_hit_defeats_player_once_and_final_snapshot_has_wreck_identity()
     {
-        using var engine = Create(LethalScenario());
-        engine.SetObjectInteractionState(Player, Player);
-        Assert.Single(At(engine, 6251).CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
-        Assert.Equal(2, At(engine, 22502).CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
-        var final = At(engine, 38753);
+        using var engine = Create(LethalScenario(150)); engine.SetObjectInteractionState(Player, Player);
+        var final = At(engine, 6000);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
         Assert.Equal(Player, final.EffectiveOutcome.PlayerObjectId);
-        Assert.Equal(3, final.CombatJournal.Count(e => e.Type == CombatEventType.Hit));
+        Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Hit);
         var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
-        Assert.Equal("threshold:3/9", death.DestroyReason);
+        Assert.Equal("critical:MOD-PLAYER-ENGINE-01", death.DestroyReason);
         Assert.Equal((long)Math.Ceiling(death.MotionTimeMs), final.MotionTimeMs);
         Assert.Equal(death.EventId, final.EffectiveOutcome.DeathEventId);
         Assert.Equal(death.MotionTimeMs, final.EffectiveOutcome.DeathMotionTimeMs);
@@ -146,17 +146,11 @@ public class PlayerDefeatTests
     [Fact]
     public void Destroying_enemy_does_not_end_the_session()
     {
-        using var engine = Create();
-        for (int shot = 0; shot < 3; shot++)
-        {
-            engine.ReceiveCommand(Fire("shot-" + shot));
-            At(engine, shot * 15000);
-            At(engine, shot * 15000 + 10000);
-        }
-        var final = At(engine, 40000);
+        using var run = new BasicCombatEndToEndTests.CombatRun(); AuthoritativeSnapshot final = run.Snapshot();
+        for (int n = 1; n <= 12 && final.Objects.Any(o => o.ObjectId == Target); n++)
+        { var launch = run.Launch(n); final = run.AdvanceTo(BasicCombatEndToEndTests.EndTime(launch)); }
         Assert.DoesNotContain(final.Objects, o => o.ObjectId == Target);
-        Assert.Equal(SessionOutcomeState.Running, final.EffectiveOutcome.State);
-        Assert.True(final.EffectiveOutcome.CanSave);
-        Assert.NotNull(engine.CaptureSaveStateForTests(40000, SimulationSpeed.Speed0));
+        Assert.Equal(SessionOutcomeState.Running, final.EffectiveOutcome.State); Assert.True(final.EffectiveOutcome.CanSave);
+        Assert.NotNull(run.Save());
     }
 }

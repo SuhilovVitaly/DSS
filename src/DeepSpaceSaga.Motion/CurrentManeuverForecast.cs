@@ -11,6 +11,8 @@ public static class CurrentManeuverForecast
 
     internal static Func<double, Pose> CreateSampler(ObjectMotionSnapshot state)
     {
+        if (state.SpeedHoldAccelerationKmS2 is not null || state.TurnHoldRateDegPerSec is not null || state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
+            return ms => { var p = Sample(state, ms); return new(p.X, p.Y, p.SpeedKmS, p.Direction); };
         if (state.HostileCombat is { Segment: var controls })
         {
             double a = controls.AccelerationKmS2;
@@ -46,13 +48,18 @@ public static class CurrentManeuverForecast
         return ms => { var p = Sample(state, ms); return new(p.X, p.Y, p.SpeedKmS, p.Direction); };
     }
 
-    public static bool HasRequiredData(ObjectMotionSnapshot state) =>
+    private static bool HasUnscheduledStep(ObjectMotionSnapshot state) =>
+        state.EngineManeuver?.CompletesOnMotionUpdate == true || state.Evasion?.BaseMotion.EngineManeuver?.CompletesOnMotionUpdate == true;
+
+    public static bool HasRequiredData(ObjectMotionSnapshot state) => !HasUnscheduledStep(state) && (
+        state.SpeedHoldAccelerationKmS2 is not null || state.TurnHoldRateDegPerSec is not null || state.Evasion is not null ||
+        state.OwnProjectile is not null || state.ObservedProjectile is not null ||
         state.HostileCombat is { Segment.AccelerationKmS2: 0 } ||
         state.HostileCombat is not null && state.MaxSpeedKmS is > 0 ||
         state.HostileCombat is null && (ValidEngineManeuver(state) || state.ActiveEngineCommandType is not
             (ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake or
              ShipEngineCommandTypes.SpeedSynchronization or ShipEngineCommandTypes.DirectionSynchronization or
-             ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnRightStep));
+             ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnRightStep)));
 
     internal static bool ValidEngineManeuver(ObjectMotionSnapshot state) => state.EngineManeuver is { } m &&
         m.CommandType == state.ActiveEngineCommandType && double.IsFinite(m.CycleRemainingMs) &&
@@ -64,6 +71,36 @@ public static class CurrentManeuverForecast
     public static ObjectMotionSnapshot Sample(ObjectMotionSnapshot state, double elapsedMs)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(elapsedMs);
+        if (!double.IsFinite(elapsedMs)) throw new ArgumentOutOfRangeException(nameof(elapsedMs));
+        if (state.Evasion is { } evasion) return SampleEvasion(state, evasion, elapsedMs);
+        if (state.TurnHoldRateDegPerSec is not null || state.SpeedHoldAccelerationKmS2 is not null) return HoldMotion.Sample(state, elapsedMs);
+        if (state.OwnProjectile is { } own)
+        {
+            if (!double.IsFinite(own.SpeedKmS) || own.SpeedKmS <= 0) throw new ArgumentException("Invalid own projectile speed.", nameof(state));
+            double dx = own.DetonationX - own.X, dy = own.DetonationY - own.Y;
+            double distance = Math.Sqrt(dx * dx + dy * dy);
+            double progress = distance == 0 ? 1 : elapsedMs * own.SpeedKmS / 100 / distance;
+            var p = BlastMath.PositionAt(own.X, own.Y, own.DetonationX, own.DetonationY, progress);
+            return state with { X = p.X, Y = p.Y, OwnProjectile = own with { X = p.X, Y = p.Y } };
+        }
+        if (state.ObservedProjectile is { } observed)
+        {
+            if (!double.IsFinite(observed.SpeedKmS) || observed.SpeedKmS <= 0) throw new ArgumentException("Invalid observed projectile speed.", nameof(state));
+            double length = Math.Sqrt(observed.DirectionX * observed.DirectionX + observed.DirectionY * observed.DirectionY);
+            if (length == 0 || !double.IsFinite(length)) throw new ArgumentException("Invalid observed projectile direction.", nameof(state));
+            double distance = observed.SpeedKmS * elapsedMs / 100;
+            double x = observed.X + observed.DirectionX / length * distance;
+            double y = observed.Y + observed.DirectionY / length * distance;
+            if (!double.IsFinite(x) || !double.IsFinite(y)) throw new ArgumentOutOfRangeException(nameof(elapsedMs));
+            return state with { X = x, Y = y, ObservedProjectile = observed with { X = x, Y = y } };
+        }
+        if (state.EngineManeuver is { CompletesOnMotionUpdate: true } pending && ValidEngineManeuver(state))
+        {
+            // A forecast sample is not an authoritative motion update. Continue
+            // the confirmed course without inventing the pending step's deadline.
+            var pose = Advance(state with { EngineManeuver = null }, elapsedMs);
+            return pose with { EngineManeuver = pending with { MotionSampleTimeMs = pending.MotionSampleTimeMs + elapsedMs } };
+        }
         if (!HasRequiredData(state)) return state;
         if (state.EngineManeuver is { } command && ValidEngineManeuver(state))
             return SampleEngineCommand(state, command, elapsedMs);
@@ -99,30 +136,6 @@ public static class CurrentManeuverForecast
 
     private static ObjectMotionSnapshot SampleEngineCommand(ObjectMotionSnapshot state, EngineManeuverSnapshot m, double elapsed)
     {
-        if (m.CompletesOnMotionUpdate)
-        {
-            if (elapsed == 0) return state;
-            // This advance visits the physical guidance boundaries and its own
-            // endpoint, just like Engine. The endpoint may precede the next tick;
-            // do not publish a fictitious command deadline in the snapshot.
-            double updateEpoch = m.MotionSampleTimeMs!.Value;
-            double untilUpdate = Math.Min(elapsed, CombatGuidanceRules.NextBoundary((long)Math.Floor(updateEpoch)) - updateEpoch);
-            var scheduled = m with
-            {
-                CompletesOnMotionUpdate = false,
-                CycleRemainingMs = untilUpdate,
-                CycleIntervalMs = CombatGuidanceRules.IntervalMs,
-                FirstSpeedDeltaKmS = m.FirstSpeedDeltaKmS + m.AccelerationKmS2 * untilUpdate / 1000
-            };
-            var result = SampleEngineCommand(state, scheduled, elapsed);
-            if (!m.Repeats) return result;
-            double updateTail = (elapsed - untilUpdate) % CombatGuidanceRules.IntervalMs;
-            return result with
-            {
-                SpeedKmS = Math.Clamp(result.SpeedKmS + m.AccelerationKmS2 * updateTail / 1000, 0, state.MaxSpeedKmS!.Value),
-                EngineManeuver = m with { FirstSpeedDeltaKmS = 0, MotionSampleTimeMs = updateEpoch + elapsed }
-            };
-        }
         double until = m.CycleRemainingMs;
         if (elapsed < until) return Advance(state, elapsed);
         var pose = Advance(state, until);
@@ -167,6 +180,30 @@ public static class CurrentManeuverForecast
                 TargetOrbitSampleTimeMs = m.TargetOrbitSampleTimeMs is { } time ? time + (long)elapsed : null
             }
         };
+    }
+
+    private static ObjectMotionSnapshot SampleEvasion(ObjectMotionSnapshot state, EvasionSnapshot evasion, double elapsed)
+    {
+        if (evasion.Steering is not null) return EvasionMotionMath.Sample(state, evasion, elapsed);
+        if (!double.IsFinite(evasion.SampleMotionTimeMs) || evasion.SampleMotionTimeMs < 0 ||
+            !double.IsFinite(evasion.EndsAtMotionTimeMs) || evasion.EndsAtMotionTimeMs < 0 ||
+            evasion.BaseMotion is null || evasion.BaseMotion.Evasion is not null || evasion.BaseMotion.ObjectId != state.ObjectId)
+            throw new ArgumentException("Invalid evasion continuation.", nameof(state));
+        double first = Math.Min(elapsed, Math.Max(0, evasion.EndsAtMotionTimeMs - evasion.SampleMotionTimeMs));
+        var pose = Advance(state with { Evasion = null, EngineManeuver = null }, first);
+        double sampleTime = evasion.SampleMotionTimeMs + elapsed;
+        if (sampleTime < evasion.EndsAtMotionTimeMs)
+            return pose with { Evasion = evasion with { SampleMotionTimeMs = sampleTime } };
+        var basis = evasion.BaseMotion with { X = pose.X, Y = pose.Y };
+        double wait = Math.Max(0, Math.Ceiling(evasion.EndsAtMotionTimeMs) - Math.Max(evasion.SampleMotionTimeMs, evasion.EndsAtMotionTimeMs));
+        double coast = Math.Min(elapsed - first, wait);
+        var coastPose = Advance(basis with { EngineManeuver = null }, coast);
+        basis = basis with { X = coastPose.X, Y = coastPose.Y };
+        if (elapsed - first < wait)
+            return basis with { Evasion = evasion with { SampleMotionTimeMs = sampleTime } };
+        if (basis.EngineManeuver is { } command)
+            basis = basis with { EngineManeuver = command with { MotionSampleTimeMs = Math.Ceiling(evasion.EndsAtMotionTimeMs) } };
+        return Sample(basis, elapsed - first - coast);
     }
 
     private static ObjectMotionSnapshot Advance(ObjectMotionSnapshot state, double ms)

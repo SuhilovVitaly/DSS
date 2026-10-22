@@ -1,63 +1,53 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
-using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
+using static DeepSpaceSaga.Engine.Tests.PointCombatUS0018TK0002Tests;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class SetFireModeTests
 {
-    private static PlayerCommand Set(string id, string mode, string module = Launcher) =>
-        new(id, 1, Player, module, TorpedoLauncherCommandTypes.SetMode, ModeId: mode);
+    private static PlayerCommand Retired(string id, string mode = "overheat", string module = Launcher) =>
+        new(id, 9, Player, module, "torpedo.setMode", ModeId: mode);
 
     [Fact]
-    public void Outside_combat_selection_is_immediate_even_while_paused()
+    public void Retired_mode_selection_while_paused_changes_no_profile_readiness_or_rng()
     {
-        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with
-        { PositionY = -5000, RelationToPlayer = PlayerRelation.Neutral } : o);
-        using var engine = Create(scenario);
-        engine.ReceiveCommand(Set("peaceful-mode", "maneuverability"));
-        var snapshot = At(engine, 0);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(snapshot.CommandResults).Status);
-        var launcher = snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
-        Assert.Equal("maneuverability", launcher.ModeId);
-        Assert.Null(launcher.ReadyAtMotionTimeMs);
-        Assert.Equal(0, snapshot.MotionTimeMs);
+        using var engine = Create(); var before = engine.CaptureLaunchScatterState();
+        engine.ReceiveCommand(Retired("paused-mode")); var state = At(engine);
+        Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(state.CommandResults).ReasonCode);
+        Assert.Equal(before, engine.CaptureLaunchScatterState()); Assert.Equal(0, state.MotionTimeMs);
+        var launcher = state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
+        Assert.Empty(launcher.ModeId); Assert.Null(launcher.ReadyAtMotionTimeMs); Assert.Empty(launcher.ActiveTorpedoIds);
     }
 
     [Fact]
-    public void Combat_selection_costs_one_reload_cycle_and_duplicate_is_durable()
+    public void Rejected_mode_receipt_is_durable_and_payload_change_cannot_restart_it_after_save_load()
     {
-        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with
-        { RelationToPlayer = PlayerRelation.Enemy } : o);
-        using var engine = Create(scenario);
-        engine.ReceiveCommand(Set("combat-mode", "overheat"));
-        var changed = At(engine, 0);
-        Assert.Equal("overheat", changed.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ModeId);
-        Assert.Equal(15000, changed.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
-        engine.ReceiveCommand(Set("combat-mode", "standard"));
-        Assert.Equal(15000, At(engine, 0).InstalledModules.Single(m => m.ModuleId == Launcher)
-            .LauncherCombat!.ReadyAtMotionTimeMs);
-        var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(
-            engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0)), true);
-        using var restored = new SimulationEngine(Registry.Value);
-        restored.LoadScenario(save, isSave: true);
-        restored.ReceiveCommand(Set("combat-mode", "standard"));
-        var duplicate = At(restored, 0);
-        Assert.Equal("overheat", duplicate.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ModeId);
-        Assert.Equal(15000, duplicate.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
+        using var engine = Create(); engine.ReceiveCommand(Retired("mode-id"));
+        var rejected = Assert.Single(At(engine).CommandResults); Assert.Equal(CommandResultStatus.Rejected, rejected.Status);
+        var save = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(engine.CaptureSaveState()), true);
+        using var restored = new SimulationEngine(Registry()); restored.LoadScenario(save, true);
+        var before = restored.CaptureLaunchScatterState();
+        restored.ReceiveCommand(Launch("mode-id", "fast"));
+        var replayed = Assert.Single(At(restored).CommandResults, r => r.CommandId == "mode-id");
+        Assert.Equal(rejected.Status, replayed.Status); Assert.Equal(rejected.ReasonCode, replayed.ReasonCode);
+        Assert.Equal("torpedo.setMode", replayed.CommandType); Assert.Equal(before, restored.CaptureLaunchScatterState());
+        Assert.DoesNotContain(At(restored).Objects, o => o.OwnProjectile is not null);
     }
 
     [Fact]
-    public void In_flight_selection_extends_existing_ready_time_and_pd_rejects_mode()
+    public void Retired_mode_cannot_extend_active_reload_or_mutate_captured_flight_on_either_weapon_category()
     {
-        using var engine = Create();
-        engine.ReceiveCommand(Fire("flight"));
-        At(engine, 0);
-        engine.ReceiveCommand(Set("mid-flight", "maneuverability"));
-        var changed = At(engine, 0);
-        Assert.Equal(30000, changed.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
-        engine.ReceiveCommand(Set("defense-mode", "maneuverability", ManualCountermeasureFireTests.Defense1));
-        Assert.Equal("mode_not_applicable", At(engine, 0).CommandResults
-            .Single(r => r.CommandId == "defense-mode").ReasonCode);
+        using var engine = Create(); engine.ReceiveCommand(Launch(profile: "fast"));
+        var state = At(engine); var flight = Assert.Single(state.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
+        var before = engine.CaptureLaunchScatterState();
+        engine.ReceiveCommand(Retired("torpedo-mode", "maneuverability"));
+        engine.ReceiveCommand(Retired("counter-mode", "standard", "MOD-PLAYER-COUNTERMEASURE-01"));
+        var after = At(engine); Assert.All(after.CommandResults.Where(r => r.CommandId.EndsWith("-mode", StringComparison.Ordinal)), r =>
+        { Assert.Equal(CommandResultStatus.Rejected, r.Status); Assert.Equal(CommandReasonCodes.UnknownCommandType, r.ReasonCode); });
+        Assert.Equal(before, engine.CaptureLaunchScatterState());
+        Assert.Equal(flight, Assert.Single(after.Objects, o => o.OwnProjectile is not null).OwnProjectile);
+        Assert.Equal(10000, after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
+        Assert.Null(after.InstalledModules.Single(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01").Defense!.ReadyAtMotionTimeMs);
     }
 }

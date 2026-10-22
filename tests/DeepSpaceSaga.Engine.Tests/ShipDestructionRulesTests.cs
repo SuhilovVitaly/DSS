@@ -44,14 +44,14 @@ public sealed class ShipDestructionRulesTests
                 .Select(module => module with { StructurePoints = 150 }).ToArray()
         } : obj);
         using var engine = Create(scenario);
-        engine.ReceiveCommand(Fire("destroy-engine"));
+        engine.ReceiveCommand(LaunchAt("destroy-engine"));
         At(engine, 0);
         var snapshot = At(engine, 5000);
         var death = Assert.Single(snapshot.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
-        Assert.Equal("threshold:1/1", death.DestroyReason);
+        Assert.Null(death.DestroyReason);
         Assert.DoesNotContain(snapshot.Objects, obj => obj.ObjectId == Target);
         Assert.Single(snapshot.Objects, obj => obj.ObjectId == death.Result && obj.ObjectType == SpaceObjectType.Wreck);
-        Assert.Equal(death.Result, Assert.Single(snapshot.CombatImpacts).WreckObjectId);
+        Assert.Empty(snapshot.CombatImpacts);
     }
 
     [Fact]
@@ -72,7 +72,7 @@ public sealed class ShipDestructionRulesTests
         using var engine = Create(scenario);
         var final = At(engine, 6000);
         var death = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
-        Assert.Equal("threshold:1/1", death.DestroyReason);
+        Assert.Equal("critical:MOD-PLAYER-ENGINE-01", death.DestroyReason);
         Assert.Equal(death.EventId, final.EffectiveOutcome.DeathEventId);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
         Assert.Single(final.Objects, obj => obj.ObjectId == final.EffectiveOutcome.WreckObjectId);

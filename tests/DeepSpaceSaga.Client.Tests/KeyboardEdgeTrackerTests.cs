@@ -148,19 +148,11 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Fact]
-    public void Ctrl_f_reports_f_and_ctrl_when_control_is_down()
+    public void Ctrl_f_reports_modifier_before_f_when_both_keys_are_pressed()
     {
         var tracker = new KeyboardEdgeTracker();
-        var pressed = new HashSet<Key> { Key.F };
-
-        Assert.Empty(Poll(tracker, pressed));
-
-        pressed.Add(Key.ControlLeft);
-        // Both ControlLeft and F are press edges on the same frame.
-        var result = Poll(tracker, pressed);
-        Assert.Contains(Key.F, result);
-        Assert.Contains(Key.ControlLeft, result);
-
+        var pressed = new HashSet<Key> { Key.ControlLeft, Key.F };
+        Assert.Equal(new[] { Key.ControlLeft, Key.F }, Poll(tracker, pressed));
         Assert.Empty(Poll(tracker, pressed));
     }
 
@@ -177,29 +169,27 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Fact]
-    public void F_without_ctrl_is_never_reported()
+    public void Bare_f_reports_once_for_battle_fit_and_releases_normally()
     {
-        // The Finance overlay must only open on Ctrl+F, never a bare F press
-        // (F alone is free for other uses / typed text elsewhere).
         var tracker = new KeyboardEdgeTracker();
         var pressed = new HashSet<Key> { Key.F };
-
-        Assert.Empty(Poll(tracker, pressed));
-
+        Assert.Equal(new[] { Key.F }, Poll(tracker, pressed));
         PollBoth(tracker, pressed, out var p, out var r);
-        Assert.Empty(p);
-        Assert.Empty(r);
+        Assert.Empty(p); Assert.Empty(r);
+        pressed.Clear();
+        PollBoth(tracker, pressed, out p, out r);
+        Assert.Empty(p); Assert.Equal(new[] { Key.F }, r);
     }
 
     [Fact]
     public void Ctrl_s_reports_s_and_ctrl_when_control_is_down()
     {
         var tracker = new KeyboardEdgeTracker();
-        var pressed = new HashSet<Key> { Key.S };
+        var pressed = new HashSet<Key>();
 
         Assert.Empty(Poll(tracker, pressed));
 
-        pressed.Add(Key.ControlLeft);
+        pressed.UnionWith(new[] { Key.ControlLeft, Key.S });
         // Both ControlLeft and S are press edges on the same frame.
         var result = Poll(tracker, pressed);
         Assert.Contains(Key.S, result);
@@ -221,14 +211,13 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Fact]
-    public void S_without_ctrl_is_never_reported()
+    public void S_without_ctrl_is_reported_once_for_braking()
     {
-        // The Ship overlay must only open on Ctrl+S, never a bare S press
-        // (S alone is free for other uses / typed text elsewhere).
+        // The screen distinguishes bare S braking from Ctrl+S opening Ship.
         var tracker = new KeyboardEdgeTracker();
         var pressed = new HashSet<Key> { Key.S };
 
-        Assert.Empty(Poll(tracker, pressed));
+        Assert.Equal(new[] { Key.S }, Poll(tracker, pressed));
 
         PollBoth(tracker, pressed, out var p, out var r);
         Assert.Empty(p);
@@ -320,8 +309,12 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Theory]
-    [InlineData(Key.Equal)] [InlineData(Key.Minus)] [InlineData(Key.KeypadAdd)]
-    [InlineData(Key.KeypadSubtract)] [InlineData(Key.Home)] [InlineData(Key.End)]
+    [InlineData(Key.Equal)]
+    [InlineData(Key.Minus)]
+    [InlineData(Key.KeypadAdd)]
+    [InlineData(Key.KeypadSubtract)]
+    [InlineData(Key.Home)]
+    [InlineData(Key.End)]
     public void Map_keys_emit_one_edge_and_resync_suppresses_held_key(Key key)
     {
         var tracker = new KeyboardEdgeTracker();

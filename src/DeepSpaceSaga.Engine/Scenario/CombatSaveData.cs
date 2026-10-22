@@ -1,7 +1,6 @@
 using System.Text.Json.Serialization;
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
-using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
@@ -77,158 +76,59 @@ internal static class CombatSaveValidation
             if (!condition) throw new ScenarioException("Invalid combat save: " + reason);
         }
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
-        foreach (var obj in objects.Values)
-        {
-            if (obj.ObjectType == SpaceObjectType.Wreck)
-                Require(obj.SpeedMps == 0 && obj.DirectionDegrees == 0 &&
-                    string.Equals(obj.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase) &&
-                    (obj.Modules?.Count ?? 0) == 0 && (obj.Crew?.Count ?? 0) == 0 &&
-                    (obj.Passengers?.Count ?? 0) == 0 && !obj.IsDocked, "wreck must be stationary and empty.");
-        }
+        foreach (var obj in objects.Values.Where(o => o.ObjectType == SpaceObjectType.Wreck))
+            Require(obj.SpeedMps == 0 && obj.DirectionDegrees == 0 && string.Equals(obj.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase) &&
+                (obj.Modules?.Count ?? 0) == 0 && (obj.Crew?.Count ?? 0) == 0 && (obj.Passengers?.Count ?? 0) == 0 && !obj.IsDocked,
+                "wreck must be stationary and empty.");
         var combat = state.CombatState;
         if (combat is null)
         {
             Require(format < 10 && !objects.Values.Any(o => o.ObjectType == SpaceObjectType.Missile), "missing combat state.");
             return;
         }
-        Require((format >= 17 ? combat.Version == 2 : combat.Version is 1 or 2), "unsupported combat version.");
+        Require(format >= 17 ? combat.Version == 2 : combat.Version is 1 or 2, "unsupported combat version.");
         Require(combat.LastProcessedMotionTimeMs == state.MotionTimeMs && combat.ProjectileSequence >= 0 &&
-            combat.ImpactSequence is >= 0 and < long.MaxValue && combat.WreckSequence is >= 0 and < long.MaxValue,
-            "invalid counters or motion time.");
-        Require(combat.HitLocationRngState is not null || combat.HitLocationRngCounter == 0,
-            "hit-location RNG counter without state.");
-        Require(combat.TorpedoHitRngState is not null || combat.TorpedoHitRngCounter == 0,
-            "torpedo-hit RNG counter without state.");
-        Require(combat.LauncherBreakdownRngState is not null || combat.LauncherBreakdownRngCounter == 0,
-            "launcher-breakdown RNG counter without state.");
-        if (format >= 17)
-            Require(combat.HitLocationRngState is not null && combat.TorpedoHitRngState is not null &&
-                combat.LauncherBreakdownRngState is not null && combat.ProcessedModeCommandIds is not null,
-                "missing module-combat RNG or mode continuation.");
-        Require(combat.Launchers is not null && combat.Projectiles is not null && combat.ProcessedLaunchCommandIds is not null,
-            "missing combat collections.");
+            combat.ImpactSequence == 0 && combat.WreckSequence is >= 0 and < long.MaxValue && combat.NextGuidanceMotionTimeMs == long.MaxValue,
+            "invalid counters, motion time or retired guidance continuation.");
+        Require((format < 17 || combat.HitLocationRngState is not null) &&
+            (combat.HitLocationRngState is not null || combat.HitLocationRngCounter == 0), "missing hit-location RNG state.");
+        Require(combat.TorpedoHitRngState is null or 0 && combat.TorpedoHitRngCounter == 0 &&
+            combat.LauncherBreakdownRngState is null or 0 && combat.LauncherBreakdownRngCounter == 0 &&
+            combat.ProcessedModeCommandIds is null or { Count: 0 }, "retired hit/breakdown RNG or mode continuation.");
+        Require(combat.Launchers is not null && combat.Projectiles is { Count: 0 } && combat.ProcessedLaunchCommandIds is not null,
+            "missing collections or retired guided flights.");
         var launches = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var id in combat.ProcessedLaunchCommandIds!)
+        foreach (string id in combat.ProcessedLaunchCommandIds!)
             Require(!string.IsNullOrWhiteSpace(id) && launches.Add(id), "duplicate or empty launch command ID.");
-        var modeCommands = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var id in combat.ProcessedModeCommandIds ?? [])
-            Require(!string.IsNullOrWhiteSpace(id) && modeCommands.Add(id), "duplicate or empty mode command ID.");
         var launchers = new Dictionary<(string, string), LauncherCombatSnapshot>();
         foreach (var row in combat.Launchers!)
         {
             Require(row is not null && !string.IsNullOrWhiteSpace(row.OwnerObjectId) && !string.IsNullOrWhiteSpace(row.ModuleId), "invalid launcher row.");
-            Require(objects.TryGetValue(row!.OwnerObjectId, out var owner) &&
-                owner.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
+            Require(objects.TryGetValue(row!.OwnerObjectId, out var owner) && owner.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip &&
                 owner.Modules?.Any(m => m.ModuleId == row.ModuleId && m.ActiveCycle is null) == true, "orphan or cycling launcher.");
-            Require(row.State is not null && Parameters(row.State.SpeedKmS, row.State.TurnRateDegPerSec, row.State.Damage) &&
-                launchers.TryAdd((row.OwnerObjectId, row.ModuleId), row.State), "invalid or duplicate launcher.");
-            Require(!row.State!.ActiveTorpedoIds.IsDefault &&
-                row.State.ActiveTorpedoIds.All(id => !string.IsNullOrWhiteSpace(id)) &&
-                row.State.ActiveTorpedoIds.Distinct(StringComparer.Ordinal).Count() == row.State.ActiveTorpedoIds.Length &&
-                row.State.ReadyAtMotionTimeMs is null or >= 0 &&
-                (row.State.ReadyAtMotionTimeMs is null || double.IsFinite(row.State.ReadyAtMotionTimeMs.Value)),
-                "invalid launcher flight list or reload time.");
+            var l = row.State;
+            Require(l is not null && state.PointCombatState is not null && l.Profiles is { IsDefaultOrEmpty: false } &&
+                double.IsFinite(l.SpeedKmS) && l.SpeedKmS > 0 && l.TurnRateDegPerSec == 0 && l.Damage > 0 &&
+                launchers.TryAdd((row.OwnerObjectId, row.ModuleId), l), "invalid, duplicate or retired launcher state.");
+            Require(!l!.ActiveTorpedoIds.IsDefault && l.ActiveTorpedoIds.All(id => !string.IsNullOrWhiteSpace(id)) &&
+                l.ActiveTorpedoIds.Distinct(StringComparer.Ordinal).Count() == l.ActiveTorpedoIds.Length &&
+                (l.ReadyAtMotionTimeMs is null || double.IsFinite(l.ReadyAtMotionTimeMs.Value) && l.ReadyAtMotionTimeMs >= 0),
+                "invalid active flights or reload deadline.");
+            Require(PointCombatSaveValidation.ProfilesValid(l.Profiles!.Value) && l.RangeKm is > 0 && double.IsFinite(l.RangeKm.Value) &&
+                l.ReloadDurationMs is >= 0 && double.IsFinite(l.ReloadDurationMs.Value) && l.ScatterPercent is >= 0 && double.IsFinite(l.ScatterPercent.Value) &&
+                l.Maneuverability is null && !l.IsBrokenUntilDock && l.ModeId == string.Empty &&
+                (l.ActiveTorpedoIds.IsEmpty || l.ReadyAtMotionTimeMs is not null), "invalid point capabilities or retired modes.");
+            if (l.Operator is { } op)
+                Require(op.SkillType == WeaponSkillType.TorpedoAttack && op.BaseRating == 0 && op.Skill is >= 0 and <= 30 &&
+                    op.EffectiveRating == op.Skill && owner!.Modules!.Single(m => m.ModuleId == row.ModuleId).OperatorCrewId == op.CrewId &&
+                    owner.Crew?.Any(c => c.CrewId == op.CrewId) == true, "invalid point operator membership.");
         }
-        var projectileIds = new HashSet<string>(StringComparer.Ordinal);
-        foreach (var row in combat.Projectiles!)
-        {
-            Require(row is not null && !string.IsNullOrWhiteSpace(row.ObjectId) && projectileIds.Add(row.ObjectId), "duplicate projectile.");
-            Require(objects.TryGetValue(row!.ObjectId, out var obj) && obj.ObjectType == SpaceObjectType.Missile &&
-                (obj.Modules?.Count ?? 0) == 0 && !obj.IsDestroyed && Finite(obj.PositionX, obj.PositionY), "orphan projectile or invalid pose.");
-            var f = row.Flight;
-            if (format >= 16) Require(CountermeasureSaveValidation.SequenceWithin(row.ObjectId, "torpedo-", combat.ProjectileSequence), "projectile sequence behind identity.");
-            Require(f is not null && Parameters(f.SpeedKmS, f.TurnRateDegPerSec, f.Damage), "invalid captured weapon.");
-            Require(f!.ArmorPiercingPercent is >= 0 and <= 100 && f.ArmorDamagePercent > 0,
-                "invalid captured armor damage parameters.");
-            Require(f.CapturedAttack is null or >= 0 && f.HitChanceTenths is null or (>= 0 and <= 1000),
-                "invalid captured hit chance.");
-            Require(f.ExpiresAtMotionTimeMs is null ||
-                f.ExpiresAtMotionTimeMs > state.MotionTimeMs && f.ExpiresAtMotionTimeMs > f.LaunchMotionTimeMs,
-                "expired projectile in save.");
-            CountermeasureSaveValidation.ValidateCapturedTorpedoRating(f!, format);
-            Require(!string.IsNullOrWhiteSpace(f!.OwnerObjectId) && !string.IsNullOrWhiteSpace(f.LauncherModuleId) &&
-                (!objects.ContainsKey(f.OwnerObjectId) && format >= 16 ||
-                launchers.TryGetValue((f.OwnerObjectId, f.LauncherModuleId), out var launcher) && launcher.ActiveTorpedoIds.Contains(row.ObjectId) &&
-                launcher.SpeedKmS == f.SpeedKmS && launcher.TurnRateDegPerSec == f.TurnRateDegPerSec && launcher.Damage == f.Damage),
-                "busy/projectile mismatch.");
-            Require(!string.IsNullOrWhiteSpace(f.TargetObjectId) && f.TargetObjectId != f.OwnerObjectId && f.TargetObjectId != row.ObjectId &&
-                row.TargetLost == (!objects.TryGetValue(f.TargetObjectId, out var targetObject) || targetObject.IsDestroyed),
-                "invalid target or target-lost state.");
-            Require(f.LaunchMotionTimeMs >= 0 && f.LaunchMotionTimeMs <= state.MotionTimeMs && f.HitChancePercent is >= 0 and <= 100 &&
-                double.IsFinite(f.DistanceTravelledWorldUnits) && f.DistanceTravelledWorldUnits >= 0 && SameSpeed(obj!.SpeedMps / 1000, f.SpeedKmS),
-                "invalid flight time, distance or speed.");
-            var route = f.Route;
-            Require(route is not null && route.PlannerVersion == TorpedoGuidanceMath.PlannerVersion && Enum.IsDefined(route.Phase) &&
-                route.StartMotionTimeMs >= f.LaunchMotionTimeMs && route.StartMotionTimeMs <= state.MotionTimeMs &&
-                double.IsFinite(route.ElapsedMs) && route.ElapsedMs == state.MotionTimeMs - route.StartMotionTimeMs &&
-                !route.Segments.IsDefaultOrEmpty, "invalid or unsupported route.");
-            foreach (var segment in route!.Segments) Require(Segment(segment, f), "invalid route segment.");
-            for (int i = 1; i < route.Segments.Length; i++)
-            {
-                var end = TorpedoGuidanceMath.PredictSegment(route.Segments[i - 1], route.Segments[i - 1].DurationMs);
-                var next = route.Segments[i];
-                Require(Near(end.X, next.X) && Near(end.Y, next.Y) && HeadingNear(end.Direction, next.Direction), "route geometry gap.");
-            }
-            Require(route.HasIntercept == (f.PredictedImpactMotionTimeMs is not null) && f.PredictedImpactMotionTimeMs is not < 0,
-                "invalid intercept time.");
-            double duration = route.Segments.Sum(s => s.DurationMs);
-            Require(double.IsFinite(duration), "route duration overflow.");
-            if (route.HasIntercept)
-                Require(duration < long.MaxValue - route.StartMotionTimeMs &&
-                    f.PredictedImpactMotionTimeMs == route.StartMotionTimeMs + (long)Math.Ceiling(duration), "intercept/route mismatch.");
-            var pose = TorpedoGuidanceMath.Predict(new ObjectMotionSnapshot(row.ObjectId, obj!.PositionX, obj.PositionY,
-                f.SpeedKmS, obj.DirectionDegrees, Torpedo: f), 0);
-            Require(Near(pose.X, obj.PositionX) && Near(pose.Y, obj.PositionY) && HeadingNear(pose.Direction, obj.DirectionDegrees), "route/pose mismatch.");
-            double time = f.LaunchMotionTimeMs, distance = 0;
-            TorpedoRouteSegment? previous = null;
-            Require(!f.Trail.IsDefault, "missing full trail.");
-            foreach (var trail in f.Trail)
-            {
-                Require(trail is not null && trail.PlannerVersion == TorpedoGuidanceMath.PlannerVersion && Segment(trail.Segment, f) &&
-                    Near(trail.StartMotionTimeMs, time), "invalid or discontinuous trail.");
-                if (previous is not null)
-                {
-                    var end = TorpedoGuidanceMath.PredictSegment(previous, previous.DurationMs);
-                    Require(Near(end.X, trail!.Segment.X) && Near(end.Y, trail.Segment.Y) && HeadingNear(end.Direction, trail.Segment.Direction), "trail geometry gap.");
-                }
-                previous = trail!.Segment;
-                time += previous.DurationMs;
-                distance += previous.DurationMs * previous.SpeedKmS / 100;
-            }
-            Require(Near(time, state.MotionTimeMs) && Near(distance, f.DistanceTravelledWorldUnits), "incomplete trail or distance mismatch.");
-            if (previous is not null)
-            {
-                var end = TorpedoGuidanceMath.PredictSegment(previous, previous.DurationMs);
-                Require(Near(end.X, obj.PositionX) && Near(end.Y, obj.PositionY) && HeadingNear(end.Direction, obj.DirectionDegrees), "trail/pose mismatch.");
-            }
-            if (row.TargetLost)
-                Require(row.TargetBaseline is null && !route.HasIntercept && route.Segments.All(s => s.AngularVelocityDegPerSec == 0), "invalid lost-target continuation.");
-            else
-                Require(row.TargetBaseline is { } target && target.ObjectId == f.TargetObjectId &&
-                    Finite(target.X, target.Y, target.SpeedKmS, target.Direction) && target.SpeedKmS >= 0 &&
-                    row.TargetBaselineMotionTimeMs >= f.LaunchMotionTimeMs && row.TargetBaselineMotionTimeMs <= state.MotionTimeMs,
-                    "missing target guidance baseline.");
-        }
-        Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Missile).All(o => projectileIds.Contains(o.ObjectId)), "missile without flight payload.");
+        Require(objects.Values.Where(o => o.ObjectType == SpaceObjectType.Missile).All(o =>
+            state.PointCombatState?.Projectiles.Any(p => p.ObjectId == o.ObjectId && p.Flight.Kind == ProjectileKind.Torpedo) == true), "missile without point flight.");
         foreach (var launcher in launchers)
-            foreach (var id in launcher.Value.ActiveTorpedoIds)
-                Require(combat.Projectiles!.Any(p => p.ObjectId == id && p.Flight.OwnerObjectId == launcher.Key.Item1 &&
-                    p.Flight.LauncherModuleId == launcher.Key.Item2), "busy launcher without matching flight.");
-        if (projectileIds.Count > 0)
-            Require(combat.NextGuidanceMotionTimeMs > state.MotionTimeMs &&
-                combat.NextGuidanceMotionTimeMs == (state.MotionTimeMs > long.MaxValue - 100 ? long.MaxValue : state.MotionTimeMs - state.MotionTimeMs % 100 + 100),
-                "invalid next guidance boundary.");
+            foreach (string id in launcher.Value.ActiveTorpedoIds)
+                Require(state.PointCombatState?.Projectiles.Any(p => p.ObjectId == id && p.Flight.Kind == ProjectileKind.Torpedo &&
+                    p.Flight.OwnerObjectId == launcher.Key.Item1 && p.Flight.LauncherModuleId == launcher.Key.Item2) == true,
+                    "busy launcher without matching point flight.");
     }
-
-    private static bool Parameters(double speed, double turn, int damage) =>
-        double.IsFinite(speed) && speed > 0 && double.IsFinite(turn) && turn > 0 && damage > 0;
-    private static bool Finite(params double[] values) => values.All(double.IsFinite);
-    // A km/s -> m/s -> km/s roundtrip can change the low bits of a valid captured speed.
-    private static bool SameSpeed(double a, double b) => double.IsFinite(a) && double.IsFinite(b) &&
-        Math.Abs(a - b) <= 1e-12 * Math.Max(Math.Abs(a), Math.Abs(b));
-    private static bool Near(double a, double b) => double.IsFinite(a) && double.IsFinite(b) && Math.Abs(a - b) <= 1e-5;
-    private static bool HeadingNear(double a, double b) => Math.Abs((a - b + 540) % 360 - 180) <= 1e-5;
-    private static bool Segment(TorpedoRouteSegment? s, TorpedoSnapshot f) => s is not null &&
-        Finite(s.X, s.Y, s.Direction, s.SpeedKmS, s.AngularVelocityDegPerSec, s.DurationMs) && s.DurationMs >= 0 &&
-        s.SpeedKmS == f.SpeedKmS && Math.Abs(s.AngularVelocityDegPerSec) <= f.TurnRateDegPerSec;
 }

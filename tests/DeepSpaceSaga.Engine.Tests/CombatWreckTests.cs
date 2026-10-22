@@ -1,137 +1,75 @@
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
-
 namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class CombatWreckTests
 {
-    private static AuthoritativeSnapshot ThreeHits(SimulationEngine engine, bool partition = false)
+    private static AuthoritativeSnapshot DestroyWithPointBlasts(SimulationEngine engine, bool partition = false)
     {
-        AuthoritativeSnapshot snapshot = At(engine, 0);
-        for (int n = 0; n < 3; n++)
+        var scene = At(engine, 0);
+        for (int n = 0; n < 12 && scene.Objects.Any(o => o.ObjectId == Target); n++)
         {
-            long launchTime = n * 15000;
-            engine.ReceiveCommand(Fire("hit-" + n));
-            At(engine, launchTime);
-            if (partition)
-                for (long t = launchTime + 37; t < launchTime + 5000; t += 137) At(engine, t);
-            snapshot = At(engine, launchTime + 5000);
+            long launch = n * 10000L; scene = At(engine, launch);
+            var target = scene.Objects.Single(o => o.ObjectId == Target);
+            var owner = scene.Objects.Single(o => o.ObjectId == Player);
+            var aim = ModuleCombatEndToEndTests.LinearAim(owner, target, 10);
+            engine.ReceiveCommand(LaunchAt("wreck-hit-" + n, aim.X, aim.Y)); scene = At(engine, launch);
+            long due = (long)Math.Ceiling(Assert.Single(scene.Objects, o => o.OwnProjectile is not null).OwnProjectile!.DetonationMotionTimeMs);
+            if (partition) for (long t = launch + 37; t < due; t += 137) At(engine, t);
+            scene = At(engine, due);
         }
-        return snapshot;
+        Assert.DoesNotContain(scene.Objects, o => o.ObjectId == Target); return scene;
     }
-
     [Fact]
-    public void Third_hit_creates_one_new_stationary_wreck()
+    public void Point_destruction_creates_one_stationary_empty_wreck_at_the_physical_ship_pose()
     {
         var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with { SpeedMps = 100, DirectionDegrees = 90, MovementType = "Linear" } : o);
-        using var whole = Create(scenario);
-        using var split = Create(scenario);
-        var result = ThreeHits(whole);
-        var partitioned = ThreeHits(split, true);
-        var wreck = Assert.Single(result.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        var other = Assert.Single(partitioned.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        var hit = result.CombatImpacts[^1];
-        Assert.Equal(Target, hit.DestroyedObjectId);
-        Assert.Equal(wreck.ObjectId, hit.WreckObjectId);
-        Assert.NotEqual(Target, wreck.ObjectId);
-        Assert.Equal(other.ObjectId, wreck.ObjectId);
-        Assert.InRange(Math.Abs(other.X - wreck.X) + Math.Abs(other.Y - wreck.Y), 0, 3e-7);
-        Assert.Equal(hit.MotionTimeMs / 1000, wreck.X, 6);
-        Assert.Equal(-100, wreck.Y, 6);
-        Assert.Equal(0, wreck.SpeedKmS);
-        Assert.Equal(0, wreck.Direction);
-        Assert.Null(wreck.HullCombat);
-        Assert.DoesNotContain(result.Objects, o => o.ObjectId == Target || o.Torpedo is not null);
+        using var whole = Create(scenario); using var split = Create(scenario);
+        var a = DestroyWithPointBlasts(whole); var b = DestroyWithPointBlasts(split, true);
+        var wreck = Assert.Single(a.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
+        var other = Assert.Single(b.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
+        var death = Assert.Single(a.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
+        Assert.Equal(death.MotionTimeMs / 1000, wreck.X, 6); Assert.Equal(-100, wreck.Y, 6);
+        Assert.Equal(wreck, other); Assert.Equal(0, wreck.SpeedKmS); Assert.Equal(0, wreck.Direction);
         var runtime = whole.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == wreck.ObjectId);
-        Assert.Equal("Permanent", runtime.PersistenceType);
-        Assert.Empty(runtime.Modules);
-        Assert.True(runtime.Crew.IsDefaultOrEmpty);
-        Assert.True(runtime.Inventory.IsDefaultOrEmpty);
-        Assert.True(runtime.Passengers.IsDefaultOrEmpty);
-        Assert.Null(runtime.HullLayout);
+        Assert.Equal("Permanent", runtime.PersistenceType); Assert.Empty(runtime.Modules); Assert.True(runtime.Crew.IsDefaultOrEmpty);
+        Assert.True(runtime.Inventory.IsDefaultOrEmpty); Assert.True(runtime.Passengers.IsDefaultOrEmpty); Assert.Null(runtime.HullLayout);
     }
-
     [Fact]
-    public void Destroyed_target_references_are_cleared()
+    public void Destruction_clears_selection_and_navigation_and_the_world_keeps_running()
     {
         using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Player ? o with { SpeedMps = 50, MovementType = "Linear" } : o));
-        engine.ReceiveCommand(new("approach", 1, Player, "MOD-PLAYER-ENGINE-01", NavigationComputerCommandTypes.Approach, Target));
-        var navigating = At(engine, 0);
-        Assert.Equal(Target, navigating.Objects.Single(o => o.ObjectId == Player).NavigationTargetObjectId);
+        engine.ReceiveCommand(new("approach", 1, Player, "MOD-PLAYER-ENGINE-01", NavigationComputerCommandTypes.Approach, Target)); At(engine, 0);
         engine.SetObjectInteractionState(Target, Target);
-        var result = ThreeHits(engine);
-        Assert.Null(result.SelectedObjectId);
-        Assert.Null(result.ActiveObjectId);
+        var result = DestroyWithPointBlasts(engine); Assert.Null(result.SelectedObjectId); Assert.Null(result.ActiveObjectId);
         Assert.Null(result.Objects.Single(o => o.ObjectId == Player).NavigationTargetObjectId);
         Assert.DoesNotContain(engine.RuntimeObjects.SelectMany(o => o.Modules), m => m.ActiveCycle?.TargetObjectId == Target);
-        var wreck = Assert.Single(result.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        engine.SetObjectInteractionState(wreck.ObjectId, wreck.ObjectId);
-        Assert.Equal(wreck.ObjectId, At(engine, 35000).SelectedObjectId);
+        var later = At(engine, result.MotionTimeMs + 10000); Assert.True(later.GameTimeMs > result.GameTimeMs);
+        Assert.Equal(SessionOutcomeState.Running, later.EffectiveOutcome.State);
+        Assert.Single(later.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
     }
-
     [Fact]
-    public void Wreck_is_invulnerable_to_followup_torpedo()
+    public void Wreck_survives_real_file_load_without_replaying_point_blast_and_ignores_followup_blast()
     {
-        using var engine = Create();
-        var third = ThreeHits(engine);
-        var wreck = Assert.Single(third.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        At(engine, 45000);
-        engine.ReceiveCommand(Fire("wreck-shot", wreck.ObjectId));
-        Assert.Single(At(engine, 45000).Objects.Where(o => o.Torpedo is not null));
-        var after = At(engine, 49000);
-        Assert.Equal(4, after.CombatImpacts.Length);
-        var hit = after.CombatImpacts[^1];
-        Assert.Equal(wreck.ObjectId, hit.HitObjectId);
-        Assert.Equal(0, hit.DamageApplied);
-        Assert.Null(hit.DestroyedObjectId);
-        Assert.Null(hit.WreckObjectId);
-        Assert.Equal(wreck, Assert.Single(after.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck)));
-        Assert.Empty(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
-    }
-
-    [Fact]
-    public void World_continues_after_pirate_destruction()
-    {
-        using var engine = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Player ? o with { SpeedMps = 50, MovementType = "Linear" } : o));
-        var dead = ThreeHits(engine);
-        var later = At(engine, 45000);
-        Assert.True(later.GameTimeMs > dead.GameTimeMs);
-        Assert.NotEqual(dead.Objects.Single(o => o.ObjectId == Player).Y, later.Objects.Single(o => o.ObjectId == Player).Y);
-        Assert.Equal(3, later.CombatImpacts.Length);
-        Assert.Single(later.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        Assert.Null(later.Objects.Single(o => o.ObjectId == Player).HullCombat);
-        Assert.DoesNotContain(later.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Player);
-    }
-
-    [Fact]
-    public void Wreck_survives_file_load_without_replaying_impacts()
-    {
-        using var engine = Create();
-        var result = ThreeHits(engine);
-        string wreckId = result.CombatImpacts[^1].WreckObjectId!;
-        var save = engine.CaptureSaveStateForTests(35000, SimulationSpeed.Speed0);
-        var wreck = save.GameState.SpaceObjects.Single(o => o.ObjectId == wreckId);
-        Assert.Equal("Stationary", wreck.MovementType);
+        using var engine = Create(); var result = DestroyWithPointBlasts(engine);
+        var wreck = Assert.Single(result.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
+        long time = result.MotionTimeMs + 10000; var save = engine.CaptureSaveStateForTests(time, SimulationSpeed.Speed0);
         string path = Path.Combine(Path.GetTempPath(), "dss-wreck-" + Guid.NewGuid() + ".json");
         try
         {
-            File.WriteAllText(path, ScenarioLoader.Serialize(save));
-            using var loaded = SimulationEngine.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path);
-            var snapshot = At(loaded, 35000);
-            Assert.Empty(snapshot.CombatImpacts);
-            Assert.Single(snapshot.Objects.Where(o => o.ObjectId == wreckId));
-            Assert.DoesNotContain(snapshot.Objects, o => o.ObjectId == Target);
-            At(loaded, 45000);
-            loaded.ReceiveCommand(Fire("after-load", wreckId));
-            At(loaded, 45000);
-            var hit = Assert.Single(At(loaded, 49000).CombatImpacts);
-            Assert.Equal(wreckId, hit.HitObjectId);
-            Assert.Equal(0, hit.DamageApplied);
+            File.WriteAllText(path, ScenarioLoader.Serialize(save)); using var loaded = SimulationEngine.CreateFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path);
+            var before = At(loaded, time); Assert.Empty(before.CombatImpacts); Assert.Contains(before.Objects, o => o.ObjectId == wreck.ObjectId);
+            int hits = before.CombatJournal.Count(e => e.Type == CombatEventType.ModuleHit);
+            loaded.ReceiveCommand(LaunchAt("wreck-followup", wreck.X, wreck.Y)); var launch = At(loaded, time);
+            long due = (long)Math.Ceiling(Assert.Single(launch.Objects, o => o.OwnProjectile is not null).OwnProjectile!.DetonationMotionTimeMs);
+            var after = At(loaded, due); Assert.Equal(hits, after.CombatJournal.Count(e => e.Type == CombatEventType.ModuleHit));
+            Assert.Equal(wreck, after.Objects.Single(o => o.ObjectId == wreck.ObjectId));
+            Assert.Single(after.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed);
         }
         finally { File.Delete(path); }
     }
-
     [Theory]
     [InlineData("speed")]
     [InlineData("heading")]
@@ -144,8 +82,9 @@ public sealed class CombatWreckTests
     public void Loader_rejects_invalid_wreck_and_unbacked_missile(string kind)
     {
         using var engine = Create();
-        ThreeHits(engine);
-        var save = engine.CaptureSaveStateForTests(35000, SimulationSpeed.Speed0);
+        var result = DestroyWithPointBlasts(engine);
+        var save = engine.CaptureSaveStateForTests(result.MotionTimeMs, SimulationSpeed.Speed0, result.MotionTimeMs);
+        Assert.NotNull(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, isSave: true));
         var wreck = save.GameState.SpaceObjects.Single(o => o.ObjectType == SpaceObjectType.Wreck);
         var invalid = kind switch
         {
@@ -156,14 +95,15 @@ public sealed class CombatWreckTests
             "modules" => wreck with { Modules = save.GameState.SpaceObjects.Single(o => o.ObjectId == Player).Modules },
             "crew" => wreck with { Crew = [new("crew", "Crew")] },
             "cargo" => wreck with { Inventory = [new("item.ice", 1)] },
-            _ => wreck with { ObjectType = SpaceObjectType.Missile }
+            _ => wreck with { ObjectType = SpaceObjectType.Missile, RelationToPlayer = null }
         };
         var bad = save with
         {
             GameState = save.GameState with
             { SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectId == wreck.ObjectId ? invalid : o).ToArray() }
         };
-        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(bad), true));
+        var error = Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(bad), true));
+        Assert.Contains(kind == "missile" ? "missile" : "wreck", error.Message, StringComparison.OrdinalIgnoreCase);
     }
 
     [Theory]
@@ -172,60 +112,21 @@ public sealed class CombatWreckTests
     public void Wreck_id_skips_existing_objects(string occupiedId)
     {
         using var engine = Create(TorpedoImpactTests.Scenario(null, Obstacle(occupiedId, 1000, 1000)));
-        var snapshot = ThreeHits(engine);
+        var snapshot = DestroyWithPointBlasts(engine);
         Assert.Equal("wreck-2", Assert.Single(snapshot.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck)).ObjectId);
         Assert.Equal(snapshot.Objects.Length, snapshot.Objects.Select(o => o.ObjectId).Distinct().Count());
     }
 
+
     [Fact]
     public void Destruction_does_not_shift_station_market_boundary_commits()
     {
-        var market = Obstacle("market", 1000, 1000) with
-        {
-            ObjectType = SpaceObjectType.Station,
-            MassKg = null,
-            CompositionType = null,
-            MarketProfileId = "market.mining"
-        };
-        using var battle = Create(TorpedoImpactTests.Scenario(null, market));
-        using var control = Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Target ? o with { ShipClassId = null } : o, market));
-        foreach (var engine in new[] { battle, control })
-        {
-            for (int n = 0; n < 3; n++)
-            {
-                engine.ReceiveCommand(Fire("shot-" + n));
-                At(engine, n * 15000);
-                At(engine, n * 15000 + 5000, n == 2 ? GameCalendar.HourMs : n * 15000 + 5000);
-            }
-        }
-        var expected = control.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "market");
-        var actual = battle.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "market");
-        Assert.True(expected.MarketRevision > 1);
-        Assert.Equal(expected.MarketRevision, actual.MarketRevision);
-        Assert.Equal(expected.MarketBudgetCredits, actual.MarketBudgetCredits);
-        Assert.Equal(expected.Inventory.ToArray(), actual.Inventory.ToArray());
-        Assert.Single(battle.RuntimeObjects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-    }
-
-    [Fact]
-    public void Original_scenario_three_real_launches_destroy_moving_pirate()
-    {
-        var scenario = WithoutDefense(InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"))));
-        using var engine = Create(scenario);
-        long time = 0;
-        for (int n = 0; n < 3; n++)
-        {
-            engine.ReceiveCommand(Fire("real-" + n));
-            var launch = At(engine, time);
-            var torpedo = Assert.Single(launch.Objects.Where(o => o.Torpedo is not null));
-            time = torpedo.Torpedo!.PredictedImpactMotionTimeMs!.Value + 1000;
-            var result = At(engine, time);
-            Assert.Equal(n + 1, result.CombatImpacts.Length);
-            Assert.Equal(150, result.CombatImpacts[^1].DamageApplied);
-        }
-        var final = At(engine, time);
-        Assert.DoesNotContain(final.Objects, o => o.ObjectId == Target);
-        Assert.Single(final.Objects.Where(o => o.ObjectType == SpaceObjectType.Wreck));
-        Assert.Equal(3, final.CombatImpacts.Length);
+        var market = Obstacle("market", 1000, 1000) with { ObjectType = SpaceObjectType.Station, MassKg = null, CompositionType = null, MarketProfileId = "market.mining" };
+        using var battle = Create(TorpedoImpactTests.Scenario(null, market)); using var control = Create(TorpedoImpactTests.Scenario(null, market));
+        var dead = DestroyWithPointBlasts(battle); At(control, dead.MotionTimeMs);
+        At(battle, dead.MotionTimeMs + 10000, GameCalendar.HourMs); At(control, dead.MotionTimeMs + 10000, GameCalendar.HourMs);
+        var a = battle.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "market"); var b = control.RuntimeObjects.Single(o => o.InitialMotion.ObjectId == "market");
+        Assert.True(a.MarketRevision > 1); Assert.Equal(b.MarketRevision, a.MarketRevision);
+        Assert.Equal(b.MarketBudgetCredits, a.MarketBudgetCredits); Assert.Equal(b.Inventory.ToArray(), a.Inventory.ToArray());
     }
 }

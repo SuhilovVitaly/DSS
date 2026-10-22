@@ -37,6 +37,7 @@ public class DefeatNavigationTests
         if (Get<Task?>(f.Window, "_defeatTransitionTask") is { } pending) await pending;
         var screen = Assert.IsType<DefeatScreen>(f.Screens.Current);
         Assert.True(f.Game.CombatReportResourcesDisposed);
+        Assert.True(f.Game.DebugPanel.IsDisposed);
         Assert.Equal(0, assets.IllustrationCount);
         Assert.Equal(0, assets.PortraitCount);
         Assert.DoesNotContain(Get<Action?>(f.Handle, "Closing")?.GetInvocationList() ?? [], d => ReferenceEquals(d.Target, f.Game));
@@ -188,9 +189,9 @@ public class DefeatNavigationTests
                         DirectionDegrees = o.ObjectId == "SPC-0001" ? 0 : 180,
                         SpeedMps = 0,
                         MovementType = "Stationary",
-                        HullHitPoints = o.ObjectId == "SPC-0001" ? 150 : o.HullHitPoints,
-                        Modules = o.Modules!.Select(m => m with
-                        { AutoDefenseEnabled = false, PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On" }).ToArray()
+                        Ai = o.ObjectId == "SPC-0001" ? null : new(25, 8, 35),
+                        Modules = o.Modules!.Where(m => o.ObjectId != "SPC-0001" || m.ModuleTypeId.StartsWith("module.engine.")).Select(m => m with
+                        { ArmorClass = "none", PowerState = m.ModuleTypeId.StartsWith("module.engine.") ? "Off" : "On" }).ToArray()
                     }).ToArray()
                 }
             };

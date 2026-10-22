@@ -53,7 +53,7 @@ public sealed class CombatReportsSaveLoadTests
         var save = engine.CaptureSaveState();
         using var loaded = Create();
         loaded.LoadScenario(save, true);
-        loaded.ReceiveCommand(Fire("new-shot"));
+        loaded.ReceiveCommand(LaunchAt("new-shot"));
         var snapshot = At(loaded, 0);
         var report = Assert.Single(snapshot.CombatReports!.Reports);
         Assert.Equal(BattleReportKind.PlayerTorpedoLaunch, report.Kind);
@@ -66,7 +66,7 @@ public sealed class CombatReportsSaveLoadTests
     {
         using var engine = Create();
         var save = engine.CaptureSaveState();
-        engine.ReceiveCommand(Fire("pending"));
+        engine.ReceiveCommand(LaunchAt("pending"));
         var invalid = save with { GameState = save.GameState with { CombatReportsState = new(2, 50, []) } };
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(invalid, true));
         var snapshot = At(engine, 0);

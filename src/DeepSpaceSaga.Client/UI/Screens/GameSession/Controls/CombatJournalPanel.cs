@@ -12,10 +12,11 @@ internal sealed class CombatJournalPanel
     private readonly List<string> _lines = new();
     private ImmutableArray<CombatJournalEntry> _layoutEntries;
     private float _layoutWidth;
+    private string? _layoutPlayerObjectId;
     private int _visibleLineCount;
     internal IEnumerable<string> VisibleLines => _lines.Skip(_offset).Take(_visibleLineCount);
     internal void Render(SKCanvas canvas, float width, float height, ImmutableArray<CombatJournalEntry> entries,
-        float maximumRight = float.PositiveInfinity)
+        float maximumRight = float.PositiveInfinity, string? playerShipObjectId = null)
     {
         Entries = entries.IsDefault ? [] : entries;
         float left = Math.Min(384, Math.Max(8, width - 96));
@@ -28,12 +29,12 @@ internal sealed class CombatJournalPanel
         canvas.DrawText($"{(Expanded ? "−" : "+")} {T("Journal")} · {Entries.Length}", left + 6, 66, text);
         canvas.Restore();
         if (!Expanded) return;
-        if (_layoutEntries != Entries || _layoutWidth != w)
+        if (_layoutEntries != Entries || _layoutWidth != w || _layoutPlayerObjectId != playerShipObjectId)
         {
             _lines.Clear();
             foreach (var entry in Entries.Reverse())
             {
-                foreach (var line in Format(entry))
+                foreach (var line in Format(entry, playerShipObjectId))
                 {
                     string rest = line;
                     while (rest.Length > 0)
@@ -47,6 +48,7 @@ internal sealed class CombatJournalPanel
             }
             _layoutEntries = Entries;
             _layoutWidth = w;
+            _layoutPlayerObjectId = playerShipObjectId;
         }
         _visibleLineCount = Math.Max(1, (int)((Bounds.Bottom - 6 - 92) / 16) + 1);
         _offset = Math.Clamp(_offset, 0, Math.Max(0, _lines.Count - _visibleLineCount));
@@ -76,48 +78,42 @@ internal sealed class CombatJournalPanel
     }
     private static string T(string key) => GameSessionScreen.CombatText(key, key);
 
-    internal static IReadOnlyList<string> Format(CombatJournalEntry entry)
+    internal static IReadOnlyList<string> Format(CombatJournalEntry entry, string? playerShipObjectId = null)
     {
-        string type = T("Event." + entry.Type);
+        if (entry.Type == CombatEventType.TorpedoReloadCompleted)
+            return [T("ReloadCompleted").Replace("{launcher}", entry.Result ?? entry.LauncherModuleId ?? string.Empty, StringComparison.Ordinal)];
+        bool ownActor = playerShipObjectId is not null && entry.ActorObjectId == playerShipObjectId;
+        bool ownTarget = playerShipObjectId is not null && entry.TargetObjectId == playerShipObjectId;
+        string type = T(entry.Type == CombatEventType.TorpedoHitRoll ? "Event.LegacyResolution" : "Event." + entry.Type);
         var lines = new List<string> { $"{entry.MotionTimeMs / 1000:0.000} {T("Seconds")} · {type} · {entry.ProjectileObjectId}",
-            $"{entry.ActorObjectId} → {entry.TargetObjectId}" };
-        if (entry.LauncherModuleId is { } module) lines.Add($"{T("Module")}: {module}");
-        if (entry.LaunchMode is { } mode) lines.Add($"{T("LaunchMode")}: {T(mode == LaunchMode.Manual ? "Manual" : "Auto")}");
-        if (entry.Type == CombatEventType.TorpedoHitRoll && entry.Attack is { } attack && entry.Defense is { } defense)
-            lines.Add($"{T("Attack")} {attack:0.##} · {T("DefenseRating")} {defense:0.##}");
-        else if (entry.Type is CombatEventType.Intercept or CombatEventType.Miss &&
-            entry.Accuracy is { } defenseRating && entry.TargetManeuverability is { } attackRating)
+            string.IsNullOrEmpty(entry.TargetObjectId) ? entry.ActorObjectId : $"{entry.ActorObjectId} → {entry.TargetObjectId}" };
+        if (ownActor && entry.LauncherModuleId is { } module) lines.Add($"{T("Module")}: {module}");
+        if (entry.ProjectileKind is { } kind) lines.Add($"{T("ProjectileKind")}: {T("Kind." + kind)}");
+        if (entry.ProfileId is { } profile) lines.Add($"{T("Profile")}: {profile}");
+        if (entry.BlastRadiusKm is { } radius) lines.Add($"{T("BlastRadius")}: {radius:0.##} {T("Kilometers")}");
+        if (entry.HitResult is { } result) lines.Add($"{T("HitResult")}: {T("Hit." + result)}");
+        if (entry.DestroyedProjectileIds is { IsDefaultOrEmpty: false } ids)
+            lines.Add($"{T("InterceptedProjectiles")}: {string.Join(", ", ids)}");
+        if (ownTarget)
         {
-            lines.Add($"{T("DefenseRating")} {defenseRating:0.##} · {T("Attack")} {attackRating:0.##}");
-            lines.Add(T("InterceptFormula"));
+            if (entry.Type is CombatEventType.Hit or CombatEventType.Destroyed or CombatEventType.ModuleHit && entry.Damage is { } damage)
+                lines.Add($"{T("Damage")} {damage}");
+            if (entry.HitModuleId is { } hitModule) lines.Add($"{T("HitModule")}: {hitModule}");
+            if (entry.Type == CombatEventType.ModuleHit)
+            {
+                if (entry.ArmorBefore is { } armorBefore && entry.ArmorAfter is { } armorAfter)
+                    lines.Add($"{T("Armor")}: {armorBefore} → {armorAfter}");
+                if (entry.StructureBefore is { } structureBefore && entry.StructureAfter is { } structureAfter)
+                    lines.Add($"{T("Structure")}: {structureBefore} → {structureAfter}");
+            }
+            if (entry.Type == CombatEventType.ShipDestroyed && entry.DestroyReason is { } reason)
+                lines.Add($"{T("Cause")}: {DescribeDestroyReason(reason)}");
         }
-        else if (entry.Accuracy is { } accuracy && entry.TargetManeuverability is { } maneuverability)
-            lines.Add($"{T("Accuracy")} {accuracy:0.##} − {T("Maneuverability")} {maneuverability:0.##}");
-        if (entry.ChanceTenths is { } chance) lines.Add($"{T("Chance")} {chance / 10m:0.0}%" + (entry.Roll is { } roll ? $" · {T("Roll")} {roll}/1000" : " · " + T("NoRoll")));
-        if (entry.RatingBreakdown is { } ratings)
-        {
-            lines.Add($"{T("Countermeasure")}: {Describe(ratings.DefenseOperator)}");
-            lines.Add(ratings.TorpedoOperator is { } torpedoOperator ? $"{T("Torpedo")}: {Describe(torpedoOperator)}" : $"{T("Maneuverability")}: {ratings.TorpedoRating:0.##}");
-        }
-        else if (entry.TorpedoOperator is { } op) lines.Add(Describe(op));
-        if (entry.Type is CombatEventType.Hit or CombatEventType.Destroyed && entry.Damage is { } damage)
-            lines.Add($"{T("Damage")} {damage}");
-        if (entry.HitModuleId is { } hitModule)
-            lines.Add($"{T("HitModule")}: {hitModule}");
-        if (entry.Type == CombatEventType.ModuleHit)
-        {
-            if (entry.ArmorBefore is { } armorBefore && entry.ArmorAfter is { } armorAfter)
-                lines.Add($"{T("Armor")}: {armorBefore} → {armorAfter}");
-            if (entry.StructureBefore is { } structureBefore && entry.StructureAfter is { } structureAfter)
-                lines.Add($"{T("Structure")}: {structureBefore} → {structureAfter}");
-        }
-        if (entry.Type == CombatEventType.ShipDestroyed && entry.DestroyReason is { } destroyReason)
-            lines.Add($"{T("Cause")}: {DescribeDestroyReason(destroyReason)}");
         if (entry.Type == CombatEventType.BurstShotSkipped && entry.Result is { } skippedReason)
             lines.Add($"{T("Cause")}: {(skippedReason == "target_or_module_unavailable" ? T("Reason.BurstTargetOrModuleUnavailable") : skippedReason)}");
         if (entry.Type == CombatEventType.LauncherBreakdown && entry.Result is { Length: > 0 } brokenMode)
-            lines.Add($"{T("Mode")}: {T("Mode." + char.ToUpperInvariant(brokenMode[0]) + brokenMode[1..])}");
-        string? reason = entry.TerminationKind switch
+            lines.Add($"{T("Cause")}: {T("Mode." + char.ToUpperInvariant(brokenMode[0]) + brokenMode[1..])}");
+        string? termination = entry.TerminationKind switch
         {
             CountermeasureTerminationKind.LifetimeExpired => "lifetime_expired",
             CountermeasureTerminationKind.MissedCoastExpired => "missed_coast_expired",
@@ -125,13 +121,11 @@ internal sealed class CombatJournalPanel
             CountermeasureTerminationKind.OwnerLost => "owner_lost",
             _ => null
         };
-        if (reason is not null) lines.Add($"{T("State")}: {GameSessionScreen.DefenseReasonText(reason)}");
+        if (termination is not null) lines.Add($"{T("State")}: {GameSessionScreen.DefenseReasonText(termination)}");
         return lines;
-        static string Describe(WeaponOperatorSnapshot op) => $"{op.DisplayName}: {T("SkillMetadata")} {op.Skill}";
         static string DescribeDestroyReason(string reason) => reason.StartsWith("critical:", StringComparison.Ordinal)
             ? T("CriticalModule") + " " + reason["critical:".Length..]
             : reason.StartsWith("threshold:", StringComparison.Ordinal)
-                ? T("ModuleThreshold") + " " + reason["threshold:".Length..]
-                : reason;
+                ? T("ModuleThreshold") + " " + reason["threshold:".Length..] : reason;
     }
 }

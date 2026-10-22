@@ -1,25 +1,7 @@
-# Ship
+# Обзор корабля
 
-Статус: экран не реализован.
+Отдельный ShipScreen — placeholder shell, не редактор модулей или полный Ship overview. Реальная информация о состоянии доступна в тактическом UI и snapshots.
 
-## Назначение
+См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
 
-Окно корабля игрока. Открывается из `Session` и дает доступ к корабельным подсистемам, которые не должны перегружать тактическую карту.
-
-## Функциональность первого релиза
-
-- Показывает корабль Tetrarch Class и его основные модули.
-- Показывает состав экипажа и занятость кают.
-- Дает переход к `Character Communication` для общения с членами экипажа.
-- Может показывать установлен ли Drilling Unit.
-
-## Связанные механики
-
-- `TetrarchClass`.
-- `CrewAndHabitation`.
-- `CrewDialogues`.
-- `IceMining`.
-
-## Размер окна
-
-1400×800 px — стандартный размер окна игровых механик (см. `ScreenCatalog.md`).
+Источники: [ShipScreen.cs](../../../src/DeepSpaceSaga.Client/UI/Screens/Ship/ShipScreen.cs).

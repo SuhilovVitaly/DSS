@@ -120,6 +120,6 @@ Harness clock correction: fake Engine time with a wall-clock SnapshotBuffer lets
 
 ## Execution result — 2026-10-12
 
-Implementation, automated checks and self-review complete; native acceptance PARTIAL/OPEN. Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Existing native artifacts:13/14 interactions complete, one incomplete; 80FPS target not accepted. See [acceptance report](../../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+Implementation, automated checks and self-review complete; native acceptance PARTIAL/OPEN. Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Existing native artifacts:13/14 interactions complete, one incomplete; 80FPS target not accepted. See [acceptance report](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
 
 User instruction now prohibits game/native runs while continuing EP-0008 then EP-0009 autonomously. Remaining native/human evidence is deferred, not waived or labelled PASS; downstream review/documentation and EP-0009 may proceed after this ticket's separate publication. Source changes preserve all gameplay authority and public clock behavior.

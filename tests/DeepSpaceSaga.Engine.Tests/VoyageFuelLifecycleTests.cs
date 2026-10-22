@@ -26,7 +26,7 @@ public sealed class VoyageFuelLifecycleTests
             dialogues: Enumerable.Range(0, source.Dialogues.Count).Select(source.Dialogues.GetDefinition),
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count).Select(source.StationMarketProfiles.GetDefinition),
             shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition),
-            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition));
+            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition), combatRules: source.CombatRules);
     }
     private static ScenarioFile Save(SimulationEngine e, long time = 0) => e.CaptureSaveStateForTests(time, SimulationSpeed.Speed0, time);
     private static AuthoritativeSnapshot Snapshot(SimulationEngine e, long time = 0) => e.CaptureSnapshotForTests(time, SimulationSpeed.Speed0, time);
@@ -144,7 +144,7 @@ public sealed class VoyageFuelLifecycleTests
             dialogues: Enumerable.Range(0, source.Dialogues.Count).Select(source.Dialogues.GetDefinition),
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count).Select(source.StationMarketProfiles.GetDefinition),
             shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition),
-            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition));
+            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition), combatRules: source.CombatRules);
         var save = Initial(second: conflict);
         if (conflict) save = QuotedTradeExecutionTests.WithShipModules(save, m => m.ModuleId == SecondTank ? m with { ModuleTypeId = "module.engine.other" } : m);
         using var engine = Load(save, registry);

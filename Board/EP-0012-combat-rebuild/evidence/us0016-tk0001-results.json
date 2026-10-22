@@ -1,0 +1,199 @@
+{
+  "date": "2026-10-20",
+  "ticket": "EP-0012-US-0016-TK-0001-combat-localization",
+  "checks": [
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS0016TK0001Tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 6091,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:     8, Skipped:     0, Total:     8, Duration: 1 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--no-build",
+        "--filter",
+        "Category!=ForecastBudget",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 97458,
+      "hardTimeoutMs": 300000,
+      "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:  2330, Skipped:     0, Total:  2330, Duration: 1 m 36 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "build",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1484,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.26\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "whitespace",
+        "DeepSpaceSaga.sln",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Client/Localization.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportFormatter.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ModuleDiagram.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CounterAimPreview.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.TorpedoAimPreview.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelText.cs",
+        "tests/DeepSpaceSaga.Client.Tests/ObjectLabelTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/RangedTorpedoUiTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0016TK0001Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 3372,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Client/Localization.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportFormatter.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ModuleDiagram.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CounterAimPreview.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.TorpedoAimPreview.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelText.cs",
+        "tests/DeepSpaceSaga.Client.Tests/ObjectLabelTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/RangedTorpedoUiTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0016TK0001Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 10672,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "review": "self-review, not independent",
+  "native": "NOT RUN",
+  "integration": "Actual Engine point scene rendered RU/EN at 100/150 percent; internal IDs, command payloads, custom/captured names preserved.",
+  "solutionBuild": {
+    "args": [
+      "build",
+      "DeepSpaceSaga.sln",
+      "--no-restore",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 4228,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Contracts.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Contracts.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.Tests.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Motion.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Motion.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.Tests.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.EconomyBalance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.EconomyBalance\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.EconomyBalance.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.EconomyBalance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.Tests.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\n  DeepSpaceSaga.Performance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.dll\n  DeepSpaceSaga.Performance.Tests -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:04.00\n",
+    "stderr": ""
+  },
+  "clientGate": "2330/2330 non-budget Client PASS; strict ForecastBudget remains OPEN (2.227ms and 2.378ms versus 2ms).",
+  "owningClientFormat": {
+    "args": [
+      "format",
+      "src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj",
+      "--verify-no-changes",
+      "--no-restore",
+      "--include",
+      "src/DeepSpaceSaga.Client/Localization.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/CombatReportFormatter.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ModuleDiagram.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ObjectInfoPanel.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Combat.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.CounterAimPreview.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.ManualDefense.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.TorpedoAimPreview.cs",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/ObjectLabelText.cs",
+      "tests/DeepSpaceSaga.Client.Tests/ObjectLabelTests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/RangedTorpedoUiTests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0016TK0001Tests.cs"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 11715,
+    "hardTimeoutMs": 300000,
+    "stdout": "",
+    "stderr": ""
+  },
+  "observedInitialFailure": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-restore",
+      "--filter",
+      "FullyQualifiedName~PointCombatUS0016TK0001Tests",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 1,
+    "timedOut": false,
+    "elapsedMs": 17862,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n  Failed DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"Russian\", scale: 1.5) [605 ms]\n  Error Message:\n   Assert.Contains() Failure: Filter not matched in collection\nCollection: []\n  Stack Trace:\n     at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 68\n   at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 84\n--- End of stack trace from previous location ---\n  Failed DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"English\", scale: 1.5) [65 ms]\n  Error Message:\n   Assert.Contains() Failure: Filter not matched in collection\nCollection: []\n  Stack Trace:\n     at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 68\n   at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 84\n--- End of stack trace from previous location ---\n  Failed DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"English\", scale: 1) [51 ms]\n  Error Message:\n   Assert.Contains() Failure: Filter not matched in collection\nCollection: []\n  Stack Trace:\n     at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 68\n   at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 84\n--- End of stack trace from previous location ---\n  Failed DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"Russian\", scale: 1) [47 ms]\n  Error Message:\n   Assert.Contains() Failure: Filter not matched in collection\nCollection: []\n  Stack Trace:\n     at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 68\n   at DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(String language, Single scale) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0016TK0001Tests.cs:line 84\n--- End of stack trace from previous location ---\n\nFailed!  - Failed:     4, Passed:     4, Skipped:     0, Total:     8, Duration: 815 ms - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+    "stderr": "[xUnit.net 00:00:04.40]     DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"Russian\", scale: 1.5) [FAIL]\n[xUnit.net 00:00:04.46]     DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"English\", scale: 1.5) [FAIL]\n[xUnit.net 00:00:04.51]     DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"English\", scale: 1) [FAIL]\n[xUnit.net 00:00:04.56]     DeepSpaceSaga.Client.Tests.PointCombatUS0016TK0001Tests.Actual_point_screen_uses_selected_locale_without_changing_identities(language: \"Russian\", scale: 1) [FAIL]\n"
+  },
+  "headlessRenders": [
+    {
+      "file": "us0016-tk0001-combat-locale-English.png",
+      "sha256": "9d92a42e12fd2c03d1130094128ead77adbfb402bc9ac80ca13565a71904f0a7",
+      "kind": "Actual GameSessionScreen render inspected; not native acceptance."
+    },
+    {
+      "file": "us0016-tk0001-combat-locale-Russian.png",
+      "sha256": "469ae9f362acff14770dc655e2714a5a9c71153807464d0d9d7be0febf7de4f9",
+      "kind": "Actual GameSessionScreen render inspected; not native acceptance."
+    }
+  ],
+  "reviewNotes": [
+    "All literal CombatText keys exist in both real locale files, Combat key sets match and JSON keys are unique. Unknown reason/forecast/UI text uses locale-owned generic messages rather than caller prose; custom profile identifiers remain public configuration data.",
+    "Known own module names use stable type-ID locale keys. Panel identities and command IDs remain unchanged; labels are translated at rendering boundary. Captured report identities remain captured data.",
+    "Initial four screen checks failed because automatic viewport layout collapsed the weapon panel. Test now opens it through the real caption click before asserting translated button labels; no button assertion removed.",
+    "Thread-local test scope reads actual locale files and restores them on the same UI thread. Runtime language preference/restart behavior is unchanged.",
+    "Self-review only; native input/GPU/heard audio and canonical catalog activation remain separate open gates."
+  ]
+}

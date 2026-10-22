@@ -16,8 +16,10 @@ public sealed partial class SimulationEngine
         var ranges = player.Modules.Where(m => CanExecuteModuleCommand(m, motionTimeMs))
             .Where(m => !launchers.TryGetValue((player.InitialMotion.ObjectId, m.ModuleId), out var launcher) || !launcher.IsBrokenUntilDock)
             .Select(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex))
-            .Where(t => t.CommandTypeIds.Contains(CombatCommandTypes.Fire) && t.TorpedoRangeKm is > 0)
-            .Select(t => t.TorpedoRangeKm!.Value).ToArray();
+            .Where(t => t.IsPointLauncher
+                ? t.CategoryTypeId == "module.torpedo.launcher" && t.CommandTypeIds.Contains(CombatCommandTypes.Launch) && t.RangeKm is > 0
+                : t.CommandTypeIds.Contains(CombatCommandTypes.Fire) && t.TorpedoRangeKm is > 0)
+            .Select(t => t.IsPointLauncher ? t.RangeKm!.Value : t.TorpedoRangeKm!.Value).ToArray();
         if (ranges.Length == 0) yield break;
         var origin = CombatPath(player).Position(motionTimeMs);
         foreach (var target in objects.Where(o => o.IsKnown && !o.IsDestroyed &&

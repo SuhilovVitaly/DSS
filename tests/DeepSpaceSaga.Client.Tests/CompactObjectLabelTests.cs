@@ -21,7 +21,7 @@ public class CompactObjectLabelTests
     }
 
     [Fact]
-    public void Ship_has_one_two_pixel_hp_bar_without_an_accent_or_gap()
+    public void Ship_keeps_compact_label_without_an_aggregate_hp_bar()
     {
         var hp = new SKColor(60, 180, 120);
         var ship = new ObjectMotionSnapshot("ship", 300, 200, 0, 0,
@@ -36,16 +36,11 @@ public class CompactObjectLabelTests
         canvas.Clear(SKColors.Transparent);
         renderer.DrawPlaques(canvas, states, 0, SimulationSpeed.Speed0, 800, 600, camera);
         var bounds = renderer.Geometries["ship"].PlaqueRect;
-        var bar = ObjectLabelLayout.ModuleBarRect(bounds);
-        Assert.Equal(18, bounds.Height);
-        Assert.Equal(2, bar.Height);
-        Assert.Equal(bounds.Top + 16, bar.Top);
-        int x = (int)bounds.Left + 3;
-        int y = (int)Math.Floor(bar.Top + .5);
-        Assert.Equal(hp, bitmap.GetPixel(x, y));
-        Assert.Equal(hp, bitmap.GetPixel(x, y + 1));
-        Assert.NotEqual(hp, bitmap.GetPixel(x, y - 1));
-        Assert.Equal(TacticalMapPalette.HpEmpty, bitmap.GetPixel((int)bar.Right - 3, y));
+        Assert.Equal(16, bounds.Height);
+        Assert.DoesNotContain(hp, bitmap.Pixels);
+        Assert.DoesNotContain(TacticalMapPalette.HpEmpty, bitmap.Pixels);
+        Assert.True(bounds.Width > 0);
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship));
     }
 
     [Theory]
@@ -58,7 +53,6 @@ public class CompactObjectLabelTests
             [new("player", 0, 0, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip),
              new("projectile", -200, -100, 0, 0, RenderObjectType: type, DisplayName: "Projectile")], "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
-        screen.ForecastCache.UseWorker = false;
         using var bitmap = new SKBitmap(1280, 720);
         using var canvas = new SKCanvas(bitmap);
         void Render() => screen.Render(canvas, 1280, 720);
@@ -107,7 +101,6 @@ public class CompactObjectLabelTests
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(new(1, 0, SimulationSpeed.Speed0, [player], "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
-        screen.ForecastCache.UseWorker = false;
         using var bitmap = new SKBitmap(1280, 720);
         using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, 1280, 720);

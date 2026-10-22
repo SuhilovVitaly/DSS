@@ -76,6 +76,19 @@ internal sealed class GameDataRegistry
     public CatalogCompatibilityData CatalogCompatibility { get; }
     public string? LegacyCatalogFingerprint { get; }
 
+    /// <summary>Replace immutable module definitions without changing numeric type identities.</summary>
+    internal GameDataRegistry WithModuleTypes(ImmutableArray<ModuleTypeDefinition> definitions)
+    {
+        if (definitions.Length != ModuleTypes.Count)
+            throw new ArgumentException("Module overlay must preserve the catalog size.", nameof(definitions));
+        for (int i = 0; i < definitions.Length; i++)
+            if (definitions[i].TypeId != ModuleTypes.GetDefinition(i).TypeId)
+                throw new ArgumentException("Module overlay must preserve catalog index order.", nameof(definitions));
+        return new(ModuleCategories, TypeRegistry<ModuleTypeDefinition>.Create(definitions, "module overlay"),
+            ItemTypes, CommandDefinitions, FactoryTypes, Recipes, Dialogues, Quests, CatalogVersion,
+            LegacyCatalogFingerprint, StationMarketProfiles, ShipClasses, StationMarketEvents, CombatRules, FireModes);
+    }
+
     public static GameDataRegistry Empty { get; } = new(
         TypeRegistry<ModuleCategoryDefinition>.Empty,
         TypeRegistry<ModuleTypeDefinition>.Empty,
@@ -104,7 +117,8 @@ internal sealed class GameDataRegistry
     {
         if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
         if (combatRules is not null) CombatContentValidation.Rules(combatRules);
-        if (!fireModes.IsDefaultOrEmpty) CombatContentValidation.Modes(new(fireModes));
+        if (!fireModes.IsDefaultOrEmpty)
+            throw new ContentException("fireModes is retired; point launchers use captured profiles.");
         var commandRegistry = TypeRegistry<CommandDefinition>.Create(commandDefinitions, "command definitions");
         var categoryRegistry = TypeRegistry<ModuleCategoryDefinition>.Create(moduleCategories, "module types");
         var moduleRegistry = TypeRegistry<ModuleTypeDefinition>.Create(moduleTypes, "module implementations");
@@ -442,6 +456,11 @@ internal sealed class GameDataRegistry
     internal static void ValidateWeaponRatings(ModuleTypeDefinition module)
     {
         ValidateAdditionalCombatFields(module);
+        if (module.IsPointLauncher)
+        {
+            ValidatePointLauncher(module);
+            return;
+        }
         bool isTorpedo = module.CategoryTypeId == "module.torpedo.launcher";
         if (isTorpedo)
         {
@@ -470,6 +489,61 @@ internal sealed class GameDataRegistry
             module.CountermeasureRangeKm is not > 0 || !double.IsFinite(module.CountermeasureRangeKm.Value) ||
             module.CountermeasureReloadMs is not > 0)
             throw new ContentException($"Module '{module.TypeId}': positive finite countermeasureSpeedKmS/countermeasureTurnRateDegPerSec/countermeasureRangeKm/countermeasureReloadMs are required.");
+    }
+
+    private static void ValidatePointLauncher(ModuleTypeDefinition module)
+    {
+        [DoesNotReturn]
+        void Reject(string field, string reason) => throw new ContentException($"Module '{module.TypeId}', {field}: {reason}.");
+        bool torpedo = module.CategoryTypeId == "module.torpedo.launcher";
+        if (!torpedo && module.CategoryTypeId != "module.countermeasure.launcher")
+            Reject("profiles", "point-launch fields require a torpedo or countermissile launcher");
+        if (module.Profiles.IsDefaultOrEmpty)
+            Reject("profiles", "a nonempty profile list is required");
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        for (int index = 0; index < module.Profiles.Length; index++)
+        {
+            var profile = module.Profiles[index];
+            if (profile is null) Reject($"profiles[{index}]", "must not be null");
+            if (string.IsNullOrWhiteSpace(profile.ProfileId) || !ids.Add(profile.ProfileId))
+                Reject($"profiles[{index}].id", "must be nonempty and unique (ordinal)");
+            if (!double.IsFinite(profile.SpeedKmS) || profile.SpeedKmS <= 0)
+                Reject($"profiles[{index}].speedKmS", "must be positive and finite");
+            if (!double.IsFinite(profile.BlastRadiusKm) || profile.BlastRadiusKm <= 0)
+                Reject($"profiles[{index}].blastRadiusKm", "must be positive and finite");
+        }
+        if (module.RangeKm is not > 0 || !double.IsFinite(module.RangeKm.Value))
+            Reject("rangeKm", "must be positive and finite");
+        if (module.ReloadMs is null or < 0)
+            Reject("reloadMs", "must be present and nonnegative");
+        if (module.ScatterPercent is null or < 0 || !double.IsFinite(module.ScatterPercent.Value))
+            Reject("scatterPercent", "must be present, nonnegative and finite");
+        if (torpedo)
+        {
+            if (module.TorpedoDamage is not > 0) Reject("torpedoDamage", "must be a positive integer");
+            if (module.ArmorPiercingPercent is null or < 0 or > 100)
+                Reject("armorPiercingPercent", "must be present and inside [0,100]");
+        }
+        else if (module.TorpedoDamage.HasValue)
+            Reject("torpedoDamage", "countermissiles cannot damage ships");
+
+        (string Field, bool Present)[] legacy = [
+            ("torpedoManeuverability", module.TorpedoManeuverability.HasValue),
+            ("torpedoRangeKm", module.TorpedoRangeKm.HasValue),
+            ("torpedoSpeedKmS", module.TorpedoSpeedKmS.HasValue),
+            ("torpedoTurnRateDegPerSec", module.TorpedoTurnRateDegPerSec.HasValue),
+            ("torpedoMaxFlightTimeMs", module.TorpedoMaxFlightTimeMs.HasValue),
+            ("accuracy", module.Accuracy.HasValue), ("launcherReloadMs", module.LauncherReloadMs.HasValue),
+            ("countermeasureAccuracy", module.CountermeasureAccuracy.HasValue),
+            ("countermeasureRangeKm", module.CountermeasureRangeKm.HasValue),
+            ("countermeasureManualRangeKm", module.CountermeasureManualRangeKm.HasValue),
+            ("countermeasureSpeedKmS", module.CountermeasureSpeedKmS.HasValue),
+            ("countermeasureTurnRateDegPerSec", module.CountermeasureTurnRateDegPerSec.HasValue),
+            ("countermeasureReloadMs", module.CountermeasureReloadMs.HasValue),
+            ("countermeasureMaxFlightTimeMs", module.CountermeasureMaxFlightTimeMs.HasValue),
+            ("barrels", module.Barrels.HasValue), ("burstIntervalMs", module.BurstIntervalMs.HasValue)];
+        foreach (var field in legacy)
+            if (field.Present) Reject(field.Field, "is not supported with point-launch profiles");
     }
 
     private static void ValidateAdditionalCombatFields(ModuleTypeDefinition module)

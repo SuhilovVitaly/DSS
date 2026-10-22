@@ -2,55 +2,15 @@ using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
-using DeepSpaceSaga.Motion;
+using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class TorpedoImpactTests
 {
     internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
-    internal static readonly string ClientRoot = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-        "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-    internal static readonly Lazy<GameDataRegistry> Registry = new(() => LegacyWeaponRegistry(100, 0));
-
-    // EP-0008 flight/interception regressions retain their calibrated weapon parameters.
-    // The shipped EP-0009 catalog is asserted separately by Client content tests.
-    internal static GameDataRegistry LegacyWeaponRegistry(decimal accuracy, decimal chanceBase)
-    {
-        var source = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"), out _, out _);
-        static IEnumerable<T> All<T>(TypeRegistry<T> registry) where T : ITypeDefinition =>
-            Enumerable.Range(0, registry.Count).Select(registry.GetDefinition);
-        return GameDataRegistry.Create(
-            All(source.ModuleCategories),
-            All(source.ModuleTypes).Select(module => module.TypeId switch
-            {
-                "module.torpedo.launcher.basic" => module with
-                {
-                    TorpedoManeuverability = 5,
-                    Accuracy = accuracy,
-                    TorpedoRangeKm = 200,
-                    TorpedoSpeedKmS = 3
-                },
-                "module.countermeasure.launcher.basic" => module with
-                {
-                    CountermeasureAccuracy = 55,
-                    CountermeasureManualRangeKm = 200,
-                    CountermeasureMaxFlightTimeMs = 60000,
-                    CountermeasureSpeedKmS = 12,
-                    CountermeasureRangeKm = 100,
-                    CountermeasureReloadMs = 10000,
-                    Barrels = 1
-                },
-                _ => module
-            }).Select(module => module with { CombatRole = null }),
-            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
-            All(source.Dialogues), All(source.Quests), catalogVersion: source.CatalogVersion,
-            legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
-            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
-            stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = chanceBase } },
-            fireModes: source.FireModes);
-    }
+    internal static readonly string ClientRoot = Point.Root;
+    internal static readonly Lazy<GameDataRegistry> Registry = new(() => Point.Registry());
     internal static ScenarioFile Scenario(Func<SpaceObjectData, SpaceObjectData>? configure = null,
         params SpaceObjectData[] extras)
     {
@@ -64,10 +24,13 @@ public sealed class TorpedoImpactTests
                 {
                     var configured = o with
                     {
+                        Ai = null,
                         Modules = o.Modules?.Select(m => m with
                         {
+                            // Explicit6km/s,4deg/s Basic engine calibration for generic motion regressions.
+                            ModuleTypeId = m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal) ? "module.engine.basic" : m.ModuleTypeId,
                             AutoDefenseEnabled = false,
-                            PowerState = o.ObjectType == SpaceObjectType.NpcShip && m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? "Off" : m.PowerState
+                            PowerState = o.ObjectType == SpaceObjectType.NpcShip && (m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal) || m.ModuleTypeId == "module.torpedo.launcher.basic") ? "Off" : m.PowerState
                         }).ToArray(),
                         PositionX = 0,
                         PositionY = o.ObjectId == Player ? 0 : -100,
@@ -80,17 +43,6 @@ public sealed class TorpedoImpactTests
             }
         };
     }
-    internal static ScenarioFile WithoutDefense(ScenarioFile scenario) => scenario with
-    {
-        GameState = scenario.GameState with
-        {
-            SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
-            {
-                Modules = o.Modules?.Select(m => m with { AutoDefenseEnabled = false }).ToArray()
-            }).ToArray()
-        }
-    };
-
     internal static SpaceObjectData FragileForOneHit(SpaceObjectData ship) => ship with
     {
         Modules = ship.Modules!.Select(module => module.ModuleTypeId is "module.container.basic" or "module.scanner.mk1"
@@ -114,248 +66,106 @@ public sealed class TorpedoImpactTests
         };
     }
 
-    [Fact]
-    public void Legacy_fixtures_explicitly_disable_defense()
-    {
-        var scenario = Scenario();
-        foreach (var ship in scenario.GameState.SpaceObjects)
-        {
-            var defenses = ship.Modules!.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
-            Assert.Equal(ship.ObjectType == SpaceObjectType.PlayerShip ? 2 : 1, defenses.Length);
-            Assert.All(defenses, defense =>
-            {
-                Assert.False(defense.AutoDefenseEnabled);
-                Assert.Contains(ship.Crew!, c => c.CrewId == defense.OperatorCrewId);
-            });
-        }
-    }
-
     internal static SimulationEngine Create(ScenarioFile? scenario = null, GameDataRegistry? registry = null)
     {
         var engine = new SimulationEngine(registry ?? Registry.Value);
         engine.LoadScenario(scenario ?? Scenario());
         return engine;
     }
-    internal static PlayerCommand Fire(string id, string target = Target) => new(id, 1, Player, Launcher, CombatCommandTypes.Fire, target);
     internal static AuthoritativeSnapshot At(SimulationEngine engine, long motion, long? calendar = null) =>
         engine.CaptureSnapshotForTests(calendar ?? motion, simulationTimeMs: motion);
     internal static SpaceObjectData Obstacle(string id, double x, double y) =>
         new(id, SpaceObjectType.Asteroid, "Permanent", id, x, y, 0, 0, "Stationary", 1_000_000, "Silicate", null, IsKnown: true);
 
-    [Theory]
-    [InlineData(0, 0)]
-    [InlineData(0, 5)]
-    [InlineData(1234, 3)]
-    public void Initial_overlap_waits_for_physical_advance_through_repeated_paused_snapshots(long launchTime, double distance)
+    internal static PlayerCommand LaunchAt(string id, double x = 0, double y = -100, string profile = "medium") =>
+        new(id, 1, Player, Launcher, CombatCommandTypes.Launch, TargetWorldX: x, TargetWorldY: y, ProfileId: profile);
+
+    [Fact]
+    public void Controlled_source_fixture_uses_real_point_catalog_and_explicit_basic_engine_calibration()
     {
-        using var engine = Create(Scenario(o => o.ObjectId == Target ? o with { PositionY = -distance } : o));
-        At(engine, launchTime);
-        engine.ReceiveCommand(Fire("overlap"));
-        var launched = At(engine, launchTime);
-        Assert.Equal(SimulationSpeed.Speed0, launched.CurrentSpeed);
-        var projectile = Assert.Single(launched.Objects.Where(o => o.Torpedo is not null));
-
-        for (int i = 0; i < 4; i++)
-        {
-            var paused = At(engine, launchTime);
-            Assert.Equal(launchTime, paused.MotionTimeMs);
-            Assert.Equal(JsonSerializer.Serialize(projectile),
-                JsonSerializer.Serialize(Assert.Single(paused.Objects.Where(o => o.Torpedo is not null))));
-            Assert.Empty(paused.CombatImpacts);
-            Assert.Null(paused.Objects.Single(o => o.ObjectId == Target).HullCombat);
-            Assert.Equal(projectile.ObjectId,
-                Assert.Single(paused.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds));
-        }
-
-        // Calendar advancement alone must not trigger physical contact either.
-        Assert.Empty(At(engine, launchTime, launchTime + 1000).CombatImpacts);
-        var advanced = At(engine, launchTime + 1, launchTime + 1001);
-        var impact = Assert.Single(advanced.CombatImpacts);
-        Assert.Equal((double)launchTime, impact.MotionTimeMs);
-        Assert.Equal(Target, impact.HitObjectId);
-        Assert.Equal(150, impact.DamageApplied);
-        Assert.Empty(impact.FinalTrail);
-        Assert.DoesNotContain(advanced.Objects, o => o.Torpedo is not null);
-        Assert.Single(advanced.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed);
-        Assert.Empty(advanced.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
-        Assert.Single(At(engine, launchTime + 1, launchTime + 1001).CombatImpacts);
+        using var engine = Create(); var snapshot = At(engine, 0);
+        Assert.Equal(2, snapshot.InstalledModules.Count(m => m.Defense is not null));
+        Assert.Equal(new[] { "slow", "medium", "fast" }, snapshot.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.Profiles!.Value.Select(p => p.ProfileId));
+        Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.False(m.Defense!.AutoEnabled));
+        Assert.Equal("module.engine.basic", snapshot.InstalledModules.Single(m => m.ModuleId == "MOD-PLAYER-ENGINE-01").ModuleTypeId);
     }
 
     [Fact]
-    public void Three_contacts_destroy_modules_with_isolated_rng_draws()
+    public void Chosen_point_flight_has_no_early_hull_contact_and_resolves_exactly_at_fuse()
     {
-        using var engine = Create();
-        var before = At(engine, 0);
-        for (int n = 1; n <= 3; n++)
-        {
-            long launchTime = (n - 1) * 15000;
-            engine.ReceiveCommand(Fire("hit-" + n));
-            At(engine, launchTime);
-            var after = At(engine, launchTime + 4000);
-            Assert.Equal(n, after.CombatImpacts.Length);
-            Assert.Equal(150, after.CombatImpacts[^1].DamageApplied);
-            Assert.Equal(n, after.CombatJournal.Count(e => e.Type == CombatEventType.ModuleDestroyed));
-            Assert.Equal((ulong)n, engine.CaptureSaveStateForTests(launchTime + 4000, SimulationSpeed.Speed0).GameState.CombatState!.HitLocationRngCounter);
-            Assert.DoesNotContain(after.Objects, o => o.Torpedo is not null);
-            Assert.Empty(after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ActiveTorpedoIds);
-            Assert.Empty(after.ShipEvents);
-            Assert.Equal(launchTime + 15000,
-                after.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
-        }
-        Assert.Equal(42UL, engine.MasterSeed);
-        // Hit location uses its own stream; the player's launcher state remains unchanged.
+        using var engine = Create(); engine.ReceiveCommand(LaunchAt("point")); At(engine, 0);
+        var middle = At(engine, 500); var flight = Assert.Single(middle.Objects, o => o.OwnProjectile is not null);
+        Assert.Equal(0, flight.X, 10); Assert.Equal(-50, flight.Y, 10); Assert.Equal(1000, flight.OwnProjectile!.DetonationMotionTimeMs);
+        Assert.DoesNotContain(middle.CombatJournal, e => e.Type == CombatEventType.Hit);
+        var end = At(engine, 1000); Assert.DoesNotContain(end.Objects, o => o.OwnProjectile is not null);
+        Assert.Equal(1000, Assert.Single(end.CombatJournal, e => e.Type == CombatEventType.TorpedoDetonated).MotionTimeMs);
+        Assert.Single(end.CombatJournal, e => e.Type == CombatEventType.Hit && e.TargetObjectId == Target);
+        Assert.Equal(10000, end.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ReadyAtMotionTimeMs);
+        var saved = engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0, 1000);
+        Assert.Equal(1ul, saved.GameState.CombatState!.HitLocationRngCounter); Assert.Equal(2ul, saved.GameState.PointCombatState!.LaunchScatter.Counter);
+        Assert.All(end.CombatJournal, e => { Assert.Null(e.Roll); Assert.Null(e.ChanceTenths); });
     }
 
     [Fact]
-    public void Intermediate_obstacle_is_ignored_and_target_contact_releases_launcher()
+    public void Intermediate_asteroid_does_not_replace_the_scheduled_area_detonation()
     {
         using var engine = Create(Scenario(null, Obstacle("rock", 0, -50)));
-        engine.ReceiveCommand(Fire("one"));
-        At(engine, 0);
-        var hit = At(engine, 4000);
-        var fact = Assert.Single(hit.CombatImpacts);
-        Assert.Equal(Target, fact.HitObjectId);
-        Assert.Equal(Target, fact.TargetObjectId);
-        Assert.Equal(150, fact.DamageApplied);
-        Assert.Null(hit.Objects.Single(o => o.ObjectId == Target).HullCombat);
-        Assert.Equal(3166.6666666666665, fact.MotionTimeMs, 4);
-        var last = fact.FinalTrail[^1];
-        var end = TorpedoGuidanceMath.PredictSegment(last.Segment, last.Segment.DurationMs);
-        Assert.Equal(fact.X, end.X, 7);
-        Assert.Equal(fact.Y, end.Y, 7);
-        Assert.Equal(fact.MotionTimeMs, fact.FinalTrail.Sum(s => s.Segment.DurationMs), 7);
-        engine.ReceiveCommand(Fire("two"));
-        Assert.Equal("launcher_reloading", At(engine, 4000).CommandResults.Single(r => r.CommandId == "two").ReasonCode);
-        engine.ReceiveCommand(Fire("ready"));
-        Assert.Single(At(engine, 15000).Objects.Where(o => o.Torpedo is not null));
+        engine.ReceiveCommand(LaunchAt("point")); At(engine, 0);
+        Assert.Single(At(engine, 500).Objects, o => o.OwnProjectile is not null);
+        var final = At(engine, 1000); Assert.Contains(final.Objects, o => o.ObjectId == "rock");
+        Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Hit && e.TargetObjectId == Target);
+        Assert.DoesNotContain(final.CombatJournal, e => e.Type == CombatEventType.Hit && e.TargetObjectId == "rock");
     }
 
     [Fact]
-    public void Owner_is_ignored_for_entire_flight()
+    public void Sparse_and_partitioned_calendar_updates_keep_the_same_physical_point_facts()
     {
-        using var engine = Create(Scenario(o => o.ObjectId == Player ? o with { SpeedMps = 3000, MovementType = "Linear" } : o));
-        engine.ReceiveCommand(Fire("one"));
-        At(engine, 0);
-        var hit = At(engine, 4000);
-        Assert.Equal(Target, Assert.Single(hit.CombatImpacts).HitObjectId);
-        Assert.Null(hit.Objects.Single(o => o.ObjectId == Player).HullCombat);
+        using var whole = Create(); using var split = Create();
+        foreach (var engine in new[] { whole, split }) { engine.ReceiveCommand(LaunchAt("point")); At(engine, 0); }
+        var expected = At(whole, 5000, 2 * GameCalendar.DayMs);
+        foreach (long time in new long[] { 7, 123, 999, 1000, 1111, 5000 }) At(split, time, time * (2 * GameCalendar.DayMs) / 5000);
+        var actual = At(split, 5000, 2 * GameCalendar.DayMs);
+        Assert.Equal(JsonSerializer.Serialize(expected.Objects), JsonSerializer.Serialize(actual.Objects));
+        Assert.Equal(JsonSerializer.Serialize(expected.CombatJournal), JsonSerializer.Serialize(actual.CombatJournal));
+        Assert.Equal(JsonSerializer.Serialize(whole.CaptureSaveStateForTests(2 * GameCalendar.DayMs, SimulationSpeed.Speed0, 5000)),
+            JsonSerializer.Serialize(split.CaptureSaveStateForTests(2 * GameCalendar.DayMs, SimulationSpeed.Speed0, 5000)));
     }
 
     [Fact]
-    public void Equal_time_non_targets_are_ignored_and_target_is_hit_once()
+    public void Coalesced_point_facts_remain_durable_without_replay_or_new_session_duplicates()
     {
-        foreach (bool reverse in new[] { false, true })
+        using var engine = Create(); engine.ReceiveCommand(LaunchAt("one")); At(engine, 0);
+        var first = At(engine, 1000).CombatJournal; var late = At(engine, 50000).CombatJournal;
+        Assert.Equal(first.ToArray(), late.Take(first.Length).ToArray());
+        Assert.Equal(first.Length + 1, late.Length);
+        Assert.Equal(CombatEventType.TorpedoReloadCompleted, late[^1].Type);
+        engine.ReceiveCommand(LaunchAt("one", 300, 0));
+        Assert.Equal(late.ToArray(), At(engine, 50000).CombatJournal.ToArray());
+        Assert.Equal(2ul, engine.CaptureLaunchScatterState().Counter);
+        engine.LoadScenario(Scenario()); Assert.Empty(At(engine, 0).CombatJournal);
+        engine.ReceiveCommand(LaunchAt("new-session")); Assert.Equal(1, Assert.Single(At(engine, 0).CombatJournal).EventId);
+    }
+
+    [Fact]
+    public void Captured_start_and_endpoint_do_not_accumulate_guidance_history()
+    {
+        using var engine = Create(); engine.ReceiveCommand(LaunchAt("line")); At(engine, 0);
+        foreach (long t in Enumerable.Range(1, 50).Select(i => i * 17L))
         {
-            var a = Obstacle("a", 0, -50);
-            var z = Obstacle("z", 0, -50);
-            using var engine = Create(Scenario(null, reverse ? [a, z] : [z, a]));
-            engine.ReceiveCommand(Fire("one"));
-            At(engine, 0);
-            var hit = At(engine, 5000);
-            Assert.Equal(Target, Assert.Single(hit.CombatImpacts).HitObjectId);
-            Assert.Single(At(engine, 6000).CombatImpacts);
-            engine.ReceiveCommand(Fire("one"));
-            Assert.DoesNotContain(At(engine, 6000).Objects, o => o.Torpedo is not null);
+            var f = Assert.Single(At(engine, t).Objects, o => o.OwnProjectile is not null);
+            Assert.Equal(0, f.OwnProjectile!.StartX); Assert.Equal(0, f.OwnProjectile.StartY);
+            Assert.Equal(0, f.OwnProjectile.DetonationX); Assert.Equal(-100, f.OwnProjectile.DetonationY);
+            Assert.Equal(-t / 10d, f.Y, 10); Assert.Null(f.Torpedo); Assert.Null(f.Countermeasure);
         }
     }
 
     [Fact]
-    public void Snapshot_coalescing_does_not_lose_impact_fact()
+    public void Ships_without_legacy_class_take_point_damage_without_publishing_private_health()
     {
-        using var engine = Create();
-        engine.ReceiveCommand(Fire("one"));
-        At(engine, 0);
-        var first = Assert.Single(At(engine, 5000).CombatImpacts);
-        var late = Assert.Single(At(engine, 50000).CombatImpacts);
-        Assert.Equal(first, late);
-        Assert.NotEmpty(late.FinalTrail);
-        engine.LoadScenario(Scenario());
-        Assert.Empty(At(engine, 0).CombatImpacts);
-        engine.ReceiveCommand(Fire("fresh-session"));
-        At(engine, 0);
-        Assert.Equal(1, Assert.Single(At(engine, 5000).CombatImpacts).EventId);
-    }
-
-    [Fact]
-    public void Calendar_boundaries_do_not_change_combat_result()
-    {
-        using var whole = Create();
-        using var split = Create();
-        foreach (var engine in new[] { whole, split }) { engine.ReceiveCommand(Fire("one")); At(engine, 0); }
-        var expected = At(whole, 5000, 2 * GameCalendar.DayMs);
-        foreach (long time in new long[] { 7, 123, 1111, 3166, 3167, 5000 })
-            At(split, time, time * (2 * GameCalendar.DayMs) / 5000);
-        var actual = At(split, 5000, 2 * GameCalendar.DayMs);
-        var a = Assert.Single(actual.CombatImpacts);
-        var e = Assert.Single(expected.CombatImpacts);
-        Assert.Equal(e.HitObjectId, a.HitObjectId);
-        Assert.InRange(Math.Abs(e.MotionTimeMs - a.MotionTimeMs), 0, .0001);
-        Assert.InRange(Math.Abs(e.X - a.X) + Math.Abs(e.Y - a.Y), 0, 3e-7);
-        Assert.Single(actual.CombatJournal, ev => ev.Type == CombatEventType.ModuleDestroyed);
-        Assert.InRange(Math.Abs(e.FinalTrail.Sum(s => s.Segment.DurationMs) - a.FinalTrail.Sum(s => s.Segment.DurationMs)), 0, .0001);
-    }
-
-    [Fact]
-    public void Moving_non_target_does_not_intercept_torpedo_between_boundary_endpoints()
-    {
-        // The obstacle crosses the projectile at 1500 ms and leaves before 1600 ms.
-        var rock = Obstacle("crossing", -3000, -45) with { SpeedMps = 200000, DirectionDegrees = 90, MovementType = "Linear" };
-        using var engine = Create(Scenario(null, rock));
-        engine.ReceiveCommand(Fire("one"));
-        At(engine, 0);
-        var hit = Assert.Single(At(engine, 4000).CombatImpacts);
-        Assert.Equal(Target, hit.HitObjectId);
-        Assert.InRange(hit.MotionTimeMs, 3166, 3167);
-    }
-
-    [Fact]
-    public void Non_target_ship_is_ignored_on_way_to_selected_asteroid()
-    {
-        var scene = Scenario(o => o.ObjectId == Target ? o with { PositionY = -50 } : o,
-            Obstacle("selected-rock", 0, -100));
-        using var engine = Create(scene);
-        engine.ReceiveCommand(Fire("one", "selected-rock"));
-        At(engine, 0);
-        var hit = Assert.Single(At(engine, 4000).CombatImpacts);
-        Assert.Equal("selected-rock", hit.HitObjectId);
-        Assert.Equal("selected-rock", hit.TargetObjectId);
-        Assert.Null(At(engine, 4000).Objects.Single(o => o.ObjectId == Target).HullCombat);
-    }
-
-    [Fact]
-    public void Real_pirate_scenario_contact_closes_arc_and_straight_history()
-    {
-        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json")));
-        using var engine = Create(WithoutDefense(scenario));
-        engine.ReceiveCommand(Fire("real-flight"));
-        var launched = At(engine, 0);
-        var torpedo = Assert.Single(launched.Objects.Where(o => o.Torpedo is not null)).Torpedo!;
-        Assert.True(torpedo.Route.HasIntercept);
-        long end = torpedo.PredictedImpactMotionTimeMs!.Value + 1000;
-        var snapshot = At(engine, end);
-        var hit = Assert.Single(snapshot.CombatImpacts);
-        Assert.Equal(Target, hit.HitObjectId);
-        Assert.Equal(150, hit.DamageApplied);
-        Assert.Contains(hit.FinalTrail, s => s.Segment.AngularVelocityDegPerSec != 0);
-        Assert.Contains(hit.FinalTrail, s => s.Segment.AngularVelocityDegPerSec == 0);
-        var target = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == Target);
-        double x = target.PositionX + target.SpeedMps / 100000 * hit.MotionTimeMs * Math.Sin(target.DirectionDegrees * Math.PI / 180);
-        double y = target.PositionY - target.SpeedMps / 100000 * hit.MotionTimeMs * Math.Cos(target.DirectionDegrees * Math.PI / 180);
-        Assert.InRange(Math.Abs(Math.Sqrt(Math.Pow(x - hit.X, 2) + Math.Pow(y - hit.Y, 2)) - 5), 0, 3e-7);
-    }
-
-    [Fact]
-    public void Tetrarch_sprite_without_class_is_invulnerable_and_unknown_hull_stays_masked()
-    {
-        using var legacy = Create(Scenario(o => o.ObjectId == Target ? o with { ShipClassId = null } : o));
-        legacy.ReceiveCommand(Fire("legacy"));
-        At(legacy, 0);
-        Assert.Equal(0, Assert.Single(At(legacy, 4000).CombatImpacts).DamageApplied);
-        using var unknown = Create(Scenario(o => o.ObjectId == Target ? o with { IsKnown = false } : o));
-        unknown.ReceiveCommand(Fire("unknown"));
-        At(unknown, 0);
-        var snapshot = At(unknown, 4000);
-        Assert.Equal(150, Assert.Single(snapshot.CombatImpacts).DamageApplied);
-        Assert.Null(snapshot.Objects.Single(o => o.ObjectId == Target).HullCombat);
+        using var engine = Create(Scenario(o => o.ObjectId != Target ? o : o with { ShipClassId = null }));
+        engine.ReceiveCommand(LaunchAt("point")); At(engine, 0); var hit = At(engine, 1000);
+        Assert.Single(hit.CombatJournal, e => e.Type == CombatEventType.Hit && e.TargetObjectId == Target);
+        Assert.All(hit.Objects.Where(o => o.ObjectId == Target), o => { Assert.Null(o.HullCombat); Assert.True(o.ModuleHealth.IsDefaultOrEmpty); });
+        Assert.Equal(1ul, engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0, 1000).GameState.CombatState!.HitLocationRngCounter);
     }
 }

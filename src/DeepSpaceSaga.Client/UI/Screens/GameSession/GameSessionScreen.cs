@@ -32,6 +32,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly Dictionary<string, ObjectMotionSnapshot> _lastSnapshotBaselineObjects = new(StringComparer.Ordinal);
     private ulong _lastSnapshotBaselineSequence;
     private long _lastSnapshotBaselineGameTimeMs;
+    private readonly ModuleDiagram _moduleDiagram = new();
     private long _travelEstimateMotionTimeMs;
     private long _lastObservedForwardJumpMs;
     private bool _hasSnapshotBaseline;
@@ -111,7 +112,7 @@ public sealed partial class GameSessionScreen : IScreen
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
     private SKRect _lastSpeedPanelRect;
-    private readonly SKRect[] _speedButtonRects = new SKRect[5];
+    private readonly SKRect[] _speedButtonRects = new SKRect[7];
 
     // Scale state
     private SKRect _lastScalePanelRect;
@@ -225,8 +226,18 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private const float ObjectHitTestRadiusPx = 30f;
 
-    private static readonly string[] SpeedLabels = { "II", "1x", "5x", "20x", "100x" };
-    private static readonly SimulationSpeed[] SpeedValues =
+    private static readonly string[] CombatSpeedLabels = ["II", "1x", "2x", "5x", "10x"];
+    private static readonly SimulationSpeed[] CombatSpeedValues = [SimulationSpeed.Speed0, SimulationSpeed.Speed1,
+        SimulationSpeed.SpeedDouble, SimulationSpeed.Speed2, SimulationSpeed.SpeedTen];
+    private static readonly string[] ExtendedSpeedLabels = ["II", "1x", "2x", "5x", "10x", "20x", "100x"];
+    private static readonly SimulationSpeed[] ExtendedSpeedValues = [SimulationSpeed.Speed0, SimulationSpeed.Speed1,
+        SimulationSpeed.SpeedDouble, SimulationSpeed.Speed2, SimulationSpeed.SpeedTen, SimulationSpeed.Speed3, SimulationSpeed.Speed4];
+    private bool HasExtendedPeaceSpeed => _buffer.CurrentSpeed is SimulationSpeed.SpeedDouble or SimulationSpeed.SpeedTen;
+    private string[] SpeedLabels => CombatIsActive ? CombatSpeedLabels : HasExtendedPeaceSpeed ? ExtendedSpeedLabels : PeaceSpeedLabels;
+    private SimulationSpeed[] SpeedValues => CombatIsActive ? CombatSpeedValues : HasExtendedPeaceSpeed ? ExtendedSpeedValues : PeaceSpeedValues;
+    internal IReadOnlyList<SimulationSpeed> SpeedOptions => SpeedValues;
+    private static readonly string[] PeaceSpeedLabels = { "II", "1x", "5x", "20x", "100x" };
+    private static readonly SimulationSpeed[] PeaceSpeedValues =
         { SimulationSpeed.Speed0, SimulationSpeed.Speed1, SimulationSpeed.Speed2, SimulationSpeed.Speed3, SimulationSpeed.Speed4 };
     private static readonly string[] ScaleLabels = { "M0.5", "M1", "M10", "M100", "M1000" };
     private readonly double[] ScaleTargets;
@@ -243,7 +254,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal SKRect LastCloseRect => _lastCloseRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
-    internal IReadOnlyList<SKRect> SpeedButtonRects => _speedButtonRects;
+    internal IReadOnlyList<SKRect> SpeedButtonRects => new ArraySegment<SKRect>(_speedButtonRects, 0, SpeedValues.Length);
     internal SKRect LastScalePanelRect => _lastScalePanelRect;
     internal IReadOnlyList<SKRect> ScaleButtonRects => _scaleButtonRects;
     internal SKRect LastMechanicsPanelRect => _lastMechanicsPanelRect;
@@ -307,22 +318,29 @@ public sealed partial class GameSessionScreen : IScreen
         float uiScale = 1.0f,
         TacticalMapSettings? mapSettings = null,
         string? tacticalMapSnapshotDirectory = null,
-        CombatVisualSettings? combatSettings = null)
+        CombatVisualSettings? combatSettings = null,
+        CombatInputSettings? combatInputs = null,
+        Action<CombatAlertCue>? alertAudio = null,
+        Action? activateAudio = null,
+        Action? deactivateAudio = null, bool playInitialCombatStart = false)
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
+        CombatInputs = (combatInputs ?? CombatInputSettings.Default).Validate();
+        _alertAudio = alertAudio;
+        _playInitialCombatStart = playInitialCombatStart;
+        _activateAlertAudio = activateAudio; _deactivateAlertAudio = deactivateAudio;
         _predictor = predictor;
         _handle = handle;
         InitializeCombatReports();
+        InitializeDebugTuning();
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
         _showTrajectoryPrediction = showTrajectoryPrediction;
         _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
         _uiScale = ValidateUiScale(uiScale);
         _uiTimeStartTimestamp = _timestampProvider();
-        _combatEffects = new CombatEffectStore(_timestampProvider,
-            _buffer.HasCombatPresentation ? null : _buffer.FindCombatImpactReceivedAtTimestamp);
-        _combatEffects.Reset(_buffer.Presented?.Snapshot.CombatImpacts ?? default);
+        _combatEffects = new CombatEffectStore(_timestampProvider);
         _combatEffects.ResetJournal(_buffer.Presented?.Snapshot.CombatJournal ?? default);
 
         _mapSettings = (mapSettings ?? new()).Validate();
@@ -361,8 +379,10 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55), Style = SKPaintStyle.Fill };
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
-        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel, GetLauncherStatus, GetDefenseStatus, GetWeaponOperatorText,
-            IsDefenseCommandEnabled, SendDefenseCommand, GetDefenseInstanceStatus, GetDefenseInstanceOperatorText, GetDefenseInstanceDetails, () => DefensePresentationTime);
+        _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel,
+            IsPointWeaponCommandEnabled, SendPointWeaponCommand, GetPointWeaponStatus,
+            GetPointWeaponOperator, GetPointWeaponDetails, () => DefensePresentationTime,
+            () => _buffer.CurrentSpeed.MotionTimeMultiplier(), PointWeaponButtonLabel);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -384,6 +404,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnActivated()
     {
+        _alertsInactive = false;
+        _activateAlertAudio?.Invoke();
         // Wait for a fresh MouseMove before hit-testing again — the position we had
         // before this screen was last deactivated (e.g. under a since-closed modal) is
         // stale and must not silently reactivate an object under it.
@@ -392,22 +414,33 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _alertsInactive = true; _launchFlashes.Clear();
+        _deactivateAlertAudio?.Invoke();
+        CancelManeuverInput();
+        CancelPointAim();
         _combatReportPanel.ClearFocus();
-        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
-        ClearLaunchPreview();
-        _combatForecastCache.CancelPending();
+        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
+        {
+            DisposeCombatReports();
+            DisposeDebugTuning();
+        }
+        _combatForecastCache.Clear();
         ReleaseCombatPaints();
         _zoomTransition.Cancel();
         _isPanningMap = false;
         _isCtrlLeftDown = false;
         _isCtrlRightDown = false;
+        _pointAltLeft = _pointAltRight = false;
         _hasMousePosition = false;
         SetActiveObjectId(null);
     }
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (HandleDebugMouse(x, y, button)) return ScreenEvent.None;
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (HandlePointAimMouse(x, y, button)) return ScreenEvent.None;
+        if (HandleThreatPanelClick(x, y, button)) return ScreenEvent.None;
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
@@ -416,6 +449,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (button == MouseButton.Left)
         {
+            if (HandleEncounterClick(uiX, uiY)) return ScreenEvent.None;
             if (_combatReportPanel.OnMouseDown(uiX, uiY)) return ScreenEvent.None;
         }
         else
@@ -506,6 +540,7 @@ public sealed partial class GameSessionScreen : IScreen
         string? hitObjectId = picked.Id;
         if (hitObjectId is not null)
         {
+            SelectPointThreat(hitObjectId);
             _selectedFieldId = null; _selectedPoiId = null;
             SetSelectedObjectId(hitObjectId);
 
@@ -561,6 +596,15 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
+        if (_debugTuningPanel.Contains(x / _uiScale, y / _uiScale))
+        {
+            _panLastScreenX = x; _panLastScreenY = y;
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return true;
+        }
+        if (PointAim is { } aim && (_mouseX != x || _mouseY != y))
+        { _pointErrors.Remove(aim.ModuleId); ResetPointFriendlyConfirmation(); }
         if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
         // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
         // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
@@ -570,6 +614,20 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
+
+        if (_combatSummaryPanel.Bounds.Contains(_uiMouseX, _uiMouseY))
+        {
+            _panLastScreenX = x; _panLastScreenY = y;
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return _combatSummaryPanel.CanContinue && _combatSummaryPanel.ContinueRect.Contains(_uiMouseX, _uiMouseY);
+        }
+        if (_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY))
+        {
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return true;
+        }
 
         if (_combatReportPanel.OnMouseMove(_uiMouseX, _uiMouseY))
         {
@@ -619,6 +677,10 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (HandleDebugMouse(x, y, null, delta)) return ScreenEvent.None;
+        if (_combatSummaryPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
+        if (_threatPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
+        if (HandlePointAimWheel(x, y, delta)) return ScreenEvent.None;
         if (_combatReportPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_combatJournalPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_objectInfoPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
@@ -632,7 +694,11 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
+        if (HandleDebugKey(key)) return ScreenEvent.None;
+        if (_combatReportPanel.HasFocus && _combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (HandleManeuverKey(key)) return ScreenEvent.None;
+        if (HandlePointAimKey(key)) return ScreenEvent.None;
         if (_combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (key is Key.Equal or Key.KeypadAdd or Key.Minus or Key.KeypadSubtract)
         {
@@ -672,13 +738,14 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // Only ever arrives as Ctrl+F — KeyboardEdgeTracker gates the F edge on Ctrl,
-        // mirroring Ctrl+I above.
         if (key == Key.F)
-            return ScreenEvent.OpenFinance;
+        {
+            if (IsCtrlDown) return ScreenEvent.OpenFinance;
+            FitMapView(MapFitMode.Combat);
+            return ScreenEvent.None;
+        }
 
-        // Only ever arrives as Ctrl+S — same gating as Ctrl+F/Ctrl+I above.
-        if (key == Key.S)
+        if (key == Key.S && IsCtrlDown)
             return ScreenEvent.OpenShip;
 
         if (key == Key.Space)
@@ -700,26 +767,14 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        string? commandType = key switch
-        {
-            Key.Up => ShipEngineCommandTypes.Accelerate,
-            Key.Down => ShipEngineCommandTypes.Brake,
-            Key.Left => ShipEngineCommandTypes.TurnLeftStep,
-            Key.Right => ShipEngineCommandTypes.TurnRightStep,
-            _ => null
-        };
-
-        if (commandType is not null && CanSendEngineCommand(commandType, _buffer.Presented?.Snapshot))
-        {
-            SendEngineCommand(commandType);
-            return ScreenEvent.None;
-        }
-
         return ScreenEvent.None;
     }
 
     public void OnKeyUp(Key key)
     {
+        ReleaseManeuverKey(key);
+        if (key == Key.AltLeft) _pointAltLeft = false;
+        else if (key == Key.AltRight) _pointAltRight = false;
         if (key == Key.ControlLeft)
             _isCtrlLeftDown = false;
         else if (key == Key.ControlRight)
@@ -733,7 +788,7 @@ public sealed partial class GameSessionScreen : IScreen
         var current = _buffer.CurrentSpeed;
         if (current == SimulationSpeed.Speed0)
         {
-            ApplySpeed(_lastNonPauseSpeed);
+            ApplySpeed(CombatIsActive && !_lastNonPauseSpeed.IsAllowedInCombat() ? SimulationSpeed.Speed1 : _lastNonPauseSpeed);
         }
         else
         {
@@ -744,6 +799,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void ApplySpeed(SimulationSpeed speed)
     {
+        if (!IsCombatSpeedEnabled(speed)) return;
         if (speed != SimulationSpeed.Speed0)
             _lastNonPauseSpeed = speed;
 
@@ -755,7 +811,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private int HitTestSpeedPanel(float x, float y)
     {
-        for (int i = 0; i < _speedButtonRects.Length; i++)
+        for (int i = 0; i < SpeedValues.Length; i++)
         {
             if (_speedButtonRects[i].Contains(x, y))
                 return i;
@@ -787,11 +843,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal bool IsModuleCommandEnabled(string commandType)
     {
         if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return false;
-        if (commandType == CombatCommandTypes.Fire) return IsTorpedoFireEnabled();
-        if (commandType == CombatCommandTypes.SelfDestruct) return IsSelfDestructEnabled();
-        if (commandType == TorpedoLauncherCommandTypes.SetMode) return IsFireModeEnabled();
-        if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable)
-            return IsDefenseToggleEnabled(commandType);
+        if (commandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or "defense.fire" or "defense.enable" or "defense.disable") return false;
         var snapshot = _buffer.Presented?.Snapshot;
         if (commandType == NavigationComputerCommandTypes.Dock && AiMapPresentation.Base(snapshot, _selectedObjectId) is not null)
             return false;
@@ -840,24 +892,8 @@ public sealed partial class GameSessionScreen : IScreen
     {
         if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return;
         if (commandType == NavigationComputerCommandTypes.Dock && !IsModuleCommandEnabled(commandType)) return;
-        if (commandType is DefenseCommandTypes.Enable or DefenseCommandTypes.Disable && !IsDefenseToggleEnabled(commandType)) return;
-        if (commandType == CombatCommandTypes.SelfDestruct)
-        {
-            SendSelfDestruct();
-            return;
-        }
-        if (commandType == TorpedoLauncherCommandTypes.SetMode)
-        {
-            SendNextFireMode();
-            return;
-        }
-        if (commandType == CombatCommandTypes.Fire)
-        {
-            SendTorpedoFire();
-            return;
-        }
-        if (commandType is ScannerCommandTypes.StructuralScan or CombatCommandTypes.Fire && !IsModuleCommandEnabled(commandType))
-            return;
+        if (commandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or "defense.fire" or "defense.enable" or "defense.disable") return;
+        if (commandType == ScannerCommandTypes.StructuralScan && !IsModuleCommandEnabled(commandType)) return;
 
         string? moduleId = ResolveModuleId(commandType);
         if (moduleId is null)
@@ -1008,7 +1044,7 @@ public sealed partial class GameSessionScreen : IScreen
             bool labelOnly = distanceSq > radiusSq;
             if (labelOnly)
             {
-                if (!ObjectLabelRenderer.HasModuleBar(state.Source) ||
+                if (!ObjectLabelRenderer.HasSelectableShipLabel(state.Source) ||
                     !_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
                     continue;
                 distanceSq = 0;
@@ -1055,7 +1091,7 @@ public sealed partial class GameSessionScreen : IScreen
             _mouseX >= 0 && _mouseX <= _viewportW &&
             _mouseY >= 0 && _mouseY <= _viewportH;
 
-        string? candidate = cursorInViewport ? FindNearestObjectId(_mouseX, _mouseY) : null;
+        string? candidate = cursorInViewport && !_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY) ? FindNearestObjectId(_mouseX, _mouseY) : null;
         SetActiveObjectId(candidate);
     }
 
@@ -1097,6 +1133,8 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
+        if (_combatSummaryPanel.Bounds.Contains(uiX, uiY) || CombatBannerRect.Contains(uiX, uiY)) return true;
+        if (_threatPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatReportPanel.Bounds.Contains(uiX, uiY)) return true;
         if (_combatJournalPanel.Contains(uiX, uiY)) return true;
         if (_mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
@@ -1130,6 +1168,7 @@ public sealed partial class GameSessionScreen : IScreen
             PrepareCombatForecasts();
         }
         _presentationPrepared = false;
+        RefreshPointAiming();
         _combatEffects.StartOnPresentation = _buffer.HasCombatPresentation;
         BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
@@ -1175,6 +1214,7 @@ public sealed partial class GameSessionScreen : IScreen
         if (_selectedPoiId is not null && !_poiGeometry.Any(p => p.Data.ObjectId == _selectedPoiId)) _selectedPoiId = null;
 
         UpdateCameraFocusFromPlayer(_renderStates);
+        UpdateThreatAlerts(now);
         UpdateCombatImportance();
         UpdateMapClusters();
 
@@ -1245,11 +1285,12 @@ public sealed partial class GameSessionScreen : IScreen
             // painted last so the solid Approach covers the target forecast at overlaps.
             DrawNavigationTrajectories(canvas, width, height);
             DrawCombatTrajectories(canvas, prediction);
-            DrawCountermeasureTrajectories(canvas, prediction);
             if (_handle is not null && buffered is not null)
                 _handle.CombatMetrics.RecordVisual(buffered.Snapshot, _renderStates, prediction?.EffectivePredictionDeltaMs ?? 0, _timestampProvider());
             RenderStageCompleted?.Invoke("combat_trajectories");
-            DrawLaunchPreview(canvas, prediction, viewportResized);
+            DrawPointAimFeedback(canvas);
+            DrawManeuverInput(canvas);
+            DrawThreatAlertOverlays(canvas, now);
             RenderStageCompleted?.Invoke("launch_preview");
             CompleteRenderStage("forecasts");
 
@@ -1275,7 +1316,9 @@ public sealed partial class GameSessionScreen : IScreen
                     // Marker radius from the shared policy (screen-space, zoom-independent).
                     // The player ship's render type comes from identity (IsPlayerShip), not
                     // the payload — legacy payloads without RenderObjectType still draw as a ship.
-                    float r = HasCombatMarker(state.Source) ? CombatMarkerRadius : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                    float r = state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null
+                        ? (float)CombatSettings.PointCombat.ProjectileMarkerRadiusPx
+                        : HasCombatMarker(state.Source) ? CombatMarkerRadius : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                         state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Pose.RenderObjectType);
                     // Include halo, reticle and engine flame extents, not just the core.
                     float margin = r * 5 + 4;
@@ -1302,9 +1345,11 @@ public sealed partial class GameSessionScreen : IScreen
                         AiMapPresentation.DrawBase(canvas, aiBase, sx, sy, r);
                         continue;
                     }
+                    if (state.Source.ObservedProjectile is { Kind: ProjectileKind.Torpedo })
+                    { DrawObservedThreatMarker(canvas, state, sx, sy, r, now); continue; }
                     if (HasCombatMarker(state.Source))
                     {
-                        if (state.Source.Torpedo is not null)
+                        if (state.Source.OwnProjectile is { Kind: ProjectileKind.Torpedo })
                             _depthRenderer.DrawEngineFlame(canvas, sx, sy, state.Pose.Direction, r, uiTimeMs);
                         DrawCombatMarker(canvas, state, sx, sy);
                         continue;
@@ -1379,6 +1424,15 @@ public sealed partial class GameSessionScreen : IScreen
         if (_panelVisible) LayoutInfoPanel(buffered);
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
+        var playerShip = FindPlayerShip(_renderStates);
+        _commandsPanel.OwnModuleDiagram = null;
+        if (buffered?.Snapshot is { Encounter: not null } moduleSnapshot && playerShip is not null)
+        {
+            _moduleDiagram.Update(_buffer.PresentationSessionId, moduleSnapshot.SnapshotSequence, moduleSnapshot.PlayerShipObjectId!,
+                moduleSnapshot.InstalledModules, moduleSnapshot.CombatJournal, prediction is null ? moduleSnapshot.MotionTimeMs : GetPredictedGameTimeMs(prediction),
+                _buffer.CurrentSpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
+            _commandsPanel.OwnModuleDiagram = _moduleDiagram;
+        }
         _commandsPanel.Render(canvas,
             buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom,
             buffered?.Snapshot.PlayerShipObjectId);
@@ -1388,14 +1442,13 @@ public sealed partial class GameSessionScreen : IScreen
         var rightColumn = GameSessionRightColumnLayout.Create(_uiViewportW, _uiViewportH, PanelMargin,
             rightHudTop, ObjectInfoPanel.ResolveWidth(_uiViewportW, _uiViewportH));
         _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default,
-            rightColumn.Bounds.Left - PanelMargin);
+            rightColumn.Bounds.Left - PanelMargin, buffered?.Snapshot.PlayerShipObjectId);
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
             DrawInfoPanel(canvas, buffered);
 
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
-        var playerShip = FindPlayerShip(_renderStates);
         // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
             ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, rightColumn.ObjectInfoMaximumBottom);
@@ -1406,11 +1459,15 @@ public sealed partial class GameSessionScreen : IScreen
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
+        RenderThreatPanel(canvas);
+        DrawEncounterHud(canvas, buffered, prediction);
+        DrawCombatSpeedTooltip(canvas);
         if (_panelVisible)
         {
             canvas.DrawRect(_lastCloseRect, _panelBgPaint);
             canvas.DrawText("×", _lastCloseRect.MidX, _lastCloseRect.Top + 16, _panelClosePaint);
         }
+        RenderDebugTuning(canvas);
         CompleteRenderStage("info_panels");
 
         canvas.Restore();
@@ -1826,6 +1883,14 @@ public sealed partial class GameSessionScreen : IScreen
         // Guidance uses the target's instantaneous velocity, without its planned
         // maneuver. Show that assumption separately from the player's own route.
         _externalPlayerTrajectoryPoints.Add(new(player.Pose.X, player.Pose.Y));
+        if (HasActiveCombatPath)
+        {
+            double heading = player.Pose.Direction * Math.PI / 180;
+            _externalPlayerTrajectoryPoints.Add(new(player.Pose.X + Math.Sin(heading) * player.Pose.SpeedKmS * 10,
+                player.Pose.Y - Math.Cos(heading) * player.Pose.SpeedKmS * 10));
+            DrawOwnVelocity(canvas, width, height);
+            return;
+        }
         TrajectoryViewportGeometry.ExtendToEdge(_externalPlayerTrajectoryPoints, player.Pose.Direction, _camera, width, height);
         _depthRenderer.DrawTargetTrajectory(canvas, _externalPlayerTrajectoryPoints, _camera, width, height,
             SpaceMapColorResolver.PlayerShipColor, opacity: 77);
@@ -1839,7 +1904,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var state in _renderStates)
         {
-            if (state.Source.Torpedo is not null || state.Source.Countermeasure is not null ||
+            if (state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null ||
                 _combatForecastCache.Results.Values.Any(r => r.TargetId == state.Source.ObjectId &&
                     PreparedFlight(r.ProjectileId, _preparedForecastPrediction) is not null)) continue;
             // The player ship always gets its own ballistic preview (subject to the
@@ -1853,6 +1918,12 @@ public sealed partial class GameSessionScreen : IScreen
 
             if (!state.IsPlayerShip && !isSelectedTarget)
                 continue;
+
+            if (state.IsPlayerShip && HasActiveCombatPath)
+            {
+                DrawOwnCombatPath(canvas, state, width, height);
+                continue;
+            }
 
             if (!(state.Pose.SpeedKmS > 0 || state.Pose.ActiveEngineCommandType is not null))
                 continue;
@@ -1903,6 +1974,13 @@ public sealed partial class GameSessionScreen : IScreen
                 continue;
 
             var predicted = state.Pose.ToSnapshot();
+            if (HasActiveCombatPath)
+            {
+                // Combat draws the full selected maneuver; keep the confirmed goal marker.
+                if (predicted.NavigationTargetX is { } goalX && predicted.NavigationTargetY is { } goalY)
+                    DrawNavigationTargetMarker(canvas, goalX, goalY, width, height);
+                continue;
+            }
             if (predicted.NavigationTargetX is not null)
             {
                 // Draw the maneuver and its continuation as one continuous path.
@@ -1967,6 +2045,12 @@ public sealed partial class GameSessionScreen : IScreen
             {
                 if (!state.IsPlayerShip)
                     return Array.Empty<FutureTrajectoryPoint>();
+
+                if (HasActiveCombatPath)
+                {
+                    CombatTrajectoryProjector.BuildOwnViewportPath(state.Pose.ToSnapshot(), _combatOwnPathPoints, _camera, _viewportW, _viewportH);
+                    return _combatOwnPathPoints;
+                }
 
                 return (state.Pose.SpeedKmS > 0 || state.Pose.ActiveEngineCommandType is not null)
                     ? _futureTrajectoryProjector.Project(state.Pose.ToSnapshot())
@@ -2058,6 +2142,7 @@ public sealed partial class GameSessionScreen : IScreen
         float btnY = _lastSpeedPanelRect.Top + SpeedPanelPadY;
 
         var currentSpeed = _buffer.CurrentSpeed;
+        using var disabled = new SKPaint { Color = new SKColor(24, 24, 24, 150) };
         int activeIdx = Array.IndexOf(SpeedValues, currentSpeed);
         if (activeIdx < 0) activeIdx = 0;
 
@@ -2066,12 +2151,16 @@ public sealed partial class GameSessionScreen : IScreen
             var btnRect = new SKRect(btnX, btnY, btnX + SpeedBtnW, btnY + SpeedBtnH);
             _speedButtonRects[i] = btnRect;
 
-            bool isActive = (i == activeIdx);
-            canvas.DrawRect(btnRect, isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
+            bool enabled = IsCombatSpeedEnabled(SpeedValues[i]);
+            bool isActive = (i == activeIdx) && enabled;
+            canvas.DrawRect(btnRect, !enabled ? disabled : isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
             canvas.DrawRect(btnRect, _panelBorderPaint);
 
             float textY = btnY + SpeedBtnH / 2f + _speedBtnTextPaint.TextSize / 3f;
+            var color = _speedBtnTextPaint.Color;
+            if (!enabled) _speedBtnTextPaint.Color = color.WithAlpha(70);
             canvas.DrawText(SpeedLabels[i], btnX + SpeedBtnW / 2f, textY, _speedBtnTextPaint);
+            _speedBtnTextPaint.Color = color;
 
             // Green indicator under active button
             if (isActive)
@@ -2333,7 +2422,9 @@ public sealed partial class GameSessionScreen : IScreen
         // At small logical heights put the info panel beside the command column
         // when there is room, preserving all captions plus the launcher controls.
         float besideX = CommandsPanel.PanelWidth + PanelMargin * 2;
-        if (FindLauncher()?.LauncherCombat is not null && panelY - PanelMargin < CommandsPanel.MinimumExpandedHeight &&
+        bool hasPointLauncher = _buffer.Presented?.Snapshot is { InstalledModules.IsDefaultOrEmpty: false } moduleSnapshot &&
+            moduleSnapshot.InstalledModules.Any(m => m.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false });
+        if (hasPointLauncher && panelY - PanelMargin < CommandsPanel.MinimumExpandedHeight &&
             besideX + panelW + PanelMargin <= _uiViewportW)
             panelX = besideX;
 
@@ -2477,7 +2568,7 @@ public sealed partial class GameSessionScreen : IScreen
         var resource = ClusterMapPresentation.Resource(_buffer.Presented?.Snapshot, p.ObjectId);
         var resourceCluster = resource is null ? null : _buffer.Presented?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, BuildTorpedoInspection(s), p.Motion.Countermeasure, market,
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, null, null, market,
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,

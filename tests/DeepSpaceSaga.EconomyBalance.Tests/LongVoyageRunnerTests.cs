@@ -1,11 +1,35 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.EconomyBalance;
+using DeepSpaceSaga.Engine;
+using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.EconomyBalance.Tests;
 
 public sealed class LongVoyageRunnerTests
 {
+    [Theory]
+    [InlineData(1000)]
+    [InlineData(2000)]
+    public void ConfiguredCargoRetainsProductionPointContinuation(int cargoMultiplier)
+    {
+        var original = EngineContentLoader.LoadRegistryFromSettingsFile(BalanceRunTests.Settings, out _, out _);
+        var configured = ClusterBalanceRunner.ConfigureCargo(original, new("point-continuation", cargoMultiplier, 1000));
+        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(BalanceRunTests.Root,
+            "src/DeepSpaceSaga.Client/Scenarios/CombatMukha/scenario.json"));
+        using var engine = new SimulationEngine(configured);
+        engine.LoadScenario(scenario);
+        var snapshot = engine.CaptureSnapshot();
+        Assert.NotEmpty(snapshot.Objects.Where(o => o.ObjectType == SpaceObjectType.NpcShip));
+        Assert.Contains(snapshot.InstalledModules, m => m.LauncherCombat?.Profiles is { Length: > 0 });
+        var save = engine.CaptureSaveState();
+        Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
+        using var restored = new SimulationEngine(configured);
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        Assert.Equal(snapshot.Encounter, restored.CaptureSnapshot().Encounter);
+    }
+
     private static readonly Lazy<ImmutableArray<ClusterCaseEvidence>> Cases = new(() => new ClusterBalanceRunner().Run(
         BalanceRunTests.Settings, BalanceRunTests.Scenario, ClusterMatrixFile.Default with { ShipConfigurations = [BalanceRunTests.Starter] }));
 

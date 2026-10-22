@@ -124,6 +124,22 @@ public sealed record TradeExecutionReceipt(
 /// </summary>
 public static class CommandReasonCodes
 {
+    public const string MissingProfile = "missing_profile";
+    public const string UnknownProfile = "unknown_profile";
+    public const string LauncherReloading = "launcher_reloading";
+    public const string NoWeaponOperator = "no_weapon_operator";
+    public const string LaunchOutOfRange = "target_out_of_range";
+    public const string InvalidTime = "invalid_time";
+    public const string ProjectileIdExhausted = "projectile_id_exhausted";
+    public const string NotOwnProjectile = "not_own_projectile";
+    public const string StaleProjectile = "stale_projectile";
+    public const string UnknownThreat = "unknown_threat";
+    public const string InvalidEvadeSide = "invalid_evade_side";
+    public const string EngineDisabled = "engine_disabled";
+    public const string CombatSpeedLocked = "combat_speed_locked";
+    public const string InvalidTurnPayload = "invalid_turn_payload";
+    public const string InvalidSpeedPayload = "invalid_speed_payload";
+
     /// <summary>The player was defeated; gameplay commands and world saves are unavailable.</summary>
     public const string SessionDefeated = "session_defeated";
     public const string VoyageDestinationRequired = "voyage_destination_required";

@@ -13,17 +13,8 @@ internal sealed class ObjectLabelRenderer
 {
     private readonly CombatVisualSettings _combatSettings;
     internal IReadOnlyDictionary<string, ObjectLabelGeometry> Geometries => _geometries;
-    internal static bool HasModuleBar(ObjectMotionSnapshot source) => ModuleBarFraction(source) is not null;
-
-    internal static double? ModuleBarFraction(ObjectMotionSnapshot source)
-    {
-        if (source.IsDestroyed || source.RenderObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) ||
-            source.ModuleHealth.IsDefaultOrEmpty) return null;
-        long maximum = source.ModuleHealth.Sum(m => (long)m.ArmorMax + m.StructureMax);
-        if (maximum <= 0) return null;
-        long current = source.ModuleHealth.Sum(m => (long)m.ArmorCurrent + m.StructureCurrent);
-        return Math.Clamp((double)current / maximum, 0, 1);
-    }
+    internal static bool HasSelectableShipLabel(ObjectMotionSnapshot source) =>
+        !source.IsDestroyed && source.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip;
     private readonly SKPaint _leaderLinePaint;
     private readonly SKPaint _plaqueBgPaint;
     private readonly SKPaint _plaqueBorderPaint;
@@ -145,7 +136,7 @@ internal sealed class ObjectLabelRenderer
                 bool focused = objectId == selectedObjectId || objectId == hoveredObjectId;
                 if (predicted.RenderObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure && !focused)
                     continue;
-                bool important = focused || state.IsPlayerShip || HasModuleBar(state.Source) || isImportant?.Invoke(objectId) == true ||
+                bool important = focused || state.IsPlayerShip || HasSelectableShipLabel(state.Source) || isImportant?.Invoke(objectId) == true ||
                     predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
                 if (important != (pass == 0)) continue;
                 if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
@@ -184,7 +175,7 @@ internal sealed class ObjectLabelRenderer
 
                 // Target geometry from orbit layout (no smoothing).
                 var targetGeom = ObjectLabelLayout.Create(objectScreen, predicted.Direction, textWidth,
-                    viewport, markerRadius, HasModuleBar(state.Source));
+                    viewport, markerRadius);
 
                 // Apply smoothing to get the visible plaque position.
                 SKRect visiblePlaque = _smoother.Update(
@@ -306,8 +297,6 @@ internal sealed class ObjectLabelRenderer
             var predicted = state.Pose;
 
             var plaqueRect = geometry.PlaqueRect;
-            bool hasModuleBar = HasModuleBar(state.Source);
-            if (hasModuleBar) plaqueRect.Bottom = Math.Max(plaqueRect.Top, plaqueRect.Bottom - ObjectLabelLayout.ModuleBarSpace);
 
             byte opacity = _opacity[objectId];
             _plaqueBgPaint.Color = TacticalMapPalette.LabelBackground.WithAlpha((byte)Math.Round(235 * opacity / 255d));
@@ -348,16 +337,7 @@ internal sealed class ObjectLabelRenderer
             canvas.ClipRect(plaqueRect);
             canvas.DrawText(label, geometry.TextOrigin.X, textY, textPaint);
             canvas.Restore();
-            if (hasModuleBar)
-            {
-                double fraction = ModuleBarFraction(state.Source)!.Value;
-                var bar = ObjectLabelLayout.ModuleBarRect(geometry.PlaqueRect);
-                _stripePaint.Color = TacticalMapPalette.HpEmpty;
-                canvas.DrawRect(bar, _stripePaint);
-                bar.Right = bar.Left + bar.Width * (float)fraction;
-                _stripePaint.Color = _combatSettings.HullHp;
-                canvas.DrawRect(bar, _stripePaint);
-            }
+
         }
     }
 }

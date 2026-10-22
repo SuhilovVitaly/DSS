@@ -16,13 +16,12 @@ public sealed class CombatMapVisualTests
 
     private static ObjectMotionSnapshot Missile(double x, double y) =>
         new("torpedo", x, y, 3, 0, RenderObjectType: SpaceObjectType.Missile,
-            Torpedo: new("player", "launcher", "target", 0, 3, 90, 150, 0,
-                new(0, 1, TorpedoRoutePhase.Straight, false, [new(x, y, 0, 3, 0, 1000)])));
+            OwnProjectile: new(ProjectileKind.Torpedo, "player", "launcher", x, y, x, y, x, y - 600, 0, 10000, 6, "slow", 9, 200, 20));
 
     [Theory]
     [InlineData(1f)]
     [InlineData(1.5f)]
-    public void Torpedo_and_wreck_remain_five_pixels_across_zoom(float uiScale)
+    public void Configured_point_marker_and_five_pixel_wreck_remain_constant_across_zoom(float uiScale)
     {
         SKColor[]? reference = null;
         foreach (double ppu in new[] { 1.0, .1, .001, .00001 })
@@ -54,7 +53,7 @@ public sealed class CombatMapVisualTests
                 Assert.InRange(diameter, 4.7, 5.1);
                 Assert.Equal(screen.CombatSettings.Torpedo, bitmap.GetPixel(1160, 420));
                 Assert.Equal(screen.CombatSettings.Wreck.Alpha, bitmap.GetPixel(760, 420).Alpha);
-                Assert.True(bitmap.GetPixel(1165, 420).Alpha > 0); // blur beyond the 5px core
+                Assert.Equal(0, bitmap.GetPixel(1165, 420).Alpha); // current point marker has no legacy impact glow
                 Assert.Equal(0, bitmap.GetPixel(765, 420).Alpha);
             };
             screen.Render(canvas, 1920, 1080);
@@ -66,7 +65,7 @@ public sealed class CombatMapVisualTests
     }
 
     [Fact]
-    public void Known_ships_show_authoritative_module_health_below_labels()
+    public void Known_ship_labels_remain_visible_without_aggregate_health()
     {
         var palette = CombatVisualSettings.Default with { HullHp = new SKColor(20, 210, 100) };
         var renderer = new ObjectLabelRenderer(palette);
@@ -83,51 +82,46 @@ public sealed class CombatMapVisualTests
         foreach (var obj in known)
         {
             var geometry = renderer.Geometries[obj.ObjectId];
-            Assert.Equal(ObjectLabelLayout.PlaqueHeight + ObjectLabelLayout.ModuleBarSpace, geometry.PlaqueRect.Height);
-            var bar = ObjectLabelLayout.ModuleBarRect(geometry.PlaqueRect);
-            Assert.True(geometry.PlaqueRect.Contains(bar));
-            Assert.Equal(palette.HullHp, bitmap.GetPixel((int)bar.MidX, (int)bar.MidY));
+            Assert.Equal(ObjectLabelLayout.PlaqueHeight, geometry.PlaqueRect.Height);
+            Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(obj));
         }
-        foreach (var obj in new[] { unknown, legacy }) Assert.False(ObjectLabelRenderer.HasModuleBar(obj));
-        Assert.True(ObjectLabelRenderer.HasModuleBar(other));
+        Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(unknown));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(legacy));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(other));
+        Assert.DoesNotContain(palette.HullHp, bitmap.Pixels);
     }
 
     [Theory]
-    [InlineData(450, 1.0)]
-    [InlineData(300, 2.0 / 3)]
-    [InlineData(150, 1.0 / 3)]
-    [InlineData(900, 1.0)]
-    public void Hp_visual_progress_is_full_two_thirds_one_third(int hp, double fraction)
+    [InlineData(450)]
+    [InlineData(300)]
+    [InlineData(150)]
+    [InlineData(900)]
+    public void Health_changes_do_not_create_a_hull_bar(int hp)
     {
         var obj = Ship("player", 300, 200, hp);
         ObjectRenderState[] states = [new(obj, obj, true)];
-        var hpColor = CombatVisualSettings.Default.HullHp.WithAlpha(255);
+        var hpColor = new SKColor(123, 45, 67);
         var renderer = new ObjectLabelRenderer(CombatVisualSettings.Default with { HullHp = hpColor });
         var camera = new CameraState(400, 300, 1);
         renderer.ComputeGeometries(states, .02, 800, 600, camera);
         using var bitmap = new SKBitmap(800, 600);
         using var canvas = new SKCanvas(bitmap);
         renderer.DrawPlaques(canvas, states, 0, SimulationSpeed.Speed0, 800, 600, camera);
-        var bar = ObjectLabelLayout.ModuleBarRect(renderer.Geometries["player"].PlaqueRect);
-        int green = Enumerable.Range((int)Math.Ceiling(bar.Left), (int)bar.Width)
-            .Count(x => bitmap.GetPixel(x, (int)bar.MidY) == hpColor);
-        Assert.InRange(green, bar.Width * fraction - 1, bar.Width * fraction + 1);
-        Assert.Equal(0, ObjectLabelRenderer.ModuleBarFraction(obj with { ModuleHealth = [new("engine", "Engine", 0, 0, 0, 450, null, false)] }));
-        Assert.False(ObjectLabelRenderer.HasModuleBar(obj with { RenderObjectType = SpaceObjectType.Wreck }));
+        Assert.Equal(ObjectLabelLayout.PlaqueHeight, renderer.Geometries["player"].PlaqueRect.Height);
+        Assert.DoesNotContain(hpColor, bitmap.Pixels);
+        Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(obj with { RenderObjectType = SpaceObjectType.Wreck }));
     }
 
     [Fact]
-    public void Module_bar_aggregates_armor_and_structure_across_modules()
+    public void Per_module_health_does_not_change_label_selection_policy()
     {
         var ship = Ship("player", 0, 0) with
         {
-            ModuleHealth =
-            [
-                new("a", "A", 10, 20, 20, 40, null, false),
-                new("b", "B", 0, 20, 40, 80, null, false)
-            ]
+            ModuleHealth = [new("a", "A", 10, 20, 20, 40, null, false), new("b", "B", 0, 20, 40, 80, null, false)]
         };
-        Assert.Equal(70.0 / 160, ObjectLabelRenderer.ModuleBarFraction(ship));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship));
+        Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship with { ModuleHealth = [] }));
+        Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(ship with { IsDestroyed = true }));
     }
 
     [Fact]
@@ -149,7 +143,7 @@ public sealed class CombatMapVisualTests
         screen.Render(canvas, 1920, 1080);
         Assert.Equal(1, screen.MapClusterCount);
         var field = typeof(GameSessionScreen).GetField("_clusteredObjectIds", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
-        Assert.Equal(new[] { "a", "b" }, ((HashSet<string>)field.GetValue(screen)!).Order(StringComparer.Ordinal));
+        Assert.Equal(new[] { "a", "b", "target" }, ((HashSet<string>)field.GetValue(screen)!).Order(StringComparer.Ordinal));
         Assert.Null(screen.SelectedObjectId);
         screen.OnDeactivated();
     }

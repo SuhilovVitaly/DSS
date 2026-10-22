@@ -1,0 +1,138 @@
+# EP-0013 execution — 2026-10-22
+
+Implementation: **21/21 tickets, 7/7 stories** including final project-wide
+documentation. Full epic acceptance: **OPEN** for human/physical/audio; independent
+review was not performed. Current stage denotes implementation, not product acceptance.
+
+Implemented: F12 tuning panel for25 enumerated fields, authoritative atomic overlay
+and immediate ship/projectile/reload retiming, Save19/18 migration, strict startup
+files and confirmed atomic export/reset, independent continuous turn/speed axes,
+Shift latch, schema2 input migration and localized actual bindings.
+
+Final required suites **5291/5291 PASS**: Engine2478, Client2284, Contracts269,
+Motion251, Performance.Tests9. Engine coverage is verified case-for-case through
+17 bounded runs with2478 unique test IDs; initial monolith/large-part timeouts
+remain recorded. Solution build0warnings/0errors; scoped formatting PASS.
+Additional cargo/catalog continuation4/4 PASS. Optional long EconomyBalance full
+and scoped attempts hit300000ms caps; no balance PASS claimed.
+
+Real OpenGL managed-input proof: RU1×/EN1.5×, each12/12 PASS on Intel Arc140V.
+Physical keyboard/mouse, human visual/product/audio acceptance **NOT RUN**.
+
+Current authoritative execution evidence:
+[FinalValidation](FinalValidation.md), [37 AC coverage](AcceptanceCoverage.md),
+[documentation inventory](DocumentationImpact.md), [21 ticket publications](PublicationStatus.md).
+Final US7 commit is pushed immediately after creation; its actual local/remote
+SHA is checked through Git and recorded in
+`D:/DeepSpaceSaga/artifacts/validation/ep0013/publication-audit.json`.
+
+## Dated execution history — superseded by the final result above
+
+The following entries preserve intermediate observations on2026-10-22. Their
+“pending/next/not run” wording applies to those checkpoints; current results and
+remaining gates are defined by FinalValidation, not inferred from old run counts.
+
+Execution authority: current user request invokes [EpicExecutionPrompt](../EpicExecutionPrompt.md).
+Branch: `codex/ep-0013-debug-tuning-panel`.
+Remote: `origin`, `https://github.com/SuhilovVitaly/DSS`.
+
+## Starting state and publication
+
+At entry HEAD was `1c44dc54205af369cb214f3964e33475154aa7e0`; the branch had
+no upstream. Existing worktree changes were confined to this epic's Board package:
+30 modified documents and two new source/index documents. They restore the full
+revision 2 specification and replace the earlier local-only rule with immediate
+per-ticket publication. They are retained as the current execution inputs.
+
+| Ticket | Existing implementation SHA | Publication |
+|---|---|---|
+| EP-0013-US-0001-TK-0001 | `1c44dc54205af369cb214f3964e33475154aa7e0` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0001-TK-0002 | `67f6c6ab53edc70bf969dd1f0f3cc6e8543a9828` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0001-TK-0003 | `0930c36d135254555dd3b6689156d2f495de4390` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0002-TK-0001 | `7e3e25de2f2593c9950c3b64e56ce531290249df` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0002-TK-0002 | `31ee6113cec56a1a0d12714892e400945e4f15e4` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0002-TK-0003 | `9d6d4f5b72eb636be2e87e37032ba3ac22fa3688` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0003-TK-0001 | `51af7a7071a71d4b607f6f1fa1209fbe9f644a44` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0003-TK-0002 | `aa8750dbac35f25b82b3ec44cbe5011fc02740a0` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0004-TK-0001 | `60d86f2313758422e51a909882231a89eb7bc42e` | Pushed; remote SHA verified identical on 2026-10-22 |
+
+The existing preparatory commit `2a63be54` was published with the same branch.
+No empty replacement implementation commit was created.
+
+## Current validation
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests --no-restore`: **264/264 PASS**.
+  Process hard-capped at 300000 ms with tree termination on timeout; completed
+  in 2.52 s wall time outside the sandbox. An earlier sandbox attempt aborted
+  when VSTest failed to connect to testhost after 90 s; no test failure inferred.
+- `dotnet build src/DeepSpaceSaga.Contracts --no-restore`: **PASS**, 0 warnings/errors.
+- `dotnet format src/DeepSpaceSaga.Contracts --verify-no-changes --no-restore
+  --include src/DeepSpaceSaga.Contracts/DebugTuning.cs src/DeepSpaceSaga.Contracts/PlayerCommand.cs`:
+  **PASS** outside sandbox. Sandbox Roslyn named-pipe access was denied.
+- `git diff --check`: **PASS**; line-ending conversion warnings are informational.
+- Existing DTO diff reviewed against US1-AC1: patch/snapshot/reasons and optional
+  payload/profile serialization are present. Snapshot transport integration is TK3.
+- Native/GPU/physical-input/human acceptance: **NOT RUN**, functional implementation pending.
+
+## Next work
+
+Mandatory reading complete: all 90 Markdown documents under Documentation, the
+entire target epic and execution prompt; semantic evidence is retained at
+`D:/DeepSpaceSaga/artifacts/validation/ep0013/reading/ep13-doc-semantics-{1,2,3,4}.json`.
+US1-TK2/TK3 published. US1-TK3 checks: Engine affected
+regression112/112; Client transport23/23; solution build0warnings/0errors;
+solution scoped format PASS. US1 self-review/AC coverage complete.
+US2-TK1 ship retiming published: affected Engine227/227, Engine build0warnings/errors,
+scoped formatter/diff check PASS. US2-TK2 projectile retiming checked: affected
+Engine107/107, Engine build0warnings/errors, scoped formatter/diff check PASS; published.
+US2-TK3 published: affected Engine118/118, Engine build0warnings/errors,
+scoped format/diff PASS. US3-TK1 Save19 implemented/checks complete: Engine
+persistence regression492/492 + final integrity7/7, Client session42/42,
+solution build0warnings/errors, scoped format/diff PASS; published.
+US3-TK2 startup checks complete: Engine128/128, Contracts264/264, Client38/38,
+solution build0warnings/errors and scoped format/diff PASS; published.
+US4-TK1 writer checks complete: Client61/61 and final lifecycle/metrics56/56,
+Client build0warnings/errors, scoped format/diff PASS; published.
+US4-TK2 published `b02d157a01f9cc470b70c780f64e8098e51565f7`: Client44/44,
+solution build0warnings/errors, scoped format/diff PASS. US4-AC4 remains assigned to
+US5-TK3 reset integration, so US4 final acceptance is still open.
+Global diff currently includes an external process-AGENTS blank-line warning;
+foreign docs/process/tool curation changes are preserved and not staged here.
+Final US7 exists
+and was expanded before main implementation to cover all six documentation
+outcomes required by the execution prompt. Next: US5-TK1 tactical panel layout.
+US5-TK1 published `349b9586bfc5e2094a16dad58a9357f74feadf7d`:
+25 rows/5 sections/scales1/1.5/2, zero bytes over100 unchanged
+frames; Client regression78/78, Client build0warnings/errors, scoped format PASS.
+US5-TK2 published `fba826c670dcfdd9220f5f076a7726e9b6110beb`:
+Client130/130, build0warnings/errors, scoped format PASS.
+US5-TK3 published `dc64383d9218f14b69ff1f3147967ded876c79d0`:
+Client116/116 plus final16/16, solution0warnings/errors,
+scoped format PASS. US4-AC4 automated reset/deletion gap closed by these tests.
+US5-TK4 published `e3bc2931c8b28d162e036caaca1d5cca86ddabd2`:
+Client126/126, build0warnings/errors, scoped format PASS;
+RU/EN strict coverage, zero allocation and inspected raster proof. US5 automated
+coverage/self-review complete. US6-TK1 published
+`2e9be5f85d720e40156cda87e713cf5dd334ce86`: contracts269/269, solution0warnings/errors,
+scoped format PASS. US6-TK2 published `55fb71314fb16440a4e681cb8b8dcae356ea60ae`:
+Motion251/251, solution0warnings/errors, format PASS.
+US6-TK3 published `c8cd504b1873a352cac1587dbd4981283d7c90e9`:
+Engine304/304, Client149/149, solution0warnings/errors, format PASS.
+US6-TK4 published `f87b1afd6b1689ddce75efd5cee00c0c9f63d4bb`:
+Client161/161, build0warnings/errors, scoped format PASS; schema2 and v1
+migration tested. US6-TK5 published `f02d20883dd1d11c98a247b78fc5e603d4ce3d79`:
+Client202/202, solution0warnings/errors, format PASS;
+S delivery, axis stacks, Shift latch, recovery and focus resync tested.
+US6-TK6 hints133/133, build0warnings/errors, format PASS. Functional stories
+implemented; final review/general checks/native attempt and US7 docs/graph remain.
+US6–US7 remain pending. US1–US5 automated AC coverage and
+self-review are complete; full epic acceptance remains OPEN.
+
+Graph source navigation is the existing ignored `src/graphify-out` export. It is
+historical EP12 navigation, not verification of EP13. Fresh semantic reading is
+complete; the final rebuild must follow the final source/document changes.
+
+Preparation commit `517c6c333d5b8394ac9eef1d8b68e1112b5cc6f6` was pushed and its
+remote SHA verified identical. While reading, process AGENTS/CLAUDE were updated
+externally with artifact/worktree cleanup rules; those changes are preserved and
+excluded from EP13 commits. New evidence uses the mandated artifacts directory.

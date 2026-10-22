@@ -13,7 +13,7 @@ source_request: "После интервью создать следующий �
 
 ## Актуализация EP-0008 — 2026-10-12
 
-44 из45 исходных тикетов опубликованы плюс отдельная коррекция A09. Функциональная реализация и self-review завершены, US-0013 документы опубликованы; завершающий аудит ссылок закрывает цепочку. Graphify отменён пользователем2026-10-12 (SKIPPED), дальнейшие игровые/native прогоны отложены. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [публикации](PublicationStatus.md). Native13/14, frame-time target и human acceptance остаются OPEN; пользователь разрешил продолжить EP-0009 без дальнейших игровых/native запусков. Это не APPROVED за пользователя.
+44 из45 исходных тикетов опубликованы плюс отдельная коррекция A09. Функциональная реализация и self-review завершены, US-0013 документы опубликованы; завершающий аудит ссылок закрывает цепочку. Graphify отменён пользователем2026-10-12 (SKIPPED), дальнейшие игровые/native прогоны отложены. [Evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [публикации](PublicationStatus.md). Native13/14, frame-time target и human acceptance остаются OPEN; пользователь разрешил продолжить EP-0009 без дальнейших игровых/native запусков. Это не APPROVED за пользователя.
 
 
 # EP-0008 — Третья фаза боя

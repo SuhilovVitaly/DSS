@@ -1,4 +1,3 @@
-using System.Reflection;
 using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
@@ -70,8 +69,7 @@ public class DefeatTimeBoundaryTests
             All(source.ItemTypes), All(source.CommandDefinitions), factoryTypes: [new("factory.defeat", "Food", recipe)],
             shipClasses: All(source.ShipClasses), stationMarketProfiles: All(source.StationMarketProfiles),
             stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules! with { Chance = source.CombatRules.Chance with { Base = 0 } },
-            fireModes: source.FireModes);
+            combatRules: source.CombatRules);
         var scenario = PlayerDefeatTests.LethalScenario(150);
         scenario = scenario with
         {
@@ -85,12 +83,14 @@ public class DefeatTimeBoundaryTests
         };
         using var engine = new SimulationEngine(registry);
         engine.LoadScenario(scenario);
+        At(engine, 1, 300);
+        var captured = Assert.Single(engine.CaptureSaveStateForTests(300, SimulationSpeed.Speed0, 1).GameState.PointCombatState!.Projectiles).Flight;
         var final = At(engine, 2 * GameCalendar.DayMs / 300, 2 * GameCalendar.DayMs);
         Assert.Equal(SessionOutcomeState.Defeated, final.EffectiveOutcome.State);
         var launch = Assert.Single(final.CombatJournal, e => e.Type == CombatEventType.Launch);
-        Assert.InRange(launch.MotionTimeMs, 501, 1251);
-        // The stationary target is still five seconds of flight away after the NPC reacts.
-        double expectedDeath = launch.MotionTimeMs + 5000;
+        Assert.Equal(captured.LaunchMotionTimeMs, launch.MotionTimeMs);
+        double expectedDeath = captured.DetonationMotionTimeMs;
+        Assert.Equal(launch.MotionTimeMs + 155 / (captured.SpeedKmS / 100), expectedDeath, 8);
         double death = final.EffectiveOutcome.DeathMotionTimeMs!.Value;
         Assert.InRange(Math.Abs(death - expectedDeath), 0, .0001);
         Assert.Equal((long)Math.Ceiling(death), final.MotionTimeMs);
@@ -102,14 +102,12 @@ public class DefeatTimeBoundaryTests
         Assert.Equal(99, Assert.Single(factory.Inventory, i => i.ItemTypeIndex == registry.ItemTypes.GetIndex("item.food-rations")).StockQuantity);
         Assert.Equal(12 * GameCalendar.HourMs, Assert.Single(factory.ProducingModules).NextProductionDueGameTimeMs);
         var world = engine.RuntimeObjects.ToArray();
-        var rngField = typeof(SimulationEngine).GetField("_countermeasureRng", BindingFlags.Instance | BindingFlags.NonPublic)!;
-        var rng = (Combat.CountermeasureRng)rngField.GetValue(engine)!;
-        var rngBefore = (rng.State, rng.Counter);
+        var rngBefore = engine.CaptureLaunchScatterState();
         engine.SetSpeed(SimulationSpeed.Speed4);
         var later = At(engine, 100 * GameCalendar.DayMs, 300 * GameCalendar.DayMs);
         Assert.Equal(final.Outcome, later.Outcome);
         Assert.Equal(world, engine.RuntimeObjects.ToArray());
-        Assert.Equal(rngBefore, (rng.State, rng.Counter));
+        Assert.Equal(rngBefore, engine.CaptureLaunchScatterState());
         Assert.Equal(final.CombatJournal.ToArray(), later.CombatJournal.ToArray());
         Assert.Empty(later.ShipEvents);
     }

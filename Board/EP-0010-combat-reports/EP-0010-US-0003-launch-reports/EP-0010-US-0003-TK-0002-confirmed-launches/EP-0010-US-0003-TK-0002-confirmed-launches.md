@@ -18,7 +18,7 @@ validation_status: automated-passed
 
 ## Why
 
-Связать фактические пуски с новой панелью без второй боевой логики. [История](../EP-0010-US-0003-launch-reports.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R09, R11, R12, R16, R18.
+Связать фактические пуски с новой панелью без второй боевой логики. [История](../EP-0010-US-0003-launch-reports.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R09, R11, R12, R16, R18.
 
 ## Decisions
 

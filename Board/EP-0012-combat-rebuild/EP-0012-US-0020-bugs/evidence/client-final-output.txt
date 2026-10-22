@@ -1,0 +1,11 @@
+  DeepSpaceSaga.Contracts -> D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Contracts\bin\Debug\net8.0\DeepSpaceSaga.Contracts.dll
+  DeepSpaceSaga.Motion -> D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Motion\bin\Debug\net8.0\DeepSpaceSaga.Motion.dll
+  DeepSpaceSaga.Engine -> D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Engine\bin\Debug\net8.0\DeepSpaceSaga.Engine.dll
+  DeepSpaceSaga.Engine.LocalClient -> D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Engine.LocalClient\bin\Debug\net8.0\DeepSpaceSaga.Engine.LocalClient.dll
+  DeepSpaceSaga.Client -> D:\DeepSpaceSaga\DSS\src\DeepSpaceSaga.Client\bin\Debug\net8.0\DeepSpaceSaga.Client.dll
+  DeepSpaceSaga.Client.Tests -> D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll
+Test run for D:\DeepSpaceSaga\DSS\tests\DeepSpaceSaga.Client.Tests\bin\Debug\net8.0\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)
+A total of 1 test files matched the specified pattern.
+Results File: D:\DeepSpaceSaga\DSS\.tmp-us20\client-diagnostic-results\sushi_VITA-CASTLE_2026-10-21_16_09_40_net8.0.trx
+
+Passed!  - Failed:     0, Passed:  2256, Skipped:     0, Total:  2256, Duration: 1 m 27 s - DeepSpaceSaga.Client.Tests.dll (net8.0)

@@ -1,0 +1,9 @@
+{
+  "files": 10,
+  "links": 77,
+  "missing": [],
+  "ticket": "EP-0012-US-0015-TK-0003-update-documents-3",
+  "review": "Implementer self-review, not independent",
+  "runtimeRerun": "NOT RUN: documentation-only changes; latest gates are linked, not remeasured",
+  "note": "Mechanics/design and all directly affected session/Defeat/save/load/menu pages synchronized. Noncombat navigation preserved; old combat snapshots explicitly superseded; observed-motion privacy retained."
+}

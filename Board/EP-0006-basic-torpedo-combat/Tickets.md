@@ -2,7 +2,7 @@
 
 ## Актуализация EP-0008 — 2026-10-12
 
-Эта поставка и её evidence являются историческими. Действующие боевые характеристики, формула, hostile AI, ручной пуск, комплектация и Save16: [канонический контракт](../../Documentation/01-Requirements/EngineRequirements.md#phase-three-combat). [Исполнение EP-0008](../EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md). Старые PASS/версии не перенесены в текущую приёмку.
+Эта поставка и её evidence являются историческими. Действующие боевые характеристики, формула, hostile AI, ручной пуск, комплектация и Save16: [канонический контракт](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/01-Requirements/EngineRequirements.md#phase-three-combat). [Исполнение EP-0008](../EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md). Старые PASS/версии не перенесены в текущую приёмку.
 
 
 Создано 2026-10-02T08:22:58Z: **8 историй, 27 тикетов**, все `stage: draft`. [Контракт эпика и журнал решений](Documentation.md).
@@ -128,4 +128,4 @@ Runtime: **не запускался**, поскольку эта задача �
 
 ## Продолжение — EP-0007 (2026-10-04)
 
-Исторический план выше сохранён. Текущий этап добавляет операторов, автоматическую защиту, самоуничтожение, журнал и Save v11. [Реализация и evidence](../../Documentation/04-Engineering/CountermeasureCombat.md). Native acceptance не объявляется пройденной; пользователь разрешил завершить EP-0007 без native smoke.
+Исторический план выше сохранён. Текущий этап добавляет операторов, автоматическую защиту, самоуничтожение, журнал и Save v11. [Реализация и evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/CountermeasureCombat.md). Native acceptance не объявляется пройденной; пользователь разрешил завершить EP-0007 без native smoke.

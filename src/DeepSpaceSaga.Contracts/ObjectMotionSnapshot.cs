@@ -128,8 +128,8 @@ public sealed record ObjectMotionSnapshot(
     /// </summary>
     HullCombatSnapshot? HullCombat = null,
     /// <summary>Confirmed flight state for a torpedo using <see cref="SpaceObjectType.Missile"/>.</summary>
-    TorpedoSnapshot? Torpedo = null,
-    CountermeasureSnapshot? Countermeasure = null,
+    [property: JsonIgnore] TorpedoSnapshot? Torpedo = null,
+    [property: JsonIgnore] CountermeasureSnapshot? Countermeasure = null,
     DefenseSnapshot? Defense = null,
     [property: JsonPropertyName("orbit")] OrbitalElements? Orbit = null,
     [property: JsonPropertyName("orbitSampleSimulationTimeMs")] long? OrbitSampleSimulationTimeMs = null,
@@ -142,7 +142,28 @@ public sealed record ObjectMotionSnapshot(
     ImmutableArray<ModuleHealthSnapshot> ModuleHealth = default,
     /// <summary>Player-visible execution phase, projected only; never stored in saves.</summary>
     [property: JsonPropertyName("engineManeuver"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    EngineManeuverSnapshot? EngineManeuver = null);
+    EngineManeuverSnapshot? EngineManeuver = null,
+    /// <summary>Full captured point flight, published only to its owner.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    OwnProjectileSnapshot? OwnProjectile = null,
+    /// <summary>Foreign point flight with no concealed endpoint, deadline or module data.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ObservedProjectileSnapshot? ObservedProjectile = null,
+    /// <summary>Aggregate hostile ship status; full enemy module health is masked by the Engine.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    EnemyShipStatusSnapshot? EnemyStatus = null,
+    /// <summary>Accepted own evasion and known return course; omitted for foreign ships.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    EvasionSnapshot? Evasion = null,
+    /// <summary>Accepted own held turn, signed degrees per physical second; omitted for foreign ships.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? TurnHoldRateDegPerSec = null,
+    /// <summary>Accepted own held acceleration in km/s²; omitted for foreign ships.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? SpeedHoldAccelerationKmS2 = null,
+    /// <summary>Own acceleration remains active after releasing Shift until the speed limit.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
+    bool SpeedHoldLatched = false);
 
 /// <summary>Existing discrete engine command, not a proposed command or future AI decision.
 /// Acceleration is km/s²; the first speed delta includes elapsed inertia before this snapshot.

@@ -20,7 +20,7 @@ public sealed record PlayerCommand(
     /// </summary>
     string? TargetObjectId = null,
     /// <summary>
-    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.Orbit"/>
+    /// Explicit world-coordinate target for point launch or <see cref="ShipEngineCommandTypes.Orbit"/>
     /// (world units, same coordinate system as <see cref="ObjectMotionSnapshot.X"/>).
     /// Both coordinates are required and must be finite for orbit; the engine
     /// validates this authoritatively and rejects the command with
@@ -29,7 +29,7 @@ public sealed record PlayerCommand(
     /// </summary>
     double? TargetWorldX = null,
     /// <summary>
-    /// Explicit world-coordinate target for <see cref="ShipEngineCommandTypes.Orbit"/>
+    /// Explicit world-coordinate target for point launch or <see cref="ShipEngineCommandTypes.Orbit"/>
     /// (world units). See <see cref="TargetWorldX"/>.
     /// </summary>
     double? TargetWorldY = null,
@@ -66,5 +66,24 @@ public sealed record PlayerCommand(
     /// Null for legacy/non-trade commands (null means "no revision", not revision zero).
     /// </summary>
     long? MarketRevision = null,
-    /// <summary>Requested fire mode for torpedo.setMode; validated by the Engine.</summary>
-    string? ModeId = null);
+    /// <summary>Reserved legacy payload slot for deterministic rejection of retired torpedo.setMode; not a current point-launch mode.</summary>
+    string? ModeId = null,
+    /// <summary>Explicit point-launch profile; the Engine validates availability on this launcher.</summary>
+    string? ProfileId = null,
+    /// <summary>Observed projectile selected for maneuver.evade, independent of UI selection.</summary>
+    string? ThreatProjectileId = null,
+    /// <summary>Evade direction relative to the selected threat's flight vector.</summary>
+    EvadeSide? EvadeSide = null,
+    /// <summary>Explicit direction for engine.turnHold; null is not a default direction.</summary>
+    TurnDirection? TurnDirection = null,
+    /// <summary>True starts/holds the selected turn or speed axis; false releases it. Null is an incomplete payload.</summary>
+    bool? Active = null,
+    /// <summary>Atomic debug catalog overlay, applied in the player-command phase.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    DebugTuningPatch? DebugTuning = null,
+    /// <summary>Direction for engine.speedHold. Null is an incomplete speed-control payload.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    SpeedDirection? SpeedDirection = null,
+    /// <summary>Accelerate until maximum speed after key release (Shift); only used by speedHold.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    bool? Latched = null);

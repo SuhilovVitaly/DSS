@@ -27,7 +27,7 @@ public sealed class CatalogCompatibilityTests
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
                 .Select(source.StationMarketProfiles.GetDefinition).Select(profile => profileChange?.Invoke(profile) ?? profile),
             shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition),
-            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition));
+            stationMarketEvents: Enumerable.Range(0, source.StationMarketEvents.Count).Select(source.StationMarketEvents.GetDefinition), combatRules: source.CombatRules);
 
     private static ItemTypeDefinition[] Items(GameDataRegistry registry) =>
         Enumerable.Range(0, registry.ItemTypes.Count).Select(registry.ItemTypes.GetDefinition).ToArray();
@@ -216,7 +216,7 @@ public sealed class CatalogCompatibilityTests
         string path = Path.Combine(Path.GetDirectoryName(SettingsPath)!, "Scenarios", scenarioName, "scenario.json");
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(SettingsPath, path);
         var save = engine.CaptureSaveState();
-        Assert.Equal(17, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(19, SaveFormat.CurrentSaveFormatVersion);
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         var registry = RealRegistry();
         Assert.Equal(registry.CatalogCompatibility, save.GameState.CatalogCompatibility);
@@ -834,6 +834,7 @@ public sealed class CargoCostPersistenceTests
                 }).ToArray()
                 }
             };
+        save = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, version);
         return save with { SaveFormatVersion = version, GameState = save.GameState with { MarketKnowledge = version < 14 ? null : save.GameState.MarketKnowledge, TradingEconomyContinuation = version < 15 ? null : save.GameState.TradingEconomyContinuation } };
     }
     private static CargoStackData Stack(SimulationEngine engine) => engine.CaptureSaveStateForTests(0, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 0)
@@ -935,7 +936,7 @@ public sealed class CargoCostPersistenceTests
             Enumerable.Range(0, source.ModuleTypes.Count).Select(source.ModuleTypes.GetDefinition),
             [new ItemTypeDefinition("item.ice", "Ice", 1)],
             Enumerable.Range(0, source.CommandDefinitions.Count).Select(source.CommandDefinitions.GetDefinition),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), combatRules: source.CombatRules);
         var save = Template(0, new("item.ice", 3));
         var ship = save.GameState.SpaceObjects.Single(o => o.ObjectId == QuotedTradeExecutionTests.ShipId);
         save = save with

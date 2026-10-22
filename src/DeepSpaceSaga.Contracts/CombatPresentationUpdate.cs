@@ -23,7 +23,9 @@ public sealed record CombatPresentationFrame(double MotionTimeMs, AuthoritativeS
 /// <summary>Queue acceptance, independent of the subsequent CommandResult.</summary>
 public sealed record CommandAcceptance(string CommandId, bool Accepted);
 public sealed record SimulationControlAcknowledgement(Guid SessionId, long MotionTimeMs,
-    SimulationSpeed CurrentSpeed, bool AutomaticPause);
+    SimulationSpeed CurrentSpeed, bool AutomaticPause,
+    /// <summary>Non-null when a request was rejected; CurrentSpeed remains the confirmed speed.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? ReasonCode = null);
 
 /// <summary>Optional modern session transport. Receipts bypass the delayed scene.</summary>
 public interface ICombatPresentationConnection

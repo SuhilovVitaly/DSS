@@ -1,0 +1,153 @@
+{
+  "date": "2026-10-20",
+  "ticket": "EP-0012-US-0009-TK-0001-scenario-combat-mukha-v3",
+  "checks": [
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS0009TK0001Tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 5374,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    14, Skipped:     0, Total:    14, Duration: 561 ms - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--no-build",
+        "--filter",
+        "Category!=ForecastBudget",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 71228,
+      "hardTimeoutMs": 300000,
+      "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:  2358, Skipped:     0, Total:  2358, Duration: 1 m 10 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "build",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1540,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.25\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "whitespace",
+        "DeepSpaceSaga.sln",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0009TK0001Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/CombatScenariosContentTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/CombatForecastCacheTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/CombatReportsAcceptanceFixtures.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 3511,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0009TK0001Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/CombatScenariosContentTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/CombatForecastCacheTests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/CombatReportsAcceptanceFixtures.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 13341,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "review": "self-review, not independent",
+  "native": "NOT RUN",
+  "integration": "Actual canonical source/deployed scenario discovery/load/runtime point launch PASS. Exact approved positions converted km×10; maximum-speed player5km/s versus each real NPC spawn, four cardinal headings each, enters70km by60000ms in12/12 cases. Weapons alone disabled in isolated pursuit diagnostic; full real scenario also loads/fires with all modules enabled.",
+  "solutionBuild": {
+    "args": [
+      "build",
+      "DeepSpaceSaga.sln",
+      "--no-restore",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 3617,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Contracts.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Contracts.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.Tests.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Motion.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Motion.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.Tests.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.EconomyBalance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.EconomyBalance\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n  DeepSpaceSaga.EconomyBalance.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.EconomyBalance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.Tests.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\n  DeepSpaceSaga.Performance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.dll\n  DeepSpaceSaga.Performance.Tests -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:03.39\n",
+    "stderr": ""
+  },
+  "clientGate": "2358/2358 non-budget Client PASS; strict forecast budgets OPEN.",
+  "consumerReproduction": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-restore",
+      "--no-build",
+      "--filter",
+      "Category!=ForecastBudget&(FullyQualifiedName~CombatScenariosContentTests|FullyQualifiedName~CombatForecastCacheTests|FullyQualifiedName~CombatReportsAcceptanceTests|FullyQualifiedName~CombatMetricsWriterTests)",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 1,
+    "timedOut": false,
+    "elapsedMs": 5324,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n  Failed DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceTests.NoMapInputLeakOrFocusSteal [248 ms]\n  Error Message:\n   DeepSpaceSaga.Engine.Content.ContentException : Unknown typeId 'module.engine.tetrarch'.\n  Stack Trace:\n     at DeepSpaceSaga.Engine.Content.TypeRegistry`1.GetIndex(String typeId) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Content\\TypeRegistry.cs:line 53\n   at DeepSpaceSaga.Engine.SimulationEngine.BuildRuntimeModules(SpaceObjectData obj, Int32 saveVersion) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 1390\n   at DeepSpaceSaga.Engine.SimulationEngine.LoadScenario(ScenarioFile scenario, Boolean isSave, SolarSystemGenerationConfig generation) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 315\n   at DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceFixtures.Create() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\CombatReportsAcceptanceFixtures.cs:line 27\n   at DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceTests.NoMapInputLeakOrFocusSteal() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\CombatReportsAcceptanceTests.cs:line 71\n--- End of stack trace from previous location ---\n  Failed DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceTests.TransportToPanelKeepsEveryPendingReport [5 ms]\n  Error Message:\n   DeepSpaceSaga.Engine.Content.ContentException : Unknown typeId 'module.engine.tetrarch'.\n  Stack Trace:\n     at DeepSpaceSaga.Engine.Content.TypeRegistry`1.GetIndex(String typeId) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Content\\TypeRegistry.cs:line 53\n   at DeepSpaceSaga.Engine.SimulationEngine.BuildRuntimeModules(SpaceObjectData obj, Int32 saveVersion) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 1390\n   at DeepSpaceSaga.Engine.SimulationEngine.LoadScenario(ScenarioFile scenario, Boolean isSave, SolarSystemGenerationConfig generation) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 315\n   at DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceFixtures.Create() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\CombatReportsAcceptanceFixtures.cs:line 27\n   at DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceTests.TransportToPanelKeepsEveryPendingReport() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\CombatReportsAcceptanceTests.cs:line 18\n--- End of stack trace from previous location ---\n  Failed DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceTests.LegacyJournalAndObjectInfoRemainUsable [5 ms]\n  Error Message:\n   DeepSpaceSaga.Engine.Content.ContentException : Unknown typeId 'module.engine.tetrarch'.\n  Stack Trace:\n     at DeepSpaceSaga.Engine.Content.TypeRegistry`1.GetIndex(String typeId) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Content\\TypeRegistry.cs:line 53\n   at DeepSpaceSaga.Engine.SimulationEngine.BuildRuntimeModules(SpaceObjectData obj, Int32 saveVersion) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 1390\n   at DeepSpaceSaga.Engine.SimulationEngine.LoadScenario(ScenarioFile scenario, Boolean isSave, SolarSystemGenerationConfig generation) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 315\n   at DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceFixtures.Create() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\CombatReportsAcceptanceFixtures.cs:line 27\n   at DeepSpaceSaga.Client.Tests.CombatReportsAcceptanceTests.LegacyJournalAndObjectInfoRemainUsable() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\CombatReportsAcceptanceTests.cs:line 84\n--- End of stack trace from previous location ---\n  Failed DeepSpaceSaga.Client.Tests.CombatForecastCacheTests.CombatForecast_worker_publishes_across_real_engine_updates [8 ms]\n  Error Message:\n   DeepSpaceSaga.Engine.Content.ContentException : Unknown typeId 'module.engine.tetrarch'.\n  Stack Trace:\n     at DeepSpaceSaga.Engine.Content.TypeRegistry`1.GetIndex(String typeId) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\Content\\TypeRegistry.cs:line 53\n   at DeepSpaceSaga.Engine.SimulationEngine.BuildRuntimeModules(SpaceObjectData obj, Int32 saveVersion) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 1390\n   at DeepSpaceSaga.Engine.SimulationEngine.LoadScenario(ScenarioFile scenario, Boolean isSave, SolarSystemGenerationConfig generation) in D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\SimulationEngine.cs:line 315\n   at DeepSpaceSaga.Client.Tests.CombatForecastCacheTests.CombatForecast_worker_publishes_across_real_engine_updates() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\CombatForecastCacheTests.cs:line 41\n--- End of stack trace from previous location ---\n\nFailed!  - Failed:     4, Passed:    53, Skipped:     0, Total:    57, Duration: 4 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n"
+  },
+  "actualConsumers": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-restore",
+      "--filter",
+      "Category!=ForecastBudget&(FullyQualifiedName~CombatScenariosContentTests|FullyQualifiedName~CombatForecastCacheTests|FullyQualifiedName~CombatReportsAcceptanceTests|FullyQualifiedName~CombatMetricsWriterTests)",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 9883,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    57, Skipped:     0, Total:    57, Duration: 5 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n"
+  },
+  "reviewNotes": [
+    "Independent exact geometry player(0,0),90deg,3km/s; NPC(-40,75),(0,85),(40,75)km,270deg,6km/s; AI25/8/35 each. Nine player types/masses51t,light armor,4 independent operators,all crew20; NPC2 modules/light launcher7250ms.",
+    "Original300km US7 admission failure is preserved as historical evidence. Exact approved US9 geometry satisfies12/12 actual controller directions/spawns without changed capabilities, orbit parameters or coordinates.",
+    "Real report panel/input tests and live forecast fixture migrated to actual v3 catalog. Explicit manual point counter replaces removed auto-PD; launch before battle termination preserves owned torpedo/counter coverage. Readiness>=95%, report sequence/input invariants retained. Synthetic legacy cache cases remain for US19/US18.",
+    "PASS14 named/57 actual consumers/2358 non-budget Client; solution/owning build/scoped formats/diff PASS. Self-review only. Other scenarios, Shmel removal, full Engine, native/balance/strict budgets remain subsequent gates."
+  ]
+}

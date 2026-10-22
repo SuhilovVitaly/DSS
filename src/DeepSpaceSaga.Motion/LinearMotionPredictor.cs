@@ -18,6 +18,20 @@ public sealed class LinearMotionPredictor : IMotionPredictor
 {
     private const double UnitsPerKmS = 10.0; // 1 km/s → 10 world units/s
 
+    /// <summary>Fractional straight motion, including negative offsets for integer-clock anchoring.</summary>
+    public static (double X, double Y, double Direction) PredictStraightPose(double startX, double startY,
+        double direction, double speedKmS, double elapsedMs)
+    {
+        if (!double.IsFinite(startX) || !double.IsFinite(startY) || !double.IsFinite(direction) ||
+            !double.IsFinite(speedKmS) || speedKmS < 0 || !double.IsFinite(elapsedMs))
+            throw new ArgumentOutOfRangeException(nameof(elapsedMs));
+        double radians = Math.PI / 180;
+        double seconds = elapsedMs / 1000, heading = direction * radians;
+        double speed = speedKmS * 10;
+        return (startX + speed * seconds * Math.Sin(heading),
+            startY - speed * seconds * Math.Cos(heading), ((direction % 360) + 360) % 360);
+    }
+
     /// <summary>Allocation-free coordinates for the common constant-velocity case.</summary>
     public static bool TryPredictLinearPosition(ObjectMotionSnapshot state, long elapsedMs, out double x, out double y)
     {
@@ -29,18 +43,19 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     }
 
     public static bool IsLinear(ObjectMotionSnapshot state) =>
+        state.SpeedHoldAccelerationKmS2 is null && state.TurnHoldRateDegPerSec is null && state.Evasion is null && state.OwnProjectile is null && state.ObservedProjectile is null &&
         state.Orbit is null && state.Torpedo is null && state.Countermeasure is null && state.HostileCombat is null && state.EngineManeuver is null &&
         state.ActiveEngineCommandType is not (NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit) &&
         (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0);
 
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
+        if (state.SpeedHoldAccelerationKmS2 is not null || state.TurnHoldRateDegPerSec is not null || state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
+            return CurrentManeuverForecast.Sample(state, elapsedMs);
         if (state.Orbit is { } orbit)
             return OrbitalMotionMath.At(state, orbit, checked((state.OrbitSampleSimulationTimeMs ?? orbit.EpochSimulationTimeMs) + elapsedMs));
-        if (state.Countermeasure is not null)
-            return CountermeasureGuidanceMath.Predict(state, elapsedMs);
-        if (state.Torpedo is not null)
-            return TorpedoGuidanceMath.Predict(state, elapsedMs);
+        if (state.Countermeasure is not null || state.Torpedo is not null)
+            throw new ArgumentException("Retired guided projectile snapshots are unsupported.", nameof(state));
         if (state.HostileCombat is not null)
             return HostileOrbitMath.Predict(state, elapsedMs);
         if (elapsedMs >= 0 && CurrentManeuverForecast.ValidEngineManeuver(state))
@@ -160,7 +175,7 @@ public sealed class LinearMotionPredictor : IMotionPredictor
         // Combined phase + step loop: fly straight segments, call Step at each
         // turn boundary (even if the remaining time is less than a full interval —
         // the Engine always runs the turn decision at the boundary).
-        while (remainingMs > 0)
+        while (remainingMs > 0 || untilNextTurnMs == 0)
         {
             // At a turn boundary, decide the turn via shared navigation math.
             // Must happen BEFORE flying the segment, matching Engine order (P1 fix).

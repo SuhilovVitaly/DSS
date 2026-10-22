@@ -116,6 +116,7 @@ public sealed class TetrarchLoadoutTests
         string root = output ? AppContext.BaseDirectory : ClientRoot;
         string relativePath = Path.Combine("Scenarios", "MarketProfiles", "scenario.json");
         string path = Path.Combine(root, relativePath);
+        Assert.DoesNotContain("autoDefenseEnabled", File.ReadAllText(path));
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(Path.Combine(ClientRoot, relativePath))),
             JsonNode.Parse(File.ReadAllText(path))));
         var scenario = ScenarioLoader.LoadFromFile(path);
@@ -140,6 +141,7 @@ public sealed class TetrarchLoadoutTests
     {
         string relativePath = Path.Combine("Scenarios", name, "scenario.json");
         string path = Path.Combine(root, relativePath);
+        Assert.DoesNotContain("autoDefenseEnabled", File.ReadAllText(path));
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(Path.Combine(ClientRoot, relativePath))),
             JsonNode.Parse(File.ReadAllText(path))));
         var scenario = ScenarioLoader.LoadFromFile(path);
@@ -147,7 +149,8 @@ public sealed class TetrarchLoadoutTests
         Assert.NotEmpty(ships);
         foreach (var ship in ships)
             AssertLoadout(ship, stressLoadout: name == "Default_500", defense: true,
-                dualDefense: name == "PlayerShipOnly" && ship.ObjectType == SpaceObjectType.PlayerShip);
+                dualDefense: name == "PlayerShipOnly" && ship.ObjectType == SpaceObjectType.PlayerShip,
+                tetrarchEngine: name == "PlayerShipOnly");
 
         // Production bootstrap exercises content resolution, placement validation and snapshot projection.
         using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(root, "Settings.json"), path);
@@ -161,25 +164,26 @@ public sealed class TetrarchLoadoutTests
         }
         var launcher = Assert.Single(snapshot.InstalledModules, m => m.ModuleTypeId == LauncherId);
         Assert.NotNull(launcher.LauncherCombat);
-        Assert.Equal(10, launcher.LauncherCombat.SpeedKmS);
-        Assert.Equal(90, launcher.LauncherCombat.TurnRateDegPerSec);
-        Assert.Equal(150, launcher.LauncherCombat.Damage);
-        Assert.Equal(150, launcher.LauncherCombat.RangeKm);
-        Assert.Equal(50, launcher.LauncherCombat.Maneuverability);
+        Assert.Equal(6, launcher.LauncherCombat.SpeedKmS);
+        Assert.Equal(new[] { 6d, 10d, 16d }, launcher.LauncherCombat.Profiles!.Value.Select(p => p.SpeedKmS));
+        Assert.Equal(0, launcher.LauncherCombat.TurnRateDegPerSec);
+        Assert.Equal(200, launcher.LauncherCombat.Damage);
+        Assert.Equal(70, launcher.LauncherCombat.RangeKm);
+        Assert.Null(launcher.LauncherCombat.Maneuverability);
         Assert.True(launcher.LauncherCombat.ActiveTorpedoIds.IsDefaultOrEmpty);
         var assignedOperator = Assert.IsType<WeaponOperatorSnapshot>(launcher.LauncherCombat.Operator);
         Assert.Equal("CHR-0001", assignedOperator.CrewId);
         Assert.Equal(0, assignedOperator.Skill);
-        Assert.Equal(50m, assignedOperator.EffectiveRating);
+        Assert.Equal(0m, assignedOperator.EffectiveRating);
         Assert.Equal("Ready", launcher.OperationalState);
         Assert.Equal("On", launcher.PowerState);
-        Assert.Equal(new[] { CombatCommandTypes.Fire, CombatCommandTypes.SelfDestruct, TorpedoLauncherCommandTypes.SetMode }, launcher.CommandTypeIds);
+        Assert.Equal(new[] { CombatCommandTypes.Launch, CombatCommandTypes.Detonate }, launcher.CommandTypeIds);
         Assert.Null(launcher.ActiveCommandType);
         Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
         return scenario;
     }
 
-    private static void AssertLoadout(SpaceObjectData ship, bool stressLoadout, bool defense, bool dualDefense)
+    private static void AssertLoadout(SpaceObjectData ship, bool stressLoadout, bool defense, bool dualDefense, bool tetrarchEngine)
     {
         Assert.Equal("ship.tetrarch", ship.ShipClassId);
         Assert.Null(ship.HullHitPoints); // New games resolve the maximum from class content.
@@ -214,7 +218,7 @@ public sealed class TetrarchLoadoutTests
             var defender = defenders[0];
             Assert.Equal(new HullCellCoordinate(5, 2), Assert.Single(defender.OccupiedCells));
             if (dualDefense) Assert.Equal(new HullCellCoordinate(3, 1), Assert.Single(defenders[1].OccupiedCells));
-            Assert.All(defenders, m => Assert.True(m.AutoDefenseEnabled));
+            // Raw source/deployed JSON above asserts removal of retired automatic-defense configuration.
             Assert.Equal(dualDefense ? 3 : 2, ship.Crew!.Count);
             Assert.Equal(ship.Crew.Count, ship.Modules.Where(m => m.OperatorCrewId is not null).Select(m => m.OperatorCrewId).Distinct().Count());
             Assert.NotEqual(launcher.OperatorCrewId, defender.OperatorCrewId);
@@ -224,7 +228,7 @@ public sealed class TetrarchLoadoutTests
         }
         var existing = ship.Modules.Where(m => m.ModuleTypeId != LauncherId && m.ModuleTypeId != "module.countermeasure.launcher.basic").ToArray();
         (string Type, int Row)[] fullLoadout = [("module.bridge.navigation.computer.basic", 0), (dualDefense ? "living.quarters.mk1.three-cabins" : "living.quarters.mk1", 1),
-            ("module.container.basic", 2), ("module.scanner.mk1", 3), ("module.generator.basic", 4), ("module.engine.basic", 5)];
+            ("module.container.basic", 2), ("module.scanner.mk1", 3), ("module.generator.basic", 4), (tetrarchEngine ? "module.engine.tetrarch" : "module.engine.basic", 5)];
         var expected = stressLoadout ? fullLoadout.Where(m => m.Row is 1 or 2 or 5).ToArray() : fullLoadout;
         Assert.Equal(expected.Select(m => m.Type), existing.Select(m => m.ModuleTypeId));
         for (int i = 0; i < existing.Length; i++)

@@ -1,253 +1,31 @@
-using System.Collections.Immutable;
-using System.Text.Json;
-using DeepSpaceSaga.Client.UI;
+using System.Diagnostics;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
-using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
-using DeepSpaceSaga.Engine;
-using DeepSpaceSaga.Engine.Content;
-using DeepSpaceSaga.Engine.Scenario;
-using DeepSpaceSaga.Motion;
-using SkiaSharp;
 using Xunit.Abstractions;
-
 namespace DeepSpaceSaga.Client.Tests;
 
 [Collection("Combat forecast performance")]
-public class ManualDefensePreviewTests(ITestOutputHelper output)
+public sealed class ManualDefensePreviewTests(ITestOutputHelper output)
 {
-    private const string First = "MOD-PLAYER-COUNTERMEASURE-01";
-    private const string Second = "MOD-PLAYER-COUNTERMEASURE-02";
-
-    [Fact]
-    [Trait("Category", "ForecastBudget")]
-    public async Task Manual_defense_preview_preparation_obeys_UI_budget()
+    [Fact, Trait("Category", "ForecastBudget")]
+    public async Task Current_point_preview_preparation_obeys_strict_UI_budget()
     {
-        await using var f = new Fixture();
-        f.Screen.ForecastCache.UseWorker = true;
-        f.Hover(First);
+        await using var f = await PointCombatUiFixture.Create(hostileShots: 12);
+        Assert.Equal(12, f.Presented.Objects.Count(o => o.ObservedProjectile is not null));
+        f.Expose(150); f.Aim(counter: true);
+        var mouse = f.Pixel(150); f.Screen.OnMouseMove(mouse.X, mouse.Y); f.Render();
+        var method = typeof(GameSessionScreen).GetMethod("BuildCounterAimPreview", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        object[] args = [150d, 0d];
+        for (int i = 0; i < 100; i++) Assert.NotNull(method.Invoke(f.Screen, args));
         var timings = new List<double>();
-        var phases = new List<(double Launch, double Target, double Defense)>();
-        for (int i = 0; i < 220; i++)
+        for (int i = 0; i < 200; i++)
         {
-            // Advance an actual guided flight, including route phase and absolute
-            // time. Snapshot production is outside the measured UI preparation.
-            long time = 1 + i * 4;
-            f.Buffer.Update(f.Engine.CaptureSnapshotForTests(time, SimulationSpeed.Speed0, time));
-            long start = System.Diagnostics.Stopwatch.GetTimestamp();
-            f.Screen.PrepareCombatReports();
-            double ms = System.Diagnostics.Stopwatch.GetElapsedTime(start).TotalMilliseconds;
-            if (i >= 20) { timings.Add(ms); phases.Add(f.Screen.ManualPreviewPreparationMs); }
-            Assert.NotNull(f.Screen.ManualDefensePreviewGeometry);
-            await Task.Delay(16);
+            args[0] = 150d + i * .01; long start = Stopwatch.GetTimestamp();
+            var preview = method.Invoke(f.Screen, args); timings.Add(Stopwatch.GetElapsedTime(start).TotalMilliseconds);
+            Assert.NotNull(preview);
         }
-        timings.Sort();
-        output.WriteLine($"manual defense preview UI prepare n=200 warmup=20 p99={timings[197]:F3} ms; headless only");
-        output.WriteLine($"phase means launch={phases.Average(p => p.Launch):F3} target={phases.Average(p => p.Target):F3} defense={phases.Average(p => p.Defense):F3} ms");
-        Assert.True(timings[197] <= 2, $"preview UI p99={timings[197]} ms");
-    }
-
-    [Theory]
-    [InlineData("speed")]
-    [InlineData("turn")]
-    [InlineData("life")]
-    public async Task Missing_captured_parameters_show_an_explicit_data_status(string missing)
-    {
-        await using var f = new Fixture();
-        f.Update(s => s with
-        {
-            InstalledModules = s.InstalledModules.Select(m => m.ModuleId != First ? m : m with
-            {
-                Defense = m.Defense! with
-                {
-                    SpeedKmS = missing == "speed" ? null : m.Defense.SpeedKmS,
-                    TurnRateDegPerSec = missing == "turn" ? null : m.Defense.TurnRateDegPerSec,
-                    MaxFlightTimeMs = missing == "life" ? null : m.Defense.MaxFlightTimeMs
-                }
-            }).ToImmutableArray()
-        });
-        Assert.True(f.Hover(First).Enabled);
-        Assert.Equal(CombatForecastStatus.InsufficientData, f.Screen.ManualDefensePreviewGeometry!.Status);
-        Assert.Null(f.Screen.ManualDefensePreviewGeometry.Intercept);
-        Assert.NotNull(f.Screen.ManualDefensePreviewMessage);
-    }
-
-    [Theory]
-    [InlineData(1f, First)]
-    [InlineData(1.2f, Second)]
-    [InlineData(1.5f, First)]
-    public async Task Hover_preview_matches_real_launch_geometry_without_rng_or_busy_side_effects(float scale, string module)
-    {
-        await using var f = new Fixture(scale);
-        string before = JsonSerializer.Serialize(f.Engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0));
-        var button = f.Hover(module);
-        var plan = Assert.IsType<CountermeasurePlan>(f.Screen.ManualDefensePreviewPlan);
-        Assert.Equal(module, f.Screen.ManualDefensePreviewWeapon!.ModuleId);
-        Assert.NotNull(plan.PredictedEncounterMotionTimeMs);
-        Assert.NotNull(f.Screen.ManualDefensePreviewGeometry!.Intercept);
-        Assert.Equal(1951, f.Buffer.Latest!.Snapshot.InstalledModules.Single(m => m.ModuleId == module).DefensePreview!.FirstTargetContactMotionTimeMs!.Value, 2);
-        f.Render(); f.Render();
-        Assert.Same(plan, f.Screen.ManualDefensePreviewPlan);
-        Assert.Empty(f.Connection.Commands);
-        Assert.Equal(before, JsonSerializer.Serialize(f.Engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0)));
-        f.Screen.OnMouseDown(button.Rect.MidX * scale, button.Rect.MidY * scale);
-        var actual = Assert.Single(f.Engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1).Objects, o => o.Countermeasure is not null).Countermeasure!;
-        Assert.Equal(module, actual.LauncherModuleId);
-        Assert.Equal(JsonSerializer.Serialize(plan.Route), JsonSerializer.Serialize(actual.Route));
-        Assert.Equal(plan.PredictedEncounterMotionTimeMs, actual.PredictedEncounterMotionTimeMs);
-        f.Render();
-        Assert.Null(f.Screen.ManualDefensePreviewPlan); // pending command immediately suppresses stale hover
-    }
-
-    [Theory]
-    [InlineData("short-life")]
-    [InlineData("earlier-target-contact")]
-    public async Task Unreachable_preview_has_no_false_cross_and_zero_chance_remains_enabled(string reason)
-    {
-        await using var f = new Fixture();
-        f.Update(s => s with
-        {
-            InstalledModules = s.InstalledModules.Select(m => m.ModuleId != First ? m : m with
-            {
-                Defense = m.Defense! with { MaxFlightTimeMs = reason == "short-life" ? 1 : 60000 },
-                DefensePreview = m.DefensePreview! with { ChanceTenths = 0, FirstTargetContactMotionTimeMs = reason == "earlier-target-contact" ? 2 : null }
-            }).ToImmutableArray()
-        });
-        Assert.True(f.Hover(First).Enabled);
-        Assert.NotNull(f.Screen.ManualDefensePreviewPlan);
-        if (reason == "short-life")
-        {
-            Assert.Null(f.Screen.ManualDefensePreviewGeometry!.Intercept);
-            Assert.NotEmpty(f.Screen.ManualDefensePreviewGeometry.Target);
-            Assert.Equal(CombatForecastStatus.Expired, f.Screen.ManualDefensePreviewGeometry.Status);
-            Assert.NotNull(f.Screen.ManualDefensePreviewMessage);
-        }
-        else
-        {
-            // The new conditional path uses physical contact, not an obsolete captured estimate.
-            Assert.NotNull(f.Screen.ManualDefensePreviewGeometry!.Intercept);
-            Assert.Null(f.Screen.ManualDefensePreviewMessage);
-        }
-        Assert.InRange(f.Screen.ManualDefensePreviewPlan!.Route.Segments.Sum(s => s.DurationMs), 0, 100);
-        Assert.Empty(f.Connection.Commands);
-    }
-
-    [Fact]
-    public async Task Hover_switch_uses_each_modules_constraints_and_clears_on_stale_target_or_overlay()
-    {
-        await using var f = new Fixture();
-        f.Update(s => s with
-        {
-            InstalledModules = s.InstalledModules.Select(m => m.ModuleId != Second ? m : m with
-            { Defense = m.Defense! with { SpeedKmS = 6, TurnRateDegPerSec = 30 } }).ToImmutableArray()
-        });
-        f.Hover(First);
-        Assert.All(f.Screen.ManualDefensePreviewPlan!.Route.Segments, segment => Assert.Equal(20, segment.SpeedKmS));
-        var button = f.Hover(Second);
-        Assert.Equal(Second, f.Screen.ManualDefensePreviewWeapon!.ModuleId);
-        Assert.All(f.Screen.ManualDefensePreviewPlan!.Route.Segments, segment => Assert.Equal(6, segment.SpeedKmS));
-        typeof(GameSessionScreen).GetField("_lastPanelRect", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .SetValue(f.Screen, button.Rect);
-        typeof(GameSessionScreen).GetField("_panelVisible", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .SetValue(f.Screen, true);
-        f.Render();
-        Assert.Null(f.Screen.ManualDefensePreviewPlan);
-        typeof(GameSessionScreen).GetField("_panelVisible", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .SetValue(f.Screen, false);
-        f.Update(s => s with
-        {
-            InstalledModules = s.InstalledModules.Select(m => m.ModuleId != Second ? m : m with
-            { DefensePreview = m.DefensePreview! with { TargetTorpedoId = "stale" } }).ToImmutableArray()
-        });
-        f.Render();
-        Assert.Null(f.Screen.ManualDefensePreviewGeometry);
-    }
-
-    [Fact]
-    public async Task Preview_draws_configured_gray_geometry_on_real_screen()
-    {
-        await using var f = new Fixture();
-        f.Hover(First);
-        bool observed = false;
-        f.Screen.RenderStageCompleted = stage =>
-        {
-            if (stage == "combat_trajectories") f.Canvas.Clear(SKColors.Transparent);
-            if (stage != "launch_preview") return;
-            Assert.True(f.Bitmap.Pixels.Count(p => p.Alpha > 100 && Math.Abs(p.Red - 100) < 3 && Math.Abs(p.Green - 110) < 3 && Math.Abs(p.Blue - 120) < 3) > 30);
-            observed = true;
-        };
-        f.Render();
-        Assert.True(observed);
-    }
-
-    private sealed class Fixture : IAsyncDisposable
-    {
-        private readonly float _scale;
-        internal SimulationEngine Engine { get; }
-        internal TorpedoCommandPanelTests.RecordingConnection Connection { get; } = new();
-        private readonly GameSessionHandle _handle;
-        internal SnapshotBuffer Buffer => _handle.Buffer;
-        internal GameSessionScreen Screen { get; }
-        internal SKBitmap Bitmap { get; } = new(1920, 1080);
-        internal SKCanvas Canvas { get; }
-        internal Fixture(float scale = 1)
-        {
-            _scale = scale;
-            string root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-            var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
-            var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json"));
-            Engine = new(registry);
-            Engine.LoadScenario(scenario with
-            {
-                GameState = scenario.GameState with
-                {
-                    MasterSeed = 42,
-                    SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
-                    {
-                        PositionX = 0,
-                        PositionY = o.ObjectId == "SPC-0001" ? 0 : -200,
-                        DirectionDegrees = o.ObjectId == "SPC-0001" ? 0 : 180,
-                        SpeedMps = 0,
-                        MovementType = "Stationary",
-                        Modules = o.Modules!.Select(m => m with
-                        {
-                            AutoDefenseEnabled = false,
-                            PowerState = m.ModuleTypeId == "module.engine.basic" ? "Off" : "On"
-                        }).ToArray()
-                    }).ToArray()
-                }
-            });
-            Engine.TryStartHostileTorpedoFire("SPC-0002", "MOD-PIRATE-TORPEDO-01", 1);
-            string target = Assert.Single(Engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1).Objects, o => o.Torpedo is not null).ObjectId;
-            Engine.SetObjectInteractionState(null, target);
-            _handle = new(Connection);
-            Buffer.Update(Engine.CaptureSnapshotForTests(1, SimulationSpeed.Speed0, 1));
-            Connection.OnSend = c => { Engine.ReceiveCommand(c); return ValueTask.CompletedTask; };
-            Screen = new(Buffer, new LinearMotionPredictor(), _handle, uiScale: scale,
-                combatSettings: CombatVisualSettings.Default with { Preview = new SKColor(100, 110, 120) });
-            Screen.ForecastCache.UseWorker = false;
-            Canvas = new(Bitmap);
-        }
-        internal void Update(Func<AuthoritativeSnapshot, AuthoritativeSnapshot> change)
-        {
-            var old = Buffer.Latest!.Snapshot;
-            Buffer.Update(change(old) with { SnapshotSequence = old.SnapshotSequence + 1 });
-        }
-        internal void Render() => Screen.Render(Canvas, 1920, 1080);
-        internal CommandButtonGeometry Hover(string module)
-        {
-            Render();
-            var row = Screen.CommandsPanel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == module);
-            if (!row.Opened) Screen.OnMouseDown(row.CaptionRect.MidX * _scale, row.CaptionRect.MidY * _scale);
-            Render();
-            var button = Screen.CommandsPanel.AllCommandButtons.Single(b => b.Weapon?.ModuleId == module && b.CommandTypeId == DefenseCommandTypes.Fire);
-            Screen.OnMouseMove(button.Rect.MidX * _scale, button.Rect.MidY * _scale);
-            Render();
-            return button;
-        }
-        public async ValueTask DisposeAsync()
-        {
-            Screen.OnDeactivated(); Canvas.Dispose(); Bitmap.Dispose(); await _handle.DisposeAsync(); Engine.Dispose();
-        }
+        timings.Sort(); output.WriteLine($"Current point preview with 12 actual observed incoming flights UI p99={timings[197]:F4} ms; strict limit=2 ms. Prior retired homing-budget failures remain historical failures.");
+        Assert.True(timings[197] <= 2, $"Point preview p99={timings[197]} ms exceeds 2 ms");
+        Assert.Null(f.Screen.LastPointCommandId); Assert.Equal(0, f.Engine.ReceivedCommandCount);
     }
 }

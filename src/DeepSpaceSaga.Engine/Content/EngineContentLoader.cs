@@ -1,12 +1,17 @@
 using System.Collections.Immutable;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Engine.Content;
 
 public static class EngineContentLoader
 {
+    /// <summary>Original immutable catalog values, without starting a world or applying startup tuning.</summary>
+    public static DebugTuningSnapshot LoadDebugTuningDefaults(string settingsPath) =>
+        new DebugTuningState(LoadRegistryFromSettingsFile(settingsPath, out _, out _)).Snapshot;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
@@ -206,10 +211,13 @@ public static class EngineContentLoader
         var paths = ReadJson<EngineSettingsFile>(settingsPath, "settings").TypeData;
         if (paths is null) throw new ContentException($"{settingsPath}: missing typeData.");
         if (paths.CombatRules is null && paths.FireModes is null) return (null, []);
-        if (string.IsNullOrWhiteSpace(paths.CombatRules) || string.IsNullOrWhiteSpace(paths.FireModes))
-            throw new ContentException($"{settingsPath}: typeData.combatRules and typeData.fireModes must both name files.");
+        if (string.IsNullOrWhiteSpace(paths.CombatRules))
+            throw new ContentException($"{settingsPath}: typeData.combatRules must name a file.");
         string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
-        return (LoadCombatRules(Resolve(root, paths.CombatRules)), LoadFireModes(Resolve(root, paths.FireModes)));
+        var rules = LoadCombatRules(Resolve(root, paths.CombatRules));
+        if (paths.FireModes is not null)
+            throw new ContentException($"{settingsPath}: typeData.fireModes is retired.");
+        return (rules, []);
     }
 
     internal static ImmutableArray<FireModeDefinition> LoadFireModes(string path)
@@ -453,10 +461,10 @@ public static class EngineContentLoader
                     $"Module implementation '{dto.TypeId}' references unknown module type '{dto.Type}'.");
             }
 
+            ValidateTorpedoParameters(dto, category, filePath);
             ValidateEngineParameters(dto, category);
             if (dto.FuelEfficiencyKmPerKg is { } efficiency && (efficiency <= 0 || category.TypeId != "module.engine"))
                 throw new ContentException($"Module '{dto.TypeId}': fuelEfficiencyKmPerKg must be positive and owned by module.engine.");
-            ValidateTorpedoParameters(dto, category, filePath);
 
             // A missing/null baseSuccessChancePercent normalizes to 100 (§56.5).
             int baseSuccessChancePercent = dto.BaseSuccessChancePercent ?? 100;
@@ -517,7 +525,8 @@ public static class EngineContentLoader
                 dto.Barrels,
                 dto.BurstIntervalMs,
                 dto.Maneuverability,
-                dto.CombatRole);
+                dto.CombatRole,
+                ReadLauncherProfiles(dto, filePath), dto.RangeKm, dto.ReloadMs, dto.ScatterPercent);
             try { GameDataRegistry.ValidateWeaponRatings(definition); }
             catch (ContentException error) { throw new ContentException($"{filePath}: {error.Message}", error); }
             return definition;
@@ -527,6 +536,12 @@ public static class EngineContentLoader
     private static void ValidateTorpedoParameters(
         ModuleImplementationDto dto, ModuleCategoryDefinition category, string filePath)
     {
+        if (dto.Profiles is not null || dto.RangeKm.HasValue || dto.ReloadMs.HasValue || dto.ScatterPercent.HasValue)
+        {
+            if (category.TypeId is not ("module.torpedo.launcher" or "module.countermeasure.launcher"))
+                throw new ContentException($"{filePath}: Module '{dto.TypeId}': profiles require a torpedo or countermissile launcher.");
+            return; // The complete point-launch schema is validated by GameDataRegistry below.
+        }
         bool isLauncher = string.Equals(category.TypeId, "module.torpedo.launcher", StringComparison.Ordinal);
         bool hasParameters = dto.TorpedoDamage.HasValue || dto.TorpedoSpeedKmS.HasValue || dto.TorpedoTurnRateDegPerSec.HasValue;
         if (!isLauncher)
@@ -542,6 +557,23 @@ public static class EngineContentLoader
             throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoSpeedKmS is required and must be positive and finite.");
         if (dto.TorpedoTurnRateDegPerSec is not > 0 || !double.IsFinite(dto.TorpedoTurnRateDegPerSec.Value))
             throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoTurnRateDegPerSec is required and must be positive and finite.");
+    }
+
+    private static ImmutableArray<LaunchProfileSnapshot> ReadLauncherProfiles(ModuleImplementationDto dto, string filePath)
+    {
+        if (dto.Profiles is null) return default;
+        var result = ImmutableArray.CreateBuilder<LaunchProfileSnapshot>(dto.Profiles.Count);
+        for (int index = 0; index < dto.Profiles.Count; index++)
+        {
+            var profile = dto.Profiles[index];
+            string source = $"{filePath}: Module '{dto.TypeId}', profiles[{index}]";
+            if (profile is null) throw new ContentException($"{source} must not be null.");
+            if (profile.Id is null) throw new ContentException($"{source}.id is required.");
+            if (profile.SpeedKmS is null) throw new ContentException($"{source}.speedKmS is required.");
+            if (profile.BlastRadiusKm is null) throw new ContentException($"{source}.blastRadiusKm is required.");
+            result.Add(new(profile.Id, profile.SpeedKmS.Value, profile.BlastRadiusKm.Value));
+        }
+        return result.MoveToImmutable();
     }
 
     private static void ValidateEngineParameters(ModuleImplementationDto dto, ModuleCategoryDefinition category)
@@ -987,7 +1019,16 @@ public static class EngineContentLoader
         [property: JsonPropertyName("barrels")] int? Barrels = null,
         [property: JsonPropertyName("burstIntervalMs")] long? BurstIntervalMs = null,
         [property: JsonPropertyName("maneuverability")] decimal? Maneuverability = null,
-        [property: JsonPropertyName("combatRole")] string? CombatRole = null);
+        [property: JsonPropertyName("combatRole")] string? CombatRole = null,
+        [property: JsonPropertyName("profiles")] IReadOnlyList<LauncherProfileDto?>? Profiles = null,
+        [property: JsonPropertyName("rangeKm")] double? RangeKm = null,
+        [property: JsonPropertyName("reloadMs")] long? ReloadMs = null,
+        [property: JsonPropertyName("scatterPercent")] double? ScatterPercent = null);
+
+    private sealed record LauncherProfileDto(
+        [property: JsonPropertyName("id")] string? Id = null,
+        [property: JsonPropertyName("speedKmS")] double? SpeedKmS = null,
+        [property: JsonPropertyName("blastRadiusKm")] double? BlastRadiusKm = null);
 
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,

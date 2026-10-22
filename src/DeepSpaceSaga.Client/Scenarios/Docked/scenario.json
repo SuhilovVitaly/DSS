@@ -221,8 +221,7 @@
                 "operationalState": "Ready",
                 "activeCycle": null,
                 "cargo": [],
-                "operatorCrewId": "CHR-PLAYER-DEFENSE",
-                "autoDefenseEnabled": true
+                "operatorCrewId": "CHR-PLAYER-DEFENSE"
               }
             ],
             "crew": [

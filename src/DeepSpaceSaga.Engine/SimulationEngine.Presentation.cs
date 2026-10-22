@@ -34,6 +34,7 @@ public sealed partial class SimulationEngine
         _presentationWorldObjectIds.Clear();
         _automaticPresentationPause = false;
         _presentationBootstrap = true;
+        _lastDebugPresentationRevision = -1;
         _presentationProgressAt = _presentationTimestamp();
     }
 
@@ -73,20 +74,38 @@ public sealed partial class SimulationEngine
 
     private void PauseForPresentation(long? realDeadlineMs = null)
     {
+        if (UsesPointEncounters) AdvancePointClockWorld(realDeadlineMs);
+        StopAllTurnHolds();
         _automaticPresentationPause = true;
         // Dialogue/modal restoration must not resume a session paused by the watchdog.
         if (_dialogue.Active is not null) _dialogue.ResumeSpeed = SimulationSpeed.Speed0;
-        if (realDeadlineMs is { } deadline) _clock.PauseAtRealTime(deadline);
+        if (UsesPointEncounters)
+        {
+            _clock.SetSpeedAtProcessedBoundary(SimulationSpeed.Speed0);
+            _clock.ResetRealBaseline();
+        }
+        else if (realDeadlineMs is { } deadline) _clock.PauseAtRealTime(deadline);
         else _clock.SetSpeed(SimulationSpeed.Speed0);
     }
 
-    public void ResumePresentation(SimulationSpeed speed)
+    public void ResumePresentation(SimulationSpeed speed) => ResumePresentationControl(speed);
+
+    public SimulationControlAcknowledgement ResumePresentationControl(SimulationSpeed speed)
     {
         lock (_worldStateLock)
         {
             _automaticPresentationPause = false;
             _presentationProgressAt = _presentationTimestamp();
-            SetSpeed(speed);
+            return SetPresentationSpeed(speed);
+        }
+    }
+
+    public SimulationControlAcknowledgement SetPresentationSpeed(SimulationSpeed speed)
+    {
+        lock (_worldStateLock)
+        {
+            var reason = TrySetSpeed(speed);
+            return CapturePresentationControl() with { ReasonCode = reason };
         }
     }
 
@@ -122,7 +141,7 @@ public sealed partial class SimulationEngine
         }
         var state = BuildSnapshot(new(calendar, clock.Speed, (long)Math.Ceiling(time)),
             presentationOnly: true, prepareWorld: false);
-        state = state with { CurrentSpeed = IsDefeated ? SimulationSpeed.Speed0 : _presentationIntervalSpeed };
+        state = state with { CurrentSpeed = IsDefeated ? SimulationSpeed.Speed0 : UsesPointEncounters ? state.CurrentSpeed : _presentationIntervalSpeed };
         _presentationImpactCursor = _combatImpacts.Count;
         _presentationJournalCursor = _combatJournal.Count;
         AddPresentationFrame(time, state);
@@ -143,7 +162,7 @@ public sealed partial class SimulationEngine
         {
             _presentationIntervalSpeed = _clock.Speed;
             CheckPresentationLease();
-            var clock = advanceClock ? _clock.UpdateAndCapture() : _clock.Capture();
+            var clock = advanceClock ? UsesPointEncounters ? AdvancePointClockWorld() : _clock.UpdateAndCapture() : _clock.Capture();
             var state = BuildSnapshot(clock, presentationOnly: true);
             // Includes commands, terminal outcomes and control acknowledgements after world advancement.
             if (_collectPresentation) AddPresentationFrame(state.MotionTimeMs, state);

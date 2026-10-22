@@ -7,6 +7,54 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// <summary>Projects prepared conditional paths for display; never changes the confirmed scene.</summary>
 internal static class CombatTrajectoryProjector
 {
+    internal static void BuildOwnPath(ObjectMotionSnapshot own, List<FutureTrajectoryPoint> points)
+    {
+        points.Clear();
+        for (int time = 0; time <= 5000; time += 100)
+        {
+            var pose = CurrentManeuverForecast.Sample(own, time);
+            points.Add(new(pose.X, pose.Y));
+        }
+    }
+
+    internal static void BuildOwnViewportPath(ObjectMotionSnapshot own, List<FutureTrajectoryPoint> points,
+        CameraState camera, int width, int height)
+    {
+        if (own.ActiveEngineCommandType != ShipEngineCommandTypes.Orbit ||
+            own.NavigationTargetX is not { } targetX || own.NavigationTargetY is not { } targetY)
+        {
+            BuildOwnPath(own, points);
+            return;
+        }
+        points.Clear();
+        points.Add(new(own.X, own.Y));
+        var predictor = new LinearMotionPredictor();
+        var pose = own;
+        // Sample steering boundaries, then integrate the locked straight leg in one call.
+        // The iteration guard protects malformed/nonconvergent inputs, not flight distance.
+        for (int i = 0; i < 20000 && pose.NavigationTargetX is not null && pose.SpeedKmS > 0; i++)
+        {
+            long step = Math.Max(1, pose.TurnStepRemainingMs);
+            if (pose.NavigationLockedCourseDegrees is not null && pose.NavigationPhase is not ("EscapeDepart" or "EscapeTurn"))
+            {
+                double distance = double.Hypot(targetX - pose.X, targetY - pose.Y);
+                double angle = pose.Direction * Math.PI / 180;
+                var arrival = NavigationWaypointMath.CheckSegmentArrival(pose.X, pose.Y,
+                    pose.X + Math.Sin(angle) * (distance + 10), pose.Y - Math.Cos(angle) * (distance + 10), targetX, targetY);
+                if (arrival.IsArrived)
+                {
+                    points.Add(new(arrival.ClosestX, arrival.ClosestY));
+                    TrajectoryViewportGeometry.ExtendToEdge(points, pose.Direction, camera, width, height);
+                    return;
+                }
+            }
+            pose = predictor.Predict(pose, step);
+            points.Add(new(pose.X, pose.Y));
+        }
+        if (pose.NavigationTargetX is null && pose.SpeedKmS > 0)
+            TrajectoryViewportGeometry.ExtendToEdge(points, pose.Direction, camera, width, height);
+    }
+
     internal sealed record Geometry(
         List<FutureTrajectoryPoint> Prediction,
         List<FutureTrajectoryPoint> Target,
@@ -16,17 +64,27 @@ internal static class CombatTrajectoryProjector
         internal double EndMotionTimeMs { get; init; }
         internal double? EtaSeconds { get; init; }
         internal double HorizonSeconds { get; init; }
+        internal FutureTrajectoryPoint? Detonation { get; init; }
+        internal double? DetonationEtaSeconds { get; init; }
+        internal double? BlastRadiusKm { get; init; }
+        internal ProjectileKind? Kind { get; init; }
+        internal bool IsObserved { get; init; }
     }
 
-    internal static Geometry Project(TorpedoSnapshot flight, ObjectMotionSnapshot? target,
-        IMotionPredictor predictor, CameraState camera, int width, int height)
+    internal static Geometry FromPointForecast(CombatForecastResult result, ObjectMotionSnapshot projectile,
+        double now, Geometry? reuse = null)
     {
-        if (flight.Route.Segments.IsDefaultOrEmpty)
-            return new([], [], null) { Status = CombatForecastStatus.InsufficientData };
-        var pose = TorpedoGuidanceMath.PredictPose(flight.Route, flight.Route.ElapsedMs);
-        double now = flight.Route.StartMotionTimeMs + flight.Route.ElapsedMs;
-        var result = CombatForecast.Torpedo(new("preview", pose.X, pose.Y, flight.SpeedKmS, pose.Direction, Torpedo: flight), target, now);
-        return FromForecast(result, now);
+        var own = projectile.OwnProjectile;
+        var observed = projectile.ObservedProjectile;
+        if (own is null && observed is null) throw new ArgumentException("Expected a point projectile.", nameof(projectile));
+        return FromForecast(result, now, reuse) with
+        {
+            Detonation = own is null ? null : new(own.DetonationX, own.DetonationY),
+            DetonationEtaSeconds = own is null ? null : Math.Max(0, (own.DetonationMotionTimeMs - now) / 1000),
+            BlastRadiusKm = own?.BlastRadiusKm ?? observed!.BlastRadiusKm,
+            Kind = own?.Kind ?? observed!.Kind,
+            IsObserved = own is null
+        };
     }
 
     internal static Geometry FromForecast(CombatForecastResult result, double now, Geometry? reuse = null)

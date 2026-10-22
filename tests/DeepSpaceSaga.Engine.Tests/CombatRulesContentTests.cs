@@ -14,26 +14,20 @@ public sealed class CombatRulesContentTests : IDisposable
     {
         Directory.CreateDirectory(_directory);
         File.Copy(Path.Combine(ClientRoot, "Data", "Combat", "combat-rules.json"), RulesPath);
-        File.Copy(Path.Combine(ClientRoot, "Data", "Combat", "fire-modes.json"), ModesPath);
     }
 
     [Fact]
     public void Rules_load()
     {
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(
-            Path.Combine(ClientRoot, "Settings.json"), out _, out _);
-        Assert.Equal(50, registry.CombatRules!.Chance.Base);
-        Assert.Equal(60000, registry.CombatRules.Damage.HitDisableMs);
-        Assert.Equal(60, registry.CombatRules.ArmorClasses["light"]);
-        Assert.Equal(["standard", "maneuverability", "overheat"],
-            registry.FireModes.Select(mode => mode.ModeId).ToArray());
-        Assert.Equal(["module.torpedo.launcher", "module.countermeasure.launcher"],
-            registry.FireModes[0].AppliesTo.ToArray());
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"), out _, out _);
+        Assert.Null(registry.CombatRules!.Chance); Assert.Equal(.3, registry.CombatRules.Blast!.CoreFraction);
+        Assert.Equal(8000, registry.CombatRules.Damage.HitDisableMs);
+        Assert.Empty(registry.FireModes);
     }
 
     [Theory]
-    [InlineData("chance", "base", -1, "chance")]
-    [InlineData("chance", "min", 101, "chance")]
+    [InlineData("scatter", "skillPivot", -1, "skillPivot")]
+    [InlineData("npc", "reactionBaseMs", 0, "reactionBaseMs")]
     [InlineData("damage", "hitDisableMs", -1, "hitDisableMs")]
     [InlineData("shipDestruction", "destroyedModuleFraction", 0, "destroyedModuleFraction")]
     public void Invalid_chance_bounds_rejected(string section, string field, int value, string expected)
@@ -69,11 +63,8 @@ public sealed class CombatRulesContentTests : IDisposable
     [Fact]
     public void Mode_for_unknown_category_rejected()
     {
-        var root = JsonNode.Parse(File.ReadAllText(ModesPath))!;
-        root["fireModes"]![1]!["appliesTo"] = new JsonArray("module.engine");
-        File.WriteAllText(ModesPath, root.ToJsonString());
-        Assert.Contains("appliesTo", Assert.Throws<ContentException>(
-            () => EngineContentLoader.LoadFireModes(ModesPath)).Message);
+        File.WriteAllText(ModesPath, "{\"fireModes\":[]}");
+        Assert.Contains("retired", Assert.Throws<ContentException>(() => EngineContentLoader.LoadFireModes(ModesPath)).Message);
     }
 
     [Fact]
@@ -83,12 +74,14 @@ public sealed class CombatRulesContentTests : IDisposable
         File.WriteAllText(settings, """{"typeData":{"combatRules":"missing.json"},"defaultScenario":"unused.json"}""");
         var missingPair = Assert.Throws<ContentException>(
             () => EngineContentLoader.LoadCombatRulesAndModes(settings));
-        Assert.Contains("settings.json", missingPair.Message);
-        Assert.Contains("typeData.fireModes", missingPair.Message);
+        Assert.Contains("missing.json", missingPair.Message);
         File.WriteAllText(settings, """{"typeData":{"combatRules":"missing.json","fireModes":"fire-modes.json"},"defaultScenario":"unused.json"}""");
         var missingFile = Assert.Throws<ContentException>(
             () => EngineContentLoader.LoadCombatRulesAndModes(settings));
         Assert.Contains("missing.json", missingFile.Message);
+        File.WriteAllText(settings, "{\"typeData\":{\"combatRules\":\"combat-rules.json\"},\"defaultScenario\":\"unused.json\"}");
+        var current = EngineContentLoader.LoadCombatRulesAndModes(settings);
+        Assert.NotNull(current.Rules); Assert.Empty(current.Modes);
     }
 
     public void Dispose() => Directory.Delete(_directory, recursive: true);

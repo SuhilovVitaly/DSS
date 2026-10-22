@@ -36,9 +36,11 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
         _engineLoopTask = Task.Run(() => RunEngineLoopAsync(_cts.Token));
     }
 
-    public static LocalGameSessionConnection CreateFromSettingsFile(string settingsPath, string? saveDirectory = null)
+    public static LocalGameSessionConnection CreateFromSettingsFile(string settingsPath, string? saveDirectory = null,
+        string? debugTuningPath = null, Action<string>? startupWarning = null)
     {
         var engine = SimulationEngine.CreateFromSettingsFile(settingsPath);
+        engine.ApplyStartupDebugTuningFile(debugTuningPath ?? DefaultDebugTuningPath, startupWarning);
         return new LocalGameSessionConnection(engine, saveDirectory);
     }
 
@@ -50,9 +52,10 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     /// to the file it just loaded from.
     /// </summary>
     public static LocalGameSessionConnection CreateFromSaveFile(
-        string settingsPath, string savePath, string? saveDirectory = null)
+        string settingsPath, string savePath, string? saveDirectory = null, string? debugTuningPath = null, Action<string>? startupWarning = null)
     {
         var engine = SimulationEngine.CreateFromSaveFile(settingsPath, savePath);
+        engine.ApplyStartupDebugTuningFile(debugTuningPath ?? DefaultDebugTuningPath, startupWarning);
         return new LocalGameSessionConnection(engine, saveDirectory ?? Path.GetDirectoryName(savePath));
     }
 
@@ -65,9 +68,10 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     /// CreateFromSettingsFile's callers do.
     /// </summary>
     public static LocalGameSessionConnection CreateFromScenarioFile(
-        string settingsPath, string scenarioPath, string? saveDirectory = null)
+        string settingsPath, string scenarioPath, string? saveDirectory = null, string? debugTuningPath = null, Action<string>? startupWarning = null)
     {
         var engine = SimulationEngine.CreateFromScenarioFile(settingsPath, scenarioPath);
+        engine.ApplyStartupDebugTuningFile(debugTuningPath ?? DefaultDebugTuningPath, startupWarning);
         return new LocalGameSessionConnection(engine, saveDirectory);
     }
 
@@ -80,6 +84,9 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     /// cannot reference InterfaceLog; it lives in Client).
     /// </summary>
     public bool MasterSeedWasMissingOnLoad => _engine.MasterSeedWasMissingOnLoad;
+    private static string DefaultDebugTuningPath => Path.Combine(AppContext.BaseDirectory, "DebugTuning", "debug-tuning.json");
+    public static DebugTuningSnapshot LoadDebugTuningDefaults(string settingsPath) =>
+        Content.EngineContentLoader.LoadDebugTuningDefaults(settingsPath);
 
     private async Task RunEngineLoopAsync(CancellationToken ct)
     {
@@ -131,8 +138,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _engine.ResumePresentation(speed);
-        return ValueTask.FromResult(_engine.CapturePresentationControl());
+        return ValueTask.FromResult(_engine.ResumePresentationControl(speed));
     }
 
     public ValueTask<SimulationControlAcknowledgement> SetPresentationSpeedAsync(SimulationSpeed speed,
@@ -140,8 +146,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     {
         cancellationToken.ThrowIfCancellationRequested();
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _engine.SetSpeed(speed);
-        return ValueTask.FromResult(_engine.CapturePresentationControl());
+        return ValueTask.FromResult(_engine.SetPresentationSpeed(speed));
     }
 
     public ValueTask SendCommandAsync(

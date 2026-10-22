@@ -3,20 +3,82 @@ using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
 
-/// <summary>Combat commands addressed by owner object, launcher module and explicit target.</summary>
+/// <summary>Point-aim projectile kind, independent of ownership and UI selection.</summary>
+public enum ProjectileKind { Torpedo, Countermissile }
+
+/// <summary>Engine-validated point-launch choice; speed km/s and physical blast radius km.</summary>
+public sealed record LaunchProfileSnapshot(string ProfileId, double SpeedKmS, double BlastRadiusKm);
+
+/// <summary>
+/// Captured flight information visible to the projectile's owner. Coordinates use world
+/// units (100 m), speed is km/s and radius is km. Times are absolute physical milliseconds;
+/// the detonation deadline may fall between whole milliseconds. The Engine supplies all
+/// values; this transport record performs no simulation or random draws.
+/// </summary>
+public sealed record OwnProjectileSnapshot(
+    [property: JsonRequired] ProjectileKind Kind,
+    [property: JsonRequired] string OwnerObjectId,
+    [property: JsonRequired] string LauncherModuleId,
+    [property: JsonRequired] double X,
+    [property: JsonRequired] double Y,
+    [property: JsonRequired] double StartX,
+    [property: JsonRequired] double StartY,
+    [property: JsonRequired] double DetonationX,
+    [property: JsonRequired] double DetonationY,
+    [property: JsonRequired] long LaunchMotionTimeMs,
+    [property: JsonRequired] double DetonationMotionTimeMs,
+    [property: JsonRequired] double SpeedKmS,
+    [property: JsonRequired] string ProfileId,
+    [property: JsonRequired] double BlastRadiusKm,
+    [property: JsonRequired] int Damage,
+    [property: JsonRequired] decimal ArmorPiercingPercent,
+    [property: JsonRequired] decimal ArmorDamagePercent = 100,
+    [property: JsonRequired] double CoreFraction = 0.3,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] BattleReportReporterSnapshot? Reporter = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? OwnerPlayerRelationAtLaunch = null);
+
+/// <summary>
+/// Foreign projectile observation. The unit direction vector is measured in world axes;
+/// coordinates use world units, speed km/s and radius km. No endpoint, deadline, launch
+/// position, target, route, module or combat rating can be represented by this schema.
+/// Unknown JSON members are rejected even when the surrounding serializer skips them.
+/// </summary>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
+public sealed record ObservedProjectileSnapshot(
+    ProjectileKind Kind,
+    double X,
+    double Y,
+    double DirectionX,
+    double DirectionY,
+    double SpeedKmS,
+    string ProfileId,
+    double BlastRadiusKm);
+
+/// <summary>Side relative to the threat's direction, not the evading ship's heading.</summary>
+public enum EvadeSide { Left, Right }
+
+public static class ManeuverCommandTypes
+{
+    public const string Evade = "maneuver.evade";
+}
+
+/// <summary>Combat commands addressed by owner object and launcher module.</summary>
 public static class CombatCommandTypes
 {
+    public const string Launch = "torpedo.launch";
+    public const string Detonate = "torpedo.detonate";
+    // Reserved legacy identifiers retain wire identity for explicit rejection; EP12 does not execute these commands.
     public const string Fire = "torpedo.fire";
     public const string SelfDestruct = "torpedo.selfDestruct";
 }
 
-/// <summary>Torpedo launcher command identifiers; mode selection is addressed to one launcher.</summary>
+/// <summary>Reserved legacy torpedo mode identifier; EP12 uses per-launch ProfileId and rejects setMode.</summary>
 public static class TorpedoLauncherCommandTypes
 {
     public const string SetMode = "torpedo.setMode";
 }
 
-/// <summary>Origin of a launch; independent of the launcher's current automatic-defense toggle.</summary>
+/// <summary>Reserved historical launch origin values; EP12 point defense is manual and has no automatic toggle.</summary>
 public enum LaunchMode { Auto, Manual }
 
 /// <summary>Why a countermeasure flight ended. Only a resolved contact consumes an interception roll.</summary>
@@ -42,12 +104,23 @@ public sealed record LauncherCombatSnapshot(
     double? RangeKm = null,
     /// <summary>Module-owned interception resistance in 0..100, distinct from physical turn rate.</summary>
     decimal? Maneuverability = null,
-    string ModeId = "standard",
+    string ModeId = "",
     double? ReadyAtMotionTimeMs = null,
     bool IsBrokenUntilDock = false,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
     ImmutableArray<string> ActiveTorpedoIds = default,
-    double? ReloadDurationMs = null);
+    double? ReloadDurationMs = null,
+    /// <summary>Point-launch capabilities; null for legacy producers. No implicit profiles.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? ScatterPercent = null,
+    /// <summary>Current own-operator sigma per km, evaluated by Engine with current scatter rules.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? EffectiveScatterPercent = null,
+    /// <summary>Current own-launch blast core fraction; absent for legacy launchers.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? CoreFraction = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs
@@ -94,7 +167,7 @@ public sealed record TorpedoSnapshot(
     string? OwnerPlayerRelationAtLaunch = null,
     /// <summary>Captured attack contribution for the contact-time hit roll.</summary>
     decimal? CapturedAttack = null,
-    /// <summary>Authoritative chance in tenths of one percent; populated by EP-0009 runtime.</summary>
+    /// <summary>Historical EP-0009 chance slot in tenths of one percent; current point runtime does not populate it.</summary>
     int? HitChanceTenths = null,
     /// <summary>Armor piercing captured at launch, independent of later catalog edits.</summary>
     decimal ArmorPiercingPercent = 0,

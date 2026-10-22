@@ -1,0 +1,9 @@
+{
+  "files": 6,
+  "links": 72,
+  "missing": [],
+  "ticket": "EP-0012-US-0015-TK-0002-update-documents-2",
+  "review": "Implementer self-review, not independent",
+  "runtimeRerun": "NOT RUN: documentation-only changes; latest gates are linked, not remeasured",
+  "note": "Report delivery preserved; point producers/privacy/save and forecasts synchronized; retired source links pin verified historical baseline. Historical measurements and OPEN gates preserved."
+}

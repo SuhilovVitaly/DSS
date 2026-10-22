@@ -1,129 +1,79 @@
 using DeepSpaceSaga.Contracts;
-using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
+using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
 public class CountermeasureBootstrapTests
 {
-    internal static ScenarioFile RealScenario() => ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
-
     [Fact]
-    public void Both_launchers_bootstrap_independently()
+    public void Independent_launchers_resume_separate_launch_based_deadlines_through_real_file_load()
     {
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"),
-            Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
-        var defenses = At(engine, 0).InstalledModules.Where(m => m.Defense is not null).ToArray();
-        Assert.Equal(2, defenses.Length);
-        Assert.All(defenses, m => { Assert.True(m.Defense!.AutoEnabled); Assert.Equal(DefenseState.Ready, m.Defense.State); });
-        Assert.NotEqual(defenses[0].Operator!.CrewId, defenses[1].Operator!.CrewId);
-        engine.ReceiveCommand(new("disable-first", 1, Player, defenses[0].ModuleId, DefenseCommandTypes.Disable));
-        var after = At(engine, 0);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(after.CommandResults).Status);
-        Assert.False(after.InstalledModules.Single(m => m.ModuleId == defenses[0].ModuleId).Defense!.AutoEnabled);
-        Assert.Equal(defenses[1].Defense, after.InstalledModules.Single(m => m.ModuleId == defenses[1].ModuleId).Defense);
-
-        // Restore two valid independently reloading modules and cross each physical deadline.
-        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        save = save with
-        {
-            GameState = save.GameState with
-            {
-                DefenseState = save.GameState.DefenseState! with
-                {
-                    Launchers = save.GameState.DefenseState!.Launchers.Select(l => l.OwnerObjectId == Player
-                        ? l with
-                        {
-                            State = l.State with
-                            {
-                                State = DefenseState.Reloading,
-                                ReloadDueMotionTimeMs = l.ModuleId == defenses[0].ModuleId ? 1000 : 2000
-                            }
-                        } : l).ToArray()
-                }
-            }
-        };
-        string path = Path.Combine(Path.GetTempPath(), $"dual-defense-{Guid.NewGuid():N}.json");
+        using var engine = Point.Create();
+        var initial = Point.At(engine).InstalledModules.Where(m => m.Defense is not null).ToArray(); Assert.Equal(2, initial.Length);
+        Assert.NotEqual(initial[0].Operator!.CrewId, initial[1].Operator!.CrewId);
+        engine.ReceiveCommand(Point.Shot("first")); Point.At(engine); Point.At(engine, 1000);
+        engine.ReceiveCommand(Point.Shot("second", Point.Counter2, y: -30)); Point.At(engine, 1000);
+        var save = Point.Save(engine, 1100);
+        string path = Path.Combine(Path.GetTempPath(), "point-dual-" + Guid.NewGuid().ToString("N") + ".json");
         try
         {
             File.WriteAllText(path, ScenarioLoader.Serialize(save));
-            using var restored = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(ClientRoot, "Settings.json"), path);
-            var firstDeadline = At(restored, 1000);
-            var first = firstDeadline.InstalledModules.Single(m => m.ModuleId == defenses[0].ModuleId).Defense!;
-            var second = firstDeadline.InstalledModules.Single(m => m.ModuleId == defenses[1].ModuleId).Defense!;
-            Assert.Equal(DefenseState.Ready, first.State);
-            Assert.False(first.AutoEnabled);
-            Assert.Null(first.ReloadDueMotionTimeMs);
-            Assert.Equal(DefenseState.Reloading, second.State);
-            Assert.True(second.AutoEnabled);
-            Assert.Equal(2000, second.ReloadDueMotionTimeMs);
-            Assert.All(At(restored, 2000).InstalledModules.Where(m => m.Defense is not null),
-                m => Assert.Equal(DefenseState.Ready, m.Defense!.State));
+            using var loaded = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(Point.Root, "Settings.json"), path);
+            var first = Point.At(loaded, 12500).InstalledModules.Where(m => m.Defense is not null).ToDictionary(m => m.ModuleId);
+            Assert.Equal(DefenseState.Ready, first[Point.Counter].Defense!.State); Assert.Null(first[Point.Counter].Defense!.ReloadDueMotionTimeMs);
+            Assert.Equal(DefenseState.Reloading, first[Point.Counter2].Defense!.State); Assert.Equal(13500, first[Point.Counter2].Defense!.ReloadDueMotionTimeMs);
+            Assert.All(Point.At(loaded, 13500).InstalledModules.Where(m => m.Defense is not null), m => Assert.Equal(DefenseState.Ready, m.Defense!.State));
+            Assert.Equal(engine.CaptureLaunchScatterState(), loaded.CaptureLaunchScatterState());
         }
         finally { File.Delete(path); }
     }
 
-    [Fact]
-    public void Generated_world_keeps_loadout()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Generated_source_and_packaged_world_keep_point_loadout_operators_and_group_geometry(bool deployed)
     {
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"),
-            Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));
-        var snapshot = At(engine, 0);
-        Assert.Equal(3, snapshot.PlayerCrewCount);
-        Assert.Equal(3, snapshot.InstalledModules.Sum(m => m.CabinesCount ?? 0));
-        Assert.Equal(new[] { "MOD-PLAYER-COUNTERMEASURE-01", "MOD-PLAYER-COUNTERMEASURE-02" },
-            snapshot.InstalledModules.Where(m => m.Defense is not null).Select(m => m.ModuleId));
-        var player = snapshot.Objects.Single(o => o.ObjectId == Player);
-        var pirate = snapshot.Objects.Single(o => o.ObjectId == Target);
-        Assert.Equal(-10000, pirate.X - player.X, 6);
-        Assert.Equal(-5000, pirate.Y - player.Y, 6);
-        var save = engine.CaptureSaveState();
-        Assert.Equal(3, save.GameState.DefenseState!.Launchers.Count);
-        Assert.Equal(3, save.GameState.SpaceObjects.Single(o => o.ObjectId == Player).Crew!.Count);
-        Assert.Equal(2, save.GameState.SpaceObjects.Single(o => o.ObjectId == Target).Crew!.Count);
-    }
-
-    [Fact]
-    public void Both_ships_start_auto_defense_enabled()
-    {
-        using var engine = Create(RealScenario());
-        var snapshot = At(engine, 0);
-        Assert.All(snapshot.Objects, o =>
+        var testOutput = new DirectoryInfo(AppContext.BaseDirectory);
+        string root = deployed ? Path.Combine(Point.Root, "bin", testOutput.Parent!.Name, testOutput.Name) : Point.Root;
+        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(root, "Settings.json"), Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
+        var snapshot = Point.At(engine); Assert.Equal(3, snapshot.PlayerCrewCount); Assert.Equal(3, snapshot.InstalledModules.Sum(m => m.CabinesCount ?? 0));
+        var counters = snapshot.InstalledModules.Where(m => m.Defense is not null).ToArray();
+        Assert.Equal(new[] { Point.Counter, Point.Counter2 }, counters.Select(m => m.ModuleId));
+        Assert.NotEqual(counters[0].Operator!.CrewId, counters[1].Operator!.CrewId);
+        Assert.All(counters, m =>
         {
-            Assert.True(o.Defense!.AutoEnabled);
-            Assert.Equal(DefenseState.Ready, o.Defense.State);
-            Assert.Equal(55m, o.Defense.Operator!.EffectiveRating);
-            Assert.Equal(100, o.Defense.RangeKm);
+            Assert.False(m.Defense!.AutoEnabled); Assert.Equal(DefenseState.Ready, m.Defense.State); Assert.Equal(30, m.Defense.RangeKm);
+            Assert.Equal(12500, m.Defense.ReloadDurationMs); Assert.Equal(new[] { "wide", "fast" }, m.Defense.Profiles!.Value.Select(p => p.ProfileId)); Assert.Null(m.DefensePreview);
         });
-        Assert.Equal(snapshot.Objects.Single(o => o.ObjectId == Player).Defense,
-            Assert.Single(snapshot.InstalledModules, m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01").Defense);
-        Assert.Equal(2, snapshot.InstalledModules.Count(m => m.Defense is not null));
+        var player = snapshot.Objects.Single(o => o.ObjectId == Point.Player); var enemy = snapshot.Objects.Single(o => o.ObjectId == Point.Enemy);
+        Assert.Equal(-10000, enemy.X - player.X, 6); Assert.Equal(-5000, enemy.Y - player.Y, 6);
+        var save = engine.CaptureSaveState(); Assert.Equal(3, save.GameState.DefenseState!.Launchers.Count);
+        Assert.All(save.GameState.DefenseState.Launchers, l => Assert.False(l.State.AutoEnabled));
+        Assert.Equal(3, save.GameState.SpaceObjects.Single(o => o.ObjectId == Point.Player).Crew!.Count);
+        Assert.Equal(2, save.GameState.SpaceObjects.Single(o => o.ObjectId == Point.Enemy).Crew!.Count);
     }
 
     [Fact]
-    public void Missing_operator_gives_no_operator_state()
+    public void Missing_point_operator_projects_no_operator_and_rejects_without_draws()
     {
-        var scenario = RealScenario();
-        scenario = scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
-                { Modules = o.Modules!.Select(m => m with { OperatorCrewId = null }).ToArray() }).ToArray()
-            }
-        };
-        using var engine = Create(scenario);
-        Assert.All(At(engine, 0).Objects, o => { Assert.Equal(DefenseState.NoOperator, o.Defense!.State); Assert.Null(o.Defense.Operator); });
+        using var engine = Point.Create(configure: o => o.ObjectId != Point.Player ? o : o with
+        { Modules = o.Modules!.Select(m => m.ModuleId is Point.Counter or Point.Counter2 ? m with { OperatorCrewId = null } : m).ToArray() });
+        var initial = Point.At(engine); Assert.All(initial.InstalledModules.Where(m => m.Defense is not null), m =>
+        { Assert.Equal(DefenseState.NoOperator, m.Defense!.State); Assert.Null(m.Defense.Operator); });
+        engine.ReceiveCommand(Point.Shot()); Assert.Equal(CommandReasonCodes.NoWeaponOperator, Assert.Single(Point.At(engine).CommandResults).ReasonCode);
+        Assert.Equal(0UL, engine.CaptureLaunchScatterState().Counter);
     }
 
     [Fact]
-    public void Npc_defense_does_not_enable_npc_torpedo_fire()
+    public void Npc_counter_capability_does_not_grant_player_authority_or_automatic_counter_fire()
     {
-        using var engine = Create(RealScenario());
-        engine.ReceiveCommand(new("npc-fire", 1, Target, "MOD-PIRATE-TORPEDO-01", CombatCommandTypes.Fire, Player));
-        var snapshot = At(engine, 1000);
-        Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null);
-        Assert.Equal(CommandResultStatus.Rejected, Assert.Single(snapshot.CommandResults).Status);
+        using var engine = Point.Create();
+        engine.ReceiveCommand(Point.Shot() with { ObjectId = Point.Enemy, ModuleId = "MOD-PIRATE-COUNTERMEASURE-01" });
+        var state = Point.At(engine, 1000); Assert.Equal(CommandReasonCodes.UnknownObject, Assert.Single(state.CommandResults).ReasonCode);
+        Assert.DoesNotContain(state.Objects, o => o.OwnProjectile is not null || o.ObservedProjectile is not null);
+        Assert.Equal(0UL, engine.CaptureLaunchScatterState().Counter);
     }
 }

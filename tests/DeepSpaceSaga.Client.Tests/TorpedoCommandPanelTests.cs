@@ -10,230 +10,26 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class TorpedoCommandPanelTests
 {
     private static readonly InstalledModuleSnapshot Launcher = new("actual-launcher", "module.torpedo.launcher.basic", "Launcher", 1,
-        [CombatCommandTypes.Fire, TorpedoLauncherCommandTypes.SetMode], "On", "Ready", 60,
-        Commands: [new(CombatCommandTypes.Fire, "Fire", "object"), new(TorpedoLauncherCommandTypes.SetMode, "Change mode", "none")],
-        LauncherCombat: new(3, 90, 150, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 50, 30, 30), RangeKm: 200));
-
-    [Fact]
-    public async Task Paused_mode_selector_cycles_authoritative_modes_and_shows_delay_or_breakdown()
-    {
-        await using var f = new Fixture();
-        Render(f.Screen);
-        CommandButtonGeometry mode = Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
-            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode);
-        Assert.True(mode.Enabled);
-        f.Screen.OnMouseDown(mode.Rect.MidX, mode.Rect.MidY);
-        f.Screen.OnMouseDown(mode.Rect.MidX, mode.Rect.MidY);
-        var first = Assert.Single(f.Connection.Commands);
-        Assert.Equal(TorpedoLauncherCommandTypes.SetMode, first.CommandType);
-        Assert.Equal("maneuverability", first.ModeId);
-        Assert.Equal(SimulationSpeed.Speed0, f.Handle.Buffer.CurrentSpeed);
-        Render(f.Screen);
-        Assert.False(Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
-            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode).Enabled);
-
-        f.Update(s => s with
-        {
-            InstalledModules = [Launcher with
-        { LauncherCombat = Launcher.LauncherCombat! with { ModeId = "maneuverability", ReadyAtMotionTimeMs = 5000 } }]
-        });
-        Render(f.Screen);
-        Assert.True(Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
-            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode).Enabled);
-        var status = f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText;
-        Assert.Contains("5.0", status);
-        Assert.Contains(GameSessionScreen.FireModeName("maneuverability"), status);
-        f.Screen.OnMouseDown(mode.Rect.MidX, mode.Rect.MidY);
-        Assert.Equal("overheat", f.Connection.Commands[1].ModeId);
-
-        f.Update(s => s with
-        {
-            InstalledModules = [Launcher with
-        { LauncherCombat = Launcher.LauncherCombat! with { ModeId = "overheat", IsBrokenUntilDock = true } }]
-        });
-        Render(f.Screen);
-        Assert.False(Assert.Single(f.Screen.CommandsPanel.AllCommandButtons,
-            b => b.CommandTypeId == TorpedoLauncherCommandTypes.SetMode).Enabled);
-        Assert.Contains(GameSessionScreen.FireModeName("overheat"),
-            f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
-    }
-
-    [Fact]
-    public async Task Busy_and_pending_launcher_disable_fire()
-    {
-        await using var f = new Fixture();
-        SelectTarget(f);
-        var button = Button(f.Screen);
-        // Also attempt a reentrant click during transport submission, before it returns.
-        var transport = new TaskCompletionSource();
-        f.Connection.OnSend = _ =>
-        {
-            f.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
-            return new(transport.Task);
-        };
-        f.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
-        f.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
-        Assert.Single(f.Connection.Commands);
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        transport.SetResult();
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled); // transport completion is not execution confirmation
-        var command = Assert.Single(f.Connection.Commands);
-        f.Update(s => s with { CommandResults = [Result(command with { CommandId = "unrelated" }, CommandResultStatus.Rejected)] });
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        f.Update(s => s with { CommandResults = [Result(command, CommandResultStatus.Deferred)] });
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        f.Update(s => s with
-        {
-            CommandResults = [Result(command, CommandResultStatus.Executed)],
-            InstalledModules = [Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoIds = ["torpedo"], ReadyAtMotionTimeMs = 1000 } }]
-        });
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        f.Update(s => s with { CommandResults = [], InstalledModules = [Launcher] });
-        Render(f.Screen);
-        Assert.True(Button(f.Screen).Enabled);
-    }
-
-    [Fact]
-    public async Task Paused_fire_uses_selected_target_not_hover()
-    {
-        await using var f = new Fixture();
-        SelectTarget(f);
-        f.Screen.OnMouseMove(740, 420);
-        Render(f.Screen);
-        ClickFire(f);
-        var command = Assert.Single(f.Connection.Commands);
-        Assert.Equal("target", command.TargetObjectId);
-        Assert.Equal(Launcher.ModuleId, command.ModuleId);
-        Assert.Equal(SimulationSpeed.Speed0, f.Handle.Buffer.CurrentSpeed);
-        f.Screen.OnMouseDown(740, 420);
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        Assert.Equal("target", command.TargetObjectId);
-    }
+        [CombatCommandTypes.Launch, CombatCommandTypes.Detonate], "On", "Ready", 60,
+        Commands: [new(CombatCommandTypes.Launch, "Launch", "point"), new(CombatCommandTypes.Detonate, "Detonate", "object")],
+        LauncherCombat: new(6, 0, 200, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 0, 30, 30), RangeKm: 70,
+            Profiles: [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)], ScatterPercent: .02));
 
     [Theory]
-    [InlineData(CommandResultStatus.Rejected)]
-    [InlineData(CommandResultStatus.Failed)]
-    [InlineData(CommandResultStatus.Cancelled)]
-    [InlineData(CommandResultStatus.Executed)]
-    public async Task Rejected_submission_returns_panel_to_authoritative_state(CommandResultStatus status)
+    [InlineData(1, "slow")]
+    [InlineData(2, "medium")]
+    [InlineData(3, "fast")]
+    public async Task Paused_point_profile_selection_is_local_and_has_no_mode_reload_rng_or_optimistic_launch(int key, string expected)
     {
-        await using var f = new Fixture();
-        SelectTarget(f);
-        ClickFire(f);
-        var command = Assert.Single(f.Connection.Commands);
-        f.Update(s => s with { CommandResults = [Result(command, status)] });
-        // Coalesce away the snapshot carrying the receipt before rendering again.
-        f.Update(s => s with { CommandResults = [] });
-        Render(f.Screen);
-        Assert.True(Button(f.Screen).Enabled);
-        ClickFire(f);
-        Assert.Equal(2, f.Connection.Commands.Count);
-        Assert.NotEqual(command.CommandId, f.Connection.Commands[1].CommandId);
-        Assert.True(f.Connection.Commands[1].ClientSequence > command.ClientSequence);
-    }
-
-    [Theory]
-    [InlineData("sync")]
-    [InlineData("async")]
-    [InlineData("cancel")]
-    public async Task Transport_failure_releases_pending_submission(string failure)
-    {
-        await using var f = new Fixture();
-        SelectTarget(f);
-        var transport = new TaskCompletionSource();
-        f.Connection.OnSend = _ => failure == "sync" ? throw new IOException("offline") : new(transport.Task);
-        ClickFire(f);
-        if (failure == "async") transport.SetException(new IOException("offline"));
-        if (failure == "cancel") transport.SetCanceled();
-        Render(f.Screen);
-        Assert.True(Button(f.Screen).Enabled);
-        Assert.Equal("Send failed", f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").StatusBarText);
-    }
-
-    [Fact]
-    public async Task Information_overlay_consumes_reported_click_and_never_covers_launcher()
-    {
-        await using var f = new Fixture();
-        SelectTarget(f);
-        Assert.True(f.Screen.LastPanelRect.Contains(56, 604));
-        var row = f.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher");
-        Assert.False(row.BodyRect.IntersectsWith(f.Screen.LastPanelRect));
-        // Force the old geometry to prove hit-test ordering independently of the layout fix.
-        using var bitmap = new SKBitmap(1280, 720);
-        using var canvas = new SKCanvas(bitmap);
-        f.Screen.CommandsPanel.Render(canvas, ImmutableArray<InstalledModuleSnapshot>.Empty);
-        var oldFire = Button(f.Screen);
-        Assert.True(oldFire.Enabled);
-        // Put a visible overlay over the cached button using the existing diagnostic field.
-        typeof(GameSessionScreen).GetField("_lastPanelRect", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!
-            .SetValue(f.Screen, oldFire.Rect);
-        f.Screen.OnMouseDown(oldFire.Rect.MidX, oldFire.Rect.MidY);
-        Assert.Empty(f.Connection.Commands);
-        Render(f.Screen);
-        f.Screen.OnMouseDown(56, 604);
-        Assert.Empty(f.Connection.Commands);
-    }
-
-    private static CommandResult Result(PlayerCommand command, CommandResultStatus status) =>
-        new(command.CommandId, command.ObjectId, command.ModuleId, command.CommandType, status, 0);
-
-    internal static void ClickFire(Fixture f)
-    {
-        var button = Button(f.Screen);
-        f.Screen.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
-    }
-
-    [Fact]
-    public async Task Launcher_panel_requires_selected_nonself_target()
-    {
-        await using var f = new Fixture();
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        f.Screen.OnMouseDown(640, 360);
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        f.Screen.OnMouseDown(640, 420);
-        Render(f.Screen);
-        Assert.True(Button(f.Screen).Enabled);
-        // Unknown selectable targets are legal; no knowledge-derived properties are needed.
-        f.Update(s => s with { Objects = [s.Objects[0]] });
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-    }
-
-    [Theory]
-    [InlineData("missing")]
-    [InlineData("legacy")]
-    [InlineData("busy")]
-    [InlineData("off")]
-    [InlineData("broken")]
-    [InlineData("disabled")]
-    public async Task Launcher_requires_actual_ready_capability(string state)
-    {
-        await using var f = new Fixture();
-        SelectTarget(f);
-        var module = state switch
-        {
-            "legacy" => Launcher with { LauncherCombat = null },
-            "busy" => Launcher with { LauncherCombat = Launcher.LauncherCombat! with { ActiveTorpedoIds = ["projectile"], ReadyAtMotionTimeMs = 1000 } },
-            "off" => Launcher with { PowerState = "Off" },
-            "broken" => Launcher with { StructurePoints = 0 },
-            "disabled" => Launcher with { OperationalState = "Disabled" },
-            _ => Launcher
-        };
-        f.Update(s => s with { InstalledModules = state == "missing" ? [] : [module] });
-        // Check the sender against stale rendered enablement too.
-        var oldButton = Button(f.Screen);
-        f.Screen.OnMouseDown(oldButton.Rect.MidX, oldButton.Rect.MidY);
-        Render(f.Screen);
-        Assert.False(Button(f.Screen).Enabled);
-        Assert.Empty(f.Connection.Commands);
+        await using var f = await PointCombatUiFixture.Create();
+        var before = f.Engine.CaptureLaunchScatterState();
+        f.Aim(profile: key);
+        Assert.Equal(expected, f.Screen.PointAim!.ProfileId); Assert.Equal(ProjectileKind.Torpedo, f.Screen.PointAim.Kind);
+        var launcher = f.Presented.InstalledModules.Single(m => m.ModuleId == PointCombatUiFixture.Torpedo).LauncherCombat!;
+        Assert.Empty(launcher.ModeId); Assert.Null(launcher.ReadyAtMotionTimeMs);
+        Assert.Equal(before, f.Engine.CaptureLaunchScatterState()); Assert.Null(f.Screen.LastPointCommandId);
+        Assert.DoesNotContain(f.Presented.Objects, o => o.OwnProjectile is not null);
+        Assert.Equal(0, f.Presented.MotionTimeMs); Assert.Equal(SimulationSpeed.Speed0, f.Presented.CurrentSpeed);
     }
 
     [Theory]
@@ -245,7 +41,9 @@ public sealed class TorpedoCommandPanelTests
         await using var f = new Fixture(scale);
         Render(f.Screen, height);
         var panel = f.Screen.CommandsPanel;
-        Assert.Equal(6, panel.CommandPanelRows.Count);
+        Assert.Equal(5, panel.CommandPanelRows.Count);
+        var weapon = panel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher");
+        if (!weapon.Opened) { f.Screen.OnMouseDown(weapon.CaptionRect.MidX * scale, weapon.CaptionRect.MidY * scale); Render(f.Screen, height); }
         Assert.True(panel.CommandPanelRows.Single(r => r.Name == "Torpedo Launcher").Opened);
         Assert.All(panel.CommandPanelRows, r => Assert.True(r.CaptionRect.Bottom * scale <= height));
         Assert.True(panel.BodyRect.Bottom * scale <= height);
@@ -262,11 +60,11 @@ public sealed class TorpedoCommandPanelTests
         Render(f.Screen);
         f.Screen.OnMouseDown(640, 420);
         Render(f.Screen);
-        Assert.True(Button(f.Screen).Enabled);
+        Assert.Equal("target", f.Screen.SelectedObjectId);
     }
 
     internal static CommandButtonGeometry Button(GameSessionScreen screen) =>
-        Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == CombatCommandTypes.Fire);
+        Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == CombatCommandTypes.Launch);
 
     internal static void Render(GameSessionScreen screen, int height = 720)
     {

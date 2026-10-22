@@ -1,6 +1,6 @@
 # EP-0010 — карта историй и тикетов
 
-12 историй,30 тикетов:27 исходных и3 corrective. Реализация и headless проверки выполнены; US11 native/human/FPS acceptance OPEN, US12 завершает документацию. Первоначальный DAG ниже дополняется Execution correction; опубликованный порядок — Publication.md. [ТЗ](../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [эпик](EP-0010-combat-reports.md).
+12 историй,30 тикетов:27 исходных и3 corrective. Реализация и headless проверки выполнены; US11 native/human/FPS acceptance OPEN, US12 завершает документацию. Первоначальный DAG ниже дополняется Execution correction; опубликованный порядок — Publication.md. [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [эпик](EP-0010-combat-reports.md).
 
 | № | Ticket | Layer | Files | Depends on | Serves |
 |---|---|---|---|---|---|

@@ -17,7 +17,7 @@ dependencies: []
 
 Текущий реестр: [ReviewStatus.md](ReviewStatus.md), 21 тикетов. EP-0002–0003 реализованы в base-fight: seeded система и общая орбитальная математика, кластеры/ресурсы/торговые направления, текущие ETA и materialized Save/Load. EP-0004 интегрирован в текущий незакоммиченный рабочий набор; native80FPS FAILED. F02–F04 исправлены и проверены новыми регрессиями. Исходные draft/approved поля отражают планирование и не изменены этим ревью.
 
-[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
 
 ## Статус и границы работы
 

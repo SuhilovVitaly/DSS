@@ -75,15 +75,16 @@ public sealed class GeneratedWorldPersistenceTests
     }
 
     [Fact]
-    public void LegacySaveIsRejectedAndInternalFixtureIsNotRegenerated()
+    public void LegacySaveIsRejectedAndCurrentSaveIsNotRegenerated()
     {
         using var original = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         original.LoadScenario(SeededWorldBootstrapTests.Scenario());
-        var save = TradingEconomySaveSchemaTests.WithoutNewContinuation(original.CaptureSaveState(), 11);
+        var save = original.CaptureSaveState();
+        var retired = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, 11);
         using var loaded = new SimulationEngine(SeededWorldBootstrapTests.Registry());
-        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => loaded.LoadScenario(save, isSave: true)).Message);
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => loaded.LoadScenario(retired, isSave: true)).Message);
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true),
-            generation: GenerationInputSchemaTests.Config()); // Historical scenario fixture must not regenerate geography.
+            isSave: true, generation: GenerationInputSchemaTests.Config()); // Current saves must not regenerate geography.
         Assert.Null(loaded.CaptureSnapshot().SolarSystemMap);
         Assert.Equal(save.GameState.SpaceObjects.Select(o => o.ObjectId), loaded.CaptureSnapshot().Objects.Select(o => o.ObjectId));
     }

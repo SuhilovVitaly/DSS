@@ -24,7 +24,9 @@ public sealed partial class GameSessionScreen
         _presentationPrepared = true;
         PrepareCombatForecasts();
         if (_combatReportDisposed) return;
-        _combatReportStore.Receive(_buffer.DrainCombatReports());
+        var reports = _buffer.DrainCombatReports().ToArray();
+        NotifyReloadReports(reports);
+        _combatReportStore.Receive(reports);
         var expanded = _combatReportStore.Reports.FirstOrDefault(r => r.Sequence == _combatReportStore.ExpandedSequence);
         _combatReportAssets.Prepare(expanded is null ? [] : [expanded]);
     }
@@ -33,13 +35,9 @@ public sealed partial class GameSessionScreen
     {
         if (_combatVisualSession == _buffer.PresentationSessionId) return;
         _combatVisualSession = _buffer.PresentationSessionId;
-        _combatEffects.Reset(_buffer.Presented?.Snapshot.CombatImpacts ?? default);
         _combatEffects.ResetJournal(_buffer.Presented?.Snapshot.CombatJournal ?? default);
         _combatReportStore.Reset();
         _combatTrajectories.Clear();
-        _launchPreviewKey = null;
-        LaunchPreviewGeometry = null;
-        LaunchPreviewRoute = null;
     }
 
     private void RenderCombatReports(SKCanvas canvas)

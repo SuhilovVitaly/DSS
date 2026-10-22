@@ -161,7 +161,7 @@ public class CommandsPanelSkeletonTests
         var screen = CreateScreen();
         Render(screen);
 
-        float expectedBottom = CommandsPanel.Panels.Length *
+        float expectedBottom = 4 *
             (CommandsPanel.PanelCaptionHeight + CommandsPanel.PanelBodyHeight) +
             CommandsPanel.MainCaptionToPanelsGap;
 
@@ -177,7 +177,7 @@ public class CommandsPanelSkeletonTests
 
         Assert.True(screen.CommandsPanel.HasLoadedXenonChrome);
         Assert.Equal(CommandsPanel.PanelWidth, screen.CommandsPanel.CaptionRect.Width);
-        Assert.Equal(1234f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
+        Assert.Equal(834f, screen.CommandsPanel.CaptionRect.Height + screen.CommandsPanel.BodyRect.Height);
     }
 
     [Fact]
@@ -215,15 +215,15 @@ public class CommandsPanelSkeletonTests
     {
         var withNoModules = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
         Render(withNoModules);
-        Assert.Equal(PanelOrder, withNoModules.CommandsPanel.CommandPanelRows.Select(r => r.Name));
+        Assert.Equal(PanelOrder.Take(4), withNoModules.CommandsPanel.CommandPanelRows.Select(r => r.Name));
 
         var withOneModule = CreateScreen(OneEngineModule);
         Render(withOneModule);
-        Assert.Equal(PanelOrder, withOneModule.CommandsPanel.CommandPanelRows.Select(r => r.Name));
+        Assert.Equal(PanelOrder.Take(4), withOneModule.CommandsPanel.CommandPanelRows.Select(r => r.Name));
 
         var withFullModule = CreateScreen(FullEngineModule);
         Render(withFullModule);
-        Assert.Equal(PanelOrder, withFullModule.CommandsPanel.CommandPanelRows.Select(r => r.Name));
+        Assert.Equal(PanelOrder.Take(4), withFullModule.CommandsPanel.CommandPanelRows.Select(r => r.Name));
     }
 
     [Fact]
@@ -373,7 +373,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
 
         Assert.Equal(CommandsPanelState.AllPanels, panel.State);
-        Assert.Equal(6, panel.CommandPanelRows.Count);
+        Assert.Equal(4, panel.CommandPanelRows.Count);
         Assert.True(panel.BodyRect.Height > 0);
     }
 
@@ -432,7 +432,7 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        foreach (var definition in CommandsPanel.Panels)
+        foreach (var definition in CommandsPanel.Panels.Take(4))
         {
             var row = panel.CommandPanelRows.Single(r => r.Name == definition.Name);
 
@@ -484,7 +484,7 @@ public class CommandsPanelSkeletonTests
         var screen = CreateScreen();
         Render(screen);
 
-        foreach (var definition in CommandsPanel.Panels)
+        foreach (var definition in CommandsPanel.Panels.Take(4))
         {
             var row = screen.CommandsPanel.CommandPanelRows.Single(r => r.Name == definition.Name);
             screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
@@ -511,10 +511,10 @@ public class CommandsPanelSkeletonTests
         Render(screen);
         var panel = screen.CommandsPanel;
 
-        Assert.Equal(6, panel.CommandPanelRows.Count);
-        Assert.Equal(PanelOrder, panel.CommandPanelRows.Select(r => r.Name));
+        Assert.Equal(4, panel.CommandPanelRows.Count);
+        Assert.Equal(PanelOrder.Take(4), panel.CommandPanelRows.Select(r => r.Name));
 
-        int expectedTotalButtons = CommandsPanel.Panels.Sum(p => p.CommandTypeIds.Length);
+        int expectedTotalButtons = CommandsPanel.Panels.Take(4).Sum(p => p.CommandTypeIds.Length);
         Assert.Equal(expectedTotalButtons, panel.AllCommandButtons.Count);
         Assert.All(panel.AllCommandButtons, b => Assert.False(b.Enabled));
     }
@@ -583,7 +583,7 @@ public class CommandsPanelSkeletonTests
     {
         Assert.Equal(
             CommandsPanel.Panels.SelectMany(panel => panel.CommandTypeIds)
-                .Where(id => id is not (CombatCommandTypes.Fire or CombatCommandTypes.SelfDestruct or TorpedoLauncherCommandTypes.SetMode or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable))
+                .Where(id => id is not (CombatCommandTypes.Launch or CombatCommandTypes.Detonate or DefenseCommandTypes.Launch))
                 .OrderBy(k => k, StringComparer.Ordinal),
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
         Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey(CombatCommandTypes.Fire));

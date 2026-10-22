@@ -23,6 +23,7 @@ public sealed partial class SimulationEngine
             Math.Clamp(((decimal)motionTime - _defeatFromMotion) / (_defeatToMotion - (decimal)_defeatFromMotion), 0, 1);
         long calendar = _defeatFromCalendar + (long)decimal.Floor((_defeatToCalendar - (decimal)_defeatFromCalendar) * fraction);
         _sessionOutcome = new(SessionOutcomeState.Defeated, playerId, wreckId, deathEventId, motionTime, calendar);
+        FinishEncounterLost((long)Math.Ceiling(motionTime));
         var stopped = DefeatedClock;
         _clock.StopAtTerminal(stopped.GameTimeMs, stopped.MotionTimeMs);
     }

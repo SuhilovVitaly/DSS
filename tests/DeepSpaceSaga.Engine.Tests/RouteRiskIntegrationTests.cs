@@ -43,7 +43,7 @@ public sealed class RouteRiskIntegrationTests
             Enumerable.Range(0, r.Quests.Count).Select(r.Quests.GetDefinition),
             legacyCatalogFingerprint: r.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, r.StationMarketProfiles.Count).Select(r.StationMarketProfiles.GetDefinition),
-            shipClasses: Enumerable.Range(0, r.ShipClasses.Count).Select(r.ShipClasses.GetDefinition), stationMarketEvents: definitions);
+            shipClasses: Enumerable.Range(0, r.ShipClasses.Count).Select(r.ShipClasses.GetDefinition), stationMarketEvents: definitions, combatRules: r.CombatRules);
     }
 
     private static SimulationEngine Create(GameDataRegistry registry, ulong seed = 1)

@@ -1,0 +1,405 @@
+{
+  "schemaVersion": 1,
+  "ticket": "EP-0012-US-0014-TK-0003-native-acceptance",
+  "baseline": "ee6763f43963ca990d651820bfe82e9b699ee22f",
+  "matrix": {
+    "results": [
+      {
+        "name": "1280x720-s0p8-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 4091,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s0p8-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3536,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 3340,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3808,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p2-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 3537,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p2-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3501,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p5-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 3601,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p5-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3618,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s0p8-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 3795,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s0p8-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3803,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 3932,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3906,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1p2-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 3848,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1p2-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3910,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1p5-ru-input",
+        "exitCode": 0,
+        "elapsedMs": 3744,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1p5-en-input",
+        "exitCode": 0,
+        "elapsedMs": 3726,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p5-ru-win",
+        "exitCode": 0,
+        "elapsedMs": 3695,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p5-ru-defeat",
+        "exitCode": 0,
+        "elapsedMs": 2538,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p5-en-win",
+        "exitCode": 0,
+        "elapsedMs": 3007,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1280x720-s1p5-en-defeat",
+        "exitCode": 0,
+        "elapsedMs": 2549,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1-ru-win",
+        "exitCode": 0,
+        "elapsedMs": 3134,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1-ru-defeat",
+        "exitCode": 0,
+        "elapsedMs": 2535,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1-en-win",
+        "exitCode": 0,
+        "elapsedMs": 3093,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      },
+      {
+        "name": "1920x1080-s1-en-defeat",
+        "exitCode": 0,
+        "elapsedMs": 2668,
+        "passed": true,
+        "failure": null,
+        "failedChecks": []
+      }
+    ],
+    "settingsRestored": true,
+    "settingsSha256": "23c8ae516b1349b9069136bc1121f3c530c719a03f9b0e9d63b13ad3483a602d"
+  },
+  "additionalCleanFlight": {
+    "passed": true,
+    "report": "native/1920x1080-s1-en-clean.json"
+  },
+  "nativePixelSample": {
+    "image": "native/1920x1080-s1-en-clean.confirmed-flights.png",
+    "expectedRadiusPx": 71.83644253965159,
+    "method": "Independent Pillow RGB edge peaks on four cardinal axes after cancelling overlapping aim preview. Four-axis sample only; not all-angle/all-scale pixel certification.",
+    "peakOffsetPx": [
+      -0.875,
+      -0.625,
+      0.125,
+      -0.125
+    ],
+    "maxAbsErrorPx": 0.875
+  },
+  "commands": {
+    "build": {
+      "args": [
+        "build",
+        "tools/DeepSpaceSaga.Performance/DeepSpaceSaga.Performance.csproj",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1350,
+      "hardTimeoutMs": 300000
+    },
+    "solution-build": {
+      "args": [
+        "build",
+        "DeepSpaceSaga.sln",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1818,
+      "hardTimeoutMs": 300000
+    },
+    "format": {
+      "args": [
+        "format",
+        "whitespace",
+        "DeepSpaceSaga.sln",
+        "--no-restore",
+        "--verify-no-changes",
+        "--include",
+        "tools/DeepSpaceSaga.Performance/PointCombatNativeEvidence.cs",
+        "tools/DeepSpaceSaga.Performance/Program.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.PointProjectiles.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Encounter.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/MapViewGeometry.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0010TK0002Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0005Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 3412,
+      "hardTimeoutMs": 300000
+    },
+    "format-full": {
+      "args": [
+        "format",
+        "DeepSpaceSaga.sln",
+        "--no-restore",
+        "--verify-no-changes",
+        "--include",
+        "tools/DeepSpaceSaga.Performance/PointCombatNativeEvidence.cs",
+        "tools/DeepSpaceSaga.Performance/Program.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.PointProjectiles.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Encounter.cs",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/MapViewGeometry.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0010TK0002Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0005Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 20256,
+      "hardTimeoutMs": 300000
+    },
+    "label-before": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~Own_countdown_and_foreign_profile_labels_remain_inside_physical_viewport",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 1,
+      "timedOut": false,
+      "elapsedMs": 7929,
+      "hardTimeoutMs": 300000
+    },
+    "label-after": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS0010TK0002Tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 5309,
+      "hardTimeoutMs": 300000
+    },
+    "summary-before": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~Won_summary_remains_visible_with_production_modules_and_short_space_control_panel",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 1,
+      "timedOut": false,
+      "elapsedMs": 5867,
+      "hardTimeoutMs": 300000
+    },
+    "summary-after": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS0013TK0005Tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 8046,
+      "hardTimeoutMs": 300000
+    },
+    "client-full": {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-build",
+        "--no-restore",
+        "--verbosity",
+        "minimal",
+        "--logger",
+        "trx;LogFileName=client.trx",
+        "--results-directory",
+        "D:\\DeepSpaceSaga\\ep12-preflight\\us0014-tk0003-client-full-trx"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 103962,
+      "hardTimeoutMs": 300000
+    },
+    "pixel-clean": {
+      "args": [
+        "run",
+        "--no-build",
+        "--project",
+        "tools/DeepSpaceSaga.Performance/DeepSpaceSaga.Performance.csproj",
+        "--",
+        "D:/DeepSpaceSaga/DSS",
+        "D:\\DeepSpaceSaga\\DSS\\Board\\EP-0012-combat-rebuild\\evidence\\native\\1920x1080-s1-en-clean.json",
+        "--combat-window",
+        "1",
+        "1920x1080",
+        "en",
+        "input",
+        "--clean-flight"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 4510,
+      "hardTimeoutMs": 300000
+    }
+  },
+  "fullClient": {
+    "passed": 2225,
+    "failed": 0,
+    "skipped": 0
+  },
+  "managedDispatchMaxMs": 2.2954,
+  "productFixes": [
+    "Clamp visible projectile label to viewport; before2FAIL, after13PASS",
+    "Won summary chooses sufficiently tall free rectangle; before1FAIL1PASS, after17PASS"
+  ],
+  "initialHarnessCorrections": [
+    "Windows PowerShell lacks ProcessStartInfo.ArgumentList; no dotnet launched; corrected to pwsh",
+    "Initial locale aliases and unsupported scale1.25 rejected as evidence; archived externally and rerun24 actual locale/scale cases",
+    "Overlapping preview circle made initial radial pixel oracle ambiguous; clean-flight independent four-axis sample only"
+  ],
+  "humanAcceptance": "OPEN; physical OS input, actual transport/input-to-photon latency, hearing, deuteranopia and usability NOT RUN",
+  "balanceAcceptance": "OPEN: dodge96.6% andP907.4933realmin outside corridors; unchanged by UI fixes",
+  "review": "Author self-review, not independent"
+}

@@ -16,7 +16,7 @@ internal struct MapWorldBounds
 
 internal static class MapViewGeometry
 {
-    internal static SKRect FreeViewport(int width, int height, IReadOnlyList<SKRect> obstacles)
+    internal static SKRect FreeViewport(int width, int height, IReadOnlyList<SKRect> obstacles, float minimumWidth = 0, float minimumHeight = 0)
     {
         var xs = new List<float> { 0, width };
         var ys = new List<float> { 0, height };
@@ -26,18 +26,18 @@ internal static class MapViewGeometry
             ys.Add(Math.Clamp(r.Top, 0, height)); ys.Add(Math.Clamp(r.Bottom, 0, height));
         }
         xs.Sort(); ys.Sort();
-        SKRect best = new(0, 0, width, height);
+        SKRect best = minimumWidth > 0 || minimumHeight > 0 ? SKRect.Empty : new(0, 0, width, height);
         float area = 0;
         for (int l = 0; l < xs.Count - 1; l++)
-        for (int r = l + 1; r < xs.Count; r++)
-        for (int t = 0; t < ys.Count - 1; t++)
-        for (int b = t + 1; b < ys.Count; b++)
-        {
-            var candidate = new SKRect(xs[l], ys[t], xs[r], ys[b]);
-            float a = candidate.Width * candidate.Height;
-            if (a <= area || obstacles.Any(o => candidate.IntersectsWith(o))) continue;
-            best = candidate; area = a;
-        }
+            for (int r = l + 1; r < xs.Count; r++)
+                for (int t = 0; t < ys.Count - 1; t++)
+                    for (int b = t + 1; b < ys.Count; b++)
+                    {
+                        var candidate = new SKRect(xs[l], ys[t], xs[r], ys[b]);
+                        float a = candidate.Width * candidate.Height;
+                        if (candidate.Width < minimumWidth || candidate.Height < minimumHeight || a <= area || obstacles.Any(o => candidate.IntersectsWith(o))) continue;
+                        best = candidate; area = a;
+                    }
         return best;
     }
 

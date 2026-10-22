@@ -67,7 +67,9 @@ internal sealed class ObjectTrailStore
         foreach (var state in renderStates)
         {
             var obj = state.Pose;
-            if (obj.SpeedKmS <= 0)
+            // Point flights have a dedicated trail from the captured own launch.
+            // Generic bootstrap would invent pre-launch or undisclosed foreign history.
+            if (obj.SpeedKmS <= 0 || state.Source.OwnProjectile is not null || state.Source.ObservedProjectile is not null)
             {
                 RemoveObjectTrail(obj.ObjectId);
                 continue;
@@ -78,6 +80,7 @@ internal sealed class ObjectTrailStore
                 points = new ObjectTrailBuffer();
                 _trails[obj.ObjectId] = points;
                 bool shouldBootstrapObject = bootstrapMissingTrails &&
+                                             state.Source.Evasion is null && state.Source.TurnHoldRateDegPerSec is null && state.Source.SpeedHoldAccelerationKmS2 is null &&
                                              (bootstrapObjectIds is null || bootstrapObjectIds.Contains(obj.ObjectId));
                 if (shouldBootstrapObject)
                 {

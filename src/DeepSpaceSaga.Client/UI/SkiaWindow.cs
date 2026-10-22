@@ -34,6 +34,7 @@ public sealed class SkiaWindow : IDisposable
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
     private readonly CombatVisualSettings _combatSettings;
+    private readonly CombatInputSettings _combatInputs;
     private readonly ScreenStack _screens = new();
     private readonly WindowThreadContext _uiContext = new();
     private readonly SessionConnectionLoader _connectionLoader = new();
@@ -50,6 +51,7 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private Task _lastSessionDisposal = Task.CompletedTask;
     private GameSessionHandle? _defeatSession;
     private Task? _defeatTransitionTask;
     private string? _pendingUndockCommandId;
@@ -62,9 +64,9 @@ public sealed class SkiaWindow : IDisposable
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
-    private readonly KeyboardEdgeTracker _keyboardEdges = new();
-    private readonly Key[] _keyboardPressedKeys = new Key[32]; // must cover every key KeyboardEdgeTracker.PollBoth can report in one call
-    private readonly Key[] _keyboardReleasedKeys = new Key[32]; // PollBoth reports releases for every tracked key.
+    private readonly KeyboardEdgeTracker _keyboardEdges;
+    private readonly Key[] _keyboardPressedKeys = new Key[64]; // Includes remapped combat bindings.
+    private readonly Key[] _keyboardReleasedKeys = new Key[64];
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
@@ -95,6 +97,8 @@ public sealed class SkiaWindow : IDisposable
     {
         _sessionFactory = sessionFactory;
         _combatSettings = CombatVisualSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
+        _combatInputs = CombatInputSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatInputSettings.RelativePath), InterfaceLog.Write);
+        _keyboardEdges = new(_combatInputs);
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
@@ -514,6 +518,7 @@ public sealed class SkiaWindow : IDisposable
             $"DIAG FocusChanged isFocused={isFocused} screen={_screens.Current.GetType().Name} " +
             $"depth={_screens.Count} printScreenDown={printScreenDown}");
 
+        bool focusChanged = _isFocused != isFocused;
         _isFocused = isFocused;
 
         // Only cover the taskbar (see WindowOptions.TopMost above) while the game
@@ -526,6 +531,13 @@ public sealed class SkiaWindow : IDisposable
         {
             _focusRegainedAtMs = Environment.TickCount64;
             _keyboardEdges.ResyncToCurrentState(_keyboard);
+        }
+        // Polling stops while unfocused and resync intentionally discards missed key releases.
+        // Release server-side held controls now, before that release edge can be lost.
+        if (focusChanged && _screens.Count > 0 && _screens.Current is GameSessionScreen game)
+        {
+            if (isFocused) game.OnActivated();
+            else game.OnDeactivated();
         }
     }
 
@@ -550,7 +562,7 @@ public sealed class SkiaWindow : IDisposable
 
     private async void OnMouseDown(IMouse mouse, MouseButton button)
     {
-        if (_closing || (button != MouseButton.Left && button != MouseButton.Right))
+        if (_closing || (button != MouseButton.Left && button != MouseButton.Right && button != MouseButton.Middle))
             return;
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false })
@@ -564,6 +576,9 @@ public sealed class SkiaWindow : IDisposable
         // that produced it — never re-derived later from (possibly stale) screen state
         // inside the locked HandleScreenEvent switch. See LoadScreen's doc comment.
         var currentScreen = _screens.Current;
+        if (currentScreen is GameSessionScreen game && _keyboard is not null)
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
+                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
         var screenEvent = currentScreen.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
         string? payload = screenEvent == ScreenEvent.LoadSlotRequested && currentScreen is LoadScreen loadScreen
             ? loadScreen.LastRequestedSlotId
@@ -646,6 +661,15 @@ public sealed class SkiaWindow : IDisposable
                 $"printScreenDown={_keyboard.IsKeyPressed(Key.PrintScreen)}");
         }
 
+        if (_screens.Current is GameSessionScreen game)
+        {
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
+                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
+            bool aimPressed = Array.IndexOf(_keyboardPressedKeys, _combatInputs.TorpedoAim, 0, pressedCount) >= 0 ||
+                Array.IndexOf(_keyboardPressedKeys, _combatInputs.CountermissileAim, 0, pressedCount) >= 0;
+            if (aimPressed && _mouse is not null && !_keyboard.IsKeyPressed(Key.ControlLeft) && !_keyboard.IsKeyPressed(Key.ControlRight))
+                game.OnMouseMove(_mouse.Position.X, _mouse.Position.Y);
+        }
         for (int i = 0; i < pressedCount; i++)
             _handleKeyboardEdge(_keyboardPressedKeys[i]);
 
@@ -914,22 +938,28 @@ public sealed class SkiaWindow : IDisposable
         if (_session is not null)
             return;
 
+        await _lastSessionDisposal;
+        if (_closing) return;
+
         var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
         if (!_connectionLoader.TryAdopt(connection)) return;
 
-        var session = new GameSessionHandle(connection);
+        var session = new GameSessionHandle(connection, deferDebugTuningWrites: true);
         try
         {
             var predictor = new LinearMotionPredictor();
+            var combatAudio = CombatAlertAudio.CreateSession();
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings);
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
+                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate, playInitialCombatStart: true);
 
             _session = session;
             _gameSessionScreen = gameScreen;
             _modalDepth = 0;
             _savedSpeed = SimulationSpeed.Speed1;
             _screens.Replace(gameScreen);
+            session.DebugTuningFiles.Activate();
         }
         catch
         {
@@ -1557,25 +1587,31 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_screens.Current is LoadScreen loading) loading.ClearError();
         GameSessionHandle? newSession = null;
+        var previousSession = _session;
         GameSessionScreen newScreen;
         try
         {
             // Offloaded for the same reason as StartGameSessionAsync: a synchronous
             // CreateSessionFromSave call here would block Silk.NET's message pump if disk I/O
             // stalls, freezing the whole window for both the Load screen and QuickLoad (F9).
+            await _lastSessionDisposal;
+            if (previousSession is not null) await previousSession.DeactivateDebugTuningWritesAsync();
             var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromSave(slotId));
             if (!_connectionLoader.TryAdopt(connection)) return false;
-            newSession = new GameSessionHandle(connection);
+            newSession = new GameSessionHandle(connection, deferDebugTuningWrites: true);
             var predictor = new LinearMotionPredictor();
+            var combatAudio = CombatAlertAudio.CreateSession();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings);
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
+                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)
         {
             InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
             if (newSession is not null) await newSession.DisposeAsync();
+            previousSession?.DebugTuningFiles.Activate();
             if (!_closing)
             {
                 await OpenLoadWindowAsync();
@@ -1592,7 +1628,13 @@ public sealed class SkiaWindow : IDisposable
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
         _screens.ReplaceAll(newScreen);
-        if (oldSession is not null) await oldSession.DisposeAsync();
+        if (oldSession is not null)
+        {
+            _lastSessionDisposal = oldSession.DisposeAsync().AsTask();
+            await _lastSessionDisposal;
+        }
+
+        newSession.DebugTuningFiles.Activate();
 
         return true;
     }
@@ -1607,8 +1649,9 @@ public sealed class SkiaWindow : IDisposable
         _pendingUndockCommandId = null;
         // The root may already be inactive under an overlay; ReplaceAll deactivates only Current.
         _gameSessionScreen?.DisposeCombatReports();
+        _gameSessionScreen?.DisposeDebugTuning();
         _gameSessionScreen = null;
-        _screens.ReplaceAll(new DefeatScreen((float)GetUiScale()));
+        _screens.ReplaceAll(new DefeatScreen((float)GetUiScale(), _session.Buffer.Presented?.Snapshot.Encounter));
         return true;
     }
 
@@ -1625,7 +1668,11 @@ public sealed class SkiaWindow : IDisposable
 
         var mainMenu = new MainMenuScreen();
         _screens.ReplaceAll(mainMenu);
-        if (oldSession is not null) await oldSession.DisposeAsync();
+        if (oldSession is not null)
+        {
+            _lastSessionDisposal = oldSession.DisposeAsync().AsTask();
+            await _lastSessionDisposal;
+        }
     }
 
     public void Dispose()
@@ -1655,7 +1702,8 @@ public sealed class SkiaWindow : IDisposable
             _input = null;
         }
 
-        _ = _session?.DisposeAsync();
+        if (_session is { } closingSession) closingSession.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _lastSessionDisposal.GetAwaiter().GetResult();
         _session = null;
 
         _screens.DeactivateAll();

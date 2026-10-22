@@ -33,18 +33,15 @@ public sealed class ModuleDamageTests
         using var second = new BasicCombatEndToEndTests.CombatRun();
         var firstLaunch = first.Launch(1);
         var secondLaunch = second.Launch(1);
-        Assert.Equal(20m, BasicCombatEndToEndTests.Flight(firstLaunch).Torpedo!.ArmorPiercingPercent);
-        Assert.Equal(100m, BasicCombatEndToEndTests.Flight(secondLaunch).Torpedo!.ArmorDamagePercent);
+        Assert.Equal(20m, BasicCombatEndToEndTests.Flight(firstLaunch).OwnProjectile!.ArmorPiercingPercent);
+        Assert.Equal(200, BasicCombatEndToEndTests.Flight(secondLaunch).OwnProjectile!.Damage);
         var firstHit = first.AdvanceTo(BasicCombatEndToEndTests.EndTime(firstLaunch));
         var secondHit = second.AdvanceTo(BasicCombatEndToEndTests.EndTime(secondLaunch));
-        var eventA = Assert.Single(firstHit.CombatJournal, e => e.Type == CombatEventType.ModuleHit);
-        var eventB = Assert.Single(secondHit.CombatJournal, e => e.Type == CombatEventType.ModuleHit);
-        Assert.Equal(eventA.HitModuleId, eventB.HitModuleId);
-        Assert.Equal(0, eventA.StructureAfter);
-        Assert.Contains(firstHit.CombatJournal, e => e.Type == CombatEventType.ModuleDestroyed && e.HitModuleId == eventA.HitModuleId);
-        Assert.Equal(1UL, first.Engine.CaptureSaveState().GameState.CombatState!.HitLocationRngCounter);
-        Assert.Equal(first.Engine.CaptureSaveState().GameState.CombatState!.HitLocationRngState,
-            second.Engine.CaptureSaveState().GameState.CombatState!.HitLocationRngState);
+        Assert.Single(firstHit.CombatJournal, e => e.Type == CombatEventType.Hit && e.TargetObjectId == Target);
+        Assert.Equal(ScenarioLoader.Serialize(first.Save()), ScenarioLoader.Serialize(second.Save()));
+        Assert.Equal(1UL, first.Save().GameState.CombatState!.HitLocationRngCounter);
+        Assert.Equal(first.Save().GameState.CombatState!.HitLocationRngState,
+            second.Save().GameState.CombatState!.HitLocationRngState);
     }
 
     [Fact]
@@ -59,22 +56,21 @@ public sealed class ModuleDamageTests
         string path = Path.Combine(Path.GetTempPath(), $"dss-module-hit-{Guid.NewGuid():N}.json");
         try
         {
-            File.WriteAllText(path, ScenarioLoader.Serialize(source.Engine.CaptureSaveState()));
+            File.WriteAllText(path, ScenarioLoader.Serialize(source.Save()));
             using var resumed = new BasicCombatEndToEndTests.CombatRun(path);
             var nextContinuous = continuous.Launch(2);
             var nextResumed = resumed.Launch(2);
             var expected = continuous.AdvanceTo(BasicCombatEndToEndTests.EndTime(nextContinuous));
             var actual = resumed.AdvanceTo(BasicCombatEndToEndTests.EndTime(nextResumed));
-            Assert.Equal(expected.CombatJournal.Last(e => e.Type == CombatEventType.ModuleHit).HitModuleId,
-                actual.CombatJournal.Last(e => e.Type == CombatEventType.ModuleHit).HitModuleId);
-            Assert.Equal(continuous.Engine.CaptureSaveState().GameState.CombatState!.HitLocationRngState,
-                resumed.Engine.CaptureSaveState().GameState.CombatState!.HitLocationRngState);
+            Assert.Equal(ScenarioLoader.Serialize(continuous.Save()), ScenarioLoader.Serialize(resumed.Save()));
+            Assert.Equal(continuous.Save().GameState.CombatState!.HitLocationRngState,
+                resumed.Save().GameState.CombatState!.HitLocationRngState);
         }
         finally { File.Delete(path); }
     }
 
     [Fact]
-    public void Light_module_hit_disables_for_one_minute()
+    public void Light_module_positive_edge_hit_disables_for_eight_seconds()
     {
         var scenario = TorpedoImpactTests.Scenario(obj => obj.ObjectId == Target ? obj with
         {
@@ -82,19 +78,16 @@ public sealed class ModuleDamageTests
                 .Select(module => module with { ArmorClass = "light", StructurePoints = 150 }).ToArray()
         } : obj);
         using var engine = Create(scenario);
-        engine.ReceiveCommand(Fire("light-armor"));
+        engine.ReceiveCommand(LaunchAt("light-armor", 40, -100));
         At(engine, 0);
         var hit = At(engine, 5000);
-        var moduleHit = Assert.Single(hit.CombatJournal, e => e.Type == CombatEventType.ModuleHit);
-        Assert.Equal(60, moduleHit.ArmorBefore);
-        Assert.Equal(0, moduleHit.ArmorAfter);
-        Assert.Equal(60, moduleHit.StructureAfter);
-        var target = engine.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == Target);
+        var fact = Assert.Single(hit.CombatJournal, e => e.Type == CombatEventType.Hit && e.TargetObjectId == Target);
+        var target = engine.CaptureSaveStateForTests(5000, SimulationSpeed.Speed0, 5000).GameState.SpaceObjects.Single(o => o.ObjectId == Target);
         var module = Assert.Single(target.Modules!);
-        Assert.Equal(0, module.Armor);
-        Assert.Equal(60, module.StructurePoints);
-        Assert.Equal(moduleHit.MotionTimeMs + 60000, module.DisabledUntilMotionTimeMs);
-        Assert.False(module.Destroyed);
+        Assert.InRange(module.Armor!.Value, 1, 59); Assert.InRange(module.StructurePoints, 1, 149);
+        Assert.Equal(fact.MotionTimeMs + 8000, module.DisabledUntilMotionTimeMs); Assert.False(module.Destroyed);
+        Assert.Null(fact.HitModuleId); Assert.Null(fact.Damage); // public NPC damage stays masked
+
     }
 
 }

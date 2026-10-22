@@ -3,7 +3,7 @@ using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
-using static DeepSpaceSaga.Engine.Tests.ManualCountermeasureFireTests;
+using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -40,7 +40,7 @@ public class PhaseThreeSaveContinuationTests
     {
         using var continuous = Create(orbit ? HostileCombatPathTests.OrbitScene(true) : HostileOrbitRuntimeTests.Scene());
         At(continuous, 100);
-        if (orbit) { continuous.ReceiveCommand(Fire("saved-attack")); At(continuous, 100); }
+        if (orbit) { continuous.ReceiveCommand(LaunchAt("saved-attack")); At(continuous, 100); }
         var save = Save(continuous, checkpoint);
         var actor = Assert.Single(save.GameState.HostileCombatState!.Actors);
         Assert.True(actor.ActiveMotion);
@@ -55,83 +55,57 @@ public class PhaseThreeSaveContinuationTests
             Assert.Equal(Json(a.CombatJournal), Json(b.CombatJournal));
             Assert.Equal(actor.State.Clockwise, b.Objects.Single(o => o.ObjectId == Target).HostileCombat!.Clockwise);
         }
-        if (orbit) Assert.True(Save(restored, 30000).GameState.DefenseState!.RngCounter > 0);
+        Assert.Equal(0ul, Save(restored, 30000).GameState.DefenseState!.RngCounter);
     }
 
     [Theory]
-    [InlineData(501, CountermeasurePhase.Guiding)]
-    [InlineData(1101, CountermeasurePhase.MissedCoast)]
-    [InlineData(3501, null)]
-    public void Two_launchers_resume_with_distinct_deadlines(long checkpoint, CountermeasurePhase? expectedPhase)
+    [InlineData(501, 2)]
+    [InlineData(1050, 1)]
+    [InlineData(3501, 0)]
+    public void Two_point_launchers_resume_with_distinct_deadlines(long checkpoint, int activeCount)
     {
-        var registry = AutomaticDefenseTests.WeaponRegistry(0, 100);
-        using var continuous = new SimulationEngine(registry);
-        var scenario = HostileTorpedoFireTests.HostileScenario(155);
-        continuous.LoadScenario(scenario with
-        {
-            GameState = scenario.GameState with
-            { SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with { DirectionDegrees = 180 } : o).ToArray() }
-        });
-        string target = LaunchEnemy(continuous);
-        continuous.ReceiveCommand(Manual("first", target)); At(continuous, 1);
-        At(continuous, 101);
-        continuous.ReceiveCommand(Manual("second", target, Defense2)); At(continuous, 101);
-        var save = Save(continuous, checkpoint);
-        var defense = save.GameState.DefenseState!;
-        if (expectedPhase is { } phase)
-        {
-            Assert.Equal(2, defense.Projectiles.Count);
-            Assert.All(defense.Projectiles, p => Assert.Equal(phase, p.Flight.Phase));
-            Assert.Equal(2, defense.Projectiles.Select(p => p.Flight.ExpiresAtMotionTimeMs).Distinct().Count());
-        }
-        else
-        {
-            Assert.Empty(defense.Projectiles);
-            var deadlines = defense.Launchers.Where(l => l.OwnerObjectId == Player).Select(l => l.State.ReloadDueMotionTimeMs).ToArray();
-            Assert.All(deadlines, d => Assert.NotNull(d));
-            Assert.Equal(2, deadlines.Distinct().Count());
-        }
-        using var restored = Roundtrip(save, registry);
-        Same(continuous, restored, checkpoint);
-        // Command identity is durable across launchers and does not consume another projectile ID.
-        restored.ReceiveCommand(Manual("first", target, Defense2)); At(restored, checkpoint);
-        Same(continuous, restored, checkpoint);
-        foreach (long time in new[] { checkpoint + 1, 4000, 5000 }) Same(continuous, restored, time);
-        Assert.Equal(2ul, Save(restored, 5000).GameState.DefenseState!.RngCounter);
+        using var continuous = Point.Create();
+        continuous.ReceiveCommand(Point.Shot("first", x: 150, y: 0)); Point.At(continuous);
+        Point.At(continuous, 100);
+        continuous.ReceiveCommand(Point.Shot("second", Point.Counter2, x: 150, y: 0)); Point.At(continuous, 100);
+        var save = Point.Save(continuous, checkpoint);
+        Assert.Equal(activeCount, save.GameState.PointCombatState!.Projectiles.Count);
+        var deadlines = save.GameState.DefenseState!.Launchers.Where(l => l.OwnerObjectId == Point.Player).Select(l => l.State.ReadyAtMotionTimeMs).ToArray();
+        Assert.Equal(new double?[] { 12500, 12600 }, deadlines);
+        using var restored = Roundtrip(save, Point.Registry());
+        restored.ReceiveCommand(Point.Shot("first", Point.Counter2, x: -150, profile: "fast"));
+        foreach (long time in new[] { checkpoint, checkpoint + 1, 4000, 12600 })
+            Assert.Equal(ScenarioLoader.Serialize(Point.Save(continuous, time)), ScenarioLoader.Serialize(Point.Save(restored, time)));
+        Assert.Equal(4ul, Point.Save(restored, 12600).GameState.PointCombatState!.LaunchScatter.Counter);
+        Assert.Equal(0ul, Point.Save(restored, 12600).GameState.DefenseState!.RngCounter);
     }
 
     [Fact]
-    public void Reload_preserves_automatic_retry_and_rng()
+    public void Reload_preserves_explicit_readiness_without_automatic_retry_or_rng()
     {
-        var registry = AutomaticDefenseTests.WeaponRegistry(1, 0);
-        using var continuous = new SimulationEngine(registry);
-        continuous.LoadScenario(AutomaticDefenseTests.DefenseScenario());
-        continuous.ReceiveCommand(Fire("auto-target")); At(continuous, 0);
-        var save = Save(continuous, 17000);
-        var defense = Assert.IsType<CountermeasureStateData>(save.GameState.DefenseState);
-        Assert.DoesNotContain("AttemptedTorpedoIds", JsonSerializer.Serialize(defense));
-        Assert.Contains(defense.Journal, e => e.Type == CombatEventType.Miss && e.LaunchMode == LaunchMode.Auto);
-        Assert.True(defense.RngCounter >= 1);
-        using var restored = Roundtrip(save, registry);
-        foreach (long time in new[] { 17000, 18000, 19999 }) Same(continuous, restored, time);
-        Assert.Equal(At(continuous, 19999).CombatJournal.Count(e => e.Result == "countermeasure" && e.Type == CombatEventType.Launch),
-            At(restored, 19999).CombatJournal.Count(e => e.Result == "countermeasure" && e.Type == CombatEventType.Launch));
-        Assert.Equal(Save(continuous, 19999).GameState.DefenseState!.RngCounter,
-            Save(restored, 19999).GameState.DefenseState!.RngCounter);
+        using var continuous = Point.Create(); continuous.ReceiveCommand(Point.Shot(x: 150, y: 0)); Point.At(continuous);
+        var save = Point.Save(continuous, 1001);
+        using var restored = Roundtrip(save, Point.Registry());
+        foreach (long time in new[] { 1001L, 12499, 12500, 20000 })
+        {
+            Assert.Equal(ScenarioLoader.Serialize(Point.Save(continuous, time)), ScenarioLoader.Serialize(Point.Save(restored, time)));
+            Assert.Empty(Point.At(restored, time).Objects.Where(o => o.OwnProjectile is not null));
+        }
+        Assert.Single(Point.At(restored, 20000).CombatJournal, e => e.Type == CombatEventType.Launch);
+        Assert.Equal(2ul, Point.Save(restored, 20000).GameState.PointCombatState!.LaunchScatter.Counter);
+        restored.ReceiveCommand(Point.Shot("explicit-next"));
+        Assert.Single(Point.Save(restored, 20000).GameState.PointCombatState!.Projectiles);
     }
 
     [Fact]
     public void Hostile_next_fire_boundary_survives_real_file_load()
     {
         using var continuous = Create(PlayerDefeatTests.LethalScenario());
-        var save = Save(continuous, 5000);
-        Assert.Single(save.GameState.CombatState!.Projectiles);
-        using var restored = Roundtrip(save);
-        Same(continuous, restored, 5001);
-        Same(continuous, restored, 17501);
-        var next = Assert.Single(Save(restored, 17501).GameState.CombatState!.Projectiles);
-        Assert.InRange(next.Flight.LaunchMotionTimeMs, 16001, 17501);
-        Same(continuous, restored, 20000);
+        var save = Save(continuous, 501); var launch = Assert.Single(save.GameState.PointCombatState!.Projectiles).Flight;
+        double ready = save.GameState.CombatState!.Launchers.Single(l => l.OwnerObjectId == Target).State.ReadyAtMotionTimeMs!.Value;
+        Assert.Equal(launch.LaunchMotionTimeMs + 10000, ready);
+        using var restored = Roundtrip(save); Same(continuous, restored, 502); Same(continuous, restored, 900);
+        Assert.Equal(At(continuous, 901).Objects.Single(o => o.ObservedProjectile is not null), At(restored, 901).Objects.Single(o => o.ObservedProjectile is not null));
     }
 
     [Fact]

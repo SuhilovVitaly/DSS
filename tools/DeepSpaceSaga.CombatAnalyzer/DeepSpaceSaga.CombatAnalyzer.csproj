@@ -1,0 +1,7 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup><OutputType>Exe</OutputType></PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj" />
+    <Compile Include="../../tests/DeepSpaceSaga.Engine.Tests/ProductionCombatBalanceHarness.cs" Link="ProductionCombatBalanceHarness.cs" />
+  </ItemGroup>
+</Project>

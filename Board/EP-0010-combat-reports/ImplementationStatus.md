@@ -22,7 +22,7 @@
 
 Полная торговая theory не зелёная: current10/11 в классе, baseline4/5 theory;15s refuel deadline воспроизведён на исходном af594de (другой station subtype в повторе, что указывает на общий временной бюджет). Это сторонняя baseline-проблема, не исправлялась. Финальная Client suite явно исключает ровно5 theory cases; её результат не выдается за полный1978/1978. Raw TRX — evidence/regression.
 
-[Тикет → SHA → push](Publication.md) · [инвентаризация документов](DocumentationInventory.md) · [audit](DocumentationAudit.json) · [финальное собственное ревью](FinalReview.md) · [текущая архитектура](../../Documentation/04-Engineering/CombatReports.md) · [Graphify](../../Documentation/06-Tooling/TradingSolarGraphify.md).
+[Тикет → SHA → push](Publication.md) · [инвентаризация документов](DocumentationInventory.md) · [audit](DocumentationAudit.json) · [финальное собственное ревью](FinalReview.md) · [текущая архитектура](../../Documentation/04-Engineering/CombatReports.md) · [Graphify](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/06-Tooling/TradingSolarGraphify.md).
 
 ## Graphify и документация
 
@@ -148,3 +148,8 @@ CorrectiveTK0004 cfb91938c2c1409213d535911cc11e7ed73e7bf6 published/remote verif
 TK0005 47b60d2902c8577642d51af3894682104b9673f9 published/remote verified. User explicitly forbids autonomous game/native launches from2026-10-16 onward. Native/performance gate stays OPEN. Existing64-frame1280/UI100/EN sample retained; no active native process remained. Station timeout reproduced on source af594de, baseline evidence retained.
 
 TK0003 5d2d9357a4c08b303ce7285ee1bfa7178f5346bd published/remote verified. TK0006 fixed HUD hover, empty-string tiny-width wrapping and free-map fixtures;226 focused cases PASS, scoped format/diff PASS. Native remains OPEN by explicit user policy.
+
+
+## Superseded by EP-0012 — 2026-10-21
+
+Guided/chance/mode/auto/burst combat and Save17/16 rules in this dated report are superseded by [point-aim combat](../../Documentation/04-Engineering/PointAimCombat.md). Module armor/structure, report delivery and observed-motion privacy remain. Historical SHA/test/FPS/native results and original permissions are preserved as evidence of their time, not fresh acceptance. EP12 actual native matrix does not close earlier human/palette/FPS gates; production dodge balance remains outside its required corridors. [Current implementation and publication](../EP-0012-combat-rebuild/ImplementationStatus.md).

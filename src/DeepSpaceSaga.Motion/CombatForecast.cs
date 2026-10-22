@@ -18,252 +18,131 @@ public sealed record CombatForecastResult(string ProjectileId, string TargetId, 
     double EndMotionTimeMs, CombatForecastStatus Status, ImmutableArray<CombatForecastPoint> Projectile,
     ImmutableArray<CombatForecastPoint> Target, ImmutableArray<CombatForecastLeg> Legs)
 {
-    public const int ModelVersion = 1;
+    public const int ModelVersion = 3;
     public double? ContactMotionTimeMs => Status == CombatForecastStatus.Contact ? EndMotionTimeMs : null;
 
     public (double X, double Y, double Direction) ProjectilePose(double time)
     {
-        int low = 0, high = Legs.Length - 1;
-        while (low < high)
+        if (!Legs.IsDefaultOrEmpty) throw new InvalidOperationException("Guidance forecast legs are unsupported.");
         {
-            int mid = (low + high) / 2;
-            if (Legs[mid].To < time) low = mid + 1; else high = mid;
+            if (Projectile.IsDefaultOrEmpty) throw new InvalidOperationException("Forecast has no projectile samples.");
+            int lowPoint = 0, highPoint = Projectile.Length - 1;
+            while (lowPoint < highPoint)
+            {
+                int mid = (lowPoint + highPoint) / 2;
+                if (Projectile[mid].MotionTimeMs < time) lowPoint = mid + 1; else highPoint = mid;
+            }
+            int index = Math.Max(0, lowPoint - 1);
+            var a = Projectile[index];
+            var b = Projectile[Math.Min(index + 1, Projectile.Length - 1)];
+            double progress = b.MotionTimeMs == a.MotionTimeMs ? 0 : (time - a.MotionTimeMs) / (b.MotionTimeMs - a.MotionTimeMs);
+            var p = BlastMath.PositionAt(a.X, a.Y, b.X, b.Y, progress);
+            double direction = Math.Atan2(b.X - a.X, a.Y - b.Y) * 180 / Math.PI;
+            return (p.X, p.Y, (direction + 360) % 360);
         }
-        var route = Legs[low].Route;
-        return TorpedoGuidanceMath.PredictPose(route, time - route.StartMotionTimeMs);
     }
 }
 
-/// <summary>Pure conditional simulation of existing flights. No world, events, RNG, or new AI commands.</summary>
+/// <summary>Pure point-flight forecast using only captured own geometry or public observations.</summary>
 public static class CombatForecast
 {
     public static CombatForecastResult Torpedo(ObjectMotionSnapshot projectile, ObjectMotionSnapshot? target,
-        double now, CombatForecastOptions? options = null, CancellationToken cancellationToken = default)
-    {
-        var flight = projectile.Torpedo ?? throw new ArgumentException("Expected a torpedo.", nameof(projectile));
-        bool known = target is { IsDestroyed: false } && target.ObjectId == flight.TargetObjectId &&
-            target.RenderObjectType != SpaceObjectType.UnknownSpaceObject;
-        bool sufficient = known && flight.ExpiresAtMotionTimeMs is not null && flight.SpeedKmS > 0 &&
-            flight.TurnRateDegPerSec > 0 && CurrentManeuverForecast.HasRequiredData(target!);
-        double speed = Math.Max(target?.SpeedKmS ?? 0, target?.MaxSpeedKmS ?? 0);
-        if (target?.Orbit is { } orbit)
-            speed = Math.Max(speed, orbit.SemiMajorAxis * Math.Tau * 1000 *
-                SimulationSpeedExtensions.BaseGameSecondsPerRealSecond / orbit.OrbitalPeriodMs / 10);
-        var sampler = sufficient ? CurrentManeuverForecast.CreateSampler(target!) : null;
-        ObjectMotionSnapshot Sample(double t)
-        {
-            var p = sampler!(t - now);
-            return target! with { X = p.X, Y = p.Y, SpeedKmS = p.SpeedKmS, Direction = p.Direction };
-        }
-        var baseline = target;
-        long baselineTime = (long)Math.Floor(now);
-        double? deadline = flight.ExpiresAtMotionTimeMs;
-        if (known && !sufficient)
-            deadline = Math.Min(deadline ?? double.PositiveInfinity, CombatGuidanceRules.NextBoundary((long)Math.Floor(now)));
-        if (projectile.IsDestroyed) deadline = now;
-        return Calculate(projectile.ObjectId, flight.TargetObjectId, flight.Route, now,
-            deadline, flight.SpeedKmS, flight.TurnRateDegPerSec,
-            sufficient ? t => { var p = sampler!(t - now); return (p.X, p.Y); }
-        : null,
-            speed / 100, sufficient ? CombatForecastStatus.NoContact : known
-                ? CombatForecastStatus.InsufficientData : CombatForecastStatus.TargetLost,
-            (pose, route, time) =>
-            {
-                var next = Sample(time);
-                bool changed = CombatGuidanceRules.TargetChanged(baseline!, time - baselineTime, next);
-                // A newly displayed command can precede the next guidance boundary.
-                // The route still contains the previous aim: recover that assumption
-                // from its timed endpoint rather than treating the new velocity as its baseline.
-                if (!changed && route.HasIntercept)
-                {
-                    double duration = route.Segments.Sum(s => s.DurationMs);
-                    var aim = TorpedoGuidanceMath.PredictPose(route, duration);
-                    var expectedTarget = TorpedoGuidanceMath.PredictSegment(new(next.X, next.Y,
-                        next.Direction, next.SpeedKmS, 0, 0), route.StartMotionTimeMs + duration - time);
-                    changed = Math.Abs(aim.X - expectedTarget.X) > 1e-6 || Math.Abs(aim.Y - expectedTarget.Y) > 1e-6;
-                }
-                if (!changed && route.HasIntercept && time - route.StartMotionTimeMs < route.Segments.Sum(s => s.DurationMs)) return route;
-                baseline = next;
-                baselineTime = time;
-                return TorpedoGuidanceMath.Plan(pose, next, flight.SpeedKmS, flight.TurnRateDegPerSec, time);
-            }, options, cancellationToken, sufficient && LinearMotionPredictor.IsLinear(target!));
-    }
+        double now, CombatForecastOptions? options = null, CancellationToken cancellationToken = default) =>
+        PointProjectile(projectile, target, now, options, cancellationToken);
 
     public static CombatForecastResult Countermeasure(ObjectMotionSnapshot projectile, ObjectMotionSnapshot? target,
-        CombatForecastResult? targetForecast, double now, CombatForecastOptions? options = null, CancellationToken cancellationToken = default)
-    {
-        var flight = projectile.Countermeasure ?? throw new ArgumentException("Expected a countermeasure.", nameof(projectile));
-        double? expires = flight.ExpiresAtMotionTimeMs;
-        if (projectile.IsDestroyed) expires = now;
-        if (flight.Phase == CountermeasurePhase.MissedCoast)
-            expires = Math.Min(expires ?? double.PositiveInfinity, flight.MissExpiresAtMotionTimeMs ?? now);
-        bool guiding = flight.Phase == CountermeasurePhase.Guiding;
-        bool sufficient = guiding && flight.SpeedKmS is > 0 && flight.TurnRateDegPerSec is > 0 && expires is not null &&
-            target?.Torpedo is not null && target.ObjectId == flight.TargetTorpedoId &&
-            targetForecast is { Legs.IsEmpty: false } && targetForecast.ProjectileId == flight.TargetTorpedoId &&
-            targetForecast.StartMotionTimeMs == now &&
-            targetForecast.Status is not (CombatForecastStatus.InsufficientData or CombatForecastStatus.TargetLost);
-        var status = !guiding ? CombatForecastStatus.MissedCoast : target?.Torpedo is null
-            ? CombatForecastStatus.TargetLost : sufficient ? CombatForecastStatus.NoContact : CombatForecastStatus.InsufficientData;
-        double end = Math.Min(expires ?? now, guiding ? targetForecast?.EndMotionTimeMs ?? double.PositiveInfinity : double.PositiveInfinity);
-        if (guiding && !sufficient && status == CombatForecastStatus.InsufficientData)
-            end = Math.Min(end, CombatGuidanceRules.NextBoundary((long)Math.Floor(now)));
-        long targetPlan = target?.Torpedo?.Route.StartMotionTimeMs ?? -1;
-        var result = Calculate(projectile.ObjectId, flight.TargetTorpedoId, flight.Route, now, end,
-            flight.SpeedKmS ?? projectile.SpeedKmS, flight.TurnRateDegPerSec ?? 0,
-            sufficient ? t => { var p = targetForecast!.ProjectilePose(t); return (p.X, p.Y); }
-        : null,
-            (target?.Torpedo?.SpeedKmS ?? 0) / 100, status,
-            (pose, route, time) =>
-            {
-                var targetRoute = targetForecast!.Legs.First(l => l.To > time || l == targetForecast.Legs[^1]).Route;
-                if (targetPlan == targetRoute.StartMotionTimeMs && route.HasIntercept) return route;
-                targetPlan = targetRoute.StartMotionTimeMs;
-                double deadline = flight.Mode == LaunchMode.Manual ? end :
-                    targetRoute.StartMotionTimeMs + targetRoute.Segments.Sum(s => s.DurationMs);
-                return CountermeasureGuidanceMath.PlanManualForForecast(pose, targetRoute, time,
-                    Math.Max(1, (long)Math.Ceiling(expires!.Value - time)), flight.SpeedKmS!.Value,
-                    flight.TurnRateDegPerSec!.Value, deadline).Route;
-            }, options, cancellationToken, targetAccelerationBound: target?.Torpedo is { } torpedo
-                ? torpedo.SpeedKmS * torpedo.TurnRateDegPerSec * Math.PI / 18_000_000 : null);
-        // Engine resolves a hull contact before a simultaneous defense contact.
-        if (guiding && targetForecast?.Status == CombatForecastStatus.Contact && result.EndMotionTimeMs >= targetForecast.EndMotionTimeMs)
-            result = result with { Status = CombatForecastStatus.TargetTerminated };
-        else if (targetForecast?.Status == CombatForecastStatus.Expired && result.Status == CombatForecastStatus.Expired &&
-            result.EndMotionTimeMs == targetForecast.EndMotionTimeMs)
-            result = result with { Status = CombatForecastStatus.TargetTerminated };
-        else if (targetForecast?.Status == CombatForecastStatus.CalculationLimited && result.Status == CombatForecastStatus.Expired &&
-            result.EndMotionTimeMs == targetForecast.EndMotionTimeMs)
-            result = result with { Status = CombatForecastStatus.CalculationLimited };
-        return result;
-    }
+        double now, CombatForecastOptions? options = null, CancellationToken cancellationToken = default) =>
+        PointProjectile(projectile, target, now, options, cancellationToken);
 
-    private static CombatForecastResult Calculate(string id, string targetId, TorpedoRoute initial, double now,
-        double? expires, double speed, double turnRate, Func<double, (double X, double Y)>? target,
-        double targetSpeedBound, CombatForecastStatus initialStatus,
-        Func<ObjectMotionSnapshot, TorpedoRoute, long, TorpedoRoute> replan, CombatForecastOptions? options, CancellationToken cancellationToken,
-        bool linearTarget = false, double? targetAccelerationBound = null)
+    /// <summary>Conditional area contact only at a known own detonation time. Foreign traces have no inferred endpoint.</summary>
+    public static CombatForecastResult PointProjectile(ObjectMotionSnapshot projectile, ObjectMotionSnapshot? target,
+        double now, CombatForecastOptions? options = null, CancellationToken cancellationToken = default)
     {
         options ??= CombatForecastOptions.Default;
-        if (options.HorizonMs <= 0 || options.MaxSteps <= 0 || options.MaxPoints < 2 ||
-            options.HorizonMs > 200_000 || options.MaxSteps > 2000 || options.MaxPoints > 8001 || !double.IsFinite(now) || now < 0)
+        if (options.HorizonMs is <= 0 or > 200_000 || options.MaxSteps is <= 0 or > 2000 ||
+            options.MaxPoints is < 2 or > 8001 || !double.IsFinite(now) || now < 0)
             throw new ArgumentOutOfRangeException(nameof(options));
+        var own = projectile.OwnProjectile;
+        if (own is null && projectile.ObservedProjectile is null)
+            throw new ArgumentException("Expected a point projectile.", nameof(projectile));
+        if (own is not null && (!double.IsFinite(own.DetonationMotionTimeMs) ||
+                own.LaunchMotionTimeMs < 0 || own.DetonationMotionTimeMs < own.LaunchMotionTimeMs || own.SpeedKmS <= 0 ||
+                !double.IsFinite(own.SpeedKmS) || own.BlastRadiusKm <= 0 || !double.IsFinite(own.BlastRadiusKm) ||
+                !double.IsFinite(own.CoreFraction) || own.CoreFraction is <= 0 or >= 1))
+            throw new ArgumentException("Invalid captured projectile.", nameof(projectile));
+        bool knownTarget = own is not null && target is { IsDestroyed: false } &&
+            target.ObjectId != projectile.ObjectId && target.RenderObjectType != SpaceObjectType.UnknownSpaceObject &&
+            CurrentManeuverForecast.HasRequiredData(target) &&
+            (own.Kind == ProjectileKind.Countermissile ? IsProjectile(target) :
+                !IsProjectile(target) && (target.ObjectType ?? target.RenderObjectType) is null or SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip);
+        bool incompleteTarget = own is not null && target is { IsDestroyed: false } &&
+            target.RenderObjectType != SpaceObjectType.UnknownSpaceObject && !CurrentManeuverForecast.HasRequiredData(target) &&
+            (own.Kind == ProjectileKind.Countermissile ? IsProjectile(target) : !IsProjectile(target) &&
+                (target.ObjectType ?? target.RenderObjectType) is null or SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip);
+        var sampler = knownTarget ? CurrentManeuverForecast.CreateSampler(target!) : null;
         var points = ImmutableArray.CreateBuilder<CombatForecastPoint>();
         var targets = ImmutableArray.CreateBuilder<CombatForecastPoint>();
-        var legs = ImmutableArray.CreateBuilder<CombatForecastLeg>();
-        var route = initial;
-        if (initial.Segments.IsDefaultOrEmpty)
-            return new(id, targetId, now, now, CombatForecastStatus.InsufficientData, [], [], []);
-        // Route.ElapsedMs is relative to the displayed sample, and can be fractional.
-        double routeOffset = initial.ElapsedMs - (now - initial.StartMotionTimeMs);
-        if (Math.Abs(routeOffset) > 1e-6)
-            return new(id, targetId, now, now, CombatForecastStatus.InsufficientData, [], [], []);
-        double end = Math.Max(now, Math.Min(now + options.HorizonMs, expires ?? double.PositiveInfinity));
+        double end = own is null ? now + options.HorizonMs : Math.Max(now, Math.Min(now + options.HorizonMs, own.DetonationMotionTimeMs));
+        double? targetEnds = knownTarget && own!.Kind == ProjectileKind.Countermissile && target!.OwnProjectile is { } targetOwn &&
+            (targetOwn.DetonationMotionTimeMs < own.DetonationMotionTimeMs ||
+             targetOwn.DetonationMotionTimeMs == own.DetonationMotionTimeMs && targetOwn.Kind == ProjectileKind.Countermissile &&
+             string.CompareOrdinal(target.ObjectId, projectile.ObjectId) < 0) ? targetOwn.DetonationMotionTimeMs : null;
+        if (targetEnds is { } targetEnd) end = Math.Max(now, Math.Min(end, targetEnd));
         double cursor = now;
-        var status = initialStatus;
+        var status = own is null || incompleteTarget ? CombatForecastStatus.InsufficientData : CombatForecastStatus.NoContact;
+        if (projectile.IsDestroyed || own is not null && now >= own.DetonationMotionTimeMs)
+            end = now;
         Add(now);
         int steps = 0;
-        bool guidanceValidated = false;
-        double routeEnd = 0;
-        TorpedoRoute? searchedRoute = null;
-        TorpedoContact? linearContact = null;
-        TorpedoRoute legRoute = route;
-        double legFrom = now;
-        bool hasLeg = false;
         while (cursor < end)
         {
-            // Cancellation is a normal forecast budget/lifecycle limit. Return an
-            // incomplete result without throwing a first-chance debugger exception.
-            if (cancellationToken.IsCancellationRequested)
+            if (cancellationToken.IsCancellationRequested || steps >= options.MaxSteps || points.Count >= options.MaxPoints)
             { status = CombatForecastStatus.CalculationLimited; break; }
-            if (steps++ >= options.MaxSteps || points.Count + 2 > options.MaxPoints)
-            { status = CombatForecastStatus.CalculationLimited; break; }
-            double next = Math.Min(end, CombatGuidanceRules.NextBoundary((long)Math.Floor(cursor)));
-            if (linearTarget && guidanceValidated && route.HasIntercept)
-            {
-                if (!ReferenceEquals(searchedRoute, route))
-                {
-                    linearContact = FirstLinearContact(route, cursor, end);
-                    searchedRoute = route;
-                }
-                if (linearContact is { } hit && hit.MotionTimeMs <= next)
-                { next = hit.MotionTimeMs; status = CombatForecastStatus.Contact; }
-            }
-            else if (target is not null)
-            {
-                var activeRoute = route;
-                var path = new CollisionPath(t =>
-                {
-                    var p = TorpedoGuidanceMath.PredictPose(activeRoute, t - activeRoute.StartMotionTimeMs);
-                    return (p.X, p.Y);
-                }, speed / 100, speed / 100 * turnRate * Math.PI / 180_000);
-                var contact = TorpedoCollisionMath.FirstForecastContact(path, new(target, targetSpeedBound, targetAccelerationBound), cursor, next);
-                if (contact is { } hit) { next = hit.MotionTimeMs; status = CombatForecastStatus.Contact; }
-            }
-            if (!ReferenceEquals(legRoute, route))
-            {
-                if (hasLeg) legs.Add(new(legFrom, cursor, legRoute));
-                legFrom = cursor;
-                legRoute = route;
-            }
-            hasLeg = true;
-            Add((cursor + next) / 2);
+            double next = Math.Min(end, cursor + 100);
             Add(next);
             cursor = next;
-            if (status == CombatForecastStatus.Contact || cursor >= end) break;
-            if (steps >= options.MaxSteps || points.Count + 2 > options.MaxPoints)
-            { status = CombatForecastStatus.CalculationLimited; break; }
-            if (target is not null && !(linearTarget && guidanceValidated && route.HasIntercept && cursor < routeEnd))
-            {
-                var pose = TorpedoGuidanceMath.PredictPose(route, cursor - route.StartMotionTimeMs);
-                route = replan(new(id, pose.X, pose.Y, speed, pose.Direction), route, (long)cursor);
-                // After validating the aim once, constant-velocity target motion
-                // cannot change it before rendezvous. Keep the same guidance
-                // boundaries/points, without allocating identical sampled DTOs.
-                guidanceValidated = true;
-                if (linearTarget) routeEnd = route.StartMotionTimeMs + route.Segments.Sum(s => s.DurationMs);
-            }
+            steps++;
         }
-        if (hasLeg) legs.Add(new(legFrom, cursor, legRoute));
-        if (cursor >= end && status == CombatForecastStatus.NoContact && expires <= end) status = CombatForecastStatus.Expired;
-        return new(id, targetId, now, cursor, status, points.ToImmutable(), targets.ToImmutable(), legs.ToImmutable());
-
-        TorpedoContact? FirstLinearContact(TorpedoRoute active, double from, double to)
+        if (cancellationToken.IsCancellationRequested) status = CombatForecastStatus.CalculationLimited;
+        else if (projectile.IsDestroyed) status = CombatForecastStatus.Expired;
+        else if (targetEnds is { } targetDeadline && cursor >= targetDeadline) status = CombatForecastStatus.TargetTerminated;
+        else if (own is not null && cursor >= own.DetonationMotionTimeMs)
         {
-            double start = active.StartMotionTimeMs;
-            var destination = new CollisionPath(target!, targetSpeedBound, 0);
-            foreach (var segment in active.Segments)
+            status = incompleteTarget ? CombatForecastStatus.InsufficientData : CombatForecastStatus.Expired;
+            if (knownTarget && now <= own.DetonationMotionTimeMs)
             {
-                double finish = start + segment.DurationMs;
-                if (finish > from)
-                {
-                    var hit = Search(from, Math.Min(to, finish),
-                        Math.Abs(segment.SpeedKmS * segment.AngularVelocityDegPerSec) * Math.PI / 18_000_000);
-                    if (hit is not null) return hit;
-                    from = Math.Min(to, finish);
-                    if (from >= to) return null;
-                }
-                start = finish;
-            }
-            return Search(from, to, 0);
-
-            TorpedoContact? Search(double a, double b, double acceleration)
-            {
-                var path = new CollisionPath(t =>
-                {
-                    var p = TorpedoGuidanceMath.PredictPose(active, t - active.StartMotionTimeMs);
-                    return (p.X, p.Y);
-                }, speed / 100, acceleration);
-                return TorpedoCollisionMath.FirstForecastContact(path, destination, a, b);
+                var p = points[^1];
+                var q = targets[^1];
+                double dx = (p.X - q.X) / 10, dy = (p.Y - q.Y) / 10;
+                double distance = Math.Sqrt(dx * dx + dy * dy);
+                bool contact = own.Kind == ProjectileKind.Countermissile ? distance <= own.BlastRadiusKm :
+                    Math.Round(own.Damage * BlastMath.Falloff(distance, own.BlastRadiusKm, own.CoreFraction), MidpointRounding.AwayFromZero) > 0;
+                if (contact) status = CombatForecastStatus.Contact;
             }
         }
+        return new(projectile.ObjectId, knownTarget ? target!.ObjectId : string.Empty, now, cursor,
+            status, points.ToImmutable(), targets.ToImmutable(), []);
 
         void Add(double time)
         {
-            if (points.Count != 0 && points[^1].MotionTimeMs == time) return;
-            var p = TorpedoGuidanceMath.PredictPose(route, time - route.StartMotionTimeMs);
+            (double X, double Y) p;
+            if (own is null)
+            {
+                var sample = CurrentManeuverForecast.Sample(projectile, time - now);
+                p = (sample.X, sample.Y);
+            }
+            else
+            {
+                double duration = own.DetonationMotionTimeMs - own.LaunchMotionTimeMs;
+                double progress = duration == 0 ? 1 : (time - own.LaunchMotionTimeMs) / duration;
+                p = BlastMath.PositionAt(own.StartX, own.StartY, own.DetonationX, own.DetonationY, progress);
+            }
             points.Add(new(time, p.X, p.Y));
-            if (target is not null) { var q = target(time); targets.Add(new(time, q.X, q.Y)); }
+            if (sampler is not null) { var q = sampler(time - now); targets.Add(new(time, q.X, q.Y)); }
         }
     }
+
+    private static bool IsProjectile(ObjectMotionSnapshot target) => target.OwnProjectile is not null || target.ObservedProjectile is not null ||
+        target.ObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure;
+
 }

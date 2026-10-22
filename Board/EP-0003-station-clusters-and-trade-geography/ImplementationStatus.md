@@ -4,7 +4,7 @@
 
 Текущая сверка: [ReviewStatus.md](ReviewStatus.md). Исторические публикации и результаты ниже сохранены. Новые F/G и свежие проверки находятся в review 2026-10-10; прежние зелёные результаты не закрывают новые дефекты.
 
-[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
 
 The user authorized the complete epic, all project/test files, and a separate commit and push after each ticket on 2026-10-07. Execution uses the existing `base-fight` branch. Planning metadata is historical; this record reports implementation and validation separately.
 
@@ -37,4 +37,4 @@ Story review commits: US-0001 `25eaf87`; US-0002 `f3c24da`; US-0003 `41a4e55`; U
 
 Completed: 20/20 tickets, 8/8 story reviews, and the final epic review with confirmed findings repaired. Final regressions pass 3859/3859 across six projects. The correctness and performance corpuses each cover 4800 worlds; all six long-voyage cases complete their return and match save/load continuation; all five final real native-window cases pass the 80 FPS p99 criterion on the recorded host. Starter fuel efficiency is now 200 km/kg to make the demonstrated return voyages reachable; fuel formulas, speed, tank and initial credits are unchanged.
 
-Final evidence, the nine epic acceptance criteria and remaining measurement limitations are recorded in [EP-0003-Implementation.md](../../Documentation/Validation/EP-0003-Implementation.md), with separate economic, CPU/raster performance and real native-window summaries. Profitability has no defined acceptance threshold; human manual playthrough and other hardware are not assessed. No historical planning `stage` value is used as runtime proof or rewritten as an approval.
+Final evidence, the nine epic acceptance criteria and remaining measurement limitations are recorded in [EP-0003-Implementation.md](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/Validation/EP-0003-Implementation.md), with separate economic, CPU/raster performance and real native-window summaries. Profitability has no defined acceptance threshold; human manual playthrough and other hardware are not assessed. No historical planning `stage` value is used as runtime proof or rewritten as an approval.

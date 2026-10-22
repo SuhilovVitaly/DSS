@@ -204,11 +204,11 @@ public sealed class StationResourceFieldContentTests
     }
 
     [Fact]
-    public void Default_500_and_legacy_without_map_remain_unchanged()
+    public void Default_500_and_legacy_without_map_preserve_data_after_retired_auto_flag_removal()
     {
-        // Baseline includes the EP-0009 structure normalization; resource-field loading must not modify it.
-        const string baselineHash = "75C648C93E5D300036CC8E6798381ACFB865B4A0560839880D97831B5C6B2797";
-        Assert.Equal(baselineHash, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(ScenarioPath("Default_500")))));
+        // EP12 removes only the retired automatic-PD field; independently derived normalized hash protects every other byte.
+        const string baselineHash = "7B102CACB98B9DF75C4F8407C54C88A707EF1F6F652B1F0EEA45AEA4AF3B075E";
+        Assert.Equal(baselineHash, Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(ScenarioPath("Default_500")).Replace("\r\n", "\n")))));
         using var enabled = new ContentFixture();
         using var disabled = new ContentFixture(enabled: false);
         foreach (string name in new[] { "Default_500", "MarketProfiles" })
@@ -224,7 +224,7 @@ public sealed class StationResourceFieldContentTests
             if (name == "Default_500") Assert.Equal(502, state.SpaceObjects.Count);
             Assert.Equal(Json(Save(second)), Json(state));
         }
-        Assert.Equal(baselineHash, Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(ScenarioPath("Default_500")))));
+        Assert.Equal(baselineHash, Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(ScenarioPath("Default_500")).Replace("\r\n", "\n")))));
     }
 
     private static void AssertGeometry(GameStateData state)

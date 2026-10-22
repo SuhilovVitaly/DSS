@@ -1,0 +1,262 @@
+{
+  "date": "2026-10-20",
+  "ticket": "EP-0012-US-0011-TK-0004-launch-commands-and-reasons",
+  "checks": [
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS0011TK0004Tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 7138,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 1 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--no-build",
+        "--filter",
+        "Category!=ForecastBudget",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 103448,
+      "hardTimeoutMs": 300000,
+      "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:  2215, Skipped:     0, Total:  2215, Duration: 1 m 42 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "build",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 2039,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.80\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "whitespace",
+        "DeepSpaceSaga.sln",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 3411,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs",
+        "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 13517,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "review": "self-review, not independent",
+  "native": "NOT RUN",
+  "integration": "OPEN until Engine/Client migration",
+  "solutionBuild": {
+    "args": [
+      "build",
+      "DeepSpaceSaga.sln",
+      "--no-restore",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 3902,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Contracts.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Contracts.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.Tests.dll\n  DeepSpaceSaga.EconomyBalance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.EconomyBalance\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Motion.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Motion.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.Tests.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\n  DeepSpaceSaga.Performance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.dll\n  DeepSpaceSaga.EconomyBalance.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.EconomyBalance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.Tests.dll\n  DeepSpaceSaga.Performance.Tests -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:03.67\n",
+    "stderr": ""
+  },
+  "clientGate": "2215/2215 non-budget Client regression PASS; strict legacy ForecastBudget remains OPEN (2.227 ms and 2.378 ms against 2 ms).",
+  "inputRegression": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-restore",
+      "--no-build",
+      "--filter",
+      "FullyQualifiedName~KeyboardEdgeTracker|FullyQualifiedName~PointCombatUS0011|FullyQualifiedName~PointCombatUS0010TK0004",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 2866,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    77, Skipped:     0, Total:    77, Duration: 1 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+    "stderr": ""
+  },
+  "owningClientFormat": {
+    "args": [
+      "format",
+      "src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj",
+      "--verify-no-changes",
+      "--no-restore",
+      "--include",
+      "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs",
+      "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 9517,
+    "hardTimeoutMs": 300000,
+    "stdout": "",
+    "stderr": ""
+  },
+  "admissionNegativeControl": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-restore",
+      "--filter",
+      "FullyQualifiedName~PointCombatUS0011TK0004Tests.Click_feedback_under_100ms_and_projectile_awaits_scene",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 1,
+    "timedOut": false,
+    "elapsedMs": 7214,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n  Failed DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Click_feedback_under_100ms_and_projectile_awaits_scene [780 ms]\n  Error Message:\n   Assert.Equal() Failure: Strings differ\n           ↓ (pos 0)\nExpected: \"Command accepted\"\nActual:   \"Ready\"\n           ↑ (pos 0)\n  Stack Trace:\n     at DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Click_feedback_under_100ms_and_projectile_awaits_scene() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0011TK0004Tests.cs:line 86\n   at DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Click_feedback_under_100ms_and_projectile_awaits_scene() in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0011TK0004Tests.cs:line 91\n--- End of stack trace from previous location ---\n\nFailed!  - Failed:     1, Passed:     0, Skipped:     0, Total:     1, Duration: 780 ms - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+    "stderr": "[xUnit.net 00:00:02.46]     DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Click_feedback_under_100ms_and_projectile_awaits_scene [FAIL]\n"
+  },
+  "initialInputFailure": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-restore",
+      "--no-build",
+      "--filter",
+      "FullyQualifiedName~KeyboardEdgeTracker|FullyQualifiedName~PointCombatUS0011|FullyQualifiedName~PointCombatUS0010TK0004",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 1,
+    "timedOut": false,
+    "elapsedMs": 3077,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n  Failed DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Launch_sends_explicit_point_profile_and_selected_module(counter: False) [511 ms]\n  Error Message:\n   Assert.IsType() Failure: Value is null\nExpected: typeof(string)\nActual:   null\n  Stack Trace:\n     at DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Launch_sends_explicit_point_profile_and_selected_module(Boolean counter) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0011TK0004Tests.cs:line 55\n   at DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Launch_sends_explicit_point_profile_and_selected_module(Boolean counter) in D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\PointCombatUS0011TK0004Tests.cs:line 66\n--- End of stack trace from previous location ---\n\nFailed!  - Failed:     1, Passed:    76, Skipped:     0, Total:    77, Duration: 1 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+    "stderr": "[xUnit.net 00:00:01.03]     DeepSpaceSaga.Client.Tests.PointCombatUS0011TK0004Tests.Launch_sends_explicit_point_profile_and_selected_module(counter: False) [FAIL]\n"
+  },
+  "reviewNotes": [
+    "Negative control temporarily restoring only the original revision-based admission criterion fails: expected Command accepted, actual Ready. Correct source restored before final build/tests.",
+    "Execution/acceptance receipts do not create speculative projectiles. Module stays pending until admitted result, own launch, readiness state or completed confirmed reload interval.",
+    "Actual click/feedback stopwatch assertion <=100ms passes; test holds real-transport scene behind the 150 ms reserve and blocks duplicate click.",
+    "Actual server reload rejection is localized and not retried. After confirmed readiness the old reload rejection no longer masks Ready.",
+    "Payload point/profile/module remain bound when active UI mode changes after submission.",
+    "All point-launch refusal reasons verified in Russian and English source/deployed files; unknown future code uses localized generic fallback.",
+    "Related initial input regression failed 76/77 because test bootstrap could arrive between Render and predicate, leaving default camera 10000,10000. Diagnostic run confirmed Target out of range with that camera. Four test helpers now require an actually rendered player; all original command/result assertions retained.",
+    "Self-review only; final catalog integration, strict budget, native/product gates remain OPEN."
+  ],
+  "dispatcherLocaleFollowup": {
+    "checks": [
+      {
+        "args": [
+          "test",
+          "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+          "--no-restore",
+          "--filter",
+          "FullyQualifiedName~PointCombatUS0011TK0004Tests",
+          "--verbosity",
+          "minimal"
+        ],
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedMs": 12019,
+        "hardTimeoutMs": 300000,
+        "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:     7, Skipped:     0, Total:     7, Duration: 1 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "format",
+          "whitespace",
+          "DeepSpaceSaga.sln",
+          "--verify-no-changes",
+          "--no-restore",
+          "--include",
+          "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs"
+        ],
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedMs": 3585,
+        "hardTimeoutMs": 300000,
+        "stdout": "",
+        "stderr": ""
+      },
+      {
+        "args": [
+          "format",
+          "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+          "--verify-no-changes",
+          "--no-restore",
+          "--include",
+          "src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0001Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0002Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0003Tests.cs",
+          "tests/DeepSpaceSaga.Client.Tests/PointCombatUS0011TK0004Tests.cs"
+        ],
+        "exitCode": 0,
+        "timedOut": false,
+        "elapsedMs": 14964,
+        "hardTimeoutMs": 300000,
+        "stdout": "",
+        "stderr": ""
+      }
+    ],
+    "scope": "Only English/Russian dialogue_active/player_destroyed entries and test coverage added after dispatcher self-review. Runtime unchanged. Previous 2215 Client regression remains historical gate at 76272384; this follow-up checks current packaged dictionaries with all seven named tests."
+  }
+}

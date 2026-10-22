@@ -4,8 +4,14 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private static BattleReportReporterSnapshot CaptureWeaponReportIdentity(WeaponOperatorSnapshot? captured,
-        BattleReportReporterRole role) => new(role, captured?.CrewId, captured?.DisplayName);
+    private BattleReportReporterSnapshot PointWeaponReporter(SpaceObjectRuntime projectile)
+    {
+        var flight = projectile.InitialMotion.OwnProjectile!;
+        if (flight.Reporter is { } captured) return captured;
+        var role = flight.Kind == ProjectileKind.Torpedo ? BattleReportReporterRole.TorpedoOperator : BattleReportReporterRole.CountermeasureOperator;
+        var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == flight.OwnerObjectId);
+        return owner is null ? new(role) : CaptureReportIdentity(owner, flight.LauncherModuleId, role);
+    }
 
     private BattleReportReporterSnapshot CaptureReportIdentity(SpaceObjectRuntime owner, string? moduleId,
         BattleReportReporterRole role)

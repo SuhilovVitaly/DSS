@@ -29,45 +29,28 @@ public class HostileCombatPathTests
 
     internal static ScenarioFile OrbitScene(bool defense = false) => TorpedoImpactTests.Scenario(o => o.ObjectId != Target ? o : o with
     {
-        PositionX = 1000,
+        PositionX = 350,
         PositionY = 0,
-        SpeedMps = 1745.3292519943295,
+        SpeedMps = 610.8652381980153,
         DirectionDegrees = 180,
         Modules = o.Modules!.Select(m => m.ModuleTypeId == "module.engine.basic" ? m with { PowerState = "On" } :
             m.ModuleTypeId == "module.countermeasure.launcher.basic" ? m with { AutoDefenseEnabled = defense } : m).ToArray()
     });
 
     [Fact]
-    public void Guidance_replans_on_real_hostile_maneuver_and_split_intervals_match()
+    public void Fixed_point_flight_does_not_replan_on_a_hostile_maneuver_and_partitions_match()
     {
-        using var whole = Create(OrbitScene());
-        using var split = Create(OrbitScene());
-        foreach (var engine in new[] { whole, split }) { At(engine, 100); engine.ReceiveCommand(Fire("attack")); At(engine, 100); }
-        var initial = At(whole, 100).Objects.Single(o => o.Torpedo is not null).Torpedo!;
-        foreach (long time in new long[] { 113, 170, 200, 345, 599, 1700, 2222 }) At(split, time);
-        var expected = At(whole, 3000);
-        var actual = At(split, 3000);
-        var flight = expected.Objects.Single(o => o.Torpedo is not null).Torpedo!;
-        Assert.True(flight.Route.StartMotionTimeMs > initial.Route.StartMotionTimeMs);
-        Assert.True(flight.Trail.Length > 1);
-        Assert.Equal(HostileCombatPhase.OrbitHold, expected.Objects.Single(o => o.ObjectId == Target).HostileCombat!.Phase);
+        using var whole = Create(OrbitScene()); using var split = Create(OrbitScene());
+        foreach (var engine in new[] { whole, split }) { At(engine, 100); engine.ReceiveCommand(LaunchAt("point", 500, 0, "slow")); At(engine, 100); }
+        var initial = Assert.Single(At(whole, 100).Objects, o => o.OwnProjectile is not null).OwnProjectile!;
+        foreach (long t in new long[] { 113, 170, 200, 345, 599, 1700, 2222 }) At(split, t);
+        var expected = At(whole, 3000); var actual = At(split, 3000);
+        var flight = Assert.Single(expected.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
+        Assert.Equal(initial.DetonationX, flight.DetonationX); Assert.Equal(initial.DetonationY, flight.DetonationY);
+        Assert.Equal(initial.DetonationMotionTimeMs, flight.DetonationMotionTimeMs); Assert.Equal(174, flight.X, 8);
         Assert.Equal(JsonSerializer.Serialize(expected.Objects), JsonSerializer.Serialize(actual.Objects));
-        Assert.Equal(JsonSerializer.Serialize(expected.CombatImpacts), JsonSerializer.Serialize(actual.CombatImpacts));
-    }
-
-    [Fact]
-    public void Orbiting_defender_launches_and_resolves_real_countermeasure()
-    {
-        using var engine = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(100, 0));
-        engine.LoadScenario(OrbitScene(true));
-        At(engine, 100);
-        engine.ReceiveCommand(Fire("attack")); At(engine, 100);
-        var end = At(engine, 30000);
-        var intercept = Assert.Single(end.CombatImpacts);
-        Assert.Equal(TorpedoTerminationKind.Intercept, intercept.TerminationKind);
-        Assert.DoesNotContain(end.CombatJournal, e => e.Type == CombatEventType.ModuleHit && e.TargetObjectId == Target);
-        Assert.Single(end.CombatJournal.Where(e => e.Roll is not null));
-        Assert.Contains(end.CombatJournal, e => e.Type == CombatEventType.Launch && e.Result == "countermeasure");
+        Assert.Equal(JsonSerializer.Serialize(expected.CombatJournal), JsonSerializer.Serialize(actual.CombatJournal));
+        Assert.DoesNotContain(expected.Objects, o => o.Countermeasure is not null);
     }
 
     [Fact]
@@ -77,34 +60,30 @@ public class HostileCombatPathTests
         var orbit = At(engine, 100).Objects.Single(o => o.ObjectId == Target).HostileCombat!;
         Assert.Equal(HostileCombatPhase.OrbitHold, orbit.Phase);
         engine.ReceiveCommand(new("accelerate", 1, Player, "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.Accelerate));
-        engine.ReceiveCommand(Fire("attack")); At(engine, 100);
+        At(engine, 100);
         var snapshot = At(engine, 20100);
         Assert.Equal(6, snapshot.Objects.Single(o => o.ObjectId == Player).SpeedKmS);
         var pursuit = snapshot.Objects.Single(o => o.ObjectId == Target);
         Assert.Equal(HostileCombatPhase.Pursuit, pursuit.HostileCombat!.Phase);
         Assert.Equal(orbit.Clockwise, pursuit.HostileCombat.Clockwise);
         Assert.Equal(6, pursuit.SpeedKmS);
-        Assert.True(snapshot.Objects.Single(o => o.Torpedo is not null).Torpedo!.Route.StartMotionTimeMs > 100);
+        Assert.DoesNotContain(snapshot.Objects, o => o.Torpedo is not null || o.Countermeasure is not null);
     }
 
     [Fact]
-    public void Three_real_hits_destroy_maneuvering_hostile_and_stop_its_controller()
+    public void Actual_point_hits_destroy_a_maneuvering_hostile_and_remove_its_controller()
     {
-        using var engine = Create(OrbitScene(), LegacyWeaponRegistry(100, 100));
-        long time = 100;
-        At(engine, time);
-        AuthoritativeSnapshot snapshot = null!;
-        for (int hit = 1; hit <= 3; hit++)
+        using var engine = Create(OrbitScene()); AuthoritativeSnapshot snapshot = At(engine, 100);
+        for (int shot = 0; shot < 8 && snapshot.Objects.Any(o => o.ObjectId == Target); shot++)
         {
-            engine.ReceiveCommand(Fire("attack-" + hit));
-            Assert.Contains(At(engine, time).Objects, o => o.Torpedo is not null);
-            long deadline = time + 180000;
-            do { time += 1000; snapshot = At(engine, time); }
-            while (snapshot.CombatImpacts.Length < hit && time < deadline);
-            Assert.Equal(hit, snapshot.CombatImpacts.Length);
+            long time = 100 + shot * 12500; snapshot = At(engine, time);
+            var target = snapshot.Objects.Single(o => o.ObjectId == Target);
+            engine.ReceiveCommand(LaunchAt("point-" + shot, target.X, target.Y, "slow")); At(engine, time);
+            snapshot = At(engine, time + 10000);
         }
         Assert.DoesNotContain(snapshot.Objects, o => o.ObjectId == Target || o.HostileCombat is not null);
         var wreck = Assert.Single(snapshot.Objects, o => o.ObjectType == SpaceObjectType.Wreck);
-        Assert.Equal(wreck, At(engine, time + 10000).Objects.Single(o => o.ObjectId == wreck.ObjectId));
+        Assert.Equal(wreck, At(engine, snapshot.MotionTimeMs + 10000).Objects.Single(o => o.ObjectId == wreck.ObjectId));
+        Assert.All(snapshot.CombatJournal, e => Assert.Null(e.Roll));
     }
 }

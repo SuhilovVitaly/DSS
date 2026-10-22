@@ -22,12 +22,12 @@ public sealed class CombatSessionRoundtripTests
         Assert.Equal(JsonSerializer.Serialize(before.Objects), JsonSerializer.Serialize(restored.Objects));
         Assert.Equal(JsonSerializer.Serialize(before.InstalledModules), JsonSerializer.Serialize(restored.InstalledModules));
         Assert.Empty(restored.CombatImpacts);
-        Assert.NotEmpty(Assert.Single(restored.Objects.Where(o => o.Torpedo is not null)).Torpedo!.Trail);
-        await fixture.Restored!.SendCommandAsync(CombatSessionFixture.Fire("session-launch"));
+        Assert.NotNull(Assert.Single(restored.Objects.Where(o => o.OwnProjectile is not null)).OwnProjectile);
+        await fixture.Restored!.SendCommandAsync(CombatSessionFixture.PointLaunch("session-launch"));
         await fixture.Restored.SaveAsync("again");
         var saved = ScenarioLoader.LoadFromFile(Path.Combine(fixture.DirectoryPath, "again.json"), true);
-        Assert.Single(saved.GameState.CombatState!.Projectiles);
-        Assert.Equal(1, saved.GameState.CombatState.ProjectileSequence);
+        Assert.Single(saved.GameState.PointCombatState!.Projectiles);
+        Assert.Equal(1, saved.GameState.CombatState!.ProjectileSequence);
     }
 }
 
@@ -64,13 +64,22 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
         Directory.CreateDirectory(DirectoryPath);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Settings, out _, out _);
         Engine = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _now)));
-        var scenario = InRangePlayerAttackScenario(ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json")));
-        if (!defense) scenario = scenario with
+        var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
+        var scenario = source with
         {
-            GameState = scenario.GameState with
+            GameState = source.GameState with
             {
-                SpaceObjects = scenario.GameState.SpaceObjects
-            .Select(o => o with { Modules = o.Modules!.Select(m => m with { AutoDefenseEnabled = false }).ToArray() }).ToArray()
+                MasterSeed = 42,
+                SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
+                {
+                    Ai = null,
+                    PositionX = o.ObjectId == Player ? 0 : 600,
+                    PositionY = 0,
+                    SpeedMps = 0,
+                    DirectionDegrees = 90,
+                    MovementType = "Stationary",
+                    Modules = o.Modules!.Select(m => m with { PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != Player ? "Off" : "On" }).ToArray()
+                }).ToArray()
             }
         };
         Engine.LoadScenario(scenario);
@@ -82,10 +91,10 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
         await First(fixture.Connection);
         return fixture;
     }
-    internal static PlayerCommand Fire(string id) => new(id, 1, Player, Launcher, CombatCommandTypes.Fire, Target);
+    internal static PlayerCommand PointLaunch(string id) => new(id, 1, Player, Launcher, CombatCommandTypes.Launch, TargetWorldX: 600, TargetWorldY: 0, ProfileId: "fast");
     internal async Task<AuthoritativeSnapshot> Launch(string id)
     {
-        await Connection.SendCommandAsync(Fire(id));
+        await Connection.SendCommandAsync(PointLaunch(id));
         return Engine.CaptureSnapshot();
     }
     internal async Task<AuthoritativeSnapshot> Advance(long deltaMs)

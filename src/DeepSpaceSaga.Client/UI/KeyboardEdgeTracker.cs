@@ -2,318 +2,89 @@ using Silk.NET.Input;
 
 namespace DeepSpaceSaga.Client.UI;
 
+/// <summary>One physical edge state for native/test polling, mapped bindings and focus resync.</summary>
 internal sealed class KeyboardEdgeTracker
 {
-    private bool _prevEscPressed;
-    private bool _prevIPressed;
-    private bool _prevFPressed;
-    private bool _prevSPressed;
-    private bool _prevSpacePressed;
-    private bool _prevTabPressed;
-    private bool _prevEnterPressed;
-    private bool _prev1Pressed;
-    private bool _prev2Pressed;
-    private bool _prev3Pressed;
-    private bool _prev4Pressed;
-    private bool _prev5Pressed;
-    private bool _prevUpPressed;
-    private bool _prevDownPressed;
-    private bool _prevLeftPressed;
-    private bool _prevRightPressed;
-    private bool _prevF5Pressed;
-    private bool _prevF9Pressed;
-    private bool _prevF10Pressed;
-    private bool _prevCPressed;
-    private bool _prevCtrlLeftPressed;
-    private bool _prevCtrlRightPressed;
-    private bool _prevEqualPressed;
-    private bool _prevMinusPressed;
-    private bool _prevKeypadAddPressed;
-    private bool _prevKeypadSubtractPressed;
-    private bool _prevHomePressed;
-    private bool _prevEndPressed;
-    private bool _prevBackspacePressed;
+    private static readonly Key[] StandardKeys =
+    [
+        Key.Escape, Key.I, Key.S, Key.F, Key.Space, Key.Tab, Key.Enter,
+        Key.Number1, Key.Number2, Key.Number3, Key.Number4, Key.Number5,
+        Key.Up, Key.Down, Key.Left, Key.Right, Key.F5, Key.F9, Key.F10, Key.C, Key.Backspace,
+        Key.Equal, Key.Minus, Key.KeypadAdd, Key.KeypadSubtract, Key.Home, Key.End
+    ];
+    private readonly Key[] _keys;
+    private readonly Dictionary<Key, bool> _previous = new();
+    private IKeyboard? _keyboard;
+    private Func<Key, bool>? _reader;
 
-    /// <summary>
-    /// Poll both press and release edges in a single pass. All edges are detected
-    /// against the SAME previous-state snapshot — this is essential for Ctrl key
-    /// handling because the real SkiaWindow calls Poll (which mutates previous state)
-    /// before PollUpKeys (which needs the OLD previous to detect the release edge).
-    /// </summary>
-    public (int pressedCount, int releasedCount) PollBoth(
-        IKeyboard keyboard, Span<Key> pressed, Span<Key> released)
+    internal KeyboardEdgeTracker(CombatInputSettings? bindings = null)
     {
-        int p = 0;
-        int r = 0;
+        var input = (bindings ?? CombatInputSettings.Default).Validate();
+        // Modifiers precede actions; aim entry precedes profile/speed keys in the same poll.
+        _keys = new[] { Key.ControlLeft, Key.ControlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight, input.TorpedoAim, input.CountermissileAim }
+            .Concat(StandardKeys).Concat(input.MappedKeys).Distinct().ToArray();
+    }
 
-        AddBoth(Key.Escape, keyboard.IsKeyPressed(Key.Escape), ref _prevEscPressed, pressed, ref p, released, ref r);
+    private Func<Key, bool> Reader(IKeyboard keyboard)
+    {
+        if (!ReferenceEquals(_keyboard, keyboard)) { _keyboard = keyboard; _reader = keyboard.IsKeyPressed; }
+        return _reader!;
+    }
 
-        bool iDown = keyboard.IsKeyPressed(Key.I);
-        bool ctrlDown = keyboard.IsKeyPressed(Key.ControlLeft) || keyboard.IsKeyPressed(Key.ControlRight);
-        AddBoth(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref p, released, ref r);
+    private static bool Down(Key key, Func<Key, bool> reader, bool control) => reader(key) && (key != Key.I || control);
 
-        bool fDown = keyboard.IsKeyPressed(Key.F);
-        AddBoth(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref p, released, ref r);
+    public (int pressedCount, int releasedCount) PollBoth(IKeyboard keyboard, Span<Key> pressed, Span<Key> released) =>
+        PollBoth(Reader(keyboard), pressed, released);
 
-        bool sDown = keyboard.IsKeyPressed(Key.S);
-        AddBoth(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref p, released, ref r);
-
-        AddBoth(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
-
-        AddBoth(Key.Space, keyboard.IsKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Tab, keyboard.IsKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Enter, keyboard.IsKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number1, keyboard.IsKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number2, keyboard.IsKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number3, keyboard.IsKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number4, keyboard.IsKeyPressed(Key.Number4), ref _prev4Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number5, keyboard.IsKeyPressed(Key.Number5), ref _prev5Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Up, keyboard.IsKeyPressed(Key.Up), ref _prevUpPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Down, keyboard.IsKeyPressed(Key.Down), ref _prevDownPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Left, keyboard.IsKeyPressed(Key.Left), ref _prevLeftPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Right, keyboard.IsKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.F5, keyboard.IsKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.F9, keyboard.IsKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.F10, keyboard.IsKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.C, keyboard.IsKeyPressed(Key.C), ref _prevCPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Backspace, keyboard.IsKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Equal, keyboard.IsKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Minus, keyboard.IsKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.KeypadAdd, keyboard.IsKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.KeypadSubtract, keyboard.IsKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Home, keyboard.IsKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref p, released, ref r);
-        AddBoth(Key.End, keyboard.IsKeyPressed(Key.End), ref _prevEndPressed, pressed, ref p, released, ref r);
-
+    internal (int pressedCount, int releasedCount) PollBoth(Func<Key, bool> isKeyPressed, Span<Key> pressed, Span<Key> released)
+    {
+        int p = 0, r = 0;
+        bool control = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
+        foreach (var key in _keys)
+        {
+            bool down = Down(key, isKeyPressed, control);
+            bool previous = _previous.GetValueOrDefault(key);
+            if (down && !previous) pressed[p++] = key;
+            else if (!down && previous) released[r++] = key;
+            _previous[key] = down;
+        }
         return (p, r);
     }
 
-    /// <summary>Test seam.</summary>
-    internal (int pressedCount, int releasedCount) PollBoth(
-        Func<Key, bool> isKeyPressed, Span<Key> pressed, Span<Key> released)
-    {
-        int p = 0;
-        int r = 0;
-
-        AddBoth(Key.Escape, isKeyPressed(Key.Escape), ref _prevEscPressed, pressed, ref p, released, ref r);
-
-        bool iDown = isKeyPressed(Key.I);
-        bool ctrlDown = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
-        AddBoth(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref p, released, ref r);
-
-        bool fDown = isKeyPressed(Key.F);
-        AddBoth(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref p, released, ref r);
-
-        bool sDown = isKeyPressed(Key.S);
-        AddBoth(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref p, released, ref r);
-
-        AddBoth(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref p, released, ref r);
-
-        AddBoth(Key.Space, isKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Tab, isKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Enter, isKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number1, isKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number2, isKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number3, isKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number4, isKeyPressed(Key.Number4), ref _prev4Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Number5, isKeyPressed(Key.Number5), ref _prev5Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Up, isKeyPressed(Key.Up), ref _prevUpPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Down, isKeyPressed(Key.Down), ref _prevDownPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Left, isKeyPressed(Key.Left), ref _prevLeftPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Right, isKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.F5, isKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.F9, isKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.F10, isKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref p, released, ref r);
-        AddBoth(Key.C, isKeyPressed(Key.C), ref _prevCPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Backspace, isKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Equal, isKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Minus, isKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.KeypadAdd, isKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.KeypadSubtract, isKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref p, released, ref r);
-        AddBoth(Key.Home, isKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref p, released, ref r);
-        AddBoth(Key.End, isKeyPressed(Key.End), ref _prevEndPressed, pressed, ref p, released, ref r);
-
-        return (p, r);
-    }
-
-    // Legacy methods kept for existing callers (the old Poll + PollUpKeys path is
-    // still used by GameSessionScreen tests — but real SkiaWindow uses PollBoth).
-    public int Poll(IKeyboard keyboard, Span<Key> pressed)
-    {
-        int count = 0;
-        AddEdge(Key.Escape, keyboard.IsKeyPressed(Key.Escape), ref _prevEscPressed, pressed, ref count);
-        bool iDown = keyboard.IsKeyPressed(Key.I);
-        bool ctrlDown = keyboard.IsKeyPressed(Key.ControlLeft) || keyboard.IsKeyPressed(Key.ControlRight);
-        AddEdge(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref count);
-        bool fDown = keyboard.IsKeyPressed(Key.F);
-        AddEdge(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref count);
-        bool sDown = keyboard.IsKeyPressed(Key.S);
-        AddEdge(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref count);
-        AddEdge(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
-        AddEdge(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
-        AddEdge(Key.Space, keyboard.IsKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
-        AddEdge(Key.Tab, keyboard.IsKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref count);
-        AddEdge(Key.Enter, keyboard.IsKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref count);
-        AddEdge(Key.Number1, keyboard.IsKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref count);
-        AddEdge(Key.Number2, keyboard.IsKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref count);
-        AddEdge(Key.Number3, keyboard.IsKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref count);
-        AddEdge(Key.Number4, keyboard.IsKeyPressed(Key.Number4), ref _prev4Pressed, pressed, ref count);
-        AddEdge(Key.Number5, keyboard.IsKeyPressed(Key.Number5), ref _prev5Pressed, pressed, ref count);
-        AddEdge(Key.Up, keyboard.IsKeyPressed(Key.Up), ref _prevUpPressed, pressed, ref count);
-        AddEdge(Key.Down, keyboard.IsKeyPressed(Key.Down), ref _prevDownPressed, pressed, ref count);
-        AddEdge(Key.Left, keyboard.IsKeyPressed(Key.Left), ref _prevLeftPressed, pressed, ref count);
-        AddEdge(Key.Right, keyboard.IsKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref count);
-        AddEdge(Key.F5, keyboard.IsKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref count);
-        AddEdge(Key.F9, keyboard.IsKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref count);
-        AddEdge(Key.F10, keyboard.IsKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref count);
-        AddEdge(Key.C, keyboard.IsKeyPressed(Key.C), ref _prevCPressed, pressed, ref count);
-        AddEdge(Key.Backspace, keyboard.IsKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref count);
-        AddEdge(Key.Equal, keyboard.IsKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref count);
-        AddEdge(Key.Minus, keyboard.IsKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref count);
-        AddEdge(Key.KeypadAdd, keyboard.IsKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref count);
-        AddEdge(Key.KeypadSubtract, keyboard.IsKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref count);
-        AddEdge(Key.Home, keyboard.IsKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref count);
-        AddEdge(Key.End, keyboard.IsKeyPressed(Key.End), ref _prevEndPressed, pressed, ref count);
-        return count;
-    }
-
+    public int Poll(IKeyboard keyboard, Span<Key> pressed) => Poll(Reader(keyboard), pressed);
     internal int Poll(Func<Key, bool> isKeyPressed, Span<Key> pressed)
     {
         int count = 0;
-        AddEdge(Key.Escape, isKeyPressed(Key.Escape), ref _prevEscPressed, pressed, ref count);
-        bool iDown = isKeyPressed(Key.I);
-        bool ctrlDown = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
-        AddEdge(Key.I, iDown && ctrlDown, ref _prevIPressed, pressed, ref count);
-        bool fDown = isKeyPressed(Key.F);
-        AddEdge(Key.F, fDown && ctrlDown, ref _prevFPressed, pressed, ref count);
-        bool sDown = isKeyPressed(Key.S);
-        AddEdge(Key.S, sDown && ctrlDown, ref _prevSPressed, pressed, ref count);
-        AddEdge(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, pressed, ref count);
-        AddEdge(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, pressed, ref count);
-        AddEdge(Key.Space, isKeyPressed(Key.Space), ref _prevSpacePressed, pressed, ref count);
-        AddEdge(Key.Tab, isKeyPressed(Key.Tab), ref _prevTabPressed, pressed, ref count);
-        AddEdge(Key.Enter, isKeyPressed(Key.Enter), ref _prevEnterPressed, pressed, ref count);
-        AddEdge(Key.Number1, isKeyPressed(Key.Number1), ref _prev1Pressed, pressed, ref count);
-        AddEdge(Key.Number2, isKeyPressed(Key.Number2), ref _prev2Pressed, pressed, ref count);
-        AddEdge(Key.Number3, isKeyPressed(Key.Number3), ref _prev3Pressed, pressed, ref count);
-        AddEdge(Key.Number4, isKeyPressed(Key.Number4), ref _prev4Pressed, pressed, ref count);
-        AddEdge(Key.Number5, isKeyPressed(Key.Number5), ref _prev5Pressed, pressed, ref count);
-        AddEdge(Key.Up, isKeyPressed(Key.Up), ref _prevUpPressed, pressed, ref count);
-        AddEdge(Key.Down, isKeyPressed(Key.Down), ref _prevDownPressed, pressed, ref count);
-        AddEdge(Key.Left, isKeyPressed(Key.Left), ref _prevLeftPressed, pressed, ref count);
-        AddEdge(Key.Right, isKeyPressed(Key.Right), ref _prevRightPressed, pressed, ref count);
-        AddEdge(Key.F5, isKeyPressed(Key.F5), ref _prevF5Pressed, pressed, ref count);
-        AddEdge(Key.F9, isKeyPressed(Key.F9), ref _prevF9Pressed, pressed, ref count);
-        AddEdge(Key.F10, isKeyPressed(Key.F10), ref _prevF10Pressed, pressed, ref count);
-        AddEdge(Key.C, isKeyPressed(Key.C), ref _prevCPressed, pressed, ref count);
-        AddEdge(Key.Backspace, isKeyPressed(Key.Backspace), ref _prevBackspacePressed, pressed, ref count);
-        AddEdge(Key.Equal, isKeyPressed(Key.Equal), ref _prevEqualPressed, pressed, ref count);
-        AddEdge(Key.Minus, isKeyPressed(Key.Minus), ref _prevMinusPressed, pressed, ref count);
-        AddEdge(Key.KeypadAdd, isKeyPressed(Key.KeypadAdd), ref _prevKeypadAddPressed, pressed, ref count);
-        AddEdge(Key.KeypadSubtract, isKeyPressed(Key.KeypadSubtract), ref _prevKeypadSubtractPressed, pressed, ref count);
-        AddEdge(Key.Home, isKeyPressed(Key.Home), ref _prevHomePressed, pressed, ref count);
-        AddEdge(Key.End, isKeyPressed(Key.End), ref _prevEndPressed, pressed, ref count);
+        bool control = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
+        foreach (var key in _keys)
+        {
+            bool down = Down(key, isKeyPressed, control);
+            if (down && !_previous.GetValueOrDefault(key)) pressed[count++] = key;
+            _previous[key] = down;
+        }
         return count;
     }
 
-    public int PollUpKeys(IKeyboard keyboard, Span<Key> released)
-    {
-        int count = 0;
-        AddUpEdge(Key.ControlLeft, keyboard.IsKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, released, ref count);
-        AddUpEdge(Key.ControlRight, keyboard.IsKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, released, ref count);
-        return count;
-    }
-
+    public int PollUpKeys(IKeyboard keyboard, Span<Key> released) => PollUpKeys(Reader(keyboard), released);
     internal int PollUpKeys(Func<Key, bool> isKeyPressed, Span<Key> released)
     {
         int count = 0;
-        AddUpEdge(Key.ControlLeft, isKeyPressed(Key.ControlLeft), ref _prevCtrlLeftPressed, released, ref count);
-        AddUpEdge(Key.ControlRight, isKeyPressed(Key.ControlRight), ref _prevCtrlRightPressed, released, ref count);
+        foreach (var key in new[] { Key.ControlLeft, Key.ControlRight })
+        {
+            bool down = isKeyPressed(key);
+            if (!down && _previous.GetValueOrDefault(key)) released[count++] = key;
+            _previous[key] = down;
+        }
         return count;
     }
 
-    private static void AddBoth(
-        Key key, bool isPressed, ref bool previous,
-        Span<Key> pressed, ref int pressedCount,
-        Span<Key> released, ref int releasedCount)
-    {
-        if (isPressed && !previous)
-            pressed[pressedCount++] = key;
-        else if (!isPressed && previous)
-            released[releasedCount++] = key;
-
-        previous = isPressed;
-    }
-
-    private static void AddEdge(
-        Key key, bool isPressed, ref bool previous,
-        Span<Key> pressed, ref int count)
-    {
-        if (isPressed && !previous)
-            pressed[count++] = key;
-        previous = isPressed;
-    }
-
-    /// <summary>
-    /// Re-baselines every tracked key to whatever the keyboard currently reports,
-    /// without emitting press/release edges. Call this when the window regains focus:
-    /// an OS-level overlay stealing focus (e.g. Windows' Print Screen key opening the
-    /// Snipping Tool over a borderless game window) can leave the underlying key-state
-    /// array stale, which otherwise surfaces on the next poll as a spurious edge — most
-    /// visibly a phantom Escape that pops the game menu open right as focus returns.
-    /// </summary>
     public void ResyncToCurrentState(IKeyboard? keyboard)
     {
-        if (keyboard is null)
-            return;
-
-        ResyncToCurrentState(keyboard.IsKeyPressed);
+        if (keyboard is not null) ResyncToCurrentState(Reader(keyboard));
     }
-
-    /// <summary>Test seam.</summary>
     internal void ResyncToCurrentState(Func<Key, bool> isKeyPressed)
     {
-        _prevEscPressed = isKeyPressed(Key.Escape);
-        _prevIPressed = isKeyPressed(Key.I)
-            && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
-        _prevFPressed = isKeyPressed(Key.F)
-            && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
-        _prevSPressed = isKeyPressed(Key.S)
-            && (isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight));
-        _prevCtrlLeftPressed = isKeyPressed(Key.ControlLeft);
-        _prevCtrlRightPressed = isKeyPressed(Key.ControlRight);
-        _prevSpacePressed = isKeyPressed(Key.Space);
-        _prevTabPressed = isKeyPressed(Key.Tab);
-        _prevEnterPressed = isKeyPressed(Key.Enter);
-        _prev1Pressed = isKeyPressed(Key.Number1);
-        _prev2Pressed = isKeyPressed(Key.Number2);
-        _prev3Pressed = isKeyPressed(Key.Number3);
-        _prev4Pressed = isKeyPressed(Key.Number4);
-        _prev5Pressed = isKeyPressed(Key.Number5);
-        _prevUpPressed = isKeyPressed(Key.Up);
-        _prevDownPressed = isKeyPressed(Key.Down);
-        _prevLeftPressed = isKeyPressed(Key.Left);
-        _prevRightPressed = isKeyPressed(Key.Right);
-        _prevF5Pressed = isKeyPressed(Key.F5);
-        _prevF9Pressed = isKeyPressed(Key.F9);
-        _prevF10Pressed = isKeyPressed(Key.F10);
-        _prevCPressed = isKeyPressed(Key.C);
-        _prevBackspacePressed = isKeyPressed(Key.Backspace);
-        _prevEqualPressed = isKeyPressed(Key.Equal);
-        _prevMinusPressed = isKeyPressed(Key.Minus);
-        _prevKeypadAddPressed = isKeyPressed(Key.KeypadAdd);
-        _prevKeypadSubtractPressed = isKeyPressed(Key.KeypadSubtract);
-        _prevHomePressed = isKeyPressed(Key.Home);
-        _prevEndPressed = isKeyPressed(Key.End);
-    }
-
-    private static void AddUpEdge(
-        Key key, bool isPressed, ref bool previous,
-        Span<Key> released, ref int count)
-    {
-        if (!isPressed && previous)
-            released[count++] = key;
-        previous = isPressed;
+        bool control = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
+        foreach (var key in _keys) _previous[key] = Down(key, isKeyPressed, control);
     }
 }

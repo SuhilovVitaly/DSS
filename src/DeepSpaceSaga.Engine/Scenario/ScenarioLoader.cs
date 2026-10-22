@@ -17,7 +17,7 @@ public static class ScenarioLoader
         { "Permanent", "Temporary" };
 
     private static readonly HashSet<string> KnownSpeeds = new(StringComparer.OrdinalIgnoreCase)
-        { "Speed0", "Speed1", "Speed2", "Speed3", "Speed4" };
+        { "Speed0", "Speed1", "SpeedDouble", "Speed2", "SpeedTen", "Speed3", "Speed4" };
 
     private static readonly HashSet<string> KnownPowerStates = new(StringComparer.OrdinalIgnoreCase)
         { "On", "Off" };
@@ -80,13 +80,25 @@ public static class ScenarioLoader
             throw new ScenarioException($"Invalid scenario JSON: {ex.Message}", ex);
         }
 
+        if (isSave) scenario = UpgradeSave18(scenario);
         return ValidateAndNormalize(scenario, allowNonZeroGameTime);
     }
 
     internal static void RequireCurrentSaveVersion(int version)
     {
-        if (version != SaveFormat.CurrentSaveFormatVersion)
+        if (version != 18 && version != SaveFormat.CurrentSaveFormatVersion)
             throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
+    }
+
+    internal static ScenarioFile UpgradeSave18(ScenarioFile scenario)
+    {
+        RequireCurrentSaveVersion(scenario.SaveFormatVersion);
+        if (scenario.SaveFormatVersion != 18) return scenario;
+        if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
+        if (scenario.GameState.DebugTuning is not null || scenario.GameState.PointCombatState?.Projectiles?.Any(
+            p => p.LauncherModuleTypeId is not null || p.OriginalFlight is not null) == true)
+            throw new ScenarioException("Invalid Save18: debug tuning/provenance requires Save19. Save was not modified.");
+        return scenario with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion };
     }
 
     internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime,
@@ -126,6 +138,9 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        normalizedState = PointCombatSaveValidation.NormalizeReferences(normalizedState);
+        PointCombatSaveValidation.Validate(normalizedState.PointCombatState, normalizedState.MotionTimeMs);
+        PointCombatContinuationValidation.Validate(normalizedState, scenario.SaveFormatVersion);
         normalizedState = CombatSaveValidation.NormalizeReferences(normalizedState);
         normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
         CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
@@ -190,6 +205,8 @@ public static class ScenarioLoader
         {
             "Speed0" => SimulationSpeed.Speed0,
             "Speed1" => SimulationSpeed.Speed1,
+            "SpeedDouble" => SimulationSpeed.SpeedDouble,
+            "SpeedTen" => SimulationSpeed.SpeedTen,
             "Speed2" => SimulationSpeed.Speed2,
             "Speed3" => SimulationSpeed.Speed3,
             "Speed4" => SimulationSpeed.Speed4,
@@ -275,7 +292,9 @@ public static class ScenarioLoader
                 (!obj.ObjectType.Equals(SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
                  !double.IsFinite(ai.StandoffKm) || ai.StandoffKm <= 0 ||
                  !double.IsFinite(ai.BandKm) || ai.BandKm < 0 || ai.BandKm >= ai.StandoffKm ||
-                 !double.IsFinite(ai.FlankOffsetDeg) || Math.Abs(ai.FlankOffsetDeg) > 180))
+                 !double.IsFinite(ai.FlankOffsetDeg) || Math.Abs(ai.FlankOffsetDeg) > 180 ||
+                 !double.IsFinite(ai.FireThreshold) || ai.FireThreshold is < 0 or > 1 ||
+                 !double.IsFinite(ai.AssumedTargetDodge) || ai.AssumedTargetDodge is < 0 or > 1))
                 throw new ScenarioException($"Object '{obj.ObjectId}' has invalid NPC attack ai parameters.");
             foreach (var module in obj.Modules ?? [])
                 foreach (var stack in module.Cargo ?? []) ValidateCargoCostMetadata(stack, scenario.SaveFormatVersion);
@@ -407,7 +426,8 @@ public static class ScenarioLoader
             throw new ScenarioException($"Unknown objectType '{obj.ObjectType}' for '{obj.ObjectId}'.");
 
         if (obj.RelationToPlayer is { } relation &&
-            (!string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
+            (!(string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
+               string.Equals(obj.ObjectType, SpaceObjectType.Wreck, StringComparison.OrdinalIgnoreCase)) ||
              relation is not (PlayerRelation.Enemy or PlayerRelation.Friend or PlayerRelation.Neutral)))
             throw new ScenarioException($"Invalid relationToPlayer for '{obj.ObjectId}'.");
 

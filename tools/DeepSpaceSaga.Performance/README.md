@@ -1,10 +1,14 @@
 # GPU/window probe
 
+## Current EP-0012 contract — 2026-10-21
+
+Current --combat-window routes PointCombatNativeEvidence, a real SkiaWindow/OpenGL run over actual production Engine snapshots. Command: `dotnet run --no-build --project tools/DeepSpaceSaga.Performance -- <repo> <report.json> --combat-window <0.8|1|1.2|1.5> <1280x720|1920x1080> <ru|en> <input|win|defeat> [--audio] [--clean-flight]`. Build first; hard process cap300000ms, internal3min guard. Output includes PNGs, actual locale/scale/GPU, checks, public commands and explicit NOT RUN limits. Terminal replays use unchanged shared production input policy. Tool temporarily changes deployed Settings and restores bytes. Clean-flight cancels overlapping preview before independent radius sampling. Managed callbacks/controlled clocks are not physical keyboard/mouse, normal transport, input-to-photon or auditory acceptance. Old CombatNativeEvidence/guided arguments below are historical, while unrelated map/report/performance commands retain their scope. [Point-aim combat contract](../../Documentation/04-Engineering/PointAimCombat.md).
+
 ## Актуализация EP-0008 — 2026-10-12
 
 EP-0008 final review and recorded native matrix are linked below. The user currently defers all game/native launches: do not execute the native combat harness until that restriction is lifted. Historical13/14 completed interactions and failed frame-time target are not full acceptance. Automated solution tests and headless performance checks remain distinct from native evidence.
 
-[Текущий контракт](../../Documentation/01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+[Текущий контракт](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
 
 
 The existing positional command runs CPU/raster benchmarks. `--window-probe`
@@ -57,7 +61,7 @@ it does not measure physical scanout. Screen predictions advance from the saved
 authoritative state; trails bootstrap normally rather than restoring their exact
 historical buffers. An Approach can finish during a long probe.
 
-See [the September 24 investigation](../../Documentation/04-Engineering/Performance500/gpu-jitter-2026-09-24.md)
+See [the September 24 investigation](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/Performance500/gpu-jitter-2026-09-24.md)
 for the captured failure and validation results.
 
 ## Solar-system evidence
@@ -128,3 +132,7 @@ Reports contain720 presented frames (120 warmup/600 measured), actual OpenGL har
 `CombatReportsNativeEvidence` / Program flag `--reports-window` prepares a real-window report UI matrix over paused production CombatMukha seed1 with explicit synthetic UI report fixtures. Arguments after the DLL: DSS root, output JSON, `--reports-window`, scale, dimensions, language; optional `--art` captures8 variants and `--performance` collects600-frame samples. This is owner-operated tooling. **User instruction: never launch the game autonomously. Agents must not execute the game or this native/performance harness without a new explicit user request.** Building and headless unit tests are allowed.
 
 The one existing1280×720/UI100/English sample contains64 frames and UI checks; it does not complete the full matrix, native Save/Load/Defeated or performance acceptance. The run without `--performance` has zero measured perf samples; `targetPassed=false` is unmeasured, not a measured FPS failure. [Actual evidence/limitations](../../Board/EP-0010-combat-reports/evidence/NativeAcceptance.md), [performance status](../../Board/EP-0010-combat-reports/evidence/Performance.md). Raster/headless tests cannot establish GPU/scanout FPS or human acceptance.
+
+## US20 native run — 2026-10-21
+
+The harness now checks the exact allowed combat speed set, restored right ship card/left health details, torpedo aim exit and absence of forward foreign geometry. Counter fixture uses displayed poses and searches a candidate through production preview; the recorded run still has two failed CM launch/detonation assertions. Do not call the whole native scenario PASS. Physical hardware input and hearing remain NOT RUN. [Raw evidence and current limits](../../Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/ExecutionStatus.md).

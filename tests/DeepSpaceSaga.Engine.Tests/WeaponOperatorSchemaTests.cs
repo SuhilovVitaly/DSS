@@ -8,9 +8,9 @@ public class WeaponOperatorSchemaTests
     [Fact]
     public void Duplicate_operator_assignment_rejected()
     {
-        using var engine = Create(CountermeasureBootstrapTests.RealScenario());
+        using var engine = Create(ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios/PlayerShipOnly/scenario.json")));
         string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
-        var scenario = CountermeasureBootstrapTests.RealScenario();
+        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios/PlayerShipOnly/scenario.json"));
         scenario = scenario with
         {
             GameState = scenario.GameState with

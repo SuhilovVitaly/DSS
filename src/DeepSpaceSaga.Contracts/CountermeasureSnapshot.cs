@@ -6,18 +6,20 @@ namespace DeepSpaceSaga.Contracts;
 public enum CountermeasurePhase { Guiding, MissedCoast }
 public enum DefenseState { Ready, Guiding, Reloading, NoOperator }
 
-/// <summary>Physical-time commitment to the next barrel of one defense burst.</summary>
+/// <summary>Historical burst payload retained for explicit old-state validation/rejection; EP12 schedules no defense burst.</summary>
 public sealed record PendingBurstShot(double DueMotionTimeMs, string TargetTorpedoId, int BarrelNumber,
     LaunchMode Mode = LaunchMode.Auto);
 
 public static class DefenseCommandTypes
 {
+    public const string Launch = "defense.launch";
+    // Reserved legacy identifiers retain wire identity for explicit rejection; EP12 does not execute these commands.
     public const string Fire = "defense.fire";
     public const string Enable = "defense.enable";
     public const string Disable = "defense.disable";
 }
 
-/// <summary>Captured opposing ratings; the Engine supplies ChanceTenths in 0..1000.</summary>
+/// <summary>Historical opposing-rating DTO retained for wire identity; current point Engine does not publish interception chance.</summary>
 public sealed record InterceptionRatingBreakdown(
     WeaponOperatorSnapshot DefenseOperator,
     decimal TorpedoRating,
@@ -25,7 +27,7 @@ public sealed record InterceptionRatingBreakdown(
 
 /// <summary>Immutable defense status; ReloadDueMotionTimeMs is an absolute physical deadline.</summary>
 public sealed record DefenseSnapshot(
-    bool AutoEnabled,
+    [property: JsonIgnore] bool AutoEnabled,
     WeaponOperatorSnapshot? Operator,
     DefenseState State,
     string? ActiveProjectileId = null,
@@ -43,7 +45,14 @@ public sealed record DefenseSnapshot(
     double? ReadyAtMotionTimeMs = null,
     /// <summary>Populated only for overlapping flights; the singular field remains the first active ID.</summary>
     ImmutableArray<string>? ActiveProjectileIds = null,
-    double? ReloadDurationMs = null);
+    double? ReloadDurationMs = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? ScatterPercent = null,
+    /// <summary>Own current sigma per km under configured rules and assigned operator.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? EffectiveScatterPercent = null);
 
 /// <summary>
 /// Separate projectile type, never a torpedo fire target. All times use physical simulation

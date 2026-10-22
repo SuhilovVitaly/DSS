@@ -1,0 +1,253 @@
+using System.Globalization;
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Motion;
+using Silk.NET.Input;
+using SkiaSharp;
+
+namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
+
+public sealed partial class GameSessionScreen
+{
+    internal sealed record PointThreat(ObjectMotionSnapshot Motion, BlastThreatResult Assessment)
+    {
+        internal string Id => Motion.ObjectId;
+        internal double ClosestKm => double.Hypot(Assessment.ClosestOffsetXKm, Assessment.ClosestOffsetYKm);
+    }
+    internal sealed record EvadeInputPreview(string ThreatId, EvadeSide Side, double ExitPhysicalSeconds,
+        double ExitRealSeconds, bool CanEscape, double DirectionX, double DirectionY, double MaxSpeedKmS,
+        IReadOnlyList<FutureTrajectoryPoint>? Path = null);
+    internal IReadOnlyList<PointThreat> PointThreats { get; private set; } = [];
+    internal string? CurrentThreatId { get; private set; }
+    internal EvadeInputPreview? CurrentEvadePreview { get; private set; }
+    internal string? LastManeuverCommandId { get; private set; }
+    internal string? ManeuverFeedback { get; private set; }
+    internal double? DisplayedBaseCourse { get; private set; }
+    internal string? EngineDisabledFeedback { get; private set; }
+    internal SKRect EngineDisabledIconBounds { get; private set; }
+    private (Key Key, EvadeSide Side, string ThreatId)? _heldEvade;
+    private (string Owner, string Module, TurnDirection Direction)? _heldTurn;
+    private readonly HashSet<Key> _heldFullSpeed = [];
+    private Guid? _maneuverSession;
+    private bool _maneuverInitialized;
+    private Task? _maneuverSendTask;
+
+    internal static IReadOnlyList<PointThreat> AssessPointThreats(ObjectMotionSnapshot player, IEnumerable<ObjectMotionSnapshot> visible)
+    {
+        double angle = player.Direction * Math.PI / 180;
+        return visible.Where(o => !o.IsDestroyed && o.ObservedProjectile is { Kind: ProjectileKind.Torpedo }).Select(o =>
+        {
+            var flight = o.ObservedProjectile!;
+            return new PointThreat(o, BlastThreatMath.Evaluate(player.X, player.Y, player.SpeedKmS * Math.Sin(angle), -player.SpeedKmS * Math.Cos(angle),
+                o.X, o.Y, flight.DirectionX, flight.DirectionY, flight.SpeedKmS, flight.BlastRadiusKm));
+        }).OrderBy(t => t.Assessment.EntryAfterSeconds ?? double.PositiveInfinity)
+            .ThenBy(t => t.Id, StringComparer.Ordinal).ToArray();
+    }
+
+    internal static EvadeInputPreview PreviewEvade(ObjectMotionSnapshot player, PointThreat threat, EvadeSide side, double multiplier,
+        EngineMotionLimitsSnapshot? limits = null)
+    {
+        var flight = threat.Motion.ObservedProjectile!;
+        var direction = Unit(flight);
+        double nx = side == EvadeSide.Left ? direction.Y : -direction.Y;
+        double ny = side == EvadeSide.Left ? -direction.X : direction.X;
+        double offset = ((player.X - threat.Motion.X) * nx + (player.Y - threat.Motion.Y) * ny) / 10;
+        double speed = player.MaxSpeedKmS ?? 0;
+        double seconds = speed > 0 ? Math.Max(0, (flight.BlastRadiusKm + .5 - offset) / speed) : double.PositiveInfinity;
+        List<FutureTrajectoryPoint>? path = null;
+        if (limits is not null && speed > 0)
+        {
+            double heading = (Math.Atan2(nx, -ny) * 180 / Math.PI + 360) % 360;
+            double end = threat.Assessment.ClosestAfterSeconds + .5;
+            ObjectMotionSnapshot Sample(double t) => EvasionMotionMath.Steer(player, heading, limits.MaxSpeedKmS,
+                limits.TurnRateDegPerSec, limits.AccelerationKmS2, t * 1000);
+            bool Outside(double t) { var p = Sample(t); return ((p.X - threat.Motion.X) * nx + (p.Y - threat.Motion.Y) * ny) / 10 >= flight.BlastRadiusKm + .5; }
+            if (Outside(0)) seconds = 0;
+            else if (!Outside(end)) seconds = double.PositiveInfinity;
+            else
+            {
+                double lo = 0, hi = end;
+                for (int i = 0; i < 40; i++) { double mid = (lo + hi) / 2; if (Outside(mid)) hi = mid; else lo = mid; }
+                seconds = hi;
+            }
+            path = new(17);
+            double duration = double.IsFinite(seconds) ? seconds : end;
+            for (int i = 0; i <= 16; i++) { var p = Sample(duration * i / 16); path.Add(new(p.X, p.Y)); }
+        }
+        bool safe = double.IsFinite(seconds) && seconds <= threat.Assessment.ClosestAfterSeconds + .5 && (!threat.Assessment.IsThreat ||
+            threat.Assessment.EntryAfterSeconds is { } deadline && seconds <= deadline);
+        return new(threat.Id, side, seconds, seconds / multiplier, safe, nx, ny, speed, path);
+    }
+
+    private InstalledModuleSnapshot? ManeuverEngine() => _buffer.Presented?.Snapshot.InstalledModules is { IsDefaultOrEmpty: false } modules
+        ? modules.FirstOrDefault(m => m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal)) : null;
+    private bool ManeuverEngineReady(InstalledModuleSnapshot? engine) => engine is { IsDestroyed: false, PowerState: "On", OperationalState: "Ready" } &&
+        (engine.StructureMax > 0 ? engine.StructureCurrent > 0 : engine.StructurePoints > 0) &&
+        !(engine.DisabledUntilMotionTimeMs is { } until && until > PointAimTime);
+    private bool UsesCombatTurnInput => _buffer.Presented?.Snapshot.Encounter?.State == CombatEncounterState.Active || PointThreats.Count > 0;
+
+    private void RefreshManeuverInput()
+    {
+        var session = _buffer.PresentationSessionId;
+        if (!_maneuverInitialized || session != _maneuverSession)
+        {
+            CancelManeuverInput(sendReleases: false); CurrentThreatId = null;
+            CurrentEvadePreview = null; LastManeuverCommandId = null; ManeuverFeedback = null;
+            _maneuverSession = session; _maneuverInitialized = true;
+            _ = _maneuverSendTask?.Exception; _maneuverSendTask = null;
+        }
+        if (_maneuverSendTask is { IsFaulted: true } or { IsCanceled: true })
+        { _ = _maneuverSendTask.Exception; ManeuverFeedback = PointLaunchReason("send_failed"); _maneuverSendTask = null; }
+        if (LastManeuverCommandId is { } id && _buffer.FindCommandResult(id) is { Status: CommandResultStatus.Rejected or CommandResultStatus.Failed } rejected)
+            ManeuverFeedback = PointLaunchReason(rejected.ReasonCode ?? "command_rejected");
+        if (_buffer.Latest?.Snapshot is not { ActiveDialogue: null } snapshot ||
+            snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated || snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDocked))
+        { CancelManeuverInput(sendReleases: false); PointThreats = []; return; }
+        ReconcileManualAxes();
+        if (FindPlayerShip(_renderStates) is not { } player) { PointThreats = []; return; }
+        PointThreats = AssessPointThreats(player.Pose.ToSnapshot(), _renderStates
+            .Where(s => !s.Source.IsDestroyed && s.Source.ObservedProjectile is { Kind: ProjectileKind.Torpedo }).Select(s => s.Pose.ToSnapshot()));
+        if (_heldEvade is { } held && !PointThreats.Any(t => t.Id == held.ThreatId)) _heldEvade = null;
+        if (CurrentThreatId is null || !PointThreats.Any(t => t.Id == CurrentThreatId)) CurrentThreatId = PointThreats.FirstOrDefault()?.Id;
+        CurrentEvadePreview = null;
+        if (_heldEvade is { } preview && PointThreats.FirstOrDefault(t => t.Id == preview.ThreatId) is { } threat)
+        {
+            double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
+            var pose = player.Pose.ToSnapshot();
+            if (!ManeuverEngineReady(ManeuverEngine())) pose = pose with { MaxSpeedKmS = null };
+            CurrentEvadePreview = PreviewEvade(pose, threat, preview.Side, multiplier > 0 ? multiplier : .25, ManeuverEngine()?.EngineMotion);
+        }
+    }
+
+    private void SelectPointThreat(string? id)
+    {
+        RefreshManeuverInput();
+        if (id is null || !PointThreats.Any(t => t.Id == id)) return;
+        CurrentThreatId = id;
+        SetSelectedObjectId(id);
+        if (_heldEvade is { } held) _heldEvade = (held.Key, held.Side, id);
+        RefreshManeuverInput();
+    }
+
+    private bool HandleManeuverKey(Key key)
+    {
+        RefreshManeuverInput();
+        if (key == CombatInputs.Cancel || key == Key.Escape)
+        {
+            bool preview = _heldEvade is not null;
+            CancelManeuverInput();
+            if (preview) { CancelPointAim(); return true; }
+            return false;
+        }
+        if (IsCtrlDown) return false;
+        if (HandleManualAxisKey(key)) return true;
+        if (key == CombatInputs.NextThreat && PointThreats.Count > 0)
+        {
+            int index = PointThreats.ToList().FindIndex(t => t.Id == CurrentThreatId);
+            SelectPointThreat(PointThreats[(index + 1) % PointThreats.Count].Id); return true;
+        }
+        if (key == CombatInputs.EvadeLeft || key == CombatInputs.EvadeRight)
+        {
+            if (CurrentThreatId is { } threat) _heldEvade = (key, key == CombatInputs.EvadeLeft ? EvadeSide.Left : EvadeSide.Right, threat);
+            RefreshManeuverInput(); return true;
+        }
+        return false;
+    }
+
+    private void ReleaseManeuverKey(Key key)
+    {
+        _heldFullSpeed.Remove(key);
+        if (_turnAxisKeys.Remove(key) | _speedAxisKeys.Remove(key)) ReconcileManualAxes();
+        if (_heldEvade is not { } evade || evade.Key != key) return;
+        _heldEvade = null; CurrentEvadePreview = null;
+        SubmitPointEvade(evade.ThreatId, evade.Side);
+    }
+
+    private void SubmitPointEvade(string threatId, EvadeSide side)
+    {
+        RefreshManeuverInput();
+        if (_handle is null || !ManeuverEngineReady(ManeuverEngine()) || ManeuverEngine() is not { } engine ||
+            _buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated ||
+            !PointThreats.Any(t => t.Id == threatId) || snapshot.PlayerShipObjectId is not { } owner) return;
+        CancelManeuverInput();
+        try
+        {
+            _maneuverSendTask = _handle.SendEvadeAsync(owner, engine.ModuleId, threatId, side, out var id).AsTask();
+            LastManeuverCommandId = id; ManeuverFeedback = CombatText("Sending", "Sending...");
+        }
+        catch (Exception) { ManeuverFeedback = PointLaunchReason("send_failed"); }
+    }
+
+    private void SendHeldTurn(string owner, string module, TurnDirection direction, bool active)
+    {
+        if (_handle is null || _maneuverSession != _buffer.PresentationSessionId) return;
+        try
+        {
+            _maneuverSendTask = _handle.SendTurnHoldAsync(owner, module, direction, active, out var id).AsTask();
+            LastManeuverCommandId = id;
+        }
+        catch (Exception) { ManeuverFeedback = PointLaunchReason("send_failed"); }
+    }
+    private void CancelManeuverInput(bool sendReleases = true)
+    {
+        _heldEvade = null; CurrentEvadePreview = null; _heldFullSpeed.Clear();
+        _turnAxisKeys.Clear(); _speedAxisKeys.Clear(); _speedLatchRequested = false;
+        if (_heldTurn is { } turn && sendReleases) SendHeldTurn(turn.Owner, turn.Module, turn.Direction, false);
+        if (_heldSpeed is { } speed && sendReleases) SendHeldSpeed(speed.Owner, speed.Module, speed.Direction, false, false);
+        _heldTurn = null; _heldSpeed = null;
+    }
+
+    private void DrawManeuverInput(SKCanvas canvas)
+    {
+        DisplayedBaseCourse = null; EngineDisabledFeedback = null; EngineDisabledIconBounds = SKRect.Empty;
+        RefreshManeuverInput();
+        if (FindPlayerShip(_renderStates) is not { } player) return;
+        if (!UsesCombatTurnInput && player.Source.Evasion is null &&
+            !(ManeuverEngine()?.DisabledUntilMotionTimeMs is { } disabled && disabled > PointAimTime)) return;
+        var styles = CombatSettings.PointCombat;
+        var center = _camera.WorldToScreen(player.Pose.X, player.Pose.Y, _viewportW, _viewportH);
+        double baseCourse = player.Source.Evasion?.BaseMotion.Direction ?? player.Pose.Direction;
+        DisplayedBaseCourse = baseCourse;
+        double angle = baseCourse * Math.PI / 180;
+        float length = (float)styles.ReticleRadiusPx * 4;
+        using var line = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)styles.LineWidthPx, Color = styles.OwnPath };
+        float ex = center.X + length * (float)Math.Sin(angle), ey = center.Y - length * (float)Math.Cos(angle);
+        canvas.DrawLine(center.X, center.Y, ex, ey, line);
+        float dx = (float)Math.Sin(angle), dy = -(float)Math.Cos(angle), head = (float)styles.ReticleRadiusPx;
+        canvas.DrawLine(ex, ey, ex - dx * head - dy * head / 2, ey - dy * head + dx * head / 2, line);
+        canvas.DrawLine(ex, ey, ex - dx * head + dy * head / 2, ey - dy * head - dx * head / 2, line);
+        using var text = new SKPaint { IsAntialias = true, TextSize = (float)styles.TextSizePx, Color = styles.ForeignProfileText };
+        if (CurrentEvadePreview is { } preview)
+        {
+            string label = preview.CanEscape ? CombatText("Maneuver.ExitIn", "Exit in") + " " + preview.ExitRealSeconds.ToString("0.0", CultureInfo.InvariantCulture) + " " + CombatText("Seconds", "s")
+                : CombatText("Maneuver.TooLate", "Cannot escape in time");
+            line.Color = preview.CanEscape ? styles.Safe : styles.Danger;
+            if (preview.Path is { } points)
+            {
+                using var path = new SKPath();
+                CombatTrajectoryProjector.BuildPath(path, points, _camera, _viewportW, _viewportH); canvas.DrawPath(path, line);
+            }
+            else if (double.IsFinite(preview.ExitPhysicalSeconds))
+            {
+                double distance = preview.MaxSpeedKmS * 10 * preview.ExitPhysicalSeconds;
+                var end = _camera.WorldToScreen(player.Pose.X + preview.DirectionX * distance, player.Pose.Y + preview.DirectionY * distance, _viewportW, _viewportH);
+                canvas.DrawLine(center.X, center.Y, end.X, end.Y, line);
+            }
+            DrawPointAimLabel(canvas, label, new(center.X, center.Y), text);
+        }
+        if (ManeuverEngine()?.DisabledUntilMotionTimeMs is { } until && until > PointAimTime)
+        {
+            double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
+            string label = CombatText("Maneuver.EngineDisabled", "Engine disabled") + " " +
+                ((until - PointAimTime) / 1000 / (multiplier > 0 ? multiplier : .25)).ToString("0.0", CultureInfo.InvariantCulture) + " " + CombatText("Seconds", "s");
+            EngineDisabledFeedback = label;
+            line.Color = styles.Danger;
+            float mark = (float)styles.ReticleRadiusPx;
+            float iconX = center.X - length, iconY = center.Y + length;
+            EngineDisabledIconBounds = new(iconX - mark, iconY - mark, iconX + mark, iconY + mark);
+            canvas.DrawCircle(iconX, iconY, mark, line);
+            canvas.DrawLine(iconX - mark / 2, iconY - mark / 2, iconX + mark / 2, iconY + mark / 2, line);
+            canvas.DrawLine(iconX - mark / 2, iconY + mark / 2, iconX + mark / 2, iconY - mark / 2, line);
+            DrawPointAimLabel(canvas, label, new(center.X, center.Y + length + text.TextSize * 3), text);
+        }
+    }
+}

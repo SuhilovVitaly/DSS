@@ -126,15 +126,12 @@ public sealed class CombatPresentationTests
     {
         long now = Ticks(5000);
         var store = new CombatEffectStore(() => now) { StartOnPresentation = true };
-        var impact = new CombatImpactSnapshot(1, "torpedo", "ship", "launcher", "target", "target", 100, 7, 9);
-        store.Receive([impact], 0);
-        Assert.Equal(0, Assert.Single(store.Active).Progress(now));
-        now += Ticks(1999);
-        store.Receive([impact], 0);
-        Assert.Single(store.Active);
-        now += Ticks(1);
-        store.Receive([impact], 0);
-        Assert.Empty(store.Active);
+        var fact = new CombatJournalEntry(1, 100, CombatEventType.TorpedoDetonated, "ship", "", "torpedo", 7, 9,
+            ProjectileKind: ProjectileKind.Torpedo, ProfileId: "slow", BlastRadiusKm: 9);
+        store.ReceiveJournal([fact], 0); var effect = Assert.Single(store.PointEffects);
+        Assert.Equal(0, store.PointProgress(effect.Entry, effect.Started, now));
+        now += Ticks(599); store.ReceiveJournal([fact], 0); Assert.Single(store.PointEffects);
+        now += Ticks(1); store.ReceiveJournal([fact], 0); Assert.Empty(store.PointEffects);
     }
 
     [Fact]

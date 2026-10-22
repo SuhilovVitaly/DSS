@@ -171,8 +171,7 @@ public class TacticalMapSmoothnessTests
                 HostileCombatPhase.Pursuit, segment));
         var torpedo = new ObjectMotionSnapshot("torpedo", 0, 0, 3, 90,
             RenderObjectType: SpaceObjectType.Missile,
-            Torpedo: new("player", "launcher", "mukha", 0, 3, 90, 150, 0,
-                new(0, 1, TorpedoRoutePhase.Straight, false, [new(0, 0, 90, 3, 0, 1000)])));
+            OwnProjectile: new(ProjectileKind.Torpedo, "player", "launcher", 0, 0, 0, 0, 600, 0, 0, 10000, 6, "slow", 9, 200, 20));
         buffer.Update(new(1, 0, SimulationSpeed.Speed1, [player, hostile, torpedo], PlayerShipObjectId: "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock);
         using var surface = SKSurface.Create(new SKImageInfo(1280, 720));

@@ -52,13 +52,16 @@ public class CountermeasureSnapshotTests
         var motion = new ObjectMotionSnapshot("pr", 0, 0, 12, 0, ObjectType: SpaceObjectType.Countermeasure, Countermeasure: projectile);
         var restored = JsonSerializer.Deserialize<ObjectMotionSnapshot>(JsonSerializer.Serialize(motion))!;
         Assert.Null(restored.Torpedo);
-        Assert.Equal(phase, restored.Countermeasure!.Phase);
-        Assert.Equal(breakdown, restored.Countermeasure.RatingBreakdown);
-        Assert.Equal(500, restored.Countermeasure.FrozenChanceTenths);
-        Assert.Equal(projectile.ResolutionRoll, restored.Countermeasure.ResolutionRoll);
-        Assert.Equal(projectile.MissExpiresAtMotionTimeMs, restored.Countermeasure.MissExpiresAtMotionTimeMs);
-        Assert.Null(restored.Countermeasure.PredictedEncounterMotionTimeMs);
-        Assert.Empty(restored.Countermeasure.Trail);
+        Assert.Null(restored.Countermeasure);
+        Assert.False(JsonDocument.Parse(JsonSerializer.Serialize(motion)).RootElement.TryGetProperty("Countermeasure", out _));
+        var legacy = JsonSerializer.Deserialize<CountermeasureSnapshot>(JsonSerializer.Serialize(projectile))!;
+        Assert.Equal(phase, legacy.Phase);
+        Assert.Equal(breakdown, legacy.RatingBreakdown);
+        Assert.Equal(500, legacy.FrozenChanceTenths);
+        Assert.Equal(projectile.ResolutionRoll, legacy.ResolutionRoll);
+        Assert.Equal(projectile.MissExpiresAtMotionTimeMs, legacy.MissExpiresAtMotionTimeMs);
+        Assert.Null(legacy.PredictedEncounterMotionTimeMs);
+        Assert.Empty(legacy.Trail);
     }
 
     [Fact]
@@ -69,7 +72,8 @@ public class CountermeasureSnapshotTests
         var restored = JsonSerializer.Deserialize<InstalledModuleSnapshot>(JsonSerializer.Serialize(module))!;
         Assert.Equal(12345, restored.Defense!.ReloadDueMotionTimeMs);
         Assert.Null(restored.Defense.ActiveProjectileId);
-        Assert.True(restored.Defense.AutoEnabled);
+        Assert.False(restored.Defense.AutoEnabled);
+        Assert.DoesNotContain("AutoEnabled", JsonSerializer.Serialize(module));
     }
 
     [Fact]

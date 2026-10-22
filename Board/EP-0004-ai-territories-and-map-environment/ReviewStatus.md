@@ -1,6 +1,6 @@
 # EP-0004: сверка поставки и остатка — 2026-10-10
 
-[Общий review и определения F/G](../../Documentation/04-Engineering/EpicReview20261010/README.md).
+[Общий review и определения F/G](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/EpicReview20261010/README.md).
 
 Поставка `76f500a` интегрирована в основную рабочую копию без commit/push. 25/26 выполнены, US-0008/TK-0003 остаётся OPEN по FPS.
 

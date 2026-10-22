@@ -1,9 +1,32 @@
 {
-  "chance": { "base": 50, "min": 0, "max": 100 },
-  "damage": { "hitDisableMs": 60000, "hitLocationWeighting": "mass" },
+  "damage": {
+    "hitDisableMs": 8000,
+    "hitLocationWeighting": "mass"
+  },
   "shipDestruction": {
-    "criticalRoles": ["bridge", "engine"],
+    "criticalRoles": [
+      "bridge",
+      "engine"
+    ],
     "destroyedModuleFraction": 0.3333
   },
-  "armorClasses": { "none": 0, "light": 60 }
+  "armorClasses": {
+    "none": 0,
+    "light": 60
+  },
+  "blast": {
+    "coreFraction": 0.3
+  },
+  "scatter": {
+    "skillPivot": 15,
+    "skillSlope": 0.0333,
+    "minMultiplier": 0.3
+  },
+  "npc": {
+    "reactionBaseMs": 1400,
+    "reactionPerSkillMs": 30,
+    "reactionMinMs": 200,
+    "dodgeChance": 0.1
+  },
+  "combatStartRangeKm": 100
 }

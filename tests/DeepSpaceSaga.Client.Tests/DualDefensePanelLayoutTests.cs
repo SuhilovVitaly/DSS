@@ -14,14 +14,14 @@ public class DualDefensePanelLayoutTests
         using var bitmap = new SKBitmap(400, 2000);
         using var canvas = new SKCanvas(bitmap);
         panel.Render(canvas, ImmutableArray<InstalledModuleSnapshot>.Empty, 2000, "player");
-        Assert.Equal(CommandsPanel.Panels.Select(p => p.Name), panel.CommandPanelRows.Select(r => r.Name));
+        Assert.Equal(CommandsPanel.Panels.Take(4).Select(p => p.Name), panel.CommandPanelRows.Select(r => r.Name));
     }
 
     private static ImmutableArray<InstalledModuleSnapshot> Modules => Enumerable.Range(1, 2).Select(i =>
         new InstalledModuleSnapshot("defense-" + i, "module.countermeasure.launcher.basic", "Defense", i,
-            [DefenseCommandTypes.Fire, DefenseCommandTypes.Enable, DefenseCommandTypes.Disable],
-            Commands: [new(DefenseCommandTypes.Fire, "Fire " + i, "object")],
-            Defense: new(false, null, DefenseState.Ready))).ToImmutableArray();
+            [DefenseCommandTypes.Launch],
+            Commands: [new(DefenseCommandTypes.Launch, "Fire " + i, "object")],
+            Defense: new(false, null, DefenseState.Ready, Profiles: [new("wide", 15, 1)], RangeKm: 30))).ToImmutableArray();
 
     private static void Render(CommandsPanel panel, float height = 1000, string owner = "player", bool reversed = false)
     {
@@ -45,11 +45,11 @@ public class DualDefensePanelLayoutTests
         foreach (var row in rows)
         {
             Assert.Equal("status-" + row.Weapon!.ModuleId, row.StatusBarText);
-            var fire = Assert.Single(row.Buttons, b => b.CommandTypeId == DefenseCommandTypes.Fire);
+            var fire = Assert.Single(row.Buttons, b => b.CommandTypeId == DefenseCommandTypes.Launch);
             Assert.Equal(row.Weapon, fire.Weapon);
             panel.OnMouseDown(fire.Rect.MidX, fire.Rect.MidY);
         }
-        Assert.Equal(new[] { ("player", "defense-1", DefenseCommandTypes.Fire), ("player", "defense-2", DefenseCommandTypes.Fire) }, clicked);
+        Assert.Equal(new[] { ("player", "defense-1", DefenseCommandTypes.Launch), ("player", "defense-2", DefenseCommandTypes.Launch) }, clicked);
     }
 
     [Fact]
@@ -88,19 +88,21 @@ public class DualDefensePanelLayoutTests
     }
 
     [Fact]
-    public void Very_short_viewport_scrolls_opened_panel_without_clicking_clipped_buttons()
+    public void Very_short_viewport_scrolls_opened_panel_and_rejects_clicks_beyond_viewport()
     {
         var clicked = new List<string>();
         var panel = new CommandsPanel(weaponCommandEnabled: (_, _) => true,
             weaponCommandClicked: (w, _) => clicked.Add(w.ModuleId));
         Render(panel, 200);
         var row = panel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == "defense-2");
-        panel.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
+        if (!row.Opened) panel.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY);
         Render(panel, 200);
         row = panel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == "defense-2");
+        panel.OnMouseWheel(100, 100, 100); Render(panel, 200);
+        row = panel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == "defense-2");
         var fire = row.Buttons[0];
-        Assert.True(fire.Rect.MidY > 200);
-        Assert.False(panel.OnMouseDown(fire.Rect.MidX, fire.Rect.MidY));
+        Assert.True(fire.Rect.Bottom > 200);
+        Assert.False(panel.OnMouseDown(fire.Rect.MidX, fire.Rect.Bottom - 1));
         Assert.Empty(clicked);
         Assert.True(panel.OnMouseWheel(100, 100, -10));
         Render(panel, 200);
@@ -119,7 +121,7 @@ public class DualDefensePanelLayoutTests
             weaponCommandClicked: (w, _) => clicked.Add(w.ModuleId));
         Render(panel, 2000);
         firstReady = false;
-        foreach (var button in panel.AllCommandButtons.Where(b => b.Weapon is not null && b.CommandTypeId == DefenseCommandTypes.Fire))
+        foreach (var button in panel.AllCommandButtons.Where(b => b.Weapon is not null && b.CommandTypeId == DefenseCommandTypes.Launch))
             panel.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
         Assert.Equal(new[] { "defense-2" }, clicked);
     }

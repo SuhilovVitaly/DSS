@@ -90,7 +90,7 @@ public class QuotedTradeExecutionTests
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
                 .Select(source.StationMarketProfiles.GetDefinition).Append(profile),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), combatRules: source.CombatRules);
     }
 
     internal static ScenarioFile MarketTemplate(IReadOnlyList<StationInventoryItemData>? stock = null)
@@ -104,6 +104,13 @@ public class QuotedTradeExecutionTests
             GameState = gs with
             {
                 TradingEconomyContinuation = null, // A fresh scenario has no continuation manifest.
+                // Recreate a fresh scenario rather than importing a current combat continuation.
+                PointCombatState = null,
+                CombatState = null,
+                DefenseState = null,
+                HostileCombatState = null,
+                CombatReportsState = null,
+
                 MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,
                 VoyageState = null,
@@ -882,14 +889,14 @@ public class QuotedTradeExecutionTests
             legacyEngine.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(legacyOnly), true));
             Assert.Equal(original.TradeReceipt!.ResultMarketRevision, Revision(legacyEngine));
 
-            var withoutRevision = legacyOnly with
+            var withoutRevision = TradingEconomySaveSchemaTests.WithoutNewContinuation(legacyOnly, 13) with
             {
                 SaveFormatVersion = 13,
-                GameState = legacyOnly.GameState with
+                GameState = TradingEconomySaveSchemaTests.WithoutNewContinuation(legacyOnly, 13).GameState with
                 {
                     TradingEconomyContinuation = null,
                     MarketKnowledge = null,
-                    SpaceObjects = legacyOnly.GameState.SpaceObjects
+                    SpaceObjects = TradingEconomySaveSchemaTests.WithoutNewContinuation(legacyOnly, 13).GameState.SpaceObjects
                         .Select(o => o with { MarketRevision = null }).ToArray(),
                 },
             };

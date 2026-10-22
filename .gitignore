@@ -480,5 +480,4 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
-/Stories
 /src/graphify-out

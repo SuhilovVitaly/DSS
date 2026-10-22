@@ -123,3 +123,8 @@ Scope baseline contained unrelated Client/Tests/NPC forecast changes and CombatM
 AC-01/03/04/05 automated roles/routing/regressions PASS; AC-02 raster evidence PASS, native readability OPEN; AC-06 automated evidence recorded, comparative screenshots/product decision OPEN. Native FPS NOT RUN. No full human acceptance claimed. Commit/push NOT RUN by explicit instruction. Format baseline debt remains outside this change.
 
 Final Board audit PASS:8 ticket documents в US-0003/US-0004 (1 aggregate+7 execution),22 valid local links, exact allowlists<=5, dependency DAG acyclic; no implementation changes outside allowlists after excluding pre-existing dirty files. TRX independently parsed:2085 executed/passed,0 failed/errors/aborted.
+
+
+## Superseded by EP-0012 — 2026-10-21
+
+Guided/chance/mode/auto/burst combat and Save17/16 rules in this dated report are superseded by [point-aim combat](../../Documentation/04-Engineering/PointAimCombat.md). Module armor/structure, report delivery and observed-motion privacy remain. Historical SHA/test/FPS/native results and original permissions are preserved as evidence of their time, not fresh acceptance. EP12 actual native matrix does not close earlier human/palette/FPS gates; production dodge balance remains outside its required corridors. [Current implementation and publication](../EP-0012-combat-rebuild/ImplementationStatus.md).

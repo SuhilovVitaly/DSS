@@ -11,6 +11,40 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class CombatMetricsWriterTests
 {
     [Fact]
+    public async Task Actual_point_flights_are_logged_from_public_own_and_observed_payloads_without_legacy_fields()
+    {
+        await using var scene = await PointCombatUiFixture.Create(hostileShots: 1);
+        Assert.Equal(CommandResultStatus.Executed, (await scene.Launch(x: 200, y: 100, profile: 3)).Status);
+        await scene.Wait(() => scene.Presented.Objects.Any(o => o.OwnProjectile is not null));
+        string directory = Path.Combine(Path.GetTempPath(), "dss-point-metrics-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            await using (var writer = new CombatMetricsWriter(directory))
+            {
+                // Observed combat must enable telemetry even without local weapon panels.
+                writer.Record(scene.Presented with { InstalledModules = [] });
+                writer.RecordVisual(scene.Presented, scene.Screen.RenderStates, 0, 0);
+            }
+            var records = Directory.GetFiles(directory, "*.jsonl").SelectMany(File.ReadAllLines).Select(line => JsonDocument.Parse(line)).ToArray();
+            try
+            {
+                var frames = records.Where(r => r.RootElement.TryGetProperty("frame", out _)).Select(r => r.RootElement.GetProperty("frame")).ToArray();
+                var facts = frames.Single(r => r.GetProperty("kind").GetString() == "authoritative").GetProperty("objects").EnumerateArray().ToArray();
+                var own = Assert.Single(facts, o => o.GetProperty("ownProjectile").ValueKind == JsonValueKind.Object);
+                var foreign = Assert.Single(facts, o => o.GetProperty("observedProjectile").ValueKind == JsonValueKind.Object);
+                Assert.Equal("fast", own.GetProperty("ownProjectile").GetProperty("profileId").GetString());
+                Assert.Equal(JsonValueKind.Null, foreign.GetProperty("ownProjectile").ValueKind);
+                Assert.False(foreign.GetProperty("observedProjectile").TryGetProperty("detonationX", out _));
+                Assert.All(facts, o => { Assert.False(o.TryGetProperty("torpedo", out _)); Assert.False(o.TryGetProperty("countermeasure", out _)); });
+                var visual = frames.Single(r => r.GetProperty("kind").GetString() == "visual").GetProperty("objects").EnumerateArray();
+                Assert.Contains(visual, o => o.GetProperty("objectId").GetString() == own.GetProperty("objectId").GetString());
+            }
+            finally { foreach (var record in records) record.Dispose(); }
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    [Fact]
     public async Task Directory_quota_removes_oldest_metrics_and_keeps_valid_rotated_records()
     {
         string directory = Path.Combine(Path.GetTempPath(), "dss-metrics-quota-" + Guid.NewGuid().ToString("N"));
@@ -109,13 +143,11 @@ public sealed class CombatMetricsWriterTests
         string directory = Path.Combine(Path.GetTempPath(), "dss-combat-metrics-" + Guid.NewGuid().ToString("N"));
         try
         {
-            var route = new TorpedoRoute(1000, 1, TorpedoRoutePhase.Straight, true, [new(0, 0, 90, 20, 0, 1000)]);
-            var flight = new CountermeasureSnapshot("player", "defense", "torpedo", CountermeasurePhase.Guiding,
-                route, 1000, 580, new(new("crew", "Crew", WeaponSkillType.CountermeasureDefense, 20, 58, 78), 70));
-            var contact = new ObjectMotionSnapshot("countermeasure", 0, 0, 20, 90, Countermeasure: flight);
+            var flight = new OwnProjectileSnapshot(ProjectileKind.Countermissile, "player", "defense", 0, 0, 0, 0, 150, 0, 1000, 2000, 15, "wide", 1, 0, 0);
+            var contact = new ObjectMotionSnapshot("countermeasure", 0, 0, 15, 90, OwnProjectile: flight);
             var snapshot = new AuthoritativeSnapshot(1, 300000, SimulationSpeed.Speed1, [contact], "player",
-                CombatJournal: [new(1, 1000, CombatEventType.Launch, "player", "torpedo", "countermeasure", 0, 0)],
-                SimulationTimeMs: 1000);
+                CombatJournal: [new(1,1000,CombatEventType.Launch,"player","","countermeasure",0,0,
+                    ProjectileKind:ProjectileKind.Countermissile,ProfileId:"wide",BlastRadiusKm:1)], SimulationTimeMs: 1000);
             var writer = new CombatMetricsWriter(directory);
             writer.Record(snapshot);
             writer.RecordVisual(snapshot, [new(contact, contact with { X = 5 }, false)], 25, 0);
@@ -125,12 +157,13 @@ public sealed class CombatMetricsWriterTests
             Assert.Null(writer.Error);
             var lines = File.ReadAllLines(writer.FilePath!);
             using var header = JsonDocument.Parse(lines[0]);
-            Assert.Equal(1, header.RootElement.GetProperty("schemaVersion").GetInt32());
+            Assert.Equal(2, header.RootElement.GetProperty("schemaVersion").GetInt32());
             using var first = JsonDocument.Parse(lines[1]);
             var frame = first.RootElement.GetProperty("frame");
             Assert.Equal("authoritative", frame.GetProperty("kind").GetString());
             Assert.Equal(1000, frame.GetProperty("motionTimeMs").GetInt64());
-            Assert.Equal(580, frame.GetProperty("objects")[0].GetProperty("countermeasure").GetProperty("frozenChanceTenths").GetInt32());
+            Assert.Equal("wide", frame.GetProperty("objects")[0].GetProperty("ownProjectile").GetProperty("profileId").GetString());
+            Assert.Equal(150, frame.GetProperty("objects")[0].GetProperty("ownProjectile").GetProperty("detonationX").GetDouble());
             Assert.Equal(1, frame.GetProperty("events").GetArrayLength());
             using var visual = JsonDocument.Parse(lines[2]);
             Assert.Equal(5, visual.RootElement.GetProperty("frame").GetProperty("objects")[0].GetProperty("x").GetDouble());
@@ -138,7 +171,7 @@ public sealed class CombatMetricsWriterTests
             Assert.Empty(second.RootElement.GetProperty("frame").GetProperty("events").EnumerateArray());
             Assert.Equal(4, lines.Length);
             Assert.Equal(0, snapshot.Objects[0].X);
-            Assert.Equal(0, snapshot.Objects[0].Countermeasure!.Route.ElapsedMs);
+            Assert.Equal(flight, snapshot.Objects[0].OwnProjectile);
         }
         finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
     }

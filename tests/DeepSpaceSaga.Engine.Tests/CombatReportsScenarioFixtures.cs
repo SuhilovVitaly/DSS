@@ -39,33 +39,17 @@ internal static class CombatReportsScenarioFixtures
             foreach (var module in current.InstalledModules.Where(m => m.LauncherCombat is not null))
             {
                 if (module.LauncherCombat!.IsBrokenUntilDock || module.LauncherCombat.ReadyAtMotionTimeMs > time) continue;
-                engine.ReceiveCommand(new($"proof-{++sequence}", sequence, Player, module.ModuleId, CombatCommandTypes.Fire, enemy.ObjectId));
+                var owner = current.Objects.Single(o => o.ObjectId == Player);
+                var profile = Assert.Single(module.LauncherCombat.Profiles!.Value, p => p.ProfileId == "fast");
+                var aim = ModuleCombatEndToEndTests.LinearAim(owner, enemy, profile.SpeedKmS);
+                double range = module.LauncherCombat.RangeKm!.Value;
+                if (Math.Pow((aim.X - owner.X) / 10, 2) + Math.Pow((aim.Y - owner.Y) / 10, 2) > range * range) continue;
+                engine.ReceiveCommand(new($"proof-{++sequence}", sequence, Player, module.ModuleId, CombatCommandTypes.Launch,
+                    TargetWorldX: aim.X, TargetWorldY: aim.Y, ProfileId: profile.ProfileId));
                 current = Capture(time);
             }
         }
         return (current, reports.ToArray());
     }
 
-    internal static BattleReportSnapshot[] AttackReports()
-    {
-        using var engine = Create(); var reports = new List<BattleReportSnapshot>();
-        for (int i = 0; i < 3; i++)
-        {
-            long time = i * 15000; engine.ReceiveCommand(Fire($"hit-{i}"));
-            reports.AddRange(At(engine, time).CombatReports!.Reports);
-            reports.AddRange(At(engine, time + 5000).CombatReports!.Reports);
-        }
-        return reports.ToArray();
-    }
-
-    internal static BattleReportSnapshot[] InterceptReports()
-    {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario(), AutomaticDefenseTests.WeaponRegistry(100, 0));
-        engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1);
-        var reports = At(engine, 1).CombatReports!.Reports.ToList();
-        string target = engine.RuntimeObjects.Single(o => o.InitialMotion.Torpedo is not null).InitialMotion.ObjectId;
-        engine.ReceiveCommand(ManualCountermeasureFireTests.Manual("intercept", target));
-        reports.AddRange(At(engine, 1).CombatReports!.Reports); reports.AddRange(At(engine, 12000).CombatReports!.Reports);
-        return reports.ToArray();
-    }
 }

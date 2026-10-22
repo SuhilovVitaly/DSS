@@ -1,0 +1,19 @@
+{
+    "schemaVersion": 2,
+    "debugPanel": "F12",
+    "torpedoAim": "Q",
+    "countermissileAim": "E",
+    "profiles": ["Number1", "Number2", "Number3"],
+    "cancel": "Escape",
+    "launchMouse": "Left",
+    "cancelMouse": "Right",
+    "wheelProfiles": true,
+    "evadeLeft": "Z",
+    "evadeRight": "C",
+    "nextThreat": "Tab",
+    "turnLeft": ["A", "Left"],
+    "turnRight": ["D", "Right"],
+    "accelerate": ["W", "Up"],
+    "brake": ["S", "Down"],
+    "fullSpeed": ["ShiftLeft", "ShiftRight"]
+}

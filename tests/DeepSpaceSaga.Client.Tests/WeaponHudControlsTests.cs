@@ -12,13 +12,13 @@ public sealed class WeaponHudControlsTests
 {
     private static ImmutableArray<InstalledModuleSnapshot> Modules =>
     [
-        new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [CombatCommandTypes.Fire],
-            LauncherCombat: new(10, 90, 150, RangeKm: 150, ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000)),
-        new("one", "module.countermeasure.launcher.basic", "Defense 1", 2, [DefenseCommandTypes.Fire],
+        new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [CombatCommandTypes.Launch],
+            LauncherCombat: new(10, 90, 150, RangeKm: 150, ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000,Profiles:[new("slow",6,9)])),
+        new("one", "module.countermeasure.launcher.basic", "Defense 1", 2, [DefenseCommandTypes.Launch],
             Defense: new(true, null, DefenseState.Reloading, ReloadDueMotionTimeMs: 11000, RangeKm: 50, ManualRangeKm: 100,
-                ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000)),
-        new("two", "module.countermeasure.launcher.basic", "Defense 2", 3, [DefenseCommandTypes.Fire],
-            Defense: new(true, null, DefenseState.Ready, RangeKm: 70, ManualRangeKm: 110, ReloadDurationMs: 10000))
+                ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000,Profiles:[new("wide",15,1)])),
+        new("two", "module.countermeasure.launcher.basic", "Defense 2", 3, [DefenseCommandTypes.Launch],
+            Defense: new(true, null, DefenseState.Ready, RangeKm: 70, ManualRangeKm: 110, ReloadDurationMs: 10000,Profiles:[new("wide",15,1)]))
     ];
 
     [Theory]
@@ -42,6 +42,8 @@ public sealed class WeaponHudControlsTests
             screen.OnMouseDown(row.RangeToggleRect.MidX * scale, row.RangeToggleRect.MidY * scale);
             Render();
             Assert.Equal(row.Opened, screen.CommandsPanel.CommandPanelRows.Single(r => r.RangeModuleId == id).Opened);
+            Assert.False(screen.CommandsPanel.IsWeaponRangeVisible(id));
+            screen.OnMouseDown(row.RangeToggleRect.MidX * scale, row.RangeToggleRect.MidY * scale); Render();
             Assert.True(screen.CommandsPanel.IsWeaponRangeVisible(id));
         }
         screen.OnMouseMove(1000, 500);
@@ -69,12 +71,12 @@ public sealed class WeaponHudControlsTests
         buffer.Update(new(1, 300000, SimulationSpeed.Speed1, [new("player", 0, 0, 0, 0)], "player",
             InstalledModules: Modules, SimulationTimeMs: 1000));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => now);
-        using var bitmap = new SKBitmap(1920, 1200);
+        using var bitmap = new SKBitmap(1920, 2000);
         using var canvas = new SKCanvas(bitmap);
-        void Render() => screen.Render(canvas, 1920, 1200);
+        void Render() => screen.Render(canvas, 1920, 2000);
         Render();
         var torpedo = screen.CommandsPanel.CommandPanelRows.Single(r => r.RangeModuleId == "torp");
-        Assert.False(torpedo.ReloadBarRect.IsEmpty);
+        Assert.False(torpedo.ReloadRingRect.IsEmpty);
         Assert.Equal(0, torpedo.ReloadFraction);
         now = Stopwatch.Frequency * 20; // 5000 physical ms at the new base pace.
         Render();

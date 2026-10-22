@@ -11,9 +11,77 @@ namespace DeepSpaceSaga.Client;
 public static class Localization
 {
     private static readonly Lazy<Dictionary<string, string>> _strings = new(Load);
+    [ThreadStatic] private static Dictionary<string, string>? _testStrings;
 
     public static string Get(string key) =>
-        _strings.Value.TryGetValue(key, out var value) ? value : key;
+        (_testStrings ?? _strings.Value).TryGetValue(key, out var value) ? value : key;
+
+    /// <summary>Combat UI has locale-owned generic messages, never caller-supplied literal fallbacks.</summary>
+    internal static string Combat(string key, Func<string, string>? localize = null)
+    {
+        var get = localize ?? Get;
+        string? Find(string suffix)
+        {
+            string full = "Combat." + suffix;
+            try { string value = get(full); return string.IsNullOrWhiteSpace(value) || value == full ? null : value; }
+            catch (KeyNotFoundException) { return null; }
+        }
+        if (Find(key) is { } translated) return translated;
+        // Profile IDs are configurable public data. Preserve unknown custom identifiers, not UI prose.
+        if (key.StartsWith("Profile.", StringComparison.Ordinal)) return key["Profile.".Length..];
+        string generic = key.StartsWith("Reason.", StringComparison.Ordinal) ? "CommandRejected" :
+            key.StartsWith("Forecast.", StringComparison.Ordinal) ? "Forecast.Unknown" : "Unknown";
+        return Find(generic) ?? "—";
+    }
+
+    internal static string CombatModuleName(string moduleTypeId, string capturedName)
+    {
+        string key = "Combat.Module." + moduleTypeId, translated = Get(key);
+        return translated == key ? capturedName : translated;
+    }
+
+    internal static string CombatPanelCaption(string identity)
+    {
+        foreach (var (name, key) in new[] { ("Torpedo Launcher", "TorpedoLauncher"), ("Countermeasure Launcher", "CountermissileLauncher"),
+            ("Navigation", "Navigation"), ("Maneuver", "Maneuver"), ("Engine", "Engine"), ("Space Control", "SpaceControl"),
+            ("Player Ship", "PlayerShip"), ("Selected Object", "SelectedObject") })
+        {
+            if (!identity.StartsWith(name, StringComparison.Ordinal)) continue;
+            string suffix = identity[name.Length..];
+            if (suffix.Length == 0 || suffix.StartsWith(' ') && suffix.Trim().All(char.IsDigit)) return Combat("Panel." + key) + suffix;
+        }
+        return identity;
+    }
+
+    internal static string CombatFieldLabel(string label) => label switch
+    {
+        "Name" => Combat("Field.Name"),
+        "Speed" => Combat("Field.Speed"),
+        "Direction" => Combat("Field.Direction"),
+        "Captain" => Combat("Field.Captain"),
+        "Distance" => Combat("Field.Distance"),
+        "Target" => Combat("Target"),
+        "Travelled" => Combat("Field.Travelled"),
+        "ETA" => Combat("ETA"),
+        "Hit chance" => Combat("Field.LegacyHitChance"),
+        _ => label
+    };
+
+    /// <summary>Thread-local test seam using the actual locale files; runtime language still applies after restart.</summary>
+    internal static IDisposable UseLocaleForTests(string language)
+    {
+        var previous = _testStrings;
+        _testStrings = LoadLocaleFile(language) ?? throw new InvalidOperationException("Missing test locale: " + language);
+        return new LocaleScope(previous, Environment.CurrentManagedThreadId);
+    }
+    private sealed class LocaleScope(Dictionary<string, string>? previous, int threadId) : IDisposable
+    {
+        public void Dispose()
+        {
+            if (Environment.CurrentManagedThreadId != threadId) throw new InvalidOperationException("Locale test scope must remain on its UI thread.");
+            _testStrings = previous;
+        }
+    }
 
     private static Dictionary<string, string> Load()
     {

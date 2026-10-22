@@ -1,0 +1,224 @@
+{
+  "date": "2026-10-21",
+  "ticket": "EP-0012-US-0019-TK-0002-scenario-engine-fixtures",
+  "checks": [
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS0019TK0002Tests",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 6685,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:     4, Skipped:     0, Total:     4, Duration: 949 ms - DeepSpaceSaga.Engine.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "test",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--no-restore",
+        "--filter",
+        "FullyQualifiedName~PointCombatUS|FullyQualifiedName~TorpedoLaunchTests|FullyQualifiedName~RangedTorpedoLaunchTests|FullyQualifiedName~WeaponOperatorRuntimeTests|FullyQualifiedName~PhaseThreeJournalTests|FullyQualifiedName~PhaseThreeSave|FullyQualifiedName~CountermeasureBootstrapTests|FullyQualifiedName~CombatRulesContentTests|FullyQualifiedName~HostileTorpedoFireTests|FullyQualifiedName~TorpedoImpactTests|FullyQualifiedName~DefeatTimeBoundaryTests|FullyQualifiedName~ModuleDamage|FullyQualifiedName~ShipDestruction|FullyQualifiedName~ModuleHitLocation|FullyQualifiedName~TorpedoHitRoll|FullyQualifiedName~TorpedoSelfDestruct|FullyQualifiedName~PhaseThreeCombatEndToEndTests|FullyQualifiedName~Defeat|FullyQualifiedName~CommandIdentity|FullyQualifiedName~CommandReceipt|FullyQualifiedName~CommandReplay|FullyQualifiedName~ManualCountermeasureFireTests|FullyQualifiedName~AutomaticDefenseTests|FullyQualifiedName~DefensePreviewProjectionTests|FullyQualifiedName~CountermeasureBarrel|FullyQualifiedName~CountermeasureRuntime|FullyQualifiedName~EngineCommandTests|FullyQualifiedName~AuthoritativeOrbitRuntimeTests|FullyQualifiedName~HostileOrbitRuntimeTests|FullyQualifiedName~OrbitalSynchronizationTests|FullyQualifiedName~OrbitalDockingDepartureTests|FullyQualifiedName~HostileAttackAiTests|FullyQualifiedName~ScenarioLoaderTests|FullyQualifiedName~CombatSaveLoadTests|FullyQualifiedName~Rng|FullyQualifiedName~SimulationClockTests|FullyQualifiedName~DialogueTests|FullyQualifiedName~CombatPresentation|FullyQualifiedName~PresentationLease|FullyQualifiedName~LocalGameSessionConnection|FullyQualifiedName~CatalogCompatibilityTests|FullyQualifiedName~CombatReportsSaveSchemaTests|FullyQualifiedName~TradingEconomySaveSchemaTests|FullyQualifiedName~QuotedTradeExecutionTests|FullyQualifiedName~EconomyTimeContinuityTests|FullyQualifiedName~CargoCost|FullyQualifiedName~VoyageFuelAccounting|FullyQualifiedName~GeneratedWorldPersistenceTests|FullyQualifiedName~ScenarioGroupTranslationTests|FullyQualifiedName~ScenarioEngineTests|FullyQualifiedName~EngineCategoryDispatchTests|FullyQualifiedName~ModuleCombatEndToEndTests|FullyQualifiedName~CombatReportsAcceptance|FullyQualifiedName~MarketRevision|FullyQualifiedName~MarketKnowledge|FullyQualifiedName~TradeQuoteIssuance|FullyQualifiedName~TradeSnapshotProjection|FullyQualifiedName~StationEconomyGeneration|FullyQualifiedName~VoyageSaveLoadContinuity",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 29610,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:  1265, Skipped:     0, Total:  1265, Duration: 25 s - DeepSpaceSaga.Engine.Tests.dll (net8.0)\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "build",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--no-restore",
+        "--verbosity",
+        "minimal"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 1758,
+      "hardTimeoutMs": 300000,
+      "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:01.54\n",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "whitespace",
+        "DeepSpaceSaga.sln",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatBalanceReport.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatReportsScenarioFixtures.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/EconomyTimeContinuityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/EngineCategoryDispatchTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/GeneratedWorldPersistenceTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/MarketKnowledgeTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/MarketRevisionTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/QuotedTradeExecutionTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/ScenarioGroupTranslationTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/StationEconomyGenerationTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/VoyageSaveLoadContinuityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0019TK0002Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 4549,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    },
+    {
+      "args": [
+        "format",
+        "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+        "--verify-no-changes",
+        "--no-restore",
+        "--include",
+        "src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatBalanceReport.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/CombatReportsScenarioFixtures.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/EconomyTimeContinuityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/EngineCategoryDispatchTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/GeneratedWorldPersistenceTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/MarketKnowledgeTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/MarketRevisionTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/QuotedTradeExecutionTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/ScenarioGroupTranslationTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/StationEconomyGenerationTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/VoyageSaveLoadContinuityTests.cs",
+        "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0019TK0002Tests.cs"
+      ],
+      "exitCode": 0,
+      "timedOut": false,
+      "elapsedMs": 12194,
+      "hardTimeoutMs": 300000,
+      "stdout": "",
+      "stderr": ""
+    }
+  ],
+  "review": "self-review, not independent",
+  "native": "NOT RUN",
+  "integration": "Actual canonical point catalog and real scenario execution verified; current Client non-budget regression2360/2360. Global Engine, native and1000-seed balance acceptance remain OPEN.",
+  "fullEngineGate": "OPEN: both non-balance full-suite attempts reached the300000ms process cap. Explicitly interrupted blame diagnostic is failure evidence. Remaining old weapon fixtures and large generation corpora require cleanup/partitioned verification before epic acceptance.",
+  "solutionBuild": {
+    "args": [
+      "build",
+      "DeepSpaceSaga.sln",
+      "--no-restore",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 6529,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Motion.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Motion.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.Tests.dll\n  DeepSpaceSaga.Contracts.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Contracts.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.Tests.dll\n  DeepSpaceSaga.EconomyBalance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.EconomyBalance\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.EconomyBalance.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.EconomyBalance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.EconomyBalance.Tests.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\n  DeepSpaceSaga.Client -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Client\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.dll\n  DeepSpaceSaga.Performance -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.dll\n  DeepSpaceSaga.Performance.Tests -> D:\\DeepSpaceSaga\\DSS\\tools\\DeepSpaceSaga.Performance.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Performance.Tests.dll\n  DeepSpaceSaga.Client.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll\n\nBuild succeeded.\n    0 Warning(s)\n    0 Error(s)\n\nTime Elapsed 00:00:06.29\n",
+    "stderr": ""
+  },
+  "scenarios": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+      "--no-restore",
+      "--filter",
+      "FullyQualifiedName~PointCombatUS0019TK0002Tests|FullyQualifiedName~ScenarioGroupTranslationTests|FullyQualifiedName~ModuleCombatEndToEndTests|FullyQualifiedName~CombatBalanceReport",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 10163,
+    "hardTimeoutMs": 300000,
+    "stdout": "  DeepSpaceSaga.Contracts -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Contracts\\bin\\Debug\\net8.0\\DeepSpaceSaga.Contracts.dll\n  DeepSpaceSaga.Motion -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Motion\\bin\\Debug\\net8.0\\DeepSpaceSaga.Motion.dll\n  DeepSpaceSaga.Engine -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.dll\n  DeepSpaceSaga.Engine.LocalClient -> D:\\DeepSpaceSaga\\DSS\\src\\DeepSpaceSaga.Engine.LocalClient\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.LocalClient.dll\n  DeepSpaceSaga.Engine.Tests -> D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll\nTest run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    18, Skipped:     0, Total:    18, Duration: 3 s - DeepSpaceSaga.Engine.Tests.dll (net8.0)\n",
+    "stderr": ""
+  },
+  "client-regression": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj",
+      "--no-restore",
+      "--no-build",
+      "--filter",
+      "Category!=ForecastBudget",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 79686,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Client.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Client.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:  2360, Skipped:     0, Total:  2360, Duration: 1 m 14 s - DeepSpaceSaga.Client.Tests.dll (net8.0)\n",
+    "stderr": ""
+  },
+  "format-engine": {
+    "args": [
+      "format",
+      "src/DeepSpaceSaga.Engine/DeepSpaceSaga.Engine.csproj",
+      "--verify-no-changes",
+      "--no-restore",
+      "--include",
+      "src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatBalanceReport.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/CombatReportsScenarioFixtures.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/EconomyTimeContinuityTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/EngineCategoryDispatchTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/GeneratedWorldPersistenceTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/MarketKnowledgeTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/MarketRevisionTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/ModuleCombatEndToEndTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/QuotedTradeExecutionTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/ScenarioGroupTranslationTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/StationEconomyGenerationTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/VoyageSaveLoadContinuityTests.cs",
+      "tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0019TK0002Tests.cs"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 11890,
+    "hardTimeoutMs": 300000,
+    "stdout": "",
+    "stderr": ""
+  },
+  "schema-final": {
+    "args": [
+      "test",
+      "tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj",
+      "--no-restore",
+      "--no-build",
+      "--filter",
+      "FullyQualifiedName~TradingEconomySaveSchemaTests",
+      "--verbosity",
+      "minimal"
+    ],
+    "exitCode": 0,
+    "timedOut": false,
+    "elapsedMs": 2084,
+    "hardTimeoutMs": 300000,
+    "stdout": "Test run for D:\\DeepSpaceSaga\\DSS\\tests\\DeepSpaceSaga.Engine.Tests\\bin\\Debug\\net8.0\\DeepSpaceSaga.Engine.Tests.dll (.NETCoreApp,Version=v8.0)\nA total of 1 test files matched the specified pattern.\n\nPassed!  - Failed:     0, Passed:    33, Skipped:     0, Total:    33, Duration: 850 ms - DeepSpaceSaga.Engine.Tests.dll (net8.0)\n",
+    "stderr": ""
+  }
+}

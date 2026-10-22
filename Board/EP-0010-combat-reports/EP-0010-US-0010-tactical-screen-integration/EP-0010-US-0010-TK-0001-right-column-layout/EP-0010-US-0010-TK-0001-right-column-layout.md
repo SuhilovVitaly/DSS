@@ -18,7 +18,7 @@ validation_status: automated-passed
 
 ## Why
 
-Резервировать место докладам под фактическим Object Info. [История](../EP-0010-US-0010-tactical-screen-integration.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R01, R02, R03, R06, R13, R20, R21, R22.
+Резервировать место докладам под фактическим Object Info. [История](../EP-0010-US-0010-tactical-screen-integration.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R01, R02, R03, R06, R13, R20, R21, R22.
 
 ## Decisions
 

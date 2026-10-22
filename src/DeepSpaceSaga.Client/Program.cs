@@ -18,6 +18,16 @@ public static class Program
                 $"STARTUP DIAG: OS process start to Main() entry — {beforeMain.TotalMilliseconds:F0} ms (.NET host/runtime init)");
         }
 
+        try
+        {
+            WriteDebugTuningDefaults(Path.Combine(AppContext.BaseDirectory, "Settings.json"),
+                Path.Combine(AppContext.BaseDirectory, "DebugTuning"));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            InterfaceLog.Write("Debug tuning catalog reference export failed: " + error.Message);
+        }
+
         var factory = new LocalGameSessionFactory();
         var mainMenu = new MainMenuScreen();
 
@@ -25,23 +35,27 @@ public static class Program
         window.Run();
     }
 
+    internal static void WriteDebugTuningDefaults(string settingsPath, string directory) =>
+        DebugTuningFileWriter.WriteDefaults(directory, LocalGameSessionConnection.LoadDebugTuningDefaults(settingsPath));
+
     private sealed class LocalGameSessionFactory : IGameSessionFactory
     {
         // The only place that knows about Saves/ on disk (mirrors Settings.json).
         private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
         private static string SaveDirectory => Path.Combine(AppContext.BaseDirectory, "Saves");
         private static string ScenariosDirectory => Path.Combine(AppContext.BaseDirectory, "Scenarios");
+        private static string DebugTuningPath => Path.Combine(AppContext.BaseDirectory, "DebugTuning", "debug-tuning.json");
         private static string QuickSavePath =>
             Path.Combine(SaveDirectory, SaveSlotNaming.ToFileName(SaveSlots.Quicksave));
 
         public IGameSessionConnection CreateSession()
         {
-            return LocalGameSessionConnection.CreateFromSettingsFile(SettingsPath, SaveDirectory);
+            return LocalGameSessionConnection.CreateFromSettingsFile(SettingsPath, SaveDirectory, DebugTuningPath, InterfaceLog.Write);
         }
 
         public IGameSessionConnection CreateSessionFromScenario(string scenarioPath)
         {
-            return LocalGameSessionConnection.CreateFromScenarioFile(SettingsPath, scenarioPath, SaveDirectory);
+            return LocalGameSessionConnection.CreateFromScenarioFile(SettingsPath, scenarioPath, SaveDirectory, DebugTuningPath, InterfaceLog.Write);
         }
 
         public ScenarioInfo[] ListScenarios()
@@ -52,7 +66,7 @@ public static class Program
         public IGameSessionConnection CreateSessionFromSave(string slotId)
         {
             string savePath = Path.Combine(SaveDirectory, SaveSlotNaming.ToFileName(slotId));
-            var connection = LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, savePath, SaveDirectory);
+            var connection = LocalGameSessionConnection.CreateFromSaveFile(SettingsPath, savePath, SaveDirectory, DebugTuningPath, InterfaceLog.Write);
 
             // A missing masterSeed here means a legacy save predating it — the engine
             // already generated and is using a fresh one; this is only about surfacing the

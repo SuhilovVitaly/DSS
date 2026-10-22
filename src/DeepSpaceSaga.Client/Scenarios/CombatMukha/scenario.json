@@ -22,7 +22,7 @@
         "name": "Player Ship",
         "positionX": 0,
         "positionY": 0,
-        "speedMps": 2000,
+        "speedMps": 3000,
         "directionDegrees": 0,
         "movementType": "Linear",
         "isKnown": true,
@@ -172,7 +172,7 @@
           },
           {
             "moduleId": "MOD-PLAYER-ENGINE-01",
-            "moduleTypeId": "module.engine.basic",
+            "moduleTypeId": "module.engine.tetrarch",
             "occupiedCells": [
               {
                 "x": 4,
@@ -220,7 +220,6 @@
             "activeCycle": null,
             "cargo": [],
             "operatorCrewId": "CHR-PLAYER-DEFENSE",
-            "autoDefenseEnabled": true,
             "armorClass": "light"
           },
           {
@@ -238,7 +237,6 @@
             "activeCycle": null,
             "cargo": [],
             "operatorCrewId": "CHR-PLAYER-DEFENSE-02",
-            "autoDefenseEnabled": true,
             "armorClass": "light"
           }
         ],
@@ -275,10 +273,10 @@
         "shipClassId": "ship.mukha",
         "persistenceType": "Permanent",
         "name": "Mukha 1",
-        "positionX": 1800,
-        "positionY": -2400.000000000000,
-        "speedMps": 3000,
-        "directionDegrees": 270,
+        "positionX": -400,
+        "positionY": -750,
+        "speedMps": 6000,
+        "directionDegrees": 180,
         "movementType": "Linear",
         "isKnown": true,
         "hullLayout": {
@@ -316,7 +314,7 @@
           },
           {
             "moduleId": "MOD-MUKHA-1-TORPEDO",
-            "moduleTypeId": "module.torpedo.launcher.basic",
+            "moduleTypeId": "module.torpedo.launcher.light",
             "occupiedCells": [
               {
                 "x": 1,
@@ -348,8 +346,8 @@
         ],
         "relationToPlayer": "enemy",
         "ai": {
-          "standoffKm": 50,
-          "bandKm": 10,
+          "standoffKm": 25,
+          "bandKm": 8,
           "flankOffsetDeg": -35
         }
       },
@@ -359,10 +357,10 @@
         "shipClassId": "ship.mukha",
         "persistenceType": "Permanent",
         "name": "Mukha 2",
-        "positionX": 2100,
-        "positionY": -2142.428528562855,
-        "speedMps": 3000,
-        "directionDegrees": 270,
+        "positionX": 0,
+        "positionY": -850,
+        "speedMps": 6000,
+        "directionDegrees": 180,
         "movementType": "Linear",
         "isKnown": true,
         "hullLayout": {
@@ -400,7 +398,7 @@
           },
           {
             "moduleId": "MOD-MUKHA-2-TORPEDO",
-            "moduleTypeId": "module.torpedo.launcher.basic",
+            "moduleTypeId": "module.torpedo.launcher.light",
             "occupiedCells": [
               {
                 "x": 1,
@@ -432,8 +430,8 @@
         ],
         "relationToPlayer": "enemy",
         "ai": {
-          "standoffKm": 50,
-          "bandKm": 10,
+          "standoffKm": 25,
+          "bandKm": 8,
           "flankOffsetDeg": 0
         }
       },
@@ -443,10 +441,10 @@
         "shipClassId": "ship.mukha",
         "persistenceType": "Permanent",
         "name": "Mukha 3",
-        "positionX": 2400,
-        "positionY": -1800.000000000000,
-        "speedMps": 3000,
-        "directionDegrees": 270,
+        "positionX": 400,
+        "positionY": -750,
+        "speedMps": 6000,
+        "directionDegrees": 180,
         "movementType": "Linear",
         "isKnown": true,
         "hullLayout": {
@@ -484,7 +482,7 @@
           },
           {
             "moduleId": "MOD-MUKHA-3-TORPEDO",
-            "moduleTypeId": "module.torpedo.launcher.basic",
+            "moduleTypeId": "module.torpedo.launcher.light",
             "occupiedCells": [
               {
                 "x": 1,
@@ -516,8 +514,8 @@
         ],
         "relationToPlayer": "enemy",
         "ai": {
-          "standoffKm": 50,
-          "bandKm": 10,
+          "standoffKm": 25,
+          "bandKm": 8,
           "flankOffsetDeg": 35
         }
       }

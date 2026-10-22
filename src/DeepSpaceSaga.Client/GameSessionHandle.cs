@@ -16,6 +16,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private readonly Task _receiveTask;
     private readonly Task _presentationWatchdogTask;
     internal CombatMetricsWriter CombatMetrics { get; }
+    internal DebugTuningFileWriter DebugTuningFiles { get; }
     private readonly Task _interactionStateSenderTask;
     private readonly Channel<(string? ActiveObjectId, string? SelectedObjectId)> _interactionStateChannel =
         Channel.CreateBounded<(string?, string?)>(new BoundedChannelOptions(1)
@@ -29,6 +30,8 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private string? _lastSentSelectedObjectId;
     private long _nextClientSequence;
     private bool _disposed;
+    private readonly object _disposeGate = new();
+    private Task? _disposeTask;
     private Exception? _failure;
     public Exception? Failure => Volatile.Read(ref _failure);
     // Disposed by the owning window; subscribers release UI-thread resources before awaits.
@@ -49,13 +52,15 @@ public sealed class GameSessionHandle : IAsyncDisposable
         catch (UnauthorizedAccessException) { }
     }
 
-    public GameSessionHandle(IGameSessionConnection connection)
-        : this(connection, new SnapshotBuffer()) { }
+    public GameSessionHandle(IGameSessionConnection connection, bool deferDebugTuningWrites = false)
+        : this(connection, new SnapshotBuffer(), debugTuningFiles: new(active: !deferDebugTuningWrites, warning: WriteDiagnostic)) { }
 
-    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer, CombatMetricsWriter? combatMetrics = null)
+    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer, CombatMetricsWriter? combatMetrics = null,
+        DebugTuningFileWriter? debugTuningFiles = null)
     {
         _connection = connection;
         CombatMetrics = combatMetrics ?? new();
+        DebugTuningFiles = debugTuningFiles ?? new(warning: WriteDiagnostic);
 
         Buffer = buffer;
         Buffer.PresentationDiagnostic += CombatMetrics.RecordPresentation;
@@ -73,6 +78,18 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+
+    internal Task FlushDebugTuningAsync()
+    {
+        ObserveDebugTuningFiles();
+        return DebugTuningFiles.FlushAsync();
+    }
+
+    internal Task DeactivateDebugTuningWritesAsync()
+    {
+        ObserveDebugTuningFiles();
+        return DebugTuningFiles.DeactivateAsync();
+    }
     public bool IsDefeated => Buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated;
     private int _stationTravelPending;
     public bool StationTravelPending => Volatile.Read(ref _stationTravelPending) != 0;
@@ -143,12 +160,66 @@ public sealed class GameSessionHandle : IAsyncDisposable
             await _connection.SendCommandAsync(command, cancellationToken);
     }
 
+    public ValueTask SendPointLaunchAsync(string objectId, string moduleId, ProjectileKind kind,
+        double x, double y, string profileId, out string commandId)
+    {
+        if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId,
+            kind == ProjectileKind.Torpedo ? CombatCommandTypes.Launch : DefenseCommandTypes.Launch,
+            TargetWorldX: x, TargetWorldY: y, ProfileId: profileId));
+    }
+
+    private void ObserveDebugTuningFiles() => DebugTuningFiles.Observe(Buffer.Latest?.Snapshot, Buffer.FindCommandResult);
+
+    public ValueTask SendDebugTuningAsync(DebugTuningPatch patch, out string commandId, bool resetAll = false)
+    {
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        if (resetAll) DebugTuningFiles.RegisterReset(commandId, Buffer.Latest?.Snapshot.DebugTuning?.Revision ?? 0);
+        return SendDebugAsync(new(commandId, sequence, "", "", DebugTuningCommandTypes.Apply, DebugTuning: patch));
+    }
+
+    private async ValueTask SendDebugAsync(PlayerCommand command)
+    {
+        try { await SubmitCommandAsync(command).ConfigureAwait(false); }
+        catch { DebugTuningFiles.CancelReset(command.CommandId); throw; }
+    }
+
     public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
     {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
         commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
         return SubmitCommandAsync(new PlayerCommand(commandId, sequence, objectId, moduleId,
             TorpedoLauncherCommandTypes.SetMode, ModeId: modeId));
+    }
+
+    public ValueTask SendEvadeAsync(string objectId, string moduleId, string threatProjectileId, EvadeSide side, out string commandId)
+    {
+        if (!Enum.IsDefined(side)) throw new ArgumentOutOfRangeException(nameof(side));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId, ManeuverCommandTypes.Evade,
+            ThreatProjectileId: threatProjectileId, EvadeSide: side));
+    }
+
+    public ValueTask SendSpeedHoldAsync(string objectId, string moduleId, SpeedDirection direction, bool active, bool latched, out string commandId)
+    {
+        if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId, ShipEngineCommandTypes.SpeedHold,
+            SpeedDirection: direction, Active: active, Latched: latched));
+    }
+
+    public ValueTask SendTurnHoldAsync(string objectId, string moduleId, TurnDirection direction, bool active, out string commandId)
+    {
+        if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId, ShipEngineCommandTypes.TurnHold,
+            TurnDirection: direction, Active: active));
     }
 
     /// <summary>Release the player ship from its current station through the authoritative navigation computer.</summary>
@@ -327,6 +398,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
                     // Enable and enqueue authoritative diagnostics before publishing a
                     // bootstrap that the UI may render immediately on another thread.
                     Buffer.UpdatePresentation(update);
+                    ObserveDebugTuningFiles();
                 }
                 if (!ct.IsCancellationRequested) Fail(new IOException("The combat connection closed unexpectedly."));
                 return;
@@ -335,6 +407,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
             {
                 if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
                 Buffer.Update(snapshot);
+                ObserveDebugTuningFiles();
                 CombatMetrics.Record(snapshot);
                 if (!snapshot.CommandResults.IsDefaultOrEmpty)
                     foreach (var result in snapshot.CommandResults)
@@ -428,11 +501,26 @@ public sealed class GameSessionHandle : IAsyncDisposable
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (_disposed)
-            return;
+        lock (_disposeGate)
+        {
+            if (_disposeTask is not null) return new(_disposeTask);
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _disposeTask = completion.Task;
+            _ = CompleteDisposalAsync(completion);
+            return new(_disposeTask);
+        }
+    }
 
+    private async Task CompleteDisposalAsync(TaskCompletionSource<bool> completion)
+    {
+        try { await DisposeCoreAsync().ConfigureAwait(false); completion.TrySetResult(true); }
+        catch (Exception error) { completion.TrySetException(error); }
+    }
+
+    private async Task DisposeCoreAsync()
+    {
         _disposed = true;
         Closing?.Invoke();
 
@@ -447,6 +535,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
         _cts.Dispose();
         Buffer.PresentationDiagnostic -= CombatMetrics.RecordPresentation;
         await CombatMetrics.DisposeAsync().ConfigureAwait(false);
+        await DebugTuningFiles.DisposeAsync().ConfigureAwait(false);
 
         if (_connection is IAsyncDisposable asyncDisposable)
             await asyncDisposable.DisposeAsync().ConfigureAwait(false);

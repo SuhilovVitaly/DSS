@@ -1,4 +1,5 @@
 using System.Text.Json;
+using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
@@ -9,309 +10,180 @@ namespace DeepSpaceSaga.Engine.Tests;
 public class ManualCountermeasureFireTests
 {
     internal const string Defense1 = "MOD-PLAYER-COUNTERMEASURE-01", Defense2 = "MOD-PLAYER-COUNTERMEASURE-02";
-    internal static PlayerCommand Manual(string id, string target, string module = Defense1) => new(id, 1, Player, module, DefenseCommandTypes.Fire, target);
-    // Establish the hostile projectile directly: these fixtures test manual interception, not AI reaction timing.
-    internal static string LaunchEnemy(SimulationEngine engine)
-    {
-        if (!engine.RuntimeObjects.Any(o => o.InitialMotion.Torpedo is not null))
-            Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostileTorpedoFire(Target, "MOD-PIRATE-TORPEDO-01", 1).Disposition);
-        return At(engine, 1).Objects.Single(o => o.Torpedo is not null).ObjectId;
-    }
-
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Paused_manual_fire_creates_busy_without_time_and_ignores_auto_toggle(bool auto)
+    [InlineData("defense.enable")]
+    [InlineData("defense.disable")]
+    public void Paused_area_launch_uses_explicit_profile_and_ignores_retired_toggle_requests(string retired)
     {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(new("toggle", 1, Player, Defense1, auto ? DefenseCommandTypes.Enable : DefenseCommandTypes.Disable));
-        engine.ReceiveCommand(Manual("manual", target));
-        var snapshot = At(engine, 1);
-        var projectile = Assert.Single(snapshot.Objects, o => o.Countermeasure is not null);
-        var flight = projectile.Countermeasure!;
-        Assert.Equal(LaunchMode.Manual, flight.Mode);
-        Assert.Equal(1, flight.LaunchMotionTimeMs);
-        Assert.Equal(60001, flight.ExpiresAtMotionTimeMs);
-        Assert.Equal(60000, flight.MaxFlightTimeMs);
-        Assert.Equal(500, flight.FrozenChanceTenths);
-        Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
-        Assert.Equal(DefenseState.Guiding, snapshot.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
-        Assert.Equal(auto, snapshot.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.AutoEnabled);
-        Assert.Equal(projectile, At(engine, 1, 9000000).Objects.Single(o => o.ObjectId == projectile.ObjectId));
-        Assert.Empty(snapshot.CombatJournal.Where(e => e.Roll is not null));
+        using var engine = Point.Create(); engine.ReceiveCommand(new("toggle", 1, Point.Player, Defense1, retired)); Point.At(engine);
+        engine.ReceiveCommand(Point.Shot()); var state = Point.At(engine); var flight = Point.Flight(state);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(state.CommandResults).Status);
+        Assert.Equal(ProjectileKind.Countermissile, flight.Kind); Assert.Equal("wide", flight.ProfileId);
+        Assert.Equal(15, flight.SpeedKmS); Assert.Equal(1, flight.BlastRadiusKm); Assert.Equal(0, state.MotionTimeMs);
+        Assert.Equal(DefenseState.Reloading, state.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
+        Assert.False(state.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.AutoEnabled);
+        Assert.Null(state.Objects.Single(o => o.OwnProjectile is not null).Countermeasure);
+        Assert.Equal(2UL, engine.CaptureLaunchScatterState().Counter);
     }
 
     [Fact]
-    public void Two_modules_can_target_same_torpedo_and_same_id_cannot_spawn_twice()
+    public void Independent_modules_and_duplicate_ids_spawn_once_and_reloading_rejection_draws_nothing()
     {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Manual("first", target));
-        engine.ReceiveCommand(Manual("first", target));
-        engine.ReceiveCommand(Manual("second", target, Defense2));
-        var snapshot = At(engine, 1);
-        Assert.Equal(2, snapshot.Objects.Count(o => o.Countermeasure is not null));
-        Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.Equal(DefenseState.Guiding, m.Defense!.State));
-        engine.ReceiveCommand(Manual("busy", target));
-        var busy = At(engine, 1);
-        Assert.Equal(CommandReasonCodes.NotReady, Assert.Single(busy.CommandResults).ReasonCode);
-        Assert.Equal(2, busy.Objects.Count(o => o.Countermeasure is not null));
-        Assert.Equal(0ul, engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState.DefenseState!.RngCounter);
+        using var engine = Point.Create(); engine.ReceiveCommand(Point.Shot("first")); Point.At(engine);
+        engine.ReceiveCommand(Point.Shot("first", Defense2)); engine.ReceiveCommand(Point.Shot("second", Defense2, y: -30));
+        var state = Point.At(engine); Assert.Equal(2, state.Objects.Count(o => o.OwnProjectile is not null));
+        Assert.Equal(2, state.Objects.Where(o => o.OwnProjectile is not null).Select(o => o.OwnProjectile!.LauncherModuleId).Distinct().Count());
+        var before = engine.CaptureLaunchScatterState(); engine.ReceiveCommand(Point.Shot("busy"));
+        var result = Assert.Single(Point.At(engine).CommandResults); Assert.Equal(CommandReasonCodes.LauncherReloading, result.ReasonCode);
+        Assert.Equal(before, engine.CaptureLaunchScatterState()); Assert.Equal(4UL, before.Counter);
     }
 
     [Fact]
-    public void Zero_chance_and_no_solution_do_not_block_manual_fire()
+    public void Empty_space_requires_no_projectile_target_or_intercept_solution()
     {
-        var source = AutomaticDefenseTests.WeaponRegistry(0, 100);
-        static IEnumerable<T> All<T>(TypeRegistry<T> r) where T : ITypeDefinition => Enumerable.Range(0, r.Count).Select(r.GetDefinition);
-        var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Select(m =>
-            m.CountermeasureAccuracy is not null ? m with { CountermeasureSpeedKmS = 0.001 } : m),
-            All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes),
-            All(source.Dialogues), All(source.Quests), stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
-        using var engine = new SimulationEngine(registry);
-        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario(1500));
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Manual("zero", target));
-        var flight = Assert.Single(At(engine, 1).Objects, o => o.Countermeasure is not null).Countermeasure!;
-        Assert.Equal(0, flight.FrozenChanceTenths);
-        Assert.False(flight.Route.HasIntercept);
-        Assert.Null(flight.PredictedEncounterMotionTimeMs);
-        var after = Assert.Single(At(engine, 1100).Objects, o => o.Countermeasure is not null).Countermeasure!;
-        Assert.Equal(60001, after.ExpiresAtMotionTimeMs);
-        Assert.Null(after.PredictedEncounterMotionTimeMs);
+        using var engine = Point.Create(); engine.ReceiveCommand(Point.Shot(x: 125, y: 25)); var state = Point.At(engine);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(state.CommandResults).Status);
+        var flight = Point.Flight(state); Assert.Equal((125d, 25d), (flight.DetonationX, flight.DetonationY));
+        Assert.Equal(double.Hypot(125, 25) / 150 * 1000, flight.DetonationMotionTimeMs, 8);
+        Assert.Empty(Assert.Single(state.CombatJournal).TargetObjectId);
     }
 
     [Theory]
-    [InlineData("missing")]
-    [InlineData("ship")]
-    [InlineData("own")]
-    [InlineData("wrong-owner")]
-    [InlineData("wrong-module")]
-    public void Invalid_manual_fire_has_no_spawn_attempt_or_rng_side_effect(string invalid)
+    [InlineData("missing-profile", CommandReasonCodes.MissingProfile)]
+    [InlineData("profile", CommandReasonCodes.UnknownProfile)]
+    [InlineData("coordinates", CommandReasonCodes.InvalidTargetCoordinates)]
+    [InlineData("range", CommandReasonCodes.LaunchOutOfRange)]
+    [InlineData("owner", CommandReasonCodes.UnknownObject)]
+    [InlineData("module", CommandReasonCodes.UnknownCommandType)]
+    [InlineData("off", CommandReasonCodes.ModuleUnavailable)]
+    [InlineData("destroyed", CommandReasonCodes.ModuleDestroyed)]
+    [InlineData("operator", CommandReasonCodes.NoWeaponOperator)]
+    public void Invalid_point_request_has_no_spawn_reload_sequence_or_random_side_effect(string defect, string expected)
     {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        if (invalid == "own")
+        using var engine = Point.Create(configure: o => o.ObjectId != Point.Player ? o : o with
         {
-            engine.ReceiveCommand(Fire("own-launch"));
-            target = At(engine, 1).Objects.Single(o => o.Torpedo?.OwnerObjectId == Player).ObjectId;
-        }
-        var command = Manual("invalid", invalid == "missing" ? "absent" : invalid == "ship" ? Target : target);
-        if (invalid == "wrong-owner") command = command with { ObjectId = Target };
-        if (invalid == "wrong-module") command = command with { ModuleId = Launcher };
-        engine.ReceiveCommand(command);
-        var result = At(engine, 1);
-        Assert.Equal(CommandResultStatus.Rejected, Assert.Single(result.CommandResults).Status);
-        Assert.DoesNotContain(result.Objects, o => o.Countermeasure is not null);
-        Assert.Contains(result.Objects, o => o.ObjectId == target && o.Torpedo is not null);
-        var save = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0).GameState;
-        Assert.Equal(0, save.DefenseState!.ProjectileSequence);
-        Assert.Equal(0ul, save.DefenseState.RngCounter);
+            Modules = o.Modules!.Select(m => m.ModuleId != Defense1 ? m : m with
+            {
+                PowerState = defect == "off" ? "Off" : m.PowerState,
+                Destroyed = defect == "destroyed" || m.Destroyed,
+                StructurePoints = defect == "destroyed" ? 0 : m.StructurePoints,
+                OperatorCrewId = defect == "operator" ? null : m.OperatorCrewId
+            }).ToArray()
+        });
+        var before = engine.CaptureLaunchScatterState();
+        var command = Point.Shot(profile: defect == "missing-profile" ? null : defect == "profile" ? "absent" : "wide",
+            x: defect == "coordinates" ? double.NaN : defect == "range" ? 300.000001 : 150);
+        if (defect == "owner") command = command with { ObjectId = Point.Enemy };
+        if (defect == "module") command = command with { ModuleId = Point.Torpedo };
+        engine.ReceiveCommand(command); var state = Point.At(engine); var result = Assert.Single(state.CommandResults);
+        Assert.Equal(DefenseCommandTypes.Launch, result.CommandType); Assert.Equal(CommandResultStatus.Rejected, result.Status); Assert.Equal(expected, result.ReasonCode);
+        Assert.Equal(before, engine.CaptureLaunchScatterState()); Assert.DoesNotContain(state.Objects, o => o.OwnProjectile is not null);
+        Assert.Equal(0, Point.Save(engine).GameState.DefenseState!.ProjectileSequence);
     }
 
     [Theory]
     [InlineData(PlayerRelation.Friend)]
     [InlineData(PlayerRelation.Neutral)]
-    public void Living_owner_current_relation_overrides_captured_enemy_provenance(string relation)
+    public void Counter_area_can_be_aimed_at_any_faction_without_hull_damage_or_target_lock(string relation)
     {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        var save = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0);
-        save = save with
-        {
-            GameState = save.GameState with
-            {
-                SpaceObjects = save.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == Target ? o with { RelationToPlayer = relation } : o).ToArray()
-            }
-        };
-        engine.LoadScenario(save);
-        engine.ReceiveCommand(Manual("friendly", target));
-        var snapshot = At(engine, 1);
-        Assert.Equal("target_not_hostile", Assert.Single(snapshot.CommandResults).ReasonCode);
-        Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
+        using var engine = Point.Create(configure: o => o.ObjectId != Point.Enemy ? o : o with { RelationToPlayer = relation });
+        engine.ReceiveCommand(Point.Shot(x: 200, y: 0)); var launched = Point.At(engine); var health = launched.Objects.Single(o => o.ObjectId == Point.Player).ModuleHealth;
+        var ended = Point.At(engine, 2000); Assert.Equal(CommandResultStatus.Executed, Assert.Single(launched.CommandResults).Status);
+        Assert.Contains(ended.Objects, o => o.ObjectId == Point.Enemy); Assert.DoesNotContain(ended.CombatJournal, e => e.Type is CombatEventType.Hit or CombatEventType.ModuleHit);
+        Assert.Equal(JsonSerializer.Serialize(health), JsonSerializer.Serialize(ended.Objects.Single(o => o.ObjectId == Point.Player).ModuleHealth));
     }
 
     [Theory]
-    [InlineData(0, true)]
-    [InlineData(1, false)]
-    public void Manual_range_boundary_is_inclusive(double offset, bool allowed)
+    [InlineData(0d, true)]
+    [InlineData(.000001d, false)]
+    public void Point_launch_range_is_inclusive_at_thirty_kilometres(double offset, bool allowed)
     {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario(2000));
-        string target = LaunchEnemy(engine);
-        var save = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0);
-        save = save with
-        {
-            GameState = save.GameState with
-            {
-                SpaceObjects = save.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == Player ? o with { PositionX = offset } : o).ToArray()
-            }
-        };
-        engine.LoadScenario(save);
-        engine.ReceiveCommand(Manual("range", target));
-        var snapshot = At(engine, 1);
-        Assert.Equal(allowed ? 1 : 0, snapshot.Objects.Count(o => o.Countermeasure is not null));
-        if (!allowed) Assert.Equal("target_out_of_range", Assert.Single(snapshot.CommandResults).ReasonCode);
-    }
-
-    [Fact]
-    public void Durable_command_identity_survives_receipt_eviction()
-    {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Manual("original", target)); At(engine, 1);
-        for (int i = 0; i <= SimulationEngine.CommandReceiptLimit; i++)
-            engine.ReceiveCommand(new("invalid-" + i, (ulong)i + 2, Player, "absent", "invalid"));
-        At(engine, 1);
-        var save = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0);
-        Assert.DoesNotContain(save.GameState.CommandReceipts!, r => r.CommandId == "original");
-        Assert.Contains("original", save.GameState.CombatState!.ProcessedLaunchCommandIds);
-        engine.ReceiveCommand(Manual("original", target, Defense2));
-        var snapshot = At(engine, 1);
-        Assert.Single(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.Equal(DefenseState.Ready, snapshot.InstalledModules.Single(m => m.ModuleId == Defense2).Defense!.State);
+        using var engine = Point.Create(); engine.ReceiveCommand(Point.Shot(x: 300 + offset, y: 0)); var state = Point.At(engine);
+        Assert.Equal(allowed ? 1 : 0, state.Objects.Count(o => o.OwnProjectile is not null));
+        Assert.Equal(allowed ? CommandResultStatus.Executed : CommandResultStatus.Rejected, Assert.Single(state.CommandResults).Status);
+        if (allowed) Assert.Equal(2000, Point.Flight(state).DetonationMotionTimeMs); else Assert.Equal(CommandReasonCodes.LaunchOutOfRange, Assert.Single(state.CommandResults).ReasonCode);
     }
 
     [Theory]
-    [InlineData("off")]
-    [InlineData("broken")]
-    [InlineData("operator")]
-    public void Unready_module_rejects_without_marking_target(string cause)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Durable_point_identity_survives_receipt_eviction_payload_change_and_file_roundtrip(bool differentFamily)
     {
-        var scenario = HostileTorpedoFireTests.HostileScenario();
-        scenario = scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(o =>
-            o.ObjectId != Player ? o : o with
-            {
-                Modules = o.Modules!.Select(m => m.ModuleId != Defense1 ? m : m with
-                {
-                    PowerState = cause == "off" ? "Off" : m.PowerState,
-                    StructurePoints = cause == "broken" ? 0 : m.StructurePoints,
-                    OperatorCrewId = cause == "operator" ? null : m.OperatorCrewId
-                }).ToArray()
-            }).ToArray()
-            }
-        };
-        using var engine = Create(scenario);
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Manual("unready", target));
-        var snapshot = At(engine, 1);
-        Assert.Equal(CommandResultStatus.Rejected, Assert.Single(snapshot.CommandResults).Status);
-        Assert.DoesNotContain(snapshot.Objects, o => o.Countermeasure is not null);
-        Assert.Contains(snapshot.Objects, o => o.ObjectId == target && o.Torpedo is not null);
+        using var engine = Point.Create(); engine.ReceiveCommand(Point.Shot("original")); var first = Point.Flight(Point.At(engine));
+        for (int i = 0; i <= SimulationEngine.CommandReceiptLimit; i++) engine.ReceiveCommand(new("invalid-" + i, (ulong)i + 2, Point.Player, "absent", "invalid"));
+        Point.At(engine); var save = Point.Save(engine); Assert.DoesNotContain(save.GameState.CommandReceipts!, r => r.CommandId == "original");
+        using var restored = new SimulationEngine(Point.Registry()); restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        var before = restored.CaptureLaunchScatterState();
+        restored.ReceiveCommand(differentFamily ? new("original", 1, Point.Player, Point.Torpedo, CombatCommandTypes.Launch,
+            TargetWorldX: 250, TargetWorldY: -30, ProfileId: "fast") : Point.Shot("original", Defense2, 250, -30, "fast"));
+        var after = Point.At(restored); Assert.Single(after.Objects, o => o.OwnProjectile is not null); Assert.Equal(first, Point.Flight(after));
+        Assert.Equal(before, restored.CaptureLaunchScatterState()); Assert.Equal(DefenseState.Ready, after.InstalledModules.Single(m => m.ModuleId == Defense2).Defense!.State);
     }
 
     [Fact]
-    public void A_new_manual_attempt_is_allowed_after_miss_and_reload()
+    public void New_manual_launch_is_possible_after_fixed_reload_without_automatic_retry()
     {
-        using var engine = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(0, 100));
-        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Manual("first-attempt", target)); At(engine, 1);
-        var ready = At(engine, 20000);
-        Assert.Contains(ready.CombatJournal, e => e.Type == CombatEventType.Miss && e.ChanceTenths == 0);
+        using var engine = Point.Create(); engine.ReceiveCommand(Point.Shot("first")); Point.At(engine);
+        var ready = Point.At(engine, 12500); Assert.Single(ready.CombatJournal, e => e.Type == CombatEventType.Launch);
         Assert.Equal(DefenseState.Ready, ready.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
-        Assert.Contains(ready.Objects, o => o.ObjectId == target && o.Torpedo is not null);
-        engine.ReceiveCommand(Manual("second-attempt", target));
-        var second = At(engine, 20000);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(second.CommandResults).Status);
-        Assert.Equal(target, Assert.Single(second.Objects, o => o.Countermeasure is not null).Countermeasure!.TargetTorpedoId);
+        engine.ReceiveCommand(Point.Shot("second", profile: "fast")); var state = Point.At(engine, 12500);
+        Assert.Equal(CommandResultStatus.Executed, Assert.Single(state.CommandResults).Status); Assert.Equal("fast", Point.Flight(state).ProfileId);
+        Assert.Equal(25000, state.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.ReadyAtMotionTimeMs);
     }
 
     [Theory]
-    [InlineData(0, 100, 0)]
-    [InlineData(100, 0, 1000)]
-    public void Zero_and_hundred_still_draw(decimal accuracy, decimal maneuverability, int expectedChance)
+    [InlineData(0)]
+    [InlineData(30)]
+    public void All_legal_operator_skills_draw_only_the_two_launch_scatter_values_and_no_intercept_roll(int skill)
     {
-        using var engine = new SimulationEngine(AutomaticDefenseTests.WeaponRegistry(accuracy, maneuverability));
-        engine.LoadScenario(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Manual("boundary", target));
-        var launched = At(engine, 1);
-        Assert.Equal(expectedChance,
-            Assert.Single(launched.Objects, o => o.Countermeasure is not null).Countermeasure!.FrozenChanceTenths);
-        var resolved = At(engine, 20000);
-        var roll = Assert.Single(resolved.CombatJournal, e => e.RatingBreakdown is not null && e.Roll is not null);
-        Assert.Equal(expectedChance, roll.ChanceTenths);
-        Assert.InRange(roll.Roll!.Value, 1, 1000);
-        Assert.Equal(1UL, engine.CaptureSaveState().GameState.DefenseState!.RngCounter);
+        using var engine = Point.Create(configure: o => o.ObjectId != Point.Player ? o : o with { Crew = o.Crew!.Select(c => c with { AccuracySkill = skill }).ToArray() });
+        engine.ReceiveCommand(Point.Shot()); var launched = Point.At(engine);
+        Assert.Equal(skill, launched.InstalledModules.Single(m => m.ModuleId == Point.Counter).Defense!.Operator!.Skill);
+        var state = Point.At(engine, 3000);
+        Assert.Equal(2UL, engine.CaptureLaunchScatterState().Counter); Assert.Equal(0UL, Point.Save(engine, 3000).GameState.DefenseState!.RngCounter);
+        Assert.DoesNotContain(state.CombatJournal, e => e.ChanceTenths is not null || e.Roll is not null);
     }
 
     [Fact]
-    public void Captured_hostility_keeps_orphaned_enemy_torpedo_eligible()
+    public void Real_counter_area_removes_friendly_and_enemy_point_torpedoes_at_the_same_crossing()
     {
-        var scenario = HostileTorpedoFireTests.HostileScenario();
-        scenario = scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(o =>
-            o.ObjectId == Target ? FragileForOneHit(o) : o).ToArray()
-            }
-        };
-        using var engine = Create(scenario);
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Fire("kill-owner"));
-        var own = At(engine, 1).Objects.Single(o => o.Torpedo?.OwnerObjectId == Player).Torpedo!;
-        long time = own.PredictedImpactMotionTimeMs!.Value + 1;
-        var orphaned = At(engine, time);
-        Assert.DoesNotContain(orphaned.Objects, o => o.ObjectId == Target);
-        Assert.Equal(PlayerRelation.Enemy, orphaned.Objects.Single(o => o.ObjectId == target).Torpedo!.OwnerPlayerRelationAtLaunch);
-        engine.ReceiveCommand(Manual("orphan", target));
-        Assert.Single(At(engine, time).Objects, o => o.Countermeasure is not null);
+        using var engine = Point.Create(enemyArmed: true);
+        engine.ReceiveCommand(new("own", 1, Point.Player, Point.Torpedo, CombatCommandTypes.Launch, TargetWorldX: 200, TargetWorldY: 0, ProfileId: "slow"));
+        Point.At(engine); Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(Point.Enemy, Point.EnemyTorpedo, 0, 0, "slow", 0).Disposition);
+        Point.At(engine, 1000); engine.ReceiveCommand(Point.Shot(x: 100, y: 0)); Point.At(engine, 1000);
+        var state = Point.At(engine, 1700); var blast = Assert.Single(state.CombatJournal, e => e.Type == CombatEventType.CountermissileDetonated);
+        Assert.Equal(new[] { "torpedo-1", "torpedo-2" }, blast.DestroyedProjectileIds!.Value);
+        Assert.Equal(2, state.CombatJournal.Count(e => e.Type == CombatEventType.ShotDown));
+        Assert.DoesNotContain(state.CombatJournal, e => e.Type is CombatEventType.TorpedoDetonated or CombatEventType.ModuleHit);
     }
 
     [Fact]
-    public void Enemy_torpedo_aimed_at_another_object_remains_manual_target()
+    public void Orphaned_foreign_point_flight_survives_owner_death_and_save_then_can_be_shot_down()
     {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        var save = engine.CaptureSaveStateForTests(1, SimulationSpeed.Speed0);
-        // A valid custom save may identify a different stationary object at the same aim
-        // point. The real launch/curve stays intact; eligibility must not demand a player target.
-        var obstacle = Obstacle("other-target", 0, 0);
-        save = save with
+        using var engine = Point.Create(enemyArmed: true, configure: o => o.ObjectId != Point.Enemy ? o : o with
         {
-            GameState = save.GameState with
-            {
-                SpaceObjects = save.GameState.SpaceObjects.Append(obstacle).ToArray(),
-                CombatState = save.GameState.CombatState! with
-                {
-                    Projectiles = save.GameState.CombatState!.Projectiles.Select(p =>
-                    p.ObjectId != target ? p : p with
-                    { Flight = p.Flight with { TargetObjectId = obstacle.ObjectId }, TargetBaseline = p.TargetBaseline! with { ObjectId = obstacle.ObjectId } }).ToArray()
-                }
-            }
-        };
-        engine.LoadScenario(save);
-        engine.ReceiveCommand(Manual("other-object", target));
-        Assert.Single(At(engine, 1).Objects, o => o.Countermeasure is not null);
+            Modules = o.Modules!.Where(m => m.ModuleId == Point.EnemyTorpedo || m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal)).Select(m =>
+            m with { StructurePoints = 1, Armor = 0, ArmorClass = "none" }).ToArray()
+        });
+        engine.ReceiveCommand(new("kill-owner", 1, Point.Player, Point.Torpedo, CombatCommandTypes.Launch, TargetWorldX: 200, TargetWorldY: 0, ProfileId: "fast")); Point.At(engine);
+        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(Point.Enemy, Point.EnemyTorpedo, -300, 0, "slow", 0).Disposition);
+        var orphaned = Point.At(engine, 1400); Assert.DoesNotContain(orphaned.Objects, o => o.ObjectId == Point.Enemy);
+        Assert.Contains(orphaned.Objects, o => o.ObjectId == "torpedo-2" && o.ObservedProjectile is not null);
+        var save = Point.Save(engine, 1400); using var restored = new SimulationEngine(Point.Registry()); restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        double x = 116 / 1.24; restored.ReceiveCommand(Point.Shot("orphan", x: x, y: 0, profile: "fast")); Point.At(restored, 1400);
+        var state = Point.At(restored, 1800); Assert.Contains(state.CombatJournal, e => e.Type == CombatEventType.ShotDown && e.ProjectileObjectId == "torpedo-2");
+        Assert.DoesNotContain(state.Objects, o => o.ObjectId == "torpedo-2");
     }
 
     [Fact]
-    public void Positive_chance_manual_flight_roundtrips_actual_file_without_duplicate_spawn()
+    public void Point_counter_roundtrips_midflight_without_duplicate_spawn_and_keeps_exact_fuse()
     {
-        using var engine = Create(HostileTorpedoFireTests.HostileScenario());
-        string target = LaunchEnemy(engine);
-        engine.ReceiveCommand(Manual("saved-manual", target)); At(engine, 1);
-        string path = Path.Combine(Path.GetTempPath(), "dss-manual-" + Guid.NewGuid().ToString("N") + ".json");
-        try
-        {
-            File.WriteAllText(path, ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(101, SimulationSpeed.Speed0)));
-            using var restored = Create(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true));
-            restored.ReceiveCommand(Manual("saved-manual", target, Defense2));
-            var actual = At(restored, 1101);
-            var expected = At(engine, 1101);
-            Assert.Single(actual.Objects, o => o.Countermeasure is not null);
-            Assert.Equal(JsonSerializer.Serialize(expected.Objects), JsonSerializer.Serialize(actual.Objects));
-            Assert.Equal(LaunchMode.Manual, actual.Objects.Single(o => o.Countermeasure is not null).Countermeasure!.Mode);
-        }
-        finally { File.Delete(path); }
+        using var engine = Point.Create(); engine.ReceiveCommand(Point.Shot("saved")); Point.At(engine);
+        var save = Point.Save(engine, 101); using var restored = new SimulationEngine(Point.Registry());
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
+        restored.ReceiveCommand(Point.Shot("saved", Defense2, 250, 25, "fast")); Point.At(restored, 101);
+        var expected = Point.At(engine, 1000); var actual = Point.At(restored, 1000);
+        Assert.Equal(JsonSerializer.Serialize(expected.Objects), JsonSerializer.Serialize(actual.Objects));
+        Assert.Single(actual.Objects, o => o.OwnProjectile is not null); Assert.Equal(engine.CaptureLaunchScatterState(), restored.CaptureLaunchScatterState());
     }
 }

@@ -76,6 +76,13 @@ internal sealed class TradingVoyageFixture : IDisposable
             {
                 GameState = save.GameState with
                 {
+                    // This fixture removes the player's crew and assignments below. Captured
+                    // capabilities must describe that same prepared world on load.
+                    CombatState = save.GameState.CombatState! with
+                    {
+                        Launchers = save.GameState.CombatState!.Launchers.Select(l => l.OwnerObjectId == ShipId
+                            ? l with { State = l.State with { Operator = null } } : l).ToArray()
+                    },
                     DefenseState = save.GameState.DefenseState! with
                     {
                         Launchers = save.GameState.DefenseState.Launchers.Select(l =>

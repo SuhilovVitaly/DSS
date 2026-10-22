@@ -138,7 +138,7 @@ internal sealed class ClusterBalanceRunner
         return GameDataRegistry.Create(All(r.ModuleCategories), All(r.ModuleTypes).Select(m => m.CargoCapacityKg is { } kg
             ? m with { CargoCapacityKg = checked((long)((Int128)kg * c.CargoCapacityMultiplierPermille / 1000)) } : m), All(r.ItemTypes), All(r.CommandDefinitions),
             All(r.FactoryTypes), All(r.Recipes), All(r.Dialogues), All(r.Quests), r.CatalogVersion, r.LegacyCatalogFingerprint,
-            All(r.StationMarketProfiles), All(r.ShipClasses), All(r.StationMarketEvents));
+            All(r.StationMarketProfiles), All(r.ShipClasses), All(r.StationMarketEvents), combatRules: r.CombatRules);
     }
 }
 
