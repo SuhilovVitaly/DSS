@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
+using System.Diagnostics;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -10,8 +11,12 @@ public sealed partial class GameSessionScreen
     private readonly DebugTuningPanel _debugTuningPanel = new();
     internal DebugTuningPanel DebugPanel => _debugTuningPanel;
     private readonly List<DebugSubmission> _debugSubmissions = [];
-    private sealed record DebugSubmission(DebugTuningValue Value, string CommandId, Task SendTask, long Revision);
+    private sealed record DebugSubmission(DebugTuningValue Value, string CommandId, Task SendTask, long Revision, long Order);
+    private long _debugSubmissionOrder, _debugFeedbackOrder;
     internal string? DebugError { get; private set; }
+    private long? _debugResetArmedAt;
+    private bool _debugStartupDismissed;
+    internal Action<string>? DebugOpenFolderForTests { get; set; }
 
     private void InitializeDebugTuning()
     {
@@ -42,8 +47,12 @@ public sealed partial class GameSessionScreen
             bool failed = submission.SendTask.IsFaulted || submission.SendTask.IsCanceled;
             if (!failed && (receipt is null || receipt.Status == CommandResultStatus.Deferred ||
                 receipt.Status == CommandResultStatus.Executed && snapshot?.Revision <= submission.Revision)) continue;
-            if (failed) { _ = submission.SendTask.Exception; DebugError = "Debug.SendFailed"; }
-            else DebugError = receipt!.Status == CommandResultStatus.Executed ? null : "Debug." + (receipt.ReasonCode ?? "Rejected");
+            if (failed) _ = submission.SendTask.Exception;
+            if (submission.Order >= _debugFeedbackOrder)
+            {
+                _debugFeedbackOrder = submission.Order;
+                DebugError = failed ? "Debug.SendFailed" : receipt!.Status == CommandResultStatus.Executed ? null : "Debug." + (receipt.ReasonCode ?? "Rejected");
+            }
             _debugSubmissions.RemoveAt(i);
         }
         for (int i = 0; i < _debugTuningPanel.RowCount; i++)
@@ -54,6 +63,9 @@ public sealed partial class GameSessionScreen
                 if (DebugTuningPanel.SameKey(row.Value, _debugSubmissions[j].Value)) { pending = _debugSubmissions[j].Value.Value; break; }
             _debugTuningPanel.SetPending(i, pending);
         }
+        if (_debugResetArmedAt is { } armed && (_timestampProvider() - armed) / (double)Stopwatch.Frequency > 1) _debugResetArmedAt = null;
+        _debugTuningPanel.SetFeedback(DebugError, _debugStartupDismissed ? null : snapshot?.StartupError,
+            _debugSubmissions.Count != 0, _debugResetArmedAt is not null, _handle?.DebugTuningFiles.Status, snapshot?.Revision ?? 0);
     }
 
     private bool HandleDebugKey(Key key)
@@ -66,7 +78,7 @@ public sealed partial class GameSessionScreen
             return true;
         }
         if (key == Key.Escape && PointAim is null && _debugTuningPanel.Visible)
-        { _debugTuningPanel.Visible = false; return true; }
+        { _debugTuningPanel.Visible = false; _debugResetArmedAt = null; return true; }
         return false;
     }
 
@@ -75,6 +87,40 @@ public sealed partial class GameSessionScreen
         float uiX = x / _uiScale, uiY = y / _uiScale;
         if (!_debugTuningPanel.Contains(uiX, uiY)) return false;
         PrepareDebugTuning();
+        if (button == MouseButton.Left)
+        {
+            if (_debugTuningPanel.ToggleHelp(uiX, uiY)) return true;
+            if (_debugTuningPanel.FolderBounds.Contains(uiX, uiY))
+            {
+                try
+                {
+                    string directory = _handle?.DebugTuningFiles.DirectoryPath ?? Path.Combine(AppContext.BaseDirectory, "DebugTuning");
+                    Directory.CreateDirectory(directory);
+                    if (DebugOpenFolderForTests is { } open) open(directory);
+                    else Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+                }
+                catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+                { DebugError = "Debug.OpenFolderFailed"; }
+                return true;
+            }
+            if (_debugTuningPanel.ResetAllBounds.Contains(uiX, uiY))
+            {
+                if (_debugResetArmedAt is null) { _debugResetArmedAt = _timestampProvider(); PrepareDebugTuning(); return true; }
+                _debugResetArmedAt = null;
+                if (_handle is not null && _buffer.Latest?.Snapshot.DebugTuning is { } tuning)
+                {
+                    try
+                    {
+                        var send = _handle.SendDebugTuningAsync(new(tuning.Defaults), out string id, resetAll: true).AsTask();
+                        foreach (var entry in tuning.Defaults) _debugSubmissions.Add(new(entry, id, send, tuning.Revision, ++_debugSubmissionOrder));
+                        _debugFeedbackOrder = _debugSubmissionOrder;
+                        _debugStartupDismissed = true; DebugError = null;
+                    }
+                    catch (Exception) { DebugError = "Debug.SendFailed"; }
+                }
+                PrepareDebugTuning(); return true;
+            }
+        }
         if (button == MouseButton.Left && _debugTuningPanel.ToggleSection(uiX, uiY)) return true;
         if ((button == MouseButton.Left || float.IsFinite(wheel) && wheel != 0) &&
             _debugTuningPanel.TryEdit(uiX, uiY, Math.Sign(wheel), IsCtrlDown, out int index, out double value))
@@ -85,7 +131,9 @@ public sealed partial class GameSessionScreen
                 try
                 {
                     var send = _handle.SendDebugTuningAsync(new([entry]), out string id).AsTask();
-                    _debugSubmissions.Add(new(entry, id, send, _buffer.Latest?.Snapshot.DebugTuning?.Revision ?? 0));
+                    _debugSubmissions.Add(new(entry, id, send, _buffer.Latest?.Snapshot.DebugTuning?.Revision ?? 0, ++_debugSubmissionOrder));
+                    _debugFeedbackOrder = _debugSubmissionOrder;
+                    _debugStartupDismissed = true; DebugError = null;
                     _debugTuningPanel.SetPending(index, value);
                 }
                 catch (Exception) { DebugError = "Debug.SendFailed"; }

@@ -9,25 +9,36 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 internal sealed class DebugTuningPanel : IDisposable
 {
     internal const float Width = 360;
-    private const float HeaderHeight = 62, FooterHeight = 38, SectionHeight = 28, RowHeight = 40;
+    private const float FooterHeight = 38, SectionHeight = 28, RowHeight = 40;
+    private float _headerHeight = 62;
     internal static readonly string[] SectionKeys = ["Debug.Tetrarch", "Debug.Mukha", "Debug.TorpedoesTetrarch", "Debug.TorpedoesMukha", "Debug.Countermissiles"];
     internal static readonly string[] ModuleIds = ["module.engine.tetrarch", "module.engine.strizh", "module.torpedo.launcher.basic", "module.torpedo.launcher.light", "module.countermeasure.launcher.basic"];
     private readonly Func<string, string> _text;
     private readonly SKFont _font = new(MenuStyle.TypefaceRegular, 12);
     private readonly SKTypeface _italicTypeface = SKTypeface.FromFamilyName("Verdana", SKFontStyle.Italic);
     private readonly SKFont _italicFont;
-    private readonly SKPaint _paint = new() { IsAntialias = true };
+    private readonly SKPaint _paint = new() { IsAntialias = true, Typeface = MenuStyle.TypefaceRegular, TextSize = 12 };
     private readonly SKTextBlob[] _sections = new SKTextBlob[5];
     private readonly bool[] _collapsed = new bool[5];
     private readonly SKRect[] _sectionBounds = new SKRect[5];
     private readonly List<Row> _rows = [];
-    private readonly SKTextBlob _title, _minus, _plus, _reset, _resetAll, _folder, _help;
+    private readonly SKTextBlob _title, _minus, _plus, _reset, _resetAll, _folder, _help, _confirmReset;
+    private readonly SKTextBlob[] _helpLines;
+    private SKTextBlob[] _statusLines = [];
+    private string? _feedbackKey, _startupError;
+    private DebugTuningFileStatus? _fileStatus;
+    private bool _feedbackPending, _resetConfirm, _statusError, _helpVisible;
+    private long _feedbackRevision = -1;
     private DebugTuningSnapshot? _snapshot;
     private float _contentHeight, _scroll;
     private bool _disposed;
     internal bool Visible { get; set; }
     internal SKRect Bounds { get; private set; }
-    internal SKRect Viewport => new(Bounds.Left, Bounds.Top + HeaderHeight, Bounds.Right, Bounds.Bottom - FooterHeight);
+    internal SKRect Viewport => new(Bounds.Left, Bounds.Top + _headerHeight, Bounds.Right, Bounds.Bottom - FooterHeight);
+    internal SKRect ResetAllBounds => new(Bounds.Left + 8, Bounds.Bottom - 32, Bounds.MidX - 4, Bounds.Bottom - 6);
+    internal SKRect FolderBounds => new(Bounds.MidX + 4, Bounds.Bottom - 32, Bounds.Right - 8, Bounds.Bottom - 6);
+    internal bool HelpVisible => _helpVisible;
+    internal string StatusText { get; private set; } = "";
     internal int RowCount => _rows.Count;
     internal int SectionCount => _sections.Length;
     internal float ScrollOffset => _scroll;
@@ -52,6 +63,8 @@ internal sealed class DebugTuningPanel : IDisposable
         _title = Blob(_text("Debug.Title"));
         _minus = Blob("−"); _plus = Blob("+"); _reset = Blob("↺"); _help = Blob("?");
         _resetAll = Blob(_text("Debug.ResetAll")); _folder = Blob(_text("Debug.OpenFolder"));
+        _confirmReset = Blob(_text("Debug.ConfirmReset"));
+        _helpLines = Wrap(_text("Debug.HelpOrbit") + "\n" + _text("Debug.HelpTorpedoes"));
         for (int i = 0; i < _sections.Length; i++) _sections[i] = Blob(_text(SectionKeys[i]));
     }
 
@@ -98,7 +111,7 @@ internal sealed class DebugTuningPanel : IDisposable
                 if (!_collapsed[section]) y += RowHeight;
             }
         }
-        _contentHeight = y;
+        _contentHeight = y + (_helpVisible ? 12 + _helpLines.Length * 16 : 0);
         _scroll = Math.Clamp(_scroll, 0, Math.Max(0, _contentHeight - Viewport.Height));
     }
 
@@ -120,6 +133,31 @@ internal sealed class DebugTuningPanel : IDisposable
     }
 
     internal Row GetRow(int index) => _rows[index];
+    internal void SetFeedback(string? errorKey, string? startupError, bool pending, bool resetConfirm, DebugTuningFileStatus? fileStatus, long revision)
+    {
+        if (_feedbackKey == errorKey && _startupError == startupError && _feedbackPending == pending &&
+            _resetConfirm == resetConfirm && ReferenceEquals(_fileStatus, fileStatus) && _feedbackRevision == revision) return;
+        _feedbackKey = errorKey; _startupError = startupError; _feedbackPending = pending;
+        _resetConfirm = resetConfirm; _fileStatus = fileStatus; _feedbackRevision = revision;
+        _statusError = errorKey is not null || startupError is not null || fileStatus?.Error is not null;
+        StatusText = errorKey is not null ? _text(errorKey) : startupError is not null ? _text("Debug.StartupRejected") + ": " + startupError :
+            fileStatus?.Error is { } diskError ? _text("Debug.WriteFailed") + ": " + diskError :
+            pending ? _text("Debug.Sending") : fileStatus is { Deleted: true } && fileStatus.Revision >= revision ? _text("Debug.ResetComplete") :
+            fileStatus?.WrittenAtUtc is { } written && fileStatus.Revision >= revision ? _text("Debug.AppliedFile") + " " + written.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture) :
+            revision > 0 ? _text("Debug.AppliedSaving") : _text("Debug.Ready");
+        foreach (var line in _statusLines) line.Dispose();
+        _statusLines = Wrap(StatusText);
+        _headerHeight = Math.Max(62, 34 + _statusLines.Length * 15);
+        Layout();
+    }
+
+    internal bool ToggleHelp(float x, float y)
+    {
+        if (!Contains(x, y) || x < Bounds.Right - 32 || y > Bounds.Top + 28) return false;
+        _helpVisible = !_helpVisible; Layout();
+        if (_helpVisible) _scroll = Math.Max(0, _contentHeight - Viewport.Height);
+        return true;
+    }
     internal void SetPending(int index, double? value)
     {
         var row = _rows[index];
@@ -180,6 +218,8 @@ internal sealed class DebugTuningPanel : IDisposable
         Fill(canvas, Bounds, new SKColor(9, 17, 23, 250));
         Draw(canvas, _title, Bounds.Left + 10, Bounds.Top + 20, XenonStyle.CyanBright);
         Draw(canvas, _help, Bounds.Right - 20, Bounds.Top + 20, MenuStyle.ColorText);
+        for (int i = 0; i < _statusLines.Length; i++)
+            Draw(canvas, _statusLines[i], Bounds.Left + 10, Bounds.Top + 38 + i * 15, _statusError ? SKColors.IndianRed : MenuStyle.ColorTextDim);
         canvas.Save();
         canvas.ClipRect(Viewport);
         canvas.Translate(0, Viewport.Top - _scroll);
@@ -201,22 +241,49 @@ internal sealed class DebugTuningPanel : IDisposable
             canvas.Restore();
             Draw(canvas, row.Number, rect.Right - 153, rect.Top + 17, row.Modified ? XenonStyle.OrangeAccent : MenuStyle.ColorText);
             if (row.Modified) Draw(canvas, row.DefaultNumber, rect.Right - 153, rect.Top + 33, MenuStyle.ColorTextDim);
-            Button(canvas, _minus, new(rect.Right - 88, rect.Top + 5, rect.Right - 64, rect.Bottom - 5));
-            Button(canvas, _plus, new(rect.Right - 58, rect.Top + 5, rect.Right - 34, rect.Bottom - 5));
-            Button(canvas, _reset, new(rect.Right - 28, rect.Top + 5, rect.Right - 4, rect.Bottom - 5));
+            var (min, max, _, _) = Limits(row.Value);
+            Button(canvas, _minus, new(rect.Right - 88, rect.Top + 5, rect.Right - 64, rect.Bottom - 5), row.DisplayValue > min);
+            Button(canvas, _plus, new(rect.Right - 58, rect.Top + 5, rect.Right - 34, rect.Bottom - 5), row.DisplayValue < max);
+            Button(canvas, _reset, new(rect.Right - 28, rect.Top + 5, rect.Right - 4, rect.Bottom - 5), row.DisplayValue != row.Default);
         }
+        if (_helpVisible)
+            for (int i = 0; i < _helpLines.Length; i++)
+                Draw(canvas, _helpLines[i], Bounds.Left + 10, _contentHeight - (_helpLines.Length - i - 1) * 16 - 3, MenuStyle.ColorText);
         canvas.Restore();
-        Button(canvas, _resetAll, new(Bounds.Left + 8, Bounds.Bottom - 32, Bounds.MidX - 4, Bounds.Bottom - 6));
-        Button(canvas, _folder, new(Bounds.MidX + 4, Bounds.Bottom - 32, Bounds.Right - 8, Bounds.Bottom - 6));
+        Button(canvas, _resetConfirm ? _confirmReset : _resetAll, ResetAllBounds);
+        Button(canvas, _folder, FolderBounds);
     }
 
     private SKPaint Color(SKColor color) { _paint.Color = color; return _paint; }
     private void Fill(SKCanvas canvas, SKRect rect, SKColor color) => canvas.DrawRect(rect, Color(color));
     private void Draw(SKCanvas canvas, SKTextBlob blob, float x, float y, SKColor color) => canvas.DrawText(blob, x, y, Color(color));
-    private void Button(SKCanvas canvas, SKTextBlob blob, SKRect rect)
+    private void Button(SKCanvas canvas, SKTextBlob blob, SKRect rect, bool enabled = true)
     {
-        Fill(canvas, rect, new SKColor(35, 49, 59));
-        Draw(canvas, blob, rect.MidX - blob.Bounds.Width / 2, rect.MidY + 4, MenuStyle.ColorText);
+        Fill(canvas, rect, enabled ? new SKColor(35, 49, 59) : new SKColor(19, 26, 31));
+        Draw(canvas, blob, rect.MidX - blob.Bounds.Width / 2, rect.MidY + 4, enabled ? MenuStyle.ColorText : MenuStyle.ColorTextDim);
+    }
+    private SKTextBlob[] Wrap(string text)
+    {
+        var lines = new List<SKTextBlob>();
+        foreach (string paragraph in text.Split('\n'))
+        {
+            string line = "";
+            foreach (string word in paragraph.Split(' '))
+            {
+                string next = line.Length == 0 ? word : line + " " + word;
+                if (_paint.MeasureText(next) > Width - 24 && line.Length != 0) { lines.Add(Blob(line)); line = word; }
+                else line = next;
+                // File paths/reasons can contain a single very long token.
+                while (_paint.MeasureText(line) > Width - 24 && line.Length > 1)
+                {
+                    int length = line.Length - 1;
+                    while (length > 1 && _paint.MeasureText(line[..length]) > Width - 24) length--;
+                    lines.Add(Blob(line[..length])); line = line[length..];
+                }
+            }
+            if (line.Length != 0) lines.Add(Blob(line));
+        }
+        return lines.ToArray();
     }
     private SKTextBlob Blob(string text) => SKTextBlob.Create(text, _font);
     private static string Format(double value) => value.ToString("0.###", CultureInfo.InvariantCulture);
@@ -232,6 +299,9 @@ internal sealed class DebugTuningPanel : IDisposable
         _disposed = true; ClearRows();
         foreach (var section in _sections) section.Dispose();
         _title.Dispose(); _minus.Dispose(); _plus.Dispose(); _reset.Dispose(); _resetAll.Dispose(); _folder.Dispose(); _help.Dispose();
+        _confirmReset.Dispose();
+        foreach (var line in _helpLines) line.Dispose();
+        foreach (var line in _statusLines) line.Dispose();
         _font.Dispose(); _italicFont.Dispose(); _italicTypeface.Dispose(); _paint.Dispose();
     }
 }

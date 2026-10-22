@@ -56,10 +56,11 @@ public sealed class DebugTuningPanelLayoutTests
         using var panel = new DebugTuningPanel(k => k) { Visible = true };
         using var surface = SKSurface.Create(new SKImageInfo(800, 600));
         var snapshot = Snapshot();
-        for (int i = 0; i < 100; i++) { panel.Prepare(800, 600, snapshot); panel.Render(surface.Canvas); }
+        var fileStatus = new DebugTuningFileStatus(1, DateTimeOffset.UtcNow, null);
+        for (int i = 0; i < 100; i++) { panel.Prepare(800, 600, snapshot); panel.SetFeedback(null, null, false, false, fileStatus, 1); panel.Render(surface.Canvas); }
         var canvas = surface.Canvas;
         long before = GC.GetAllocatedBytesForCurrentThread();
-        for (int i = 0; i < 100; i++) { panel.Prepare(800, 600, snapshot); panel.Render(canvas); }
+        for (int i = 0; i < 100; i++) { panel.Prepare(800, 600, snapshot); panel.SetFeedback(null, null, false, false, fileStatus, 1); panel.Render(canvas); }
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
     }
 }

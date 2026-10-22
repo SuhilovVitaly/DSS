@@ -131,5 +131,34 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         Assert.Equal(1, writer.Status.Revision);
     }
 
+    [Fact]
+    public async Task Reset_requires_matching_success_receipt_and_does_not_delete_a_later_edit()
+    {
+        var catalog = Catalog();
+        await using var writer = new DebugTuningFileWriter(_directory);
+        var changed = Change(catalog, 1); writer.Observe(changed); await writer.FlushAsync();
+        string before = File.ReadAllText(writer.CurrentPath);
+        writer.RegisterReset("rejected", 1);
+        writer.Observe(new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0, [], DebugTuning: changed,
+            CommandResults: [new("rejected", "", "", DebugTuningCommandTypes.Apply, CommandResultStatus.Rejected, 0, DebugTuningReasonCodes.ValueOutOfRange)]));
+        await writer.FlushAsync(); Assert.Equal(before, File.ReadAllText(writer.CurrentPath));
+        writer.RegisterReset("reset", 1);
+        var defaults = catalog with { Revision = 2 };
+        writer.Observe(defaults); await writer.FlushAsync(); Assert.True(File.Exists(writer.CurrentPath));
+        // The matching retained receipt is sufficient even after its original frame coalesces.
+        writer.Observe(new AuthoritativeSnapshot(2, 0, SimulationSpeed.Speed0, [], DebugTuning: defaults),
+            id => id == "reset" ? new(id, "", "", DebugTuningCommandTypes.Apply, CommandResultStatus.Executed, 0) : null);
+        await writer.FlushAsync(); Assert.False(File.Exists(writer.CurrentPath)); Assert.True(writer.Status.Deleted);
+        writer.Observe(defaults); await writer.FlushAsync(); Assert.False(File.Exists(writer.CurrentPath));
+        await writer.DeactivateAsync(); writer.Activate(); await writer.FlushAsync(); Assert.False(File.Exists(writer.CurrentPath));
+        writer.RegisterReset("reset-then-edit", 2);
+        var final = Change(catalog, 4);
+        writer.Observe(new AuthoritativeSnapshot(4, 0, SimulationSpeed.Speed0, [], DebugTuning: final,
+            CommandResults: [new("reset-then-edit", "", "", DebugTuningCommandTypes.Apply, CommandResultStatus.Executed, 0)]));
+        await writer.FlushAsync(); Assert.True(File.Exists(writer.CurrentPath)); Assert.False(writer.Status.Deleted);
+        Assert.True(DebugTuningFileFormat.TryParse(File.ReadAllText(writer.CurrentPath), catalog.Defaults, out var patch, out _));
+        Assert.Equal(5.4, patch.Values[0].Value, 8);
+    }
+
     public void Dispose() => Directory.Delete(_directory, recursive: true);
 }

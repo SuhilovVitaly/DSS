@@ -1,7 +1,7 @@
 ---
 epic: EP-0013-debug-tuning-panel
 story: EP-0013-US-0004-tuning-files
-stage: in-progress
+stage: done
 ---
 
 # Файлы
@@ -17,6 +17,12 @@ diff PASS. Both file tickets are implemented; AC4's reset button and confirmed
 file deletion are intentionally covered by existing US5-TK3. Source specification
 places that integration after this story; keep this story's final acceptance open
 until US5-TK3, without inventing a duplicate reset ticket or claiming a UI test.
+
+US5-TK3 now closes automated AC4: two-click reset sends all25 defaults as one
+command, matching executed receipt+confirmed defaults delete current JSON,
+rejection preserves it, later edit wins, reference JSON is byte-identical.
+Client regression116/116 and final16/16; solution build0warnings/errors, format
+PASS. Self-review/automated story criteria complete; native/human acceptance open.
 
 ## Публикация
 

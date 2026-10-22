@@ -5,12 +5,12 @@ using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client;
 
-internal sealed record DebugTuningFileStatus(long Revision, DateTimeOffset? WrittenAtUtc, string? Error);
+internal sealed record DebugTuningFileStatus(long Revision, DateTimeOffset? WrittenAtUtc, string? Error, bool Deleted = false);
 
 /// <summary>Confirmed revisions only; serialized, coalesced, atomic disk writes outside rendering.</summary>
 internal sealed class DebugTuningFileWriter : IAsyncDisposable
 {
-    private sealed record Request(DebugTuningSnapshot? Snapshot, TaskCompletionSource<bool>? Barrier = null);
+    private sealed record Request(DebugTuningSnapshot? Snapshot, TaskCompletionSource<bool>? Barrier = null, bool Delete = false);
     private readonly Channel<Request> _requests = Channel.CreateUnbounded<Request>(new() { SingleReader = true });
     private readonly object _gate = new();
     private readonly Task _worker;
@@ -19,6 +19,8 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
     private DebugTuningSnapshot? _latestObserved;
     private DebugTuningFileStatus _status = new(-1, null, null);
     private bool _active;
+    private bool _latestDelete;
+    private readonly Dictionary<string, long> _resets = new(StringComparer.Ordinal);
     private int _disposed;
     internal string DirectoryPath { get; }
     internal string CurrentPath => Path.Combine(DirectoryPath, "debug-tuning.json");
@@ -34,9 +36,45 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
         _worker = Task.Run(WriteLoopAsync);
     }
 
-    internal void Observe(AuthoritativeSnapshot? snapshot)
+    internal void RegisterReset(string commandId, long revision)
     {
-        if (snapshot?.DebugTuning is { } tuning) Observe(tuning);
+        lock (_gate) _resets[commandId] = revision;
+    }
+    internal void CancelReset(string commandId) { lock (_gate) _resets.Remove(commandId); }
+
+    internal void Observe(AuthoritativeSnapshot? snapshot, Func<string, CommandResult?>? findResult = null)
+    {
+        if (snapshot?.DebugTuning is not { } tuning) return;
+        bool delete = false;
+        lock (_gate)
+        {
+            // Results can be retained by SnapshotBuffer after transport coalescing.
+            foreach (var reset in _resets.ToArray())
+            {
+                CommandResult? result = findResult?.Invoke(reset.Key);
+                if (result is null && !snapshot.CommandResults.IsDefaultOrEmpty)
+                    foreach (var candidate in snapshot.CommandResults)
+                        if (candidate.CommandId == reset.Key) { result = candidate; break; }
+                if (result is null || result.Status == CommandResultStatus.Deferred ||
+                    result.Status == CommandResultStatus.Executed && tuning.Revision <= reset.Value) continue;
+                _resets.Remove(reset.Key);
+                if (result.Status == CommandResultStatus.Executed && IsDefault(tuning)) delete = true;
+            }
+            ObserveCore(tuning, delete);
+        }
+    }
+
+    private static bool IsDefault(DebugTuningSnapshot tuning)
+    {
+        if (tuning.Values.Length != tuning.Defaults.Length) return false;
+        foreach (var value in tuning.Values)
+        {
+            bool found = false;
+            foreach (var entry in tuning.Defaults)
+                if (value == entry) { found = true; break; }
+            if (!found) return false;
+        }
+        return true;
     }
 
     internal void Observe(DebugTuningSnapshot snapshot)
@@ -44,10 +82,15 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
         if (snapshot.Values.IsDefault || snapshot.Defaults.IsDefault) return;
         lock (_gate)
         {
-            if (_disposed != 0 || _latestObserved is { } previous && previous.Revision >= snapshot.Revision) return;
-            _latestObserved = snapshot;
-            if (_active && snapshot.Revision > 0) _requests.Writer.TryWrite(new(snapshot));
+            ObserveCore(snapshot, false);
         }
+    }
+
+    private void ObserveCore(DebugTuningSnapshot snapshot, bool delete)
+    {
+        if (_disposed != 0 || _latestObserved is { } previous && (previous.Revision > snapshot.Revision || previous.Revision == snapshot.Revision && !delete)) return;
+        _latestObserved = snapshot; _latestDelete = delete;
+        if (_active && snapshot.Revision > 0) _requests.Writer.TryWrite(new(snapshot, Delete: delete));
     }
 
     internal void Activate()
@@ -56,7 +99,7 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
         {
             if (_disposed != 0 || _active) return;
             _active = true;
-            if (_latestObserved is { Revision: > 0 } snapshot) _requests.Writer.TryWrite(new(snapshot));
+            if (_latestObserved is { Revision: > 0 } snapshot) _requests.Writer.TryWrite(new(snapshot, Delete: _latestDelete));
         }
     }
 
@@ -76,6 +119,7 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
     private async Task WriteLoopAsync()
     {
         DebugTuningSnapshot? pending = null;
+        bool pendingDelete = false;
         long attemptedAt = 0;
         var barriers = new List<TaskCompletionSource<bool>>();
         try
@@ -83,7 +127,7 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
             while (await _requests.Reader.WaitToReadAsync().ConfigureAwait(false))
             {
                 Drain();
-                if (pending is not null && pending.Revision != Status.Revision)
+                if (pending is not null && (pending.Revision != Status.Revision || pendingDelete != Status.Deleted))
                 {
                     double wait;
                     while (attemptedAt != 0 && (wait = 250 - Stopwatch.GetElapsedTime(attemptedAt).TotalMilliseconds) > 0)
@@ -92,8 +136,9 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
                     try
                     {
                         var written = DateTimeOffset.UtcNow;
-                        WriteAtomic(CurrentPath, DebugTuningFileFormat.Serialize(pending.Values, written), _commit);
-                        Volatile.Write(ref _status, new(pending.Revision, written, null));
+                        if (pendingDelete) File.Delete(CurrentPath);
+                        else WriteAtomic(CurrentPath, DebugTuningFileFormat.Serialize(pending.Values, written), _commit);
+                        Volatile.Write(ref _status, new(pending.Revision, written, null, pendingDelete));
                     }
                     catch (Exception error) when (error is IOException or UnauthorizedAccessException)
                     {
@@ -115,7 +160,7 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
         {
             while (_requests.Reader.TryRead(out var request))
             {
-                if (request.Snapshot is { } snapshot) pending = snapshot;
+                if (request.Snapshot is { } snapshot) { pending = snapshot; pendingDelete = request.Delete; }
                 if (request.Barrier is { } barrier) barriers.Add(barrier);
             }
         }

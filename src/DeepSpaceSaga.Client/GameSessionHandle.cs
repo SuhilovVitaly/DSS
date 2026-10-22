@@ -81,13 +81,13 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     internal Task FlushDebugTuningAsync()
     {
-        DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
+        ObserveDebugTuningFiles();
         return DebugTuningFiles.FlushAsync();
     }
 
     internal Task DeactivateDebugTuningWritesAsync()
     {
-        DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
+        ObserveDebugTuningFiles();
         return DebugTuningFiles.DeactivateAsync();
     }
     public bool IsDefeated => Buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated;
@@ -171,11 +171,20 @@ public sealed class GameSessionHandle : IAsyncDisposable
             TargetWorldX: x, TargetWorldY: y, ProfileId: profileId));
     }
 
-    public ValueTask SendDebugTuningAsync(DebugTuningPatch patch, out string commandId)
+    private void ObserveDebugTuningFiles() => DebugTuningFiles.Observe(Buffer.Latest?.Snapshot, Buffer.FindCommandResult);
+
+    public ValueTask SendDebugTuningAsync(DebugTuningPatch patch, out string commandId, bool resetAll = false)
     {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
         commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
-        return SubmitCommandAsync(new(commandId, sequence, "", "", DebugTuningCommandTypes.Apply, DebugTuning: patch));
+        if (resetAll) DebugTuningFiles.RegisterReset(commandId, Buffer.Latest?.Snapshot.DebugTuning?.Revision ?? 0);
+        return SendDebugAsync(new(commandId, sequence, "", "", DebugTuningCommandTypes.Apply, DebugTuning: patch));
+    }
+
+    private async ValueTask SendDebugAsync(PlayerCommand command)
+    {
+        try { await SubmitCommandAsync(command).ConfigureAwait(false); }
+        catch { DebugTuningFiles.CancelReset(command.CommandId); throw; }
     }
 
     public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
@@ -380,7 +389,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
                     // Enable and enqueue authoritative diagnostics before publishing a
                     // bootstrap that the UI may render immediately on another thread.
                     Buffer.UpdatePresentation(update);
-                    DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
+                    ObserveDebugTuningFiles();
                 }
                 if (!ct.IsCancellationRequested) Fail(new IOException("The combat connection closed unexpectedly."));
                 return;
@@ -389,7 +398,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
             {
                 if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
                 Buffer.Update(snapshot);
-                DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
+                ObserveDebugTuningFiles();
                 CombatMetrics.Record(snapshot);
                 if (!snapshot.CommandResults.IsDefaultOrEmpty)
                     foreach (var result in snapshot.CommandResults)
