@@ -38,10 +38,20 @@ No empty replacement implementation commit was created.
 
 ## Next work
 
-Complete mandatory reading and source grounding, then US1-TK2. Final US7 exists
+Mandatory reading complete: all 90 Markdown documents under Documentation, the
+entire target epic and execution prompt; semantic evidence is retained at
+`D:/DeepSpaceSaga/artifacts/validation/ep0013/reading/ep13-doc-semantics-{1,2,3,4}.json`.
+US1-TK2 implementation/checks complete (93/93 affected regression; zero-warning
+Engine build; scoped format PASS). Commit/push verification follows immediately.
+Final US7 exists
 and was expanded before main implementation to cover all six documentation
-outcomes required by the execution prompt. All other tickets remain pending.
+outcomes required by the execution prompt. US1-TK3 and later tickets remain pending.
 
 Graph source navigation is the existing ignored `src/graphify-out` export. It is
 historical EP12 navigation, not verification of EP13. Fresh semantic reading is
-in progress; the final rebuild must follow the final source/document changes.
+complete; the final rebuild must follow the final source/document changes.
+
+Preparation commit `517c6c333d5b8394ac9eef1d8b68e1112b5cc6f6` was pushed and its
+remote SHA verified identical. While reading, process AGENTS/CLAUDE were updated
+externally with artifact/worktree cleanup rules; those changes are preserved and
+excluded from EP13 commits. New evidence uses the mandated artifacts directory.

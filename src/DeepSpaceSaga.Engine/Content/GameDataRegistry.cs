@@ -76,6 +76,19 @@ internal sealed class GameDataRegistry
     public CatalogCompatibilityData CatalogCompatibility { get; }
     public string? LegacyCatalogFingerprint { get; }
 
+    /// <summary>Replace immutable module definitions without changing numeric type identities.</summary>
+    internal GameDataRegistry WithModuleTypes(ImmutableArray<ModuleTypeDefinition> definitions)
+    {
+        if (definitions.Length != ModuleTypes.Count)
+            throw new ArgumentException("Module overlay must preserve the catalog size.", nameof(definitions));
+        for (int i = 0; i < definitions.Length; i++)
+            if (definitions[i].TypeId != ModuleTypes.GetDefinition(i).TypeId)
+                throw new ArgumentException("Module overlay must preserve catalog index order.", nameof(definitions));
+        return new(ModuleCategories, TypeRegistry<ModuleTypeDefinition>.Create(definitions, "module overlay"),
+            ItemTypes, CommandDefinitions, FactoryTypes, Recipes, Dialogues, Quests, CatalogVersion,
+            LegacyCatalogFingerprint, StationMarketProfiles, ShipClasses, StationMarketEvents, CombatRules, FireModes);
+    }
+
     public static GameDataRegistry Empty { get; } = new(
         TypeRegistry<ModuleCategoryDefinition>.Empty,
         TypeRegistry<ModuleTypeDefinition>.Empty,
