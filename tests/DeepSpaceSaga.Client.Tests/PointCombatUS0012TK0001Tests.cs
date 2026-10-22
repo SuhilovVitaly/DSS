@@ -180,7 +180,7 @@ public sealed class PointCombatUS0012TK0001Tests
         await s.Wait(() => s.Handle.Buffer.FindCommandResult(stop) is { Status: CommandResultStatus.Executed });
         Assert.Null(s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).TurnHoldRateDegPerSec);
         count = s.World.Engine.ReceivedCommandCount; s.Down(Key.ShiftLeft); s.Down(Key.ShiftLeft);
-        await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).ActiveEngineCommandType == ShipEngineCommandTypes.Accelerate);
+        await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).ActiveEngineCommandType == ShipEngineCommandTypes.SpeedHold);
         Assert.Equal(count + 1, s.World.Engine.ReceivedCommandCount);
         Assert.Equal(0, s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).SpeedKmS);
         await s.Handle.SetSpeedAsync(SimulationSpeed.Speed1); s.World.SetReal(4000);
@@ -196,6 +196,21 @@ public sealed class PointCombatUS0012TK0001Tests
         await using var s = await Session.Create(); s.Down(Key.Z);
         if (deactivate) s.Screen.OnDeactivated(); else s.Screen.OnKeyDown(Key.Escape);
         s.Up(Key.Z); Assert.Equal(0, s.World.Engine.ReceivedCommandCount); Assert.Null(s.Screen.CurrentEvadePreview);
+    }
+
+    [Fact]
+    public async Task Evade_clears_held_axes_and_requires_a_fresh_maneuver_press()
+    {
+        await using var s = await Session.Create();
+        s.Down(Key.W); s.Down(Key.Left);
+        await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).SpeedHoldAccelerationKmS2 is not null);
+        s.Down(Key.Z); s.Up(Key.Z);
+        await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).Evasion is not null);
+        int count = s.World.Engine.ReceivedCommandCount;
+        s.Render(); s.Up(Key.W); s.Up(Key.Left); Assert.Equal(count, s.World.Engine.ReceivedCommandCount);
+        s.Down(Key.W);
+        await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).SpeedHoldAccelerationKmS2 is not null);
+        Assert.Null(s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).Evasion);
     }
 
     [Fact]
@@ -219,13 +234,13 @@ public sealed class PointCombatUS0012TK0001Tests
     }
 
     [Fact]
-    public async Task Outside_combat_arrows_keep_step_turn_command()
+    public async Task Outside_combat_arrows_use_the_same_continuous_turn_command()
     {
         await using var s = await Session.Create(combat: false); Assert.Empty(s.Screen.PointThreats);
         Assert.NotEqual(CombatEncounterState.Active, s.Handle.Buffer.Presented!.Snapshot.Encounter!.State);
         s.Down(Key.Left);
-        await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).ActiveEngineCommandType == ShipEngineCommandTypes.TurnLeftStep);
-        Assert.Null(s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).TurnHoldRateDegPerSec);
+        await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).TurnHoldRateDegPerSec < 0);
+        Assert.Equal(ShipEngineCommandTypes.TurnHold, s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).ActiveEngineCommandType);
     }
 
     [Fact]

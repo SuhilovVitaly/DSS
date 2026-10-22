@@ -185,11 +185,11 @@ public class KeyboardEdgeTrackerTests
     public void Ctrl_s_reports_s_and_ctrl_when_control_is_down()
     {
         var tracker = new KeyboardEdgeTracker();
-        var pressed = new HashSet<Key> { Key.S };
+        var pressed = new HashSet<Key>();
 
         Assert.Empty(Poll(tracker, pressed));
 
-        pressed.Add(Key.ControlLeft);
+        pressed.UnionWith(new[] { Key.ControlLeft, Key.S });
         // Both ControlLeft and S are press edges on the same frame.
         var result = Poll(tracker, pressed);
         Assert.Contains(Key.S, result);
@@ -211,14 +211,13 @@ public class KeyboardEdgeTrackerTests
     }
 
     [Fact]
-    public void S_without_ctrl_is_never_reported()
+    public void S_without_ctrl_is_reported_once_for_braking()
     {
-        // The Ship overlay must only open on Ctrl+S, never a bare S press
-        // (S alone is free for other uses / typed text elsewhere).
+        // The screen distinguishes bare S braking from Ctrl+S opening Ship.
         var tracker = new KeyboardEdgeTracker();
         var pressed = new HashSet<Key> { Key.S };
 
-        Assert.Empty(Poll(tracker, pressed));
+        Assert.Equal(new[] { Key.S }, Poll(tracker, pressed));
 
         PollBoth(tracker, pressed, out var p, out var r);
         Assert.Empty(p);

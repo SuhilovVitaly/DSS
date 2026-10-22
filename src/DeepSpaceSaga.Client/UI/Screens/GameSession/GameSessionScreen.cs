@@ -740,8 +740,7 @@ public sealed partial class GameSessionScreen : IScreen
             return ScreenEvent.None;
         }
 
-        // Only ever arrives as Ctrl+S — same gating as Ctrl+F/Ctrl+I above.
-        if (key == Key.S)
+        if (key == Key.S && IsCtrlDown)
             return ScreenEvent.OpenShip;
 
         if (key == Key.Space)
@@ -760,21 +759,6 @@ public sealed partial class GameSessionScreen : IScreen
         if (key >= Key.Number1 && key <= Key.Number4)
         {
             ApplySpeed(SpeedValues[1 + (int)(key - Key.Number1)]);
-            return ScreenEvent.None;
-        }
-
-        string? commandType = key switch
-        {
-            Key.Up => ShipEngineCommandTypes.Accelerate,
-            Key.Down => ShipEngineCommandTypes.Brake,
-            Key.Left => ShipEngineCommandTypes.TurnLeftStep,
-            Key.Right => ShipEngineCommandTypes.TurnRightStep,
-            _ => null
-        };
-
-        if (commandType is not null && CanSendEngineCommand(commandType, _buffer.Presented?.Snapshot))
-        {
-            SendEngineCommand(commandType);
             return ScreenEvent.None;
         }
 

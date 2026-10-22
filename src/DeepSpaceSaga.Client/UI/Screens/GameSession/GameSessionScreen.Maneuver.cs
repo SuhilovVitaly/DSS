@@ -29,7 +29,6 @@ public sealed partial class GameSessionScreen
     private readonly HashSet<Key> _heldFullSpeed = [];
     private Guid? _maneuverSession;
     private bool _maneuverInitialized;
-    private SimulationSpeed _maneuverLastSpeed;
     private Task? _maneuverSendTask;
 
     internal static IReadOnlyList<PointThreat> AssessPointThreats(ObjectMotionSnapshot player, IEnumerable<ObjectMotionSnapshot> visible)
@@ -91,20 +90,20 @@ public sealed partial class GameSessionScreen
         var session = _buffer.PresentationSessionId;
         if (!_maneuverInitialized || session != _maneuverSession)
         {
-            _heldTurn = null; _heldEvade = null; _heldFullSpeed.Clear(); CurrentThreatId = null;
+            CancelManeuverInput(sendReleases: false); CurrentThreatId = null;
             CurrentEvadePreview = null; LastManeuverCommandId = null; ManeuverFeedback = null;
-            _maneuverSession = session; _maneuverInitialized = true; _maneuverLastSpeed = _buffer.CurrentSpeed;
+            _maneuverSession = session; _maneuverInitialized = true;
             _ = _maneuverSendTask?.Exception; _maneuverSendTask = null;
         }
-        if (_maneuverLastSpeed != SimulationSpeed.Speed0 && _buffer.CurrentSpeed == SimulationSpeed.Speed0) CancelManeuverInput();
-        _maneuverLastSpeed = _buffer.CurrentSpeed;
         if (_maneuverSendTask is { IsFaulted: true } or { IsCanceled: true })
         { _ = _maneuverSendTask.Exception; ManeuverFeedback = PointLaunchReason("send_failed"); _maneuverSendTask = null; }
         if (LastManeuverCommandId is { } id && _buffer.FindCommandResult(id) is { Status: CommandResultStatus.Rejected or CommandResultStatus.Failed } rejected)
             ManeuverFeedback = PointLaunchReason(rejected.ReasonCode ?? "command_rejected");
-        if (_buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || FindPlayerShip(_renderStates) is not { } player ||
-            snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
-        { CancelManeuverInput(); PointThreats = []; return; }
+        if (_buffer.Latest?.Snapshot is not { ActiveDialogue: null } snapshot ||
+            snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated || snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDocked))
+        { CancelManeuverInput(sendReleases: false); PointThreats = []; return; }
+        ReconcileManualAxes();
+        if (FindPlayerShip(_renderStates) is not { } player) { PointThreats = []; return; }
         PointThreats = AssessPointThreats(player.Pose.ToSnapshot(), _renderStates
             .Where(s => !s.Source.IsDestroyed && s.Source.ObservedProjectile is { Kind: ProjectileKind.Torpedo }).Select(s => s.Pose.ToSnapshot()));
         if (_heldEvade is { } held && !PointThreats.Any(t => t.Id == held.ThreatId)) _heldEvade = null;
@@ -139,8 +138,8 @@ public sealed partial class GameSessionScreen
             if (preview) { CancelPointAim(); return true; }
             return false;
         }
-        if (key == Key.Space) { CancelManeuverInput(); return false; }
         if (IsCtrlDown) return false;
+        if (HandleManualAxisKey(key)) return true;
         if (key == CombatInputs.NextThreat && PointThreats.Count > 0)
         {
             int index = PointThreats.ToList().FindIndex(t => t.Id == CurrentThreatId);
@@ -151,41 +150,13 @@ public sealed partial class GameSessionScreen
             if (CurrentThreatId is { } threat) _heldEvade = (key, key == CombatInputs.EvadeLeft ? EvadeSide.Left : EvadeSide.Right, threat);
             RefreshManeuverInput(); return true;
         }
-        if (CombatInputs.FullSpeed.Contains(key))
-        {
-            bool first = _heldFullSpeed.Count == 0;
-            _heldFullSpeed.Add(key);
-            if (first && ManeuverEngineReady(ManeuverEngine()) && CanSendEngineCommand(ShipEngineCommandTypes.Accelerate, _buffer.Presented?.Snapshot))
-                SendEngineCommand(ShipEngineCommandTypes.Accelerate);
-            return true;
-        }
-        if (CombatInputs.TurnLeft.Contains(key) || CombatInputs.TurnRight.Contains(key))
-        {
-            var direction = CombatInputs.TurnLeft.Contains(key) ? TurnDirection.Left : TurnDirection.Right;
-            if (UsesCombatTurnInput)
-            {
-                if (_heldTurn?.Direction != direction && ManeuverEngineReady(ManeuverEngine()) && _handle is not null &&
-                    _buffer.Presented?.Snapshot.PlayerShipObjectId is { } owner && ManeuverEngine() is { } engine)
-                {
-                    _heldEvade = null; CurrentEvadePreview = null;
-                    _heldTurn = (owner, engine.ModuleId, direction); SendHeldTurn(owner, engine.ModuleId, direction, true);
-                }
-            }
-            else
-            {
-                string command = direction == TurnDirection.Left ? ShipEngineCommandTypes.TurnLeftStep : ShipEngineCommandTypes.TurnRightStep;
-                if (CanSendEngineCommand(command, _buffer.Presented?.Snapshot)) SendEngineCommand(command);
-            }
-            return true;
-        }
-        return UsesCombatTurnInput && key is Key.Left or Key.Right;
+        return false;
     }
 
     private void ReleaseManeuverKey(Key key)
     {
         _heldFullSpeed.Remove(key);
-        if (_heldTurn is { } turn && (CombatInputs.TurnLeft.Contains(key) && turn.Direction == TurnDirection.Left || CombatInputs.TurnRight.Contains(key) && turn.Direction == TurnDirection.Right))
-        { _heldTurn = null; SendHeldTurn(turn.Owner, turn.Module, turn.Direction, false); }
+        if (_turnAxisKeys.Remove(key) | _speedAxisKeys.Remove(key)) ReconcileManualAxes();
         if (_heldEvade is not { } evade || evade.Key != key) return;
         _heldEvade = null; CurrentEvadePreview = null;
         SubmitPointEvade(evade.ThreatId, evade.Side);
@@ -197,6 +168,7 @@ public sealed partial class GameSessionScreen
         if (_handle is null || !ManeuverEngineReady(ManeuverEngine()) || ManeuverEngine() is not { } engine ||
             _buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated ||
             !PointThreats.Any(t => t.Id == threatId) || snapshot.PlayerShipObjectId is not { } owner) return;
+        CancelManeuverInput();
         try
         {
             _maneuverSendTask = _handle.SendEvadeAsync(owner, engine.ModuleId, threatId, side, out var id).AsTask();
@@ -215,11 +187,13 @@ public sealed partial class GameSessionScreen
         }
         catch (Exception) { ManeuverFeedback = PointLaunchReason("send_failed"); }
     }
-    private void CancelManeuverInput()
+    private void CancelManeuverInput(bool sendReleases = true)
     {
         _heldEvade = null; CurrentEvadePreview = null; _heldFullSpeed.Clear();
-        if (_heldTurn is not { } turn) return;
-        _heldTurn = null; SendHeldTurn(turn.Owner, turn.Module, turn.Direction, false);
+        _turnAxisKeys.Clear(); _speedAxisKeys.Clear(); _speedLatchRequested = false;
+        if (_heldTurn is { } turn && sendReleases) SendHeldTurn(turn.Owner, turn.Module, turn.Direction, false);
+        if (_heldSpeed is { } speed && sendReleases) SendHeldSpeed(speed.Owner, speed.Module, speed.Direction, false, false);
+        _heldTurn = null; _heldSpeed = null;
     }
 
     private void DrawManeuverInput(SKCanvas canvas)

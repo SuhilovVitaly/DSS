@@ -31,7 +31,7 @@ internal sealed class KeyboardEdgeTracker
         return _reader!;
     }
 
-    private static bool Down(Key key, Func<Key, bool> reader, bool control) => reader(key) && (key is not (Key.I or Key.S) || control);
+    private static bool Down(Key key, Func<Key, bool> reader, bool control) => reader(key) && (key != Key.I || control);
 
     public (int pressedCount, int releasedCount) PollBoth(IKeyboard keyboard, Span<Key> pressed, Span<Key> released) =>
         PollBoth(Reader(keyboard), pressed, released);

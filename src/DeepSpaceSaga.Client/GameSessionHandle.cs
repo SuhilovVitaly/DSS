@@ -204,6 +204,15 @@ public sealed class GameSessionHandle : IAsyncDisposable
             ThreatProjectileId: threatProjectileId, EvadeSide: side));
     }
 
+    public ValueTask SendSpeedHoldAsync(string objectId, string moduleId, SpeedDirection direction, bool active, bool latched, out string commandId)
+    {
+        if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction));
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId, ShipEngineCommandTypes.SpeedHold,
+            SpeedDirection: direction, Active: active, Latched: latched));
+    }
+
     public ValueTask SendTurnHoldAsync(string objectId, string moduleId, TurnDirection direction, bool active, out string commandId)
     {
         if (!Enum.IsDefined(direction)) throw new ArgumentOutOfRangeException(nameof(direction));

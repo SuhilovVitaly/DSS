@@ -88,8 +88,10 @@ scoped format PASS. US6-TK2 published `55fb71314fb16440a4e681cb8b8dcae356ea60ae`
 Motion251/251, solution0warnings/errors, format PASS.
 US6-TK3 published `c8cd504b1873a352cac1587dbd4981283d7c90e9`:
 Engine304/304, Client149/149, solution0warnings/errors, format PASS.
-US6-TK4 Client161/161, build0warnings/errors, scoped format PASS; schema2 and v1
-migration tested. Next: actual native S and independent key stacks/Shift latch.
+US6-TK4 published `f87b1afd6b1689ddce75efd5cee00c0c9f63d4bb`:
+Client161/161, build0warnings/errors, scoped format PASS; schema2 and v1
+migration tested. US6-TK5 Client202/202, solution0warnings/errors, format PASS;
+S delivery, axis stacks, Shift latch, recovery and focus resync tested. Next: hints.
 US6–US7 remain pending. US1–US5 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 
