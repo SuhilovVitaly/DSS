@@ -127,7 +127,7 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
         Assert.True(Screen.AvailableMapRect().Contains(point.X, point.Y), DebugMap(x, y));
     }
     internal void Aim(bool counter = false, int profile = 2)
-    { Screen.OnKeyDown(counter ? Key.W : Key.Q); Screen.OnKeyDown(profile switch { 1 => Key.Number1, 2 => Key.Number2, _ => Key.Number3 }); Render(); }
+    { Screen.OnKeyDown(counter ? Key.E : Key.Q); Screen.OnKeyDown(profile switch { 1 => Key.Number1, 2 => Key.Number2, _ => Key.Number3 }); Render(); }
     internal async Task<CommandResult> Launch(bool counter = false, double x = 300, double y = 0, int profile = 2)
     {
         Expose(x, y); Aim(counter, profile); Click(x, y);

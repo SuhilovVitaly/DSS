@@ -87,10 +87,10 @@ public sealed class PointCombatUS0011TK0003Tests
     [Fact]
     public void Alt_edges_precede_aim_and_focus_resync_preserves_held_state()
     {
-        var tracker = new KeyboardEdgeTracker(); var down = new HashSet<Key> { Key.AltRight, Key.W };
+        var tracker = new KeyboardEdgeTracker(); var down = new HashSet<Key> { Key.AltRight, Key.E };
         var pressed = new Key[64]; var released = new Key[64];
         var (count, _) = tracker.PollBoth(down.Contains, pressed, released);
-        Assert.Equal(new[] { Key.AltRight, Key.W }, pressed[..count]);
+        Assert.Equal(new[] { Key.AltRight, Key.E }, pressed[..count]);
         tracker.ResyncToCurrentState(down.Contains);
         (count, _) = tracker.PollBoth(down.Contains, pressed, released); Assert.Equal(0, count);
         down.Clear(); var (_, up) = tracker.PollBoth(down.Contains, pressed, released);
@@ -120,7 +120,7 @@ public sealed class PointCombatUS0011TK0003Tests
         await Wait(() => handle.Buffer.Presented?.Snapshot.MotionTimeMs == 12000);
         var foreign = Assert.Single(handle.Buffer.Presented!.Snapshot.Objects, o => o.ObservedProjectile is not null);
         Assert.Equal(280, foreign.X, 6);
-        var tracker = new KeyboardEdgeTracker(); var down = new HashSet<Key> { Key.W };
+        var tracker = new KeyboardEdgeTracker(); var down = new HashSet<Key> { Key.E };
         if (alt) down.Add(Key.AltLeft);
         var pressed = new Key[64]; var released = new Key[64];
         var (count, _) = tracker.PollBoth(down.Contains, pressed, released);

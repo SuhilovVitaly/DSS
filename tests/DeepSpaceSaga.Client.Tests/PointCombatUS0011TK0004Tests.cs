@@ -49,13 +49,13 @@ public sealed class PointCombatUS0011TK0004Tests
     {
         await using var s = await Session.Create();
         s.Click(400); // unrelated object selection before aim must not become a launch target
-        s.Screen.OnKeyDown(counter ? Key.W : Key.Q); s.Screen.OnKeyDown(Key.Number2);
+        s.Screen.OnKeyDown(counter ? Key.E : Key.Q); s.Screen.OnKeyDown(Key.Number2);
         string module = s.Screen.PointAim!.ModuleId;
         string profile = s.Screen.PointAim.ProfileId;
         s.Click(250, 30);
         Assert.True(s.Screen.LastPointCommandId is not null, $"Aim={s.Screen.PointAim}; feedback={s.Screen.PointAimFeedback}; camera={s.Screen.CameraFocusX},{s.Screen.CameraFocusY}/{s.Screen.CameraPixelsPerWorldUnit}; free={s.Screen.AvailableMapRect()}; modules={string.Join(';', s.Handle.Buffer.Presented!.Snapshot.InstalledModules.Where(m => m.LauncherCombat is not null || m.Defense is not null).Select(m => m.ModuleId + ':' + m.PowerState + '/' + m.OperationalState))}");
         string id = s.Screen.LastPointCommandId!;
-        s.Screen.OnKeyDown(counter ? Key.Q : Key.W); // change active UI context after submission
+        s.Screen.OnKeyDown(counter ? Key.Q : Key.E); // change active UI context after submission
         await s.Wait(() => s.Handle.Buffer.FindCommandResult(id) is not null);
         var result = s.Handle.Buffer.FindCommandResult(id)!;
         Assert.Equal(CommandResultStatus.Executed, result.Status);

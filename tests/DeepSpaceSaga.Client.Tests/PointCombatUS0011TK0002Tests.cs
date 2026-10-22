@@ -153,7 +153,7 @@ public sealed class PointCombatUS0011TK0002Tests
             case "point": s.Move(11); s.Move(10); break;
             case "profile": s.Screen.OnKeyDown(Key.Number3); s.Screen.OnKeyDown(Key.Number1); break;
             case "cancel": s.Screen.OnKeyDown(Key.Escape); s.Screen.OnKeyDown(Key.Q); break;
-            case "launcher": s.Screen.OnKeyDown(Key.W); s.Screen.OnKeyDown(Key.Q); break;
+            case "launcher": s.Screen.OnKeyDown(Key.E); s.Screen.OnKeyDown(Key.Q); break;
             case "timeout": s.RealMs = 1001; break;
         }
         s.Click(10); Assert.Equal(0, s.World.Engine.ReceivedCommandCount);

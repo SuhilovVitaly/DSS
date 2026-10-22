@@ -83,7 +83,7 @@ public sealed class PointCombatUS0011TK0001Tests
         Assert.Equal(zoom, s.Screen.CameraPixelsPerWorldUnit);
         s.Tap(Key.Number1); Assert.Equal("slow", s.Screen.PointAim.ProfileId);
         s.Tap(Key.Escape); Assert.Null(s.Screen.PointAim);
-        s.Tap(Key.W); Assert.Equal(ProjectileKind.Countermissile, s.Screen.PointAim!.Kind);
+        s.Tap(Key.E); Assert.Equal(ProjectileKind.Countermissile, s.Screen.PointAim!.Kind);
         Assert.Equal("MOD-PLAYER-COUNTERMEASURE-01", s.Screen.PointAim.ModuleId);
         s.Tap(Key.Number2); Assert.Equal("fast", s.Screen.PointAim.ProfileId);
         s.Tap(Key.Number3); Assert.Equal("fast", s.Screen.PointAim.ProfileId);
@@ -135,7 +135,7 @@ public sealed class PointCombatUS0011TK0001Tests
             200, 0, "wide", out var id);
         await s.Wait(() => s.Handle.Buffer.FindCommandResult(id) is { Status: CommandResultStatus.Executed } &&
             s.Handle.Buffer.Presented!.Snapshot.InstalledModules.Single(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-01").Defense!.ReadyAtMotionTimeMs > 0);
-        s.Tap(Key.W); Assert.Equal("MOD-PLAYER-COUNTERMEASURE-02", s.Screen.PointAim!.ModuleId);
+        s.Tap(Key.E); Assert.Equal("MOD-PLAYER-COUNTERMEASURE-02", s.Screen.PointAim!.ModuleId);
         foreach (string name in new[] { "Navigation", "Maneuver", "Engine", "Space Control", "Torpedo Launcher" })
         {
             var row = s.Screen.CommandsPanel.CommandPanelRows.FirstOrDefault(r => r.Name == name && r.Opened);
@@ -176,7 +176,7 @@ public sealed class PointCombatUS0011TK0001Tests
     public void Shipped_input_is_packaged_and_invalid_bindings_report_path()
     {
         var loaded = CombatInputSettings.Load(SourceInput);
-        Assert.Equal(Key.Q, loaded.TorpedoAim); Assert.Equal(Key.W, loaded.CountermissileAim);
+        Assert.Equal(Key.Q, loaded.TorpedoAim); Assert.Equal(Key.E, loaded.CountermissileAim);
         Assert.Equal(new[] { Key.Number1, Key.Number2, Key.Number3 }, loaded.Profiles.ToArray());
         Assert.Equal(Key.Escape, loaded.Cancel); Assert.Equal(MouseButton.Left, loaded.LaunchMouse);
         Assert.Equal(MouseButton.Right, loaded.CancelMouse); Assert.True(loaded.WheelProfiles);
@@ -196,7 +196,7 @@ public sealed class PointCombatUS0011TK0001Tests
     }
 
     [Theory]
-    [InlineData("schemaVersion", "2")]
+    [InlineData("schemaVersion", "3")]
     [InlineData("profiles", "empty")]
     [InlineData("cancel", "missing")]
     [InlineData("wheelProfiles", "string")]
@@ -210,7 +210,7 @@ public sealed class PointCombatUS0011TK0001Tests
             var json = JsonNode.Parse(File.ReadAllText(SourceInput))!.AsObject();
             if (change == "missing") json.Remove(key);
             else json[key] = change switch
-            { "2" => JsonValue.Create(2), "empty" => new JsonArray(), "reserved" => JsonValue.Create("F10"), _ => JsonValue.Create("invalid") };
+            { "3" => JsonValue.Create(3), "empty" => new JsonArray(), "reserved" => JsonValue.Create("F10"), _ => JsonValue.Create("invalid") };
             File.WriteAllText(file, json.ToJsonString());
             var error = Assert.Throws<InvalidDataException>(() => CombatInputSettings.Load(file));
             Assert.Contains(file, error.Message); Assert.Contains(key, error.Message);

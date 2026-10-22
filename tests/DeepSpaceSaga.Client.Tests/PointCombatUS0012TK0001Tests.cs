@@ -36,8 +36,8 @@ public sealed class PointCombatUS0012TK0001Tests
     [Theory]
     [InlineData(Key.Left)]
     [InlineData(Key.Right)]
-    [InlineData(Key.A)]
-    [InlineData(Key.D)]
+    [InlineData(Key.Z)]
+    [InlineData(Key.C)]
     public async Task Native_focus_loss_clears_input_before_keyboard_resync(Key key)
     {
         await using var f = await PointCombatUiFixture.Create(hostileShots: 1);
@@ -145,8 +145,8 @@ public sealed class PointCombatUS0012TK0001Tests
     }
 
     [Theory]
-    [InlineData(Key.A, EvadeSide.Left)]
-    [InlineData(Key.D, EvadeSide.Right)]
+    [InlineData(Key.Z, EvadeSide.Left)]
+    [InlineData(Key.C, EvadeSide.Right)]
     public async Task Evade_preview_on_hold_command_on_release(Key key, EvadeSide side)
     {
         await using var s = await Session.Create();
@@ -193,9 +193,9 @@ public sealed class PointCombatUS0012TK0001Tests
     [InlineData(true)]
     public async Task Cancel_or_focus_loss_does_not_send_held_evasion(bool deactivate)
     {
-        await using var s = await Session.Create(); s.Down(Key.A);
+        await using var s = await Session.Create(); s.Down(Key.Z);
         if (deactivate) s.Screen.OnDeactivated(); else s.Screen.OnKeyDown(Key.Escape);
-        s.Up(Key.A); Assert.Equal(0, s.World.Engine.ReceivedCommandCount); Assert.Null(s.Screen.CurrentEvadePreview);
+        s.Up(Key.Z); Assert.Equal(0, s.World.Engine.ReceivedCommandCount); Assert.Null(s.Screen.CurrentEvadePreview);
     }
 
     [Fact]
@@ -212,9 +212,9 @@ public sealed class PointCombatUS0012TK0001Tests
     [Fact]
     public async Task Disabled_engine_can_preview_but_does_not_submit_evade_or_turn()
     {
-        await using var s = await Session.Create(enabled: false); s.Down(Key.A);
+        await using var s = await Session.Create(enabled: false); s.Down(Key.Z);
         Assert.NotNull(s.Screen.CurrentEvadePreview); Assert.False(s.Screen.CurrentEvadePreview.CanEscape);
-        s.Up(Key.A); s.Down(Key.Left); s.Up(Key.Left); s.Down(Key.ShiftLeft);
+        s.Up(Key.Z); s.Down(Key.Left); s.Up(Key.Left); s.Down(Key.ShiftLeft);
         Assert.Equal(0, s.World.Engine.ReceivedCommandCount);
     }
 
@@ -241,9 +241,9 @@ public sealed class PointCombatUS0012TK0001Tests
         float x = (float)(960 + (300 - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
         float y = (float)(600 - screen.CameraFocusY * screen.CameraPixelsPerWorldUnit);
         screen.OnMouseMove(x, y); screen.OnMouseDown(x, y); Assert.Equal("b", screen.CurrentThreatId);
-        screen.OnKeyDown(Key.A); Assert.Equal("b", screen.CurrentEvadePreview!.ThreatId);
+        screen.OnKeyDown(Key.Z); Assert.Equal("b", screen.CurrentEvadePreview!.ThreatId);
         buffer.Update(scene with { SnapshotSequence = scene.SnapshotSequence + 1, Objects = scene.Objects.Where(o => o.ObjectId != "b").ToImmutableArray() });
-        screen.Render(canvas, 1920, 1200); Assert.Null(screen.CurrentEvadePreview); screen.OnKeyUp(Key.A);
+        screen.Render(canvas, 1920, 1200); Assert.Null(screen.CurrentEvadePreview); screen.OnKeyUp(Key.Z);
         screen.OnDeactivated();
     }
 
@@ -255,7 +255,7 @@ public sealed class PointCombatUS0012TK0001Tests
         try
         {
             var json = JsonNode.Parse(File.ReadAllText(source))!.AsObject(); json["evadeLeft"] = "Z";
-            json["turnLeft"] = "J"; json["fullSpeed"] = new JsonArray("G"); File.WriteAllText(file, json.ToJsonString());
+            json["turnLeft"] = new JsonArray("J"); json["fullSpeed"] = new JsonArray("G"); File.WriteAllText(file, json.ToJsonString());
             var input = CombatInputSettings.Load(file); await using var s = await Session.Create(bindings: input);
             s.Down(Key.A); Assert.Null(s.Screen.CurrentEvadePreview); s.Up(Key.A);
             s.Down(Key.Z); Assert.Equal(EvadeSide.Left, s.Screen.CurrentEvadePreview!.Side); s.Up(Key.Z);
@@ -265,9 +265,10 @@ public sealed class PointCombatUS0012TK0001Tests
             s.Down(Key.J); id = s.Screen.LastManeuverCommandId!;
             await s.Wait(() => s.Handle.Buffer.FindCommandResult(id) is { Status: CommandResultStatus.Executed });
             Assert.Equal(ShipEngineCommandTypes.TurnHold, s.Handle.Buffer.FindCommandResult(id)!.CommandType); s.Up(Key.J);
-            foreach (string key in new[] { "evadeLeft", "evadeRight", "nextThreat", "turnLeft", "turnRight", "fullSpeed" }) json.Remove(key);
+            foreach (string key in new[] { "evadeLeft", "evadeRight", "nextThreat", "turnLeft", "turnRight", "fullSpeed", "accelerate", "brake" }) json.Remove(key);
+            json["schemaVersion"] = 1;
             File.WriteAllText(file, json.ToJsonString()); var legacy = CombatInputSettings.Load(file);
-            Assert.Equal(Key.A, legacy.EvadeLeft); Assert.Equal(new[] { Key.ShiftLeft, Key.ShiftRight }, legacy.FullSpeed.ToArray());
+            Assert.Equal(Key.Z, legacy.EvadeLeft); Assert.Equal(new[] { Key.ShiftLeft, Key.ShiftRight }, legacy.FullSpeed.ToArray());
         }
         finally { File.Delete(file); }
     }

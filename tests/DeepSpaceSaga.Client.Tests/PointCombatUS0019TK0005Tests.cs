@@ -19,7 +19,7 @@ public sealed class PointCombatUS0019TK0005Tests
     {
         string root = deployed ? AppContext.BaseDirectory : Source;
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
-        string[] added = [ShipEngineCommandTypes.TurnHold, ManeuverCommandTypes.Evade, CombatEncounterCommandTypes.AcknowledgeResults];
+        string[] added = [ShipEngineCommandTypes.TurnHold, ShipEngineCommandTypes.SpeedHold, ManeuverCommandTypes.Evade, CombatEncounterCommandTypes.AcknowledgeResults];
         string[] original = ["engine.accelerate", "engine.brake", "engine.maintainSpeed", "engine.turnLeftStep", "engine.turnRightStep",
             "engine.turnLeftUntilCancel", "engine.turnRightUntilCancel", "engine.maintainCourse", "engine.speedSynchronization",
             "engine.directionSynchronization", "engine.orbit", "navigation.approach", "trade.refuel"];

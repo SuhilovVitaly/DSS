@@ -159,9 +159,9 @@ public sealed partial class GameSessionScreen
                 SendEngineCommand(ShipEngineCommandTypes.Accelerate);
             return true;
         }
-        if (key == CombatInputs.TurnLeft || key == CombatInputs.TurnRight)
+        if (CombatInputs.TurnLeft.Contains(key) || CombatInputs.TurnRight.Contains(key))
         {
-            var direction = key == CombatInputs.TurnLeft ? TurnDirection.Left : TurnDirection.Right;
+            var direction = CombatInputs.TurnLeft.Contains(key) ? TurnDirection.Left : TurnDirection.Right;
             if (UsesCombatTurnInput)
             {
                 if (_heldTurn?.Direction != direction && ManeuverEngineReady(ManeuverEngine()) && _handle is not null &&
@@ -184,7 +184,7 @@ public sealed partial class GameSessionScreen
     private void ReleaseManeuverKey(Key key)
     {
         _heldFullSpeed.Remove(key);
-        if (_heldTurn is { } turn && (key == CombatInputs.TurnLeft && turn.Direction == TurnDirection.Left || key == CombatInputs.TurnRight && turn.Direction == TurnDirection.Right))
+        if (_heldTurn is { } turn && (CombatInputs.TurnLeft.Contains(key) && turn.Direction == TurnDirection.Left || CombatInputs.TurnRight.Contains(key) && turn.Direction == TurnDirection.Right))
         { _heldTurn = null; SendHeldTurn(turn.Owner, turn.Module, turn.Direction, false); }
         if (_heldEvade is not { } evade || evade.Key != key) return;
         _heldEvade = null; CurrentEvadePreview = null;

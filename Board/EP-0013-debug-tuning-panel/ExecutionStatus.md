@@ -86,7 +86,10 @@ coverage/self-review complete. US6-TK1 published
 `2e9be5f85d720e40156cda87e713cf5dd334ce86`: contracts269/269, solution0warnings/errors,
 scoped format PASS. US6-TK2 published `55fb71314fb16440a4e681cb8b8dcae356ea60ae`:
 Motion251/251, solution0warnings/errors, format PASS.
-US6-TK3 Engine304/304, Client149/149, solution0warnings/errors, format PASS.
+US6-TK3 published `c8cd504b1873a352cac1587dbd4981283d7c90e9`:
+Engine304/304, Client149/149, solution0warnings/errors, format PASS.
+US6-TK4 Client161/161, build0warnings/errors, scoped format PASS; schema2 and v1
+migration tested. Next: actual native S and independent key stacks/Shift latch.
 US6–US7 remain pending. US1–US5 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 
