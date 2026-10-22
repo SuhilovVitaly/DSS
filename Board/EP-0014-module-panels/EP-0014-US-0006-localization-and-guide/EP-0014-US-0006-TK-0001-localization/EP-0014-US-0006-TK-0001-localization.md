@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0006-localization-and-guide
 ticket: EP-0014-US-0006-TK-0001-localization
 title: localization
-stage: approved
+stage: implemented
 layer: content-data
 depends_on: [EP-0014-US-0005-TK-0003-save-continuation]
 files_touched: 3
@@ -26,8 +26,8 @@ Preserve Save19 and migration18. Decimal penetration retains catalog precision. 
 ## Code context
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/Locale/Russian.json` | Existing owning implementation or new named test | Audit all Combat.Panel keys and intentional missing key failure; RU/EN Render for final panels. New keys ship with each earlier owning panel ticket. |
-| `src/DeepSpaceSaga.Client/Locale/English.json` | Existing owning implementation or new named test | Audit all Combat.Panel keys and intentional missing key failure; RU/EN Render for final panels. New keys ship with each earlier owning panel ticket. |
+| `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | Existing owning implementation or new named test | Audit all Combat.Panel keys and intentional missing key failure; RU/EN Render for final panels. New keys ship with each earlier owning panel ticket. |
+| `src/DeepSpaceSaga.Client/Data/Locale/English.json` | Existing owning implementation or new named test | Audit all Combat.Panel keys and intentional missing key failure; RU/EN Render for final panels. New keys ship with each earlier owning panel ticket. |
 | `tests/DeepSpaceSaga.Client.Tests/ModulePanelLocalizationTests.cs` | Existing owning implementation or new named test | Audit all Combat.Panel keys and intentional missing key failure; RU/EN Render for final panels. New keys ship with each earlier owning panel ticket. |
 
 ## Public API after the change
@@ -50,3 +50,9 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Implementation evidence
+
+Audit required RU and EN panel keys and render fresh localized screens
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-panel-locales.trx and client-panel-locales-format.log. Owning build, scoped format and diff checks passed. Diff self-reviewed against ticket and invariants. Native, human acceptance and independent review are not claimed.
