@@ -15,10 +15,19 @@ internal sealed class ThreatPanel
     internal readonly List<Hit> Actions = [];
     private int _offset;
     private string[] _ids = [];
+    private CombatInputSettings? _bindings;
+    internal string[] ButtonLabels { get; private set; } = [];
     internal void Clear() { Bounds = SKRect.Empty; Rows = []; VisibleRows.Clear(); Actions.Clear(); _offset = 0; _ids = []; }
 
-    internal void Render(SKCanvas canvas, SKRect available, IReadOnlyList<Row> rows, PointCombatVisualSettings styles)
+    internal void Render(SKCanvas canvas, SKRect available, IReadOnlyList<Row> rows, PointCombatVisualSettings styles, CombatInputSettings? bindings = null)
     {
+        bindings ??= CombatInputSettings.Default;
+        if (!ReferenceEquals(_bindings, bindings))
+        {
+            _bindings = bindings;
+            ButtonLabels = [T("Counter", "CM") + " [" + DebugTuningPanel.KeyLabel(bindings.CountermissileAim) + "]",
+                "← [" + DebugTuningPanel.KeyLabel(bindings.EvadeLeft) + "]", "→ [" + DebugTuningPanel.KeyLabel(bindings.EvadeRight) + "]"];
+        }
         if (rows.Count == 0) { Clear(); return; }
         var ids = rows.Select(r => r.Id).ToArray();
         if (!_ids.SequenceEqual(ids)) _offset = 0;
@@ -52,12 +61,12 @@ internal sealed class ThreatPanel
             canvas.DrawText(profile + (row.PredictedIntercept ? " · ~" + T("Counter", "CM") : ""), rect.Left + 6, top + 14, text);
             string deadline = row.EntryRealSeconds is { } seconds ? seconds.ToString("0.0", CultureInfo.InvariantCulture) + " " + GameSessionScreen.CombatText("Seconds", "s") : "—";
             canvas.DrawText(T("Boundary", "Boundary") + " " + deadline, rect.Left + 6, top + 30, text);
-            float buttonWidth = Math.Min(32, Math.Max(1, (rect.Width - 20) / 3));
+            float buttonWidth = Math.Min(70, Math.Max(1, (rect.Width - 20) / 3));
             float x = compact ? rect.Left + 6 : rect.Right - (buttonWidth + 4) * 3 - 2;
             float y = compact ? top + 40 : top + 10;
-            DrawButton(Action.Countermissile, T("Counter", "CM"), row.CounterEnabled);
-            DrawButton(Action.EvadeLeft, "←", row.EvadeEnabled);
-            DrawButton(Action.EvadeRight, "→", row.EvadeEnabled);
+            DrawButton(Action.Countermissile, ButtonLabels[0], row.CounterEnabled);
+            DrawButton(Action.EvadeLeft, ButtonLabels[1], row.EvadeEnabled);
+            DrawButton(Action.EvadeRight, ButtonLabels[2], row.EvadeEnabled);
             void DrawButton(Action action, string label, bool enabled)
             {
                 var button = new SKRect(x, y, x + buttonWidth, y + 20);

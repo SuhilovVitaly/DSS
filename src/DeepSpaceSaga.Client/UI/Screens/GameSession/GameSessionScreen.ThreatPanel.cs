@@ -31,7 +31,7 @@ public sealed partial class GameSessionScreen
             canCounter, _handle is not null && ManeuverEngineReady(ManeuverEngine()));
         var free = AvailableMapRect(includeThreatPanel: false, includeEncounterHud: false);
         var logical = new SKRect(free.Left / _uiScale, free.Top / _uiScale, free.Right / _uiScale, free.Bottom / _uiScale);
-        _threatPanel.Render(canvas, logical, rows, CombatSettings.PointCombat);
+        _threatPanel.Render(canvas, logical, rows, CombatSettings.PointCombat, CombatInputs);
     }
 
     private bool HandleThreatPanelClick(float x, float y, MouseButton button)

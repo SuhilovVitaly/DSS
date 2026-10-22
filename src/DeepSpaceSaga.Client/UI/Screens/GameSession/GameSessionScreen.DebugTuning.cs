@@ -20,6 +20,7 @@ public sealed partial class GameSessionScreen
 
     private void InitializeDebugTuning()
     {
+        _debugTuningPanel.ConfigureBindings(CombatInputs);
         if (_handle is not null) _handle.Closing += DisposeDebugTuning;
     }
 

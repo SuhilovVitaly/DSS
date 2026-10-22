@@ -1,6 +1,7 @@
 using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
+using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
@@ -23,7 +24,7 @@ internal sealed class DebugTuningPanel : IDisposable
     private readonly SKRect[] _sectionBounds = new SKRect[5];
     private readonly List<Row> _rows = [];
     private readonly SKTextBlob _title, _minus, _plus, _resetAll, _folder, _help, _confirmReset;
-    private readonly SKTextBlob[] _helpLines;
+    private SKTextBlob[] _helpLines = [];
     private SKTextBlob[] _statusLines = [];
     private string? _feedbackKey, _startupError;
     private DebugTuningFileStatus? _fileStatus;
@@ -39,6 +40,7 @@ internal sealed class DebugTuningPanel : IDisposable
     internal SKRect FolderBounds => new(Bounds.MidX + 4, Bounds.Bottom - 32, Bounds.Right - 8, Bounds.Bottom - 6);
     internal bool HelpVisible => _helpVisible;
     internal string StatusText { get; private set; } = "";
+    internal string ControlsHint { get; private set; } = "";
     internal int RowCount => _rows.Count;
     internal int SectionCount => _sections.Length;
     internal float ScrollOffset => _scroll;
@@ -64,9 +66,30 @@ internal sealed class DebugTuningPanel : IDisposable
         _minus = Blob("−"); _plus = Blob("+"); _help = Blob("?");
         _resetAll = Blob(_text("Debug.ResetAll")); _folder = Blob(_text("Debug.OpenFolder"));
         _confirmReset = Blob(_text("Debug.ConfirmReset"));
-        _helpLines = Wrap(_text("Debug.HelpOrbit") + "\n" + _text("Debug.HelpTorpedoes"));
+        ConfigureBindings(CombatInputSettings.Default);
         for (int i = 0; i < _sections.Length; i++) _sections[i] = Blob(_text(SectionKeys[i]));
     }
+
+    internal void ConfigureBindings(CombatInputSettings bindings)
+    {
+        ControlsHint = string.Format(CultureInfo.CurrentCulture, _text("Debug.HelpControls"),
+            string.Join("/", bindings.Accelerate.Select(KeyLabel)), string.Join("/", bindings.Brake.Select(KeyLabel)),
+            string.Join("/", bindings.TurnLeft.Select(KeyLabel)), string.Join("/", bindings.TurnRight.Select(KeyLabel)),
+            string.Join("/", bindings.FullSpeed.Select(KeyLabel).Distinct()), KeyLabel(bindings.TorpedoAim), KeyLabel(bindings.CountermissileAim),
+            KeyLabel(bindings.EvadeLeft), KeyLabel(bindings.EvadeRight), KeyLabel(bindings.DebugPanel));
+        foreach (var line in _helpLines) line.Dispose();
+        _helpLines = Wrap(_text("Debug.HelpOrbit") + "\n" + _text("Debug.HelpTorpedoes") + "\n" + ControlsHint);
+    }
+
+    internal static string KeyLabel(Key key) => key switch
+    {
+        Key.Up => Localization.Get("Debug.Key.Up"),
+        Key.Down => Localization.Get("Debug.Key.Down"),
+        Key.Left => Localization.Get("Debug.Key.Left"),
+        Key.Right => Localization.Get("Debug.Key.Right"),
+        Key.ShiftLeft or Key.ShiftRight => "Shift",
+        _ => key.ToString()
+    };
 
     internal void Prepare(float viewportWidth, float viewportHeight, DebugTuningSnapshot? snapshot)
     {

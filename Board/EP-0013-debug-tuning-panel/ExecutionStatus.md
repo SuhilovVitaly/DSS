@@ -90,8 +90,11 @@ US6-TK3 published `c8cd504b1873a352cac1587dbd4981283d7c90e9`:
 Engine304/304, Client149/149, solution0warnings/errors, format PASS.
 US6-TK4 published `f87b1afd6b1689ddce75efd5cee00c0c9f63d4bb`:
 Client161/161, build0warnings/errors, scoped format PASS; schema2 and v1
-migration tested. US6-TK5 Client202/202, solution0warnings/errors, format PASS;
-S delivery, axis stacks, Shift latch, recovery and focus resync tested. Next: hints.
+migration tested. US6-TK5 published `f02d20883dd1d11c98a247b78fc5e603d4ce3d79`:
+Client202/202, solution0warnings/errors, format PASS;
+S delivery, axis stacks, Shift latch, recovery and focus resync tested.
+US6-TK6 hints133/133, build0warnings/errors, format PASS. Functional stories
+implemented; final review/general checks/native attempt and US7 docs/graph remain.
 US6–US7 remain pending. US1–US5 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 
