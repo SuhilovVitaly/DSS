@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0004-common-panel
 ticket: EP-0014-US-0004-TK-0002-panel-projection
 title: panel-projection
-stage: approved
+stage: implemented
 layer: engine
 depends_on: [EP-0014-US-0004-TK-0001-panel-contracts]
 files_touched: 3
@@ -50,3 +50,7 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Implementation evidence
+
+Own root DestroyedModuleLimit is computed by Engine from current own module count and decimal rules fraction; no foreign-object threshold is projected. ProjectWeaponLauncher publishes catalog decimal penetration. Tests verify9=>3,6=>2 and20.125 percent precision. Focused3/3 PASS; affected PointCombat/DebugTuning regression417/417 PASS; owning build no warnings; elevated scoped format PASS; git diff --check PASS. Sandbox build/formatter named pipes failed; elevated execution restored validation. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/engine-panel.trx, engine-panel-regression.trx, engine-format-elevated.log. Diff self-review found no state mutation, RNG consumption or save-version change. Independent/native/human acceptance not claimed.

@@ -5,8 +5,8 @@
 | Ticket | Layer | Story criteria | Dependency | State |
 |---|---|---|---|---|
 | [EP-0014-US-0004-TK-0001-panel-contracts](EP-0014-US-0004-common-panel/EP-0014-US-0004-TK-0001-panel-contracts/EP-0014-US-0004-TK-0001-panel-contracts.md) | contracts | AC-04 |  | implemented |
-| [EP-0014-US-0004-TK-0002-panel-projection](EP-0014-US-0004-common-panel/EP-0014-US-0004-TK-0002-panel-projection/EP-0014-US-0004-TK-0002-panel-projection.md) | engine | AC-04 | EP-0014-US-0004-TK-0001-panel-contracts | pending |
-| [EP-0014-US-0004-TK-0003-priority-and-time](EP-0014-US-0004-common-panel/EP-0014-US-0004-TK-0003-priority-and-time/EP-0014-US-0004-TK-0003-priority-and-time.md) | client | AC-01, AC-02 | EP-0014-US-0004-TK-0002-panel-projection | pending |
+| [EP-0014-US-0004-TK-0002-panel-projection](EP-0014-US-0004-common-panel/EP-0014-US-0004-TK-0002-panel-projection/EP-0014-US-0004-TK-0002-panel-projection.md) | engine | AC-04 | EP-0014-US-0004-TK-0001-panel-contracts | implemented |
+| [EP-0014-US-0004-TK-0003-priority-and-time](EP-0014-US-0004-common-panel/EP-0014-US-0004-TK-0003-priority-and-time/EP-0014-US-0004-TK-0003-priority-and-time.md) | client | AC-01, AC-02 | EP-0014-US-0004-TK-0002-panel-projection | implemented |
 | [EP-0014-US-0004-TK-0004-module-health](EP-0014-US-0004-common-panel/EP-0014-US-0004-TK-0004-module-health/EP-0014-US-0004-TK-0004-module-health.md) | client | AC-03, AC-04, AC-06 | EP-0014-US-0004-TK-0003-priority-and-time | pending |
 | [EP-0014-US-0004-TK-0005-dead-code](EP-0014-US-0004-common-panel/EP-0014-US-0004-TK-0005-dead-code/EP-0014-US-0004-TK-0005-dead-code.md) | client | AC-05 | EP-0014-US-0004-TK-0004-module-health | pending |
 | [EP-0014-US-0001-TK-0001-profile-memory](EP-0014-US-0001-torpedo-panel/EP-0014-US-0001-TK-0001-profile-memory/EP-0014-US-0001-TK-0001-profile-memory.md) | client | AC-02 | EP-0014-US-0004-TK-0005-dead-code | pending |

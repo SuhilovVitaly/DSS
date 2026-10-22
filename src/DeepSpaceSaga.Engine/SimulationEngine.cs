@@ -873,7 +873,8 @@ public sealed partial class SimulationEngine : IDisposable
                 VoyageFinances: presentationOnly ? default : BuildVoyageFinanceProjection(),
                 StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
                 Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch(), Encounter: CaptureEncounter(gameTimeMs),
-                DebugTuning: CaptureDebugTuning(presentationOnly));
+                DebugTuning: CaptureDebugTuning(presentationOnly),
+                DestroyedModuleLimit: CaptureOwnDestroyedModuleLimit());
             if (!presentationOnly) _pendingCombatReports.Clear();
             return snapshot;
         }
