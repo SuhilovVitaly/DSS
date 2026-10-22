@@ -79,9 +79,11 @@ Client130/130, build0warnings/errors, scoped format PASS.
 US5-TK3 published `dc64383d9218f14b69ff1f3147967ded876c79d0`:
 Client116/116 plus final16/16, solution0warnings/errors,
 scoped format PASS. US4-AC4 automated reset/deletion gap closed by these tests.
-US5-TK4: Client126/126, build0warnings/errors, scoped format PASS;
+US5-TK4 published `e3bc2931c8b28d162e036caaca1d5cca86ddabd2`:
+Client126/126, build0warnings/errors, scoped format PASS;
 RU/EN strict coverage, zero allocation and inspected raster proof. US5 automated
-coverage/self-review complete. US6–US7 remain pending. US1–US5 automated AC coverage and
+coverage/self-review complete. US6-TK1 contracts269/269, solution0warnings/errors,
+scoped format PASS. US6–US7 remain pending. US1–US5 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 
 Graph source navigation is the existing ignored `src/graphify-out` export. It is

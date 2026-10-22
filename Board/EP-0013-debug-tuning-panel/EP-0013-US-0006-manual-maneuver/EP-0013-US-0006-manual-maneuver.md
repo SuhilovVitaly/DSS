@@ -1,7 +1,7 @@
 ---
 epic: EP-0013-debug-tuning-panel
 story: EP-0013-US-0006-manual-maneuver
-stage: draft
+stage: in-progress
 ---
 
 # Маневрирование

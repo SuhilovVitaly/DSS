@@ -80,4 +80,10 @@ public sealed record PlayerCommand(
     bool? Active = null,
     /// <summary>Atomic debug catalog overlay, applied in the player-command phase.</summary>
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
-    DebugTuningPatch? DebugTuning = null);
+    DebugTuningPatch? DebugTuning = null,
+    /// <summary>Direction for engine.speedHold. Null is an incomplete speed-control payload.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    SpeedDirection? SpeedDirection = null,
+    /// <summary>Accelerate until maximum speed after key release (Shift); only used by speedHold.</summary>
+    [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]
+    bool? Latched = null);
