@@ -252,6 +252,7 @@ public sealed partial class SimulationEngine : IDisposable
                 _registry = tuning.Registry;
                 LoadScenarioCore(scenario, isSave, generation);
                 _debugTuning = tuning;
+                _debugStartupError = null;
             }
             catch
             {

@@ -22,6 +22,7 @@ per-ticket publication. They are retained as the current execution inputs.
 | EP-0013-US-0002-TK-0001 | `7e3e25de2f2593c9950c3b64e56ce531290249df` | Pushed; remote SHA verified identical on 2026-10-22 |
 | EP-0013-US-0002-TK-0002 | `31ee6113cec56a1a0d12714892e400945e4f15e4` | Pushed; remote SHA verified identical on 2026-10-22 |
 | EP-0013-US-0002-TK-0003 | `9d6d4f5b72eb636be2e87e37032ba3ac22fa3688` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0003-TK-0001 | `51af7a7071a71d4b607f6f1fa1209fbe9f644a44` | Pushed; remote SHA verified identical on 2026-10-22 |
 
 The existing preparatory commit `2a63be54` was published with the same branch.
 No empty replacement implementation commit was created.
@@ -55,11 +56,13 @@ Engine107/107, Engine build0warnings/errors, scoped formatter/diff check PASS; p
 US2-TK3 published: affected Engine118/118, Engine build0warnings/errors,
 scoped format/diff PASS. US3-TK1 Save19 implemented/checks complete: Engine
 persistence regression492/492 + final integrity7/7, Client session42/42,
-solution build0warnings/errors, scoped format/diff PASS. Its commit/push follows.
+solution build0warnings/errors, scoped format/diff PASS; published.
+US3-TK2 startup checks complete: Engine128/128, Contracts264/264, Client38/38,
+solution build0warnings/errors and scoped format/diff PASS; its commit/push follows.
 Final US7 exists
 and was expanded before main implementation to cover all six documentation
-outcomes required by the execution prompt. Next: US3-TK2 startup files.
-US3–US7 remain pending. US1/US2 automated AC coverage and
+outcomes required by the execution prompt. Next: US4-TK1 confirmed file writer.
+US4–US7 remain pending. US1–US3 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 
 Graph source navigation is the existing ignored `src/graphify-out` export. It is

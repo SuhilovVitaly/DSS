@@ -19,7 +19,8 @@ public sealed record DebugTuningPatch(
 public sealed record DebugTuningSnapshot(
     long Revision,
     ImmutableArray<DebugTuningValue> Values,
-    ImmutableArray<DebugTuningValue> Defaults);
+    ImmutableArray<DebugTuningValue> Defaults,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] string? StartupError = null);
 
 public static class DebugTuningCommandTypes
 {
