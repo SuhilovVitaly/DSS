@@ -17,7 +17,7 @@ public sealed class SetFireModeTests
         Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(state.CommandResults).ReasonCode);
         Assert.Equal(before, engine.CaptureLaunchScatterState()); Assert.Equal(0, state.MotionTimeMs);
         var launcher = state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
-        Assert.Empty(launcher.ModeId); Assert.Null(launcher.ReadyAtMotionTimeMs); Assert.Empty(launcher.ActiveTorpedoIds);
+        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("ModeId")); Assert.Null(launcher.ReadyAtMotionTimeMs); Assert.Empty(launcher.ActiveTorpedoIds);
     }
 
     [Fact]

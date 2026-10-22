@@ -19,7 +19,7 @@ public sealed class PointCombatUS0013TK0002Tests
     public void Weapon_reload_ring_uses_physical_deadline_with_tenth_second_precision(double motionMs, double seconds, double fraction)
     {
         var module = new InstalledModuleSnapshot("launcher", "type", "Launcher", 0, [],
-            LauncherCombat: new(6, 0, 200, ReadyAtMotionTimeMs: 10000, ReloadDurationMs: 10000, Profiles: [new("slow", 6, 9)]));
+            LauncherCombat: new(200, ReadyAtMotionTimeMs: 10000, ReloadDurationMs: 10000, Profiles: [new("slow", 6, 9)]));
         var panel = new CommandsPanel(motionTime: () => motionMs, motionMultiplier: () => .25);
         using var bitmap = new SKBitmap(500, 1800); using var canvas = new SKCanvas(bitmap);
         panel.Render(canvas, [module], 1800, "player");
@@ -93,7 +93,7 @@ public sealed class PointCombatUS0013TK0002Tests
     public void Pause_freezes_reload_and_never_optimistically_resets_ring()
     {
         var module = new InstalledModuleSnapshot("launcher", "type", "Launcher", 0, [],
-            LauncherCombat: new(6, 0, 200, ReadyAtMotionTimeMs: 10000, ReloadDurationMs: 10000, Profiles: [new("slow", 6, 9)]));
+            LauncherCombat: new(200, ReadyAtMotionTimeMs: 10000, ReloadDurationMs: 10000, Profiles: [new("slow", 6, 9)]));
         var panel = new CommandsPanel(motionTime: () => 2500, motionMultiplier: () => 0);
         using var bitmap = new SKBitmap(500, 1800); using var canvas = new SKCanvas(bitmap);
         panel.Render(canvas, [module], 1800, "player");

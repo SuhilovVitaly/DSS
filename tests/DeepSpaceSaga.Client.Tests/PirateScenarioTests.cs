@@ -74,12 +74,12 @@ public sealed class PirateScenarioTests
         Assert.Equal(2, snapshot.Objects.Count(o => o.ObjectType is "PlayerShip" or "NpcShip"));
         Assert.All(snapshot.Objects.Where(o => o.ObjectType is "PlayerShip" or "NpcShip"), o => Assert.Null(o.HullCombat));
         var launcher = Assert.Single(snapshot.InstalledModules, m => m.LauncherCombat is not null).LauncherCombat!;
-        Assert.Equal(6, launcher.SpeedKmS);
+        Assert.Equal(6, launcher.Profiles!.Value[0].SpeedKmS);
         Assert.Equal(new[] { 6d, 10d, 16d }, launcher.Profiles!.Value.Select(p => p.SpeedKmS));
-        Assert.Equal(0, launcher.TurnRateDegPerSec);
+        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("TurnRateDegPerSec"));
         Assert.Equal(200, launcher.Damage);
         Assert.Equal(70, launcher.RangeKm);
-        Assert.Null(launcher.Maneuverability);
+        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("Maneuverability"));
         Assert.True(launcher.ActiveTorpedoIds.IsDefaultOrEmpty);
         var pirate = Pirate(snapshot);
         var playerPose = snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId);

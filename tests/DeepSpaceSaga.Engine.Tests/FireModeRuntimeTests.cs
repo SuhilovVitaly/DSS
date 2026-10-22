@@ -20,7 +20,7 @@ public sealed class FireModeRuntimeTests
             var flight = Assert.Single(state.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
             Assert.Equal(profile, flight.ProfileId); Assert.Equal(before.Counter + 2, engine.CaptureLaunchScatterState().Counter);
             var launcher = state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
-            Assert.Empty(launcher.ModeId); Assert.False(launcher.IsBrokenUntilDock); Assert.Equal(10000, launcher.ReadyAtMotionTimeMs);
+            Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("ModeId")); Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("IsBrokenUntilDock")); Assert.Equal(10000, launcher.ReadyAtMotionTimeMs);
             Assert.Equal(0UL, engine.CaptureSaveState().GameState.CombatState!.LauncherBreakdownRngCounter);
             Assert.DoesNotContain(state.CombatJournal, e => e.ChanceTenths is not null || e.Roll is not null);
         }

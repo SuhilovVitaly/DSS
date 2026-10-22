@@ -770,7 +770,7 @@ public sealed class CommandsPanel
                 double? reloadDuration = weaponModule?.LauncherCombat?.ReloadDurationMs ?? weaponModule?.Defense?.ReloadDurationMs;
                 double remainingReload = Math.Max(0, (readyAt ?? 0) - _motionTime());
                 double reloadFraction = remainingReload <= 0 ? 1 : reloadDuration is > 0 ? Math.Clamp(1 - remainingReload / reloadDuration.Value, 0, 1) : 0;
-                if (weaponModule is { StructureMax: > 0, StructureCurrent: <= 0 } || weaponModule?.LauncherCombat?.IsBrokenUntilDock == true) reloadFraction = 0;
+                if (weaponModule is { StructureMax: > 0, StructureCurrent: <= 0 } || weaponModule?.IsDestroyed == true) reloadFraction = 0;
                 bool pointWeapon = weaponModule?.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false } || weaponModule?.Defense?.Profiles is { IsDefaultOrEmpty: false };
                 var reloadRing = pointWeapon ? new SKRect(captionRect.Left + 8, captionRect.MidY - 12, captionRect.Left + 32, captionRect.MidY + 12) : SKRect.Empty;
                 double multiplier = _motionMultiplier();

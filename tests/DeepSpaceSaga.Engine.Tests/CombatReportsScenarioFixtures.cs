@@ -38,7 +38,7 @@ internal static class CombatReportsScenarioFixtures
             if (enemy is null) break;
             foreach (var module in current.InstalledModules.Where(m => m.LauncherCombat is not null))
             {
-                if (module.LauncherCombat!.IsBrokenUntilDock || module.LauncherCombat.ReadyAtMotionTimeMs > time) continue;
+                if (module.IsDestroyed || module.LauncherCombat!.ReadyAtMotionTimeMs > time) continue;
                 var owner = current.Objects.Single(o => o.ObjectId == Player);
                 var profile = Assert.Single(module.LauncherCombat.Profiles!.Value, p => p.ProfileId == "fast");
                 var aim = ModuleCombatEndToEndTests.LinearAim(owner, enemy, profile.SpeedKmS);

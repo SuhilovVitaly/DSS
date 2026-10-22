@@ -13,7 +13,7 @@ public sealed class WeaponHudControlsTests
     private static ImmutableArray<InstalledModuleSnapshot> Modules =>
     [
         new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [CombatCommandTypes.Launch],
-            LauncherCombat: new(10, 90, 150, RangeKm: 150, ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000,Profiles:[new("slow",6,9)])),
+            LauncherCombat: new(150, RangeKm: 150, ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000,Profiles:[new("slow",6,9)])),
         new("one", "module.countermeasure.launcher.basic", "Defense 1", 2, [DefenseCommandTypes.Launch],
             Defense: new(true, null, DefenseState.Reloading, ReloadDueMotionTimeMs: 11000, RangeKm: 50, ManualRangeKm: 100,
                 ReadyAtMotionTimeMs: 11000, ReloadDurationMs: 10000,Profiles:[new("wide",15,1)])),

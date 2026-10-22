@@ -19,7 +19,7 @@ public sealed class PointCombatUS0018TK0003Tests
         using var engine = Create(o => o with { IsKnown = true, PositionX = o.ObjectId == Player ? 0 : 600, PositionY = 0 }, scatter: 0);
         engine.ReceiveCommand(Launch(x: 600, y: 0, profile: profile));
         var start = At(engine); var shot = Flight(start);
-        Assert.Null(start.InstalledModules.Single(m => m.ModuleId == Launcher).TorpedoMaxFlightTimeMs);
+        Assert.DoesNotContain("torpedoMaxFlightTimeMs", JsonSerializer.Serialize(start.InstalledModules.Single(m => m.ModuleId == Launcher)));
         Assert.Null(shot.Torpedo);
         var rng = engine.CaptureLaunchScatterState();
         var forecast = CombatForecast.PointProjectile(shot, start.Objects.Single(o => o.ObjectId == Target), 0);

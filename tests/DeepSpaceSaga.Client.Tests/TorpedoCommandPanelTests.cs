@@ -12,7 +12,7 @@ public sealed class TorpedoCommandPanelTests
     private static readonly InstalledModuleSnapshot Launcher = new("actual-launcher", "module.torpedo.launcher.basic", "Launcher", 1,
         [CombatCommandTypes.Launch, CombatCommandTypes.Detonate], "On", "Ready", 60,
         Commands: [new(CombatCommandTypes.Launch, "Launch", "point"), new(CombatCommandTypes.Detonate, "Detonate", "object")],
-        LauncherCombat: new(6, 0, 200, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 0, 30, 30), RangeKm: 70,
+        LauncherCombat: new(200, new("crew", "Operator", WeaponSkillType.TorpedoAttack, 0, 30, 30), RangeKm: 70,
             Profiles: [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)], ScatterPercent: .02));
 
     [Theory]
@@ -26,7 +26,7 @@ public sealed class TorpedoCommandPanelTests
         f.Aim(profile: key);
         Assert.Equal(expected, f.Screen.PointAim!.ProfileId); Assert.Equal(ProjectileKind.Torpedo, f.Screen.PointAim.Kind);
         var launcher = f.Presented.InstalledModules.Single(m => m.ModuleId == PointCombatUiFixture.Torpedo).LauncherCombat!;
-        Assert.Empty(launcher.ModeId); Assert.Null(launcher.ReadyAtMotionTimeMs);
+        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("ModeId")); Assert.Null(launcher.ReadyAtMotionTimeMs);
         Assert.Equal(before, f.Engine.CaptureLaunchScatterState()); Assert.Null(f.Screen.LastPointCommandId);
         Assert.DoesNotContain(f.Presented.Objects, o => o.OwnProjectile is not null);
         Assert.Equal(0, f.Presented.MotionTimeMs); Assert.Equal(SimulationSpeed.Speed0, f.Presented.CurrentSpeed);

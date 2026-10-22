@@ -100,7 +100,7 @@ public sealed class CombatMetricsWriterTests
     }
 
     private static AuthoritativeSnapshot MetricsSnapshot(long sequence) => new((ulong)sequence, 0, SimulationSpeed.Speed0, [],
-        InstalledModules: [new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [], LauncherCombat: new(10, 90, 150))]);
+        InstalledModules: [new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [], LauncherCombat: new(150))]);
 
     [Fact]
     public async Task Real_session_automatically_records_authoritative_and_rendered_combat_state()
@@ -185,7 +185,7 @@ public sealed class CombatMetricsWriterTests
         {
             var writer = new CombatMetricsWriter(path);
             writer.Record(new(1, 0, SimulationSpeed.Speed0, [], InstalledModules:
-                [new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [], LauncherCombat: new(10, 90, 150))]));
+                [new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [], LauncherCombat: new(150))]));
             await writer.DisposeAsync().AsTask().WaitAsync(TimeSpan.FromSeconds(5));
             Assert.NotNull(writer.Error);
         }

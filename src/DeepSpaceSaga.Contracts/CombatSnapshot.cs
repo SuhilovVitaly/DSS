@@ -91,22 +91,16 @@ public enum CountermeasureTerminationKind { Intercept, MissedCoastExpired, Lifet
 public sealed record HullCombatSnapshot(string ShipClassId, int CurrentHp, int MaxHp);
 
 /// <summary>
-/// Captured launcher parameters: speed in km/s, positive maximum turn rate in degrees/s,
-/// damage in integer hull hit points. ActiveTorpedoIds lists every projectile still
+/// Authoritative point-launch capabilities and physical reload deadline;
+/// damage in integer module hit points. ActiveTorpedoIds lists every projectile still
 /// in flight; launch readiness is governed by ReadyAtMotionTimeMs.
 /// </summary>
 public sealed record LauncherCombatSnapshot(
-    double SpeedKmS,
-    double TurnRateDegPerSec,
     int Damage,
     WeaponOperatorSnapshot? Operator = null,
     /// <summary>Inclusive launch range in km, supplied by the module definition. Null means not supplied.</summary>
     double? RangeKm = null,
-    /// <summary>Module-owned interception resistance in 0..100, distinct from physical turn rate.</summary>
-    decimal? Maneuverability = null,
-    string ModeId = "",
     double? ReadyAtMotionTimeMs = null,
-    bool IsBrokenUntilDock = false,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
     ImmutableArray<string> ActiveTorpedoIds = default,
     double? ReloadDurationMs = null,

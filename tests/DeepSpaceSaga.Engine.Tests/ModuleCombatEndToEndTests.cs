@@ -51,7 +51,7 @@ public sealed class ModuleCombatEndToEndTests
             foreach (var module in snapshot.InstalledModules.Where(m => m.LauncherCombat is not null))
             {
                 var launcher = module.LauncherCombat!;
-                if (launcher.IsBrokenUntilDock || (launcher.ReadyAtMotionTimeMs ?? 0) > snapshot.MotionTimeMs)
+                if (module.IsDestroyed || (launcher.ReadyAtMotionTimeMs ?? 0) > snapshot.MotionTimeMs)
                     continue;
                 var owner = snapshot.Objects.Single(o => o.ObjectId == playerId);
                 var profile = Assert.Single(launcher.Profiles!.Value, p => p.ProfileId == "fast");

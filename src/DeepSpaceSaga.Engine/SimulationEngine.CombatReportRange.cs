@@ -14,7 +14,6 @@ public sealed partial class SimulationEngine
         Func<SpaceObjectRuntime, string?> relation)
     {
         var ranges = player.Modules.Where(m => CanExecuteModuleCommand(m, motionTimeMs))
-            .Where(m => !launchers.TryGetValue((player.InitialMotion.ObjectId, m.ModuleId), out var launcher) || !launcher.IsBrokenUntilDock)
             .Select(m => _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex))
             .Where(t => t.IsPointLauncher
                 ? t.CategoryTypeId == "module.torpedo.launcher" && t.CommandTypeIds.Contains(CombatCommandTypes.Launch) && t.RangeKm is > 0

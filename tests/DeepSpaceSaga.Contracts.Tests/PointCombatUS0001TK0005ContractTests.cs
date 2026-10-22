@@ -8,7 +8,7 @@ public class PointCombatUS0001TK0005ContractTests
     [Fact]
     public void Launcher_profiles_roundtrip_captured_catalogue_values()
     {
-        var launcher = new LauncherCombatSnapshot(6, 0, 200, RangeKm: 70,
+        var launcher = new LauncherCombatSnapshot(200, RangeKm: 70,
             Profiles: [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)], ScatterPercent: 0.02);
         var restored = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher))!;
         Assert.Equal(launcher.Profiles!.Value.ToArray(), restored.Profiles!.Value.ToArray());

@@ -26,7 +26,46 @@ public sealed record CombatStateData(
 public sealed record LauncherSaveData(
     [property: JsonRequired, JsonPropertyName("ownerObjectId")] string OwnerObjectId,
     [property: JsonRequired, JsonPropertyName("moduleId")] string ModuleId,
-    [property: JsonRequired, JsonPropertyName("state")] LauncherCombatSnapshot State);
+    [property: JsonRequired, JsonPropertyName("state")] LauncherCombatSaveState State);
+
+/// <summary>Save-only legacy envelope; live panel DTOs do not carry retired guided fields.</summary>
+public sealed record LauncherCombatSaveState(
+    double SpeedKmS,
+    double TurnRateDegPerSec,
+    int Damage,
+    WeaponOperatorSnapshot? Operator = null,
+    /// <summary>Inclusive launch range in km, supplied by the module definition. Null means not supplied.</summary>
+    double? RangeKm = null,
+    /// <summary>Module-owned interception resistance in 0..100, distinct from physical turn rate.</summary>
+    decimal? Maneuverability = null,
+    string ModeId = "",
+    double? ReadyAtMotionTimeMs = null,
+    bool IsBrokenUntilDock = false,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> ActiveTorpedoIds = default,
+    double? ReloadDurationMs = null,
+    /// <summary>Point-launch capabilities; null for legacy producers. No implicit profiles.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    ImmutableArray<LaunchProfileSnapshot>? Profiles = null,
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? ScatterPercent = null,
+    /// <summary>Current own-operator sigma per km, evaluated by Engine with current scatter rules.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? EffectiveScatterPercent = null,
+    /// <summary>Current own-launch blast core fraction; absent for legacy launchers.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? CoreFraction = null,
+    /// <summary>Authoritative armor penetration percentage, preserving fractional catalog precision.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    decimal? ArmorPiercingPercent = null)
+{
+    public static implicit operator LauncherCombatSaveState(LauncherCombatSnapshot state) => new(
+        state.Profiles is { IsDefaultOrEmpty: false } profiles ? profiles[0].SpeedKmS : 0, 0, state.Damage,
+        Operator: state.Operator, RangeKm: state.RangeKm, ReadyAtMotionTimeMs: state.ReadyAtMotionTimeMs,
+        ActiveTorpedoIds: state.ActiveTorpedoIds, ReloadDurationMs: state.ReloadDurationMs,
+        Profiles: state.Profiles, ScatterPercent: state.ScatterPercent, EffectiveScatterPercent: state.EffectiveScatterPercent,
+        CoreFraction: state.CoreFraction, ArmorPiercingPercent: state.ArmorPiercingPercent);
+}
 
 public sealed record ProjectileSaveData(
     [property: JsonRequired, JsonPropertyName("objectId")] string ObjectId,
@@ -100,7 +139,7 @@ internal static class CombatSaveValidation
         var launches = new HashSet<string>(StringComparer.Ordinal);
         foreach (string id in combat.ProcessedLaunchCommandIds!)
             Require(!string.IsNullOrWhiteSpace(id) && launches.Add(id), "duplicate or empty launch command ID.");
-        var launchers = new Dictionary<(string, string), LauncherCombatSnapshot>();
+        var launchers = new Dictionary<(string, string), LauncherCombatSaveState>();
         foreach (var row in combat.Launchers!)
         {
             Require(row is not null && !string.IsNullOrWhiteSpace(row.OwnerObjectId) && !string.IsNullOrWhiteSpace(row.ModuleId), "invalid launcher row.");

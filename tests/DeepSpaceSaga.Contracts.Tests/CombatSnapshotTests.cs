@@ -9,11 +9,11 @@ public class CombatSnapshotTests
     [Fact]
     public void Point_launcher_profiles_fractional_readiness_and_multiple_flights_roundtrip_without_an_implicit_mode()
     {
-        var launcher = new LauncherCombatSnapshot(6, 0, 200, RangeKm: 70,
+        var launcher = new LauncherCombatSnapshot(200, RangeKm: 70,
             ReadyAtMotionTimeMs: 15123.5, ActiveTorpedoIds: ["torpedo-1", "torpedo-2"], ReloadDurationMs: 10000,
             Profiles: [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)], ScatterPercent: .02);
         var copy = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher))!;
-        Assert.Empty(copy.ModeId); Assert.False(copy.IsBrokenUntilDock);
+        Assert.DoesNotContain("ModeId", JsonSerializer.Serialize(copy)); Assert.DoesNotContain("IsBrokenUntilDock", JsonSerializer.Serialize(copy));
         Assert.Equal(15123.5, copy.ReadyAtMotionTimeMs); Assert.Equal(10000, copy.ReloadDurationMs);
         Assert.Equal(["torpedo-1", "torpedo-2"], copy.ActiveTorpedoIds.ToArray());
         Assert.Equal(launcher.Profiles!.Value.ToArray(), copy.Profiles!.Value.ToArray());
@@ -24,7 +24,7 @@ public class CombatSnapshotTests
         Assert.Equal(command, request); Assert.Null(request.ModeId); Assert.Null(request.TargetObjectId);
         var omitted = JsonSerializer.Deserialize<LauncherCombatSnapshot>(
             """{"SpeedKmS":6,"TurnRateDegPerSec":0,"Damage":200}""")!;
-        Assert.Empty(omitted.ModeId); Assert.True(omitted.ActiveTorpedoIds.IsDefaultOrEmpty);
+        Assert.DoesNotContain("ModeId", JsonSerializer.Serialize(omitted)); Assert.True(omitted.ActiveTorpedoIds.IsDefaultOrEmpty);
     }
 
     [Fact]
@@ -56,8 +56,8 @@ public class CombatSnapshotTests
     [Fact]
     public void Weapon_parameters_roundtrip()
     {
-        var launcher = new LauncherCombatSnapshot(3, 90, 150,
-            RangeKm: 200.25, Maneuverability: 5.125m, ActiveTorpedoIds: ["torpedo"]);
+        var launcher = new LauncherCombatSnapshot(150,
+            RangeKm: 200.25, ActiveTorpedoIds: ["torpedo"]);
         var flight = new TorpedoSnapshot("owner", "launcher", "target", 100,
             3, 90, 150, 0, new(100, 1, TorpedoRoutePhase.Straight, false),
             CapturedManeuverability: 5.125m, OwnerPlayerRelationAtLaunch: PlayerRelation.Enemy);
@@ -97,7 +97,7 @@ public class CombatSnapshotTests
         var torpedo = new TorpedoSnapshot("ship-1", "launcher-1", "ship-2", 1000,
             3, 90, 150, 24.015, route, trail, PredictedImpactMotionTimeMs: 3201);
         var hull = new HullCombatSnapshot("ship.tetrarch", 300, 450);
-        var launcher = new LauncherCombatSnapshot(3, 90, 150,
+        var launcher = new LauncherCombatSnapshot(150,
             ActiveTorpedoIds: activeTorpedoObjectId is null ? [] : [activeTorpedoObjectId]);
         var snapshot = new AuthoritativeSnapshot(7, 987654321, SimulationSpeed.Speed0,
             ImmutableArray.Create(
