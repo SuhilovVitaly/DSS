@@ -51,6 +51,7 @@ public sealed class SkiaWindow : IDisposable
     private RawImage? _interactiveCursorImage;
 
     private GameSessionHandle? _session;
+    private Task _lastSessionDisposal = Task.CompletedTask;
     private GameSessionHandle? _defeatSession;
     private Task? _defeatTransitionTask;
     private string? _pendingUndockCommandId;
@@ -937,10 +938,13 @@ public sealed class SkiaWindow : IDisposable
         if (_session is not null)
             return;
 
+        await _lastSessionDisposal;
+        if (_closing) return;
+
         var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromScenario(scenarioPath));
         if (!_connectionLoader.TryAdopt(connection)) return;
 
-        var session = new GameSessionHandle(connection);
+        var session = new GameSessionHandle(connection, deferDebugTuningWrites: true);
         try
         {
             var predictor = new LinearMotionPredictor();
@@ -955,6 +959,7 @@ public sealed class SkiaWindow : IDisposable
             _modalDepth = 0;
             _savedSpeed = SimulationSpeed.Speed1;
             _screens.Replace(gameScreen);
+            session.DebugTuningFiles.Activate();
         }
         catch
         {
@@ -1582,15 +1587,18 @@ public sealed class SkiaWindow : IDisposable
     {
         if (_screens.Current is LoadScreen loading) loading.ClearError();
         GameSessionHandle? newSession = null;
+        var previousSession = _session;
         GameSessionScreen newScreen;
         try
         {
             // Offloaded for the same reason as StartGameSessionAsync: a synchronous
             // CreateSessionFromSave call here would block Silk.NET's message pump if disk I/O
             // stalls, freezing the whole window for both the Load screen and QuickLoad (F9).
+            await _lastSessionDisposal;
+            if (previousSession is not null) await previousSession.DeactivateDebugTuningWritesAsync();
             var connection = await _connectionLoader.CreateAsync(() => _sessionFactory.CreateSessionFromSave(slotId));
             if (!_connectionLoader.TryAdopt(connection)) return false;
-            newSession = new GameSessionHandle(connection);
+            newSession = new GameSessionHandle(connection, deferDebugTuningWrites: true);
             var predictor = new LinearMotionPredictor();
             var combatAudio = CombatAlertAudio.CreateSession();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
@@ -1603,6 +1611,7 @@ public sealed class SkiaWindow : IDisposable
         {
             InterfaceLog.Write($"{logPrefix} failed: {ex.Message}");
             if (newSession is not null) await newSession.DisposeAsync();
+            previousSession?.DebugTuningFiles.Activate();
             if (!_closing)
             {
                 await OpenLoadWindowAsync();
@@ -1619,7 +1628,13 @@ public sealed class SkiaWindow : IDisposable
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
         _screens.ReplaceAll(newScreen);
-        if (oldSession is not null) await oldSession.DisposeAsync();
+        if (oldSession is not null)
+        {
+            _lastSessionDisposal = oldSession.DisposeAsync().AsTask();
+            await _lastSessionDisposal;
+        }
+
+        newSession.DebugTuningFiles.Activate();
 
         return true;
     }
@@ -1652,7 +1667,11 @@ public sealed class SkiaWindow : IDisposable
 
         var mainMenu = new MainMenuScreen();
         _screens.ReplaceAll(mainMenu);
-        if (oldSession is not null) await oldSession.DisposeAsync();
+        if (oldSession is not null)
+        {
+            _lastSessionDisposal = oldSession.DisposeAsync().AsTask();
+            await _lastSessionDisposal;
+        }
     }
 
     public void Dispose()
@@ -1682,7 +1701,8 @@ public sealed class SkiaWindow : IDisposable
             _input = null;
         }
 
-        _ = _session?.DisposeAsync();
+        if (_session is { } closingSession) closingSession.DisposeAsync().AsTask().GetAwaiter().GetResult();
+        _lastSessionDisposal.GetAwaiter().GetResult();
         _session = null;
 
         _screens.DeactivateAll();

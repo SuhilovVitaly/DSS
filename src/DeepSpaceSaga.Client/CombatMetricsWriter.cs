@@ -229,6 +229,6 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
     public async ValueTask DisposeAsync()
     {
         _records.Writer.TryComplete();
-        await _worker;
+        await _worker.ConfigureAwait(false);
     }
 }

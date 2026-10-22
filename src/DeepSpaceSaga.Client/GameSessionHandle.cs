@@ -16,6 +16,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private readonly Task _receiveTask;
     private readonly Task _presentationWatchdogTask;
     internal CombatMetricsWriter CombatMetrics { get; }
+    internal DebugTuningFileWriter DebugTuningFiles { get; }
     private readonly Task _interactionStateSenderTask;
     private readonly Channel<(string? ActiveObjectId, string? SelectedObjectId)> _interactionStateChannel =
         Channel.CreateBounded<(string?, string?)>(new BoundedChannelOptions(1)
@@ -29,6 +30,8 @@ public sealed class GameSessionHandle : IAsyncDisposable
     private string? _lastSentSelectedObjectId;
     private long _nextClientSequence;
     private bool _disposed;
+    private readonly object _disposeGate = new();
+    private Task? _disposeTask;
     private Exception? _failure;
     public Exception? Failure => Volatile.Read(ref _failure);
     // Disposed by the owning window; subscribers release UI-thread resources before awaits.
@@ -49,13 +52,15 @@ public sealed class GameSessionHandle : IAsyncDisposable
         catch (UnauthorizedAccessException) { }
     }
 
-    public GameSessionHandle(IGameSessionConnection connection)
-        : this(connection, new SnapshotBuffer()) { }
+    public GameSessionHandle(IGameSessionConnection connection, bool deferDebugTuningWrites = false)
+        : this(connection, new SnapshotBuffer(), debugTuningFiles: new(active: !deferDebugTuningWrites, warning: WriteDiagnostic)) { }
 
-    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer, CombatMetricsWriter? combatMetrics = null)
+    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer, CombatMetricsWriter? combatMetrics = null,
+        DebugTuningFileWriter? debugTuningFiles = null)
     {
         _connection = connection;
         CombatMetrics = combatMetrics ?? new();
+        DebugTuningFiles = debugTuningFiles ?? new(warning: WriteDiagnostic);
 
         Buffer = buffer;
         Buffer.PresentationDiagnostic += CombatMetrics.RecordPresentation;
@@ -73,6 +78,18 @@ public sealed class GameSessionHandle : IAsyncDisposable
 
     public IGameSessionConnection Connection => _connection;
     public SnapshotBuffer Buffer { get; }
+
+    internal Task FlushDebugTuningAsync()
+    {
+        DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
+        return DebugTuningFiles.FlushAsync();
+    }
+
+    internal Task DeactivateDebugTuningWritesAsync()
+    {
+        DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
+        return DebugTuningFiles.DeactivateAsync();
+    }
     public bool IsDefeated => Buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated;
     private int _stationTravelPending;
     public bool StationTravelPending => Volatile.Read(ref _stationTravelPending) != 0;
@@ -356,6 +373,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
                     // Enable and enqueue authoritative diagnostics before publishing a
                     // bootstrap that the UI may render immediately on another thread.
                     Buffer.UpdatePresentation(update);
+                    DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
                 }
                 if (!ct.IsCancellationRequested) Fail(new IOException("The combat connection closed unexpectedly."));
                 return;
@@ -364,6 +382,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
             {
                 if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
                 Buffer.Update(snapshot);
+                DebugTuningFiles.Observe(Buffer.Latest?.Snapshot);
                 CombatMetrics.Record(snapshot);
                 if (!snapshot.CommandResults.IsDefaultOrEmpty)
                     foreach (var result in snapshot.CommandResults)
@@ -457,11 +476,26 @@ public sealed class GameSessionHandle : IAsyncDisposable
         }
     }
 
-    public async ValueTask DisposeAsync()
+    public ValueTask DisposeAsync()
     {
-        if (_disposed)
-            return;
+        lock (_disposeGate)
+        {
+            if (_disposeTask is not null) return new(_disposeTask);
+            var completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+            _disposeTask = completion.Task;
+            _ = CompleteDisposalAsync(completion);
+            return new(_disposeTask);
+        }
+    }
 
+    private async Task CompleteDisposalAsync(TaskCompletionSource<bool> completion)
+    {
+        try { await DisposeCoreAsync().ConfigureAwait(false); completion.TrySetResult(true); }
+        catch (Exception error) { completion.TrySetException(error); }
+    }
+
+    private async Task DisposeCoreAsync()
+    {
         _disposed = true;
         Closing?.Invoke();
 
@@ -476,6 +510,7 @@ public sealed class GameSessionHandle : IAsyncDisposable
         _cts.Dispose();
         Buffer.PresentationDiagnostic -= CombatMetrics.RecordPresentation;
         await CombatMetrics.DisposeAsync().ConfigureAwait(false);
+        await DebugTuningFiles.DisposeAsync().ConfigureAwait(false);
 
         if (_connection is IAsyncDisposable asyncDisposable)
             await asyncDisposable.DisposeAsync().ConfigureAwait(false);
