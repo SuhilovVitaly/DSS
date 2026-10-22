@@ -53,3 +53,7 @@ Draft; human approval отсутствует. Решения и точные с�
 ## Execution ticket map2026-10-22
 
 Execution authorized through epic-executor; see [current ticket map](../Tickets.md). Earlier planning-only/no-tickets statements above are historical. Stage remains distinct from human acceptance. Final US-0006 must audit and update all impacted project documentation and rebuild Graphify after final code and text.
+
+## Story verification2026-10-22
+
+56/56 affected tests pass, including live observed common-point arrival, unreachable profile, no-track handling, calibrated10km sigma, no core,50/25s reload, shared profile memory and existing countermeasure flows. Common blocked-input paths were verified in US1. Snapshot data and observed trace only; no concealed future endpoint is read. Native/human and independent review remain open.

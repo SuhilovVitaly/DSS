@@ -1,4 +1,5 @@
 {
+  "Combat.Panel.Unreachable": "Unreachable",
   "Combat.Panel.Reason.BurstTargetOrModuleUnavailable": "Target or launcher unavailable",
   "Combat.Panel.Reason.busy": "Launcher busy",
   "Combat.Panel.Reason.combat_speed_locked": "Combat allows pause and 1×, 2×, 5×, 10×",

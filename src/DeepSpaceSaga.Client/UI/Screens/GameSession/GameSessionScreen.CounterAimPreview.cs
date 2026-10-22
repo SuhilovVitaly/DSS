@@ -19,7 +19,7 @@ public sealed partial class GameSessionScreen
         if (PointAim is not { Kind: ProjectileKind.Countermissile } aim || PointAimModule(aim.ModuleId) is not { } module ||
             FindPlayerShip(_renderStates) is not { } player ||
             PointProfiles(module).FirstOrDefault(p => p.ProfileId == aim.ProfileId) is not { } profile) return null;
-        double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
+        double multiplier = PanelDisplaySpeed.MotionTimeMultiplier();
         return ProjectCounterAim(player.Pose.ToSnapshot(), _renderStates.Where(s => !s.Source.IsDestroyed &&
             (s.Source.OwnProjectile is not null || s.Source.ObservedProjectile is not null)).Select(s => s.Pose.ToSnapshot()).ToArray(),
             profile, module.Defense!.RangeKm, x, y, _camera.PixelsPerWorldUnit, _pointAltLeft || _pointAltRight,
@@ -27,12 +27,14 @@ public sealed partial class GameSessionScreen
     }
 
     internal static CounterAimPreview ProjectCounterAim(ObjectMotionSnapshot player, IReadOnlyList<ObjectMotionSnapshot> displayed,
-        LaunchProfileSnapshot profile, double rangeKm, double x, double y, double ppu, bool alt, double nowMotionMs, double multiplier)
+        LaunchProfileSnapshot profile, double rangeKm, double x, double y, double ppu, bool alt, double nowMotionMs, double multiplier,
+        CounterAimPreview? lockedPoint = null)
     {
         var foreign = displayed.Where(o => o.ObservedProjectile is not null && !o.IsDestroyed).OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray();
-        ObjectMotionSnapshot? snapped = null;
+        ObjectMotionSnapshot? snapped = lockedPoint?.SnappedObjectId is { } lockedId ? foreign.FirstOrDefault(o => o.ObjectId == lockedId) : null;
+        if (lockedPoint is not null) { x = lockedPoint.X; y = lockedPoint.Y; }
         double closestPx = 12;
-        if (!alt)
+        if (!alt && lockedPoint is null)
             foreach (var row in foreign)
             {
                 if (row.ObservedProjectile is not { Kind: ProjectileKind.Torpedo } observed) continue;
@@ -44,7 +46,7 @@ public sealed partial class GameSessionScreen
                 snapped = row; closestPx = distancePx;
             }
         // Re-project once after selection: candidates must all be compared to the original cursor.
-        if (snapped is not null)
+        if (snapped is not null && lockedPoint is null)
         {
             var direction = Unit(snapped.ObservedProjectile!);
             double along = Math.Max(0, (x - snapped.X) * direction.X + (y - snapped.Y) * direction.Y);

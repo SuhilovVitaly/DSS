@@ -1,4 +1,5 @@
 {
+  "Combat.Panel.Unreachable": "Недостижимо",
   "Combat.Panel.Reason.BurstTargetOrModuleUnavailable": "Цель или пусковая установка недоступна",
   "Combat.Panel.Reason.busy": "Аппарат занят",
   "Combat.Panel.Reason.combat_speed_locked": "Во время боя доступны пауза и 1×, 2×, 5×, 10×",

@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0002-countermissile-panel
 ticket: EP-0014-US-0002-TK-0001-countermissile-panel
 title: countermissile-panel
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0014-US-0001-TK-0005-blocked-aim]
 files_touched: 3
@@ -50,3 +50,12 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Code context correction before implementation
+Actual preview path is GameSessionScreen.CounterAimPreview.cs. Add RU/EN locale keys. Use ProjectCounterAim for each profile with an optional locked preview point/observed ID so every row shares the live admitted target and reachability model; no hidden Engine data or duplicated interception rules. Base common components already provide10km sigma,50s reload, per-module memory, ring and blocks.
+
+## Implementation evidence
+
+Compare countermeasure profiles at the shared observed interception point;56 checks pass
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-counter-panel-final.trx and client-counter-panel-final-format.log. Owning build, scoped format and diff checks passed. Diff self-reviewed against ticket and invariants. Native, human acceptance and independent review are not claimed.

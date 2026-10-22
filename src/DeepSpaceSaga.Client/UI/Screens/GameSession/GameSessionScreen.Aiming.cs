@@ -308,9 +308,19 @@ public sealed partial class GameSessionScreen
         string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : SelectedPointProfile(module);
         bool aiming = PointAim?.ModuleId == module.ModuleId && _hasMousePosition;
         double? distanceKm = null;
+        CounterAimPreview? counterPoint = null;
+        ObjectMotionSnapshot? counterOwner = null;
+        ObjectMotionSnapshot[] counterRows = [];
         if (aiming && FindPlayerShip(_renderStates) is { } own)
         {
             var target = _camera.ScreenToWorld(_mouseX, _mouseY, _viewportW, _viewportH);
+            if (module.Defense is not null && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
+            {
+                counterPoint = counter; counterOwner = own.Pose.ToSnapshot();
+                counterRows = _renderStates.Where(s => !s.Source.IsDestroyed && (s.Source.OwnProjectile is not null || s.Source.ObservedProjectile is not null))
+                    .Select(s => s.Pose.ToSnapshot()).ToArray();
+                target = (counter.X, counter.Y);
+            }
             distanceKm = double.Hypot(target.Item1 - own.Pose.X, target.Item2 - own.Pose.Y) / 10;
         }
         double? range = module.LauncherCombat?.RangeKm ?? module.Defense?.RangeKm;
@@ -330,6 +340,13 @@ public sealed partial class GameSessionScreen
                 else
                 {
                     time = $"{PanelTime.RealSeconds(distance / profile.SpeedKmS, PanelDisplaySpeed):0.0}{Localization.Combat("Panel.Seconds")}";
+                    if (counterPoint?.SnappedObjectId is not null && counterOwner is not null && module.Defense is { } defense)
+                    {
+                        var arrival = ProjectCounterAim(counterOwner, counterRows, profile, defense.RangeKm,
+                            counterPoint.X, counterPoint.Y, _camera.PixelsPerWorldUnit, false, PointAimTime,
+                            PanelDisplaySpeed.MotionTimeMultiplier(), counterPoint);
+                        if (arrival.Late || arrival.Unreachable) time = Localization.Combat("Panel.Unreachable");
+                    }
                     sigmaText = effective is { } cursorSigma ? $"{Localization.Combat("Panel.Sigma")}{cursorSigma * distance:0.00}" : Localization.Combat("Panel.UnknownValue");
                 }
             }
@@ -355,6 +372,8 @@ public sealed partial class GameSessionScreen
         if (PointAim?.ModuleId == module.ModuleId && _hasMousePosition && FindPlayerShip(_renderStates) is { } own)
         {
             var target = _camera.ScreenToWorld(_mouseX, _mouseY, _viewportW, _viewportH);
+            if (module.Defense is not null && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
+                target = (counter.X, counter.Y);
             double distance = double.Hypot(target.Item1 - own.Pose.X, target.Item2 - own.Pose.Y) / 10;
             foreach (var profile in PointProfiles(module))
                 lines.Add(CombatText("Profile." + profile.ProfileId, profile.ProfileId) + ": " + PanelTime.Tooltip(distance / profile.SpeedKmS, PanelDisplaySpeed));
