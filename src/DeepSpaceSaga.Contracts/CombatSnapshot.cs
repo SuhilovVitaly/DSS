@@ -120,7 +120,10 @@ public sealed record LauncherCombatSnapshot(
     double? EffectiveScatterPercent = null,
     /// <summary>Current own-launch blast core fraction; absent for legacy launchers.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    double? CoreFraction = null);
+    double? CoreFraction = null,
+    /// <summary>Authoritative armor penetration percentage, preserving fractional catalog precision.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    decimal? ArmorPiercingPercent = null);
 
 /// <summary>
 /// Immutable confirmed torpedo flight. The Engine produces this state; the DTO performs

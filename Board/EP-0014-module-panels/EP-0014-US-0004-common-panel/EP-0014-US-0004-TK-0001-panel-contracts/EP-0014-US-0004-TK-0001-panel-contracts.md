@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0004-common-panel
 ticket: EP-0014-US-0004-TK-0001-panel-contracts
 title: panel-contracts
-stage: approved
+stage: implemented
 layer: contracts
 depends_on: []
 files_touched: 3
@@ -50,3 +50,8 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Implementation evidence
+Added LauncherCombatSnapshot.ArmorPiercingPercent (decimal?) and AuthoritativeSnapshot.DestroyedModuleLimit (int?, player ship only). Optional properties omit null; no save schema change. Reviewed exact diff: appended optional parameters preserve positional consumers, DTO remains immutable, old producers do not invent values.
+
+Validation2026-10-22: focused ModulePanelContractTests2/2; Contracts regression271/271. Commands: dotnet test tests/DeepSpaceSaga.Contracts.Tests --no-restore --filter FullyQualifiedName~ModulePanelContractTests; then --no-build regression, both with absolute results directory and TRX. Owning build succeeded without warnings. Scoped dotnet format verify and git diff --check PASS after CRLF correction. Sandbox run failed testhost connection; elevated reruns passed. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/contracts-panel-elevated.trx, contracts-regression.trx, contracts-format.log. Native/UI: not applicable to schema ticket. Human acceptance and independent review not claimed. Engine population follows TK-0002.
