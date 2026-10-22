@@ -63,15 +63,17 @@ US3-TK2 startup checks complete: Engine128/128, Contracts264/264, Client38/38,
 solution build0warnings/errors and scoped format/diff PASS; published.
 US4-TK1 writer checks complete: Client61/61 and final lifecycle/metrics56/56,
 Client build0warnings/errors, scoped format/diff PASS; published.
-US4-TK2 defaults checks complete: Client44/44, solution build0warnings/errors,
-scoped format/diff PASS; its commit/push follows. US4-AC4 remains assigned to
+US4-TK2 published `b02d157a01f9cc470b70c780f64e8098e51565f7`: Client44/44,
+solution build0warnings/errors, scoped format/diff PASS. US4-AC4 remains assigned to
 US5-TK3 reset integration, so US4 final acceptance is still open.
 Global diff currently includes an external process-AGENTS blank-line warning;
 foreign docs/process/tool curation changes are preserved and not staged here.
 Final US7 exists
 and was expanded before main implementation to cover all six documentation
 outcomes required by the execution prompt. Next: US5-TK1 tactical panel layout.
-US4–US7 remain pending. US1–US3 automated AC coverage and
+US5-TK1 layout: 25 rows/5 sections/scales1/1.5/2, zero bytes over100 unchanged
+frames; Client regression78/78, Client build0warnings/errors, scoped format PASS.
+US5–US7 remain pending. US1–US3 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 
 Graph source navigation is the existing ignored `src/graphify-out` export. It is

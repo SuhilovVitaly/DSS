@@ -334,6 +334,7 @@ public sealed partial class GameSessionScreen : IScreen
         _predictor = predictor;
         _handle = handle;
         InitializeCombatReports();
+        InitializeDebugTuning();
         _timestampProvider = timestampProvider ?? Stopwatch.GetTimestamp;
         _showTrajectoryPrediction = showTrajectoryPrediction;
         _tacticalMapSnapshotDirectory = tacticalMapSnapshotDirectory ?? TacticalMapSnapshotWriter.DefaultDirectory;
@@ -1467,6 +1468,7 @@ public sealed partial class GameSessionScreen : IScreen
             canvas.DrawRect(_lastCloseRect, _panelBgPaint);
             canvas.DrawText("×", _lastCloseRect.MidX, _lastCloseRect.Top + 16, _panelClosePaint);
         }
+        RenderDebugTuning(canvas);
         CompleteRenderStage("info_panels");
 
         canvas.Restore();

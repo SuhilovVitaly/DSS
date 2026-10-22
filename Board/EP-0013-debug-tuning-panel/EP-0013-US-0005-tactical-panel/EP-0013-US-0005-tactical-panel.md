@@ -1,7 +1,7 @@
 ---
 epic: EP-0013-debug-tuning-panel
 story: EP-0013-US-0005-tactical-panel
-stage: draft
+stage: in-progress
 ---
 
 # Панель
