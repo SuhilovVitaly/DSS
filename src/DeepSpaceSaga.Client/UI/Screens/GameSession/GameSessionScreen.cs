@@ -433,6 +433,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (HandleDebugMouse(x, y, button)) return ScreenEvent.None;
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         if (HandlePointAimMouse(x, y, button)) return ScreenEvent.None;
         if (HandleThreatPanelClick(x, y, button)) return ScreenEvent.None;
@@ -591,6 +592,13 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
+        if (_debugTuningPanel.Contains(x / _uiScale, y / _uiScale))
+        {
+            _panLastScreenX = x; _panLastScreenY = y;
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return true;
+        }
         if (PointAim is { } aim && (_mouseX != x || _mouseY != y))
         { _pointErrors.Remove(aim.ModuleId); ResetPointFriendlyConfirmation(); }
         if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
@@ -665,6 +673,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
+        if (HandleDebugMouse(x, y, null, delta)) return ScreenEvent.None;
         if (_combatSummaryPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (_threatPanel.Scroll(x / _uiScale, y / _uiScale, delta)) return ScreenEvent.None;
         if (HandlePointAimWheel(x, y, delta)) return ScreenEvent.None;
@@ -681,6 +690,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public ScreenEvent OnKeyDown(Key key)
     {
+        if (HandleDebugKey(key)) return ScreenEvent.None;
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         if (HandleManeuverKey(key)) return ScreenEvent.None;
         if (HandlePointAimKey(key)) return ScreenEvent.None;

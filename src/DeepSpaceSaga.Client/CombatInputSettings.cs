@@ -12,6 +12,7 @@ public sealed record CombatInputSettings
     public Key CountermissileAim { get; init; } = Key.W;
     public ImmutableArray<Key> Profiles { get; init; } = [Key.Number1, Key.Number2, Key.Number3];
     public Key Cancel { get; init; } = Key.Escape;
+    public Key DebugPanel { get; init; } = Key.F12;
     public MouseButton LaunchMouse { get; init; } = MouseButton.Left;
     public MouseButton CancelMouse { get; init; } = MouseButton.Right;
     public bool WheelProfiles { get; init; } = true;
@@ -22,14 +23,14 @@ public sealed record CombatInputSettings
     public Key TurnRight { get; init; } = Key.Right;
     public ImmutableArray<Key> FullSpeed { get; init; } = [Key.ShiftLeft, Key.ShiftRight];
     public static CombatInputSettings Default { get; } = new();
-    internal IEnumerable<Key> MappedKeys => new[] { TorpedoAim, CountermissileAim, Cancel, EvadeLeft, EvadeRight, NextThreat, TurnLeft, TurnRight }.Concat(Profiles).Concat(FullSpeed);
+    internal IEnumerable<Key> MappedKeys => new[] { TorpedoAim, CountermissileAim, Cancel, DebugPanel, EvadeLeft, EvadeRight, NextThreat, TurnLeft, TurnRight }.Concat(Profiles).Concat(FullSpeed);
 
     internal CombatInputSettings Validate()
     {
         if (Profiles.IsDefault || Profiles.Length != 3) throw new ArgumentException("profiles must contain three keys");
         var keys = new HashSet<Key>();
         var namedKeys = new[] { ("torpedoAim", TorpedoAim), ("countermissileAim", CountermissileAim), ("cancel", Cancel),
-            ("evadeLeft", EvadeLeft), ("evadeRight", EvadeRight), ("nextThreat", NextThreat), ("turnLeft", TurnLeft), ("turnRight", TurnRight) }
+            ("debugPanel", DebugPanel), ("evadeLeft", EvadeLeft), ("evadeRight", EvadeRight), ("nextThreat", NextThreat), ("turnLeft", TurnLeft), ("turnRight", TurnRight) }
             .Concat(Profiles.Select((key, index) => ($"profiles[{index}]", key)));
         foreach (var (field, key) in namedKeys)
         {
@@ -61,7 +62,7 @@ public sealed record CombatInputSettings
             var root = document.RootElement;
             if (root.ValueKind != JsonValueKind.Object) throw Invalid("root", "expected an object");
             string[] expected = ["schemaVersion", "torpedoAim", "countermissileAim", "profiles", "cancel", "launchMouse", "cancelMouse", "wheelProfiles"];
-            string[] optional = ["evadeLeft", "evadeRight", "nextThreat", "turnLeft", "turnRight", "fullSpeed"];
+            string[] optional = ["evadeLeft", "evadeRight", "nextThreat", "turnLeft", "turnRight", "fullSpeed", "debugPanel"];
             var seen = new HashSet<string>(StringComparer.Ordinal);
             foreach (var property in root.EnumerateObject())
             {
@@ -81,6 +82,7 @@ public sealed record CombatInputSettings
                 CountermissileAim = Read<Key>(root.GetProperty("countermissileAim"), "countermissileAim"),
                 Profiles = profiles.EnumerateArray().Select(p => Read<Key>(p, "profiles")).ToImmutableArray(),
                 Cancel = Read<Key>(root.GetProperty("cancel"), "cancel"),
+                DebugPanel = OptionalKey("debugPanel", Key.F12),
                 LaunchMouse = Read<MouseButton>(root.GetProperty("launchMouse"), "launchMouse"),
                 CancelMouse = Read<MouseButton>(root.GetProperty("cancelMouse"), "cancelMouse"),
                 WheelProfiles = wheel.GetBoolean(),

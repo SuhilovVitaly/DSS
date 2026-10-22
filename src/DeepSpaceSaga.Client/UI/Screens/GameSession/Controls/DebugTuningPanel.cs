@@ -14,6 +14,8 @@ internal sealed class DebugTuningPanel : IDisposable
     internal static readonly string[] ModuleIds = ["module.engine.tetrarch", "module.engine.strizh", "module.torpedo.launcher.basic", "module.torpedo.launcher.light", "module.countermeasure.launcher.basic"];
     private readonly Func<string, string> _text;
     private readonly SKFont _font = new(MenuStyle.TypefaceRegular, 12);
+    private readonly SKTypeface _italicTypeface = SKTypeface.FromFamilyName("Verdana", SKFontStyle.Italic);
+    private readonly SKFont _italicFont;
     private readonly SKPaint _paint = new() { IsAntialias = true };
     private readonly SKTextBlob[] _sections = new SKTextBlob[5];
     private readonly bool[] _collapsed = new bool[5];
@@ -38,11 +40,14 @@ internal sealed class DebugTuningPanel : IDisposable
         internal readonly int Section = section;
         internal SKTextBlob Label = null!, Number = null!, DefaultNumber = null!;
         internal SKRect Bounds;
+        internal double? PendingValue;
+        internal double DisplayValue => PendingValue ?? Value.Value;
         internal bool Modified => Value.Value != Default;
     }
 
     internal DebugTuningPanel(Func<string, string>? text = null)
     {
+        _italicFont = new(_italicTypeface, 12);
         _text = text ?? Localization.Get;
         _title = Blob(_text("Debug.Title"));
         _minus = Blob("−"); _plus = Blob("+"); _reset = Blob("↺"); _help = Blob("?");
@@ -115,6 +120,53 @@ internal sealed class DebugTuningPanel : IDisposable
     }
 
     internal Row GetRow(int index) => _rows[index];
+    internal void SetPending(int index, double? value)
+    {
+        var row = _rows[index];
+        if (row.PendingValue == value) return;
+        row.PendingValue = value;
+        row.Number.Dispose();
+        row.Number = SKTextBlob.Create(Format(row.DisplayValue), value is null ? _font : _italicFont);
+    }
+
+    internal bool TryEdit(float x, float y, int wheelDirection, bool fine, out int index, out double value)
+    {
+        index = -1; value = 0;
+        if (!Contains(x, y) || !Viewport.Contains(x, y)) return false;
+        for (int i = 0; i < _rows.Count; i++)
+        {
+            var row = _rows[i]; var rect = RowBounds(i);
+            if (rect.IsEmpty || !rect.Contains(x, y)) continue;
+            int direction;
+            if (wheelDirection != 0)
+            {
+                if (x < rect.Right - 160 || x >= rect.Right - 90) return false;
+                direction = wheelDirection;
+            }
+            else if (x >= rect.Right - 28 && x <= rect.Right - 4)
+            { value = row.Default; index = i; return value != row.DisplayValue; }
+            else if (x >= rect.Right - 88 && x <= rect.Right - 64) direction = -1;
+            else if (x >= rect.Right - 58 && x <= rect.Right - 34) direction = 1;
+            else return false;
+            var (min, max, step, small) = Limits(row.Value);
+            value = Math.Clamp(Math.Round(row.DisplayValue + direction * (fine ? small : step), 6), min, max);
+            if (value == row.DisplayValue) return false;
+            index = i; return true;
+        }
+        return false;
+    }
+
+    internal static (double Min, double Max, double Step, double Fine) Limits(DebugTuningValue value) => value.Field switch
+    {
+        "maxSpeedKmS" => (.1, 50, .5, .1),
+        "accelerationMps2" => (10, 20000, 50, 10),
+        "turnRateDegPerSec" => (1, 360, 2, 1),
+        "reloadMs" => (100, 600000, 500, 100),
+        "speedKmS" => (.1, 100, .5, .1),
+        "blastRadiusKm" when value.ModuleTypeId == ModuleIds[4] => (.05, 50, .25, .05),
+        "blastRadiusKm" => (.05, 50, .5, .1),
+        _ => throw new InvalidOperationException("Unknown tuning field.")
+    };
     internal SKRect RowBounds(int index)
     {
         var rect = _rows[index].Bounds;
@@ -180,6 +232,6 @@ internal sealed class DebugTuningPanel : IDisposable
         _disposed = true; ClearRows();
         foreach (var section in _sections) section.Dispose();
         _title.Dispose(); _minus.Dispose(); _plus.Dispose(); _reset.Dispose(); _resetAll.Dispose(); _folder.Dispose(); _help.Dispose();
-        _font.Dispose(); _paint.Dispose();
+        _font.Dispose(); _italicFont.Dispose(); _italicTypeface.Dispose(); _paint.Dispose();
     }
 }

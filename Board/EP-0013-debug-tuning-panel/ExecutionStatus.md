@@ -71,8 +71,10 @@ foreign docs/process/tool curation changes are preserved and not staged here.
 Final US7 exists
 and was expanded before main implementation to cover all six documentation
 outcomes required by the execution prompt. Next: US5-TK1 tactical panel layout.
-US5-TK1 layout: 25 rows/5 sections/scales1/1.5/2, zero bytes over100 unchanged
+US5-TK1 published `349b9586bfc5e2094a16dad58a9357f74feadf7d`:
+25 rows/5 sections/scales1/1.5/2, zero bytes over100 unchanged
 frames; Client regression78/78, Client build0warnings/errors, scoped format PASS.
+US5-TK2 input: Client130/130, build0warnings/errors, scoped format PASS; publication follows.
 US5–US7 remain pending. US1–US3 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 

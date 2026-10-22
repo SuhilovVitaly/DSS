@@ -171,6 +171,13 @@ public sealed class GameSessionHandle : IAsyncDisposable
             TargetWorldX: x, TargetWorldY: y, ProfileId: profileId));
     }
 
+    public ValueTask SendDebugTuningAsync(DebugTuningPatch patch, out string commandId)
+    {
+        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
+        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
+        return SubmitCommandAsync(new(commandId, sequence, "", "", DebugTuningCommandTypes.Apply, DebugTuning: patch));
+    }
+
     public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
     {
         ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
