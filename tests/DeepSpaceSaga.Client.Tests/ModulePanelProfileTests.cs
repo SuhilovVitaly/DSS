@@ -9,6 +9,46 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class ModulePanelProfileTests
 {
     [Fact]
+    public async Task Profile_rows_use_current_binding_order_outside_aim()
+    {
+        await using var f = await PointCombatUiFixture.Create(inputs: CombatInputSettings.Default with
+        { Profiles = [Key.Number3, Key.Number1, Key.Number2] });
+        var row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        var keys = row.DetailLines.Where(l => l.Contains('\t')).Select(l => l.Split('\t')[0]).ToArray();
+        Assert.Equal("3", keys[0]);
+        Assert.Equal("1" + Localization.Combat("Panel.Selected"), keys[1]);
+        Assert.Equal("2", keys[2]);
+    }
+
+    [Fact]
+    public async Task Actual_profile_rows_show_keys_core_cursor_times_and_sigma()
+    {
+        await using var f = await PointCombatUiFixture.Create(accuracySkill: 20);
+        f.Expose(250);
+        f.Screen.OnKeyDown(Key.Q);
+        var point = f.Pixel(250);
+        f.Screen.OnMouseMove(point.X, point.Y);
+        f.Render();
+        var row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        var columns = row.DetailLines.Where(l => l.Contains('\t')).Select(l => l.Split('\t')).ToArray();
+        Assert.Equal(3, columns.Length);
+        Assert.Equal("1", columns[0][0]);
+        Assert.Contains(Localization.Combat("Panel.Selected"), columns[1][0]);
+        Assert.Contains("2.7", columns[0][4].Replace(',', '.'));
+        Assert.Contains("1.5", columns[1][4].Replace(',', '.'));
+        Assert.Contains("0.75", columns[2][4].Replace(',', '.'));
+        Assert.Contains("16.7", columns[0][5].Replace(',', '.'));
+        Assert.Contains("10.0", columns[1][5].Replace(',', '.'));
+        Assert.Contains("6.3", columns[2][5].Replace(',', '.'));
+        Assert.Contains("0.42", columns[1][6].Replace(',', '.'));
+        f.Expose(800);
+        f.Screen.OnKeyDown(Key.Q);
+        point = f.Pixel(800); f.Screen.OnMouseMove(point.X, point.Y); f.Render();
+        row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.All(row.DetailLines.Where(l => l.Contains('\t')), l => Assert.Contains(Localization.Combat("Panel.OutOfRange"), l));
+    }
+
+    [Fact]
     public async Task Actual_entry_uses_medium_and_remembers_fast_per_session()
     {
         await using (var f = await PointCombatUiFixture.Create())

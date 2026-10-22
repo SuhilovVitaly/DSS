@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0001-torpedo-panel
 ticket: EP-0014-US-0001-TK-0002-profile-rows
 title: profile-rows
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0014-US-0001-TK-0001-profile-memory]
 files_touched: 3
@@ -50,3 +50,14 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Scope refinement before implementation
+Include Data/Locale/English.json and Russian.json so symbols/units ship localized; include GameSessionScreen.TorpedoAimPreview.cs to keep aim preview real-time conversion consistent while paused. Seven implementation files. Columns are explicit tab-delimited field slots drawn at fixed offsets, not proportional-space padding. Cursor distance uses the same admitted own pose and world scale as live preview; no damage/rules simulation added.
+
+Numeric fixture correction: current PlayerShipOnly crew accuracy is0, so live sigma at25km is0.75, not specification example0.42 at skill20. Extend tests/DeepSpaceSaga.Client.Tests/PointCombatUiFixture.cs with optional initial accuracySkill override for explicit skill20 fixture; production catalog and scenario remain unchanged. The original expected0.42 assertion is retained.
+
+## Implementation evidence
+
+Render bound profile columns and core radii with cursor flight time and sigma;30 checks pass
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-profile-rows-final.trx and client-profile-rows-final-format.log. Owning build, scoped format and diff checks passed. Diff self-reviewed against ticket and invariants. Native, human acceptance and independent review are not claimed.

@@ -1,4 +1,12 @@
 {
+  "Combat.Panel.Core": "ядро",
+  "Combat.Panel.Kilometers": "км",
+  "Combat.Panel.KilometersPerSecond": "км/с",
+  "Combat.Panel.OutOfRange": "вне дальности",
+  "Combat.Panel.Radius": "R",
+  "Combat.Panel.Seconds": "с",
+  "Combat.Panel.Selected": "▸",
+  "Combat.Panel.Sigma": "σ",
   "Combat.Panel.Armor": "Броня",
   "Combat.Panel.BarEmpty": "░",
   "Combat.Panel.BarFull": "█",

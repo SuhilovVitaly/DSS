@@ -816,6 +816,7 @@ public sealed class CommandsPanel
         var lines = ImmutableArray.CreateBuilder<string>();
         foreach (string line in source)
         {
+            if (line.Contains('\t')) { lines.Add(line); continue; }
             string remaining = line;
             while (paint.MeasureText(remaining) > PanelWidth - 20)
             {
@@ -1041,7 +1042,21 @@ public sealed class CommandsPanel
                 {
                     paint.Color = row.Name == "Navigation" && i == 0 && DestroyedModuleLimit is { } limit &&
                         OwnModuleDiagram is { } diagram && diagram.DestroyedCount >= limit - 1 ? SKColors.IndianRed : XenonStyle.CyanBright;
-                    canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, Math.Max(row.BodyRect.Top + (row.Weapon is null ? 16 : 96), row.Buttons.IsDefaultOrEmpty ? 0 : row.Buttons.Max(b => b.Rect.Bottom) + 16) + i * 16, paint);
+                    float y = Math.Max(row.BodyRect.Top + (row.Weapon is null ? 16 : 96), row.Buttons.IsDefaultOrEmpty ? 0 : row.Buttons.Max(b => b.Rect.Bottom) + 16) + i * 16;
+                    if (row.DetailLines[i].Contains('\t'))
+                    {
+                        float[] widths = [24, 65, 45, 39, 57, 44, 54];
+                        var columns = row.DetailLines[i].Split('\t');
+                        float x = row.BodyRect.Left + 10;
+                        paint.TextSize = 10;
+                        for (int column = 0; column < columns.Length; column++)
+                        {
+                            canvas.DrawText(columns[column], x, y, paint);
+                            x += widths[Math.Min(column, widths.Length - 1)];
+                        }
+                        paint.TextSize = 12;
+                    }
+                    else canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, y, paint);
                 }
                 canvas.Restore();
             }

@@ -280,12 +280,46 @@ public sealed partial class GameSessionScreen
         var lines = new List<string>();
         var profiles = PointProfiles(module);
         string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : SelectedPointProfile(module);
-        foreach (var profile in profiles)
-            lines.Add($"{(profile.ProfileId == current ? "> " : "")}{CombatText("Profile." + profile.ProfileId, profile.ProfileId)} · {profile.SpeedKmS:0.##} {CombatText("KilometersPerSecond", "")} · R {profile.BlastRadiusKm:0.##} {CombatText("Kilometers", "")}");
-        double? scatter = module.LauncherCombat?.ScatterPercent ?? module.Defense?.ScatterPercent;
+        bool aiming = PointAim?.ModuleId == module.ModuleId && _hasMousePosition;
+        double? distanceKm = null;
+        if (aiming && FindPlayerShip(_renderStates) is { } own)
+        {
+            var target = _camera.ScreenToWorld(_mouseX, _mouseY, _viewportW, _viewportH);
+            distanceKm = double.Hypot(target.Item1 - own.Pose.X, target.Item2 - own.Pose.Y) / 10;
+        }
+        double? range = module.LauncherCombat?.RangeKm ?? module.Defense?.RangeKm;
         double? effective = module.LauncherCombat?.EffectiveScatterPercent ?? module.Defense?.EffectiveScatterPercent;
+        for (int i = 0; i < profiles.Length; i++)
+        {
+            var profile = profiles[i];
+            string key = i < CombatInputs.Profiles.Length ? PanelKeyLabel(CombatInputs.Profiles[i]) : "";
+            string marker = profile.ProfileId == current ? Localization.Combat("Panel.Selected") : "";
+            string core = module.LauncherCombat?.CoreFraction is { } fraction
+                ? $"{Localization.Combat("Panel.Core")} {profile.BlastRadiusKm * fraction:0.##}" : "";
+            string time = "", sigmaText = "";
+            if (distanceKm is { } distance)
+            {
+                if (range is not > 0 || distance > range)
+                    time = Localization.Combat("Panel.OutOfRange");
+                else
+                {
+                    time = $"{PanelTime.RealSeconds(distance / profile.SpeedKmS, PanelDisplaySpeed):0.0}{Localization.Combat("Panel.Seconds")}";
+                    sigmaText = effective is { } cursorSigma ? $"{Localization.Combat("Panel.Sigma")}{cursorSigma * distance:0.00}" : Localization.Combat("Panel.UnknownValue");
+                }
+            }
+            lines.Add(string.Join('\t', key + marker, CombatText("Profile." + profile.ProfileId, profile.ProfileId),
+                $"{profile.SpeedKmS:0.##}{Localization.Combat("Panel.KilometersPerSecond")}",
+                $"{Localization.Combat("Panel.Radius")}{profile.BlastRadiusKm:0.##}", core, time, sigmaText));
+        }
+        double? scatter = module.LauncherCombat?.ScatterPercent ?? module.Defense?.ScatterPercent;
         lines.Add($"{CombatText("Scatter", "Разброс")}: {(scatter is { } value ? (value * 100).ToString("0.##") + "%" : "—")} · σ {(effective is { } sigma ? (sigma * 100).ToString("0.##") + "%" : "—")}");
         return lines;
+    }
+
+    private static string PanelKeyLabel(Key key)
+    {
+        string name = key.ToString();
+        return name.StartsWith("Number", StringComparison.Ordinal) ? name[6..] : name;
     }
 
     private void RememberPointProfile(InstalledModuleSnapshot module, string profile) =>

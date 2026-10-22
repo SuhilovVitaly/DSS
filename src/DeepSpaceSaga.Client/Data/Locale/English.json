@@ -1,4 +1,12 @@
 {
+  "Combat.Panel.Core": "core",
+  "Combat.Panel.Kilometers": "km",
+  "Combat.Panel.KilometersPerSecond": "km/s",
+  "Combat.Panel.OutOfRange": "out of range",
+  "Combat.Panel.Radius": "R",
+  "Combat.Panel.Seconds": "s",
+  "Combat.Panel.Selected": "▸",
+  "Combat.Panel.Sigma": "σ",
   "Combat.Panel.Armor": "Armor",
   "Combat.Panel.BarEmpty": "░",
   "Combat.Panel.BarFull": "█",
