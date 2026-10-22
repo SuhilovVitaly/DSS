@@ -85,6 +85,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     /// </summary>
     public bool MasterSeedWasMissingOnLoad => _engine.MasterSeedWasMissingOnLoad;
     private static string DefaultDebugTuningPath => Path.Combine(AppContext.BaseDirectory, "DebugTuning", "debug-tuning.json");
+    public static DebugTuningSnapshot LoadDebugTuningDefaults(string settingsPath) =>
+        Content.EngineContentLoader.LoadDebugTuningDefaults(settingsPath);
 
     private async Task RunEngineLoopAsync(CancellationToken ct)
     {

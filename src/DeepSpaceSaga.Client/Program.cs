@@ -18,12 +18,25 @@ public static class Program
                 $"STARTUP DIAG: OS process start to Main() entry — {beforeMain.TotalMilliseconds:F0} ms (.NET host/runtime init)");
         }
 
+        try
+        {
+            WriteDebugTuningDefaults(Path.Combine(AppContext.BaseDirectory, "Settings.json"),
+                Path.Combine(AppContext.BaseDirectory, "DebugTuning"));
+        }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            InterfaceLog.Write("Debug tuning catalog reference export failed: " + error.Message);
+        }
+
         var factory = new LocalGameSessionFactory();
         var mainMenu = new MainMenuScreen();
 
         using var window = new SkiaWindow(mainMenu, factory, startupStopwatch);
         window.Run();
     }
+
+    internal static void WriteDebugTuningDefaults(string settingsPath, string directory) =>
+        DebugTuningFileWriter.WriteDefaults(directory, LocalGameSessionConnection.LoadDebugTuningDefaults(settingsPath));
 
     private sealed class LocalGameSessionFactory : IGameSessionFactory
     {

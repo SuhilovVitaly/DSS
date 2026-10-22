@@ -8,6 +8,10 @@ namespace DeepSpaceSaga.Engine.Content;
 
 public static class EngineContentLoader
 {
+    /// <summary>Original immutable catalog values, without starting a world or applying startup tuning.</summary>
+    public static DebugTuningSnapshot LoadDebugTuningDefaults(string settingsPath) =>
+        new DebugTuningState(LoadRegistryFromSettingsFile(settingsPath, out _, out _)).Snapshot;
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,

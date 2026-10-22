@@ -24,6 +24,7 @@ per-ticket publication. They are retained as the current execution inputs.
 | EP-0013-US-0002-TK-0003 | `9d6d4f5b72eb636be2e87e37032ba3ac22fa3688` | Pushed; remote SHA verified identical on 2026-10-22 |
 | EP-0013-US-0003-TK-0001 | `51af7a7071a71d4b607f6f1fa1209fbe9f644a44` | Pushed; remote SHA verified identical on 2026-10-22 |
 | EP-0013-US-0003-TK-0002 | `aa8750dbac35f25b82b3ec44cbe5011fc02740a0` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0004-TK-0001 | `60d86f2313758422e51a909882231a89eb7bc42e` | Pushed; remote SHA verified identical on 2026-10-22 |
 
 The existing preparatory commit `2a63be54` was published with the same branch.
 No empty replacement implementation commit was created.
@@ -61,12 +62,15 @@ solution build0warnings/errors, scoped format/diff PASS; published.
 US3-TK2 startup checks complete: Engine128/128, Contracts264/264, Client38/38,
 solution build0warnings/errors and scoped format/diff PASS; published.
 US4-TK1 writer checks complete: Client61/61 and final lifecycle/metrics56/56,
-Client build0warnings/errors, scoped format/diff PASS; its commit/push follows.
+Client build0warnings/errors, scoped format/diff PASS; published.
+US4-TK2 defaults checks complete: Client44/44, solution build0warnings/errors,
+scoped format/diff PASS; its commit/push follows. US4-AC4 remains assigned to
+US5-TK3 reset integration, so US4 final acceptance is still open.
 Global diff currently includes an external process-AGENTS blank-line warning;
 foreign docs/process/tool curation changes are preserved and not staged here.
 Final US7 exists
 and was expanded before main implementation to cover all six documentation
-outcomes required by the execution prompt. Next: US4-TK2 catalog defaults file.
+outcomes required by the execution prompt. Next: US5-TK1 tactical panel layout.
 US4–US7 remain pending. US1–US3 automated AC coverage and
 self-review are complete; full epic acceptance remains OPEN.
 

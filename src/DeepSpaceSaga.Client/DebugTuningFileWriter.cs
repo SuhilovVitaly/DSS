@@ -137,6 +137,10 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
         }
     }
 
+    internal static void WriteDefaults(string directory, DebugTuningSnapshot catalog) =>
+        WriteAtomic(Path.Combine(directory, "debug-tuning.defaults.json"),
+            DebugTuningFileFormat.Serialize(catalog.Defaults, DateTimeOffset.UtcNow, catalog: true));
+
     public async ValueTask DisposeAsync()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0) { await _worker.ConfigureAwait(false); return; }
