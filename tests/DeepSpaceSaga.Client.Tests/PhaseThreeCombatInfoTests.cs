@@ -15,7 +15,7 @@ public class PhaseThreeCombatInfoTests
     [InlineData(480)]
     public void Long_details_wrap_and_remain_scrollable(int height)
     {
-        string detail = string.Join(" ", Enumerable.Repeat("captured accuracy and maneuverability", 8));
+        string detail = string.Join(" ", Enumerable.Repeat("captured accuracy and maneuverability", 24));
         var panel = new CommandsPanel(weaponDetails: _ => [detail], weaponCommandEnabled: (_, _) => true);
         using var bitmap = new SKBitmap(400, height);
         using var canvas = new SKCanvas(bitmap);

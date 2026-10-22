@@ -20,6 +20,7 @@ public sealed class CommandsPanel
     private SKPicture? _cachedPicture;
     private SKPaint? _detailsPaint, _reloadRingPaint, _reloadTimerPaint, _rangeCheckPaint, _progressPaint;
     private SKPath? _reloadRingPath;
+    private SKTypeface? _detailsTypeface;
     private InstalledModuleSnapshot[] _cachedModules = [];
     private object? _cachedTiles;
     private string? _cachedOwner;
@@ -35,6 +36,7 @@ public sealed class CommandsPanel
         _cachedModules = [];
         _cachedTiles = null;
         _detailsPaint?.Dispose(); _detailsPaint = null;
+        _detailsTypeface?.Dispose(); _detailsTypeface = null;
         _reloadRingPaint?.Dispose(); _reloadRingPaint = null;
         _reloadTimerPaint?.Dispose(); _reloadTimerPaint = null;
         _rangeCheckPaint?.Dispose(); _rangeCheckPaint = null;
@@ -44,7 +46,8 @@ public sealed class CommandsPanel
 
     private void PreparePresentationResources()
     {
-        _detailsPaint ??= new() { TextSize = 12f, IsAntialias = true };
+        _detailsTypeface ??= SKTypeface.FromFamilyName("Consolas");
+        _detailsPaint ??= new() { TextSize = 12f, IsAntialias = true, Typeface = _detailsTypeface };
         _reloadRingPaint ??= new() { Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
         _reloadTimerPaint ??= new() { Color = XenonStyle.CyanBright, TextSize = 8, TextAlign = SKTextAlign.Center, IsAntialias = true };
         _rangeCheckPaint ??= new() { Color = XenonStyle.CyanBright, StrokeWidth = 2, IsAntialias = true };
@@ -682,9 +685,6 @@ public sealed class CommandsPanel
             // explicitly opened group priority, then the installed launcher.
             HashSet<string>? visibleBodies = null;
             bool hasLauncher = OwnModuleDiagram is not null || safeModules.Any(m => m.LauncherCombat is not null || m.Defense is not null);
-            float captionHeight = hasLauncher && viewportHeight < MinimumExpandedHeight
-                ? Math.Clamp((viewportHeight - rowY - 144 - (panels.Length - 1) * CollapsedPanelGap) / panels.Length, 18f, 28f)
-                : PanelCaptionHeight;
             float BodyHeight(string name)
             {
                 if (!hasLauncher) return PanelBodyHeight;
@@ -694,6 +694,12 @@ public sealed class CommandsPanel
                     StatusBarHeight + XenonBodySliceInset + (definition.Weapon is not null || name is "Torpedo Launcher" or "Countermeasure Launcher" ? 48f : 0)
                     + details[name].Length * 16f;
             }
+            var firstExpanded = panels.OrderBy(p => p.Key == _preferredOpenedPanel ? -1 : ExpansionPriority(p))
+                .FirstOrDefault(p => !_panelOpenedByName.TryGetValue(p.Key, out bool requested) || requested);
+            float reservedBody = firstExpanded is null ? 0 : BodyHeight(firstExpanded.Key);
+            float captionHeight = hasLauncher
+                ? Math.Clamp((viewportHeight - rowY - reservedBody - (panels.Length - 1) * CollapsedPanelGap) / panels.Length, 18f, PanelCaptionHeight)
+                : PanelCaptionHeight;
             if (hasLauncher)
             {
                 visibleBodies = new(StringComparer.Ordinal);
@@ -772,7 +778,9 @@ public sealed class CommandsPanel
                 double reloadFraction = remainingReload <= 0 ? 1 : reloadDuration is > 0 ? Math.Clamp(1 - remainingReload / reloadDuration.Value, 0, 1) : 0;
                 if (weaponModule is { StructureMax: > 0, StructureCurrent: <= 0 } || weaponModule?.IsDestroyed == true) reloadFraction = 0;
                 bool pointWeapon = weaponModule?.LauncherCombat?.Profiles is { IsDefaultOrEmpty: false } || weaponModule?.Defense?.Profiles is { IsDefaultOrEmpty: false };
-                var reloadRing = pointWeapon ? new SKRect(captionRect.Left + 8, captionRect.MidY - 12, captionRect.Left + 32, captionRect.MidY + 12) : SKRect.Empty;
+                float ringRadius = Math.Min(12, captionRect.Height / 2 - 1);
+                var reloadRing = pointWeapon ? new SKRect(captionRect.Left + 20 - ringRadius, captionRect.MidY - ringRadius,
+                    captionRect.Left + 20 + ringRadius, captionRect.MidY + ringRadius) : SKRect.Empty;
                 double multiplier = _motionMultiplier();
                 double remainingReal = remainingReload / 1000 / (multiplier > 0 ? multiplier : .25);
                 _panelRows.Add(new CommandPanelGeometry(

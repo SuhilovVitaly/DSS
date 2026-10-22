@@ -8,6 +8,20 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class ModulePanelHealthTests
 {
     [Fact]
+    public async Task Native_regressions_keep_all_captions_reachable_and_panel_symbols_supported()
+    {
+        await using var fixture = await PointCombatUiFixture.Create(1280, 720, 1.5f);
+        var panel = fixture.Screen.CommandsPanel;
+        Assert.All(panel.CommandPanelRows, row => Assert.True(row.CaptionRect.Bottom <= 480, row.Name));
+        var paint = (SKPaint)typeof(CommandsPanel).GetField("_detailsPaint",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(panel)!;
+        string glyphs = string.Concat(new[] { "BarLeft", "BarFull", "BarEmpty", "BarRight", "Selected", "CriticalIcon" }
+            .Select(key => Localization.Combat("Panel." + key)));
+        foreach (char symbol in glyphs + "Точность Броня")
+            Assert.True(paint.GetGlyphs(symbol.ToString()).All(g => g != 0), $"Missing U+{(int)symbol:X4} in {paint.Typeface.FamilyName}");
+    }
+
+    [Fact]
     public async Task Render_uses_authoritative_limit_and_explains_health_and_criticality()
     {
         await using var f = await PointCombatUiFixture.Create();

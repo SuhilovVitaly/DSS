@@ -1,6 +1,6 @@
 # EP-0014 execution order
 
-18 tickets, six stories. Sequential publication; final US-0006 includes full repository documentation impact audit and Graphify. Dependencies follow the preceding row; story-level dependencies describe final acceptance, while additive schema work can precede UI.
+19 tickets, six stories. Sequential publication; final US-0006 includes full repository documentation impact audit and Graphify. Dependencies follow the preceding row; story-level dependencies describe final acceptance, while additive schema work can precede UI.
 
 | Ticket | Layer | Story criteria | Dependency | State |
 |---|---|---|---|---|
@@ -21,4 +21,5 @@
 | [EP-0014-US-0005-TK-0003-save-continuation](EP-0014-US-0005-snapshot-compatibility/EP-0014-US-0005-TK-0003-save-continuation/EP-0014-US-0005-TK-0003-save-continuation.md) | engine | AC-01, AC-04, AC-05 | EP-0014-US-0005-TK-0002-legacy-defense-fields | implemented |
 | [EP-0014-US-0006-TK-0001-localization](EP-0014-US-0006-localization-and-guide/EP-0014-US-0006-TK-0001-localization/EP-0014-US-0006-TK-0001-localization.md) | content-data | AC-01, AC-02 | EP-0014-US-0005-TK-0003-save-continuation | implemented |
 | [EP-0014-US-0006-TK-0003-snapshot-render-consistency](EP-0014-US-0006-localization-and-guide/EP-0014-US-0006-TK-0003-snapshot-render-consistency/EP-0014-US-0006-TK-0003-snapshot-render-consistency.md) | client | AC-02 | EP-0014-US-0006-TK-0001-localization | implemented |
-| [EP-0014-US-0006-TK-0002-project-documentation](EP-0014-US-0006-localization-and-guide/EP-0014-US-0006-TK-0002-project-documentation/EP-0014-US-0006-TK-0002-project-documentation.md) | documentation | AC-03, AC-04 | EP-0014-US-0006-TK-0003-snapshot-render-consistency | implemented |
+| [EP-0014-US-0006-TK-0004-native-panel-validation](EP-0014-US-0006-localization-and-guide/EP-0014-US-0006-TK-0004-native-panel-validation/EP-0014-US-0006-TK-0004-native-panel-validation.md) | client-tools | AC-02 | EP-0014-US-0006-TK-0003-snapshot-render-consistency | implemented |
+| [EP-0014-US-0006-TK-0002-project-documentation](EP-0014-US-0006-localization-and-guide/EP-0014-US-0006-TK-0002-project-documentation/EP-0014-US-0006-TK-0002-project-documentation.md) | documentation | AC-03, AC-04 | EP-0014-US-0006-TK-0004-native-panel-validation | implemented |
