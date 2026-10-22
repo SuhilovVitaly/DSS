@@ -26,6 +26,7 @@ public sealed partial class GameSessionScreen
     }
     private readonly Dictionary<string, PointSubmission> _pointSubmissions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _pointErrors = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Owner, string Module), string> _pointProfileMemory = new();
     private static ImmutableArray<LaunchProfileSnapshot> PointProfiles(InstalledModuleSnapshot module) =>
         module.LauncherCombat?.Profiles ?? module.Defense?.Profiles ?? [];
     private double PointAimTime => _buffer.LatestPrediction is { } prediction
@@ -50,7 +51,7 @@ public sealed partial class GameSessionScreen
         {
             CancelPointAim(); _pointInputSession = session; _pointInputSessionInitialized = true;
             foreach (var pending in _pointSubmissions.Values) _ = pending.SendTask?.Exception;
-            _pointSubmissions.Clear(); _pointErrors.Clear(); LastPointCommandId = null; _lastPointModuleId = null;
+            _pointSubmissions.Clear(); _pointErrors.Clear(); _pointProfileMemory.Clear(); LastPointCommandId = null; _lastPointModuleId = null;
         }
         var snapshot = _buffer.Presented?.Snapshot;
         if (snapshot is null || snapshot.ActiveDialogue is not null || snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
@@ -112,7 +113,7 @@ public sealed partial class GameSessionScreen
         var module = modules.FirstOrDefault(m => !_pointSubmissions.ContainsKey(m.ModuleId) && PointReadyReason(m) is null) ?? modules.FirstOrDefault();
         if (module is null) return false;
         ResetPointFriendlyConfirmation();
-        PointAim = new(kind, module.ModuleId, PointProfiles(module)[0].ProfileId);
+        PointAim = new(kind, module.ModuleId, SelectedPointProfile(module));
         _pointErrors.Remove(module.ModuleId); _isPanningMap = false;
         return true;
     }
@@ -132,7 +133,11 @@ public sealed partial class GameSessionScreen
         {
             ResetPointFriendlyConfirmation();
             var profiles = PointProfiles(module);
-            if (index < profiles.Length) PointAim = aim with { ProfileId = profiles[index].ProfileId };
+            if (index < profiles.Length)
+            {
+                PointAim = aim with { ProfileId = profiles[index].ProfileId };
+                RememberPointProfile(module, PointAim.ProfileId);
+            }
             _pointErrors.Remove(module.ModuleId);
             return true;
         }
@@ -148,6 +153,7 @@ public sealed partial class GameSessionScreen
         ResetPointFriendlyConfirmation();
         int index = Enumerable.Range(0, profiles.Length).First(i => profiles[i].ProfileId == aim.ProfileId);
         PointAim = aim with { ProfileId = profiles[(index + (delta > 0 ? 1 : profiles.Length - 1)) % profiles.Length].ProfileId };
+        RememberPointProfile(module, PointAim.ProfileId);
         _pointErrors.Remove(module.ModuleId);
         return true;
     }
@@ -273,7 +279,7 @@ public sealed partial class GameSessionScreen
         if (PointPanelModule(weapon) is not { } module) return [];
         var lines = new List<string>();
         var profiles = PointProfiles(module);
-        string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : profiles.FirstOrDefault()?.ProfileId;
+        string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : SelectedPointProfile(module);
         foreach (var profile in profiles)
             lines.Add($"{(profile.ProfileId == current ? "> " : "")}{CombatText("Profile." + profile.ProfileId, profile.ProfileId)} · {profile.SpeedKmS:0.##} {CombatText("KilometersPerSecond", "")} · R {profile.BlastRadiusKm:0.##} {CombatText("Kilometers", "")}");
         double? scatter = module.LauncherCombat?.ScatterPercent ?? module.Defense?.ScatterPercent;
@@ -281,6 +287,20 @@ public sealed partial class GameSessionScreen
         lines.Add($"{CombatText("Scatter", "Разброс")}: {(scatter is { } value ? (value * 100).ToString("0.##") + "%" : "—")} · σ {(effective is { } sigma ? (sigma * 100).ToString("0.##") + "%" : "—")}");
         return lines;
     }
+
+    private void RememberPointProfile(InstalledModuleSnapshot module, string profile) =>
+        _pointProfileMemory[(_buffer.Presented?.Snapshot.PlayerShipObjectId ?? "", module.ModuleId)] = profile;
+
+    private string SelectedPointProfile(InstalledModuleSnapshot module)
+    {
+        _pointProfileMemory.TryGetValue((_buffer.Presented?.Snapshot.PlayerShipObjectId ?? "", module.ModuleId), out var remembered);
+        return ResolvePanelProfile(PointProfiles(module), remembered, module.LauncherCombat is not null
+            ? CombatSettings.DefaultTorpedoProfile : CombatSettings.DefaultCountermissileProfile);
+    }
+
+    internal static string ResolvePanelProfile(ImmutableArray<LaunchProfileSnapshot> profiles, string? remembered, string configured) =>
+        profiles.FirstOrDefault(p => p.ProfileId == remembered)?.ProfileId ??
+        profiles.FirstOrDefault(p => p.ProfileId == configured)?.ProfileId ?? profiles.FirstOrDefault()?.ProfileId ?? "";
 
     private void DrawPointAimFeedback(SKCanvas canvas)
     {

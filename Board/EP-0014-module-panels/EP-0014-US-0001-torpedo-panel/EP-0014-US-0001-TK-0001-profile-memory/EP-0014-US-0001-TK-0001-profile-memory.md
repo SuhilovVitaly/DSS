@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0001-torpedo-panel
 ticket: EP-0014-US-0001-TK-0001-profile-memory
 title: profile-memory
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0014-US-0004-TK-0005-dead-code]
 files_touched: 4
@@ -51,3 +51,12 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Code context correction before implementation
+Actual settings file is src/DeepSpaceSaga.Client/UI/CombatVisualSettings.cs (not Client root). Default profile keys are optional root fields in schema1 combat-visuals.json, preserving existing files. Aiming state is keyed by owner/module and cleared with presentation session reset. Test production entry via PointCombatUiFixture; parser and invalid/removed profile fallback share the same resolver.
+
+## Implementation evidence
+
+Remember launcher profiles per owner and session with configurable medium and wide defaults;36 checks pass
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-profiles-memory-final.trx and client-profiles-memory-final-format.log. Owning build, scoped format and diff checks passed. Diff self-reviewed against ticket and invariants. Native, human acceptance and independent review are not claimed.

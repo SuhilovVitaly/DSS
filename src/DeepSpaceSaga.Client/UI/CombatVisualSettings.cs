@@ -19,6 +19,8 @@ public sealed record CombatVisualSettings(
     public SKColor ManualDefenseRange { get; init; } = TacticalMapPalette.Countermeasure.WithAlpha(71);
     public PointCombatVisualSettings PointCombat { get; init; } = PointCombatVisualSettings.Default;
     public ThreatAlertVisualSettings ThreatAlerts { get; init; } = ThreatAlertVisualSettings.Default;
+    public string DefaultTorpedoProfile { get; init; } = "medium";
+    public string DefaultCountermissileProfile { get; init; } = "wide";
     internal SKColor RangeColor(string kind) => kind switch
     {
         "torpedo" => TorpedoRange,
@@ -58,9 +60,18 @@ public sealed record CombatVisualSettings(
                 ManualDefenseRange = Optional("manualDefenseRange", Default.ManualDefenseRange),
                 PointCombat = ReadPointCombat(),
                 ThreatAlerts = ReadThreatAlerts(),
+                DefaultTorpedoProfile = ReadDefaultProfile("defaultTorpedoProfile", Default.DefaultTorpedoProfile),
+                DefaultCountermissileProfile = ReadDefaultProfile("defaultCountermissileProfile", Default.DefaultCountermissileProfile),
                 ForecastHorizonMs = root.TryGetProperty("forecastHorizonMs", out var horizon) &&
                     horizon.ValueKind == JsonValueKind.Number && horizon.TryGetInt64(out long ms) && ms is > 0 and <= 200_000 ? ms : 200_000
             };
+
+            string ReadDefaultProfile(string key, string fallback)
+            {
+                if (!root.TryGetProperty(key, out var element)) return fallback;
+                return element.ValueKind == JsonValueKind.String && element.GetString() is { Length: > 0 and <= 64 } value &&
+                    !string.IsNullOrWhiteSpace(value) ? value : throw Invalid(key, "expected a nonempty profile ID");
+            }
 
             ThreatAlertVisualSettings ReadThreatAlerts()
             {
