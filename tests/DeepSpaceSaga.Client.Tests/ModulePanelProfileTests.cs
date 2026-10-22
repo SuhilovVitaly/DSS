@@ -9,6 +9,42 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class ModulePanelProfileTests
 {
     [Fact]
+    public async Task Snapshot_statistics_and_reference_sigma_follow_game_speed()
+    {
+        await using var f = await PointCombatUiFixture.Create(accuracySkill: 20);
+        var row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.Equal(70, row.RangeKm);
+        Assert.Contains("0.42", row.OperatorText!.Replace(',', '.'));
+        Assert.Contains(row.DetailLines, l => l.Contains("200") && l.Contains("20") && l.Contains("40"));
+        await f.Connection.SetSimulationSpeedAsync(SimulationSpeed.SpeedDouble);
+        await f.Wait(() => f.Presented.CurrentSpeed == SimulationSpeed.SpeedDouble);
+        row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.Reload") + " 20 "));
+        Assert.Contains("x2", row.TimeTooltip);
+        Assert.Contains("10", row.TimeTooltip);
+    }
+
+    [Fact]
+    public async Task Render_keeps_fractional_penetration_and_does_not_invent_an_operator_sigma()
+    {
+        await using var f = await PointCombatUiFixture.Create();
+        var snapshot = f.Presented with
+        {
+            InstalledModules = [.. f.Presented.InstalledModules.Select(m => m.LauncherCombat is not { } launcher ? m : m with
+            { Operator = null, LauncherCombat = launcher with { Operator = null, EffectiveScatterPercent = null, ArmorPiercingPercent = 20.125m } })]
+        };
+        var buffer = new SnapshotBuffer(() => 0); buffer.Update(snapshot);
+        var screen = new GameSessionScreen(buffer, new DeepSpaceSaga.Motion.LinearMotionPredictor(), timestampProvider: () => 0);
+        using var bitmap = new SkiaSharp.SKBitmap(1920, 1080);
+        using var canvas = new SkiaSharp.SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        var row = Assert.Single(screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.Contains(row.DetailLines, l => l.Replace(',', '.').Contains("20.125"));
+        Assert.Equal(Localization.Combat("Panel.NoOperator"), row.OperatorText);
+        screen.OnDeactivated();
+    }
+
+    [Fact]
     public async Task Profile_rows_use_current_binding_order_outside_aim()
     {
         await using var f = await PointCombatUiFixture.Create(inputs: CombatInputSettings.Default with

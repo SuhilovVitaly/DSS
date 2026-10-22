@@ -270,10 +270,17 @@ public sealed partial class GameSessionScreen
         return command == CombatCommandTypes.Detonate ? CombatText("Detonate", "Подрыв") :
             $"{CombatText("Aim", "Прицел")} [{(module.LauncherCombat?.Profiles is not null ? CombatInputs.TorpedoAim : CombatInputs.CountermissileAim)}]";
     }
-    private string? GetPointWeaponOperator(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module
-        ? PointOperatorLabel(module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator) : null;
-    private static string PointOperatorLabel(WeaponOperatorSnapshot? op) => op is null ? CombatText("NoOperator", "Нет оператора") :
-        $"{op.DisplayName} · {CombatText("Accuracy", "Точность")} {op.Skill}";
+    private string? GetPointWeaponOperator(WeaponPanelInstance weapon)
+    {
+        if (PointPanelModule(weapon) is not { } module) return null;
+        var op = module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator;
+        if (op is null) return Localization.Combat("Panel.NoOperator");
+        double reference = module.LauncherCombat is not null ? 25 : 10;
+        double? effective = module.LauncherCombat?.EffectiveScatterPercent ?? module.Defense?.EffectiveScatterPercent;
+        return $"{op.DisplayName} · {Localization.Combat("Panel.Accuracy")} {op.Skill} · {Localization.Combat("Panel.Sigma")} " +
+            $"{(effective is { } sigma ? (sigma * reference).ToString("0.00") : Localization.Combat("Panel.UnknownValue"))} " +
+            $"{Localization.Combat("Panel.Kilometers")} {Localization.Combat("Panel.AtDistance")} {reference} {Localization.Combat("Panel.Kilometers")}";
+    }
     private IReadOnlyList<string> GetPointWeaponDetails(WeaponPanelInstance weapon)
     {
         if (PointPanelModule(weapon) is not { } module) return [];
@@ -311,9 +318,29 @@ public sealed partial class GameSessionScreen
                 $"{profile.SpeedKmS:0.##}{Localization.Combat("Panel.KilometersPerSecond")}",
                 $"{Localization.Combat("Panel.Radius")}{profile.BlastRadiusKm:0.##}", core, time, sigmaText));
         }
-        double? scatter = module.LauncherCombat?.ScatterPercent ?? module.Defense?.ScatterPercent;
-        lines.Add($"{CombatText("Scatter", "Разброс")}: {(scatter is { } value ? (value * 100).ToString("0.##") + "%" : "—")} · σ {(effective is { } sigma ? (sigma * 100).ToString("0.##") + "%" : "—")}");
+        double? reload = module.LauncherCombat?.ReloadDurationMs ?? module.Defense?.ReloadDurationMs;
+        string reloadText = reload is { } duration ? PanelTime.Format(PanelTime.RealSeconds(duration / 1000, PanelDisplaySpeed)) : Localization.Combat("Panel.UnknownValue");
+        string stats = module.LauncherCombat is { } launcher
+            ? $"{Localization.Combat("Panel.Damage")} {launcher.Damage} · {Localization.Combat("Panel.ArmorPiercing")} {launcher.ArmorPiercingPercent?.ToString("0.###") ?? Localization.Combat("Panel.UnknownValue")} {Localization.Combat("Panel.Percent")}" :
+            Localization.Combat("Panel.CounterStats");
+        lines.Add($"{stats} · {Localization.Combat("Panel.Reload")} {reloadText} {Localization.Combat("Panel.Seconds")}");
         return lines;
+    }
+
+    private string? GetPointPanelTimeTooltip(WeaponPanelInstance weapon)
+    {
+        if (PointPanelModule(weapon) is not { } module) return null;
+        var lines = new List<string>();
+        double? reload = module.LauncherCombat?.ReloadDurationMs ?? module.Defense?.ReloadDurationMs;
+        if (reload is { } duration) lines.Add(Localization.Combat("Panel.Reload") + ": " + PanelTime.Tooltip(duration / 1000, PanelDisplaySpeed));
+        if (PointAim?.ModuleId == module.ModuleId && _hasMousePosition && FindPlayerShip(_renderStates) is { } own)
+        {
+            var target = _camera.ScreenToWorld(_mouseX, _mouseY, _viewportW, _viewportH);
+            double distance = double.Hypot(target.Item1 - own.Pose.X, target.Item2 - own.Pose.Y) / 10;
+            foreach (var profile in PointProfiles(module))
+                lines.Add(CombatText("Profile." + profile.ProfileId, profile.ProfileId) + ": " + PanelTime.Tooltip(distance / profile.SpeedKmS, PanelDisplaySpeed));
+        }
+        return string.Join('\n', lines);
     }
 
     private static string PanelKeyLabel(Key key)

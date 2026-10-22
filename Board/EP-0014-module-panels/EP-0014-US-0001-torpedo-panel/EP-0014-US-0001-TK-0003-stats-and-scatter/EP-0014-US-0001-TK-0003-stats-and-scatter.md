@@ -3,7 +3,7 @@ epic: EP-0014-module-panels
 story: EP-0014-US-0001-torpedo-panel
 ticket: EP-0014-US-0001-TK-0003-stats-and-scatter
 title: stats-and-scatter
-stage: approved
+stage: implemented
 layer: client
 depends_on: [EP-0014-US-0001-TK-0002-profile-rows]
 files_touched: 2
@@ -49,3 +49,12 @@ Implemented criteria and tests pass, diff reviewed, actual evidence recorded, se
 
 ## Self-containment check
 Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Scope refinement before implementation
+Include CommandsPanel.cs and GameSessionScreen.cs for range label and injected weapon-duration tooltip; include Data/Locale RU/EN for all new labels. Six implementation files. Display statistics use snapshot damage/decimal penetration/reload, sigma uses authoritative effective ratio and explicit25km reference (10km for counter). Old percent scatter row is replaced, without changing Engine formulas.
+
+## Implementation evidence
+
+Show snapshot damage penetration reload range and reference sigma with duration explanations;31 checks pass
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-stats-final.trx and client-stats-final-format.log. Owning build, scoped format and diff checks passed. Diff self-reviewed against ticket and invariants. Native, human acceptance and independent review are not claimed.

@@ -1,4 +1,12 @@
 {
+  "Combat.Panel.Accuracy": "точность",
+  "Combat.Panel.ArmorPiercing": "бронепробитие",
+  "Combat.Panel.AtDistance": "на",
+  "Combat.Panel.CounterStats": "Сбивает снаряды в радиусе R",
+  "Combat.Panel.Damage": "Урон",
+  "Combat.Panel.NoOperator": "Нет оператора — пуск невозможен",
+  "Combat.Panel.Percent": "%",
+  "Combat.Panel.Reload": "перезарядка",
   "Combat.Panel.Core": "ядро",
   "Combat.Panel.Kilometers": "км",
   "Combat.Panel.KilometersPerSecond": "км/с",

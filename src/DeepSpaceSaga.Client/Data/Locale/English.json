@@ -1,4 +1,12 @@
 {
+  "Combat.Panel.Accuracy": "accuracy",
+  "Combat.Panel.ArmorPiercing": "armor piercing",
+  "Combat.Panel.AtDistance": "at",
+  "Combat.Panel.CounterStats": "Destroys projectiles within R",
+  "Combat.Panel.Damage": "Damage",
+  "Combat.Panel.NoOperator": "No operator — launch unavailable",
+  "Combat.Panel.Percent": "%",
+  "Combat.Panel.Reload": "reload",
   "Combat.Panel.Core": "core",
   "Combat.Panel.Kilometers": "km",
   "Combat.Panel.KilometersPerSecond": "km/s",

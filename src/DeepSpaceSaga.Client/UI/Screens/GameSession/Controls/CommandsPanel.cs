@@ -202,6 +202,7 @@ public sealed class CommandsPanel
     private readonly Func<WeaponPanelInstance, IReadOnlyList<string>>? _weaponDetails;
     private readonly Func<WeaponPanelInstance, string, string?>? _weaponCommandLabel;
     private readonly Func<double> _motionMultiplier;
+    private readonly Func<WeaponPanelInstance, string?>? _weaponTimeTooltip;
     private readonly Func<double> _motionTime;
     private readonly HashSet<string> _visibleWeaponRanges = new(StringComparer.Ordinal);
     private readonly HashSet<string> _initializedPointRanges = new(StringComparer.Ordinal);
@@ -312,7 +313,8 @@ public sealed class CommandsPanel
         Func<WeaponPanelInstance, string?>? weaponOperatorText = null,
         Func<WeaponPanelInstance, IReadOnlyList<string>>? weaponDetails = null,
         Func<double>? motionTime = null, Func<double>? motionMultiplier = null,
-        Func<WeaponPanelInstance, string, string?>? weaponCommandLabel = null)
+        Func<WeaponPanelInstance, string, string?>? weaponCommandLabel = null,
+        Func<WeaponPanelInstance, string?>? weaponTimeTooltip = null)
     {
         _isCommandEnabled = isCommandEnabled ?? (_ => true);
         _commandClicked = commandClicked ?? (_ => { });
@@ -324,6 +326,7 @@ public sealed class CommandsPanel
         _motionTime = motionTime ?? (() => 0);
         _motionMultiplier = motionMultiplier ?? (() => .25);
         _weaponCommandLabel = weaponCommandLabel;
+        _weaponTimeTooltip = weaponTimeTooltip;
 
         var typeface = XenonStyle.TypefaceRegular;
 
@@ -730,8 +733,8 @@ public sealed class CommandsPanel
                     : panel.Name == "Torpedo Launcher" ? safeModules.OrderBy(m => m.Position).FirstOrDefault(m => m.LauncherCombat is not null)
                     : panel.Name == "Countermeasure Launcher" ? safeModules.OrderBy(m => m.Position).FirstOrDefault(m => m.Defense is not null) : null;
                 float toggleSize = Math.Min(18, captionRect.Height - 4);
-                var toggle = weaponModule is null ? SKRect.Empty : new SKRect(captionRect.Right - toggleSize - 8,
-                    captionRect.MidY - toggleSize / 2, captionRect.Right - 8, captionRect.MidY + toggleSize / 2);
+                var toggle = weaponModule is null ? SKRect.Empty : new SKRect(captionRect.Right - toggleSize - 62,
+                    captionRect.MidY - toggleSize / 2, captionRect.Right - 62, captionRect.MidY + toggleSize / 2);
                 var reloadBar = opened && weaponModule is not null
                     ? new SKRect(bodyRect.Left + 12, bodyRect.Bottom - 9, bodyRect.Right - 12, bodyRect.Bottom - 3) : SKRect.Empty;
                 double? readyAt = weaponModule?.LauncherCombat?.ReadyAtMotionTimeMs ??
@@ -749,7 +752,9 @@ public sealed class CommandsPanel
                     weaponModule?.ModuleId, toggle, weaponModule is not null && IsWeaponRangeVisible(weaponModule.ModuleId), pointWeapon ? SKRect.Empty : reloadBar, reloadFraction, reloadRing, remainingReal,
                     panel.Weapon is { } operatorWeapon ? _weaponOperatorText?.Invoke(operatorWeapon) : null,
                     remainingReload > 0 ? PanelTime.Tooltip(remainingReload / 1000,
-                        (SimulationSpeed)(int)Math.Round((multiplier > 0 ? multiplier : .25) * 4)) : null));
+                        (SimulationSpeed)(int)Math.Round((multiplier > 0 ? multiplier : .25) * 4)) :
+                        panel.Weapon is { } timeWeapon ? _weaponTimeTooltip?.Invoke(timeWeapon) : null,
+                    weaponModule?.LauncherCombat?.RangeKm ?? weaponModule?.Defense?.RangeKm));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -787,9 +792,10 @@ public sealed class CommandsPanel
         }
         foreach (var row in _panelRows)
         {
-            if (!row.Opened || !row.BodyRect.Contains(_pointerX, _pointerY) || OwnModuleDiagram is null) continue;
-            var tooltips = new List<string>();
-            foreach (var tile in OwnModuleDiagram.Tiles)
+            if (!row.Opened || !row.BodyRect.Contains(_pointerX, _pointerY)) continue;
+            var tooltips = row.TimeTooltip?.Split('\n').ToList() ?? new List<string>();
+            CurrentTimeTooltip = row.TimeTooltip;
+            foreach (var tile in OwnModuleDiagram?.Tiles ?? [])
             {
                 if (row.Weapon is { } weapon && weapon.ModuleId != tile.Id) continue;
                 if (!row.DetailLines.Any(line => line.StartsWith(tile.Name, StringComparison.Ordinal))) continue;
@@ -998,6 +1004,9 @@ public sealed class CommandsPanel
             (row.RangeToggleRect.IsEmpty ? row.CaptionRect.Right - 6 : row.RangeToggleRect.Left - 6) - textX), textX, textY, _moduleCaptionTextPaint);
         if (!row.RangeToggleRect.IsEmpty)
         {
+            if (row.RangeKm is { } range)
+                canvas.DrawText($"{range:0.##} {Localization.Combat("Panel.Kilometers")}", row.RangeToggleRect.Right + 4,
+                    row.CaptionRect.MidY + 4, _moduleCaptionTextPaint);
             canvas.DrawRect(row.RangeToggleRect, row.RangeVisible ? _btnActivePaint : _btnNormalPaint);
             canvas.DrawRect(row.RangeToggleRect, _btnBorderPaint);
             if (row.RangeVisible)
@@ -1235,7 +1244,7 @@ public readonly record struct CommandPanelGeometry(
     ImmutableArray<string> DetailLines = default,
     string? RangeModuleId = null, SKRect RangeToggleRect = default, bool RangeVisible = false,
     SKRect ReloadBarRect = default, double ReloadFraction = 1, SKRect ReloadRingRect = default, double RemainingReloadRealSeconds = 0, string? OperatorText = null,
-    string? TimeTooltip = null)
+    string? TimeTooltip = null, double? RangeKm = null)
 {
     public string Key => Weapon?.Key ?? Name;
 }
