@@ -58,7 +58,7 @@ public sealed class BasicCombatUiFlowTests
         f.Screen.OnKeyDown(Key.Escape); f.Expose(0); f.Click(0); f.Render();
         Assert.Equal(PointCombatUiFixture.Player, f.Screen.SelectedObjectId);
         f.Screen.OnKeyDown(Key.Right);
-        await f.Wait(() => f.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatUiFixture.Player).ActiveEngineCommandType == ShipEngineCommandTypes.TurnRightStep);
+        await f.Wait(() => f.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatUiFixture.Player).TurnHoldRateDegPerSec > 0);
         var moved = await f.AdvanceTo(500); f.Screen.OnKeyUp(Key.Right);
         var flight = Assert.Single(moved.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
         Assert.Equal(original.DetonationX, flight.DetonationX); Assert.Equal(original.DetonationY, flight.DetonationY);

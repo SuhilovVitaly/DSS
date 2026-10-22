@@ -1649,6 +1649,7 @@ public sealed class SkiaWindow : IDisposable
         _pendingUndockCommandId = null;
         // The root may already be inactive under an overlay; ReplaceAll deactivates only Current.
         _gameSessionScreen?.DisposeCombatReports();
+        _gameSessionScreen?.DisposeDebugTuning();
         _gameSessionScreen = null;
         _screens.ReplaceAll(new DefeatScreen((float)GetUiScale(), _session.Buffer.Presented?.Snapshot.Encounter));
         return true;

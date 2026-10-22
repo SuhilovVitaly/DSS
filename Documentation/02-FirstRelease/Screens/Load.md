@@ -1,5 +1,7 @@
 # Load
 
+> **Контракт EP-0013.** EP-0013: после saved tuning bootstrap применяет валидный debug-tuning.json обычной командой, включая retiming восстановленных снарядов; отсутствующие ключи частичного файла берутся из каталога. Invalid файл отвергается целиком. Перед чтением файла заменяющей сессией предыдущий writer завершается; Load сбрасывает физический ввод. [Текущий контракт](../../04-Engineering/DebugTuningPanel.md#файлы-и-продолжение).
+
 ## Current EP-0012 contract — 2026-10-21
 
 Current writer is SaveFormatVersion18. A real Save17 or earlier is rejected atomically without migration/current-world replacement; NewGame scenario version0 is a separate path. Point flights, reload/captured operators, named scatter/dodge RNG, evasion/AI/encounter and fractional motion remainder survive load. Defeated sessions cannot overwrite a slot; error/cancel remains recoverable. Version17/16/15 text below records earlier stages. Existing modal pause, file IO and menu navigation semantics remain applicable. Headless continuation/rejection passed; native physical Save/Load menu acceptance is NOT RUN. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).

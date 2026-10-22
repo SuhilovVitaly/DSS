@@ -14,8 +14,11 @@ AC4/AC5 exact command counts/aliases/opposite stacks/10s; AC6 Shift/manual repla
 AC7 real PlayerShipOnly and combat; AC8 S/Ctrl+S/Ctrl+C/E/Z/C and actual hints;
 AC9 strict schema2/v1 warning migration; AC10 damage, recovery, focus resync and
 save/load input release. Engine304/304, Client202/202 before hints; hints133/133,
-build0warnings/errors, scoped format PASS. Native/physical-input/human acceptance
-remains open pending final evidence; current stage denotes implementation.
+build0warnings/errors, scoped format PASS. AC11 is covered by the five-second
+Engine/forecast boundary and partition comparison in SpeedHoldEngineTests.
+Final real OpenGL managed-input evidence: RU1× and EN1.5× PASS; physical input,
+human/audio acceptance remains OPEN. See [final evidence](../FinalValidation.md).
+Current stage denotes implementation.
 
 ## Публикация
 

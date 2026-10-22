@@ -76,7 +76,7 @@ public sealed record PlayerCommand(
     EvadeSide? EvadeSide = null,
     /// <summary>Explicit direction for engine.turnHold; null is not a default direction.</summary>
     TurnDirection? TurnDirection = null,
-    /// <summary>True starts/holds a turn; false releases it. Null is an incomplete payload.</summary>
+    /// <summary>True starts/holds the selected turn or speed axis; false releases it. Null is an incomplete payload.</summary>
     bool? Active = null,
     /// <summary>Atomic debug catalog overlay, applied in the player-command phase.</summary>
     [property: System.Text.Json.Serialization.JsonIgnore(Condition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull)]

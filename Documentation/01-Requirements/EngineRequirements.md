@@ -1,5 +1,7 @@
 # Deep Space Saga — контрольная точка требований к движку
 
+> **Контракт EP-0013.** Нормативное обновление EP-0013: [DebugTuningPanel](../04-Engineering/DebugTuningPanel.md) и [ManualManeuver](../04-Engineering/ManualManeuver.md) определяют обязательные25 tuning-параметров, атомарное применение и retiming, файлы/Save19 с миграцией18, два независимых канала удержания и schema2 клавиш. В этой области новые контракты заменяют прежние назначения W/A/D, step-стрелки вне боя и описание старого writer; остальные требования сохраняют силу. Приёмка ведётся в Board, отдельно от наличия кода.
+
 ## US20 current behavior — 2026-10-21
 
 Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.

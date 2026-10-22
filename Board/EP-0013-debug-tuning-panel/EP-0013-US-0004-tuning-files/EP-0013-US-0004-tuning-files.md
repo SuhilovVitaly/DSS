@@ -13,16 +13,17 @@ Contract and acceptance: [Documentation](../Documentation.md). All supplied revi
 AC1/AC2: full25-value confirmed file, strict250ms coalescing, atomic replacement,
 failure/retry and final/session-swap flush (Client61/61; final lifecycle56/56).
 AC3: app-start original-catalog reference export (Client44/44). Builds/format/scoped
-diff PASS. Both file tickets are implemented; AC4's reset button and confirmed
-file deletion are intentionally covered by existing US5-TK3. Source specification
-places that integration after this story; keep this story's final acceptance open
-until US5-TK3, without inventing a duplicate reset ticket or claiming a UI test.
+diff PASS. Both file tickets are implemented. AC4's reset button and confirmed
+file deletion were assigned to existing US5-TK3 later in the execution order.
+That temporary automated gap is closed by the following evidence.
 
 US5-TK3 now closes automated AC4: two-click reset sends all25 defaults as one
 command, matching executed receipt+confirmed defaults delete current JSON,
 rejection preserves it, later edit wins, reference JSON is byte-identical.
 Client regression116/116 and final16/16; solution build0warnings/errors, format
-PASS. Self-review/automated story criteria complete; native/human acceptance open.
+PASS. Self-review/automated story criteria complete. Final real OpenGL reset and
+reference-preservation checks PASS in RU/EN; physical/human/audio acceptance OPEN.
+See [final evidence](../FinalValidation.md).
 
 ## Публикация
 

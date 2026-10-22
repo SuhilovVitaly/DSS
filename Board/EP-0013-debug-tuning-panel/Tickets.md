@@ -1,6 +1,11 @@
 # EP-0013 ticket order
 
 Original US5-TK5 docs becomes final US7-TK1. Push immediately after every commit under the updated epic section9; verify the target branch and remote, then confirm the remote branch SHA matches local HEAD.
+
+Seven stories,21 tickets. Current implementation/acceptance evidence:
+[ExecutionStatus](ExecutionStatus.md), [coverage](AcceptanceCoverage.md),
+[per-ticket publication](PublicationStatus.md). Story/ticket stage denotes
+implementation; epic human/physical/audio acceptance is tracked separately.
 - [EP-0013-US-0001-TK-0001-contracts](EP-0013-US-0001-contracts-and-state/EP-0013-US-0001-TK-0001-contracts/EP-0013-US-0001-TK-0001-contracts.md) — Contracts
 - [EP-0013-US-0001-TK-0002-tuning-state](EP-0013-US-0001-contracts-and-state/EP-0013-US-0001-TK-0002-tuning-state/EP-0013-US-0001-TK-0002-tuning-state.md) — Engine
 - [EP-0013-US-0001-TK-0003-apply-command](EP-0013-US-0001-contracts-and-state/EP-0013-US-0001-TK-0003-apply-command/EP-0013-US-0001-TK-0003-apply-command.md) — Engine

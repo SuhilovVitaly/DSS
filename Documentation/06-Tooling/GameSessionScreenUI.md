@@ -1,5 +1,7 @@
 # Tactical button assets
 
+> **Контракт EP-0013.** EP-0013: [панель](../04-Engineering/DebugTuningPanel.md) владеет cached Skia ресурсами, mouse routing и pending text; [маневрирование](../04-Engineering/ManualManeuver.md) использует native keyboard edges и независимые оси. Нативный режим проверки описан в [Performance/EP0013](../../tools/DeepSpaceSaga.Performance/EP0013.md). Raster, real OpenGL managed-input и physical/human acceptance учитываются отдельно.
+
 ## US20 current behavior — 2026-10-21
 
 Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.

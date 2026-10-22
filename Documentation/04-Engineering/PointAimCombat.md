@@ -1,5 +1,7 @@
 # Point-aim combat — EP-0012
 
+> **Контракт EP-0013.** EP-0013 уточняет текущий point combat: [DebugTuningPanel](DebugTuningPanel.md) задаёт авторитетный live retiming кораблей, captured point flights и reload; [ManualManeuver](ManualManeuver.md) задаёт совместные speedHold/turnHold, schema2 и клавиши Q/E/Z/C. В этих областях прежние keyboard назначения и отсутствие live overlay считаются заменёнными. Endpoint, ownership, damage/scatter и RNG сохраняются.
+
 ## US20 implementation — 2026-10-21
 
 The six US20 changes are implemented and published. Selected Ctrl+click Orbit motion follows shared steering/arrival math through the selected point and continues straight to the viewport edge; unselected combat forecast retains its five-second horizon. Right Player Ship shows the existing image and ship fields. All own module health, disable/destroyed/critical/hit details and destruction summary are available in the left command groups, with wrapping and scrolling. NPC torpedoes show a dot, a rear tail capped at18px and a nearly black trail of display-admitted positions; there is no forward flight geometry or map profile label. Threat classification remains available in the threat panel. A successful torpedo send immediately exits aiming and clears preview; pending/errors remain in its weapon panel, and invalid/friendly-confirmation paths retain aiming.

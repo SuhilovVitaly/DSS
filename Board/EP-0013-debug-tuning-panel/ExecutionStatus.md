@@ -1,6 +1,36 @@
 # EP-0013 execution — 2026-10-22
 
-Status: **IN PROGRESS**, epic acceptance **OPEN**.
+Implementation: **21/21 tickets, 7/7 stories** including final project-wide
+documentation. Full epic acceptance: **OPEN** for human/physical/audio; independent
+review was not performed. Current stage denotes implementation, not product acceptance.
+
+Implemented: F12 tuning panel for25 enumerated fields, authoritative atomic overlay
+and immediate ship/projectile/reload retiming, Save19/18 migration, strict startup
+files and confirmed atomic export/reset, independent continuous turn/speed axes,
+Shift latch, schema2 input migration and localized actual bindings.
+
+Final required suites **5291/5291 PASS**: Engine2478, Client2284, Contracts269,
+Motion251, Performance.Tests9. Engine coverage is verified case-for-case through
+17 bounded runs with2478 unique test IDs; initial monolith/large-part timeouts
+remain recorded. Solution build0warnings/0errors; scoped formatting PASS.
+Additional cargo/catalog continuation4/4 PASS. Optional long EconomyBalance full
+and scoped attempts hit300000ms caps; no balance PASS claimed.
+
+Real OpenGL managed-input proof: RU1×/EN1.5×, each12/12 PASS on Intel Arc140V.
+Physical keyboard/mouse, human visual/product/audio acceptance **NOT RUN**.
+
+Current authoritative execution evidence:
+[FinalValidation](FinalValidation.md), [37 AC coverage](AcceptanceCoverage.md),
+[documentation inventory](DocumentationImpact.md), [21 ticket publications](PublicationStatus.md).
+Final US7 commit is pushed immediately after creation; its actual local/remote
+SHA is checked through Git and recorded in
+`D:/DeepSpaceSaga/artifacts/validation/ep0013/publication-audit.json`.
+
+## Dated execution history — superseded by the final result above
+
+The following entries preserve intermediate observations on2026-10-22. Their
+“pending/next/not run” wording applies to those checkpoints; current results and
+remaining gates are defined by FinalValidation, not inferred from old run counts.
 
 Execution authority: current user request invokes [EpicExecutionPrompt](../EpicExecutionPrompt.md).
 Branch: `codex/ep-0013-debug-tuning-panel`.

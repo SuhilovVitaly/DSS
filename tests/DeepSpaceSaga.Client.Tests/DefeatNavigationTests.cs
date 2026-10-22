@@ -37,6 +37,7 @@ public class DefeatNavigationTests
         if (Get<Task?>(f.Window, "_defeatTransitionTask") is { } pending) await pending;
         var screen = Assert.IsType<DefeatScreen>(f.Screens.Current);
         Assert.True(f.Game.CombatReportResourcesDisposed);
+        Assert.True(f.Game.DebugPanel.IsDisposed);
         Assert.Equal(0, assets.IllustrationCount);
         Assert.Equal(0, assets.PortraitCount);
         Assert.DoesNotContain(Get<Action?>(f.Handle, "Closing")?.GetInvocationList() ?? [], d => ReferenceEquals(d.Target, f.Game));

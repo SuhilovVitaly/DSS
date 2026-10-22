@@ -1,12 +1,23 @@
 ---
 epic: EP-0013-debug-tuning-panel
 story: EP-0013-US-0007-project-documentation
-stage: draft
+stage: done
 ---
 
 # Документация проекта
 
 Contract and acceptance: [Documentation](../Documentation.md). All supplied revision2 criteria for US7 apply. Final US7 owns project-wide documentation and Graphify, including original US5-TK5.
+
+## Результат2026-10-22
+
+Все шесть результатов завершающей истории выполнены:
+[инвентаризация](../DocumentationImpact.md), полные текущие требования/механики,
+документы инструментов/комментарии, сохранённая датированная история,
+[coverage37 AC](../AcceptanceCoverage.md), [SHA/push](../PublicationStatus.md),
+финальный Graphify и Board audit. Проверки и остаточные границы:
+[FinalValidation](../FinalValidation.md). Все обязательные автоматические suites
+прошли; real OpenGL managed-input RU/EN PASS. Human/physical/audio и независимый
+review не объявляются выполненными; stage обозначает реализацию истории.
 
 ## Обязательная завершающая приёмка
 

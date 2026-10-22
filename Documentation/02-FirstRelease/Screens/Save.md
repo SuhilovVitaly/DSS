@@ -1,5 +1,7 @@
 # Save
 
+> **Контракт EP-0013.** Текущий контракт EP-0013: writer Save19, явная миграция Save18, сохранение не-каталожного tuning и provenance retimed flight. Сохраняется sampled pose; клавишные удержания и Shift latch не сохраняются. [Подробности](../../04-Engineering/DebugTuningPanel.md#файлы-и-продолжение).
+
 ## Current EP-0012 contract — 2026-10-21
 
 Current writer is SaveFormatVersion18. A real Save17 or earlier is rejected atomically without migration/current-world replacement; NewGame scenario version0 is a separate path. Point flights, reload/captured operators, named scatter/dodge RNG, evasion/AI/encounter and fractional motion remainder survive load. Defeated sessions cannot overwrite a slot; error/cancel remains recoverable. Version17/16/15 text below records earlier stages. Existing modal pause, file IO and menu navigation semantics remain applicable. Headless continuation/rejection passed; native physical Save/Load menu acceptance is NOT RUN. [Point-aim combat contract](../../04-Engineering/PointAimCombat.md).

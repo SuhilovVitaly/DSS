@@ -1,5 +1,7 @@
 # Командные панели корабля
 
+> **Контракт EP-0013.** EP-0013: keyboard turnHold/speedHold работают независимыми осями; кнопочные циклы остаются отдельными командами и отменяются ручным удержанием. Текущие клавиши и pending/receipt семантика заданы в [ManualManeuver](../../04-Engineering/ManualManeuver.md); отладочный overlay применяется только авторитетной командой из [DebugTuningPanel](../../04-Engineering/DebugTuningPanel.md).
+
 ## US20 current behavior — 2026-10-21
 
 Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.

@@ -12,8 +12,10 @@ Automated story coverage: AC1/AC3/AC5 input command/capture tests at1/1.5;
 AC2 catalog25 rows/five sections/scroll/scales; AC4 boundary/rejection/default
 tests; AC6 startup reason; AC7 strict RU/EN coverage; AC8 zero managed bytes
 with actual RU/EN status+render over100 frames. Latest affected regression126/126,
-build0warnings/errors, scoped format PASS. Self-review complete. Native/human
-acceptance remains open; final new maneuver controls are covered by US6.
+build0warnings/errors, scoped format PASS. Self-review complete. Final real
+OpenGL managed-input checks PASS at RU1×/EN1.5×; human/physical/audio acceptance
+remains OPEN. See [final evidence](../FinalValidation.md). Final new maneuver
+controls are covered by US6.
 
 ## Публикация
 

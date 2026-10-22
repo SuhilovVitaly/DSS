@@ -11,6 +11,8 @@ story_count: 20
 ticket_count: 80
 ---
 
+> **Контракт EP-0013.** Замена контрактов22.10.2026: EP-0013 расширяет этот point-combat baseline отладочным overlay/retiming и независимыми ручными осями. Текущие требования: [панель](../../Documentation/04-Engineering/DebugTuningPanel.md), [маневрирование](../../Documentation/04-Engineering/ManualManeuver.md). Датированные результаты EP-0012 остаются историческими и не являются проверкой EP-0013.
+
 # EP-0012 — Канонический контракт и grounding
 
 [Вход эпика](EP-0012-combat-rebuild.md) · [Порядок исполнения](Tickets.md)

@@ -136,7 +136,10 @@ public sealed class TorpedoImpactTests
     {
         using var engine = Create(); engine.ReceiveCommand(LaunchAt("one")); At(engine, 0);
         var first = At(engine, 1000).CombatJournal; var late = At(engine, 50000).CombatJournal;
-        Assert.Equal(first.ToArray(), late.ToArray()); engine.ReceiveCommand(LaunchAt("one", 300, 0));
+        Assert.Equal(first.ToArray(), late.Take(first.Length).ToArray());
+        Assert.Equal(first.Length + 1, late.Length);
+        Assert.Equal(CombatEventType.TorpedoReloadCompleted, late[^1].Type);
+        engine.ReceiveCommand(LaunchAt("one", 300, 0));
         Assert.Equal(late.ToArray(), At(engine, 50000).CombatJournal.ToArray());
         Assert.Equal(2ul, engine.CaptureLaunchScatterState().Counter);
         engine.LoadScenario(Scenario()); Assert.Empty(At(engine, 0).CombatJournal);

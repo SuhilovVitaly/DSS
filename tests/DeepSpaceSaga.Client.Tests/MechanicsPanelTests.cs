@@ -172,6 +172,7 @@ public class MechanicsPanelTests
     {
         var screen = CreateScreen();
 
+        screen.OnKeyDown(Key.ControlLeft);
         var result = screen.OnKeyDown(Key.S);
         Assert.Equal(ScreenEvent.OpenShip, result);
     }

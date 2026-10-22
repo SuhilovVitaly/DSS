@@ -1,5 +1,7 @@
 # Тактическая карта и маневрирование
 
+> **Контракт EP-0013.** Актуальное управление EP-0013: A/← и D/→ непрерывно поворачивают; W/↑ и S/↓ разгоняют/тормозят в бою и вне боя. Оси независимы, синонимы и противоположные клавиши обрабатываются стеком, Shift защёлкивает разгон. E — прицел ПРО, Z/C — уклонение. [Полный текущий контракт](../../04-Engineering/ManualManeuver.md) заменяет прежнюю keyboard step-схему. [F12-панель](../../04-Engineering/DebugTuningPanel.md) перехватывает мышь, сохраняя боевые клавиши.
+
 ## US20 current behavior — 2026-10-21
 
 Selected navigation reaches its point and continues to the edge; ship image/fields are on the right, module details on the left. NPC torpedo map visuals contain only current marker, short rear tail and dark admitted past trail. Torpedo send exits aiming; own reload completion emits one journal/report/readiness cue. Combat offers pause/1×/2×/5×/10× with real multipliers and Save18 continuation. Earlier conflicting summaries below are superseded for these six changes. See [current contract](../../04-Engineering/PointAimCombat.md) and its execution link; native/audio/human limits remain explicit.

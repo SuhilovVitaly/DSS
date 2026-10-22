@@ -1,5 +1,7 @@
 # Deep Space Saga Documentation
 
+> **Контракт EP-0013.** Действующие контракты EP-0013: [панель и файлы отладки](04-Engineering/DebugTuningPanel.md), [независимые ручные оси и schema2](04-Engineering/ManualManeuver.md). Реализация и приёмка учитываются раздельно в [Board](../Board/EP-0013-debug-tuning-panel/ExecutionStatus.md).
+
 ## Current EP-0012 contract — 2026-10-21
 
 Start current combat work at the new point-aim contract and EngineRequirements PointAim section. WriterSave18; EP9/EP10/EP11 sections below are dated implementation/navigation history. Combat and launch forecasts now reuse admitted observed NPC motion. Current implementation/evidence/publication is in Board/EP-0012-combat-rebuild; balance and human acceptance OPEN. Graph rebuild follows final texts in US15TK5. [Point-aim combat contract](04-Engineering/PointAimCombat.md).

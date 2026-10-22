@@ -419,7 +419,11 @@ public sealed partial class GameSessionScreen : IScreen
         CancelManeuverInput();
         CancelPointAim();
         _combatReportPanel.ClearFocus();
-        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) DisposeCombatReports();
+        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
+        {
+            DisposeCombatReports();
+            DisposeDebugTuning();
+        }
         _combatForecastCache.Clear();
         ReleaseCombatPaints();
         _zoomTransition.Cancel();
@@ -691,6 +695,7 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnKeyDown(Key key)
     {
         if (HandleDebugKey(key)) return ScreenEvent.None;
+        if (_combatReportPanel.HasFocus && _combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         if (HandleManeuverKey(key)) return ScreenEvent.None;
         if (HandlePointAimKey(key)) return ScreenEvent.None;

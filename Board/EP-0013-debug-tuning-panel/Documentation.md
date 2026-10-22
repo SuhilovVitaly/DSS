@@ -5,14 +5,20 @@ stage: in-progress
 created: 2026-10-22
 revision: 2
 baseline: "codex/ep-0012-combat-rebuild @ e134a2ca"
-validation_status: implementation-in-progress
+validation_status: automated-pass-native-managed-pass-human-open
 ---
 
 # EP-0013
 
 [Вход в эпик и истории](EP-0013-debug-tuning-panel.md) · [Полный исходный материал revision 2](SourceSpecification.md) · [Тикеты](Tickets.md)
 
-Дополнение Board от 2026-10-22 по запросу «создай эпик 13 в боарде»: существующий пакет сохранён; приложение записано полностью, включая точные AC. Историческое утверждение ниже об отсутствии пакета относится к его первоначальному созданию. Текущее поручение касается оформления Board.
+История оформления Board от2026-10-22: существующий пакет и полное приложение
+revision2 сохранены. Утверждение ниже об отсутствии пакета относится к его
+первоначальному созданию. Текущее поручение — исполнить эпик по
+[EpicExecutionPrompt](../EpicExecutionPrompt.md), включая публикацию и финальную
+документацию. [Фактическое выполнение](ExecutionStatus.md),
+[покрытие37 AC](AcceptanceCoverage.md), [инвентаризация](DocumentationImpact.md)
+и [публикации](PublicationStatus.md) отделяют реализацию от human acceptance.
 
 Implementation authority: user's complete revision 2 specification in the execution conversation (2026-10-22), plus `Board/EpicExecutionPrompt.md`. Publication rule updated by the user on 2026-10-22: each completed ticket receives a separate commit, followed immediately by push. After every commit, verify the target branch and remote, push, then confirm the remote branch SHA matches local HEAD. Draft status does not block execution.
 
