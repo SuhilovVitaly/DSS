@@ -10,8 +10,16 @@ public sealed partial class SimulationEngine
             return CommandStartOutcome.Rejected(DebugTuningReasonCodes.SessionNotRunning);
         if (!_debugTuning.TryApply(command.DebugTuning, out var candidate, out var reason))
             return CommandStartOutcome.Rejected(reason!);
+        if (!TryStageDebugShips(candidate.Registry, time, out var ships))
+            return CommandStartOutcome.Rejected(DebugTuningReasonCodes.ValueOutOfRange);
         _registry = candidate.Registry;
         _debugTuning = candidate;
+        _objects.Clear();
+        _objects.AddRange(ships.Objects);
+        _evasions.Clear();
+        foreach (var pair in ships.Evasions) _evasions.Add(pair.Key, pair.Value);
+        _hostileCombat.Clear();
+        foreach (var pair in ships.Hostiles) _hostileCombat.Add(pair.Key, pair.Value);
         foreach (var owner in _objects)
             foreach (var module in owner.Modules)
             {
