@@ -18,7 +18,7 @@ validation_status: passed
 
 ## Why
 
-Передавать доклады через существующую async границу. [История](../EP-0010-US-0001-report-contracts.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R11, R12, R16, R17.
+Передавать доклады через существующую async границу. [История](../EP-0010-US-0001-report-contracts.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R11, R12, R16, R17.
 
 ## Decisions
 

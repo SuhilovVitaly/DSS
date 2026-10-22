@@ -18,7 +18,7 @@ validation_status: automated-passed
 
 ## Why
 
-Собрать визуальную карточку из готового store, текста и assets. [История](../EP-0010-US-0009-report-accordion.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R04, R05, R06, R07, R13, R15, R22.
+Собрать визуальную карточку из готового store, текста и assets. [История](../EP-0010-US-0009-report-accordion.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R04, R05, R06, R07, R13, R15, R22.
 
 ## Decisions
 

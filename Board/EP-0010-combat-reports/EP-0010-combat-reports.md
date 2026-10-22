@@ -16,7 +16,7 @@ ticket_count: 30
 
 ## Канонический контракт
 
-[Полное ТЗ](../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) — продуктовые R01–R24 и события E01–E07; технические A01–A10 явно отделены от решений пользователя. [Grounding и ссылки](Documentation.md), [порядок и трассировка](Tickets.md), [статус реализации](ImplementationStatus.md).
+[Полное ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) — продуктовые R01–R24 и события E01–E07; технические A01–A10 явно отделены от решений пользователя. [Grounding и ссылки](Documentation.md), [порядок и трассировка](Tickets.md), [статус реализации](ImplementationStatus.md).
 
 ## Статус и полномочия
 

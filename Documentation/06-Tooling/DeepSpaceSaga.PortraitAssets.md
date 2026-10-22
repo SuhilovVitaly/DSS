@@ -1,14 +1,14 @@
-# Подготовка портретных деталей
+# Инструмент подготовки портретов
 
-`DeepSpaceSaga.PortraitAssets` — утилита для разработки графического набора, а не часть работающей игры. Она выделяет слои из подготовленных исходников, подгоняет детали к овалам, записывает каталог и создаёт обзоры для проверки. Утилита использует модели и рендерер клиента, чтобы проверочные изображения соответствовали игре. Клиент не ссылается на утилиту и не запускает её.
+`tools/DeepSpaceSaga.PortraitAssets` готовит и проверяет слои портретов.
+Доступные операции и аргументы определяет Program.cs; не используй старый
+список вызовов как гарантию интерфейса. Runtime manifest и PNG остаются в
+наборе персонажей, авторские исходники и проверки — вне Documentation.
 
-Игра читает готовые PNG и JSON из `Images/Persons/W/PortraitGenerator` рядом со своим exe. Рабочий набор, исходники и тестовый эталон хранятся в `src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator`; для запуска и обычной сборки клиента утилита не нужна.
+Проверяй размеры, alpha, названия, геометрию и reconstruct/composition по
+контракту выбранного W4/M4 набора. Не выдавай визуально похожую голову за
+совместимый компонент без проверки совмещения. Скрипты навыков и reference
+assembly contract относятся к workflow генерации, не к игровому Engine.
+См. [PortraitGenerator](../03-Design/PortraitGenerator.md).
 
-Из корня DSS:
-
-```powershell
-dotnet run --project tools/DeepSpaceSaga.PortraitAssets -- validate src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator
-dotnet run --project tools/DeepSpaceSaga.PortraitAssets -- features src/DeepSpaceSaga.Client/Images/Persons/W/PortraitGenerator
-```
-
-`validate` проверяет каталог и изображения, `features` заново извлекает 40 деталей из существующих исходников. Полный список команд и описание набора — в `Documentation/03-Design/PortraitGenerator.md`. Исходники, обзоры и эталон исключены из поставки клиента.
+Источники: [Program.cs](../../tools/DeepSpaceSaga.PortraitAssets/Program.cs), [PortraitAssetRepository.cs](../../src/DeepSpaceSaga.Client/Portraits/PortraitAssetRepository.cs).

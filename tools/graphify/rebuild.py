@@ -30,14 +30,12 @@ EXCLUDED={TUNING_EP+'/ExecutionStatus.md':'publication/evidence ledger updated a
  'Documentation/06-Tooling/GraphifyRebuild.md':'describes generated graph itself',
  'Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/ExecutionStatus.md':'US20 evidence updated alongside graph',
  'Documentation/README.md':'navigation index updated alongside graph',
- 'Documentation/06-Tooling/TradingSolarGraphify.md':'describes generated graph itself',
- 'Documentation/06-Tooling/AiMapGraphify.md':'historical graph evidence',
+ 'Documentation/06-Tooling/Graphify.md':'describes generated graph itself',
  EP+'/ImplementationStatus.md':'execution status updated alongside graph',
  OBSERVED_EP+'/ImplementationStatus.md':'execution status updated alongside graph',
  POINT_EP+'/ImplementationStatus.md':'execution status updated alongside graph',
  POINT_EP+'/PublicationStatus.md':'publication ledger updated alongside graph',
- 'Documentation/04-Engineering/PointCombatDocumentation.md':'impact and graph audit inventory updated alongside graph',
- 'Documentation/06-Tooling/CountermeasureGraphify.md':'historical graph navigation note updated alongside graph'}
+}
 def dump(n,v): (O/n).write_text(json.dumps(v,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 def sha(p): return hashlib.sha256(p.read_bytes()).hexdigest()
 def txt(p): return (R/p).read_text(encoding='utf-8-sig')
@@ -111,7 +109,7 @@ def main():
  flow=[('outbox','contract'),('range','outbox'),('identity','outbox'),('save_validation','save_restore'),('save_restore','outbox'),('outbox','mailbox'),('mailbox','buffer'),('buffer','inbox'),('inbox','history'),('history','formatter'),('formatter','panel'),('assets','panel'),('screen','history'),('screen','assets'),('screen','panel')]
  for s,t in flow:
   p=next(x[0] for x in evidence if x[3]==s);edge(mechanisms[s],mechanisms[t],'shares_data_with',p,conf='INFERRED',rationale='Reviewed EP-0010 architecture mapping, not a measured execution trace.')
- spec='Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md'
+ spec='Documentation/04-Engineering/CombatReports.md'
  if spec in containers:
   for key in mechanisms:edge(containers[spec],mechanisms[key],'conceptually_related_to',spec,conf='INFERRED',rationale='Selective implementation mapping to the report specification.')
  hyper=[dict(id='ep0010_lossless_delivery',label='Combat report delivery pipeline',nodes=[mechanisms[k] for k in ('outbox','mailbox','buffer','inbox','history')],relation='participate_in',confidence='INFERRED',confidence_score=.85,source_file='src/DeepSpaceSaga.Client/SnapshotBuffer.cs',source_location='L1')]

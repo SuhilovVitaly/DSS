@@ -14,7 +14,7 @@ current_review: epic-review
 
 Текущий реестр: [ReviewStatus.md](ReviewStatus.md), 74 тикетов. EP-0001 реализует профили/часовую экономику, события, authoritative quotes/receipts, физические рейсы, резерв/settlement топлива, cargo cost basis, voyage ledger и remote market knowledge. Приёмка баланса остаётся OPEN; cargo-upgrade теперь меняет реальную capacity в обоих runner (F01 исправлен). Исходные draft/approved поля отражают планирование и не изменены этим ревью.
 
-[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
 
 ## Статус и границы работы
 

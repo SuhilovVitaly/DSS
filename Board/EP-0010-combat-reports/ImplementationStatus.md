@@ -22,7 +22,7 @@
 
 Полная торговая theory не зелёная: current10/11 в классе, baseline4/5 theory;15s refuel deadline воспроизведён на исходном af594de (другой station subtype в повторе, что указывает на общий временной бюджет). Это сторонняя baseline-проблема, не исправлялась. Финальная Client suite явно исключает ровно5 theory cases; её результат не выдается за полный1978/1978. Raw TRX — evidence/regression.
 
-[Тикет → SHA → push](Publication.md) · [инвентаризация документов](DocumentationInventory.md) · [audit](DocumentationAudit.json) · [финальное собственное ревью](FinalReview.md) · [текущая архитектура](../../Documentation/04-Engineering/CombatReports.md) · [Graphify](../../Documentation/06-Tooling/TradingSolarGraphify.md).
+[Тикет → SHA → push](Publication.md) · [инвентаризация документов](DocumentationInventory.md) · [audit](DocumentationAudit.json) · [финальное собственное ревью](FinalReview.md) · [текущая архитектура](../../Documentation/04-Engineering/CombatReports.md) · [Graphify](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/06-Tooling/TradingSolarGraphify.md).
 
 ## Graphify и документация
 

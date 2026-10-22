@@ -1,6 +1,6 @@
 # EP-0010 — текущая документация и grounding
 
-2026-10-16: production path реализован. [Текущая архитектура](../../Documentation/04-Engineering/CombatReports.md), [status/tests](ImplementationStatus.md), [публикация](Publication.md), [инвентаризация](DocumentationInventory.md), [Graphify](../../Documentation/06-Tooling/TradingSolarGraphify.md). Самостоятельные игровые запуски запрещены пользователем; native/human/FPS OPEN.
+2026-10-16: production path реализован. [Текущая архитектура](../../Documentation/04-Engineering/CombatReports.md), [status/tests](ImplementationStatus.md), [публикация](Publication.md), [инвентаризация](DocumentationInventory.md), [Graphify](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/06-Tooling/TradingSolarGraphify.md). Самостоятельные игровые запуски запрещены пользователем; native/human/FPS OPEN.
 
 ## Grounding
 
@@ -10,7 +10,7 @@
 
 # EP-0010 — документация и grounding
 
-[Эпик](EP-0010-combat-reports.md) · [ТЗ](../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [Тикеты](Tickets.md) · [Статус](ImplementationStatus.md)
+[Эпик](EP-0010-combat-reports.md) · [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md) · [Тикеты](Tickets.md) · [Статус](ImplementationStatus.md)
 
 ## Исторический grounding планирования
 

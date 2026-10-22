@@ -2,21 +2,25 @@
 
 This CLI runs the shipped `CombatMukha` scenario through the production Engine and the same public-command policy used by `CombatBalanceReport`. Its shared policy source is linked from `tests/DeepSpaceSaga.Engine.Tests/ProductionCombatBalanceHarness.cs`; xUnit is not a dependency. `global.json` pins the installed SDK 10.0.400. The tool is outside `DeepSpaceSaga.sln`.
 
-From the repository root:
+From the repository root, create a unique output directory under the workspace's
+canonical validation artifacts directory:
 
 ```powershell
+$analysisRun = Join-Path 'D:/DeepSpaceSaga/artifacts/validation/combat-analyzer' ((Get-Date -Format 'yyyyMMdd-HHmmss-fff') + '-' + [Guid]::NewGuid().ToString('N'))
+New-Item -ItemType Directory -Path $analysisRun -Force | Out-Null
 dotnet build tools/DeepSpaceSaga.CombatAnalyzer
 dotnet run --no-build --project tools/DeepSpaceSaga.CombatAnalyzer -- --self-test
-dotnet run --no-build --project tools/DeepSpaceSaga.CombatAnalyzer -- --seeds 3001:4000 --policy dodge --output artifacts/dodge.csv
-dotnet run --no-build --project tools/DeepSpaceSaga.CombatAnalyzer -- --seeds 3001:4000 --policy static --output artifacts/static.csv
+dotnet run --no-build --project tools/DeepSpaceSaga.CombatAnalyzer -- --seeds 3001:4000 --policy dodge --output "$analysisRun/dodge.csv"
+dotnet run --no-build --project tools/DeepSpaceSaga.CombatAnalyzer -- --seeds 3001:4000 --policy static --output "$analysisRun/static.csv"
 ```
 
 Each output creates CSV (one row per seed), `.summary.json`, and `.jsonl.gz` containing every outcome and actual command trace. Use `--root <repo>` when running outside the checkout. Each seed uses a fresh Engine and named RNG state; the registry/scenario are reused unchanged. All shipped operators are checked at skill20.
 
-To inspect the published 2000-battle artifact without rerunning battles:
+To inspect the published 2000-battle artifact without rerunning battles, use the
+`$analysisRun` directory created above:
 
 ```powershell
-dotnet run --no-build --project tools/DeepSpaceSaga.CombatAnalyzer -- --input Board/EP-0012-combat-rebuild/evidence/us0014-tk0001-production-balance.jsonl.gz --seeds 3001:4000 --policy dodge --output artifacts/recorded-dodge.csv
+dotnet run --no-build --project tools/DeepSpaceSaga.CombatAnalyzer -- --input Board/EP-0012-combat-rebuild/evidence/us0014-tk0001-production-balance.jsonl.gz --seeds 3001:4000 --policy dodge --output "$analysisRun/recorded-dodge.csv"
 ```
 
 Input is the current balance JSONL `RunResult` protocol (`PolicyVersion=public-observation-v1`), plain or gzip. The reader validates identities, exact selected seed coverage, consistent catalog/scenario hashes, finite durations, current point-launch/evade commands, receipts and absence of legacy chance facts. Input mode checks recorded data; its summary records that battles were not rerun. Preserve provenance hashes with exported results. Output paths that would overwrite the input artifact are rejected.

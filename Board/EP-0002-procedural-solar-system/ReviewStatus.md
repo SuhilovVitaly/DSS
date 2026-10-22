@@ -1,6 +1,6 @@
 # EP-0002: сверка поставки и остатка — 2026-10-10
 
-[Общий review и определения F/G](../../Documentation/04-Engineering/EpicReview20261010/README.md).
+[Общий review и определения F/G](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/EpicReview20261010/README.md).
 
 Проверена `base-fight`, HEAD `02c89d4`. Список фиксирует существующую поставку, а не новый approval.
 

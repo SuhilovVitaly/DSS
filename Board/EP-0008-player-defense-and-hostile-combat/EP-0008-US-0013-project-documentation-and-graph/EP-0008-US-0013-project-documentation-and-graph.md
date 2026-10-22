@@ -12,7 +12,7 @@ validation_status: documentation-complete-graph-skipped-by-user
 
 ## Актуализация EP-0008 — 2026-10-12
 
-TK-0001 опубликован904a21f; TK-0002 проверяет ссылки/Board. Перестройка Graphify отменена прямым указанием пользователя2026-10-12; её статус SKIPPED, не PASS. [Фактическое evidence](../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
+TK-0001 опубликован904a21f; TK-0002 проверяет ссылки/Board. Перестройка Graphify отменена прямым указанием пользователя2026-10-12; её статус SKIPPED, не PASS. [Фактическое evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
 
 
 # Актуальная документация всего проекта

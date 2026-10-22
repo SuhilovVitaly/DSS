@@ -17,7 +17,7 @@
 | Other suites |Contracts256, Motion234, Performance9 PASS в финальном bounded запуске. EconomyBalance61PASS после corrective registry consumer repair (сначала13FAIL/46PASS, focused2FAIL→2PASS). [Final audit](evidence/final-validation.json)|
 | Balance |2000battles complete,37593actual commands Executed. Dodge966/1000=96.6%, P907.4933realmin **FAIL72–88%/<=5.5min**; static59/1000=5.9% PASS<=10%. [Protocol/raw evidence](evidence/balance.md)|
 | Native |24/24 actual GPU matrix +clean-flight probe PASS только enumerated assertions. [All UI subcriteria and NOT RUN reasons](evidence/native.md)|
-| Docs/graph |[Impact inventory](../../Documentation/04-Engineering/PointCombatDocumentation.md), [current combat](../../Documentation/04-Engineering/PointAimCombat.md), [Graph audit](../../src/graphify-out/verification.json). Graph navigation не является runtime/product evidence. |
+| Docs/graph |[Impact inventory](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PointCombatDocumentation.md), [current combat](../../Documentation/04-Engineering/PointAimCombat.md), [Graph audit](../../src/graphify-out/verification.json). Graph navigation не является runtime/product evidence. |
 
 Физический OS keyboard/mouse/heldAlt, input-to-photon/normal session transport latency, hearing/urgency cadence, deuteranopia perception, human gameplay/usability и отмеченные native variants NOT RUN. EP11 palette/native/performance gates не закрыты. Точные вне-коридорные цифры переданы автору; параметры не подгонялись. Внешний reference tape не предоставлен, побитовое равенство симулятору не заявляется.
 

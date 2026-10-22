@@ -18,7 +18,7 @@ validation_status: automated-passed
 
 ## Why
 
-Подключить готовую графику с безопасными заменами и без I/O в Draw. [История](../EP-0010-US-0008-report-illustrations.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R12, R14, R15, R22.
+Подключить готовую графику с безопасными заменами и без I/O в Draw. [История](../EP-0010-US-0008-report-illustrations.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R12, R14, R15, R22.
 
 ## Decisions
 

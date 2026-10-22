@@ -18,7 +18,7 @@ validation_status: automated-passed
 
 ## Why
 
-Отделить логику карточек от рендера и объектов мира. [История](../EP-0010-US-0007-report-history-and-text.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R03, R04, R05, R07, R11, R12, R13, R19, R20.
+Отделить логику карточек от рендера и объектов мира. [История](../EP-0010-US-0007-report-history-and-text.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R03, R04, R05, R07, R11, R12, R13, R19, R20.
 
 ## Decisions
 

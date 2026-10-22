@@ -12,7 +12,7 @@ validation_status: automated-reviewed-native-open
 
 ## Актуализация EP-0008 — 2026-10-12
 
-Acceptance/self-review опубликованы; native matrix13/14 и human/FPS gates остаются OPEN. [Фактическое evidence](../../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
+Acceptance/self-review опубликованы; native matrix13/14 и human/FPS gates остаются OPEN. [Фактическое evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
 
 
 # Проверяемый двусторонний бой

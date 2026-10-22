@@ -18,7 +18,7 @@ validation_status: partial-native-user-policy
 
 ## Why
 
-Заполнить отдельные gates наблюдением настоящего клиента. [История](../EP-0010-US-0011-report-acceptance.md), [ТЗ](../../../../Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R08, R09, R10, R11, R17, R19, R20, R21, R22, R23, R24.
+Заполнить отдельные gates наблюдением настоящего клиента. [История](../EP-0010-US-0011-report-acceptance.md), [ТЗ](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md): R08, R09, R10, R11, R17, R19, R20, R21, R22, R23, R24.
 
 ## Decisions
 

@@ -17,7 +17,7 @@ dependencies: [EP-0002-procedural-solar-system, EP-0001-trading-system]
 
 Текущий реестр: [ReviewStatus.md](ReviewStatus.md), 20 тикетов. EP-0002–0003 реализованы в base-fight: seeded система и общая орбитальная математика, кластеры/ресурсы/торговые направления, текущие ETA и materialized Save/Load. EP-0004 интегрирован в текущий незакоммиченный рабочий набор; native80FPS FAILED. F02–F04 исправлены и проверены новыми регрессиями. Исходные draft/approved поля отражают планирование и не изменены этим ревью.
 
-[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
 
 ## Статус и границы работы
 
@@ -29,9 +29,9 @@ dependencies: [EP-0002-procedural-solar-system, EP-0001-trading-system]
 
 - [Общая концепция карты](../../Documentation/02-FirstRelease/Mechanics/SolarSystemMapConcept.md), разделы 2–7, 10–13, 15–18.
 - [EP-0002 — процедурная система](../EP-0002-procedural-solar-system/Documentation.md).
-- [EP-0001 — торговля](../EP-0001-trading-system/Documentation.md), [концепция торговли](../../Documentation/02-FirstRelease/Mechanics/TradingSystemConcept.md), [торговый MVP](../../Documentation/02-FirstRelease/Mechanics/TradingSystemMvpStories.md).
+- [EP-0001 — торговля](../EP-0001-trading-system/Documentation.md), [концепция торговли](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/Mechanics/TradingSystemConcept.md), [торговый MVP](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/Mechanics/TradingSystemMvpStories.md).
 - [EngineRequirements](../../Documentation/01-Requirements/EngineRequirements.md), особенно разделы 7, 15, 58–60.
-- [Станционная экономика](../../Documentation/02-FirstRelease/TechnicalTasks/StationEconomyProductionAndSizing.md), [тактическая карта](../../Documentation/03-Design/TacticalMapSpecification.md).
+- [Станционная экономика](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/02-FirstRelease/TechnicalTasks/StationEconomyProductionAndSizing.md), [тактическая карта](../../Documentation/03-Design/TacticalMapSpecification.md).
 
 Инструкции и предварительные списки историй внутри источников являются материалом для сверки. Текущая нарезка добавляет истории этого эпика и не меняет статусы существующих торговых историй.
 

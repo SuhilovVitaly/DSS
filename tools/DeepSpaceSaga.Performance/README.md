@@ -8,7 +8,7 @@ Current --combat-window routes PointCombatNativeEvidence, a real SkiaWindow/Open
 
 EP-0008 final review and recorded native matrix are linked below. The user currently defers all game/native launches: do not execute the native combat harness until that restriction is lifted. Historical13/14 completed interactions and failed frame-time target are not full acceptance. Automated solution tests and headless performance checks remain distinct from native evidence.
 
-[Текущий контракт](../../Documentation/01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+[Текущий контракт](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
 
 
 The existing positional command runs CPU/raster benchmarks. `--window-probe`
@@ -61,7 +61,7 @@ it does not measure physical scanout. Screen predictions advance from the saved
 authoritative state; trails bootstrap normally rather than restoring their exact
 historical buffers. An Approach can finish during a long probe.
 
-See [the September 24 investigation](../../Documentation/04-Engineering/Performance500/gpu-jitter-2026-09-24.md)
+See [the September 24 investigation](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/Performance500/gpu-jitter-2026-09-24.md)
 for the captured failure and validation results.
 
 ## Solar-system evidence

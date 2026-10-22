@@ -2,7 +2,7 @@
 
 ## Актуализация EP-0008 — 2026-10-12
 
-Шаги1–44 опубликованы; US-0009-TK-0003 получил отдельную review-коррекцию округления terminal clock. Шаг44 — документы, опубликован904a21f;45 — аудит ссылок/Board; Graphify SKIPPED по прямому указанию пользователя2026-10-12.13 историй/45 уникальных тикетов. Столбец Files ниже — исходный план; точное расширение scope и фактический diff находятся в карточках и Git. [Публикации](PublicationStatus.md), [evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md). Native/human gates открыты по описанной в отчёте причине.
+Шаги1–44 опубликованы; US-0009-TK-0003 получил отдельную review-коррекцию округления terminal clock. Шаг44 — документы, опубликован904a21f;45 — аудит ссылок/Board; Graphify SKIPPED по прямому указанию пользователя2026-10-12.13 историй/45 уникальных тикетов. Столбец Files ниже — исходный план; точное расширение scope и фактический diff находятся в карточках и Git. [Публикации](PublicationStatus.md), [evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md). Native/human gates открыты по описанной в отчёте причине.
 
 
 Статус: **execution in progress**, 2026-10-11 (исходный план 2026-10-07). 13 историй,45 тикетов. [Контракт](Documentation.md), [51 решение](Decisions.md), [промт исполнения](../EpicExecutionPrompt.md).

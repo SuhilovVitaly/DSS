@@ -4,7 +4,7 @@
 
 Текущая сверка: [ReviewStatus.md](ReviewStatus.md). Этот ранее созданный файл оставлен как исторический аудит 2026-10-05; его NOT_IMPLEMENTED/PARTIAL утверждения о событиях, ledger, continuation, market knowledge и tooling устарели и НЕ являются текущим остатком. Новые F/G и свежие проверки находятся в review 2026-10-10; прежние зелёные результаты не закрывают новые дефекты.
 
-[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](../../Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
+[Текущее устройство](../../Documentation/04-Engineering/TradingAndSolarSystem.md) · [Ревью, дефекты и остаток](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/EpicReview20261010/README.md). Датированные записи ниже сохраняют историческое значение; они не являются новым подтверждением готовности.
 
 Дата аудита: 2026-10-05. Статус эпика: **НЕ ЗАВЕРШЁН**.
 

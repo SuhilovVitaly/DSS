@@ -12,7 +12,7 @@ validation_status: planning-only
 
 ## Актуализация EP-0008 — 2026-10-12
 
-Эта поставка и её evidence являются историческими. Действующие боевые характеристики, формула, hostile AI, ручной пуск, комплектация и Save16: [канонический контракт](../../Documentation/01-Requirements/EngineRequirements.md#phase-three-combat). [Исполнение EP-0008](../EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md). Старые PASS/версии не перенесены в текущую приёмку.
+Эта поставка и её evidence являются историческими. Действующие боевые характеристики, формула, hostile AI, ручной пуск, комплектация и Save16: [канонический контракт](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/01-Requirements/EngineRequirements.md#phase-three-combat). [Исполнение EP-0008](../EP-0008-player-defense-and-hostile-combat/ImplementationStatus.md). Старые PASS/версии не перенесены в текущую приёмку.
 
 
 # EP-0007 — Противоракетная защита
@@ -137,4 +137,4 @@ Read-only опоры: src/DeepSpaceSaga.Contracts/CombatSnapshot.cs; Scenario/Co
 
 ## Результат исполнения — 2026-10-04
 
-Все production-этапы EP-0007 реализованы в рабочем дереве. Engine1153, Client1568, Contracts103, Motion137 тестов проходят; solution build без warnings/errors. Native-проверка не выполнена: Computer Use app approval timed out, после чего пользователь явно указал продолжать без неё. APPROVED не выставляется автоматически. [Подробные контракты, impact audit и evidence](../../Documentation/04-Engineering/CountermeasureCombat.md), [итоговый граф](../../Documentation/06-Tooling/CountermeasureGraphify.md). Commit/push не выполнялись.
+Все production-этапы EP-0007 реализованы в рабочем дереве. Engine1153, Client1568, Contracts103, Motion137 тестов проходят; solution build без warnings/errors. Native-проверка не выполнена: Computer Use app approval timed out, после чего пользователь явно указал продолжать без неё. APPROVED не выставляется автоматически. [Подробные контракты, impact audit и evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/CountermeasureCombat.md), [итоговый граф](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/06-Tooling/CountermeasureGraphify.md). Commit/push не выполнялись.

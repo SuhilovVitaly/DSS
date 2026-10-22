@@ -271,7 +271,7 @@ Explicit user confirmation names GitHub SuhilovVitaly/DSS and base-fight. `git p
 
 ## EP-0008-US-0012-TK-0003 — 2026-10-12
 
-Implementation and self-review complete, pending separate publication. Real click/session viewport matrix6/6 and full Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Native artifacts retained:13/14 interaction cases complete; 1920x1080/UI150 combat incomplete, timing target not accepted. Footer/PR label overlaps fixed. User defers further game/native runs and authorizes continuation through review/docs and EP-0009; native/human acceptance remains OPEN. [Evidence](../../Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
+Implementation and self-review complete, pending separate publication. Real click/session viewport matrix6/6 and full Client1855/1855; solution build0 warnings/errors; scoped format/diff PASS. Native artifacts retained:13/14 interaction cases complete; 1920x1080/UI150 combat incomplete, timing target not accepted. Footer/PR label overlaps fixed. User defers further game/native runs and authorizes continuation through review/docs and EP-0009; native/human acceptance remains OPEN. [Evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
 
 ## US-0009-TK-0003 review correction — 2026-10-12
 
@@ -291,7 +291,7 @@ Documentation904a21f published/remote verified. User cancelled Graphify rebuildi
 
 ## Superseded by EP-0009 — 2026-10-12
 
-EP-0008 implementation and publication evidence above remains historical. Its Hull HP, attack/interception formulas, one-flight/auto-attempt rules and SaveFormatVersion16 were superseded by [EP-0009 §2.1](../EP-0009-battle/EP-0009-module-combat.md#21-переопределяется-правила-ep-0008-перестают-действовать). Current engineering contract: [ModuleCombat](../../Documentation/04-Engineering/ModuleCombat.md). EP-0008's unfinished native/FPS/human gates remain historical OPEN; EP-0009 native checks are separately NOT RUN by user instruction.
+EP-0008 implementation and publication evidence above remains historical. Its Hull HP, attack/interception formulas, one-flight/auto-attempt rules and SaveFormatVersion16 were superseded by [EP-0009 §2.1](../EP-0009-battle/EP-0009-module-combat.md#21-переопределяется-правила-ep-0008-перестают-действовать). Current engineering contract: [ModuleCombat](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/ModuleCombat.md). EP-0008's unfinished native/FPS/human gates remain historical OPEN; EP-0009 native checks are separately NOT RUN by user instruction.
 
 
 ## Superseded by EP-0012 — 2026-10-21

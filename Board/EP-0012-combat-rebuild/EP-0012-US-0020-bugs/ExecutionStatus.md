@@ -58,7 +58,7 @@ Physical keyboard/mouse, complete native US20 maneuver/zoom/resize matrix, actua
 
 ## Documentation and graph
 
-Current contracts and related entry points updated across Documentation and Board; tools README updated. No root README exists. Root AGENTS/CLAUDE remain navigation shims. [90-document impact inventory](evidence/documentation-impact.json) · [current contract](../../../Documentation/04-Engineering/PointAimCombat.md) · [project documentation inventory](../../../Documentation/04-Engineering/PointCombatDocumentation.md).
+Current contracts and related entry points updated across Documentation and Board; tools README updated. No root README exists. Root AGENTS/CLAUDE remain navigation shims. [90-document impact inventory](evidence/documentation-impact.json) · [current contract](../../../Documentation/04-Engineering/PointAimCombat.md) · [project documentation inventory](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PointCombatDocumentation.md).
 
 Reproducible graph builder `tools/graphify/rebuild.py` uses installed graphifyy offline, fresh code AST/Markdown structure plus selective14-node US20 semantics (13source files; one host analysis, tokens unmeasured), retaining explicit EP10 mechanisms. Older EP12 semantic fragment was replaced rather than rehashed as though re-extracted. Graph output is local/ignored under src/graphify-out; committed semantic input and integrity evidence make scope explicit. Graph navigation is not runtime/product acceptance.
 
