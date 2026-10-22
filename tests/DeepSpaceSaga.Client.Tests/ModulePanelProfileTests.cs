@@ -9,6 +9,31 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class ModulePanelProfileTests
 {
     [Fact]
+    public async Task Reload_ring_number_and_status_remain_visible_on_button_hover()
+    {
+        await using var f = await PointCombatUiFixture.Create();
+        await f.Launch(x: 300);
+        await f.AdvanceTo(3000);
+        var panel = f.Screen.CommandsPanel;
+        var row = Assert.Single(panel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.Equal(28, row.RemainingReloadRealSeconds, 3);
+        Assert.Equal("28 " + Localization.Combat("Panel.Seconds"), row.ReloadTimerText);
+        var button = row.Buttons[0];
+        f.Screen.OnMouseMove(button.Rect.MidX, button.Rect.MidY); f.Render();
+        row = Assert.Single(panel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.Contains(Localization.Combat("Reloading"), row.StatusBarText);
+        Assert.Contains("28", row.StatusBarText);
+        Assert.NotNull(row.HoverText);
+        Assert.Equal("28 " + Localization.Combat("Panel.Seconds"), row.ReloadTimerText);
+        await f.AdvanceTo(8950);
+        row = Assert.Single(panel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.Equal("4.2 " + Localization.Combat("Panel.Seconds"), row.ReloadTimerText!.Replace(',', '.'));
+        await f.AdvanceTo(10000);
+        row = Assert.Single(panel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatUiFixture.Torpedo);
+        Assert.Null(row.ReloadTimerText);
+    }
+
+    [Fact]
     public async Task Snapshot_statistics_and_reference_sigma_follow_game_speed()
     {
         await using var f = await PointCombatUiFixture.Create(accuracySkill: 20);

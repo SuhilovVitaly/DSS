@@ -663,7 +663,7 @@ public sealed class CommandsPanel
                 var definition = panels.First(p => p.Key == name);
                 int rows = (definition.CommandTypeIds.Length + 3) / 4;
                 return BodyPaddingY * 2 + rows * CommandButtonHeight + (rows - 1) * CommandButtonGap +
-                    StatusBarHeight + XenonBodySliceInset + (definition.Weapon is not null || name is "Torpedo Launcher" or "Countermeasure Launcher" ? 32f : 0)
+                    StatusBarHeight + XenonBodySliceInset + (definition.Weapon is not null || name is "Torpedo Launcher" or "Countermeasure Launcher" ? 48f : 0)
                     + details[name].Length * 16f;
             }
             if (hasLauncher)
@@ -721,12 +721,12 @@ public sealed class CommandsPanel
                         bodyRect.Right - XenonBodySliceInset,
                         bodyRect.Bottom - XenonBodySliceInset)
                     : SKRect.Empty;
-                string? statusBarText = opened &&
+                string? hoveredText = opened &&
                     _hoveredCommandButtonIndex >= rowStartOrdinal &&
                     _hoveredCommandButtonIndex < rowEndOrdinalExclusive
                         ? _commandButtons[_hoveredCommandButtonIndex].Label
                         : null;
-                if (opened && statusBarText is null && panel.Weapon is { } weapon) statusBarText = _weaponStatus?.Invoke(weapon);
+                string? statusBarText = opened && panel.Weapon is { } weapon ? _weaponStatus?.Invoke(weapon) : hoveredText;
 
                 var weaponModule = panel.Weapon is { } instance
                     ? safeModules.FirstOrDefault(m => m.ModuleId == instance.ModuleId)
@@ -754,7 +754,9 @@ public sealed class CommandsPanel
                     remainingReload > 0 ? PanelTime.Tooltip(remainingReload / 1000,
                         (SimulationSpeed)(int)Math.Round((multiplier > 0 ? multiplier : .25) * 4)) :
                         panel.Weapon is { } timeWeapon ? _weaponTimeTooltip?.Invoke(timeWeapon) : null,
-                    weaponModule?.LauncherCombat?.RangeKm ?? weaponModule?.Defense?.RangeKm));
+                    weaponModule?.LauncherCombat?.RangeKm ?? weaponModule?.Defense?.RangeKm,
+                    remainingReal > 0 ? PanelTime.Format(remainingReal) + " " + Localization.Combat("Panel.Seconds") : null,
+                    panel.Weapon is not null ? hoveredText : null));
 
                 rowY += opened ? (captionHeight + BodyHeight(panel.Key)) : captionHeight;
                 if (!opened && panelIndex < panels.Length - 1)
@@ -997,6 +999,11 @@ public sealed class CommandsPanel
             ring.Color = XenonStyle.CyanBright;
             using var arc = new SKPath(); arc.AddArc(row.ReloadRingRect, -90, (float)(360 * row.ReloadFraction));
             canvas.DrawPath(arc, ring);
+            if (row.ReloadTimerText is { } timer)
+            {
+                using var text = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 8, TextAlign = SKTextAlign.Center, IsAntialias = true };
+                canvas.DrawText(timer, row.ReloadRingRect.MidX, row.ReloadRingRect.MidY + 3, text);
+            }
         }
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;
@@ -1042,6 +1049,9 @@ public sealed class CommandsPanel
                 canvas.Restore();
             }
             DrawPanelStatusBar(canvas, row);
+            if (row.HoverText is { } hover)
+                canvas.DrawText(TruncateLabel(hover, _statusBarTextPaint, row.StatusBarRect.Width - 12),
+                    row.StatusBarRect.MidX, row.StatusBarRect.Top - 3, _statusBarTextPaint);
             if (!row.DetailLines.IsDefaultOrEmpty)
             {
                 using var paint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true };
@@ -1244,7 +1254,7 @@ public readonly record struct CommandPanelGeometry(
     ImmutableArray<string> DetailLines = default,
     string? RangeModuleId = null, SKRect RangeToggleRect = default, bool RangeVisible = false,
     SKRect ReloadBarRect = default, double ReloadFraction = 1, SKRect ReloadRingRect = default, double RemainingReloadRealSeconds = 0, string? OperatorText = null,
-    string? TimeTooltip = null, double? RangeKm = null)
+    string? TimeTooltip = null, double? RangeKm = null, string? ReloadTimerText = null, string? HoverText = null)
 {
     public string Key => Weapon?.Key ?? Name;
 }
