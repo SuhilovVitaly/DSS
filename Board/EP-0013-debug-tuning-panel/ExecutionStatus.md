@@ -20,6 +20,7 @@ per-ticket publication. They are retained as the current execution inputs.
 | EP-0013-US-0001-TK-0002 | `67f6c6ab53edc70bf969dd1f0f3cc6e8543a9828` | Pushed; remote SHA verified identical on 2026-10-22 |
 | EP-0013-US-0001-TK-0003 | `0930c36d135254555dd3b6689156d2f495de4390` | Pushed; remote SHA verified identical on 2026-10-22 |
 | EP-0013-US-0002-TK-0001 | `7e3e25de2f2593c9950c3b64e56ce531290249df` | Pushed; remote SHA verified identical on 2026-10-22 |
+| EP-0013-US-0002-TK-0002 | `31ee6113cec56a1a0d12714892e400945e4f15e4` | Pushed; remote SHA verified identical on 2026-10-22 |
 
 The existing preparatory commit `2a63be54` was published with the same branch.
 No empty replacement implementation commit was created.
@@ -49,12 +50,14 @@ regression112/112; Client transport23/23; solution build0warnings/0errors;
 solution scoped format PASS. US1 self-review/AC coverage complete.
 US2-TK1 ship retiming published: affected Engine227/227, Engine build0warnings/errors,
 scoped formatter/diff check PASS. US2-TK2 projectile retiming checked: affected
-Engine107/107, Engine build0warnings/errors, scoped formatter/diff check PASS.
-Its commit/push verification follows immediately.
+Engine107/107, Engine build0warnings/errors, scoped formatter/diff check PASS; published.
+US2-TK3 reload checks complete: affected Engine118/118, Engine build0warnings/errors,
+scoped format/diff PASS. Its commit/push verification follows immediately.
 Final US7 exists
 and was expanded before main implementation to cover all six documentation
-outcomes required by the execution prompt. Next: US2-TK3 reload retiming;
-all subsequent stories remain pending.
+outcomes required by the execution prompt. Next: US3-TK1 saved overlay/provenance,
+then startup files. US3–US7 remain pending. US1/US2 automated AC coverage and
+self-review are complete; full epic acceptance remains OPEN.
 
 Graph source navigation is the existing ignored `src/graphify-out` export. It is
 historical EP12 navigation, not verification of EP13. Fresh semantic reading is

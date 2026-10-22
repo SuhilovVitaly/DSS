@@ -14,6 +14,8 @@ public sealed partial class SimulationEngine
             return CommandStartOutcome.Rejected(DebugTuningReasonCodes.ValueOutOfRange);
         if (!TryStageDebugProjectiles(candidate.Registry, time, ships.Objects, out var originals, out var launcherTypes))
             return CommandStartOutcome.Rejected(DebugTuningReasonCodes.ValueOutOfRange);
+        if (!TryStageDebugReloads(candidate.Registry, time, out var reloads))
+            return CommandStartOutcome.Rejected(DebugTuningReasonCodes.ValueOutOfRange);
         _registry = candidate.Registry;
         _debugTuning = candidate;
         _objects.Clear();
@@ -26,6 +28,8 @@ public sealed partial class SimulationEngine
         foreach (var pair in originals) _debugOriginalFlights.Add(pair.Key, pair.Value);
         _debugProjectileTypes.Clear();
         foreach (var pair in launcherTypes) _debugProjectileTypes.Add(pair.Key, pair.Value);
+        _launcherCombat = reloads.Launchers;
+        _defenses = reloads.Defenses;
         foreach (var owner in _objects)
             foreach (var module in owner.Modules)
             {
@@ -38,6 +42,7 @@ public sealed partial class SimulationEngine
                     _defenses[key] = defense with { Profiles = type.Profiles, ReloadDurationMs = type.ReloadMs };
             }
         while (NextPointDetonationTime() is var due && due <= time) ResolvePointDetonations(due);
+        foreach (string moduleId in reloads.CompletedPlayerModules) CompletePlayerTorpedoReloads(time, moduleId);
         RecordCommandResult(command, CommandResultStatus.Executed, time);
         return CommandStartOutcome.Started;
     }

@@ -176,11 +176,12 @@ public sealed partial class SimulationEngine
         .Where(p => p.Key.ObjectId == PlayerShipObjectId && p.Value.ReadyAtMotionTimeMs > cursor)
         .Select(p => p.Value.ReadyAtMotionTimeMs ?? double.PositiveInfinity).DefaultIfEmpty(double.PositiveInfinity).Min();
 
-    private void CompletePlayerTorpedoReloads(double time)
+    private void CompletePlayerTorpedoReloads(double time, string? onlyModuleId = null)
     {
         var owner = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
         if (owner is null) return;
-        foreach (var row in _launcherCombat.Where(p => p.Key.ObjectId == PlayerShipObjectId && p.Value.ReadyAtMotionTimeMs == time)
+        foreach (var row in _launcherCombat.Where(p => p.Key.ObjectId == PlayerShipObjectId && p.Value.ReadyAtMotionTimeMs == time &&
+            (onlyModuleId is null || p.Key.ModuleId == onlyModuleId))
             .OrderBy(p => p.Key.ModuleId, StringComparer.Ordinal))
         {
             var module = owner.Modules.FirstOrDefault(m => m.ModuleId == row.Key.ModuleId);
