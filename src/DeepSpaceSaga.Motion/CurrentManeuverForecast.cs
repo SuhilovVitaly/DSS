@@ -11,7 +11,7 @@ public static class CurrentManeuverForecast
 
     internal static Func<double, Pose> CreateSampler(ObjectMotionSnapshot state)
     {
-        if (state.TurnHoldRateDegPerSec is not null || state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
+        if (state.SpeedHoldAccelerationKmS2 is not null || state.TurnHoldRateDegPerSec is not null || state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
             return ms => { var p = Sample(state, ms); return new(p.X, p.Y, p.SpeedKmS, p.Direction); };
         if (state.HostileCombat is { Segment: var controls })
         {
@@ -52,7 +52,7 @@ public static class CurrentManeuverForecast
         state.EngineManeuver?.CompletesOnMotionUpdate == true || state.Evasion?.BaseMotion.EngineManeuver?.CompletesOnMotionUpdate == true;
 
     public static bool HasRequiredData(ObjectMotionSnapshot state) => !HasUnscheduledStep(state) && (
-        state.TurnHoldRateDegPerSec is not null || state.Evasion is not null ||
+        state.SpeedHoldAccelerationKmS2 is not null || state.TurnHoldRateDegPerSec is not null || state.Evasion is not null ||
         state.OwnProjectile is not null || state.ObservedProjectile is not null ||
         state.HostileCombat is { Segment.AccelerationKmS2: 0 } ||
         state.HostileCombat is not null && state.MaxSpeedKmS is > 0 ||
@@ -73,13 +73,7 @@ public static class CurrentManeuverForecast
         ArgumentOutOfRangeException.ThrowIfNegative(elapsedMs);
         if (!double.IsFinite(elapsedMs)) throw new ArgumentOutOfRangeException(nameof(elapsedMs));
         if (state.Evasion is { } evasion) return SampleEvasion(state, evasion, elapsedMs);
-        if (state.TurnHoldRateDegPerSec is { } rate)
-        {
-            if (!double.IsFinite(rate)) throw new ArgumentException("Invalid held turn rate.", nameof(state));
-            var p = HostileOrbitMath.Sample(new HostileMotionSegment(0, long.MaxValue, 0,
-                state.X, state.Y, state.SpeedKmS, state.Direction, 0, rate), elapsedMs);
-            return state with { X = p.X, Y = p.Y, Direction = p.Direction };
-        }
+        if (state.TurnHoldRateDegPerSec is not null || state.SpeedHoldAccelerationKmS2 is not null) return HoldMotion.Sample(state, elapsedMs);
         if (state.OwnProjectile is { } own)
         {
             if (!double.IsFinite(own.SpeedKmS) || own.SpeedKmS <= 0) throw new ArgumentException("Invalid own projectile speed.", nameof(state));
