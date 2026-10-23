@@ -600,25 +600,26 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        if (_debugTuningPanel.Contains(x / _uiScale, y / _uiScale))
-        {
-            _panLastScreenX = x; _panLastScreenY = y;
-            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
-            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
-            SetActiveObjectId(null); return true;
-        }
-        if (PointAim is { } aim && (_mouseX != x || _mouseY != y))
-        { _pointErrors.Remove(aim.ModuleId); ResetPointFriendlyConfirmation(); }
-        if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
-        // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
-        // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
-        // coordinates UI panels hover-test against.
+        bool pointerMoved = _mouseX != x || _mouseY != y;
+        // Keep the current cursor even when an overlay consumes this event:
+        // Render recomputes map hover without waiting for another mouse move.
+        // Raw coordinates serve camera hit-testing; UI coordinates are logical.
         _mouseX = x;
         _mouseY = y;
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
 
+        if (_debugTuningPanel.Contains(_uiMouseX, _uiMouseY))
+        {
+            _panLastScreenX = x; _panLastScreenY = y;
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return true;
+        }
+        if (PointAim is { } aim && pointerMoved)
+        { _pointErrors.Remove(aim.ModuleId); ResetPointFriendlyConfirmation(); }
+        if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
         if (_combatSummaryPanel.Bounds.Contains(_uiMouseX, _uiMouseY))
         {
             _panLastScreenX = x; _panLastScreenY = y;
@@ -1095,7 +1096,8 @@ public sealed partial class GameSessionScreen : IScreen
             _mouseX >= 0 && _mouseX <= _viewportW &&
             _mouseY >= 0 && _mouseY <= _viewportH;
 
-        string? candidate = cursorInViewport && !_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY) ? FindNearestObjectId(_mouseX, _mouseY) : null;
+        string? candidate = cursorInViewport && !_debugTuningPanel.Contains(_uiMouseX, _uiMouseY) &&
+            !_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY) ? FindNearestObjectId(_mouseX, _mouseY) : null;
         SetActiveObjectId(candidate);
     }
 

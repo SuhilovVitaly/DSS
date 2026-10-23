@@ -12,6 +12,52 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class DebugTuningPanelInputTests
 {
     [Theory]
+    [InlineData(.8f)]
+    [InlineData(1f)]
+    [InlineData(1.2f)]
+    [InlineData(1.5f)]
+    public void PanelHoverRemainsCapturedAfterRenderAndTracksTheCurrentCursor(float scale)
+    {
+        const int width = 1920, height = 1080;
+        var original = new ObjectMotionSnapshot("OBJ-1", 10000, 10000, 0, 0);
+        var snapshot = new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0, [original], DebugTuning: new(0, [], []));
+        var buffer = new SnapshotBuffer(); buffer.Update(snapshot);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), uiScale: scale);
+        using var surface = SKSurface.Create(new SKImageInfo(width, height));
+        try
+        {
+            void Render() => screen.Render(surface.Canvas, width, height);
+            void Toggle() { screen.OnKeyDown(Key.F12); screen.OnKeyUp(Key.F12); }
+            Render(); Toggle(); Render();
+            screen.OnMouseMove(width / 2f, height / 2f);
+            Assert.Equal("OBJ-1", screen.ActiveObjectId);
+            float x = screen.DebugPanel.Bounds.MidX * scale;
+            float y = (screen.DebugPanel.Bounds.Top + 100) * scale;
+            Assert.True(screen.OnMouseMove(x, y));
+            Assert.Null(screen.ActiveObjectId);
+            for (int i = 0; i < 3; i++) { Render(); Assert.Null(screen.ActiveObjectId); }
+
+            // A map object directly underneath the panel must also stay excluded.
+            var underneath = original with
+            {
+                ObjectId = "OBJ-2",
+                X = screen.CameraFocusX + (x - width / 2d) / screen.CameraPixelsPerWorldUnit,
+                Y = screen.CameraFocusY + (y - height / 2d) / screen.CameraPixelsPerWorldUnit
+            };
+            buffer.Update(snapshot with { SnapshotSequence = 2, Objects = [underneath] });
+            Render(); Assert.Null(screen.ActiveObjectId);
+            // Closing and reopening without another mouse event uses this same cursor.
+            Toggle(); Render(); Assert.Equal("OBJ-2", screen.ActiveObjectId);
+            Toggle(); Render(); Assert.Null(screen.ActiveObjectId);
+            buffer.Update(snapshot with { SnapshotSequence = 3 });
+            Render(); Assert.Null(screen.ActiveObjectId);
+            screen.OnMouseMove(width / 2f, height / 2f);
+            Render(); Assert.Equal("OBJ-1", screen.ActiveObjectId);
+        }
+        finally { screen.OnDeactivated(); }
+    }
+
+    [Theory]
     [InlineData(1f)]
     [InlineData(1.5f)]
     public async Task BindingRapidEditsConfirmationAndMouseCapture(float scale)
