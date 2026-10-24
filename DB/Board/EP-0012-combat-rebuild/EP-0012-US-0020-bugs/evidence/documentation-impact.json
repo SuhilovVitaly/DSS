@@ -1,0 +1,738 @@
+[
+  {
+    "path": "DB/Documentation/00-Process/AGENTS.md",
+    "bytes": 796,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/00-Process/CLAUDE.md",
+    "bytes": 22760,
+    "changed": true,
+    "matched_topics": [
+      "SimulationSpeed",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/00-Process/DocumentationSystem.md",
+    "bytes": 2805,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/01-Requirements/EngineRequirements.md",
+    "bytes": 353083,
+    "changed": true,
+    "matched_topics": [
+      "SimulationSpeed",
+      "CombatReports",
+      "торпед",
+      "перезаряд",
+      "point aim",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/01-Requirements/FirstReleaseRequirements.md",
+    "bytes": 42233,
+    "changed": true,
+    "matched_topics": [
+      "торпед",
+      "point aim",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/CargoHold.md",
+    "bytes": 4467,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/CommandPanels.md",
+    "bytes": 11074,
+    "changed": true,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/CrewAndHabitation.md",
+    "bytes": 4840,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/CrewDialogues.md",
+    "bytes": 2105,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/Docking.md",
+    "bytes": 8782,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/ElectricityAndEnergyCells.md",
+    "bytes": 3567,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/Fuel.md",
+    "bytes": 5843,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/IceMining.md",
+    "bytes": 6025,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/Money.md",
+    "bytes": 5433,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/PassengerContracts.md",
+    "bytes": 4152,
+    "changed": false,
+    "matched_topics": [
+      "торпед"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/SolarSystemMapConcept.md",
+    "bytes": 75634,
+    "changed": false,
+    "matched_topics": [
+      "SimulationSpeed"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/StationDialogues.md",
+    "bytes": 2179,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/StationInventory.md",
+    "bytes": 10610,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md",
+    "bytes": 12460,
+    "changed": true,
+    "matched_topics": [
+      "торпед",
+      "point aim",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/TetrarchClass.md",
+    "bytes": 7156,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/Trading.md",
+    "bytes": 9859,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/TradingSystemConcept.md",
+    "bytes": 19116,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Mechanics/TradingSystemMvpStories.md",
+    "bytes": 32409,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Cargo.md",
+    "bytes": 976,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/CharacterCommunication.md",
+    "bytes": 1046,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Contracts.md",
+    "bytes": 2573,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Defeat.md",
+    "bytes": 2791,
+    "changed": false,
+    "matched_topics": [
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Dialog.md",
+    "bytes": 1035,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Finance.md",
+    "bytes": 3779,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/GameMenu.md",
+    "bytes": 3526,
+    "changed": false,
+    "matched_topics": [
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/GameSession.md",
+    "bytes": 12772,
+    "changed": true,
+    "matched_topics": [
+      "CombatReports",
+      "торпед",
+      "point aim",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Hire.md",
+    "bytes": 2570,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Load.md",
+    "bytes": 7506,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Loot.md",
+    "bytes": 882,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/MainMenu.md",
+    "bytes": 2285,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Save.md",
+    "bytes": 8489,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/ScenarioSelect.md",
+    "bytes": 6186,
+    "changed": false,
+    "matched_topics": [
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/ScreenCatalog.md",
+    "bytes": 11791,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Settings.md",
+    "bytes": 1788,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Ship.md",
+    "bytes": 1046,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Station.md",
+    "bytes": 9830,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/Screens/Trade.md",
+    "bytes": 14513,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/TechnicalTasks/CombatPresentationSynchronization.md",
+    "bytes": 23048,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "перезаряд",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/TechnicalTasks/CombatTrajectoryForecasting.md",
+    "bytes": 53322,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/TechnicalTasks/ScreenNamingConventionRefactor.md",
+    "bytes": 6948,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/TechnicalTasks/StationEconomyProductionAndSizing.md",
+    "bytes": 15424,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/02-FirstRelease/TechnicalTasks/TacticalCombatReports.md",
+    "bytes": 30646,
+    "changed": true,
+    "matched_topics": [
+      "CombatReports",
+      "торпед",
+      "перезаряд",
+      "point aim",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/03-Design/DialoguePortraits.md",
+    "bytes": 3215,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/FemaleFaceProportions.md",
+    "bytes": 14023,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/PortraitGenerator.md",
+    "bytes": 20878,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/PortraitGeneratorM4.md",
+    "bytes": 3564,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/PortraitGeneratorW1.md",
+    "bytes": 3094,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/PortraitGeneratorW2.md",
+    "bytes": 3204,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/PortraitGeneratorW4.md",
+    "bytes": 4068,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/TacticalButtons/STYLE.md",
+    "bytes": 8548,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/03-Design/TacticalMapSpecification.md",
+    "bytes": 34547,
+    "changed": true,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/AiMapEnvironment.md",
+    "bytes": 15988,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/ApproachRoutes.md",
+    "bytes": 15563,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/BasicTorpedoCombat.md",
+    "bytes": 18573,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/CodeReview20260912/Fixes.md",
+    "bytes": 9322,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/CodeReview20260912/README.md",
+    "bytes": 29192,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/CombatReports.md",
+    "bytes": 12085,
+    "changed": true,
+    "matched_topics": [
+      "CombatReports",
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/CountermeasureCombat.md",
+    "bytes": 20554,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/EP-0002-Implementation.md",
+    "bytes": 26077,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/EpicReview20261010/Fixes.md",
+    "bytes": 6690,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/EpicReview20261010/README.md",
+    "bytes": 12897,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/EpicReview20261010/Validation.md",
+    "bytes": 5113,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/ItemCatalogSchema.md",
+    "bytes": 12584,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/MapScaling20260914/README.md",
+    "bytes": 18234,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/ModuleCombat.md",
+    "bytes": 7347,
+    "changed": false,
+    "matched_topics": [
+      "CombatReports",
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/ModuleCombatDocumentation.md",
+    "bytes": 5660,
+    "changed": false,
+    "matched_topics": [
+      "CombatReports",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/NpcObservedTrajectories.md",
+    "bytes": 9452,
+    "changed": false,
+    "matched_topics": [
+      "торпед",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/Performance500/gpu-jitter-2026-09-24.md",
+    "bytes": 9327,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/Performance500/README.md",
+    "bytes": 15560,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/Performance500/x100-smoothness-2026-09-16.md",
+    "bytes": 12153,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md",
+    "bytes": 18096,
+    "changed": false,
+    "matched_topics": [
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/PhaseThreeCombatDocumentation.md",
+    "bytes": 12580,
+    "changed": false,
+    "matched_topics": [
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/PointAimCombat.md",
+    "bytes": 17808,
+    "changed": true,
+    "matched_topics": [
+      "торпед",
+      "перезаряд",
+      "TorpedoReload",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/PointCombatDocumentation.md",
+    "bytes": 18028,
+    "changed": false,
+    "matched_topics": [
+      "CombatReports",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/TradeUI20260912/README.md",
+    "bytes": 7034,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/04-Engineering/TradingAndSolarSystem.md",
+    "bytes": 10826,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/05-Backlog/ImplementationTaskDiffs03-12.md",
+    "bytes": 18762,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/05-Backlog/TechnicalTasksSmall2026-08-09.md",
+    "bytes": 22200,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/06-Tooling/AiMapGraphify.md",
+    "bytes": 6301,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/06-Tooling/CountermeasureGraphify.md",
+    "bytes": 18081,
+    "changed": false,
+    "matched_topics": [
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/06-Tooling/DeepSpaceSaga.PortraitAssets.md",
+    "bytes": 1846,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/06-Tooling/GameSessionScreenUI.md",
+    "bytes": 3198,
+    "changed": true,
+    "matched_topics": [
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/06-Tooling/TradingSolarGraphify.md",
+    "bytes": 12924,
+    "changed": false,
+    "matched_topics": [
+      "CombatReports",
+      "point-aim"
+    ],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  },
+  {
+    "path": "DB/Documentation/README.md",
+    "bytes": 9386,
+    "changed": true,
+    "matched_topics": [
+      "CombatReports",
+      "point-aim"
+    ],
+    "disposition": "updated US20 current behavior"
+  },
+  {
+    "path": "DB/Documentation/Validation/EP-0003-Implementation.md",
+    "bytes": 26396,
+    "changed": false,
+    "matched_topics": [],
+    "disposition": "retained historical or unaffected contract; indexed for impact search"
+  }
+]

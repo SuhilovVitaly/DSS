@@ -23,7 +23,7 @@ public sealed record AuthoritativeSnapshot(
     string? ActiveObjectId = null,
     string? SelectedObjectId = null,
     /// <summary>
-    /// Current player Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md). Always
+    /// Current player Credits balance (DB\Documentation\02-FirstRelease\Mechanics\Money.md). Always
     /// present.
     /// </summary>
     long PlayerCredits = 0,

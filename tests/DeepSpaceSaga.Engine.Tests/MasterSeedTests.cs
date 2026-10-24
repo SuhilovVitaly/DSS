@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
 /// ТЗ-02A: masterSeed for New Game and save/load continuation (requirements §15).
-/// Covers all 5 acceptance criteria from Documentation/05-Backlog/ImplementationTaskDiffs03-12.md.
+/// Covers all 5 acceptance criteria from DB/Documentation/05-Backlog/ImplementationTaskDiffs03-12.md.
 /// </summary>
 public class MasterSeedTests
 {

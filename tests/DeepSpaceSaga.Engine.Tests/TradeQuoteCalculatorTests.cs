@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
 /// Covers <see cref="TradeQuoteCalculator"/> — the pure sequential price curve of EP-0001-US-0015-TK-0002
-/// (epic baseline Board/EP-0001-trading-system/Documentation.md:96): per unit
+/// (epic baseline DB/Board/EP-0001-trading-system/Documentation.md:96): per unit
 /// <c>stockFactor = clamp(1 + 0.70 × (1 − stock / targetStock), 0.65, 1.70)</c> taken from the virtual stock
 /// before the unit moves, <c>raw = Product(station/event factors) × stockFactor × spread</c> (buy 1.15,
 /// sell 0.85), <c>final = clamp(raw, 0.50, 3.00)</c>, one AwayFromZero round of <c>base × final</c>, minimum 1.

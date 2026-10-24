@@ -1,0 +1,233 @@
+{
+  "main": {
+    "id": "cf7a413291b0310e",
+    "type": "split",
+    "children": [
+      {
+        "id": "880eba1aff2fe595",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "308dc47191e08d6a",
+            "type": "leaf",
+            "state": {
+              "type": "empty",
+              "state": {},
+              "icon": "lucide-file",
+              "title": "New tab"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "vertical"
+  },
+  "left": {
+    "id": "e3ca054b435aca12",
+    "type": "split",
+    "children": [
+      {
+        "id": "48844da8ac0c2a71",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "0145ffa12839b88b",
+            "type": "leaf",
+            "state": {
+              "type": "file-explorer",
+              "state": {
+                "sortOrder": "alphabetical",
+                "autoReveal": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-folder-closed",
+              "title": "Files"
+            }
+          },
+          {
+            "id": "2ab327c459ef8f2a",
+            "type": "leaf",
+            "state": {
+              "type": "search",
+              "state": {
+                "query": "",
+                "matchingCase": false,
+                "explainSearch": false,
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical"
+              },
+              "icon": "lucide-search",
+              "title": "Search"
+            }
+          },
+          {
+            "id": "334e34ea3a2f2d6b",
+            "type": "leaf",
+            "state": {
+              "type": "bookmarks",
+              "state": {
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-bookmark",
+              "title": "Bookmarks"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300
+  },
+  "right": {
+    "id": "330223ecc1f32608",
+    "type": "split",
+    "children": [
+      {
+        "id": "d1ca2a6598ee7c75",
+        "type": "tabs",
+        "children": [
+          {
+            "id": "da0a8e3700960418",
+            "type": "leaf",
+            "state": {
+              "type": "backlink",
+              "state": {
+                "collapseAll": false,
+                "extraContext": false,
+                "sortOrder": "alphabetical",
+                "showSearch": false,
+                "searchQuery": "",
+                "backlinkCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-coming-in",
+              "title": "Backlinks"
+            }
+          },
+          {
+            "id": "7195d6873f54975a",
+            "type": "leaf",
+            "state": {
+              "type": "outgoing-link",
+              "state": {
+                "linksCollapsed": false,
+                "unlinkedCollapsed": true
+              },
+              "icon": "links-going-out",
+              "title": "Outgoing links"
+            }
+          },
+          {
+            "id": "05fc3eace748f267",
+            "type": "leaf",
+            "state": {
+              "type": "tag",
+              "state": {
+                "sortOrder": "frequency",
+                "useHierarchy": true,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-tags",
+              "title": "Tags"
+            }
+          },
+          {
+            "id": "ea6320113e44b05a",
+            "type": "leaf",
+            "state": {
+              "type": "all-properties",
+              "state": {
+                "sortOrder": "frequency",
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-archive",
+              "title": "All properties"
+            }
+          },
+          {
+            "id": "fa7f7e9eb39723bb",
+            "type": "leaf",
+            "state": {
+              "type": "outline",
+              "state": {
+                "followCursor": false,
+                "showSearch": false,
+                "searchQuery": ""
+              },
+              "icon": "lucide-list",
+              "title": "Outline"
+            }
+          }
+        ]
+      }
+    ],
+    "direction": "horizontal",
+    "width": 300,
+    "collapsed": true
+  },
+  "left-ribbon": {
+    "hiddenItems": {
+      "switcher:Open quick switcher": false,
+      "graph:Open graph view": false,
+      "canvas:Create new canvas": false,
+      "daily-notes:Open today's daily note": false,
+      "templates:Insert template": false,
+      "command-palette:Open command palette": false,
+      "bases:Create new base": false
+    }
+  },
+  "active": "0145ffa12839b88b",
+  "lastOpenFiles": [
+    "Board/EP-0012-combat-rebuild/evidence/2G7WFt0o",
+    "Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/evidence/gGyZgRfL",
+    "Board/EP-0009-battle/zafBYusq",
+    "Board/EP-0009-battle/EP-0009-US-0012-project-documentation/36PASF7s",
+    "Board/EP-0009-battle/EP-0009-US-0011-save-and-combat-acceptance/EP-0009-US-0011-TK-0003-simulator-on-game-data-and-native/fiNEe6nX",
+    "Board/EP-0009-battle/EP-0009-US-0011-save-and-combat-acceptance/EP-0009-US-0011-TK-0002-combat-acceptance-and-balance/PGdfbz93",
+    "Board/EP-0008-player-defense-and-hostile-combat/EP-0008-US-0013-project-documentation-and-graph/rzPIiOAp",
+    "Board/EP-0007-countermeasure-combat/FrN0GhhY",
+    "Board/EP-0004-ai-territories-and-map-environment/ImplementationStatus.md",
+    "Board/EP-0004-ai-territories-and-map-environment/CXmse1fS",
+    "Board/EP-0004-ai-territories-and-map-environment/EP-0004-US-0009-project-documentation/EP-0004-US-0009-TK-0001-sync-project-docs/ZBGXRb55",
+    "Board/EP-0014-module-panels/r6ht7rdP",
+    "Documentation/03-Design/TacticalButtons/STYLE.md",
+    "Documentation/02-FirstRelease/Mechanics/Trading.md",
+    "Documentation/02-FirstRelease/Mechanics/TetrarchClass.md",
+    "Documentation/02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md",
+    "Documentation/02-FirstRelease/Mechanics/StationInventory.md",
+    "Documentation/02-FirstRelease/Mechanics/SolarSystemMapConcept.md",
+    "Documentation/02-FirstRelease/Mechanics/Money.md",
+    "Documentation/02-FirstRelease/Mechanics/IceMining.md",
+    "Documentation/02-FirstRelease/Mechanics/Fuel.md",
+    "Documentation/02-FirstRelease/Mechanics/ElectricityAndEnergyCells.md",
+    "Documentation/02-FirstRelease/Mechanics/Docking.md",
+    "Documentation/02-FirstRelease/Mechanics/CrewAndHabitation.md",
+    "Documentation/02-FirstRelease/Mechanics/CommandPanels.md",
+    "Documentation/02-FirstRelease/Mechanics/CargoHold.md",
+    "Documentation/02-FirstRelease/Screens/Trade.md",
+    "Documentation/02-FirstRelease/Screens/Station.md",
+    "Documentation/02-FirstRelease/Screens/Ship.md",
+    "Documentation/02-FirstRelease/Screens/Settings.md",
+    "Documentation/02-FirstRelease/Screens/ScreenCatalog.md",
+    "Documentation/02-FirstRelease/Screens/ScenarioSelect.md",
+    "Documentation/02-FirstRelease/Screens/Save.md",
+    "Documentation/02-FirstRelease/Screens/MainMenu.md",
+    "Documentation/02-FirstRelease/Screens/Load.md",
+    "Documentation/02-FirstRelease/Screens/Hire.md",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.torpedo-aim.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.out-of-range.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.paused.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.minimum-markers.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.manual-blast.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.evade-preview.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.counter-flight.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.counter-blast.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.counter-aim.png",
+    "Board/EP-0012-combat-rebuild/evidence/native/1920x1080-s1p5-ru-input.confirmed-flights.png"
+  ]
+}

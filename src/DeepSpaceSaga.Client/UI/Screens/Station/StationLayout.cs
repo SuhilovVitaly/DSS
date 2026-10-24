@@ -12,7 +12,7 @@ public enum StationButton
 
 /// <summary>
 /// Layout and hit-test geometry for the Station overlay panel. 1600×800 — widened by
-/// 200px from the 1400×800 standard for gameplay-mechanic windows (Documentation/02-FirstRelease/
+/// 200px from the 1400×800 standard for gameplay-mechanic windows (DB/Documentation/02-FirstRelease/
 /// Screens/ScreenCatalog.md — Station, Trade, Hire, Contracts, Cargo, Loot, Ship,
 /// Character Communication, Dialog, Finance) to match every other station-hub window
 /// (<see cref="Finance.FinanceLayout"/>, <see cref="Trade.TradeLayout"/>,
@@ -75,7 +75,7 @@ public sealed class StationLayout
     /// <summary>
     /// TRADE button rect, local to the panel — occupies the first body row (the other
     /// placeholder lines start one row below it). Centered horizontally like the
-    /// placeholder text it replaces (Documentation/02-FirstRelease/Screens/Station.md: "Позволяет
+    /// placeholder text it replaces (DB/Documentation/02-FirstRelease/Screens/Station.md: "Позволяет
     /// открыть экран торговли кнопкой Trade").
     /// </summary>
     public static (float Left, float Top, float Right, float Bottom) TradeButtonLocalRect()
@@ -87,7 +87,7 @@ public sealed class StationLayout
 
     /// <summary>
     /// HIRE button rect, local to the panel — occupies the row `Hire`'s placeholder text
-    /// used to sit in (Documentation/02-FirstRelease/Screens/Station.md: "Позволяет открыть окно
+    /// used to sit in (DB/Documentation/02-FirstRelease/Screens/Station.md: "Позволяет открыть окно
     /// `Hire` для пассажирских контрактов"), same styling/centering as
     /// <see cref="TradeButtonLocalRect"/>.
     /// </summary>
@@ -100,7 +100,7 @@ public sealed class StationLayout
 
     /// <summary>
     /// FINANCE button rect, local to the panel — occupies the row `Finance`'s placeholder
-    /// text used to sit in (Documentation/02-FirstRelease/Screens/Station.md: "Позволяет открыть
+    /// text used to sit in (DB/Documentation/02-FirstRelease/Screens/Station.md: "Позволяет открыть
     /// финансовую сводку/операции кнопкой `Finance`"), same styling/centering as
     /// <see cref="TradeButtonLocalRect"/>/<see cref="HireButtonLocalRect"/>. Unlike Trade
     /// and Hire, this opens the pre-existing <see cref="Finance.FinanceScreen"/> (already
@@ -117,7 +117,7 @@ public sealed class StationLayout
     /// <summary>
     /// CONTRACTS button rect, local to the panel — a new row appended after `Undock`
     /// (row 6), not a converted placeholder line: `Contracts` was split out of `Hire`
-    /// (Documentation/02-FirstRelease/Screens/Contracts.md — passenger contracts, separate from
+    /// (DB/Documentation/02-FirstRelease/Screens/Contracts.md — passenger contracts, separate from
     /// `Hire`'s now crew-hiring-specific scope) after the original six-row layout was
     /// already fixed. Same styling/centering as the other row buttons.
     /// </summary>

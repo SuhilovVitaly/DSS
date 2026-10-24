@@ -18,12 +18,12 @@ from graphify.detect import save_manifest
 R=Path(__file__).resolve().parents[2]
 O=Path(os.environ.get('DSS_GRAPH_OUTPUT') or ('D:/DeepSpaceSaga/artifacts/validation/graphify/'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')))
 O.mkdir(parents=True,exist_ok=True)
-EP='Board/EP-0010-combat-reports'
-OBSERVED_EP='Board/EP-0011-short-fixes'
-POINT_EP='Board/EP-0012-combat-rebuild'
-MODULE_EP='Board/EP-0009-battle'
-TUNING_EP='Board/EP-0013-debug-tuning-panel'
-PANELS_EP='Board/EP-0014-module-panels'
+EP='DB/Board/EP-0010-combat-reports'
+OBSERVED_EP='DB/Board/EP-0011-short-fixes'
+POINT_EP='DB/Board/EP-0012-combat-rebuild'
+MODULE_EP='DB/Board/EP-0009-battle'
+TUNING_EP='DB/Board/EP-0013-debug-tuning-panel'
+PANELS_EP='DB/Board/EP-0014-module-panels'
 EXCLUDED={PANELS_EP+'/ExecutionStatus.md':'publication ledger updated after graph',
  PANELS_EP+'/PublicationStatus.md':'publication ledger updated after graph',
  PANELS_EP+'/DocumentationImpact.md':'impact audit updated after graph',
@@ -32,10 +32,10 @@ EXCLUDED={PANELS_EP+'/ExecutionStatus.md':'publication ledger updated after grap
  TUNING_EP+'/PublicationStatus.md':'publication ledger updated alongside graph',
  TUNING_EP+'/DocumentationImpact.md':'final impact audit updated alongside graph',
  TUNING_EP+'/FinalValidation.md':'final evidence audit updated alongside graph',
- 'Documentation/06-Tooling/GraphifyRebuild.md':'describes generated graph itself',
- 'Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/ExecutionStatus.md':'US20 evidence updated alongside graph',
- 'Documentation/README.md':'navigation index updated alongside graph',
- 'Documentation/06-Tooling/Graphify.md':'describes generated graph itself',
+ 'DB/Documentation/06-Tooling/GraphifyRebuild.md':'describes generated graph itself',
+ 'DB/Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/ExecutionStatus.md':'US20 evidence updated alongside graph',
+ 'DB/Documentation/README.md':'navigation index updated alongside graph',
+ 'DB/Documentation/06-Tooling/Graphify.md':'describes generated graph itself',
  EP+'/ImplementationStatus.md':'execution status updated alongside graph',
  OBSERVED_EP+'/ImplementationStatus.md':'execution status updated alongside graph',
  POINT_EP+'/ImplementationStatus.md':'execution status updated alongside graph',
@@ -52,7 +52,7 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')))
+ docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')))
  docs=[p for p in docs if not {'bin','obj'} & set(p.parts)]
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and ('evidence' not in p.relative_to(R).parts or p.relative_to(R).as_posix() in {POINT_EP+'/evidence/balance.md',POINT_EP+'/evidence/native.md'})]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)
@@ -114,7 +114,7 @@ def main():
  flow=[('outbox','contract'),('range','outbox'),('identity','outbox'),('save_validation','save_restore'),('save_restore','outbox'),('outbox','mailbox'),('mailbox','buffer'),('buffer','inbox'),('inbox','history'),('history','formatter'),('formatter','panel'),('assets','panel'),('screen','history'),('screen','assets'),('screen','panel')]
  for s,t in flow:
   p=next(x[0] for x in evidence if x[3]==s);edge(mechanisms[s],mechanisms[t],'shares_data_with',p,conf='INFERRED',rationale='Reviewed EP-0010 architecture mapping, not a measured execution trace.')
- spec='Documentation/04-Engineering/CombatReports.md'
+ spec='DB/Documentation/04-Engineering/CombatReports.md'
  if spec in containers:
   for key in mechanisms:edge(containers[spec],mechanisms[key],'conceptually_related_to',spec,conf='INFERRED',rationale='Selective implementation mapping to the report specification.')
  hyper=[dict(id='ep0010_lossless_delivery',label='Combat report delivery pipeline',nodes=[mechanisms[k] for k in ('outbox','mailbox','buffer','inbox','history')],relation='participate_in',confidence='INFERRED',confidence_score=.85,source_file='src/DeepSpaceSaga.Client/SnapshotBuffer.cs',source_location='L1')]
@@ -185,7 +185,7 @@ def main():
  prefix+='Reproduce with tools/graphify/rebuild.py and the fresh DSS_GRAPH_SEMANTICS fragments; choose DSS_GRAPH_OUTPUT outside the repository. --dry-run validates without exporting.\n\n'
  prefix+=f'Audit: {len(pruned)} unresolved AST endpoint edges were explicitly pruned; {len(unlocated)} reference-only symbols have no local declaration location. Canonicalization produced {len(canonical_selfloops)} self-loops, removed from the derived graph. The undirected export combines some relations and canonicalizes equivalent nodes; extraction.json retains original non-loop relationships. See diagnostics.json and the dedicated audit sidecars before interpreting absence of a path.\n\n'
  (O/'GRAPH_REPORT.md').write_text(prefix+report,encoding='utf-8');dump('extraction.json',ex);dump('.graphify_labels.json',labels);dump('community-cohesion.json',co);dump('diagnostics.json',diagnose_extraction(ex,directed=False,root=R));dump('pruned-unresolved-edges.json',dict(reason='AST references without declared endpoints; not invented as facts',edges=pruned));dump('unlocated-references.json',dict(reason='Symbols without local declaration location',nodes=unlocated))
- stamp=datetime.now(timezone.utc).isoformat();dump('input-evidence.json',dict(head=head,working_tree=True,captured_at=stamp,inputs=hashes,exclusions=EXCLUDED,excluded_directories=['src/graphify-out','Board/*/evidence','**/bin','**/obj'],policy='No game/API execution; navigation is not acceptance'));dump('source-manifest.json',dict(algorithm='sha256',files=hashes,excluded=EXCLUDED))
+ stamp=datetime.now(timezone.utc).isoformat();dump('input-evidence.json',dict(head=head,working_tree=True,captured_at=stamp,inputs=hashes,exclusions=EXCLUDED,excluded_directories=['src/graphify-out','DB/Board/*/evidence','**/bin','**/obj'],policy='No game/API execution; navigation is not acceptance'));dump('source-manifest.json',dict(algorithm='sha256',files=hashes,excluded=EXCLUDED))
  # Only AST inputs receive native Graphify stamps. Selective documents remain
  # unstamped for semantic updates, rather than pretending full semantic coverage.
  dump('manifest.json',{})
