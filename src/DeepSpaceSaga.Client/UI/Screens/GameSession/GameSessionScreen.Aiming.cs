@@ -26,12 +26,13 @@ public sealed partial class GameSessionScreen
     }
     private readonly Dictionary<string, PointSubmission> _pointSubmissions = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _pointErrors = new(StringComparer.Ordinal);
+    private readonly Dictionary<(string Owner, string Module), string> _pointProfileMemory = new();
     private static ImmutableArray<LaunchProfileSnapshot> PointProfiles(InstalledModuleSnapshot module) =>
         module.LauncherCombat?.Profiles ?? module.Defense?.Profiles ?? [];
     private double PointAimTime => _buffer.LatestPrediction is { } prediction
         ? prediction.BufferedSnapshot.Snapshot.MotionTimeMs + CombatPredictionDelta(prediction) : 0;
     internal string? PointAimFeedback => (PointAim?.ModuleId ?? _lastPointModuleId) is { } moduleId && PointAimModule(moduleId) is { } module
-        ? PointWeaponStatus(module) : null;
+        ? PointWeaponStatusWithTime(module) : null;
 
     private bool _pointAltLeft, _pointAltRight;
     internal void SynchronizeModifiers(bool controlLeft, bool controlRight, bool altLeft = false, bool altRight = false)
@@ -50,7 +51,7 @@ public sealed partial class GameSessionScreen
         {
             CancelPointAim(); _pointInputSession = session; _pointInputSessionInitialized = true;
             foreach (var pending in _pointSubmissions.Values) _ = pending.SendTask?.Exception;
-            _pointSubmissions.Clear(); _pointErrors.Clear(); LastPointCommandId = null; _lastPointModuleId = null;
+            _pointSubmissions.Clear(); _pointErrors.Clear(); _pointProfileMemory.Clear(); LastPointCommandId = null; _lastPointModuleId = null;
         }
         var snapshot = _buffer.Presented?.Snapshot;
         if (snapshot is null || snapshot.ActiveDialogue is not null || snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
@@ -106,13 +107,13 @@ public sealed partial class GameSessionScreen
         if (snapshot is null || snapshot.InstalledModules.IsDefaultOrEmpty || snapshot.ActiveDialogue is not null ||
             FindPlayerShipMotion(snapshot) is not { IsDestroyed: false }) return false;
         var modules = snapshot.InstalledModules.Where(m => !PointProfiles(m).IsDefaultOrEmpty &&
-            (kind == ProjectileKind.Torpedo ? m.LauncherCombat?.Profiles is not null : m.Defense?.Profiles is not null) && !m.IsDestroyed)
+            (kind == ProjectileKind.Torpedo ? m.LauncherCombat?.Profiles is not null : m.Defense?.Profiles is not null))
             .Where(m => moduleId is null || m.ModuleId == moduleId)
             .OrderBy(m => m.Position).ThenBy(m => m.ModuleId, StringComparer.Ordinal).ToArray();
         var module = modules.FirstOrDefault(m => !_pointSubmissions.ContainsKey(m.ModuleId) && PointReadyReason(m) is null) ?? modules.FirstOrDefault();
         if (module is null) return false;
         ResetPointFriendlyConfirmation();
-        PointAim = new(kind, module.ModuleId, PointProfiles(module)[0].ProfileId);
+        PointAim = new(kind, module.ModuleId, SelectedPointProfile(module));
         _pointErrors.Remove(module.ModuleId); _isPanningMap = false;
         return true;
     }
@@ -132,7 +133,11 @@ public sealed partial class GameSessionScreen
         {
             ResetPointFriendlyConfirmation();
             var profiles = PointProfiles(module);
-            if (index < profiles.Length) PointAim = aim with { ProfileId = profiles[index].ProfileId };
+            if (index < profiles.Length)
+            {
+                PointAim = aim with { ProfileId = profiles[index].ProfileId };
+                RememberPointProfile(module, PointAim.ProfileId);
+            }
             _pointErrors.Remove(module.ModuleId);
             return true;
         }
@@ -148,6 +153,7 @@ public sealed partial class GameSessionScreen
         ResetPointFriendlyConfirmation();
         int index = Enumerable.Range(0, profiles.Length).First(i => profiles[i].ProfileId == aim.ProfileId);
         PointAim = aim with { ProfileId = profiles[(index + (delta > 0 ? 1 : profiles.Length - 1)) % profiles.Length].ProfileId };
+        RememberPointProfile(module, PointAim.ProfileId);
         _pointErrors.Remove(module.ModuleId);
         return true;
     }
@@ -161,7 +167,8 @@ public sealed partial class GameSessionScreen
         _mouseX = x; _mouseY = y; _uiMouseX = x / _uiScale; _uiMouseY = y / _uiScale; _hasMousePosition = true;
         if (PointAimModule(aim.ModuleId) is not { } module || _buffer.Presented?.Snapshot is not { } snapshot) return true;
         if (_pointSubmissions.ContainsKey(module.ModuleId)) return true;
-        if (PointReadyReason(module) is not null) { _pointErrors.Remove(module.ModuleId); return true; }
+        if (PointReadyReason(module) is not null)
+        { _pointErrors.Remove(module.ModuleId); _lastPointModuleId = module.ModuleId; return true; }
         if (_handle is null) { _pointErrors[module.ModuleId] = "connection_unavailable"; return true; }
         var target = _camera.ScreenToWorld(x, y, _viewportW, _viewportH);
         if (aim.Kind == ProjectileKind.Countermissile && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
@@ -209,15 +216,21 @@ public sealed partial class GameSessionScreen
             if (error == CommandReasonCodes.LauncherReloading &&
                 (module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs) is { } ready && ready <= PointAimTime)
                 _pointErrors.Remove(module.ModuleId);
-            else return PointLaunchReason(error);
+            else if (error != PointReadyReason(module)) return PointLaunchReason(error);
+            else _pointErrors.Remove(module.ModuleId);
         }
-        if (PointReadyReason(module) is { } reason) return reason == CommandReasonCodes.LauncherReloading
-            ? CombatText("Reloading", "Reloading") : PointLaunchReason(reason);
+        if (PointReadyReason(module) is { } reason)
+        {
+            if (reason == CommandReasonCodes.LauncherReloading) return CombatText("Reloading", "Reloading");
+            if (reason == CommandReasonCodes.ModuleDisabled && module.DisabledUntilMotionTimeMs is { } until)
+                return PointLaunchReason(reason) + " " + PanelTime.Format(PanelTime.RealSeconds((until - PointAimTime) / 1000, PanelDisplaySpeed)) + " " + Localization.Combat("Panel.Seconds");
+            return PointLaunchReason(reason);
+        }
         return CombatText("Ready", "Ready");
     }
 
     internal static string PointLaunchReason(string reason) => reason == "aim_unreachable" ? CombatText("Aim.Unreachable", "Unreachable") :
-        CombatText("Reason." + reason, CombatText("CommandRejected", "Command rejected"));
+        CombatText("Panel.Reason." + reason, CombatText("CommandRejected", "Command rejected"));
 
     private InstalledModuleSnapshot? PointPanelModule(WeaponPanelInstance weapon) =>
         _buffer.Presented?.Snapshot.PlayerShipObjectId == weapon.OwnerObjectId ? PointAimModule(weapon.ModuleId) : null;
@@ -225,7 +238,7 @@ public sealed partial class GameSessionScreen
     {
         if (PointPanelModule(weapon) is not { } module) return false;
         if (_buffer.Presented?.Snapshot is not { ActiveDialogue: null } snapshot || FindPlayerShipMotion(snapshot) is not { IsDestroyed: false }) return false;
-        if (commandType is CombatCommandTypes.Launch or DefenseCommandTypes.Launch) return !module.IsDestroyed;
+        if (commandType is CombatCommandTypes.Launch or DefenseCommandTypes.Launch) return true;
         return commandType == CombatCommandTypes.Detonate && _selectedObjectId is { } id && snapshot.Objects.Any(o =>
             o.ObjectId == id && o.OwnProjectile is { Kind: ProjectileKind.Torpedo } point && point.LauncherModuleId == module.ModuleId && point.OwnerObjectId == weapon.OwnerObjectId);
     }
@@ -240,39 +253,153 @@ public sealed partial class GameSessionScreen
     private string? GetPointWeaponStatus(WeaponPanelInstance weapon)
     {
         if (PointPanelModule(weapon) is not { } module) return null;
+        return PointWeaponStatusWithTime(module);
+    }
+
+    private string PointWeaponStatusWithTime(InstalledModuleSnapshot module)
+    {
         string status = PointWeaponStatus(module);
         return status == CombatText("Reloading", "Reloading")
-            ? $"{status} {PointReloadRealSeconds(module):0.0} {CombatText("Seconds", "с")}" : status;
+            ? $"{status} {PanelTime.Format(PointReloadRealSeconds(module))} {Localization.Combat("Panel.Seconds")}" : status;
     }
+
+    private bool IsPointPanelBlocked(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module &&
+        (PointReadyReason(module) is not null || _pointErrors.ContainsKey(module.ModuleId));
+
+    internal bool PointAimFeedbackIsError => PointAim is { } aim && PointAimModule(aim.ModuleId) is { } module &&
+        (PointReadyReason(module) is not null || _pointErrors.ContainsKey(module.ModuleId));
     private double PointReloadRealSeconds(InstalledModuleSnapshot module)
     {
         double ready = module.LauncherCombat?.ReadyAtMotionTimeMs ?? module.Defense?.ReadyAtMotionTimeMs ?? 0;
-        double multiplier = _buffer.CurrentSpeed.MotionTimeMultiplier();
-        return Math.Max(0, ready - PointAimTime) / 1000 / (multiplier > 0 ? multiplier : .25);
+        return PanelTime.RealSeconds((ready - PointAimTime) / 1000, PanelDisplaySpeed);
+    }
+
+    private SimulationSpeed PanelDisplaySpeed
+    {
+        get
+        {
+            if (_buffer.CurrentSpeed != SimulationSpeed.Speed0) _lastNonPauseSpeed = _buffer.CurrentSpeed;
+            return PanelTime.EffectiveSpeed(_buffer.CurrentSpeed, _lastNonPauseSpeed);
+        }
     }
     private string? PointWeaponButtonLabel(WeaponPanelInstance weapon, string command)
     {
         if (PointPanelModule(weapon) is not { } module) return null;
+        if (command != CombatCommandTypes.Detonate && PointReadyReason(module) is not null) return GetPointWeaponStatus(weapon);
         return command == CombatCommandTypes.Detonate ? CombatText("Detonate", "Подрыв") :
-            $"{CombatText("Aim", "Прицел")} [{(module.LauncherCombat?.Profiles is not null ? CombatInputs.TorpedoAim : CombatInputs.CountermissileAim)}]";
+            $"{CombatText("Aim", "Прицел")} {PanelKeyLabel(module.LauncherCombat?.Profiles is not null ? CombatInputs.TorpedoAim : CombatInputs.CountermissileAim)}";
     }
-    private string? GetPointWeaponOperator(WeaponPanelInstance weapon) => PointPanelModule(weapon) is { } module
-        ? PointOperatorLabel(module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator) : null;
-    private static string PointOperatorLabel(WeaponOperatorSnapshot? op) => op is null ? CombatText("NoOperator", "Нет оператора") :
-        $"{op.DisplayName} · {CombatText("Accuracy", "Точность")} {op.Skill}";
+    private string? GetPointWeaponOperator(WeaponPanelInstance weapon)
+    {
+        if (PointPanelModule(weapon) is not { } module) return null;
+        var op = module.Operator ?? module.LauncherCombat?.Operator ?? module.Defense?.Operator;
+        if (op is null) return Localization.Combat("Panel.NoOperator");
+        double reference = module.LauncherCombat is not null ? 25 : 10;
+        double? effective = module.LauncherCombat?.EffectiveScatterPercent ?? module.Defense?.EffectiveScatterPercent;
+        return $"{op.DisplayName} · {Localization.Combat("Panel.Accuracy")} {op.Skill} · {Localization.Combat("Panel.Sigma")} " +
+            $"{(effective is { } sigma ? (sigma * reference).ToString("0.00") : Localization.Combat("Panel.UnknownValue"))} " +
+            $"{Localization.Combat("Panel.Kilometers")} {Localization.Combat("Panel.AtDistance")} {reference} {Localization.Combat("Panel.Kilometers")}";
+    }
     private IReadOnlyList<string> GetPointWeaponDetails(WeaponPanelInstance weapon)
     {
         if (PointPanelModule(weapon) is not { } module) return [];
         var lines = new List<string>();
         var profiles = PointProfiles(module);
-        string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : profiles.FirstOrDefault()?.ProfileId;
-        foreach (var profile in profiles)
-            lines.Add($"{(profile.ProfileId == current ? "> " : "")}{CombatText("Profile." + profile.ProfileId, profile.ProfileId)} · {profile.SpeedKmS:0.##} {CombatText("KilometersPerSecond", "")} · R {profile.BlastRadiusKm:0.##} {CombatText("Kilometers", "")}");
-        double? scatter = module.LauncherCombat?.ScatterPercent ?? module.Defense?.ScatterPercent;
+        string? current = PointAim?.ModuleId == module.ModuleId ? PointAim.ProfileId : SelectedPointProfile(module);
+        bool aiming = PointAim?.ModuleId == module.ModuleId && _hasMousePosition;
+        double? distanceKm = null;
+        CounterAimPreview? counterPoint = null;
+        ObjectMotionSnapshot? counterOwner = null;
+        ObjectMotionSnapshot[] counterRows = [];
+        if (aiming && FindPlayerShip(_renderStates) is { } own)
+        {
+            var target = _camera.ScreenToWorld(_mouseX, _mouseY, _viewportW, _viewportH);
+            if (module.Defense is not null && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
+            {
+                counterPoint = counter; counterOwner = own.Pose.ToSnapshot();
+                counterRows = _renderStates.Where(s => !s.Source.IsDestroyed && (s.Source.OwnProjectile is not null || s.Source.ObservedProjectile is not null))
+                    .Select(s => s.Pose.ToSnapshot()).ToArray();
+                target = (counter.X, counter.Y);
+            }
+            distanceKm = double.Hypot(target.Item1 - own.Pose.X, target.Item2 - own.Pose.Y) / 10;
+        }
+        double? range = module.LauncherCombat?.RangeKm ?? module.Defense?.RangeKm;
         double? effective = module.LauncherCombat?.EffectiveScatterPercent ?? module.Defense?.EffectiveScatterPercent;
-        lines.Add($"{CombatText("Scatter", "Разброс")}: {(scatter is { } value ? (value * 100).ToString("0.##") + "%" : "—")} · σ {(effective is { } sigma ? (sigma * 100).ToString("0.##") + "%" : "—")}");
+        for (int i = 0; i < profiles.Length; i++)
+        {
+            var profile = profiles[i];
+            string key = i < CombatInputs.Profiles.Length ? PanelKeyLabel(CombatInputs.Profiles[i]) : "";
+            string marker = profile.ProfileId == current ? Localization.Combat("Panel.Selected") : "";
+            string core = module.LauncherCombat?.CoreFraction is { } fraction
+                ? $"{Localization.Combat("Panel.Core")} {profile.BlastRadiusKm * fraction:0.##}" : "";
+            string time = "", sigmaText = "";
+            if (distanceKm is { } distance)
+            {
+                if (range is not > 0 || distance > range)
+                    time = Localization.Combat("Panel.OutOfRange");
+                else
+                {
+                    time = $"{PanelTime.RealSeconds(distance / profile.SpeedKmS, PanelDisplaySpeed):0.0}{Localization.Combat("Panel.Seconds")}";
+                    if (counterPoint?.SnappedObjectId is not null && counterOwner is not null && module.Defense is { } defense)
+                    {
+                        var arrival = ProjectCounterAim(counterOwner, counterRows, profile, defense.RangeKm,
+                            counterPoint.X, counterPoint.Y, _camera.PixelsPerWorldUnit, false, PointAimTime,
+                            PanelDisplaySpeed.MotionTimeMultiplier(), counterPoint);
+                        if (arrival.Late || arrival.Unreachable) time = Localization.Combat("Panel.Unreachable");
+                    }
+                    sigmaText = effective is { } cursorSigma ? $"{Localization.Combat("Panel.Sigma")}{cursorSigma * distance:0.00}" : Localization.Combat("Panel.UnknownValue");
+                }
+            }
+            lines.Add(string.Join('\t', key + marker, CombatText("Profile." + profile.ProfileId, profile.ProfileId),
+                $"{profile.SpeedKmS:0.##}{Localization.Combat("Panel.KilometersPerSecond")}",
+                $"{Localization.Combat("Panel.Radius")}{profile.BlastRadiusKm:0.##}", core, time, sigmaText));
+        }
+        double? reload = module.LauncherCombat?.ReloadDurationMs ?? module.Defense?.ReloadDurationMs;
+        string reloadText = reload is { } duration ? PanelTime.Format(PanelTime.RealSeconds(duration / 1000, PanelDisplaySpeed)) : Localization.Combat("Panel.UnknownValue");
+        string stats = module.LauncherCombat is { } launcher
+            ? $"{Localization.Combat("Panel.Damage")} {launcher.Damage} · {Localization.Combat("Panel.ArmorPiercing")} {launcher.ArmorPiercingPercent?.ToString("0.###") ?? Localization.Combat("Panel.UnknownValue")} {Localization.Combat("Panel.Percent")}" :
+            Localization.Combat("Panel.CounterStats");
+        lines.Add($"{stats} · {Localization.Combat("Panel.Reload")} {reloadText} {Localization.Combat("Panel.Seconds")}");
         return lines;
     }
+
+    private string? GetPointPanelTimeTooltip(WeaponPanelInstance weapon)
+    {
+        if (PointPanelModule(weapon) is not { } module) return null;
+        var lines = new List<string>();
+        double? reload = module.LauncherCombat?.ReloadDurationMs ?? module.Defense?.ReloadDurationMs;
+        if (reload is { } duration) lines.Add(Localization.Combat("Panel.Reload") + ": " + PanelTime.Tooltip(duration / 1000, PanelDisplaySpeed));
+        if (PointAim?.ModuleId == module.ModuleId && _hasMousePosition && FindPlayerShip(_renderStates) is { } own)
+        {
+            var target = _camera.ScreenToWorld(_mouseX, _mouseY, _viewportW, _viewportH);
+            if (module.Defense is not null && BuildCounterAimPreview(target.Item1, target.Item2) is { } counter)
+                target = (counter.X, counter.Y);
+            double distance = double.Hypot(target.Item1 - own.Pose.X, target.Item2 - own.Pose.Y) / 10;
+            foreach (var profile in PointProfiles(module))
+                lines.Add(CombatText("Profile." + profile.ProfileId, profile.ProfileId) + ": " + PanelTime.Tooltip(distance / profile.SpeedKmS, PanelDisplaySpeed));
+        }
+        return string.Join('\n', lines);
+    }
+
+    private static string PanelKeyLabel(Key key)
+    {
+        string name = key.ToString();
+        return name.StartsWith("Number", StringComparison.Ordinal) ? name[6..] : name;
+    }
+
+    private void RememberPointProfile(InstalledModuleSnapshot module, string profile) =>
+        _pointProfileMemory[(_buffer.Presented?.Snapshot.PlayerShipObjectId ?? "", module.ModuleId)] = profile;
+
+    private string SelectedPointProfile(InstalledModuleSnapshot module)
+    {
+        _pointProfileMemory.TryGetValue((_buffer.Presented?.Snapshot.PlayerShipObjectId ?? "", module.ModuleId), out var remembered);
+        return ResolvePanelProfile(PointProfiles(module), remembered, module.LauncherCombat is not null
+            ? CombatSettings.DefaultTorpedoProfile : CombatSettings.DefaultCountermissileProfile);
+    }
+
+    internal static string ResolvePanelProfile(ImmutableArray<LaunchProfileSnapshot> profiles, string? remembered, string configured) =>
+        profiles.FirstOrDefault(p => p.ProfileId == remembered)?.ProfileId ??
+        profiles.FirstOrDefault(p => p.ProfileId == configured)?.ProfileId ?? profiles.FirstOrDefault()?.ProfileId ?? "";
 
     private void DrawPointAimFeedback(SKCanvas canvas)
     {
@@ -290,7 +417,7 @@ public sealed partial class GameSessionScreen
         using var line = new SKPaint { Color = styles.AimReticle, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = (float)styles.LineWidthPx };
         float radius = (float)styles.ReticleRadiusPx;
         canvas.DrawLine(x - radius, y, x + radius, y, line); canvas.DrawLine(x, y - radius, x, y + radius, line);
-        using var text = new SKPaint { Color = styles.ForeignProfileText, IsAntialias = true, TextSize = (float)styles.TextSizePx };
+        using var text = new SKPaint { Color = PointAimFeedbackIsError ? styles.Danger : styles.ForeignProfileText, IsAntialias = true, TextSize = (float)styles.TextSizePx };
         canvas.DrawText($"{CombatText("Profile." + aim.ProfileId, aim.ProfileId)} · {PointAimFeedback}", x + radius, y + radius + text.TextSize, text);
     }
 }

@@ -15,7 +15,7 @@ public class PointCombatUS0001TK0001Tests
         var json = JsonSerializer.SerializeToElement(entry);
         foreach (string field in new[] { "ChanceTenths", "Roll", "LaunchMode", "Accuracy", "Attack", "Defense" })
             Assert.False(json.TryGetProperty(field, out _));
-        var defense = JsonSerializer.SerializeToElement(new DefenseSnapshot(true, null, DefenseState.Ready));
+        var defense = JsonSerializer.SerializeToElement(new DefenseSnapshot(null, DefenseState.Ready));
         Assert.False(defense.TryGetProperty("AutoEnabled", out _));
     }
     [Theory]

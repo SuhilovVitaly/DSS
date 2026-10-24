@@ -22,15 +22,15 @@ public sealed class CombatForecastContractTests
     }
 
     [Fact]
-    public void Forecast_launcher_lifetime_is_optional_and_roundtrips_without_changing_legacy_payloads()
+    public void Retired_launcher_lifetime_is_absent_from_live_snapshot_schema()
     {
         var old = new InstalledModuleSnapshot("launcher", "torpedo", "Launcher", 0, []);
         string json = JsonSerializer.Serialize(old);
         Assert.DoesNotContain("torpedoMaxFlightTimeMs", json);
-        Assert.Null(JsonSerializer.Deserialize<InstalledModuleSnapshot>(json)!.TorpedoMaxFlightTimeMs);
-        var current = old with { TorpedoMaxFlightTimeMs = 1234 };
-        string currentJson = JsonSerializer.Serialize(current);
-        Assert.Contains("\"torpedoMaxFlightTimeMs\":1234", currentJson);
-        Assert.Equal(1234, JsonSerializer.Deserialize<InstalledModuleSnapshot>(currentJson)!.TorpedoMaxFlightTimeMs);
+        Assert.Null(typeof(InstalledModuleSnapshot).GetProperty("TorpedoMaxFlightTimeMs"));
+        string legacy = json[..^1] + ",\"torpedoMaxFlightTimeMs\":1234}";
+        var restored = JsonSerializer.Deserialize<InstalledModuleSnapshot>(legacy)!;
+        Assert.Equal(old.ModuleId, restored.ModuleId);
+        Assert.DoesNotContain("torpedoMaxFlightTimeMs", JsonSerializer.Serialize(restored));
     }
 }

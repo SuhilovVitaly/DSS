@@ -8,7 +8,7 @@ public class PointCombatUS0001TK0005ContractTests
     [Fact]
     public void Launcher_profiles_roundtrip_captured_catalogue_values()
     {
-        var launcher = new LauncherCombatSnapshot(6, 0, 200, RangeKm: 70,
+        var launcher = new LauncherCombatSnapshot(200, RangeKm: 70,
             Profiles: [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)], ScatterPercent: 0.02);
         var restored = JsonSerializer.Deserialize<LauncherCombatSnapshot>(JsonSerializer.Serialize(launcher))!;
         Assert.Equal(launcher.Profiles!.Value.ToArray(), restored.Profiles!.Value.ToArray());
@@ -19,7 +19,7 @@ public class PointCombatUS0001TK0005ContractTests
     [Fact]
     public void Countermissile_profiles_have_no_ship_damage()
     {
-        var defense = new DefenseSnapshot(false, null, DefenseState.Ready, RangeKm: 30,
+        var defense = new DefenseSnapshot(null, DefenseState.Ready, RangeKm: 30,
             Profiles: [new("wide", 15, 1), new("fast", 25, 0.5)], ScatterPercent: 0.08);
         var restored = JsonSerializer.Deserialize<DefenseSnapshot>(JsonSerializer.Serialize(defense))!;
         Assert.Equal(defense.Profiles!.Value.ToArray(), restored.Profiles!.Value.ToArray());

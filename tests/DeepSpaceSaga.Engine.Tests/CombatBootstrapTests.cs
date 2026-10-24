@@ -57,8 +57,8 @@ public sealed class CombatBootstrapTests
         Assert.All(snapshot.Objects, obj => Assert.Null(obj.HullCombat));
         Assert.Equal("ship.tetrarch", engine.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").ShipClassId);
         var module = Assert.Single(snapshot.InstalledModules);
-        Assert.Equal(6, module.LauncherCombat!.SpeedKmS);
-        Assert.Equal(0, module.LauncherCombat.TurnRateDegPerSec);
+        Assert.Equal(6, module.LauncherCombat!.Profiles!.Value[0].SpeedKmS);
+        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("TurnRateDegPerSec"));
         Assert.Equal(200, module.LauncherCombat.Damage);
         Assert.Empty(module.LauncherCombat.ActiveTorpedoIds);
         Assert.Equal("Ready", module.OperationalState);

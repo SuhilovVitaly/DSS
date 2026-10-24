@@ -23,7 +23,7 @@ public sealed record AuthoritativeSnapshot(
     string? ActiveObjectId = null,
     string? SelectedObjectId = null,
     /// <summary>
-    /// Current player Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md). Always
+    /// Current player Credits balance (DB\Documentation\02-FirstRelease\Mechanics\Money.md). Always
     /// present.
     /// </summary>
     long PlayerCredits = 0,
@@ -81,7 +81,10 @@ public sealed record AuthoritativeSnapshot(
     CombatEncounterSnapshot? Encounter = null,
     /// <summary>Confirmed debug overlay; omitted from compact frames when its revision is unchanged.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    DebugTuningSnapshot? DebugTuning = null)
+    DebugTuningSnapshot? DebugTuning = null,
+    /// <summary>Authoritative destruction threshold for PlayerShipObjectId only; absent for legacy producers.</summary>
+    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    int? DestroyedModuleLimit = null)
 {
     [JsonIgnore]
     public SessionOutcomeSnapshot EffectiveOutcome => Outcome ?? SessionOutcomeSnapshot.Running;

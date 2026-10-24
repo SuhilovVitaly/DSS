@@ -1,5 +1,7 @@
 {
     "schemaVersion": 1,
+    "defaultTorpedoProfile": "medium",
+    "defaultCountermissileProfile": "wide",
     "forecastHorizonMs": 200000,
     "torpedo": "#EDB86AFF",
     "trail": "#EDB86AFF",

@@ -21,10 +21,10 @@ public sealed class DefensePreviewProjectionTests
             var state = Point.At(engine); var modules = state.InstalledModules.Where(m => m.Defense is not null).ToArray(); Assert.Equal(2, modules.Length);
             Assert.All(modules, m =>
             {
-                Assert.Null(m.DefensePreview); Assert.False(m.Defense!.AutoEnabled); Assert.Equal(skill, m.Defense.Operator!.Skill);
+                Assert.Null(m.DefensePreview); Assert.NotNull(m.Defense); Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled")); Assert.Equal(skill, m.Defense.Operator!.Skill);
                 Assert.Equal(0m, m.Defense.Operator.BaseRating); Assert.Equal(skill, m.Defense.Operator.EffectiveRating);
                 Assert.Equal(expected, m.Defense.EffectiveScatterPercent!.Value, 10); Assert.Equal(30, m.Defense.RangeKm);
-                Assert.Null(m.Defense.Accuracy); Assert.Null(m.Defense.ManualRangeKm);
+                Assert.Null(typeof(DefenseSnapshot).GetProperty("Accuracy")); Assert.Null(typeof(DefenseSnapshot).GetProperty("ManualRangeKm"));
             });
             Assert.Equal(before, engine.CaptureLaunchScatterState()); Assert.Equal(0, Point.Save(engine).GameState.DefenseState!.ProjectileSequence);
         }

@@ -65,6 +65,12 @@ public class ApproachCameraIntegrationTests
             Click(x, y);
             Assert.Equal(id, screen.SelectedObjectId);
             screen.Render(canvas, bitmap.Width, bitmap.Height);
+            var navigation = Assert.Single(screen.CommandsPanel.CommandPanelRows, r => r.Name == "Navigation");
+            if (!navigation.Opened)
+            {
+                Click(navigation.CaptionRect.MidX, navigation.CaptionRect.MidY);
+                screen.Render(canvas, bitmap.Width, bitmap.Height);
+            }
             var button = Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == NavigationComputerCommandTypes.Approach);
             Assert.True(button.Enabled);
             Click(button.Rect.MidX, button.Rect.MidY);

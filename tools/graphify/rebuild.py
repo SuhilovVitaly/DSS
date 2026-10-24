@@ -1,4 +1,4 @@
-"""Fresh offline Graphify AST/Markdown + fresh host-agent document/EP-0013 semantic rebuild.
+"""Fresh offline Graphify AST/Markdown + fresh host-agent document/EP-0014 semantic rebuild.
 Never executes the game or external APIs. Run with graphify 0.9.66.
 --prepare-ast warms the structural cache; --force permits intentional shrink.
 """
@@ -18,19 +18,24 @@ from graphify.detect import save_manifest
 R=Path(__file__).resolve().parents[2]
 O=Path(os.environ.get('DSS_GRAPH_OUTPUT') or ('D:/DeepSpaceSaga/artifacts/validation/graphify/'+datetime.now(timezone.utc).strftime('%Y%m%dT%H%M%S')))
 O.mkdir(parents=True,exist_ok=True)
-EP='Board/EP-0010-combat-reports'
-OBSERVED_EP='Board/EP-0011-short-fixes'
-POINT_EP='Board/EP-0012-combat-rebuild'
-MODULE_EP='Board/EP-0009-battle'
-TUNING_EP='Board/EP-0013-debug-tuning-panel'
-EXCLUDED={TUNING_EP+'/ExecutionStatus.md':'publication/evidence ledger updated alongside graph',
+EP='DB/Board/EP-0010-combat-reports'
+OBSERVED_EP='DB/Board/EP-0011-short-fixes'
+POINT_EP='DB/Board/EP-0012-combat-rebuild'
+MODULE_EP='DB/Board/EP-0009-battle'
+TUNING_EP='DB/Board/EP-0013-debug-tuning-panel'
+PANELS_EP='DB/Board/EP-0014-module-panels'
+EXCLUDED={PANELS_EP+'/ExecutionStatus.md':'publication ledger updated after graph',
+ PANELS_EP+'/PublicationStatus.md':'publication ledger updated after graph',
+ PANELS_EP+'/DocumentationImpact.md':'impact audit updated after graph',
+ PANELS_EP+'/FinalValidation.md':'validation audit updated after graph',
+ TUNING_EP+'/ExecutionStatus.md':'publication/evidence ledger updated alongside graph',
  TUNING_EP+'/PublicationStatus.md':'publication ledger updated alongside graph',
  TUNING_EP+'/DocumentationImpact.md':'final impact audit updated alongside graph',
  TUNING_EP+'/FinalValidation.md':'final evidence audit updated alongside graph',
- 'Documentation/06-Tooling/GraphifyRebuild.md':'describes generated graph itself',
- 'Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/ExecutionStatus.md':'US20 evidence updated alongside graph',
- 'Documentation/README.md':'navigation index updated alongside graph',
- 'Documentation/06-Tooling/Graphify.md':'describes generated graph itself',
+ 'DB/Documentation/06-Tooling/GraphifyRebuild.md':'describes generated graph itself',
+ 'DB/Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/ExecutionStatus.md':'US20 evidence updated alongside graph',
+ 'DB/Documentation/README.md':'navigation index updated alongside graph',
+ 'DB/Documentation/06-Tooling/Graphify.md':'describes generated graph itself',
  EP+'/ImplementationStatus.md':'execution status updated alongside graph',
  OBSERVED_EP+'/ImplementationStatus.md':'execution status updated alongside graph',
  POINT_EP+'/ImplementationStatus.md':'execution status updated alongside graph',
@@ -47,7 +52,7 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')))
+ docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')))
  docs=[p for p in docs if not {'bin','obj'} & set(p.parts)]
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and ('evidence' not in p.relative_to(R).parts or p.relative_to(R).as_posix() in {POINT_EP+'/evidence/balance.md',POINT_EP+'/evidence/native.md'})]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)
@@ -109,7 +114,7 @@ def main():
  flow=[('outbox','contract'),('range','outbox'),('identity','outbox'),('save_validation','save_restore'),('save_restore','outbox'),('outbox','mailbox'),('mailbox','buffer'),('buffer','inbox'),('inbox','history'),('history','formatter'),('formatter','panel'),('assets','panel'),('screen','history'),('screen','assets'),('screen','panel')]
  for s,t in flow:
   p=next(x[0] for x in evidence if x[3]==s);edge(mechanisms[s],mechanisms[t],'shares_data_with',p,conf='INFERRED',rationale='Reviewed EP-0010 architecture mapping, not a measured execution trace.')
- spec='Documentation/04-Engineering/CombatReports.md'
+ spec='DB/Documentation/04-Engineering/CombatReports.md'
  if spec in containers:
   for key in mechanisms:edge(containers[spec],mechanisms[key],'conceptually_related_to',spec,conf='INFERRED',rationale='Selective implementation mapping to the report specification.')
  hyper=[dict(id='ep0010_lossless_delivery',label='Combat report delivery pipeline',nodes=[mechanisms[k] for k in ('outbox','mailbox','buffer','inbox','history')],relation='participate_in',confidence='INFERRED',confidence_score=.85,source_file='src/DeepSpaceSaga.Client/SnapshotBuffer.cs',source_location='L1')]
@@ -126,18 +131,18 @@ def main():
    actual=Path(source) if Path(source).is_absolute() else R/source
    if sha(actual)!=expected:raise ValueError('Semantic input changed; re-extract: '+source)
    if actual.resolve().is_relative_to(R):fragment['input_sha256'][relative(source)]=expected
-  mapping={n['id']:f'ep0013_host_{chunk_index}_'+n['id'] for n in chunk['nodes']}
+  mapping={n['id']:f'dss_host_{chunk_index}_'+n['id'] for n in chunk['nodes']}
   for n in chunk['nodes']:
-   n=dict(n);n['id']=mapping[n['id']];n['source_file']=relative(n['source_file']);n['_origin']='dss_ep0013_host_semantic'
+   n=dict(n);n['id']=mapping[n['id']];n['source_file']=relative(n['source_file']);n['_origin']='dss_dss_host_semantic'
    if n.get('file_type') not in {'code','document','paper','image','rationale','concept'}:raise ValueError('Invalid semantic node type')
    ns.append(n);fragment['nodes'].append(n)
    if n['source_file'] in containers:edge(containers[n['source_file']],n['id'],'conceptually_related_to',n['source_file'],int(str(n.get('source_location') or 'L1')[1:]),conf='INFERRED',rationale='Fresh host-reviewed source concept; navigation, not runtime evidence.')
   for e in chunk['edges']:
-   e=dict(e);e['source']=mapping.get(e['source'],e['source']);e['target']=mapping.get(e['target'],e['target']);e['source_file']=relative(e['source_file']);e['_origin']='dss_ep0013_host_semantic'
+   e=dict(e);e['source']=mapping.get(e['source'],e['source']);e['target']=mapping.get(e['target'],e['target']);e['source_file']=relative(e['source_file']);e['_origin']='dss_dss_host_semantic'
    if e['confidence']=='EXTRACTED' and e['confidence_score']!=1.0:raise ValueError('Invalid extracted confidence')
    es.append(e)
   for h in chunk.get('hyperedges',[]):
-   h=dict(h);h['id']=f'ep0013_host_{chunk_index}_'+h['id'];h['nodes']=[mapping.get(n,n) for n in h['nodes']];h['source_file']=relative(h['source_file']);hyper.append(h)
+   h=dict(h);h['id']=f'dss_host_{chunk_index}_'+h['id'];h['nodes']=[mapping.get(n,n) for n in h['nodes']];h['source_file']=relative(h['source_file']);hyper.append(h)
  ns=list({n['id']:n for n in ns}.values());ids={n['id'] for n in ns};pruned=[e for e in es if e.get('source') not in ids or e.get('target') not in ids];es=[e for e in es if e.get('source') in ids and e.get('target') in ids and e['source']!=e['target']]
  unlocated=[];bad=[];missing=[];linecounts={}
  for n in ns+es:
@@ -169,23 +174,23 @@ def main():
  if not to_json(G,c,str(O/'graph.json'),force=args.force,built_at_commit=head,community_labels=labels):raise SystemExit('Fresh graph shrank: inspect scope and use --force only if intentional.')
  if not to_html(G,c,str(O/'graph.html'),community_labels=labels,node_limit=5000):raise SystemExit('HTML export failed')
  html=(O/'graph.html').read_text(encoding='utf-8')
- note='<aside id="dss-graph-scope" style="position:fixed;bottom:8px;right:8px;max-width:440px;z-index:9999;background:#17212b;color:#e7edf3;padding:10px;border:1px solid #668095;font:12px sans-serif">DSS navigation only. Fresh AST and Markdown structure; fresh host-agent document/EP-0013 semantics. Aggregated community view; full data in graph.json. Does not prove gameplay, FPS, or human acceptance.</aside>'
+ note='<aside id="dss-graph-scope" style="position:fixed;bottom:8px;right:8px;max-width:440px;z-index:9999;background:#17212b;color:#e7edf3;padding:10px;border:1px solid #668095;font:12px sans-serif">DSS navigation only. Fresh AST and Markdown structure; fresh host-agent document/EP-0014 semantics. Aggregated community view; full data in graph.json. Does not prove gameplay, FPS, or human acceptance.</aside>'
  html=re.sub(r'(<body[^>]*>)',lambda m:m[1]+note,html,count=1)
  (O/'graph.html').write_text(html,encoding='utf-8')
  hashes={p.relative_to(R).as_posix():sha(p) for p in code+docs};d=dict(total_files=len(hashes),total_words=sum(len(txt(p).split()) for p in hashes),files=dict(code=[p.relative_to(R).as_posix() for p in code],document=[p.relative_to(R).as_posix() for p in docs]))
  report=generate(G,c,co,labels,god_nodes(G),surprising_connections(G,c),d,dict(input=0,output=0),str(R),suggested_questions=suggest_questions(G,c,labels),built_at_commit=head)
  report=re.sub(r'- Token cost:.*', '- Token cost: unmeasured host-agent usage (see cost.json)', report)
  report=report.replace('Run `graphify update .` after code changes (no API cost).','Rebuild this selected corpus with `tools/graphify/rebuild.py`; AST/Markdown extraction is offline and curated semantic evidence tokens are revalidated.')
- prefix='# DSS fresh structural and host-agent semantic graph\n\nFresh AST covers selected code. Markdown headings/links are structural evidence. Three fresh host-agent chunks fully read the current 55 selected Documentation files and 15 EP13 code files; exclusions and input hashes are explicit in semantic-coverage.json. Remaining Board/code semantics are selective, including validated EP10 mechanisms. Historical EP12 fragments are replaced. No image extraction or external API runs. Token usage is unmeasured. Navigation does not establish gameplay, FPS, physical input, audio or human acceptance. HTML aggregates communities; JSON contains the complete graph. Recorded HEAD is pre-export; hashes describe the actual working tree, including concurrent documentation curation.\n\n'
+ prefix='# DSS fresh structural and host-agent semantic graph\n\nFresh AST covers selected code. Markdown headings/links are structural evidence. Fresh host-agent fragments cover the explicit source hashes listed in semantic-coverage.json; coverage is selective and recorded per run. Remaining Board/code semantics are selective, including validated EP10 mechanisms. Historical EP12 fragments are replaced. No image extraction or external API runs. Token usage is unmeasured. Navigation does not establish gameplay, FPS, physical input, audio or human acceptance. HTML aggregates communities; JSON contains the complete graph. Recorded HEAD is pre-export; hashes describe the actual working tree, including concurrent documentation curation.\n\n'
  prefix+='Reproduce with tools/graphify/rebuild.py and the fresh DSS_GRAPH_SEMANTICS fragments; choose DSS_GRAPH_OUTPUT outside the repository. --dry-run validates without exporting.\n\n'
  prefix+=f'Audit: {len(pruned)} unresolved AST endpoint edges were explicitly pruned; {len(unlocated)} reference-only symbols have no local declaration location. Canonicalization produced {len(canonical_selfloops)} self-loops, removed from the derived graph. The undirected export combines some relations and canonicalizes equivalent nodes; extraction.json retains original non-loop relationships. See diagnostics.json and the dedicated audit sidecars before interpreting absence of a path.\n\n'
  (O/'GRAPH_REPORT.md').write_text(prefix+report,encoding='utf-8');dump('extraction.json',ex);dump('.graphify_labels.json',labels);dump('community-cohesion.json',co);dump('diagnostics.json',diagnose_extraction(ex,directed=False,root=R));dump('pruned-unresolved-edges.json',dict(reason='AST references without declared endpoints; not invented as facts',edges=pruned));dump('unlocated-references.json',dict(reason='Symbols without local declaration location',nodes=unlocated))
- stamp=datetime.now(timezone.utc).isoformat();dump('input-evidence.json',dict(head=head,working_tree=True,captured_at=stamp,inputs=hashes,exclusions=EXCLUDED,excluded_directories=['src/graphify-out','Board/*/evidence','**/bin','**/obj'],policy='No game/API execution; navigation is not acceptance'));dump('source-manifest.json',dict(algorithm='sha256',files=hashes,excluded=EXCLUDED))
+ stamp=datetime.now(timezone.utc).isoformat();dump('input-evidence.json',dict(head=head,working_tree=True,captured_at=stamp,inputs=hashes,exclusions=EXCLUDED,excluded_directories=['src/graphify-out','DB/Board/*/evidence','**/bin','**/obj'],policy='No game/API execution; navigation is not acceptance'));dump('source-manifest.json',dict(algorithm='sha256',files=hashes,excluded=EXCLUDED))
  # Only AST inputs receive native Graphify stamps. Selective documents remain
  # unstamped for semantic updates, rather than pretending full semantic coverage.
  dump('manifest.json',{})
  save_manifest({'code':[str(p) for p in code]},manifest_path=str(O/'manifest.json'),kind='ast',root=R,scan_corpus=[str(p) for p in code],clear_semantic=[str(p) for p in code])
- dump('semantic-coverage.json',dict(mode='Fresh AST + Markdown structure + fresh host-agent document/EP-0013 semantics',code_files=len(code),markdown_files=len(docs),doc_heading_occurrences=headings,resolved_markdown_links=links,curated_mechanisms=len(mechanisms)+len(fragment["nodes"]),curated_source_files=sorted(set(semantic_files)|set(fragment["input_sha256"])),ep0013_semantic_chunks=fragment["chunks"],ep0013_semantic_inputs=len(fragment["input_sha256"]),limitations=['55 selected current Documentation files fully read; remaining Board/code semantics selective','No image vision extraction','INFERRED architecture mappings are not runtime traces','Undirected graph collapses some relations; extraction.json retains them','Generated status and graph docs excluded to avoid circular hashes','Historical semantic fragments intentionally replaced'],token_usage=dict(input=None,output=None,status='unmeasured host-agent extraction')))
+ dump('semantic-coverage.json',dict(mode='Fresh AST + Markdown structure + fresh host-agent document/EP-0014 semantics',code_files=len(code),markdown_files=len(docs),doc_heading_occurrences=headings,resolved_markdown_links=links,curated_mechanisms=len(mechanisms)+len(fragment["nodes"]),curated_source_files=sorted(set(semantic_files)|set(fragment["input_sha256"])),host_semantic_chunks=fragment["chunks"],host_semantic_inputs=len(fragment["input_sha256"]),limitations=['Host semantic coverage is selective; exact current inputs are listed in curated_source_files','No image vision extraction','INFERRED architecture mappings are not runtime traces','Undirected graph collapses some relations; extraction.json retains them','Generated status and graph docs excluded to avoid circular hashes','Historical semantic fragments intentionally replaced'],token_usage=dict(input=None,output=None,status='unmeasured host-agent extraction')))
  counts=dict(nodes=G.number_of_nodes(),edges=G.number_of_edges(),communities=len(c),extraction_nodes=len(ns),extraction_edges=len(es),code_files=len(code),markdown_files=len(docs),pruned_unresolved_edges=len(pruned),canonical_selfloops_pruned=len(canonical_selfloops),unlocated_reference_nodes=len(unlocated));dump('counts.json',counts);dump('cost.json',dict(run=stamp,input_tokens=None,output_tokens=None,status='unmeasured',backend='Host-agent semantics; offline AST/Markdown'));(O/'.graphify_root').write_text(str(R),encoding='utf-8');(O/'.graphify_python').write_text(sys.executable,encoding='utf-8')
  v=dict(head=head,working_tree=True,input_hashes_verified=len(hashes),semantic_input_hashes_verified=len(fragment['input_sha256']),missing_source_files=0,out_of_range_locations=0,dangling_edges=0,self_loops=0,**counts);v['artifact_sha256']={p.name:sha(p) for p in sorted(O.iterdir()) if p.is_file() and p.name!='verification.json'};dump('verification.json',v);print(json.dumps(counts),flush=True)
 if __name__=='__main__':main()

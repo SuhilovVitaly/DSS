@@ -33,8 +33,18 @@ public sealed partial class SimulationEngine
                 ? BlastMath.ScatterSigma(1, definition.ScatterPercent!.Value, op.Skill,
                     scatter.SkillPivot, scatter.SkillSlope, scatter.MinMultiplier) : null,
             CoreFraction = definition.IsPointLauncher ? _registry.CombatRules?.Blast?.CoreFraction : null,
+            ArmorPiercingPercent = definition.ArmorPiercingPercent,
             ReloadDurationMs = definition.ReloadMs
         };
+    }
+
+    private int? CaptureOwnDestroyedModuleLimit()
+    {
+        if (PlayerShipObjectId is null || _registry.CombatRules?.ShipDestruction is not { } rules)
+            return null;
+        var ship = _objects.FirstOrDefault(o => o.InitialMotion.ObjectId == PlayerShipObjectId);
+        return ship is null || ship.Modules.IsDefaultOrEmpty ? null :
+            (int)decimal.Ceiling(ship.Modules.Length * rules.DestroyedModuleFraction);
     }
 
     internal static void ValidateWeaponAssignments(SpaceObjectData obj)

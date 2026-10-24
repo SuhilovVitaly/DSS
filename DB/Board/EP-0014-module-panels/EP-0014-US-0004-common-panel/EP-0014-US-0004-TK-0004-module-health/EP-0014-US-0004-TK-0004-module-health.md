@@ -1,0 +1,60 @@
+---
+epic: EP-0014-module-panels
+story: EP-0014-US-0004-common-panel
+ticket: EP-0014-US-0004-TK-0004-module-health
+title: module-health
+stage: implemented
+layer: client
+depends_on: [EP-0014-US-0004-TK-0003-priority-and-time]
+files_touched: 4
+serves: [AC-03, AC-04, AC-06]
+created: 2026-10-22
+revision: 1
+---
+
+# module-health
+
+## Why
+Display authoritative n/L, labeled health bars and critical tooltip; cache unchanged open-panel presentation and measure warm Render allocations.
+
+## Decisions
+Execution explicitly authorized by user invoking epic-executor on EP-0014 on2026-10-22. Workflow approval is not human product acceptance.
+
+## Assumptions
+Preserve Save19 and migration18. Decimal penetration retains catalog precision. Own destruction limit is root snapshot data, nullable for old producers. Client core is only radius times authoritative fraction. Destroyed weapons may enter aim for preparation; Engine remains final launch authority. Zero-allocation gate covers warmed CommandsPanel.Render with stable inputs, not the entire screen.
+
+## Code context
+| File | Current state | Allowed change |
+|---|---|---|
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs` | Existing owning implementation or new named test | Display authoritative n/L, labeled health bars and critical tooltip; cache unchanged open-panel presentation and measure warm Render allocations. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/ModuleDiagram.cs` | Existing owning implementation or new named test | Display authoritative n/L, labeled health bars and critical tooltip; cache unchanged open-panel presentation and measure warm Render allocations. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs` | Existing owning implementation or new named test | Display authoritative n/L, labeled health bars and critical tooltip; cache unchanged open-panel presentation and measure warm Render allocations. |
+| `tests/DeepSpaceSaga.Client.Tests/ModulePanelHealthTests.cs` | Existing owning implementation or new named test | Display authoritative n/L, labeled health bars and critical tooltip; cache unchanged open-panel presentation and measure warm Render allocations. |
+
+## Public API after the change
+Display authoritative n/L, labeled health bars and critical tooltip; cache unchanged open-panel presentation and measure warm Render allocations. Exact signatures must be grounded in owning source before implementation. Existing APIs remain unless this ticket explicitly migrates them.
+
+## Implementation steps
+Read current owning functions and matching tests; implement the stated result; preserve neighboring behaviors; add observable production-path checks.
+
+## Out of scope
+Combat balance, hidden NPC futures, unrelated refactors and save-version changes.
+
+## Invariants
+Engine owns outcomes/RNG/commands; Client uses admitted immutable snapshots and shared Motion math. Render performs no synchronous Engine access. No new hidden information.
+
+## Tests
+Owning project: tests/DeepSpaceSaga.Client.Tests. Focus named ModulePanel tests, then affected regression; build, scoped format and git diff --check. Test processes capped at300000ms, absolute results directory under D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/.
+
+## Definition of Done
+Implemented criteria and tests pass, diff reviewed, actual evidence recorded, separate ticket commit immediately pushed and remote SHA verified. Native and human gates remain distinct from automated tests.
+
+## Self-containment check
+Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Scope refinement before implementation
+Include Data/Locale/English.json, Russian.json and existing PointCombatUS0020TK0002Tests.cs to replace superseded health-text assertions. Cache CommandsPanel.Render into an SKPicture with explicit presentation revision, module identity, times, viewport, UI input and diagram content invalidation; dispose retained picture on deactivation. Health bar glyphs are localized presentation tokens, with full numeric tooltip. Destroyed threshold comes only from snapshot. Allocation test targets warmed real CommandsPanel.Render, not a formatter.
+
+## Implementation evidence
+
+Module rows use localized armor/structure bars and current values, full ratios/critical explanation/disabled physical-time hover, no duplicate weapon Ready. Navigation uses authoritative n/L and warns atL-1. CommandsPanel caches retained Skia drawing with module, revision, time, speed, viewport, input and health invalidation; session deactivation releases cache. ModuleDiagram avoids rebuilding stable data. Initial allocation test measured56 bytes per draw from SnapshotBuffer.LatestPrediction callback; fixed by supplying already prepared screen time. Unchanged assertion now measures0 bytes over100 warmed actual panel Render calls. Final affected111/111 tests PASS, owning build/scoped format/diff check PASS. Initial2 failures preserved separately. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-health-fixed.trx, client-health.trx, client-health-format.log. Self-review checked cache invalidation and ownership; full-screen allocations, native and human acceptance not claimed.

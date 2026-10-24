@@ -27,21 +27,11 @@ public sealed record InterceptionRatingBreakdown(
 
 /// <summary>Immutable defense status; ReloadDueMotionTimeMs is an absolute physical deadline.</summary>
 public sealed record DefenseSnapshot(
-    [property: JsonIgnore] bool AutoEnabled,
     WeaponOperatorSnapshot? Operator,
     DefenseState State,
     string? ActiveProjectileId = null,
     double? ReloadDueMotionTimeMs = null,
     double RangeKm = 100,
-    /// <summary>Independent inclusive manual launch range in km.</summary>
-    double? ManualRangeKm = null,
-    decimal? Accuracy = null,
-    double? SpeedKmS = null,
-    double? TurnRateDegPerSec = null,
-    long? MaxFlightTimeMs = null,
-    int Barrels = 1,
-    /// <summary>Null in pre-migration snapshots; an empty array means no queued barrel shots.</summary>
-    ImmutableArray<PendingBurstShot>? PendingBurstShots = null,
     double? ReadyAtMotionTimeMs = null,
     /// <summary>Populated only for overlapping flights; the singular field remains the first active ID.</summary>
     ImmutableArray<string>? ActiveProjectileIds = null,

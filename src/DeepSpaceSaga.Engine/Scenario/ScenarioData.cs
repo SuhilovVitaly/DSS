@@ -73,7 +73,7 @@ public sealed record GameStateData(
     [property: JsonPropertyName("spaceObjects")] IReadOnlyList<SpaceObjectData> SpaceObjects,
     [property: JsonPropertyName("masterSeed")] ulong? MasterSeed = null,
     /// <summary>
-    /// Player's Tokens balance (Documentation\02-FirstRelease\Mechanics\Money.md). The player-facing
+    /// Player's Tokens balance (DB\Documentation\02-FirstRelease\Mechanics\Money.md). The player-facing
     /// term for the currency is "tokens"; the engine keeps the value in
     /// <c>SimulationEngine.PlayerCredits</c>. Null means "not yet resolved" —
     /// SimulationEngine.LoadScenario treats a missing value as 0 (a scenario/save predating
@@ -224,14 +224,14 @@ public sealed record SpaceObjectData(
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
     [property: JsonPropertyName("dockedStationObjectId")] string? DockedStationObjectId = null,
     /// <summary>
-    /// Station's Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md). Only meaningful for
+    /// Station's Credits balance (DB\Documentation\02-FirstRelease\Mechanics\Money.md). Only meaningful for
     /// ObjectType == Station. Null means "not yet resolved" — SimulationEngine.LoadScenario
     /// generates a deterministic value from masterSeed the first time; a subsequent save
     /// always carries the resolved value explicitly, so it is never regenerated again.
     /// </summary>
     [property: JsonPropertyName("credits")] long? Credits = null,
     /// <summary>
-    /// Station's price coefficient, fixed-point where 1000 == 1.0x (Documentation\02-FirstRelease\
+    /// Station's price coefficient, fixed-point where 1000 == 1.0x (DB\Documentation\02-FirstRelease\
     /// Mechanics\StationInventory.md's 0.5..2.0 range == 500..2000 here — the project
     /// forbids float/double for authoritative values). Same "null == not yet resolved,
     /// resolved once and then always explicit" rule as <see cref="Credits"/>.
@@ -245,7 +245,7 @@ public sealed record SpaceObjectData(
     /// <summary>Item ids whose explicit scenario inventory overrides profile fallback stock.</summary>
     [property: JsonPropertyName("explicitInventoryItemTypeIds")] IReadOnlyList<string>? ExplicitInventoryItemTypeIds = null,
     /// <summary>
-    /// Station's size classification (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
+    /// Station's size classification (requirements §59, DB\Documentation\02-FirstRelease\TechnicalTasks\
     /// StationEconomyProductionAndSizing.md "Размеры станции") — one of "Huge"/"Large"/
     /// "Medium"/"Outpost" (case-insensitive). Only meaningful for ObjectType == Station. Null
     /// means "not yet resolved": unlike <see cref="Credits"/>/<see cref="PriceCoefficient"/>/

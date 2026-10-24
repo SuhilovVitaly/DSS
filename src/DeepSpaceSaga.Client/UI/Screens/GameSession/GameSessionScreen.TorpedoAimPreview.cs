@@ -43,7 +43,7 @@ public sealed partial class GameSessionScreen
         double distanceKm = double.Hypot(x - player.Pose.X, y - player.Pose.Y) / 10;
         if (!double.IsFinite(distanceKm) || profile.SpeedKmS <= 0) return null;
         double seconds = distanceKm / profile.SpeedKmS;
-        double multiplier = _buffer.LatestPrediction?.CurrentSpeed.MotionTimeMultiplier() ?? .25;
+        double multiplier = PanelDisplaySpeed.MotionTimeMultiplier();
         var shadows = new List<AimShadow>();
         foreach (var state in _renderStates)
         {

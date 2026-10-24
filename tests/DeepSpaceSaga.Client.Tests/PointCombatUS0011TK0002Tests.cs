@@ -62,7 +62,7 @@ public sealed class PointCombatUS0011TK0002Tests
     [Fact]
     public async Task Torpedo_preview_is_linear_at_eta_and_has_no_chance()
     {
-        await using var s = await Session.Create(); s.Screen.OnKeyDown(Key.Q); s.Move(600); s.Render();
+        await using var s = await Session.Create(); s.Screen.OnKeyDown(Key.Q); s.Screen.OnKeyDown(Key.Number1); s.Move(600); s.Render();
         Assert.True(s.Screen.CurrentTorpedoAimPreview is not null, $"Aim={s.Screen.PointAim}, ppu={s.Screen.CameraPixelsPerWorldUnit}, focus={s.Screen.CameraFocusX},{s.Screen.CameraFocusY}, free={s.Screen.AvailableMapRect()}");
         var preview = s.Screen.CurrentTorpedoAimPreview!;
         Assert.Equal(60, preview.X / 10, 5); Assert.Equal(9, preview.RadiusKm); Assert.Equal(.3, preview.CoreFraction);
@@ -116,7 +116,7 @@ public sealed class PointCombatUS0011TK0002Tests
             mapSettings: new TacticalMapSettings { ZoomAnimationMs = 0, WheelFactor = 2 });
         using var bitmap = new SKBitmap(1920, 1200); using var canvas = new SKCanvas(bitmap); screen.Render(canvas, 1920, 1200);
         for (int i = 0; i < 1; i++) screen.OnKeyDown(Key.Minus);
-        screen.OnKeyDown(Key.Q);
+        screen.OnKeyDown(Key.Q); screen.OnKeyDown(Key.Number1);
         float x = (float)(960 + (500 - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
         float y = (float)(600 - screen.CameraFocusY * screen.CameraPixelsPerWorldUnit);
         screen.OnMouseMove(x, y); screen.Render(canvas, 1920, 1200);
@@ -130,7 +130,7 @@ public sealed class PointCombatUS0011TK0002Tests
     [Fact]
     public async Task Friendly_fire_requires_second_click_within_one_second()
     {
-        await using var s = await Session.Create(); s.Screen.OnKeyDown(Key.Q); s.Move(10); s.Render();
+        await using var s = await Session.Create(); s.Screen.OnKeyDown(Key.Q); s.Screen.OnKeyDown(Key.Number1); s.Move(10); s.Render();
         Assert.True(s.Screen.CurrentTorpedoAimPreview!.FriendlyFire); s.Click(10);
         Assert.Equal(0, s.World.Engine.ReceivedCommandCount); Assert.Null(s.Screen.LastPointCommandId);
         s.RealMs = 1000; s.Click(10);
@@ -147,13 +147,13 @@ public sealed class PointCombatUS0011TK0002Tests
     [InlineData("timeout")]
     public async Task Changed_context_invalidates_friendly_confirmation(string change)
     {
-        await using var s = await Session.Create(); s.Screen.OnKeyDown(Key.Q); s.Click(10);
+        await using var s = await Session.Create(); s.Screen.OnKeyDown(Key.Q); s.Screen.OnKeyDown(Key.Number1); s.Click(10);
         switch (change)
         {
             case "point": s.Move(11); s.Move(10); break;
             case "profile": s.Screen.OnKeyDown(Key.Number3); s.Screen.OnKeyDown(Key.Number1); break;
-            case "cancel": s.Screen.OnKeyDown(Key.Escape); s.Screen.OnKeyDown(Key.Q); break;
-            case "launcher": s.Screen.OnKeyDown(Key.E); s.Screen.OnKeyDown(Key.Q); break;
+            case "cancel": s.Screen.OnKeyDown(Key.Escape); s.Screen.OnKeyDown(Key.Q); s.Screen.OnKeyDown(Key.Number1); break;
+            case "launcher": s.Screen.OnKeyDown(Key.E); s.Screen.OnKeyDown(Key.Q); s.Screen.OnKeyDown(Key.Number1); break;
             case "timeout": s.RealMs = 1001; break;
         }
         s.Click(10); Assert.Equal(0, s.World.Engine.ReceivedCommandCount);
@@ -192,7 +192,7 @@ public sealed class PointCombatUS0011TK0002Tests
             mapSettings: new TacticalMapSettings { ZoomAnimationMs = 0, WheelFactor = 2 });
         using var bitmap = new SKBitmap(1920, 1200); using var canvas = new SKCanvas(bitmap); screen.Render(canvas, 1920, 1200);
         for (int i = 0; i < 1; i++) screen.OnKeyDown(Key.Minus);
-        screen.OnKeyDown(Key.Q);
+        screen.OnKeyDown(Key.Q); screen.OnKeyDown(Key.Number1);
         screen.OnMouseMove((float)(960 + (600 - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit),
             (float)(600 - screen.CameraFocusY * screen.CameraPixelsPerWorldUnit)); screen.Render(canvas, 1920, 1200);
         var shadows = screen.CurrentTorpedoAimPreview!.Shadows.Where(s => !s.Friendly).ToArray(); Assert.Equal(2, shadows.Length);
@@ -210,7 +210,7 @@ public sealed class PointCombatUS0011TK0002Tests
         var buffer = new SnapshotBuffer(() => 0); buffer.Update(world.Engine.CaptureSnapshot());
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0, uiScale: scale);
         using var bitmap = new SKBitmap(width, height); using var canvas = new SKCanvas(bitmap); screen.Render(canvas, width, height);
-        screen.OnKeyDown(Key.Q); var free = screen.AvailableMapRect();
+        screen.OnKeyDown(Key.Q); screen.OnKeyDown(Key.Number1); var free = screen.AvailableMapRect();
         screen.OnMouseMove(free.MidX, free.MidY); screen.Render(canvas, width, height);
         Assert.NotNull(screen.CurrentTorpedoAimPreview);
         Assert.True(free.Contains(screen.TorpedoAimLabelBounds), $"{free}: {screen.TorpedoAimLabelBounds}");

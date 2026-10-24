@@ -111,15 +111,17 @@ public sealed partial class GameSessionScreen : IScreen
 
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
+    private double _panelMotionTime;
     private SKRect _lastSpeedPanelRect;
     private readonly SKRect[] _speedButtonRects = new SKRect[7];
+    private SimulationSpeed[] _renderedSpeedValues = PeaceSpeedValues;
 
     // Scale state
     private SKRect _lastScalePanelRect;
     private readonly SKRect[] _scaleButtonRects = new SKRect[ScaleLabels.Length];
 
     // Mechanics panel (bottom-center) state — holds the Finance/Ship/... buttons
-    // (Documentation/02-FirstRelease/Screens/Finance.md, Documentation/02-FirstRelease/Screens/Ship.md)
+    // (DB/Documentation/02-FirstRelease/Screens/Finance.md, DB/Documentation/02-FirstRelease/Screens/Ship.md)
     private SKRect _lastMechanicsPanelRect;
     private SKRect _lastGameTimeRect;
     private SKRect _lastFinanceButtonRect;
@@ -254,7 +256,7 @@ public sealed partial class GameSessionScreen : IScreen
     internal SKRect LastCloseRect => _lastCloseRect;
     internal SimulationSpeed LastNonPauseSpeed => _lastNonPauseSpeed;
     internal SKRect LastSpeedPanelRect => _lastSpeedPanelRect;
-    internal IReadOnlyList<SKRect> SpeedButtonRects => new ArraySegment<SKRect>(_speedButtonRects, 0, SpeedValues.Length);
+    internal IReadOnlyList<SKRect> SpeedButtonRects => new ArraySegment<SKRect>(_speedButtonRects, 0, _renderedSpeedValues.Length);
     internal SKRect LastScalePanelRect => _lastScalePanelRect;
     internal IReadOnlyList<SKRect> ScaleButtonRects => _scaleButtonRects;
     internal SKRect LastMechanicsPanelRect => _lastMechanicsPanelRect;
@@ -381,8 +383,9 @@ public sealed partial class GameSessionScreen : IScreen
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel,
             IsPointWeaponCommandEnabled, SendPointWeaponCommand, GetPointWeaponStatus,
-            GetPointWeaponOperator, GetPointWeaponDetails, () => DefensePresentationTime,
-            () => _buffer.CurrentSpeed.MotionTimeMultiplier(), PointWeaponButtonLabel);
+            GetPointWeaponOperator, GetPointWeaponDetails, () => _panelMotionTime,
+            () => PanelDisplaySpeed.MotionTimeMultiplier(), PointWeaponButtonLabel, GetPointPanelTimeTooltip, IsPointPanelBlocked,
+            GetEnginePanelDetails, GetEnginePanelTimeTooltip);
         _objectInfoPanel = new ObjectInfoPanel();
     }
 
@@ -414,6 +417,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _commandsPanel.ReleasePresentationCache();
         _alertsInactive = true; _launchFlashes.Clear();
         _deactivateAlertAudio?.Invoke();
         CancelManeuverInput();
@@ -499,7 +503,7 @@ public sealed partial class GameSessionScreen : IScreen
         int speedIdx = HitTestSpeedPanel(uiX, uiY);
         if (speedIdx >= 0)
         {
-            ApplySpeed(SpeedValues[speedIdx]);
+            ApplySpeed(_renderedSpeedValues[speedIdx]);
             return ScreenEvent.None;
         }
 
@@ -596,25 +600,26 @@ public sealed partial class GameSessionScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
-        if (_debugTuningPanel.Contains(x / _uiScale, y / _uiScale))
-        {
-            _panLastScreenX = x; _panLastScreenY = y;
-            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
-            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
-            SetActiveObjectId(null); return true;
-        }
-        if (PointAim is { } aim && (_mouseX != x || _mouseY != y))
-        { _pointErrors.Remove(aim.ModuleId); ResetPointFriendlyConfirmation(); }
-        if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
-        // _mouseX/_mouseY stay raw (displayed as "Cursor Window" and used to compute
-        // "Cursor Game" via the camera); _uiMouseX/_uiMouseY are the logical-space
-        // coordinates UI panels hover-test against.
+        bool pointerMoved = _mouseX != x || _mouseY != y;
+        // Keep the current cursor even when an overlay consumes this event:
+        // Render recomputes map hover without waiting for another mouse move.
+        // Raw coordinates serve camera hit-testing; UI coordinates are logical.
         _mouseX = x;
         _mouseY = y;
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
 
+        if (_debugTuningPanel.Contains(_uiMouseX, _uiMouseY))
+        {
+            _panLastScreenX = x; _panLastScreenY = y;
+            _commandsPanel.OnMouseMove(-1, -1); _objectInfoPanel.OnMouseMove(-1, -1);
+            _isFinanceButtonHovered = _isShipButtonHovered = _isTempCharacterImageButtonHovered = false;
+            SetActiveObjectId(null); return true;
+        }
+        if (PointAim is { } aim && pointerMoved)
+        { _pointErrors.Remove(aim.ModuleId); ResetPointFriendlyConfirmation(); }
+        if (double.Hypot(x - _selectionCycleX, y - _selectionCycleY) > 3) { _selectionCycle = []; _selectionCycleIndex = 0; }
         if (_combatSummaryPanel.Bounds.Contains(_uiMouseX, _uiMouseY))
         {
             _panLastScreenX = x; _panLastScreenY = y;
@@ -811,7 +816,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private int HitTestSpeedPanel(float x, float y)
     {
-        for (int i = 0; i < SpeedValues.Length; i++)
+        for (int i = 0; i < _renderedSpeedValues.Length; i++)
         {
             if (_speedButtonRects[i].Contains(x, y))
                 return i;
@@ -1091,7 +1096,8 @@ public sealed partial class GameSessionScreen : IScreen
             _mouseX >= 0 && _mouseX <= _viewportW &&
             _mouseY >= 0 && _mouseY <= _viewportH;
 
-        string? candidate = cursorInViewport && !_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY) ? FindNearestObjectId(_mouseX, _mouseY) : null;
+        string? candidate = cursorInViewport && !_debugTuningPanel.Contains(_uiMouseX, _uiMouseY) &&
+            !_threatPanel.Bounds.Contains(_uiMouseX, _uiMouseY) ? FindNearestObjectId(_mouseX, _mouseY) : null;
         SetActiveObjectId(candidate);
     }
 
@@ -1425,12 +1431,16 @@ public sealed partial class GameSessionScreen : IScreen
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
         var playerShip = FindPlayerShip(_renderStates);
+        _panelMotionTime = prediction is null ? buffered?.Snapshot.MotionTimeMs ?? 0 : GetPredictedGameTimeMs(prediction);
+        _commandsPanel.DestroyedModuleLimit = buffered?.Snapshot.DestroyedModuleLimit;
+        _commandsPanel.PresentationRevision = HashCode.Combine(buffered?.Snapshot.SnapshotSequence, _mouseX, _mouseY,
+            PointAim, _pointSubmissions.Count, _pointErrors.Count, _selectedObjectId);
         _commandsPanel.OwnModuleDiagram = null;
         if (buffered?.Snapshot is { Encounter: not null } moduleSnapshot && playerShip is not null)
         {
             _moduleDiagram.Update(_buffer.PresentationSessionId, moduleSnapshot.SnapshotSequence, moduleSnapshot.PlayerShipObjectId!,
                 moduleSnapshot.InstalledModules, moduleSnapshot.CombatJournal, prediction is null ? moduleSnapshot.MotionTimeMs : GetPredictedGameTimeMs(prediction),
-                _buffer.CurrentSpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
+                PanelDisplaySpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
             _commandsPanel.OwnModuleDiagram = _moduleDiagram;
         }
         _commandsPanel.Render(canvas,
@@ -2133,7 +2143,13 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void DrawSpeedPanel(SKCanvas canvas)
     {
-        int btnCount = SpeedLabels.Length;
+        // An admitted snapshot can change while drawing. Keep values and labels
+        // from the same option set, including the mapping used by mouse input.
+        var values = SpeedValues;
+        var labels = ReferenceEquals(values, CombatSpeedValues) ? CombatSpeedLabels :
+            ReferenceEquals(values, ExtendedSpeedValues) ? ExtendedSpeedLabels : PeaceSpeedLabels;
+        _renderedSpeedValues = values;
+        int btnCount = values.Length;
         _lastSpeedPanelRect = ComputeSpeedPanelRect();
         canvas.DrawRect(_lastSpeedPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastSpeedPanelRect, _panelBorderPaint);
@@ -2143,7 +2159,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         var currentSpeed = _buffer.CurrentSpeed;
         using var disabled = new SKPaint { Color = new SKColor(24, 24, 24, 150) };
-        int activeIdx = Array.IndexOf(SpeedValues, currentSpeed);
+        int activeIdx = Array.IndexOf(values, currentSpeed);
         if (activeIdx < 0) activeIdx = 0;
 
         for (int i = 0; i < btnCount; i++)
@@ -2151,7 +2167,7 @@ public sealed partial class GameSessionScreen : IScreen
             var btnRect = new SKRect(btnX, btnY, btnX + SpeedBtnW, btnY + SpeedBtnH);
             _speedButtonRects[i] = btnRect;
 
-            bool enabled = IsCombatSpeedEnabled(SpeedValues[i]);
+            bool enabled = IsCombatSpeedEnabled(values[i]);
             bool isActive = (i == activeIdx) && enabled;
             canvas.DrawRect(btnRect, !enabled ? disabled : isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
             canvas.DrawRect(btnRect, _panelBorderPaint);
@@ -2159,7 +2175,7 @@ public sealed partial class GameSessionScreen : IScreen
             float textY = btnY + SpeedBtnH / 2f + _speedBtnTextPaint.TextSize / 3f;
             var color = _speedBtnTextPaint.Color;
             if (!enabled) _speedBtnTextPaint.Color = color.WithAlpha(70);
-            canvas.DrawText(SpeedLabels[i], btnX + SpeedBtnW / 2f, textY, _speedBtnTextPaint);
+            canvas.DrawText(labels[i], btnX + SpeedBtnW / 2f, textY, _speedBtnTextPaint);
             _speedBtnTextPaint.Color = color;
 
             // Green indicator under active button
@@ -2582,8 +2598,8 @@ public sealed partial class GameSessionScreen : IScreen
 
     /// <summary>
     /// Bottom-center panel holding one button per gameplay-mechanic window — "F"
-    /// opens Finance (Documentation/02-FirstRelease/Screens/Finance.md), "S" opens Ship
-    /// (Documentation/02-FirstRelease/Screens/Ship.md). Ctrl+F / Ctrl+S open the same overlays
+    /// opens Finance (DB/Documentation/02-FirstRelease/Screens/Finance.md), "S" opens Ship
+    /// (DB/Documentation/02-FirstRelease/Screens/Ship.md). Ctrl+F / Ctrl+S open the same overlays
     /// without needing the buttons (see OnKeyDown). Clicking pushes
     /// ScreenEvent.OpenFinance / OpenShip, handled by SkiaWindow's generic
     /// PushModalAsync — pause-on-open/resume-on-close needs no logic here.

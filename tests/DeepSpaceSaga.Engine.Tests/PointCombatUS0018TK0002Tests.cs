@@ -70,12 +70,12 @@ public sealed class PointCombatUS0018TK0002Tests
         double duration = double.Hypot(flight.DetonationX - flight.StartX, flight.DetonationY - flight.StartY) / (speed * 10) * 1000;
         Assert.Equal(duration, flight.DetonationMotionTimeMs, 8);
         var launcher = state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
-        Assert.Empty(launcher.ModeId); Assert.False(launcher.IsBrokenUntilDock); Assert.Equal(10000, launcher.ReadyAtMotionTimeMs);
+        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("ModeId")); Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("IsBrokenUntilDock")); Assert.Equal(10000, launcher.ReadyAtMotionTimeMs);
         Assert.Empty(Registry().FireModes);
         var save = engine.CaptureSaveState();
         using var restored = new SimulationEngine(Registry()); restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
         Assert.Equal(JsonSerializer.Serialize(flight), JsonSerializer.Serialize(Assert.Single(At(restored).Objects, o => o.OwnProjectile is not null).OwnProjectile));
-        Assert.Empty(At(restored).InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!.ModeId);
+        Assert.DoesNotContain("ModeId", JsonSerializer.Serialize(At(restored).InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat));
         Assert.Equal(engine.CaptureLaunchScatterState(), restored.CaptureLaunchScatterState());
     }
 

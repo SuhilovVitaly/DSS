@@ -28,7 +28,7 @@ public sealed class PointCombatUS0004TK0003Tests
         var after = engine.CaptureSaveState(); Assert.Equal(saved.GameState.DefenseState!.ProjectileSequence, after.GameState.DefenseState!.ProjectileSequence);
         Assert.Equal(saved.GameState.DefenseState.RngCounter, after.GameState.DefenseState.RngCounter);
         Assert.All(state.InstalledModules.Where(m => m.Defense is not null), m =>
-        { Assert.False(m.Defense!.AutoEnabled); Assert.Null(m.Defense.ReadyAtMotionTimeMs); Assert.Equal(DefenseState.Ready, m.Defense.State); });
+        { Assert.NotNull(m.Defense); Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled")); Assert.Null(m.Defense.ReadyAtMotionTimeMs); Assert.Equal(DefenseState.Ready, m.Defense.State); });
     }
 
     [Theory]
@@ -43,7 +43,7 @@ public sealed class PointCombatUS0004TK0003Tests
         Assert.All(state.Objects.Where(o => o.OwnProjectile is not null), o =>
         { Assert.Equal(profile, o.OwnProjectile!.ProfileId); Assert.Equal(speed, o.OwnProjectile.SpeedKmS); Assert.Equal(radius, o.OwnProjectile.BlastRadiusKm); Assert.Null(o.Countermeasure); });
         Assert.All(state.InstalledModules.Where(m => m.Defense is not null), m =>
-        { Assert.False(m.Defense!.AutoEnabled); Assert.Equal(DefenseState.Reloading, m.Defense.State); Assert.True(m.Defense.PendingBurstShots!.Value.IsEmpty); Assert.Equal(12500, m.Defense.ReadyAtMotionTimeMs); });
+        { Assert.NotNull(m.Defense); Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled")); Assert.Equal(DefenseState.Reloading, m.Defense.State); Assert.Null(typeof(DefenseSnapshot).GetProperty("PendingBurstShots")); Assert.Equal(12500, m.Defense.ReadyAtMotionTimeMs); });
         var ended = At(engine, 3000); Assert.DoesNotContain(ended.Objects, o => o.OwnProjectile is not null);
         Assert.Equal(2, ended.CombatJournal.Count(e => e.Type == CombatEventType.Launch && e.ProjectileKind == ProjectileKind.Countermissile));
         Assert.All(ended.InstalledModules.Where(m => m.Defense is not null), m => Assert.Equal(DefenseState.Reloading, m.Defense!.State));
@@ -82,7 +82,7 @@ public sealed class PointCombatUS0004TK0003Tests
         Assert.Contains(state.Objects, o => o.ObservedProjectile?.Kind == ProjectileKind.Torpedo);
         Assert.DoesNotContain(state.Objects, o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile);
         Assert.DoesNotContain(state.CombatJournal, e => e.Type == CombatEventType.Launch && e.ProjectileKind == ProjectileKind.Countermissile);
-        Assert.All(state.InstalledModules.Where(m => m.Defense is not null), m => Assert.False(m.Defense!.AutoEnabled));
+        Assert.All(state.InstalledModules.Where(m => m.Defense is not null), m => Assert.NotNull(m.Defense));
         Assert.Equal(before, engine.CaptureLaunchScatterState());
     }
 

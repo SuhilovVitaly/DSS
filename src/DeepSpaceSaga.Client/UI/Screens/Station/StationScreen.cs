@@ -10,7 +10,7 @@ using System.Collections.Immutable;
 namespace DeepSpaceSaga.Client.UI.Screens.Station;
 
 /// <summary>
-/// Station overlay (Documentation/02-FirstRelease/Screens/Station.md). Placeholder shell:
+/// Station overlay (DB/Documentation/02-FirstRelease/Screens/Station.md). Placeholder shell:
 /// Representatives/Install Drilling Unit are not yet implemented, so the
 /// panel shows a "not available yet" line for each of them. `Trade`, `Hire`,
 /// `Finance` and `Contracts` are real buttons — `Trade`/`Hire`/`Contracts` open

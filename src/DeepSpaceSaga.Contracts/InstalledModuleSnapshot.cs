@@ -74,10 +74,6 @@ public sealed record InstalledModuleSnapshot(
     double? DisabledUntilMotionTimeMs = null,
     bool IsDestroyed = false,
     string? CombatRole = null,
-    /// <summary>Snapshot-only maximum life of a newly launched torpedo, in physical ms.
-    /// Null means unavailable; this module projection is never part of save state.</summary>
-    [property: JsonPropertyName("torpedoMaxFlightTimeMs"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    long? TorpedoMaxFlightTimeMs = null,
     /// <summary>Own module criticality under the authoritative configured destruction rules.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     bool IsCritical = false,

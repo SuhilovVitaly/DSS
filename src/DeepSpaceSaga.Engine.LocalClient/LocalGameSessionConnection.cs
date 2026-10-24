@@ -20,6 +20,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     private readonly SemaphoreSlim _saveGate = new(1, 1);
     private volatile bool _disposed;
     private volatile bool _usesCombatUpdates;
+    private readonly TaskCompletionSource<bool> _transportSelection = new(TaskCreationOptions.RunContinuationsAsynchronously);
     private readonly Channel<CombatPresentationUpdate> _combatUpdates = Channel.CreateBounded<CombatPresentationUpdate>(128);
 
     /// <param name="saveDirectory">
@@ -92,6 +93,9 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     {
         try
         {
+            // Capturing an update consumes Engine report payloads. Do not discard
+            // the bootstrap while the owning reader is still being scheduled.
+            _usesCombatUpdates = await _transportSelection.Task.WaitAsync(ct).ConfigureAwait(false);
             await foreach (var update in _engine.RunCombatUpdatesAsync(ct))
             {
                 if (!_usesCombatUpdates && update.FullSnapshot is { } snapshot) _snapshots.Publish(snapshot);
@@ -120,9 +124,15 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        _usesCombatUpdates = true;
         _engine.EnablePresentationLease();
+        SelectTransport(combat: true);
         await foreach (var update in _combatUpdates.Reader.ReadAllAsync(cancellationToken)) yield return update;
+    }
+
+    private void SelectTransport(bool combat)
+    {
+        if (!_transportSelection.TrySetResult(combat) && _transportSelection.Task.Result != combat)
+            throw new InvalidOperationException("A local session connection has one snapshot or combat transport reader.");
     }
 
     public ValueTask ReportPresentationProgressAsync(Guid sessionId, long contiguousSequence, bool pauseRequested,
@@ -219,6 +229,8 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     public async IAsyncEnumerable<AuthoritativeSnapshot> ReadSnapshotsAsync(
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        SelectTransport(combat: false);
         await foreach (var snapshot in _snapshots.ReadAllAsync(cancellationToken))
         {
             yield return snapshot;

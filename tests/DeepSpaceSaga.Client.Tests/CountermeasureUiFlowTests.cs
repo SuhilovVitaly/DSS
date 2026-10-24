@@ -20,7 +20,7 @@ public sealed class CountermeasureUiFlowTests
         var flights = f.Presented.Objects.Where(o => o.OwnProjectile is not null).Select(o => o.OwnProjectile!).ToArray();
         Assert.Equal(2, flights.Select(p => p.LauncherModuleId).Distinct().Count());
         Assert.All(f.Presented.InstalledModules.Where(m => m.Defense is not null), m =>
-        { Assert.False(m.Defense!.AutoEnabled); Assert.Equal(DefenseState.Reloading, m.Defense.State); Assert.Equal(12500, m.Defense.ReadyAtMotionTimeMs); });
+        { Assert.NotNull(m.Defense); Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled")); Assert.Equal(DefenseState.Reloading, m.Defense.State); Assert.Equal(12500, m.Defense.ReadyAtMotionTimeMs); });
         Assert.All(flights, p => Assert.Equal(0, p.LaunchMotionTimeMs));
         Assert.Equal(0, f.Presented.MotionTimeMs); Assert.Equal(SimulationSpeed.Speed0, f.Presented.CurrentSpeed);
         Assert.DoesNotContain(f.Presented.Objects, o => o.Countermeasure is not null || o.Torpedo is not null);

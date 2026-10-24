@@ -9,13 +9,13 @@ public class PhaseThreeCombatInfoTests
     private static InstalledModuleSnapshot Module(string id, decimal unusedAccuracy, int unusedChance) => new(id,
         "module.countermeasure.launcher.basic", "Countermissile", id == "defense-1" ? 2 : 3, [DefenseCommandTypes.Launch],
         "On", "Ready", 60, Commands: [new(DefenseCommandTypes.Launch, "Launch", "point")],
-        Defense: new(false, null, DefenseState.Ready, Profiles: [new("wide", 15, 1), new("fast", 25, .5)], RangeKm: 30));
+        Defense: new(null, DefenseState.Ready, Profiles: [new("wide", 15, 1), new("fast", 25, .5)], RangeKm: 30));
     [Theory]
     [InlineData(200)]
     [InlineData(480)]
     public void Long_details_wrap_and_remain_scrollable(int height)
     {
-        string detail = string.Join(" ", Enumerable.Repeat("captured accuracy and maneuverability", 8));
+        string detail = string.Join(" ", Enumerable.Repeat("captured accuracy and maneuverability", 24));
         var panel = new CommandsPanel(weaponDetails: _ => [detail], weaponCommandEnabled: (_, _) => true);
         using var bitmap = new SKBitmap(400, height);
         using var canvas = new SKCanvas(bitmap);

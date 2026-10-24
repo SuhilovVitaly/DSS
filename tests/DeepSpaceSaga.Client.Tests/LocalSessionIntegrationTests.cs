@@ -16,6 +16,41 @@ namespace DeepSpaceSaga.Client.Tests;
 public class LocalSessionIntegrationTests
 {
     [Fact]
+    public async Task Delayed_combat_subscription_retains_the_initial_report_bootstrap()
+    {
+        string root = PointCombatUiFixture.Root;
+        var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"),
+            Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
+        var source = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
+        engine.LoadScenario(source with
+        {
+            GameState = source.GameState with
+            {
+                CurrentSpeed = "Speed0",
+                SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
+                {
+                    Ai = null,
+                    PositionX = o.ObjectId == source.GameState.PlayerShipObjectId ? 0 : 300,
+                    PositionY = 0,
+                    Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off" }).ToArray()
+                }).ToArray()
+            }
+        });
+        await using var connection = new LocalGameSessionConnection(engine);
+        await Task.Delay(300);
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+        await foreach (var update in connection.ReadCombatUpdatesAsync(timeout.Token))
+        {
+            if (update.FullSnapshot is not { } bootstrap) continue;
+            var delivered = update.Frames.SelectMany(frame => frame.State.CombatReports?.Reports ?? [])
+                .Concat(bootstrap.CombatReports?.Reports ?? []).ToArray();
+            Assert.Contains(delivered, report => report.Sequence == 1 && report.Kind == BattleReportKind.EnemyInRange);
+            return;
+        }
+        Assert.Fail("Combat transport ended before its bootstrap.");
+    }
+
+    [Fact]
     public async Task Engine_publishes_snapshots_with_incrementing_sequence()
     {
         var engine = new SimulationEngine();

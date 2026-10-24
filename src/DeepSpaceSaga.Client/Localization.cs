@@ -29,7 +29,7 @@ public static class Localization
         if (Find(key) is { } translated) return translated;
         // Profile IDs are configurable public data. Preserve unknown custom identifiers, not UI prose.
         if (key.StartsWith("Profile.", StringComparison.Ordinal)) return key["Profile.".Length..];
-        string generic = key.StartsWith("Reason.", StringComparison.Ordinal) ? "CommandRejected" :
+        string generic = key.StartsWith("Reason.", StringComparison.Ordinal) || key.StartsWith("Panel.Reason.", StringComparison.Ordinal) ? "CommandRejected" :
             key.StartsWith("Forecast.", StringComparison.Ordinal) ? "Forecast.Unknown" : "Unknown";
         return Find(generic) ?? "—";
     }

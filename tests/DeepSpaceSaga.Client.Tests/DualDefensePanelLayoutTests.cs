@@ -21,7 +21,7 @@ public class DualDefensePanelLayoutTests
         new InstalledModuleSnapshot("defense-" + i, "module.countermeasure.launcher.basic", "Defense", i,
             [DefenseCommandTypes.Launch],
             Commands: [new(DefenseCommandTypes.Launch, "Fire " + i, "object")],
-            Defense: new(false, null, DefenseState.Ready, Profiles: [new("wide", 15, 1)], RangeKm: 30))).ToImmutableArray();
+            Defense: new(null, DefenseState.Ready, Profiles: [new("wide", 15, 1)], RangeKm: 30))).ToImmutableArray();
 
     private static void Render(CommandsPanel panel, float height = 1000, string owner = "player", bool reversed = false)
     {

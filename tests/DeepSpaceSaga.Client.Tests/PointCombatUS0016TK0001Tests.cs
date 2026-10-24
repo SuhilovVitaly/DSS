@@ -63,7 +63,7 @@ public sealed class PointCombatUS0016TK0001Tests
             Assert.Equal("medium", screen.PointAim!.ProfileId); Assert.NotNull(screen.CurrentTorpedoAimPreview);
             var row = Assert.Single(screen.CommandsPanel.CommandPanelRows, p => p.Weapon?.ModuleId == PointCombatSessionFixture.Torpedo);
             Assert.StartsWith("Torpedo Launcher", row.Name); Assert.Equal(row.Name, row.Weapon!.Caption); // internal identity stays in its domain
-            Assert.Contains(row.DetailLines, line => line.StartsWith("> " + locale["Combat.Profile.medium"], StringComparison.Ordinal));
+            Assert.Contains(row.DetailLines, line => line.StartsWith("2" + locale["Combat.Panel.Selected"] + "\t" + locale["Combat.Profile.medium"], StringComparison.Ordinal));
             Assert.Contains(row.DetailLines, line => line.Contains(locale["Combat.KilometersPerSecond"], StringComparison.Ordinal));
             if (!row.Opened)
             {
@@ -72,7 +72,7 @@ public sealed class PointCombatUS0016TK0001Tests
                 screen.Render(canvas, 1920, 1080);
                 row = Assert.Single(screen.CommandsPanel.CommandPanelRows, p => p.Weapon?.ModuleId == PointCombatSessionFixture.Torpedo);
             }
-            Assert.Contains(row.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch && b.Label == locale["Combat.Aim"] + " [Q]");
+            Assert.Contains(row.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch && b.Label == locale["Combat.Aim"] + " Q");
             Assert.True(screen.AvailableMapRect().Contains(screen.TorpedoAimLabelBounds));
             foreach (var tile in screen.CommandsPanel.OwnModuleDiagram!.Tiles)
             {

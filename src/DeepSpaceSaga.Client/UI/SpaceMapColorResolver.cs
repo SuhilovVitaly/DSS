@@ -6,7 +6,7 @@ namespace DeepSpaceSaga.Client.UI;
 /// <summary>
 /// Maps object type and player relation to a marker color.
 /// Pure client-side — no Engine dependency.
-/// Source of truth: Documentation/03-Design/TacticalMapSpecification.md.
+/// Source of truth: DB/Documentation/03-Design/TacticalMapSpecification.md.
 /// </summary>
 internal static class SpaceMapColorResolver
 {
@@ -37,7 +37,7 @@ internal static class SpaceMapColorResolver
         };
     }
 
-    // ── Palette (from Documentation/03-Design/TacticalMapSpecification.md) ─────────
+    // ── Palette (from DB/Documentation/03-Design/TacticalMapSpecification.md) ─────────
 
     internal static readonly SKColor PlayerShipColor = new(140, 185, 224);
     internal static readonly SKColor NpcNeutralColor = new(186, 196, 206);

@@ -29,7 +29,8 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
     internal AuthoritativeSnapshot Latest => Handle.Buffer.Latest!.Snapshot;
     internal AuthoritativeSnapshot Presented => Handle.Buffer.Presented!.Snapshot;
 
-    private PointCombatUiFixture(int width, int height, float scale, CombatInputSettings? inputs, int hostileShots)
+    private PointCombatUiFixture(int width, int height, float scale, CombatInputSettings? inputs, int hostileShots, int? accuracySkill,
+        Func<SpaceObjectData, SpaceObjectData>? configure)
     {
         (_width, _height, Scale) = (width, height, scale);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
@@ -72,8 +73,10 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
                     DirectionDegrees = o.ObjectId == Player ? 90 : 270,
                     MovementType = "Stationary",
                     Ai = null,
+                    Crew = o.ObjectId == Player && accuracySkill is { } skill
+                        ? o.Crew!.Select(c => c with { AccuracySkill = skill }).ToArray() : o.Crew,
                     Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == Player ? "On" : "Off" }).ToArray()
-                }).Concat(extraEnemies).ToArray()
+                }).Concat(extraEnemies).Select(o => configure?.Invoke(o) ?? o).ToArray()
             }
         });
         for (int i = 0; i < hostileShots; i++)
@@ -90,9 +93,10 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
         _bitmap = new(width, height); _canvas = new(_bitmap);
     }
     internal static async Task<PointCombatUiFixture> Create(int width = 1920, int height = 1080, float scale = 1,
-        CombatInputSettings? inputs = null, int hostileShots = 0)
+        CombatInputSettings? inputs = null, int hostileShots = 0, int? accuracySkill = null,
+        Func<SpaceObjectData, SpaceObjectData>? configure = null)
     {
-        var f = new PointCombatUiFixture(width, height, scale, inputs, hostileShots);
+        var f = new PointCombatUiFixture(width, height, scale, inputs, hostileShots, accuracySkill, configure);
         await f.Wait(() => f.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0 && f.Screen.RenderStates.Any(o => o.IsPlayerShip));
         f.Screen.OnActivated(); f.Render();
         if (f.Screen.IsPanelVisible)

@@ -112,7 +112,7 @@ internal static class PointCombatNativeEvidence
                     case 0:
                         Tap(Key.F);
                         checks["activeBannerAndAllowedSpeeds"] = screen.CombatBorderVisible && !screen.CombatBannerRect.IsEmpty && screen.IsCombatSpeedEnabled(SimulationSpeed.SpeedDouble) && screen.IsCombatSpeedEnabled(SimulationSpeed.Speed2) && screen.IsCombatSpeedEnabled(SimulationSpeed.SpeedTen) && !screen.IsCombatSpeedEnabled(SimulationSpeed.Speed3) && !screen.IsCombatSpeedEnabled(SimulationSpeed.Speed4);
-                        checks["shipCardAndLeftModules"] = screen.ObjectInfoPanel.OwnModuleDiagram is null && screen.CommandsPanel.OwnModuleDiagram is not null;
+                        checks["shipCardAndLeftModules"] = screen.ObjectInfoPanel.RowBodyRects[0].Height > 0 && screen.CommandsPanel.OwnModuleDiagram is not null;
                         checks["ranges70And30"] = screen.WeaponRangeRings.Any(r => r.RangeKm == 70) && screen.WeaponRangeRings.Count(r => r.RangeKm == 30) == 2;
                         Tap(Key.Q); Tap(Key.Number1); aim = ChooseAim(40, 65); Move(aim); break;
                     case 1:

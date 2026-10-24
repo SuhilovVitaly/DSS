@@ -99,7 +99,7 @@ public sealed partial class SimulationEngine : IDisposable
     public bool MasterSeedWasMissingOnLoad { get; private set; }
 
     /// <summary>
-    /// Player's Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md). Never negative.
+    /// Player's Credits balance (DB\Documentation\02-FirstRelease\Mechanics\Money.md). Never negative.
     /// A New Game player starts at 0 (plain default — never RNG-generated). Set by
     /// LoadScenario and projected back into GameStateData.PlayerCredits by
     /// CaptureSaveStateCore.
@@ -518,7 +518,7 @@ public sealed partial class SimulationEngine : IDisposable
             _aiPlacementValidation = aiPlacementValidation;
             MasterSeedWasMissingOnLoad = resolvedMasterSeedWasMissingOnLoad;
 
-            // Player Tokens (Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance
+            // Player Tokens (DB\Documentation\02-FirstRelease\Mechanics\Money.md): the starting balance
             // comes from the scenario's playerTokens — every shipped scenario sets 2000.
             // Null (a scenario/save predating the field) means 0 — plain default, never
             // randomized (unlike station Credits, which the docs explicitly call out as
@@ -873,7 +873,8 @@ public sealed partial class SimulationEngine : IDisposable
                 VoyageFinances: presentationOnly ? default : BuildVoyageFinanceProjection(),
                 StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
                 Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch(), Encounter: CaptureEncounter(gameTimeMs),
-                DebugTuning: CaptureDebugTuning(presentationOnly));
+                DebugTuning: CaptureDebugTuning(presentationOnly),
+                DestroyedModuleLimit: CaptureOwnDestroyedModuleLimit());
             if (!presentationOnly) _pendingCombatReports.Clear();
             return snapshot;
         }
@@ -894,7 +895,7 @@ public sealed partial class SimulationEngine : IDisposable
     }
 
     /// <summary>
-    /// Build the docked station's tradeable inventory projection (Documentation\02-FirstRelease\
+    /// Build the docked station's tradeable inventory projection (DB\Documentation\02-FirstRelease\
     /// Mechanics\{Money,StationInventory,Trading}.md), story-20260822-193700 Batch 4.
     /// Non-null only while the player ship is actually docked to a station.
     /// The station's raw <see cref="SpaceObjectRuntime.Credits"/> balance is never
@@ -950,7 +951,7 @@ public sealed partial class SimulationEngine : IDisposable
             // an unconfigured one keeps spending the whole hidden Credits balance as before.
             long purse = bounded ? station.MarketBudgetCredits ?? 0 : station.Credits;
             long rawMaxSellable = unitPrice > 0 ? purse / unitPrice : 0;
-            // Selling is fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение:
+            // Selling is fully per-unit (DB/Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение:
             // панель действия" — this supersedes the former §59/U9 sell-package-size rule) —
             // MaxSellableQuantity is the raw affordable quantity, no package flooring.
             long maxSellable = rawMaxSellable;
@@ -1786,7 +1787,7 @@ public sealed partial class SimulationEngine : IDisposable
         checked((decimal)value * sizeFactor / 1000m), 0, MidpointRounding.AwayFromZero));
 
     /// <summary>
-    /// Resolve a station's Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md): explicit
+    /// Resolve a station's Credits balance (DB\Documentation\02-FirstRelease\Mechanics\Money.md): explicit
     /// scenario/save value used as-is, otherwise a deterministic value in 10,000..50,000
     /// (inclusive) derived from masterSeed via the station's own named RNG stream — so
     /// generation never regenerates once the value has been resolved and saved once.
@@ -1803,7 +1804,7 @@ public sealed partial class SimulationEngine : IDisposable
     }
 
     /// <summary>
-    /// Resolve a station's price coefficient (Documentation\02-FirstRelease\Mechanics\
+    /// Resolve a station's price coefficient (DB\Documentation\02-FirstRelease\Mechanics\
     /// StationInventory.md): explicit scenario/save value used as-is, otherwise a
     /// deterministic value in 500..2000 (inclusive) — fixed-point representation of the
     /// documented 0.5..2.0 range (1000 == 1.0x; the project forbids float/double for
@@ -1822,7 +1823,7 @@ public sealed partial class SimulationEngine : IDisposable
     }
 
     /// <summary>
-    /// Resolve a station's tradeable stock (Documentation\02-FirstRelease\Mechanics\
+    /// Resolve a station's tradeable stock (DB\Documentation\02-FirstRelease\Mechanics\
     /// StationInventory.md): one entry per registered item type that carries a
     /// BasePriceCredits (i.e. is currently sellable by a station at all). Each entry uses
     /// its explicit scenario/save quantity when present, otherwise a deterministic value in
@@ -1874,7 +1875,7 @@ public sealed partial class SimulationEngine : IDisposable
     }
 
     /// <summary>
-    /// Resolve a station's size (requirements §59, Documentation\02-FirstRelease\TechnicalTasks\
+    /// Resolve a station's size (requirements §59, DB\Documentation\02-FirstRelease\TechnicalTasks\
     /// StationEconomyProductionAndSizing.md "Размеры станции"): explicit scenario/save value
     /// used as-is, otherwise a fixed fallback — <b>never</b> RNG-generated (unlike
     /// Credits/PriceCoefficient/Inventory above; story-20260825-084409 Batch 2 explicitly
@@ -2472,7 +2473,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// <see cref="TryStartEngineCommand"/> unchanged; navigation.dock/navigation.undock
     /// are NavigationComputer commands and go through
     /// <see cref="TryStartNavigationCommand"/> instead; trade.buy/trade.sell/trade.refuel
-    /// (station trading, Documentation\02-FirstRelease\Mechanics\{Money,StationInventory,Trading}.md) go
+    /// (station trading, DB\Documentation\02-FirstRelease\Mechanics\{Money,StationInventory,Trading}.md) go
     /// through <see cref="TryStartTradeCommand"/>. Everything else (including
     /// navigation.stationsList, not implemented yet) falls through to
     /// TryStartEngineCommand, which rejects it with UnknownCommandType exactly as before
@@ -2531,7 +2532,7 @@ public sealed partial class SimulationEngine : IDisposable
         return ExecuteTurnHoldOverride(command, gameTimeMs, () => ExecuteEvasionOverride(command, gameTimeMs, () => TryStartEngineCommand(command, gameTimeMs)));
     }
 
-    /// <summary>1 world unit = 100 m (Documentation/00-Process/CLAUDE.md developer guide), so 1 km = 10 world units.</summary>
+    /// <summary>1 world unit = 100 m (DB/Documentation/00-Process/CLAUDE.md developer guide), so 1 km = 10 world units.</summary>
     private const double WorldUnitsPerKm = 10.0;
 
     /// <summary>
@@ -2738,7 +2739,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     /// <summary>
     /// Handles trade.buy / trade.sell / trade.refuel — station trading (requirements
-    /// Documentation\02-FirstRelease\Mechanics\{Money,StationInventory,Trading}.md). Like navigation.dock,
+    /// DB\Documentation\02-FirstRelease\Mechanics\{Money,StationInventory,Trading}.md). Like navigation.dock,
     /// these are immediate one-shot authoritative actions (no ActiveCycle/duration) validated
     /// only by <see cref="CanExecuteModuleCommand"/> (power/operational/structure) — a trade
     /// module is never "busy", so trade commands are always either Started or Rejected, never
@@ -2838,7 +2839,7 @@ public sealed partial class SimulationEngine : IDisposable
 
             // Partial fill: the only direction where the station's hidden Credits balance can
             // limit the operation (CP-1/Money.md) — Buy/Refuel only ever add to it. Selling is
-            // fully per-unit (Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение: панель действия"
+            // fully per-unit (DB/Documentation/02-FirstRelease/Screens/Trade.md, "UI-решение: панель действия"
             // — this supersedes the former §59/U9 sell-package-size rule), so no flooring is
             // applied to the partial-fill quantity.
             bool boundedMarket = TryGetMarket(station, out var sellProfile, out var sellEconomy);
@@ -4088,12 +4089,12 @@ internal sealed record SpaceObjectRuntime(
     /// <summary>ObjectId of the station this object is docked to. Null unless <see cref="IsDocked"/>.</summary>
     string? DockedStationObjectId = null,
     /// <summary>
-    /// Station's Credits balance (Documentation\02-FirstRelease\Mechanics\Money.md). Only meaningful for
+    /// Station's Credits balance (DB\Documentation\02-FirstRelease\Mechanics\Money.md). Only meaningful for
     /// ObjectType == Station; 0 for every other object type (never RNG-resolved for them).
     /// </summary>
     long Credits = 0,
     /// <summary>
-    /// Station's price coefficient, fixed-point where 1000 == 1.0x (Documentation\02-FirstRelease\
+    /// Station's price coefficient, fixed-point where 1000 == 1.0x (DB\Documentation\02-FirstRelease\
     /// Mechanics\StationInventory.md's 0.5..2.0 range == 500..2000). Only meaningful for
     /// ObjectType == Station; 1000 (neutral) for every other object type.
     /// </summary>

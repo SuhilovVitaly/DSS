@@ -39,7 +39,7 @@ internal sealed record TradeQuotePriceResult(
     ImmutableArray<TradePriceReason> PriceReasons);
 
 /// <summary>
-/// Sequential price curve of EP-0001-US-0015-TK-0002 (epic baseline Board/EP-0001-trading-system/
+/// Sequential price curve of EP-0001-US-0015-TK-0002 (epic baseline DB/Board/EP-0001-trading-system/
 /// Documentation.md:96). Each unit is priced from the virtual stock it sees before it moves:
 /// <list type="number">
 /// <item><c>stockFactor = clamp(1 + 0.70 × (1 − stock / target), 0.65, 1.70)</c>, or 1 without a target;</item>

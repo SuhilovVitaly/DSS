@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 /// <summary>
 /// Batch 2 (Trade economy generation, story-20260822-193700.md): deterministic generation
-/// of station Credits/PriceCoefficient/Inventory (Documentation\02-FirstRelease\Mechanics\
+/// of station Credits/PriceCoefficient/Inventory (DB\Documentation\02-FirstRelease\Mechanics\
 /// {Money,StationInventory}.md) and PlayerCredits, wired through LoadScenario/CaptureSaveState.
 /// </summary>
 public class StationEconomyGenerationTests

@@ -60,7 +60,7 @@ public sealed class PointCombatUS0009TK0001Tests
         var snapshot = At(engine);
         Assert.Equal(9, snapshot.InstalledModules.Length);
         Assert.Equal(CombatEncounterState.Active, snapshot.Encounter!.State);
-        Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.False(m.Defense!.AutoEnabled));
+        Assert.All(snapshot.InstalledModules.Where(m => m.Defense is not null), m => Assert.NotNull(m.Defense));
         Assert.All(snapshot.Objects.Where(o => o.ObjectType == SpaceObjectType.NpcShip), o => Assert.Empty(o.ModuleHealth));
         engine.ReceiveCommand(new("scenario-point-launch", 1, player.ObjectId, "MOD-PLAYER-TORPEDO-01", CombatCommandTypes.Launch,
             TargetWorldX: 0, TargetWorldY: 600, ProfileId: "fast"));

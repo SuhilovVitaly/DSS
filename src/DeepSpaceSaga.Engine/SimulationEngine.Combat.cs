@@ -340,7 +340,7 @@ public sealed partial class SimulationEngine
                 if (_registry.CombatRules is not { IsPointAim: true })
                     throw new ScenarioException("Point launcher requires current combatRules.");
                 launchers.Add((obj.InitialMotion.ObjectId, module.ModuleId), new LauncherCombatSnapshot(
-                    definition.Profiles[0].SpeedKmS, 0, damage,
+                    damage,
                     Operator: ResolveWeaponOperator(obj, module, WeaponSkillType.TorpedoAttack),
                     RangeKm: definition.RangeKm, ActiveTorpedoIds: [], ReloadDurationMs: definition.ReloadMs,
                     Profiles: definition.Profiles, ScatterPercent: definition.ScatterPercent));

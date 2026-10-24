@@ -21,7 +21,7 @@ public class ManualCountermeasureFireTests
         Assert.Equal(ProjectileKind.Countermissile, flight.Kind); Assert.Equal("wide", flight.ProfileId);
         Assert.Equal(15, flight.SpeedKmS); Assert.Equal(1, flight.BlastRadiusKm); Assert.Equal(0, state.MotionTimeMs);
         Assert.Equal(DefenseState.Reloading, state.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.State);
-        Assert.False(state.InstalledModules.Single(m => m.ModuleId == Defense1).Defense!.AutoEnabled);
+        Assert.Null(typeof(DefenseSnapshot).GetProperty("AutoEnabled"));
         Assert.Null(state.Objects.Single(o => o.OwnProjectile is not null).Countermeasure);
         Assert.Equal(2UL, engine.CaptureLaunchScatterState().Counter);
     }

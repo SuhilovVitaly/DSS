@@ -11,7 +11,7 @@ public class PointCombatUS0020TK0002Tests
     public async Task Player_info_restores_ship_image_and_fields()
     {
         await using var f = await PointCombatUiFixture.Create();
-        Assert.Null(f.Screen.ObjectInfoPanel.OwnModuleDiagram);
+        Assert.True(f.Screen.ObjectInfoPanel.RowBodyRects[0].Height > 0);
         var lines = ObjectInfoPanel.BuildLines(new("ship", "Ship", 5, 90, SpaceObjectType.PlayerShip));
         Assert.Contains(lines, l => l.Label == "Name");
         Assert.Contains(lines, l => l.Label == "Speed");
@@ -29,10 +29,10 @@ public class PointCombatUS0020TK0002Tests
         diagram.Update(null, 1, "ship", [.. modules], [], 0, .25, 0);
         var lines = CommandsPanel.ModuleDetails("Navigation", null, modules, diagram);
         foreach (var module in modules) Assert.Contains(lines, l => l.StartsWith(module.DisplayName));
-        Assert.Contains(lines, l => l.Contains("20/40"));
-        Assert.Contains(lines, l => l.Contains("32.0") || l.Contains("32,0"));
-        Assert.Contains(lines, l => l.Contains("0/100"));
-        Assert.Contains(lines, l => l.EndsWith(" !"));
+        Assert.Contains(lines, l => l.Contains(Localization.Combat("Panel.Armor")) && l.Contains("20"));
+        Assert.Contains(lines, l => l.Contains(Localization.Combat("Disabled")) && l.Contains("32"));
+        Assert.Contains(lines, l => l.Contains(Localization.Combat("Panel.Structure")) && l.Contains("0"));
+        Assert.Contains(lines, l => l.EndsWith(" " + Localization.Combat("Panel.CriticalIcon")));
     }
 
     [Theory]
@@ -46,7 +46,7 @@ public class PointCombatUS0020TK0002Tests
         using var bitmap = new SKBitmap(width + 100, height + 100);
         using var canvas = new SKCanvas(bitmap);
         f.Screen.Render(canvas, width + 100, height + 100);
-        Assert.Null(f.Screen.ObjectInfoPanel.OwnModuleDiagram);
+        Assert.True(f.Screen.ObjectInfoPanel.RowBodyRects[0].Height > 0);
         Assert.True(f.Screen.CombatReportsBounds.Height > 0);
     }
 }

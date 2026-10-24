@@ -8,8 +8,8 @@ namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
 /// Bottom-center Mechanics panel on GameSessionScreen: the "F" button opens Finance
-/// (Documentation/02-FirstRelease/Screens/Finance.md) and the "S" button opens Ship
-/// (Documentation/02-FirstRelease/Screens/Ship.md). Pause-on-open/resume-on-close is generic
+/// (DB/Documentation/02-FirstRelease/Screens/Finance.md) and the "S" button opens Ship
+/// (DB/Documentation/02-FirstRelease/Screens/Ship.md). Pause-on-open/resume-on-close is generic
 /// SkiaWindow modal behavior (already covered by ModalPauseTests / ModalTransitionTests
 /// for Settings/Save/Load) — not re-tested here. The FinanceScreen/ShipScreen overlays
 /// themselves are covered in FinanceScreenTests.cs / ShipScreenTests.cs.

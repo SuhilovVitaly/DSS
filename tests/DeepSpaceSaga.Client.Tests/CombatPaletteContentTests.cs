@@ -33,7 +33,9 @@ public sealed class CombatPaletteContentTests
             ["torpedoRange"] = "#EDB86A2E",
             ["manualDefenseRange"] = "#76D5DC47"
         };
-        Assert.Equal(expected.Count + 4, root.EnumerateObject().Count());
+        Assert.Equal(expected.Count + 6, root.EnumerateObject().Count());
+        Assert.Equal("medium", root.GetProperty("defaultTorpedoProfile").GetString());
+        Assert.Equal("wide", root.GetProperty("defaultCountermissileProfile").GetString());
         Assert.Equal(JsonValueKind.Object, root.GetProperty("pointCombat").ValueKind);
         var alerts = root.GetProperty("threatAlerts");
         Assert.Equal(JsonValueKind.Object, alerts.ValueKind);
