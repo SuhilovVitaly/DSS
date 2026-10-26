@@ -1,10 +1,11 @@
 """Compare the same commit on Windows/Ubuntu; cap each process tree at 300s.
 
 Usage: python tools/ci/platform-baseline.py <absolute-results-directory>
-Every test method discovered by VSTest is assigned to exactly one partition.
-Theory rows stay together; no failures or unavailable graphics are silently skipped.
+Every test case discovered by VSTest is assigned to exactly one partition.
+Slow corpus theory rows run separately; result names must match discovery.
 """
 
+import argparse
 import json
 import os
 from pathlib import Path
@@ -34,7 +35,12 @@ def run(command, log):
 
 
 def main():
-    output = Path(sys.argv[1])
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("results_directory", type=Path)
+    parser.add_argument("--project", help="Exact test project name; omission runs all projects")
+    parser.add_argument("--skip-build", action="store_true", help="Use an already built Release baseline")
+    args = parser.parse_args()
+    output = args.results_directory
     if not output.is_absolute():
         raise ValueError("results-directory must be absolute")
     output.mkdir(parents=True, exist_ok=False)
@@ -42,14 +48,19 @@ def main():
     os.chdir(root)
     report = {"commit": subprocess.check_output(["git", "rev-parse", "HEAD"], text=True).strip(),
               "platform": sys.platform, "projects": []}
-    for name, command in [("sdk", ["dotnet", "--info"]),
+    preparation = [("sdk", ["dotnet", "--info"]),
                           ("restore", ["dotnet", "restore", "DeepSpaceSaga.sln"]),
-                          ("build", ["dotnet", "build", "DeepSpaceSaga.sln", "-c", "Release", "--no-restore"])]:
+                          ("build", ["dotnet", "build", "DeepSpaceSaga.sln", "-c", "Release", "--no-restore"])]
+    for name, command in preparation[:1] if args.skip_build else preparation:
         report[name] = run(command, output / f"{name}.log")
         if report[name]:
             (output / "summary.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
             return 1
     projects = sorted(root.glob("tests/*.Tests/*.csproj")) + sorted(root.glob("tools/*.Tests/*.csproj"))
+    if args.project:
+        projects = [p for p in projects if p.stem == args.project]
+    if not projects:
+        raise ValueError("No matching test projects")
     failed = False
     for project in projects:
         name = project.stem
@@ -59,18 +70,33 @@ def main():
         discovery = folder / "discovery.log"
         code = run(base + ["--list-tests", "--results-directory", str(folder)], discovery)
         listed = discovery.read_text(encoding="utf-8-sig").split("The following Tests are available:", 1)
-        names = sorted(set(re.match(r"^\s{4}(\S+?)(?:\(|$)", line).group(1)
-                           for line in listed[-1].splitlines()
-                           if re.match(r"^\s{4}(\S+?)(?:\(|$)", line))) if len(listed) == 2 else []
-        row = {"project": name, "discovery": code, "methods": len(names), "partitions": []}
-        (folder / "methods.json").write_text(json.dumps(names, indent=2), encoding="utf-8")
+        names = sorted(set(line.strip() for line in listed[-1].splitlines()
+                           if line.startswith("    DeepSpaceSaga."))) if len(listed) == 2 else []
+        row = {"project": name, "discovery": code, "cases": len(names), "partitions": []}
+        (folder / "cases.json").write_text(json.dumps(names, indent=2), encoding="utf-8")
         if code or not names:
             failed = True
         else:
-            for index in range(0, len(names), 100):
-                part = index // 100
-                selection = names[index:index + 100]
-                filter_text = "|".join("FullyQualifiedName=" + name for name in selection)
+            selections = []
+            pending = []
+            for case in names:
+                if "CorpusTests." in case or ".CombatBalanceReport." in case:
+                    if pending:
+                        selections.append(pending)
+                        pending = []
+                    selections.append([case])
+                else:
+                    pending.append(case)
+                    if len(pending) == 100:
+                        selections.append(pending)
+                        pending = []
+            if pending:
+                selections.append(pending)
+            for part, selection in enumerate(selections):
+                def escape(value):
+                    value = value.replace("%", "%25").replace(",", "%2C").replace('"', "%22").replace(";", "%3B")
+                    return re.sub(r"([\\()&|=!~])", r"\\\1", value)
+                filter_text = "|".join("DisplayName=" + escape(case) for case in selection)
                 trx = f"part-{part:03}.trx"
                 code = run(base + ["--filter", filter_text, "--logger", "trx;LogFileName=" + trx,
                                    "--results-directory", str(folder)], folder / f"part-{part:03}.log")
@@ -80,12 +106,17 @@ def main():
                     document = ET.parse(path)
                     counters = document.find(".//{*}Counters")
                     counts = counters.attrib if counters is not None else {}
+                    actual = sorted(result.get("testName") for result in document.findall(".//{*}UnitTestResult"))
+                    if actual != sorted(selection):
+                        code = 1
+                        (folder / f"part-{part:03}-coverage.json").write_text(
+                            json.dumps({"expected": selection, "actual": actual}, indent=2), encoding="utf-8")
                     # A successful process with zero selected tests is not evidence.
                     if int(counts.get("executed", "0")) == 0:
                         code = 1
                 else:
                     code = code or 1
-                row["partitions"].append({"exit": code, "methods": selection, "counts": counts})
+                row["partitions"].append({"exit": code, "cases": selection, "counts": counts})
                 failed |= code != 0
         report["projects"].append(row)
         (output / "summary.json").write_text(json.dumps(report, indent=2), encoding="utf-8")

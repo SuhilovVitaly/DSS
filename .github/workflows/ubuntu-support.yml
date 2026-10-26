@@ -22,6 +22,9 @@ jobs:
         os: [ubuntu-24.04, windows-2022]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 55
+    env:
+      DOTNET_INSTALL_DIR: ${{ github.workspace }}/../artifacts/validation/ep-0015-ubuntu-support/${{ github.run_id }}-${{ matrix.os }}-sdk
+      DOTNET_MULTILEVEL_LOOKUP: '0'
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -33,6 +36,8 @@ jobs:
       - name: Build and partitioned baseline
         shell: pwsh
         run: |
+          $selectedSdk = dotnet --version
+          if (-not $selectedSdk.StartsWith('8.0.')) { throw "Expected SDK 8.0.x, selected $selectedSdk" }
           $results = Join-Path (Split-Path $env:GITHUB_WORKSPACE) "artifacts/validation/ep-0015-ubuntu-support/$env:GITHUB_RUN_ID-${{ matrix.os }}"
           python tools/ci/platform-baseline.py $results
       - uses: actions/upload-artifact@v4
