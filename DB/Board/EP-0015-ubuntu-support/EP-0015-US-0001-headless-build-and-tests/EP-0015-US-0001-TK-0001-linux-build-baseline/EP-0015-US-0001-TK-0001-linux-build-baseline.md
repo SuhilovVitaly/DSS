@@ -62,3 +62,7 @@ created: 2026-10-25
 В CI SDK8 устанавливается в изолированный каталог с проверкой фактически выбранной версии8.0.x: global.json rollForward=latestMajor иначе может выбрать предустановленный более новый SDK. Обоснование install-dir: https://github.com/actions/setup-dotnet/blob/main/README.md#environment-variables.
 
 Локальный исходный Windows baseline SDK10.0.400: Release build0 warnings/errors; Contracts273/273; Motion251/251; Client2322/2322. Логи/TRX: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-baseline/. Это отдельный результат, не сравнительный SDK8 CI.
+
+## Exact-case harness verification
+
+Contracts corpus обнаружил повторный разбор nested JSON/quotes в CLI/MSBuild. Фильтры перенесены в XML RunSettings/RunConfiguration/TestCaseFilter; на CLI передаётся только абсолютный путь. Повторный полный Contracts exact-case прогон:273/273, expected/actual TRX names совпали для всех трёх partitions. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-runsettings-contracts/. Неудачный предыдущий harness-прогон хранится отдельно (20261026-exact-contracts) и не объявлен product/test defect или PASS.

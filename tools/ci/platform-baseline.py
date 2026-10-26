@@ -94,11 +94,17 @@ def main():
                 selections.append(pending)
             for part, selection in enumerate(selections):
                 def escape(value):
-                    value = value.replace("%", "%25").replace(",", "%2C").replace('"', "%22").replace(";", "%3B")
                     return re.sub(r"([\\()&|=!~])", r"\\\1", value)
                 filter_text = "|".join("DisplayName=" + escape(case) for case in selection)
+                # Keep arbitrary theory data (including nested JSON/quotes) out of
+                # the dotnet/MSBuild command line. Only VSTest parses this value.
+                settings = folder / f"part-{part:03}.runsettings"
+                document = ET.Element("RunSettings")
+                configuration = ET.SubElement(document, "RunConfiguration")
+                ET.SubElement(configuration, "TestCaseFilter").text = filter_text
+                ET.ElementTree(document).write(settings, encoding="utf-8", xml_declaration=True)
                 trx = f"part-{part:03}.trx"
-                code = run(base + ["--filter", filter_text, "--logger", "trx;LogFileName=" + trx,
+                code = run(base + ["--settings", str(settings), "--logger", "trx;LogFileName=" + trx,
                                    "--results-directory", str(folder)], folder / f"part-{part:03}.log")
                 counts = {}
                 path = folder / trx
