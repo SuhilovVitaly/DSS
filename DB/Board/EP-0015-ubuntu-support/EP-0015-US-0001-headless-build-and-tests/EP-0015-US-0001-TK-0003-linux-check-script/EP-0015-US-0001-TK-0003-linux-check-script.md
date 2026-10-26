@@ -45,3 +45,9 @@ created: 2026-10-25
 tools/check-linux.sh добавлен сset-euo-pipefail, проверкойLinux/.NET8+/Python3, абсолютным results-dir и уникальным дочерним run. Используется проверенный exact-case Python harness: buildRelease, каждый test process≤300с, TRX identity coverage, ненулевойexit приfailure. БезDISPLAY/WAYLAND_DISPLAY Client явноNOT RUN вstdout иsummary; остальныеprojects выполняются. ПодDISPLAY/WaylandClient выполняется. CIUbuntu вызываетentrypoint подXvfb, Windows сохраняеттотжеharness.
 
 Python AST/Python LF assertion иbash-n/--help PASS. SandboxMSYS named-object denied; повтор внеsandbox с300с cap прошёл. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-check-linux/ (bash-syntax.log, bash-help.log). Native/human acceptance не заявлена. РеальныйUbuntu script/corpus подтверждаетсяCIпослеpush; результаты добавляются вfinal evidence. Executable100755 иLF проверяютсяGit. Self-review иgit diff --checkPASS.
+
+## Bounded-suite follow-up scope
+
+Large Engine/Economy batches can exceed300s even when individual exact cases fit. platform-baseline.py now records an invalid timed-out batch attempt and recursively bisects its unique display-name selection; only completed leaf partitions contribute suite coverage. Singleton timeouts still fail, no test skipped and no timeout increased. Names/multiplicity assertions retained. This is validation orchestration, not an Engine performance claim.
+
+Validation: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-adaptive-runner/adaptive-verification.json: 273 real Contracts cases passed in six leaf partitions, exact multiplicity/coverage equal discovery. Three parent timeouts were explicitly injected without starting VSTest, to exercise recursive orchestration; these are not real performance measurements. All leaf TRX are actual VSTest runs. A singleton timeout still produces failure.

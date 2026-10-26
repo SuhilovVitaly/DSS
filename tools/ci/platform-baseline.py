@@ -109,21 +109,28 @@ def main():
                         pending = []
             if pending:
                 selections.append(pending)
-            for part, selection in enumerate(selections):
+            def execute(selection, label):
+                nonlocal failed
                 expected = sorted(case for case in selection for _ in range(multiplicity[case]))
                 def escape(value):
                     return re.sub(r"([\\()&|=!~])", r"\\\1", value)
                 filter_text = "|".join("DisplayName=" + escape(case) for case in selection)
                 # Keep arbitrary theory data (including nested JSON/quotes) out of
                 # the dotnet/MSBuild command line. Only VSTest parses this value.
-                settings = folder / f"part-{part:03}.runsettings"
+                settings = folder / f"part-{label}.runsettings"
                 document = ET.Element("RunSettings")
                 configuration = ET.SubElement(document, "RunConfiguration")
                 ET.SubElement(configuration, "TestCaseFilter").text = filter_text
                 ET.ElementTree(document).write(settings, encoding="utf-8", xml_declaration=True)
-                trx = f"part-{part:03}.trx"
+                trx = f"part-{label}.trx"
                 code = run(base + ["--settings", str(settings), "--logger", "trx;LogFileName=" + trx,
-                                   "--results-directory", str(folder)], folder / f"part-{part:03}.log")
+                                   "--results-directory", str(folder)], folder / f"part-{label}.log")
+                if code == 124 and len(selection) > 1:
+                    row.setdefault("invalid_timeout_attempts", []).append({"label": label, "exit": code, "unique_cases": len(selection)})
+                    midpoint = len(selection) // 2
+                    execute(selection[:midpoint], label + "a")
+                    execute(selection[midpoint:], label + "b")
+                    return
                 counts = {}
                 path = folder / trx
                 if path.exists():
@@ -133,7 +140,7 @@ def main():
                     actual = sorted(result.get("testName") for result in document.findall(".//{*}UnitTestResult"))
                     if actual != expected:
                         code = 1
-                        (folder / f"part-{part:03}-coverage.json").write_text(
+                        (folder / f"part-{label}-coverage.json").write_text(
                             json.dumps({"expected": expected, "actual": actual}, indent=2), encoding="utf-8")
                     # A successful process with zero selected tests is not evidence.
                     if int(counts.get("executed", "0")) == 0:
@@ -142,6 +149,8 @@ def main():
                     code = code or 1
                 row["partitions"].append({"exit": code, "cases": expected, "counts": counts})
                 failed |= code != 0
+            for part, selection in enumerate(selections):
+                execute(selection, f"{part:03}")
         report["projects"].append(row)
         (output / "summary.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
     return int(failed)
