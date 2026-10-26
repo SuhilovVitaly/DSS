@@ -36,3 +36,12 @@ created: 2026-10-25
 - Тест: генератор тона для 440 Гц / 100 мс выдаёт 4410 сэмплов, первый и последний сэмпл равны нулю.
 - Запуск без звукового устройства (например, в контейнере) не роняет клиент.
 - Проверено на Windows и Ubuntu; на Windows поведение не ухудшилось.
+
+## Code context and implementation scope
+
+Directory.Packages.props; src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj; UI/CombatAlertAudio.cs; new UI/CombatTone.cs and UI/OpenAlTonePlayer.cs; tests/DeepSpaceSaga.Client.Tests/CombatToneTests.cs. Preserve session epochs, throttling, and one-time unavailable reporting. Worker thread owns the OpenAL context; configured buffers are prepared before queue playback, outside rendering. Nyquist constraint: use 44100 Hz through 22050 Hz tones, 96000 Hz for higher supported frequencies; the required 440/100 fixture remains 4410 samples. Native heard-by-human acceptance remains separately reported. Official binding example: https://github.com/dotnet/Silk.NET/blob/main/examples/CSharp/OpenAL%20Demos/WavePlayer/Program.cs .
+
+## Implementation and validation checkpoint
+
+OpenAL binding 2.21.0, native Soft package 1.23.1 (native package has its own version series, verified against NuGet). Added bounded audio queue (128, DropOldest), dedicated context-owning background thread, cached PCM buffers, epoch cancellation during tones/gaps, and disabled-device draining with one warning. CI workflow scope extended to exercise Linux null-device and unavailable-driver subprocesses.
+Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-audio/: build.log C#12 zero warnings/errors; audio.trx 28/28 existing timing/epochs plus PCM; native-null.trx 4/4 real native context+buffer initialization; native-no-device.trx 1/1 non-crashing unavailable path; format.log scoped formatter exit0. Human audible Windows/PulseAudio/PipeWire acceptance NOT RUN. Linux native CI pending.

@@ -50,6 +50,21 @@ jobs:
           } else {
             python tools/ci/platform-baseline.py $results --project $env:DSS_TEST_PROJECT
           }
+      - name: OpenAL native and unavailable-device checks
+        if: ${{ runner.os == 'Linux' && matrix.project == 'DeepSpaceSaga.Client.Tests' }}
+        shell: pwsh
+        run: |
+          $results = '${{ steps.checks.outputs.results }}'
+          $env:DSS_DIAGNOSTICS_DIRECTORY = $results
+          $env:DSS_INTERFACE_LOG_PATH = Join-Path $results 'audio-interface.log'
+          $env:ALSOFT_DRIVERS = 'null'
+          $env:DSS_EXPECT_AUDIO_AVAILABLE = 'true'
+          dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --no-build --no-restore --filter FullyQualifiedName~CombatToneTests --results-directory $results --logger 'trx;LogFileName=openal-null.trx'
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          $env:ALSOFT_DRIVERS = 'dss-unavailable-driver'
+          $env:DSS_EXPECT_AUDIO_AVAILABLE = 'false'
+          dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --no-build --no-restore --filter FullyQualifiedName~NativeInitializationReportsDeviceOutcomeWithoutCrashing --results-directory $results --logger 'trx;LogFileName=openal-no-device.trx'
+          exit $LASTEXITCODE
       - name: Ubuntu native layout captures
         if: ${{ always() && runner.os == 'Linux' && matrix.project == 'DeepSpaceSaga.Client.Tests' }}
         shell: pwsh
