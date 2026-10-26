@@ -5,8 +5,8 @@ namespace DeepSpaceSaga.Client.UI;
 /// <summary>Owned and used by one audio thread, including context teardown.</summary>
 internal sealed unsafe class OpenAlTonePlayer : IDisposable
 {
-    private readonly ALContext _alc = ALContext.GetApi();
-    private readonly AL _al = AL.GetApi();
+    private readonly ALContext _alc = ALContext.GetApi(soft: true);
+    private readonly AL _al = AL.GetApi(soft: true);
     private Device* _device;
     private Context* _context;
     private uint _source;

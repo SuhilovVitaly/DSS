@@ -49,3 +49,7 @@ Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-a
 Self-review boundary fix: exactly22050Hz equals Nyquist at44100Hz and a sampled sine would be silent. Switch to96000Hz at22050Hz inclusive; add exact22049/22050 boundary cases. Earlier prose saying through22050 is superseded by this correction; required440/100 sample fixture unchanged.
 
 Nyquist follow-up verified: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-audio-nyquist/nyquist.trx6/6, including exact22049/22050 boundaries and native OpenAL Soft initialization; C#12 build zero diagnostics. Change is one threshold and two theory rows; scoped formatting style unchanged.
+
+Linux follow-up40290044041: full Client corpus passed after Unix write-failure correction; 8/8 native layouts now pass with graphics dependencies. Explicit OpenAL-null check failed loading the library: default AL/ALContext.GetApi(false) searches system OpenAL names, whereas the package ships Soft native names. XML API documentation exposes GetApi(bool soft); select soft:true in both APIs to use the bundled library instead of relying on a system install. Evidence in D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-linux-native-deps/.
+
+Bundled-loader Windows verification: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-audio-bundled/bundled-null.trx6/6, bundled-unavailable.trx1/1; C#12 build zero diagnostics. Both AL and ALC explicitly prefer Soft native library names. Final Linux repeat pending CI.
