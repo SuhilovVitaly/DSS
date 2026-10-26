@@ -32,7 +32,7 @@ public class GameSessionScalePanelTests
 
     private static string ReadLogLines()
     {
-        string path = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
+        string path = Path.GetFullPath(InterfaceLog.OutputPath);
         if (!File.Exists(path))
             return string.Empty;
 
@@ -236,7 +236,7 @@ public class GameSessionScalePanelTests
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, -1.0f);
 
         // Read only the tail appended after the action to isolate from parallel test writers.
-        string logPath = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
+        string logPath = Path.GetFullPath(InterfaceLog.OutputPath);
         long lengthBefore = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
 
         screen.OnMouseWheel(ScreenWidth / 2f, ScreenHeight / 2f, 1.0f);

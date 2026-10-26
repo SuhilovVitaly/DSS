@@ -153,7 +153,7 @@ public class GameSessionZoomTests
         Assert.Equal(1.0, screen.CameraPixelsPerWorldUnit);
 
         // Read only the tail appended after the action to isolate from parallel test writers.
-        string logPath = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
+        string logPath = Path.GetFullPath(InterfaceLog.OutputPath);
         long lengthBefore = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
 
         screen.OnMouseWheel(960, 540, 1.0f); // zoom-in at boundary → no change

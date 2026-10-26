@@ -169,7 +169,12 @@ public sealed partial class TradeScreen : IScreen
     private int ListCount => Model.FuelMode ? Model.Modules.Length : Model.Rows.Length;
     private int CurrentCount => _history ? _journal.DisplayCount : ListCount;
     private int CurrentOffset { get => _history ? _historyScroll : _scroll; set { if (_history) _historyScroll = value; else _scroll = value; } }
-    private SKPoint Local(float x, float y) => new(x - TradeLayout.PanelLeft(_width), y - TradeLayout.PanelTop(_height));
+    private SKPoint Local(float x, float y)
+    {
+        var viewport = TradeLayout.Viewport(_width, _height);
+        float scale = TradeLayout.FitScale(_width, _height);
+        return new((x - viewport.Left) / scale, (y - viewport.Top) / scale);
+    }
     internal static string L(string key) => Localization.Get("TradeUX." + key);
     internal static string N(long value) => value.ToString("N0", CultureInfo.InvariantCulture).Replace(',', ' ');
     internal static string F(string key, params object[] args) => string.Format(CultureInfo.CurrentCulture, L(key), args);

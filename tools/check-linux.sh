@@ -22,4 +22,9 @@ if [[ ! $sdk_version =~ ^([0-9]+)\. ]] || (( ${BASH_REMATCH[1]} < 8 )); then
     exit 2
 fi
 printf 'SDK %s; results: %s\n' "$sdk_version" "$run_dir"
-python3 tools/ci/platform-baseline.py "$run_dir" --skip-client-without-display
+selection=()
+if [[ -n ${DSS_TEST_PROJECT:-} ]]; then
+    printf 'Explicit CI project selection: %s\n' "$DSS_TEST_PROJECT"
+    selection=(--project "$DSS_TEST_PROJECT")
+fi
+python3 tools/ci/platform-baseline.py "$run_dir" --skip-client-without-display "${selection[@]}"

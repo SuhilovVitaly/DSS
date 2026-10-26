@@ -14,11 +14,13 @@ public sealed partial class TradeScreen
     public void Render(SKCanvas canvas, int width, int height)
     {
         _width = width; _height = height; Refresh();
-        float pl = TradeLayout.PanelLeft(width), pt = TradeLayout.PanelTop(height);
-        MenuStyle.DrawPanel(canvas, SKRect.Create(pl, pt, TradeLayout.PanelWidth, TradeLayout.PanelHeight));
-        // Keep the original shared toolbar call and all its coordinates. New content is clipped below it.
-        DrawToolbar(canvas, pl, pt);
-        canvas.Save(); canvas.Translate(pl, pt);
+        var viewport = TradeLayout.Viewport(width, height);
+        canvas.Save(); canvas.Translate(viewport.Left, viewport.Top);
+        canvas.Scale(TradeLayout.FitScale(width, height));
+        MenuStyle.DrawPanel(canvas, SKRect.Create(0, 0, TradeLayout.PanelWidth, TradeLayout.PanelHeight));
+        // Toolbar and body share the same fit transform and logical hit-test coordinates.
+        DrawToolbar(canvas, 0, 0);
+        canvas.Save();
         canvas.ClipRect(new SKRect(0, StationToolbar.Height, TradeLayout.PanelWidth, TradeLayout.PanelHeight));
         using (var p = new TradePainter(canvas))
         {
@@ -43,7 +45,8 @@ public sealed partial class TradeScreen
             DrawMarketEvents(canvas, p);
         }
         canvas.Restore();
-        DrawToolbarTooltips(canvas, pl, pt);
+        DrawToolbarTooltips(canvas, 0, 0);
+        canvas.Restore();
     }
     private void DrawMarketEvents(SKCanvas canvas, TradePainter p)
     {

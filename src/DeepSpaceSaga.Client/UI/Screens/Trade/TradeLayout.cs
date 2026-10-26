@@ -11,8 +11,16 @@ public sealed class TradeLayout
     public const float RowHeight = 50;
     public static float PanelLeft(int width) => (width - PanelWidth) / 2f;
     public static float PanelTop(int height) => (height - PanelHeight) / 2f;
+    public static float FitScale(int width, int height) => width > 0 && height > 0
+        ? Math.Min(1, Math.Min(width / PanelWidth, height / PanelHeight)) : 1;
+    public static SKRect Viewport(int width, int height)
+    {
+        float scale = FitScale(width, height);
+        return SKRect.Create((width - PanelWidth * scale) / 2, (height - PanelHeight * scale) / 2,
+            PanelWidth * scale, PanelHeight * scale);
+    }
     public static bool IsInsidePanel(float x, float y, int width, int height) =>
-        SKRect.Create(PanelLeft(width), PanelTop(height), PanelWidth, PanelHeight).Contains(x, y);
+        Viewport(width, height).Contains(x, y);
 
     internal static readonly SKRect MarketTab = new(20, 80, 185, 126);
     internal static readonly SKRect FuelTab = new(197, 80, 380, 126);

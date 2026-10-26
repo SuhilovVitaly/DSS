@@ -16,7 +16,7 @@ internal sealed class CombatMetricsWriter : IAsyncDisposable
     private static readonly Dictionary<string, long> ActiveFiles = new(StringComparer.OrdinalIgnoreCase);
     private readonly long _limitBytes;
     private readonly long _partBytes;
-    internal static string DefaultDirectory => Path.Combine(AppContext.BaseDirectory, "CombatMetrics");
+    internal static string DefaultDirectory => Path.Combine(UI.InterfaceLog.DiagnosticDirectory ?? AppContext.BaseDirectory, "CombatMetrics");
     private readonly string _directory;
     private readonly string _stem = $"combat-{DateTime.UtcNow:yyyyMMdd-HHmmss-fff}-{Guid.NewGuid():N}";
     private readonly Channel<object> _records = Channel.CreateBounded<object>(new BoundedChannelOptions(128)

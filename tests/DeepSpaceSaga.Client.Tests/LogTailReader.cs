@@ -14,7 +14,7 @@ internal static class LogTailReader
     /// </summary>
     internal static string ReadTail(long lengthBefore)
     {
-        string logPath = Path.Combine(Environment.CurrentDirectory, InterfaceLog.FileName);
+        string logPath = Path.GetFullPath(InterfaceLog.OutputPath);
         long lengthAfter = File.Exists(logPath) ? new FileInfo(logPath).Length : 0;
         if (lengthAfter <= lengthBefore)
             return string.Empty;

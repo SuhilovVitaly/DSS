@@ -10,6 +10,13 @@ public static class InterfaceLog
 {
     public const string FileName = "Interface.log";
 
+    /// <summary>Absolute evidence override; normal application logging keeps its default filename.</summary>
+    public static string OutputPath => Environment.GetEnvironmentVariable("DSS_INTERFACE_LOG_PATH") is { } path
+        && Path.IsPathFullyQualified(path) ? path : FileName;
+
+    internal static string? DiagnosticDirectory => Environment.GetEnvironmentVariable("DSS_DIAGNOSTICS_DIRECTORY") is { } path
+        && Path.IsPathFullyQualified(path) ? path : null;
+
     private static readonly object Sync = new();
 
     /// <summary>
@@ -21,7 +28,7 @@ public static class InterfaceLog
         lock (Sync)
         {
             using var stream = new FileStream(
-                FileName, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
+                OutputPath, FileMode.Append, FileAccess.Write, FileShare.ReadWrite);
             using var writer = new StreamWriter(stream);
             writer.WriteLine(line);
             writer.Flush();

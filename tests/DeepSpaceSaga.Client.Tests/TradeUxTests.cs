@@ -276,6 +276,28 @@ public class TradeUxTests
         Assert.Equal(321, model.Quote.AmountAfter);
     }
 
+    [Theory]
+    [InlineData(1280, 720)]
+    [InlineData(1024, 768)]
+    [InlineData(1920, 1080)]
+    public async Task Fitted_panel_keeps_content_visible_and_routes_item_and_exit_clicks(int width, int height)
+    {
+        await using var fixture = new Fixture();
+        using var bitmap = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(bitmap);
+        fixture.Screen.Render(canvas, width, height);
+        var bounds = TradeLayout.Viewport(width, height);
+        Assert.True(bounds.Left >= 0 && bounds.Top >= 0 && bounds.Right <= width && bounds.Bottom <= height);
+        float scale = TradeLayout.FitScale(width, height);
+        int row = fixture.Screen.Model.Rows[0].ItemTypeId != fixture.Screen.Model.SelectedItemId ? 0 : 1;
+        var rect = TradeLayout.Row(row);
+        fixture.Screen.OnMouseDown(bounds.Left + rect.MidX * scale, bounds.Top + rect.MidY * scale, MouseButton.Left);
+        Assert.Equal(fixture.Screen.Model.Rows[row].ItemTypeId, fixture.Screen.Model.SelectedItemId);
+        var close = StationToolbar.ExitButtonLocalRect();
+        Assert.Equal(ScreenEvent.CloseTrade, fixture.Screen.OnMouseDown(bounds.Left + close.MidX * scale,
+            bounds.Top + close.MidY * scale, MouseButton.Left));
+    }
+
     private sealed class Fixture : IAsyncDisposable
     {
         internal RecordingConnection Connection { get; } = new();

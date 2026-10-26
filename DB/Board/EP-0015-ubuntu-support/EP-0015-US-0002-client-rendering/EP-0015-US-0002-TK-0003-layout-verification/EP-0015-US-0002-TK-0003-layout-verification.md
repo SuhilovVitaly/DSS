@@ -34,3 +34,23 @@ Inter и JetBrains Mono по ширине отличаются от Segoe UI и 
 - Набор скриншотов Windows/Ubuntu приложен к тикету; обрезанного текста нет.
 - `DeepSpaceSaga.Client.Tests` проходит на обеих ОС.
 - Проверено на Windows и Ubuntu; на Windows поведение не ухудшилось.
+
+## Scope and Code context 2026-10-26
+
+ТекущийfullClient2326/2326. Дляпроверяемыхnativecapturesсоставscopeуточнён: tools/DeepSpaceSaga.Performance/PlatformLayoutNativeEvidence.cs иProgram.cs (реальныйSkiaWindow,productionэкраны,LocalGameSessionConnection ифайловыйSave); UI/InterfaceLog.cs (абсолютныйdiagnosticpathoverride,чтобыCWDзагрузкиассетовнеписаллогвbin); existingLogTailReader,GameSessionScalePanelTests,GameSessionZoomTests (чтениефактическогоLogPathбезослабленияassertions); tools/ci/platform-baseline.py (маршрутизациялога дочернегопроцессавегоevidence); CIworkflowдляLinuxnativecaptureпослеbuild. Расширениеболее5файловобусловленореальнымnativeevidence/diagnosticownership,неизменениемEngineправил.
+
+РеальныйсценарийDocked сseed1,pausedEngine,localtransport,настоящийSaveSlotRepository иTradeScreen;callbacksсохранения/загрузкиреальные. CaptureизGPU SKSurface,метрикиfile-backedfonts игеометрияпанелейсохраняютсядляWindows/Linuxсравнения. Xvfb/llvmpipeпомечаетсякакsoftwareOpenGL;неphysical/human/Waylandприёмка. До-фонтныйnativebaselineNOT RUN:Codexcreate_worktreeвернулNot a git repositoryдляchatcwdD:/DeepSpaceSaga;manualcheckout/sourcecopyнеприменяются. После-фонтныйcaptureиindependentmetricscomparisonвыполняютсядоступнымипутями.
+
+## Native findings and scope extension
+
+ПерваяверсияprobeошибочносчиталаblackTrade/Stationвместоmapвалиднымиcapture:Self-reviewPNGвыявилневернуюsessionbinding. Probeисправлен:реальныйMarkettravel,отдельнаяundockedPlayerShipOnlysession,проверкаactualscreenidentity/OpenGL/nonblank/captions. ПервыеJSONсpassedtrueнеявляютсяприёмкой. Windows-en-1-fixedподтвердилactualscreens,нозатемвизуальнообнаруженреальныйcropTrade1280x720:fixed1600x800panelцентрируетсясотрицательнымикоординатами. ЭтоотносящийсякTKдефект;scopeрасширеннаTradeLayout.cs,TradeScreen.cs,TradeScreen.Render.cs иTradeUxTests.cs. Исправление—равномерныйfit-scaleвсегопанелявместесобщимtoolbarиобратныйtransformmouseкоординат;1920x1080legacygeometryнеизменяется. Проверкиновыхразмеровдолжныдоказатьvisibleboundsиitem/exitinputrouting,неснижаяassertions.
+
+## Validation infrastructure refinements
+
+Engine--list-testsимеет2484rows,но2476uniquedisplaynames:8JSONrowscollideиз-заxUnittruncation. HarnessсохраняетmultiplicityиTRXмультимножествоимён;dedupнеподменяетcoverage. CIшардированна6реальныхtestprojects×2ОС,каждыйявноназванвselection;defaultcheck-linux.shпо-прежнемусканируетвсепроектыоднойкомандой. Каждыйtestprocesscap300ссохранён;jobbudget120minнеповышаетprocesscap. NativeLinuxstepтолькоClientshardподXvfb;захваты6экранов×8cases. SDK8/setup/failureevidenceнеотключались.
+
+Diagnostic scope: CombatMetricsWriter.cs and DebugTuningFileWriter.cs now honor the same absolute DSS_DIAGNOSTICS_DIRECTORY override as validation subprocesses. This prevents test output and retention from touching pre-existing bin diagnostics. Production defaults are unchanged until the user-path ticket.
+
+## Windows validation checkpoint
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-layout/. client-layout-full.trx: 2329 passed, 0 failed/skipped (C# 12); format-layout.log: scoped formatter exit 0. trade-fit.trx: 106 passed including three viewport/input cases. windows-matrix.json references eight final native cases with six real OpenGL PNG captures each (48 total), RU/EN and scales 0.8/1/1.2/1.5. Trade fit fixed at 1280x720; selected-item quote and exit input remain tested. Linux captures and pixel/geometry comparison are pending the newly sharded CI. Pre-font native baseline and human/physical-input/Wayland acceptance remain NOT RUN, not inferred from these captures.

@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/ubuntu-support.yml'
       - 'tools/ci/platform-baseline.py'
+      - 'tools/ci/platform-layout.py'
       - 'tools/check-linux.sh'
       - 'src/**'
       - 'tests/**'
@@ -21,11 +22,13 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, windows-2022]
+        project: [DeepSpaceSaga.Client.Tests, DeepSpaceSaga.Contracts.Tests, DeepSpaceSaga.Engine.Tests, DeepSpaceSaga.Motion.Tests, DeepSpaceSaga.EconomyBalance.Tests, DeepSpaceSaga.Performance.Tests]
     runs-on: ${{ matrix.os }}
-    timeout-minutes: 55
+    timeout-minutes: 120
     env:
-      DOTNET_INSTALL_DIR: ${{ github.workspace }}/../artifacts/validation/ep-0015-ubuntu-support/${{ github.run_id }}-${{ matrix.os }}-sdk
+      DOTNET_INSTALL_DIR: ${{ github.workspace }}/../artifacts/validation/ep-0015-ubuntu-support/${{ github.run_id }}-${{ matrix.os }}-${{ matrix.project }}-sdk
       DOTNET_MULTILEVEL_LOOKUP: '0'
+      DSS_TEST_PROJECT: ${{ matrix.project }}
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-dotnet@v4
@@ -38,18 +41,26 @@ jobs:
         id: checks
         shell: pwsh
         run: |
-          $results = [IO.Path]::GetFullPath((Join-Path (Split-Path $env:GITHUB_WORKSPACE) "artifacts/validation/ep-0015-ubuntu-support/$env:GITHUB_RUN_ID-${{ matrix.os }}"))
+          $results = [IO.Path]::GetFullPath((Join-Path (Split-Path $env:GITHUB_WORKSPACE) "artifacts/validation/ep-0015-ubuntu-support/$env:GITHUB_RUN_ID-${{ matrix.os }}-${{ matrix.project }}"))
           "results=$results" >> $env:GITHUB_OUTPUT
           $selectedSdk = dotnet --version
           if (-not $selectedSdk.StartsWith('8.0.')) { throw "Expected SDK 8.0.x, selected $selectedSdk" }
           if ($IsLinux) {
             xvfb-run -a bash tools/check-linux.sh $results
           } else {
-            python tools/ci/platform-baseline.py $results
+            python tools/ci/platform-baseline.py $results --project $env:DSS_TEST_PROJECT
           }
+      - name: Ubuntu native layout captures
+        if: ${{ always() && runner.os == 'Linux' && matrix.project == 'DeepSpaceSaga.Client.Tests' }}
+        shell: pwsh
+        run: |
+          $results = '${{ steps.checks.outputs.results }}'
+          $dll = Join-Path $env:GITHUB_WORKSPACE 'tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll'
+          if (-not (Test-Path -LiteralPath $dll)) { Write-Output 'NOT RUN native layouts: solution build did not produce the tool.'; exit 0 }
+          python tools/ci/platform-layout.py $env:GITHUB_WORKSPACE (Join-Path $results 'native') --virtual-display
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: ep-0015-${{ matrix.os }}
+          name: ep-0015-${{ matrix.os }}-${{ matrix.project }}
           path: ${{ steps.checks.outputs.results }}
           retention-days: 14

@@ -10,6 +10,12 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Contains("--platform-layout-window"))
+{
+    Environment.ExitCode = PlatformLayoutNativeEvidence.Run(args);
+    return;
+}
+
 if (args.Contains("--module-panels-window"))
 {
     Environment.ExitCode = ModulePanelNativeEvidence.Run(args);
