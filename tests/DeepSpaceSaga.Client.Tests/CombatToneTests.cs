@@ -11,7 +11,15 @@ public sealed class CombatToneTests
         _ = CombatAlertAudio.CreateSession();
         bool available = await CombatAlertAudio.Initialization.WaitAsync(TimeSpan.FromSeconds(15));
         if (Environment.GetEnvironmentVariable("DSS_EXPECT_AUDIO_AVAILABLE") is { } expected)
+        {
             Assert.Equal(bool.Parse(expected), available);
+            if (available)
+            {
+                // The explicit native gate runs alone with the null driver; exercise core playback exports too.
+                using var player = new OpenAlTonePlayer();
+                player.Play(new CombatTone(440, 20), () => true);
+            }
+        }
     }
 
     [Fact]
