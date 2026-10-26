@@ -4,6 +4,7 @@ story: EP-0015-US-0001-headless-build-and-tests
 ticket: EP-0015-US-0001-TK-0002-test-portability-fixes
 title: "Исправление непереносимых тестов"
 stage: draft
+execution_status: implemented-local-validation
 layer: tests
 depends_on: [EP-0015-US-0001-TK-0004-sdk8-client-compilation]
 serves: [AC-02, AC-03, AC-04]
@@ -38,3 +39,9 @@ created: 2026-10-25
 ## Scope update and Code context 2026-10-26
 
 SDK8 baseline выявил CS8600 L61 и CS8604 L72/L106 в tests/DeepSpaceSaga.Engine.Tests/TradingVoyageFixture.cs: Where(id is not null) не сужает string? sequence в старом компиляторе. Разрешено безопасное явное nullable narrowing (OfType<string>) без изменения соседей/порядка и без null-forgiving обхода. Этот файл и .gitattributes составляют подтверждённый initial allowlist. Новые platform failures добавлять с обоснованием перед правкой. Layer tests, production Engine не меняется. Проверки: SDK8 solution build, trading voyage tests, cross-platform exact-case corpus/count/identity comparison; все skips учитывать явно.
+
+## Execution result 2026-10-26
+
+Where(nullable) заменён на OfType<string>, порядок сохранён, neighbors! удалён. .gitattributes: text=auto, shellLF, binary для изображений/шрифтов/TRX. Полная C#12 Release solution build0 warnings/errors; RepeatableTradingVoyageTests + VoyageSaveLoadContinuityTests + TradingContinuationReviewTests:41/41. Scoped whitespace format, git check-attr и diff check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-portability/ (solution-csharp12-build.log, trading.log, trading.trx, format.log). Команды ограничены300с на процесс. Self-review: null элементы отфильтрованы как прежде, соседи и assertions не изменены.
+
+SDK8 cross-platform count/identity comparison выполняется послеpush и сохраняется в итоговом evidence; этот локальный результат не объявлен Linux PASS. Новые подтверждённые platform failures исправляются дополнительными коммитами этого тикета без переписывания истории. Чистый повторный checkout проверяется CI, посторонние исходные изменения исключены из commit.

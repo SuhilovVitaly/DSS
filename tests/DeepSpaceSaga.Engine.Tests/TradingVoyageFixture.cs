@@ -57,8 +57,8 @@ internal sealed class TradingVoyageFixture : IDisposable
         var map = save.GameState.TradingMap!;
         var neighbors = map.Edges.Select(e => e.FromStationObjectId == origin ? e.ToStationObjectId :
                 e.ToStationObjectId == origin ? e.FromStationObjectId : null)
-            .Where(id => id is not null).Order(StringComparer.Ordinal).ToArray();
-        foreach (string neighbor in neighbors!)
+            .OfType<string>().Order(StringComparer.Ordinal).ToArray();
+        foreach (string neighbor in neighbors)
         {
             var originStation = save.GameState.SpaceObjects.Single(o => o.ObjectId == origin);
             var destinationStation = save.GameState.SpaceObjects.Single(o => o.ObjectId == neighbor);
