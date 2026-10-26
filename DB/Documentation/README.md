@@ -78,6 +78,8 @@ Writer Save19 и миграция Save18 проверены по ScenarioData/Sc
 
 ### 06-Tooling
 
+- [Ubuntu: сборка, запуск и пользовательские файлы](06-Tooling/Ubuntu.md).
+
 - [Инструмент подготовки портретов](06-Tooling/DeepSpaceSaga.PortraitAssets.md).
 - [Ассеты и данные тактического UI](06-Tooling/GameSessionScreenUI.md).
 - [Навигационный граф](06-Tooling/Graphify.md).

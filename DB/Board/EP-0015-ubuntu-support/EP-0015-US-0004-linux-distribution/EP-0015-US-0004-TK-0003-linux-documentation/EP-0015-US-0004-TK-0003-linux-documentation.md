@@ -33,3 +33,9 @@ created: 2026-10-25
 
 - Новый человек по документу собирает, тестирует и запускает игру на чистой Ubuntu без дополнительных вопросов.
 - Проверено на Windows и Ubuntu; на Windows поведение не ухудшилось.
+
+## Code context and scope
+
+New DB/Documentation/06-Tooling/Ubuntu.md and documentation README navigation. Commands verified against actual check/publish/asset interfaces; dependency names grounded in official Microsoft/Ubuntu docs. Workflow scope extended to Ubuntu22.04 matrix so the source-card target is verified rather than stated as already tested. Current execution counts/results remain in Board only; native Wayland, physical audio/input and arm64 are not inferred from Xvfb CI.
+
+Validation: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-linux-docs/links.json: zero broken links in Ubuntu guide/navigation. Guide distinguishes source build, release launch, Xvfb and physical acceptance; records absolute-only XDG, migration marker/no overwrite, managed contentRoot, portable requirements and optional desktop re-registration after moving install. Official .NET/PowerShell dependency guidance linked. Actual Ubuntu22.04 execution added to CI matrix and remains pending, not described as already passed.

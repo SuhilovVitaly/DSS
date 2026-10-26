@@ -27,7 +27,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-24.04, windows-2022]
+        os: [ubuntu-22.04, ubuntu-24.04, windows-2022]
         project: [DeepSpaceSaga.Client.Tests, DeepSpaceSaga.Contracts.Tests, DeepSpaceSaga.Engine.Tests, DeepSpaceSaga.Motion.Tests, DeepSpaceSaga.EconomyBalance.Tests, DeepSpaceSaga.Performance.Tests]
     runs-on: ${{ matrix.os }}
     timeout-minutes: 120
