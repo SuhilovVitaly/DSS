@@ -75,7 +75,7 @@ require-input=false
 path=/evidence/xwayland-client.sh
 watch=false
 WESTON
-runuser -u dss -- env HOME=/home/dss XDG_RUNTIME_DIR=/evidence/xdg-runtime XDG_DATA_HOME=/evidence/data XDG_CONFIG_HOME=/evidence/config XDG_SESSION_TYPE=wayland DSS_INTERFACE_LOG_PATH=/evidence/xwayland-interface.log DSS_DIAGNOSTICS_DIRECTORY=/evidence/xwayland-diagnostics LIBGL_ALWAYS_SOFTWARE=true ALSOFT_DRIVERS=null COREHOST_TRACE=1 weston --backend=headless --renderer=pixman --shell=kiosk --socket=wayland-dss --idle-time=0 --width=1920 --height=1080 --config=/evidence/weston.ini --log=/evidence/weston.log &
+runuser -u dss -- env HOME=/home/dss XDG_RUNTIME_DIR=/evidence/xdg-runtime XDG_DATA_HOME=/evidence/data XDG_CONFIG_HOME=/evidence/config XDG_SESSION_TYPE=wayland DSS_INTERFACE_LOG_PATH=/evidence/xwayland-interface.log DSS_DIAGNOSTICS_DIRECTORY=/evidence/xwayland-diagnostics LIBGL_ALWAYS_SOFTWARE=true ALSOFT_DRIVERS=null COREHOST_TRACE=1 weston --xwayland --backend=headless --renderer=pixman --shell=kiosk --socket=wayland-dss --idle-time=0 --width=1920 --height=1080 --config=/evidence/weston.ini --log=/evidence/weston.log &
 weston_pid=$!
 trap 'kill "$weston_pid" 2>/dev/null || true' EXIT
 for attempt in $(seq 1 500); do
