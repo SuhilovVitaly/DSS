@@ -115,7 +115,9 @@ public static class EngineContentLoader
     /// <summary>Discover portable portrait references once at bootstrap; resolved choices are saved on crew members.</summary>
     internal static ImmutableArray<string> LoadCrewPortraits(string settingsPath)
     {
-        string root = ContentRoot(settingsPath, ReadJson<EngineSettingsFile>(settingsPath, "settings"));
+        string root = File.Exists(settingsPath)
+            ? ContentRoot(settingsPath, ReadJson<EngineSettingsFile>(settingsPath, "settings"))
+            : Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
         string folder = Path.Combine(root, DeepSpaceSaga.Contracts.CharacterPortraits.FemaleFolder);
         if (!Directory.Exists(folder)) return [];
         return Directory.EnumerateFiles(folder)
