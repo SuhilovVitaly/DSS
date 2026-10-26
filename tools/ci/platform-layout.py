@@ -40,6 +40,7 @@ def main():
                                     "exit": code, "passed": passed, "report": str(folder / "layout.json")})
             (args.results / "matrix.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
             if not passed:
+                print(result.get("failure", "No native JSON report was produced"), flush=True)
                 return 1
     return 0
 
