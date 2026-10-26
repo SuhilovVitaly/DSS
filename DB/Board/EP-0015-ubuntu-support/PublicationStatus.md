@@ -1,6 +1,6 @@
 # Публикация EP-0015
 
-Ветка: codex/ep-0013-debug-tuning-panel. Remote: https://github.com/SuhilovVitaly/DSS. После каждого коммита выполнялся немедленный push и git ls-remote; переписывание истории не применялось.
+Ветка: codex/ep-0013-debug-tuning-panel. Remote: https://github.com/SuhilovVitaly/DSS. Каждый implementation/fix commit получил немедленный push и git ls-remote; history rewrite не применялся. Все 16 тикетов имеют отдельные опубликованные commits.
 
 | Тикет | Опубликованные SHA по порядку | Push |
 |---|---|---|
@@ -11,17 +11,17 @@
 | [EP-0015-US-0002-TK-0001-skiasharp-linux-native](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0001-skiasharp-linux-native/EP-0015-US-0002-TK-0001-skiasharp-linux-native.md) | 2418b2cab355dc1f795dcde9a3f0989ef21e49ee | VERIFIED |
 | [EP-0015-US-0002-TK-0002-bundled-fonts](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0002-bundled-fonts/EP-0015-US-0002-TK-0002-bundled-fonts.md) | f202dff1402a47d018c5b89a2b612a3dae6b6dab | VERIFIED |
 | [EP-0015-US-0002-TK-0003-layout-verification](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0003-layout-verification/EP-0015-US-0002-TK-0003-layout-verification.md) | e9a8d2365b94d804d717ff77a821acee44ad741e<br>43aa99db9e41888ce9ca4def89e853e32be78fbf<br>5cc62782b57678bf595466f2494906312fa3fe9a | VERIFIED |
-| [EP-0015-US-0003-TK-0001-cross-platform-alert-audio](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0001-cross-platform-alert-audio/EP-0015-US-0003-TK-0001-cross-platform-alert-audio.md) | 4224bda61668546a12a08770516f318bc661c5ea<br>367b58adb97aa7dbcb9134f66732bb0f12cec689<br>deef160c4c3eb5a1988e546a2339ea046b8b58c5 | VERIFIED |
+| [EP-0015-US-0003-TK-0001-cross-platform-alert-audio](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0001-cross-platform-alert-audio/EP-0015-US-0003-TK-0001-cross-platform-alert-audio.md) | 4224bda61668546a12a08770516f318bc661c5ea<br>367b58adb97aa7dbcb9134f66732bb0f12cec689<br>deef160c4c3eb5a1988e546a2339ea046b8b58c5<br>3e569ce9dfe6d9919231eee750341eaeab2d494c<br>2cb8fb67d911598ff572ef5fa0ec112dc08dca05<br>af3faf637bb4b5571ce525805dee094f8a6ff922 | VERIFIED |
 | [EP-0015-US-0003-TK-0002-open-folder-fallback](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0002-open-folder-fallback/EP-0015-US-0003-TK-0002-open-folder-fallback.md) | d79096daa1ebd1250630db59d5b03f6d4bd1807c<br>4995e0be93d1b14da152416b78d53be65deb1530 | VERIFIED |
 | [EP-0015-US-0003-TK-0003-powershell-scripts](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0003-powershell-scripts/EP-0015-US-0003-TK-0003-powershell-scripts.md) | 2e5e5f089afdb248c792977c2d962f4cbea77de9 | VERIFIED |
 | [EP-0015-US-0004-TK-0001-user-data-paths](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0001-user-data-paths/EP-0015-US-0004-TK-0001-user-data-paths.md) | e544f7e22ef59f44305f7888f73e4db4d34614a7 | VERIFIED |
-| [EP-0015-US-0004-TK-0002-linux-publish](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0002-linux-publish/EP-0015-US-0004-TK-0002-linux-publish.md) | 5d5bd31b0b54a6ff7a3d54c62749e334b647528d | VERIFIED |
+| [EP-0015-US-0004-TK-0002-linux-publish](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0002-linux-publish/EP-0015-US-0004-TK-0002-linux-publish.md) | 5d5bd31b0b54a6ff7a3d54c62749e334b647528d<br>b587c608d638339b5fab28800b0eb1592625c958<br>5ac2de3d2dd4e5a8bfa8aa6cca83246dabf3df04 | VERIFIED |
 | [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) | 116ccf91a55a49a3feb7781d5d327bff3ffaee1a | VERIFIED |
 | [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) | c7e76bd7d2827032f18a4e8134db57824b239bca<br>0ef5866f8b6a66d2bc3464cc4c9495c4d5710dd5 | VERIFIED |
 | [EP-0015-US-0005-TK-0001-project-documentation](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md) | c2ff74610ea18c142469e08fc0ad94ce36b8c69a | VERIFIED |
-| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | 62cdf4404acc4cdf81d90093f052dfba8488d7b2 | VERIFIED |
+| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | 62cdf4404acc4cdf81d90093f052dfba8488d7b2<br>0c081c5e95c892a55981cba966bff9608798ee82 | VERIFIED |
 
-Служебная миграция Board:661f3fe86cb5351abf087b5aefd465250313e8cd. Проверенный функциональный checkpoint:4995e0be93d1b14da152416b78d53be65deb1530. Проверенный документационный checkpoint:62cdf4404acc4cdf81d90093f052dfba8488d7b2. Собственный SHA evidence-attestation проверяется через Git после фактического commit/push.
+Служебная миграция: 661f3fe86cb5351abf087b5aefd465250313e8cd. Последний проверенный опубликованный checkpoint: 5ac2de3d2dd4e5a8bfa8aa6cca83246dabf3df04. Итоговый evidence commit проверяется после создания; собственный SHA не записывается циклически.
 
 ## История коммитов
 
@@ -55,7 +55,10 @@
 - `5cc62782b57678bf595466f2494906312fa3fe9a` — EP-0015 US-0002 TK-0003 validate trade in its real modal stack
 - `0ef5866f8b6a66d2bc3464cc4c9495c4d5710dd5` — EP-0015 US-0004 TK-0004 preserve directory-only portrait discovery
 - `4995e0be93d1b14da152416b78d53be65deb1530` — EP-0015-US-0003-TK-0002-open-folder-fallback: preserve successful Windows shell activation
-
 - `62cdf4404acc4cdf81d90093f052dfba8488d7b2` — EP-0015-US-0005-TK-0002-final-evidence-and-graph: publish source-audited graph and validation ledger
-
-Все16 тикетов имеют отдельные опубликованные implementation commits. Docs checkpoint62cdf4404acc4cdf81d90093f052dfba8488d7b2 совпал с git ls-remote после push. Последующие evidence/attestation commits проверяются через Git после создания, без циклической записи собственного hash.
+- `0c081c5e95c892a55981cba966bff9608798ee82` — EP-0015-US-0005-TK-0002-final-evidence-and-graph: attest publication of all sixteen ticket commits
+- `3e569ce9dfe6d9919231eee750341eaeab2d494c` — EP-0015-US-0003-TK-0001-cross-platform-alert-audio: bound standalone CI native checks to five minutes
+- `2cb8fb67d911598ff572ef5fa0ec112dc08dca05` — EP-0015-US-0003-TK-0001-cross-platform-alert-audio: load bundled native context by absolute portable path
+- `af3faf637bb4b5571ce525805dee094f8a6ff922` — EP-0015-US-0003-TK-0001-cross-platform-alert-audio: verify native source playback in explicit device gate
+- `b587c608d638339b5fab28800b0eb1592625c958` — EP-0015-US-0004-TK-0002-linux-publish: verify clean package startup through Weston XWayland
+- `5ac2de3d2dd4e5a8bfa8aa6cca83246dabf3df04` — EP-0015-US-0004-TK-0002 Enable Weston XWayland bridge explicitly

@@ -4,7 +4,7 @@ story: EP-0015-US-0001-headless-build-and-tests
 title: "Сборка и тесты без клиента на Ubuntu"
 stage: draft
 acceptance_status: open
-execution_status: implemented_validation_open
+execution_status: implemented
 dependencies: []
 ---
 

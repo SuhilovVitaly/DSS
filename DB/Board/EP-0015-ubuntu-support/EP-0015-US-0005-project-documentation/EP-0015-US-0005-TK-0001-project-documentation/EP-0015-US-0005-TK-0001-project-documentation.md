@@ -14,6 +14,8 @@ created: 2026-10-26
 
 # Документация проекта
 
+> Текущий сводный результат, checkpoints и открытые gates: [FinalValidation](../../FinalValidation.md); публикация: [PublicationStatus](../../PublicationStatus.md). Записи отдельных прогонов ниже — история evidence, а не обещание текущего PASS.
+
 ## Why
 
 Обязательный завершающий результат раздела 6 EpicExecutionPrompt.

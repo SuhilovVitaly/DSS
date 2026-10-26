@@ -14,6 +14,8 @@ created: 2026-10-26
 
 # Финальный evidence и граф
 
+> Текущий сводный результат, checkpoints и открытые gates: [FinalValidation](../../FinalValidation.md); публикация: [PublicationStatus](../../PublicationStatus.md). Записи отдельных прогонов ниже — история evidence, а не обещание текущего PASS.
+
 ## Why
 
 Обязательный завершающий результат раздела 6 EpicExecutionPrompt.
@@ -38,6 +40,6 @@ Content/source verification, локальные Markdown-ссылки, ID/DAG/co
 
 2026-10-26: Board synchronized to5 stories/16 tickets, explicit execution/acceptance statuses, ticket-to-SHA ledger and dated documentation impact. FinalValidation.md and ExecutionStatus.md distinguish current Windows results, earlier CI source states, pending CI and manual gates. Documentation corpus remains Markdown-only;84 Board+Documentation files have0 broken local links and ticket/story DAG is acyclic (20261026-final-graph/audit.py and final-audit.json).
 
-Graph workflow includes EP-0015. Three required host semantic agents re-read63 current source files, producing108 nodes/117 edges/3 hyperedges with source hashes and selective semantic coverage. Full selected structural corpus:869 code,372 Markdown. Output and manifests under20261026-final-graph/graph; graph navigation is not runtime/acceptance evidence. Parser recovery, pruned references and aggregation limitations are recorded in FinalValidation.md.
+Graph workflow includes EP-0015. Three required host semantic agents re-read63 current source files, producing109 nodes/120 edges/3 hyperedges with source hashes and selective semantic coverage. Full selected structural corpus:869 code,372 Markdown. Output and manifests under20261026-final-graph/graph; graph navigation is not runtime/acceptance evidence. Parser recovery, pruned references and aggregation limitations are recorded in FinalValidation.md.
 
-Current Client full regression2349/2349; Engine fixed-source full repeat and newest Linux source runs remain pending at this checkpoint. This ticket publishes a truthful audit and current documentation; it does not mark the epic or human/product acceptance complete. Cleanup evidence is recorded under20261026-cleanup; final remote SHA is verified after commit/push and entered into the excluded publication ledger.
+Current Client full regression2349/2349 and Engine fixed-source full regression2486/2486 PASS on Windows. The additional full corpus with actual SDK8.0.427 PASS5429/5429, exact discovery/TRX coverage and0 failures/skips. Newest Linux native source runs remain pending at this checkpoint. This ticket publishes a truthful audit and current documentation; it does not mark the epic or human/product acceptance complete. Cleanup evidence is recorded under20261026-cleanup; final remote SHA is verified after commit/push and entered into the excluded publication ledger.

@@ -30,3 +30,8 @@ README.md в корне репозитория отсутствует. Корн�
 - 2026-10-26: Ubuntu guide отделил системные зависимости/команды от доказательств запусков. Контракты путей обновляются вместо противоречащего описания рядом с executable.
 - 2026-10-26: миграция пользовательских путей не повышает SaveFormat19; contentRoot — конфигурационный корень установки, не новое поле сохранения. Поля gameSettings сохраняются.
 - 2026-10-26: bundled fonts/OpenAL/Unix launcher/portable asset tools описываются как текущий код; native/physical/human и независимое review остаются отдельными gates.
+
+- 2026-10-26: Ubuntu/PointAimCombat уточняют абсолютный bundled OpenAL path для publish и framework-dependent portable RID. Earlier soft-preference-only inference сохранена в Board как failed checkpoint.
+- 2026-10-26: clean-package validation дополнена явным headless Weston/XWayland gate поUS-0002 AC-01. Это код проверки, а не утверждение о native PASS; текущий статус ведётся в FinalValidation.
+
+- 2026-10-26: ссылки на единый current audit добавлены во все16 карточек; отдельные run записи явно обозначены историей. Подтверждены полный Windows SDK8 corpus5429/5429 и same-commit headless Windows/Ubuntu22/Ubuntu24 по3080/3080; literal display-name differences сохранены отдельно без изменения tests/assertions. Private SDK/CLI-home/http cache удалены после проверки, обычный restore восстановлен.

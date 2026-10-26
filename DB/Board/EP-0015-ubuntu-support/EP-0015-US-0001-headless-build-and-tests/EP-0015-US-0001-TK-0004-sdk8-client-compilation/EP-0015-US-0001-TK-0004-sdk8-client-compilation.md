@@ -15,6 +15,8 @@ created: 2026-10-26
 
 # Совместимость вызовов SkiaSharp с компилятором SDK8
 
+> Текущий сводный результат, checkpoints и открытые gates: [FinalValidation](../../FinalValidation.md); публикация: [PublicationStatus](../../PublicationStatus.md). Записи отдельных прогонов ниже — история evidence, а не обещание текущего PASS.
+
 ## Why
 
 SDK8.0.427 baseline на Ubuntu24.04 и Windows2022 воспроизводит CS0121 в двух gradient calls. C#12 не выбирает между SKColor[]/float[] и SKColorF[]/SKColorSpace для collection expression + null. SDK10 baseline проходит. Нужен отдельный production Client merge unit перед исправлением тестового fixture.

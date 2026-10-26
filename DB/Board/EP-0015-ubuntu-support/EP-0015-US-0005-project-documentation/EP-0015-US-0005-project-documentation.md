@@ -25,7 +25,7 @@ created: 2026-10-26
 
 Все четыре функциональные истории; выполняется последней по разделу 6 [EpicExecutionPrompt](../../EpicExecutionPrompt.md).
 
-## Approved ticket map
+## Ticket map
 
 1. [Документация проекта](EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md): AC-01.
 2. [Финальный evidence и граф](EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md): AC-02, AC-03.

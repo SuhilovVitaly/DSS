@@ -13,6 +13,8 @@ serves: [AC-01, AC-02]
 
 # Контент при внешнем Settings.json
 
+> Текущий сводный результат, checkpoints и открытые gates: [FinalValidation](../../FinalValidation.md); публикация: [PublicationStatus](../../PublicationStatus.md). Записи отдельных прогонов ниже — история evidence, а не обещание текущего PASS.
+
 История: [US-0004](../EP-0015-US-0004-linux-distribution.md).
 
 Перенос Settings.json в XDG иначе заставляет Engine искать Data, Scenarios и портреты в пользовательском каталоге. Добавить необязательный contentRoot с разрешением относительно Settings.json; без поля сохранить текущую семантику. Все загрузчики registry, default scenario, solar generation, station resources, combat rules и crew portraits используют единый корень. Save schema не меняется.
