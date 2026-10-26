@@ -8,8 +8,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.Trade;
 internal sealed class TradePainter(SKCanvas canvas) : IDisposable
 {
     // The menu's display fonts do not cover every UI arrow; use a body font with Cyrillic and symbol coverage.
-    private static readonly SKTypeface Regular = SKTypeface.FromFamilyName("Segoe UI", SKFontStyle.Normal) ?? MenuStyle.TypefaceRegular;
-    private static readonly SKTypeface Bold = SKTypeface.FromFamilyName("Segoe UI", SKFontStyle.Bold) ?? MenuStyle.TypefaceBold;
+    private static readonly SKTypeface Regular = UiFonts.Ui;
+    private static readonly SKTypeface Bold = UiFonts.UiBold;
     internal static readonly SKColor Background = new(9, 18, 27), Surface = new(13, 28, 40), Border = new(43, 68, 86),
         TextColor = new(230, 239, 245), Muted = new(147, 173, 190), Cyan = new(50, 198, 224), Amber = new(245, 177, 65),
         Green = new(119, 208, 160), Red = new(242, 146, 134), Selected = new(17, 56, 73);

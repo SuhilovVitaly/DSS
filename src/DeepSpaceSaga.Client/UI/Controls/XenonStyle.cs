@@ -20,9 +20,9 @@ public static class XenonStyle
     public static readonly SKColor DisabledText = new(91, 119, 135);
 
     public static readonly SKTypeface TypefaceRegular =
-        LoadTypeface("UI/Fonts/FiraSans-Regular.ttf", SKFontStyleWeight.Normal);
+        UiFonts.Ui;
     public static readonly SKTypeface TypefaceSemibold =
-        LoadTypeface("UI/Fonts/FiraSans-SemiBold.ttf", SKFontStyleWeight.SemiBold);
+        UiFonts.UiBold;
 
     public static readonly SKPaint HeaderFallbackFill = MakePaint(new SKColor(3, 24, 35, 150));
     public static readonly SKPaint ThinCyanStroke = MakePaint(Cyan, SKPaintStyle.Stroke, 1f);
@@ -41,37 +41,16 @@ public static class XenonStyle
     /// <summary>Forces optional typeface and paint initialization before the render loop.</summary>
     public static void Preload() { }
 
-    private static SKTypeface LoadTypeface(string relativePath, SKFontStyleWeight fallbackWeight)
-    {
-        try
-        {
-            var path = Path.Combine(AppContext.BaseDirectory,
-                relativePath.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(path))
-                return SKTypeface.FromFile(path) ?? FallbackTypeface(fallbackWeight);
-        }
-        catch
-        {
-            // Optional typeface: use the Cyrillic-capable system fallback below.
-        }
-
-        return FallbackTypeface(fallbackWeight);
-    }
-
-    private static SKTypeface FallbackTypeface(SKFontStyleWeight weight) =>
-        SKTypeface.FromFamilyName("Verdana", weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
-        ?? SKTypeface.Default;
-
     private static SKPaint MakePaint(SKColor color, SKPaintStyle style = SKPaintStyle.Fill, float width = 1f) =>
         new() { Color = color, Style = style, StrokeWidth = width, IsAntialias = true };
 
     private static SKPaint MakeText(float size, SKColor color, SKTypeface typeface,
         SKTextAlign align = SKTextAlign.Center) => new()
-    {
-        Color = color,
-        TextSize = size,
-        IsAntialias = true,
-        TextAlign = align,
-        Typeface = typeface
-    };
+        {
+            Color = color,
+            TextSize = size,
+            IsAntialias = true,
+            TextAlign = align,
+            Typeface = typeface
+        };
 }

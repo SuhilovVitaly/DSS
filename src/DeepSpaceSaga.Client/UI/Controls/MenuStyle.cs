@@ -20,9 +20,9 @@ public static class MenuStyle
     // first field so it's initialized before anything it measures below.
     private static readonly System.Diagnostics.Stopwatch DiagStopwatch = System.Diagnostics.Stopwatch.StartNew();
 
-    // --- Fonts (Verdana, matching reference) ---
-    public static readonly SKTypeface TypefaceRegular = LoadTypefaceDiag("Regular", SKFontStyleWeight.Normal);
-    public static readonly SKTypeface TypefaceBold = LoadTypefaceDiag("Bold", SKFontStyleWeight.Bold);
+    // --- Bundled body fonts ---
+    public static readonly SKTypeface TypefaceRegular = UiFonts.Body;
+    public static readonly SKTypeface TypefaceBold = UiFonts.BodyBold;
 
     /// <summary>
     /// Custom display font for the MainMenu buttons. Falls back to <see cref="TypefaceBold"/>
@@ -30,18 +30,6 @@ public static class MenuStyle
     /// </summary>
     public static readonly SKTypeface TypefaceHumaroid =
         LoadCustomTypeface("UI/Fonts/humaroid.regular.otf") ?? TypefaceBold;
-
-    // TEMP DIAG — startup timing investigation, remove once resolved.
-    private static SKTypeface LoadTypefaceDiag(string label, SKFontStyleWeight weight)
-    {
-        var sw = System.Diagnostics.Stopwatch.StartNew();
-        var typeface =
-            SKTypeface.FromFamilyName("Verdana", weight, SKFontStyleWidth.Normal, SKFontStyleSlant.Upright)
-            ?? SKTypeface.Default;
-        DeepSpaceSaga.Client.UI.InterfaceLog.Write(
-            $"STARTUP DIAG: MenuStyle SKTypeface.FromFamilyName(Verdana {label}) took {sw.ElapsedMilliseconds} ms");
-        return typeface;
-    }
 
     private static SKTypeface? LoadCustomTypeface(string path)
     {

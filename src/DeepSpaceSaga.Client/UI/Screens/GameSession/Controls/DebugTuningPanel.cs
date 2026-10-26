@@ -16,7 +16,7 @@ internal sealed class DebugTuningPanel : IDisposable
     internal static readonly string[] ModuleIds = ["module.engine.tetrarch", "module.engine.strizh", "module.torpedo.launcher.basic", "module.torpedo.launcher.light", "module.countermeasure.launcher.basic"];
     private readonly Func<string, string> _text;
     private readonly SKFont _font = new(MenuStyle.TypefaceRegular, 12);
-    private readonly SKTypeface _italicTypeface = SKTypeface.FromFamilyName("Verdana", SKFontStyle.Italic);
+    private readonly SKTypeface _italicTypeface = UiFonts.BodyItalic;
     private readonly SKFont _italicFont;
     private readonly SKPaint _paint = new() { IsAntialias = true, Typeface = MenuStyle.TypefaceRegular, TextSize = 12 };
     private readonly SKTextBlob[] _sections = new SKTextBlob[5];
@@ -336,6 +336,6 @@ internal sealed class DebugTuningPanel : IDisposable
         _confirmReset.Dispose();
         foreach (var line in _helpLines) line.Dispose();
         foreach (var line in _statusLines) line.Dispose();
-        _font.Dispose(); _italicFont.Dispose(); _italicTypeface.Dispose(); _paint.Dispose();
+        _font.Dispose(); _italicFont.Dispose(); _paint.Dispose();
     }
 }

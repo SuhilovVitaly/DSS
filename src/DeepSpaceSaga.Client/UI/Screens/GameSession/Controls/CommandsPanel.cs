@@ -36,7 +36,7 @@ public sealed class CommandsPanel
         _cachedModules = [];
         _cachedTiles = null;
         _detailsPaint?.Dispose(); _detailsPaint = null;
-        _detailsTypeface?.Dispose(); _detailsTypeface = null;
+        _detailsTypeface = null; // Shared UiFonts owns the typeface.
         _reloadRingPaint?.Dispose(); _reloadRingPaint = null;
         _reloadTimerPaint?.Dispose(); _reloadTimerPaint = null;
         _rangeCheckPaint?.Dispose(); _rangeCheckPaint = null;
@@ -46,7 +46,7 @@ public sealed class CommandsPanel
 
     private void PreparePresentationResources()
     {
-        _detailsTypeface ??= SKTypeface.FromFamilyName("Consolas");
+        _detailsTypeface ??= UiFonts.Mono;
         _detailsPaint ??= new() { TextSize = 12f, IsAntialias = true, Typeface = _detailsTypeface };
         _reloadRingPaint ??= new() { Style = SKPaintStyle.Stroke, StrokeWidth = 3, IsAntialias = true };
         _reloadTimerPaint ??= new() { Color = XenonStyle.CyanBright, TextSize = 8, TextAlign = SKTextAlign.Center, IsAntialias = true };

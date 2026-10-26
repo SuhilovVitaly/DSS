@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 
@@ -44,7 +45,7 @@ internal sealed class ObjectLabelRenderer
     public ObjectLabelRenderer(CombatVisualSettings? combatSettings = null)
     {
         _combatSettings = combatSettings ?? CombatVisualSettings.Default;
-        var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
+        var typeface = UiFonts.Mono;
 
         _leaderLinePaint = new SKPaint
         {

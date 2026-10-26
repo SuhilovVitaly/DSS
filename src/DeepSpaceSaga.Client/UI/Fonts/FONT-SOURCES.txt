@@ -1,0 +1,69 @@
+DSS bundled fonts, imported 2026-10-26. OFL 1.1 licenses accompany each family.
+Inter/Noto Sans static instances produced with fontTools 4.60.2, updateFontNames=True, recalcTimestamp=False. JetBrains Mono is an unmodified upstream static TTF. Humaroid is unchanged.
+
+Inter-variable.ttf: https://raw.githubusercontent.com/google/fonts/main/ofl/inter/Inter%5Bopsz,wght%5D.ttf
+NotoSans-variable.ttf: https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/NotoSans%5Bwdth,wght%5D.ttf
+NotoSans-Italic-variable.ttf: https://raw.githubusercontent.com/google/fonts/main/ofl/notosans/NotoSans-Italic%5Bwdth,wght%5D.ttf
+JetBrainsMono-Regular.ttf: https://raw.githubusercontent.com/JetBrains/JetBrainsMono/master/fonts/ttf/JetBrainsMono-Regular.ttf
+
+[
+  {
+    "file": "Inter-Regular.ttf",
+    "source": "Inter-variable.ttf",
+    "axes": {
+      "opsz": 14,
+      "wght": 400
+    },
+    "source_sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+    "output_sha256": "0b59f6b6fc9e8a9ad8032802d1797c4237d9288a3e7b7661517070627b577060"
+  },
+  {
+    "file": "Inter-Bold.ttf",
+    "source": "Inter-variable.ttf",
+    "axes": {
+      "opsz": 14,
+      "wght": 700
+    },
+    "source_sha256": "29160a80ff49ddcab2c97711247e08b1fab27a484a329ce8b813d820dc559031",
+    "output_sha256": "202f240469f916722233188ec316107f6cecaf13b801e9b3939b82b9f7a816d6"
+  },
+  {
+    "file": "NotoSans-Regular.ttf",
+    "source": "NotoSans-variable.ttf",
+    "axes": {
+      "wdth": 100,
+      "wght": 400
+    },
+    "source_sha256": "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
+    "output_sha256": "16a1ee5229882c1ba577d265014a85d8a4ddbcf5e45bd30bcfbabfdaf89cabf3"
+  },
+  {
+    "file": "NotoSans-Bold.ttf",
+    "source": "NotoSans-variable.ttf",
+    "axes": {
+      "wdth": 100,
+      "wght": 700
+    },
+    "source_sha256": "bfb7bb691513f12e734dc346c03a03f784912432d7e3fa8e56efcf906fe86b3d",
+    "output_sha256": "5a0ee56d5fa69689702d64bef03a4a24d58a93f5ae950ff5a004705102668833"
+  },
+  {
+    "file": "NotoSans-Italic.ttf",
+    "source": "NotoSans-Italic-variable.ttf",
+    "axes": {
+      "wdth": 100,
+      "wght": 400
+    },
+    "source_sha256": "58e6e0ebd1931b29a365aa2d3e2ee9a9e831a3af7cf3ad1462d4e72154f0b291",
+    "output_sha256": "4187bd3eed08928c38695ad7702515c2f4c1999e37958e6001d9a7a6bbba1e55"
+  },
+  {
+    "file": "JetBrainsMono-Regular.ttf",
+    "source": "JetBrainsMono-Regular.ttf",
+    "source_sha256": "e6fd0d7e91550b3ed2b735d4312474362c4716edc4fc0577a0f61ed782d5aed1"
+  }
+]
+
+DSSMono-Regular.ttf is an OFL-derived JetBrains Mono instance named DSS Mono. U+2666 aliases upstream U+25C6 (solid diamond), preserving the native monospace advance/outline. Other glyphs and metrics are unchanged. UiFonts.Mono uses this derived face. The unmodified JetBrainsMono-Regular.ttf is retained with its OFL.
+Derived SHA256: 2d1218597a599a273d562f93fe3d26b8bf21333354e6ff5c73ea1ea55d377b47
+License text wording is unchanged; trailing spaces and line endings were normalized for the repository.
