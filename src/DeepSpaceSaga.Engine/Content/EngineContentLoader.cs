@@ -12,6 +12,14 @@ public static class EngineContentLoader
     public static DebugTuningSnapshot LoadDebugTuningDefaults(string settingsPath) =>
         new DebugTuningState(LoadRegistryFromSettingsFile(settingsPath, out _, out _)).Snapshot;
 
+    private static string ContentRoot(string settingsPath, EngineSettingsFile settings)
+    {
+        string directory = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+        if (settings.ContentRoot is null) return directory;
+        if (string.IsNullOrWhiteSpace(settings.ContentRoot)) throw new ContentException($"{settingsPath}: contentRoot must name a directory.");
+        return Resolve(directory, settings.ContentRoot);
+    }
+
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
         UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
@@ -76,7 +84,7 @@ public static class EngineContentLoader
         if (settings.TypeData.SolarSystem is not { } declaredPath) return null;
         if (string.IsNullOrWhiteSpace(declaredPath))
             throw new ContentException($"{settingsPath}: typeData.solarSystem contains an empty path.");
-        var path = Resolve(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!, declaredPath);
+        var path = Resolve(ContentRoot(settingsPath, settings), declaredPath);
         try { return SolarSystemGeneration.ValidateConfig(ReadJson<SolarSystemGenerationConfig>(path, "solarSystem")); }
         catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
     }
@@ -96,7 +104,7 @@ public static class EngineContentLoader
         if (settings.TypeData.StationResourceFields is not { } declaredPath) return null;
         if (string.IsNullOrWhiteSpace(declaredPath))
             throw new ContentException($"{settingsPath}: typeData.stationResourceFields contains an empty content path.");
-        string path = Resolve(Path.GetDirectoryName(Path.GetFullPath(settingsPath))!, declaredPath);
+        string path = Resolve(ContentRoot(settingsPath, settings), declaredPath);
         try
         {
             return StationResourceFields.ValidateConfig(ReadJson<StationResourceFieldConfig>(path, "station resource fields"), registry);
@@ -107,7 +115,7 @@ public static class EngineContentLoader
     /// <summary>Discover portable portrait references once at bootstrap; resolved choices are saved on crew members.</summary>
     internal static ImmutableArray<string> LoadCrewPortraits(string settingsPath)
     {
-        string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+        string root = ContentRoot(settingsPath, ReadJson<EngineSettingsFile>(settingsPath, "settings"));
         string folder = Path.Combine(root, DeepSpaceSaga.Contracts.CharacterPortraits.FemaleFolder);
         if (!Directory.Exists(folder)) return [];
         return Directory.EnumerateFiles(folder)
@@ -130,8 +138,8 @@ public static class EngineContentLoader
         if (!File.Exists(settingsPath))
             throw new ContentException($"Settings file not found: {settingsPath}");
 
-        basePath = Path.GetDirectoryName(Path.GetFullPath(settingsPath)) ?? AppContext.BaseDirectory;
         settings = ReadJson<EngineSettingsFile>(settingsPath, "settings");
+        basePath = ContentRoot(settingsPath, settings);
 
         if (settings.TypeData is null)
             throw new ContentException("Settings file is missing typeData.");
@@ -213,7 +221,7 @@ public static class EngineContentLoader
         if (paths.CombatRules is null && paths.FireModes is null) return (null, []);
         if (string.IsNullOrWhiteSpace(paths.CombatRules))
             throw new ContentException($"{settingsPath}: typeData.combatRules must name a file.");
-        string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
+        string root = ContentRoot(settingsPath, ReadJson<EngineSettingsFile>(settingsPath, "settings"));
         var rules = LoadCombatRules(Resolve(root, paths.CombatRules));
         if (paths.FireModes is not null)
             throw new ContentException($"{settingsPath}: typeData.fireModes is retired.");
@@ -876,7 +884,8 @@ public static class EngineContentLoader
         // SaveLanguage, GetUiScale, etc.) can add, rename, or remove gameSettings fields
         // freely without ever touching engine code again.
         [property: JsonPropertyName("gameSettings")] JsonElement GameSettings = default,
-        [property: JsonPropertyName("economy")] EconomyContentVersions? Economy = null);
+        [property: JsonPropertyName("economy")] EconomyContentVersions? Economy = null,
+        [property: JsonPropertyName("contentRoot")] string? ContentRoot = null);
 
     internal sealed record EconomyContentVersions(
         [property: JsonPropertyName("catalogVersion")] int CatalogVersion,

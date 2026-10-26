@@ -30,3 +30,5 @@ EP-0015-US-0002, EP-0015-US-0003
 - [EP-0015-US-0004-TK-0001-user-data-paths](EP-0015-US-0004-TK-0001-user-data-paths/EP-0015-US-0004-TK-0001-user-data-paths.md) — Пользовательские данные вне каталога программы
 - [EP-0015-US-0004-TK-0002-linux-publish](EP-0015-US-0004-TK-0002-linux-publish/EP-0015-US-0004-TK-0002-linux-publish.md) — Публикация linux-x64
 - [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) — Документация для Linux
+
+- [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) — prerequisite for TK-0001: preserve content lookup with external configuration.

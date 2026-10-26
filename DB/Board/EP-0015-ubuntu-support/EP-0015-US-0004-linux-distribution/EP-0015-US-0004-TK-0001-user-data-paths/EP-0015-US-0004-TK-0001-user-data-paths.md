@@ -5,7 +5,7 @@ ticket: EP-0015-US-0004-TK-0001-user-data-paths
 title: "Пользовательские данные вне каталога программы"
 stage: draft
 layer: client
-depends_on: []
+depends_on: [EP-0015-US-0004-TK-0004-external-settings-content-root]
 serves: [AC-02, AC-03]
 created: 2026-10-25
 ---

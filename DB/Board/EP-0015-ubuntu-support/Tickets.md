@@ -20,3 +20,5 @@
 | [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | [EP-0015-US-0005-TK-0001-project-documentation] | [AC-02, AC-03] | NOT STARTED |
 
 Дополнительный [EP-0015-US-0001-TK-0004-sdk8-client-compilation](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0004-sdk8-client-compilation/EP-0015-US-0001-TK-0004-sdk8-client-compilation.md) выполняется послеTK-0001, передTK-0002; AC-01. TK-0001: baseline measured, не product PASS.
+
+Additional Engine prerequisite: [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) before user-data-paths; implemented with 93/93 scoped tests. Total now 16 tickets.
