@@ -6,4 +6,7 @@
 
 См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
 
+Слоты берутся из AppPaths.Current.Saves; перенос старых слотов не меняет
+формат Save19/18. [Текущий persistence контракт](../../04-Engineering/SaveFormat.md).
+
 Источники: [LoadScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Load/LoadScreen.cs).

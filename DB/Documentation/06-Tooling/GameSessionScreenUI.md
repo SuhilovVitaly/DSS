@@ -22,4 +22,12 @@ Data/UI/combat-visuals.json; это UI defaults, а не изменение бо
 Нативный режим --module-panels-window описан в [Performance README](../../../tools/DeepSpaceSaga.Performance/README.md#module-panel-native-validation).
 Он проверяет реальный OpenGL и managed callbacks, сохраняя hardware/human gates отдельно.
 
+UiFonts владеет общими file-backed typefaces на протяжении процесса.
+CommandsPanel и DebugTuningPanel не Dispose общие роли при закрытии; собственные
+paints/pictures освобождаются по прежнему lifecycle. Inter/Noto Sans/DSS Mono
+и лицензии входят в output/publish; fallback при отсутствии файла логируется.
+Export-TacticalButtonAssets.ps1 требует pwsh7+ и SDK, вызывает Skia-based
+PortraitAssets exporter и формирует контактный лист без System.Drawing.
+[Ubuntu и переносимые инструменты](Ubuntu.md).
+
 Источники: [Export-TacticalButtonAssets.ps1](../../../tools/Export-TacticalButtonAssets.ps1), [Settings.json](../../../src/DeepSpaceSaga.Client/Settings.json), [UI](../../../src/DeepSpaceSaga.Client/Data/UI).

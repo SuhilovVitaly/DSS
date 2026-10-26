@@ -31,3 +31,11 @@ Content/source verification, локальные Markdown-ссылки, ID/DAG/co
 ## Definition of Done
 
 Все указанные AC подтверждены реальным evidence; собственная проверка обозначена self-review. Отдельный коммит с полным ID, немедленный push и remote verification. Артефакты только в D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/<run>/.
+
+## Final impact scope
+
+Точный список и обоснования: [DocumentationImpact](../../DocumentationImpact.md). Расширенный docs scope следует зависимостям финального diff; root README отсутствует, canonical navigation — DB/Documentation/README.md. Посторонний изменённый process AGENTS исключён. История ревизии остаётся в Board, current contracts обновляются на месте.
+
+## Validation
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-project-docs/documentation-check.json: весь текущий Markdown corpus проверен, broken local links0, non-Markdown files0. Источники сверены с опубликованными AppPaths, contentRoot, native publisher, UiFonts, OpenAL и portable asset tool. Save19/18 и игровые правила не изменялись. git diff --check PASS. Результаты CI/human не перенесены в current contracts; источник статусов — Board.

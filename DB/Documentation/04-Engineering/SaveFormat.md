@@ -24,7 +24,11 @@ validation некорректных старых полей. Active flights, cap
 reload deadlines, command receipts, debug tuning и named RNG продолжаются
 после Load; повтор команды не создаёт второй projectile.
 
-Program использует `Saves` рядом с executable, SaveSlotNaming задаёт имена файлов.
+Program использует `AppPaths.Current.Saves` в пользовательских данных;
+portable.txt переключает этот путь в каталог программы. SaveSlotNaming задаёт
+имена файлов. Однократная миграция старых слотов копирует их без перезаписи
+и удаления; [пути и migration marker](../06-Tooling/Ubuntu.md#настройки-и-данные).
+contentRoot относится к конфигурации, не к Save19/18.
 Local file Load запускает продолжение на паузе. UI Save/Load не изменяет Engine
 самостоятельно и не выдаёт stale callback за разрешение перезаписать слот после Defeat.
 Правила стартового tuning-файла — в [DebugTuning](DebugTuning.md).

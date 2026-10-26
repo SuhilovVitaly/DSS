@@ -12,7 +12,8 @@ ProfileId. `debug.tuning.apply` — авторитетная атомарная 
 
 Overlay принадлежит сессии; исходные catalog defaults не перезаписываются.
 Save19 сохраняет optional tuning и flight provenance. Стартовый файл
-`DebugTuning/debug-tuning.json` ищется рядом с executable. Program передаёт
+`DebugTuning/debug-tuning.json` ищется в AppPaths.UserData; portable.txt
+переносит данные в каталог программы. [Пути и режимы](../06-Tooling/Ubuntu.md#настройки-и-данные). Program передаёт
 его фабрикам New Game, выбранного сценария и Load. Чтение bootstrap-only,
 без live watcher. Неверный файл отклоняется с предупреждением/StartupError.
 Общий `DebugTuningFileFormat` требует schemaVersion 1 и проверяет ключи по defaults.

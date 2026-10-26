@@ -23,4 +23,10 @@ NPC future line строится из наблюдений; NPC torpedo не и�
 остаётся отдельной UI-информацией. Численные palette/scale значения находятся
 в content. Стиль кнопок — [STYLE](TacticalButtons/STYLE.md).
 
+UI использует комплектные file-backed Inter/Noto Sans/DSS Mono через UiFonts.
+Кириллица, числовые ячейки и маркеры проверяются как glyph coverage; системное
+имя семейства не является контрактом раскладки. Typefaces живут весь процесс;
+панели освобождают собственные paints/pictures, сохраняя общие font roles.
+[Комплект и лицензии](../../../src/DeepSpaceSaga.Client/UI/Fonts).
+
 Источники: [Settings.json](../../../src/DeepSpaceSaga.Client/Settings.json), [GameSessionScreen.MapView.cs](../../../src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.MapView.cs), [UI](../../../src/DeepSpaceSaga.Client/Data/UI).

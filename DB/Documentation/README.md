@@ -3,7 +3,7 @@
 > **Контракт EP-0013.** Действующие контракты EP-0013: [панель и файлы отладки](04-Engineering/DebugTuningPanel.md), [независимые ручные оси и schema2](04-Engineering/ManualManeuver.md). Реализация и приёмка учитываются раздельно в [Board](../Board/EP-0013-debug-tuning-panel/ExecutionStatus.md).
 
 Документация описывает игровые контракты и текущий код. Незавершённые
-функции явно отделены от реализованных. Дата ревизии: 22 октября 2026.
+функции явно отделены от реализованных. Дата ревизии: 26 октября 2026.
 Writer Save19 и миграция Save18 проверены по ScenarioData/ScenarioLoader;
 Панели point combat описаны в [PointAimCombat](04-Engineering/PointAimCombat.md#панели-модулей),
 а публикация и отдельные acceptance gates — в [Board EP-0014](../Board/EP-0014-module-panels/ExecutionStatus.md).

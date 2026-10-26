@@ -66,7 +66,8 @@ Engine применяет tuning в фазе команд игрока. Кора
 
 ## Файлы и продолжение
 
-Каталог `DebugTuning` находится рядом с executable. После подтверждённых изменений
+Каталог `DebugTuning` находится в AppPaths.UserData; рядом с executable —
+только при portable.txt. [Пути и режимы](../06-Tooling/Ubuntu.md#настройки-и-данные). После подтверждённых изменений
 Client пишет полный UTF-8 `debug-tuning.json`: schemaVersion1, writtenAtUtc,
 `ships`, `launchers` и вложенные `profiles`. Фоновая очередь объединяет revisions,
 записи разделены минимум250мс; временный файл атомарно заменяет текущий.
@@ -109,6 +110,11 @@ Save17 и старше не принимаются. Повреждённый ф�
 Текущие проверки, публикации и открытые native/human/audio gates принадлежат
 [Board EP-0013](../../Board/EP-0013-debug-tuning-panel/ExecutionStatus.md).
 Управление клавишами: [ManualManeuver](ManualManeuver.md).
+«Открыть папку» использует Windows shell, xdg-open на Linux и open на macOS.
+Ошибка запуска или ненулевой Unix exit не блокирует рендер: статус показывает
+локализованную причину с полным путём, Interface.log сохраняет детали.
+macOS launcher selection не означает приёмку всей игры на macOS.
+
 Источники: [Contracts](../../../src/DeepSpaceSaga.Contracts/DebugTuning.cs),
 [schema](../../../src/DeepSpaceSaga.Contracts/DebugTuningFileFormat.cs),
 [Engine apply](../../../src/DeepSpaceSaga.Engine/SimulationEngine.DebugTuning.cs),

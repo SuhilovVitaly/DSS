@@ -10,4 +10,9 @@ Client.csproj требует manifests W4/M4 при сборке и копиру
 исключая авторские Sources/Generated. Размещение файлов в другом наборе не
 меняет явно сохранённый portraitImage. Общие правила — [PortraitGenerator](PortraitGenerator.md).
 
+Подготовка головы поддерживается переносимым pwsh7+/Skia workflow;
+prepare.ps1 принимает gender и явные output/preview directories. Проверки
+alpha, непрерывности шеи и трёх воротников обязательны до сохранения.
+[Инструмент и команды](../06-Tooling/DeepSpaceSaga.PortraitAssets.md).
+
 Источники: [parts.json](../../../src/DeepSpaceSaga.Client/Images/Persons/W4/parts.json), [portrait-style.json](../../../src/DeepSpaceSaga.Client/Images/Persons/W4/portrait-style.json), [DeepSpaceSaga.Client.csproj](../../../src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj).

@@ -85,4 +85,12 @@ Save19 продолжает flights/deadlines/RNG; Save18 имеет отдел�
 Баланс, native input/audio и доступность проверяются отдельно; статистика
 старых запусков не является свойством текущего контракта.
 
+Звуковые сигналы воспроизводятся через OpenAL Soft на отдельном потоке,
+владеющем native context. Настроенные PCM buffers подготавливаются до playback;
+render только ставит cue в ограниченную очередь. Session epochs и интервалы
+ограничивают stale/повторные сигналы. При недоступном устройстве выводится одно
+предупреждение, клиент продолжает работу. PCM — mono16 с 5ms огибающей;
+44100Hz для тонов ниже22050Hz, 96000Hz для более высоких поддержанных частот.
+[Платформа и приёмка звука](../06-Tooling/Ubuntu.md).
+
 Источники: [SimulationEngine.PointCombat.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombat.cs), [SimulationEngine.PointAim.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.PointAim.cs), [SimulationEngine.Evasion.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.Evasion.cs), [SimulationEngine.Encounter.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.Encounter.cs), [combat-rules.json](../../../src/DeepSpaceSaga.Client/Data/Combat/combat-rules.json), [Modules](../../../src/DeepSpaceSaga.Client/Data/Modules).

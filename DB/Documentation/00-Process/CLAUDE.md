@@ -36,10 +36,15 @@ CommandsPanel кеширует подготовленную геометрию/�
 Проекты нацелены на `net8.0`. `global.json`: SDK `8.0.100`,
 `rollForward: latestMajor`, prerelease отключён; конкретный выбранный SDK зависит
 от установки. Это не жёсткое закрепление версии 10.0.400.
-Settings.json рядом с executable перечисляет каталоги и defaultScenario.
-EngineContentLoader валидирует данные и создаёт registry до публикации мира.
-New Game, выбранный сценарий и Load используют фабрику локальных сессий.
-Слоты, Scenarios и DebugTuning ищутся относительно `AppContext.BaseDirectory`.
+AppPaths отделяет read-only content установки от пользовательских config/data.
+Пользовательский Settings.json сохраняет preferences; управляемый contentRoot
+задаёт EngineContentLoader корень каталогов, defaultScenario, generation и portraits.
+Без contentRoot пути разрешаются относительно Settings.json. New Game, выбранный
+сценарий и Load используют фабрику локальных сессий. Saves, DebugTuning,
+CombatMetrics и Interface.log относятся к UserData; Scenarios — к content.
+XDG/Windows, первичная миграция, portable.txt, OpenAL и комплектные шрифты
+описаны в [Ubuntu](../06-Tooling/Ubuntu.md). Платформенное окно, звук и launcher
+принадлежат Client; Engine не знает XDG и не воспроизводит сигналы.
 
 ## Проверки и изменения
 
