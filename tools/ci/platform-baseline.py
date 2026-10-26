@@ -97,7 +97,7 @@ def main():
             selections = []
             pending = []
             for case in sorted(multiplicity):
-                if "CorpusTests." in case or ".CombatBalanceReport." in case:
+                if "CorpusTests." in case or ".CombatBalanceReport." in case or name == "DeepSpaceSaga.EconomyBalance.Tests":
                     if pending:
                         selections.append(pending)
                         pending = []

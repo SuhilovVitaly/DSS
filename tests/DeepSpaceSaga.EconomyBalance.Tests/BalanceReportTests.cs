@@ -143,10 +143,21 @@ public sealed class BalanceReportTests : IDisposable
     public void Atomic_replace_failure_preserves_previous_bytes_and_cleans_temporary_sibling()
     {
         File.WriteAllText(Output, "old");
-        using (var locked = new FileStream(Output, FileMode.Open, FileAccess.Read, FileShare.None))
+        if (OperatingSystem.IsWindows())
         {
+            using var locked = new FileStream(Output, FileMode.Open, FileAccess.Read, FileShare.None);
             var exception = Record.Exception(() => Program.WriteAtomic(Output, [1, 2, 3]));
             Assert.True(exception is IOException or UnauthorizedAccessException);
+        }
+        else
+        {
+            var permissions = File.GetUnixFileMode(_directory);
+            try
+            {
+                File.SetUnixFileMode(_directory, permissions & ~(UnixFileMode.UserWrite | UnixFileMode.GroupWrite | UnixFileMode.OtherWrite));
+                Assert.Throws<UnauthorizedAccessException>(() => Program.WriteAtomic(Output, [1, 2, 3]));
+            }
+            finally { File.SetUnixFileMode(_directory, permissions); }
         }
         Assert.Equal("old", File.ReadAllText(Output)); Assert.Empty(Directory.GetFiles(_directory, "*.tmp-*"));
         Program.WriteAtomic(Output, [4, 5]); Assert.Equal(new byte[] { 4, 5 }, File.ReadAllBytes(Output));

@@ -1300,8 +1300,21 @@ public class LocalSessionIntegrationTests
             await using var connection = new LocalGameSessionConnection(f.Engine, dir);
             await connection.SaveAsync("good"); string path = Path.Combine(dir, "good.json");
             byte[] before = await File.ReadAllBytesAsync(path);
-            using (var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read))
+            if (OperatingSystem.IsWindows())
+            {
+                using var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
                 await Assert.ThrowsAnyAsync<UnauthorizedAccessException>(async () => await connection.SaveAsync("good"));
+            }
+            else
+            {
+                var permissions = File.GetUnixFileMode(dir);
+                try
+                {
+                    File.SetUnixFileMode(dir, permissions & ~(UnixFileMode.UserWrite | UnixFileMode.GroupWrite | UnixFileMode.OtherWrite));
+                    await Assert.ThrowsAnyAsync<UnauthorizedAccessException>(async () => await connection.SaveAsync("good"));
+                }
+                finally { File.SetUnixFileMode(dir, permissions); }
+            }
             Assert.Equal(before, await File.ReadAllBytesAsync(path)); Assert.Empty(Directory.GetFiles(dir, "*.tmp"));
             await connection.SaveAsync("after-error");
             Assert.NotNull(ScenarioLoader.LoadFromFile(Path.Combine(dir, "after-error.json"), true));
