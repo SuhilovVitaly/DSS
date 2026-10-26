@@ -31,7 +31,8 @@ internal static class PlatformLayoutNativeEvidence
         if (args.Length != 6) throw new ArgumentException("<repo> <report.json> --platform-layout-window <scale> <WxH> <ru|en>");
         string output = Path.GetFullPath(args[1]), directory = Path.GetDirectoryName(output)!;
         Directory.CreateDirectory(directory);
-        string settings = Path.Combine(AppContext.BaseDirectory, "Settings.json");
+        using var pathScope = AppPaths.Use(new AppPaths(AppContext.BaseDirectory, AppContext.BaseDirectory, AppContext.BaseDirectory, true));
+        string settings = AppPaths.Current.Settings;
         byte[] original = File.ReadAllBytes(settings);
         string previousCwd = Environment.CurrentDirectory;
         string? previousLog = Environment.GetEnvironmentVariable("DSS_INTERFACE_LOG_PATH");

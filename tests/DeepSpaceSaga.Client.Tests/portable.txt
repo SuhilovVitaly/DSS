@@ -1,0 +1,1 @@
+Client tests explicitly retain isolated output-directory settings and content.

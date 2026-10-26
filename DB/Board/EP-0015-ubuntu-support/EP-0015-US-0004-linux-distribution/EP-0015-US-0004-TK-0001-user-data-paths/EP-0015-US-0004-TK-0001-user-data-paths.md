@@ -36,3 +36,11 @@ created: 2026-10-25
 - С `portable.txt` поведение совпадает с текущим.
 - Тесты `AppPaths`: переменные XDG заданы и не заданы; переносной режим; миграция не перезаписывает существующие файлы.
 - Проверено на Windows и Ubuntu; на Windows поведение не ухудшилось.
+
+## Code context and scope
+
+New Client/AppPaths.cs; Program.cs; Localization.cs; UI/SkiaWindow.cs; CombatMetricsWriter.cs; DebugTuningFileWriter.cs; UI/InterfaceLog.cs; GameSessionScreen.DebugTuning.cs; new AppPathsTests.cs plus Client.Tests.csproj/portable.txt; Performance native layout harness. More than5 files necessary to route all existing settings/data writes through one source. Content assets remain AppContext.BaseDirectory; optional Engine contentRoot prerequisite published c7e76bd7. Tests use an explicit portable marker and isolated path override; no validation writes real user settings. Initialize config/migration before startup logging, atomic config writes, preserve existing saves and one-time migration marker.
+
+## Windows validation checkpoint
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-app-paths/: app-paths-final.trx39/39; client-full.trx2346/2346, no failures/skips; format.log scoped formatter exit0. Initial five path-test failures were mixed slash expectations on Windows, corrected by normalizing expected full paths. Program now sets CWD to read-only content so existing relative image/font lookups work when started from a desktop launcher; all settings/save/log/diagnostic writes use absolute user paths. This final Main adjustment compiled with zero warnings/errors in build-final.log; native-windows/layout.json captures six real screens successfully using isolated portable override. Actual user profiles were not modified by validation. Linux XDG/portable validation pending CI.

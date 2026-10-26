@@ -100,7 +100,7 @@ public sealed partial class GameSessionScreen
             if (_debugTuningPanel.ToggleHelp(uiX, uiY)) return true;
             if (_debugTuningPanel.FolderBounds.Contains(uiX, uiY))
             {
-                _debugFolderPath = _handle?.DebugTuningFiles.DirectoryPath ?? Path.Combine(AppContext.BaseDirectory, "DebugTuning");
+                _debugFolderPath = _handle?.DebugTuningFiles.DirectoryPath ?? AppPaths.Current.DebugTuning;
                 if (_debugFolderOpen is not null) return true;
                 if (DebugOpenFolderForTests is { } open)
                 {

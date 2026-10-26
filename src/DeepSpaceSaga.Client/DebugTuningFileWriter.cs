@@ -29,7 +29,7 @@ internal sealed class DebugTuningFileWriter : IAsyncDisposable
     internal DebugTuningFileWriter(string? directory = null, bool active = true,
         Action<string, string>? commit = null, Action<string>? warning = null)
     {
-        DirectoryPath = directory ?? Path.Combine(UI.InterfaceLog.DiagnosticDirectory ?? AppContext.BaseDirectory, "DebugTuning");
+        DirectoryPath = directory ?? (UI.InterfaceLog.DiagnosticDirectory is { } diagnostics ? Path.Combine(diagnostics, "DebugTuning") : AppPaths.Current.DebugTuning);
         _active = active;
         _commit = commit ?? ((temporary, destination) => File.Move(temporary, destination, overwrite: true));
         _warning = warning;

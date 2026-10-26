@@ -97,7 +97,7 @@ public static class Localization
     {
         try
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "Settings.json");
+            var path = AppPaths.Current.Settings;
             if (!File.Exists(path))
                 return "English";
 

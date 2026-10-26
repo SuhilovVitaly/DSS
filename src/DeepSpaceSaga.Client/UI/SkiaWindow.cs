@@ -951,7 +951,7 @@ public sealed class SkiaWindow : IDisposable
             var combatAudio = CombatAlertAudio.CreateSession();
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(AppPaths.Current.Settings), combatSettings: _combatSettings, combatInputs: _combatInputs,
                 alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate, playInitialCombatStart: true);
 
             _session = session;
@@ -1303,7 +1303,7 @@ public sealed class SkiaWindow : IDisposable
         await PushModalAsync(loadScreen);
     }
 
-    private static string SettingsFilePath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
+    private static string SettingsFilePath => AppPaths.Current.Settings;
 
     private static int GetSelectedMonitorIndex()
     {
@@ -1603,7 +1603,7 @@ public sealed class SkiaWindow : IDisposable
             var combatAudio = CombatAlertAudio.CreateSession();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(AppPaths.Current.Settings), combatSettings: _combatSettings, combatInputs: _combatInputs,
                 alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }

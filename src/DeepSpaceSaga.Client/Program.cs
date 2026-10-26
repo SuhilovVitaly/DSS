@@ -9,6 +9,8 @@ public static class Program
 {
     public static void Main()
     {
+        Directory.SetCurrentDirectory(AppPaths.Current.Content);
+        AppPaths.Current.Initialize(InterfaceLog.Write);
         // TEMP DIAG — startup timing investigation, remove once resolved.
         var startupStopwatch = System.Diagnostics.Stopwatch.StartNew();
         using (var proc = System.Diagnostics.Process.GetCurrentProcess())
@@ -20,8 +22,8 @@ public static class Program
 
         try
         {
-            WriteDebugTuningDefaults(Path.Combine(AppContext.BaseDirectory, "Settings.json"),
-                Path.Combine(AppContext.BaseDirectory, "DebugTuning"));
+            WriteDebugTuningDefaults(AppPaths.Current.Settings,
+                AppPaths.Current.DebugTuning);
         }
         catch (Exception error) when (error is IOException or UnauthorizedAccessException)
         {
@@ -41,10 +43,10 @@ public static class Program
     private sealed class LocalGameSessionFactory : IGameSessionFactory
     {
         // The only place that knows about Saves/ on disk (mirrors Settings.json).
-        private static string SettingsPath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
-        private static string SaveDirectory => Path.Combine(AppContext.BaseDirectory, "Saves");
-        private static string ScenariosDirectory => Path.Combine(AppContext.BaseDirectory, "Scenarios");
-        private static string DebugTuningPath => Path.Combine(AppContext.BaseDirectory, "DebugTuning", "debug-tuning.json");
+        private static string SettingsPath => AppPaths.Current.Settings;
+        private static string SaveDirectory => AppPaths.Current.Saves;
+        private static string ScenariosDirectory => AppPaths.Current.Scenarios;
+        private static string DebugTuningPath => Path.Combine(AppPaths.Current.DebugTuning, "debug-tuning.json");
         private static string QuickSavePath =>
             Path.Combine(SaveDirectory, SaveSlotNaming.ToFileName(SaveSlots.Quicksave));
 
