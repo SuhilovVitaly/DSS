@@ -26,7 +26,7 @@ internal sealed class DebugTuningPanel : IDisposable
     private readonly SKTextBlob _title, _minus, _plus, _resetAll, _folder, _help, _confirmReset;
     private SKTextBlob[] _helpLines = [];
     private SKTextBlob[] _statusLines = [];
-    private string? _feedbackKey, _startupError;
+    private string? _feedbackKey, _startupError, _feedbackDetail;
     private DebugTuningFileStatus? _fileStatus;
     private bool _feedbackPending, _resetConfirm, _statusError, _helpVisible;
     private long _feedbackRevision = -1;
@@ -156,14 +156,14 @@ internal sealed class DebugTuningPanel : IDisposable
     }
 
     internal Row GetRow(int index) => _rows[index];
-    internal void SetFeedback(string? errorKey, string? startupError, bool pending, bool resetConfirm, DebugTuningFileStatus? fileStatus, long revision)
+    internal void SetFeedback(string? errorKey, string? startupError, bool pending, bool resetConfirm, DebugTuningFileStatus? fileStatus, long revision, string? errorDetail = null)
     {
-        if (_feedbackKey == errorKey && _startupError == startupError && _feedbackPending == pending &&
+        if (_feedbackDetail == errorDetail && _feedbackKey == errorKey && _startupError == startupError && _feedbackPending == pending &&
             _resetConfirm == resetConfirm && ReferenceEquals(_fileStatus, fileStatus) && _feedbackRevision == revision) return;
-        _feedbackKey = errorKey; _startupError = startupError; _feedbackPending = pending;
+        _feedbackDetail = errorDetail; _feedbackKey = errorKey; _startupError = startupError; _feedbackPending = pending;
         _resetConfirm = resetConfirm; _fileStatus = fileStatus; _feedbackRevision = revision;
         _statusError = errorKey is not null || startupError is not null || fileStatus?.Error is not null;
-        StatusText = errorKey is not null ? _text(errorKey) : startupError is not null ? _text("Debug.StartupRejected") + ": " + startupError :
+        StatusText = errorKey is not null ? _text(errorKey) + (errorDetail is null ? "" : ": " + errorDetail) : startupError is not null ? _text("Debug.StartupRejected") + ": " + startupError :
             fileStatus?.Error is { } diskError ? _text("Debug.WriteFailed") + ": " + diskError :
             pending ? _text("Debug.Sending") : fileStatus is { Deleted: true } && fileStatus.Revision >= revision ? _text("Debug.ResetComplete") :
             fileStatus?.WrittenAtUtc is { } written && fileStatus.Revision >= revision ? _text("Debug.AppliedFile") + " " + written.ToLocalTime().ToString("HH:mm:ss", CultureInfo.InvariantCulture) :

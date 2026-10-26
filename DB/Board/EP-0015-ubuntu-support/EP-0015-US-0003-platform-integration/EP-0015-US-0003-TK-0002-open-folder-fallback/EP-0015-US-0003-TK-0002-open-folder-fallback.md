@@ -33,3 +33,11 @@ created: 2026-10-25
 - На Ubuntu с рабочим столом папка открывается в файловом менеджере.
 - Без `xdg-utils` клиент не падает и показывает путь.
 - Проверено на Windows и Ubuntu; на Windows поведение не ухудшилось.
+
+## Code context and scope
+
+New UI/ShellLauncher.cs; GameSessionScreen.DebugTuning.cs; GameSession/Controls/DebugTuningPanel.cs; tests/ShellLauncherTests.cs and DebugTuningPanelInputTests.cs. Use ArgumentList for Unix and Windows shell association; inspect asynchronous nonzero launcher exits without blocking rendering. Status carries the attempted absolute directory; errors are logged once per request. Existing folder-test callback remains supported.
+
+## Validation checkpoint
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-shell/: shell.trx 11/11 (Unix argument boundaries, Windows association, missing executable, four-scale panel input/status path); tests.log C#12 compilation zero diagnostics; format.log scoped formatter exit0. Unix launcher nonzero stderr is awaited off rendering with a 15-second timeout; path is displayed in localized feedback and failure is logged. Real desktop file-manager opening on Ubuntu remains NOT RUN until a graphical desktop is available.

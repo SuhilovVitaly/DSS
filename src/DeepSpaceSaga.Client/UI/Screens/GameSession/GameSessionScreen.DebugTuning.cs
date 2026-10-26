@@ -14,6 +14,8 @@ public sealed partial class GameSessionScreen
     private sealed record DebugSubmission(DebugTuningValue Value, string CommandId, Task SendTask, long Revision, long Order);
     private long _debugSubmissionOrder, _debugFeedbackOrder;
     internal string? DebugError { get; private set; }
+    private Task<string?>? _debugFolderOpen;
+    private string? _debugFolderPath;
     private long? _debugResetArmedAt;
     private bool _debugStartupDismissed;
     internal Action<string>? DebugOpenFolderForTests { get; set; }
@@ -39,6 +41,11 @@ public sealed partial class GameSessionScreen
 
     internal void PrepareDebugTuning()
     {
+        if (_debugFolderOpen is { IsCompletedSuccessfully: true } completed)
+        {
+            DebugError = completed.Result is null ? null : "Debug.OpenFolderFailed";
+            _debugFolderOpen = null;
+        }
         var snapshot = _buffer.Latest?.Snapshot.DebugTuning;
         _debugTuningPanel.Prepare(_uiViewportW, _uiViewportH, snapshot);
         for (int i = _debugSubmissions.Count - 1; i >= 0; i--)
@@ -66,7 +73,7 @@ public sealed partial class GameSessionScreen
         }
         if (_debugResetArmedAt is { } armed && (_timestampProvider() - armed) / (double)Stopwatch.Frequency > 1) _debugResetArmedAt = null;
         _debugTuningPanel.SetFeedback(DebugError, _debugStartupDismissed ? null : snapshot?.StartupError,
-            _debugSubmissions.Count != 0, _debugResetArmedAt is not null, _handle?.DebugTuningFiles.Status, snapshot?.Revision ?? 0);
+            _debugSubmissions.Count != 0, _debugResetArmedAt is not null, _handle?.DebugTuningFiles.Status, snapshot?.Revision ?? 0, DebugError == "Debug.OpenFolderFailed" ? _debugFolderPath : null);
     }
 
     private bool HandleDebugKey(Key key)
@@ -93,15 +100,20 @@ public sealed partial class GameSessionScreen
             if (_debugTuningPanel.ToggleHelp(uiX, uiY)) return true;
             if (_debugTuningPanel.FolderBounds.Contains(uiX, uiY))
             {
-                try
+                _debugFolderPath = _handle?.DebugTuningFiles.DirectoryPath ?? Path.Combine(AppContext.BaseDirectory, "DebugTuning");
+                if (_debugFolderOpen is not null) return true;
+                if (DebugOpenFolderForTests is { } open)
                 {
-                    string directory = _handle?.DebugTuningFiles.DirectoryPath ?? Path.Combine(AppContext.BaseDirectory, "DebugTuning");
-                    Directory.CreateDirectory(directory);
-                    if (DebugOpenFolderForTests is { } open) open(directory);
-                    else Process.Start(new ProcessStartInfo(directory) { UseShellExecute = true });
+                    try { Directory.CreateDirectory(_debugFolderPath); open(_debugFolderPath); DebugError = null; }
+                    catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
+                    {
+                        DebugError = "Debug.OpenFolderFailed";
+                        try { InterfaceLog.Write($"Could not open folder '{_debugFolderPath}': {error.Message}"); }
+                        catch (Exception logError) when (logError is IOException or UnauthorizedAccessException) { }
+                    }
                 }
-                catch (Exception error) when (error is IOException or UnauthorizedAccessException or System.ComponentModel.Win32Exception)
-                { DebugError = "Debug.OpenFolderFailed"; }
+                else _debugFolderOpen = ShellLauncher.OpenDirectory(_debugFolderPath);
+                PrepareDebugTuning();
                 return true;
             }
             if (_debugTuningPanel.ResetAllBounds.Contains(uiX, uiY))

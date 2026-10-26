@@ -118,6 +118,12 @@ public sealed class DebugTuningPanelInputTests
             string? opened = null; screen.DebugOpenFolderForTests = path => opened = path;
             var folder = screen.DebugPanel.FolderBounds;
             screen.OnMouseDown(folder.MidX * scale, folder.MidY * scale); Assert.Equal(directory, opened);
+            screen.DebugOpenFolderForTests = _ => throw new System.ComponentModel.Win32Exception("xdg-open missing");
+            screen.OnMouseDown(folder.MidX * scale, folder.MidY * scale);
+            screen.PrepareDebugTuning();
+            Assert.Equal("Debug.OpenFolderFailed", screen.DebugError);
+            Assert.Contains(directory, screen.DebugPanel.StatusText);
+            screen.DebugOpenFolderForTests = path => opened = path;
             screen.OnMouseDown((screen.DebugPanel.Bounds.Right - 20) * scale, (screen.DebugPanel.Bounds.Top + 15) * scale);
             Assert.True(screen.DebugPanel.HelpVisible);
             var reset = screen.DebugPanel.ResetAllBounds;
