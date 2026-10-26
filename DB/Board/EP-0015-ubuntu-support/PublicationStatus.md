@@ -19,9 +19,9 @@
 | [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) | 116ccf91a55a49a3feb7781d5d327bff3ffaee1a | VERIFIED |
 | [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) | c7e76bd7d2827032f18a4e8134db57824b239bca<br>0ef5866f8b6a66d2bc3464cc4c9495c4d5710dd5 | VERIFIED |
 | [EP-0015-US-0005-TK-0001-project-documentation](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md) | c2ff74610ea18c142469e08fc0ad94ce36b8c69a | VERIFIED |
-| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | ещё не создан | PENDING |
+| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | 62cdf4404acc4cdf81d90093f052dfba8488d7b2 | VERIFIED |
 
-Служебная миграция Board:661f3fe86cb5351abf087b5aefd465250313e8cd. Проверенный remote checkpoint:4995e0be93d1b14da152416b78d53be65deb1530. Финальный собственный SHA записывается только после фактического commit/push.
+Служебная миграция Board:661f3fe86cb5351abf087b5aefd465250313e8cd. Проверенный функциональный checkpoint:4995e0be93d1b14da152416b78d53be65deb1530. Проверенный документационный checkpoint:62cdf4404acc4cdf81d90093f052dfba8488d7b2. Собственный SHA evidence-attestation проверяется через Git после фактического commit/push.
 
 ## История коммитов
 
@@ -55,3 +55,7 @@
 - `5cc62782b57678bf595466f2494906312fa3fe9a` — EP-0015 US-0002 TK-0003 validate trade in its real modal stack
 - `0ef5866f8b6a66d2bc3464cc4c9495c4d5710dd5` — EP-0015 US-0004 TK-0004 preserve directory-only portrait discovery
 - `4995e0be93d1b14da152416b78d53be65deb1530` — EP-0015-US-0003-TK-0002-open-folder-fallback: preserve successful Windows shell activation
+
+- `62cdf4404acc4cdf81d90093f052dfba8488d7b2` — EP-0015-US-0005-TK-0002-final-evidence-and-graph: publish source-audited graph and validation ledger
+
+Все16 тикетов имеют отдельные опубликованные implementation commits. Docs checkpoint62cdf4404acc4cdf81d90093f052dfba8488d7b2 совпал с git ls-remote после push. Последующие evidence/attestation commits проверяются через Git после создания, без циклической записи собственного hash.
