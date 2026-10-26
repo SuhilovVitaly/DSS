@@ -5,7 +5,7 @@ ticket: EP-0015-US-0001-TK-0002-test-portability-fixes
 title: "Исправление непереносимых тестов"
 stage: draft
 layer: tests
-depends_on: [EP-0015-US-0001-TK-0001-linux-build-baseline]
+depends_on: [EP-0015-US-0001-TK-0004-sdk8-client-compilation]
 serves: [AC-02, AC-03, AC-04]
 created: 2026-10-25
 ---
@@ -34,3 +34,7 @@ created: 2026-10-25
 - Все тесты из таблицы TK-0001 с причиной «переносимость» проходят на Linux и на Windows.
 - `.gitattributes` добавлен; повторный checkout на Windows и Linux не даёт изменённых файлов в `git status`.
 - Проверено на Windows и Ubuntu; на Windows поведение не ухудшилось.
+
+## Scope update and Code context 2026-10-26
+
+SDK8 baseline выявил CS8600 L61 и CS8604 L72/L106 в tests/DeepSpaceSaga.Engine.Tests/TradingVoyageFixture.cs: Where(id is not null) не сужает string? sequence в старом компиляторе. Разрешено безопасное явное nullable narrowing (OfType<string>) без изменения соседей/порядка и без null-forgiving обхода. Этот файл и .gitattributes составляют подтверждённый initial allowlist. Новые platform failures добавлять с обоснованием перед правкой. Layer tests, production Engine не меняется. Проверки: SDK8 solution build, trading voyage tests, cross-platform exact-case corpus/count/identity comparison; все skips учитывать явно.

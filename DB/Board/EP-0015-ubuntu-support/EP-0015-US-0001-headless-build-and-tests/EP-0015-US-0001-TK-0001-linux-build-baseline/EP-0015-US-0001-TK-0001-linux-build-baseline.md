@@ -4,6 +4,7 @@ story: EP-0015-US-0001-headless-build-and-tests
 ticket: EP-0015-US-0001-TK-0001-linux-build-baseline
 title: "Базовый прогон сборки и тестов на Ubuntu"
 stage: draft
+execution_status: baseline-measured
 layer: infra
 depends_on: []
 serves: [AC-01, AC-02]
@@ -68,3 +69,21 @@ created: 2026-10-25
 Contracts corpus обнаружил повторный разбор nested JSON/quotes в CLI/MSBuild. Фильтры перенесены в XML RunSettings/RunConfiguration/TestCaseFilter; на CLI передаётся только абсолютный путь. Повторный полный Contracts exact-case прогон:273/273, expected/actual TRX names совпали для всех трёх partitions. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-runsettings-contracts/. Неудачный предыдущий harness-прогон хранится отдельно (20261026-exact-contracts) и не объявлен product/test defect или PASS.
 
 CI40281943899 подтвердил restore0 и build1 на обоих SDK8 runners. Исходные compiler logs не были доступны из-за ошибки upload-artifact: относительный ../ path запрещён самим action. Исправлено на нормализованный абсолютный path через step output; при ненулевом exit последние40 строк command log также выводятся в job log. Это исправление harness, а не сокрытие ошибки сборки. Для baseline использованы read-only GitHub tools/API; отмена промежуточного прогона через credentials была отклонена auto-review и не выполнена, обход не применялся.
+
+## Execution result — baseline measured
+
+COMPLETE только измерение baseline; это не PASS сборки или приёмка истории. На commit13cdb4a8bc3718d1a69583b89e56be18c6866442 оба SDK8.0.427 runners выполнили restore0/build1. Тесты SDK8 NOT RUN из-за compile failure. Ни один src файл в этом тикете не менялся.
+
+| Ошибка | Ubuntu24.04 и Windows2022 | Закрывающий тикет |
+|---|---|---|
+| TacticalMapDepthRenderer.cs:420 CS0121 | Одинаковая неоднозначность Skia gradient overload | US-0001-TK-0004 |
+| GameSessionScreen.cs:1867 CS0121 | Одинаковая неоднозначность Skia gradient overload | US-0001-TK-0004 |
+| TradingVoyageFixture.cs:61/72/106 CS8600/CS8604 | Nullable narrowing старого компилятора | US-0001-TK-0002 |
+| Все SDK8 test projects | NOT RUN: solution build failed | ПослеTK-0004/TK-0002, затемTK-0003 |
+| Local Engine method partitions000/010 | exit124 при300с; остальные12 завершились | Повтор exact-case coverage через harness этогоTK |
+
+CI: https://github.com/SuhilovVitaly/DSS/actions/runs/40282243373 ; Ubuntu job121437891188 и Windows job121437890935, artifact IDs12632920718/12632093914. Job logs сохранены в D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-baseline/ci-121437891188.log и ci-121437890935.log.
+
+Локально SDK10: build0 warnings/errors, Contracts273/273, Motion251/251, Client2322/2322. Engine12 partitions прошли,2timeout. Отдельное exact-case Contracts273/273 с полным совпадением identities. Python AST и scoped git diff --check PASS. Review: self-review. Исходный latestMajorCI40280294407 остаётся отдельным запуском, его результат фиксируется по окончании.
+
+Подготовка Board661f3fe8, harness d026651a/e2cd785c/8eaa3740/13cdb4a8 и новая corrective card3558240c опубликованы и remote verified. Последний коммит содержал только новую карточку: генерация остальных записей прервалась на UTF-8 decode и восстановлена отдельным исправляющим коммитом без переписывания истории. Собственный completion SHA определяется после commit/push через Git.

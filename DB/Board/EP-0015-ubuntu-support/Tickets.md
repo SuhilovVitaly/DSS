@@ -1,6 +1,6 @@
 # EP-0015 — тикеты
 
-5 историй, 14 тикетов. Исходные ID сохранены; тикеты размещены в одноимённых папках.
+5 историй, 15 тикетов. Исходные ID сохранены; тикеты размещены в одноимённых папках.
 
 | Тикет | Dependencies | Story AC | Execution |
 |---|---|---|---|
@@ -18,3 +18,5 @@
 | [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) | [EP-0015-US-0004-TK-0002-linux-publish] | [AC-04] | NOT STARTED |
 | [EP-0015-US-0005-TK-0001-project-documentation](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md) | [EP-0015-US-0004-TK-0003-linux-documentation] | [AC-01] | NOT STARTED |
 | [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | [EP-0015-US-0005-TK-0001-project-documentation] | [AC-02, AC-03] | NOT STARTED |
+
+Дополнительный [EP-0015-US-0001-TK-0004-sdk8-client-compilation](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0004-sdk8-client-compilation/EP-0015-US-0001-TK-0004-sdk8-client-compilation.md) выполняется послеTK-0001, передTK-0002; AC-01. TK-0001: baseline measured, не product PASS.

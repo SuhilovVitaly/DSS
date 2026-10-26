@@ -31,3 +31,7 @@ dependencies: []
 - [EP-0015-US-0001-TK-0001-linux-build-baseline](EP-0015-US-0001-TK-0001-linux-build-baseline/EP-0015-US-0001-TK-0001-linux-build-baseline.md) — Базовый прогон сборки и тестов на Ubuntu
 - [EP-0015-US-0001-TK-0002-test-portability-fixes](EP-0015-US-0001-TK-0002-test-portability-fixes/EP-0015-US-0001-TK-0002-test-portability-fixes.md) — Исправление непереносимых тестов
 - [EP-0015-US-0001-TK-0003-linux-check-script](EP-0015-US-0001-TK-0003-linux-check-script/EP-0015-US-0001-TK-0003-linux-check-script.md) — Скрипт проверки check-linux.sh
+
+## Execution dependency correction
+
+Baseline выявил production Client compile blocker SDK8: добавлен [TK-0004](EP-0015-US-0001-TK-0004-sdk8-client-compilation/EP-0015-US-0001-TK-0004-sdk8-client-compilation.md). Порядок: TK-0001 → TK-0004 → TK-0002 → TK-0003. Всего4 тикета, исходные ID сохранены.
