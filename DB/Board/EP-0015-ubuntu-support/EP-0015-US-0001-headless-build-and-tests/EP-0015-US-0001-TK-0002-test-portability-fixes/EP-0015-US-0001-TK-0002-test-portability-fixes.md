@@ -45,3 +45,9 @@ SDK8 baseline выявил CS8600 L61 и CS8604 L72/L106 в tests/DeepSpaceSaga.
 Where(nullable) заменён на OfType<string>, порядок сохранён, neighbors! удалён. .gitattributes: text=auto, shellLF, binary для изображений/шрифтов/TRX. Полная C#12 Release solution build0 warnings/errors; RepeatableTradingVoyageTests + VoyageSaveLoadContinuityTests + TradingContinuationReviewTests:41/41. Scoped whitespace format, git check-attr и diff check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-portability/ (solution-csharp12-build.log, trading.log, trading.trx, format.log). Команды ограничены300с на процесс. Self-review: null элементы отфильтрованы как прежде, соседи и assertions не изменены.
 
 SDK8 cross-platform count/identity comparison выполняется послеpush и сохраняется в итоговом evidence; этот локальный результат не объявлен Linux PASS. Новые подтверждённые platform failures исправляются дополнительными коммитами этого тикета без переписывания истории. Чистый повторный checkout проверяется CI, посторонние исходные изменения исключены из commit.
+
+## Additional SDK8 finding 2026-10-26
+
+CI40283423491 наобеихОС показалCS1998 вtests/DeepSpaceSaga.Client.Tests/GameSessionNavigationTests.cs:105: Navigation_trajectory_projection_shows_wait_turn_then_straight_to_target — полностьюсинхронныйтест, нообъявленasyncTask. Scopeрасширеннатестовыйфайл: заменитьсигнатурунаvoid, сохраниввсеassertions/геометрию; warningнеподавлять. РанееисправленныеCS0121/CS8600/CS8604 исчезлиизSDK8CI. НовыйcompilerfindingзакрываетсядополнительнымкоммитомэтогоTK.
+
+SDK8 CS1998 follow-up: synchronous navigation signature repaired; GameSessionNavigationTests36/36 onC#12. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-portability-navigation/navigation.log иnavigation.trx. Assertions unchanged; independentSDK8CIconfirmation follows separatepush. Currentworktree also contains uncommittedfontwork, excluded fromthisfixcommit.

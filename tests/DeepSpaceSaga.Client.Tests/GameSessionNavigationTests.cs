@@ -102,7 +102,7 @@ public class GameSessionNavigationTests
     }
 
     [Fact]
-    public async Task Navigation_trajectory_projection_shows_wait_turn_then_straight_to_target()
+    public void Navigation_trajectory_projection_shows_wait_turn_then_straight_to_target()
     {
         // ТЗ-08.5 (AC4): NavigationTrajectoryProjector produces the approved shape —
         // straight (wait while r < R), stepwise turn once r ≥ R, straight through the
