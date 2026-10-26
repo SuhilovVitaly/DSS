@@ -80,6 +80,7 @@ jobs:
           $env:DSS_INTERFACE_LOG_PATH = Join-Path $results 'audio-interface.log'
           $env:ALSOFT_DRIVERS = 'null'
           $env:DSS_EXPECT_AUDIO_AVAILABLE = 'true'
+          Get-ChildItem tests/DeepSpaceSaga.Client.Tests/bin/Release/net8.0 -Recurse -Filter 'libopenal.so' | ForEach-Object { & ldd $_.FullName } *> (Join-Path $results 'openal-ldd.log')
           dotnet test tests/DeepSpaceSaga.Client.Tests -c Release --no-build --no-restore --filter FullyQualifiedName~CombatToneTests --results-directory $results --logger 'trx;LogFileName=openal-null.trx'
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           $env:ALSOFT_DRIVERS = 'dss-unavailable-driver'

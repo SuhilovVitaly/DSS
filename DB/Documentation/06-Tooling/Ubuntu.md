@@ -22,6 +22,8 @@ sudo apt-get install -y libgl1 libglx-mesa0 libegl1 libglfw3 libx11-6 \
 `libasound2t64` на Ubuntu 24.04 и `libasound2` на Ubuntu 22.04. OpenAL Soft
 поставляется вместе с игрой. При недоступном устройстве клиент продолжает
 работать и однократно пишет причину в Interface.log.
+Загрузка использует абсолютный путь к комплектному файлу: в publish он лежит
+рядом с executable, в framework-dependent build — в runtimes/linux-x64/native.
 
 Self-contained сборке не нужен установленный .NET, но нужны системные
 зависимости .NET: libc, libgcc, libstdc++, ICU, OpenSSL, zlib, tzdata и

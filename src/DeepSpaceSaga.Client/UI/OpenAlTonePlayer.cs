@@ -1,16 +1,32 @@
 using Silk.NET.OpenAL;
+using Silk.NET.Core.Contexts;
+using System.Runtime.InteropServices;
 
 namespace DeepSpaceSaga.Client.UI;
 
 /// <summary>Owned and used by one audio thread, including context teardown.</summary>
 internal sealed unsafe class OpenAlTonePlayer : IDisposable
 {
-    private readonly ALContext _alc = ALContext.GetApi(soft: true);
-    private readonly AL _al = AL.GetApi(soft: true);
+    private readonly ALContext _alc = new(BundledContext());
+    private readonly AL _al = new(BundledContext());
     private Device* _device;
     private Context* _context;
     private uint _source;
     private readonly Dictionary<CombatTone, uint> _buffers = new();
+
+    private static DefaultNativeContext BundledContext()
+    {
+        string os = OperatingSystem.IsWindows() ? "win" : OperatingSystem.IsMacOS() ? "osx" : "linux";
+        string file = os == "win" ? "soft_oal.dll" : os == "osx" ? "libopenal.dylib" : "libopenal.so";
+        string path = Path.Combine(AppContext.BaseDirectory, file);
+        if (!File.Exists(path))
+        {
+            string rid = os + "-" + RuntimeInformation.ProcessArchitecture.ToString().ToLowerInvariant();
+            path = Path.Combine(AppContext.BaseDirectory, "runtimes", rid, "native", file);
+        }
+        // Avoid the binding's legacy distro-RID fallback in framework-dependent builds.
+        return new DefaultNativeContext(path);
+    }
 
     internal OpenAlTonePlayer()
     {
