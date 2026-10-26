@@ -5,7 +5,7 @@ ticket: EP-0015-US-0005-TK-0002-final-evidence-and-graph
 title: "Финальный evidence и граф"
 stage: draft
 acceptance_status: open
-execution_status: implemented_validation_open
+execution_status: implemented
 layer: docs
 depends_on: [EP-0015-US-0005-TK-0001-project-documentation]
 serves: [AC-02, AC-03]
@@ -42,4 +42,4 @@ Content/source verification, локальные Markdown-ссылки, ID/DAG/co
 
 Graph workflow includes EP-0015. Three required host semantic agents re-read63 current source files, producing109 nodes/120 edges/3 hyperedges with source hashes and selective semantic coverage. Full selected structural corpus:869 code,372 Markdown. Output and manifests under20261026-final-graph/graph; graph navigation is not runtime/acceptance evidence. Parser recovery, pruned references and aggregation limitations are recorded in FinalValidation.md.
 
-Current Client full regression2349/2349 and Engine fixed-source full regression2486/2486 PASS on Windows. The additional full corpus with actual SDK8.0.427 PASS5429/5429, exact discovery/TRX coverage and0 failures/skips. Newest Linux native source runs remain pending at this checkpoint. This ticket publishes a truthful audit and current documentation; it does not mark the epic or human/product acceptance complete. Cleanup evidence is recorded under20261026-cleanup; final remote SHA is verified after commit/push and entered into the excluded publication ledger.
+Current Client full regression2349/2349 and Engine fixed-source full regression2486/2486 PASS on Windows. The additional full corpus with actual SDK8.0.427 PASS5429/5429, exact discovery/TRX coverage and0 failures/skips. Both Linux Client corpora PASS2349/2349; native audio Play/Stop6/6 and no-device1/1 on both Ubuntu versions. Final5ac2de3d package runs in clean Ubuntu24 without system .NET through X11 and real Weston/XWayland,13 GPU frames and production save/load each; release-audit.json and release archive retained under20261026-final-linux-native. This ticket publishes a truthful audit and current documentation; it does not mark the epic or human/product acceptance complete. Cleanup evidence is recorded under20261026-cleanup; final remote SHA is verified after commit/push and entered into the excluded publication ledger.

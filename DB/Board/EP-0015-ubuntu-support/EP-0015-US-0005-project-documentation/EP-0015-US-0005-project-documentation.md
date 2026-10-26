@@ -4,7 +4,7 @@ story: EP-0015-US-0005-project-documentation
 title: "Актуальная документация поддержки Ubuntu"
 stage: draft
 acceptance_status: open
-execution_status: implemented_validation_open
+execution_status: implemented
 dependencies: [EP-0015-US-0001, EP-0015-US-0002, EP-0015-US-0003, EP-0015-US-0004]
 created: 2026-10-26
 ---

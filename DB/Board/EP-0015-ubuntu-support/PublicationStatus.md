@@ -1,6 +1,6 @@
 # Публикация EP-0015
 
-Ветка: codex/ep-0013-debug-tuning-panel. Remote: https://github.com/SuhilovVitaly/DSS. Каждый implementation/fix commit получил немедленный push и git ls-remote; history rewrite не применялся. Все 16 тикетов имеют отдельные опубликованные commits.
+Ветка: codex/ep-0013-debug-tuning-panel. Remote: https://github.com/SuhilovVitaly/DSS. Каждый implementation/fix commit получил немедленный push и git ls-remote; history rewrite не применялся. Все16 тикетов имеют отдельные опубликованные commits.
 
 | Тикет | Опубликованные SHA по порядку | Push |
 |---|---|---|
@@ -19,9 +19,9 @@
 | [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) | 116ccf91a55a49a3feb7781d5d327bff3ffaee1a | VERIFIED |
 | [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) | c7e76bd7d2827032f18a4e8134db57824b239bca<br>0ef5866f8b6a66d2bc3464cc4c9495c4d5710dd5 | VERIFIED |
 | [EP-0015-US-0005-TK-0001-project-documentation](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md) | c2ff74610ea18c142469e08fc0ad94ce36b8c69a | VERIFIED |
-| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | 62cdf4404acc4cdf81d90093f052dfba8488d7b2<br>0c081c5e95c892a55981cba966bff9608798ee82 | VERIFIED |
+| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | 62cdf4404acc4cdf81d90093f052dfba8488d7b2<br>0c081c5e95c892a55981cba966bff9608798ee82<br>a729c7247154cc2bddae18baf3bdcafcf4599a79 | VERIFIED |
 
-Служебная миграция: 661f3fe86cb5351abf087b5aefd465250313e8cd. Последний проверенный опубликованный checkpoint: 5ac2de3d2dd4e5a8bfa8aa6cca83246dabf3df04. Итоговый evidence commit проверяется после создания; собственный SHA не записывается циклически.
+Служебная миграция:661f3fe86cb5351abf087b5aefd465250313e8cd. Снимок истории включает коммиты до a729c7247154cc2bddae18baf3bdcafcf4599a79. Коммит, содержащий этот ledger, проверяется после создания через Git; собственный SHA не записывается циклически. Финальный remote snapshot и полная история находятся в D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-publication/.
 
 ## История коммитов
 
@@ -62,3 +62,4 @@
 - `af3faf637bb4b5571ce525805dee094f8a6ff922` — EP-0015-US-0003-TK-0001-cross-platform-alert-audio: verify native source playback in explicit device gate
 - `b587c608d638339b5fab28800b0eb1592625c958` — EP-0015-US-0004-TK-0002-linux-publish: verify clean package startup through Weston XWayland
 - `5ac2de3d2dd4e5a8bfa8aa6cca83246dabf3df04` — EP-0015-US-0004-TK-0002 Enable Weston XWayland bridge explicitly
+- `a729c7247154cc2bddae18baf3bdcafcf4599a79` — EP-0015-US-0005-TK-0002 Record full SDK8 and same-commit cross-OS validation

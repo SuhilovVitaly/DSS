@@ -1,6 +1,6 @@
 # Тикеты и покрытие EP-0015
 
-5 историй,16 тикетов. Stage draft сохранён; execution/acceptance учитываются отдельно. Все функциональные тикеты реализованы, окончательная cross-OS проверка и manual gates ещё открыты.
+5 историй,16 тикетов. Stage draft сохранён; execution/acceptance учитываются отдельно. Все16 тикетов реализованы и опубликованы; automated/cross-OS/native проверки подтверждены. Остаточные manual/acceptance gates перечислены в FinalValidation.
 
 | Тикет | Layer | Зависимости | AC истории | Execution | Последний опубликованный SHA |
 |---|---|---|---|---|---|
@@ -19,6 +19,6 @@
 | [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) | docs | EP-0015-US-0004-TK-0002-linux-publish | AC-04 | implemented | 116ccf91a55a |
 | [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) | engine | — | AC-01, AC-02 | implemented | 0ef5866f8b6a |
 | [EP-0015-US-0005-TK-0001-project-documentation](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md) | docs | EP-0015-US-0004-TK-0003-linux-documentation | AC-01 | implemented | c2ff74610ea1 |
-| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | docs | EP-0015-US-0005-TK-0001-project-documentation | AC-02, AC-03 | implemented_validation_open | см. PublicationStatus после commit |
+| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | docs | EP-0015-US-0005-TK-0001-project-documentation | AC-02, AC-03 | implemented | см. PublicationStatus после commit |
 
 Реальный порядок: baseline → SDK8 Client → test portability → Linux Skia → check script → fonts/layout → platform integration → contentRoot → user paths → publish/Linux guide → project docs → final evidence/graph. Полные SHA и push: [PublicationStatus](PublicationStatus.md).

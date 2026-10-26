@@ -2,10 +2,11 @@
 epic: EP-0015-ubuntu-support
 title: "Поддержка Ubuntu"
 stage: draft
-execution_status: verification_in_progress
+execution_status: implemented_validation_open
+acceptance_status: open
 created: 2026-10-26
 source_request: "Перенести EP-0015 в DB/Board, добавить документационную историю и выполнить полностью по EpicExecutionPrompt, с проверками, отдельными коммитами и push каждого тикета."
-current_review: execution-validation
+current_review: acceptance-open
 ---
 
 # EP-0015 — Поддержка Ubuntu
@@ -16,7 +17,9 @@ current_review: execution-validation
 
 Цель: сборка/тесты на Ubuntu, Linux Skia, комплектные шрифты, одинаковая раскладка, звук, открытие папок, переносимые инструменты, XDG/portable paths и self-contained дистрибутив. Полный объём и AC сохранены в карточках.
 
-## Grounding
+Текущий итог:16/16 реализованы и опубликованы; actual SDK8 Windows5429/5429, same-commit headless Windows/Ubuntu22/Ubuntu24 по3080/3080, graphical Client обеих Ubuntu2349/2349. Native audio, layout comparisons и clean Ubuntu24 X11/Weston-XWayland package/save-load подтверждены. [FinalValidation](FinalValidation.md) содержит source checkpoints и residual manual gates; полная human/product приёмка не заявляется.
+
+## Исходный baseline до реализации
 
 - Directory.Build.props: net8.0, TreatWarningsAsErrors=true; global.json допускает более новый стабильный SDK. Локально установлен SDK 10.0.400, что не доказывает проверку .NET 8 SDK.
 - Directory.Packages.props содержит SkiaSharp 2.88.8, Silk.NET 2.21.0; Linux-native пакет отсутствует. Состав пакетов проверяется перед реализацией.
@@ -40,7 +43,7 @@ current_review: execution-validation
 - A-02: при отсутствии локальной Ubuntu допускается настоящий Ubuntu 24.04 GitHub Actions runner для headless baseline; native desktop/audio/human gates учитываются отдельно.
 - G-01: локально WSL не установлен, docker/podman не найдены. Проверка вне sandbox подтвердила отсутствие WSL. Используется реальный GitHub Actions Ubuntu runner; pending и выполненные gates перечислены в ExecutionStatus.
 - G-02: исходные карточки не имели Code context/allowlist; уточнять перед каждым тикетом по текущим исходникам, записывая расширения scope.
-- G-03: утверждение исходного TK о зависимости NoDependencies/fontconfig требует проверки официального описания пакета перед выбором. Требование обычного NativeAssets.Linux сохраняется.
+- G-03: закрыто: проверено официальное описание пакета; выбран обычный SkiaSharp.NativeAssets.Linux2.88.8 с fontconfig, matching managed2.88.8. Исходное объяснение NoDependencies исправлено в карточке.
 - G-04: 44100 Гц sample rate из исходного audio TK не может точно представить весь заявленный диапазон до32767 Гц. Принято техническое решение:44100Hz ниже22050Hz,96000Hz на22050..32767Hz;440Hz/100ms остаётся4410 samples.
 
 ## Review log

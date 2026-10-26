@@ -35,3 +35,5 @@ README.md в корне репозитория отсутствует. Корн�
 - 2026-10-26: clean-package validation дополнена явным headless Weston/XWayland gate поUS-0002 AC-01. Это код проверки, а не утверждение о native PASS; текущий статус ведётся в FinalValidation.
 
 - 2026-10-26: ссылки на единый current audit добавлены во все16 карточек; отдельные run записи явно обозначены историей. Подтверждены полный Windows SDK8 corpus5429/5429 и same-commit headless Windows/Ubuntu22/Ubuntu24 по3080/3080; literal display-name differences сохранены отдельно без изменения tests/assertions. Private SDK/CLI-home/http cache удалены после проверки, обычный restore восстановлен.
+
+- 2026-10-26: итоговый audit переписан вокруг подтверждённых current results, failures сохранены историей. Final clean Ubuntu24 X11/Weston-XWayland13+13 frames и production save/load подтверждены CI40305139664; audio Play/Stop и no-device — обеими Ubuntu. Сохранён final release/hash; physical/human/file-manager/pre-font baseline gates остаются явно открытыми.
