@@ -3,7 +3,7 @@ epic: EP-0015-ubuntu-support
 story: EP-0015-US-0002-client-rendering
 title: "Клиент запускается и выглядит как на Windows"
 stage: draft
-dependencies: [EP-0015-US-0001]
+dependencies: []
 ---
 
 # Клиент запускается и выглядит как на Windows
@@ -30,3 +30,7 @@ EP-0015-US-0001
 - [EP-0015-US-0002-TK-0001-skiasharp-linux-native](EP-0015-US-0002-TK-0001-skiasharp-linux-native/EP-0015-US-0002-TK-0001-skiasharp-linux-native.md) — Нативная библиотека SkiaSharp для Linux
 - [EP-0015-US-0002-TK-0002-bundled-fonts](EP-0015-US-0002-TK-0002-bundled-fonts/EP-0015-US-0002-TK-0002-bundled-fonts.md) — Шрифты в комплекте клиента
 - [EP-0015-US-0002-TK-0003-layout-verification](EP-0015-US-0002-TK-0003-layout-verification/EP-0015-US-0002-TK-0003-layout-verification.md) — Проверка раскладки после смены шрифтов
+
+## Dependency correction 2026-10-26
+
+Linux-native Skia необходима raster tests инструментов Performance изUS-0001; ожидание всейUS-0001 создавало скрытую циклическую зависимость. Реальный порядок: US-0001 baseline/compile/fixture → US-0002-TK-0001 native assets → US-0001-TK-0003 check script/regression. Остальная клиентская история следует после baseline и не объявляется принятой до cross-platform проверки.

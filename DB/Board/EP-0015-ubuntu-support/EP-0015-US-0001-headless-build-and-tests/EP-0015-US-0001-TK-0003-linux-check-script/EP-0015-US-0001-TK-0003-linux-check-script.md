@@ -5,7 +5,7 @@ ticket: EP-0015-US-0001-TK-0003-linux-check-script
 title: "Скрипт проверки check-linux.sh"
 stage: draft
 layer: tools
-depends_on: [EP-0015-US-0001-TK-0002-test-portability-fixes]
+depends_on: [EP-0015-US-0001-TK-0002-test-portability-fixes, EP-0015-US-0002-TK-0001-skiasharp-linux-native]
 serves: [AC-05]
 created: 2026-10-25
 ---

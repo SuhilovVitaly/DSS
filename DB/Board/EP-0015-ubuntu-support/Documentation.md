@@ -45,3 +45,7 @@ current_review: execution-preparation
 ## Review log
 
 2026-10-26: перенос и дополнение явно разрешены пользователем. Подготовка — self-review, независимое review и native/human approval не заявляются.
+
+## Execution order correction
+
+SDK8 repairs: US-0001-TK-0001 → US-0001-TK-0004 → US-0001-TK-0002 → US-0002-TK-0001 native Skia → US-0001-TK-0003 check/regression → остальныеUS-0002 → US-0003 → US-0004 → US-0005. Native Skia нужна также Performance raster corpus; первоначальный порядок целых историй заменён реальным ticket DAG.
