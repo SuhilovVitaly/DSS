@@ -87,6 +87,8 @@ public sealed class SkiaWindow : IDisposable
     private double? _monitorRefreshHz;
     // Optional native evidence hook: the surface still contains this screen's
     // rendered pixels, before polling transitions or swapping the framebuffer.
+    internal bool HasNativeGpu => _grContext is not null;
+    internal void CloseEvidenceWindow() => _window.Close();
     internal Action<SKSurface, IScreen?>? NativeFrameRendered { get; set; }
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)

@@ -34,6 +34,7 @@ public static class Program
         var mainMenu = new MainMenuScreen();
 
         using var window = new SkiaWindow(mainMenu, factory, startupStopwatch);
+        NativeStartupEvidence.Attach(window, factory);
         window.Run();
     }
 

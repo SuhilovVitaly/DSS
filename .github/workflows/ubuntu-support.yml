@@ -8,6 +8,9 @@ on:
       - 'tools/ci/platform-baseline.py'
       - 'tools/ci/platform-layout.py'
       - 'tools/check-linux.sh'
+      - 'tools/publish-linux.sh'
+      - 'tools/linux/**'
+      - 'tools/ci/platform-publish.py'
       - 'tools/ci/platform-assets.ps1'
       - 'tools/Export-TacticalButtonAssets.ps1'
       - 'tools/DeepSpaceSaga.PortraitAssets/**'
@@ -90,6 +93,11 @@ jobs:
           & xvfb-run -a glxinfo -B *> (Join-Path $results 'glxinfo.log')
           Get-ChildItem -LiteralPath (Split-Path $dll) -Recurse -Filter 'libglfw*' | ForEach-Object { & ldd $_.FullName } *> (Join-Path $results 'glfw-ldd.log')
           python tools/ci/platform-layout.py $env:GITHUB_WORKSPACE (Join-Path $results 'native') --virtual-display
+      - name: Self-contained Ubuntu package acceptance
+        if: ${{ always() && runner.os == 'Linux' && matrix.project == 'DeepSpaceSaga.Client.Tests' }}
+        shell: pwsh
+        run: |
+          python tools/ci/platform-publish.py $env:GITHUB_WORKSPACE (Join-Path '${{ steps.checks.outputs.results }}' 'distribution')
       - uses: actions/upload-artifact@v4
         if: always()
         with:
