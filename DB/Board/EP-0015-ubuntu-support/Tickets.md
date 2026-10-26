@@ -1,24 +1,24 @@
-# EP-0015 — тикеты
+# Тикеты и покрытие EP-0015
 
-5 историй, 15 тикетов. Исходные ID сохранены; тикеты размещены в одноимённых папках.
+5 историй,16 тикетов. Stage draft сохранён; execution/acceptance учитываются отдельно. Все функциональные тикеты реализованы, окончательная cross-OS проверка и manual gates ещё открыты.
 
-| Тикет | Dependencies | Story AC | Execution |
-|---|---|---|---|
-| [EP-0015-US-0001-TK-0001-linux-build-baseline](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0001-linux-build-baseline/EP-0015-US-0001-TK-0001-linux-build-baseline.md) | [] | [AC-01, AC-02] | NOT STARTED |
-| [EP-0015-US-0001-TK-0002-test-portability-fixes](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0002-test-portability-fixes/EP-0015-US-0001-TK-0002-test-portability-fixes.md) | [EP-0015-US-0001-TK-0001-linux-build-baseline] | [AC-02, AC-03, AC-04] | NOT STARTED |
-| [EP-0015-US-0001-TK-0003-linux-check-script](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0003-linux-check-script/EP-0015-US-0001-TK-0003-linux-check-script.md) | [EP-0015-US-0001-TK-0002-test-portability-fixes] | [AC-05] | NOT STARTED |
-| [EP-0015-US-0002-TK-0001-skiasharp-linux-native](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0001-skiasharp-linux-native/EP-0015-US-0002-TK-0001-skiasharp-linux-native.md) | [] | [AC-01] | NOT STARTED |
-| [EP-0015-US-0002-TK-0002-bundled-fonts](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0002-bundled-fonts/EP-0015-US-0002-TK-0002-bundled-fonts.md) | [EP-0015-US-0002-TK-0001-skiasharp-linux-native] | [AC-02] | NOT STARTED |
-| [EP-0015-US-0002-TK-0003-layout-verification](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0003-layout-verification/EP-0015-US-0002-TK-0003-layout-verification.md) | [EP-0015-US-0002-TK-0002-bundled-fonts] | [AC-03, AC-04] | NOT STARTED |
-| [EP-0015-US-0003-TK-0001-cross-platform-alert-audio](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0001-cross-platform-alert-audio/EP-0015-US-0003-TK-0001-cross-platform-alert-audio.md) | [] | [AC-01, AC-02] | NOT STARTED |
-| [EP-0015-US-0003-TK-0002-open-folder-fallback](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0002-open-folder-fallback/EP-0015-US-0003-TK-0002-open-folder-fallback.md) | [] | [AC-03] | NOT STARTED |
-| [EP-0015-US-0003-TK-0003-powershell-scripts](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0003-powershell-scripts/EP-0015-US-0003-TK-0003-powershell-scripts.md) | [] | [AC-04] | NOT STARTED |
-| [EP-0015-US-0004-TK-0001-user-data-paths](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0001-user-data-paths/EP-0015-US-0004-TK-0001-user-data-paths.md) | [] | [AC-02, AC-03] | NOT STARTED |
-| [EP-0015-US-0004-TK-0002-linux-publish](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0002-linux-publish/EP-0015-US-0004-TK-0002-linux-publish.md) | [EP-0015-US-0004-TK-0001-user-data-paths] | [AC-01] | NOT STARTED |
-| [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) | [EP-0015-US-0004-TK-0002-linux-publish] | [AC-04] | NOT STARTED |
-| [EP-0015-US-0005-TK-0001-project-documentation](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md) | [EP-0015-US-0004-TK-0003-linux-documentation] | [AC-01] | NOT STARTED |
-| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | [EP-0015-US-0005-TK-0001-project-documentation] | [AC-02, AC-03] | NOT STARTED |
+| Тикет | Layer | Зависимости | AC истории | Execution | Последний опубликованный SHA |
+|---|---|---|---|---|---|
+| [EP-0015-US-0001-TK-0001-linux-build-baseline](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0001-linux-build-baseline/EP-0015-US-0001-TK-0001-linux-build-baseline.md) | infra | — | AC-01, AC-02 | measured | 7ba686785625 |
+| [EP-0015-US-0001-TK-0002-test-portability-fixes](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0002-test-portability-fixes/EP-0015-US-0001-TK-0002-test-portability-fixes.md) | tests | EP-0015-US-0001-TK-0004-sdk8-client-compilation | AC-02, AC-03, AC-04 | implemented | 4945ccead41f |
+| [EP-0015-US-0001-TK-0003-linux-check-script](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0003-linux-check-script/EP-0015-US-0001-TK-0003-linux-check-script.md) | tools | EP-0015-US-0001-TK-0002-test-portability-fixes, EP-0015-US-0002-TK-0001-skiasharp-linux-native | AC-05 | implemented | 86cc66cfc366 |
+| [EP-0015-US-0001-TK-0004-sdk8-client-compilation](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0004-sdk8-client-compilation/EP-0015-US-0001-TK-0004-sdk8-client-compilation.md) | client | EP-0015-US-0001-TK-0001-linux-build-baseline | AC-01 | implemented | 91f9377a0d4b |
+| [EP-0015-US-0002-TK-0001-skiasharp-linux-native](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0001-skiasharp-linux-native/EP-0015-US-0002-TK-0001-skiasharp-linux-native.md) | client | EP-0015-US-0001-TK-0002-test-portability-fixes | AC-01 | implemented | 2418b2cab355 |
+| [EP-0015-US-0002-TK-0002-bundled-fonts](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0002-bundled-fonts/EP-0015-US-0002-TK-0002-bundled-fonts.md) | client | EP-0015-US-0002-TK-0001-skiasharp-linux-native | AC-02 | implemented | f202dff1402a |
+| [EP-0015-US-0002-TK-0003-layout-verification](EP-0015-US-0002-client-rendering/EP-0015-US-0002-TK-0003-layout-verification/EP-0015-US-0002-TK-0003-layout-verification.md) | client | EP-0015-US-0002-TK-0002-bundled-fonts | AC-03, AC-04 | implemented | 5cc62782b576 |
+| [EP-0015-US-0003-TK-0001-cross-platform-alert-audio](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0001-cross-platform-alert-audio/EP-0015-US-0003-TK-0001-cross-platform-alert-audio.md) | client | — | AC-01, AC-02 | implemented | deef160c4c3e |
+| [EP-0015-US-0003-TK-0002-open-folder-fallback](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0002-open-folder-fallback/EP-0015-US-0003-TK-0002-open-folder-fallback.md) | client | — | AC-03 | implemented | 4995e0be93d1 |
+| [EP-0015-US-0003-TK-0003-powershell-scripts](EP-0015-US-0003-platform-integration/EP-0015-US-0003-TK-0003-powershell-scripts/EP-0015-US-0003-TK-0003-powershell-scripts.md) | tools | — | AC-04 | implemented | 2e5e5f089afd |
+| [EP-0015-US-0004-TK-0001-user-data-paths](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0001-user-data-paths/EP-0015-US-0004-TK-0001-user-data-paths.md) | client | EP-0015-US-0004-TK-0004-external-settings-content-root | AC-02, AC-03 | implemented | e544f7e22ef5 |
+| [EP-0015-US-0004-TK-0002-linux-publish](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0002-linux-publish/EP-0015-US-0004-TK-0002-linux-publish.md) | tools | EP-0015-US-0004-TK-0001-user-data-paths | AC-01 | implemented | 5d5bd31b0b54 |
+| [EP-0015-US-0004-TK-0003-linux-documentation](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0003-linux-documentation/EP-0015-US-0004-TK-0003-linux-documentation.md) | docs | EP-0015-US-0004-TK-0002-linux-publish | AC-04 | implemented | 116ccf91a55a |
+| [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) | engine | — | AC-01, AC-02 | implemented | 0ef5866f8b6a |
+| [EP-0015-US-0005-TK-0001-project-documentation](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0001-project-documentation/EP-0015-US-0005-TK-0001-project-documentation.md) | docs | EP-0015-US-0004-TK-0003-linux-documentation | AC-01 | implemented | c2ff74610ea1 |
+| [EP-0015-US-0005-TK-0002-final-evidence-and-graph](EP-0015-US-0005-project-documentation/EP-0015-US-0005-TK-0002-final-evidence-and-graph/EP-0015-US-0005-TK-0002-final-evidence-and-graph.md) | docs | EP-0015-US-0005-TK-0001-project-documentation | AC-02, AC-03 | implemented_validation_open | см. PublicationStatus после commit |
 
-Дополнительный [EP-0015-US-0001-TK-0004-sdk8-client-compilation](EP-0015-US-0001-headless-build-and-tests/EP-0015-US-0001-TK-0004-sdk8-client-compilation/EP-0015-US-0001-TK-0004-sdk8-client-compilation.md) выполняется послеTK-0001, передTK-0002; AC-01. TK-0001: baseline measured, не product PASS.
-
-Additional Engine prerequisite: [EP-0015-US-0004-TK-0004-external-settings-content-root](EP-0015-US-0004-linux-distribution/EP-0015-US-0004-TK-0004-external-settings-content-root/EP-0015-US-0004-TK-0004-external-settings-content-root.md) before user-data-paths; implemented with 93/93 scoped tests. Total now 16 tickets.
+Реальный порядок: baseline → SDK8 Client → test portability → Linux Skia → check script → fonts/layout → platform integration → contentRoot → user paths → publish/Linux guide → project docs → final evidence/graph. Полные SHA и push: [PublicationStatus](PublicationStatus.md).

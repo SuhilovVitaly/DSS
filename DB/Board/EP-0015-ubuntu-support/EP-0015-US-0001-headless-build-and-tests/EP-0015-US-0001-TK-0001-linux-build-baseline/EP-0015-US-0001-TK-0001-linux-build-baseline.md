@@ -4,7 +4,8 @@ story: EP-0015-US-0001-headless-build-and-tests
 ticket: EP-0015-US-0001-TK-0001-linux-build-baseline
 title: "Базовый прогон сборки и тестов на Ubuntu"
 stage: draft
-execution_status: baseline-measured
+acceptance_status: open
+execution_status: measured
 layer: infra
 depends_on: []
 serves: [AC-01, AC-02]

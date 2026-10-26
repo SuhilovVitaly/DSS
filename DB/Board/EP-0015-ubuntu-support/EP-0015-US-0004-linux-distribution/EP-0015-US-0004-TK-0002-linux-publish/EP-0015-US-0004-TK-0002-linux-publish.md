@@ -4,6 +4,8 @@ story: EP-0015-US-0004-linux-distribution
 ticket: EP-0015-US-0004-TK-0002-linux-publish
 title: "Публикация linux-x64"
 stage: draft
+acceptance_status: open
+execution_status: implemented
 layer: tools
 depends_on: [EP-0015-US-0004-TK-0001-user-data-paths]
 serves: [AC-01]

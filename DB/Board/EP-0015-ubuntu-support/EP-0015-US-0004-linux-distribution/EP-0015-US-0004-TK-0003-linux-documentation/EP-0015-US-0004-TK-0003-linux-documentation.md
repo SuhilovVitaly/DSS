@@ -4,6 +4,8 @@ story: EP-0015-US-0004-linux-distribution
 ticket: EP-0015-US-0004-TK-0003-linux-documentation
 title: "Документация для Linux"
 stage: draft
+acceptance_status: open
+execution_status: implemented
 layer: docs
 depends_on: [EP-0015-US-0004-TK-0002-linux-publish]
 serves: [AC-04]

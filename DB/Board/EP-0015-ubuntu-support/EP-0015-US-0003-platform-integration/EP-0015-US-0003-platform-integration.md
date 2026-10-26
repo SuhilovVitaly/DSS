@@ -3,6 +3,8 @@ epic: EP-0015-ubuntu-support
 story: EP-0015-US-0003-platform-integration
 title: "Звук, открытие папок и скрипты на Linux"
 stage: draft
+acceptance_status: open
+execution_status: implemented_validation_open
 dependencies: [EP-0015-US-0002]
 ---
 

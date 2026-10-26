@@ -1,23 +1,50 @@
 # EP-0015 — исполнение
 
-Дата: 2026-10-26. Статус: PREPARATION, не завершён.
+Дата: 2026-10-26. **Реализация опубликована; окончательная проверка в работе. Приёмка открыта.**
 
-Пакет перенесён в Board; 5 историй, 14 тикетов. Production-код не менялся, тесты ещё не запускались. Подготовка и реализация учитываются отдельно.
+Canonical Board:5 историй,16 тикетов, включая два дополнительных prerequisites и завершающую документационную историю. Stage draft сохранён; пользователь явно разрешил реализацию и публикацию. Ни self-review, ни автоматизированные проверки не являются human approval.
 
-## Publication
+## Текущий результат
 
-Upstream: origin/codex/ep-0013-debug-tuning-panel. Начальный remote SHA: 5c77fccc9bf46ceb19e41b3bf1b710044d237099. SHA подготовки и тикетов проверяются после коммита и push, не записываются заранее.
+| История | Реализация | Оставшаяся проверка |
+|---|---|---|
+| US-0001 | SDK8 compilation, portability, bounded exact-case check script/CI | Полные финальные Engine/EconomyBalance и Ubuntu22.04 corpus |
+| US-0002 | Linux native Skia, bundled fonts, shared typeface lifetime, Trade viewport/input | Финальная composite native матрица Ubuntu после уточнения probe |
+| US-0003 | OpenAL worker/cache/epochs, platform folder launcher, portable PS asset tools | Linux bundled-Soft loader repeat; новые platform scripts сравнить по PNG hashes |
+| US-0004 | contentRoot, XDG/Windows/portable paths, no-overwrite migration, self-contained publisher и Linux guide | Clean Ubuntu24.04 container без .NET: startup/save/load PASS; final source repeat в очереди |
+| US-0005 | Current contracts и датированная история документации опубликованы | Граф и аудит PASS; согласование ожидающих CI результатов и публикация evidence |
 
-## Gates
+Последний опубликованный функциональный checkpoint:4995e0be93d1b14da152416b78d53be65deb1530. Полные соответствия тикет→SHA→push: [PublicationStatus](PublicationStatus.md). Текущие статусы и AC: [Tickets](Tickets.md).
 
-Ubuntu baseline NOT RUN: WSL не установлен, docker/podman не найдены. Проверяется альтернатива GitHub Actions. Windows automated NOT RUN. Native X11/XWayland, сравнение раскладки, physical input, audio и human acceptance NOT RUN. Полное завершение не заявляется.
+## Подтверждённые проверки
 
-## 2026-10-26 baseline checkpoint
+- Windows C#12 builds: ноль warnings/errors на целевых и интеграционных сборках.
+- Final Windows Client:2349/2349 в20261026-final-client-windows/summary.json после всех source fixes; audio boundary/bundled-loader6/6 плюс unavailable1/1. Final C#12 solution build0 warnings/errors в20261026-final-build/build.log.
+- Contracts:273/273, Motion:251/251 baseline; adaptive Contracts orchestration также273 реальных cases с точным leaf coverage.
+- Full Engine baseline CI40288631755: Windows и Ubuntu24.04 по2484/2484 в181 leaf partitions. Это source e9a8d236 до contentRoot; новый полный corpus и targeted loader regression учитываются отдельно.
+- External Settings content:93/93, включая реальный bootstrap/portraits/save/load.
+- Ubuntu24.04 SDK8.0.427: Contracts/Motion/Performance и полный Client проходят в40290044041. Общий job Client был красным из-за отдельного OpenAL-null check; full corpus и native layouts учитываются отдельно.
+- Native: Windows8/8 cases,48 PNG в20261026-layout-composite/windows. Ubuntu40290044041 native8/8,48 PNG в20261026-linux-native-deps; standalone Trade margin не является финальным production-composite visual acceptance. Composite harness уточнён и опубликован отдельно.
+- Actual Windows production Main: GPU main menu и реальный save/load round-trip проходят под изолированным LOCALAPPDATA в20261026-publish/windows-startup.json.
+- Cross-publish linux-x64: native/runtime/content inventory PASS; deliberate missing Skia rejects package. Запуск Linux executable этим не доказан.
+- Отдельный настоящий запуск self-contained executable в clean Ubuntu24.04 без dotnet проходит: read-only installation, unprivileged user,13 GPU frames и production Save/Load, XDG config/data. Evidence20261026-linux-distribution-ci/extracted/distribution/summary.json, CI40291292917.
+- Финальный review исправил directory-only portrait discovery (существующий independent test1/1) и ложную Windows shell ошибку при reuse Explorer (repro failure →12/12). Оба fix опубликованы отдельными коммитами.
+- Documentation: локальные ссылки0 broken, corpus Markdown-only; [impact/history](DocumentationImpact.md).
 
-US-0001-TK-0001: baseline измерен на Ubuntu24.04 и Windows2022, SDK8.0.427: restore0/build1 с одинаковыми5 compiler diagnostics (2Client и3fixture). Тесты SDK8 NOT RUN, это не зелёная сборка. Добавлен US-0001-TK-0004 (Client compile), TK-0002 расширен на nullable fixture. Всего5 историй/15 тикетов. Следующий: US-0001-TK-0004, затемTK-0002/TK-0003. Остальные истории ещё не реализованы.
+Все каталоги выше находятся под D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/. [Подробный audit](FinalValidation.md) содержит точные пути и ограничения.
 
-Published и remote verified: подготовка661f3fe86cb5351abf087b5aefd465250313e8cd; harness d026651ab4c60e429f357dd112f9ce8420304e90, e2cd785c56374b51f739003650e76b63652e3fbb, 8eaa374008e81ac242d6010beedeae8cacf5dabc, 13cdb4a8bc3718d1a69583b89e56be18c6866442; corrective card3558240c77f86a2fa0c9016d4abecc0ced816741. Completion report SHA проверяется после commit/push.
+## Открытые gates
 
-Локально SDK10: build0 warnings/errors, Contracts273/273, Motion251/251, Client2322/2322; Engine12 method partitions прошли,2 достигли300с и не считаютсяPASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-baseline/. Проверенный exact-case Contracts harness: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-runsettings-contracts/. SDK8 CI: https://github.com/SuhilovVitaly/DSS/actions/runs/40282243373 . Полные job logs сохранены локально.
+Финальные CI runs стоят в очереди за ранними длительными corpus jobs. Ubuntu22.04 уже проходит Client/Contracts/Motion/EconomyBalance/Performance в40291596107; Engine ещё выполняется. Финальная composite layout comparison и bundled OpenAL-null repeat пока PENDING, не PASS. Полный локальный Engine corpus выполняется с300s cap на процесс; найденный loader regression исправлен и отдельно проверен, активный старый binary не подменялся.
 
-Auto-review отклонил только вспомогательную отмену устаревшегоCI через credentials: действие не выполнено, credentials не извлекались, обход не применялся. Это не блокирует реализацию. Статусы native/audio/human остаютсяNOT RUN.
+NOT RUN/OPEN: до-фонтный native Windows baseline (Codex-managed worktree не создан: tool ответил Not a git repository для chat cwd), физическая мышь/клавиатура, слышимость на Windows/PulseAudio/PipeWire, реальный файловый менеджер Ubuntu, native Wayland, arm64, user/product acceptance и независимое review. Xvfb/llvmpipe — реальный software OpenGL, не hardware/physical evidence.
+
+## История решений и baseline
+
+2026-10-26:661f3fe8 перенёс внешний пакет в Board и добавил US-0005. Первый SDK8 baseline на обеих ОС выявил2 CS0121 и3 nullable diagnostics; последующая компиляция обнаружила CS1998. Эти failures сохранены и исправлены отдельными коммитами, не переписаны как PASS. Локальный SDK10 baseline изначально проходил и не подменял SDK8.
+
+2026-10-26: native/raster review нашёл glyph gap для♦ и Trade crop1280×720; исправлены производные DSS Mono glyph mapping и общий fit/input transform без изменения игровых правил. Self-review выявил точную Nyquist границу22050Hz; она исправлена. Linux native проверка выявила отсутствие graphics dependencies и неверный default OpenAL library-name selection; зависимости и explicit soft:true исправлены.
+
+## Ограничение вспомогательной операции
+
+Автоматическая проверка разрешений отклонила попытку отменить устаревший CI через сохранённые Git credentials: извлечение credentials и внешняя отмена не были отдельно разрешены. Операция не выполнена, credentials не извлекались, обход не применялся. Отмена не является частью deliverable; проверки продолжаются с фактическим ожиданием очереди.

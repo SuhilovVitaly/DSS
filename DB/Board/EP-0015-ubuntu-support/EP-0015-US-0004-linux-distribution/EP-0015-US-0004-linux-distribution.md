@@ -3,6 +3,8 @@ epic: EP-0015-ubuntu-support
 story: EP-0015-US-0004-linux-distribution
 title: "Сборка дистрибутива и пользовательские данные на Linux"
 stage: draft
+acceptance_status: open
+execution_status: implemented_validation_open
 dependencies: [EP-0015-US-0002, EP-0015-US-0003]
 ---
 

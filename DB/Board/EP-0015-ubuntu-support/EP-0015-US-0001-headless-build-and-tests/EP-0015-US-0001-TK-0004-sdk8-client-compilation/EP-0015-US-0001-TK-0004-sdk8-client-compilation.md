@@ -4,6 +4,7 @@ story: EP-0015-US-0001-headless-build-and-tests
 ticket: EP-0015-US-0001-TK-0004-sdk8-client-compilation
 title: "Совместимость вызовов SkiaSharp с компилятором SDK8"
 stage: draft
+acceptance_status: open
 execution_status: implemented
 layer: client
 depends_on: [EP-0015-US-0001-TK-0001-linux-build-baseline]

@@ -4,6 +4,8 @@ story: EP-0015-US-0003-platform-integration
 ticket: EP-0015-US-0003-TK-0001-cross-platform-alert-audio
 title: "Кроссплатформенный звук тревоги"
 stage: draft
+acceptance_status: open
+execution_status: implemented
 layer: client
 depends_on: []
 serves: [AC-01, AC-02]

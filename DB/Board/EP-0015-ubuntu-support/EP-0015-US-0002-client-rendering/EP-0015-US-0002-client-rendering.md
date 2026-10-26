@@ -3,6 +3,8 @@ epic: EP-0015-ubuntu-support
 story: EP-0015-US-0002-client-rendering
 title: "Клиент запускается и выглядит как на Windows"
 stage: draft
+acceptance_status: open
+execution_status: implemented_validation_open
 dependencies: []
 ---
 

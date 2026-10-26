@@ -4,6 +4,8 @@ story: EP-0015-US-0005-project-documentation
 ticket: EP-0015-US-0005-TK-0001-project-documentation
 title: "Документация проекта"
 stage: draft
+acceptance_status: open
+execution_status: implemented
 layer: docs
 depends_on: [EP-0015-US-0004-TK-0003-linux-documentation]
 serves: [AC-01]

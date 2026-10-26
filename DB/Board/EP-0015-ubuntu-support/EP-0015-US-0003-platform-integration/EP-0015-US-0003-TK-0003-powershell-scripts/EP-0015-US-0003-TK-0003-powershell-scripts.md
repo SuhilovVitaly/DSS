@@ -4,6 +4,8 @@ story: EP-0015-US-0003-platform-integration
 ticket: EP-0015-US-0003-TK-0003-powershell-scripts
 title: "Служебные скрипты PowerShell"
 stage: draft
+acceptance_status: open
+execution_status: implemented
 layer: tools
 depends_on: []
 serves: [AC-04]

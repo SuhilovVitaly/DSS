@@ -4,7 +4,8 @@ story: EP-0015-US-0001-headless-build-and-tests
 ticket: EP-0015-US-0001-TK-0002-test-portability-fixes
 title: "Исправление непереносимых тестов"
 stage: draft
-execution_status: implemented-local-validation
+acceptance_status: open
+execution_status: implemented
 layer: tests
 depends_on: [EP-0015-US-0001-TK-0004-sdk8-client-compilation]
 serves: [AC-02, AC-03, AC-04]

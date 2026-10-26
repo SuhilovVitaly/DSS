@@ -4,7 +4,8 @@ story: EP-0015-US-0002-client-rendering
 ticket: EP-0015-US-0002-TK-0001-skiasharp-linux-native
 title: "Нативная библиотека SkiaSharp для Linux"
 stage: draft
-execution_status: implemented-local-validation
+acceptance_status: open
+execution_status: implemented
 layer: client
 depends_on: [EP-0015-US-0001-TK-0002-test-portability-fixes]
 serves: [AC-01]

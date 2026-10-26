@@ -4,6 +4,8 @@ story: EP-0015-US-0005-project-documentation
 ticket: EP-0015-US-0005-TK-0002-final-evidence-and-graph
 title: "Финальный evidence и граф"
 stage: draft
+acceptance_status: open
+execution_status: implemented_validation_open
 layer: docs
 depends_on: [EP-0015-US-0005-TK-0001-project-documentation]
 serves: [AC-02, AC-03]
@@ -31,3 +33,11 @@ Content/source verification, локальные Markdown-ссылки, ID/DAG/co
 ## Definition of Done
 
 Все указанные AC подтверждены реальным evidence; собственная проверка обозначена self-review. Отдельный коммит с полным ID, немедленный push и remote verification. Артефакты только в D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/<run>/.
+
+## Implementation and evidence
+
+2026-10-26: Board synchronized to5 stories/16 tickets, explicit execution/acceptance statuses, ticket-to-SHA ledger and dated documentation impact. FinalValidation.md and ExecutionStatus.md distinguish current Windows results, earlier CI source states, pending CI and manual gates. Documentation corpus remains Markdown-only;84 Board+Documentation files have0 broken local links and ticket/story DAG is acyclic (20261026-final-graph/audit.py and final-audit.json).
+
+Graph workflow includes EP-0015. Three required host semantic agents re-read63 current source files, producing108 nodes/117 edges/3 hyperedges with source hashes and selective semantic coverage. Full selected structural corpus:869 code,372 Markdown. Output and manifests under20261026-final-graph/graph; graph navigation is not runtime/acceptance evidence. Parser recovery, pruned references and aggregation limitations are recorded in FinalValidation.md.
+
+Current Client full regression2349/2349; Engine fixed-source full repeat and newest Linux source runs remain pending at this checkpoint. This ticket publishes a truthful audit and current documentation; it does not mark the epic or human/product acceptance complete. Cleanup evidence is recorded under20261026-cleanup; final remote SHA is verified after commit/push and entered into the excluded publication ledger.

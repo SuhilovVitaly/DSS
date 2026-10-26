@@ -4,6 +4,8 @@ story: EP-0015-US-0004-linux-distribution
 ticket: EP-0015-US-0004-TK-0001-user-data-paths
 title: "Пользовательские данные вне каталога программы"
 stage: draft
+acceptance_status: open
+execution_status: implemented
 layer: client
 depends_on: [EP-0015-US-0004-TK-0004-external-settings-content-root]
 serves: [AC-02, AC-03]

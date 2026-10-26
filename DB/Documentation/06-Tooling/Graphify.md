@@ -8,6 +8,13 @@
 намеренное уменьшение графа, а не скрывает потерю coverage.
 Зависимости берутся из локального окружения Graphify, не загружаются игрой.
 
+Rebuild включает code AST, headings/links текущей Documentation и Board
+EP-0009…EP-0015. Fresh host-agent semantic fragments задаются абсолютным
+DSS_GRAPH_SEMANTICS и проверяются по input_sha256; semantic coverage выборочная
+и перечислена в sidecar, а не выдаётся за полный semantic анализ всех файлов.
+Динамические status/publication/impact/validation ledgers и финальная карточка
+Graphify исключены явно, чтобы запись экспортного SHA не делала hash цикличным.
+
 Граф помогает находить владельцев API и связи документов/кода. Его metadata,
 input hashes и warnings определяют свежесть. После изменения документации
 старый граф не следует выдавать за актуальный источник требований.
