@@ -41,6 +41,8 @@ def main():
     parser.add_argument("results_directory", type=Path)
     parser.add_argument("--project", help="Exact test project name; omission runs all projects")
     parser.add_argument("--skip-build", action="store_true", help="Use an already built Release baseline")
+    parser.add_argument("--skip-client-without-display", action="store_true",
+                        help="Explicitly report Client NOT RUN when Linux has neither DISPLAY nor WAYLAND_DISPLAY")
     args = parser.parse_args()
     output = args.results_directory
     if not output.is_absolute():
@@ -66,6 +68,14 @@ def main():
     failed = False
     for project in projects:
         name = project.stem
+        if (args.skip_client_without_display and sys.platform.startswith("linux")
+                and name == "DeepSpaceSaga.Client.Tests"
+                and not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY"))):
+            reason = "No DISPLAY or WAYLAND_DISPLAY; Client tests require a graphical session in check-linux.sh"
+            print(f"{name}: NOT RUN: {reason}", flush=True)
+            report["projects"].append({"project": name, "status": "NOT RUN", "reason": reason})
+            (output / "summary.json").write_text(json.dumps(report, indent=2), encoding="utf-8")
+            continue
         folder = output / name
         folder.mkdir()
         base = ["dotnet", "test", str(project), "-c", "Release", "--no-build", "--no-restore"]

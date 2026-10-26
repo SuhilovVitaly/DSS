@@ -6,6 +6,7 @@ on:
     paths:
       - '.github/workflows/ubuntu-support.yml'
       - 'tools/ci/platform-baseline.py'
+      - 'tools/check-linux.sh'
       - 'src/**'
       - 'tests/**'
       - 'Directory.*.props'
@@ -41,7 +42,11 @@ jobs:
           "results=$results" >> $env:GITHUB_OUTPUT
           $selectedSdk = dotnet --version
           if (-not $selectedSdk.StartsWith('8.0.')) { throw "Expected SDK 8.0.x, selected $selectedSdk" }
-          python tools/ci/platform-baseline.py $results
+          if ($IsLinux) {
+            xvfb-run -a bash tools/check-linux.sh $results
+          } else {
+            python tools/ci/platform-baseline.py $results
+          }
       - uses: actions/upload-artifact@v4
         if: always()
         with:
