@@ -21,8 +21,9 @@ internal static class ShellLauncher
             Directory.CreateDirectory(path);
             string platform = OperatingSystem.IsWindows() ? "windows" : OperatingSystem.IsMacOS() ? "macos" : "linux";
             using var process = (start ?? Process.Start)(DirectoryCommand(path, platform));
-            if (process is null) throw new InvalidOperationException("Folder launcher did not start");
+            // Explorer may handle the shell request without starting a new process.
             if (platform == "windows") return null;
+            if (process is null) throw new InvalidOperationException("Folder launcher did not start");
             Task<string> errors = process.StandardError.ReadToEndAsync();
             try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15)).ConfigureAwait(false); }
             catch (TimeoutException) { process.Kill(); throw; }

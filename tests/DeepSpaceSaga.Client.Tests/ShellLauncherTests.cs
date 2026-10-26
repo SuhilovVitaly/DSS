@@ -29,6 +29,14 @@ public sealed class ShellLauncherTests
     }
 
     [Fact]
+    public async Task NoProcessHandleIsAcceptedOnlyForWindowsShell()
+    {
+        string? result = await ShellLauncher.OpenDirectory(Path.GetTempPath(), _ => null);
+        if (OperatingSystem.IsWindows()) Assert.Null(result);
+        else Assert.Contains("Folder launcher did not start", result);
+    }
+
+    [Fact]
     public async Task MissingLauncherReturnsFailureWithoutThrowing()
     {
         string? result = await ShellLauncher.OpenDirectory(Path.GetTempPath(), _ => throw new Win32Exception("missing xdg-open"));
