@@ -34,15 +34,17 @@ jobs:
         with:
           python-version: '3.12'
       - name: Build and partitioned baseline
+        id: checks
         shell: pwsh
         run: |
+          $results = [IO.Path]::GetFullPath((Join-Path (Split-Path $env:GITHUB_WORKSPACE) "artifacts/validation/ep-0015-ubuntu-support/$env:GITHUB_RUN_ID-${{ matrix.os }}"))
+          "results=$results" >> $env:GITHUB_OUTPUT
           $selectedSdk = dotnet --version
           if (-not $selectedSdk.StartsWith('8.0.')) { throw "Expected SDK 8.0.x, selected $selectedSdk" }
-          $results = Join-Path (Split-Path $env:GITHUB_WORKSPACE) "artifacts/validation/ep-0015-ubuntu-support/$env:GITHUB_RUN_ID-${{ matrix.os }}"
           python tools/ci/platform-baseline.py $results
       - uses: actions/upload-artifact@v4
         if: always()
         with:
           name: ep-0015-${{ matrix.os }}
-          path: ../artifacts/validation/ep-0015-ubuntu-support/${{ github.run_id }}-${{ matrix.os }}
+          path: ${{ steps.checks.outputs.results }}
           retention-days: 14

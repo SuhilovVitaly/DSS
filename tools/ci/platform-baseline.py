@@ -31,6 +31,8 @@ def run(command, log):
             process.wait()
             code = 124
     print(f"{log.name}: exit {code}", flush=True)
+    if code:
+        print("\n".join(log.read_text(encoding="utf-8-sig", errors="replace").splitlines()[-40:]), flush=True)
     return code
 
 

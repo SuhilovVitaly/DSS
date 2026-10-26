@@ -66,3 +66,5 @@ created: 2026-10-25
 ## Exact-case harness verification
 
 Contracts corpus обнаружил повторный разбор nested JSON/quotes в CLI/MSBuild. Фильтры перенесены в XML RunSettings/RunConfiguration/TestCaseFilter; на CLI передаётся только абсолютный путь. Повторный полный Contracts exact-case прогон:273/273, expected/actual TRX names совпали для всех трёх partitions. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-runsettings-contracts/. Неудачный предыдущий harness-прогон хранится отдельно (20261026-exact-contracts) и не объявлен product/test defect или PASS.
+
+CI40281943899 подтвердил restore0 и build1 на обоих SDK8 runners. Исходные compiler logs не были доступны из-за ошибки upload-artifact: относительный ../ path запрещён самим action. Исправлено на нормализованный абсолютный path через step output; при ненулевом exit последние40 строк command log также выводятся в job log. Это исправление harness, а не сокрытие ошибки сборки. Для baseline использованы read-only GitHub tools/API; отмена промежуточного прогона через credentials была отклонена auto-review и не выполнена, обход не применялся.
