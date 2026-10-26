@@ -65,11 +65,13 @@ jobs:
             python tools/ci/platform-baseline.py $results --project $env:DSS_TEST_PROJECT
           }
       - name: Portable PowerShell asset scripts
+        timeout-minutes: 5
         if: ${{ matrix.project == 'DeepSpaceSaga.Client.Tests' }}
         shell: pwsh
         run: |
           & ./tools/ci/platform-assets.ps1 -Repository $env:GITHUB_WORKSPACE -Results (Join-Path '${{ steps.checks.outputs.results }}' 'asset-scripts')
       - name: OpenAL native and unavailable-device checks
+        timeout-minutes: 5
         if: ${{ runner.os == 'Linux' && matrix.project == 'DeepSpaceSaga.Client.Tests' }}
         shell: pwsh
         run: |
