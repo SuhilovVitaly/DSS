@@ -1865,7 +1865,7 @@ public sealed partial class GameSessionScreen : IScreen
                     float startT = totalLength > 0 ? (float)(_trailLengths[segment.Start] / totalLength) : 0;
                     float endT = totalLength > 0 ? (float)(_trailLengths[segment.End] / totalLength) : 1;
                     using var shader = SKShader.CreateLinearGradient(from, to,
-                        [GetTrailSegmentColor(startT, isShip, trailColor), GetTrailSegmentColor(endT, isShip, trailColor)],
+                        new SKColor[] { GetTrailSegmentColor(startT, isShip, trailColor), GetTrailSegmentColor(endT, isShip, trailColor) },
                         null, SKShaderTileMode.Clamp);
                     _trailPaint.Color = SKColors.White;
                     _trailPaint.Shader = shader;
