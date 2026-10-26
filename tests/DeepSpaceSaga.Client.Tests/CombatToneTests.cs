@@ -32,6 +32,8 @@ public sealed class CombatToneTests
     [Theory]
     [InlineData(-1, 0, 37, 1, 44100)]
     [InlineData(99999, 999, 32767, 250, 96000)]
+    [InlineData(22049, 100, 22049, 100, 44100)]
+    [InlineData(22050, 100, 22050, 100, 96000)]
     public void LimitsRemainSupportedWithoutAliasing(int frequency, int duration, int expectedHz, int expectedMs, int rate)
     {
         var tone = CombatTone.From(new(CombatAlertKind.Danger, frequency, duration, 1, 0));

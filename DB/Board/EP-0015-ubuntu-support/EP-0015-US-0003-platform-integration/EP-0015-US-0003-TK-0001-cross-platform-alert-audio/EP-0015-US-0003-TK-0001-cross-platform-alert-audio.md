@@ -45,3 +45,7 @@ Directory.Packages.props; src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj; 
 
 OpenAL binding 2.21.0, native Soft package 1.23.1 (native package has its own version series, verified against NuGet). Added bounded audio queue (128, DropOldest), dedicated context-owning background thread, cached PCM buffers, epoch cancellation during tones/gaps, and disabled-device draining with one warning. CI workflow scope extended to exercise Linux null-device and unavailable-driver subprocesses.
 Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-audio/: build.log C#12 zero warnings/errors; audio.trx 28/28 existing timing/epochs plus PCM; native-null.trx 4/4 real native context+buffer initialization; native-no-device.trx 1/1 non-crashing unavailable path; format.log scoped formatter exit0. Human audible Windows/PulseAudio/PipeWire acceptance NOT RUN. Linux native CI pending.
+
+Self-review boundary fix: exactly22050Hz equals Nyquist at44100Hz and a sampled sine would be silent. Switch to96000Hz at22050Hz inclusive; add exact22049/22050 boundary cases. Earlier prose saying through22050 is superseded by this correction; required440/100 sample fixture unchanged.
+
+Nyquist follow-up verified: D:/DeepSpaceSaga/artifacts/validation/ep-0015-ubuntu-support/20261026-audio-nyquist/nyquist.trx6/6, including exact22049/22050 boundaries and native OpenAL Soft initialization; C#12 build zero diagnostics. Change is one threshold and two theory rows; scoped formatting style unchanged.

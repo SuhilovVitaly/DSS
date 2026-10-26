@@ -3,7 +3,7 @@ namespace DeepSpaceSaga.Client.UI;
 internal readonly record struct CombatTone(int FrequencyHz, int DurationMs)
 {
     internal static CombatTone From(CombatAlertCue cue) => new(Math.Clamp(cue.FrequencyHz, 37, 32767), Math.Clamp(cue.DurationMs, 1, 250));
-    internal int SampleRate => FrequencyHz <= 22050 ? 44100 : 96000;
+    internal int SampleRate => FrequencyHz < 22050 ? 44100 : 96000;
 
     internal short[] Generate()
     {
