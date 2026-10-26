@@ -5,9 +5,12 @@ import importlib.util
 import json
 import os
 from pathlib import Path
+import sys
 import tarfile
 import uuid
 
+
+sys.dont_write_bytecode = True
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)

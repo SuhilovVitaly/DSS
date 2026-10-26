@@ -12,6 +12,7 @@ using DeepSpaceSaga.Client.UI.Screens.Load;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.Trade;
+using DeepSpaceSaga.Client.UI.Screens.Station;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.Content;
@@ -94,13 +95,20 @@ internal static class PlatformLayoutNativeEvidence
                 };
                 foreach (var entry in screens)
                 {
-                    using var window = new SkiaWindow(entry.Screen, factory);
+                    IScreen root = entry.Screen == trade ? new GameSessionScreen(buffer, new LinearMotionPredictor(), handle, uiScale: scale) : entry.Screen;
+                    using var window = new SkiaWindow(root, factory);
                     var native = (IWindow)typeof(SkiaWindow).GetField("_window", Private)!.GetValue(window)!;
                     if (entry.Screen == trade || entry.Screen == game)
                     {
                         typeof(SkiaWindow).GetField("_session", Private)!.SetValue(window, entry.Screen == game ? mapHandle : handle);
-                        if (entry.Screen == game)
-                            typeof(SkiaWindow).GetField("_gameSessionScreen", Private)!.SetValue(window, game);
+                        if (root is GameSessionScreen rootGame)
+                            typeof(SkiaWindow).GetField("_gameSessionScreen", Private)!.SetValue(window, rootGame);
+                        if (entry.Screen == trade)
+                        {
+                            var stack = (ScreenStack)typeof(SkiaWindow).GetField("_screens", Private)!.GetValue(window)!;
+                            stack.Push(new StationScreen(buffer, handle));
+                            stack.Push(trade);
+                        }
                     }
                     int frame = 0;
                     var watch = Stopwatch.StartNew();
@@ -172,7 +180,7 @@ internal static class PlatformLayoutNativeEvidence
                             height,
                             coloredSamples,
                             renderer = typeof(SkiaWindow).GetField("_graphicsRenderer", Private)!.GetValue(window),
-                            quote = screen == trade ? new { trade.Model.SelectedItemId, trade.Model.AuthoritativeQuote?.QuoteId } : null,
+                            quote = screen == trade ? new { trade.Model.SelectedItemId, trade.Model.AuthoritativeQuote?.QuoteId, trade.Model.AuthoritativeQuote?.TotalCredits, trade.Model.AuthoritativeQuote?.RequestedQuantity, trade.Model.AuthoritativeQuote?.ExecutableQuantity, trade.Model.AuthoritativeQuote?.MaximumQuantity, trade.Model.AuthoritativeQuote?.DisabledReason } : null,
                             rows = screen == game ? game.CommandsPanel.CommandPanelRows.Select(r => new
                             {
                                 r.Name,
