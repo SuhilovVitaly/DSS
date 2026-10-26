@@ -8,6 +8,9 @@ on:
       - 'tools/ci/platform-baseline.py'
       - 'tools/ci/platform-layout.py'
       - 'tools/check-linux.sh'
+      - 'tools/ci/platform-assets.ps1'
+      - 'tools/Export-TacticalButtonAssets.ps1'
+      - 'tools/DeepSpaceSaga.PortraitAssets/**'
       - 'src/**'
       - 'tests/**'
       - 'Directory.*.props'
@@ -50,6 +53,11 @@ jobs:
           } else {
             python tools/ci/platform-baseline.py $results --project $env:DSS_TEST_PROJECT
           }
+      - name: Portable PowerShell asset scripts
+        if: ${{ matrix.project == 'DeepSpaceSaga.Client.Tests' }}
+        shell: pwsh
+        run: |
+          & ./tools/ci/platform-assets.ps1 -Repository $env:GITHUB_WORKSPACE -Results (Join-Path '${{ steps.checks.outputs.results }}' 'asset-scripts')
       - name: OpenAL native and unavailable-device checks
         if: ${{ runner.os == 'Linux' && matrix.project == 'DeepSpaceSaga.Client.Tests' }}
         shell: pwsh
