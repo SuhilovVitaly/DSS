@@ -209,26 +209,27 @@ public sealed class BattleNavigationTests
         }
         internal ScreenStack Screens => Field<ScreenStack>(Window, "_screens");
         internal int Depth => Field<int>(Window, "_modalDepth");
-        private Fixture(TacticalBattleInputSettings? inputs, float uiScale)
+        private Fixture(TacticalBattleInputSettings? inputs, float uiScale, string? saveDirectory, SimulationSpeed initialSpeed)
         {
             string settings = Path.Combine(AppContext.BaseDirectory, "Settings.json");
             Engine = SimulationEngine.CreateFromSettingsFile(settings);
-            Engine.SetSpeed(SimulationSpeed.Speed2);
+            Engine.SetSpeed(initialSpeed);
             var connection = DispatchProxy.Create<IGameSessionConnection, ConnectionProxy>();
             Proxy = (ConnectionProxy)(object)connection;
-            Proxy.Inner = new LocalGameSessionConnection(Engine);
+            Proxy.Inner = new LocalGameSessionConnection(Engine, saveDirectory);
             Handle = new GameSessionHandle(connection, deferDebugTuningWrites: true);
             Game = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, uiScale: uiScale, tacticalBattleInputs: inputs);
             Window = new SkiaWindow(Game, this, null, createNativeWindow: false);
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
         }
-        internal static async Task<Fixture> Create(TacticalBattleInputSettings? inputs = null, float uiScale = 1)
+        internal static async Task<Fixture> Create(TacticalBattleInputSettings? inputs = null, float uiScale = 1,
+            string? saveDirectory = null, SimulationSpeed initialSpeed = SimulationSpeed.Speed2)
         {
-            var fixture = new Fixture(inputs, uiScale);
+            var fixture = new Fixture(inputs, uiScale, saveDirectory, initialSpeed);
             try
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-                while (fixture.Handle.Buffer.Latest is null || fixture.Handle.Buffer.CurrentSpeed != SimulationSpeed.Speed2)
+                while (fixture.Handle.Buffer.Latest is null || fixture.Handle.Buffer.CurrentSpeed != initialSpeed)
                 {
                     Assert.Null(fixture.Handle.Failure);
                     await Task.Delay(10, timeout.Token);

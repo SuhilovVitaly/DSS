@@ -46,7 +46,7 @@
 | EP-0015-US-0009-fire-and-results | AC-02 | EP-0015-US-0009-TK-0002-results-phase | PASS: actual shot playback, pre/post values including sides and log, skip/replay, no duplicate commands, no-shot and cap branches |
 | EP-0015-US-0009-fire-and-results | AC-03 | EP-0015-US-0009-TK-0005-journal-contract, EP-0015-US-0009-TK-0006-journal-events, EP-0015-US-0009-TK-0003-sides-and-log-tabs, EP-0015-US-0009-TK-0004-forecast-tab | PASS: sides, retained typed log and all three forecast modes; pre-arrival privacy and map legend |
 | EP-0015-US-0010-battle-end | AC-01 | EP-0015-US-0010-TK-0001-battle-end-ui | PASS: actual mid-battle restart and setup prefill; confirmed active and direct terminal exit; typed outcome |
-| EP-0015-US-0010-battle-end | AC-02 | EP-0015-US-0010-TK-0002-sandbox-flow | not started |
+| EP-0015-US-0010-battle-end | AC-02 | EP-0015-US-0010-TK-0002-sandbox-flow | PASS: real F8/exit, exact LocalConnection save bytes, camera/speed restored and F5/menu re-enabled |
 | EP-0015-US-0011-legacy-removal-prep | AC-01 | EP-0015-US-0011-TK-0001-removal-inventory | not started |
 | EP-0015-US-0011-legacy-removal-prep | AC-02 | EP-0015-US-0011-TK-0002-save-fixtures | not started |
 | EP-0015-US-0011-legacy-removal-prep | AC-03 | EP-0015-US-0011-TK-0003-maneuver-input-move | not started |

@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 47/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; проверяется возврат из песочницы. Остальные 34 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 48/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; возврат из песочницы проверен; начинается подготовка удаления старого боя. Остальные 33 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Это исходный регрессионный срез. Core/session parity уже PASS; полная нативная и продуктовая приёмка пока NOT RUN.
 
-Продолжение: US-0010 TK-0002. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
+Продолжение: US-0011 TK-0001. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -66,4 +66,5 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0009-TK-0006-journal-events | 8ec240237f774f3d5fda70f33b815685ddbf0beb | PASS: remote SHA verified | origin | Linux42126749647 PASS; 380 Engine +173 Client +19 Motion guard PASS; exact retained journal facts |
 | EP-0015-US-0009-TK-0003-sides-and-log-tabs | 7bb8ee0d3a6104686d7dfbd207b5a42849ca13ef | PASS: remote SHA verified | origin | Linux42127506099 PASS; 176 Client +380 Engine +19 Motion guard PASS; inspected sides/log rasters |
 | EP-0015-US-0009-TK-0004-forecast-tab | ba7ad5f40371d1defd5f4107ee0400f89483d59f | PASS: remote SHA verified | origin | 178 Client +380 Engine +19 Motion guard PASS; inspected forecast raster |
-| EP-0015-US-0010-TK-0001-battle-end-ui | current ticket commit | SHA checked immediately after push | origin | 180 Client +380 Engine +19 Motion guard PASS; actual restart and exit |
+| EP-0015-US-0010-TK-0001-battle-end-ui | 20f15a74eb8aac03e96cd59857b07168a2aa428d | PASS: remote SHA verified | origin | 180 Client +380 Engine +19 Motion guard PASS; actual restart and exit |
+| EP-0015-US-0010-TK-0002-sandbox-flow | current ticket commit | SHA checked immediately after push | origin | full Client2479; focused182 Client +380 Engine +19 Motion guard PASS; exact world save |
