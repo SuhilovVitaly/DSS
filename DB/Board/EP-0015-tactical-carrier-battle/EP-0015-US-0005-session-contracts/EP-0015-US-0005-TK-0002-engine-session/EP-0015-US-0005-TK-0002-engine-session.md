@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0005-session-contracts
 ticket: EP-0015-US-0005-TK-0002-engine-session
 title: engine-session
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0005-TK-0001-contracts"]
-files_touched: 3
+files_touched: 4
 serves: [AC-02]
 created: 2026-11-05
 revision: 3
@@ -52,3 +52,12 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+Add `src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSnapshotBuilder.cs` for pure projection of loaded options and current battle into the complete immutable Contracts model; it owns no RNG or phase transitions. Four code positions total (three Engine files + SessionTests). SimulationEngine facade serializes access with existing _worldStateLock and caches original command responses by ordinal CommandId + exact request signature. Replays return original receipts without effects; conflicting reuse is rejected. BattleId derives from start CommandId, avoiding any battle RNG use for identity. Move/fire check battle/revision/phase and all batch members before mutation. Exit is battle-scoped, revision-independent, as declared by TK-0001. Next-turn AI planning occurs immediately after salvo per Display §1; turn-stamped paths/shots and BeforeSalvoUnits preserve animation facts. World command/save guards remain the dependent TK-0003 slice; transport and UI wiring follow later.
+## Execution evidence — 2026-11-05
+
+AC-02 implemented: authoritative phases, both-side AI draws, untouched suggestions, clamp on every move, atomic batch rejection, typed errors, own-only loadout/targets, automatic no-target salvo and no player turn cap. Deep immutable options/state, before-salvo units and turn-stamped animation facts; log deltas and full journal. Receipt replay preserves original response without repeated side effects, identity conflicts rejected. No world defeat/state changes introduced; world guards are TK-0003.
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-session-01/ — build.log PASS (0 warnings/errors), format.log PASS, tests.log and tests/*.trx 274/274 TacticalBattle Engine cases PASS (29 new, including both complete seed-1 session modes). Self-review and git diff --check PASS; not independent review/native acceptance. Publication authorized by D-USER-14/15 and explicit override of D-USER-09/R-06; original restriction above superseded. Separate commit and immediate origin push, SHA recorded in ExecutionStatus.md.
