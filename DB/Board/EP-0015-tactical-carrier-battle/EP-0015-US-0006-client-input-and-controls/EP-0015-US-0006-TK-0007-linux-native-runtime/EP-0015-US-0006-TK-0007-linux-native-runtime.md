@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 ticket: EP-0015-US-0006-TK-0007-linux-native-runtime
 title: Linux native runtime for actual glyph/raster checks
-stage: in-progress
+stage: done
 layer: client-build
 depends_on: ["EP-0015-US-0006-TK-0005-widgets-lists"]
 files_touched: 3
@@ -37,3 +37,7 @@ Windows restore/build and owning Client tests pass without changing rendering as
 ## Windows validation and CI publication — 2026-11-05
 
 Official NativeAssets.Linux2.88.8 reference added with unchanged managed SkiaSharp2.88.8. Native linux-x64 libSkiaSharp.so is present transitively in Client.Tests output; actual path/length/SHA256 retained in D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-linux-runtime-01/native-runtime.json. Restore/build PASS0 warnings/errors; owning Client113/113 PASS, including unchanged glyph/raster assertions and existing text input. XML parse and diff/self-review PASS. Workflow explicitly installs fontconfig/DejaVu host prerequisites and checks linux-x64 .so dependencies with ldd before raster cases. Linux confirmation pending this push; both this card and TK-0006 remain in-progress. No native window/GPU claim.
+
+## Required Linux confirmation — 2026-11-05
+
+PASS run42113068311 / job127545443551 / code4080197095f45cb7cce7ec48ff846d08867c61a7. Native .so and ldd prerequisite step PASS, all dependencies resolved; Motion1376, Engine378, Tactical Client97 PASS, no test exclusions/skips. Actual Linux faces DejaVu Sans; glyph/raster tests execute rather than fail initialization. D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-linux-runtime-01/: linux.log, linux-skia-linux-dependencies.log, linux-glyph-coverage.json, linux-glyphs.png. Downloaded actions-42113068311.zip verified SHA256 e724b61425be90f8c32046449e9d18457d80414db3fc23440a1a8f770d9324fa and retained as platform evidence. Linux glyph image visually inspected. CPU/Skia only, no native window/GPU/physical claim. Temporary caches from19 completed local runs removed after graceful dotnet build-server shutdown; cleanup evidence in sibling20261105-cleanup-01. Code push SHA previously verified; final evidence commit/push checked separately.
