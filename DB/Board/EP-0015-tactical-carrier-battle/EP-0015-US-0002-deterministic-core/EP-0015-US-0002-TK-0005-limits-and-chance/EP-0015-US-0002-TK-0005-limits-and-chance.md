@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0002-deterministic-core
 ticket: EP-0015-US-0002-TK-0005-limits-and-chance
 title: limits-and-chance
-stage: draft
+stage: done
 layer: motion
 depends_on: ["EP-0015-US-0002-TK-0004-geometry"]
 files_touched: 3
@@ -52,3 +52,11 @@ Owning project: tests/DeepSpaceSaga.Motion.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Execution evidence — 2026-11-05
+
+Motion accepts immutable numeric parameters, without referencing Engine content types. Engine/Client adapters follow in their own tickets. Limits preserve engine-list sums and add engine mass last; recomputation uses current engine factors. Speed clamp and speed-dependent turn use Spec operation order. Chance exposes every signed term, raw sum, bounded probability, rear and narrower rear-bonus classification; no RNG/state.
+
+`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-limits-01/`: solution build 0 warnings/errors; full Motion 1376/1376 including source guard; scoped format/diff PASS. Four new tests cover Spec examples, caps, damaged engines, all 34 published seed-one shot chances at source precision (absolute error ≤0.0000006), shield count/absence, carrier/rear behavior, range override and summation-order witness. Source trace has no unrounded per-term values; no bitwise claim for rounded chance is made. Current Engine/content baseline remains recorded, not freshly rerun. Self-review completed; independent review NOT RUN.
+
+Geometry ticket passed Linux run 42088474253 at SHA 8a43baf53ac0ff3f88f518b769893ef7ec244283, all 1088 vectors exactly. Own publication uses user GitHub override; SHA is verified after commit. Production battle and forecast integration are dependent work, not claimed complete here.
