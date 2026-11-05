@@ -159,8 +159,8 @@ public sealed class CombatBootstrapTests
             restored.LoadScenario(ScenarioLoader.LoadFromFile(path, allowNonZeroGameTime: true), isSave: true);
             Assert.Null(restored.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").HullHitPoints);
             Assert.Equal("ship.tetrarch", restored.CaptureSaveState().GameState.SpaceObjects.Single(obj => obj.ObjectId == "player").ShipClassId);
-            Assert.Equal(JsonSerializer.Serialize(Assert.Single(engine.CaptureSnapshot().InstalledModules).LauncherCombat),
-                JsonSerializer.Serialize(Assert.Single(restored.CaptureSnapshot().InstalledModules).LauncherCombat));
+            Assert.Empty(engine.CaptureSnapshot().InstalledModules);
+            Assert.Empty(restored.CaptureSnapshot().InstalledModules);
         }
         finally { File.Delete(path); }
     }

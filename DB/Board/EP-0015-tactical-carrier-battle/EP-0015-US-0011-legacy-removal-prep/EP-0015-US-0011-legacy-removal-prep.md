@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0011-legacy-removal-prep
 title: "Подготовка удаления старого боя: инвентаризация, сохранения, небоевое"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0010-battle-end]
 ---
 
@@ -48,3 +48,5 @@ dependencies: [EP-0015-US-0010-battle-end]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+All four preparation tickets are technically implemented. Save20 and continued noncombat state are verified on Windows; the original Save18 fixtures are historical schema projections as documented in their README. Full post-removal regression remains in the owning stories.

@@ -70,7 +70,7 @@ public static class ScenarioLoader
                 if (envelope.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("Save envelope must be an object.");
                 int version = envelope.RootElement.TryGetProperty("saveFormatVersion", out var field) &&
                     field.ValueKind == JsonValueKind.Number && field.TryGetInt32(out int parsed) ? parsed : 0;
-                RequireCurrentSaveVersion(version);
+                RequireSupportedSaveVersion(version);
             }
             scenario = JsonSerializer.Deserialize<ScenarioFile>(json, JsonOptions)
                        ?? throw new ScenarioException("Scenario JSON deserialized to null.");
@@ -80,25 +80,14 @@ public static class ScenarioLoader
             throw new ScenarioException($"Invalid scenario JSON: {ex.Message}", ex);
         }
 
-        if (isSave) scenario = UpgradeSave18(scenario);
+        if (isSave) scenario = SaveMigration20.Upgrade(scenario, allowNonZeroGameTime);
         return ValidateAndNormalize(scenario, allowNonZeroGameTime);
     }
 
-    internal static void RequireCurrentSaveVersion(int version)
+    internal static void RequireSupportedSaveVersion(int version)
     {
-        if (version != 18 && version != SaveFormat.CurrentSaveFormatVersion)
+        if (version is not (18 or SaveMigration20.PreviousVersion or SaveFormat.CurrentSaveFormatVersion))
             throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
-    }
-
-    internal static ScenarioFile UpgradeSave18(ScenarioFile scenario)
-    {
-        RequireCurrentSaveVersion(scenario.SaveFormatVersion);
-        if (scenario.SaveFormatVersion != 18) return scenario;
-        if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
-        if (scenario.GameState.DebugTuning is not null || scenario.GameState.PointCombatState?.Projectiles?.Any(
-            p => p.LauncherModuleTypeId is not null || p.OriginalFlight is not null) == true)
-            throw new ScenarioException("Invalid Save18: debug tuning/provenance requires Save19. Save was not modified.");
-        return scenario with { SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion };
     }
 
     internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime,
@@ -138,13 +127,16 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
-        normalizedState = PointCombatSaveValidation.NormalizeReferences(normalizedState);
-        PointCombatSaveValidation.Validate(normalizedState.PointCombatState, normalizedState.MotionTimeMs);
-        PointCombatContinuationValidation.Validate(normalizedState, scenario.SaveFormatVersion);
-        normalizedState = CombatSaveValidation.NormalizeReferences(normalizedState);
-        normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
-        CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
-        normalizedState = HostileCombatSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        if (scenario.SaveFormatVersion < SaveFormat.CurrentSaveFormatVersion)
+        {
+            normalizedState = PointCombatSaveValidation.NormalizeReferences(normalizedState);
+            PointCombatSaveValidation.Validate(normalizedState.PointCombatState, normalizedState.MotionTimeMs);
+            PointCombatContinuationValidation.Validate(normalizedState, scenario.SaveFormatVersion);
+            normalizedState = CombatSaveValidation.NormalizeReferences(normalizedState);
+            normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+            CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
+            normalizedState = HostileCombatSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
+        }
         return TradingEconomySaveMigration.Normalize(scenario with { GameState = normalizedState });
     }
 
@@ -222,7 +214,8 @@ public static class ScenarioLoader
         var gs = scenario.GameState;
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
-        CombatReportsSaveValidation.Validate(gs.CombatReportsState);
+        if (scenario.SaveFormatVersion == SaveFormat.CurrentSaveFormatVersion) SaveMigration20.RequireWorldOnly(gs);
+        else CombatReportsSaveValidation.Validate(gs.CombatReportsState);
         if (scenario.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion && gs.MasterSeed is null)
             throw new ScenarioException("Trading economy save: missing masterSeed. Save was not modified.");
         if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)

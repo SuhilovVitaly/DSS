@@ -242,7 +242,7 @@ public sealed partial class SimulationEngine : IDisposable
     /// </summary>
     public void LoadScenario(ScenarioFile scenario, bool isSave = false, SolarSystemGenerationConfig? generation = null)
     {
-        if (isSave) scenario = ScenarioLoader.UpgradeSave18(scenario);
+        if (isSave) scenario = SaveMigration20.Upgrade(scenario);
         if (scenario.GameState is null) throw new ScenarioException("Missing gameState.");
         var tuning = new DebugTuningState(_catalogRegistry);
         if (scenario.GameState.DebugTuning is { } values && !tuning.TryApply(new([.. values]), out tuning, out var reason))
@@ -268,7 +268,8 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void LoadScenarioCore(ScenarioFile scenario, bool isSave, SolarSystemGenerationConfig? generation)
     {
-        if (isSave) ScenarioLoader.RequireCurrentSaveVersion(scenario.SaveFormatVersion);
+        if (isSave && scenario.SaveFormatVersion != SaveFormat.CurrentSaveFormatVersion)
+            throw new ScenarioException("Save was not migrated to the current format.");
         scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true,
             armorClasses: _registry.CombatRules?.ArmorClasses);
         var gs = scenario.GameState;
@@ -490,7 +491,8 @@ public sealed partial class SimulationEngine : IDisposable
         // The scenario-authoring API also accepts historical unarmed economic worlds.
         // Only those start a fresh point subsystem; every actual save and every
         // captured point weapon continuation must retain the complete Save18 state.
-        bool requirePointContinuation = loadingSave && (isSave || scenario.SaveFormatVersion >= 18 ||
+        bool requirePointContinuation = scenario.SaveFormatVersion < SaveFormat.CurrentSaveFormatVersion &&
+            loadingSave && (isSave || scenario.SaveFormatVersion >= 18 ||
             combatState.Count > 0 || defenses.Count > 0);
         StagePointCombatRestore(gs, requirePointContinuation, runtimeObjects, combatState, defenses);
         var restoredReports = StageCombatReportsRestore(gs, loadingSave, runtimeObjects, combatState);
@@ -1261,9 +1263,7 @@ public sealed partial class SimulationEngine : IDisposable
             TradingMap: _tradingMap,
             StationResourceFields: _stationResourceFields,
             VoyageState: _voyageState,
-            CombatState: CaptureCombatState(gameTimeMs), DefenseState: CaptureDefenseState(), SolarSystem: _solarSystem,
-            HostileCombatState: CaptureHostileState(gameTimeMs), CombatReportsState: CaptureCombatReportsState(), CombatReactionDelays: [],
-            PointCombatState: CapturePointCombatState(gameTimeMs), DebugTuning: CaptureDebugTuningOverlay(),
+            SolarSystem: _solarSystem, DebugTuning: CaptureDebugTuningOverlay(),
             MarketEventCatalogFingerprint: _registry.StationMarketEvents.Count > 0 ? _registry.StationMarketEventCatalogFingerprint : null,
             LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
             MarketKnowledge: CaptureMarketKnowledge(clockState.GameTimeMs),
@@ -1271,6 +1271,7 @@ public sealed partial class SimulationEngine : IDisposable
             VoyageFuelSettlements: _voyageFuelSettlements.Values.OrderBy(v => v.VoyageId, StringComparer.Ordinal).ToArray(),
             EngineIdentityCounters: new(_nextEngineCycleId, _nextShipEventId), ClusterMap: _clusterMap, AiMap: _aiMap);
 
+        gameState = SaveMigration20.WorldOnly(gameState);
         return new ScenarioFile(
             Metadata: new ScenarioMetadata(ScenarioId: "quicksave", Name: "Quicksave"),
             GameState: gameState with

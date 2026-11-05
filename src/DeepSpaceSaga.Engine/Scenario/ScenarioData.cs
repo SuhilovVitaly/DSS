@@ -30,9 +30,9 @@ public static class SaveFormat
     /// Version 16 requires phase-three combat continuation; earlier files are rejected by the save entrypoint.
     /// Version 17 requires module-combat continuation (defense 3, combat 2, hostile 2); older saves are rejected.
     /// Version 18 adds point flights, scatter/dodge RNG, evasion and encounter continuation; Save17 is rejected.
-    /// Version19 adds optional debug tuning and retimed flight provenance; Save18 migrates explicitly.
+    /// Version20 keeps only world state; versions 18 and 19 are validated and migrated on load.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 19;
+    public const int CurrentSaveFormatVersion = 20;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -91,8 +91,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
     [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
-    [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
-    [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
+    [property: JsonPropertyName("combatState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CombatStateData? CombatState = null,
+    [property: JsonPropertyName("defenseState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CountermeasureStateData? DefenseState = null,
     [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
     [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
     [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
@@ -103,12 +103,12 @@ public sealed record GameStateData(
     [property: JsonPropertyName("engineIdentityCounters")] EngineIdentityCountersData? EngineIdentityCounters = null,
     [property: JsonPropertyName("clusterMap")] DeepSpaceSaga.Contracts.StationClusterMapSnapshot? ClusterMap = null,
     [property: JsonPropertyName("aiMap")] DeepSpaceSaga.Contracts.AiMapEnvironmentSnapshot? AiMap = null,
-    [property: JsonPropertyName("hostileCombatState")] HostileCombatSaveData? HostileCombatState = null,
+    [property: JsonPropertyName("hostileCombatState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] HostileCombatSaveData? HostileCombatState = null,
     /// <summary>Fractional physical milliseconds, in quarters. Absent in older saves (zero).</summary>
     [property: JsonPropertyName("motionQuarterRemainder")] int MotionQuarterRemainder = 0,
-    [property: JsonPropertyName("combatReportsState")] CombatReportsSaveData? CombatReportsState = null,
-    [property: JsonPropertyName("combatReactionDelays")] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null,
-    [property: JsonPropertyName("pointCombatState")] PointCombatStateData? PointCombatState = null,
+    [property: JsonPropertyName("combatReportsState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CombatReportsSaveData? CombatReportsState = null,
+    [property: JsonPropertyName("combatReactionDelays"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null,
+    [property: JsonPropertyName("pointCombatState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PointCombatStateData? PointCombatState = null,
     [property: JsonPropertyName("debugTuning"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     IReadOnlyList<DeepSpaceSaga.Contracts.DebugTuningValue>? DebugTuning = null)
 {

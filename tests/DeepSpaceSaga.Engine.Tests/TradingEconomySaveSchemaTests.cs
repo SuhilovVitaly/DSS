@@ -28,8 +28,9 @@ public sealed class TradingEconomySaveSchemaTests
                 EngineIdentityCounters = null,
                 MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge,
                 PointCombatState = null,
-                CombatState = version == 0 ? null : source.GameState.CombatState! with { Launchers = [], Projectiles = [] },
-                DefenseState = version == 0 ? null : source.GameState.DefenseState! with { Version = version == 16 ? 2 : 3, Launchers = [], Projectiles = [] },
+                CombatState = version >= 10 ? new(2, source.GameState.MotionTimeMs, 0, 0, 0, long.MaxValue, [], [], [],
+                    HitLocationRngState: 0) : null,
+                DefenseState = version >= 11 ? new(version == 16 ? 2 : 3, 0, 1, 0, 0, 0, [], [], []) : null,
                 HostileCombatState = null,
                 CombatReportsState = null,
                 SpaceObjects = version == 0 ? source.GameState.SpaceObjects : source.GameState.SpaceObjects.Select(o => o with
@@ -92,7 +93,7 @@ public sealed class TradingEconomySaveSchemaTests
     {
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
-        Assert.Equal(19, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(20, SaveFormat.CurrentSaveFormatVersion);
         var manifest = save.GameState.TradingEconomyContinuation!;
         Assert.Equal(1, manifest.SchemaVersion);
         Assert.Equal(64, manifest.ConfigurationFingerprint.Length);

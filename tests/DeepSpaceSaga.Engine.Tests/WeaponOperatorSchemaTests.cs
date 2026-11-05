@@ -105,11 +105,11 @@ public class WeaponOperatorSchemaTests
         var player = engine.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Player);
         Assert.Equal(0, Assert.Single(player.Crew!).AccuracySkill);
         Assert.Equal(0, Assert.Single(player.Crew!).ManeuverabilitySkill);
-        Assert.All(player.Modules!, m => { Assert.Null(m.OperatorCrewId); Assert.True(m.AutoDefenseEnabled); });
+        Assert.All(player.Modules!, m => { Assert.Null(m.OperatorCrewId); Assert.False(m.AutoDefenseEnabled); });
     }
 
     [Fact]
-    public void Crew_skills_and_assignment_roundtrip()
+    public void Crew_skills_roundtrip_without_retired_weapon_assignment()
     {
         using var engine = Create(Assigned(0, 30));
         var saved = engine.CaptureSaveState();
@@ -117,7 +117,7 @@ public class WeaponOperatorSchemaTests
         var player = restored.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Player);
         Assert.Equal(0, Assert.Single(player.Crew!).AccuracySkill);
         Assert.Equal(30, Assert.Single(player.Crew!).ManeuverabilitySkill);
-        Assert.Equal("operator-" + Player, player.Modules!.Single(m => m.ModuleId == Launcher).OperatorCrewId);
+        Assert.DoesNotContain(player.Modules!, m => m.ModuleId == Launcher);
         Assert.All(player.Modules!, m => Assert.False(m.AutoDefenseEnabled));
     }
 

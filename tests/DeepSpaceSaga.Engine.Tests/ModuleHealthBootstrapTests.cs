@@ -82,9 +82,9 @@ public sealed class ModuleHealthBootstrapTests
         using var restored = new SimulationEngine(loaded.Registry);
         restored.LoadScenario(save, isSave: true);
         var module = restored.CaptureSnapshot().InstalledModules[0];
-        Assert.Equal(17, module.ArmorCurrent);
-        Assert.Equal(60, module.ArmorMax);
+        Assert.Equal(0, module.ArmorCurrent);
+        Assert.Equal(0, module.ArmorMax);
         Assert.Equal(90, module.StructureCurrent);
-        Assert.Equal(1200, module.DisabledUntilMotionTimeMs);
+        Assert.Null(module.DisabledUntilMotionTimeMs);
     }
 }

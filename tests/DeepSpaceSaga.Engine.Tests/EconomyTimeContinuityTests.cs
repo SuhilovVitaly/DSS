@@ -164,8 +164,6 @@ public class EconomyTimeContinuityTests
                 TradingMap = null,
                 VoyageState = null,
                 DialogueState = null,
-                CombatState = save.GameState.CombatState! with { Launchers = [], Projectiles = [] },
-                DefenseState = save.GameState.DefenseState! with { Launchers = [], Projectiles = [] },
                 SpaceObjects = save.GameState.SpaceObjects
                     .Where(o => o.ObjectId == save.GameState.PlayerShipObjectId || o.ObjectId == "SPC-0002")
                     .Select(o => o with
