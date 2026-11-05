@@ -9,6 +9,24 @@ namespace DeepSpaceSaga.Contracts;
 /// </summary>
 public interface IGameSessionConnection : IAsyncDisposable
 {
+    ValueTask<TacticalBattleOptions> GetTacticalBattleOptionsAsync(CancellationToken cancellationToken = default) =>
+        cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled<TacticalBattleOptions>(cancellationToken)
+        : ValueTask.FromResult(new TacticalBattleOptions(new(false, new("", "connection", "Tactical battle is unsupported.")), [], [], [], [], []));
+    ValueTask<TacticalBattleSnapshot?> GetTacticalBattleStateAsync(CancellationToken cancellationToken = default) =>
+        cancellationToken.IsCancellationRequested ? ValueTask.FromCanceled<TacticalBattleSnapshot?>(cancellationToken)
+        : ValueTask.FromResult<TacticalBattleSnapshot?>(null);
+    ValueTask<TacticalBattleResponse> StartTacticalBattleAsync(StartTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        UnsupportedTactical(request?.CommandId, cancellationToken);
+    ValueTask<TacticalBattleResponse> MoveTacticalBattleAsync(MoveTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        UnsupportedTactical(request?.CommandId, cancellationToken);
+    ValueTask<TacticalBattleResponse> FireTacticalBattleAsync(FireTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        UnsupportedTactical(request?.CommandId, cancellationToken);
+    ValueTask<TacticalBattleResponse> ExitTacticalBattleAsync(ExitTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        UnsupportedTactical(request?.CommandId, cancellationToken);
+    private static ValueTask<TacticalBattleResponse> UnsupportedTactical(string? id, CancellationToken token) =>
+        token.IsCancellationRequested ? ValueTask.FromCanceled<TacticalBattleResponse>(token)
+        : ValueTask.FromResult(new TacticalBattleResponse(id ?? "", false, TacticalBattleRejectionCode.Unsupported, null, null, []));
+
     ValueTask<StationTravelResult> TravelStationAsync(StationTravelCommand command,
         CancellationToken cancellationToken = default) =>
         ValueTask.FromException<StationTravelResult>(new NotSupportedException("Station travel is unavailable."));

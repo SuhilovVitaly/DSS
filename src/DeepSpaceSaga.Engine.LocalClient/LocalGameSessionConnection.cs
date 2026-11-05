@@ -169,6 +169,31 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
         return ValueTask.CompletedTask;
     }
 
+    public ValueTask<TacticalBattleOptions> GetTacticalBattleOptionsAsync(CancellationToken cancellationToken = default) =>
+        TacticalCall(_engine.GetTacticalBattleOptions, cancellationToken);
+    public ValueTask<TacticalBattleSnapshot?> GetTacticalBattleStateAsync(CancellationToken cancellationToken = default) =>
+        TacticalCall(_engine.GetTacticalBattleState, cancellationToken);
+    public ValueTask<TacticalBattleResponse> StartTacticalBattleAsync(StartTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        TacticalCall(() => _engine.StartTacticalBattle(request), cancellationToken);
+    public ValueTask<TacticalBattleResponse> MoveTacticalBattleAsync(MoveTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        TacticalCall(() => _engine.MoveTacticalBattle(request), cancellationToken);
+    public ValueTask<TacticalBattleResponse> FireTacticalBattleAsync(FireTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        TacticalCall(() => _engine.FireTacticalBattle(request), cancellationToken);
+    public ValueTask<TacticalBattleResponse> ExitTacticalBattleAsync(ExitTacticalBattleRequest request, CancellationToken cancellationToken = default) =>
+        TacticalCall(() => _engine.ExitTacticalBattle(request), cancellationToken);
+
+    private ValueTask<T> TacticalCall<T>(Func<T> action, CancellationToken token)
+    {
+        // Engine methods serialize against the same lock as world ticks. The adapter owns no battle state.
+        if (token.IsCancellationRequested) return ValueTask.FromCanceled<T>(token);
+        try
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            return ValueTask.FromResult(action());
+        }
+        catch (Exception error) { return ValueTask.FromException<T>(error); }
+    }
+
     public async ValueTask<CommandAcceptance> SubmitCommandAsync(PlayerCommand command,
         CancellationToken cancellationToken = default)
     {

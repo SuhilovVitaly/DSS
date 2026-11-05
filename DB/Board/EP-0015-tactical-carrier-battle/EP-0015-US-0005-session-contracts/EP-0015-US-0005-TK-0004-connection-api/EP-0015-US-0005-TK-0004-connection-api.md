@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0005-session-contracts
 ticket: EP-0015-US-0005-TK-0004-connection-api
 title: connection-api
-stage: draft
+stage: done
 layer: engine-local-client
 depends_on: ["EP-0015-US-0005-TK-0003-world-guard"]
 files_touched: 3
@@ -52,3 +52,13 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Pre-implementation boundary — 2026-11-05
+
+The card explicitly owns the Contracts interface addition alongside its Engine.LocalClient adapter. Default methods return unavailable/null/typed Unsupported, preserving existing implementations without synchronous UI exceptions. Local calls use the Engine world-state lock already shared with ticks; no new loop or competing state cache. Cancellation/disposal faults are returned as faulted/cancelled ValueTasks, never thrown while obtaining the task. Invalid gameplay requests retain typed Engine responses.
+
+## Execution evidence — 2026-11-05
+
+AC-04 implemented: six cancellable default interface methods; legacy implementations compile unchanged and return typed Unsupported/unavailable. Local adapter delegates to Engine world-state lock shared with ticks. UI call sites obtain ValueTask without synchronous cancellation/disposal/gameplay exceptions. Typed invalid requests retain codes/phases. Actual running snapshot transport + sixteen concurrent starts and sixteen moves prove one authoritative application and stable RNG/revisions. No Client InterfaceLog dependency introduced.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-connection-02/: build 0 warnings/errors, verify-format PASS, 284/284 TacticalBattle Engine + 283/283 Contracts PASS; diff/self-review PASS. Run01 had test-only reference equality for separately captured ImmutableArray records; assertion corrected to compare complete serialized content; no production weakening. Independent review/native NOT RUN. Immediate origin push authorized by user override.
