@@ -10,6 +10,9 @@ public sealed class DropDown<T>
     private readonly Func<T, string> _label;
     private float _scale = 1;
     private int _visibleRows;
+    private SKRect _viewport;
+    private int _maximumRows;
+    private bool _hasLayout;
     private int _highlighted;
     private double _wheel;
     private string? _caption;
@@ -42,7 +45,7 @@ public sealed class DropDown<T>
         SelectedIndex = Items.IsEmpty ? -1 : 0;
         if (had) for (int i = 0; i < Items.Length; i++)
             if (EqualityComparer<T>.Default.Equals(previous, Items[i])) { SelectedIndex = i; break; }
-        _caption = null; FirstVisibleIndex = 0; _visibleRows = 0; PopupBounds = SKRect.Empty;
+        _caption = null; FirstVisibleIndex = 0; _visibleRows = 0; PopupBounds = SKRect.Empty; _hasLayout = false;
         ResetInput();
     }
     public bool SelectIndex(int index, bool notify = false)
@@ -56,6 +59,9 @@ public sealed class DropDown<T>
     public void Layout(SKRect bounds, SKRect viewport, float uiScale = 1, int maximumRows = 8)
     {
         if (!float.IsFinite(uiScale) || uiScale <= 0 || maximumRows < 1) throw new ArgumentOutOfRangeException(nameof(uiScale));
+        // Rendering commonly repeats layout. Preserve user wheel position until geometry actually changes.
+        if (_hasLayout && Bounds == bounds && _viewport == viewport && _scale == uiScale && _maximumRows == maximumRows) return;
+        _hasLayout = true; _viewport = viewport; _maximumRows = maximumRows;
         if (Bounds != bounds || _scale != uiScale) _caption = null;
         Bounds = bounds; _scale = uiScale;
         float row = 30 * uiScale;

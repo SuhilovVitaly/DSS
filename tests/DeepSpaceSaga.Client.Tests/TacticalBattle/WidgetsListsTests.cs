@@ -48,6 +48,8 @@ public sealed class WidgetsListsTests
         list.OnMouseWheel(20, y, 25); list.OnMouseWheel(20, y, 25);
         Assert.Equal(0, list.FirstVisibleIndex);
         list.OnMouseWheel(20, y, 50); Assert.Equal(1, list.FirstVisibleIndex);
+        list.Layout(new(10, 10, 310, 42), Viewport, maximumRows: 5); // render repeats the same layout
+        Assert.Equal(1, list.FirstVisibleIndex);
         list.OnMouseWheel(20, y, 10000); Assert.Equal(25, list.FirstVisibleIndex);
         list.OnMouseWheel(20, y, -10000); Assert.Equal(0, list.FirstVisibleIndex);
         Assert.Equal(0, list.SelectedItem);
