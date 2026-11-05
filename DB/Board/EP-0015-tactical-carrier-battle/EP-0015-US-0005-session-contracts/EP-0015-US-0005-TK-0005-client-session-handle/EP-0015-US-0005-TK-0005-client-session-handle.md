@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0005-session-contracts
 ticket: EP-0015-US-0005-TK-0005-client-session-handle
 title: client-session-handle
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0005-TK-0004-connection-api"]
-files_touched: 2
+files_touched: 4
 serves: [AC-05]
 created: 2026-11-05
 revision: 3
@@ -49,3 +49,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+Four Client code positions: GameSessionHandle.cs becomes partial, GameSessionHandle.TacticalBattle.cs contains forwarding/logging and localized refusal lookup, UI/InterfaceLog.cs honors the existing absolute DSS_VALIDATION_ROOT diagnostic setting, and SessionHandleBattleTests.cs verifies forwarding/logs/locales/failures. Russian/English locale keys are R-07-exempt. InterfaceLog defaults to existing Interface.log for normal gameplay; diagnostic runs use the configured root without changing cwd or writing repository-root logs. Existing readers use InterfaceLog.FileName and follow the same resolved path. No battle simulation or state cache added to Client; immutable Engine replies flow directly to screens. Transport errors become typed Unavailable plus diagnostic details; caller cancellation remains cancellable.
+
+## Execution evidence — 2026-11-05
+
+AC-05 implemented: six forwarding APIs, original request precision and typed responses retained; every start/move/fire/exit submission and disposition logged with identity/code/phase. Transport failures logged and returned as Unavailable; requested cancellation logged and propagated asynchronously. All 20 refusal codes localized in English/Russian; unknown codes use generic unavailable. No Engine rules/cache in Client. InterfaceLog diagnostic root now follows absolute DSS_VALIDATION_ROOT, default gameplay path preserved; old reader tests follow resolved filename.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-handle-01/: build 0 warnings/errors, scoped format PASS; 33/33 Client cases PASS (new forwarding/log/failure/cancellation/locales, content, existing zoom/scale/log readers). Interface.log retained there, no new root log. Self-review/diff PASS; independent/native acceptance NOT RUN. origin push authorized by explicit override.

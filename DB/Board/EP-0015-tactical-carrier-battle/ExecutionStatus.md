@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 22/78 тикетов. Новый бой ещё не подключён, остальные 56 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 23/78 тикетов. Новый бой ещё не подключён, остальные 55 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Native/input, полная battle parity и приёмка боя пока NOT RUN.
 
-Продолжение: US-0005 TK-0005. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: US-0005 TK-0006. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -49,4 +49,6 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 
 | EP-0015-US-0005-TK-0003-world-guard | ab56c05a1d666de24b414f0d7ff3ae7fc28bece2 | PASS: remote SHA verified | origin | 436 Engine PASS; exact world preservation/save bytes; build/format/diff PASS |
 
-| EP-0015-US-0005-TK-0004-connection-api | SHA проверяется Git после создания коммита | pending | origin | 284 Engine + 283 Contracts PASS; concurrent tick boundary; build/format/diff PASS |
+| EP-0015-US-0005-TK-0004-connection-api | dff18600fccd636aa4d8704a96263cdcdf4e00f5 | PASS: remote SHA verified | origin | 284 Engine + 283 Contracts PASS; concurrent tick boundary; build/format/diff PASS |
+
+| EP-0015-US-0005-TK-0005-client-session-handle | SHA проверяется Git после создания коммита | pending | origin | 33 Client PASS; forwarding/log/refusals/locales; build/format/diff PASS |

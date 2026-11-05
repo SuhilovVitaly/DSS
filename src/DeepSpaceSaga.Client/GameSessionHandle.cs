@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client;
 /// Starts a background receive loop that reads snapshots from the connection
 /// and feeds them into the SnapshotBuffer.
 /// </summary>
-public sealed class GameSessionHandle : IAsyncDisposable
+public sealed partial class GameSessionHandle : IAsyncDisposable
 {
     private readonly IGameSessionConnection _connection;
     private readonly CancellationTokenSource _cts = new();
