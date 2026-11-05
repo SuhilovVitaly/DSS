@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0001-content-and-loader, EP-0015-US-0002-deterministic
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -24,7 +24,7 @@ dependencies: [EP-0015-US-0001-content-and-loader, EP-0015-US-0002-deterministic
 
 - **AC-01.** `DocumentationImpact.md`: по итоговому diff, API, командам, конфигурации и версиям схем — документ → изменение → обновление → проверка.
 
-- **AC-02.** Новый контракт: `04-Engineering/TacticalBattle.md` (правила, ИИ, данные, детерминизм, правила C#-семантики — по `DB/Planning/V4.0/Spec`, числа ссылками на JSON); экраны подготовки и боя в `02-FirstRelease/Screens` и `ScreenCatalog`; `GameSession.md` и `TacticalMapAndManeuvering.md` (F8, клавиши во время боя); `EngineRequirements` §Бой и §Сохранение; `SaveFormat` (Save20); `06-Tooling` (v4_update, CarrierWingSim, LongRunning).
+- **AC-02.** Новый контракт: `04-Engineering/TacticalBattle.md` (правила, ИИ, данные, детерминизм, правила C#-семантики — по `VData/Planning/V4.0/Spec`, числа ссылками на JSON); экраны подготовки и боя в `02-FirstRelease/Screens` и `ScreenCatalog`; `GameSession.md` и `TacticalMapAndManeuvering.md` (F8, клавиши во время боя); `EngineRequirements` §Бой и §Сохранение; `SaveFormat` (Save20); `06-Tooling` (v4_update, CarrierWingSim, LongRunning).
 
 - **AC-03.** Описания старого боя **удалены или переписаны** по `DocumentationSystem.md` (отменённое убирается, история — в Git), без «пометок замены»: `PointAimCombat.md`, `CombatReports.md`, `DebugTuning.md`, `DebugTuningPanel.md`, `ManualManeuver.md`, `NpcObservedTrajectories.md`, `FirstReleaseRequirements.md`, `CommandPanels.md`, `Save.md`, `Defeat.md`, `TacticalMapSpecification.md`, `06-Tooling/GameSessionScreenUI.md`, `DB/Documentation/README.md`, `00-Process/CLAUDE.md` (архитектура combat DTO и reader).
 

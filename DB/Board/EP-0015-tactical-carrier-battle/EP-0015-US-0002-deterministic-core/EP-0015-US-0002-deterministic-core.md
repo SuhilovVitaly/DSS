@@ -10,7 +10,7 @@ dependencies: []
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -32,7 +32,7 @@ none
 
 - **AC-05.** `TacticalLimits` (масса → k → vmin, vmax, change, turn; `clamp_speed`; предел поворота; масса — сумма двигателей отдельно и прибавляется в конце, `wing4.py:250-251`) и `TacticalHitChance` (слагаемые Combat §6.2 в порядке суммирования, `rangeBonus`, без бросков) живут в Motion и совпадают со слагаемыми выстрелов `trace-seed-1.json`; их используют и Engine, и Client.
 
-- **AC-06.** AC-04/05 проходят на Windows (VDI исполнения) и Linux. Если тригонометрия .NET на Windows расходится с glibc хотя бы на одном аргументе `geometry.json`: (1) сначала — порт корректно округлённых `Sin`/`Cos`/`Atan2` в `DeterministicMath` (Motion), сверка со всеми аргументами эталона; (2) если это не даёт совпадения — разрешена перегенерация эталонов (D-USER-13): тот же алгоритм в Python, `v4_update.py`, запись в `DB/Planning/V4.0-archive/Changes/` и снимки баланса до/после, новая цель в Documentation.md §1. Решение и замер записаны.
+- **AC-06.** AC-04/05 проходят на Windows (VDI исполнения) и Linux. Если тригонометрия .NET на Windows расходится с glibc хотя бы на одном аргументе `geometry.json`: (1) сначала — порт корректно округлённых `Sin`/`Cos`/`Atan2` в `DeterministicMath` (Motion), сверка со всеми аргументами эталона; (2) если это не даёт совпадения — разрешена перегенерация эталонов (D-USER-13): тот же алгоритм в Python, `v4_update.py`, запись в `VData/Planning/V4.0-archive/Changes/` и снимки баланса до/после, новая цель в Documentation.md §1. Решение и замер записаны.
 
 Это план будущих наблюдений, а не выполненная проверка. Automated/render, native/input и product/human acceptance фиксируются раздельно.
 
