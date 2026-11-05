@@ -5,7 +5,7 @@ ticket: EP-0015-US-0009-TK-0003-sides-and-log-tabs
 title: sides-and-log-tabs
 stage: draft
 layer: client
-depends_on: ["EP-0015-US-0009-TK-0002-results-phase"]
+depends_on: ["EP-0015-US-0009-TK-0006-journal-events"]
 files_touched: 4
 serves: [AC-03]
 created: 2026-11-05

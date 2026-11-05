@@ -10,7 +10,8 @@ public enum TacticalOutcomeReasonCode { CarrierDestroyed = 0, NoDrones = 1, Time
 public enum TacticalBattleLogKind
 {
     Started = 0, RoleChanged = 1, FighterBreak = 2, NoTargets = 3, ShotMissed = 4, ShotHit = 5,
-    RearKill = 6, Disabled = 7, Destroyed = 8, WeaponJammed = 9, EngineDamaged = 10, Outcome = 11, Exited = 12
+    RearKill = 6, Disabled = 7, Destroyed = 8, WeaponJammed = 9, EngineDamaged = 10, Outcome = 11, Exited = 12,
+    DamageApplied = 13
 }
 
 public readonly record struct TacticalPoseSnapshot(double X, double Y, double Course);
@@ -44,9 +45,14 @@ public sealed record TacticalBattleTotalsSnapshot(long Shots, long Hits, long Re
     ImmutableArray<TacticalWeaponTotalsSnapshot> Weapons);
 public sealed record TacticalOutcomeSnapshot(TacticalBattleOutcomeCode Kind, ImmutableArray<TacticalOutcomeReasonSnapshot> Reasons,
     int Turns, ImmutableArray<TacticalLossCount> Losses, TacticalBattleTotalsSnapshot Statistics, long RandomCalls);
+/// <summary>Chance is the original zero-to-one probability; Rear describes this actual shot.</summary>
+public sealed record TacticalLogShot(double Chance, bool Rear);
+public sealed record TacticalLogDamage(int Hull, int Armor, int Hits, int HullRemaining);
+public sealed record TacticalLogUnit(TacticalUnitKind Kind, int Hull, int MaxHull, string? EngineName = null, double? EngineFactor = null);
 public sealed record TacticalBattleLogEvent(ulong Sequence, int Turn, TacticalBattlePhase Phase, TacticalBattleLogKind Kind,
     string? ActorId = null, string? TargetId = null, string? RoleId = null, int? Amount = null, int? EngineIndex = null,
-    bool NoAttackers = false, TacticalOutcomeSnapshot? Outcome = null);
+    bool NoAttackers = false, TacticalOutcomeSnapshot? Outcome = null, TacticalLogShot? Shot = null,
+    TacticalLogDamage? Damage = null, TacticalLogUnit? Unit = null);
 
 /// <summary>Captured data only. Suggestions appear in Move; Targets/Incoming appear in Fire. Log is the full retained journal.</summary>
 public sealed record TacticalBattleSnapshot(string BattleId, ulong Revision, TacticalBattlePhase Phase, int Turn, string PlayerSide,

@@ -7,6 +7,29 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void JournalPreservesTypedFactsAndOldEventPayloadsRemainReadable()
+    {
+        const string oldEvent = """{"Sequence":7,"Turn":2,"Phase":1,"Kind":10,"TargetId":"d","EngineIndex":1}""";
+        var legacy = JsonSerializer.Deserialize<TacticalBattleLogEvent>(oldEvent)!;
+        Assert.Equal(TacticalBattleLogKind.EngineDamaged, legacy.Kind);
+        Assert.Null(legacy.Shot);
+        Assert.Null(legacy.Damage);
+        Assert.Null(legacy.Unit);
+        double chance = Math.BitIncrement(0.6123456789);
+        var fire = new TacticalBattleLogEvent(8, 2, TacticalBattlePhase.Fire, TacticalBattleLogKind.ShotHit,
+            ActorId: "e", TargetId: "d", Amount: 21, Shot: new(chance, true));
+        var applied = new TacticalBattleLogEvent(9, 2, TacticalBattlePhase.Fire, TacticalBattleLogKind.DamageApplied,
+            TargetId: "d", Damage: new(12, 9, 2, 24));
+        var system = legacy with { Sequence = 10, Unit = new(TacticalUnitKind.Drone, 24, 60, "Маршевый", 0.5) };
+        var frame = Frame() with { Log = [fire, applied, system] };
+        var restored = RoundTrip(frame);
+        Assert.Equal(frame.Log.AsEnumerable(), restored.Log);
+        Assert.Equal(BitConverter.DoubleToInt64Bits(chance), BitConverter.DoubleToInt64Bits(restored.Log[0].Shot!.Chance));
+        Assert.Equal(12, (int)TacticalBattleLogKind.Exited);
+        Assert.Equal(13, (int)TacticalBattleLogKind.DamageApplied);
+    }
+
+    [Fact]
     public void FullSnapshotRoundTripRetainsNestedEquipmentOutcomePathsAndTypedJournal()
     {
         var frame = Frame();

@@ -40,6 +40,8 @@ dependencies: [EP-0015-US-0008-battle-map]
 |---|---|---|
 | [EP-0015-US-0009-TK-0001-fire-planning](EP-0015-US-0009-TK-0001-fire-planning/EP-0015-US-0009-TK-0001-fire-planning.md) | client | AC-01 |
 | [EP-0015-US-0009-TK-0002-results-phase](EP-0015-US-0009-TK-0002-results-phase/EP-0015-US-0009-TK-0002-results-phase.md) | client | AC-02 |
+| [EP-0015-US-0009-TK-0005-journal-contract](EP-0015-US-0009-TK-0005-journal-contract/EP-0015-US-0009-TK-0005-journal-contract.md) | contracts | AC-03 |
+| [EP-0015-US-0009-TK-0006-journal-events](EP-0015-US-0009-TK-0006-journal-events/EP-0015-US-0009-TK-0006-journal-events.md) | engine | AC-03 |
 | [EP-0015-US-0009-TK-0003-sides-and-log-tabs](EP-0015-US-0009-TK-0003-sides-and-log-tabs/EP-0015-US-0009-TK-0003-sides-and-log-tabs.md) | client | AC-03 |
 | [EP-0015-US-0009-TK-0004-forecast-tab](EP-0015-US-0009-TK-0004-forecast-tab/EP-0015-US-0009-TK-0004-forecast-tab.md) | client | AC-03 |
 
