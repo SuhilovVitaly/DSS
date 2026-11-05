@@ -1,4 +1,10 @@
 {
+  "TacticalBattle.MapUnits": "у. е.",
+  "TacticalBattle.UnitDisabledShort": "выведен",
+  "TacticalBattle.FitFieldHelp": "Вписать поле боя и снова автоматически подстраивать вид.",
+  "TacticalBattle.EnemyForecast": "Прогноз противника",
+  "TacticalBattle.EnemySectors": "Секторы противника",
+  "TacticalBattle.AiAllHelp": "Сбросить свои изменения и передать движение всех дронов ИИ.",
   "TacticalBattle.LossLine": "Потери: свои {0} · противник {1}",
   "TacticalBattle.Phase.Results": "Результаты стрельбы",
   "TacticalBattle.Outcome.Victory": "Победа",

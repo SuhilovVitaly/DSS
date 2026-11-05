@@ -39,7 +39,7 @@
 | EP-0015-US-0007-launch-and-setup | AC-04 | EP-0015-US-0007-TK-0004-battle-keys-guard | PASS: window polls all keys, blocks queued world events, F10 PNG and Escape confirmation |
 | EP-0015-US-0008-battle-map | AC-01 | EP-0015-US-0008-TK-0001-battle-screen-and-camera | PASS: immutable frame, fit/resize, cursor zoom, real headless right pan and 0 |
 | EP-0015-US-0008-battle-map | AC-02 | EP-0015-US-0008-TK-0002-panel-header | PASS: phase/loss/seed, outcome and actual refusal; pre/post-salvo snapshots |
-| EP-0015-US-0008-battle-map | AC-03 | EP-0015-US-0008-TK-0003-battle-map-render | not started |
+| EP-0015-US-0008-battle-map | AC-03 | EP-0015-US-0008-TK-0003-battle-map-render | PASS: snapshot renderer, colors/states/ruler/grid and real toggles; selected input/AI-all in TK-0004 |
 | EP-0015-US-0008-battle-map | AC-04 | EP-0015-US-0008-TK-0004-movement-orders | not started |
 | EP-0015-US-0008-battle-map | AC-05 | EP-0015-US-0008-TK-0005-movement-animation | not started |
 | EP-0015-US-0009-fire-and-results | AC-01 | EP-0015-US-0009-TK-0001-fire-planning | not started |
