@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0001-content-and-loader
 ticket: EP-0015-US-0001-TK-0002-content-definitions
 title: content-definitions
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0001-TK-0001-content-data"]
 files_touched: 4
@@ -53,3 +53,11 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Execution — 2026-11-05
+
+Определения всех данных, ordered immutable каталоги и закрытые константы Spec реализованы в четырёх запланированных файлах. Навык хранит признак диапазона отдельно: [50,50] не превращается в фиксированный навык и сохраняет будущий RNG draw. Catalog копирует входную коллекцию; порядок итерации не зависит от словаря, ID сравниваются Ordinal. Проверены production weapon fixture, optional rangeBonus и отказ int-поля 40.0.
+
+Validation: `dotnet build DeepSpaceSaga.sln --no-restore --nologo -v:minimal -m:1` PASS, 0 warnings/errors; `dotnet test ...Engine.Tests.csproj --no-build --no-restore --filter FullyQualifiedName~TacticalBattle.DefinitionsTests --results-directory D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-definitions-01/tests --logger trx` — 3/3 PASS. Scoped format whitespace `--verify-no-changes` и diff check PASS. Evidence: абсолютный каталог `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-definitions-01/` (build.log, tests.log, format-verify.log, tests/*.trx).
+
+Regression selection: полный свежий baseline 5402/5402 — ContentValidation.md, опубликованный TK-0001. В TK-0002 изменены только новые пока не подключённые типы; существующие runtime-пути и прежние тесты не изменены. Эти неизменные наборы не повторялись; текущая сборка и все новые owning tests проверены. Self-review выполнен, independent/native/Linux review не заявляются. SHA и push проверяются Git после создания коммита.

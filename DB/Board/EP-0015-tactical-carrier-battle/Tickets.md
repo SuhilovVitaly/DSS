@@ -5,7 +5,7 @@
 | Ticket | Layer | Story criteria | Dependency | State |
 |---|---|---|---|---|
 | [EP-0015-US-0001-TK-0001-content-data](EP-0015-US-0001-content-and-loader/EP-0015-US-0001-TK-0001-content-data/EP-0015-US-0001-TK-0001-content-data.md) | content-data | AC-01, AC-02 |  | done |
-| [EP-0015-US-0001-TK-0002-content-definitions](EP-0015-US-0001-content-and-loader/EP-0015-US-0001-TK-0002-content-definitions/EP-0015-US-0001-TK-0002-content-definitions.md) | engine | AC-01, AC-03 | EP-0015-US-0001-TK-0001-content-data | draft |
+| [EP-0015-US-0001-TK-0002-content-definitions](EP-0015-US-0001-content-and-loader/EP-0015-US-0001-TK-0002-content-definitions/EP-0015-US-0001-TK-0002-content-definitions.md) | engine | AC-01, AC-03 | EP-0015-US-0001-TK-0001-content-data | done |
 | [EP-0015-US-0001-TK-0003-content-loader](EP-0015-US-0001-content-and-loader/EP-0015-US-0001-TK-0003-content-loader/EP-0015-US-0001-TK-0003-content-loader.md) | engine | AC-03 | EP-0015-US-0001-TK-0002-content-definitions | draft |
 | [EP-0015-US-0001-TK-0004-content-sync](EP-0015-US-0001-content-and-loader/EP-0015-US-0001-TK-0004-content-sync/EP-0015-US-0001-TK-0004-content-sync.md) | tooling | AC-04 | EP-0015-US-0001-TK-0003-content-loader | draft |
 | [EP-0015-US-0002-TK-0001-py-math](EP-0015-US-0002-deterministic-core/EP-0015-US-0002-TK-0001-py-math/EP-0015-US-0002-TK-0001-py-math.md) | motion | AC-01 |  | draft |
