@@ -1,0 +1,60 @@
+---
+epic: EP-0014-module-panels
+story: EP-0014-US-0004-common-panel
+ticket: EP-0014-US-0004-TK-0003-priority-and-time
+title: priority-and-time
+stage: implemented
+layer: client
+depends_on: [EP-0014-US-0004-TK-0002-panel-projection]
+files_touched: 4
+serves: [AC-01, AC-02]
+created: 2026-10-22
+revision: 1
+---
+
+# priority-and-time
+
+## Why
+Prioritize explicit weapon kinds before navigation; real-time formatter remembers last nonzero speed and exposes physical-time tooltip.
+
+## Decisions
+Execution explicitly authorized by user invoking epic-executor on EP-0014 on2026-10-22. Workflow approval is not human product acceptance.
+
+## Assumptions
+Preserve Save19 and migration18. Decimal penetration retains catalog precision. Own destruction limit is root snapshot data, nullable for old producers. Client core is only radius times authoritative fraction. Destroyed weapons may enter aim for preparation; Engine remains final launch authority. Zero-allocation gate covers warmed CommandsPanel.Render with stable inputs, not the entire screen.
+
+## Code context
+| File | Current state | Allowed change |
+|---|---|---|
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/CommandsPanel.cs` | Existing owning implementation or new named test | Prioritize explicit weapon kinds before navigation; real-time formatter remembers last nonzero speed and exposes physical-time tooltip. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Aiming.cs` | Existing owning implementation or new named test | Prioritize explicit weapon kinds before navigation; real-time formatter remembers last nonzero speed and exposes physical-time tooltip. |
+| `src/DeepSpaceSaga.Client/UI/Screens/GameSession/PanelTime.cs` | Existing owning implementation or new named test | Prioritize explicit weapon kinds before navigation; real-time formatter remembers last nonzero speed and exposes physical-time tooltip. |
+| `tests/DeepSpaceSaga.Client.Tests/ModulePanelTimeTests.cs` | Existing owning implementation or new named test | Prioritize explicit weapon kinds before navigation; real-time formatter remembers last nonzero speed and exposes physical-time tooltip. |
+
+## Public API after the change
+Prioritize explicit weapon kinds before navigation; real-time formatter remembers last nonzero speed and exposes physical-time tooltip. Exact signatures must be grounded in owning source before implementation. Existing APIs remain unless this ticket explicitly migrates them.
+
+## Implementation steps
+Read current owning functions and matching tests; implement the stated result; preserve neighboring behaviors; add observable production-path checks.
+
+## Out of scope
+Combat balance, hidden NPC futures, unrelated refactors and save-version changes.
+
+## Invariants
+Engine owns outcomes/RNG/commands; Client uses admitted immutable snapshots and shared Motion math. Render performs no synchronous Engine access. No new hidden information.
+
+## Tests
+Owning project: tests/DeepSpaceSaga.Client.Tests. Focus named ModulePanel tests, then affected regression; build, scoped format and git diff --check. Test processes capped at300000ms, absolute results directory under D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/.
+
+## Definition of Done
+Implemented criteria and tests pass, diff reviewed, actual evidence recorded, separate ticket commit immediately pushed and remote SHA verified. Native and human gates remain distinct from automated tests.
+
+## Self-containment check
+Parent story defines numeric fixtures and full criteria; epic contains source specification. Current Code context must be corrected before any expanded edits, as authorized by EpicExecutionPrompt.
+
+## Scope refinement before implementation
+Add GameSessionScreen.cs to inject remembered speed into panel callbacks, and Data/Locale/English.json plus Russian.json for localized time tooltip. Seven implementation files are necessary for one coherent Client presentation change and permitted by EpicExecutionPrompt scope authority. Exact APIs: CommandsPanel.Render/BuildPanels/CommandPanelDefinition.CommandTypeIds, GameSessionScreen._lastNonPauseSpeed and PointReloadRealSeconds. Priority follows command type identity, never localized captions. Shared PanelTime owns display conversion only.
+
+## Implementation evidence
+
+Priority uses launch command IDs, so module instance keys and localization cannot hide weapons. Shared PanelTime converts physical to real seconds, remembers last active speed, and provides localized reload-ring hover tooltip. Tests include actual1280x720 scale1.5 Render and live launch,2x,pause,hover. Focused7/7 before tooltip extension; final affected regression109/109 PASS, owning build PASS, scoped format PASS, git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0014-module-panels/20261022-execution/client-time-regression.trx and client-time-format.log. Self-review completed; native/human and independent review remain unclaimed. Other duration tooltips are supplied with subsequent owning panel rows.

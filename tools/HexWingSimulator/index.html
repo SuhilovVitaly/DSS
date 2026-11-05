@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="ru">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Носитель и крыло — движение дронов</title><link rel="stylesheet" href="style.css"></head>
+<body>
+<main>
+  <section class="field"><div class="boardwrap"><svg id="board" role="img" aria-label="Гексагональное поле боя"></svg></div></section>
+  <aside>
+    <div class="panel-top">
+      <div class="brand">DEEP SPACE SAGA<small>ТАКТИЧЕСКИЙ ПРОТОТИП · МАСШТАБ ×3</small></div>
+      <details id="archivePanel"><summary>Архив · 4000 боёв</summary><label class="help" for="replayVersion">Серия правил</label><select id="replayVersion"><option value="2" selected>Новые · выбор скорости и пушек · 2000</option><option value="1">Исходные · 75%, урон 1–3 · 2000</option><option value="">Обе серии · 4000</option></select><div class="archive-filters"><label>Тактика<select id="replayScenario"><option value="">Все тактики</option><option value="baseline">Текущий / текущий</option><option value="focus">Фокус / текущий</option><option value="raid">Налёт / текущий</option><option value="defence">Защита / налёт</option></select></label><label>Исход<select id="replayResult"><option value="">Любой исход</option><option value="win">Победа тактики</option><option value="loss">Поражение тактики</option><option value="draw">Ничья</option><option value="timeout">Лимит раундов</option><option value="carrier">Гибель носителя</option></select></label></div><label class="help" for="replayBattle">Бой из выбранной серии</label><select id="replayBattle"></select><button id="loadReplay">Открыть бой</button><div class="help" id="archiveCount"></div></details>
+      <div id="replayControls" hidden><div class="edit"><button id="replayPlay">▶ Смотреть</button><button id="replayBack" aria-label="Предыдущий кадр">←</button><button id="replayNext" aria-label="Следующий кадр">→</button><select id="replaySpeed" aria-label="Скорость просмотра"><option value=".5">½×</option><option value="1" selected>1×</option><option value="2">2×</option><option value="4">4×</option></select></div><input id="replaySeek" type="range" min="0" max="1" value="0" aria-label="Позиция в записи"><div id="replayPosition" class="help"></div><button id="exitReplay" class="quiet">Вернуться к игре</button></div>
+      <div id="phaseTitle"></div>
+      <div id="unitInfo"></div>
+      <button id="mainAction" class="primary"></button>
+      <div id="status" class="help" role="status"></div>
+    </div>
+    <div class="toolbar"><button id="fitView" class="quiet">Всё поле</button><button id="reset" class="quiet">Новый бой</button><label class="speed"><input type="checkbox" id="fast"> Быстро</label><span id="zoomValue" class="help" aria-label="Масштаб поля">100%</span></div>
+    <div class="legend"><span><i class="dot player"></i> Игрок</span><span><i class="dot ai"></i> ИИ</span><span id="speedLegend">Тяжёлый: 4/6 · лёгкий: 6/9</span></div>
+    <div id="phaseOverlay" hidden></div>
+    <div class="sectiontitle">НОСИТЕЛИ</div><div id="carriers"></div><div class="sectiontitle">ОТРЯД</div><div class="fleet" id="fleet"></div>
+    <div id="planner">
+      <label class="sectiontitle" for="moveSpeed">СКОРОСТЬ НА ЭТОТ ХОД</label><select id="moveSpeed"></select><div class="help">Смена скорости задаёт новый прямой план. После своего последнего действия дрон ждёт.</div>
+      <div id="fieldHint" class="help"></div>
+      <label class="sectiontitle" for="targetCell">КОНЕЧНАЯ КЛЕТКА</label><select id="targetCell" aria-label="Конечная клетка"></select>
+      <div id="headingChoices" hidden></div><div id="plans"></div>
+      <div class="sectiontitle">ПОСЛЕДОВАТЕЛЬНОСТЬ ДЕЙСТВИЙ</div><div id="actionSlots"></div>
+      <div class="edit"><button id="forward">Шаг ↑</button><button id="left">↶ 60°</button><button id="right">60° ↷</button><button id="undo" class="quiet">Отменить</button><button id="clear" class="quiet">Сначала</button></div>
+      <div id="draftHelp" class="help"></div>
+    </div>
+    <div id="gunModePanel"><label class="sectiontitle" for="gunMode">РЕЖИМ КУРСОВОЙ ПУШКИ</label><select id="gunMode"><option value="precise">Точный · 90% · урон 1–2</option><option value="power">Мощный · 60% · урон 2–4</option></select></div>
+    <div id="firePlanner" hidden><div class="sectiontitle">КУРСОВАЯ ПУШКА · ВЫБОР ЦЕЛИ</div><div id="fireHint" class="help"></div><div id="fireTargets"></div></div><div id="salvoPanel" hidden><div class="sectiontitle">НАЗНАЧЕННЫЙ ЗАЛП</div><div id="salvoSummary"></div></div><div class="eventbox"><div class="sectiontitle">ЖУРНАЛ</div><div id="log" role="log" aria-live="polite"></div></div>
+    <details class="rules"><summary>Правила движения</summary><p>Тяжёлый выбирает 4 или 6 действий, лёгкий — 6 или 9.</p><p>Шаг и поворот стоят по 1. Первое действие — шаг вперёд. Между поворотами — минимум 2 шага вперёд, в том числе между раундами.</p><p>Конфликтующие шаги отменяются заранее. Отскоков нет. Сохранённые пути остаются на поле; другие варианты видны при наведении.</p><p>Выбор гекса со своим дроном выбирает сам дрон. Для планирования в занятую клетку используй список конечных клеток.</p><p>Курсовая пушка: 12 гексов, сектор ±30°. Точный режим: 90%, урон 1–2. Мощный: 60%, урон 2–4. Корпус: лёгкий 6, тяжёлый 9. Носитель: 15 корпуса, без оружия. Его гибель останавливает и отключает оружие всех своих дронов после одновременного залпа. Выстрелы одновременные; брони нет.</p></details>
+  </aside>
+</main>
+<script src="logic.js"></script><script src="replay-rules-v1.js"></script><script src="replay-rules-v2.js"></script><script src="replay-v2.js"></script><script src="battle-catalog.js"></script><script src="replay.js"></script><script src="replay-controls.js"></script><script src="app.js"></script>
+</body></html>
