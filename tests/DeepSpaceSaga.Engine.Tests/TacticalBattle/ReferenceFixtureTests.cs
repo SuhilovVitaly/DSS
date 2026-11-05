@@ -79,7 +79,7 @@ public sealed class ReferenceFixtureTests
             Assert.Equal(int.Parse(r[3]), actual.GetProperty("turns").GetInt32());
             Assert.Equal(r[4].Split('/').Select(int.Parse), actual.GetProperty("losses").EnumerateArray().Select(e => e.GetInt32()));
             Assert.Equal(r[5].Split('/').Select(int.Parse), actual.GetProperty("carrierHull").EnumerateArray().Select(e => e.GetInt32()));
-            string[] counters = ["shots", "hits", "rearKills", "systems", "disabled"];
+            string[] counters = ["shots", "hits", "rearHits", "systems", "disabled"];
             for (int j = 0; j < counters.Length; j++) Assert.Equal(int.Parse(r[6 + j]), actual.GetProperty(counters[j]).GetInt32());
             int[] calls = r[11].Split('+').Select(int.Parse).ToArray();
             Assert.Equal(calls[0], actual.GetProperty("assemblyCalls").GetInt32());

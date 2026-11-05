@@ -60,7 +60,7 @@ def battles(text):
         kind = "NoDrones" if "не осталось дронов" in reason else "CarrierDestroyed" if "уничтожен" in reason else "Unclassified"
         result.append(dict(seed=integer(r["сид"]), tactic=r["тактика A"], outcome=r["исход"], turns=integer(r["ходов"]),
                            losses=pair(r["потери A / B"]), carrierHull=pair(r["корпус носителей A / B"]),
-                           shots=integer(r["выстрелов"]), hits=integer(r["попаданий"]), rearKills=integer(r["в корму"]),
+                           shots=integer(r["выстрелов"]), hits=integer(r["попаданий"]), rearHits=integer(r["в корму"]),
                            systems=integer(r["систем"]), disabled=integer(r["выведено"]), assemblyCalls=calls[0],
                            turnCalls=calls[1], totalCalls=sum(calls), reason=dict(kind=kind, side=side, text=reason)))
     if len(result) != 90 or any(r["reason"]["kind"] == "Unclassified" for r in result):
@@ -153,12 +153,12 @@ def documents():
     if sys.platform != "linux" or libc != "glibc":
         raise RuntimeError("Reference JSON must be exported on Linux/glibc")
     texts = {name: (REFERENCE / (name + ".md")).read_text(encoding="utf-8") for name in ["battles", "trace-seed-1", "series"]}
-    header = dict(formatVersion=1, source="independent-markdown", exporterPython=platform.python_version(),
+    header = dict(formatVersion=2, source="independent-markdown", exporterPython=platform.python_version(),
                   exporterLibc=libc + " " + version, exporterOs=platform.platform(),
                   sourceSha256={name + ".md": hashlib.sha256(text.replace("\r\n", "\n").encode()).hexdigest() for name, text in texts.items()},
                   geometryEncoding="little-endian IEEE-754 binary64 hex", tracePrecision="decimal-6",
                   missingCoverage=["original simulator environment", "unrounded trace IEEE bits", "all battle trig arguments",
-                                   "per-weapon statistics", "roleChanges", "stage calls for battles other than seed 1",
+                                   "per-weapon statistics", "rearKills in battle summaries", "roleChanges", "stage calls for battles other than seed 1",
                                    "exact series integer sums and timeout counts"])
     data = {"battles": battles(texts["battles"]), "trace-seed-1": trace(texts["trace-seed-1"]),
             "series": series(texts["series"]), "geometry": geometry()}
@@ -181,6 +181,15 @@ def main():
             if existing["data"] != value["data"] or any(existing["header"][key] != value["header"][key] for key in stable):
                 raise ValueError("Reference differs: " + file)
         else:
+            if path.exists():
+                old = json.loads(path.read_text(encoding="utf-8"))
+                if old["header"]["formatVersion"] == 1:
+                    if file == "battles.json":
+                        for row in old["data"]:
+                            row["rearHits"] = row.pop("rearKills")
+                    if old["data"] != value["data"] or old["header"]["sourceSha256"] != value["header"]["sourceSha256"]:
+                        raise ValueError("Schema migration changed independent values: " + file)
+                    print("Schema 1 -> 2: unchanged independent values verified for " + file)
             path.write_text(text, encoding="utf-8", newline="\n")
         if args.emit_log:
             for offset in range(0, len(text), 4000):

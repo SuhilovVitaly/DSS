@@ -21,7 +21,7 @@ jobs:
       - name: Export independent references on glibc
         run: |
           mkdir -p "$DSS_VALIDATION_ROOT"
-          if test -f VData/Planning/V4.0/Reference/geometry.json; then
+          if test -f VData/Planning/V4.0/Reference/geometry.json && ! grep -q '"formatVersion": 1' VData/Planning/V4.0/Reference/geometry.json; then
             python3 tools/tactical-battle/export_references.py --check
           else
             python3 tools/tactical-battle/export_references.py --emit-log
