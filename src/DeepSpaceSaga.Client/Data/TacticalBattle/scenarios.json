@@ -1,7 +1,7 @@
 {
   "initial": {
     "name": "Начальный бой",
-    "description": "4 дрона игрока против 6 тагов.",
+    "description": "Начальный бой",
     "goal": {
       "playerSide": "A",
       "winMaxOneLoss": 0.8,

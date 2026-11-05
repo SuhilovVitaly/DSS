@@ -1,12 +1,12 @@
 #!/usr/bin/env pwsh
 # V4 Data Markdown tables are the independent source; this tool contains no combat rules.
 [CmdletBinding()]
-param([switch]$Check)
+param([switch]$Check, [string]$OutputDirectory)
 
 $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
 $source = Join-Path $repo 'VData/Planning/V4.0/Data'
-$destination = Join-Path $repo 'src/DeepSpaceSaga.Client/Data/TacticalBattle'
+$destination = if ($OutputDirectory) { [IO.Path]::GetFullPath($OutputDirectory) } else { Join-Path $repo 'src/DeepSpaceSaga.Client/Data/TacticalBattle' }
 $culture = [Globalization.CultureInfo]::InvariantCulture
 $documents = [ordered]@{}
 
@@ -26,6 +26,7 @@ function Read-Table([string]$File, [string]$Name) {
 }
 
 function Parse-Cell([string]$Value) {
+    $original = $Value
     $value = $Value.Replace('−', '-')
     if ($value -eq 'true') { return $true }
     if ($value -eq 'false') { return $false }
@@ -36,7 +37,7 @@ function Parse-Cell([string]$Value) {
     if ([long]::TryParse($value, [Globalization.NumberStyles]::Integer, $culture, [ref]$integer)) { return $integer }
     $real = 0.0
     if ([double]::TryParse($value, [Globalization.NumberStyles]::Float, $culture, [ref]$real)) { return $real }
-    return $value
+    return $original
 }
 
 function Set-Field($Object, [string]$Path, $Value) {
@@ -103,8 +104,8 @@ $scenarios = [ordered]@{}
 foreach ($row in Read-Table 'README.md' 'goals') {
     $goal = [ordered]@{}
     foreach ($field in @('playerSide', 'winMaxOneLoss', 'winNoLoss', 'tolerance', 'seeds')) { $goal[$field] = Parse-Cell $row[$field] }
-    # The Markdown source has no separate description: use its stated scenario composition.
-    $scenarios[$row['сценарий']] = [ordered]@{ name = $row['name']; description = '4 дрона игрока против 6 тагов.'; goal = $goal; sides = @() }
+    # No separate description in the Markdown table; retain the supplied scenario name.
+    $scenarios[$row['сценарий']] = [ordered]@{ name = $row['name']; description = $row['name']; goal = $goal; sides = @() }
 }
 foreach ($row in Read-Table 'README.md' 'scenarios') {
     $scenario = $scenarios[$row['сценарий']]

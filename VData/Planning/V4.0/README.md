@@ -16,12 +16,12 @@
 | `Data/Modules/Engines/` | двигатели |
 | `Data/Modules/Shields/` | щиты |
 | `Data/Modules/Armor/` | бронеплиты |
-| `Data/*.json` | правила, ИИ, пилоты, компоновки, сценарии |
+| `Data/` Markdown-таблицы | исходные правила, ИИ, пилоты, компоновки, сценарии; экспорт JSON в контент игры |
 | `Reference/battles.md` | 90 эталонных боёв: исход, ходы, потери, счётчики, число вызовов генератора |
 | `Reference/trace-seed-1.md` | полный ход одного боя: приказы, позиции, выстрелы, состояния, броски после каждого этапа |
 | `Reference/series.md` | замер цели сценария на 1000 боях по каждой тактике |
 
-Каждое число есть и в JSON, и в md-таблицах. Тест сверяет таблицы с JSON, поэтому md хватает и без JSON.
+В этом checkout исходные данные представлены Markdown-таблицами. JSON игры создаёт `tools/tactical-battle/Export-Content.ps1`; ContentSyncTests независимо сверяет значения и порядок с таблицами.
 
 ## Как собрать симулятор
 
@@ -33,29 +33,13 @@
 6. **Серии:** Generation §4 → `Reference/series.md`.
 7. **Интерфейс,** если нужен: `Spec/Display.md`.
 
-## Справочная реализация
+## Текущий workflow DSS
 
-Python 3.10+, только стандартная библиотека, папка `tools/DeepSpaceSaga.CarrierWingSim`:
+Справочная Python-реализация в этом checkout отсутствует и не требуется (D-USER-14/15 EP-0015). Источник JSON игры — таблицы `Data/**/*.md`, размеченные `<!-- table:... -->`.
 
-```
-python scripts/play4.py                              # бой игрока http://127.0.0.1:8766, просмотр боёв ИИ /replay
-python scripts/wing4_series.py --goal --seeds 1:1000 # цель сценария по всем тактикам
-python scripts/wing4_series.py --hits                # попаданий до выхода из боя
-python scripts/v4_update.py [--check]                # всё производное в V4.0: таблицы Data/, CombatSystem.md, Reference/
-python scripts/wing4_snapshot.py --name <имя> --stage before|after   # снимок баланса в V4.0-archive/Balance
-python -m unittest discover -s tests
-```
+1. Изменить таблицы данных; при изменении механики согласованно обновить `Spec/`.
+2. Из корня DSS выполнить `pwsh -NoProfile -File tools/tactical-battle/Export-Content.ps1`.
+3. Выполнить ту же команду с `-Check`; она проверяет экспорт без записи.
+4. Выполнить тесты `ContentSyncTests` в Engine.Tests с абсолютным results-directory в workspace artifacts. Полные команды — в `tools/tactical-battle/README.md`.
 
-## Как менять
-
-Все числа и все параметры расчёта — в `Data/`, в коде их нет. Правила, которых нет в данных, описаны в `Spec/`. Порядок любой правки — ребаланса, нового или изменённого модуля, рамы, ИИ, механики:
-
-1. Поменять JSON в `Data/`. Если меняется механика — ещё код и `Spec/`.
-2. `python scripts/v4_update.py` — одна команда пересобирает в `V4.0` всё производное, около 30 с:
-   - md-таблицы `Data/`;
-   - эталоны `Reference/`, включая серию на 1000 боёв;
-   - сгенерированные блоки `CombatSystem.md`: дроны, счёт каталогов, баланс по тактикам, сравнение пушек.
-3. Вручную поправить выводы в тексте `CombatSystem.md`, если они изменились.
-4. `python -m unittest discover -s tests`. Тест `v4_update.py --check` падает, если что-то в `V4.0` отстало от данных или кода.
-
-История правок — запись в `DB/Planning/V4.0-archive/Changes/` и снимки до и после в `V4.0-archive/Balance/` (`wing4_snapshot.py`). В `V4.0` остаётся только текущая редакция.
+`Reference/*.md` — независимые эталоны прежней реализации. Их нельзя пересоздавать по новому Engine, чтобы получить зелёные проверки. Изменение баланса требует отдельно согласованных независимых эталонов. Trace публикует координаты с шестью десятичными знаками; отсутствующие биты double из него не восстанавливаются.

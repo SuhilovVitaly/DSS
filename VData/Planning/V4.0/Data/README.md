@@ -1,6 +1,6 @@
 # Данные V4
 
-Все числа боя хранятся здесь, в коде их нет. Каждое число есть и в JSON, который читает симулятор, и в таблицах md: этой страницы, `Frames/README.md` и `Modules/*/README.md`. Таблицы md строит из JSON `tools/DeepSpaceSaga.CarrierWingSim/scripts/v4_tables.py`, а тесты проверяют, что они совпадают. Поэтому для новой реализации хватит одних md.
+Все числа боя хранятся в таблицах Markdown этой страницы, Frames/README.md и Modules/*/README.md. В текущем checkout JSON игры создаёт tools/tactical-battle/Export-Content.ps1 из этих таблиц. ContentSyncTests независимо проверяет значения и порядок JSON. Справочная Python-реализация не требуется (D-USER-14/15 EP-0015).
 
 ## Устройство папки
 

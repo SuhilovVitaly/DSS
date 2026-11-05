@@ -4,10 +4,10 @@
 
 | История | Критерий | Тикеты | Статус |
 |---|---|---|---|
-| EP-0015-US-0001-content-and-loader | AC-01 | EP-0015-US-0001-TK-0001-content-data, EP-0015-US-0001-TK-0002-content-definitions | technical backend done; final sync pending |
-| EP-0015-US-0001-content-and-loader | AC-02 | EP-0015-US-0001-TK-0001-content-data | technical backend done; final sync pending |
+| EP-0015-US-0001-content-and-loader | AC-01 | EP-0015-US-0001-TK-0001-content-data, EP-0015-US-0001-TK-0002-content-definitions | technical backend done; content sync PASS |
+| EP-0015-US-0001-content-and-loader | AC-02 | EP-0015-US-0001-TK-0001-content-data | technical backend done; content sync PASS |
 | EP-0015-US-0001-content-and-loader | AC-03 | EP-0015-US-0001-TK-0002-content-definitions, EP-0015-US-0001-TK-0003-content-loader | backend done; Client error presentation pending US-0007 |
-| EP-0015-US-0001-content-and-loader | AC-04 | EP-0015-US-0001-TK-0004-content-sync | not started |
+| EP-0015-US-0001-content-and-loader | AC-04 | EP-0015-US-0001-TK-0004-content-sync | done: 29 JSON values/order checked independently |
 | EP-0015-US-0002-deterministic-core | AC-01 | EP-0015-US-0002-TK-0001-py-math | not started |
 | EP-0015-US-0002-deterministic-core | AC-02 | EP-0015-US-0002-TK-0002-reference-fixtures | not started |
 | EP-0015-US-0002-deterministic-core | AC-03 | EP-0015-US-0002-TK-0003-mulberry32 | not started |
