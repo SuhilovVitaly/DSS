@@ -22,7 +22,7 @@
 | EP-0015-US-0004-battle-ai | AC-02 | EP-0015-US-0004-TK-0002-striker-fighter-tail | done: modes/hunt/grid tie and RNG edge cases PASS |
 | EP-0015-US-0004-battle-ai | AC-03 | EP-0015-US-0004-TK-0003-interceptor-commander | done: complete policy and independent first planning stage PASS |
 | EP-0015-US-0004-battle-ai | AC-04 | EP-0015-US-0004-TK-0004-golden-battles | done under D-USER-15: 90 summaries + continuous trace Windows/Linux PASS |
-| EP-0015-US-0005-session-contracts | AC-01 | EP-0015-US-0005-TK-0001-contracts | not started |
+| EP-0015-US-0005-session-contracts | AC-01 | EP-0015-US-0005-TK-0001-contracts | DTOs done; complete captures/options behavior in TK-0002 |
 | EP-0015-US-0005-session-contracts | AC-02 | EP-0015-US-0005-TK-0002-engine-session | not started |
 | EP-0015-US-0005-session-contracts | AC-03 | EP-0015-US-0005-TK-0003-world-guard, EP-0015-US-0005-TK-0006-session-tests | not started |
 | EP-0015-US-0005-session-contracts | AC-04 | EP-0015-US-0005-TK-0004-connection-api | not started |

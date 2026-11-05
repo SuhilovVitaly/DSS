@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0005-session-contracts
 title: "Контракты, сессия, транспорт боя"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0004-battle-ai]
 ---
 
