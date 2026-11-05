@@ -51,7 +51,8 @@ public sealed class BattleNavigationTests
         canvas.Clear(SKColors.Magenta);
         battle.Render(canvas, 1280, 720);
         Assert.NotEqual(SKColors.Magenta, bitmap.GetPixel(0, 0));
-        Assert.Equal(ScreenEvent.NewTacticalBattle, battle.OnMouseDown(300, 680, MouseButton.Left));
+        var newBattle = Assert.IsType<TacticalBattleScreen>(battle).NewBattleBounds;
+        Assert.Equal(ScreenEvent.NewTacticalBattle, battle.OnMouseDown(newBattle.MidX, newBattle.MidY, MouseButton.Left));
         await fixture.Route(ScreenEvent.NewTacticalBattle);
         var next = Assert.IsAssignableFrom<TacticalBattleModalScreen>(fixture.Screens.Current);
         Assert.True(next.IsSetup); Assert.NotSame(setup, next); Assert.Same(battle.Flow, next.Flow);

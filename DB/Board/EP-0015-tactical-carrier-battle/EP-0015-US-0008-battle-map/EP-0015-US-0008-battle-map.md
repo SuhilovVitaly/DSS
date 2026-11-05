@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0008-battle-map
 title: "Поле боя и приказы движения"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0007-launch-and-setup]
 ---
 

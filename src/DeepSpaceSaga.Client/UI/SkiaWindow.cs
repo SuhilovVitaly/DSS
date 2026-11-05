@@ -1095,7 +1095,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle };
-    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new(flow, isSetup: false, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle };
+    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {
         await flow.OptionsTask!;

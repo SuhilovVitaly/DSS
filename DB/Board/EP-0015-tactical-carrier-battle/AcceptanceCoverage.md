@@ -37,7 +37,7 @@
 | EP-0015-US-0007-launch-and-setup | AC-02 | EP-0015-US-0007-TK-0002-battle-key-and-hint | PASS: F8/remap/click/hint + unavailable reason/no Start/log; final106 focused |
 | EP-0015-US-0007-launch-and-setup | AC-03 | EP-0015-US-0007-TK-0003-setup-screen | PASS: real options/start, exact IDs/seed, keyboard/scroll and four raster layouts |
 | EP-0015-US-0007-launch-and-setup | AC-04 | EP-0015-US-0007-TK-0004-battle-keys-guard | PASS: window polls all keys, blocks queued world events, F10 PNG and Escape confirmation |
-| EP-0015-US-0008-battle-map | AC-01 | EP-0015-US-0008-TK-0001-battle-screen-and-camera | not started |
+| EP-0015-US-0008-battle-map | AC-01 | EP-0015-US-0008-TK-0001-battle-screen-and-camera | PASS: immutable frame, fit/resize, cursor zoom, real headless right pan and 0 |
 | EP-0015-US-0008-battle-map | AC-02 | EP-0015-US-0008-TK-0002-panel-header | not started |
 | EP-0015-US-0008-battle-map | AC-03 | EP-0015-US-0008-TK-0003-battle-map-render | not started |
 | EP-0015-US-0008-battle-map | AC-04 | EP-0015-US-0008-TK-0004-movement-orders | not started |

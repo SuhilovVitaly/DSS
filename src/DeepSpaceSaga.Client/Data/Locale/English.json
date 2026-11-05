@@ -24,6 +24,7 @@
   "TacticalBattle.OpenTooltip": "Open battle setup and pause the world.",
   "TacticalBattle.SetupTitle": "Tactical battle setup",
   "TacticalBattle.WorldActionBlocked": "Unavailable during battle",
+  "TacticalBattle.FitField": "Fit battlefield",
   "TacticalBattle.BattleTitle": "Tactical battle",
   "TacticalBattle.Start": "Start battle",
   "TacticalBattle.Move": "Execute movement",
