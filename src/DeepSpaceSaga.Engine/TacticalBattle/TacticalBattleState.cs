@@ -1,5 +1,6 @@
 using System.Collections.Immutable;
 using DeepSpaceSaga.Engine.TacticalBattle.Content;
+using DeepSpaceSaga.Engine.TacticalBattle.Ai;
 using DeepSpaceSaga.Motion.TacticalBattle;
 
 namespace DeepSpaceSaga.Engine.TacticalBattle;
@@ -75,6 +76,7 @@ internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, stri
     public Mulberry32 Random { get; } = random;
     public int Turn { get; set; }
     public int RoleChanges { get; set; }
+    public List<TacticalAiEvent> AiEvents { get; } = [];
     public (double X, double Y) Midpoint => ((Carriers[0].Pose.X + Carriers[1].Pose.X) / 2.0, (Carriers[0].Pose.Y + Carriers[1].Pose.Y) / 2.0);
     public IEnumerable<TacticalDrone> ActiveDrones(string side) => Drones.Where(d => d.Side == side && d.IsActive);
     public TacticalCarrier Carrier(string side) => Carriers.First(c => c.Side == side);
