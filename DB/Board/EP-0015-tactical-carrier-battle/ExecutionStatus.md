@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 25/78 тикетов. Новый бой ещё не подключён, остальные 53 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 26/78 тикетов. Новый бой ещё не подключён, остальные 52 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Native/input, полная battle parity и приёмка боя пока NOT RUN.
 
-Продолжение: US-0006 TK-0002. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: US-0006 TK-0003. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -55,4 +55,6 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 
 | EP-0015-US-0005-TK-0006-session-tests | ad9817828448e70e051c6363f8bac7f4f277c052 | PASS: remote SHA verified; Linux42106901851 PASS | origin | 378 Engine PASS; 180 independent connection battles + phase save guards; build/format/diff PASS |
 
-| EP-0015-US-0006-TK-0001-keyboard | SHA проверяется Git после создания коммита | pending | origin | 68 Client PASS; real headless PollKeyboard/focus routing; build/format/diff PASS |
+| EP-0015-US-0006-TK-0001-keyboard | 16bd3e4cdb9f540ae17068454859c3cdfa4fae53 | PASS: remote SHA verified | origin | 68 Client PASS; real headless PollKeyboard/focus routing; build/format/diff PASS |
+
+| EP-0015-US-0006-TK-0002-input-settings | SHA проверяется Git после создания коммита | pending | origin | 103 Client PASS; strict settings/game-binding conflicts/fallback; build/format/diff PASS |

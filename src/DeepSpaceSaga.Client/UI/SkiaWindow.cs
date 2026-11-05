@@ -65,6 +65,7 @@ public sealed class SkiaWindow : IDisposable
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges;
+    private readonly TacticalBattleInputSettings _tacticalInputs;
     private readonly Key[] _keyboardPressedKeys = new Key[64]; // Includes remapped combat bindings.
     private readonly Key[] _keyboardReleasedKeys = new Key[64];
     private readonly Key[] _keyboardRepeatedKeys = new Key[4];
@@ -100,7 +101,8 @@ public sealed class SkiaWindow : IDisposable
         _sessionFactory = sessionFactory;
         _combatSettings = CombatVisualSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
         _combatInputs = CombatInputSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatInputSettings.RelativePath), InterfaceLog.Write);
-        _keyboardEdges = new(_combatInputs);
+        _tacticalInputs = TacticalBattleInputSettings.Load(Path.Combine(AppContext.BaseDirectory, TacticalBattleInputSettings.RelativePath), _combatInputs, InterfaceLog.Write);
+        _keyboardEdges = new(_combatInputs, _tacticalInputs);
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;

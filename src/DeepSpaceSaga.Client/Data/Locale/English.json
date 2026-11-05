@@ -1,4 +1,6 @@
 {
+  "TacticalBattle.InputDefaults": "Battle input settings '{0}': {1}. Using defaults.",
+  "TacticalBattle.InputDefaultConflict": "F8 is bound to a game control. The battle shortcut is disabled; use the battle launch button or fix the settings.",
   "TacticalBattle.Refusal.Unavailable": "Battle is unavailable. Check the connection and battle data.",
   "TacticalBattle.Refusal.NoBattle": "No battle is active.",
   "TacticalBattle.Refusal.AlreadyActive": "A battle is already active.",

@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 ticket: EP-0015-US-0006-TK-0002-input-settings
 title: input-settings
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0006-TK-0001-keyboard"]
-files_touched: 3
+files_touched: 5
 serves: [AC-02]
 created: 2026-11-05
 revision: 3
@@ -51,3 +51,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+Add KeyboardEdgeTracker.cs (track configurable launch key and apply captured repeat timings) and SkiaWindow.cs (load actual current bindings at startup) to three planned positions. Four code files + one UI JSON; locales R-07 exempt. Strict schema1 rejects unknown/duplicate/missing fields, numeric key spellings, reserved/game-binding collisions and invalid timings; logs localized fallback with path/field. Repeat delay may be zero, period must be positive. If custom game bindings also occupy fallback F8, retain default values but mark ShortcutAvailable=false and explicitly log that conflict; a future clickable launch entry stays available, preventing two actions on one key. This fail-safe is a technical assumption, not a user decision. US-0007 must use ShortcutAvailable for keyboard entry/hint. Legacy combat bindings are not silently rewritten. The tracker still includes fixed F8/0/keypad keys from TK-0001.
+
+## Execution evidence — 2026-11-05
+
+AC-02 implemented with packaged schema1 F8/400/80, strict parsing and localized InterfaceLog fallback. Configured key joins native tracker and captured repeat timing; conflict validation uses actual passed or sibling combat-input bindings, including custom debugPanel/maneuver keys. Unknown/numeric/case-mismatched keys, duplicate/unknown/missing fields, schema/types/timing errors and missing files verified. Default F8 collision fails safe as documented above, without changing game controls.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-input-settings-01/: build 0 warnings/errors; scoped format/diff/self-review PASS; 103/103 Client cases PASS (35 new settings cases plus tactical/keyboard/held-input regression). Native physical input and independent review NOT RUN. UI launch follows US-0007, which must honor ShortcutAvailable. Separate immediate origin publication authorized.

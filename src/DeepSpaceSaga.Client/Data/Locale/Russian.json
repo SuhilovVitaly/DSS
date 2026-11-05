@@ -1,4 +1,6 @@
 {
+  "TacticalBattle.InputDefaults": "Настройки ввода боя «{0}»: {1}. Используются значения по умолчанию.",
+  "TacticalBattle.InputDefaultConflict": "Клавиша F8 занята управлением игры. Горячая клавиша боя отключена; используйте кнопку запуска боя или исправьте настройки.",
   "TacticalBattle.Refusal.Unavailable": "Бой недоступен. Проверьте соединение и данные боя.",
   "TacticalBattle.Refusal.NoBattle": "Нет активного боя.",
   "TacticalBattle.Refusal.AlreadyActive": "Бой уже запущен.",
