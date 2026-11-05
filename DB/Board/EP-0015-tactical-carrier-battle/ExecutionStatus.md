@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 14/78 тикетов. Новый бой ещё не подключён, остальные 64 тикета и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 15/78 тикетов. Новый бой ещё не подключён, остальные 63 тикета и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Native/input, полная battle parity и приёмка боя пока NOT RUN.
 
-Продолжение: US-0004 TK-0001. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: US-0004 TK-0002. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -33,4 +33,6 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0003-TK-0001-battle-assembly | cdd2f3d6ba4ff648961fa1e4dcebf71f2abc4b09 | PASS: remote SHA verified | origin | 101 Engine + 1376 Motion PASS; independent assembly trace; build/format/diff PASS |
 | EP-0015-US-0003-TK-0002-movement | 692e9f5501f7cb994d7d27c479990de6e07ef782 | PASS: remote SHA verified | origin | 104 Engine + 1376 Motion PASS; all 19 slices; build/format/diff PASS |
 | EP-0015-US-0003-TK-0003-salvo | 9a505142e2b9c6f80a448c2174d893c007fada22 | PASS: remote SHA verified | origin | 122 Engine + 1376 Motion PASS; all 19 salvo states/calls; build/format/diff PASS |
-| EP-0015-US-0003-TK-0004-turn-and-outcome | SHA проверяется Git после создания коммита | pending | origin | 130 targeted; 6443 fresh regression across 6 projects; build/format/diff PASS |
+| EP-0015-US-0003-TK-0004-turn-and-outcome | 834a6ce5f81d645a3a43dbc0bb4befb9222c9399 | PASS: remote SHA verified | origin | 130 targeted; 6443 fresh regression across 6 projects; build/format/diff PASS |
+
+| EP-0015-US-0004-TK-0001-steering | SHA проверяется Git после создания коммита | pending | origin | 138 Engine + 19 source guard PASS; first trace pursuit; build/format/diff PASS |

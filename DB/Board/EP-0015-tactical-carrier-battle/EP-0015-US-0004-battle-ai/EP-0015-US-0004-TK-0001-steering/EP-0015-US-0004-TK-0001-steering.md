@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0004-battle-ai
 ticket: EP-0015-US-0004-TK-0001-steering
 title: steering
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0003-TK-0004-turn-and-outcome"]
 files_touched: 2
@@ -50,3 +50,11 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Execution evidence — 2026-11-05
+
+Implemented Spec steer/leash/recursive slowForTurn, current-speed prediction, two-draw pursue and effective role. All tuning comes from captured content; shared Motion owns limits/geometry. Leash redirects only the point to the two-carrier midpoint; pursue speed uses the noisy aim point; effective role leaves stored role/hunt unchanged.
+
+`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-steering-01/`: solution build 0 warnings/errors, Engine TacticalBattle 138/138 (8 new), Motion source guard 19/19, scoped format/diff PASS. Independent first trace pursuit order matches within original half-micro precision and consumes X then Y draws (Calls42→44). Tests cover midpoint vs own carrier, preserved passed speed, recursive second-step speed and early stop, vmax=min, prediction above damaged limits and inactive enemies. Full unchanged regression from prior rules story remains 6443 PASS; no redundant fresh full-suite claim. Temp/fixtures are redirected into this absolute run root.
+
+Self-review completed; independent review NOT RUN. Real whole-side planning is wired after the dependent roles/commander pieces, not replaced by a fallback policy. Own SHA verified after user-authorized GitHub publication.

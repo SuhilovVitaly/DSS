@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0004-battle-ai
 title: "ИИ сторон и сверка с эталонными боями"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0003-battle-rules]
 ---
 

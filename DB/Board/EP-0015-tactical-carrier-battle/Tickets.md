@@ -18,7 +18,7 @@
 | [EP-0015-US-0003-TK-0002-movement](EP-0015-US-0003-battle-rules/EP-0015-US-0003-TK-0002-movement/EP-0015-US-0003-TK-0002-movement.md) | engine | AC-02 | EP-0015-US-0003-TK-0001-battle-assembly | done |
 | [EP-0015-US-0003-TK-0003-salvo](EP-0015-US-0003-battle-rules/EP-0015-US-0003-TK-0003-salvo/EP-0015-US-0003-TK-0003-salvo.md) | engine | AC-03 | EP-0015-US-0003-TK-0002-movement | done |
 | [EP-0015-US-0003-TK-0004-turn-and-outcome](EP-0015-US-0003-battle-rules/EP-0015-US-0003-TK-0004-turn-and-outcome/EP-0015-US-0003-TK-0004-turn-and-outcome.md) | engine | AC-04 | EP-0015-US-0003-TK-0003-salvo | done |
-| [EP-0015-US-0004-TK-0001-steering](EP-0015-US-0004-battle-ai/EP-0015-US-0004-TK-0001-steering/EP-0015-US-0004-TK-0001-steering.md) | engine | AC-01 | EP-0015-US-0003-TK-0004-turn-and-outcome | draft |
+| [EP-0015-US-0004-TK-0001-steering](EP-0015-US-0004-battle-ai/EP-0015-US-0004-TK-0001-steering/EP-0015-US-0004-TK-0001-steering.md) | engine | AC-01 | EP-0015-US-0003-TK-0004-turn-and-outcome | done |
 | [EP-0015-US-0004-TK-0002-striker-fighter-tail](EP-0015-US-0004-battle-ai/EP-0015-US-0004-TK-0002-striker-fighter-tail/EP-0015-US-0004-TK-0002-striker-fighter-tail.md) | engine | AC-02 | EP-0015-US-0004-TK-0001-steering | draft |
 | [EP-0015-US-0004-TK-0003-interceptor-commander](EP-0015-US-0004-battle-ai/EP-0015-US-0004-TK-0003-interceptor-commander/EP-0015-US-0004-TK-0003-interceptor-commander.md) | engine | AC-03 | EP-0015-US-0004-TK-0002-striker-fighter-tail | draft |
 | [EP-0015-US-0004-TK-0004-golden-battles](EP-0015-US-0004-battle-ai/EP-0015-US-0004-TK-0004-golden-battles/EP-0015-US-0004-TK-0004-golden-battles.md) | engine | AC-04 | EP-0015-US-0004-TK-0003-interceptor-commander | draft |

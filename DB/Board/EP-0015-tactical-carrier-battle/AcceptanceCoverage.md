@@ -18,7 +18,7 @@
 | EP-0015-US-0003-battle-rules | AC-02 | EP-0015-US-0003-TK-0002-movement | done: all 19 independent movement slices PASS |
 | EP-0015-US-0003-battle-rules | AC-03 | EP-0015-US-0003-TK-0003-salvo | done: all 19 salvo slices, exact states/calls and edge cases PASS |
 | EP-0015-US-0003-battle-rules | AC-04 | EP-0015-US-0003-TK-0004-turn-and-outcome | done: phase/outcome/statistics cases and 6443 fresh regression PASS |
-| EP-0015-US-0004-battle-ai | AC-01 | EP-0015-US-0004-TK-0001-steering | not started |
+| EP-0015-US-0004-battle-ai | AC-01 | EP-0015-US-0004-TK-0001-steering | done: steering/prediction/pursuit cases and first trace order PASS |
 | EP-0015-US-0004-battle-ai | AC-02 | EP-0015-US-0004-TK-0002-striker-fighter-tail | not started |
 | EP-0015-US-0004-battle-ai | AC-03 | EP-0015-US-0004-TK-0003-interceptor-commander | not started |
 | EP-0015-US-0004-battle-ai | AC-04 | EP-0015-US-0004-TK-0004-golden-battles | not started |
