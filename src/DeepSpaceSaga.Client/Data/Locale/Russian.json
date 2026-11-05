@@ -1,4 +1,13 @@
 {
+  "TacticalBattle.LossLine": "Потери: свои {0} · противник {1}",
+  "TacticalBattle.Phase.Results": "Результаты стрельбы",
+  "TacticalBattle.Outcome.Victory": "Победа",
+  "TacticalBattle.Outcome.Defeat": "Поражение",
+  "TacticalBattle.Outcome.Draw": "Ничья",
+  "TacticalBattle.Outcome.Timeout": "Лимит ходов",
+  "TacticalBattle.OutcomeReason.CarrierDestroyed": "Носитель {0} уничтожен",
+  "TacticalBattle.OutcomeReason.NoDrones": "У носителя {0} не осталось боеспособных дронов",
+  "TacticalBattle.OutcomeReason.Timeout": "Достигнут лимит ходов: {0}",
   "TacticalBattle.Scenario": "Сценарий",
   "TacticalBattle.SetupOpponents": "Дронов противника: {0}",
   "TacticalBattle.SetupGoal": "Цель: победа с потерей не более одного дрона в {0} боёв, без потерь в {1}; допуск ±{2}.",

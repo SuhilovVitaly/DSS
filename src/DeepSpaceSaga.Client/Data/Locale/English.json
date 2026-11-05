@@ -1,4 +1,13 @@
 {
+  "TacticalBattle.LossLine": "Losses: own {0} · enemy {1}",
+  "TacticalBattle.Phase.Results": "Salvo results",
+  "TacticalBattle.Outcome.Victory": "Victory",
+  "TacticalBattle.Outcome.Defeat": "Defeat",
+  "TacticalBattle.Outcome.Draw": "Draw",
+  "TacticalBattle.Outcome.Timeout": "Turn limit",
+  "TacticalBattle.OutcomeReason.CarrierDestroyed": "Carrier {0} destroyed",
+  "TacticalBattle.OutcomeReason.NoDrones": "No operational drones remain for {0}",
+  "TacticalBattle.OutcomeReason.Timeout": "Turn limit reached: {0}",
   "TacticalBattle.Scenario": "Scenario",
   "TacticalBattle.SetupOpponents": "Enemy drones: {0}",
   "TacticalBattle.SetupGoal": "Goal: win with at most one drone lost in {0} of battles, with no losses in {1}; tolerance ±{2}.",

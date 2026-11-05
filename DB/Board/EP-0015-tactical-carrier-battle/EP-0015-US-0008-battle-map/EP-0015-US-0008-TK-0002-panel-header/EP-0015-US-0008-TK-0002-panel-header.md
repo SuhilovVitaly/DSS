@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0008-battle-map
 ticket: EP-0015-US-0008-TK-0002-panel-header
 title: panel-header
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0008-TK-0001-battle-screen-and-camera"]
-files_touched: 2
+files_touched: 3
 serves: [AC-02]
 created: 2026-11-05
 revision: 3
@@ -28,6 +28,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattlePanelHeader.cs` | new | Заголовок, значок фазы, потери, баннер, ошибка, «Новый бой» |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/PanelHeaderTests.cs` | new | Значения до залпа во время полёта; отказ показывается |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | existing frame and panel | Connect immutable presentation mode and header; place buttons below it |
 
 ## Public API after the change
 —
@@ -49,3 +50,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Frame gains an immutable presentation mode so the header can use the captured pre-salvo units while a shot is in flight, and switch atomically to resolved losses/outcome after arrival. The timeline itself belongs to US-0009. Tests exercise that presentation boundary against real accepted salvo snapshots. Existing battle buttons and world-key notice are routed through the new full-height panel.
+
+## Execution evidence — 2026-11-06
+
+AC-02: right panel shows scenario/turn, phase marker, player-side losses, exact seed, localized outcome/reason, typed refusal and New Battle when permitted. Immutable SalvoFlight/SalvoResults modes are tested with actual accepted salvo snapshots: the first loss is absent in flight and present on arrival; end-of-battle result and New button are hidden in flight. US-0009 will drive the timeline. A real stale-revision refusal rendered at 1280x720 and 1.5x scale was visually inspected.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-panel-header-01/: format/build/diff/self-review PASS; Client160, Engine378, Motion source guard19 PASS; logs, TRX and panel PNG retained.

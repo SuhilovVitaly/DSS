@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 36/79 тикетов. Бой запускается из карты; форма подготовки реализована; поле боя в работе. Остальные 43 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 37/79 тикетов. Бой запускается из карты; форма подготовки реализована; поле боя в работе. Остальные 42 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Это исходный регрессионный срез. Core/session parity уже PASS; полная нативная и продуктовая приёмка пока NOT RUN.
 
-Продолжение: US-0008 TK-0002. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
+Продолжение: US-0008 TK-0003. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -55,4 +55,5 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0007-TK-0002-battle-key-and-hint | b19f3d5bcc349ad636f6b288a40577b67fdc01f5 | PASS: remote SHA verified | origin | Linux42117903122 PASS; full2428 Client PASS pre-log; final106 focused PASS; build/format/diff PASS |
 | EP-0015-US-0007-TK-0003-setup-screen | bfd7437560cb86511896e45756f2194e7a6f54e8 | PASS: remote SHA verified | origin | Linux42120143435 PASS; 115 Client + 378 Engine PASS; four raster layouts; build/format/diff PASS |
 | EP-0015-US-0007-TK-0004-battle-keys-guard | b1bc2f694c7eae86e1b22312529156b5e4905cb8 | PASS: remote SHA verified | origin | Linux42120776299 PASS; 154 Client + 378 Engine PASS; F10 PNG and world-event guard; build/format/diff PASS |
-| EP-0015-US-0008-TK-0001-battle-screen-and-camera | current ticket commit | SHA checked immediately after push | origin | 158 Client +378 Engine +19 Motion guard PASS; build/format/diff PASS |
+| EP-0015-US-0008-TK-0001-battle-screen-and-camera | 013467b9c0d45ec49c606f051a79de7613141094 | PASS: remote SHA verified | origin | 158 Client +378 Engine +19 Motion guard PASS; build/format/diff PASS |
+| EP-0015-US-0008-TK-0002-panel-header | current ticket commit | SHA checked immediately after push | origin | 160 Client +378 Engine +19 Motion guard PASS; real salvo and refusal raster; build/format/diff PASS |

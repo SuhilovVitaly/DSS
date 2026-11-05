@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 /// <summary>All information used to draw a battle frame is captured before painting it.</summary>
 public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, TacticalBattleView View, SKRect Panel,
-    float UiScale, bool Pending, string Status);
+    float UiScale, bool Pending, string Status, TacticalBattlePresentation Presentation = TacticalBattlePresentation.Current);
 
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
@@ -77,25 +77,21 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         canvas.DrawRect(panel.Left, panel.Top, s, panel.Height, background);
         var content = new SKRect(panel.Left + 12 * s, panel.Top, panel.Right - 12 * s, panel.Bottom);
         var battle = frame.Battle;
-        ControlVisuals.Label(canvas, battle.ScenarioName + " · " + L("Turn") + " " + BattleFormat.Number(battle.Turn),
-            new(content.Left, 12 * s, content.Right, 42 * s), true, s);
-        ControlVisuals.Label(canvas, L("Phase." + battle.Phase), new(content.Left, 45 * s, content.Right, 75 * s), true, s);
-        string status = frame.Pending ? L("Waiting") : frame.Status;
-        if (status.Length > 0)
-            ControlVisuals.Label(canvas, status, new(content.Left, 80 * s, content.Right, 115 * s), true, s);
+        var header = TacticalBattlePanelHeader.Capture(frame);
+        float y = header.Draw(canvas, content, s);
 
         float col = (float)PyMath.Max(0, (content.Width - 8 * s) * 0.5);
-        _fit.Bounds = SKRect.Create(content.Left, 124 * s, col, 34 * s);
-        _exitBattle.Bounds = SKRect.Create(content.Right - col, 124 * s, col, 34 * s);
-        _phaseAction.Bounds = SKRect.Create(content.Left, 170 * s, content.Width, 36 * s);
-        _newBattle.Bounds = battle.Phase == TacticalBattlePhase.Over ? _phaseAction.Bounds : SKRect.Empty;
+        _fit.Bounds = SKRect.Create(content.Left, y, col, 34 * s);
+        _exitBattle.Bounds = SKRect.Create(content.Right - col, y, col, 34 * s);
+        _phaseAction.Bounds = SKRect.Create(content.Left, y + 46 * s, content.Width, 36 * s);
+        _newBattle.Bounds = header.ShowNew ? _phaseAction.Bounds : SKRect.Empty;
         _fit.Label = L("FitField");
         _exitBattle.Label = L("ToMap"); _exitBattle.Enabled = !frame.Pending;
         _phaseAction.Label = L(battle.Phase == TacticalBattlePhase.Fire ? "Fire" : "Move");
         _phaseAction.Enabled = !frame.Pending && battle.Phase != TacticalBattlePhase.Over;
         _newBattle.Label = L("NewBattle"); _newBattle.Enabled = !frame.Pending;
         _fit.Draw(canvas, s); _exitBattle.Draw(canvas, s);
-        if (battle.Phase == TacticalBattlePhase.Over) _newBattle.Draw(canvas, s);
+        if (header.ShowNew) _newBattle.Draw(canvas, s);
         else _phaseAction.Draw(canvas, s);
     }
 
