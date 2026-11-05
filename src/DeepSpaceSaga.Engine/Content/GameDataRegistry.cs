@@ -3,6 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Text.Json;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 namespace DeepSpaceSaga.Engine.Content;
 
@@ -23,7 +24,8 @@ internal sealed class GameDataRegistry
         TypeRegistry<ShipClassDefinition>? shipClasses = null,
         TypeRegistry<StationMarketEventDefinition>? stationMarketEvents = null,
         CombatRulesDefinition? combatRules = null,
-        ImmutableArray<FireModeDefinition> fireModes = default)
+        ImmutableArray<FireModeDefinition> fireModes = default,
+        TacticalBattleAvailability? tacticalBattle = null)
     {
         ModuleCategories = moduleCategories;
         ModuleTypes = moduleTypes;
@@ -38,6 +40,7 @@ internal sealed class GameDataRegistry
         StationMarketEvents = stationMarketEvents ?? TypeRegistry<StationMarketEventDefinition>.Empty;
         CombatRules = combatRules;
         FireModes = fireModes.IsDefault ? [] : fireModes;
+        TacticalBattle = tacticalBattle ?? TacticalBattleAvailability.Unavailable("Settings.json", "typeData.tacticalBattle", "Battle content is not configured.");
         StationMarketEventCatalogFingerprint = StationMarketEventCatalog.Fingerprint(StationMarketEvents);
         CatalogVersion = catalogVersion;
         LegacyCatalogFingerprint = legacyCatalogFingerprint;
@@ -71,6 +74,7 @@ internal sealed class GameDataRegistry
     public TypeRegistry<StationMarketEventDefinition> StationMarketEvents { get; }
     public CombatRulesDefinition? CombatRules { get; }
     public ImmutableArray<FireModeDefinition> FireModes { get; }
+    public TacticalBattleAvailability TacticalBattle { get; }
     public string StationMarketEventCatalogFingerprint { get; }
     public int CatalogVersion { get; }
     public CatalogCompatibilityData CatalogCompatibility { get; }
@@ -86,7 +90,7 @@ internal sealed class GameDataRegistry
                 throw new ArgumentException("Module overlay must preserve catalog index order.", nameof(definitions));
         return new(ModuleCategories, TypeRegistry<ModuleTypeDefinition>.Create(definitions, "module overlay"),
             ItemTypes, CommandDefinitions, FactoryTypes, Recipes, Dialogues, Quests, CatalogVersion,
-            LegacyCatalogFingerprint, StationMarketProfiles, ShipClasses, StationMarketEvents, CombatRules, FireModes);
+            LegacyCatalogFingerprint, StationMarketProfiles, ShipClasses, StationMarketEvents, CombatRules, FireModes, TacticalBattle);
     }
 
     public static GameDataRegistry Empty { get; } = new(
@@ -113,7 +117,8 @@ internal sealed class GameDataRegistry
         IEnumerable<StationMarketEventDefinition>? stationMarketEvents = null,
         bool requireCompleteMarketEventSet = false,
         CombatRulesDefinition? combatRules = null,
-        ImmutableArray<FireModeDefinition> fireModes = default)
+        ImmutableArray<FireModeDefinition> fireModes = default,
+        TacticalBattleAvailability? tacticalBattle = null)
     {
         if (catalogVersion != 1) throw new ContentException($"Unsupported catalogVersion: {catalogVersion}.");
         if (combatRules is not null) CombatContentValidation.Rules(combatRules);
@@ -191,7 +196,7 @@ internal sealed class GameDataRegistry
         }
         return new GameDataRegistry(categoryRegistry, moduleRegistry, itemRegistry, commandRegistry, factoryRegistry, recipeRegistry,
             dialogueRegistry, questRegistry, catalogVersion, legacyCatalogFingerprint, profileRegistry, shipClassRegistry, eventRegistry,
-            combatRules, fireModes);
+            combatRules, fireModes, tacticalBattle);
     }
 
     internal static TypeRegistry<ShipClassDefinition> CreateShipClassRegistry(IEnumerable<ShipClassDefinition> classes)

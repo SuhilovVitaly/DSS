@@ -3,6 +3,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
+using DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 namespace DeepSpaceSaga.Engine.Content;
 
@@ -196,7 +197,8 @@ public static class EngineContentLoader
             dialogues, quests, catalogVersion: catalog.Version,
             legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles,
             shipClasses: shipClasses, stationMarketEvents: marketEvents, requireCompleteMarketEventSet: marketEvents is not null,
-            combatRules: combatRules, fireModes: fireModes);
+            combatRules: combatRules, fireModes: fireModes,
+            tacticalBattle: TacticalBattleContentLoader.FromSettings(settingsPath, basePath, settings.TypeData.TacticalBattle));
     }
 
     internal static CombatRulesDefinition LoadCombatRules(string path)
@@ -899,7 +901,7 @@ public static class EngineContentLoader
         [property: JsonPropertyName("stationMarketEvents"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketEvents = null,
         [property: JsonPropertyName("combatRules")] string? CombatRules = null,
         [property: JsonPropertyName("fireModes")] string? FireModes = null,
-        [property: JsonPropertyName("tacticalBattle")] string? TacticalBattle = null);
+        [property: JsonPropertyName("tacticalBattle")] JsonElement TacticalBattle = default);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
     {

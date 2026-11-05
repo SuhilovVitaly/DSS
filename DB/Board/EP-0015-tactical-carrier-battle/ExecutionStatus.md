@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. US-0001 TK-0001 и TK-0002 выполнены технически и проверены; 2/78 тикетов. Новый бой ещё не подключён, остальные 76 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. US-0001 TK-0001, TK-0002 и TK-0003 выполнены технически и проверены; 3/78 тикетов. Новый бой ещё не подключён, остальные 75 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -18,6 +18,8 @@
 |---|---|---|---|---|
 | EP-0015-US-0001-TK-0001-content-data | 8015f9852f2534a95f16fc8b8ee668932c7062a4 | PASS: remote SHA verified | origin | 29 JSON; 5402 PASS; build/format/diff PASS |
 
-| EP-0015-US-0001-TK-0002-content-definitions | SHA проверяется Git после создания коммита | pending | origin | 3 new tests PASS; build/format/diff PASS; unchanged baseline reused |
+| EP-0015-US-0001-TK-0002-content-definitions | 8daec47976c5746d6aca54c1db3d66e187c32e24 | PASS: remote SHA verified | origin | 3 new tests PASS; build/format/diff PASS; unchanged baseline reused |
 
-Порядок продолжения: US-0001 TK-0003 → TK-0004 → US-0002; далее зависимости Tickets.md. Этот отчёт не закрывает функциональные или документационные истории целиком.
+Порядок продолжения: US-0001 TK-0004 → US-0002; далее зависимости Tickets.md. Этот отчёт не закрывает функциональные или документационные истории целиком.
+
+| EP-0015-US-0001-TK-0003-content-loader | SHA проверяется Git после создания коммита | pending | origin | 69 targeted PASS; Engine 2397, Client 2324, Economy 2 regression PASS; build/format/diff PASS |

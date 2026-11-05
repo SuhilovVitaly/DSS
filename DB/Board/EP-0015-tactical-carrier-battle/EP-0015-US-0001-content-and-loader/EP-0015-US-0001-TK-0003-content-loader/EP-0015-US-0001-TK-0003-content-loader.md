@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0001-content-and-loader
 ticket: EP-0015-US-0001-TK-0003-content-loader
 title: content-loader
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0001-TK-0002-content-definitions"]
-files_touched: 3
+files_touched: 5
 serves: [AC-03]
 created: 2026-11-05
 revision: 3
@@ -30,6 +30,9 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 | `src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs` | загрузка typeData при создании Engine | Подключить `tacticalBattle`; ошибку не пробрасывать в загрузку мира, а сохранить как `TacticalBattleAvailability` |
 | `tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/ContentLoaderTests.cs` | new | Тест на каждую проверку `wing4.validate` + production-контент + мир грузится при ошибке боя |
 
+## Scope correction before implementation — 2026-11-05
+
+D-USER-14/15: валидатор строится по Spec/Data Markdown и явному AC-03, без вызова wing4.validate. Добавлены в Code context `src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs` (catalog/availability хранятся вместе с загруженным контентом и сохраняются при WithModuleTypes) и `src/DeepSpaceSaga.Engine/Content/ContentException.cs` (снять sealed для типизированной ContentException с file/field/message, без изменения существующего поведения). Ровно 5 файлов кода одного owning Engine-слоя с тестами. Отсутствующее, null и неверно типизированное tacticalBattle path изолируются как ошибка доступности боя, а не ошибка всего Settings. Повреждённые JSON-тесты используют только копии content fixtures под абсолютным validation root, не копии исходников/checkout.
 ## Public API after the change
 `TacticalBattleContentLoader.Load(folder) → TacticalBattleCatalog`; `TacticalBattleAvailability { Available | Unavailable(reason: file, field, message) }`.
 
@@ -52,3 +55,11 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Execution evidence — 2026-11-05
+
+Implemented typed immutable catalog loading at Engine creation. Invalid battle data is captured as file/field/message availability while New Game, Scenario and Save/Load continue. WithModuleTypes preserves the captured catalog. JSON order, required fields, numeric types, references, slots, sides, IDs, ranges and AI constraints are validated against AC-03 and Markdown sources (D-USER-14/15).
+
+Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-loader-01/`. Final solution build: 0 warnings/errors (`build-verified.log`); final targeted tests: 69/69 (`tests-final.log`, `tests-final/`). Fresh regression before the final empty-ID guard: Engine general 2397/2397, Client 2324/2324, Economy continuation 2/2 (`engine-regression.log`, `client-regression.log`, `economy-continuation.log`). Unchanged Balance/corpus baseline remains in ContentValidation.md; this is not a fresh full-suite claim. Scoped format verification and diff check PASS. Fixtures cleaned by tests; zero remaining loader-fixture directories.
+
+Self-review completed against story/epic and production bootstrap paths; independent review NOT RUN. Client error presentation/F8 belongs to later UI tickets and is still open. Publication uses the explicit user override of D-USER-09/R-06 recorded in Documentation.md; own SHA is verified after commit in the execution ledger.
