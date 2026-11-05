@@ -36,6 +36,7 @@ public sealed class SkiaWindow : IDisposable
     private readonly IGameSessionFactory _sessionFactory;
     private readonly CombatVisualSettings _combatSettings;
     private readonly CombatInputSettings _combatInputs;
+    private readonly ManeuverInputSettings _maneuverInputs;
     private readonly ScreenStack _screens = new();
     private readonly WindowThreadContext _uiContext = new();
     private readonly SessionConnectionLoader _connectionLoader = new();
@@ -102,8 +103,10 @@ public sealed class SkiaWindow : IDisposable
         _sessionFactory = sessionFactory;
         _combatSettings = CombatVisualSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
         _combatInputs = CombatInputSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatInputSettings.RelativePath), InterfaceLog.Write);
-        _tacticalInputs = TacticalBattleInputSettings.Load(Path.Combine(AppContext.BaseDirectory, TacticalBattleInputSettings.RelativePath), _combatInputs, InterfaceLog.Write);
-        _keyboardEdges = new(_combatInputs, _tacticalInputs);
+        _maneuverInputs = ManeuverInputSettings.Load(Path.Combine(AppContext.BaseDirectory, ManeuverInputSettings.RelativePath), _combatInputs.MappedKeys);
+        _tacticalInputs = TacticalBattleInputSettings.Load(Path.Combine(AppContext.BaseDirectory, TacticalBattleInputSettings.RelativePath),
+            _combatInputs, InterfaceLog.Write, _maneuverInputs);
+        _keyboardEdges = new(_combatInputs, _tacticalInputs, _maneuverInputs);
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
@@ -1028,7 +1031,7 @@ public sealed class SkiaWindow : IDisposable
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
                 alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate, playInitialCombatStart: true,
-                tacticalBattleInputs: _tacticalInputs);
+                tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
 
             _session = session;
             _gameSessionScreen = gameScreen;
@@ -1096,8 +1099,10 @@ public sealed class SkiaWindow : IDisposable
         _modalDepth++;
     }
 
-    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle };
-    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle };
+    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
+        new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) =>
+        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {
         await flow.OptionsTask!;
@@ -1692,7 +1697,7 @@ public sealed class SkiaWindow : IDisposable
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
                 alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate,
-                tacticalBattleInputs: _tacticalInputs);
+                tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)

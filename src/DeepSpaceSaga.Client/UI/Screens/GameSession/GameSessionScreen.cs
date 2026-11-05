@@ -325,12 +325,14 @@ public sealed partial class GameSessionScreen : IScreen
         Action<CombatAlertCue>? alertAudio = null,
         Action? activateAudio = null,
         Action? deactivateAudio = null, bool playInitialCombatStart = false,
-        TacticalBattleInputSettings? tacticalBattleInputs = null)
+        TacticalBattleInputSettings? tacticalBattleInputs = null,
+        ManeuverInputSettings? maneuverInputs = null)
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         CombatInputs = (combatInputs ?? CombatInputSettings.Default).Validate();
+        ManeuverInputs = (maneuverInputs ?? ManeuverInputSettings.Default).Validate(CombatInputs.MappedKeys);
         _tacticalBattleInputs = tacticalBattleInputs ?? TacticalBattleInputSettings.Default;
         _alertAudio = alertAudio;
         _playInitialCombatStart = playInitialCombatStart;

@@ -49,7 +49,7 @@
 | EP-0015-US-0010-battle-end | AC-02 | EP-0015-US-0010-TK-0002-sandbox-flow | PASS: real F8/exit, exact LocalConnection save bytes, camera/speed restored and F5/menu re-enabled |
 | EP-0015-US-0011-legacy-removal-prep | AC-01 | EP-0015-US-0011-TK-0001-removal-inventory | PASS: current owner/consumer/disposition matrix plus exact search evidence and scenario/content checks |
 | EP-0015-US-0011-legacy-removal-prep | AC-02 | EP-0015-US-0011-TK-0002-save-fixtures | PASS: four writer-derived Default fixtures with active/idle Save18/19, exact provenance and deterministic loading |
-| EP-0015-US-0011-legacy-removal-prep | AC-03 | EP-0015-US-0011-TK-0003-maneuver-input-move | not started |
+| EP-0015-US-0011-legacy-removal-prep | AC-03 | EP-0015-US-0011-TK-0003-maneuver-input-move | PASS: separate strict maneuver config; real held input and remapped debug/launch collision checks |
 | EP-0015-US-0011-legacy-removal-prep | AC-04 | EP-0015-US-0011-TK-0004-save-format-20 | not started |
 | EP-0015-US-0012-legacy-client-removal | AC-01 | EP-0015-US-0012-TK-0001-client-map-removal-1, EP-0015-US-0012-TK-0002-client-map-removal-2 | not started |
 | EP-0015-US-0012-legacy-client-removal | AC-02 | EP-0015-US-0012-TK-0003-client-panels-removal, EP-0015-US-0012-TK-0004-client-stores-removal | not started |

@@ -87,14 +87,15 @@ public sealed class PointCombatUS0012TK0001Tests
         private readonly Key[] _pressed = new Key[64], _released = new Key[64];
         private readonly SKBitmap _bitmap = new(1920, 1200);
         private readonly SKCanvas _canvas;
-        private Session(bool enabled, CombatInputSettings? bindings, bool combat)
+        private Session(bool enabled, CombatInputSettings? bindings, bool combat, ManeuverInputSettings? maneuver)
         {
             World = new(engineEnabled: enabled, launchHostile: combat, enemyX: combat ? 400 : 2000);
-            Handle = new(World.Connection); Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle, combatInputs: bindings);
-            _keys = new(bindings); _canvas = new(_bitmap);
+            Handle = new(World.Connection); Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle, combatInputs: bindings, maneuverInputs: maneuver);
+            _keys = new(bindings, maneuver: maneuver); _canvas = new(_bitmap);
         }
-        internal static async Task<Session> Create(bool enabled = true, CombatInputSettings? bindings = null, bool combat = true)
-        { var s = new Session(enabled, bindings, combat); await s.Wait(() => s.Screen.RenderStates.Any(o => o.IsPlayerShip)); return s; }
+        internal static async Task<Session> Create(bool enabled = true, CombatInputSettings? bindings = null, bool combat = true,
+            ManeuverInputSettings? maneuver = null)
+        { var s = new Session(enabled, bindings, combat, maneuver); await s.Wait(() => s.Screen.RenderStates.Any(o => o.IsPlayerShip)); return s; }
         internal void Render() => Screen.Render(_canvas, 1920, 1200);
         private void Poll()
         {
@@ -270,8 +271,9 @@ public sealed class PointCombatUS0012TK0001Tests
         try
         {
             var json = JsonNode.Parse(File.ReadAllText(source))!.AsObject(); json["evadeLeft"] = "Z";
-            json["turnLeft"] = new JsonArray("J"); json["fullSpeed"] = new JsonArray("G"); File.WriteAllText(file, json.ToJsonString());
-            var input = CombatInputSettings.Load(file); await using var s = await Session.Create(bindings: input);
+            File.WriteAllText(file, json.ToJsonString());
+            var maneuver = ManeuverInputSettings.Default with { TurnLeft = [Key.J], FullSpeed = [Key.G] };
+            var input = CombatInputSettings.Load(file); await using var s = await Session.Create(bindings: input, maneuver: maneuver);
             s.Down(Key.A); Assert.Null(s.Screen.CurrentEvadePreview); s.Up(Key.A);
             s.Down(Key.Z); Assert.Equal(EvadeSide.Left, s.Screen.CurrentEvadePreview!.Side); s.Up(Key.Z);
             string id = s.Screen.LastManeuverCommandId!;
@@ -283,7 +285,7 @@ public sealed class PointCombatUS0012TK0001Tests
             foreach (string key in new[] { "evadeLeft", "evadeRight", "nextThreat", "turnLeft", "turnRight", "fullSpeed", "accelerate", "brake" }) json.Remove(key);
             json["schemaVersion"] = 1;
             File.WriteAllText(file, json.ToJsonString()); var legacy = CombatInputSettings.Load(file);
-            Assert.Equal(Key.Z, legacy.EvadeLeft); Assert.Equal(new[] { Key.ShiftLeft, Key.ShiftRight }, legacy.FullSpeed.ToArray());
+            Assert.Equal(Key.Z, legacy.EvadeLeft);
         }
         finally { File.Delete(file); }
     }

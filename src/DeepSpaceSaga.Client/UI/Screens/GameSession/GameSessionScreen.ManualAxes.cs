@@ -5,13 +5,15 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 public sealed partial class GameSessionScreen
 {
+    internal ManeuverInputSettings ManeuverInputs { get; }
+
     private readonly List<Key> _turnAxisKeys = [], _speedAxisKeys = [];
     private bool _speedLatchRequested;
     private (string Owner, string Module, SpeedDirection Direction, bool Latched, string CommandId)? _heldSpeed;
 
     private bool HandleManualAxisKey(Key key)
     {
-        if (CombatInputs.FullSpeed.Contains(key))
+        if (ManeuverInputs.FullSpeed.Contains(key))
         {
             if (_heldFullSpeed.Add(key) && _heldFullSpeed.Count == 1)
             {
@@ -20,12 +22,12 @@ public sealed partial class GameSessionScreen
             }
             return true;
         }
-        if (CombatInputs.TurnLeft.Contains(key) || CombatInputs.TurnRight.Contains(key))
+        if (ManeuverInputs.TurnLeft.Contains(key) || ManeuverInputs.TurnRight.Contains(key))
         {
             if (!_turnAxisKeys.Contains(key)) _turnAxisKeys.Add(key);
             _heldEvade = null; CurrentEvadePreview = null; ReconcileManualAxes(); return true;
         }
-        if (CombatInputs.Accelerate.Contains(key) || CombatInputs.Brake.Contains(key))
+        if (ManeuverInputs.Accelerate.Contains(key) || ManeuverInputs.Brake.Contains(key))
         {
             if (!_speedAxisKeys.Contains(key))
             {
@@ -56,7 +58,7 @@ public sealed partial class GameSessionScreen
             _buffer.FindCommandResult(pending.CommandId) is { Status: CommandResultStatus.Executed } &&
             !ship.SpeedHoldLatched && ship.MaxSpeedKmS is { } maximum && ship.SpeedKmS >= maximum - 1e-9)
         { _speedLatchRequested = false; _heldSpeed = null; }
-        TurnDirection? turn = _turnAxisKeys.Count == 0 ? null : CombatInputs.TurnLeft.Contains(_turnAxisKeys[^1]) ? TurnDirection.Left : TurnDirection.Right;
+        TurnDirection? turn = _turnAxisKeys.Count == 0 ? null : ManeuverInputs.TurnLeft.Contains(_turnAxisKeys[^1]) ? TurnDirection.Left : TurnDirection.Right;
         if (_heldTurn?.Direction != turn)
         {
             if (turn is { } direction)
@@ -69,7 +71,7 @@ public sealed partial class GameSessionScreen
             }
         }
         SpeedDirection? speed = _speedLatchRequested ? SpeedDirection.Accelerate : _speedAxisKeys.Count == 0 ? null :
-            CombatInputs.Accelerate.Contains(_speedAxisKeys[^1]) ? SpeedDirection.Accelerate : SpeedDirection.Brake;
+            ManeuverInputs.Accelerate.Contains(_speedAxisKeys[^1]) ? SpeedDirection.Accelerate : SpeedDirection.Brake;
         if (_heldSpeed?.Direction == speed && (_heldSpeed is null || _heldSpeed.Value.Latched == _speedLatchRequested)) return;
         if (speed is { } speedDirection)
             SendHeldSpeed(owner, engine!.ModuleId, speedDirection, true, _speedLatchRequested);

@@ -66,17 +66,17 @@ internal sealed class DebugTuningPanel : IDisposable
         _minus = Blob("−"); _plus = Blob("+"); _help = Blob("?");
         _resetAll = Blob(_text("Debug.ResetAll")); _folder = Blob(_text("Debug.OpenFolder"));
         _confirmReset = Blob(_text("Debug.ConfirmReset"));
-        ConfigureBindings(CombatInputSettings.Default);
+        ConfigureBindings(CombatInputSettings.Default, ManeuverInputSettings.Default);
         for (int i = 0; i < _sections.Length; i++) _sections[i] = Blob(_text(SectionKeys[i]));
     }
 
-    internal void ConfigureBindings(CombatInputSettings bindings)
+    internal void ConfigureBindings(CombatInputSettings bindings, ManeuverInputSettings maneuver)
     {
         ControlsHint = string.Format(CultureInfo.CurrentCulture, _text("Debug.HelpControls"),
-            string.Join("/", bindings.Accelerate.Select(KeyLabel)), string.Join("/", bindings.Brake.Select(KeyLabel)),
-            string.Join("/", bindings.TurnLeft.Select(KeyLabel)), string.Join("/", bindings.TurnRight.Select(KeyLabel)),
-            string.Join("/", bindings.FullSpeed.Select(KeyLabel).Distinct()), KeyLabel(bindings.TorpedoAim), KeyLabel(bindings.CountermissileAim),
-            KeyLabel(bindings.EvadeLeft), KeyLabel(bindings.EvadeRight), KeyLabel(bindings.DebugPanel));
+            string.Join("/", maneuver.Accelerate.Select(KeyLabel)), string.Join("/", maneuver.Brake.Select(KeyLabel)),
+            string.Join("/", maneuver.TurnLeft.Select(KeyLabel)), string.Join("/", maneuver.TurnRight.Select(KeyLabel)),
+            string.Join("/", maneuver.FullSpeed.Select(KeyLabel).Distinct()), KeyLabel(bindings.TorpedoAim), KeyLabel(bindings.CountermissileAim),
+            KeyLabel(bindings.EvadeLeft), KeyLabel(bindings.EvadeRight), KeyLabel(maneuver.DebugPanel));
         foreach (var line in _helpLines) line.Dispose();
         _helpLines = Wrap(_text("Debug.HelpOrbit") + "\n" + _text("Debug.HelpTorpedoes") + "\n" + ControlsHint);
     }

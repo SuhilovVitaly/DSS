@@ -1,0 +1,24 @@
+{
+  "schemaVersion": 1,
+  "debugPanel": "F12",
+  "turnLeft": [
+    "A",
+    "Left"
+  ],
+  "turnRight": [
+    "D",
+    "Right"
+  ],
+  "accelerate": [
+    "W",
+    "Up"
+  ],
+  "brake": [
+    "S",
+    "Down"
+  ],
+  "fullSpeed": [
+    "ShiftLeft",
+    "ShiftRight"
+  ]
+}

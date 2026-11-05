@@ -97,6 +97,7 @@ public class TacticalBattleModalScreen : IScreen
     public float UiScale { get; }
     public bool ConfirmExit { get; protected set; }
     internal Key LaunchKey { get; init; } = Key.F8;
+    internal Key WorldDebugKey { get; init; } = Key.F12;
     private long _blockedNoticeUntil;
     internal string BlockedNotice => Environment.TickCount64 < _blockedNoticeUntil ? L("WorldActionBlocked") : "";
 
@@ -106,7 +107,7 @@ public class TacticalBattleModalScreen : IScreen
     {
         bool speedKey = key is Key.Number1 or Key.Number2 or Key.Number3 or Key.Number4;
         if (speedKey && editingSeed && (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == 0) return false;
-        if (!speedKey && key != LaunchKey && key is not (Key.F5 or Key.F9 or Key.F12 or Key.F8 or Key.I or Key.Space)
+        if (!speedKey && key != LaunchKey && key != WorldDebugKey && key is not (Key.F5 or Key.F9 or Key.F12 or Key.F8 or Key.I or Key.Space)
             && !(key is Key.F or Key.S && modifiers.HasFlag(KeyModifiers.Control))) return false;
         NotifyWorldActionBlocked();
         return true;

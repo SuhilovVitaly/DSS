@@ -100,14 +100,14 @@ public sealed class TacticalBattleInputSettingsTests
     {
         using var fixture = new FileFixture(Valid.Replace("F8", "F7"));
         var messages = new List<string>();
-        var game = CombatInputSettings.Default with { DebugPanel = Key.F7 };
-        Assert.Equal(TacticalBattleInputSettings.Default, TacticalBattleInputSettings.Load(fixture.Path, game, messages.Add));
+        var game = ManeuverInputSettings.Default with { DebugPanel = Key.F7 };
+        Assert.Equal(TacticalBattleInputSettings.Default, TacticalBattleInputSettings.Load(fixture.Path, warning: messages.Add, maneuverBindings: game));
         Assert.Contains("F7", Assert.Single(messages));
-        var root = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, CombatInputSettings.RelativePath)));
+        var root = JsonDocument.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, ManeuverInputSettings.RelativePath)));
         using (root)
         {
             string gameJson = root.RootElement.GetRawText().Replace("F12", "F7");
-            File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(fixture.Path)!, "combat-input.json"), gameJson);
+            File.WriteAllText(System.IO.Path.Combine(System.IO.Path.GetDirectoryName(fixture.Path)!, "maneuver-input.json"), gameJson);
         }
         messages.Clear();
         Assert.Equal(TacticalBattleInputSettings.Default, TacticalBattleInputSettings.Load(fixture.Path, warning: messages.Add));

@@ -62,7 +62,7 @@ public sealed class DebugTuningPanelInputTests
     [InlineData(1.5f)]
     public async Task BindingRapidEditsConfirmationAndMouseCapture(float scale)
     {
-        string directory = Path.Combine("D:/DeepSpaceSaga/artifacts/validation/ep0013/panel-fixtures", Guid.NewGuid().ToString("N"));
+        string directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath(), Guid.NewGuid().ToString("N"));
         Directory.CreateDirectory(directory);
         try
         {
@@ -75,7 +75,7 @@ public sealed class DebugTuningPanelInputTests
             long tick = 0;
             await using var handle = new GameSessionHandle(connection, buffer, new CombatMetricsWriter(Path.Combine(directory, "metrics")), new DebugTuningFileWriter(directory));
             var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle, uiScale: scale, timestampProvider: () => tick,
-                combatInputs: CombatInputSettings.Default with { DebugPanel = Key.F11 });
+                maneuverInputs: ManeuverInputSettings.Default with { DebugPanel = Key.F11 });
             using var surface = SKSurface.Create(new SKImageInfo(1920, 1200));
             screen.Render(surface.Canvas, 1920, 1200);
             screen.OnKeyDown(Key.F12); Assert.False(screen.DebugPanel.Visible);
