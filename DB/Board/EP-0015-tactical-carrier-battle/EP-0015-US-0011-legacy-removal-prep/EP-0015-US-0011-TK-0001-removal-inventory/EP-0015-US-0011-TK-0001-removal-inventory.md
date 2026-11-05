@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0011-legacy-removal-prep
 ticket: EP-0015-US-0011-TK-0001-removal-inventory
 title: removal-inventory
-stage: draft
+stage: done
 layer: documentation
 depends_on: ["EP-0015-US-0010-TK-0002-sandbox-flow"]
 files_touched: 1
@@ -50,3 +50,9 @@ Engine владеет исходами, RNG и командами; Contracts н�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Execution evidence — 2026-11-06
+
+Published RemovalInventory.md with actual checkout owners, callers, disposition, compile order and owning tests. Machine search at baseline54bbf54c identifies 551 candidate consumer files with exact match locations under the validation root; the matrix distinguishes mixed and retained features (Scanner, world maneuvers, ordinary module state, station/economy tooling, ship class IDs). No old production code removed yet; real Save18/19 fixtures come next.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-removal-inventory-01/: build0 warnings/errors and33 scenario/content Client checks PASS; diff/self-review PASS. Eight scenario.json sources parsed plus runtime listing and launch tests for configured scenarios. Full Client2479 baseline retained from sandbox-flow-01.

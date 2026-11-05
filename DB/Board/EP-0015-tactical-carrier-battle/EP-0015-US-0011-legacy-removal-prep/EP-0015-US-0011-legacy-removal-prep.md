@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0011-legacy-removal-prep
 title: "Подготовка удаления старого боя: инвентаризация, сохранения, небоевое"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0010-battle-end]
 ---
 
