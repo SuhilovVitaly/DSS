@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0004-battle-ai
 ticket: EP-0015-US-0004-TK-0003-interceptor-commander
 title: interceptor-commander
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0004-TK-0002-striker-fighter-tail"]
 files_touched: 2
@@ -50,3 +50,11 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Execution evidence — 2026-11-05
+
+Implemented vmax-based stable threats; carrier-near pursuit, engage, screen/hold and parity flank; patrol step at raw patrol speed; commander quotas, current-role-first assignment, minRoleTurns and strict weak-carrier threshold. TacticalBattleAi.Plan composes the real side-role pass and drone-order pass, including forced all-interceptor fallback with typed events and roleChanges. Role maneuver always precedes optional tail replacement. Captured positions remain unchanged during planning; firing selection uses stored role via the existing Salvo default selector.
+
+`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-commander-01/`: final solution build 0 warnings/errors; Engine TacticalBattle 154/154 (10 new), Motion source guard 19/19; scoped format/diff PASS. All ten first-turn orders and Calls=58 match independent trace. Cases cover vmax vs current-speed threats and inclusive boundaries, stable threat ties, every interceptor branch, active-index flank parity, raw-speed patrol witness, role lock/current-role preference, strict carrier threshold and immediate no-attacker fallback/hunt retention. Initial build found xUnit2031 style error; fixed Assert.Single predicate. Earlier tests/ run used the prior 144-case binary and is excluded; tests-final/ contains the actual 154-case validation. No failed/stale run is reported as coverage of the new code.
+
+Self-review completed; independent review NOT RUN. Prior unchanged broad regression remains 6443 PASS. Whole 90-battle/full trace and platform gates follow in TK-0004. Own SHA verified after explicit user-authorized GitHub publication.
