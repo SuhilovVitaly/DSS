@@ -30,7 +30,7 @@
 | EP-0015-US-0005-session-contracts | AC-06 | EP-0015-US-0005-TK-0006-session-tests | PASS: 90 independent rows x 2 connection modes; all378 Engine cases |
 | EP-0015-US-0006-client-input-and-controls | AC-01 | EP-0015-US-0006-TK-0001-keyboard | Keyboard boundary PASS: 68 Client cases; physical input and future drag consumers pending |
 | EP-0015-US-0006-client-input-and-controls | AC-02 | EP-0015-US-0006-TK-0002-input-settings | PASS: strict schema/conflicts/fallback/native tracker wiring; 103 Client cases |
-| EP-0015-US-0006-client-input-and-controls | AC-03 | EP-0015-US-0006-TK-0003-mouse | not started |
+| EP-0015-US-0006-client-input-and-controls | AC-03 | EP-0015-US-0006-TK-0003-mouse | Mouse boundary PASS: 121 Client cases; actual battle drag/pan and physical acceptance pending |
 | EP-0015-US-0006-client-input-and-controls | AC-04 | EP-0015-US-0006-TK-0004-widgets-basic, EP-0015-US-0006-TK-0005-widgets-lists | not started |
 | EP-0015-US-0006-client-input-and-controls | AC-05 | EP-0015-US-0006-TK-0006-text-and-numbers | not started |
 | EP-0015-US-0007-launch-and-setup | AC-01 | EP-0015-US-0007-TK-0001-modal-navigation | not started |

@@ -603,8 +603,8 @@ public sealed class SkiaWindow : IDisposable
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
-        if (button == MouseButton.Left && !_closing)
-            _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y);
+        if (!_closing && button is MouseButton.Left or MouseButton.Right or MouseButton.Middle)
+            _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y, button);
     }
 
     private void OnMouseMove(IMouse mouse, System.Numerics.Vector2 position)
@@ -634,7 +634,7 @@ public sealed class SkiaWindow : IDisposable
         var screenEvent = _screens.Current.OnMouseWheel(
             mouse.Position.X,
             mouse.Position.Y,
-            scroll.Y);
+            _screens.Current.UsesBrowserWheelDelta ? MouseWheelInput.NormalizeSilk(scroll.Y) : scroll.Y);
 
         _ = HandleScreenEvent(screenEvent);
     }
