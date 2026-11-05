@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 45/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки в работе. Остальные 36 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 46/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; проверяется возврат из песочницы. Остальные 35 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Это исходный регрессионный срез. Core/session parity уже PASS; полная нативная и продуктовая приёмка пока NOT RUN.
 
-Продолжение: US-0009 TK-0004. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
+Продолжение: US-0010 TK-0001. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -58,10 +58,11 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0008-TK-0001-battle-screen-and-camera | 013467b9c0d45ec49c606f051a79de7613141094 | PASS: remote SHA verified | origin | Linux42121522199 PASS; 158 Client +378 Engine +19 Motion guard PASS; build/format/diff PASS |
 | EP-0015-US-0008-TK-0002-panel-header | 1ce00d3ff5e0c53e3f9354d7362bb31759922737 | PASS: remote SHA verified | origin | Linux42122019390 PASS; 160 Client +378 Engine +19 Motion guard PASS; real salvo and refusal raster; build/format/diff PASS |
 | EP-0015-US-0008-TK-0003-battle-map-render | f03c9faa9cb5515ec04eb25accfb004153e7d7fb | PASS: remote SHA verified | origin | Linux42122702685 PASS; 162 Client +378 Engine +19 Motion guard PASS; 2 visually reviewed CPU rasters |
-| EP-0015-US-0008-TK-0004-movement-orders | 2a36e9037c1461bc7bfd5e90c72e2dface34fe1e | PASS: remote SHA verified | origin | Client166 final; Engine378 + Motion guard19 on behavior; inspected final raster |
-| EP-0015-US-0008-TK-0005-movement-animation | 2d129f7cb5d3677ed068f291f4f635bad11dd1d0 | PASS: remote SHA verified | origin | 168 Client +378 Engine +19 Motion guard PASS; delayed response and 900ms gate |
-| EP-0015-US-0009-TK-0001-fire-planning | e9f258bf978e2198a758842ee94df8cbf38e9dc6 | PASS: remote SHA verified | origin | 170 Client +378 Engine +19 Motion guard PASS; inspected Fire CPU raster |
-| EP-0015-US-0009-TK-0002-results-phase | 21a0a649e44a09c6b25a354ed63939fc72e1519a | PASS: remote SHA verified | origin | 173 Client +378 Engine +19 Motion guard PASS; two inspected CPU rasters |
-| EP-0015-US-0009-TK-0005-journal-contract | aca445ca8c4f1be69e5fb35c2315c30d2c315801 | PASS: remote SHA verified | origin | 284 Contracts +173 Client +378 Engine +19 Motion guard PASS |
-| EP-0015-US-0009-TK-0006-journal-events | 8ec240237f774f3d5fda70f33b815685ddbf0beb | PASS: remote SHA verified | origin | 380 Engine +173 Client +19 Motion guard PASS; exact retained journal facts |
-| EP-0015-US-0009-TK-0003-sides-and-log-tabs | current ticket commit | SHA checked immediately after push | origin | 176 Client +380 Engine +19 Motion guard PASS; inspected sides/log rasters |
+| EP-0015-US-0008-TK-0004-movement-orders | 2a36e9037c1461bc7bfd5e90c72e2dface34fe1e | PASS: remote SHA verified | origin | Linux42123739150 PASS; Client166 final; Engine378 + Motion guard19 on behavior; inspected final raster |
+| EP-0015-US-0008-TK-0005-movement-animation | 2d129f7cb5d3677ed068f291f4f635bad11dd1d0 | PASS: remote SHA verified | origin | Linux42124499090 PASS; 168 Client +378 Engine +19 Motion guard PASS; delayed response and 900ms gate |
+| EP-0015-US-0009-TK-0001-fire-planning | e9f258bf978e2198a758842ee94df8cbf38e9dc6 | PASS: remote SHA verified | origin | Linux42125251392 PASS; 170 Client +378 Engine +19 Motion guard PASS; inspected Fire CPU raster |
+| EP-0015-US-0009-TK-0002-results-phase | 21a0a649e44a09c6b25a354ed63939fc72e1519a | PASS: remote SHA verified | origin | Linux42125911783 PASS; 173 Client +378 Engine +19 Motion guard PASS; two inspected CPU rasters |
+| EP-0015-US-0009-TK-0005-journal-contract | aca445ca8c4f1be69e5fb35c2315c30d2c315801 | PASS: remote SHA verified | origin | Linux42126314471 PASS; 284 Contracts +173 Client +378 Engine +19 Motion guard PASS |
+| EP-0015-US-0009-TK-0006-journal-events | 8ec240237f774f3d5fda70f33b815685ddbf0beb | PASS: remote SHA verified | origin | Linux42126749647 PASS; 380 Engine +173 Client +19 Motion guard PASS; exact retained journal facts |
+| EP-0015-US-0009-TK-0003-sides-and-log-tabs | 7bb8ee0d3a6104686d7dfbd207b5a42849ca13ef | PASS: remote SHA verified | origin | Linux42127506099 PASS; 176 Client +380 Engine +19 Motion guard PASS; inspected sides/log rasters |
+| EP-0015-US-0009-TK-0004-forecast-tab | current ticket commit | SHA checked immediately after push | origin | 178 Client +380 Engine +19 Motion guard PASS; inspected forecast raster |

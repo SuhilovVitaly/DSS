@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 ticket: EP-0015-US-0009-TK-0004-forecast-tab
 title: forecast-tab
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0009-TK-0003-sides-and-log-tabs"]
-files_touched: 2
+files_touched: 3
 serves: [AC-03]
 created: 2026-11-05
 revision: 3
@@ -28,6 +28,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleForecastTab.cs` | new | Прогноз фаз, легенда |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ForecastTabTests.cs` | new | Прогноз движения = TacticalHitChance; носитель в целях; сортировка; incoming из снимка; средний урон |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | panel tabs | Wire Forecast tab and scroll routing |
 
 ## Public API after the change
 —
@@ -50,3 +51,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Movement forecast uses captured local orders, straight enemy movement, stable ordering and shared Motion chance calculations. Fire forecast uses exact Engine incoming/selected candidates and displays expected raw rolled damage (hit probability × average damage). Salvo Forecast hides each outcome until its projectile arrives and aggregates only after the last arrival. Eight legend lines describe the map primitives specified by Display.
+
+## Execution evidence — 2026-11-06
+
+AC-03 complete. Movement estimate uses local order endpoints, straight enemy projections and shared TacticalHitChance, with carriers as possible targets and stable chance sorting. Fire displays actual selected and Engine incoming rows, raw damage range and expected damage totals. Results show shot outcomes only after their arrival and target deltas after all arrive. Scrollable legend describes eight map conventions. Tested a carrier/incoming geometry fixture and actual Fire/Results flow; visually inspected the forecast CPU raster.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-forecast-tab-01/: build/format/diff/self-review PASS; 178 Client +380 Engine +19 Motion source guard PASS. Native/physical/human acceptance remains open.

@@ -26,9 +26,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private readonly TacticalBattleMovePanel _movePanel;
     private readonly TacticalBattleFireOrders _fireOrders = new();
     private readonly TacticalBattleFirePanel _firePanel;
-    private readonly TabStrip _tabs = new([new("phase", L("Tab.Phase")), new("sides", L("Tab.Sides")), new("log", L("Tab.Log"))]);
+    private readonly TabStrip _tabs = new([new("phase", L("Tab.Phase")), new("sides", L("Tab.Sides")),
+        new("log", L("Tab.Log")), new("forecast", L("Tab.Forecast"))]);
     private readonly TacticalBattleSidesTab _sidesTab = new();
     private readonly TacticalBattleLogTab _logTab = new();
+    private readonly TacticalBattleForecastTab _forecastTab = new();
     private bool _orderDrag, _orderDragEdited;
     private SKPoint _lastAim;
     private sealed record TurnPresentation(TacticalBattleSnapshot Accepted, TacticalBattleMovementAnimation? Animation,
@@ -48,6 +50,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal TabStrip PanelTabs => _tabs;
     internal TacticalBattleSidesTab SidesTab => _sidesTab;
     internal TacticalBattleLogTab LogTab => _logTab;
+    internal TacticalBattleForecastTab ForecastTab => _forecastTab;
 
     public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : base(flow, isSetup: false, uiScale)
     {
@@ -58,6 +61,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             CancelOrderGesture();
             _firePanel.ResetInput();
             _logTab.ResetInput();
+            _forecastTab.ResetInput();
         };
         if (flow.State is { } state) _presentation = new(state, null);
     }
@@ -179,6 +183,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         body.Top += 34 * s;
         if (_tabs.SelectedId == "sides") { _sidesTab.Draw(canvas, frame, body); return; }
         if (_tabs.SelectedId == "log") { _logTab.Draw(canvas, frame, body); return; }
+        if (_tabs.SelectedId == "forecast") { _forecastTab.Draw(canvas, frame, body); return; }
         if (frame.Salvo is { } salvo)
         {
             using var paint = ControlText.Paint(s);
@@ -208,6 +213,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
         if (TurnBusy) return ScreenEvent.None;
         if (!ConfirmExit && _tabs.SelectedId == "log" && _logTab.OnKeyDown(key)) return ScreenEvent.None;
+        if (!ConfirmExit && _tabs.SelectedId == "forecast" && _forecastTab.OnKeyDown(key)) return ScreenEvent.None;
         if (!ConfirmExit && !repeat && modifiers == KeyModifiers.None && key is Key.Number0 or Key.Keypad0)
         {
             Fit();
@@ -313,6 +319,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             else if (_phaseAction.OnMouseDown(x, y, button)) AdvanceSalvo();
             else if (_replaySalvo.OnMouseDown(x, y, button)) ReplaySalvo();
             else if (_tabs.SelectedId == "log") _logTab.OnMouseDown(x, y, button);
+            else if (_tabs.SelectedId == "forecast") _forecastTab.OnMouseDown(x, y, button);
             return ScreenEvent.None;
         }
         if (button == MouseButton.Right)
@@ -364,6 +371,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             }
         }
         else if (_tabs.SelectedId == "log") _logTab.OnMouseDown(x, y, button);
+        else if (_tabs.SelectedId == "forecast") _forecastTab.OnMouseDown(x, y, button);
         else if (Flow.State?.Phase == TacticalBattlePhase.Move) _movePanel.OnMouseDown(x, y, button);
         else if (firing) _firePanel.OnMouseDown(x, y, button);
         return ScreenEvent.None;
@@ -378,6 +386,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         {
             "sides" => _sidesTab.Hover(x, y),
             "log" => _logTab.OnMouseMove(x, y),
+            "forecast" => _forecastTab.OnMouseMove(x, y),
             _ => false
         });
         if (HasSalvoPresentation)
@@ -400,6 +409,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (button == MouseButton.Right) _camera.EndPan();
         _movePanel.OnMouseUp(button);
         _logTab.OnMouseUp(button);
+        _forecastTab.OnMouseUp(button);
         if (button != MouseButton.Left || !_orderDrag) return;
         if (!ConfirmExit && !TurnBusy && Flow.State?.Phase == TacticalBattlePhase.Move)
         {
@@ -416,6 +426,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         {
             "sides" => _sidesTab.OnMouseWheel(x, y, delta),
             "log" => _logTab.OnMouseWheel(x, y, delta),
+            "forecast" => _forecastTab.OnMouseWheel(x, y, delta),
             _ when HasSalvoPresentation => false,
             _ when Flow.State?.Phase == TacticalBattlePhase.Move => _movePanel.OnMouseWheel(x, y, delta),
             _ when Flow.State?.Phase == TacticalBattlePhase.Fire => _firePanel.OnMouseWheel(x, y, delta) || _firePanel.Targets.IsOpen,
@@ -431,6 +442,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         CancelOrderGesture();
         _firePanel.ResetInput();
         _logTab.ResetInput();
+        _forecastTab.ResetInput();
         _fit.ResetInput(); _exitBattle.ResetInput(); _newBattle.ResetInput(); _phaseAction.ResetInput(); _replaySalvo.ResetInput();
         _enemyForecast.HasFocus = _enemySectors.HasFocus = false;
     }

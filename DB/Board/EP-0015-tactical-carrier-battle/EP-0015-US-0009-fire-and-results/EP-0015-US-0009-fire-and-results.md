@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 title: "Планирование стрельбы, результаты и прогноз"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0008-battle-map]
 ---
 
@@ -48,3 +48,7 @@ dependencies: [EP-0015-US-0008-battle-map]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution review — 2026-11-06
+
+All six tickets completed technically, including the two authoritative journal prerequisites. Real local connection and CPU rasters verify target planning, result playback, side/log views and forecast. Goldens remain unchanged. Native/physical and human acceptance remain open.
