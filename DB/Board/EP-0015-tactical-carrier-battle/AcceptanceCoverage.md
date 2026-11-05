@@ -16,7 +16,7 @@
 | EP-0015-US-0002-deterministic-core | AC-06 | EP-0015-US-0002-TK-0006-platform-determinism | done for available D-USER-15 vectors; golden battles remain US-0004 |
 | EP-0015-US-0003-battle-rules | AC-01 | EP-0015-US-0003-TK-0001-battle-assembly | done: every assembly trace field and RNG42 PASS |
 | EP-0015-US-0003-battle-rules | AC-02 | EP-0015-US-0003-TK-0002-movement | done: all 19 independent movement slices PASS |
-| EP-0015-US-0003-battle-rules | AC-03 | EP-0015-US-0003-TK-0003-salvo | not started |
+| EP-0015-US-0003-battle-rules | AC-03 | EP-0015-US-0003-TK-0003-salvo | done: all 19 salvo slices, exact states/calls and edge cases PASS |
 | EP-0015-US-0003-battle-rules | AC-04 | EP-0015-US-0003-TK-0004-turn-and-outcome | not started |
 | EP-0015-US-0004-battle-ai | AC-01 | EP-0015-US-0004-TK-0001-steering | not started |
 | EP-0015-US-0004-battle-ai | AC-02 | EP-0015-US-0004-TK-0002-striker-fighter-tail | not started |
