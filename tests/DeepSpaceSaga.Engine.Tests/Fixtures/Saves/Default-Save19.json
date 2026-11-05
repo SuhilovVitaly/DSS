@@ -1,0 +1,1703 @@
+{
+  "scenarioMetadata": {
+    "scenarioId": "quicksave",
+    "name": "Quicksave",
+    "description": null
+  },
+  "gameState": {
+    "gameTimeMs": 0,
+    "currentSpeed": "Speed0",
+    "playerShipObjectId": "SPC-0001",
+    "focus": null,
+    "spaceObjects": [
+      {
+        "objectId": "SPC-0001",
+        "objectType": "PlayerShip",
+        "persistenceType": "Permanent",
+        "name": "Player Ship",
+        "positionX": 10000,
+        "positionY": 10000,
+        "speedMps": 700,
+        "directionDegrees": 0,
+        "movementType": "Linear",
+        "massKg": null,
+        "compositionType": null,
+        "modules": [
+          {
+            "moduleId": "MOD-PLAYER-BRIDGE-01",
+            "moduleTypeId": "module.bridge.navigation.computer.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 0
+              }
+            ],
+            "structurePoints": 80,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": null,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": null,
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": null,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          },
+          {
+            "moduleId": "MOD-PLAYER-LIVING-QUARTERS-01",
+            "moduleTypeId": "living.quarters.mk1",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 1
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": null,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": null,
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": null,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          },
+          {
+            "moduleId": "MOD-PLAYER-CARGO-01",
+            "moduleTypeId": "module.container.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 2
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [
+              {
+                "itemTypeId": "item.energy-cells",
+                "quantity": 1000,
+                "costBasisCredits": 50000,
+                "acquisitionSources": [
+                  "bootstrap"
+                ]
+              },
+              {
+                "itemTypeId": "item.food-rations",
+                "quantity": 200,
+                "costBasisCredits": 4000,
+                "acquisitionSources": [
+                  "bootstrap"
+                ]
+              }
+            ],
+            "fuelAmountKg": null,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": null,
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": null,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          },
+          {
+            "moduleId": "MOD-PLAYER-SCANNER-01",
+            "moduleTypeId": "module.scanner.mk1",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 3
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": null,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": null,
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": null,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          },
+          {
+            "moduleId": "MOD-PLAYER-GENERATOR-01",
+            "moduleTypeId": "module.generator.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 4
+              }
+            ],
+            "structurePoints": 150,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": null,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": null,
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": null,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          },
+          {
+            "moduleId": "MOD-PLAYER-ENGINE-01",
+            "moduleTypeId": "module.engine.basic",
+            "occupiedCells": [
+              {
+                "x": 4,
+                "y": 5
+              }
+            ],
+            "structurePoints": 100,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": 750,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": null,
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": 7500,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          },
+          {
+            "moduleId": "MOD-PLAYER-TORPEDO-01",
+            "moduleTypeId": "module.torpedo.launcher.basic",
+            "occupiedCells": [
+              {
+                "x": 3,
+                "y": 2
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": null,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": "CHR-0001",
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": null,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          },
+          {
+            "moduleId": "MOD-PLAYER-COUNTERMEASURE-01",
+            "moduleTypeId": "module.countermeasure.launcher.basic",
+            "occupiedCells": [
+              {
+                "x": 5,
+                "y": 2
+              }
+            ],
+            "structurePoints": 60,
+            "powerState": "On",
+            "operationalState": "Ready",
+            "activeCycle": null,
+            "cargo": [],
+            "fuelAmountKg": null,
+            "lastTurnGameTimeMs": null,
+            "operatorCrewId": "CHR-PLAYER-DEFENSE",
+            "autoDefenseEnabled": true,
+            "fuelCostBasisCredits": null,
+            "armorClass": "none",
+            "armor": null,
+            "disabledUntilMotionTimeMs": null,
+            "destroyed": false
+          }
+        ],
+        "isKnown": true,
+        "image": "Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png",
+        "hullLayout": {
+          "width": 9,
+          "height": 9,
+          "cells": [
+            {
+              "x": 4,
+              "y": 0
+            },
+            {
+              "x": 3,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 1
+            },
+            {
+              "x": 5,
+              "y": 1
+            },
+            {
+              "x": 4,
+              "y": 2
+            },
+            {
+              "x": 4,
+              "y": 3
+            },
+            {
+              "x": 4,
+              "y": 4
+            },
+            {
+              "x": 3,
+              "y": 5
+            },
+            {
+              "x": 4,
+              "y": 5
+            },
+            {
+              "x": 5,
+              "y": 5
+            },
+            {
+              "x": 3,
+              "y": 2
+            },
+            {
+              "x": 5,
+              "y": 2
+            }
+          ]
+        },
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": null,
+        "priceCoefficient": null,
+        "inventory": null,
+        "explicitInventoryItemTypeIds": null,
+        "stationSize": null,
+        "producingModules": null,
+        "events": null,
+        "crew": [
+          {
+            "crewId": "CHR-0001",
+            "displayName": "Dunkan Su",
+            "accuracySkill": 0,
+            "maneuverabilitySkill": 0
+          },
+          {
+            "crewId": "CHR-PLAYER-DEFENSE",
+            "displayName": "Defense operator",
+            "accuracySkill": 0,
+            "maneuverabilitySkill": 0
+          }
+        ],
+        "stationCrew": null,
+        "captainDisplayName": "Tariq Amari",
+        "captainPortraitImage": "Images/Persons/M4/Portraits/CHR-20260915-105947-6DC202.png",
+        "portFeeCreditsPerDay": null,
+        "securityZoneRadiusKm": null,
+        "piracyWarningGracePeriodMs": null,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": null,
+        "marketProfileFingerprint": null,
+        "marketBudgetCredits": null,
+        "marketRevision": null,
+        "relationToPlayer": null,
+        "shipClassId": "ship.tetrarch",
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      },
+      {
+        "objectId": "SPC-0002",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Start Station",
+        "positionX": 11000,
+        "positionY": 11000,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "massKg": null,
+        "compositionType": null,
+        "modules": [],
+        "isKnown": true,
+        "image": null,
+        "hullLayout": null,
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": 28800,
+        "priceCoefficient": 1791,
+        "inventory": [
+          {
+            "itemTypeId": "item.electronics",
+            "quantity": 144
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "quantity": 350
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "quantity": 500
+          },
+          {
+            "itemTypeId": "item.fuel",
+            "quantity": 700
+          },
+          {
+            "itemTypeId": "item.ice",
+            "quantity": 320
+          },
+          {
+            "itemTypeId": "item.iron-ore",
+            "quantity": 410
+          },
+          {
+            "itemTypeId": "item.magnesium-ore",
+            "quantity": 120
+          },
+          {
+            "itemTypeId": "item.silicon",
+            "quantity": 70
+          },
+          {
+            "itemTypeId": "item.steel",
+            "quantity": 144
+          },
+          {
+            "itemTypeId": "item.water",
+            "quantity": 144
+          }
+        ],
+        "explicitInventoryItemTypeIds": [
+          "item.energy-cells",
+          "item.food-rations",
+          "item.fuel",
+          "item.ice",
+          "item.iron-ore",
+          "item.magnesium-ore",
+          "item.silicon"
+        ],
+        "stationSize": "Large",
+        "producingModules": null,
+        "events": null,
+        "crew": null,
+        "stationCrew": [
+          {
+            "crewId": "CHR-0003",
+            "role": "Dock Operator",
+            "displayName": "Mari Lefeber",
+            "portraitImage": "Images/Persons/W4/Portraits/CHR-20260915-102436-A2570C.png"
+          }
+        ],
+        "captainDisplayName": null,
+        "captainPortraitImage": null,
+        "portFeeCreditsPerDay": 100,
+        "securityZoneRadiusKm": 200,
+        "piracyWarningGracePeriodMs": 60000,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": "market.transit",
+        "marketProfileFingerprint": "75B61BA27E0CBB84184D6E12CAF88CD4176EDAE1C2611605E7FCE5DF058C3119",
+        "marketBudgetCredits": 28800,
+        "marketRevision": 1,
+        "relationToPlayer": null,
+        "shipClassId": null,
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      },
+      {
+        "objectId": "SPC-0003",
+        "objectType": "Asteroid",
+        "persistenceType": "Temporary",
+        "name": null,
+        "positionX": 10400,
+        "positionY": 10000,
+        "speedMps": 600,
+        "directionDegrees": 256,
+        "movementType": "Linear",
+        "massKg": 1000000,
+        "compositionType": "Silicate",
+        "modules": [],
+        "isKnown": true,
+        "image": "Images/CelestialObjects/Asteroid/asteroid-1.png",
+        "hullLayout": null,
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": null,
+        "priceCoefficient": null,
+        "inventory": null,
+        "explicitInventoryItemTypeIds": null,
+        "stationSize": null,
+        "producingModules": null,
+        "events": null,
+        "crew": null,
+        "stationCrew": null,
+        "captainDisplayName": null,
+        "captainPortraitImage": null,
+        "portFeeCreditsPerDay": null,
+        "securityZoneRadiusKm": null,
+        "piracyWarningGracePeriodMs": null,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": null,
+        "marketProfileFingerprint": null,
+        "marketBudgetCredits": null,
+        "marketRevision": null,
+        "relationToPlayer": null,
+        "shipClassId": null,
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      },
+      {
+        "objectId": "SPC-0004",
+        "objectType": "Asteroid",
+        "persistenceType": "Temporary",
+        "name": null,
+        "positionX": 10000,
+        "positionY": 10450,
+        "speedMps": 1200,
+        "directionDegrees": 22,
+        "movementType": "Linear",
+        "massKg": 1000000,
+        "compositionType": "Ice",
+        "modules": [],
+        "isKnown": false,
+        "image": "Images/CelestialObjects/Asteroid/ice-asteroid-1.png",
+        "hullLayout": null,
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": null,
+        "priceCoefficient": null,
+        "inventory": null,
+        "explicitInventoryItemTypeIds": null,
+        "stationSize": null,
+        "producingModules": null,
+        "events": null,
+        "crew": null,
+        "stationCrew": null,
+        "captainDisplayName": null,
+        "captainPortraitImage": null,
+        "portFeeCreditsPerDay": null,
+        "securityZoneRadiusKm": null,
+        "piracyWarningGracePeriodMs": null,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": null,
+        "marketProfileFingerprint": null,
+        "marketBudgetCredits": null,
+        "marketRevision": null,
+        "relationToPlayer": null,
+        "shipClassId": null,
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      },
+      {
+        "objectId": "SPC-0005",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Mining",
+        "positionX": 10900,
+        "positionY": 11000,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "massKg": null,
+        "compositionType": null,
+        "modules": [],
+        "isKnown": true,
+        "image": null,
+        "hullLayout": null,
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": 9600,
+        "priceCoefficient": 1978,
+        "inventory": [
+          {
+            "itemTypeId": "item.carbon-ore",
+            "quantity": 162
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "quantity": 36
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "quantity": 36
+          },
+          {
+            "itemTypeId": "item.fuel",
+            "quantity": 200
+          },
+          {
+            "itemTypeId": "item.ice",
+            "quantity": 162
+          },
+          {
+            "itemTypeId": "item.iron-ore",
+            "quantity": 162
+          },
+          {
+            "itemTypeId": "item.magnesium-ore",
+            "quantity": 162
+          },
+          {
+            "itemTypeId": "item.steel",
+            "quantity": 36
+          },
+          {
+            "itemTypeId": "item.water",
+            "quantity": 36
+          }
+        ],
+        "explicitInventoryItemTypeIds": null,
+        "stationSize": "Medium",
+        "producingModules": null,
+        "events": null,
+        "crew": null,
+        "stationCrew": null,
+        "captainDisplayName": null,
+        "captainPortraitImage": null,
+        "portFeeCreditsPerDay": 100,
+        "securityZoneRadiusKm": null,
+        "piracyWarningGracePeriodMs": null,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": "market.mining",
+        "marketProfileFingerprint": "D5F4A8DA3958ACF3EE89AA2C0CC0BAACA138B0E76BB38A30BD5C254000E56555",
+        "marketBudgetCredits": 9600,
+        "marketRevision": 1,
+        "relationToPlayer": null,
+        "shipClassId": null,
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      },
+      {
+        "objectId": "SPC-0006",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Industrial",
+        "positionX": 11000,
+        "positionY": 10000,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "massKg": null,
+        "compositionType": null,
+        "modules": [],
+        "isKnown": true,
+        "image": null,
+        "hullLayout": null,
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": 14400,
+        "priceCoefficient": 1376,
+        "inventory": [
+          {
+            "itemTypeId": "item.carbon-ore",
+            "quantity": 66
+          },
+          {
+            "itemTypeId": "item.electronics",
+            "quantity": 132
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "quantity": 132
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "quantity": 44
+          },
+          {
+            "itemTypeId": "item.fuel",
+            "quantity": 200
+          },
+          {
+            "itemTypeId": "item.iron-ore",
+            "quantity": 66
+          },
+          {
+            "itemTypeId": "item.magnesium-ore",
+            "quantity": 66
+          },
+          {
+            "itemTypeId": "item.silicon",
+            "quantity": 66
+          },
+          {
+            "itemTypeId": "item.steel",
+            "quantity": 132
+          },
+          {
+            "itemTypeId": "item.water",
+            "quantity": 44
+          }
+        ],
+        "explicitInventoryItemTypeIds": null,
+        "stationSize": "Medium",
+        "producingModules": null,
+        "events": null,
+        "crew": null,
+        "stationCrew": null,
+        "captainDisplayName": null,
+        "captainPortraitImage": null,
+        "portFeeCreditsPerDay": 100,
+        "securityZoneRadiusKm": null,
+        "piracyWarningGracePeriodMs": null,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": "market.industrial",
+        "marketProfileFingerprint": "2BADBB87632E222C483CAA3044E5C62C24D2FBFE3A784F094F91A47D7949760B",
+        "marketBudgetCredits": 14400,
+        "marketRevision": 1,
+        "relationToPlayer": null,
+        "shipClassId": null,
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      },
+      {
+        "objectId": "SPC-0007",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Hydroponic",
+        "positionX": 12000,
+        "positionY": 11000,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "massKg": null,
+        "compositionType": null,
+        "modules": [],
+        "isKnown": true,
+        "image": null,
+        "hullLayout": null,
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": 12000,
+        "priceCoefficient": 1044,
+        "inventory": [
+          {
+            "itemTypeId": "item.electronics",
+            "quantity": 40
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "quantity": 40
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "quantity": 120
+          },
+          {
+            "itemTypeId": "item.fuel",
+            "quantity": 200
+          },
+          {
+            "itemTypeId": "item.ice",
+            "quantity": 60
+          },
+          {
+            "itemTypeId": "item.protein-mass",
+            "quantity": 120
+          },
+          {
+            "itemTypeId": "item.steel",
+            "quantity": 40
+          },
+          {
+            "itemTypeId": "item.water",
+            "quantity": 120
+          }
+        ],
+        "explicitInventoryItemTypeIds": null,
+        "stationSize": "Medium",
+        "producingModules": null,
+        "events": null,
+        "crew": null,
+        "stationCrew": null,
+        "captainDisplayName": null,
+        "captainPortraitImage": null,
+        "portFeeCreditsPerDay": 100,
+        "securityZoneRadiusKm": null,
+        "piracyWarningGracePeriodMs": null,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": "market.hydroponic",
+        "marketProfileFingerprint": "4BA95221A82D9E162B0EB6D8F0F6A55F8304B17E85E55EF90D69E2B73E450EAF",
+        "marketBudgetCredits": 12000,
+        "marketRevision": 1,
+        "relationToPlayer": null,
+        "shipClassId": null,
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      },
+      {
+        "objectId": "SPC-0008",
+        "objectType": "Station",
+        "persistenceType": "Permanent",
+        "name": "Scientific/Military",
+        "positionX": 11000,
+        "positionY": 9500,
+        "speedMps": 0,
+        "directionDegrees": 0,
+        "movementType": "Stationary",
+        "massKg": null,
+        "compositionType": null,
+        "modules": [],
+        "isKnown": true,
+        "image": null,
+        "hullLayout": null,
+        "isDocked": false,
+        "dockedStationObjectId": null,
+        "credits": 16800,
+        "priceCoefficient": 1699,
+        "inventory": [
+          {
+            "itemTypeId": "item.electronics",
+            "quantity": 96
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "quantity": 32
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "quantity": 32
+          },
+          {
+            "itemTypeId": "item.fuel",
+            "quantity": 200
+          },
+          {
+            "itemTypeId": "item.silicon",
+            "quantity": 48
+          },
+          {
+            "itemTypeId": "item.steel",
+            "quantity": 32
+          },
+          {
+            "itemTypeId": "item.water",
+            "quantity": 32
+          }
+        ],
+        "explicitInventoryItemTypeIds": null,
+        "stationSize": "Medium",
+        "producingModules": null,
+        "events": null,
+        "crew": null,
+        "stationCrew": null,
+        "captainDisplayName": null,
+        "captainPortraitImage": null,
+        "portFeeCreditsPerDay": 100,
+        "securityZoneRadiusKm": null,
+        "piracyWarningGracePeriodMs": null,
+        "isDestroyed": false,
+        "passengers": [],
+        "firstPortFeeGameTimeMs": null,
+        "nextPortFeeDueGameTimeMs": null,
+        "portFeeDebt": 0,
+        "marketProfileId": "market.scientific-military",
+        "marketProfileFingerprint": "DCB61CA4400D06AF8C72AB4ABF56861A249F0DE2096BB9C6B33BAB3ECFB81E98",
+        "marketBudgetCredits": 16800,
+        "marketRevision": 1,
+        "relationToPlayer": null,
+        "shipClassId": null,
+        "hullHitPoints": null,
+        "hullHitPointsMax": null,
+        "orbit": null,
+        "worldOffsetX": 0,
+        "worldOffsetY": 0,
+        "ai": null
+      }
+    ],
+    "masterSeed": 42,
+    "playerTokens": 2000,
+    "dialogueState": {
+      "ActiveDialogue": null,
+      "Progress": {
+        "PlayerCharacter": {
+          "Attributes": {}
+        },
+        "Quests": {},
+        "Flags": [],
+        "StationAccessStates": {},
+        "SecurityIncidents": []
+      },
+      "ProcessedCommandIds": [],
+      "NextInstanceId": 0,
+      "NextEventId": 0,
+      "ResumeSpeed": null
+    },
+    "commandReceipts": [],
+    "pendingCommands": [],
+    "economyTime": {
+      "rulesVersion": 1,
+      "stationDistrict": 0,
+      "travelReceipts": [],
+      "activeContracts": [],
+      "routeArrivalGameTimeMs": null,
+      "missingRations": 0
+    },
+    "simulationTimeMs": 0,
+    "catalogCompatibility": {
+      "catalogVersion": 1,
+      "rulesVersion": 1,
+      "fingerprint": "FB95784357DF3BF74B871D1FCEBD834698E206102EF8D1FCC31EE2E4E56F5678"
+    },
+    "tradingMapGeneration": null,
+    "tradingMap": {
+      "schemaVersion": 1,
+      "templateId": "ring-a",
+      "quarterTurns": 2,
+      "rules": {
+        "schemaVersion": 1,
+        "startStationObjectId": "SPC-0002",
+        "referenceSpeedMps": 700,
+        "shortMaxGameTimeMs": 21600000,
+        "mediumMaxGameTimeMs": 64800000,
+        "maxTravelGameTimeMs": 129600000,
+        "minStationDistanceKm": 5,
+        "clearanceKm": 2,
+        "stations": [
+          {
+            "objectId": "SPC-0002",
+            "marketProfileId": "market.transit",
+            "name": "Transit",
+            "stationSize": "Large"
+          },
+          {
+            "objectId": "SPC-0005",
+            "marketProfileId": "market.mining",
+            "name": "Mining",
+            "stationSize": "Medium"
+          },
+          {
+            "objectId": "SPC-0006",
+            "marketProfileId": "market.industrial",
+            "name": "Industrial",
+            "stationSize": "Medium"
+          },
+          {
+            "objectId": "SPC-0007",
+            "marketProfileId": "market.hydroponic",
+            "name": "Hydroponic",
+            "stationSize": "Medium"
+          },
+          {
+            "objectId": "SPC-0008",
+            "marketProfileId": "market.scientific-military",
+            "name": "Scientific/Military",
+            "stationSize": "Medium"
+          }
+        ],
+        "templates": [
+          {
+            "templateId": "cross-current",
+            "links": [
+              {
+                "fromStationObjectId": "SPC-0002",
+                "toStationObjectId": "SPC-0005",
+                "riskProfileId": "risk.safe"
+              },
+              {
+                "fromStationObjectId": "SPC-0002",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.elevated"
+              },
+              {
+                "fromStationObjectId": "SPC-0005",
+                "toStationObjectId": "SPC-0006",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0005",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0006",
+                "toStationObjectId": "SPC-0007",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0006",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.elevated"
+              },
+              {
+                "fromStationObjectId": "SPC-0007",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.normal"
+              }
+            ],
+            "offsets": [
+              {
+                "stationObjectId": "SPC-0002",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0005",
+                "x": 150,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0006",
+                "x": 0,
+                "y": 800
+              },
+              {
+                "stationObjectId": "SPC-0007",
+                "x": -800,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0008",
+                "x": 0,
+                "y": 1800
+              }
+            ]
+          },
+          {
+            "templateId": "ring-a",
+            "links": [
+              {
+                "fromStationObjectId": "SPC-0002",
+                "toStationObjectId": "SPC-0005",
+                "riskProfileId": "risk.safe"
+              },
+              {
+                "fromStationObjectId": "SPC-0002",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.elevated"
+              },
+              {
+                "fromStationObjectId": "SPC-0005",
+                "toStationObjectId": "SPC-0006",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0005",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0006",
+                "toStationObjectId": "SPC-0007",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0006",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.elevated"
+              },
+              {
+                "fromStationObjectId": "SPC-0007",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.normal"
+              }
+            ],
+            "offsets": [
+              {
+                "stationObjectId": "SPC-0002",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0005",
+                "x": 100,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0006",
+                "x": 0,
+                "y": 1000
+              },
+              {
+                "stationObjectId": "SPC-0007",
+                "x": -1000,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0008",
+                "x": 0,
+                "y": 1500
+              }
+            ]
+          },
+          {
+            "templateId": "wide-loop",
+            "links": [
+              {
+                "fromStationObjectId": "SPC-0002",
+                "toStationObjectId": "SPC-0005",
+                "riskProfileId": "risk.safe"
+              },
+              {
+                "fromStationObjectId": "SPC-0002",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.elevated"
+              },
+              {
+                "fromStationObjectId": "SPC-0005",
+                "toStationObjectId": "SPC-0006",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0005",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0006",
+                "toStationObjectId": "SPC-0007",
+                "riskProfileId": "risk.normal"
+              },
+              {
+                "fromStationObjectId": "SPC-0006",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.elevated"
+              },
+              {
+                "fromStationObjectId": "SPC-0007",
+                "toStationObjectId": "SPC-0008",
+                "riskProfileId": "risk.normal"
+              }
+            ],
+            "offsets": [
+              {
+                "stationObjectId": "SPC-0002",
+                "x": 0,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0005",
+                "x": 200,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0006",
+                "x": 0,
+                "y": 1200
+              },
+              {
+                "stationObjectId": "SPC-0007",
+                "x": -1200,
+                "y": 0
+              },
+              {
+                "stationObjectId": "SPC-0008",
+                "x": 0,
+                "y": 2200
+              }
+            ]
+          }
+        ],
+        "riskProfiles": [
+          {
+            "riskProfileId": "risk.elevated",
+            "fuelMultiplierPermille": 1300
+          },
+          {
+            "riskProfileId": "risk.normal",
+            "fuelMultiplierPermille": 1100
+          },
+          {
+            "riskProfileId": "risk.safe",
+            "fuelMultiplierPermille": 1000
+          }
+        ]
+      },
+      "edges": [
+        {
+          "fromStationObjectId": "SPC-0002",
+          "toStationObjectId": "SPC-0005",
+          "distanceKm": 10,
+          "travelEstimateGameTimeMs": 4285715,
+          "distanceClass": "Short",
+          "fuelMultiplierPermille": 1000,
+          "riskProfileId": "risk.safe"
+        },
+        {
+          "fromStationObjectId": "SPC-0002",
+          "toStationObjectId": "SPC-0008",
+          "distanceKm": 150,
+          "travelEstimateGameTimeMs": 64285715,
+          "distanceClass": "Medium",
+          "fuelMultiplierPermille": 1300,
+          "riskProfileId": "risk.elevated"
+        },
+        {
+          "fromStationObjectId": "SPC-0005",
+          "toStationObjectId": "SPC-0006",
+          "distanceKm": 100.4987562112089,
+          "travelEstimateGameTimeMs": 43070896,
+          "distanceClass": "Medium",
+          "fuelMultiplierPermille": 1100,
+          "riskProfileId": "risk.normal"
+        },
+        {
+          "fromStationObjectId": "SPC-0005",
+          "toStationObjectId": "SPC-0008",
+          "distanceKm": 150.3329637837291,
+          "travelEstimateGameTimeMs": 64428414,
+          "distanceClass": "Medium",
+          "fuelMultiplierPermille": 1100,
+          "riskProfileId": "risk.normal"
+        },
+        {
+          "fromStationObjectId": "SPC-0006",
+          "toStationObjectId": "SPC-0007",
+          "distanceKm": 141.4213562373095,
+          "travelEstimateGameTimeMs": 60609153,
+          "distanceClass": "Medium",
+          "fuelMultiplierPermille": 1100,
+          "riskProfileId": "risk.normal"
+        },
+        {
+          "fromStationObjectId": "SPC-0006",
+          "toStationObjectId": "SPC-0008",
+          "distanceKm": 50,
+          "travelEstimateGameTimeMs": 21428572,
+          "distanceClass": "Short",
+          "fuelMultiplierPermille": 1300,
+          "riskProfileId": "risk.elevated"
+        },
+        {
+          "fromStationObjectId": "SPC-0007",
+          "toStationObjectId": "SPC-0008",
+          "distanceKm": 180.2775637731995,
+          "travelEstimateGameTimeMs": 77261814,
+          "distanceClass": "Long",
+          "fuelMultiplierPermille": 1100,
+          "riskProfileId": "risk.normal"
+        }
+      ],
+      "cargoFlows": [
+        {
+          "fromStationObjectId": "SPC-0005",
+          "toStationObjectId": "SPC-0006",
+          "itemTypeIds": [
+            "item.carbon-ore",
+            "item.iron-ore",
+            "item.magnesium-ore"
+          ]
+        },
+        {
+          "fromStationObjectId": "SPC-0006",
+          "toStationObjectId": "SPC-0005",
+          "itemTypeIds": [
+            "item.energy-cells",
+            "item.steel"
+          ]
+        },
+        {
+          "fromStationObjectId": "SPC-0006",
+          "toStationObjectId": "SPC-0007",
+          "itemTypeIds": [
+            "item.electronics",
+            "item.energy-cells",
+            "item.steel"
+          ]
+        },
+        {
+          "fromStationObjectId": "SPC-0006",
+          "toStationObjectId": "SPC-0008",
+          "itemTypeIds": [
+            "item.energy-cells",
+            "item.steel"
+          ]
+        },
+        {
+          "fromStationObjectId": "SPC-0007",
+          "toStationObjectId": "SPC-0006",
+          "itemTypeIds": [
+            "item.food-rations",
+            "item.water"
+          ]
+        },
+        {
+          "fromStationObjectId": "SPC-0007",
+          "toStationObjectId": "SPC-0008",
+          "itemTypeIds": [
+            "item.food-rations",
+            "item.water"
+          ]
+        },
+        {
+          "fromStationObjectId": "SPC-0008",
+          "toStationObjectId": "SPC-0002",
+          "itemTypeIds": [
+            "item.electronics"
+          ]
+        },
+        {
+          "fromStationObjectId": "SPC-0008",
+          "toStationObjectId": "SPC-0007",
+          "itemTypeIds": [
+            "item.electronics"
+          ]
+        }
+      ],
+      "rngStreams": [
+        {
+          "name": "TradingMap.Geometry",
+          "seed": 13212974641784025556,
+          "counter": 10010
+        },
+        {
+          "name": "TradingMap.Topology",
+          "seed": 8876089363604565327,
+          "counter": 10010
+        }
+      ]
+    },
+    "stationResourceFields": null,
+    "voyageState": null,
+    "combatState": {
+      "version": 2,
+      "lastProcessedMotionTimeMs": 0,
+      "projectileSequence": 0,
+      "impactSequence": 0,
+      "wreckSequence": 0,
+      "nextGuidanceMotionTimeMs": 9223372036854775807,
+      "launchers": [
+        {
+          "ownerObjectId": "SPC-0001",
+          "moduleId": "MOD-PLAYER-TORPEDO-01",
+          "state": {
+            "SpeedKmS": 6,
+            "TurnRateDegPerSec": 0,
+            "Damage": 200,
+            "Operator": {
+              "CrewId": "CHR-0001",
+              "DisplayName": "Dunkan Su",
+              "SkillType": 0,
+              "Skill": 0,
+              "BaseRating": 0,
+              "EffectiveRating": 0
+            },
+            "RangeKm": 70,
+            "Maneuverability": null,
+            "ModeId": "",
+            "ReadyAtMotionTimeMs": null,
+            "IsBrokenUntilDock": false,
+            "ActiveTorpedoIds": [],
+            "ReloadDurationMs": 10000,
+            "Profiles": [
+              {
+                "ProfileId": "slow",
+                "SpeedKmS": 6,
+                "BlastRadiusKm": 9
+              },
+              {
+                "ProfileId": "medium",
+                "SpeedKmS": 10,
+                "BlastRadiusKm": 5
+              },
+              {
+                "ProfileId": "fast",
+                "SpeedKmS": 16,
+                "BlastRadiusKm": 2.5
+              }
+            ],
+            "ScatterPercent": 0.02
+          }
+        }
+      ],
+      "projectiles": [],
+      "processedLaunchCommandIds": [],
+      "hitLocationRngState": 2616674504103519672,
+      "hitLocationRngCounter": 0,
+      "torpedoHitRngState": 0,
+      "torpedoHitRngCounter": 0,
+      "launcherBreakdownRngState": 0,
+      "launcherBreakdownRngCounter": 0,
+      "processedModeCommandIds": []
+    },
+    "defenseState": {
+      "Version": 3,
+      "ProjectileSequence": 0,
+      "RngVersion": 1,
+      "RngState": 0,
+      "RngCounter": 0,
+      "JournalSequence": 0,
+      "Launchers": [
+        {
+          "OwnerObjectId": "SPC-0001",
+          "ModuleId": "MOD-PLAYER-COUNTERMEASURE-01",
+          "State": {
+            "Operator": {
+              "CrewId": "CHR-PLAYER-DEFENSE",
+              "DisplayName": "Defense operator",
+              "SkillType": 1,
+              "Skill": 0,
+              "BaseRating": 0,
+              "EffectiveRating": 0
+            },
+            "State": 0,
+            "ActiveProjectileId": null,
+            "ReloadDueMotionTimeMs": null,
+            "RangeKm": 30,
+            "ManualRangeKm": null,
+            "Accuracy": null,
+            "SpeedKmS": null,
+            "TurnRateDegPerSec": null,
+            "MaxFlightTimeMs": null,
+            "Barrels": 1,
+            "PendingBurstShots": [],
+            "ReadyAtMotionTimeMs": null,
+            "ActiveProjectileIds": [],
+            "ReloadDurationMs": 12500,
+            "Profiles": [
+              {
+                "ProfileId": "wide",
+                "SpeedKmS": 15,
+                "BlastRadiusKm": 1
+              },
+              {
+                "ProfileId": "fast",
+                "SpeedKmS": 25,
+                "BlastRadiusKm": 0.5
+              }
+            ],
+            "ScatterPercent": 0.08
+          }
+        }
+      ],
+      "Projectiles": [],
+      "Journal": [],
+      "SelectedProjectileId": null
+    },
+    "solarSystem": null,
+    "marketEventCatalogFingerprint": "D9C6599AEB4A099FDE6799B4BE81B21D10AEF8DDAC94E4D11CCD90283E1F0FC9",
+    "lastVoyageFuelSettlement": null,
+    "marketKnowledge": [
+      {
+        "stationObjectId": "SPC-0002",
+        "stationRole": "Transit",
+        "isAvailable": true,
+        "observedAtGameTimeMs": 0,
+        "observedMarketRevision": 1,
+        "stockBands": [
+          {
+            "itemTypeId": "item.electronics",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "stockState": "Surplus"
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "stockState": "Surplus"
+          },
+          {
+            "itemTypeId": "item.steel",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.water",
+            "stockState": "Normal"
+          }
+        ]
+      },
+      {
+        "stationObjectId": "SPC-0005",
+        "stationRole": "Mining",
+        "isAvailable": true,
+        "observedAtGameTimeMs": 0,
+        "observedMarketRevision": 1,
+        "stockBands": [
+          {
+            "itemTypeId": "item.carbon-ore",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.ice",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.iron-ore",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.magnesium-ore",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.steel",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.water",
+            "stockState": "Normal"
+          }
+        ]
+      },
+      {
+        "stationObjectId": "SPC-0006",
+        "stationRole": "Industrial",
+        "isAvailable": true,
+        "observedAtGameTimeMs": 0,
+        "observedMarketRevision": 1,
+        "stockBands": [
+          {
+            "itemTypeId": "item.carbon-ore",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.electronics",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.iron-ore",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.magnesium-ore",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.silicon",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.steel",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.water",
+            "stockState": "Normal"
+          }
+        ]
+      },
+      {
+        "stationObjectId": "SPC-0007",
+        "stationRole": "Hydroponic",
+        "isAvailable": true,
+        "observedAtGameTimeMs": 0,
+        "observedMarketRevision": 1,
+        "stockBands": [
+          {
+            "itemTypeId": "item.electronics",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.ice",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.protein-mass",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.steel",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.water",
+            "stockState": "Normal"
+          }
+        ]
+      },
+      {
+        "stationObjectId": "SPC-0008",
+        "stationRole": "Scientific/Military",
+        "isAvailable": true,
+        "observedAtGameTimeMs": 0,
+        "observedMarketRevision": 1,
+        "stockBands": [
+          {
+            "itemTypeId": "item.electronics",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.energy-cells",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.food-rations",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.silicon",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.steel",
+            "stockState": "Normal"
+          },
+          {
+            "itemTypeId": "item.water",
+            "stockState": "Normal"
+          }
+        ]
+      }
+    ],
+    "tradingEconomyContinuation": {
+      "schemaVersion": 1,
+      "configurationFingerprint": "5FFF03E575A48DABF8B4FBF393D03814C1FD1C7175AF4B9CE644462AF2395895",
+      "lastProcessedMarketGameTimeMs": 0,
+      "nextMarketRevision": 2,
+      "nextMarketEventSequence": 1,
+      "durableTerminalReceiptIds": []
+    },
+    "voyageLedgers": [],
+    "voyageFuelSettlements": [],
+    "engineIdentityCounters": {
+      "engineCycle": 0,
+      "shipEvent": 0
+    },
+    "clusterMap": null,
+    "aiMap": null,
+    "hostileCombatState": {
+      "Version": 3,
+      "NextDecisionMotionTimeMs": 0,
+      "Actors": []
+    },
+    "motionQuarterRemainder": 0,
+    "combatReportsState": {
+      "version": 1,
+      "sequence": 0,
+      "reportedRangeTargetIds": []
+    },
+    "combatReactionDelays": [],
+    "pointCombatState": {
+      "Version": 1,
+      "Projectiles": [],
+      "Evasions": [],
+      "LaunchScatter": {
+        "AlgorithmVersion": 1,
+        "State": 9883791914141417139,
+        "Counter": 0
+      },
+      "NpcDodge": {
+        "AlgorithmVersion": 1,
+        "State": 5322342897196785080,
+        "Counter": 0
+      },
+      "DodgeThreats": [],
+      "Encounter": {
+        "State": 0,
+        "StartedAt": 0,
+        "EndedAt": null,
+        "QuietSince": 0,
+        "EnemyIds": [],
+        "ProjectileIds": [],
+        "Stats": {
+          "TorpedoesLaunched": 0,
+          "CountermissilesLaunched": 0,
+          "EnemyTorpedoesLaunched": 0,
+          "TorpedoesIntercepted": 0,
+          "PlayerHitsReceived": 0,
+          "EnemyHitsDealt": 0,
+          "PlayerEvasions": 0,
+          "EnemiesDestroyed": 0,
+          "ArmorDamageTaken": 0,
+          "StructureDamageTaken": 0
+        },
+        "ResumeSpeed": null
+      },
+      "PlayerEvasionEpisodes": 0
+    }
+  },
+  "saveFormatVersion": 19
+}
