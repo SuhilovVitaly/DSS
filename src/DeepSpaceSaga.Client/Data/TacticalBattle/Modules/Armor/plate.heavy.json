@@ -1,0 +1,7 @@
+{
+  "id": "plate.heavy",
+  "name": "Тяжёлые плиты",
+  "tier": 2,
+  "armor": 130,
+  "massKg": 260
+}

@@ -1,0 +1,13 @@
+{
+  "id": "gun.auto",
+  "name": "Автопушка",
+  "tier": 2,
+  "arcDeg": 45,
+  "range": 135,
+  "damageMin": 40,
+  "damageMax": 70,
+  "piercing": 0,
+  "hitBonus": -2,
+  "rearKillChance": 0.7,
+  "massKg": 70
+}

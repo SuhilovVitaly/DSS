@@ -898,7 +898,8 @@ public static class EngineContentLoader
         [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null,
         [property: JsonPropertyName("stationMarketEvents"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketEvents = null,
         [property: JsonPropertyName("combatRules")] string? CombatRules = null,
-        [property: JsonPropertyName("fireModes")] string? FireModes = null);
+        [property: JsonPropertyName("fireModes")] string? FireModes = null,
+        [property: JsonPropertyName("tacticalBattle")] string? TacticalBattle = null);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
     {

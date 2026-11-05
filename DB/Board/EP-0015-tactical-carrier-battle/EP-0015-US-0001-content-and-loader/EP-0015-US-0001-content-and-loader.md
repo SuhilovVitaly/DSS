@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0001-content-and-loader
 title: "Данные тактического боя в контенте игры"
-stage: draft
+stage: in-progress
 dependencies: []
 ---
 

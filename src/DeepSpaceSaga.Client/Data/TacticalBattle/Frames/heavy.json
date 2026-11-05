@@ -1,0 +1,12 @@
+{
+  "id": "heavy",
+  "name": "Тяжёлый",
+  "hull": 65,
+  "frameMassKg": 460,
+  "referenceMassKg": 760,
+  "minSpeed": 50,
+  "maxSpeedCap": 110,
+  "turnCapDeg": 70,
+  "engineSlots": 2,
+  "shieldSlots": 2
+}

@@ -1,0 +1,8 @@
+{
+  "id": "drive.sprint",
+  "name": "Форсажный",
+  "speedBonus": 35,
+  "speedChange": 14,
+  "turnDeg": 25,
+  "massKg": 120
+}

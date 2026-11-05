@@ -1,0 +1,7 @@
+{
+  "id": "plate.light",
+  "name": "Лёгкие плиты",
+  "tier": 1,
+  "armor": 50,
+  "massKg": 50
+}

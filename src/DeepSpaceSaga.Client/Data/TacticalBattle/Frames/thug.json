@@ -1,0 +1,12 @@
+{
+  "id": "thug",
+  "name": "Таг",
+  "hull": 45,
+  "frameMassKg": 260,
+  "referenceMassKg": 760,
+  "minSpeed": 45,
+  "maxSpeedCap": 105,
+  "turnCapDeg": 70,
+  "engineSlots": 1,
+  "shieldSlots": 1
+}

@@ -1,0 +1,7 @@
+{
+  "id": "plate.medium",
+  "name": "Средние плиты",
+  "tier": 1,
+  "armor": 80,
+  "massKg": 120
+}

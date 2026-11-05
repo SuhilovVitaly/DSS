@@ -4,8 +4,8 @@
 
 | История | Критерий | Тикеты | Статус |
 |---|---|---|---|
-| EP-0015-US-0001-content-and-loader | AC-01 | EP-0015-US-0001-TK-0001-content-data, EP-0015-US-0001-TK-0002-content-definitions | not started |
-| EP-0015-US-0001-content-and-loader | AC-02 | EP-0015-US-0001-TK-0001-content-data | not started |
+| EP-0015-US-0001-content-and-loader | AC-01 | EP-0015-US-0001-TK-0001-content-data, EP-0015-US-0001-TK-0002-content-definitions | partial: TK-0001 done; definitions/loader pending |
+| EP-0015-US-0001-content-and-loader | AC-02 | EP-0015-US-0001-TK-0001-content-data | partial: TK-0001 done; definitions/loader pending |
 | EP-0015-US-0001-content-and-loader | AC-03 | EP-0015-US-0001-TK-0002-content-definitions, EP-0015-US-0001-TK-0003-content-loader | not started |
 | EP-0015-US-0001-content-and-loader | AC-04 | EP-0015-US-0001-TK-0004-content-sync | not started |
 | EP-0015-US-0002-deterministic-core | AC-01 | EP-0015-US-0002-TK-0001-py-math | not started |

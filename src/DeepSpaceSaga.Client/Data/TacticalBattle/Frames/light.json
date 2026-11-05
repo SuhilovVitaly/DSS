@@ -1,0 +1,12 @@
+{
+  "id": "light",
+  "name": "Лёгкий",
+  "hull": 55,
+  "frameMassKg": 300,
+  "referenceMassKg": 760,
+  "minSpeed": 50,
+  "maxSpeedCap": 120,
+  "turnCapDeg": 80,
+  "engineSlots": 2,
+  "shieldSlots": 1
+}

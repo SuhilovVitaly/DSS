@@ -1,13 +1,13 @@
 ---
 epic: EP-0015-tactical-carrier-battle
 title: "Тактический бой V4: носитель и крыло дронов вместо боя реального времени"
-stage: draft
+stage: in-progress
 created: 2026-11-05
 source_request: "Сделать в DB/Board эпик 15 по образу эпиков, переводящий боевую систему на созданную в VData/Planning/V4.0; бой начинается клавишей в тактической карте; данные V4.0 — JSON в контенте проекта"
 revision: 3
 baseline: "main @ fb39a0cf08298a9322c84fa982bc7db614f64464"
 design_source: "VData/Planning/V4.0 (README, CombatSystem.md, Spec/, Data/, Reference/)"
-validation_status: planning-only
+validation_status: in-progress
 story_count: 17
 ticket_count: 78
 ---
@@ -18,7 +18,7 @@ ticket_count: 78
 
 ## Статус
 
-Planning-only, draft, revision 3 (после второго глубокого ревью 2026-11-05). Эпик описывает перевод боевой системы игры на пошаговый бой «носитель и крыло дронов», созданный и сбалансированный в `VData/Planning/V4.0`. Реализация, сборка, тесты и публикация не выполнялись. Human approval историй отсутствует.
+Исполнение начато 2026-11-05 по прямому поручению пользователя. US-0001 TK-0001 реализован и проверен; остальные тикеты в работе по зависимостям. Новый бой ещё не подключён к игре. Фактические проверки и публикация — в ExecutionStatus.md. Historical planning review revision 3 сохранён ниже; он не отменяет текущего разрешения исполнения.
 
 ## Разрешение публикации и запуск исполнения — 2026-11-05
 

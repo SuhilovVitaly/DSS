@@ -1,0 +1,40 @@
+{
+  "version": "4.0",
+  "description": "Общие правила V4: плоскость без краёв, движение V2, одновременный залп, целые числа урона.",
+  "substeps": 4,
+  "turnAtMaxSpeedFraction": 0.5,
+  "deployScatter": {
+    "xy": 12,
+    "courseDeg": 6
+  },
+  "hit": {
+    "base": 50,
+    "minChance": 5,
+    "maxChance": 95,
+    "rangeBonus": 15,
+    "anglePenalty": 12,
+    "rearBonus": 10,
+    "rearBonusArcDeg": 30
+  },
+  "rear": {
+    "arcHalfDeg": 45
+  },
+  "disabled": {
+    "hullFraction": 0.3
+  },
+  "systems": {
+    "minHullLoss": 40,
+    "engineDamagedFactor": 0.5,
+    "table": [
+      {
+        "effect": "weaponJammed",
+        "weight": 1
+      },
+      {
+        "effect": "engineDamaged",
+        "weight": 1
+      }
+    ]
+  },
+  "seriesTurnCap": 100
+}

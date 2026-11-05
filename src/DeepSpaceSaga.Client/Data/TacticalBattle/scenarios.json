@@ -1,0 +1,134 @@
+{
+  "initial": {
+    "name": "Начальный бой",
+    "description": "4 дрона игрока против 6 тагов.",
+    "goal": {
+      "playerSide": "A",
+      "winMaxOneLoss": 0.8,
+      "winNoLoss": 0.6,
+      "tolerance": 0.03,
+      "seeds": [
+        1,
+        1000
+      ]
+    },
+    "sides": [
+      {
+        "id": "A",
+        "tactic": "dogfight",
+        "carrier": {
+          "id": "Скиталец",
+          "layout": "carrier.standard",
+          "x": 110,
+          "y": 250,
+          "course": 0
+        },
+        "drones": [
+          {
+            "id": "Вера",
+            "pilot": "vera",
+            "layout": "heavy.sword.shield",
+            "x": 145,
+            "y": 228,
+            "course": -12,
+            "speed": 60
+          },
+          {
+            "id": "Юн",
+            "pilot": "yun",
+            "layout": "heavy.spear.shield",
+            "x": 145,
+            "y": 275,
+            "course": 20,
+            "speed": 60
+          },
+          {
+            "id": "Марта",
+            "pilot": "marta",
+            "layout": "light.sword.shield",
+            "x": 138,
+            "y": 212,
+            "course": -12,
+            "speed": 60
+          },
+          {
+            "id": "Олег",
+            "pilot": "oleg",
+            "layout": "light.spear",
+            "x": 135,
+            "y": 288,
+            "course": 0,
+            "speed": 60
+          }
+        ]
+      },
+      {
+        "id": "B",
+        "tactic": "commander",
+        "carrier": {
+          "id": "Логово",
+          "layout": "carrier.standard",
+          "x": 790,
+          "y": 150,
+          "course": -180
+        },
+        "drones": [
+          {
+            "id": "Таг-1",
+            "pilot": "thug1",
+            "layout": "thug.scrap.shield",
+            "x": 755,
+            "y": 172,
+            "course": 168,
+            "speed": 55
+          },
+          {
+            "id": "Таг-2",
+            "pilot": "thug2",
+            "layout": "thug.scrap",
+            "x": 755,
+            "y": 125,
+            "course": -160,
+            "speed": 55
+          },
+          {
+            "id": "Таг-3",
+            "pilot": "thug3",
+            "layout": "thug.sawn",
+            "x": 762,
+            "y": 188,
+            "course": 168,
+            "speed": 55
+          },
+          {
+            "id": "Таг-4",
+            "pilot": "thug4",
+            "layout": "thug.sawn",
+            "x": 765,
+            "y": 112,
+            "course": -180,
+            "speed": 55
+          },
+          {
+            "id": "Таг-5",
+            "pilot": "thug5",
+            "layout": "thug.scrap",
+            "x": 770,
+            "y": 205,
+            "course": 175,
+            "speed": 55
+          },
+          {
+            "id": "Таг-6",
+            "pilot": "thug6",
+            "layout": "thug.sawn",
+            "x": 772,
+            "y": 95,
+            "course": -175,
+            "speed": 55
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0001-content-and-loader
 ticket: EP-0015-US-0001-TK-0001-content-data
 title: content-data
-stage: draft
+stage: done
 layer: content-data
 depends_on: []
-files_touched: 15
+files_touched: 9
 serves: [AC-01, AC-02]
 created: 2026-11-05
 revision: 3
@@ -59,3 +59,9 @@ Owning project: tests/DeepSpaceSaga.Client.Tests — файлы в output, кл�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+Scope integration: EngineContentLoader.TypeDataPaths запрещает неизвестные JSON-поля; для компилируемого и запускаемого первого среза добавить optional tacticalBattle path в EngineContentLoader.cs сейчас. Сам loader подключается TK-0003. Это необходимая совместимость Settings, а не перенос бизнес-логики в content-data.
+
+## Execution — 2026-11-05
+
+29 JSON восстановлены из Markdown D-USER-15; значения и порядок проверены Export-Content.ps1 -Check. Данные копируются существующим правилом Client.csproj. Добавлены 2 проверки состава, ссылок, Settings и output. Optional tacticalBattle в строгой схеме Engine необходим для совместимости первого среза; чтение каталога выполняется TK-0003. Build: 0 warnings/errors; 5402/5402 теста в шести проектах (длинные corpus — точные ID, cap 300000 ms). Scoped format и diff check PASS. Self-review выполнен, независимое review не заявляется. Evidence: [ContentValidation.md](../../ContentValidation.md). Native NOT RUN: этот тикет не добавляет экран или runtime боя. SHA и push проверяются после коммита через Git.

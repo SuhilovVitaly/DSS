@@ -1,0 +1,88 @@
+{
+  "heavy.sword.shield": {
+    "name": "Тяжёлый · меч I · средние плиты · щит I ×2",
+    "class": "heavy",
+    "weapon": "gun.sword.t1",
+    "armor": "plate.medium",
+    "shield": "shield.t1",
+    "shieldCount": 2,
+    "engines": [
+      "drive.standard",
+      "drive.standard"
+    ]
+  },
+  "heavy.spear.shield": {
+    "name": "Тяжёлый · копьё I · средние плиты · щит I ×2",
+    "class": "heavy",
+    "weapon": "gun.spear.t1",
+    "armor": "plate.medium",
+    "shield": "shield.t1",
+    "shieldCount": 2,
+    "engines": [
+      "drive.standard",
+      "drive.standard"
+    ]
+  },
+  "light.sword.shield": {
+    "name": "Лёгкий · меч I · средние плиты · щит I",
+    "class": "light",
+    "weapon": "gun.sword.t1",
+    "armor": "plate.medium",
+    "shield": "shield.t1",
+    "engines": [
+      "drive.standard",
+      "drive.standard"
+    ]
+  },
+  "light.spear": {
+    "name": "Лёгкий · копьё I · средние плиты · щит I",
+    "class": "light",
+    "weapon": "gun.spear.t1",
+    "armor": "plate.medium",
+    "shield": "shield.t1",
+    "engines": [
+      "drive.standard",
+      "drive.standard"
+    ]
+  },
+  "thug.scrap": {
+    "name": "Таг · самопал I · латаные плиты",
+    "class": "thug",
+    "weapon": "gun.scrap.t1",
+    "armor": "plate.patched",
+    "engines": [
+      "drive.light"
+    ],
+    "shield": null
+  },
+  "thug.sawn": {
+    "name": "Таг · обрез I · обшивка из хлама",
+    "class": "thug",
+    "hull": 40,
+    "weapon": "gun.sawn.t1",
+    "armor": "plate.rags",
+    "engines": [
+      "drive.light"
+    ],
+    "shield": null
+  },
+  "thug.scrap.shield": {
+    "name": "Таг · самопал I · лёгкие плиты · щит I",
+    "class": "thug",
+    "hull": 50,
+    "weapon": "gun.scrap.t1",
+    "armor": "plate.light",
+    "shield": "shield.t1",
+    "engines": [
+      "drive.light"
+    ]
+  },
+  "carrier.standard": {
+    "name": "Носитель · без вооружения",
+    "class": "carrier",
+    "armor": "armor.none",
+    "weapon": null,
+    "shield": null,
+    "engines": []
+  }
+}

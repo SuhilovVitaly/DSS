@@ -1,0 +1,7 @@
+{
+  "id": "shield.t1",
+  "name": "Щит I",
+  "tier": 1,
+  "defense": 10,
+  "massKg": 10
+}

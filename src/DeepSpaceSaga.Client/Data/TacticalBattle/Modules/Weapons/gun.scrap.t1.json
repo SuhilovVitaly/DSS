@@ -1,0 +1,13 @@
+{
+  "id": "gun.scrap.t1",
+  "name": "Самопал I",
+  "tier": 1,
+  "arcDeg": 50,
+  "range": 115,
+  "damageMin": 30,
+  "damageMax": 60,
+  "piercing": 0,
+  "hitBonus": 6,
+  "rearKillChance": 0,
+  "massKg": 50
+}
