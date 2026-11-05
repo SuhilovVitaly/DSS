@@ -32,6 +32,15 @@ jobs:
         run: ./tools/tactical-battle/Export-Content.ps1 -Check
       - name: Build
         run: timeout --kill-after=10s 300s dotnet build DeepSpaceSaga.sln --verbosity minimal > "$DSS_VALIDATION_ROOT/build.log" 2>&1 || { cat "$DSS_VALIDATION_ROOT/build.log"; exit 1; }
+      - name: Linux raster prerequisites
+        run: |
+          sudo apt-get update > "$DSS_VALIDATION_ROOT/system-packages.log" 2>&1 || { cat "$DSS_VALIDATION_ROOT/system-packages.log"; exit 1; }
+          sudo apt-get install --yes --no-install-recommends libfontconfig1 fonts-dejavu-core >> "$DSS_VALIDATION_ROOT/system-packages.log" 2>&1 || { cat "$DSS_VALIDATION_ROOT/system-packages.log"; exit 1; }
+          native=tests/DeepSpaceSaga.Client.Tests/bin/Debug/net8.0/runtimes/linux-x64/native/libSkiaSharp.so
+          test -f "$native"
+          ldd "$native" > "$DSS_VALIDATION_ROOT/skia-linux-dependencies.log"
+          cat "$DSS_VALIDATION_ROOT/skia-linux-dependencies.log"
+          if grep -q 'not found' "$DSS_VALIDATION_ROOT/skia-linux-dependencies.log"; then exit 1; fi
       - name: Motion tests
         run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Motion.Tests --no-build --results-directory "$DSS_VALIDATION_ROOT/motion" --logger trx
       - name: Tactical Engine tests

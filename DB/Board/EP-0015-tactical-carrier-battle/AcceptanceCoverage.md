@@ -32,7 +32,7 @@
 | EP-0015-US-0006-client-input-and-controls | AC-02 | EP-0015-US-0006-TK-0002-input-settings | PASS: strict schema/conflicts/fallback/native tracker wiring; 103 Client cases |
 | EP-0015-US-0006-client-input-and-controls | AC-03 | EP-0015-US-0006-TK-0003-mouse | Mouse boundary PASS: 121 Client cases; actual battle drag/pan and physical acceptance pending |
 | EP-0015-US-0006-client-input-and-controls | AC-04 | EP-0015-US-0006-TK-0004-widgets-basic, EP-0015-US-0006-TK-0005-widgets-lists | Basic controls PASS (79 cases + 4 raster scales); lists/filter/tooltip button PASS (108 cases + 4 raster scales); screen geometry pending US-0008 |
-| EP-0015-US-0006-client-input-and-controls | AC-05 | EP-0015-US-0006-TK-0006-text-and-numbers | not started |
+| EP-0015-US-0006-client-input-and-controls | AC-05 | EP-0015-US-0006-TK-0006-text-and-numbers, EP-0015-US-0006-TK-0007-linux-native-runtime | Windows glyph/rounding PASS; Linux native prerequisite in progress |
 | EP-0015-US-0007-launch-and-setup | AC-01 | EP-0015-US-0007-TK-0001-modal-navigation | not started |
 | EP-0015-US-0007-launch-and-setup | AC-02 | EP-0015-US-0007-TK-0002-battle-key-and-hint | not started |
 | EP-0015-US-0007-launch-and-setup | AC-03 | EP-0015-US-0007-TK-0003-setup-screen | not started |

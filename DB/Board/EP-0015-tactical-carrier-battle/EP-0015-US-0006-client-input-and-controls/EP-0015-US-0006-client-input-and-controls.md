@@ -52,3 +52,7 @@ dependencies: [EP-0015-US-0005-session-contracts]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution dependency addition — 2026-11-05
+
+[EP-0015-US-0006-TK-0007-linux-native-runtime](EP-0015-US-0006-TK-0007-linux-native-runtime/EP-0015-US-0006-TK-0007-linux-native-runtime.md), client-build, AC-05; depends on TK-0005 and precedes completion of TK-0006. Required recovery from actual Ubuntu DllNotFoundException, no glyph/raster tests excluded.

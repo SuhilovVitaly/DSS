@@ -5,7 +5,7 @@ ticket: EP-0015-US-0006-TK-0006-text-and-numbers
 title: text-and-numbers
 stage: in-progress
 layer: client
-depends_on: ["EP-0015-US-0006-TK-0005-widgets-lists"]
+depends_on: ["EP-0015-US-0006-TK-0005-widgets-lists", "EP-0015-US-0006-TK-0007-linux-native-runtime"]
 files_touched: 5
 serves: [AC-05]
 created: 2026-11-05

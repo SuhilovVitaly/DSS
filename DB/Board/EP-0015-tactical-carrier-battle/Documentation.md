@@ -9,7 +9,7 @@ baseline: "main @ fb39a0cf08298a9322c84fa982bc7db614f64464"
 design_source: "VData/Planning/V4.0 (README, CombatSystem.md, Spec/, Data/, Reference/)"
 validation_status: in-progress
 story_count: 17
-ticket_count: 78
+ticket_count: 79
 ---
 
 # EP-0015 — Тактический бой V4
@@ -205,3 +205,7 @@ US-0002: Windows and Ubuntu/glibc runs pass all 1088 independent geometry vector
 ### Implementation clarification — display symbols (2026-11-05)
 
 US-0006 actual Windows Verdana lacks U+2192. New controls/BattleFormat retain the selected fonts and lazily verify symbols across regular/bold MenuStyle and Xenon faces. Unsupported signs display supported ASCII equivalents; source labels/log data are unchanged. Numeric rounding is explicit ToEven before invariant decimal formatting, with exact long seed formatting and normalized signed zero. This implements the allowed glyph substitutions in US-0006 AC-05; no user approval or new combat rule inferred. See TK-0006 evidence for actual platform measurements.
+
+### Execution dependency repair — Linux native runtime (2026-11-05)
+
+Added US-0006 TK-0007 for missing Linux Skia runtime exposed by actual raster/glyph checks in run42112081477. Three build/config files, matching managed2.88.8 package; no tests excluded. TK-0006 waits for this prerequisite. Current total79 tickets/17 stories; historical planning counts above unchanged. User authorization already covers necessary implementation/validation and GitHub publication.

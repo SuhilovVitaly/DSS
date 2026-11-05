@@ -1,6 +1,6 @@
 # EP-0015 execution order
 
-78 tickets, 17 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
+79 tickets, 17 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
 
 | Ticket | Layer | Story criteria | Dependency | State |
 |---|---|---|---|---|
@@ -33,7 +33,8 @@
 | [EP-0015-US-0006-TK-0003-mouse](EP-0015-US-0006-client-input-and-controls/EP-0015-US-0006-TK-0003-mouse/EP-0015-US-0006-TK-0003-mouse.md) | client | AC-03 | EP-0015-US-0006-TK-0002-input-settings | done |
 | [EP-0015-US-0006-TK-0004-widgets-basic](EP-0015-US-0006-client-input-and-controls/EP-0015-US-0006-TK-0004-widgets-basic/EP-0015-US-0006-TK-0004-widgets-basic.md) | client | AC-04 | EP-0015-US-0006-TK-0003-mouse | done |
 | [EP-0015-US-0006-TK-0005-widgets-lists](EP-0015-US-0006-client-input-and-controls/EP-0015-US-0006-TK-0005-widgets-lists/EP-0015-US-0006-TK-0005-widgets-lists.md) | client | AC-04 | EP-0015-US-0006-TK-0004-widgets-basic | done |
-| [EP-0015-US-0006-TK-0006-text-and-numbers](EP-0015-US-0006-client-input-and-controls/EP-0015-US-0006-TK-0006-text-and-numbers/EP-0015-US-0006-TK-0006-text-and-numbers.md) | client | AC-05 | EP-0015-US-0006-TK-0005-widgets-lists | draft |
+| [EP-0015-US-0006-TK-0007-linux-native-runtime](EP-0015-US-0006-client-input-and-controls/EP-0015-US-0006-TK-0007-linux-native-runtime/EP-0015-US-0006-TK-0007-linux-native-runtime.md) | client-build | AC-05 | EP-0015-US-0006-TK-0005-widgets-lists | in-progress |
+| [EP-0015-US-0006-TK-0006-text-and-numbers](EP-0015-US-0006-client-input-and-controls/EP-0015-US-0006-TK-0006-text-and-numbers/EP-0015-US-0006-TK-0006-text-and-numbers.md) | client | AC-05 | EP-0015-US-0006-TK-0005-widgets-lists, EP-0015-US-0006-TK-0007-linux-native-runtime | in-progress |
 | [EP-0015-US-0007-TK-0001-modal-navigation](EP-0015-US-0007-launch-and-setup/EP-0015-US-0007-TK-0001-modal-navigation/EP-0015-US-0007-TK-0001-modal-navigation.md) | client | AC-01 | EP-0015-US-0006-TK-0006-text-and-numbers | draft |
 | [EP-0015-US-0007-TK-0002-battle-key-and-hint](EP-0015-US-0007-launch-and-setup/EP-0015-US-0007-TK-0002-battle-key-and-hint/EP-0015-US-0007-TK-0002-battle-key-and-hint.md) | client | AC-02 | EP-0015-US-0007-TK-0001-modal-navigation | draft |
 | [EP-0015-US-0007-TK-0003-setup-screen](EP-0015-US-0007-launch-and-setup/EP-0015-US-0007-TK-0003-setup-screen/EP-0015-US-0007-TK-0003-setup-screen.md) | client | AC-03 | EP-0015-US-0007-TK-0002-battle-key-and-hint | draft |
