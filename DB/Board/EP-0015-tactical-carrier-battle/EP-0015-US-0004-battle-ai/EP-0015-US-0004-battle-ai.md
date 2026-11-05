@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0004-battle-ai
 title: "ИИ сторон и сверка с эталонными боями"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0003-battle-rules]
 ---
 
@@ -48,3 +48,7 @@ dependencies: [EP-0015-US-0003-battle-rules]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution result
+
+Four tickets complete. All 90 independent summaries and continuous 19-turn seed-one trace pass on Windows and Linux under D-USER-14/15 source precision. Evidence: TK-0004 execution sections and PlatformValidation.md. No new expected outcomes were generated from the Engine; session/UI work remains dependent.

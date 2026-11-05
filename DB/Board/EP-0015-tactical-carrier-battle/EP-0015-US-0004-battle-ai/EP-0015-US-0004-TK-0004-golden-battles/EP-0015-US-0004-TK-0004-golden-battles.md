@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0004-battle-ai
 ticket: EP-0015-US-0004-TK-0004-golden-battles
 title: golden-battles
-stage: in-progress
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0004-TK-0003-interceptor-commander"]
 files_touched: 2
@@ -59,3 +59,10 @@ Reuse existing ReferenceFixtureTests.Open/ReadDoubleHex rather than duplicate a 
 `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-golden-01/`: solution build 0 warnings/errors; 91 golden cases PASS (90 independent battle summaries + uninterrupted seed-one trace), full TacticalBattle 245/245, source guard 19/19, scoped format/diff PASS. Every summary matches exact outcome/reason/turns/losses/carrier hull/published statistics/RNG. The continuous trace matches every planning/movement/firing stage and final state, without source-state/order/RNG injection. Fractional trace fields use only original 6-decimal precision; no bit-level trace claim is made.
 
 This implementation commit is published to execute the required Linux CI gate; ticket remains in-progress until the actual Linux result is observed and recorded. No next ticket begins before successful publication and Linux verification. Existing workflow runs the identical TacticalBattle suite on Ubuntu/glibc with tracked schema-2 references. Self-review completed; independent review NOT RUN. No production defect or expected-outcome change was required by the Windows golden suite.
+## Linux gate and completion — 2026-11-05
+
+Implementation commit 1f92fafffe9a6c121205d0c5a740edc5929b077a published with matching origin SHA. Linux run [42098486879](https://github.com/SuhilovVitaly/DSS/actions/runs/42098486879), job 127494720122: PASS, including full Motion 1376, Engine TacticalBattle 245 (all 90 golden battles + full continuous seed-one trace), Client content 2, tracked reference/content checks and solution build. Actual Linux log retained in the golden-01 evidence directory. No expected data or production code changed to obtain parity.
+
+All available D-USER-15 golden criteria pass on Windows and Linux. Missing original per-weapon/role/stage fields remain explicit in headers; own unit tests cover their implementation, not invented reference values. Independent review/native/player integration remain later gates. Follow-up evidence commit closes this ticket only after the observed CI success; its SHA is verified after publication.
+
+Story review: all four AI tickets complete. Real planning policy composes roles, commander, pursuit/tail and stable targeting in source order; no RNG mocks or source state injection in golden runs. Runtime session/user commands, transport, UI and world isolation still require US-0005 onward; playable game acceptance is not implied.
