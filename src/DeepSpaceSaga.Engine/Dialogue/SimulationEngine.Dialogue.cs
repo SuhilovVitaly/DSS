@@ -15,7 +15,11 @@ public sealed partial class SimulationEngine
     public void ReceiveDialogueCommand(DialogueCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        lock (_worldStateLock) _pendingDialogueCommands.Enqueue(command);
+        lock (_worldStateLock)
+        {
+            ThrowIfTacticalBattleActive();
+            _pendingDialogueCommands.Enqueue(command);
+        }
     }
 
     private void ValidateDialogueState(DialogueSaveState? save, IReadOnlyList<SpaceObjectRuntime> objects)
@@ -132,6 +136,7 @@ public sealed partial class SimulationEngine
 
     private string? ApplyDialogueCommand(DialogueCommand command, long time)
     {
+        if (_tacticalBattleSession is not null) return TacticalBattleActiveReason;
         if (command.Action == DialogueAction.Start)
         {
             if (command.DialogueDefinitionId is not { } id || !_registry.Dialogues.Contains(id)) return "unknown_dialogue";

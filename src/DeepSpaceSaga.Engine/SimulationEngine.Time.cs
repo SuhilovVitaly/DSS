@@ -37,6 +37,7 @@ public sealed partial class SimulationEngine
         ArgumentNullException.ThrowIfNull(command);
         lock (_worldStateLock)
         {
+            if (_tacticalBattleSession is not null) return new(false, TacticalBattleActiveReason, CaptureSnapshot());
             if (IsDefeated) return new(false, CommandReasonCodes.SessionDefeated, CaptureSnapshot());
             if (string.IsNullOrWhiteSpace(command.CommandId) || !Enum.IsDefined(command.Destination))
                 return new(false, "invalid_transition", CaptureSnapshot());

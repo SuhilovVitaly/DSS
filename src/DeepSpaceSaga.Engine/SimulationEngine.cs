@@ -150,16 +150,19 @@ public sealed partial class SimulationEngine : IDisposable
     {
         ArgumentNullException.ThrowIfNull(command);
         ArgumentException.ThrowIfNullOrWhiteSpace(command.CommandId);
-        lock (_commandGate)
-        {
-            if (!_knownCommands.Add(command.CommandId))
+        lock (_worldStateLock)
+            lock (_commandGate)
             {
-                if (_commandReceipts.TryGetValue(command.CommandId, out var result)) _replayedResults[command.CommandId] = result;
-                return;
+                if (!_knownCommands.Add(command.CommandId))
+                {
+                    if (_commandReceipts.TryGetValue(command.CommandId, out var result)) _replayedResults[command.CommandId] = result;
+                    return;
+                }
+                _receivedCommandCount++;
+                if (_tacticalBattleSession is not null)
+                    RecordCommandResult(command, CommandResultStatus.Rejected, _processedWorldTimeMs, TacticalBattleActiveReason);
+                else _pendingCommands.Add(command);
             }
-            _pendingCommands.Add(command);
-            _receivedCommandCount++;
-        }
     }
 
     /// <summary>Set the authoritative simulation speed (e.g. Speed0 for pause).</summary>
@@ -170,6 +173,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         lock (_worldStateLock)
         {
+            if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
             CheckPresentationLease();
             if (IsDefeated) return CommandReasonCodes.SessionDefeated;
             if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
@@ -246,6 +250,7 @@ public sealed partial class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             var previous = _registry;
+            ThrowIfTacticalBattleActive();
             try
             {
                 _registry = tuning.Registry;
@@ -874,7 +879,8 @@ public sealed partial class SimulationEngine : IDisposable
                 StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
                 Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch(), Encounter: CaptureEncounter(gameTimeMs),
                 DebugTuning: CaptureDebugTuning(presentationOnly),
-                DestroyedModuleLimit: CaptureOwnDestroyedModuleLimit());
+                DestroyedModuleLimit: CaptureOwnDestroyedModuleLimit(),
+                IsTacticalBattleActive: _tacticalBattleSession is not null);
             if (!presentationOnly) _pendingCombatReports.Clear();
             return snapshot;
         }
@@ -1145,6 +1151,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private ScenarioFile CaptureSaveStateCore(SimulationClockState clockState)
     {
+        ThrowIfTacticalBattleActive();
         ThrowIfDefeated();
         long gameTimeMs = clockState.MotionTimeMs;
         bool dialogueWasActive = _dialogue.Active is not null;
@@ -2341,6 +2348,11 @@ public sealed partial class SimulationEngine : IDisposable
 
         foreach (var command in commands)
         {
+            if (_tacticalBattleSession is not null)
+            {
+                RecordCommandResult(command, CommandResultStatus.Rejected, gameTimeMs, TacticalBattleActiveReason);
+                continue;
+            }
             var outcome = TryStartCommand(command, gameTimeMs);
             if (outcome.Disposition == CommandStartDisposition.Deferred)
             {

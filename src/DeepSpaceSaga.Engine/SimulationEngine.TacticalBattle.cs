@@ -7,6 +7,11 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
+    public const string TacticalBattleActiveReason = "tactical_battle_active";
+    private void ThrowIfTacticalBattleActive()
+    {
+        if (_tacticalBattleSession is not null) throw new InvalidOperationException(TacticalBattleActiveReason);
+    }
     private TacticalBattleSession? _tacticalBattleSession;
     private readonly Dictionary<string, (string Signature, TacticalBattleResponse Response)> _tacticalReceipts = new(StringComparer.Ordinal);
     private static readonly JsonSerializerOptions TacticalIdentityJson = new() { NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals };
