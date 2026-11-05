@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0007-launch-and-setup
 ticket: EP-0015-US-0007-TK-0002-battle-key-and-hint
 title: battle-key-and-hint
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0007-TK-0001-modal-navigation"]
-files_touched: 3
+files_touched: 5
 serves: [AC-02]
 created: 2026-11-05
 revision: 3
@@ -50,3 +50,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+Five Client code files: three planned plus SkiaWindow.cs to inject the same captured settings into both new/loaded map screens, and BattleNavigationTests.cs to extend the real headless fixture for remapping/availability observations. Add scale-aware clickable launch row above existing map toolbar, retain old button positions and reserve right-column space. Use localized configured-key caption; if fallback F8 conflicts, hide key hint and keep clickable launch. Options remain loaded only after opening modal, so content-error path stays reachable and Start is absent. Test observable UI error/absence using structured failed options; real launch/nav remains actual LocalGameSessionConnection. Existing navigation tests assert modal protocol rather than concrete base type so planned rich subclasses preserve the same behavior.
+
+## Execution evidence — 2026-11-06
+
+AC-02 implemented: captured F8/custom binding injected into both new/loaded map screens; localized RU/EN caption and clickable scale-aware map entry. Collision fallback leaves the clickable entry without a misleading F8 hint. Opens opaque paused preparation through the actual window router and local connection. Structured content issue shows file/field/reason, hides Start and blocks even a queued Start; logs reason in InterfaceLog. Backend content-error isolation was independently exercised by US-0001 loader tests; this UI test injects the structured unavailable reply to check presentation. AC-03 of US-0001 now has its Client evidence.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-launch-key-01/: build and full uninterrupted2428/2428 Client PASS before final diagnostic-only logging addition; 106 focused PASS. Final code run D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-launch-key-02/: build0 warnings/errors, verify-format/diff/self-review PASS;106/106 TacticalBattle Client PASS including new log assertion, retained Interface.log. Prior modal code6ac53a85 Linux workflow42116152154 PASS; this commit joins next run. Native/physical/human acceptance still open. Separate immediate origin publication authorized.

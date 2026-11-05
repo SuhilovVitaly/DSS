@@ -324,12 +324,14 @@ public sealed partial class GameSessionScreen : IScreen
         CombatInputSettings? combatInputs = null,
         Action<CombatAlertCue>? alertAudio = null,
         Action? activateAudio = null,
-        Action? deactivateAudio = null, bool playInitialCombatStart = false)
+        Action? deactivateAudio = null, bool playInitialCombatStart = false,
+        TacticalBattleInputSettings? tacticalBattleInputs = null)
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         CombatInputs = (combatInputs ?? CombatInputSettings.Default).Validate();
+        _tacticalBattleInputs = tacticalBattleInputs ?? TacticalBattleInputSettings.Default;
         _alertAudio = alertAudio;
         _playInitialCombatStart = playInitialCombatStart;
         _activateAlertAudio = activateAudio; _deactivateAlertAudio = deactivateAudio;
@@ -417,6 +419,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void OnDeactivated()
     {
+        _tacticalBattleEntry.ResetInput();
         _commandsPanel.ReleasePresentationCache();
         _alertsInactive = true; _launchFlashes.Clear();
         _deactivateAlertAudio?.Invoke();
@@ -455,6 +458,11 @@ public sealed partial class GameSessionScreen : IScreen
         {
             if (HandleEncounterClick(uiX, uiY)) return ScreenEvent.None;
             if (_combatReportPanel.OnMouseDown(uiX, uiY)) return ScreenEvent.None;
+            if (CanOpenTacticalBattle && _tacticalBattleEntry.OnMouseDown(uiX, uiY, button))
+            {
+                _tacticalBattleEntry.HasFocus = false;
+                return ScreenEvent.OpenTacticalBattle;
+            }
         }
         else
         {
@@ -609,6 +617,7 @@ public sealed partial class GameSessionScreen : IScreen
         _uiMouseX = x / _uiScale;
         _uiMouseY = y / _uiScale;
         _hasMousePosition = true;
+        if (!_tacticalBattleEntry.Bounds.Contains(_uiMouseX, _uiMouseY)) _tacticalBattleEntry.ResetInput();
 
         if (_debugTuningPanel.Contains(_uiMouseX, _uiMouseY))
         {
@@ -664,7 +673,8 @@ public sealed partial class GameSessionScreen : IScreen
         bool infoOverlayHovered = _panelVisible && _lastPanelRect.Contains(_uiMouseX, _uiMouseY);
         bool commandHovered = infoOverlayHovered
             ? _commandsPanel.OnMouseMove(-1, -1) : _commandsPanel.OnMouseMove(_uiMouseX, _uiMouseY);
-        return commandHovered || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered || _isTempCharacterImageButtonHovered ||
+        bool battleHovered = CanOpenTacticalBattle && _tacticalBattleEntry.OnMouseMove(_uiMouseX, _uiMouseY);
+        return battleHovered || commandHovered || objectInfoHovered || _isFinanceButtonHovered || _isShipButtonHovered || _isTempCharacterImageButtonHovered ||
             _mapViewButtons.Where((_, i) => IsMapViewAvailable(i)).Any(r => r.Contains(_uiMouseX, _uiMouseY));
     }
 
@@ -702,6 +712,8 @@ public sealed partial class GameSessionScreen : IScreen
         if (HandleDebugKey(key)) return ScreenEvent.None;
         if (_combatReportPanel.HasFocus && _combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
         if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
+        if (CanOpenTacticalBattle && _tacticalBattleInputs.ShortcutAvailable && key == _tacticalBattleInputs.TacticalBattle)
+            return ScreenEvent.OpenTacticalBattle;
         if (HandleManeuverKey(key)) return ScreenEvent.None;
         if (HandlePointAimKey(key)) return ScreenEvent.None;
         if (_combatReportPanel.OnKeyDown(key)) return ScreenEvent.None;
@@ -1448,7 +1460,7 @@ public sealed partial class GameSessionScreen : IScreen
             buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
-        float rightHudTop = ComputeScaleSpeedRowY() - 62 - (buffered?.Snapshot.AiMap is null ? 0 : 28) - 27 - 8;
+        float rightHudTop = ComputeScaleSpeedRowY() - 62 - (buffered?.Snapshot.AiMap is null ? 0 : 28) - 27 - 8 - TacticalBattleEntryHeight;
         var rightColumn = GameSessionRightColumnLayout.Create(_uiViewportW, _uiViewportH, PanelMargin,
             rightHudTop, ObjectInfoPanel.ResolveWidth(_uiViewportW, _uiViewportH));
         _combatJournalPanel.Render(canvas, _uiViewportW, _uiViewportH, buffered?.Snapshot.CombatJournal ?? default,
@@ -1477,6 +1489,8 @@ public sealed partial class GameSessionScreen : IScreen
             canvas.DrawRect(_lastCloseRect, _panelBgPaint);
             canvas.DrawText("×", _lastCloseRect.MidX, _lastCloseRect.Top + 16, _panelClosePaint);
         }
+        if (!_debugTuningPanel.Contains(_uiMouseX, _uiMouseY))
+            _tacticalBattleEntry.DrawTooltip(canvas, new SKRect(0, 0, _uiViewportW, _uiViewportH));
         RenderDebugTuning(canvas);
         CompleteRenderStage("info_panels");
 

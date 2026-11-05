@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0001-content-and-loader
 title: "Данные тактического боя в контенте игры"
-stage: in-progress
+stage: done
 dependencies: []
 ---
 
@@ -48,3 +48,7 @@ D-USER-07: `VData/Planning/V4.0` должен быть в checkout. Схема V
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Client acceptance continuation — 2026-11-06
+
+AC-03 presentation closed technically by US-0007 TK-0002: F8 opens paused preparation with structured file/field/reason, writes InterfaceLog and omits Start. Focused Client106/106 final evidence in that ticket; original loader failure isolation and JSON sync evidence remains in US-0001 cards. Native/physical/human acceptance is separate.

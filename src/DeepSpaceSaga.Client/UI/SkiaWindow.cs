@@ -793,7 +793,11 @@ public sealed class SkiaWindow : IDisposable
                         var flow = new TacticalBattleFlow(battleSession);
                         var setup = CreateTacticalSetupView(flow);
                         await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
-                        if (ReferenceEquals(_screens.Current, setup)) flow.BeginLoadOptions();
+                        if (ReferenceEquals(_screens.Current, setup))
+                        {
+                            flow.BeginLoadOptions();
+                            _ = LogTacticalUnavailableAsync(flow);
+                        }
                     }
                     break;
                 case ScreenEvent.StartTacticalBattle:
@@ -1013,7 +1017,8 @@ public sealed class SkiaWindow : IDisposable
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
-                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate, playInitialCombatStart: true);
+                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate, playInitialCombatStart: true,
+                tacticalBattleInputs: _tacticalInputs);
 
             _session = session;
             _gameSessionScreen = gameScreen;
@@ -1083,6 +1088,14 @@ public sealed class SkiaWindow : IDisposable
 
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new(flow, isSetup: true, _gameSessionScreen?.UiScale ?? 1);
     private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new(flow, isSetup: false, _gameSessionScreen?.UiScale ?? 1);
+    private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
+    {
+        await flow.OptionsTask!;
+        if (flow.Options?.Availability.Available != false) return;
+        try { InterfaceLog.Write("TACTICAL unavailable: " + flow.Error); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+    }
 
     /// <summary>
     /// Pop the current modal screen.
@@ -1668,7 +1681,8 @@ public sealed class SkiaWindow : IDisposable
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
                 uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
-                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate);
+                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate,
+                tacticalBattleInputs: _tacticalInputs);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)

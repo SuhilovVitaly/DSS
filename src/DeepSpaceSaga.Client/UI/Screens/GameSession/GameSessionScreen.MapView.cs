@@ -1,4 +1,7 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using System.Globalization;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
@@ -9,6 +12,14 @@ internal enum MapLayerFlags { Orbits = 1, Territories = 2, Fields = 4, PointsOfI
 
 public sealed partial class GameSessionScreen
 {
+    private readonly TacticalBattleInputSettings _tacticalBattleInputs;
+    private readonly ShortcutButton _tacticalBattleEntry = new("");
+    private bool CanOpenTacticalBattle => _handle is { IsDefeated: false, Failure: null };
+    private float TacticalBattleEntryHeight => CanOpenTacticalBattle ? 32 : 0;
+    internal SKRect TacticalBattleEntryBounds => _tacticalBattleEntry.Bounds;
+    internal string TacticalBattleHint => _tacticalBattleInputs.ShortcutAvailable
+        ? string.Format(CultureInfo.InvariantCulture, BattleFormat.Localize("OpenHint"), _tacticalBattleInputs.TacticalBattle)
+        : BattleFormat.Localize("BattleTitle");
     private bool HasActiveCombatPath => _buffer.Presented?.Snapshot.Encounter?.State == CombatEncounterState.Active;
     private readonly List<FutureTrajectoryPoint> _combatOwnPathPoints = new(51);
 
@@ -418,7 +429,8 @@ public sealed partial class GameSessionScreen
         float layerRowHeight = hasMapLayers ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62 - layerRowHeight;
-        if (_commandsPanel.BodyRect.Bottom > top - 27)
+        float battleRow = TacticalBattleEntryHeight;
+        if (_commandsPanel.BodyRect.Bottom > top - 27 - battleRow)
         {
             left = Math.Max(left, _commandsPanel.BodyRect.Right + 8);
             width = Math.Min(width, _uiViewportW - left - 8);
@@ -426,8 +438,18 @@ public sealed partial class GameSessionScreen
         int columns = width < 520 ? 4 : 8;
         float wrappedRowHeight = columns == 4 ? 27 : 0;
         top -= wrappedRowHeight;
-        _mapToolbarRect = new(left, top, left + width, top + 58 + layerRowHeight + wrappedRowHeight);
+        _mapToolbarRect = new(left, top - battleRow, left + width, top + 58 + layerRowHeight + wrappedRowHeight);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
+        float battleWidth = Math.Min(280, width - 8);
+        _tacticalBattleEntry.Bounds = battleRow > 0 && battleWidth > 0
+            ? SKRect.Create(left + (width - battleWidth) / 2, top - 29, battleWidth, 26) : SKRect.Empty;
+        _tacticalBattleEntry.Enabled = CanOpenTacticalBattle;
+        if (!_tacticalBattleEntry.Bounds.IsEmpty)
+        {
+            _tacticalBattleEntry.Label = TacticalBattleHint;
+            _tacticalBattleEntry.Tooltip = BattleFormat.Localize("OpenTooltip");
+            _tacticalBattleEntry.Draw(canvas);
+        }
         string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt", "Map.Cluster"];
         float buttonWidth = (width - 12) / columns;
         for (int i = 0; i < keys.Length; i++)

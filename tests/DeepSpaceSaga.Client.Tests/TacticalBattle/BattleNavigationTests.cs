@@ -24,7 +24,7 @@ public sealed class BattleNavigationTests
         camera.SetFocus(14326.5, -4987.25); camera.SetZoom(0.002345);
         var captured = (fixture.Game.CameraFocusX, fixture.Game.CameraFocusY, fixture.Game.CameraPixelsPerWorldUnit);
         await fixture.Route(ScreenEvent.OpenTacticalBattle);
-        var setup = Assert.IsType<TacticalBattleModalScreen>(fixture.Screens.Current);
+        var setup = Assert.IsAssignableFrom<TacticalBattleModalScreen>(fixture.Screens.Current);
         Assert.True(setup.IsSetup); Assert.True(setup.IsOpaque);
         await setup.Flow.OptionsTask!;
         Assert.True(setup.Flow.Options!.Availability.Available);
@@ -35,7 +35,7 @@ public sealed class BattleNavigationTests
         Assert.Same(fixture.Game, fixture.Screens.UnderCurrent);
         Assert.Null(fixture.Engine.GetTacticalBattleState());
         await fixture.Route(setup.OnKeyDown(Key.Enter));
-        var battle = Assert.IsType<TacticalBattleModalScreen>(fixture.Screens.Current);
+        var battle = Assert.IsAssignableFrom<TacticalBattleModalScreen>(fixture.Screens.Current);
         Assert.False(battle.IsSetup); Assert.Same(setup.Flow, battle.Flow);
         Assert.Equal(TacticalBattlePhase.Move, battle.Flow.State!.Phase);
         Assert.Equal(1, fixture.Depth);
@@ -53,7 +53,7 @@ public sealed class BattleNavigationTests
         Assert.NotEqual(SKColors.Magenta, bitmap.GetPixel(0, 0));
         Assert.Equal(ScreenEvent.NewTacticalBattle, battle.OnMouseDown(300, 680, MouseButton.Left));
         await fixture.Route(ScreenEvent.NewTacticalBattle);
-        var next = Assert.IsType<TacticalBattleModalScreen>(fixture.Screens.Current);
+        var next = Assert.IsAssignableFrom<TacticalBattleModalScreen>(fixture.Screens.Current);
         Assert.True(next.IsSetup); Assert.NotSame(setup, next); Assert.Same(battle.Flow, next.Flow);
         Assert.Null(fixture.Engine.GetTacticalBattleState());
         Assert.Equal(1, fixture.Depth);
@@ -145,11 +145,16 @@ public sealed class BattleNavigationTests
         internal ConcurrentQueue<SimulationSpeed> Speeds { get; } = new();
         internal bool DelayOptions { get; set; }
         internal bool OptionsCancelled { get; private set; }
+        internal TacticalBattleOptions? OptionsOverride { get; set; }
+        internal int Starts { get; private set; }
         protected override object? Invoke(MethodInfo? method, object?[]? args)
         {
             if (method!.Name == nameof(IGameSessionConnection.SetSimulationSpeedAsync)) Speeds.Enqueue((SimulationSpeed)args![0]!);
             if (DelayOptions && method.Name == nameof(IGameSessionConnection.GetTacticalBattleOptionsAsync))
                 return new ValueTask<TacticalBattleOptions>(WaitForOptions((CancellationToken)args![0]!));
+            if (OptionsOverride is { } options && method.Name == nameof(IGameSessionConnection.GetTacticalBattleOptionsAsync))
+                return ValueTask.FromResult(options);
+            if (method.Name == nameof(IGameSessionConnection.StartTacticalBattleAsync)) Starts++;
             return method.Invoke(Inner, args);
         }
         private async Task<TacticalBattleOptions> WaitForOptions(CancellationToken cancellation)
@@ -169,7 +174,7 @@ public sealed class BattleNavigationTests
         internal readonly ConnectionProxy Proxy;
         internal ScreenStack Screens => Field<ScreenStack>(Window, "_screens");
         internal int Depth => Field<int>(Window, "_modalDepth");
-        private Fixture()
+        private Fixture(TacticalBattleInputSettings? inputs, float uiScale)
         {
             string settings = Path.Combine(AppContext.BaseDirectory, "Settings.json");
             Engine = SimulationEngine.CreateFromSettingsFile(settings);
@@ -178,13 +183,13 @@ public sealed class BattleNavigationTests
             Proxy = (ConnectionProxy)(object)connection;
             Proxy.Inner = new LocalGameSessionConnection(Engine);
             Handle = new GameSessionHandle(connection, deferDebugTuningWrites: true);
-            Game = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle);
+            Game = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, uiScale: uiScale, tacticalBattleInputs: inputs);
             Window = new SkiaWindow(Game, this, null, createNativeWindow: false);
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
         }
-        internal static async Task<Fixture> Create()
+        internal static async Task<Fixture> Create(TacticalBattleInputSettings? inputs = null, float uiScale = 1)
         {
-            var fixture = new Fixture();
+            var fixture = new Fixture(inputs, uiScale);
             try
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
@@ -199,6 +204,11 @@ public sealed class BattleNavigationTests
         }
         internal Task Route(ScreenEvent evt) => (Task)typeof(SkiaWindow).GetMethod("HandleScreenEvent", BindingFlags.Instance | BindingFlags.NonPublic)!
             .Invoke(Window, new object?[] { evt, null })!;
+        internal async Task PressKey(Key key)
+        {
+            typeof(SkiaWindow).GetMethod("HandleKeyboardEdge", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(Window, new object[] { key });
+            if (Field<Task?>(Window, "_pendingKeyboardTransition") is { } task) await task;
+        }
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromSave(string slotId) => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromScenario(string path) => throw new NotSupportedException();

@@ -6,7 +6,7 @@
 |---|---|---|---|
 | EP-0015-US-0001-content-and-loader | AC-01 | EP-0015-US-0001-TK-0001-content-data, EP-0015-US-0001-TK-0002-content-definitions | technical backend done; content sync PASS |
 | EP-0015-US-0001-content-and-loader | AC-02 | EP-0015-US-0001-TK-0001-content-data | technical backend done; content sync PASS |
-| EP-0015-US-0001-content-and-loader | AC-03 | EP-0015-US-0001-TK-0002-content-definitions, EP-0015-US-0001-TK-0003-content-loader | backend done; Client error presentation pending US-0007 |
+| EP-0015-US-0001-content-and-loader | AC-03 | EP-0015-US-0001-TK-0002-content-definitions, EP-0015-US-0001-TK-0003-content-loader | PASS: loader isolation and structured Client reason/no Start/log via US-0007 TK-0002 |
 | EP-0015-US-0001-content-and-loader | AC-04 | EP-0015-US-0001-TK-0004-content-sync | done: 29 JSON values/order checked independently |
 | EP-0015-US-0002-deterministic-core | AC-01 | EP-0015-US-0002-TK-0001-py-math | done: Motion and source guard PASS |
 | EP-0015-US-0002-deterministic-core | AC-02 | EP-0015-US-0002-TK-0002-reference-fixtures | done under D-USER-14/15; missing original fields explicit in header |
@@ -34,7 +34,7 @@
 | EP-0015-US-0006-client-input-and-controls | AC-04 | EP-0015-US-0006-TK-0004-widgets-basic, EP-0015-US-0006-TK-0005-widgets-lists | Basic controls PASS (79 cases + 4 raster scales); lists/filter/tooltip button PASS (108 cases + 4 raster scales); screen geometry pending US-0008 |
 | EP-0015-US-0006-client-input-and-controls | AC-05 | EP-0015-US-0006-TK-0006-text-and-numbers, EP-0015-US-0006-TK-0007-linux-native-runtime | PASS: Windows113 Client + Linux97 Tactical Client, real glyph IDs/raster and invariant ToEven |
 | EP-0015-US-0007-launch-and-setup | AC-01 | EP-0015-US-0007-TK-0001-modal-navigation | PASS: real headless modal pause/start/new/exit/opacity/camera; rich views and physical acceptance pending |
-| EP-0015-US-0007-launch-and-setup | AC-02 | EP-0015-US-0007-TK-0002-battle-key-and-hint | not started |
+| EP-0015-US-0007-launch-and-setup | AC-02 | EP-0015-US-0007-TK-0002-battle-key-and-hint | PASS: F8/remap/click/hint + unavailable reason/no Start/log; final106 focused |
 | EP-0015-US-0007-launch-and-setup | AC-03 | EP-0015-US-0007-TK-0003-setup-screen | not started |
 | EP-0015-US-0007-launch-and-setup | AC-04 | EP-0015-US-0007-TK-0004-battle-keys-guard | not started |
 | EP-0015-US-0008-battle-map | AC-01 | EP-0015-US-0008-TK-0001-battle-screen-and-camera | not started |
