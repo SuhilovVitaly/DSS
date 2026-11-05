@@ -2,6 +2,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\DeepSpaceSaga.Contracts\DeepSpaceSaga.Contracts.csproj" />
+    <None Update="TacticalBattle/CPython-LICENSE.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" TargetPath="Licenses/CPython-LICENSE.txt" />
   </ItemGroup>
 
   <PropertyGroup>

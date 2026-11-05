@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 7/78 тикетов. Новый бой ещё не подключён, остальные 71 тикет и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 8/78 тикетов. Новый бой ещё не подключён, остальные 70 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -23,6 +23,8 @@
 | EP-0015-US-0002-TK-0001-py-math | 1926f73afffd6382c6e12d1286969da18555497a | PASS: remote SHA verified | origin | 280/280 Motion; build/format/diff PASS |
 | EP-0015-US-0002-TK-0002-reference-fixtures | 8148aec3a43bf1df7c8fb8a3457af351623cbea8 | PASS: remote SHA verified | origin | Linux 42087024500 PASS; Windows 87 Engine; 90 battles/19 turns/1088 vectors; build/format/diff PASS |
 
-Продолжение: US-0002 TK-0004. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: US-0002 TK-0005. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
-| EP-0015-US-0002-TK-0003-mulberry32 | SHA проверяется Git после создания коммита | pending | origin | 96 Engine + 280 Motion PASS; build/format/diff PASS |
+| EP-0015-US-0002-TK-0003-mulberry32 | 53144cdbace23309b2f18889af102caf8fd6b680 | PASS: remote SHA verified | origin | 96 Engine + 280 Motion PASS; build/format/diff PASS |
+
+| EP-0015-US-0002-TK-0004-geometry | SHA проверяется Git после создания коммита | pending | origin | Windows 1372 Motion + 96 Engine PASS; 1088 exact IEEE vectors; license copy/build/format/diff PASS |
