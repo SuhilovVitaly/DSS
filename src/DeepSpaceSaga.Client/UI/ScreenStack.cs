@@ -30,6 +30,15 @@ public sealed class ScreenStack
     /// </summary>
     public IEnumerable<IScreen> AllBottomToTop() => _stack.Reverse();
 
+    /// <summary>Only the topmost opaque screen and any overlays above it need rendering.</summary>
+    public IEnumerable<IScreen> VisibleBottomToTop()
+    {
+        var screens = _stack.Reverse().ToArray();
+        int first = 0;
+        for (int i = 0; i < screens.Length; i++) if (screens[i].IsOpaque) first = i;
+        for (int i = first; i < screens.Length; i++) yield return screens[i];
+    }
+
     /// <summary>Set the initial screen.</summary>
     public void SetRoot(IScreen screen)
     {

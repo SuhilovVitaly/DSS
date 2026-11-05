@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0007-launch-and-setup
 title: "Запуск из тактической карты и подготовка боя"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0006-client-input-and-controls]
 ---
 

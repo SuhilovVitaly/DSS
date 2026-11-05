@@ -4,6 +4,7 @@ using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Screens.Finance;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
@@ -347,7 +348,7 @@ public sealed class SkiaWindow : IDisposable
         // instead of compounding darker with each nested level.
         int index = 0;
         GameSessionScreen? profiledScreen = null;
-        foreach (var screen in _screens.AllBottomToTop())
+        foreach (var screen in _screens.VisibleBottomToTop())
         {
             // A transition can be waiting for an authoritative speed acknowledgement.
             // Do not paint an obsolete market while its serialized removal is pending.
@@ -432,6 +433,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
+        if (_screens.Current is TacticalBattleModalScreen) return;
         if (_session?.IsDefeated == true)
         {
             if (!ReferenceEquals(_defeatSession, _session) && (_defeatTransitionTask?.IsCompleted ?? true))
@@ -785,6 +787,44 @@ public sealed class SkiaWindow : IDisposable
                 () => _session?.Buffer.Latest?.Snapshot, PopModalAsync);
             switch (evt)
             {
+                case ScreenEvent.OpenTacticalBattle:
+                    if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen)
+                    {
+                        var flow = new TacticalBattleFlow(battleSession);
+                        var setup = CreateTacticalSetupView(flow);
+                        await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
+                        if (ReferenceEquals(_screens.Current, setup)) flow.BeginLoadOptions();
+                    }
+                    break;
+                case ScreenEvent.StartTacticalBattle:
+                    if (_screens.Current is TacticalBattleModalScreen { CanStart: true } preparation)
+                    {
+                        var started = await preparation.Flow.StartAsync(preparation.BuildStartRequest());
+                        if (started?.Accepted == true && ReferenceEquals(_screens.Current, preparation))
+                            _screens.Replace(CreateTacticalBattleView(preparation.Flow));
+                    }
+                    break;
+                case ScreenEvent.MoveTacticalBattle:
+                case ScreenEvent.FireTacticalBattle:
+                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } battle && !battle.Flow.Pending)
+                    {
+                        var before = battle.Flow.State;
+                        var response = evt == ScreenEvent.MoveTacticalBattle
+                            ? await battle.Flow.MoveAsync(battle.BuildMoveRequest())
+                            : await battle.Flow.FireAsync(battle.BuildFireRequest());
+                        if (response is not null && ReferenceEquals(_screens.Current, battle)) battle.OnBattleUpdated(before, response);
+                    }
+                    break;
+                case ScreenEvent.NewTacticalBattle:
+                case ScreenEvent.CloseTacticalBattle:
+                    if (_screens.Current is TacticalBattleModalScreen modal && !modal.Flow.Pending)
+                    {
+                        if (evt == ScreenEvent.NewTacticalBattle && modal.Flow.State?.Phase != TacticalBattlePhase.Over) break;
+                        if (modal.Flow.State is not null && !await modal.Flow.ExitAsync()) break;
+                        if (evt == ScreenEvent.NewTacticalBattle) _screens.Replace(CreateTacticalSetupView(modal.Flow));
+                        else await PopModalAsync();
+                    }
+                    break;
                 case ScreenEvent.NewGame:
                     OpenScenarioSelect();
                     break;
@@ -1040,6 +1080,9 @@ public sealed class SkiaWindow : IDisposable
         _screens.Push(screen);
         _modalDepth++;
     }
+
+    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new(flow, isSetup: true, _gameSessionScreen?.UiScale ?? 1);
+    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new(flow, isSetup: false, _gameSessionScreen?.UiScale ?? 1);
 
     /// <summary>
     /// Pop the current modal screen.

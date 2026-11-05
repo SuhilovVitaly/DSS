@@ -8,6 +8,7 @@ public enum KeyModifiers { None = 0, Shift = 1, Control = 2, Alt = 4 }
 
 public interface IScreen
 {
+    bool IsOpaque => false;
     void Render(SKCanvas canvas, int width, int height);
     ScreenEvent OnMouseDown(float x, float y, MouseButton button);
     void OnMouseUp(float x, float y) { }
@@ -81,5 +82,11 @@ public enum ScreenEvent
     /// </summary>
     NavigateToStation,
     OpenTempCharacterImage,
-    CloseTempCharacterImage
+    CloseTempCharacterImage,
+    OpenTacticalBattle,
+    StartTacticalBattle,
+    MoveTacticalBattle,
+    FireTacticalBattle,
+    NewTacticalBattle,
+    CloseTacticalBattle
 }
