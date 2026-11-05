@@ -67,6 +67,8 @@ public sealed class SkiaWindow : IDisposable
     private readonly KeyboardEdgeTracker _keyboardEdges;
     private readonly Key[] _keyboardPressedKeys = new Key[64]; // Includes remapped combat bindings.
     private readonly Key[] _keyboardReleasedKeys = new Key[64];
+    private readonly Key[] _keyboardRepeatedKeys = new Key[4];
+    private IScreen? _repeatScreen;
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
@@ -532,6 +534,11 @@ public sealed class SkiaWindow : IDisposable
             _focusRegainedAtMs = Environment.TickCount64;
             _keyboardEdges.ResyncToCurrentState(_keyboard);
         }
+        else
+        {
+            _keyboardEdges.ResetRepeats();
+            _screens.Current.OnInputReset();
+        }
         // Polling stops while unfocused and resync intentionally discards missed key releases.
         // Release server-side held controls now, before that release edge can be lost.
         if (focusChanged && _screens.Count > 0 && _screens.Current is GameSessionScreen game)
@@ -593,6 +600,7 @@ public sealed class SkiaWindow : IDisposable
     {
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
+
         if (button == MouseButton.Left && !_closing)
             _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y);
     }
@@ -648,6 +656,11 @@ public sealed class SkiaWindow : IDisposable
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
+        if (!ReferenceEquals(_repeatScreen, _screens.Current))
+        {
+            _keyboardEdges.ResetRepeats();
+            _repeatScreen = _screens.Current;
+        }
         var (pressedCount, releasedCount) = _keyboardEdges.PollBoth(
             _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys);
 
@@ -675,9 +688,15 @@ public sealed class SkiaWindow : IDisposable
 
         for (int i = 0; i < releasedCount; i++)
             _screens.Current.OnKeyUp(_keyboardReleasedKeys[i]);
+        if (_screens.Current.WantsArrowRepeat && ReferenceEquals(_repeatScreen, _screens.Current))
+        {
+            int count = _keyboardEdges.PollRepeats(Environment.TickCount64, _keyboardRepeatedKeys);
+            for (int i = 0; i < count; i++) HandleKeyboardEvent(_keyboardRepeatedKeys[i], repeat: true);
+        }
     }
 
-    private void HandleKeyboardEdge(Key key)
+    private void HandleKeyboardEdge(Key key) => HandleKeyboardEvent(key, repeat: false);
+    private void HandleKeyboardEvent(Key key, bool repeat)
     {
         if (key == Key.F10)
         {
@@ -689,14 +708,14 @@ public sealed class SkiaWindow : IDisposable
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
             {
-                var screenEvent = _screens.Current.OnKeyDown(key);
+                var screenEvent = _screens.Current.OnKeyDown(key, _keyboardEdges.Modifiers, repeat);
                 _pendingKeyboardTransition = HandleScreenEvent(screenEvent);
             }
 
             return;
         }
 
-        var action = _screens.Current.OnKeyDown(key);
+        var action = _screens.Current.OnKeyDown(key, _keyboardEdges.Modifiers, repeat);
         if (action != ScreenEvent.None) _pendingKeyboardTransition = HandleScreenEvent(action);
     }
 

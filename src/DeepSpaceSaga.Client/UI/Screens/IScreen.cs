@@ -3,6 +3,9 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens;
 
+[Flags]
+public enum KeyModifiers { None = 0, Shift = 1, Control = 2, Alt = 4 }
+
 public interface IScreen
 {
     void Render(SKCanvas canvas, int width, int height);
@@ -11,6 +14,10 @@ public interface IScreen
     bool OnMouseMove(float x, float y);
     ScreenEvent OnMouseWheel(float x, float y, float delta);
     ScreenEvent OnKeyDown(Key key);
+    ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat) => OnKeyDown(key);
+    bool WantsArrowRepeat => false;
+    /// <summary>Focus loss cancels transient input such as dragging and panning.</summary>
+    void OnInputReset() { }
     void OnKeyUp(Key key) { }
     /// <summary>Printable-character input, forwarded from Silk.NET's <c>IKeyboard.KeyChar</c>.</summary>
     void OnTextInput(char c) { }
