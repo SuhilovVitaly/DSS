@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0002-deterministic-core
 ticket: EP-0015-US-0002-TK-0006-platform-determinism
 title: platform-determinism
-stage: draft
+stage: done
 layer: motion
 depends_on: ["EP-0015-US-0002-TK-0005-limits-and-chance"]
 files_touched: 5
@@ -52,3 +52,14 @@ Motion.Tests на обеих ОС; результат в ExecutionStatus. Сбо
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before validation — 2026-11-05
+
+Existing GeometryTests already evaluates every geometry.json argument and exact IEEE image; LimitsAndChanceTests covers all published seed-one chances. Reuse these production-path tests rather than add duplicate PlatformDeterminismTests or unused DeterministicMath. Code context for this ticket is evidence-only: existing tests (read/run), new Board `PlatformValidation.md`, and current Board Documentation.md/ExecutionStatus/coverage. No code or golden expectation changes are planned unless the platform run finds a mismatch. D-USER-15 means absent original battle trig arguments are not invented; measured coverage is the 1088 independent vectors, all source shot chances and later golden-battle results.
+## Execution evidence — 2026-11-05
+
+PlatformValidation.md records Windows and Linux/glibc runs. Linux run 42089031642 at fc29503a812f6793779d3564f22884a8cd0eecdb succeeded: solution build, 1376 Motion, 96 Engine TacticalBattle and 2 Client content tests. Windows same Motion set 1376/1376; all 1088 exact geometry images match on both platforms, plus all 34 source shot chances at source precision. No production changes required: no observed trig discrepancy, no speculative DeterministicMath, no regenerated expected outcomes. The original all-battle trig argument set is absent and remains explicit coverage debt under D-USER-15; golden battle integration must still pass in US-0004.
+
+Evidence root `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-platform-01/` contains Windows SDK info and Linux job log. Windows build/tests/format use the unchanged-code evidence in geometry-01 and limits-01. This ticket changes only Board evidence, so content/links/diff checks are appropriate; no redundant duplicate tests were added. Self-review completed; independent review NOT RUN. Own SHA is verified after publication using explicit user GitHub authorization.
+
+Story review: six deterministic-core tickets complete under D-USER-14/15 available-source contract. Motion remains pure, RNG remains Engine-owned; no world simulation/save format changes. End-to-end battle/UI integration and broader actual-argument coverage are dependent work. US-0001 future Client availability presentation also remains open in US-0007.

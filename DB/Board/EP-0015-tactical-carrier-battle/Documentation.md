@@ -198,3 +198,7 @@ Preflight выявил отсутствующие обязательные ис�
 - последствия боя для мира и сохранение посреди боя (D-USER-03);
 - изменение баланса (только через V4.0 и экспорт);
 - новые сценарии боя.
+
+## Current numerical platform measurement — 2026-11-05
+
+US-0002: Windows and Ubuntu/glibc runs pass all 1088 independent geometry vectors bit for bit, plus all 34 published shot chances at six-decimal source precision. Keep .NET Sin/Cos/Atan2 and CPython 3.12.3 vector_norm n=2 port; no trig mismatch or new expected battle outcomes were observed/introduced. Details and coverage limits: [PlatformValidation.md](PlatformValidation.md). G-03 is measured for available D-USER-15 vectors and reopens if later golden battles expose a numerical difference; original all-battle trig arguments are absent from MD.

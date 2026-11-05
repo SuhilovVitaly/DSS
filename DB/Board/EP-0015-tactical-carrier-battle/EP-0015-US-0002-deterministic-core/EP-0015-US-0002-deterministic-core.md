@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0002-deterministic-core
 title: "Детерминированное ядро и общая математика боя"
-stage: in-progress
+stage: done
 dependencies: []
 ---
 
@@ -54,3 +54,7 @@ G-03 закрывается фактом замера TK-0006. Без него U
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution result
+
+Six tickets complete under D-USER-14/15. Numerical platform evidence and remaining integration/coverage gates: [PlatformValidation.md](../PlatformValidation.md). This status does not claim playable tactical combat.

@@ -11,9 +11,9 @@
 | EP-0015-US-0002-deterministic-core | AC-01 | EP-0015-US-0002-TK-0001-py-math | done: Motion and source guard PASS |
 | EP-0015-US-0002-deterministic-core | AC-02 | EP-0015-US-0002-TK-0002-reference-fixtures | done under D-USER-14/15; missing original fields explicit in header |
 | EP-0015-US-0002-deterministic-core | AC-03 | EP-0015-US-0002-TK-0003-mulberry32 | done: controls and independent assembly trace PASS |
-| EP-0015-US-0002-deterministic-core | AC-04 | EP-0015-US-0002-TK-0004-geometry | Windows 1088 bitwise vectors PASS; Linux gate TK-0006 |
+| EP-0015-US-0002-deterministic-core | AC-04 | EP-0015-US-0002-TK-0004-geometry | Windows + Linux 1088 bitwise vectors PASS |
 | EP-0015-US-0002-deterministic-core | AC-05 | EP-0015-US-0002-TK-0005-limits-and-chance | Motion implementation and 34 shot references PASS; integration dependent stories |
-| EP-0015-US-0002-deterministic-core | AC-06 | EP-0015-US-0002-TK-0006-platform-determinism | not started |
+| EP-0015-US-0002-deterministic-core | AC-06 | EP-0015-US-0002-TK-0006-platform-determinism | done for available D-USER-15 vectors; golden battles remain US-0004 |
 | EP-0015-US-0003-battle-rules | AC-01 | EP-0015-US-0003-TK-0001-battle-assembly | not started |
 | EP-0015-US-0003-battle-rules | AC-02 | EP-0015-US-0003-TK-0002-movement | not started |
 | EP-0015-US-0003-battle-rules | AC-03 | EP-0015-US-0003-TK-0003-salvo | not started |

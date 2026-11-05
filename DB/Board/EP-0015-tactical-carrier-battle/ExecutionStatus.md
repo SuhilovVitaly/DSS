@@ -2,17 +2,17 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 9/78 тикетов. Новый бой ещё не подключён, остальные 69 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 10/78 тикетов. Новый бой ещё не подключён, остальные 68 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
 - Принятые уточнения D-USER-14/15: исходники — `VData/Planning/V4.0` Markdown; JSON создаются по таблицам; Python-симулятор не нужен. Служебный коммит `06c5fc69032de5b7b7fe94d19079b5284998846c`, push и remote SHA проверены. Прежний preflight-блокер отсутствующих исходников снят этими указаниями.
 - История US-0017 уже существует, зависит от всех функциональных историй и выполняется последней.
-- Linux route работает: GitHub Actions run 42086320971 PASS на Ubuntu 24.04 / CPython 3.12.3 / glibc 2.39. Это bootstrap/export + текущие Motion/content tests; полная геометрия и бой ещё не проверены.
+- Linux route работает: GitHub Actions run 42086320971 PASS на Ubuntu 24.04 / CPython 3.12.3 / glibc 2.39. Это bootstrap/export + текущие Motion/content tests; геометрия дополнительно проверена на Windows/Linux в PlatformValidation.md; бой ещё не реализован.
 
 ## Проверки
 
-[ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Native/input, полная Linux parity геометрии и приёмка боя пока NOT RUN.
+[ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Native/input, полная battle parity и приёмка боя пока NOT RUN.
 
 | Тикет | Коммит | Push | Remote | Проверки |
 |---|---|---|---|---|
@@ -23,10 +23,12 @@
 | EP-0015-US-0002-TK-0001-py-math | 1926f73afffd6382c6e12d1286969da18555497a | PASS: remote SHA verified | origin | 280/280 Motion; build/format/diff PASS |
 | EP-0015-US-0002-TK-0002-reference-fixtures | 8148aec3a43bf1df7c8fb8a3457af351623cbea8 | PASS: remote SHA verified | origin | Linux 42087024500 PASS; Windows 87 Engine; 90 battles/19 turns/1088 vectors; build/format/diff PASS |
 
-Продолжение: US-0002 TK-0006. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: US-0003 TK-0001. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
 | EP-0015-US-0002-TK-0003-mulberry32 | 53144cdbace23309b2f18889af102caf8fd6b680 | PASS: remote SHA verified | origin | 96 Engine + 280 Motion PASS; build/format/diff PASS |
 
 | EP-0015-US-0002-TK-0004-geometry | 8a43baf53ac0ff3f88f518b769893ef7ec244283 | PASS: remote SHA verified | origin | Windows 1372 Motion + 96 Engine PASS; 1088 exact IEEE vectors; license copy/build/format/diff PASS |
 
-| EP-0015-US-0002-TK-0005-limits-and-chance | SHA проверяется Git после создания коммита | pending | origin | 1376 Motion PASS; 34 reference shot chances; build/format/diff PASS |
+| EP-0015-US-0002-TK-0005-limits-and-chance | fc29503a812f6793779d3564f22884a8cd0eecdb | PASS: remote SHA verified | origin | 1376 Motion PASS; 34 reference shot chances; build/format/diff PASS |
+
+| EP-0015-US-0002-TK-0006-platform-determinism | SHA проверяется Git после создания коммита | pending | origin | Windows/Linux 1376 Motion; 1088 exact vectors; evidence/link/diff PASS |
