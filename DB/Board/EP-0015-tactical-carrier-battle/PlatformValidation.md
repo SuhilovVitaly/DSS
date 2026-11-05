@@ -1,6 +1,6 @@
 # EP-0015 — numerical platform validation
 
-Validated slice: US-0002 shared Motion functions and Engine Mulberry32, prior to battle rules/UI integration. Reference source overrides D-USER-14/15 apply.
+Scope: shared Motion/RNG, full core/session parity and new-control glyph/raster checks. Sections preserve each measurement and its source SHA. Reference source overrides D-USER-14/15 apply.
 
 ## Independent inputs
 
@@ -22,7 +22,7 @@ Limits/chance run [42089031642](https://github.com/SuhilovVitaly/DSS/actions/run
 
 No .NET/glibc discrepancy was observed in the available vectors on Windows. Keep Math.Sin/Cos/Atan2 and the CPython vector_norm port; neither a speculative trig port nor regenerated battle outcomes are justified by this measurement.
 
-This is not evidence for the absent original arguments of every trig call in 90 battles. Their absence is listed in fixture headers. End-to-end golden battles, deterministic player/AI integration, UI/native input, and performance are later epic gates. New numerical mismatches reopen G-03; expected outcomes must never be rewritten from the new Engine to conceal a defect. Self-review is not independent review.
+This is not evidence for the absent original arguments of every trig call in 90 battles. Their absence is listed in fixture headers. Core and real-connection golden gates subsequently passed as recorded below; full UI/native input and performance remain open. New numerical mismatches reopen G-03; expected outcomes must never be rewritten from the new Engine to conceal a defect. Self-review is not independent review.
 
 Schema-2 correction (rearHits field name only, all numeric data unchanged) passed Linux run [42090979851](https://github.com/SuhilovVitaly/DSS/actions/runs/42090979851). Current schema-2 geometry file SHA256: `1379ce96e16a22bb0ad4670faefadfee5d4fe679ece890011e0817ddea0be64a`. This header-only change does not alter any geometry vector.
 
@@ -32,3 +32,9 @@ US-0004 TK-0004: all 90 independent battle summaries and uninterrupted seed-one 
 ## Session/transport continuation — 2026-11-05
 
 Linux GitHub Actions run42106901851 / job127523984603 / SHA ad9817828448e70e051c6363f8bac7f4f277c052 PASS: 1376 Motion, 378 TacticalBattle Engine, 7 TacticalBattle Client. All90 independent connection rows run twice (180 battles) and real save boundary cases are included. Complete job log: D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-local-session-01/linux.log. Windows corresponding Engine378 PASS at same ticket. This does not establish physical input, native rendering or human acceptance.
+
+## Real glyph/raster continuation — 2026-11-05
+
+US-0006 TK-0006/0007: Windows113 Client (97 Tactical +16 existing TextInputBox) and378 Engine PASS. Ubuntu run [42113068311](https://github.com/SuhilovVitaly/DSS/actions/runs/42113068311), job127545443551, source4080197095f45cb7cce7ec48ff846d08867c61a7 PASS:1376 Motion,378 Engine,97 Tactical Client. Actual DejaVu Sans faces support all required signs; Windows Verdana arrow glyph0 is replaced for display by -> while source prose remains intact. Real CPU Skia raster used on both platforms; this is not a native window/GPU/physical input claim.
+
+The preceding run42112081477 failed17 Client cases because the baseline lacked libSkiaSharp. Added matching official NativeAssets.Linux2.88.8, unchanged managed API version, host fontconfig/DejaVu prerequisites and ldd check. No tests skipped/assertions weakened. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-text-01/ (Windows glyph JSON/PNG, logs/TRX, failed Linux log); sibling20261105-linux-runtime-01/ (successful linux.log, linux-glyph-coverage.json, linux-glyphs.png, linux-skia-linux-dependencies.log, verified actions-42113068311.zip SHA256 e724b61425be90f8c32046449e9d18457d80414db3fc23440a1a8f770d9324fa). Both glyph images visually inspected. Final project dependency guidance belongs to US-0017.

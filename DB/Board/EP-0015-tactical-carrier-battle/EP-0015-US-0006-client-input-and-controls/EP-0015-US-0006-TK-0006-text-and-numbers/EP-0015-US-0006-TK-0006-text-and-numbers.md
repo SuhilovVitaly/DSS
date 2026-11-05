@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 ticket: EP-0015-US-0006-TK-0006-text-and-numbers
 title: text-and-numbers
-stage: in-progress
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0006-TK-0005-widgets-lists", "EP-0015-US-0006-TK-0007-linux-native-runtime"]
 files_touched: 5
@@ -60,3 +60,7 @@ Five Client code files: two planned plus Controls/DropDown.cs (shared symbol sub
 BattleFormat and actual new-control rendering implemented. Windows Verdana glyph ID for arrow U+2192 is0; display substitutes ASCII -> through cached shared font checks while source Text/log stays intact. Existing font family preserved. Explicit ToEven precedes invariant fixed-decimal formatting; signed zero normalized; exact signed64 seed avoids double conversion. Non-finite presentation uses a supported dash; command rejection remains Engine-owned.
 
 D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-text-01/: build0 warnings/errors, scoped format/diff/self-review PASS; Client113/113 (new numeric/glyph cases plus full tactical controls and existing text input), Engine378/378 including source guards and all180 connection battles PASS. glyph-coverage.json records actual font glyph IDs and substitutions; glyphs.png and renders/widgets-lists-2.png visually inspected: arrow square replaced, captions/tooltip readable. CPU raster only. Linux glyph validation pending next CI push; ticket remains in-progress until that required gate. Code commit is published to trigger Linux; final evidence update follows before next ticket.
+
+## Required Linux gate and completion — 2026-11-05
+
+TK-0007 prerequisite completed/published. Run42113068311 / job127545443551 at4080197095f45cb7cce7ec48ff846d08867c61a7 PASS: Motion1376, Engine378, Tactical Client97. All numeric/glyph/raster checks execute with actual Linux native Skia and DejaVu Sans; original required symbols supported there, while Windows Verdana arrow gets supported ASCII display replacement. No assertions weakened or tests skipped. Linux glyph JSON/image and dependency log retained in D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-linux-runtime-01/; linux-glyphs.png visually inspected and readable. Earlier failed run42112081477 remains recorded as native-runtime reproduction, not PASS. AC-05 complete for available Windows/Linux fonts. Native window/input/human acceptance remains open. Code cab5d313 was pushed/verified; final evidence commit separately published.
