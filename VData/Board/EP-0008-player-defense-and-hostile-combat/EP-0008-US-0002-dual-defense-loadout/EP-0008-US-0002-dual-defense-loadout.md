@@ -1,0 +1,57 @@
+---
+epic: EP-0008-player-defense-and-hostile-combat
+story: EP-0008-US-0002-dual-defense-loadout
+title: "Две установки ПРО и три оператора в боевом сценарии"
+stage: implemented
+dependencies: ["EP-0008-US-0001-module-owned-weapon-rules"]
+created: 2026-10-07
+revision: 1
+current_review: complete
+validation_status: automated-pass
+---
+
+## Актуализация EP-0008 — 2026-10-12
+
+Функциональные тикеты реализованы, проверены и опубликованы; self-review завершено. [Фактическое evidence](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md), [ticket → SHA → push](../PublicationStatus.md). `stage: draft` — исходная метка планирования, не утверждение о пользовательском APPROVED. Дальнейшие game/native запуски отложены пользователем.
+
+
+# Две установки ПРО и три оператора в боевом сценарии
+
+## User story
+
+Игрок в Player Ship and Pirate получает два независимых аппарата ПРО. Три назначенных оператора размещаются в новом варианте жилого модуля, без изменения комплектации других сценариев.
+
+## Источник и границы
+
+Решения Q32–Q34; полный контекст в [журнале решений](../Decisions.md) и [контракте эпика](../Documentation.md). Технические допущения A01–A12 отделены от пользовательских ответов. Scope ограничен результатом этой истории; смежные механики из Non-goals эпика не добавляются.
+
+## Acceptance criteria
+
+- **AC-0001:** Только PlayerShipOnly получает вторую ПРО, третьего отдельного оператора и вариант living quarters на3 каюты.
+- **AC-0002:** Обе установки имеют уникальные module IDs, независимый ready/auto/reload; старый жилой модуль остаётся на2 каюты, пират с одной ПРО.
+- **AC-0003:** Сгенерированный New Game сохраняет loadout, исходную относительную геометрию и валидное размещение; экипаж учитывается в существующих каютах/питании.
+
+## Зависимости
+
+- [EP-0008-US-0001-module-owned-weapon-rules](../EP-0008-US-0001-module-owned-weapon-rules/EP-0008-US-0001-module-owned-weapon-rules.md): production-результат зависимости должен быть реализован и проверен до этой истории.
+
+## Карта тикетов и покрытия
+
+| Шаг | Тикет | Layer | Serves |
+|---|---|---|---|
+| 6 | [EP-0008-US-0002-TK-0001-living-variant-and-scenario](EP-0008-US-0002-TK-0001-living-variant-and-scenario/EP-0008-US-0002-TK-0001-living-variant-and-scenario.md) — Новый жилой вариант и комплектация игрока | content-data | AC-0001, AC-0002, AC-0003 |
+| 7 | [EP-0008-US-0002-TK-0002-dual-bootstrap](EP-0008-US-0002-TK-0002-dual-bootstrap/EP-0008-US-0002-TK-0002-dual-bootstrap.md) — Независимое состояние двух аппаратов после New Game | engine | AC-0002, AC-0003 |
+
+## Completion evidence
+
+Покрытие AC и фактические ограничения приведены в текущем execution status и acceptance report; наличие запланированных проверок само по себе не является evidence. Конкретные команды и запланированные регрессии находятся в карточках. Native/UI требования подтверждаются реальным окном отдельно от automated tests; при недоступности это NOT RUN, не PASS.
+
+## Gaps и исполнение
+
+Блокирующих продуктовых вопросов для планирования нет. Proposed API/названия файлов уточняются по актуальному baseline; изменения в scope фиксируются в карточке. Общие числовые/временные инварианты находятся в эпике, включая current-format save и terminal clock. История draft и не является утверждением о пройденных тестах.
+
+При будущем запуске по [EpicExecutionPrompt](../../EpicExecutionPrompt.md) каждый тикет выполняется, проверяется, коммитится и публикуется отдельно. Исходная запись описывала план; текущий запрос разрешает автономное исполнение.
+
+## Execution self-review — 2026-10-11
+
+AC-0001/0003: real source and generated NewGame, 3 cabins/crew, preserved geometry and other starts, meal consumes3 rations. AC-0002:2 distinct module/operator IDs, independent toggle and file-restored physical reload deadlines; duplicate assignment atomically rejected. Client1762/1762 (TK-0001), Engine1731/1731 (TK-0002) PASS. Build/format/diff PASS; native NOT RUN. Production dual-module storage already existed and required no rewrite. Launch/lifetime scheduling is tested further in downstream combat stories. Both tickets receive separate commits/pushes. This supersedes planning-only prose above; review is self-review.
