@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 33/79 тикетов. Бой запускается из карты; полная форма и поле боя в работе. Остальные 46 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 34/79 тикетов. Бой запускается из карты; форма подготовки реализована; поле боя в работе. Остальные 45 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -48,8 +48,9 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0006-TK-0002-input-settings | 13fdbcda3aa16f1b21d001e57780a4ec387c5e9a | PASS: remote SHA verified | origin | 103 Client PASS; strict settings/game-binding conflicts/fallback; build/format/diff PASS |
 | EP-0015-US-0006-TK-0003-mouse | f5265b8c14579d2de49016f00c282a3ac15ef518 | PASS: remote SHA verified | origin | 121 Client PASS; native-handler headless routing/buttons/wheel; build/format/diff PASS |
 | EP-0015-US-0006-TK-0004-widgets-basic | 427ba7e8f53d700247b936ebbc9043236d8a7dbd | PASS: remote SHA verified | origin | 79 Client PASS; four CPU raster scales; build/format/diff PASS |
-| EP-0015-US-0006-TK-0005-widgets-lists | 172569fb43a5e102758ce49d38a8f24f326e18d2 (original); reflow correction SHA checked after commit | PASS: remote SHA verified | origin | 108 Client PASS; popup/wrap/filter/tooltip + 4 raster scales; glyph fix completed TK-0006; reflow reproduction/fix106 Client PASS; build/format/diff PASS |
+| EP-0015-US-0006-TK-0005-widgets-lists | 172569fb43a5e102758ce49d38a8f24f326e18d2 (original); reflow correction 20b065d5edc1aead2b8f42dfe226bd1b2185908f | PASS: remote SHA verified | origin | 108 Client PASS; popup/wrap/filter/tooltip + 4 raster scales; glyph fix completed TK-0006; reflow reproduction/fix106 Client PASS; build/format/diff PASS |
 | EP-0015-US-0006-TK-0006-text-and-numbers | cab5d313edd27e3ae1c8f50d24e79a69b7f25f6c (code), 4611628819a12ebb81b642f7ac89c5e5aef80088 (evidence), remote verified | PASS: remote SHA verified; Linux42113068311 PASS (42112081477 superseded native prerequisite failure) | origin | Windows113 Client +378 Engine PASS; explicit ToEven/glyph substitution; Linux97 Client +378 Engine +1376 Motion PASS |
 | EP-0015-US-0006-TK-0007-linux-native-runtime | 4080197095f45cb7cce7ec48ff846d08867c61a7 (code), 55332e709e9367be86a351d4fce8d31b74b5e3ee (evidence), remote verified | PASS: remote verified; Linux42113068311 PASS | origin | Windows restore/build113 Client PASS; actual Linux .so transitive output verified; config/diff PASS |
 | EP-0015-US-0007-TK-0001-modal-navigation | 6ac53a85fcc525cb73b007c6af9c3ae19bfee5e1 | PASS: remote verified; Linux42116152154 PASS | origin | 114 Client +378 Engine PASS; real modal lifecycle/opacity/camera; build/format/diff PASS |
 | EP-0015-US-0007-TK-0002-battle-key-and-hint | b19f3d5bcc349ad636f6b288a40577b67fdc01f5 | PASS: remote SHA verified | origin | full2428 Client PASS pre-log; final106 focused PASS; build/format/diff PASS |
+| EP-0015-US-0007-TK-0003-setup-screen | current ticket commit | SHA checked immediately after push | origin | 115 Client + 378 Engine PASS; four raster layouts; build/format/diff PASS |

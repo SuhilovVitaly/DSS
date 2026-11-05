@@ -1086,7 +1086,7 @@ public sealed class SkiaWindow : IDisposable
         _modalDepth++;
     }
 
-    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new(flow, isSetup: true, _gameSessionScreen?.UiScale ?? 1);
+    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1);
     private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new(flow, isSetup: false, _gameSessionScreen?.UiScale ?? 1);
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {

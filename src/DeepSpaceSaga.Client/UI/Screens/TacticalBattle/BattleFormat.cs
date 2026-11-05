@@ -22,8 +22,10 @@ public static class BattleFormat
         string number = Number(value, decimals);
         return double.IsFinite(value) && Math.Round(value, decimals, MidpointRounding.ToEven) > 0 ? "+" + number : number;
     }
-    /// <summary>Chance values already use percentage units, not a zero-to-one fraction.</summary>
+    /// <summary>Format an already scaled percentage-point value.</summary>
     public static string Percent(double value, int decimals = 0) => Number(value, decimals) + "%";
+    /// <summary>Engine hit/rear-kill chances and scenario goals are zero-to-one probabilities.</summary>
+    public static string Probability(double value, int decimals = 0) => Percent(value * 100.0, decimals);
     public static string Degrees(double value, int decimals = 0) => Number(value, decimals) + Text("°");
     public static string Seed(long seed) => Text(seed.ToString(CultureInfo.InvariantCulture).Replace('-', '−'));
 }
