@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 ticket: EP-0015-US-0009-TK-0003-sides-and-log-tabs
 title: sides-and-log-tabs
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0009-TK-0006-journal-events"]
-files_touched: 4
+files_touched: 5
 serves: [AC-03]
 created: 2026-11-05
 revision: 3
@@ -30,6 +30,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleLogTab.cs` | new | Журнал из событий |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleLogFormatter.cs` | new | Шаблоны Display §6 |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SidesAndLogTests.cs` | new | Карточки, выбор по клику, форматирование всех типов событий |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | panel composition | Route immutable snapshot to tabs and clicks to existing selection |
 
 ## Public API after the change
 `BattleLogFormatter`.
@@ -51,3 +52,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Use retained typed journal facts from TK-0005/6; during SalvoFlight suppress this salvo and subsequent events until the admitted results are shown. Sides uses BeforeSalvoUnits in flight. Tabs stay in the full-height right panel; a Phase tab keeps the phase controls and leaves the primary action visible above tabs. Own active cards select the existing move/fire order. Forecast arrives in TK-0004.
+
+## Execution evidence — 2026-11-06
+
+Sides and Log tabs draw admitted snapshots. Sides groups by playerSide, shows carrier/drone health bars and actual loadout/skills/role/system status; clicking an own active card selects it without editing an order. Log uses all retained typed event kinds, exact ToEven chance formatting and scroll follow. During real salvo flight both tabs use pre-salvo values/events; after arrival they use the admitted resolved frame.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-sides-journal-01/: build/format/diff/self-review PASS; 176 Client +380 Engine +19 Motion source guard PASS. Reviewed actual Sides and Log CPU raster outputs. Forecast remains TK-0004.
