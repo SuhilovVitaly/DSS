@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 title: "Планирование стрельбы, результаты и прогноз"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0008-battle-map]
 ---
 

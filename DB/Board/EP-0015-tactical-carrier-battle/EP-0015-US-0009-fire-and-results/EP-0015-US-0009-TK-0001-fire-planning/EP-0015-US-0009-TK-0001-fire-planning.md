@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 ticket: EP-0015-US-0009-TK-0001-fire-planning
 title: fire-planning
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0008-TK-0005-movement-animation"]
-files_touched: 3
+files_touched: 5
 serves: [AC-01]
 created: 2026-11-05
 revision: 3
@@ -29,6 +29,8 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFirePanel.cs` | new | Цели, выбор, сообщения, отправка |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMapRenderer.cs` | из US-0008 | Слои планирования |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/FirePlanningTests.cs` | new | Выбор цели кликом и списком, по умолчанию — ИИ, сообщения заклинивания и пустого сектора |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFireOrders.cs` | new | Capture default targets, edit choices and build immutable view |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | actual battle view | Connect Fire panel, map picking and exact Fire command |
 
 ## Public API after the change
 —
@@ -50,3 +52,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Five Client files. Candidate ID, distance, angle, probabilities and default come from the admitted Engine frame. Player edits are local, encoded as explicit target or null for each own active drone. The dropdown gives the complete candidate caption via tooltip; right panel and map use the same immutable planning view. Enemy rear arcs are presentation, not a recomputation of candidate validity.
+
+## Execution evidence — 2026-11-06
+
+AC-01: default targets come from the Engine snapshot. The panel shows exact candidate distance/angle and chance, carrier/rear marks and full tooltip. Jammed and empty sectors have separate messages. Actual map hit/toggle, panel dropdown and clear-all were exercised on a real LocalGameSessionConnection; Engine fired exactly one own shot at the selected target with the displayed raw chance. Fire input is gated while the command is pending.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-fire-planning-01/: build/format/diff/self-review PASS; 170 Client +378 Engine +19 Motion guard PASS; actual Fire CPU raster visually inspected. Native/physical/human acceptance remains open.

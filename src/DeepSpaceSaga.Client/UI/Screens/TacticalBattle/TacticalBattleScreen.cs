@@ -9,7 +9,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 /// <summary>All information used to draw a battle frame is captured before painting it.</summary>
 public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, TacticalBattleView View, SKRect Panel,
     float UiScale, bool Pending, string Status, TacticalBattlePresentation Presentation = TacticalBattlePresentation.Current,
-    bool EnemyForecast = true, bool EnemySectors = false, string? SelectedDroneId = null, TacticalMovementFrame? Movement = null);
+    bool EnemyForecast = true, bool EnemySectors = false, string? SelectedDroneId = null, TacticalMovementFrame? Movement = null,
+    TacticalFirePlan? FirePlan = null);
 
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
@@ -22,6 +23,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private readonly Toggle _enemySectors = new("");
     private readonly TacticalBattleOrders _orders = new();
     private readonly TacticalBattleMovePanel _movePanel;
+    private readonly TacticalBattleFireOrders _fireOrders = new();
+    private readonly TacticalBattleFirePanel _firePanel;
     private bool _orderDrag, _orderDragEdited;
     private SKPoint _lastAim;
     private sealed record TurnPresentation(TacticalBattleSnapshot Accepted, TacticalBattleMovementAnimation? Animation);
@@ -34,10 +37,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal TacticalBattleView View => _camera.View;
     internal TacticalMovementFrame Movement => _orders.Capture();
     internal TacticalBattleMovePanel MovePanel => _movePanel;
+    internal TacticalBattleFirePanel FirePanel => _firePanel;
 
     public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : base(flow, isSetup: false, uiScale)
     {
         _movePanel = new(_orders);
+        _firePanel = new(_fireOrders);
         if (flow.State is { } state) _presentation = new(state, null);
     }
 
@@ -68,8 +73,9 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         return new(state, _camera.View, _panel, UiScale, moving || Flow.Pending || presentation.Accepted.Revision != Flow.State?.Revision,
             BlockedNotice is { Length: > 0 } notice ? notice : moving ? L("AnimatingMovement") : Flow.Error,
             EnemyForecast: !moving && _enemyForecast.Value, EnemySectors: !moving && _enemySectors.Value,
-            SelectedDroneId: moving ? null : _orders.Selected,
-            Movement: !moving && state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null);
+            SelectedDroneId: moving ? null : _orders.Selected ?? _fireOrders.Selected,
+            Movement: !moving && state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null,
+            FirePlan: !moving && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null);
     }
 
     public override void Render(SKCanvas canvas, int width, int height)
@@ -95,6 +101,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             var viewport = SKRect.Create(width, height);
             _fit.DrawTooltip(canvas, viewport, frame.UiScale);
             if (frame.Movement is not null) _movePanel.DrawTooltip(canvas, viewport);
+            if (frame.FirePlan is not null) _firePanel.DrawOverlay(canvas, viewport);
         }
     }
 
@@ -131,9 +138,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _fit.Draw(canvas, s); _exitBattle.Draw(canvas, s);
         if (header.ShowNew) _newBattle.Draw(canvas, s);
         else _phaseAction.Draw(canvas, s);
-        if (frame.Movement is { } movement)
-            _movePanel.Draw(canvas, movement, new(content.Left, _phaseAction.Bounds.Bottom + 8 * s, content.Right, panel.Bottom - 8 * s),
-                s, !frame.Pending);
+        var body = new SKRect(content.Left, _phaseAction.Bounds.Bottom + 8 * s, content.Right, panel.Bottom - 8 * s);
+        if (frame.Movement is { } movement) _movePanel.Draw(canvas, movement, body, s, !frame.Pending);
+        if (frame.FirePlan is { } fire) _firePanel.Draw(canvas, fire, battle, body,
+            SKRect.Create(panel.Right, panel.Bottom), s, !frame.Pending);
     }
 
     private void Fit()
@@ -170,6 +178,17 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
                 }
             }
         }
+        if (!ConfirmExit && Flow.State is { Phase: TacticalBattlePhase.Fire } firing)
+        {
+            ObserveOrders(firing);
+            if (key == Key.Tab && !repeat && (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == 0)
+            {
+                _firePanel.ResetInput();
+                _fireOrders.Cycle(modifiers.HasFlag(KeyModifiers.Shift));
+                return ScreenEvent.None;
+            }
+            if (!repeat && _firePanel.OnKeyDown(key)) return ScreenEvent.None;
+        }
         if (key is Key.Escape or Key.Enter or Key.KeypadEnter) CancelOrderGesture();
         return base.OnKeyDown(key, modifiers, repeat);
     }
@@ -179,6 +198,13 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (Flow.State is not { } state) return base.BuildMoveRequest();
         ObserveOrders(state);
         return new(TacticalBattleFlow.NewIdentity("move"), state.BattleId, state.Revision, _orders.EditedOrders());
+    }
+
+    public override FireTacticalBattleRequest BuildFireRequest()
+    {
+        if (Flow.State is not { } state) return base.BuildFireRequest();
+        ObserveOrders(state);
+        return new(TacticalBattleFlow.NewIdentity("fire"), state.BattleId, state.Revision, _fireOrders.BuildTargets());
     }
 
     public override void OnBattleUpdated(TacticalBattleSnapshot? before, TacticalBattleResponse response)
@@ -193,11 +219,16 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (ReferenceEquals(_observedOrders, state)) return;
         var before = _observedOrders;
         _observedOrders = state;
+        var previouslyFiring = _fireOrders.Selected;
+        _fireOrders.Observe(state, _orders.Selected);
         _orders.Observe(state);
         if (state.Turn != before?.Turn || state.Phase != before?.Phase)
         {
+            if (state.Phase == TacticalBattlePhase.Move && previouslyFiring is not null) _orders.Select(previouslyFiring);
             CancelOrderGesture();
             _movePanel.ResetScroll();
+            _firePanel.ResetInput();
+            _firePanel.ResetScroll();
         }
     }
 
@@ -205,6 +236,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
         if (TurnBusy) return ScreenEvent.None;
+        bool firing = Flow.State?.Phase == TacticalBattlePhase.Fire;
+        if (firing && _firePanel.Targets.IsOpen)
+        {
+            _firePanel.OnMouseDown(x, y, button);
+            return ScreenEvent.None;
+        }
         if (button == MouseButton.Right)
         {
             if (!_orderDrag) _camera.BeginPan(x, y);
@@ -230,6 +267,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
                     if (_orderDrag) AimOrder(p);
                 }
             }
+            else if (button == MouseButton.Left && !_camera.Panning && _camera.Contains(x, y) &&
+                Flow.State is { Phase: TacticalBattlePhase.Fire } fire)
+            {
+                ObserveOrders(fire);
+                _fireOrders.ChooseAt(View, new(x, y), UiScale);
+            }
             return ScreenEvent.None;
         }
         if (_fit.OnMouseDown(x, y, button)) Fit();
@@ -239,6 +282,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         else if (_newBattle.OnMouseDown(x, y, button)) return ScreenEvent.NewTacticalBattle;
         else if (_phaseAction.OnMouseDown(x, y, button)) return ActionEvent;
         else if (Flow.State?.Phase == TacticalBattlePhase.Move) _movePanel.OnMouseDown(x, y, button);
+        else if (firing) _firePanel.OnMouseDown(x, y, button);
         return ScreenEvent.None;
     }
 
@@ -252,8 +296,13 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             if (!Flow.Pending && new SKPoint(x, y) != _lastAim) AimOrder(new(x, y));
             return true;
         }
-        bool moveHover = !Flow.Pending && Flow.State?.Phase == TacticalBattlePhase.Move && _movePanel.OnMouseMove(x, y);
-        return moveHover | _fit.OnMouseMove(x, y) | _exitBattle.OnMouseMove(x, y) | _newBattle.OnMouseMove(x, y) | _phaseAction.OnMouseMove(x, y);
+        bool bodyHover = Flow.State?.Phase switch
+        {
+            TacticalBattlePhase.Move => _movePanel.OnMouseMove(x, y),
+            TacticalBattlePhase.Fire => _firePanel.OnMouseMove(x, y),
+            _ => false
+        };
+        return bodyHover | _fit.OnMouseMove(x, y) | _exitBattle.OnMouseMove(x, y) | _newBattle.OnMouseMove(x, y) | _phaseAction.OnMouseMove(x, y);
     }
     public override void OnMouseUp(float x, float y, MouseButton button)
     {
@@ -271,7 +320,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         if (!ConfirmExit && !TurnBusy && !_orderDrag &&
-            !(Flow.State?.Phase == TacticalBattlePhase.Move && _movePanel.OnMouseWheel(x, y, delta))) _camera.Zoom(x, y, delta);
+            !(Flow.State?.Phase == TacticalBattlePhase.Move && _movePanel.OnMouseWheel(x, y, delta)) &&
+            !(Flow.State?.Phase == TacticalBattlePhase.Fire && (_firePanel.OnMouseWheel(x, y, delta) || _firePanel.Targets.IsOpen))) _camera.Zoom(x, y, delta);
         return ScreenEvent.None;
     }
     public override void OnInputReset()
@@ -279,6 +329,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         base.OnInputReset();
         _camera.EndPan();
         CancelOrderGesture();
+        _firePanel.ResetInput();
         _fit.ResetInput(); _exitBattle.ResetInput(); _newBattle.ResetInput(); _phaseAction.ResetInput();
         _enemyForecast.HasFocus = _enemySectors.HasFocus = false;
     }

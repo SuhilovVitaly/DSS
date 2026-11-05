@@ -39,7 +39,7 @@ internal static class TacticalBattleMapRenderer
             foreach (var unit in units)
             {
                 if (unit.Side == battle.PlayerSide || unit.State != TacticalUnitState.Air) continue;
-                if (frame.EnemyForecast)
+                if (frame.EnemyForecast && frame.FirePlan is null)
                 {
                     var vector = TacticalGeometry.Vec(unit.Pose.Course, unit.Speed);
                     var end = unit.Pose with { X = unit.Pose.X + vector.X, Y = unit.Pose.Y + vector.Y };
@@ -54,12 +54,51 @@ internal static class TacticalBattleMapRenderer
                 }
             }
             if (frame.Movement is { } movement) DrawMovement(canvas, frame, movement, paint);
+            if (frame.FirePlan is { } fire) DrawFire(canvas, frame, fire, paint);
         }
 
         DrawLabels(canvas, frame, units);
         foreach (var unit in units)
             DrawUnit(canvas, view.Project(unit.Pose), unit, unit.Side == battle.PlayerSide, unit.Id == frame.SelectedDroneId, scale, paint);
         DrawRuler(canvas, view, scale, paint);
+    }
+
+    private static void DrawFire(SKCanvas canvas, TacticalBattleFrame frame, TacticalFirePlan plan, SKPaint paint)
+    {
+        var view = frame.View;
+        float s = frame.UiScale;
+        foreach (var row in plan.Rows)
+        {
+            if (row.Drone.Jammed || row.Drone.Build is not { } gun) continue;
+            paint.Color = Own.WithAlpha(row.Drone.Id == plan.SelectedDroneId ? (byte)52 : (byte)18);
+            DrawArc(canvas, view, row.Drone.Pose, gun.Range, gun.ArcDegrees, row.Drone.Pose.Course, paint, filled: true);
+        }
+        foreach (var enemy in frame.Battle.Units)
+        {
+            if (enemy.Side == frame.Battle.PlayerSide || enemy.State != TacticalUnitState.Air) continue;
+            paint.Color = Enemy.WithAlpha(112);
+            DrawArc(canvas, view, enemy.Pose, 70, frame.Battle.Rules.RearArc, enemy.Pose.Course + 180, paint, filled: false);
+        }
+        if (plan.Selected is not { } selected) return;
+        var source = view.Project(selected.Drone.Pose);
+        foreach (var candidate in selected.Group.List)
+        {
+            var target = frame.Battle.Units.FirstOrDefault(u => u.Id == candidate.TargetId);
+            if (target is null) continue;
+            var endpoint = view.Project(target.Pose);
+            bool chosen = candidate.TargetId == selected.TargetId;
+            paint.Color = chosen && candidate.Rear ? new(253, 143, 104) : new(145, 224, 238);
+            paint.StrokeWidth = (chosen ? 1.7f : 1) * s;
+            paint.Style = SKPaintStyle.Stroke;
+            canvas.DrawCircle(endpoint, (target.Kind == TacticalUnitKind.Carrier ? 20 : 14) * s, paint);
+            paint.Style = SKPaintStyle.Fill;
+            if (!chosen) continue;
+            canvas.DrawLine(source, endpoint, paint);
+            float x = (source.X + endpoint.X) * 0.5f;
+            float y = (source.Y + endpoint.Y) * 0.5f;
+            string label = BattleFormat.Probability(candidate.Chance) + (candidate.Rear ? " " + BattleFormat.Localize("FireRearShort") : "");
+            ControlVisuals.Label(canvas, label, new(x, y - 23 * s, x + 104 * s, y - 3 * s), true, s);
+        }
     }
 
     private static void DrawMovement(SKCanvas canvas, TacticalBattleFrame frame, TacticalMovementFrame movement, SKPaint paint)
