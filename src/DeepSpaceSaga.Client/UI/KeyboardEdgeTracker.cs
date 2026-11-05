@@ -9,7 +9,7 @@ internal sealed class KeyboardEdgeTracker
     private static readonly Key[] StandardKeys =
     [
         Key.Escape, Key.I, Key.S, Key.F, Key.Space, Key.Tab, Key.Enter,
-        Key.Number0, Key.Keypad0, Key.KeypadEnter, Key.F8,
+        Key.Number0, Key.Keypad0, Key.KeypadEnter, Key.F8, Key.F12,
         Key.Number1, Key.Number2, Key.Number3, Key.Number4, Key.Number5,
         Key.Up, Key.Down, Key.Left, Key.Right, Key.F5, Key.F9, Key.F10, Key.C, Key.Backspace,
         Key.Equal, Key.Minus, Key.KeypadAdd, Key.KeypadSubtract, Key.Home, Key.End
@@ -42,10 +42,10 @@ internal sealed class KeyboardEdgeTracker
 
     private static bool Down(Key key, Func<Key, bool> reader, bool control) => reader(key) && (key != Key.I || control);
 
-    public (int pressedCount, int releasedCount) PollBoth(IKeyboard keyboard, Span<Key> pressed, Span<Key> released) =>
-        PollBoth(Reader(keyboard), pressed, released);
+    public (int pressedCount, int releasedCount) PollBoth(IKeyboard keyboard, Span<Key> pressed, Span<Key> released, bool captureBareI = false) =>
+        PollBoth(Reader(keyboard), pressed, released, captureBareI: captureBareI);
 
-    internal (int pressedCount, int releasedCount) PollBoth(Func<Key, bool> isKeyPressed, Span<Key> pressed, Span<Key> released, long? nowMs = null)
+    internal (int pressedCount, int releasedCount) PollBoth(Func<Key, bool> isKeyPressed, Span<Key> pressed, Span<Key> released, long? nowMs = null, bool captureBareI = false)
     {
         int p = 0, r = 0;
         bool control = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
@@ -53,7 +53,7 @@ internal sealed class KeyboardEdgeTracker
         long now = nowMs ?? Environment.TickCount64;
         foreach (var key in _keys)
         {
-            bool down = Down(key, isKeyPressed, control);
+            bool down = Down(key, isKeyPressed, control || captureBareI);
             bool previous = _previous.GetValueOrDefault(key);
             if (down && !previous)
             {
@@ -112,16 +112,16 @@ internal sealed class KeyboardEdgeTracker
         return count;
     }
 
-    public void ResyncToCurrentState(IKeyboard? keyboard)
+    public void ResyncToCurrentState(IKeyboard? keyboard, bool captureBareI = false)
     {
         ResetRepeats();
-        if (keyboard is not null) ResyncToCurrentState(Reader(keyboard));
+        if (keyboard is not null) ResyncToCurrentState(Reader(keyboard), captureBareI);
     }
-    internal void ResyncToCurrentState(Func<Key, bool> isKeyPressed)
+    internal void ResyncToCurrentState(Func<Key, bool> isKeyPressed, bool captureBareI = false)
     {
         ResetRepeats();
         Modifiers = ReadModifiers(isKeyPressed);
         bool control = isKeyPressed(Key.ControlLeft) || isKeyPressed(Key.ControlRight);
-        foreach (var key in _keys) _previous[key] = Down(key, isKeyPressed, control);
+        foreach (var key in _keys) _previous[key] = Down(key, isKeyPressed, control || captureBareI);
     }
 }

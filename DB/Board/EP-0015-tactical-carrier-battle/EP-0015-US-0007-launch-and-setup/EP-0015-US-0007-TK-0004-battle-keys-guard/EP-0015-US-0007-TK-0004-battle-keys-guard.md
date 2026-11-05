@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0007-launch-and-setup
 ticket: EP-0015-US-0007-TK-0004-battle-keys-guard
 title: battle-keys-guard
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0007-TK-0003-setup-screen"]
-files_touched: 3
+files_touched: 5
 serves: [AC-04]
 created: 2026-11-05
 revision: 3
@@ -26,8 +26,10 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 ## Code context
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleKeyPolicy.cs` | new | Общая политика клавиш экранов боя |
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/ExitBattleConfirm.cs` | new | Подтверждение выхода |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFlow.cs` | modal base and exit confirm exist | Shared key policy and refusal presentation |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSetupScreen.cs` | setup exists | Apply shared policy, keep number text entry |
+| `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` | native dispatch and serialized transitions | Prevent stale world events; preserve global F10 |
+| `src/DeepSpaceSaga.Client/UI/KeyboardEdgeTracker.cs` | suppresses bare I for world | Capture I in tactical modal and track F12 |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/KeysDuringBattleTests.cs` | new | Каждая клавиша карты при открытом бою; F10; меню недоступно |
 
 ## Public API after the change
@@ -51,3 +53,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+The shared modal and GenericWindowTypeA exit confirmation already exist from TK-0001; apply key policy in the existing base and setup view. In seed focus, plain numeric keys remain available for editing the seed, without changing world speed. The window only supplies the configured launch key, routes keys/F10 and rejects stale world transitions under its existing lock. Screenshot output follows the validation root when configured. Tracker captures bare I in the modal without changing Ctrl+I in the world. Russian and English strings are outside the five-code-file scope.
+
+## Execution evidence — 2026-11-06
+
+Actual window polling shows the localized refusal for all twelve required bindings during setup and Move. Queued world navigation/save/load cannot bypass the modal; setup and active-battle Escape retain their different behavior. F10 captured the actual tactical CPU Skia frame without altering the session. No physical-input or native-window acceptance claimed.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-battle-keys-01/: 154 Client +378 Engine PASS; format/build (0 warnings/errors)/diff/self-review PASS. Logs, TRX and F10 PNG retained. Separate immediate origin publication authorized.

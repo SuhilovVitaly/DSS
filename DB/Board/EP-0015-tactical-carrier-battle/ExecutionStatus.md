@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 34/79 тикетов. Бой запускается из карты; форма подготовки реализована; поле боя в работе. Остальные 45 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 35/79 тикетов. Бой запускается из карты; форма подготовки реализована; поле боя в работе. Остальные 44 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Это исходный регрессионный срез. Core/session parity уже PASS; полная нативная и продуктовая приёмка пока NOT RUN.
 
-Продолжение: US-0007 TK-0003. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
+Продолжение: US-0008 TK-0001. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -53,4 +53,5 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0006-TK-0007-linux-native-runtime | 4080197095f45cb7cce7ec48ff846d08867c61a7 (code), 55332e709e9367be86a351d4fce8d31b74b5e3ee (evidence), remote verified | PASS: remote verified; Linux42113068311 PASS | origin | Windows restore/build113 Client PASS; actual Linux .so transitive output verified; config/diff PASS |
 | EP-0015-US-0007-TK-0001-modal-navigation | 6ac53a85fcc525cb73b007c6af9c3ae19bfee5e1 | PASS: remote verified; Linux42116152154 PASS | origin | 114 Client +378 Engine PASS; real modal lifecycle/opacity/camera; build/format/diff PASS |
 | EP-0015-US-0007-TK-0002-battle-key-and-hint | b19f3d5bcc349ad636f6b288a40577b67fdc01f5 | PASS: remote SHA verified | origin | full2428 Client PASS pre-log; final106 focused PASS; build/format/diff PASS |
-| EP-0015-US-0007-TK-0003-setup-screen | current ticket commit | SHA checked immediately after push | origin | 115 Client + 378 Engine PASS; four raster layouts; build/format/diff PASS |
+| EP-0015-US-0007-TK-0003-setup-screen | bfd7437560cb86511896e45756f2194e7a6f54e8 | PASS: remote SHA verified | origin | 115 Client + 378 Engine PASS; four raster layouts; build/format/diff PASS |
+| EP-0015-US-0007-TK-0004-battle-keys-guard | current ticket commit | SHA checked immediately after push | origin | 154 Client + 378 Engine PASS; F10 PNG and world-event guard; build/format/diff PASS |

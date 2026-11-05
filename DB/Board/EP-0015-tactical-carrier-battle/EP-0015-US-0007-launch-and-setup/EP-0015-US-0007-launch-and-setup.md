@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0007-launch-and-setup
 title: "Запуск из тактической карты и подготовка боя"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0006-client-input-and-controls]
 ---
 
@@ -48,3 +48,7 @@ dependencies: [EP-0015-US-0006-client-input-and-controls]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution review — 2026-11-06
+
+All four tickets completed technically. Actual local session + headless window verify opaque modal navigation, F8/remapped clickable entry, data-driven setup, guarded keyboard and queued transitions, F10 and confirmed exit. 154 Client and 378 Engine cases pass on the final ticket. Native/physical and product acceptance remain open; full map is US-0008.

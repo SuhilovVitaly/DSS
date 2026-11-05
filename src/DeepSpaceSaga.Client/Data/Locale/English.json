@@ -23,6 +23,7 @@
   "TacticalBattle.OpenHint": "{0} — tactical battle",
   "TacticalBattle.OpenTooltip": "Open battle setup and pause the world.",
   "TacticalBattle.SetupTitle": "Tactical battle setup",
+  "TacticalBattle.WorldActionBlocked": "Unavailable during battle",
   "TacticalBattle.BattleTitle": "Tactical battle",
   "TacticalBattle.Start": "Start battle",
   "TacticalBattle.Move": "Execute movement",

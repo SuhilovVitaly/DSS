@@ -23,6 +23,7 @@
   "TacticalBattle.OpenHint": "{0} — тактический бой",
   "TacticalBattle.OpenTooltip": "Открыть подготовку боя. Мир будет приостановлен.",
   "TacticalBattle.SetupTitle": "Подготовка тактического боя",
+  "TacticalBattle.WorldActionBlocked": "Недоступно во время боя",
   "TacticalBattle.BattleTitle": "Тактический бой",
   "TacticalBattle.Start": "Начать бой",
   "TacticalBattle.Move": "Выполнить движение",

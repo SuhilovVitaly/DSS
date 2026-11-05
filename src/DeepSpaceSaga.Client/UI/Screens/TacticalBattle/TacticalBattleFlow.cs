@@ -96,6 +96,21 @@ public class TacticalBattleModalScreen : IScreen
     public bool IsSetup { get; }
     public float UiScale { get; }
     public bool ConfirmExit { get; protected set; }
+    internal Key LaunchKey { get; init; } = Key.F8;
+    private long _blockedNoticeUntil;
+    internal string BlockedNotice => Environment.TickCount64 < _blockedNoticeUntil ? L("WorldActionBlocked") : "";
+
+    internal void NotifyWorldActionBlocked() => _blockedNoticeUntil = Environment.TickCount64 + 4000;
+
+    protected bool BlockWorldKey(Key key, KeyModifiers modifiers, bool editingSeed = false)
+    {
+        bool speedKey = key is Key.Number1 or Key.Number2 or Key.Number3 or Key.Number4;
+        if (speedKey && editingSeed && (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == 0) return false;
+        if (!speedKey && key != LaunchKey && key is not (Key.F5 or Key.F9 or Key.F12 or Key.F8 or Key.I or Key.Space)
+            && !(key is Key.F or Key.S && modifiers.HasFlag(KeyModifiers.Control))) return false;
+        NotifyWorldActionBlocked();
+        return true;
+    }
     public bool IsOpaque => true;
     public bool WantsArrowRepeat => true;
     public bool UsesBrowserWheelDelta => true;
@@ -171,6 +186,8 @@ public class TacticalBattleModalScreen : IScreen
         if (!IsSetup && Flow.State?.Phase == TacticalBattlePhase.Over) _new.Draw(canvas, s);
         if (Flow.Pending) ControlVisuals.Label(canvas, L("Waiting"), new(24 * s, height - 100 * s, width - 24 * s, height - 70 * s), true, s);
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
+        if (BlockedNotice is { Length: > 0 } notice)
+            ControlVisuals.Label(canvas, notice, new(24 * s, height - 96 * s, width - 24 * s, height - 65 * s), true, s);
     }
     protected void DrawExitConfirmation(SKCanvas canvas, int width, int height)
     {
@@ -203,6 +220,7 @@ public class TacticalBattleModalScreen : IScreen
     public virtual ScreenEvent OnKeyDown(Key key) => OnKeyDown(key, KeyModifiers.None, false);
     public virtual ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
+        if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
         if (Flow.Pending) return ScreenEvent.None;
         if (key == Key.Escape)
         {

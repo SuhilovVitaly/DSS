@@ -536,7 +536,7 @@ public sealed class SkiaWindow : IDisposable
         if (isFocused)
         {
             _focusRegainedAtMs = Environment.TickCount64;
-            _keyboardEdges.ResyncToCurrentState(_keyboard);
+            _keyboardEdges.ResyncToCurrentState(_keyboard, _screens.Current is TacticalBattleModalScreen);
         }
         else
         {
@@ -666,7 +666,7 @@ public sealed class SkiaWindow : IDisposable
             _repeatScreen = _screens.Current;
         }
         var (pressedCount, releasedCount) = _keyboardEdges.PollBoth(
-            _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys);
+            _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys, _screens.Current is TacticalBattleModalScreen);
 
         if (pressedCount > 0 || releasedCount > 0)
         {
@@ -708,7 +708,7 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
-        if (key == Key.Escape || key == Key.F5 || key == Key.F9 || key == Key.F || key == Key.S)
+        if (_screens.Current is not TacticalBattleModalScreen && key is Key.Escape or Key.F5 or Key.F9 or Key.F or Key.S)
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
             {
@@ -739,10 +739,11 @@ public sealed class SkiaWindow : IDisposable
 
         try
         {
-            Directory.CreateDirectory(ScreenshotsDirectory);
+            string directory = Path.Combine(Path.GetDirectoryName(InterfaceLog.FileName) ?? "", ScreenshotsDirectory);
+            Directory.CreateDirectory(directory);
 
             string fileName = $"screenshot_{DateTime.UtcNow:yyyy-MM-dd'T'HH-mm-ss-fff'Z'}.png";
-            string path = Path.Combine(ScreenshotsDirectory, fileName);
+            string path = Path.Combine(directory, fileName);
 
             using var image = _surface.Snapshot();
             using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -781,6 +782,13 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             if (_closing) return;
+            if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
+                (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
+                ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle))
+            {
+                activeBattle.NotifyWorldActionBlocked();
+                return;
+            }
             if (EnsureDefeatScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or
                 ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.Exit)) return;
             await _stationNavigation.RemoveInvalidOverlaysAsync(_screens,
@@ -1086,8 +1094,8 @@ public sealed class SkiaWindow : IDisposable
         _modalDepth++;
     }
 
-    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1);
-    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new(flow, isSetup: false, _gameSessionScreen?.UiScale ?? 1);
+    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) => new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle };
+    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) => new(flow, isSetup: false, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {
         await flow.OptionsTask!;

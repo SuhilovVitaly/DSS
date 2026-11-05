@@ -171,7 +171,7 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
         canvas.Restore();
         _start.Enabled = CanStart; _back.Enabled = !Flow.Pending;
         _start.Draw(canvas); _back.Draw(canvas);
-        string status = Flow.Pending ? L("Waiting") : !TrySeed(out _) ? L("InvalidSeed") : Flow.Error;
+        string status = BlockedNotice is { Length: > 0 } notice ? notice : Flow.Pending ? L("Waiting") : !TrySeed(out _) ? L("InvalidSeed") : Flow.Error;
         if (status.Length > 0) DrawParagraph(canvas, status, layout.Status);
         foreach (var field in _fields) field.DrawPopup(canvas);
         foreach (var field in _fields) field.DrawTooltip(canvas, layout.Viewport);
@@ -230,6 +230,7 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
     {
         EnsureForm();
         if (_scenario is null) return base.OnKeyDown(key, modifiers, repeat);
+        if (BlockWorldKey(key, modifiers, _focus == SeedFocus)) return ScreenEvent.None;
         if (Flow.Pending) return ScreenEvent.None;
         if (key == Key.Tab && !repeat)
         {
