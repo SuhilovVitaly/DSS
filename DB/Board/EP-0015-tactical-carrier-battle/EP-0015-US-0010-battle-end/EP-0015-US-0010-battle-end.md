@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0010-battle-end
 title: "Конец боя, новый бой и возврат на карту"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0009-fire-and-results]
 ---
 

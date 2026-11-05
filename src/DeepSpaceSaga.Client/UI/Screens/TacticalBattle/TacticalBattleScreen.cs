@@ -79,6 +79,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal bool CanSubmitTurn(ScreenEvent evt) => !TurnBusy && !HasSalvoPresentation && !ConfirmExit &&
         Flow.State?.Phase == (evt == ScreenEvent.MoveTacticalBattle ? TacticalBattlePhase.Move : TacticalBattlePhase.Fire);
 
+    private bool SalvoInFlight => Volatile.Read(ref _presentation)?.Results?.InFlight(ClockMilliseconds()) == true;
+    internal bool CanStartNewBattle => !TurnBusy && !SalvoInFlight && !ConfirmExit && Flow.State is not null;
+    private bool OutcomeVisible => Flow.State?.Phase == TacticalBattlePhase.Over && !SalvoInFlight;
+
     internal TacticalBattleFrame? CaptureFrame(int width, int height)
     {
         if (Volatile.Read(ref _presentation) is not { } presentation || width < 2 || height < 1) return null;
@@ -150,10 +154,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _fit.Bounds = SKRect.Create(content.Left, y, col, 34 * s);
         _exitBattle.Bounds = SKRect.Create(content.Right - col, y, col, 34 * s);
         bool results = frame.Salvo is not null;
-        _enemyForecast.Bounds = results ? SKRect.Empty : SKRect.Create(content.Left, y + 43 * s, content.Width, 22 * s);
-        _enemySectors.Bounds = results ? SKRect.Empty : SKRect.Create(content.Left, y + 69 * s, content.Width, 22 * s);
-        _phaseAction.Bounds = SKRect.Create(content.Left, y + (results ? 46 : 100) * s, content.Width, 36 * s);
-        _newBattle.Bounds = !results && header.ShowNew ? _phaseAction.Bounds : SKRect.Empty;
+        _newBattle.Bounds = SKRect.Create(content.Left, y + 41 * s, content.Width, 30 * s);
+        _enemyForecast.Bounds = results || header.ShowNew ? SKRect.Empty : SKRect.Create(content.Left, y + 78 * s, content.Width, 22 * s);
+        _enemySectors.Bounds = results || header.ShowNew ? SKRect.Empty : SKRect.Create(content.Left, y + 104 * s, content.Width, 22 * s);
+        _phaseAction.Bounds = !results && header.ShowNew ? SKRect.Empty :
+            SKRect.Create(content.Left, y + (results ? 78 : 135) * s, content.Width, 36 * s);
         _fit.Label = L("FitField");
         _fit.Tooltip = L("FitFieldHelp");
         _enemyForecast.Label = L("EnemyForecast");
@@ -165,11 +170,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             ? playback.InFlight ? "SalvoSkip" : battle.Phase == TacticalBattlePhase.Over ? "SalvoToOutcome" : "SalvoToMove"
             : battle.Phase == TacticalBattlePhase.Fire ? "Fire" : "Move");
         _phaseAction.Enabled = !frame.Pending && (results || battle.Phase != TacticalBattlePhase.Over);
-        _newBattle.Label = L("NewBattle"); _newBattle.Enabled = !frame.Pending;
+        _newBattle.Label = L("NewBattle"); _newBattle.Enabled = !frame.Pending && frame.Salvo?.InFlight != true;
         _fit.Draw(canvas, s); _exitBattle.Draw(canvas, s);
-        if (!results && header.ShowNew) _newBattle.Draw(canvas, s);
-        else _phaseAction.Draw(canvas, s);
-        var body = new SKRect(content.Left, _phaseAction.Bounds.Bottom + 8 * s, content.Right, panel.Bottom - 8 * s);
+        _newBattle.Draw(canvas, s);
+        _phaseAction.Draw(canvas, s);
+        var body = new SKRect(content.Left, (float)PyMath.Max(_phaseAction.Bounds.Bottom, _newBattle.Bounds.Bottom) + 8 * s,
+            content.Right, panel.Bottom - 8 * s);
         _replaySalvo.Bounds = SKRect.Empty;
         if (frame.Salvo is { InFlight: false })
         {
@@ -212,6 +218,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
         if (TurnBusy) return ScreenEvent.None;
+        if (key == Key.Escape && !repeat && OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
         if (!ConfirmExit && _tabs.SelectedId == "log" && _logTab.OnKeyDown(key)) return ScreenEvent.None;
         if (!ConfirmExit && _tabs.SelectedId == "forecast" && _forecastTab.OnKeyDown(key)) return ScreenEvent.None;
         if (!ConfirmExit && !repeat && modifiers == KeyModifiers.None && key is Key.Number0 or Key.Keypad0)
@@ -315,7 +322,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         {
             if (button == MouseButton.Right) _camera.BeginPan(x, y);
             else if (_fit.OnMouseDown(x, y, button)) Fit();
-            else if (_exitBattle.OnMouseDown(x, y, button)) ConfirmExit = true;
+            else if (_exitBattle.OnMouseDown(x, y, button)) return ExitAction();
+            else if (CanStartNewBattle && _newBattle.OnMouseDown(x, y, button)) return ScreenEvent.NewTacticalBattle;
             else if (_phaseAction.OnMouseDown(x, y, button)) AdvanceSalvo();
             else if (_replaySalvo.OnMouseDown(x, y, button)) ReplaySalvo();
             else if (_tabs.SelectedId == "log") _logTab.OnMouseDown(x, y, button);
@@ -356,10 +364,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             return ScreenEvent.None;
         }
         if (_fit.OnMouseDown(x, y, button)) Fit();
-        else if (_exitBattle.OnMouseDown(x, y, button)) ConfirmExit = true;
+        else if (_exitBattle.OnMouseDown(x, y, button)) return ExitAction();
         else if (_enemyForecast.OnMouseDown(x, y, button)) _enemySectors.HasFocus = false;
         else if (_enemySectors.OnMouseDown(x, y, button)) _enemyForecast.HasFocus = false;
-        else if (_newBattle.OnMouseDown(x, y, button)) return ScreenEvent.NewTacticalBattle;
+        else if (CanStartNewBattle && _newBattle.OnMouseDown(x, y, button)) return ScreenEvent.NewTacticalBattle;
         else if (_phaseAction.OnMouseDown(x, y, button)) return ActionEvent;
         else if (_tabs.SelectedId == "sides")
         {
@@ -390,7 +398,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             _ => false
         });
         if (HasSalvoPresentation)
-            return tabHover | _fit.OnMouseMove(x, y) | _exitBattle.OnMouseMove(x, y) | _phaseAction.OnMouseMove(x, y) | _replaySalvo.OnMouseMove(x, y);
+            return tabHover | _fit.OnMouseMove(x, y) | _exitBattle.OnMouseMove(x, y) | _newBattle.OnMouseMove(x, y) |
+                _phaseAction.OnMouseMove(x, y) | _replaySalvo.OnMouseMove(x, y);
         if (_orderDrag)
         {
             if (!Flow.Pending && new SKPoint(x, y) != _lastAim) AimOrder(new(x, y));
@@ -453,6 +462,13 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (current?.Results is not { } salvo) return;
         var next = salvo.InFlight(ClockMilliseconds()) ? salvo with { Skipped = true } : null;
         Interlocked.CompareExchange(ref _presentation, current with { Results = next }, current);
+    }
+
+    private ScreenEvent ExitAction()
+    {
+        if (OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
+        ConfirmExit = true;
+        return ScreenEvent.None;
     }
 
     private void ReplaySalvo()

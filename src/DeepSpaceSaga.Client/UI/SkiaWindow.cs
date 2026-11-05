@@ -833,7 +833,7 @@ public sealed class SkiaWindow : IDisposable
                     if (_screens.Current is TacticalBattleModalScreen modal && !modal.Flow.Pending)
                     {
                         if (modal is TacticalBattleScreen { TurnBusy: true }) break;
-                        if (evt == ScreenEvent.NewTacticalBattle && modal.Flow.State?.Phase != TacticalBattlePhase.Over) break;
+                        if (evt == ScreenEvent.NewTacticalBattle && modal is not TacticalBattleScreen { CanStartNewBattle: true }) break;
                         if (modal.Flow.State is not null && !await modal.Flow.ExitAsync()) break;
                         if (evt == ScreenEvent.NewTacticalBattle) _screens.Replace(CreateTacticalSetupView(modal.Flow));
                         else await PopModalAsync();
