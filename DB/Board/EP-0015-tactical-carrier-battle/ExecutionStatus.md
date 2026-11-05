@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 28/78 тикетов. Новый бой ещё не подключён, остальные 50 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 29/78 тикетов. Новый бой ещё не подключён, остальные 49 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Native/input, полная battle parity и приёмка боя пока NOT RUN.
 
-Продолжение: US-0006 TK-0005. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: US-0006 TK-0006. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -61,4 +61,6 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 
 | EP-0015-US-0006-TK-0003-mouse | f5265b8c14579d2de49016f00c282a3ac15ef518 | PASS: remote SHA verified | origin | 121 Client PASS; native-handler headless routing/buttons/wheel; build/format/diff PASS |
 
-| EP-0015-US-0006-TK-0004-widgets-basic | SHA проверяется Git после создания коммита | pending | origin | 79 Client PASS; four CPU raster scales; build/format/diff PASS |
+| EP-0015-US-0006-TK-0004-widgets-basic | 427ba7e8f53d700247b936ebbc9043236d8a7dbd | PASS: remote SHA verified | origin | 79 Client PASS; four CPU raster scales; build/format/diff PASS |
+
+| EP-0015-US-0006-TK-0005-widgets-lists | SHA проверяется Git после создания коммита | pending | origin | 108 Client PASS; popup/wrap/filter/tooltip + 4 raster scales; glyph fix pending TK-0006; build/format/diff PASS |

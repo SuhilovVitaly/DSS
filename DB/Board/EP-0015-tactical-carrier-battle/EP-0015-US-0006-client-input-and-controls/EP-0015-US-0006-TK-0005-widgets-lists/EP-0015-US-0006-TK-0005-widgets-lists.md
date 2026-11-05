@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 ticket: EP-0015-US-0006-TK-0005-widgets-lists
 title: widgets-lists
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0006-TK-0004-widgets-basic"]
-files_touched: 4
+files_touched: 5
 serves: [AC-04]
 created: 2026-11-05
 revision: 3
@@ -52,3 +52,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests (raster + ввод). Сборк
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+Add ShortcutButton.cs as fifth Client code file, completing the AC-04 key-hint/tooltip button omitted from original allowlist. Reuses GenericButtonTypeA and existing tooltip delay. DropDown<T> owns selection/open/viewport-fit popup/keyboard/wheel state and uses XenonComboBox only for rendering. Shared Unicode-aware ellipsis/wrap/viewport-clamped tooltip helper stays in DropDown.cs. ScrollTextPanel generalizes clipping/offset from CombatJournalPanel but preserves word boundaries, supports fractional normalized wheel and draggable scrollbar, and follows appended log only while already at bottom. TextInputBox gets optional character predicate; old callers unchanged. All labels supplied by owner/locales; empty-list placeholder gets English/Russian key. Popup/layout and wrap updates are explicit UI calls; Draw has no command/simulation side effects. 1280x720 fixture and uiScale variants validate fit; native screen/input gates remain open.
+
+## Execution evidence — 2026-11-05
+
+AC-04 remaining control pieces implemented: viewport-fit DropDown keyboard/mouse/scroll/ellipsis/full tooltip, chronological wrapped ScrollTextPanel with thumb and conditional append-follow, optional TextInputBox predicate and ShortcutButton key hint/delayed tooltip. Existing text-input tests unchanged and passing. Unicode text elements retained on truncation, default captions cached; draws do not invoke Engine. Layout changes cancel scrollbar drag and keep popup highlight visible. Owners must Layout before opening/reopen after SetItems and reset gestures on focus loss. Screen panel/minimum geometry remains US-0008.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-widgets-lists-03/: build 0 warnings/errors, verify-format/diff/self-review PASS; 108/108 Client cases PASS including existing TextInputBox tests. Four1280x720 raster PNGs at0.75/1/1.5/2 scales in renders/, complete long-label tooltip present. Visual review of scale2 caught chevron/text collision in run02; left insets corrected and run03 inspected. Earlier run02 image retained as defect evidence. Known missing Verdana arrow glyph appears as square in journal fixture; assigned dependent TK-0006 glyph coverage/substitution, not claimed fixed here. CPU raster is not native/human acceptance. Separate immediate origin publication authorized.
