@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0003-battle-rules
 title: "Правила боя: сборка, движение, залп, урон, исход"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0002-deterministic-core, EP-0015-US-0001-content-and-loader]
 ---
 
@@ -48,3 +48,7 @@ dependencies: [EP-0015-US-0002-deterministic-core, EP-0015-US-0001-content-and-l
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution result
+
+Four rules tickets complete. Targeted source slices and 6443 fresh regression cases PASS; detailed evidence is in ticket execution sections. AI/full-battle parity and real session/UI integration remain the dependent US-0004/0005 work; no playable-screen acceptance is claimed.
