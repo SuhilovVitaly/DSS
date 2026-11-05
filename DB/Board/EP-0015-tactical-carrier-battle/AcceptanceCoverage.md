@@ -44,7 +44,7 @@
 | EP-0015-US-0008-battle-map | AC-05 | EP-0015-US-0008-TK-0005-movement-animation | PASS: real delayed response, immutable path interpolation, 899/900 ms gate, queued dispatch guard and terminal UI branch |
 | EP-0015-US-0009-fire-and-results | AC-01 | EP-0015-US-0009-TK-0001-fire-planning | PASS: actual defaults/candidate details, map toggle/dropdown/none and exact selected Engine shot |
 | EP-0015-US-0009-fire-and-results | AC-02 | EP-0015-US-0009-TK-0002-results-phase | PASS: actual shot playback, pre/post values, skip/replay, no duplicate commands, no-shot and cap branches |
-| EP-0015-US-0009-fire-and-results | AC-03 | EP-0015-US-0009-TK-0005-journal-contract, EP-0015-US-0009-TK-0006-journal-events, EP-0015-US-0009-TK-0003-sides-and-log-tabs, EP-0015-US-0009-TK-0004-forecast-tab | journal contract PASS; Engine production and tabs pending |
+| EP-0015-US-0009-fire-and-results | AC-03 | EP-0015-US-0009-TK-0005-journal-contract, EP-0015-US-0009-TK-0006-journal-events, EP-0015-US-0009-TK-0003-sides-and-log-tabs, EP-0015-US-0009-TK-0004-forecast-tab | journal contract and authoritative Engine event order PASS; Client tabs pending |
 | EP-0015-US-0010-battle-end | AC-01 | EP-0015-US-0010-TK-0001-battle-end-ui | not started |
 | EP-0015-US-0010-battle-end | AC-02 | EP-0015-US-0010-TK-0002-sandbox-flow | not started |
 | EP-0015-US-0011-legacy-removal-prep | AC-01 | EP-0015-US-0011-TK-0001-removal-inventory | not started |

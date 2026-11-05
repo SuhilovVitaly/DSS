@@ -84,7 +84,7 @@ internal sealed class TacticalBattleSession
         Battle.Movement(); // current Motion limits clamp all orders, including untouched AI suggestions
         _paths = Battle.LastMovement.Select(m => new TacticalMovementPath(Battle.Turn, m.DroneId,
             m.Path.Select(TacticalBattleSnapshotBuilder.Pose).ToImmutableArray())).ToImmutableArray();
-        if (Battle.Result is not null) AddOutcome();
+        if (Battle.Result is not null) AddOutcome(TacticalBattlePhase.Move);
         else if (!Battle.ActiveDrones(PlayerSide).Any(d => !TacticalBattleSalvo.Candidates(Battle, d).IsEmpty))
         {
             _fireSkipped = true;
@@ -124,23 +124,40 @@ internal sealed class TacticalBattleSession
         Battle.Firing((drone, candidates) => drone.Side == PlayerSide
             ? targets.FirstOrDefault(t => t.DroneId == drone.Id).TargetId
             : TacticalBattleSalvo.DefaultTarget(drone, candidates)?.Target.Id);
-        _shots = Battle.LastSalvo!.Shots.Select(s => new TacticalShotSnapshot(turn, s.Shooter.Id, s.Target.Id,
+        var salvo = Battle.LastSalvo!;
+        _shots = salvo.Shots.Select(s => new TacticalShotSnapshot(turn, s.Shooter.Id, s.Target.Id,
             TacticalBattleSnapshotBuilder.Pose(s.Shooter.Pose), TacticalBattleSnapshotBuilder.Pose(s.Target.Pose),
             s.Chance, s.Hit, s.Damage, s.Rear, s.Kill, s.Target.Hull <= 0)).ToImmutableArray();
         foreach (var shot in _shots)
             Add(shot.Kill ? TacticalBattleLogKind.RearKill : shot.Hit ? TacticalBattleLogKind.ShotHit : TacticalBattleLogKind.ShotMissed,
-                TacticalBattlePhase.Fire, shot.ShooterId, shot.TargetId, amount: shot.Damage);
-        foreach (var unit in Battle.Drones.Cast<TacticalUnit>().Concat(Battle.Carriers))
+                TacticalBattlePhase.Fire, shot.ShooterId, shot.TargetId, amount: shot.Damage, shot: new(shot.Chance, shot.Rear));
+
+        var units = TacticalBattleConstants.SideOrder.SelectMany(side => Battle.Drones.Where(d => d.Side == side))
+            .Cast<TacticalUnit>().Concat(TacticalBattleConstants.SideOrder.Select(Battle.Carrier)).ToArray();
+        foreach (var damage in salvo.Damage)
+        {
+            var unit = units.First(u => u.Id == damage.TargetId);
+            int hits = _shots.Count(s => s.Hit && s.TargetId == damage.TargetId);
+            Add(TacticalBattleLogKind.DamageApplied, TacticalBattlePhase.Fire, target: damage.TargetId,
+                damage: new(damage.Hull, damage.Armor, hits, unit.Hull));
+        }
+        foreach (var unit in units)
         {
             var before = _beforeSalvo.First(u => u.Id == unit.Id);
             if (unit is TacticalDrone drone && before.State == TacticalUnitState.Air && drone.Status == TacticalDroneStatus.Disabled)
-                Add(TacticalBattleLogKind.Disabled, TacticalBattlePhase.Fire, target: unit.Id);
-            else if (unit.Hull <= 0 && before.Hull > 0) Add(TacticalBattleLogKind.Destroyed, TacticalBattlePhase.Fire, target: unit.Id);
+                Add(TacticalBattleLogKind.Disabled, TacticalBattlePhase.Fire, target: unit.Id, unit: Describe(unit));
+            else if (unit.Hull <= 0 && before.Hull > 0)
+                Add(TacticalBattleLogKind.Destroyed, TacticalBattlePhase.Fire, target: unit.Id, unit: Describe(unit));
         }
-        foreach (var change in Battle.LastSalvo.Systems)
+        foreach (var change in salvo.Systems)
+        {
+            var drone = Battle.Drones.First(d => d.Id == change.TargetId);
+            var engine = change.EngineIndex is { } index ? drone.Engines[index] : null;
             Add(change.Effect == "weaponJammed" ? TacticalBattleLogKind.WeaponJammed : TacticalBattleLogKind.EngineDamaged,
-                TacticalBattlePhase.Fire, target: change.TargetId, engine: change.EngineIndex);
-        if (Battle.Result is not null) AddOutcome();
+                TacticalBattlePhase.Fire, target: change.TargetId, engine: change.EngineIndex,
+                unit: Describe(drone) with { EngineName = engine?.Definition.Name, EngineFactor = engine?.Factor });
+        }
+        if (Battle.Result is not null) AddOutcome(TacticalBattlePhase.Fire);
         else BeginTurn();
     }
 
@@ -154,11 +171,15 @@ internal sealed class TacticalBattleSession
             else Add(TacticalBattleLogKind.FighterBreak, TacticalBattlePhase.Move, entry.DroneId);
         }
     }
-    private void AddOutcome() => _log.Add(new(++_eventSequence, Battle.Turn, TacticalBattlePhase.Over,
+    private static TacticalLogUnit Describe(TacticalUnit unit) =>
+        new(unit is TacticalCarrier ? TacticalUnitKind.Carrier : TacticalUnitKind.Drone, unit.Hull, unit.MaxHull);
+    private void AddOutcome(TacticalBattlePhase phase) => _log.Add(new(++_eventSequence, Battle.Turn, phase,
         TacticalBattleLogKind.Outcome, Outcome: TacticalBattleSnapshotBuilder.Outcome(Battle.Result)));
     private void Add(TacticalBattleLogKind kind, TacticalBattlePhase phase, string? actor = null, string? target = null,
-        string? role = null, int? amount = null, int? engine = null, bool noAttackers = false) =>
-        _log.Add(new(++_eventSequence, Battle.Turn, phase, kind, actor, target, role, amount, engine, noAttackers));
+        string? role = null, int? amount = null, int? engine = null, bool noAttackers = false,
+        TacticalLogShot? shot = null, TacticalLogDamage? damage = null, TacticalLogUnit? unit = null) =>
+        _log.Add(new(++_eventSequence, Battle.Turn, phase, kind, actor, target, role, amount, engine, noAttackers,
+            Shot: shot, Damage: damage, Unit: unit));
     private TacticalDrone? Own(string id) => Battle.Drones.FirstOrDefault(d => d.Id == id && d.Side == PlayerSide && d.IsActive);
     private TacticalBattleRejectionCode Check(string id, ulong revision, TacticalBattlePhase phase) => id != Id ? TacticalBattleRejectionCode.WrongBattle
         : revision != Revision ? TacticalBattleRejectionCode.StaleRevision : Phase != phase ? TacticalBattleRejectionCode.WrongPhase : TacticalBattleRejectionCode.None;
