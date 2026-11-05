@@ -24,10 +24,10 @@
 | EP-0015-US-0004-battle-ai | AC-04 | EP-0015-US-0004-TK-0004-golden-battles | done under D-USER-15: 90 summaries + continuous trace Windows/Linux PASS |
 | EP-0015-US-0005-session-contracts | AC-01 | EP-0015-US-0005-TK-0001-contracts | DTOs done; complete captures/options behavior in TK-0002 |
 | EP-0015-US-0005-session-contracts | AC-02 | EP-0015-US-0005-TK-0002-engine-session | PASS: session commands; 274 Engine cases, including two complete seed-1 modes |
-| EP-0015-US-0005-session-contracts | AC-03 | EP-0015-US-0005-TK-0003-world-guard, EP-0015-US-0005-TK-0006-session-tests | Engine guards PASS (436 cases); connection/UI coverage pending TK-0006/US-0007 |
+| EP-0015-US-0005-session-contracts | AC-03 | EP-0015-US-0005-TK-0003-world-guard, EP-0015-US-0005-TK-0006-session-tests | Engine/connection PASS: all phases + queued save; UI F9 guard pending US-0007 |
 | EP-0015-US-0005-session-contracts | AC-04 | EP-0015-US-0005-TK-0004-connection-api | PASS: default API, local forwarding/concurrency/cancellation; 284 Engine + 283 Contracts |
 | EP-0015-US-0005-session-contracts | AC-05 | EP-0015-US-0005-TK-0005-client-session-handle | PASS: forwarding, InterfaceLog, typed failures and both locales; 33 Client cases |
-| EP-0015-US-0005-session-contracts | AC-06 | EP-0015-US-0005-TK-0006-session-tests | not started |
+| EP-0015-US-0005-session-contracts | AC-06 | EP-0015-US-0005-TK-0006-session-tests | PASS: 90 independent rows x 2 connection modes; all378 Engine cases |
 | EP-0015-US-0006-client-input-and-controls | AC-01 | EP-0015-US-0006-TK-0001-keyboard | not started |
 | EP-0015-US-0006-client-input-and-controls | AC-02 | EP-0015-US-0006-TK-0002-input-settings | not started |
 | EP-0015-US-0006-client-input-and-controls | AC-03 | EP-0015-US-0006-TK-0003-mouse | not started |

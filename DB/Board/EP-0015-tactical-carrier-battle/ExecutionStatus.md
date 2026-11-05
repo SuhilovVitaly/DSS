@@ -2,19 +2,19 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 23/78 тикетов. Новый бой ещё не подключён, остальные 55 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 24/78 тикетов. Новый бой ещё не подключён, остальные 54 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
 - Принятые уточнения D-USER-14/15: исходники — `VData/Planning/V4.0` Markdown; JSON создаются по таблицам; Python-симулятор не нужен. Служебный коммит `06c5fc69032de5b7b7fe94d19079b5284998846c`, push и remote SHA проверены. Прежний preflight-блокер отсутствующих исходников снят этими указаниями.
 - История US-0017 уже существует, зависит от всех функциональных историй и выполняется последней.
-- Linux route работает: GitHub Actions run 42086320971 PASS на Ubuntu 24.04 / CPython 3.12.3 / glibc 2.39. Это bootstrap/export + текущие Motion/content tests; геометрия дополнительно проверена на Windows/Linux в PlatformValidation.md; core battle/AI реализован и проверен 90 эталонами Windows/Linux; сессия/UI ещё не подключены.
+- Linux route работает: GitHub Actions run 42086320971 PASS на Ubuntu 24.04 / CPython 3.12.3 / glibc 2.39. Это bootstrap/export + текущие Motion/content tests; геометрия дополнительно проверена на Windows/Linux в PlatformValidation.md; core battle/AI реализован и проверен 90 эталонами Windows/Linux; сессия/соединение реализованы; UI ещё не подключён.
 
 ## Проверки
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Native/input, полная battle parity и приёмка боя пока NOT RUN.
 
-Продолжение: US-0005 TK-0006. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: US-0006 TK-0001. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -51,4 +51,6 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 
 | EP-0015-US-0005-TK-0004-connection-api | dff18600fccd636aa4d8704a96263cdcdf4e00f5 | PASS: remote SHA verified | origin | 284 Engine + 283 Contracts PASS; concurrent tick boundary; build/format/diff PASS |
 
-| EP-0015-US-0005-TK-0005-client-session-handle | SHA проверяется Git после создания коммита | pending | origin | 33 Client PASS; forwarding/log/refusals/locales; build/format/diff PASS |
+| EP-0015-US-0005-TK-0005-client-session-handle | 9eec6113effc3f5481eaf9651972d2103cb90786 | PASS: remote SHA verified | origin | 33 Client PASS; forwarding/log/refusals/locales; build/format/diff PASS |
+
+| EP-0015-US-0005-TK-0006-session-tests | SHA проверяется Git после создания коммита | pending | origin | 378 Engine PASS; 180 independent connection battles + phase save guards; build/format/diff PASS |
