@@ -1,0 +1,44 @@
+name: Tactical battle Linux
+on:
+  push:
+    branches: [codex/ep-0015-tactical-carrier-battle]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  linux:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    env:
+      DSS_VALIDATION_ROOT: ${{ runner.temp }}/artifacts/validation/ep-0015-tactical-carrier-battle/${{ github.run_id }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-dotnet@0f4a354dd5547a28c70b7853dbd95d5b67886e73 # v6.1.0
+        with:
+          dotnet-version: 8.0.x
+      - name: Export independent references on glibc
+        run: |
+          mkdir -p "$DSS_VALIDATION_ROOT"
+          python3 tools/tactical-battle/export_references.py --emit-log
+          python3 tools/tactical-battle/export_references.py --check
+      - name: Verify content
+        shell: pwsh
+        run: ./tools/tactical-battle/Export-Content.ps1 -Check
+      - name: Build
+        run: timeout --kill-after=10s 300s dotnet build DeepSpaceSaga.sln --verbosity minimal > "$DSS_VALIDATION_ROOT/build.log" 2>&1 || { cat "$DSS_VALIDATION_ROOT/build.log"; exit 1; }
+      - name: Motion tests
+        run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Motion.Tests --no-build --results-directory "$DSS_VALIDATION_ROOT/motion" --logger trx
+      - name: Tactical Engine tests
+        run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Engine.Tests --no-build --filter FullyQualifiedName~TacticalBattle --results-directory "$DSS_VALIDATION_ROOT/engine" --logger trx
+      - name: Tactical Client tests
+        run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Client.Tests --no-build --filter FullyQualifiedName~TacticalBattle --results-directory "$DSS_VALIDATION_ROOT/client" --logger trx
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        if: always()
+        with:
+          name: tactical-battle-linux
+          path: |
+            ${{ env.DSS_VALIDATION_ROOT }}
+            VData/Planning/V4.0/Reference/*.json
+          retention-days: 30

@@ -54,3 +54,9 @@ Python-тесты инструмента на Linux/glibc. Сборка, scoped 
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+D-USER-14/15 replaces the missing simulator export/check with a source-only Markdown converter. Code context now: `tools/tactical-battle/export_references.py` (new, standard-library Python converter, no battle simulation); `.github/workflows/tactical-battle.yml` (new Ubuntu Linux/glibc validation/export route); `tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/ReferenceFixtureTests.cs` (new schema/coverage, source fingerprint and IEEE parser tests); `VData/Planning/V4.0/Reference/{battles,trace-seed-1,geometry,series}.json` (generated outputs); `VData/Planning/V4.0/README.md` (format/provenance/coverage). Four code/context positions plus source README, replacing the old seven positions. Game content and existing reference Markdown stay unchanged.
+
+The converter refuses writes off Linux/glibc. Geometry edge vectors are independent CPython/glibc evaluations with IEEE hex. Battle/trace/series expectations are parsed only from existing Markdown. Header records actual exporter Python/glibc/OS and source hashes; it does not claim those were the original simulator environment. Original unrounded trace bits, per-weapon/role statistics, stage calls for all 90 battles and actual trig arguments are absent; coverage lists them explicitly. Series rounded averages remain decimals, not invented integer sums. Linux bootstrap infrastructure may be published as a service commit to execute this validation before the ticket is marked done; the ticket commit then includes verified generated evidence and Windows parser tests.
