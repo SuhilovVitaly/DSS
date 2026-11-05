@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0003-battle-rules
 ticket: EP-0015-US-0003-TK-0001-battle-assembly
 title: battle-assembly
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0002-TK-0006-platform-determinism", "EP-0015-US-0001-TK-0004-content-sync"]
 files_touched: 3
@@ -52,3 +52,9 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Execution evidence — 2026-11-05
+
+Engine-owned mutable TacticalBattle/unit/engine state uses immutable captured definitions and separate RNG per battle. Create preserves A/B drone and carrier order, computes initial speed before skills, rolls all NPC skills before all scatter, then assigns stable hull-ordered roles. Partial loadout record uses null for omitted fields and empty Shield to clear; retains original shield count when omitted, uses default one when needed and zero without shield. Internal assembly intentionally does not revalidate slots; public command validation belongs to US-0005. Carrier uses frame hull/maneuver, ignoring layout hull. Motion performs limits/math; no world state changes.
+
+`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-assembly-01/`: solution build 0 warnings/errors; Engine TacticalBattle 101/101 (5 new tests), full Motion 1376/1376 including source guard; scoped format/diff PASS. Every published assembly field and Calls=42 matches independent trace at original precision; tests cover range-equal RNG draw, initial speed clamp, role tie order, out-of-slot internal overrides, carrier hull and independent mutable state/RNG. Self-review completed; independent review NOT RUN. Playback/game-session/UI integration is still future work. Own SHA is verified after publication using user GitHub override.

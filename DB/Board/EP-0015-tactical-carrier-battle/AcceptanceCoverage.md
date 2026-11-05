@@ -14,7 +14,7 @@
 | EP-0015-US-0002-deterministic-core | AC-04 | EP-0015-US-0002-TK-0004-geometry | Windows + Linux 1088 bitwise vectors PASS |
 | EP-0015-US-0002-deterministic-core | AC-05 | EP-0015-US-0002-TK-0005-limits-and-chance | Motion implementation and 34 shot references PASS; integration dependent stories |
 | EP-0015-US-0002-deterministic-core | AC-06 | EP-0015-US-0002-TK-0006-platform-determinism | done for available D-USER-15 vectors; golden battles remain US-0004 |
-| EP-0015-US-0003-battle-rules | AC-01 | EP-0015-US-0003-TK-0001-battle-assembly | not started |
+| EP-0015-US-0003-battle-rules | AC-01 | EP-0015-US-0003-TK-0001-battle-assembly | done: every assembly trace field and RNG42 PASS |
 | EP-0015-US-0003-battle-rules | AC-02 | EP-0015-US-0003-TK-0002-movement | not started |
 | EP-0015-US-0003-battle-rules | AC-03 | EP-0015-US-0003-TK-0003-salvo | not started |
 | EP-0015-US-0003-battle-rules | AC-04 | EP-0015-US-0003-TK-0004-turn-and-outcome | not started |

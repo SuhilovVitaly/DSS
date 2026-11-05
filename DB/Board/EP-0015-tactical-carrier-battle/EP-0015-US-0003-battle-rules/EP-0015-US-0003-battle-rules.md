@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0003-battle-rules
 title: "Правила боя: сборка, движение, залп, урон, исход"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0002-deterministic-core, EP-0015-US-0001-content-and-loader]
 ---
 
