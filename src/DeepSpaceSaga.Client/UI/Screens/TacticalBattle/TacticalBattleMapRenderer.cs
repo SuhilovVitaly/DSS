@@ -60,7 +60,61 @@ internal static class TacticalBattleMapRenderer
         DrawLabels(canvas, frame, units);
         foreach (var unit in units)
             DrawUnit(canvas, view.Project(unit.Pose), unit, unit.Side == battle.PlayerSide, unit.Id == frame.SelectedDroneId, scale, paint);
+        if (frame.Salvo is { } salvo) DrawSalvo(canvas, frame, salvo, paint);
         DrawRuler(canvas, view, scale, paint);
+    }
+
+    private static void DrawSalvo(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, SKPaint paint)
+    {
+        float scale = frame.UiScale;
+        using var text = ControlText.Paint(scale);
+        text.TextSize = 12 * scale;
+        foreach (var flight in salvo.Flights)
+        {
+            if (!flight.Flying && !flight.Flash) continue;
+            var shot = flight.Shot;
+            var from = frame.View.Project(shot.From);
+            var to = TacticalBattleResults.Endpoint(from, frame.View.Project(shot.To), shot.Hit, flight.Index, scale);
+            if (flight.Flying)
+            {
+                var head = Lerp(from, to, flight.Progress);
+                var tail = Lerp(from, to, PyMath.Max(0, flight.Progress - 0.10));
+                paint.Color = new(255, 220, 149, 135);
+                paint.StrokeWidth = 2 * scale;
+                canvas.DrawLine(tail, head, paint);
+                paint.Color = new(255, 246, 209);
+                canvas.DrawCircle(head, 3.1f * scale, paint);
+                continue;
+            }
+            double fraction = (flight.ElapsedMs - flight.LaunchMs - TacticalBattleResults.FlightMs) / (double)TacticalBattleResults.FlashMs;
+            byte alpha = (byte)(255 * (1 - fraction));
+            if (shot.Hit)
+            {
+                paint.Color = (shot.Kill ? new SKColor(255, 72, 65) : new SKColor(255, 216, 110)).WithAlpha(alpha);
+                canvas.DrawCircle(to, (5 + 8 * (float)fraction) * scale, paint);
+            }
+            text.Color = (shot.Hit ? new SKColor(255, 224, 173) : new SKColor(191, 206, 218)).WithAlpha(alpha);
+            string caption = shot.Hit ? BattleFormat.Signed(-shot.Damage) : BattleFormat.Localize("SalvoMiss");
+            canvas.DrawText(caption, to.X + 6 * scale, to.Y - (11 + 14 * (float)fraction) * scale, text);
+        }
+        foreach (var damage in salvo.Damage)
+        {
+            var p = frame.View.Project(damage.Unit.Pose);
+            string status = damage.StateChanged ? damage.Unit.State switch
+            {
+                TacticalUnitState.Destroyed when damage.Unit.Kind == TacticalUnitKind.Carrier => " " + BattleFormat.Localize("SalvoCarrierDestroyed"),
+                TacticalUnitState.Destroyed => " " + BattleFormat.Localize("SalvoDestroyed"),
+                TacticalUnitState.Disabled => " " + BattleFormat.Localize("SalvoDisabled"),
+                _ => ""
+            } : "";
+            string label = string.Format(System.Globalization.CultureInfo.InvariantCulture, BattleFormat.Localize("SalvoDamage"),
+                BattleFormat.Signed(-damage.Armor), BattleFormat.Signed(-damage.Hull)) + status;
+            text.Color = new(255, 198, 148);
+            canvas.DrawText(label, p.X + 10 * scale, p.Y - 26 * scale, text);
+        }
+
+        static SKPoint Lerp(SKPoint from, SKPoint to, double fraction) =>
+            new(from.X + (float)((to.X - from.X) * fraction), from.Y + (float)((to.Y - from.Y) * fraction));
     }
 
     private static void DrawFire(SKCanvas canvas, TacticalBattleFrame frame, TacticalFirePlan plan, SKPaint paint)

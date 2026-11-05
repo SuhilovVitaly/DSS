@@ -45,10 +45,10 @@ public sealed class BattleNavigationTests
         Assert.Equal((ulong)1, battle.Flow.State.Revision);
         for (int i = 0; battle.Flow.State.Phase != TacticalBattlePhase.Over && i < 100; i++)
         {
-            fixture.AdvanceAnimation(1000);
+            fixture.FinishPresentation();
             await fixture.Route(battle.OnKeyDown(Key.Enter));
         }
-        fixture.AdvanceAnimation(1000);
+        fixture.FinishPresentation();
         Assert.Equal(TacticalBattlePhase.Over, battle.Flow.State.Phase);
         Assert.NotNull(battle.Flow.State.Outcome);
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
@@ -200,6 +200,13 @@ public sealed class BattleNavigationTests
         private long _clockMilliseconds;
         internal bool ManualAnimation { get; set; }
         internal void AdvanceAnimation(long ms) => Interlocked.Add(ref _clockMilliseconds, ms);
+        internal void FinishPresentation()
+        {
+            AdvanceAnimation(1000);
+            if (Screens.Current is not TacticalBattleScreen { HasSalvoPresentation: true } battle) return;
+            battle.OnKeyDown(Key.Enter);
+            if (battle.HasSalvoPresentation) battle.OnKeyDown(Key.Enter);
+        }
         internal ScreenStack Screens => Field<ScreenStack>(Window, "_screens");
         internal int Depth => Field<int>(Window, "_modalDepth");
         private Fixture(TacticalBattleInputSettings? inputs, float uiScale)
@@ -232,7 +239,11 @@ public sealed class BattleNavigationTests
         }
         internal async Task Route(ScreenEvent evt)
         {
-            if (!ManualAnimation) AdvanceAnimation(1000);
+            if (!ManualAnimation)
+            {
+                if (evt is ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle) FinishPresentation();
+                else AdvanceAnimation(1000);
+            }
             await (Task)typeof(SkiaWindow).GetMethod("HandleScreenEvent", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(Window, new object?[] { evt, null })!;
             if (Screens.Current is TacticalBattleScreen battle)

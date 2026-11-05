@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 ticket: EP-0015-US-0009-TK-0002-results-phase
 title: results-phase
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0009-TK-0001-fire-planning"]
-files_touched: 2
+files_touched: 5
 serves: [AC-02]
 created: 2026-11-05
 revision: 3
@@ -28,6 +28,9 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleResults.cs` | new | Таймлайн снарядов, следы, вспышки, значения до залпа, итог по целям |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ResultsPhaseTests.cs` | new | Кадры таймлайна, смещения промаха, двухшаговый Enter, «Ещё раз», пропуск фазы |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | phase presentation | Play, skip, replay and continue without additional Engine calls |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMapRenderer.cs` | immutable map renderer | Draw projectile/flash/miss and target deltas |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/BattleNavigationTests.cs` | deterministic test clock | Finish playback explicitly in existing navigation flows |
 
 ## Public API after the change
 —
@@ -50,3 +53,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Use immutable admitted shots and before/after units; no replay or skip sends a command. Start automatically after the existing movement timeline for Engine auto-salvos, skip the presentation entirely for no shots. Flight shows pre-salvo values in map and header; the later sides/forecast tabs consume the same presentation mode. Cap entire flight including final arrival at 3000 ms by compressing the launch interval only when required.
+
+## Execution evidence — 2026-11-06
+
+AC-02 core result timeline: actual Engine shots animate in stable order, 300ms first launch, 380ms nominal spacing, 650ms flight, 450ms flash and 3000ms cap; misses alternate 13 logical pixels sideways and extend 28. During flight map/header use pre-salvo values; on arrival they switch to admitted outcomes and target deltas. Skip, replay and continue are local presentation actions; queued tactical orders are blocked. Empty automatic salvo skips presentation; automatic shots start after movement. Sides/forecast tabs will use the same frame in TK-0003/4.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-salvo-results-01/: build/format/diff/self-review PASS; 173 Client +378 Engine +19 Motion source guard PASS. Actual flight/resolved CPU rasters visually inspected. Long automatic salvo cap exercised with repeated captured shot fixture.
