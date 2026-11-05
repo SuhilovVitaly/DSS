@@ -6,7 +6,7 @@ Validated slice: US-0002 shared Motion functions and Engine Mulberry32, prior to
 
 - `VData/Planning/V4.0/Reference/geometry.json`: 1088 exact IEEE images exported on Linux / CPython 3.12.3 / glibc 2.39. Includes 14 normalization vectors, 28 sin/cos vectors, 16 signed-axis atan2 vectors and 1030 hypot vectors (normal, extreme and subnormal).
 - `trace-seed-1.json`: assembly and 19 turns, rounded to six decimal places. All 34 published shot chances are checked with absolute error at most 0.0000006; no missing IEEE bits or original per-term values are invented.
-- Geometry file SHA256 in the current Windows checkout: `c75405863fd6c93cfde1f30ef35fe114c485365a39f65a1ab40dce6fbeb1518c`.
+- Geometry schema-1 file SHA256 during the original platform measurement: `c75405863fd6c93cfde1f30ef35fe114c485365a39f65a1ab40dce6fbeb1518c`.
 
 ## Windows
 
@@ -23,3 +23,5 @@ Limits/chance run [42089031642](https://github.com/SuhilovVitaly/DSS/actions/run
 No .NET/glibc discrepancy was observed in the available vectors on Windows. Keep Math.Sin/Cos/Atan2 and the CPython vector_norm port; neither a speculative trig port nor regenerated battle outcomes are justified by this measurement.
 
 This is not evidence for the absent original arguments of every trig call in 90 battles. Their absence is listed in fixture headers. End-to-end golden battles, deterministic player/AI integration, UI/native input, and performance are later epic gates. New numerical mismatches reopen G-03; expected outcomes must never be rewritten from the new Engine to conceal a defect. Self-review is not independent review.
+
+Schema-2 correction (rearHits field name only, all numeric data unchanged) passed Linux run [42090979851](https://github.com/SuhilovVitaly/DSS/actions/runs/42090979851). Current schema-2 geometry file SHA256: `1379ce96e16a22bb0ad4670faefadfee5d4fe679ece890011e0817ddea0be64a`. This header-only change does not alter any geometry vector.

@@ -1,6 +1,6 @@
 {
   "header": {
-    "formatVersion": 1,
+    "formatVersion": 2,
     "source": "independent-markdown",
     "exporterPython": "3.12.3",
     "exporterLibc": "glibc 2.39",
@@ -17,6 +17,7 @@
       "unrounded trace IEEE bits",
       "all battle trig arguments",
       "per-weapon statistics",
+      "rearKills in battle summaries",
       "roleChanges",
       "stage calls for battles other than seed 1",
       "exact series integer sums and timeout counts"
