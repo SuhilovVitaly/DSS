@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0004-battle-ai
 ticket: EP-0015-US-0004-TK-0004-golden-battles
 title: golden-battles
-stage: draft
+stage: in-progress
 layer: engine
 depends_on: ["EP-0015-US-0004-TK-0003-interceptor-commander"]
 files_touched: 2
@@ -50,3 +50,12 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests на Windows и Linux; process-
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Source/reader assumption before implementation — 2026-11-05
+
+Reuse existing ReferenceFixtureTests.Open/ReadDoubleHex rather than duplicate a ReferenceReader. New code position is GoldenBattleTests.cs; existing source-fingerprint/schema tests remain mandatory in the TacticalBattle suite. D-USER-14/15 limits expectations to published data: all 90 summaries with exact integer outcomes/counters/RNG; full seed-one trace at original six-decimal precision and exact stage counts/states. No source contains stage calls for other 89 battles, original trace IEEE bits, per-weapon/role counters for all battles or all original trig arguments; those are not fabricated. Full trace test runs one uninterrupted Engine battle without setting source positions/orders/states/RNG into it. Any confirmed production defect expands the owning file scope before its fix.
+## Windows validation / Linux CI publication — 2026-11-05
+
+`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-golden-01/`: solution build 0 warnings/errors; 91 golden cases PASS (90 independent battle summaries + uninterrupted seed-one trace), full TacticalBattle 245/245, source guard 19/19, scoped format/diff PASS. Every summary matches exact outcome/reason/turns/losses/carrier hull/published statistics/RNG. The continuous trace matches every planning/movement/firing stage and final state, without source-state/order/RNG injection. Fractional trace fields use only original 6-decimal precision; no bit-level trace claim is made.
+
+This implementation commit is published to execute the required Linux CI gate; ticket remains in-progress until the actual Linux result is observed and recorded. No next ticket begins before successful publication and Linux verification. Existing workflow runs the identical TacticalBattle suite on Ubuntu/glibc with tracked schema-2 references. Self-review completed; independent review NOT RUN. No production defect or expected-outcome change was required by the Windows golden suite.
