@@ -820,6 +820,7 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.FireTacticalBattle:
                     if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } battle && !battle.Flow.Pending)
                     {
+                        if (battle is TacticalBattleScreen view && !view.CanSubmitTurn(evt)) break;
                         var before = battle.Flow.State;
                         var response = evt == ScreenEvent.MoveTacticalBattle
                             ? await battle.Flow.MoveAsync(battle.BuildMoveRequest())
@@ -831,6 +832,7 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.CloseTacticalBattle:
                     if (_screens.Current is TacticalBattleModalScreen modal && !modal.Flow.Pending)
                     {
+                        if (modal is TacticalBattleScreen { TurnBusy: true }) break;
                         if (evt == ScreenEvent.NewTacticalBattle && modal.Flow.State?.Phase != TacticalBattlePhase.Over) break;
                         if (modal.Flow.State is not null && !await modal.Flow.ExitAsync()) break;
                         if (evt == ScreenEvent.NewTacticalBattle) _screens.Replace(CreateTacticalSetupView(modal.Flow));

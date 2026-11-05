@@ -44,7 +44,11 @@ public sealed class BattleNavigationTests
         await fixture.Route(ScreenEvent.StartTacticalBattle); // queued second press cannot start another battle
         Assert.Equal((ulong)1, battle.Flow.State.Revision);
         for (int i = 0; battle.Flow.State.Phase != TacticalBattlePhase.Over && i < 100; i++)
+        {
+            fixture.AdvanceAnimation(1000);
             await fixture.Route(battle.OnKeyDown(Key.Enter));
+        }
+        fixture.AdvanceAnimation(1000);
         Assert.Equal(TacticalBattlePhase.Over, battle.Flow.State.Phase);
         Assert.NotNull(battle.Flow.State.Outcome);
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
@@ -148,6 +152,11 @@ public sealed class BattleNavigationTests
         internal bool OptionsCancelled { get; private set; }
         internal TacticalBattleOptions? OptionsOverride { get; set; }
         internal int Starts { get; private set; }
+        internal int Moves { get; private set; }
+        internal int Fires { get; private set; }
+        internal TaskCompletionSource MoveSeen { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
+        internal TaskCompletionSource? MoveGate { get; set; }
+        internal Func<TacticalBattleResponse, TacticalBattleResponse>? TransformMoveResponse { get; set; }
         protected override object? Invoke(MethodInfo? method, object?[]? args)
         {
             if (method!.Name == nameof(IGameSessionConnection.SetSimulationSpeedAsync)) Speeds.Enqueue((SimulationSpeed)args![0]!);
@@ -156,7 +165,22 @@ public sealed class BattleNavigationTests
             if (OptionsOverride is { } options && method.Name == nameof(IGameSessionConnection.GetTacticalBattleOptionsAsync))
                 return ValueTask.FromResult(options);
             if (method.Name == nameof(IGameSessionConnection.StartTacticalBattleAsync)) Starts++;
+            if (method.Name == nameof(IGameSessionConnection.MoveTacticalBattleAsync))
+            {
+                Moves++;
+                MoveSeen.TrySetResult();
+                if (MoveGate is not null || TransformMoveResponse is not null)
+                    return new ValueTask<TacticalBattleResponse>(WaitForMove(MoveGate?.Task ?? Task.CompletedTask,
+                        (MoveTacticalBattleRequest)args![0]!, (CancellationToken)args[1]!));
+            }
+            if (method.Name == nameof(IGameSessionConnection.FireTacticalBattleAsync)) Fires++;
             return method.Invoke(Inner, args);
+        }
+        private async Task<TacticalBattleResponse> WaitForMove(Task gate, MoveTacticalBattleRequest request, CancellationToken cancellation)
+        {
+            await gate.WaitAsync(cancellation);
+            var response = await Inner.MoveTacticalBattleAsync(request, cancellation);
+            return TransformMoveResponse?.Invoke(response) ?? response;
         }
         private async Task<TacticalBattleOptions> WaitForOptions(CancellationToken cancellation)
         {
@@ -173,6 +197,9 @@ public sealed class BattleNavigationTests
         internal readonly GameSessionScreen Game;
         internal readonly SkiaWindow Window;
         internal readonly ConnectionProxy Proxy;
+        private long _clockMilliseconds;
+        internal bool ManualAnimation { get; set; }
+        internal void AdvanceAnimation(long ms) => Interlocked.Add(ref _clockMilliseconds, ms);
         internal ScreenStack Screens => Field<ScreenStack>(Window, "_screens");
         internal int Depth => Field<int>(Window, "_modalDepth");
         private Fixture(TacticalBattleInputSettings? inputs, float uiScale)
@@ -203,8 +230,14 @@ public sealed class BattleNavigationTests
             }
             catch { await fixture.DisposeAsync(); throw; }
         }
-        internal Task Route(ScreenEvent evt) => (Task)typeof(SkiaWindow).GetMethod("HandleScreenEvent", BindingFlags.Instance | BindingFlags.NonPublic)!
-            .Invoke(Window, new object?[] { evt, null })!;
+        internal async Task Route(ScreenEvent evt)
+        {
+            if (!ManualAnimation) AdvanceAnimation(1000);
+            await (Task)typeof(SkiaWindow).GetMethod("HandleScreenEvent", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(Window, new object?[] { evt, null })!;
+            if (Screens.Current is TacticalBattleScreen battle)
+                battle.ClockMilliseconds = () => Interlocked.Read(ref _clockMilliseconds);
+        }
         internal async Task PressKey(Key key)
         {
             typeof(SkiaWindow).GetMethod("HandleKeyboardEdge", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(Window, new object[] { key });

@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 title: "Ввод и элементы интерфейса для экранов боя"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0005-session-contracts]
 ---
 
@@ -59,4 +59,4 @@ Draft; human approval отсутствует. Решения и сообщени
 
 ## Execution review — 2026-11-05
 
-All seven control/input implementation tickets complete, including required Linux native recovery. Number/glyph coverage PASS Windows/Linux, real handler routing verified headlessly, controls/raster verified across scales. AC-01/03 final drag/pan consumers and AC-04 right-panel/minimum-window integration remain in US-0008; physical input/native/human acceptance is not replaced by these checks. See ExecutionStatus.md/PlatformValidation.md and cards for exact source SHA and evidence. Self-review only, not independent approval.
+All seven control/input implementation tickets complete, including required Linux native recovery. Number/glyph coverage PASS Windows/Linux, real handler routing verified headlessly, controls/raster verified across scales. AC-01/03 drag/pan consumers and AC-04 right-panel/minimum-window integration passed headless checks in US-0008; physical input/native/human acceptance is not replaced by these checks. See ExecutionStatus.md/PlatformValidation.md and cards for exact source SHA and evidence. Self-review only, not independent approval.

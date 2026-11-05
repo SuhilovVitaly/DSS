@@ -28,10 +28,10 @@
 | EP-0015-US-0005-session-contracts | AC-04 | EP-0015-US-0005-TK-0004-connection-api | PASS: default API, local forwarding/concurrency/cancellation; 284 Engine + 283 Contracts |
 | EP-0015-US-0005-session-contracts | AC-05 | EP-0015-US-0005-TK-0005-client-session-handle | PASS: forwarding, InterfaceLog, typed failures and both locales; 33 Client cases |
 | EP-0015-US-0005-session-contracts | AC-06 | EP-0015-US-0005-TK-0006-session-tests | PASS: 90 independent rows x 2 connection modes; all378 Engine cases |
-| EP-0015-US-0006-client-input-and-controls | AC-01 | EP-0015-US-0006-TK-0001-keyboard | Keyboard boundary PASS: 68 Client cases; physical input and future drag consumers pending |
+| EP-0015-US-0006-client-input-and-controls | AC-01 | EP-0015-US-0006-TK-0001-keyboard | Keyboard boundary PASS: 68 Client cases; actual consumers verified in US-0008; physical input pending |
 | EP-0015-US-0006-client-input-and-controls | AC-02 | EP-0015-US-0006-TK-0002-input-settings | PASS: strict schema/conflicts/fallback/native tracker wiring; 103 Client cases |
-| EP-0015-US-0006-client-input-and-controls | AC-03 | EP-0015-US-0006-TK-0003-mouse | Mouse boundary PASS: 121 Client cases; actual battle drag/pan and physical acceptance pending |
-| EP-0015-US-0006-client-input-and-controls | AC-04 | EP-0015-US-0006-TK-0004-widgets-basic, EP-0015-US-0006-TK-0005-widgets-lists | Basic controls PASS (79 cases + 4 raster scales); lists/filter/tooltip button PASS (108 cases + 4 raster scales); screen geometry pending US-0008 |
+| EP-0015-US-0006-client-input-and-controls | AC-03 | EP-0015-US-0006-TK-0003-mouse | Mouse boundary PASS: 121 Client cases; actual battle drag/pan PASS in US-0008; physical acceptance pending |
+| EP-0015-US-0006-client-input-and-controls | AC-04 | EP-0015-US-0006-TK-0004-widgets-basic, EP-0015-US-0006-TK-0005-widgets-lists | Basic controls PASS (79 cases + 4 raster scales); lists/filter/tooltip button PASS (108 cases + 4 raster scales); full-height panel and movement controls integrated in US-0008; physical acceptance pending |
 | EP-0015-US-0006-client-input-and-controls | AC-05 | EP-0015-US-0006-TK-0006-text-and-numbers, EP-0015-US-0006-TK-0007-linux-native-runtime | PASS: Windows113 Client + Linux97 Tactical Client, real glyph IDs/raster and invariant ToEven |
 | EP-0015-US-0007-launch-and-setup | AC-01 | EP-0015-US-0007-TK-0001-modal-navigation | PASS: real headless modal pause/start/new/exit/opacity/camera; rich views and physical acceptance pending |
 | EP-0015-US-0007-launch-and-setup | AC-02 | EP-0015-US-0007-TK-0002-battle-key-and-hint | PASS: F8/remap/click/hint + unavailable reason/no Start/log; final106 focused |
@@ -41,7 +41,7 @@
 | EP-0015-US-0008-battle-map | AC-02 | EP-0015-US-0008-TK-0002-panel-header | PASS: phase/loss/seed, outcome and actual refusal; pre/post-salvo snapshots |
 | EP-0015-US-0008-battle-map | AC-03 | EP-0015-US-0008-TK-0003-battle-map-render | PASS: snapshot renderer, colors/states/ruler/grid and real toggles; actual selection ring and AI-all tooltip wired in TK-0004 |
 | EP-0015-US-0008-battle-map | AC-04 | EP-0015-US-0008-TK-0004-movement-orders | PASS: AI proposals, stable 13×61 aim, actual sliders/keys/drag, edited rows only and actual Engine paths |
-| EP-0015-US-0008-battle-map | AC-05 | EP-0015-US-0008-TK-0005-movement-animation | not started |
+| EP-0015-US-0008-battle-map | AC-05 | EP-0015-US-0008-TK-0005-movement-animation | PASS: real delayed response, immutable path interpolation, 899/900 ms gate, queued dispatch guard and terminal UI branch |
 | EP-0015-US-0009-fire-and-results | AC-01 | EP-0015-US-0009-TK-0001-fire-planning | not started |
 | EP-0015-US-0009-fire-and-results | AC-02 | EP-0015-US-0009-TK-0002-results-phase | not started |
 | EP-0015-US-0009-fire-and-results | AC-03 | EP-0015-US-0009-TK-0003-sides-and-log-tabs, EP-0015-US-0009-TK-0004-forecast-tab | not started |

@@ -53,6 +53,7 @@
   "TacticalBattle.BattleTitle": "Tactical battle",
   "TacticalBattle.Start": "Start battle",
   "TacticalBattle.Move": "Execute movement",
+  "TacticalBattle.AnimatingMovement": "Movement in progress…",
   "TacticalBattle.Fire": "Fire salvo",
   "TacticalBattle.NewBattle": "New battle",
   "TacticalBattle.ToMap": "Back to map",

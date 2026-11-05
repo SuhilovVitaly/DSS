@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0008-battle-map
 ticket: EP-0015-US-0008-TK-0005-movement-animation
 title: movement-animation
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0008-TK-0004-movement-orders"]
-files_touched: 2
+files_touched: 5
 serves: [AC-05]
 created: 2026-11-05
 revision: 3
@@ -28,6 +28,9 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | из TK-0001 | Блокировка ввода, индикатор ожидания, анимация 900 мс, переходы фаз |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/MovementAnimationTests.cs` | new | Кадры анимации на фиксированном времени; ввод заблокирован; конец боя в движении |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMovementAnimation.cs` | new | Immutable frame interpolation over admitted Engine paths |
+| `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` | serializes phase events | Revalidate at dispatch to stop a queued Enter during playback |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/BattleNavigationTests.cs` | headless fixture | Inject manual monotonic clock and a controlled pending connection response |
 
 ## Public API after the change
 —
@@ -50,3 +53,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Animate only after an accepted Move with paths for that turn. Keep the admitted next frame in Flow, but publish a display snapshot interpolated from the pre-move units until 900 monotonic milliseconds have elapsed. Pending and playback both gate command dispatch; an event already queued behind the request is checked again when the window lock is acquired. Test the 0/450/899/900 ms boundaries and no-request behavior with the real window/connection and a controlled response delay. Salvo presentation remains US-0009.
+
+## Execution evidence — 2026-11-06
+
+AC-05: only an accepted Move starts the 900 ms monotonic timeline. UI reads the immutable pre-move snapshot and admitted paths until playback ends; the accepted engine state remains available to Flow. Enter, mouse orders and already queued Move/Fire are blocked until arrival. A real held response verifies pending, exact first frame, interpolation, 899/900 ms gate and absence of duplicate commands. A terminal response injected over real movement paths verifies the rare direct outcome presentation; this is Client branch coverage, not a claimed new engine scenario. US-0009 owns shot playback.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-movement-animation-01/: format/build/diff/self-review PASS; Client168, Engine378, Motion source guard19 PASS. Native/physical/human acceptance remains open.

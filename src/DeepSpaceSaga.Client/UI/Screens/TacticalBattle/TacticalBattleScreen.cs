@@ -24,6 +24,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private readonly TacticalBattleMovePanel _movePanel;
     private bool _orderDrag, _orderDragEdited;
     private SKPoint _lastAim;
+    private sealed record TurnPresentation(TacticalBattleSnapshot Accepted, TacticalBattleMovementAnimation? Animation);
+    private TurnPresentation? _presentation;
+    private TacticalBattleSnapshot? _observedOrders;
+    internal Func<long> ClockMilliseconds { get; set; } = () => Environment.TickCount64;
     private SKRect _panel;
     internal SKRect NewBattleBounds => _newBattle.Bounds;
     internal (SKRect Forecast, SKRect Sectors) OverlayControls => (_enemyForecast.Bounds, _enemySectors.Bounds);
@@ -31,30 +35,50 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal TacticalMovementFrame Movement => _orders.Capture();
     internal TacticalBattleMovePanel MovePanel => _movePanel;
 
-    public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : base(flow, isSetup: false, uiScale) =>
-        _movePanel = new(_orders);
-
-    private TacticalBattleFrame Capture(TacticalBattleSnapshot state, int width, int height)
+    public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : base(flow, isSetup: false, uiScale)
     {
+        _movePanel = new(_orders);
+        if (flow.State is { } state) _presentation = new(state, null);
+    }
+
+    internal bool TurnBusy
+    {
+        get
+        {
+            var presentation = Volatile.Read(ref _presentation);
+            return Flow.Pending || presentation?.Accepted.Revision != Flow.State?.Revision ||
+                presentation?.Animation?.IsActive(ClockMilliseconds()) == true;
+        }
+    }
+
+    internal bool CanSubmitTurn(ScreenEvent evt) => !TurnBusy && !ConfirmExit &&
+        Flow.State?.Phase == (evt == ScreenEvent.MoveTacticalBattle ? TacticalBattlePhase.Move : TacticalBattlePhase.Fire);
+
+    internal TacticalBattleFrame? CaptureFrame(int width, int height)
+    {
+        if (Volatile.Read(ref _presentation) is not { } presentation || width < 2 || height < 1) return null;
+        long now = ClockMilliseconds();
+        bool moving = presentation.Animation?.IsActive(now) == true;
+        var state = moving ? presentation.Animation!.Interpolate(now) : presentation.Accepted;
         int panelWidth = (int)PyMath.Min(400 * UiScale, width * 0.60);
         int mapWidth = (int)PyMath.Max(1, width - panelWidth);
         _panel = new(mapWidth, 0, width, height);
         _camera.Update(state, mapWidth, height);
-        _orders.Observe(state);
-        return new(state, _camera.View, _panel, UiScale, Flow.Pending,
-            BlockedNotice is { Length: > 0 } notice ? notice : Flow.Error,
-            EnemyForecast: _enemyForecast.Value, EnemySectors: _enemySectors.Value, SelectedDroneId: _orders.Selected,
-            Movement: state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null);
+        if (!moving) ObserveOrders(state);
+        return new(state, _camera.View, _panel, UiScale, moving || Flow.Pending || presentation.Accepted.Revision != Flow.State?.Revision,
+            BlockedNotice is { Length: > 0 } notice ? notice : moving ? L("AnimatingMovement") : Flow.Error,
+            EnemyForecast: !moving && _enemyForecast.Value, EnemySectors: !moving && _enemySectors.Value,
+            SelectedDroneId: moving ? null : _orders.Selected,
+            Movement: !moving && state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null);
     }
 
     public override void Render(SKCanvas canvas, int width, int height)
     {
-        if (Flow.State is not { } state || width < 2 || height < 1)
+        if (CaptureFrame(width, height) is not { } frame)
         {
             base.Render(canvas, width, height);
             return;
         }
-        var frame = Capture(state, width, height);
         canvas.Clear(new SKColor(2, 12, 22));
         canvas.Save();
         canvas.ClipRect(SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight));
@@ -120,6 +144,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
+        if (TurnBusy) return ScreenEvent.None;
         if (!ConfirmExit && !repeat && modifiers == KeyModifiers.None && key is Key.Number0 or Key.Keypad0)
         {
             Fit();
@@ -127,7 +152,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         }
         if (!ConfirmExit && !Flow.Pending && Flow.State is { Phase: TacticalBattlePhase.Move } state)
         {
-            _orders.Observe(state);
+            ObserveOrders(state);
             if (key == Key.Tab && !repeat && (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == 0)
             {
                 CancelOrderGesture();
@@ -152,13 +177,22 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override MoveTacticalBattleRequest BuildMoveRequest()
     {
         if (Flow.State is not { } state) return base.BuildMoveRequest();
-        _orders.Observe(state);
+        ObserveOrders(state);
         return new(TacticalBattleFlow.NewIdentity("move"), state.BattleId, state.Revision, _orders.EditedOrders());
     }
 
     public override void OnBattleUpdated(TacticalBattleSnapshot? before, TacticalBattleResponse response)
     {
         if (Flow.State is not { } state) return;
+        var animation = TacticalBattleMovementAnimation.Create(before, response, ClockMilliseconds());
+        Volatile.Write(ref _presentation, new(state, animation));
+    }
+
+    private void ObserveOrders(TacticalBattleSnapshot state)
+    {
+        if (ReferenceEquals(_observedOrders, state)) return;
+        var before = _observedOrders;
+        _observedOrders = state;
         _orders.Observe(state);
         if (state.Turn != before?.Turn || state.Phase != before?.Phase)
         {
@@ -170,7 +204,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
-        if (Flow.Pending) return ScreenEvent.None;
+        if (TurnBusy) return ScreenEvent.None;
         if (button == MouseButton.Right)
         {
             if (!_orderDrag) _camera.BeginPan(x, y);
@@ -181,7 +215,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             if (button == MouseButton.Left && !_camera.Panning && _camera.Contains(x, y) &&
                 Flow.State is { Phase: TacticalBattlePhase.Move } state)
             {
-                _orders.Observe(state);
+                ObserveOrders(state);
                 var p = new SKPoint(x, y);
                 if (_orders.Hit(View, p, 12 * UiScale, endpoint: true) is { } handle)
                 {
@@ -211,6 +245,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override bool OnMouseMove(float x, float y)
     {
         if (ConfirmExit) return base.OnMouseMove(x, y);
+        if (TurnBusy) return false;
         if (_camera.PanTo(x, y)) return true;
         if (_orderDrag)
         {
@@ -225,7 +260,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (button == MouseButton.Right) _camera.EndPan();
         _movePanel.OnMouseUp(button);
         if (button != MouseButton.Left || !_orderDrag) return;
-        if (!ConfirmExit && !Flow.Pending && Flow.State?.Phase == TacticalBattlePhase.Move)
+        if (!ConfirmExit && !TurnBusy && Flow.State?.Phase == TacticalBattlePhase.Move)
         {
             var p = new SKPoint(x, y);
             if (p != _lastAim) AimOrder(p);
@@ -235,7 +270,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     }
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
-        if (!ConfirmExit && !Flow.Pending && !_orderDrag &&
+        if (!ConfirmExit && !TurnBusy && !_orderDrag &&
             !(Flow.State?.Phase == TacticalBattlePhase.Move && _movePanel.OnMouseWheel(x, y, delta))) _camera.Zoom(x, y, delta);
         return ScreenEvent.None;
     }
