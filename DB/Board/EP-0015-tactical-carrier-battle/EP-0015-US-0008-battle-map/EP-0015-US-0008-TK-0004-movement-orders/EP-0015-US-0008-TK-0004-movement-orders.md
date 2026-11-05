@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0008-battle-map
 ticket: EP-0015-US-0008-TK-0004-movement-orders
 title: movement-orders
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0008-TK-0003-battle-map-render"]
-files_touched: 3
+files_touched: 5
 serves: [AC-04]
 created: 2026-11-05
 revision: 3
@@ -29,6 +29,8 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleOrders.cs` | new | Приказы, тронутые, aimAt, достижимость, автовыбор |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMovePanel.cs` | new | Блок управления движением |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/MovementOrdersTests.cs` | new | Начальное предложение, только тронутые в запросе, aimAt, клавиши, ползунки, приоритет мыши, автовыбор |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | actual input routing | Dispatch view controls and only touched orders |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMapRenderer.cs` | immutable renderer | Draw captured order geometry, end handles and selected sector |
 
 ## Public API after the change
 —
@@ -50,3 +52,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Five Client code files; Motion limits, integration and path functions remain the shared authority. The UI samples 13 speeds and 61 turns for cursor aim, caches that geometry per unit and phase, and uses stable first match within 1e-6. Form changes are local, draft input is shown as immutable render data, and the actual Engine command includes edited rows only. Selecting a drone does not touch it; ending an order gesture can advance to the closest untouched drone. AI-all clears touched state. Panel card/slider input remains accessible with scrolling at larger UI scale.
+
+## Execution evidence — 2026-11-06
+
+AC-04: exact AI suggestions populate the movement panel and preview paths without touching orders. Real keyboard, sliders, body/card selection, handle drag and AI-all exercise the actual battle screen. Release advances to nearest untouched; body/card selection does not. Aim mesh tests include an exact interior candidate and an equal-endpoint first tie. Real Engine paths match the edited preview for the changed row and the original proposals for all other rows; next phase clears the draft.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-movement-orders-01/: format/build/diff/self-review PASS; Client166, Engine378, Motion guard19 PASS. Visual inspection identified missing arrow glyphs. Final D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-movement-orders-02/: named key hints and wrapped limits; Client166, build/format/diff PASS; final raster inspected.

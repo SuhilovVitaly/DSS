@@ -53,12 +53,54 @@ internal static class TacticalBattleMapRenderer
                     DrawArc(canvas, view, unit.Pose, build.Range, build.ArcDegrees, unit.Pose.Course, paint, filled: true);
                 }
             }
+            if (frame.Movement is { } movement) DrawMovement(canvas, frame, movement, paint);
         }
 
         DrawLabels(canvas, frame, units);
         foreach (var unit in units)
             DrawUnit(canvas, view.Project(unit.Pose), unit, unit.Side == battle.PlayerSide, unit.Id == frame.SelectedDroneId, scale, paint);
         DrawRuler(canvas, view, scale, paint);
+    }
+
+    private static void DrawMovement(SKCanvas canvas, TacticalBattleFrame frame, TacticalMovementFrame movement, SKPaint paint)
+    {
+        var view = frame.View;
+        if (!movement.Reachable.IsDefaultOrEmpty)
+        {
+            using var area = new SKPath();
+            area.MoveTo(view.Project(movement.Reachable[0]));
+            for (int i = 1; i < movement.Reachable.Length; i++) area.LineTo(view.Project(movement.Reachable[i]));
+            area.Close();
+            paint.Color = new SKColor(73, 160, 250, 45);
+            canvas.DrawPath(area, paint);
+            paint.Color = new SKColor(73, 160, 250, 125);
+            paint.Style = SKPaintStyle.Stroke;
+            canvas.DrawPath(area, paint);
+            paint.Style = SKPaintStyle.Fill;
+        }
+        if (movement.SelectedOrder is { Unit.Jammed: false, Unit.Build: { } weapon } selected && !selected.Path.IsDefaultOrEmpty)
+        {
+            var end = selected.Path[^1];
+            paint.Color = Own.WithAlpha(35);
+            DrawArc(canvas, view, end, weapon.Range, weapon.ArcDegrees, end.Course, paint, filled: true);
+        }
+        foreach (var row in movement.Orders)
+        {
+            if (row.Path.IsDefaultOrEmpty) continue;
+            bool selectedRow = row.Unit.Id == movement.Selected;
+            paint.Color = selectedRow ? new SKColor(154, 235, 246) : new SKColor(126, 187, 196, 170);
+            paint.StrokeWidth = (selectedRow ? 1.6f : 1) * frame.UiScale;
+            paint.Style = SKPaintStyle.Stroke;
+            using var path = new SKPath();
+            path.MoveTo(view.Project(row.Path[0]));
+            for (int i = 1; i < row.Path.Length; i++) path.LineTo(view.Project(row.Path[i]));
+            canvas.DrawPath(path, paint);
+            var end = row.Path[^1];
+            var p = view.Project(end);
+            canvas.DrawCircle(p, 7 * frame.UiScale, paint);
+            paint.Style = SKPaintStyle.Fill;
+            DrawDrone(canvas, p, end.Course, row.Unit.FrameId, frame.UiScale, paint);
+        }
     }
 
     private static void DrawGrid(SKCanvas canvas, TacticalBattleView view, SKPaint paint)

@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 /// <summary>All information used to draw a battle frame is captured before painting it.</summary>
 public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, TacticalBattleView View, SKRect Panel,
     float UiScale, bool Pending, string Status, TacticalBattlePresentation Presentation = TacticalBattlePresentation.Current,
-    bool EnemyForecast = true, bool EnemySectors = false, string? SelectedDroneId = null);
+    bool EnemyForecast = true, bool EnemySectors = false, string? SelectedDroneId = null, TacticalMovementFrame? Movement = null);
 
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
@@ -20,12 +20,19 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private readonly ShortcutButton _newBattle = new("");
     private readonly Toggle _enemyForecast = new("", true);
     private readonly Toggle _enemySectors = new("");
+    private readonly TacticalBattleOrders _orders = new();
+    private readonly TacticalBattleMovePanel _movePanel;
+    private bool _orderDrag, _orderDragEdited;
+    private SKPoint _lastAim;
     private SKRect _panel;
     internal SKRect NewBattleBounds => _newBattle.Bounds;
     internal (SKRect Forecast, SKRect Sectors) OverlayControls => (_enemyForecast.Bounds, _enemySectors.Bounds);
     internal TacticalBattleView View => _camera.View;
+    internal TacticalMovementFrame Movement => _orders.Capture();
+    internal TacticalBattleMovePanel MovePanel => _movePanel;
 
-    public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : base(flow, isSetup: false, uiScale) { }
+    public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : base(flow, isSetup: false, uiScale) =>
+        _movePanel = new(_orders);
 
     private TacticalBattleFrame Capture(TacticalBattleSnapshot state, int width, int height)
     {
@@ -33,9 +40,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         int mapWidth = (int)PyMath.Max(1, width - panelWidth);
         _panel = new(mapWidth, 0, width, height);
         _camera.Update(state, mapWidth, height);
+        _orders.Observe(state);
         return new(state, _camera.View, _panel, UiScale, Flow.Pending,
             BlockedNotice is { Length: > 0 } notice ? notice : Flow.Error,
-            EnemyForecast: _enemyForecast.Value, EnemySectors: _enemySectors.Value);
+            EnemyForecast: _enemyForecast.Value, EnemySectors: _enemySectors.Value, SelectedDroneId: _orders.Selected,
+            Movement: state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null);
     }
 
     public override void Render(SKCanvas canvas, int width, int height)
@@ -57,7 +66,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         DrawPanel(canvas, frame);
         canvas.Restore();
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
-        else _fit.DrawTooltip(canvas, SKRect.Create(width, height), frame.UiScale);
+        else
+        {
+            var viewport = SKRect.Create(width, height);
+            _fit.DrawTooltip(canvas, viewport, frame.UiScale);
+            if (frame.Movement is not null) _movePanel.DrawTooltip(canvas, viewport);
+        }
     }
 
     private void DrawPanel(SKCanvas canvas, TacticalBattleFrame frame)
@@ -93,6 +107,9 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _fit.Draw(canvas, s); _exitBattle.Draw(canvas, s);
         if (header.ShowNew) _newBattle.Draw(canvas, s);
         else _phaseAction.Draw(canvas, s);
+        if (frame.Movement is { } movement)
+            _movePanel.Draw(canvas, movement, new(content.Left, _phaseAction.Bounds.Bottom + 8 * s, content.Right, panel.Bottom - 8 * s),
+                s, !frame.Pending);
     }
 
     private void Fit()
@@ -102,26 +119,92 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
+        if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
         if (!ConfirmExit && !repeat && modifiers == KeyModifiers.None && key is Key.Number0 or Key.Keypad0)
         {
             Fit();
             return ScreenEvent.None;
         }
+        if (!ConfirmExit && !Flow.Pending && Flow.State is { Phase: TacticalBattlePhase.Move } state)
+        {
+            _orders.Observe(state);
+            if (key == Key.Tab && !repeat && (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == 0)
+            {
+                CancelOrderGesture();
+                _orders.Cycle(modifiers.HasFlag(KeyModifiers.Shift));
+                return ScreenEvent.None;
+            }
+            if (modifiers == KeyModifiers.None)
+            {
+                switch (key)
+                {
+                    case Key.Left: _orders.Adjust(0, -5); return ScreenEvent.None;
+                    case Key.Right: _orders.Adjust(0, 5); return ScreenEvent.None;
+                    case Key.Up: _orders.Adjust(2, 0); return ScreenEvent.None;
+                    case Key.Down: _orders.Adjust(-2, 0); return ScreenEvent.None;
+                }
+            }
+        }
+        if (key is Key.Escape or Key.Enter or Key.KeypadEnter) CancelOrderGesture();
         return base.OnKeyDown(key, modifiers, repeat);
+    }
+
+    public override MoveTacticalBattleRequest BuildMoveRequest()
+    {
+        if (Flow.State is not { } state) return base.BuildMoveRequest();
+        _orders.Observe(state);
+        return new(TacticalBattleFlow.NewIdentity("move"), state.BattleId, state.Revision, _orders.EditedOrders());
+    }
+
+    public override void OnBattleUpdated(TacticalBattleSnapshot? before, TacticalBattleResponse response)
+    {
+        if (Flow.State is not { } state) return;
+        _orders.Observe(state);
+        if (state.Turn != before?.Turn || state.Phase != before?.Phase)
+        {
+            CancelOrderGesture();
+            _movePanel.ResetScroll();
+        }
     }
 
     public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
         if (Flow.Pending) return ScreenEvent.None;
-        if (button == MouseButton.Right) { _camera.BeginPan(x, y); return ScreenEvent.None; }
-        if (!_panel.Contains(x, y)) return ScreenEvent.None;
+        if (button == MouseButton.Right)
+        {
+            if (!_orderDrag) _camera.BeginPan(x, y);
+            return ScreenEvent.None;
+        }
+        if (!_panel.Contains(x, y))
+        {
+            if (button == MouseButton.Left && !_camera.Panning && _camera.Contains(x, y) &&
+                Flow.State is { Phase: TacticalBattlePhase.Move } state)
+            {
+                _orders.Observe(state);
+                var p = new SKPoint(x, y);
+                if (_orders.Hit(View, p, 12 * UiScale, endpoint: true) is { } handle)
+                {
+                    _orders.Select(handle);
+                    _orderDrag = true; _orderDragEdited = false; _lastAim = p;
+                }
+                else if (_orders.Hit(View, p, 12 * UiScale, endpoint: false) is { } drone) _orders.Select(drone);
+                else
+                {
+                    _orderDrag = _orders.Selected is not null;
+                    _orderDragEdited = false;
+                    if (_orderDrag) AimOrder(p);
+                }
+            }
+            return ScreenEvent.None;
+        }
         if (_fit.OnMouseDown(x, y, button)) Fit();
         else if (_exitBattle.OnMouseDown(x, y, button)) ConfirmExit = true;
         else if (_enemyForecast.OnMouseDown(x, y, button)) _enemySectors.HasFocus = false;
         else if (_enemySectors.OnMouseDown(x, y, button)) _enemyForecast.HasFocus = false;
         else if (_newBattle.OnMouseDown(x, y, button)) return ScreenEvent.NewTacticalBattle;
         else if (_phaseAction.OnMouseDown(x, y, button)) return ActionEvent;
+        else if (Flow.State?.Phase == TacticalBattlePhase.Move) _movePanel.OnMouseDown(x, y, button);
         return ScreenEvent.None;
     }
 
@@ -129,22 +212,52 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         if (ConfirmExit) return base.OnMouseMove(x, y);
         if (_camera.PanTo(x, y)) return true;
-        return _fit.OnMouseMove(x, y) | _exitBattle.OnMouseMove(x, y) | _newBattle.OnMouseMove(x, y) | _phaseAction.OnMouseMove(x, y);
+        if (_orderDrag)
+        {
+            if (!Flow.Pending && new SKPoint(x, y) != _lastAim) AimOrder(new(x, y));
+            return true;
+        }
+        bool moveHover = !Flow.Pending && Flow.State?.Phase == TacticalBattlePhase.Move && _movePanel.OnMouseMove(x, y);
+        return moveHover | _fit.OnMouseMove(x, y) | _exitBattle.OnMouseMove(x, y) | _newBattle.OnMouseMove(x, y) | _phaseAction.OnMouseMove(x, y);
     }
     public override void OnMouseUp(float x, float y, MouseButton button)
     {
         if (button == MouseButton.Right) _camera.EndPan();
+        _movePanel.OnMouseUp(button);
+        if (button != MouseButton.Left || !_orderDrag) return;
+        if (!ConfirmExit && !Flow.Pending && Flow.State?.Phase == TacticalBattlePhase.Move)
+        {
+            var p = new SKPoint(x, y);
+            if (p != _lastAim) AimOrder(p);
+            if (_orderDragEdited) _orders.AdvanceToNearestUntouched();
+        }
+        _orderDrag = _orderDragEdited = false;
     }
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
-        if (!ConfirmExit && !Flow.Pending) _camera.Zoom(x, y, delta);
+        if (!ConfirmExit && !Flow.Pending && !_orderDrag &&
+            !(Flow.State?.Phase == TacticalBattlePhase.Move && _movePanel.OnMouseWheel(x, y, delta))) _camera.Zoom(x, y, delta);
         return ScreenEvent.None;
     }
     public override void OnInputReset()
     {
         base.OnInputReset();
         _camera.EndPan();
+        CancelOrderGesture();
         _fit.ResetInput(); _exitBattle.ResetInput(); _newBattle.ResetInput(); _phaseAction.ResetInput();
         _enemyForecast.HasFocus = _enemySectors.HasFocus = false;
+    }
+
+    private void AimOrder(SKPoint p)
+    {
+        var (x, y) = View.Unproject(p.X, p.Y);
+        _orderDragEdited |= _orders.AimAt(x, y);
+        _lastAim = p;
+    }
+
+    private void CancelOrderGesture()
+    {
+        _orderDrag = _orderDragEdited = false;
+        _movePanel.ResetInput();
     }
 }
