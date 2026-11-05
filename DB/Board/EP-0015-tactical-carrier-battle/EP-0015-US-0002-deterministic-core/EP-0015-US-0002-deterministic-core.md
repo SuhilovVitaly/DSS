@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0002-deterministic-core
 title: "Детерминированное ядро и общая математика боя"
-stage: draft
+stage: in-progress
 dependencies: []
 ---
 

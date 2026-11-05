@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 4/78 тикетов. Новый бой ещё не подключён, остальные 74 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 5/78 тикетов. Новый бой ещё не подключён, остальные 73 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -23,6 +23,8 @@
 
 | EP-0015-US-0001-TK-0003-content-loader | 981a5f0921e6c37291400f4491f0e9984996aa9f | PASS: remote SHA verified | origin | 69 targeted PASS; Engine 2397, Client 2324, Economy 2 regression PASS; build/format/diff PASS |
 
-| EP-0015-US-0001-TK-0004-content-sync | SHA проверяется Git после создания коммита | pending | origin | 71 Engine + 2 Client targeted PASS; content export/check/build/format/diff PASS |
+| EP-0015-US-0001-TK-0004-content-sync | a0fb809b25dbec7461a17573cc8ece1e0b1881cf | PASS: remote SHA verified | origin | 71 Engine + 2 Client targeted PASS; content export/check/build/format/diff PASS |
 
 Порядок продолжения: US-0002 по зависимостям Tickets.md. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+
+| EP-0015-US-0002-TK-0001-py-math | SHA проверяется Git после создания коммита | pending | origin | 280/280 Motion; build/format/diff PASS |
