@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0003-battle-rules
 ticket: EP-0015-US-0003-TK-0002-movement
 title: movement
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0003-TK-0001-battle-assembly"]
 files_touched: 2
@@ -50,3 +50,14 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Precision assumption before validation — 2026-11-05
+
+Independent trace orders and positions are rounded to six decimals (D-USER-15). Movement-slice tests reset to each source endpoint, avoiding cumulative uncertainty; input half-micro-unit speed/course/turn errors propagate to at most 3 micro-units XY and 1.5 micro-degrees at source speeds. This slice check is separate from the later full unrounded Engine trace/golden-battle integration. Move computes all active paths before mutating state, clamps orders through current Motion limits and consumes no RNG.
+## Execution evidence — 2026-11-05
+
+Move returns immutable start/substep paths, applies current Motion speed/turn limits, normalizes course only at the final substep and records speed/absolute turn. All paths validate before any state update. Disabled/destroyed drones and carriers stay stationary; no RNG consumed.
+
+`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-movement-01/`: solution build 0 warnings/errors; Engine TacticalBattle 104/104 (3 new), full Motion 1376/1376 including source guard; scoped format/diff PASS. All 19 independent trace slices match the documented rounding propagation budget; this is distinct from the later full Engine trace comparison. Atomic invalid-late-order refusal and stationary units tested. Self-review completed; independent review NOT RUN. Publication uses user GitHub override, own SHA checked after commit.
+
+Spec review for next salvo ticket identified a pre-existing export schema defect: battles.md column «в корму» is rearHits (Combat §7.1), while TK-0002 named it rearKills. Fix the schema through a follow-up reference repair before golden battle comparison, preserving all original numeric values and Markdown.

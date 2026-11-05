@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-05
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 11/78 тикетов. Новый бой ещё не подключён, остальные 67 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 12/78 тикетов. Новый бой ещё не подключён, остальные 66 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -23,7 +23,7 @@
 | EP-0015-US-0002-TK-0001-py-math | 1926f73afffd6382c6e12d1286969da18555497a | PASS: remote SHA verified | origin | 280/280 Motion; build/format/diff PASS |
 | EP-0015-US-0002-TK-0002-reference-fixtures | 8148aec3a43bf1df7c8fb8a3457af351623cbea8 | PASS: remote SHA verified | origin | Linux 42087024500 PASS; Windows 87 Engine; 90 battles/19 turns/1088 vectors; build/format/diff PASS |
 
-Продолжение: US-0003 TK-0002. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
+Продолжение: reference rearHits schema repair → US-0003 TK-0003. US-0001 backend завершён; Client error presentation из AC-03 остаётся в US-0007.
 
 | EP-0015-US-0002-TK-0003-mulberry32 | 53144cdbace23309b2f18889af102caf8fd6b680 | PASS: remote SHA verified | origin | 96 Engine + 280 Motion PASS; build/format/diff PASS |
 
@@ -33,4 +33,6 @@
 
 | EP-0015-US-0002-TK-0006-platform-determinism | 61c3c4410f0931d7f71fcfe6254ab99e80114ba7 | PASS: remote SHA verified | origin | Windows/Linux 1376 Motion; 1088 exact vectors; evidence/link/diff PASS |
 
-| EP-0015-US-0003-TK-0001-battle-assembly | SHA проверяется Git после создания коммита | pending | origin | 101 Engine + 1376 Motion PASS; independent assembly trace; build/format/diff PASS |
+| EP-0015-US-0003-TK-0001-battle-assembly | cdd2f3d6ba4ff648961fa1e4dcebf71f2abc4b09 | PASS: remote SHA verified | origin | 101 Engine + 1376 Motion PASS; independent assembly trace; build/format/diff PASS |
+
+| EP-0015-US-0003-TK-0002-movement | SHA проверяется Git после создания коммита | pending | origin | 104 Engine + 1376 Motion PASS; all 19 slices; build/format/diff PASS |
