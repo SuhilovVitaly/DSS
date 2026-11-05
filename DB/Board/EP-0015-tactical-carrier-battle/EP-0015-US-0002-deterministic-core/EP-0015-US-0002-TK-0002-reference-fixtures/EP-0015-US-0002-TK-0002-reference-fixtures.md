@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0002-deterministic-core
 ticket: EP-0015-US-0002-TK-0002-reference-fixtures
 title: reference-fixtures
-stage: draft
+stage: done
 layer: tooling
 depends_on: ["EP-0015-US-0002-TK-0001-py-math"]
 files_touched: 7
@@ -60,3 +60,10 @@ Python-тесты инструмента на Linux/glibc. Сборка, scoped 
 D-USER-14/15 replaces the missing simulator export/check with a source-only Markdown converter. Code context now: `tools/tactical-battle/export_references.py` (new, standard-library Python converter, no battle simulation); `.github/workflows/tactical-battle.yml` (new Ubuntu Linux/glibc validation/export route); `tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/ReferenceFixtureTests.cs` (new schema/coverage, source fingerprint and IEEE parser tests); `VData/Planning/V4.0/Reference/{battles,trace-seed-1,geometry,series}.json` (generated outputs); `VData/Planning/V4.0/README.md` (format/provenance/coverage). Four code/context positions plus source README, replacing the old seven positions. Game content and existing reference Markdown stay unchanged.
 
 The converter refuses writes off Linux/glibc. Geometry edge vectors are independent CPython/glibc evaluations with IEEE hex. Battle/trace/series expectations are parsed only from existing Markdown. Header records actual exporter Python/glibc/OS and source hashes; it does not claim those were the original simulator environment. Original unrounded trace bits, per-weapon/role statistics, stage calls for all 90 battles and actual trig arguments are absent; coverage lists them explicitly. Series rounded averages remain decimals, not invented integer sums. Linux bootstrap infrastructure may be published as a service commit to execute this validation before the ticket is marked done; the ticket commit then includes verified generated evidence and Windows parser tests.
+## Execution evidence — 2026-11-05
+
+Linux bootstrap service commits `a83a446b55323d231bd508299ab1104f896b3c4b` and `3ddc28dcb18fd2a0d4b4fb36f7783542f4f01285` published and remote SHA verified. First workflow was rejected before jobs due to runner context in job env; corrected to an absolute /tmp validation root. Run https://github.com/SuhilovVitaly/DSS/actions/runs/42086320971 succeeded: CPython 3.12.3, glibc 2.39, Ubuntu 24.04. Export/check 4 JSON PASS, content check 29 JSON PASS, solution build PASS, Motion 280/280, Engine TacticalBattle 71/71, Client content 2/2. Generated JSON was retrieved from that Linux job's exact chunked output, not computed on Windows.
+
+Windows evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-reference-01/`: solution build 0 warnings/errors, Engine TacticalBattle 87/87 (16 fixture tests added), scoped format/diff PASS. `linux-bootstrap.log` retains the Linux run log except the bulky JSON transfer lines; generated files themselves are tracked evidence. All 90 rows/counters, source fingerprints, 19 trace turns and 1088 geometry edge vectors checked. New parser tests run on Linux on the ticket's published SHA; that follow-up result is recorded in the ledger when observed.
+
+Self-review: no battle engine imported or invoked; no source Markdown changed; no expected missing fields synthesized. CI checks tracked fixtures before export once fixtures exist. --check compares data and stable source metadata, preserving original export environment provenance across kernel updates. Missing original evidence stays listed in each header. Independent review NOT RUN. Full battle and trig-platform parity remain dependent TK-0004/TK-0006/US-0004 gates, not claimed by fixture conversion.

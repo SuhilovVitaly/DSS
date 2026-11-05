@@ -43,3 +43,24 @@
 4. Выполнить тесты `ContentSyncTests` в Engine.Tests с абсолютным results-directory в workspace artifacts. Полные команды — в `tools/tactical-battle/README.md`.
 
 `Reference/*.md` — независимые эталоны прежней реализации. Их нельзя пересоздавать по новому Engine, чтобы получить зелёные проверки. Изменение баланса требует отдельно согласованных независимых эталонов. Trace публикует координаты с шестью десятичными знаками; отсутствующие биты double из него не восстанавливаются.
+
+## Машиночитаемые эталоны
+
+`tools/tactical-battle/export_references.py` преобразует существующие Markdown в
+`Reference/{battles,trace-seed-1,series}.json`. Это конвертер таблиц, без симуляции.
+Запись разрешена только на Linux/glibc; `--check` сравнивает семантический JSON.
+`geometry.json` содержит независимые крайние векторы CPython/glibc: norm, sin,
+cos, atan2, hypot. Не содержит отсутствующие в источнике аргументы всех боёв.
+Workflow `.github/workflows/tactical-battle.yml` выполняет экспорт и проверки.
+
+У каждого JSON есть `header` и `data`. Header содержит версию формата, фактическую
+среду конвертера, SHA256 исходных Markdown после нормализации CRLF в LF и список
+непокрытых исходных полей. Среда конвертера не выдаётся за исходную среду симулятора.
+Geometry хранит `arguments` и `expected` как 16 hex-символов восьми IEEE-754 bytes
+в little-endian порядке; C# читает их через ReadInt64LittleEndian и
+BitConverter.Int64BitsToDouble. Trace хранит опубликованные десятичные числа с
+точностью шесть знаков, сборку и 19 ходов с orders/positions/shots/states и calls.
+Battles хранит все 90 строк, включая опубликованные счётчики, потери, корпус и
+структурную причину. Series сохраняет опубликованные проценты и округлённые
+средние; точные целые суммы и timeout counts из этих чисел не восстанавливаются.
+ReferenceFixtureTests проверяет fingerprint, формат IEEE и покрытие источника.

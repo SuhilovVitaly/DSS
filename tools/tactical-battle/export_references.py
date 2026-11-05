@@ -174,7 +174,11 @@ def main():
         text = json.dumps(value, ensure_ascii=False, indent=2, allow_nan=False) + "\n"
         path = REFERENCE / file
         if args.check:
-            if json.loads(path.read_text(encoding="utf-8")) != value:
+            existing = json.loads(path.read_text(encoding="utf-8"))
+            # Runtime provenance belongs to the original export. A different Linux
+            # kernel or Python patch must not hide a changed numerical expectation.
+            stable = ("formatVersion", "source", "sourceSha256", "geometryEncoding", "tracePrecision", "missingCoverage")
+            if existing["data"] != value["data"] or any(existing["header"][key] != value["header"][key] for key in stable):
                 raise ValueError("Reference differs: " + file)
         else:
             path.write_text(text, encoding="utf-8", newline="\n")

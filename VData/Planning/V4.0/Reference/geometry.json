@@ -1,0 +1,8689 @@
+{
+  "header": {
+    "formatVersion": 1,
+    "source": "independent-markdown",
+    "exporterPython": "3.12.3",
+    "exporterLibc": "glibc 2.39",
+    "exporterOs": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "sourceSha256": {
+      "battles.md": "2607b606c1a8eb135cfa9d68d16e24f974c77b81b429f26b1372b1904f29a458",
+      "trace-seed-1.md": "1411c33a1972bf8a159aa05ce654f1cb5fa6c9845c19193f9164ba73688583ab",
+      "series.md": "a2101b441c9d50f33f6d95fde860dab1ecf706388cebf58179d92c46f257a7a7"
+    },
+    "geometryEncoding": "little-endian IEEE-754 binary64 hex",
+    "tracePrecision": "decimal-6",
+    "missingCoverage": [
+      "original simulator environment",
+      "unrounded trace IEEE bits",
+      "all battle trig arguments",
+      "per-weapon statistics",
+      "roleChanges",
+      "stage calls for battles other than seed 1",
+      "exact series integer sums and timeout counts"
+    ]
+  },
+  "data": [
+    {
+      "operation": "norm",
+      "arguments": [
+        "00003426f56b0cc3"
+      ],
+      "expected": "0000000000005440"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "970e049a52bfafc2"
+      ],
+      "expected": "4caa6563bf84ef3f"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "970e049a52bfafc2"
+      ],
+      "expected": "153ecfc5c11ec63f"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "00000000008086c0"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "182d4454fb2129c0"
+      ],
+      "expected": "075c143326a6c13c"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "182d4454fb2129c0"
+      ],
+      "expected": "000000000000f03f"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "00000000008076c0"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "182d4454fb2119c0"
+      ],
+      "expected": "075c143326a6b13c"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "182d4454fb2119c0"
+      ],
+      "expected": "000000000000f03f"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "01000000008066c0"
+      ],
+      "expected": "0000000000806640"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "192d4454fb2109c0"
+      ],
+      "expected": "fdd175e6ec2cb73c"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "192d4454fb2109c0"
+      ],
+      "expected": "000000000000f0bf"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "00000000008066c0"
+      ],
+      "expected": "00000000008066c0"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "182d4454fb2109c0"
+      ],
+      "expected": "075c143326a6a1bc"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "182d4454fb2109c0"
+      ],
+      "expected": "000000000000f0bf"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "ffffffffff7f66c0"
+      ],
+      "expected": "ffffffffff7f66c0"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "172d4454fb2109c0"
+      ],
+      "expected": "0217c58c8969c4bc"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "172d4454fb2109c0"
+      ],
+      "expected": "000000000000f0bf"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "0000000000000080"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "0000000000000080"
+      ],
+      "expected": "0000000000000080"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "0000000000000080"
+      ],
+      "expected": "000000000000f03f"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "0000000000000000"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "0000000000000000"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "0000000000000000"
+      ],
+      "expected": "000000000000f03f"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "ffffffffff7f6640"
+      ],
+      "expected": "00000000008066c0"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "172d4454fb210940"
+      ],
+      "expected": "0217c58c8969c43c"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "172d4454fb210940"
+      ],
+      "expected": "000000000000f0bf"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "0000000000806640"
+      ],
+      "expected": "00000000008066c0"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "182d4454fb210940"
+      ],
+      "expected": "075c143326a6a13c"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "182d4454fb210940"
+      ],
+      "expected": "000000000000f0bf"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "0100000000806640"
+      ],
+      "expected": "00000000008066c0"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "192d4454fb210940"
+      ],
+      "expected": "fdd175e6ec2cb7bc"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "192d4454fb210940"
+      ],
+      "expected": "000000000000f0bf"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "0000000000807640"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "182d4454fb211940"
+      ],
+      "expected": "075c143326a6b1bc"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "182d4454fb211940"
+      ],
+      "expected": "000000000000f03f"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "0000000000808640"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "182d4454fb212940"
+      ],
+      "expected": "075c143326a6c1bc"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "182d4454fb212940"
+      ],
+      "expected": "000000000000f03f"
+    },
+    {
+      "operation": "norm",
+      "arguments": [
+        "00003426f56b0c43"
+      ],
+      "expected": "00000000000054c0"
+    },
+    {
+      "operation": "sin",
+      "arguments": [
+        "970e049a52bfaf42"
+      ],
+      "expected": "4caa6563bf84efbf"
+    },
+    {
+      "operation": "cos",
+      "arguments": [
+        "970e049a52bfaf42"
+      ],
+      "expected": "153ecfc5c11ec63f"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f0bf",
+        "000000000000f0bf"
+      ],
+      "expected": "d221337f7cd902c0"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f0bf",
+        "0000000000000080"
+      ],
+      "expected": "182d4454fb21f9bf"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f0bf",
+        "0000000000000000"
+      ],
+      "expected": "182d4454fb21f9bf"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f0bf",
+        "000000000000f03f"
+      ],
+      "expected": "182d4454fb21e9bf"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000080",
+        "000000000000f0bf"
+      ],
+      "expected": "182d4454fb2109c0"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000080",
+        "0000000000000080"
+      ],
+      "expected": "182d4454fb2109c0"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000080",
+        "0000000000000000"
+      ],
+      "expected": "0000000000000080"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000080",
+        "000000000000f03f"
+      ],
+      "expected": "0000000000000080"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000000",
+        "000000000000f0bf"
+      ],
+      "expected": "182d4454fb210940"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000000",
+        "0000000000000080"
+      ],
+      "expected": "182d4454fb210940"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "0000000000000000",
+        "000000000000f03f"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f03f",
+        "000000000000f0bf"
+      ],
+      "expected": "d221337f7cd90240"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f03f",
+        "0000000000000080"
+      ],
+      "expected": "182d4454fb21f93f"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f03f",
+        "0000000000000000"
+      ],
+      "expected": "182d4454fb21f93f"
+    },
+    {
+      "operation": "atan2",
+      "arguments": [
+        "000000000000f03f",
+        "000000000000f03f"
+      ],
+      "expected": "182d4454fb21e93f"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0000000000000000",
+        "0000000000000000"
+      ],
+      "expected": "0000000000000000"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0000000000000840",
+        "0000000000001040"
+      ],
+      "expected": "0000000000001440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9c7500883ce4377e",
+        "9c7500883ce4377e"
+      ],
+      "expected": "11b2990fd5e4407e"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "59f3f8c21f6ea501",
+        "59f3f8c21f6ea501"
+      ],
+      "expected": "252276128d4eae01"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9c7500883ce4377e",
+        "59f3f8c21f6ea501"
+      ],
+      "expected": "9c7500883ce4377e"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0100000000000000",
+        "0100000000000000"
+      ],
+      "expected": "0100000000000000"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9abf3f",
+        "b8560e3cdd9aff3f"
+      ],
+      "expected": "7b5644b9a6aaff3f"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9acf3f",
+        "0ac10aed25b40740"
+      ],
+      "expected": "7fbad5802ec90740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b4d73f",
+        "b8560e3cdd9a0f40"
+      ],
+      "expected": "5da1478b57be0f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9adf3f",
+        "33f68845cac01340"
+      ],
+      "expected": "74e18ddc02da1340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac0e33f",
+        "0ac10aed25b41740"
+      ],
+      "expected": "94e98f2bfbd41740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b4e73f",
+        "e18b8c9481a71b40"
+      ],
+      "expected": "4352886f06d01b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a7eb3f",
+        "b8560e3cdd9a1f40"
+      ],
+      "expected": "21d8a5891dcb1f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9aef3f",
+        "c810c8711cc72140"
+      ],
+      "expected": "1c842e431ee32140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e547106f1cc7f13f",
+        "33f68845cac02340"
+      ],
+      "expected": "2362a383b0e02340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac0f33f",
+        "9edb491978ba2540"
+      ],
+      "expected": "673a61c544de2540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5174f71578baf53f",
+        "0ac10aed25b42740"
+      ],
+      "expected": "a2a5ef87dadb2740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b4f73f",
+        "76a6cbc0d3ad2940"
+      ],
+      "expected": "105e687271d92940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bda0debcd3adf93f",
+        "e18b8c9481a72b40"
+      ],
+      "expected": "4de3514509d72b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a7fb3f",
+        "4c714d682fa12d40"
+      ],
+      "expected": "d2ed23d2a1d42d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29cdc5632fa1fd3f",
+        "b8560e3cdd9a2f40"
+      ],
+      "expected": "70e4faf53ad22f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9aff3f",
+        "129ee78745ca3040"
+      ],
+      "expected": "283d154beae73040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca7c568545ca0040",
+        "c810c8711cc73140"
+      ],
+      "expected": "c07dfa4eb7e63140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e547106f1cc70140",
+        "7d83a85bf3c33240"
+      ],
+      "expected": "07b07d7e84e53240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0013ca58f3c30240",
+        "33f68845cac03340"
+      ],
+      "expected": "53b712d351e43340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac00340",
+        "e968692fa1bd3440"
+      ],
+      "expected": "63f16c471fe33440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36a93d2ca1bd0440",
+        "9edb491978ba3540"
+      ],
+      "expected": "8e8e36d7ece13540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5174f71578ba0540",
+        "544e2a034fb73640"
+      ],
+      "expected": "05e1da7ebae03640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c3fb1ff4eb70640",
+        "0ac10aed25b43740"
+      ],
+      "expected": "471a5e3b88df3740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b40740",
+        "c033ebd6fcb03840"
+      ],
+      "expected": "93b33e0a56de3840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a2d524d3fcb00840",
+        "76a6cbc0d3ad3940"
+      ],
+      "expected": "9de65de923dd3940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bda0debcd3ad0940",
+        "2b19acaaaaaa3a40"
+      ],
+      "expected": "7b61edd6f1db3a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d86b98a6aaaa0a40",
+        "e18b8c9481a73b40"
+      ],
+      "expected": "d5e660d1bfda3b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a70b40",
+        "97fe6c7e58a43c40"
+      ],
+      "expected": "c0e762d78dd93c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e020c7a58a40c40",
+        "4c714d682fa13d40"
+      ],
+      "expected": "9065cbe75bd83d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29cdc5632fa10d40",
+        "02e42d52069e3e40"
+      ],
+      "expected": "a29798012ad73e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "44987f4d069e0e40",
+        "b8560e3cdd9a3f40"
+      ],
+      "expected": "32f2e823f8d53f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9a0f40",
+        "b764f712da4b4040"
+      ],
+      "expected": "b121fb26636a4040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3d977910da4b1040",
+        "129ee78745ca4040"
+      ],
+      "expected": "8ad6883fcae94040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca7c568545ca1040",
+        "6dd7d7fcb0484140"
+      ],
+      "expected": "be27505b31694140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "586233fab0481140",
+        "c810c8711cc74140"
+      ],
+      "expected": "f3400c7a98e84140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e547106f1cc71140",
+        "224ab8e687454240"
+      ],
+      "expected": "7cbf7f9bff674240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "732dede387451240",
+        "7d83a85bf3c34240"
+      ],
+      "expected": "7fb773bf66e74240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0013ca58f3c31240",
+        "d8bc98d05e424340"
+      ],
+      "expected": "b7dfb6e5cd664340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8ef8a6cd5e421340",
+        "33f68845cac04340"
+      ],
+      "expected": "11dd1c0e35e64340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac01340",
+        "8e2f79ba353f4440"
+      ],
+      "expected": "b4a87d389c654440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a9c360b7353f1440",
+        "e968692fa1bd4440"
+      ],
+      "expected": "ff0bb56403e54440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36a93d2ca1bd1440",
+        "44a259a40c3c4540"
+      ],
+      "expected": "052fa2926a644540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c48e1aa10c3c1540",
+        "9edb491978ba4540"
+      ],
+      "expected": "703627c2d1e34540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5174f71578ba1540",
+        "f9143a8ee3384640"
+      ],
+      "expected": "95ee28f338634640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "df59d48ae3381640",
+        "544e2a034fb74640"
+      ],
+      "expected": "7e818e25a0e24640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c3fb1ff4eb71640",
+        "af871a78ba354740"
+      ],
+      "expected": "7e36415907624740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fa248e74ba351740",
+        "0ac10aed25b44740"
+      ],
+      "expected": "c6392c8e6ee14740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b41740",
+        "65fafa6191324840"
+      ],
+      "expected": "ec6a3cc4d5604840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "15f0475e91321840",
+        "c033ebd6fcb04840"
+      ],
+      "expected": "583160fb3ce04840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a2d524d3fcb01840",
+        "1b6ddb4b682f4940"
+      ],
+      "expected": "dc558733a45f4940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "30bb0148682f1940",
+        "76a6cbc0d3ad4940"
+      ],
+      "expected": "b1e0a26c0bdf4940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bda0debcd3ad1940",
+        "d0dfbb353f2c4a40"
+      ],
+      "expected": "57fba4a6725e4a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4b86bb313f2c1a40",
+        "2b19acaaaaaa4a40"
+      ],
+      "expected": "ccd580e1d9dd4a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d86b98a6aaaa1a40",
+        "86529c1f16294b40"
+      ],
+      "expected": "a68e2a1d415d4b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6651751b16291b40",
+        "e18b8c9481a74b40"
+      ],
+      "expected": "cb1d9759a8dc4b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a71b40",
+        "3cc57c09ed254c40"
+      ],
+      "expected": "5c41bc960f5c4c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "811c2f05ed251c40",
+        "97fe6c7e58a44c40"
+      ],
+      "expected": "a06c90d476db4c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e020c7a58a41c40",
+        "f2375df3c3224d40"
+      ],
+      "expected": "a4b80a13de5a4d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ce7e8eec3221d40",
+        "4c714d682fa14d40"
+      ],
+      "expected": "6ed6225245da4d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29cdc5632fa11d40",
+        "a7aa3ddd9a1f4e40"
+      ],
+      "expected": "8a02d191ac594e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b7b2a2d89a1f1e40",
+        "02e42d52069e4e40"
+      ],
+      "expected": "c1f90dd213d94e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "44987f4d069e1e40",
+        "5d1d1ec7711c4f40"
+      ],
+      "expected": "eeeed2127b584f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d27d5cc2711c1f40",
+        "b8560e3cdd9a4f40"
+      ],
+      "expected": "c8811954e2d74f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9a1f40",
+        "09487f58a40c5040"
+      ],
+      "expected": "3edbedcaa42b5040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "76240b56a40c2040",
+        "b764f712da4b5040"
+      ],
+      "expected": "0cf7096c586b5040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3d977910da4b2040",
+        "64816fcd0f8b5040"
+      ],
+      "expected": "c76f5e0d0cab5040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "040ae8ca0f8b2040",
+        "129ee78745ca5040"
+      ],
+      "expected": "bbc8e8aebfea5040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca7c568545ca2040",
+        "bfba5f427b095140"
+      ],
+      "expected": "1caaa650732a5140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "91efc43f7b092140",
+        "6dd7d7fcb0485140"
+      ],
+      "expected": "67de95f2266a5140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "586233fab0482140",
+        "1af44fb7e6875140"
+      ],
+      "expected": "f54fb494daa95140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1fd5a1b4e6872140",
+        "c810c8711cc75140"
+      ],
+      "expected": "cb0600378ee95140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e547106f1cc72140",
+        "752d402c52065240"
+      ],
+      "expected": "882677d941295240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "acba7e2952062240",
+        "224ab8e687455240"
+      ],
+      "expected": "8fec177cf5685240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "732dede387452240",
+        "d06630a1bd845240"
+      ],
+      "expected": "4daee01ea9a85240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3aa05b9ebd842240",
+        "7d83a85bf3c35240"
+      ],
+      "expected": "a1d7cfc15ce85240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0013ca58f3c32240",
+        "2ba0201629035340"
+      ],
+      "expected": "6de9e36410285340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c785381329032340",
+        "d8bc98d05e425340"
+      ],
+      "expected": "35781b08c4675340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8ef8a6cd5e422340",
+        "86d9108b94815340"
+      ],
+      "expected": "ec2a75ab77a75340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "556b158894812340",
+        "33f68845cac05340"
+      ],
+      "expected": "bfb9ef4e2be75340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac02340",
+        "e012010000005440"
+      ],
+      "expected": "12ed89f2de265440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e250f2fcffff2340",
+        "8e2f79ba353f5440"
+      ],
+      "expected": "7b9c429692665440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a9c360b7353f2440",
+        "3b4cf1746b7e5440"
+      ],
+      "expected": "d8ad183a46a65440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7036cf716b7e2440",
+        "e968692fa1bd5440"
+      ],
+      "expected": "7b140bdef9e55440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36a93d2ca1bd2440",
+        "9685e1e9d6fc5440"
+      ],
+      "expected": "55d01882ad255540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fd1bace6d6fc2440",
+        "44a259a40c3c5540"
+      ],
+      "expected": "47ed402661655540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c48e1aa10c3c2540",
+        "f1bed15e427b5540"
+      ],
+      "expected": "688282ca14a55540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8b01895b427b2540",
+        "9edb491978ba5540"
+      ],
+      "expected": "67b1dc6ec8e45540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5174f71578ba2540",
+        "4cf8c1d3adf95540"
+      ],
+      "expected": "f2a54e137c245640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "18e765d0adf92540",
+        "f9143a8ee3385640"
+      ],
+      "expected": "2495d7b72f645640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "df59d48ae3382640",
+        "a731b24819785640"
+      ],
+      "expected": "08bd765ce3a35640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a6cc424519782640",
+        "544e2a034fb75640"
+      ],
+      "expected": "14642b0197e35640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c3fb1ff4eb72640",
+        "026ba2bd84f65640"
+      ],
+      "expected": "bdd8f4a54a235740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "33b21fba84f62640",
+        "af871a78ba355740"
+      ],
+      "expected": "0371d24afe625740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fa248e74ba352740",
+        "5da49232f0745740"
+      ],
+      "expected": "128ac3efb1a25740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c197fc2ef0742740",
+        "0ac10aed25b45740"
+      ],
+      "expected": "db87c79465e25740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b42740",
+        "b7dd82a75bf35740"
+      ],
+      "expected": "c2d4dd3919225840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4e7dd9a35bf32740",
+        "65fafa6191325840"
+      ],
+      "expected": "47e105dfcc615840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "15f0475e91322840",
+        "1217731cc7715840"
+      ],
+      "expected": "b4233f8480a15840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "db62b618c7712840",
+        "c033ebd6fcb05840"
+      ],
+      "expected": "d617892934e15840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a2d524d3fcb02840",
+        "6d50639132f05840"
+      ],
+      "expected": "b83ee3cee7205940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6948938d32f02840",
+        "1b6ddb4b682f5940"
+      ],
+      "expected": "5f1e4d749b605940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "30bb0148682f2940",
+        "c88953069e6e5940"
+      ],
+      "expected": "8a41c6194fa05940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f62d70029e6e2940",
+        "76a6cbc0d3ad5940"
+      ],
+      "expected": "81374ebf02e05940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bda0debcd3ad2940",
+        "23c3437b09ed5940"
+      ],
+      "expected": "d193e464b61f5a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "84134d7709ed2940",
+        "d0dfbb353f2c5a40"
+      ],
+      "expected": "22ee880a6a5f5a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4b86bb313f2c2a40",
+        "7efc33f0746b5a40"
+      ],
+      "expected": "04e23ab01d9f5a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "11f929ec746b2a40",
+        "2b19acaaaaaa5a40"
+      ],
+      "expected": "bb0efa55d1de5a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d86b98a6aaaa2a40",
+        "d9352465e0e95a40"
+      ],
+      "expected": "1d17c6fb841e5b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9fde0661e0e92a40",
+        "86529c1f16295b40"
+      ],
+      "expected": "60a19ea1385e5b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6651751b16292b40",
+        "346f14da4b685b40"
+      ],
+      "expected": "f7568347ec9d5b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2cc4e3d54b682b40",
+        "e18b8c9481a75b40"
+      ],
+      "expected": "6de473ed9fdd5b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a72b40",
+        "8ea8044fb7e65b40"
+      ],
+      "expected": "42f96f93531d5c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "baa9c04ab7e62b40",
+        "3cc57c09ed255c40"
+      ],
+      "expected": "c8477739075d5c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "811c2f05ed252c40",
+        "e9e1f4c322655c40"
+      ],
+      "expected": "048589dfba9c5c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "478f9dbf22652c40",
+        "97fe6c7e58a45c40"
+      ],
+      "expected": "9568a6856edc5c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e020c7a58a42c40",
+        "441be5388ee35c40"
+      ],
+      "expected": "8daccd2b221c5d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d5747a348ee32c40",
+        "f2375df3c3225d40"
+      ],
+      "expected": "650dffd1d55b5d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ce7e8eec3222d40",
+        "9f54d5adf9615d40"
+      ],
+      "expected": "d2493a78899b5d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "625a57a9f9612d40",
+        "4c714d682fa15d40"
+      ],
+      "expected": "be227f1e3ddb5d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29cdc5632fa12d40",
+        "fa8dc52265e05d40"
+      ],
+      "expected": "275bcdc4f01a5e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f03f341e65e02d40",
+        "a7aa3ddd9a1f5e40"
+      ],
+      "expected": "07b8246ba45a5e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b7b2a2d89a1f2e40",
+        "55c7b597d05e5e40"
+      ],
+      "expected": "49008511589a5e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7d251193d05e2e40",
+        "02e42d52069e5e40"
+      ],
+      "expected": "acfcedb70bda5e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "44987f4d069e2e40",
+        "b000a60c3cdd5e40"
+      ],
+      "expected": "b5775f5ebf195f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0b0bee073cdd2e40",
+        "5d1d1ec7711c5f40"
+      ],
+      "expected": "9b3dd90473595f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d27d5cc2711c2f40",
+        "0b3a9681a75b5f40"
+      ],
+      "expected": "381c5bab26995f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "98f0ca7ca75b2f40",
+        "b8560e3cdd9a5f40"
+      ],
+      "expected": "f4e2e451dad85f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9a2f40",
+        "657386f612da5f40"
+      ],
+      "expected": "5f313bfc460c6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "26d6a7f112da2f40",
+        "09487f58a40c6040"
+      ],
+      "expected": "f9b687cf202c6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "76240b56a40c3040",
+        "6056bb353f2c6040"
+      ],
+      "expected": "2becd7a2fa4b6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "da5d42333f2c3040",
+        "b764f712da4b6040"
+      ],
+      "expected": "81bb2b76d46b6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3d977910da4b3040",
+        "0e7333f0746b6040"
+      ],
+      "expected": "2f108349ae8b6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a0d0b0ed746b3040",
+        "64816fcd0f8b6040"
+      ],
+      "expected": "05d6dd1c88ab6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "040ae8ca0f8b3040",
+        "bb8fabaaaaaa6040"
+      ],
+      "expected": "70f93bf061cb6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "67431fa8aaaa3040",
+        "129ee78745ca6040"
+      ],
+      "expected": "6c679dc33beb6040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca7c568545ca3040",
+        "68ac2365e0e96040"
+      ],
+      "expected": "840d0297150b6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2eb68d62e0e93040",
+        "bfba5f427b096140"
+      ],
+      "expected": "d1d9696aef2a6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "91efc43f7b093140",
+        "16c99b1f16296140"
+      ],
+      "expected": "e9bad43dc94a6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f528fc1c16293140",
+        "6dd7d7fcb0486140"
+      ],
+      "expected": "e69f4211a36a6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "586233fab0483140",
+        "c3e513da4b686140"
+      ],
+      "expected": "5978b3e47c8a6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bb9b6ad74b683140",
+        "1af44fb7e6876140"
+      ],
+      "expected": "4f3427b856aa6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1fd5a1b4e6873140",
+        "71028c9481a76140"
+      ],
+      "expected": "42c49d8b30ca6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "820ed99181a73140",
+        "c810c8711cc76140"
+      ],
+      "expected": "1c19175f0aea6140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e547106f1cc73140",
+        "1e1f044fb7e66140"
+      ],
+      "expected": "31249332e4096240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4981474cb7e63140",
+        "752d402c52066240"
+      ],
+      "expected": "40d71106be296240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "acba7e2952063240",
+        "cc3b7c09ed256240"
+      ],
+      "expected": "662493d997496240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "10f4b506ed253240",
+        "224ab8e687456240"
+      ],
+      "expected": "21fe16ad71696240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "732dede387453240",
+        "7958f4c322656240"
+      ],
+      "expected": "50579d804b896240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d66624c122653240",
+        "d06630a1bd846240"
+      ],
+      "expected": "2623265425a96240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3aa05b9ebd843240",
+        "27756c7e58a46240"
+      ],
+      "expected": "3155b127ffc86240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9dd9927b58a43240",
+        "7d83a85bf3c36240"
+      ],
+      "expected": "51e13efbd8e86240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0013ca58f3c33240",
+        "d491e4388ee36240"
+      ],
+      "expected": "b7bbceceb2086340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "644c01368ee33240",
+        "2ba0201629036340"
+      ],
+      "expected": "e4d860a28c286340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c785381329033340",
+        "81ae5cf3c3226340"
+      ],
+      "expected": "a22df57566486340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2bbf6ff0c3223340",
+        "d8bc98d05e426340"
+      ],
+      "expected": "09af8b4940686340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8ef8a6cd5e423340",
+        "2fcbd4adf9616340"
+      ],
+      "expected": "7452241d1a886340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f131deaaf9613340",
+        "86d9108b94816340"
+      ],
+      "expected": "860dbff0f3a76340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "556b158894813340",
+        "dce74c682fa16340"
+      ],
+      "expected": "22d65bc4cdc76340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b8a44c652fa13340",
+        "33f68845cac06340"
+      ],
+      "expected": "6ea2fa97a7e76340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac03340",
+        "8a04c52265e06340"
+      ],
+      "expected": "ce689b6b81076440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7f17bb1f65e03340",
+        "e012010000006440"
+      ],
+      "expected": "e21f3e3f5b276440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e250f2fcffff3340",
+        "37213ddd9a1f6440"
+      ],
+      "expected": "86bee21235476440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "458a29da9a1f3440",
+        "8e2f79ba353f6440"
+      ],
+      "expected": "cf3b89e60e676440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a9c360b7353f3440",
+        "e53db597d05e6440"
+      ],
+      "expected": "088f31bae8866440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0cfd9794d05e3440",
+        "3b4cf1746b7e6440"
+      ],
+      "expected": "b2afdb8dc2a66440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7036cf716b7e3440",
+        "925a2d52069e6440"
+      ],
+      "expected": "849587619cc66440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d36f064f069e3440",
+        "e968692fa1bd6440"
+      ],
+      "expected": "6738353576e66440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36a93d2ca1bd3440",
+        "3f77a50c3cdd6440"
+      ],
+      "expected": "7290e40850066540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ae274093cdd3440",
+        "9685e1e9d6fc6440"
+      ],
+      "expected": "ef9595dc29266540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fd1bace6d6fc3440",
+        "ed931dc7711c6540"
+      ],
+      "expected": "564148b003466540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6055e3c3711c3540",
+        "44a259a40c3c6540"
+      ],
+      "expected": "4a8bfc83dd656540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c48e1aa10c3c3540",
+        "9ab09581a75b6540"
+      ],
+      "expected": "9a6cb257b7856540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "27c8517ea75b3540",
+        "f1bed15e427b6540"
+      ],
+      "expected": "41de692b91a56540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8b01895b427b3540",
+        "48cd0d3cdd9a6540"
+      ],
+      "expected": "61d922ff6ac56540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ee3ac038dd9a3540",
+        "9edb491978ba6540"
+      ],
+      "expected": "4557ddd244e56540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5174f71578ba3540",
+        "f5e985f612da6540"
+      ],
+      "expected": "605199a61e056640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b5ad2ef312da3540",
+        "4cf8c1d3adf96540"
+      ],
+      "expected": "47c1567af8246640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "18e765d0adf93540",
+        "a306feb048196640"
+      ],
+      "expected": "b9a0154ed2446640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7b209dad48193640",
+        "f9143a8ee3386640"
+      ],
+      "expected": "92e9d521ac646640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "df59d48ae3383640",
+        "5023766b7e586640"
+      ],
+      "expected": "d89597f585846640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "42930b687e583640",
+        "a731b24819786640"
+      ],
+      "expected": "ae9f5ac95fa46640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a6cc424519783640",
+        "fe3fee25b4976640"
+      ],
+      "expected": "58011f9d39c46640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "09067a22b4973640",
+        "544e2a034fb76640"
+      ],
+      "expected": "3ab5e47013e46640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c3fb1ff4eb73640",
+        "ab5c66e0e9d66640"
+      ],
+      "expected": "dab5ab44ed036740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d078e8dce9d63640",
+        "026ba2bd84f66640"
+      ],
+      "expected": "d9fd7318c7236740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "33b21fba84f63640",
+        "5879de9a1f166740"
+      ],
+      "expected": "f6873deca0436740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "96eb56971f163740",
+        "af871a78ba356740"
+      ],
+      "expected": "0e4f08c07a636740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fa248e74ba353740",
+        "0696565555556740"
+      ],
+      "expected": "184ed49354836740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5d5ec55155553740",
+        "5da49232f0746740"
+      ],
+      "expected": "2880a1672ea36740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c197fc2ef0743740",
+        "b3b2ce0f8b946740"
+      ],
+      "expected": "69e06f3b08c36740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "24d1330c8b943740",
+        "0ac10aed25b46740"
+      ],
+      "expected": "246a3f0fe2e26740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b43740",
+        "61cf46cac0d36740"
+      ],
+      "expected": "ba1810e3bb026840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "eb43a2c6c0d33740",
+        "b7dd82a75bf36740"
+      ],
+      "expected": "a1e7e1b695226840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4e7dd9a35bf33740",
+        "0eecbe84f6126840"
+      ],
+      "expected": "6cd2b48a6f426840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b1b61081f6123840",
+        "65fafa6191326840"
+      ],
+      "expected": "c2d4885e49626840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "15f0475e91323840",
+        "bc08373f2c526840"
+      ],
+      "expected": "60ea5d3223826840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "78297f3b2c523840",
+        "1217731cc7716840"
+      ],
+      "expected": "190f3406fda16840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "db62b618c7713840",
+        "6925aff961916840"
+      ],
+      "expected": "da3e0bdad6c16840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3f9cedf561913840",
+        "c033ebd6fcb06840"
+      ],
+      "expected": "a075e3adb0e16840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a2d524d3fcb03840",
+        "164227b497d06840"
+      ],
+      "expected": "7dafbc818a016940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "060f5cb097d03840",
+        "6d50639132f06840"
+      ],
+      "expected": "99e8965564216940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6948938d32f03840",
+        "c45e9f6ecd0f6940"
+      ],
+      "expected": "2e1d72293e416940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cc81ca6acd0f3940",
+        "1b6ddb4b682f6940"
+      ],
+      "expected": "89494efd17616940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "30bb0148682f3940",
+        "717b1729034f6940"
+      ],
+      "expected": "096a2bd1f1806940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "93f43825034f3940",
+        "c88953069e6e6940"
+      ],
+      "expected": "227b09a5cba06940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f62d70029e6e3940",
+        "1f988fe3388e6940"
+      ],
+      "expected": "5679e878a5c06940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5a67a7df388e3940",
+        "76a6cbc0d3ad6940"
+      ],
+      "expected": "3861c84c7fe06940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bda0debcd3ad3940",
+        "ccb4079e6ecd6940"
+      ],
+      "expected": "6f2fa92059006a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "21da159a6ecd3940",
+        "23c3437b09ed6940"
+      ],
+      "expected": "b0e08af432206a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "84134d7709ed3940",
+        "7ad17f58a40c6a40"
+      ],
+      "expected": "c1716dc80c406a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e74c8454a40c3a40",
+        "d0dfbb353f2c6a40"
+      ],
+      "expected": "76df509ce65f6a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4b86bb313f2c3a40",
+        "27eef712da4b6a40"
+      ],
+      "expected": "b5263570c07f6a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "aebff20eda4b3a40",
+        "7efc33f0746b6a40"
+      ],
+      "expected": "71441a449a9f6a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "11f929ec746b3a40",
+        "d50a70cd0f8b6a40"
+      ],
+      "expected": "ab35001874bf6a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "753261c90f8b3a40",
+        "2b19acaaaaaa6a40"
+      ],
+      "expected": "72f7e6eb4ddf6a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d86b98a6aaaa3a40",
+        "8227e88745ca6a40"
+      ],
+      "expected": "e686cebf27ff6a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3ca5cf8345ca3a40",
+        "d9352465e0e96a40"
+      ],
+      "expected": "32e1b693011f6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9fde0661e0e93a40",
+        "2f4460427b096b40"
+      ],
+      "expected": "8d03a067db3e6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "02183e3e7b093b40",
+        "86529c1f16296b40"
+      ],
+      "expected": "3eeb893bb55e6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6651751b16293b40",
+        "dd60d8fcb0486b40"
+      ],
+      "expected": "9795740f8f7e6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c98aacf8b0483b40",
+        "346f14da4b686b40"
+      ],
+      "expected": "f6ff5fe3689e6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2cc4e3d54b683b40",
+        "8a7d50b7e6876b40"
+      ],
+      "expected": "c6274cb742be6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "90fd1ab3e6873b40",
+        "e18b8c9481a76b40"
+      ],
+      "expected": "7e0a398b1cde6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a73b40",
+        "389ac8711cc76b40"
+      ],
+      "expected": "9fa5265ff6fd6b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5670896d1cc73b40",
+        "8ea8044fb7e66b40"
+      ],
+      "expected": "b6f61433d01d6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "baa9c04ab7e63b40",
+        "e5b6402c52066c40"
+      ],
+      "expected": "5dfb0307aa3d6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1de3f72752063c40",
+        "3cc57c09ed256c40"
+      ],
+      "expected": "36b1f3da835d6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "811c2f05ed253c40",
+        "93d3b8e687456c40"
+      ],
+      "expected": "ef15e4ae5d7d6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e45566e287453c40",
+        "e9e1f4c322656c40"
+      ],
+      "expected": "3f27d582379d6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "478f9dbf22653c40",
+        "40f030a1bd846c40"
+      ],
+      "expected": "eae2c65611bd6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "abc8d49cbd843c40",
+        "97fe6c7e58a46c40"
+      ],
+      "expected": "bb46b92aebdc6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e020c7a58a43c40",
+        "ed0ca95bf3c36c40"
+      ],
+      "expected": "8650acfec4fc6c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "713b4357f3c33c40",
+        "441be5388ee36c40"
+      ],
+      "expected": "2efe9fd29e1c6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d5747a348ee33c40",
+        "9b29211629036d40"
+      ],
+      "expected": "994d94a6783c6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "38aeb11129033d40",
+        "f2375df3c3226d40"
+      ],
+      "expected": "ba3c897a525c6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ce7e8eec3223d40",
+        "484699d05e426d40"
+      ],
+      "expected": "88c97e4e2c7c6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ff2020cc5e423d40",
+        "9f54d5adf9616d40"
+      ],
+      "expected": "0bf27422069c6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "625a57a9f9613d40",
+        "f662118b94816d40"
+      ],
+      "expected": "4bb46bf6dfbb6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c6938e8694813d40",
+        "4c714d682fa16d40"
+      ],
+      "expected": "5d0e63cab9db6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29cdc5632fa13d40",
+        "a37f8945cac06d40"
+      ],
+      "expected": "5efe5a9e93fb6d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8c06fd40cac03d40",
+        "fa8dc52265e06d40"
+      ],
+      "expected": "728253726d1b6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f03f341e65e03d40",
+        "519c010000006e40"
+      ],
+      "expected": "c4984c46473b6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "53796bfbffff3d40",
+        "a7aa3ddd9a1f6e40"
+      ],
+      "expected": "873f461a215b6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b7b2a2d89a1f3e40",
+        "feb879ba353f6e40"
+      ],
+      "expected": "f97440eefa7a6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1aecd9b5353f3e40",
+        "55c7b597d05e6e40"
+      ],
+      "expected": "5a373bc2d49a6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7d251193d05e3e40",
+        "acd5f1746b7e6e40"
+      ],
+      "expected": "f5843696aeba6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e15e48706b7e3e40",
+        "02e42d52069e6e40"
+      ],
+      "expected": "1a5c326a88da6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "44987f4d069e3e40",
+        "59f2692fa1bd6e40"
+      ],
+      "expected": "22bb2e3e62fa6e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a7d1b62aa1bd3e40",
+        "b000a60c3cdd6e40"
+      ],
+      "expected": "6ba02b123c1a6f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0b0bee073cdd3e40",
+        "060fe2e9d6fc6e40"
+      ],
+      "expected": "590a29e6153a6f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6e4425e5d6fc3e40",
+        "5d1d1ec7711c6f40"
+      ],
+      "expected": "59f726baef596f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d27d5cc2711c3f40",
+        "b42b5aa40c3c6f40"
+      ],
+      "expected": "dd65258ec9796f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "35b7939f0c3c3f40",
+        "0b3a9681a75b6f40"
+      ],
+      "expected": "5d542462a3996f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "98f0ca7ca75b3f40",
+        "6148d25e427b6f40"
+      ],
+      "expected": "57c123367db96f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fc29025a427b3f40",
+        "b8560e3cdd9a6f40"
+      ],
+      "expected": "52ab230a57d96f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9a3f40",
+        "0f654a1978ba6f40"
+      ],
+      "expected": "d61024de30f96f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c29c701478ba3f40",
+        "657386f612da6f40"
+      ],
+      "expected": "39781259850c7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "26d6a7f112da3f40",
+        "bc81c2d3adf96f40"
+      ],
+      "expected": "60241343721c7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "890fdfceadf93f40",
+        "09487f58a40c7040"
+      ],
+      "expected": "2c0c142d5f2c7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "76240b56a40c4040",
+        "354f1dc7711c7040"
+      ],
+      "expected": "ef2e15174c3c7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "28c1a6c4711c4040",
+        "6056bb353f2c7040"
+      ],
+      "expected": "fa8b1601394c7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "da5d42333f2c4040",
+        "8c5d59a40c3c7040"
+      ],
+      "expected": "a62218eb255c7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8bfadda10c3c4040",
+        "b764f712da4b7040"
+      ],
+      "expected": "48f219d5126c7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3d977910da4b4040",
+        "e26b9581a75b7040"
+      ],
+      "expected": "3cfa1bbfff7b7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ef33157fa75b4040",
+        "0e7333f0746b7040"
+      ],
+      "expected": "e1391ea9ec8b7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a0d0b0ed746b4040",
+        "397ad15e427b7040"
+      ],
+      "expected": "94b02093d99b7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "526d4c5c427b4040",
+        "64816fcd0f8b7040"
+      ],
+      "expected": "b95d237dc6ab7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "040ae8ca0f8b4040",
+        "90880d3cdd9a7040"
+      ],
+      "expected": "b6402667b3bb7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b5a68339dd9a4040",
+        "bb8fabaaaaaa7040"
+      ],
+      "expected": "ee582951a0cb7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "67431fa8aaaa4040",
+        "e696491978ba7040"
+      ],
+      "expected": "cda52c3b8ddb7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "19e0ba1678ba4040",
+        "129ee78745ca7040"
+      ],
+      "expected": "bf2630257aeb7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca7c568545ca4040",
+        "3da585f612da7040"
+      ],
+      "expected": "2edb330f67fb7040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7c19f2f312da4040",
+        "68ac2365e0e97040"
+      ],
+      "expected": "8cc237f9530b7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2eb68d62e0e94040",
+        "94b3c1d3adf97040"
+      ],
+      "expected": "4cdc3be3401b7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e05229d1adf94040",
+        "bfba5f427b097140"
+      ],
+      "expected": "df2740cd2d2b7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "91efc43f7b094140",
+        "ebc1fdb048197140"
+      ],
+      "expected": "bda444b71a3b7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "438c60ae48194140",
+        "16c99b1f16297140"
+      ],
+      "expected": "5c5249a1074b7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f528fc1c16294140",
+        "41d0398ee3387140"
+      ],
+      "expected": "37304e8bf45a7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a6c5978be3384140",
+        "6dd7d7fcb0487140"
+      ],
+      "expected": "cb3d5375e16a7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "586233fab0484140",
+        "98de756b7e587140"
+      ],
+      "expected": "927a585fce7a7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0affce687e584140",
+        "c3e513da4b687140"
+      ],
+      "expected": "0ee65d49bb8a7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bb9b6ad74b684140",
+        "efecb14819787140"
+      ],
+      "expected": "c17f6333a89a7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6d38064619784140",
+        "1af44fb7e6877140"
+      ],
+      "expected": "2b47691d95aa7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1fd5a1b4e6874140",
+        "45fbed25b4977140"
+      ],
+      "expected": "d33b6f0782ba7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d0713d23b4974140",
+        "71028c9481a77140"
+      ],
+      "expected": "405d75f16eca7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "820ed99181a74140",
+        "9c092a034fb77140"
+      ],
+      "expected": "f8aa7bdb5bda7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "34ab74004fb74140",
+        "c810c8711cc77140"
+      ],
+      "expected": "872482c548ea7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e547106f1cc74140",
+        "f31766e0e9d67140"
+      ],
+      "expected": "77c988af35fa7140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "97e4abdde9d64140",
+        "1e1f044fb7e67140"
+      ],
+      "expected": "55998f99220a7240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4981474cb7e64140",
+        "4a26a2bd84f67140"
+      ],
+      "expected": "b29396830f1a7240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fa1de3ba84f64140",
+        "752d402c52067240"
+      ],
+      "expected": "1bb89d6dfc297240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "acba7e2952064240",
+        "a034de9a1f167240"
+      ],
+      "expected": "2406a557e9397240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5e571a981f164240",
+        "cc3b7c09ed257240"
+      ],
+      "expected": "617dac41d6497240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "10f4b506ed254240",
+        "f7421a78ba357240"
+      ],
+      "expected": "641db42bc3597240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c1905175ba354240",
+        "224ab8e687457240"
+      ],
+      "expected": "c5e5bb15b0697240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "732dede387454240",
+        "4e51565555557240"
+      ],
+      "expected": "1bd6c3ff9c797240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "25ca885255554240",
+        "7958f4c322657240"
+      ],
+      "expected": "ffedcbe989897240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d66624c122654240",
+        "a45f9232f0747240"
+      ],
+      "expected": "0c2dd4d376997240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8803c02ff0744240",
+        "d06630a1bd847240"
+      ],
+      "expected": "de92dcbd63a97240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3aa05b9ebd844240",
+        "fb6dce0f8b947240"
+      ],
+      "expected": "101fe5a750b97240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "eb3cf70c8b944240",
+        "27756c7e58a47240"
+      ],
+      "expected": "44d1ed913dc97240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9dd9927b58a44240",
+        "527c0aed25b47240"
+      ],
+      "expected": "16a9f67b2ad97240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4f762eea25b44240",
+        "7d83a85bf3c37240"
+      ],
+      "expected": "28a6ff6517e97240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0013ca58f3c34240",
+        "a98a46cac0d37240"
+      ],
+      "expected": "1ec8085004f97240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b2af65c7c0d34240",
+        "d491e4388ee37240"
+      ],
+      "expected": "990e123af1087340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "644c01368ee34240",
+        "ff9882a75bf37240"
+      ],
+      "expected": "3f791b24de187340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "15e99ca45bf34240",
+        "2ba0201629037340"
+      ],
+      "expected": "b607250ecb287340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c785381329034340",
+        "56a7be84f6127340"
+      ],
+      "expected": "a4b92ef8b7387340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7922d481f6124340",
+        "81ae5cf3c3227340"
+      ],
+      "expected": "b18e38e2a4487340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2bbf6ff0c3224340",
+        "adb5fa6191327340"
+      ],
+      "expected": "888642cc91587340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dc5b0b5f91324340",
+        "d8bc98d05e427340"
+      ],
+      "expected": "d2a04cb67e687340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8ef8a6cd5e424340",
+        "03c4363f2c527340"
+      ],
+      "expected": "3add56a06b787340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4095423c2c524340",
+        "2fcbd4adf9617340"
+      ],
+      "expected": "6f3b618a58887340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f131deaaf9614340",
+        "5ad2721cc7717340"
+      ],
+      "expected": "1bbb6b7445987340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a3ce7919c7714340",
+        "86d9108b94817340"
+      ],
+      "expected": "f05b765e32a87340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "556b158894814340",
+        "b1e0aef961917340"
+      ],
+      "expected": "9b1d81481fb87340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0608b1f661914340",
+        "dce74c682fa17340"
+      ],
+      "expected": "cfff8b320cc87340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b8a44c652fa14340",
+        "08efead6fcb07340"
+      ],
+      "expected": "3c02971cf9d77340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6a41e8d3fcb04340",
+        "33f68845cac07340"
+      ],
+      "expected": "9524a206e6e77340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac04340",
+        "5efd26b497d07340"
+      ],
+      "expected": "8e66adf0d2f77340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cd7a1fb197d04340",
+        "8a04c52265e07340"
+      ],
+      "expected": "dcc7b8dabf077440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7f17bb1f65e04340",
+        "b50b639132f07340"
+      ],
+      "expected": "3348c4c4ac177440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "30b4568e32f04340",
+        "e012010000007440"
+      ],
+      "expected": "4ae7cfae99277440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e250f2fcffff4340",
+        "0c1a9f6ecd0f7440"
+      ],
+      "expected": "daa4db9886377440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "94ed8d6bcd0f4440",
+        "37213ddd9a1f7440"
+      ],
+      "expected": "9980e78273477440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "458a29da9a1f4440",
+        "6328db4b682f7440"
+      ],
+      "expected": "427af36c60577440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f726c548682f4440",
+        "8e2f79ba353f7440"
+      ],
+      "expected": "8c91ff564d677440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a9c360b7353f4440",
+        "b9361729034f7440"
+      ],
+      "expected": "35c60b413a777440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5b60fc25034f4440",
+        "e53db597d05e7440"
+      ],
+      "expected": "f817182b27877440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0cfd9794d05e4440",
+        "104553069e6e7440"
+      ],
+      "expected": "9086241514977440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "be9933039e6e4440",
+        "3b4cf1746b7e7440"
+      ],
+      "expected": "bb1131ff00a77440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7036cf716b7e4440",
+        "67538fe3388e7440"
+      ],
+      "expected": "38b93de9edb67440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "21d36ae0388e4440",
+        "925a2d52069e7440"
+      ],
+      "expected": "c47c4ad3dac67440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d36f064f069e4440",
+        "bd61cbc0d3ad7440"
+      ],
+      "expected": "205c57bdc7d67440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "850ca2bdd3ad4440",
+        "e968692fa1bd7440"
+      ],
+      "expected": "0e5764a7b4e67440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36a93d2ca1bd4440",
+        "1470079e6ecd7440"
+      ],
+      "expected": "4c6d7191a1f67440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e845d99a6ecd4440",
+        "3f77a50c3cdd7440"
+      ],
+      "expected": "9d9e7e7b8e067540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ae274093cdd4440",
+        "6b7e437b09ed7440"
+      ],
+      "expected": "c6ea8b657b167540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4b7f107809ed4440",
+        "9685e1e9d6fc7440"
+      ],
+      "expected": "8651994f68267540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fd1bace6d6fc4440",
+        "c28c7f58a40c7540"
+      ],
+      "expected": "a5d2a63955367540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "afb84755a40c4540",
+        "ed931dc7711c7540"
+      ],
+      "expected": "e66db42342467540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6055e3c3711c4540",
+        "189bbb353f2c7540"
+      ],
+      "expected": "0e23c20d2f567540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "12f27e323f2c4540",
+        "44a259a40c3c7540"
+      ],
+      "expected": "e5f1cff71b667540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c48e1aa10c3c4540",
+        "6fa9f712da4b7540"
+      ],
+      "expected": "30dadde108767540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "762bb60fda4b4540",
+        "9ab09581a75b7540"
+      ],
+      "expected": "b7dbebcbf5857540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "27c8517ea75b4540",
+        "c6b733f0746b7540"
+      ],
+      "expected": "44f6f9b5e2957540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d964edec746b4540",
+        "f1bed15e427b7540"
+      ],
+      "expected": "9c2908a0cfa57540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8b01895b427b4540",
+        "1cc66fcd0f8b7540"
+      ],
+      "expected": "8c75168abcb57540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3c9e24ca0f8b4540",
+        "48cd0d3cdd9a7540"
+      ],
+      "expected": "ddd92474a9c57540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ee3ac038dd9a4540",
+        "73d4abaaaaaa7540"
+      ],
+      "expected": "5856335e96d57540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a0d75ba7aaaa4540",
+        "9edb491978ba7540"
+      ],
+      "expected": "caea414883e57540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5174f71578ba4540",
+        "cae2e78745ca7540"
+      ],
+      "expected": "ff96503270f57540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0311938445ca4540",
+        "f5e985f612da7540"
+      ],
+      "expected": "c25a5f1c5d057640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b5ad2ef312da4540",
+        "21f12365e0e97540"
+      ],
+      "expected": "e2356e064a157640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "664aca61e0e94540",
+        "4cf8c1d3adf97540"
+      ],
+      "expected": "2b287df036257640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "18e765d0adf94540",
+        "77ff5f427b097640"
+      ],
+      "expected": "6b318cda23357640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca83013f7b094640",
+        "a306feb048197640"
+      ],
+      "expected": "73519bc410457640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7b209dad48194640",
+        "ce0d9c1f16297640"
+      ],
+      "expected": "0f88aaaefd547640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2dbd381c16294640",
+        "f9143a8ee3387640"
+      ],
+      "expected": "11d5b998ea647640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "df59d48ae3384640",
+        "251cd8fcb0487640"
+      ],
+      "expected": "4a38c982d7747640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "90f66ff9b0484640",
+        "5023766b7e587640"
+      ],
+      "expected": "88b1d86cc4847640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "42930b687e584640",
+        "7b2a14da4b687640"
+      ],
+      "expected": "9f40e856b1947640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f42fa7d64b684640",
+        "a731b24819787640"
+      ],
+      "expected": "60e5f7409ea47640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a6cc424519784640",
+        "d23850b7e6877640"
+      ],
+      "expected": "9d9f072b8bb47640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5769deb3e6874640",
+        "fe3fee25b4977640"
+      ],
+      "expected": "2b6f171578c47640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "09067a22b4974640",
+        "29478c9481a77640"
+      ],
+      "expected": "da5327ff64d47640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bba2159181a74640",
+        "544e2a034fb77640"
+      ],
+      "expected": "804d37e951e47640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c3fb1ff4eb74640",
+        "8055c8711cc77640"
+      ],
+      "expected": "f25b47d33ef47640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1edc4c6e1cc74640",
+        "ab5c66e0e9d67640"
+      ],
+      "expected": "037f57bd2b047740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d078e8dce9d64640",
+        "d663044fb7e67640"
+      ],
+      "expected": "89b667a718147740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8115844bb7e64640",
+        "026ba2bd84f67640"
+      ],
+      "expected": "5b02789105247740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "33b21fba84f64640",
+        "2d72402c52067740"
+      ],
+      "expected": "4d62887bf2337740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e54ebb2852064740",
+        "5879de9a1f167740"
+      ],
+      "expected": "37d69865df437740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "96eb56971f164740",
+        "84807c09ed257740"
+      ],
+      "expected": "f05da94fcc537740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4888f205ed254740",
+        "af871a78ba357740"
+      ],
+      "expected": "50f9b939b9637740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fa248e74ba354740",
+        "da8eb8e687457740"
+      ],
+      "expected": "2da8ca23a6737740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "abc129e387454740",
+        "0696565555557740"
+      ],
+      "expected": "636adb0d93837740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5d5ec55155554740",
+        "319df4c322657740"
+      ],
+      "expected": "c73fecf77f937740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0ffb60c022654740",
+        "5da49232f0747740"
+      ],
+      "expected": "3528fde16ca37740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c197fc2ef0744740",
+        "88ab30a1bd847740"
+      ],
+      "expected": "84230ecc59b37740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7234989dbd844740",
+        "b3b2ce0f8b947740"
+      ],
+      "expected": "90311fb646c37740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "24d1330c8b944740",
+        "dfb96c7e58a47740"
+      ],
+      "expected": "345230a033d37740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d66dcf7a58a44740",
+        "0ac10aed25b47740"
+      ],
+      "expected": "4985418a20e37740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b44740",
+        "35c8a85bf3c37740"
+      ],
+      "expected": "abca52740df37740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "39a70658f3c34740",
+        "61cf46cac0d37740"
+      ],
+      "expected": "3622645efa027840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "eb43a2c6c0d34740",
+        "8cd6e4388ee37740"
+      ],
+      "expected": "c48b7548e7127840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ce03d358ee34740",
+        "b7dd82a75bf37740"
+      ],
+      "expected": "34078732d4227840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4e7dd9a35bf34740",
+        "e3e4201629037840"
+      ],
+      "expected": "6294981cc1327840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "001a751229034840",
+        "0eecbe84f6127840"
+      ],
+      "expected": "2a33aa06ae427840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b1b61081f6124840",
+        "3af35cf3c3227840"
+      ],
+      "expected": "6ae3bbf09a527840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6353acefc3224840",
+        "65fafa6191327840"
+      ],
+      "expected": "00a5cdda87627840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "15f0475e91324840",
+        "900199d05e427840"
+      ],
+      "expected": "c977dfc474727840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c68ce3cc5e424840",
+        "bc08373f2c527840"
+      ],
+      "expected": "a65bf1ae61827840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "78297f3b2c524840",
+        "e70fd5adf9617840"
+      ],
+      "expected": "735003994e927840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2ac61aaaf9614840",
+        "1217731cc7717840"
+      ],
+      "expected": "115615833ba27840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "db62b618c7714840",
+        "3e1e118b94817840"
+      ],
+      "expected": "5f6c276d28b27840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8dff518794814840",
+        "6925aff961917840"
+      ],
+      "expected": "3c93395715c27840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3f9cedf561914840",
+        "942c4d682fa17840"
+      ],
+      "expected": "88ca4b4102d27840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f13889642fa14840",
+        "c033ebd6fcb07840"
+      ],
+      "expected": "26125e2befe17840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a2d524d3fcb04840",
+        "eb3a8945cac07840"
+      ],
+      "expected": "f4697015dcf17840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5472c041cac04840",
+        "164227b497d07840"
+      ],
+      "expected": "d3d182ffc8017940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "060f5cb097d04840",
+        "4249c52265e07840"
+      ],
+      "expected": "a74995e9b5117940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b7abf71e65e04840",
+        "6d50639132f07840"
+      ],
+      "expected": "50d1a7d3a2217940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6948938d32f04840",
+        "9957010000007940"
+      ],
+      "expected": "b068babd8f317940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1be52efcffff4840",
+        "c45e9f6ecd0f7940"
+      ],
+      "expected": "a80fcda77c417940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cc81ca6acd0f4940",
+        "ef653ddd9a1f7940"
+      ],
+      "expected": "1cc6df9169517940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7e1e66d99a1f4940",
+        "1b6ddb4b682f7940"
+      ],
+      "expected": "f08bf27b56617940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "30bb0148682f4940",
+        "467479ba353f7940"
+      ],
+      "expected": "0561056643717940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e1579db6353f4940",
+        "717b1729034f7940"
+      ],
+      "expected": "3f45185030817940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "93f43825034f4940",
+        "9d82b597d05e7940"
+      ],
+      "expected": "83382b3a1d917940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4591d493d05e4940",
+        "c88953069e6e7940"
+      ],
+      "expected": "b33a3e240aa17940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f62d70029e6e4940",
+        "f390f1746b7e7940"
+      ],
+      "expected": "b54b510ef7b07940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a8ca0b716b7e4940",
+        "1f988fe3388e7940"
+      ],
+      "expected": "6d6b64f8e3c07940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5a67a7df388e4940",
+        "4a9f2d52069e7940"
+      ],
+      "expected": "be9977e2d0d07940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0c04434e069e4940",
+        "76a6cbc0d3ad7940"
+      ],
+      "expected": "90d68accbde07940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bda0debcd3ad4940",
+        "a1ad692fa1bd7940"
+      ],
+      "expected": "c6219eb6aaf07940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6f3d7a2ba1bd4940",
+        "ccb4079e6ecd7940"
+      ],
+      "expected": "467bb1a097007a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "21da159a6ecd4940",
+        "f8bba50c3cdd7940"
+      ],
+      "expected": "f7e2c48a84107a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d276b1083cdd4940",
+        "23c3437b09ed7940"
+      ],
+      "expected": "be58d87471207a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "84134d7709ed4940",
+        "4ecae1e9d6fc7940"
+      ],
+      "expected": "81dceb5e5e307a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36b0e8e5d6fc4940",
+        "7ad17f58a40c7a40"
+      ],
+      "expected": "286eff484b407a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e74c8454a40c4a40",
+        "a5d81dc7711c7a40"
+      ],
+      "expected": "980d133338507a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "99e91fc3711c4a40",
+        "d0dfbb353f2c7a40"
+      ],
+      "expected": "b8ba261d25607a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4b86bb313f2c4a40",
+        "fce659a40c3c7a40"
+      ],
+      "expected": "72753a0712707a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fc2257a00c3c4a40",
+        "27eef712da4b7a40"
+      ],
+      "expected": "ab3d4ef1fe7f7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "aebff20eda4b4a40",
+        "52f59581a75b7a40"
+      ],
+      "expected": "4b1362dbeb8f7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "605c8e7da75b4a40",
+        "7efc33f0746b7a40"
+      ],
+      "expected": "3bf675c5d89f7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "11f929ec746b4a40",
+        "a903d25e427b7a40"
+      ],
+      "expected": "62e689afc5af7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c395c55a427b4a40",
+        "d50a70cd0f8b7a40"
+      ],
+      "expected": "a9e39d99b2bf7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "753261c90f8b4a40",
+        "00120e3cdd9a7a40"
+      ],
+      "expected": "f9edb1839fcf7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "26cffc37dd9a4a40",
+        "2b19acaaaaaa7a40"
+      ],
+      "expected": "3905c66d8cdf7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d86b98a6aaaa4a40",
+        "57204a1978ba7a40"
+      ],
+      "expected": "5529da5779ef7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8a08341578ba4a40",
+        "8227e88745ca7a40"
+      ],
+      "expected": "335aee4166ff7a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3ca5cf8345ca4a40",
+        "ad2e86f612da7a40"
+      ],
+      "expected": "be97022c530f7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ed416bf212da4a40",
+        "d9352465e0e97a40"
+      ],
+      "expected": "e2e11616401f7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9fde0661e0e94a40",
+        "043dc2d3adf97a40"
+      ],
+      "expected": "84382b002d2f7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "517ba2cfadf94a40",
+        "2f4460427b097b40"
+      ],
+      "expected": "929b3fea193f7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "02183e3e7b094b40",
+        "5b4bfeb048197b40"
+      ],
+      "expected": "f50a54d4064f7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b4b4d9ac48194b40",
+        "86529c1f16297b40"
+      ],
+      "expected": "978668bef35e7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6651751b16294b40",
+        "b1593a8ee3387b40"
+      ],
+      "expected": "630e7da8e06e7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "17ee108ae3384b40",
+        "dd60d8fcb0487b40"
+      ],
+      "expected": "45a29192cd7e7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c98aacf8b0484b40",
+        "0868766b7e587b40"
+      ],
+      "expected": "2642a67cba8e7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7b2748677e584b40",
+        "346f14da4b687b40"
+      ],
+      "expected": "f3edba66a79e7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2cc4e3d54b684b40",
+        "5f76b24819787b40"
+      ],
+      "expected": "96a5cf5094ae7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "de607f4419784b40",
+        "8a7d50b7e6877b40"
+      ],
+      "expected": "fb68e43a81be7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "90fd1ab3e6874b40",
+        "b684ee25b4977b40"
+      ],
+      "expected": "1038f9246ece7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "419ab621b4974b40",
+        "e18b8c9481a77b40"
+      ],
+      "expected": "bd120e0f5bde7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a74b40",
+        "0c932a034fb77b40"
+      ],
+      "expected": "f1f822f947ee7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a5d3edfe4eb74b40",
+        "389ac8711cc77b40"
+      ],
+      "expected": "98ea37e334fe7b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5670896d1cc74b40",
+        "63a166e0e9d67b40"
+      ],
+      "expected": "9ee74ccd210e7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "080d25dce9d64b40",
+        "8ea8044fb7e67b40"
+      ],
+      "expected": "efef61b70e1e7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "baa9c04ab7e64b40",
+        "baafa2bd84f67b40"
+      ],
+      "expected": "790377a1fb2d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c465cb984f64b40",
+        "e5b6402c52067c40"
+      ],
+      "expected": "29228c8be83d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1de3f72752064c40",
+        "11bede9a1f167c40"
+      ],
+      "expected": "ec4ba175d54d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cf7f93961f164c40",
+        "3cc57c09ed257c40"
+      ],
+      "expected": "ae80b65fc25d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "811c2f05ed254c40",
+        "67cc1a78ba357c40"
+      ],
+      "expected": "5ec0cb49af6d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "32b9ca73ba354c40",
+        "93d3b8e687457c40"
+      ],
+      "expected": "eb0ae1339c7d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e45566e287454c40",
+        "beda565555557c40"
+      ],
+      "expected": "3f60f61d898d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "96f2015155554c40",
+        "e9e1f4c322657c40"
+      ],
+      "expected": "4bc00b08769d7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "478f9dbf22654c40",
+        "15e99232f0747c40"
+      ],
+      "expected": "fd2a21f262ad7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f92b392ef0744c40",
+        "40f030a1bd847c40"
+      ],
+      "expected": "41a036dc4fbd7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "abc8d49cbd844c40",
+        "6bf7ce0f8b947c40"
+      ],
+      "expected": "08204cc63ccd7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5c65700b8b944c40",
+        "97fe6c7e58a47c40"
+      ],
+      "expected": "40aa61b029dd7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e020c7a58a44c40",
+        "c2050bed25b47c40"
+      ],
+      "expected": "d73e779a16ed7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c09ea7e825b44c40",
+        "ed0ca95bf3c37c40"
+      ],
+      "expected": "bcdd8c8403fd7c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "713b4357f3c34c40",
+        "191447cac0d37c40"
+      ],
+      "expected": "e086a26ef00c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "23d8dec5c0d34c40",
+        "441be5388ee37c40"
+      ],
+      "expected": "2f3ab858dd1c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d5747a348ee34c40",
+        "702283a75bf37c40"
+      ],
+      "expected": "9bf7cd42ca2c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "871116a35bf34c40",
+        "9b29211629037d40"
+      ],
+      "expected": "11bfe32cb73c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "38aeb11129034d40",
+        "c630bf84f6127d40"
+      ],
+      "expected": "8390f916a44c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ea4a4d80f6124d40",
+        "f2375df3c3227d40"
+      ],
+      "expected": "e06b0f01915c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ce7e8eec3224d40",
+        "1d3ffb6191327d40"
+      ],
+      "expected": "175125eb7d6c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4d84845d91324d40",
+        "484699d05e427d40"
+      ],
+      "expected": "19403bd56a7c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ff2020cc5e424d40",
+        "744d373f2c527d40"
+      ],
+      "expected": "d63851bf578c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b1bdbb3a2c524d40",
+        "9f54d5adf9617d40"
+      ],
+      "expected": "3e3b67a9449c7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "625a57a9f9614d40",
+        "ca5b731cc7717d40"
+      ],
+      "expected": "41477d9331ac7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "14f7f217c7714d40",
+        "f662118b94817d40"
+      ],
+      "expected": "d25c937d1ebc7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c6938e8694814d40",
+        "216aaff961917d40"
+      ],
+      "expected": "de7ba9670bcc7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "77302af561914d40",
+        "4c714d682fa17d40"
+      ],
+      "expected": "58a4bf51f8db7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29cdc5632fa14d40",
+        "7878ebd6fcb07d40"
+      ],
+      "expected": "32d6d53be5eb7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "db6961d2fcb04d40",
+        "a37f8945cac07d40"
+      ],
+      "expected": "5a11ec25d2fb7d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8c06fd40cac04d40",
+        "cf8627b497d07d40"
+      ],
+      "expected": "c5550210bf0b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3ea398af97d04d40",
+        "fa8dc52265e07d40"
+      ],
+      "expected": "60a318faab1b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f03f341e65e04d40",
+        "2595639132f07d40"
+      ],
+      "expected": "1ffa2ee4982b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a1dccf8c32f04d40",
+        "519c010000007e40"
+      ],
+      "expected": "f55945ce853b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "53796bfbffff4d40",
+        "7ca39f6ecd0f7e40"
+      ],
+      "expected": "d0c25bb8724b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0516076acd0f4e40",
+        "a7aa3ddd9a1f7e40"
+      ],
+      "expected": "a43472a25f5b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b7b2a2d89a1f4e40",
+        "d3b1db4b682f7e40"
+      ],
+      "expected": "64af888c4c6b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "684f3e47682f4e40",
+        "feb879ba353f7e40"
+      ],
+      "expected": "ff329f76397b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1aecd9b5353f4e40",
+        "29c01729034f7e40"
+      ],
+      "expected": "69bfb560268b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cc887524034f4e40",
+        "55c7b597d05e7e40"
+      ],
+      "expected": "9554cc4a139b7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7d251193d05e4e40",
+        "80ce53069e6e7e40"
+      ],
+      "expected": "73f2e23400ab7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2fc2ac019e6e4e40",
+        "acd5f1746b7e7e40"
+      ],
+      "expected": "f898f91eedba7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e15e48706b7e4e40",
+        "d7dc8fe3388e7e40"
+      ],
+      "expected": "15481009daca7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "92fbe3de388e4e40",
+        "02e42d52069e7e40"
+      ],
+      "expected": "bdff26f3c6da7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "44987f4d069e4e40",
+        "2eebcbc0d3ad7e40"
+      ],
+      "expected": "e3bf3dddb3ea7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f6341bbcd3ad4e40",
+        "59f2692fa1bd7e40"
+      ],
+      "expected": "7a8854c7a0fa7e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a7d1b62aa1bd4e40",
+        "84f9079e6ecd7e40"
+      ],
+      "expected": "74596bb18d0a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "596e52996ecd4e40",
+        "b000a60c3cdd7e40"
+      ],
+      "expected": "c632829b7a1a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0b0bee073cdd4e40",
+        "db07447b09ed7e40"
+      ],
+      "expected": "62149985672a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bca7897609ed4e40",
+        "060fe2e9d6fc7e40"
+      ],
+      "expected": "3afeaf6f543a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6e4425e5d6fc4e40",
+        "32168058a40c7f40"
+      ],
+      "expected": "45f0c659414a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "20e1c053a40c4f40",
+        "5d1d1ec7711c7f40"
+      ],
+      "expected": "73eadd432e5a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d27d5cc2711c4f40",
+        "8824bc353f2c7f40"
+      ],
+      "expected": "b9ecf42d1b6a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "831af8303f2c4f40",
+        "b42b5aa40c3c7f40"
+      ],
+      "expected": "0cf70b18087a7f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "35b7939f0c3c4f40",
+        "df32f812da4b7f40"
+      ],
+      "expected": "5e092302f5897f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e7532f0eda4b4f40",
+        "0b3a9681a75b7f40"
+      ],
+      "expected": "a3233aece1997f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "98f0ca7ca75b4f40",
+        "364134f0746b7f40"
+      ],
+      "expected": "d04551d6cea97f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4a8d66eb746b4f40",
+        "6148d25e427b7f40"
+      ],
+      "expected": "d86f68c0bbb97f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fc29025a427b4f40",
+        "8d4f70cd0f8b7f40"
+      ],
+      "expected": "b0a17faaa8c97f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "adc69dc80f8b4f40",
+        "b8560e3cdd9a7f40"
+      ],
+      "expected": "4cdb969495d97f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9a4f40",
+        "e35dacaaaaaa7f40"
+      ],
+      "expected": "a01cae7e82e97f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1100d5a5aaaa4f40",
+        "0f654a1978ba7f40"
+      ],
+      "expected": "a265c5686ff97f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c29c701478ba4f40",
+        "3a6ce88745ca7f40"
+      ],
+      "expected": "225b6e29ae048040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "74390c8345ca4f40",
+        "657386f612da7f40"
+      ],
+      "expected": "3e077a9ea40c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "26d6a7f112da4f40",
+        "917a2465e0e97f40"
+      ],
+      "expected": "21b785139b148040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d7724360e0e94f40",
+        "bc81c2d3adf97f40"
+      ],
+      "expected": "c26a9188911c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "890fdfceadf94f40",
+        "744430a1bd048040"
+      ],
+      "expected": "1e229dfd87248040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1d56bd9ebd045040",
+        "09487f58a40c8040"
+      ],
+      "expected": "2edda8727e2c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "76240b56a40c5040",
+        "9f4bce0f8b148040"
+      ],
+      "expected": "ee9bb4e774348040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cff2580d8b145040",
+        "354f1dc7711c8040"
+      ],
+      "expected": "585ec05c6b3c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "28c1a6c4711c5040",
+        "ca526c7e58248040"
+      ],
+      "expected": "6624ccd161448040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "818ff47b58245040",
+        "6056bb353f2c8040"
+      ],
+      "expected": "14eed746584c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "da5d42333f2c5040",
+        "f6590aed25348040"
+      ],
+      "expected": "5bbbe3bb4e548040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "322c90ea25345040",
+        "8c5d59a40c3c8040"
+      ],
+      "expected": "378cef30455c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8bfadda10c3c5040",
+        "2161a85bf3438040"
+      ],
+      "expected": "a260fba53b648040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e4c82b59f3435040",
+        "b764f712da4b8040"
+      ],
+      "expected": "9838071b326c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3d977910da4b5040",
+        "4d6846cac0538040"
+      ],
+      "expected": "1214139028748040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9665c7c7c0535040",
+        "e26b9581a75b8040"
+      ],
+      "expected": "0cf31e051f7c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ef33157fa75b5040",
+        "786fe4388e638040"
+      ],
+      "expected": "82d52a7a15848040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "480263368e635040",
+        "0e7333f0746b8040"
+      ],
+      "expected": "6dbb36ef0b8c8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a0d0b0ed746b5040",
+        "a37682a75b738040"
+      ],
+      "expected": "c9a4426402948040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f99efea45b735040",
+        "397ad15e427b8040"
+      ],
+      "expected": "91914ed9f89b8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "526d4c5c427b5040",
+        "cf7d201629838040"
+      ],
+      "expected": "c0815a4eefa38040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ab3b9a1329835040",
+        "64816fcd0f8b8040"
+      ],
+      "expected": "517566c3e5ab8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "040ae8ca0f8b5040",
+        "fa84be84f6928040"
+      ],
+      "expected": "406c7238dcb38040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5dd83582f6925040",
+        "90880d3cdd9a8040"
+      ],
+      "expected": "87667eadd2bb8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b5a68339dd9a5040",
+        "258c5cf3c3a28040"
+      ],
+      "expected": "21648a22c9c38040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e75d1f0c3a25040",
+        "bb8fabaaaaaa8040"
+      ],
+      "expected": "0b659697bfcb8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "67431fa8aaaa5040",
+        "5193fa6191b28040"
+      ],
+      "expected": "4069a20cb6d38040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c0116d5f91b25040",
+        "e696491978ba8040"
+      ],
+      "expected": "b970ae81acdb8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "19e0ba1678ba5040",
+        "7c9a98d05ec28040"
+      ],
+      "expected": "747bbaf6a2e38040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "72ae08ce5ec25040",
+        "129ee78745ca8040"
+      ],
+      "expected": "6b89c66b99eb8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca7c568545ca5040",
+        "a7a1363f2cd28040"
+      ],
+      "expected": "9a9ad2e08ff38040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "234ba43c2cd25040",
+        "3da585f612da8040"
+      ],
+      "expected": "fcaede5586fb8040"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7c19f2f312da5040",
+        "d3a8d4adf9e18040"
+      ],
+      "expected": "8ec6eaca7c038140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d5e73fabf9e15040",
+        "68ac2365e0e98040"
+      ],
+      "expected": "49e1f63f730b8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2eb68d62e0e95040",
+        "feaf721cc7f18040"
+      ],
+      "expected": "2bff02b569138140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8784db19c7f15040",
+        "94b3c1d3adf98040"
+      ],
+      "expected": "2e200f2a601b8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e05229d1adf95040",
+        "2ab7108b94018140"
+      ],
+      "expected": "4f441b9f56238140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3821778894015140",
+        "bfba5f427b098140"
+      ],
+      "expected": "876b27144d2b8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "91efc43f7b095140",
+        "55beaef961118140"
+      ],
+      "expected": "d595338943338140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "eabd12f761115140",
+        "ebc1fdb048198140"
+      ],
+      "expected": "33c33ffe393b8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "438c60ae48195140",
+        "80c54c682f218140"
+      ],
+      "expected": "9df34b7330438140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9c5aae652f215140",
+        "16c99b1f16298140"
+      ],
+      "expected": "0f2758e8264b8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f528fc1c16295140",
+        "acccead6fc308140"
+      ],
+      "expected": "855d645d1d538140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4df749d4fc305140",
+        "41d0398ee3388140"
+      ],
+      "expected": "f99670d2135b8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a6c5978be3385140",
+        "d7d38845ca408140"
+      ],
+      "expected": "6ad37c470a638140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ff93e542ca405140",
+        "6dd7d7fcb0488140"
+      ],
+      "expected": "d21289bc006b8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "586233fab0485140",
+        "02db26b497508140"
+      ],
+      "expected": "2d559531f7728140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b13081b197505140",
+        "98de756b7e588140"
+      ],
+      "expected": "779aa1a6ed7a8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0affce687e585140",
+        "2ee2c42265608140"
+      ],
+      "expected": "ade2ad1be4828140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "62cd1c2065605140",
+        "c3e513da4b688140"
+      ],
+      "expected": "c92dba90da8a8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bb9b6ad74b685140",
+        "59e9629132708140"
+      ],
+      "expected": "c97bc605d1928140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "146ab88e32705140",
+        "efecb14819788140"
+      ],
+      "expected": "a9ccd27ac79a8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6d38064619785140",
+        "84f0000000808140"
+      ],
+      "expected": "6320dfefbda28140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c60654fdff7f5140",
+        "1af44fb7e6878140"
+      ],
+      "expected": "f676eb64b4aa8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1fd5a1b4e6875140",
+        "b0f79e6ecd8f8140"
+      ],
+      "expected": "5cd0f7d9aab28140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "78a3ef6bcd8f5140",
+        "45fbed25b4978140"
+      ],
+      "expected": "922c044fa1ba8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d0713d23b4975140",
+        "dbfe3cdd9a9f8140"
+      ],
+      "expected": "948b10c497c28140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29408bda9a9f5140",
+        "71028c9481a78140"
+      ],
+      "expected": "60ed1c398eca8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "820ed99181a75140",
+        "0606db4b68af8140"
+      ],
+      "expected": "ee5129ae84d28140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dbdc264968af5140",
+        "9c092a034fb78140"
+      ],
+      "expected": "3fb935237bda8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "34ab74004fb75140",
+        "320d79ba35bf8140"
+      ],
+      "expected": "4d23429871e28140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8d79c2b735bf5140",
+        "c810c8711cc78140"
+      ],
+      "expected": "15904e0d68ea8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e547106f1cc75140",
+        "5d14172903cf8140"
+      ],
+      "expected": "92ff5a825ef28140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3e165e2603cf5140",
+        "f31766e0e9d68140"
+      ],
+      "expected": "c27167f754fa8140"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "97e4abdde9d65140",
+        "891bb597d0de8140"
+      ],
+      "expected": "a2e6736c4b028240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f0b2f994d0de5140",
+        "1e1f044fb7e68140"
+      ],
+      "expected": "2b5e80e1410a8240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4981474cb7e65140",
+        "b42253069eee8140"
+      ],
+      "expected": "5dd88c5638128240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a24f95039eee5140",
+        "4a26a2bd84f68140"
+      ],
+      "expected": "345599cb2e1a8240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fa1de3ba84f65140",
+        "df29f1746bfe8140"
+      ],
+      "expected": "aad4a54025228240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "53ec30726bfe5140",
+        "752d402c52068240"
+      ],
+      "expected": "bf56b2b51b2a8240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "acba7e2952065240",
+        "0b318fe3380e8240"
+      ],
+      "expected": "6ddbbe2a12328240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0589cce0380e5240",
+        "a034de9a1f168240"
+      ],
+      "expected": "b162cb9f083a8240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5e571a981f165240",
+        "36382d52061e8240"
+      ],
+      "expected": "89ecd714ff418240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b725684f061e5240",
+        "cc3b7c09ed258240"
+      ],
+      "expected": "f178e489f5498240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "10f4b506ed255240",
+        "613fcbc0d32d8240"
+      ],
+      "expected": "e407f1feeb518240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "68c203bed32d5240",
+        "f7421a78ba358240"
+      ],
+      "expected": "6299fd73e2598240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c1905175ba355240",
+        "8d46692fa13d8240"
+      ],
+      "expected": "652d0ae9d8618240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1a5f9f2ca13d5240",
+        "224ab8e687458240"
+      ],
+      "expected": "eac3165ecf698240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "732dede387455240",
+        "b84d079e6e4d8240"
+      ],
+      "expected": "ef5c23d3c5718240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ccfb3a9b6e4d5240",
+        "4e51565555558240"
+      ],
+      "expected": "70f82f48bc798240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "25ca885255555240",
+        "e354a50c3c5d8240"
+      ],
+      "expected": "69963cbdb2818240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7d98d6093c5d5240",
+        "7958f4c322658240"
+      ],
+      "expected": "d8364932a9898240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d66624c122655240",
+        "0f5c437b096d8240"
+      ],
+      "expected": "bad955a79f918240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2f357278096d5240",
+        "a45f9232f0748240"
+      ],
+      "expected": "0a7f621c96998240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8803c02ff0745240",
+        "3a63e1e9d67c8240"
+      ],
+      "expected": "c8266f918ca18240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e1d10de7d67c5240",
+        "d06630a1bd848240"
+      ],
+      "expected": "eed07b0683a98240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3aa05b9ebd845240",
+        "656a7f58a48c8240"
+      ],
+      "expected": "7a7d887b79b18240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "936ea955a48c5240",
+        "fb6dce0f8b948240"
+      ],
+      "expected": "6a2c95f06fb98240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "eb3cf70c8b945240",
+        "91711dc7719c8240"
+      ],
+      "expected": "b9dda16566c18240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "440b45c4719c5240",
+        "27756c7e58a48240"
+      ],
+      "expected": "6691aeda5cc98240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9dd9927b58a45240",
+        "bc78bb353fac8240"
+      ],
+      "expected": "6b47bb4f53d18240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f6a7e0323fac5240",
+        "527c0aed25b48240"
+      ],
+      "expected": "c9ffc7c449d98240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4f762eea25b45240",
+        "e87f59a40cbc8240"
+      ],
+      "expected": "7abad43940e18240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a8447ca10cbc5240",
+        "7d83a85bf3c38240"
+      ],
+      "expected": "7c77e1ae36e98240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0013ca58f3c35240",
+        "1387f712dacb8240"
+      ],
+      "expected": "cc36ee232df18240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "59e11710dacb5240",
+        "a98a46cac0d38240"
+      ],
+      "expected": "68f8fa9823f98240"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b2af65c7c0d35240",
+        "3e8e9581a7db8240"
+      ],
+      "expected": "4bbc070e1a018340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0b7eb37ea7db5240",
+        "d491e4388ee38240"
+      ],
+      "expected": "7482148310098340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "644c01368ee35240",
+        "6a9533f074eb8240"
+      ],
+      "expected": "e14a21f806118340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bd1a4fed74eb5240",
+        "ff9882a75bf38240"
+      ],
+      "expected": "8c152e6dfd188340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "15e99ca45bf35240",
+        "959cd15e42fb8240"
+      ],
+      "expected": "75e23ae2f3208340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6eb7ea5b42fb5240",
+        "2ba0201629038340"
+      ],
+      "expected": "98b14757ea288340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c785381329035340",
+        "c0a36fcd0f0b8340"
+      ],
+      "expected": "f18254cce0308340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "205486ca0f0b5340",
+        "56a7be84f6128340"
+      ],
+      "expected": "80566141d7388340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7922d481f6125340",
+        "ecaa0d3cdd1a8340"
+      ],
+      "expected": "422c6eb6cd408340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d2f02139dd1a5340",
+        "81ae5cf3c3228340"
+      ],
+      "expected": "31047b2bc4488340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2bbf6ff0c3225340",
+        "17b2abaaaa2a8340"
+      ],
+      "expected": "4ede87a0ba508340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "838dbda7aa2a5340",
+        "adb5fa6191328340"
+      ],
+      "expected": "95ba9415b1588340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dc5b0b5f91325340",
+        "42b94919783a8340"
+      ],
+      "expected": "0199a18aa7608340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "352a5916783a5340",
+        "d8bc98d05e428340"
+      ],
+      "expected": "9479aeff9d688340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8ef8a6cd5e425340",
+        "6ec0e787454a8340"
+      ],
+      "expected": "485cbb7494708340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e7c6f484454a5340",
+        "03c4363f2c528340"
+      ],
+      "expected": "1b41c8e98a788340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4095423c2c525340",
+        "99c785f6125a8340"
+      ],
+      "expected": "0b28d55e81808340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "986390f3125a5340",
+        "2fcbd4adf9618340"
+      ],
+      "expected": "1511e2d377888340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f131deaaf9615340",
+        "c5ce2365e0698340"
+      ],
+      "expected": "37fcee486e908340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4a002c62e0695340",
+        "5ad2721cc7718340"
+      ],
+      "expected": "6ce9fbbd64988340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a3ce7919c7715340",
+        "f0d5c1d3ad798340"
+      ],
+      "expected": "b6d808335ba08340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fc9cc7d0ad795340",
+        "86d9108b94818340"
+      ],
+      "expected": "0fca15a851a88340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "556b158894815340",
+        "1bdd5f427b898340"
+      ],
+      "expected": "74bd221d48b08340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ad39633f7b895340",
+        "b1e0aef961918340"
+      ],
+      "expected": "e5b22f923eb88340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0608b1f661915340",
+        "47e4fdb048998340"
+      ],
+      "expected": "5faa3c0735c08340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5fd6fead48995340",
+        "dce74c682fa18340"
+      ],
+      "expected": "dea3497c2bc88340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b8a44c652fa15340",
+        "72eb9b1f16a98340"
+      ],
+      "expected": "619f56f121d08340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "11739a1c16a95340",
+        "08efead6fcb08340"
+      ],
+      "expected": "e69c636618d88340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6a41e8d3fcb05340",
+        "9df2398ee3b88340"
+      ],
+      "expected": "689c70db0ee08340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c30f368be3b85340",
+        "33f68845cac08340"
+      ],
+      "expected": "e89d7d5005e88340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1bde8342cac05340",
+        "c9f9d7fcb0c88340"
+      ],
+      "expected": "61a18ac5fbef8340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "74acd1f9b0c85340",
+        "5efd26b497d08340"
+      ],
+      "expected": "d1a6973af2f78340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cd7a1fb197d05340",
+        "f400766b7ed88340"
+      ],
+      "expected": "38aea4afe8ff8340"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "26496d687ed85340",
+        "8a04c52265e08340"
+      ],
+      "expected": "91b7b124df078440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7f17bb1f65e05340",
+        "1f0814da4be88340"
+      ],
+      "expected": "dac2be99d50f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d8e508d74be85340",
+        "b50b639132f08340"
+      ],
+      "expected": "12d0cb0ecc178440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "30b4568e32f05340",
+        "4b0fb24819f88340"
+      ],
+      "expected": "36dfd883c21f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8982a44519f85340",
+        "e012010000008440"
+      ],
+      "expected": "43f0e5f8b8278440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e250f2fcffff5340",
+        "761650b7e6078440"
+      ],
+      "expected": "3803f36daf2f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3b1f40b4e6075440",
+        "0c1a9f6ecd0f8440"
+      ],
+      "expected": "121800e3a5378440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "94ed8d6bcd0f5440",
+        "a11dee25b4178440"
+      ],
+      "expected": "cf2e0d589c3f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "edbbdb22b4175440",
+        "37213ddd9a1f8440"
+      ],
+      "expected": "6d471acd92478440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "458a29da9a1f5440",
+        "cd248c9481278440"
+      ],
+      "expected": "e9612742894f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9e58779181275440",
+        "6328db4b682f8440"
+      ],
+      "expected": "427e34b77f578440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f726c548682f5440",
+        "f82b2a034f378440"
+      ],
+      "expected": "749c412c765f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "50f512004f375440",
+        "8e2f79ba353f8440"
+      ],
+      "expected": "80bc4ea16c678440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a9c360b7353f5440",
+        "2433c8711c478440"
+      ],
+      "expected": "60de5b16636f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0292ae6e1c475440",
+        "b9361729034f8440"
+      ],
+      "expected": "1402698b59778440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5b60fc25034f5440",
+        "4f3a66e0e9568440"
+      ],
+      "expected": "9a277600507f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b32e4adde9565440",
+        "e53db597d05e8440"
+      ],
+      "expected": "f04e837546878440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0cfd9794d05e5440",
+        "7a41044fb7668440"
+      ],
+      "expected": "127890ea3c8f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "65cbe54bb7665440",
+        "104553069e6e8440"
+      ],
+      "expected": "00a39d5f33978440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "be9933039e6e5440",
+        "a648a2bd84768440"
+      ],
+      "expected": "b7cfaad4299f8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "176881ba84765440",
+        "3b4cf1746b7e8440"
+      ],
+      "expected": "35feb74920a78440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7036cf716b7e5440",
+        "d14f402c52868440"
+      ],
+      "expected": "782ec5be16af8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c8041d2952865440",
+        "67538fe3388e8440"
+      ],
+      "expected": "7e60d2330db78440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "21d36ae0388e5440",
+        "fc56de9a1f968440"
+      ],
+      "expected": "4594dfa803bf8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7aa1b8971f965440",
+        "925a2d52069e8440"
+      ],
+      "expected": "cbc9ec1dfac68440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d36f064f069e5440",
+        "285e7c09eda58440"
+      ],
+      "expected": "0f01fa92f0ce8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2c3e5406eda55440",
+        "bd61cbc0d3ad8440"
+      ],
+      "expected": "0c3a0708e7d68440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "850ca2bdd3ad5440",
+        "53651a78bab58440"
+      ],
+      "expected": "c374147dddde8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dedaef74bab55440",
+        "e968692fa1bd8440"
+      ],
+      "expected": "31b121f2d3e68440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36a93d2ca1bd5440",
+        "7e6cb8e687c58440"
+      ],
+      "expected": "54ef2e67caee8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8f778be387c55440",
+        "1470079e6ecd8440"
+      ],
+      "expected": "2a2f3cdcc0f68440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e845d99a6ecd5440",
+        "aa73565555d58440"
+      ],
+      "expected": "b2704951b7fe8440"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4114275255d55440",
+        "3f77a50c3cdd8440"
+      ],
+      "expected": "e8b356c6ad068540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ae274093cdd5440",
+        "d57af4c322e58440"
+      ],
+      "expected": "ccf8633ba40e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f3b0c2c022e55440",
+        "6b7e437b09ed8440"
+      ],
+      "expected": "5c3f71b09a168540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4b7f107809ed5440",
+        "01829232f0f48440"
+      ],
+      "expected": "95877e25911e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a44d5e2ff0f45440",
+        "9685e1e9d6fc8440"
+      ],
+      "expected": "75d18b9a87268540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fd1bace6d6fc5440",
+        "2c8930a1bd048540"
+      ],
+      "expected": "fc1c990f7e2e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "56eaf99dbd045540",
+        "c28c7f58a40c8540"
+      ],
+      "expected": "266aa68474368540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "afb84755a40c5540",
+        "5790ce0f8b148540"
+      ],
+      "expected": "f2b8b3f96a3e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0887950c8b145540",
+        "ed931dc7711c8540"
+      ],
+      "expected": "5f09c16e61468540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6055e3c3711c5540",
+        "83976c7e58248540"
+      ],
+      "expected": "6b5bcee3574e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b923317b58245540",
+        "189bbb353f2c8540"
+      ],
+      "expected": "12afdb584e568540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "12f27e323f2c5540",
+        "ae9e0aed25348540"
+      ],
+      "expected": "5504e9cd445e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6bc0cce925345540",
+        "44a259a40c3c8540"
+      ],
+      "expected": "315bf6423b668540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c48e1aa10c3c5540",
+        "d9a5a85bf3438540"
+      ],
+      "expected": "a3b303b8316e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1d5d6858f3435540",
+        "6fa9f712da4b8540"
+      ],
+      "expected": "ac0d112d28768540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "762bb60fda4b5540",
+        "05ad46cac0538540"
+      ],
+      "expected": "49691ea21e7e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cef903c7c0535540",
+        "9ab09581a75b8540"
+      ],
+      "expected": "76c62b1715868540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "27c8517ea75b5540",
+        "30b4e4388e638540"
+      ],
+      "expected": "3525398c0b8e8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "80969f358e635540",
+        "c6b733f0746b8540"
+      ],
+      "expected": "8385460102968540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d964edec746b5540",
+        "5bbb82a75b738540"
+      ],
+      "expected": "5ce75376f89d8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "32333ba45b735540",
+        "f1bed15e427b8540"
+      ],
+      "expected": "c14a61ebeea58540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8b01895b427b5540",
+        "87c2201629838540"
+      ],
+      "expected": "afaf6e60e5ad8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e3cfd61229835540",
+        "1cc66fcd0f8b8540"
+      ],
+      "expected": "25167cd5dbb58540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3c9e24ca0f8b5540",
+        "b2c9be84f6928540"
+      ],
+      "expected": "217e894ad2bd8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "956c7281f6925540",
+        "48cd0d3cdd9a8540"
+      ],
+      "expected": "a2e796bfc8c58540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ee3ac038dd9a5540",
+        "ddd05cf3c3a28540"
+      ],
+      "expected": "a452a434bfcd8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "47090ef0c3a25540",
+        "73d4abaaaaaa8540"
+      ],
+      "expected": "28bfb1a9b5d58540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a0d75ba7aaaa5540",
+        "09d8fa6191b28540"
+      ],
+      "expected": "2c2dbf1eacdd8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f8a5a95e91b25540",
+        "9edb491978ba8540"
+      ],
+      "expected": "ac9ccc93a2e58540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5174f71578ba5540",
+        "34df98d05ec28540"
+      ],
+      "expected": "aa0dda0899ed8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "aa4245cd5ec25540",
+        "cae2e78745ca8540"
+      ],
+      "expected": "2280e77d8ff58540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0311938445ca5540",
+        "60e6363f2cd28540"
+      ],
+      "expected": "13f4f4f285fd8540"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5cdfe03b2cd25540",
+        "f5e985f612da8540"
+      ],
+      "expected": "7a6902687c058640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b5ad2ef312da5540",
+        "8bedd4adf9e18540"
+      ],
+      "expected": "58e00fdd720d8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e7c7caaf9e15540",
+        "21f12365e0e98540"
+      ],
+      "expected": "ab581d5269158640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "664aca61e0e95540",
+        "b6f4721cc7f18540"
+      ],
+      "expected": "6ed22ac75f1d8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bf181819c7f15540",
+        "4cf8c1d3adf98540"
+      ],
+      "expected": "a44d383c56258640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "18e765d0adf95540",
+        "e2fb108b94018640"
+      ],
+      "expected": "49ca45b14c2d8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "71b5b38794015640",
+        "77ff5f427b098640"
+      ],
+      "expected": "5b48532643358640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca83013f7b095640",
+        "0d03aff961118640"
+      ],
+      "expected": "dbc7609b393d8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "23524ff661115640",
+        "a306feb048198640"
+      ],
+      "expected": "c5486e1030458640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7b209dad48195640",
+        "380a4d682f218640"
+      ],
+      "expected": "18cb7b85264d8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d4eeea642f215640",
+        "ce0d9c1f16298640"
+      ],
+      "expected": "d34e89fa1c558640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2dbd381c16295640",
+        "6411ebd6fc308640"
+      ],
+      "expected": "f5d3966f135d8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "868b86d3fc305640",
+        "f9143a8ee3388640"
+      ],
+      "expected": "7b5aa4e409658640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "df59d48ae3385640",
+        "8f188945ca408640"
+      ],
+      "expected": "65e2b159006d8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "38282242ca405640",
+        "251cd8fcb0488640"
+      ],
+      "expected": "b06bbfcef6748640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "90f66ff9b0485640",
+        "ba1f27b497508640"
+      ],
+      "expected": "5cf6cc43ed7c8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e9c4bdb097505640",
+        "5023766b7e588640"
+      ],
+      "expected": "6782dab8e3848640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "42930b687e585640",
+        "e626c52265608640"
+      ],
+      "expected": "cf0fe82dda8c8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9b61591f65605640",
+        "7b2a14da4b688640"
+      ],
+      "expected": "939ef5a2d0948640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f42fa7d64b685640",
+        "112e639132708640"
+      ],
+      "expected": "b22e0318c79c8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4dfef48d32705640",
+        "a731b24819788640"
+      ],
+      "expected": "2bc0108dbda48640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a6cc424519785640",
+        "3c35010000808640"
+      ],
+      "expected": "fa521e02b4ac8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fe9a90fcff7f5640",
+        "d23850b7e6878640"
+      ],
+      "expected": "21e72b77aab48640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5769deb3e6875640",
+        "683c9f6ecd8f8640"
+      ],
+      "expected": "9c7c39eca0bc8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b0372c6bcd8f5640",
+        "fe3fee25b4978640"
+      ],
+      "expected": "6b13476197c48640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "09067a22b4975640",
+        "93433ddd9a9f8640"
+      ],
+      "expected": "8bab54d68dcc8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "62d4c7d99a9f5640",
+        "29478c9481a78640"
+      ],
+      "expected": "fd44624b84d48640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bba2159181a75640",
+        "bf4adb4b68af8640"
+      ],
+      "expected": "bfdf6fc07adc8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1371634868af5640",
+        "544e2a034fb78640"
+      ],
+      "expected": "cd7b7d3571e48640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c3fb1ff4eb75640",
+        "ea5179ba35bf8640"
+      ],
+      "expected": "29198baa67ec8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c50dffb635bf5640",
+        "8055c8711cc78640"
+      ],
+      "expected": "d0b7981f5ef48640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1edc4c6e1cc75640",
+        "1559172903cf8640"
+      ],
+      "expected": "c157a69454fc8640"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "77aa9a2503cf5640",
+        "ab5c66e0e9d68640"
+      ],
+      "expected": "fbf8b3094b048740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d078e8dce9d65640",
+        "4160b597d0de8640"
+      ],
+      "expected": "7c9bc17e410c8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "28473694d0de5640",
+        "d663044fb7e68640"
+      ],
+      "expected": "423fcff337148740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8115844bb7e65640",
+        "6c6753069eee8640"
+      ],
+      "expected": "4ee4dc682e1c8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dae3d1029eee5640",
+        "026ba2bd84f68640"
+      ],
+      "expected": "9d8aeadd24248740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "33b21fba84f65640",
+        "976ef1746bfe8640"
+      ],
+      "expected": "2e32f8521b2c8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8c806d716bfe5640",
+        "2d72402c52068740"
+      ],
+      "expected": "00db05c811348740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e54ebb2852065740",
+        "c3758fe3380e8740"
+      ],
+      "expected": "1185133d083c8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3e1d09e0380e5740",
+        "5879de9a1f168740"
+      ],
+      "expected": "603021b2fe438740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "96eb56971f165740",
+        "ee7c2d52061e8740"
+      ],
+      "expected": "eddc2e27f54b8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "efb9a44e061e5740",
+        "84807c09ed258740"
+      ],
+      "expected": "b58a3c9ceb538740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4888f205ed255740",
+        "1984cbc0d32d8740"
+      ],
+      "expected": "b6394a11e25b8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a15640bdd32d5740",
+        "af871a78ba358740"
+      ],
+      "expected": "f2e95786d8638740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fa248e74ba355740",
+        "458b692fa13d8740"
+      ],
+      "expected": "669b65fbce6b8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "53f3db2ba13d5740",
+        "da8eb8e687458740"
+      ],
+      "expected": "0f4e7370c5738740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "abc129e387455740",
+        "7092079e6e4d8740"
+      ],
+      "expected": "ef0181e5bb7b8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0490779a6e4d5740",
+        "0696565555558740"
+      ],
+      "expected": "03b78e5ab2838740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5d5ec55155555740",
+        "9c99a50c3c5d8740"
+      ],
+      "expected": "4a6d9ccfa88b8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b62c13093c5d5740",
+        "319df4c322658740"
+      ],
+      "expected": "c124aa449f938740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0ffb60c022655740",
+        "c7a0437b096d8740"
+      ],
+      "expected": "6addb7b9959b8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "68c9ae77096d5740",
+        "5da49232f0748740"
+      ],
+      "expected": "4397c52e8ca38740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c197fc2ef0745740",
+        "f2a7e1e9d67c8740"
+      ],
+      "expected": "4852d3a382ab8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "19664ae6d67c5740",
+        "88ab30a1bd848740"
+      ],
+      "expected": "7c0ee11879b38740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7234989dbd845740",
+        "1eaf7f58a48c8740"
+      ],
+      "expected": "dbcbee8d6fbb8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cb02e654a48c5740",
+        "b3b2ce0f8b948740"
+      ],
+      "expected": "648afc0266c38740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "24d1330c8b945740",
+        "49b61dc7719c8740"
+      ],
+      "expected": "174a0a785ccb8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7d9f81c3719c5740",
+        "dfb96c7e58a48740"
+      ],
+      "expected": "f30a18ed52d38740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d66dcf7a58a45740",
+        "74bdbb353fac8740"
+      ],
+      "expected": "f4cc256249db8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2e3c1d323fac5740",
+        "0ac10aed25b48740"
+      ],
+      "expected": "1d9033d73fe38740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "870a6be925b45740",
+        "a0c459a40cbc8740"
+      ],
+      "expected": "6a54414c36eb8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e0d8b8a00cbc5740",
+        "35c8a85bf3c38740"
+      ],
+      "expected": "da194fc12cf38740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "39a70658f3c35740",
+        "cbcbf712dacb8740"
+      ],
+      "expected": "6ee05c3623fb8740"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9275540fdacb5740",
+        "61cf46cac0d38740"
+      ],
+      "expected": "23a86aab19038840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "eb43a2c6c0d35740",
+        "f6d29581a7db8740"
+      ],
+      "expected": "f7707820100b8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4312f07da7db5740",
+        "8cd6e4388ee38740"
+      ],
+      "expected": "eb3a869506138840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ce03d358ee35740",
+        "22da33f074eb8740"
+      ],
+      "expected": "fe05940afd1a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f5ae8bec74eb5740",
+        "b7dd82a75bf38740"
+      ],
+      "expected": "2cd2a17ff3228840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4e7dd9a35bf35740",
+        "4de1d15e42fb8740"
+      ],
+      "expected": "779faff4e92a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a74b275b42fb5740",
+        "e3e4201629038840"
+      ],
+      "expected": "dd6dbd69e0328840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "001a751229035840",
+        "78e86fcd0f0b8840"
+      ],
+      "expected": "5b3dcbded63a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "59e8c2c90f0b5840",
+        "0eecbe84f6128840"
+      ],
+      "expected": "f30dd953cd428840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b1b61081f6125840",
+        "a4ef0d3cdd1a8840"
+      ],
+      "expected": "a3dfe6c8c34a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0a855e38dd1a5840",
+        "3af35cf3c3228840"
+      ],
+      "expected": "69b2f43dba528840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6353acefc3225840",
+        "cff6abaaaa2a8840"
+      ],
+      "expected": "438602b3b05a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bc21faa6aa2a5840",
+        "65fafa6191328840"
+      ],
+      "expected": "335b1028a7628840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "15f0475e91325840",
+        "fbfd4919783a8840"
+      ],
+      "expected": "35311e9d9d6a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6ebe9515783a5840",
+        "900199d05e428840"
+      ],
+      "expected": "49082c1294728840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c68ce3cc5e425840",
+        "2605e887454a8840"
+      ],
+      "expected": "70e039878a7a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1f5b3184454a5840",
+        "bc08373f2c528840"
+      ],
+      "expected": "a6b947fc80828840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "78297f3b2c525840",
+        "510c86f6125a8840"
+      ],
+      "expected": "ea935571778a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d1f7ccf2125a5840",
+        "e70fd5adf9618840"
+      ],
+      "expected": "3d6f63e66d928840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2ac61aaaf9615840",
+        "7d132465e0698840"
+      ],
+      "expected": "9e4b715b649a8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "83946861e0695840",
+        "1217731cc7718840"
+      ],
+      "expected": "09297fd05aa28840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "db62b618c7715840",
+        "a81ac2d3ad798840"
+      ],
+      "expected": "80078d4551aa8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "343104d0ad795840",
+        "3e1e118b94818840"
+      ],
+      "expected": "01e79aba47b28840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8dff518794815840",
+        "d32160427b898840"
+      ],
+      "expected": "8ac7a82f3eba8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e6cd9f3e7b895840",
+        "6925aff961918840"
+      ],
+      "expected": "1da9b6a434c28840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3f9cedf561915840",
+        "ff28feb048998840"
+      ],
+      "expected": "b68bc4192bca8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "986a3bad48995840",
+        "942c4d682fa18840"
+      ],
+      "expected": "546fd28e21d28840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f13889642fa15840",
+        "2a309c1f16a98840"
+      ],
+      "expected": "f853e00318da8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4907d71b16a95840",
+        "c033ebd6fcb08840"
+      ],
+      "expected": "a039ee780ee28840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a2d524d3fcb05840",
+        "55373a8ee3b88840"
+      ],
+      "expected": "4a20fced04ea8840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fba3728ae3b85840",
+        "eb3a8945cac08840"
+      ],
+      "expected": "f7070a63fbf18840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5472c041cac05840",
+        "813ed8fcb0c88840"
+      ],
+      "expected": "a6f017d8f1f98840"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ad400ef9b0c85840",
+        "164227b497d08840"
+      ],
+      "expected": "53da254de8018940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "060f5cb097d05840",
+        "ac45766b7ed88840"
+      ],
+      "expected": "01c533c2de098940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5edda9677ed85840",
+        "4249c52265e08840"
+      ],
+      "expected": "adb04137d5118940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b7abf71e65e05840",
+        "d84c14da4be88840"
+      ],
+      "expected": "569d4faccb198940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "107a45d64be85840",
+        "6d50639132f08840"
+      ],
+      "expected": "fa8a5d21c2218940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6948938d32f05840",
+        "0354b24819f88840"
+      ],
+      "expected": "9b796b96b8298940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c216e14419f85840",
+        "9957010000008940"
+      ],
+      "expected": "3769790baf318940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1be52efcffff5840",
+        "2e5b50b7e6078940"
+      ],
+      "expected": "cb598780a5398940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "73b37cb3e6075940",
+        "c45e9f6ecd0f8940"
+      ],
+      "expected": "594b95f59b418940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cc81ca6acd0f5940",
+        "5a62ee25b4178940"
+      ],
+      "expected": "de3da36a92498940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "25501822b4175940",
+        "ef653ddd9a1f8940"
+      ],
+      "expected": "5931b1df88518940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7e1e66d99a1f5940",
+        "85698c9481278940"
+      ],
+      "expected": "cb25bf547f598940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d7ecb39081275940",
+        "1b6ddb4b682f8940"
+      ],
+      "expected": "321bcdc975618940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "30bb0148682f5940",
+        "b0702a034f378940"
+      ],
+      "expected": "8d11db3e6c698940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "89894fff4e375940",
+        "467479ba353f8940"
+      ],
+      "expected": "db08e9b362718940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e1579db6353f5940",
+        "dc77c8711c478940"
+      ],
+      "expected": "1c01f72859798940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3a26eb6d1c475940",
+        "717b1729034f8940"
+      ],
+      "expected": "4dfa049e4f818940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "93f43825034f5940",
+        "077f66e0e9568940"
+      ],
+      "expected": "70f4121346898940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ecc286dce9565940",
+        "9d82b597d05e8940"
+      ],
+      "expected": "82ef20883c918940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4591d493d05e5940",
+        "3286044fb7668940"
+      ],
+      "expected": "82eb2efd32998940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9e5f224bb7665940",
+        "c88953069e6e8940"
+      ],
+      "expected": "72e83c7229a18940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f62d70029e6e5940",
+        "5e8da2bd84768940"
+      ],
+      "expected": "4ee64ae71fa98940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4ffcbdb984765940",
+        "f390f1746b7e8940"
+      ],
+      "expected": "15e5585c16b18940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a8ca0b716b7e5940",
+        "8994402c52868940"
+      ],
+      "expected": "c9e466d10cb98940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0199592852865940",
+        "1f988fe3388e8940"
+      ],
+      "expected": "67e5744603c18940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5a67a7df388e5940",
+        "b49bde9a1f968940"
+      ],
+      "expected": "eee682bbf9c88940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b335f5961f965940",
+        "4a9f2d52069e8940"
+      ],
+      "expected": "5ee99030f0d08940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0c04434e069e5940",
+        "e0a27c09eda58940"
+      ],
+      "expected": "b7ec9ea5e6d88940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "64d29005eda55940",
+        "76a6cbc0d3ad8940"
+      ],
+      "expected": "f7f0ac1adde08940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bda0debcd3ad5940",
+        "0baa1a78bab58940"
+      ],
+      "expected": "1cf6ba8fd3e88940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "166f2c74bab55940",
+        "a1ad692fa1bd8940"
+      ],
+      "expected": "27fcc804caf08940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6f3d7a2ba1bd5940",
+        "37b1b8e687c58940"
+      ],
+      "expected": "1703d779c0f88940"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c80bc8e287c55940",
+        "ccb4079e6ecd8940"
+      ],
+      "expected": "ea0ae5eeb6008a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "21da159a6ecd5940",
+        "62b8565555d58940"
+      ],
+      "expected": "a113f363ad088a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "79a8635155d55940",
+        "f8bba50c3cdd8940"
+      ],
+      "expected": "3a1d01d9a3108a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d276b1083cdd5940",
+        "8dbff4c322e58940"
+      ],
+      "expected": "b4270f4e9a188a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2b45ffbf22e55940",
+        "23c3437b09ed8940"
+      ],
+      "expected": "0f331dc390208a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "84134d7709ed5940",
+        "b9c69232f0f48940"
+      ],
+      "expected": "4a3f2b3887288a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dde19a2ef0f45940",
+        "4ecae1e9d6fc8940"
+      ],
+      "expected": "624c39ad7d308a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "36b0e8e5d6fc5940",
+        "e4cd30a1bd048a40"
+      ],
+      "expected": "5a5a472274388a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8e7e369dbd045a40",
+        "7ad17f58a40c8a40"
+      ],
+      "expected": "306955976a408a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e74c8454a40c5a40",
+        "0fd5ce0f8b148a40"
+      ],
+      "expected": "e178630c61488a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "401bd20b8b145a40",
+        "a5d81dc7711c8a40"
+      ],
+      "expected": "6e89718157508a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "99e91fc3711c5a40",
+        "3bdc6c7e58248a40"
+      ],
+      "expected": "d79a7ff64d588a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f2b76d7a58245a40",
+        "d0dfbb353f2c8a40"
+      ],
+      "expected": "19ad8d6b44608a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4b86bb313f2c5a40",
+        "66e30aed25348a40"
+      ],
+      "expected": "36c09be03a688a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a45409e925345a40",
+        "fce659a40c3c8a40"
+      ],
+      "expected": "2bd4a95531708a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fc2257a00c3c5a40",
+        "91eaa85bf3438a40"
+      ],
+      "expected": "f7e8b7ca27788a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "55f1a457f3435a40",
+        "27eef712da4b8a40"
+      ],
+      "expected": "9cfec53f1e808a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "aebff20eda4b5a40",
+        "bdf146cac0538a40"
+      ],
+      "expected": "1715d4b414888a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "078e40c6c0535a40",
+        "52f59581a75b8a40"
+      ],
+      "expected": "662ce2290b908a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "605c8e7da75b5a40",
+        "e8f8e4388e638a40"
+      ],
+      "expected": "8c44f09e01988a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b92adc348e635a40",
+        "7efc33f0746b8a40"
+      ],
+      "expected": "865dfe13f89f8a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "11f929ec746b5a40",
+        "130083a75b738a40"
+      ],
+      "expected": "52770c89eea78a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6ac777a35b735a40",
+        "a903d25e427b8a40"
+      ],
+      "expected": "f2911afee4af8a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c395c55a427b5a40",
+        "3f07211629838a40"
+      ],
+      "expected": "64ad2873dbb78a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1c64131229835a40",
+        "d50a70cd0f8b8a40"
+      ],
+      "expected": "a7c936e8d1bf8a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "753261c90f8b5a40",
+        "6a0ebf84f6928a40"
+      ],
+      "expected": "bae6445dc8c78a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ce00af80f6925a40",
+        "00120e3cdd9a8a40"
+      ],
+      "expected": "9d0453d2becf8a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "26cffc37dd9a5a40",
+        "96155df3c3a28a40"
+      ],
+      "expected": "50236147b5d78a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7f9d4aefc3a25a40",
+        "2b19acaaaaaa8a40"
+      ],
+      "expected": "d0426fbcabdf8a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d86b98a6aaaa5a40",
+        "c11cfb6191b28a40"
+      ],
+      "expected": "1e637d31a2e78a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "313ae65d91b25a40",
+        "57204a1978ba8a40"
+      ],
+      "expected": "3a848ba698ef8a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8a08341578ba5a40",
+        "ec2399d05ec28a40"
+      ],
+      "expected": "20a6991b8ff78a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e3d681cc5ec25a40",
+        "8227e88745ca8a40"
+      ],
+      "expected": "d3c8a79085ff8a40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3ca5cf8345ca5a40",
+        "182b373f2cd28a40"
+      ],
+      "expected": "51ecb5057c078b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "94731d3b2cd25a40",
+        "ad2e86f612da8a40"
+      ],
+      "expected": "9810c47a720f8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ed416bf212da5a40",
+        "4332d5adf9e18a40"
+      ],
+      "expected": "aa35d2ef68178b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4610b9a9f9e15a40",
+        "d9352465e0e98a40"
+      ],
+      "expected": "845be0645f1f8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9fde0661e0e95a40",
+        "6e39731cc7f18a40"
+      ],
+      "expected": "2582eed955278b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f8ac5418c7f15a40",
+        "043dc2d3adf98a40"
+      ],
+      "expected": "8fa9fc4e4c2f8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "517ba2cfadf95a40",
+        "9a40118b94018b40"
+      ],
+      "expected": "bfd10ac442378b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a949f08694015b40",
+        "2f4460427b098b40"
+      ],
+      "expected": "b4fa1839393f8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "02183e3e7b095b40",
+        "c547aff961118b40"
+      ],
+      "expected": "702427ae2f478b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5be68bf561115b40",
+        "5b4bfeb048198b40"
+      ],
+      "expected": "f04e3523264f8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b4b4d9ac48195b40",
+        "f04e4d682f218b40"
+      ],
+      "expected": "337a43981c578b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0d8327642f215b40",
+        "86529c1f16298b40"
+      ],
+      "expected": "3aa6510d135f8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6651751b16295b40",
+        "1c56ebd6fc308b40"
+      ],
+      "expected": "04d35f8209678b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "be1fc3d2fc305b40",
+        "b1593a8ee3388b40"
+      ],
+      "expected": "8f006ef7ff6e8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "17ee108ae3385b40",
+        "475d8945ca408b40"
+      ],
+      "expected": "dd2e7c6cf6768b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "70bc5e41ca405b40",
+        "dd60d8fcb0488b40"
+      ],
+      "expected": "ea5d8ae1ec7e8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c98aacf8b0485b40",
+        "736427b497508b40"
+      ],
+      "expected": "b88d9856e3868b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2259faaf97505b40",
+        "0868766b7e588b40"
+      ],
+      "expected": "45bea6cbd98e8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7b2748677e585b40",
+        "9e6bc52265608b40"
+      ],
+      "expected": "91efb440d0968b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d4f5951e65605b40",
+        "346f14da4b688b40"
+      ],
+      "expected": "9a21c3b5c69e8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2cc4e3d54b685b40",
+        "c972639132708b40"
+      ],
+      "expected": "6154d12abda68b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8592318d32705b40",
+        "5f76b24819788b40"
+      ],
+      "expected": "e587df9fb3ae8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "de607f4419785b40",
+        "f579010000808b40"
+      ],
+      "expected": "25bced14aab68b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "372fcdfbff7f5b40",
+        "8a7d50b7e6878b40"
+      ],
+      "expected": "20f1fb89a0be8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "90fd1ab3e6875b40",
+        "20819f6ecd8f8b40"
+      ],
+      "expected": "d7260aff96c68b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e9cb686acd8f5b40",
+        "b684ee25b4978b40"
+      ],
+      "expected": "485d18748dce8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "419ab621b4975b40",
+        "4b883ddd9a9f8b40"
+      ],
+      "expected": "719426e983d68b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9a6804d99a9f5b40",
+        "e18b8c9481a78b40"
+      ],
+      "expected": "55cc345e7ade8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f336529081a75b40",
+        "778fdb4b68af8b40"
+      ],
+      "expected": "f10443d370e68b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4c05a04768af5b40",
+        "0c932a034fb78b40"
+      ],
+      "expected": "433e514867ee8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a5d3edfe4eb75b40",
+        "a29679ba35bf8b40"
+      ],
+      "expected": "4e785fbd5df68b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fea13bb635bf5b40",
+        "389ac8711cc78b40"
+      ],
+      "expected": "0fb36d3254fe8b40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5670896d1cc75b40",
+        "cd9d172903cf8b40"
+      ],
+      "expected": "86ee7ba74a068c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "af3ed72403cf5b40",
+        "63a166e0e9d68b40"
+      ],
+      "expected": "b22a8a1c410e8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "080d25dce9d65b40",
+        "f9a4b597d0de8b40"
+      ],
+      "expected": "9467989137168c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "61db7293d0de5b40",
+        "8ea8044fb7e68b40"
+      ],
+      "expected": "28a5a6062e1e8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "baa9c04ab7e65b40",
+        "24ac53069eee8b40"
+      ],
+      "expected": "71e3b47b24268c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "13780e029eee5b40",
+        "baafa2bd84f68b40"
+      ],
+      "expected": "6d22c3f01a2e8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6c465cb984f65b40",
+        "4fb3f1746bfe8b40"
+      ],
+      "expected": "1a62d16511368c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c414aa706bfe5b40",
+        "e5b6402c52068c40"
+      ],
+      "expected": "7aa2dfda073e8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1de3f72752065c40",
+        "7bba8fe3380e8c40"
+      ],
+      "expected": "8be3ed4ffe458c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "76b145df380e5c40",
+        "11bede9a1f168c40"
+      ],
+      "expected": "4d25fcc4f44d8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cf7f93961f165c40",
+        "a6c12d52061e8c40"
+      ],
+      "expected": "be670a3aeb558c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "284ee14d061e5c40",
+        "3cc57c09ed258c40"
+      ],
+      "expected": "dfaa18afe15d8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "811c2f05ed255c40",
+        "d2c8cbc0d32d8c40"
+      ],
+      "expected": "afee2624d8658c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d9ea7cbcd32d5c40",
+        "67cc1a78ba358c40"
+      ],
+      "expected": "2d333599ce6d8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "32b9ca73ba355c40",
+        "fdcf692fa13d8c40"
+      ],
+      "expected": "5978430ec5758c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8b87182ba13d5c40",
+        "93d3b8e687458c40"
+      ],
+      "expected": "32be5183bb7d8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e45566e287455c40",
+        "28d7079e6e4d8c40"
+      ],
+      "expected": "b60460f8b1858c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3d24b4996e4d5c40",
+        "beda565555558c40"
+      ],
+      "expected": "e84b6e6da88d8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "96f2015155555c40",
+        "54dea50c3c5d8c40"
+      ],
+      "expected": "c5937ce29e958c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "efc04f083c5d5c40",
+        "e9e1f4c322658c40"
+      ],
+      "expected": "4cdc8a57959d8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "478f9dbf22655c40",
+        "7fe5437b096d8c40"
+      ],
+      "expected": "7f2599cc8ba58c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a05deb76096d5c40",
+        "15e99232f0748c40"
+      ],
+      "expected": "5b6fa74182ad8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f92b392ef0745c40",
+        "aaece1e9d67c8c40"
+      ],
+      "expected": "dfb9b5b678b58c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "52fa86e5d67c5c40",
+        "40f030a1bd848c40"
+      ],
+      "expected": "0d05c42b6fbd8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "abc8d49cbd845c40",
+        "d6f37f58a48c8c40"
+      ],
+      "expected": "e350d2a065c58c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "04972254a48c5c40",
+        "6bf7ce0f8b948c40"
+      ],
+      "expected": "609de0155ccd8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5c65700b8b945c40",
+        "01fb1dc7719c8c40"
+      ],
+      "expected": "84eaee8a52d58c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b533bec2719c5c40",
+        "97fe6c7e58a48c40"
+      ],
+      "expected": "5038fdff48dd8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0e020c7a58a45c40",
+        "2c02bc353fac8c40"
+      ],
+      "expected": "c0860b753fe58c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "67d059313fac5c40",
+        "c2050bed25b48c40"
+      ],
+      "expected": "d6d519ea35ed8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c09ea7e825b45c40",
+        "58095aa40cbc8c40"
+      ],
+      "expected": "9225285f2cf58c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "196df59f0cbc5c40",
+        "ed0ca95bf3c38c40"
+      ],
+      "expected": "f17536d422fd8c40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "713b4357f3c35c40",
+        "8310f812dacb8c40"
+      ],
+      "expected": "f4c6444919058d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ca09910edacb5c40",
+        "191447cac0d38c40"
+      ],
+      "expected": "9b1853be0f0d8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "23d8dec5c0d35c40",
+        "af179681a7db8c40"
+      ],
+      "expected": "e56a613306158d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7ca62c7da7db5c40",
+        "441be5388ee38c40"
+      ],
+      "expected": "d0bd6fa8fc1c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d5747a348ee35c40",
+        "da1e34f074eb8c40"
+      ],
+      "expected": "5e117e1df3248d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2e43c8eb74eb5c40",
+        "702283a75bf38c40"
+      ],
+      "expected": "8d658c92e92c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "871116a35bf35c40",
+        "0526d25e42fb8c40"
+      ],
+      "expected": "5cba9a07e0348d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dfdf635a42fb5c40",
+        "9b29211629038d40"
+      ],
+      "expected": "cb0fa97cd63c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "38aeb11129035d40",
+        "312d70cd0f0b8d40"
+      ],
+      "expected": "db65b7f1cc448d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "917cffc80f0b5d40",
+        "c630bf84f6128d40"
+      ],
+      "expected": "89bcc566c34c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ea4a4d80f6125d40",
+        "5c340e3cdd1a8d40"
+      ],
+      "expected": "d613d4dbb9548d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "43199b37dd1a5d40",
+        "f2375df3c3228d40"
+      ],
+      "expected": "c26be250b05c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9ce7e8eec3225d40",
+        "873bacaaaa2a8d40"
+      ],
+      "expected": "4ac4f0c5a6648d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f4b536a6aa2a5d40",
+        "1d3ffb6191328d40"
+      ],
+      "expected": "701dff3a9d6c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4d84845d91325d40",
+        "b3424a19783a8d40"
+      ],
+      "expected": "33770db093748d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a652d214783a5d40",
+        "484699d05e428d40"
+      ],
+      "expected": "91d11b258a7c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ff2020cc5e425d40",
+        "de49e887454a8d40"
+      ],
+      "expected": "8c2c2a9a80848d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "58ef6d83454a5d40",
+        "744d373f2c528d40"
+      ],
+      "expected": "2288380f778c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b1bdbb3a2c525d40",
+        "095186f6125a8d40"
+      ],
+      "expected": "52e446846d948d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "098c09f2125a5d40",
+        "9f54d5adf9618d40"
+      ],
+      "expected": "1d4155f9639c8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "625a57a9f9615d40",
+        "35582465e0698d40"
+      ],
+      "expected": "819e636e5aa48d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bb28a560e0695d40",
+        "ca5b731cc7718d40"
+      ],
+      "expected": "7efc71e350ac8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "14f7f217c7715d40",
+        "605fc2d3ad798d40"
+      ],
+      "expected": "155b805847b48d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6dc540cfad795d40",
+        "f662118b94818d40"
+      ],
+      "expected": "44ba8ecd3dbc8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c6938e8694815d40",
+        "8b6660427b898d40"
+      ],
+      "expected": "0a1a9d4234c48d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1f62dc3d7b895d40",
+        "216aaff961918d40"
+      ],
+      "expected": "687aabb72acc8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "77302af561915d40",
+        "b76dfeb048998d40"
+      ],
+      "expected": "5ddbb92c21d48d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d0fe77ac48995d40",
+        "4c714d682fa18d40"
+      ],
+      "expected": "e73cc8a117dc8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "29cdc5632fa15d40",
+        "e2749c1f16a98d40"
+      ],
+      "expected": "089fd6160ee48d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "829b131b16a95d40",
+        "7878ebd6fcb08d40"
+      ],
+      "expected": "bf01e58b04ec8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "db6961d2fcb05d40",
+        "0e7c3a8ee3b88d40"
+      ],
+      "expected": "0a65f300fbf38d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3438af89e3b85d40",
+        "a37f8945cac08d40"
+      ],
+      "expected": "e9c80176f1fb8d40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8c06fd40cac05d40",
+        "3983d8fcb0c88d40"
+      ],
+      "expected": "5d2d10ebe7038e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e5d44af8b0c85d40",
+        "cf8627b497d08d40"
+      ],
+      "expected": "65921e60de0b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3ea398af97d05d40",
+        "648a766b7ed88d40"
+      ],
+      "expected": "fff72cd5d4138e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9771e6667ed85d40",
+        "fa8dc52265e08d40"
+      ],
+      "expected": "2c5e3b4acb1b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f03f341e65e05d40",
+        "909114da4be88d40"
+      ],
+      "expected": "ecc449bfc1238e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "490e82d54be85d40",
+        "2595639132f08d40"
+      ],
+      "expected": "3d2c5834b82b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a1dccf8c32f05d40",
+        "bb98b24819f88d40"
+      ],
+      "expected": "209466a9ae338e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "faaa1d4419f85d40",
+        "519c010000008e40"
+      ],
+      "expected": "93fc741ea53b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "53796bfbffff5d40",
+        "e69f50b7e6078e40"
+      ],
+      "expected": "966583939b438e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ac47b9b2e6075e40",
+        "7ca39f6ecd0f8e40"
+      ],
+      "expected": "2acf9108924b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0516076acd0f5e40",
+        "12a7ee25b4178e40"
+      ],
+      "expected": "4e39a07d88538e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5ee45421b4175e40",
+        "a7aa3ddd9a1f8e40"
+      ],
+      "expected": "00a4aef27e5b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b7b2a2d89a1f5e40",
+        "3dae8c9481278e40"
+      ],
+      "expected": "410fbd6775638e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0f81f08f81275e40",
+        "d3b1db4b682f8e40"
+      ],
+      "expected": "117bcbdc6b6b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "684f3e47682f5e40",
+        "68b52a034f378e40"
+      ],
+      "expected": "6de7d95162738e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c11d8cfe4e375e40",
+        "feb879ba353f8e40"
+      ],
+      "expected": "5854e8c6587b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1aecd9b5353f5e40",
+        "94bcc8711c478e40"
+      ],
+      "expected": "d0c1f63b4f838e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "73ba276d1c475e40",
+        "29c01729034f8e40"
+      ],
+      "expected": "d32f05b1458b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "cc887524034f5e40",
+        "bfc366e0e9568e40"
+      ],
+      "expected": "639e13263c938e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2457c3dbe9565e40",
+        "55c7b597d05e8e40"
+      ],
+      "expected": "7f0d229b329b8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "7d251193d05e5e40",
+        "eaca044fb7668e40"
+      ],
+      "expected": "257d301029a38e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d6f35e4ab7665e40",
+        "80ce53069e6e8e40"
+      ],
+      "expected": "57ed3e851fab8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2fc2ac019e6e5e40",
+        "16d2a2bd84768e40"
+      ],
+      "expected": "135e4dfa15b38e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8890fab884765e40",
+        "acd5f1746b7e8e40"
+      ],
+      "expected": "59cf5b6f0cbb8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e15e48706b7e5e40",
+        "41d9402c52868e40"
+      ],
+      "expected": "28416ae402c38e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3a2d962752865e40",
+        "d7dc8fe3388e8e40"
+      ],
+      "expected": "80b37859f9ca8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "92fbe3de388e5e40",
+        "6de0de9a1f968e40"
+      ],
+      "expected": "622687ceefd28e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "ebc931961f965e40",
+        "02e42d52069e8e40"
+      ],
+      "expected": "ca999543e6da8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "44987f4d069e5e40",
+        "98e77c09eda58e40"
+      ],
+      "expected": "bc0da4b8dce28e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "9d66cd04eda55e40",
+        "2eebcbc0d3ad8e40"
+      ],
+      "expected": "3582b22dd3ea8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f6341bbcd3ad5e40",
+        "c3ee1a78bab58e40"
+      ],
+      "expected": "34f7c0a2c9f28e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4f036973bab55e40",
+        "59f2692fa1bd8e40"
+      ],
+      "expected": "bb6ccf17c0fa8e40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a7d1b62aa1bd5e40",
+        "eff5b8e687c58e40"
+      ],
+      "expected": "c8e2dd8cb6028f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "00a004e287c55e40",
+        "84f9079e6ecd8e40"
+      ],
+      "expected": "5959ec01ad0a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "596e52996ecd5e40",
+        "1afd565555d58e40"
+      ],
+      "expected": "71d0fa76a3128f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "b23ca05055d55e40",
+        "b000a60c3cdd8e40"
+      ],
+      "expected": "0f4809ec991a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0b0bee073cdd5e40",
+        "4504f5c322e58e40"
+      ],
+      "expected": "30c0176190228f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "64d93bbf22e55e40",
+        "db07447b09ed8e40"
+      ],
+      "expected": "d63826d6862a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "bca7897609ed5e40",
+        "710b9332f0f48e40"
+      ],
+      "expected": "ffb1344b7d328f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "1576d72df0f45e40",
+        "060fe2e9d6fc8e40"
+      ],
+      "expected": "ac2b43c0733a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "6e4425e5d6fc5e40",
+        "9c1231a1bd048f40"
+      ],
+      "expected": "dca551356a428f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "c712739cbd045f40",
+        "32168058a40c8f40"
+      ],
+      "expected": "8f2060aa604a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "20e1c053a40c5f40",
+        "c719cf0f8b148f40"
+      ],
+      "expected": "c49b6e1f57528f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "79af0e0b8b145f40",
+        "5d1d1ec7711c8f40"
+      ],
+      "expected": "7b177d944d5a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "d27d5cc2711c5f40",
+        "f3206d7e58248f40"
+      ],
+      "expected": "b3938b0944628f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "2a4caa7958245f40",
+        "8824bc353f2c8f40"
+      ],
+      "expected": "6c109a7e3a6a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "831af8303f2c5f40",
+        "1e280bed25348f40"
+      ],
+      "expected": "a78da8f330728f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "dce845e825345f40",
+        "b42b5aa40c3c8f40"
+      ],
+      "expected": "620bb768277a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "35b7939f0c3c5f40",
+        "4a2fa95bf3438f40"
+      ],
+      "expected": "9c89c5dd1d828f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "8e85e156f3435f40",
+        "df32f812da4b8f40"
+      ],
+      "expected": "5608d452148a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "e7532f0eda4b5f40",
+        "753647cac0538f40"
+      ],
+      "expected": "9087e2c70a928f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "3f227dc5c0535f40",
+        "0b3a9681a75b8f40"
+      ],
+      "expected": "4807f13c019a8f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "98f0ca7ca75b5f40",
+        "a03de5388e638f40"
+      ],
+      "expected": "7e87ffb1f7a18f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "f1be18348e635f40",
+        "364134f0746b8f40"
+      ],
+      "expected": "33080e27eea98f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "4a8d66eb746b5f40",
+        "cc4483a75b738f40"
+      ],
+      "expected": "66891c9ce4b18f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "a35bb4a25b735f40",
+        "6148d25e427b8f40"
+      ],
+      "expected": "150b2b11dbb98f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "fc29025a427b5f40",
+        "f74b211629838f40"
+      ],
+      "expected": "428d3986d1c18f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "54f84f1129835f40",
+        "8d4f70cd0f8b8f40"
+      ],
+      "expected": "eb0f48fbc7c98f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "adc69dc80f8b5f40",
+        "2253bf84f6928f40"
+      ],
+      "expected": "10935670bed18f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "0695eb7ff6925f40",
+        "b8560e3cdd9a8f40"
+      ],
+      "expected": "b21665e5b4d98f40"
+    },
+    {
+      "operation": "hypot",
+      "arguments": [
+        "5f633937dd9a5f40",
+        "4e5a5df3c3a28f40"
+      ],
+      "expected": "cf9a735aabe18f40"
+    }
+  ]
+}

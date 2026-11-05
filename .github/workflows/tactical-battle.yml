@@ -21,8 +21,12 @@ jobs:
       - name: Export independent references on glibc
         run: |
           mkdir -p "$DSS_VALIDATION_ROOT"
-          python3 tools/tactical-battle/export_references.py --emit-log
-          python3 tools/tactical-battle/export_references.py --check
+          if test -f VData/Planning/V4.0/Reference/geometry.json; then
+            python3 tools/tactical-battle/export_references.py --check
+          else
+            python3 tools/tactical-battle/export_references.py --emit-log
+            python3 tools/tactical-battle/export_references.py --check
+          fi
       - name: Verify content
         shell: pwsh
         run: ./tools/tactical-battle/Export-Content.ps1 -Check

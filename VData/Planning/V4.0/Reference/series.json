@@ -1,0 +1,117 @@
+{
+  "header": {
+    "formatVersion": 1,
+    "source": "independent-markdown",
+    "exporterPython": "3.12.3",
+    "exporterLibc": "glibc 2.39",
+    "exporterOs": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "sourceSha256": {
+      "battles.md": "2607b606c1a8eb135cfa9d68d16e24f974c77b81b429f26b1372b1904f29a458",
+      "trace-seed-1.md": "1411c33a1972bf8a159aa05ce654f1cb5fa6c9845c19193f9164ba73688583ab",
+      "series.md": "a2101b441c9d50f33f6d95fde860dab1ecf706388cebf58179d92c46f257a7a7"
+    },
+    "geometryEncoding": "little-endian IEEE-754 binary64 hex",
+    "tracePrecision": "decimal-6",
+    "missingCoverage": [
+      "original simulator environment",
+      "unrounded trace IEEE bits",
+      "all battle trig arguments",
+      "per-weapon statistics",
+      "roleChanges",
+      "stage calls for battles other than seed 1",
+      "exact series integer sums and timeout counts"
+    ]
+  },
+  "data": [
+    {
+      "tactic": "dogfight",
+      "battles": 1000,
+      "winPercent": 96.3,
+      "winMaxOneLossPercent": 80.9,
+      "winNoLossPercent": 57.2,
+      "defeatPercent": 3.4,
+      "drawPercent": 0.1,
+      "averageTurns": 19.7,
+      "averageLosses": [
+        0.73,
+        5.93
+      ],
+      "carrierDeathPercent": [
+        0.0,
+        1.0
+      ]
+    },
+    {
+      "tactic": "raid",
+      "battles": 1000,
+      "winPercent": 85.7,
+      "winMaxOneLossPercent": 55.0,
+      "winNoLossPercent": 37.8,
+      "defeatPercent": 13.9,
+      "drawPercent": 0.4,
+      "averageTurns": 19.2,
+      "averageLosses": [
+        1.52,
+        4.98
+      ],
+      "carrierDeathPercent": [
+        0.0,
+        45.0
+      ]
+    },
+    {
+      "tactic": "defence",
+      "battles": 1000,
+      "winPercent": 94.9,
+      "winMaxOneLossPercent": 80.9,
+      "winNoLossPercent": 59.2,
+      "defeatPercent": 4.9,
+      "drawPercent": 0.2,
+      "averageTurns": 23.7,
+      "averageLosses": [
+        0.73,
+        5.9
+      ],
+      "carrierDeathPercent": [
+        1.0,
+        0.0
+      ]
+    },
+    {
+      "tactic": "balanced",
+      "battles": 1000,
+      "winPercent": 95.9,
+      "winMaxOneLossPercent": 78.5,
+      "winNoLossPercent": 41.6,
+      "defeatPercent": 4.0,
+      "drawPercent": 0.0,
+      "averageTurns": 21.3,
+      "averageLosses": [
+        0.93,
+        5.89
+      ],
+      "carrierDeathPercent": [
+        1.0,
+        3.0
+      ]
+    },
+    {
+      "tactic": "commander",
+      "battles": 1000,
+      "winPercent": 95.4,
+      "winMaxOneLossPercent": 73.5,
+      "winNoLossPercent": 41.8,
+      "defeatPercent": 4.4,
+      "drawPercent": 0.2,
+      "averageTurns": 23.4,
+      "averageLosses": [
+        1.0,
+        5.54
+      ],
+      "carrierDeathPercent": [
+        0.0,
+        36.0
+      ]
+    }
+  ]
+}

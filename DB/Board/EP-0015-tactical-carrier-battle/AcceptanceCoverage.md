@@ -9,7 +9,7 @@
 | EP-0015-US-0001-content-and-loader | AC-03 | EP-0015-US-0001-TK-0002-content-definitions, EP-0015-US-0001-TK-0003-content-loader | backend done; Client error presentation pending US-0007 |
 | EP-0015-US-0001-content-and-loader | AC-04 | EP-0015-US-0001-TK-0004-content-sync | done: 29 JSON values/order checked independently |
 | EP-0015-US-0002-deterministic-core | AC-01 | EP-0015-US-0002-TK-0001-py-math | done: Motion and source guard PASS |
-| EP-0015-US-0002-deterministic-core | AC-02 | EP-0015-US-0002-TK-0002-reference-fixtures | not started |
+| EP-0015-US-0002-deterministic-core | AC-02 | EP-0015-US-0002-TK-0002-reference-fixtures | done under D-USER-14/15; missing original fields explicit in header |
 | EP-0015-US-0002-deterministic-core | AC-03 | EP-0015-US-0002-TK-0003-mulberry32 | not started |
 | EP-0015-US-0002-deterministic-core | AC-04 | EP-0015-US-0002-TK-0004-geometry | not started |
 | EP-0015-US-0002-deterministic-core | AC-05 | EP-0015-US-0002-TK-0005-limits-and-chance | not started |
