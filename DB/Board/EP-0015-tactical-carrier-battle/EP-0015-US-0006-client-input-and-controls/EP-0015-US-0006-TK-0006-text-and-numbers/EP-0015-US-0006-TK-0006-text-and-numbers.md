@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 ticket: EP-0015-US-0006-TK-0006-text-and-numbers
 title: text-and-numbers
-stage: draft
+stage: in-progress
 layer: client
 depends_on: ["EP-0015-US-0006-TK-0005-widgets-lists"]
-files_touched: 2
+files_touched: 5
 serves: [AC-05]
 created: 2026-11-05
 revision: 3
@@ -50,3 +50,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+Five Client code files: two planned plus Controls/DropDown.cs (shared symbol substitution cache used before measuring/wrapping), TabStrip.cs (generic labels), ShortcutButton.cs (generic button captions). Visual run widgets-lists-02/03 confirmed Verdana arrow missing; fix actual shared rendering, not only a test formatter. Keep existing typefaces, use required symbols where all new-control regular/bold faces support them, otherwise verified ASCII equivalents. Lazy immutable mapping shared across MenuStyle/Xenon font faces, no per-frame glyph probes; old game rendering unchanged. BattleFormat provides invariant fixed decimals, explicit ToEven before formatting, normalized signed zero, signed/percent/degree helpers, exact long seed and localized safe text. Source text/log data remain intact; display substitutes only. Glyph and numeric tests run Windows/Linux; CPU raster not physical/native acceptance.
+
+## Windows execution evidence — 2026-11-05
+
+BattleFormat and actual new-control rendering implemented. Windows Verdana glyph ID for arrow U+2192 is0; display substitutes ASCII -> through cached shared font checks while source Text/log stays intact. Existing font family preserved. Explicit ToEven precedes invariant fixed-decimal formatting; signed zero normalized; exact signed64 seed avoids double conversion. Non-finite presentation uses a supported dash; command rejection remains Engine-owned.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-text-01/: build0 warnings/errors, scoped format/diff/self-review PASS; Client113/113 (new numeric/glyph cases plus full tactical controls and existing text input), Engine378/378 including source guards and all180 connection battles PASS. glyph-coverage.json records actual font glyph IDs and substitutions; glyphs.png and renders/widgets-lists-2.png visually inspected: arrow square replaced, captions/tooltip readable. CPU raster only. Linux glyph validation pending next CI push; ticket remains in-progress until that required gate. Code commit is published to trigger Linux; final evidence update follows before next ticket.

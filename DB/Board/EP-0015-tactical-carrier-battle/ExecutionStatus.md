@@ -63,4 +63,6 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 
 | EP-0015-US-0006-TK-0004-widgets-basic | 427ba7e8f53d700247b936ebbc9043236d8a7dbd | PASS: remote SHA verified | origin | 79 Client PASS; four CPU raster scales; build/format/diff PASS |
 
-| EP-0015-US-0006-TK-0005-widgets-lists | SHA проверяется Git после создания коммита | pending | origin | 108 Client PASS; popup/wrap/filter/tooltip + 4 raster scales; glyph fix pending TK-0006; build/format/diff PASS |
+| EP-0015-US-0006-TK-0005-widgets-lists | 172569fb43a5e102758ce49d38a8f24f326e18d2 | PASS: remote SHA verified | origin | 108 Client PASS; popup/wrap/filter/tooltip + 4 raster scales; glyph fix pending TK-0006; build/format/diff PASS |
+
+| EP-0015-US-0006-TK-0006-text-and-numbers | code SHA checked after commit; Linux pending | pending | origin | Windows113 Client +378 Engine PASS; explicit ToEven/glyph substitution; completion waits Linux |

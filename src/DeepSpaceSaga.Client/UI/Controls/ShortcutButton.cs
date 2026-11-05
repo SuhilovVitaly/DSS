@@ -39,7 +39,7 @@ public sealed class ShortcutButton(string label, string keyHint = "", string too
         if (Bounds.IsEmpty || uiScale <= 0) return;
         canvas.Save(); canvas.Translate(Bounds.Left, Bounds.Top); canvas.Scale(uiScale);
         GenericButtonTypeA.Draw(canvas, SKRect.Create(0, 0, Bounds.Width / uiScale, Bounds.Height / uiScale),
-            Label + (KeyHint.Length == 0 ? "" : " [" + KeyHint + "]"), !Enabled ? ButtonState.Disabled : Hovered || HasFocus ? ButtonState.Hovered : ButtonState.Normal);
+            ControlText.SafeSymbols(Label + (KeyHint.Length == 0 ? "" : " [" + KeyHint + "]")), !Enabled ? ButtonState.Disabled : Hovered || HasFocus ? ButtonState.Hovered : ButtonState.Normal);
         canvas.Restore();
     }
     public bool TooltipReady(long nowMs) => Hovered && Tooltip.Length > 0 && nowMs - _hoverAt >= MenuStyle.TooltipHoverDelaySeconds * 1000;

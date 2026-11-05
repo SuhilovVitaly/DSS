@@ -202,3 +202,6 @@ Preflight выявил отсутствующие обязательные ис�
 ## Current numerical platform measurement — 2026-11-05
 
 US-0002: Windows and Ubuntu/glibc runs pass all 1088 independent geometry vectors bit for bit, plus all 34 published shot chances at six-decimal source precision. Keep .NET Sin/Cos/Atan2 and CPython 3.12.3 vector_norm n=2 port; no trig mismatch or new expected battle outcomes were observed/introduced. Details and coverage limits: [PlatformValidation.md](PlatformValidation.md). G-03 is measured for available D-USER-15 vectors and reopens if later golden battles expose a numerical difference; original all-battle trig arguments are absent from MD.
+### Implementation clarification — display symbols (2026-11-05)
+
+US-0006 actual Windows Verdana lacks U+2192. New controls/BattleFormat retain the selected fonts and lazily verify symbols across regular/bold MenuStyle and Xenon faces. Unsupported signs display supported ASCII equivalents; source labels/log data are unchanged. Numeric rounding is explicit ToEven before invariant decimal formatting, with exact long seed formatting and normalized signed zero. This implements the allowed glyph substitutions in US-0006 AC-05; no user approval or new combat rule inferred. See TK-0006 evidence for actual platform measurements.

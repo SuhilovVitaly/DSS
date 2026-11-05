@@ -192,11 +192,33 @@ public sealed class DropDown<T>
 
 internal static class ControlText
 {
+    private static readonly char[] SpecialSymbols = ['−', '→', '·', '±', '×', '°', '≤', '…', '—'];
+    private static readonly Lazy<ImmutableArray<(string Symbol, string Replacement)>> Substitutions = new(() =>
+    {
+        (string Symbol, string Replacement)[] candidates = [("−", "-"), ("→", "->"), ("·", "*"), ("±", "+/-"), ("×", "x"), ("°", "deg"), ("≤", "<="), ("…", "..."), ("—", "-")];
+        var faces = new[] { MenuStyle.TypefaceRegular, MenuStyle.TypefaceBold, XenonStyle.TypefaceRegular, XenonStyle.TypefaceSemibold };
+        var result = ImmutableArray.CreateBuilder<(string, string)>();
+        foreach (var candidate in candidates)
+            foreach (var face in faces)
+            {
+                using var paint = new SKPaint { Typeface = face };
+                var glyphs = paint.GetGlyphs(candidate.Symbol);
+                if (glyphs.Length == 0 || glyphs.Any(g => g == 0)) { result.Add(candidate); break; }
+            }
+        return result.ToImmutable();
+    });
+    internal static string SafeSymbols(string text)
+    {
+        if (text.IndexOfAny(SpecialSymbols) < 0) return text;
+        foreach (var pair in Substitutions.Value) text = text.Replace(pair.Symbol, pair.Replacement, StringComparison.Ordinal);
+        return text;
+    }
     internal static SKPaint Paint(float scale) => new() { IsAntialias = true, Typeface = MenuStyle.TypefaceRegular, TextSize = 14 * scale, Color = MenuStyle.ColorText };
     internal static string Ellipsize(string text, float width, SKPaint paint)
     {
+        text = SafeSymbols(text);
         if (paint.MeasureText(text) <= width) return text;
-        const string ellipsis = "…";
+        string ellipsis = SafeSymbols("…");
         if (paint.MeasureText(ellipsis) > width) return "";
         int[] starts = StringInfo.ParseCombiningCharacters(text);
         int low = 0, high = starts.Length;
@@ -211,6 +233,7 @@ internal static class ControlText
     internal static ImmutableArray<string> Wrap(string text, float width, SKPaint paint)
     {
         if (width <= 0) return [];
+        text = SafeSymbols(text);
         var lines = ImmutableArray.CreateBuilder<string>();
         foreach (string paragraph in text.Replace("\r\n", "\n", StringComparison.Ordinal).Replace('\r', '\n').Split('\n'))
         {

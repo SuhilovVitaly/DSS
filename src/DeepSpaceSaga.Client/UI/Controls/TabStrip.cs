@@ -89,7 +89,7 @@ internal static class ControlVisuals
             TextAlign = center ? SKTextAlign.Center : SKTextAlign.Left
         };
         canvas.Save(); canvas.ClipRect(rect);
-        canvas.DrawText(text, center ? rect.MidX : rect.Left, MenuStyle.VerticalCenterBaseline(rect, paint), paint);
+        canvas.DrawText(ControlText.SafeSymbols(text), center ? rect.MidX : rect.Left, MenuStyle.VerticalCenterBaseline(rect, paint), paint);
         canvas.Restore();
     }
 }
