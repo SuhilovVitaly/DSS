@@ -204,10 +204,10 @@ public sealed class StationResourceFieldContentTests
     }
 
     [Fact]
-    public void Default_500_and_legacy_without_map_preserve_data_after_retired_auto_flag_removal()
+    public void Stress_and_legacy_worlds_without_maps_preserve_authored_data()
     {
-        // EP12 removes only the retired automatic-PD field; independently derived normalized hash protects every other byte.
-        const string baselineHash = "7B102CACB98B9DF75C4F8407C54C88A707EF1F6F652B1F0EEA45AEA4AF3B075E";
+        // The approved world-only stress fixture retains its authored asteroid, station and module layout.
+        const string baselineHash = "27D3FECEB3319FF393AF9FF2C6EDBE4C95980FF514EC10CA96AC2432947FF9AE";
         Assert.Equal(baselineHash, Convert.ToHexString(SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(File.ReadAllText(ScenarioPath("Default_500")).Replace("\r\n", "\n")))));
         using var enabled = new ContentFixture();
         using var disabled = new ContentFixture(enabled: false);

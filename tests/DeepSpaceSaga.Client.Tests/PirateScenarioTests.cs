@@ -22,7 +22,7 @@ public sealed class PirateScenarioTests
     private static ObjectMotionSnapshot Pirate(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects, o => o.ObjectType == SpaceObjectType.NpcShip);
 
     [Fact]
-    public void Three_distinct_operators_fit_three_cabins()
+    public void Crew_fit_existing_cabins_after_weapon_assignments_are_removed()
     {
         using var engine = Create();
         var saved = ScenarioLoader.LoadFromFile(ScenarioPath);
@@ -33,10 +33,7 @@ public sealed class PirateScenarioTests
             Assert.Equal(expected, ship.Crew!.Count);
             int cabins = ship.Modules!.Sum(m => registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)).CabinesCount ?? 0);
             Assert.Equal(expected, cabins);
-            var assignments = ship.Modules!.Where(m => m.OperatorCrewId is not null).Select(m => m.OperatorCrewId).ToArray();
-            Assert.Equal(expected, assignments.Length);
-            Assert.Equal(expected, assignments.Distinct().Count());
-            Assert.All(assignments, id => Assert.Contains(ship.Crew, c => c.CrewId == id));
+            Assert.All(ship.Modules!, module => Assert.Null(module.OperatorCrewId));
         }
     }
 
@@ -49,21 +46,6 @@ public sealed class PirateScenarioTests
         var save = engine.CaptureSaveStateForTests(12 * GameCalendar.HourMs, SimulationSpeed.Speed0, simulationTimeMs: 0);
         var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         Assert.Equal(197, player.Modules!.SelectMany(m => m.Cargo ?? []).Single(c => c.ItemTypeId == "item.food-rations").Quantity);
-    }
-
-    [Fact]
-    public void Only_combat_player_gets_two_defenses()
-    {
-        var scenario = ScenarioLoader.LoadFromFile(ScenarioPath);
-        foreach (var ship in scenario.GameState.SpaceObjects)
-        {
-            var modules = ship.Modules!.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
-            Assert.Equal(ship.ObjectType == "PlayerShip" ? 2 : 1, modules.Length);
-            var module = modules[0];
-            Assert.Equal(new HullCellCoordinate(5, 2), Assert.Single(module.OccupiedCells));
-            if (modules.Length == 2) Assert.Equal(new HullCellCoordinate(3, 1), Assert.Single(modules[1].OccupiedCells));
-            Assert.All(modules, m => Assert.True(m.AutoDefenseEnabled));
-        }
     }
 
     [Fact]
@@ -92,7 +74,7 @@ public sealed class PirateScenarioTests
     }
 
     [Fact]
-    public void Pirate_can_be_clicked_and_information_includes_generated_captain()
+    public void Neutral_contact_can_be_clicked_and_information_includes_generated_captain()
     {
         using var engine = Create();
         var save = ScenarioLoader.LoadFromFile(ScenarioPath);
@@ -115,7 +97,7 @@ public sealed class PirateScenarioTests
         screen.OnMouseDown(640, 420);
         var pirate = Pirate(snapshot);
         Assert.Equal(pirate.ObjectId, screen.SelectedObjectId);
-        Assert.Equal(PlayerRelation.Enemy, screen.SelectedOrActiveObjectInfo?.RelationToPlayer);
+        Assert.Equal(PlayerRelation.Neutral, screen.SelectedOrActiveObjectInfo?.RelationToPlayer);
         var lines = ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo);
         Assert.Contains(("Name", pirate.DisplayName!), lines);
         Assert.Contains(("Captain", pirate.CaptainDisplayName!), lines);

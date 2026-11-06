@@ -13,8 +13,6 @@ public sealed class ScenarioGroupTranslationTests
     [InlineData("Undocked")]
     [InlineData("MarketProfiles")]
     [InlineData("PlayerShipOnly")]
-    [InlineData("CombatMukha")]
-    [InlineData("CombatMukhaSingle")]
     public void AllScenarioIdentityMatrix(string name)
     {
         var scenario = SeededWorldBootstrapTests.Scenario(name);
@@ -85,6 +83,6 @@ public sealed class ScenarioGroupTranslationTests
     {
         var found = Directory.GetFiles(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Scenarios"), "scenario.json", SearchOption.AllDirectories)
             .Select(p => new DirectoryInfo(Path.GetDirectoryName(p)!).Name).Order().ToArray();
-        Assert.Equal(new[] { "CombatMukha", "CombatMukhaSingle", "Default", "Default_500", "Docked", "MarketProfiles", "PlayerShipOnly", "Undocked" }, found);
+        Assert.Equal(new[] { "Default", "Default_500", "Docked", "MarketProfiles", "PlayerShipOnly", "Undocked" }, found);
     }
 }

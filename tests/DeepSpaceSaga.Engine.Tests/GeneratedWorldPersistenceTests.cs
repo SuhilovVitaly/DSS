@@ -24,14 +24,9 @@ public sealed class GeneratedWorldPersistenceTests
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         using var restored = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), isSave: true);
-        string[] removed = before.Objects.Select(o => o.ObjectId).Except(save.GameState.SpaceObjects.Select(o => o.ObjectId)).ToArray();
-        Assert.Equal(name == "PlayerShipOnly" ? new[] { "SPC-0002" } : [], removed);
-        EqualWorld(WithoutRetiredHostiles(before), restored.CaptureSnapshot());
-        EqualWorld(WithoutRetiredHostiles(original.CaptureSnapshotForTests(GameCalendar.DayMs + 3333333, SimulationSpeed.Speed4, 13345)),
+        EqualWorld(before, restored.CaptureSnapshot());
+        EqualWorld(original.CaptureSnapshotForTests(GameCalendar.DayMs + 3333333, SimulationSpeed.Speed4, 13345),
             restored.CaptureSnapshotForTests(GameCalendar.DayMs + 3333333, SimulationSpeed.Speed4, 13345));
-
-        AuthoritativeSnapshot WithoutRetiredHostiles(AuthoritativeSnapshot snapshot) => snapshot with
-        { Objects = [.. snapshot.Objects.Where(o => !removed.Contains(o.ObjectId))] };
     }
 
     [Theory]

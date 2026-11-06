@@ -5,10 +5,10 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class DebugTuningShipTests
 {
-    internal static SimulationEngine Create(double speed = 4500, bool hostile = false, bool enemyWeapon = false)
+    internal static SimulationEngine Create(double speed = 4500)
     {
         var source = ScenarioLoader.LoadFromFile(Path.Combine(TorpedoImpactTests.ClientRoot,
-            "Scenarios", hostile ? "CombatMukhaSingle" : "PlayerShipOnly", "scenario.json"));
+            "Scenarios", "PlayerShipOnly", "scenario.json"));
         var engine = new SimulationEngine(PointCombatUS0018TK0002Tests.Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
         engine.LoadScenario(source with
         {
@@ -21,8 +21,7 @@ public sealed class DebugTuningShipTests
                     SpeedMps = o.ObjectId == source.GameState.PlayerShipObjectId ? speed : o.SpeedMps,
                     Modules = o.Modules!.Select(m => m with
                     {
-                        PowerState = hostile && m.ModuleTypeId.Contains("engine", StringComparison.Ordinal) ||
-                        enemyWeapon && m.ModuleTypeId.Contains("torpedo", StringComparison.Ordinal) || o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off"
+                        PowerState = o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off"
                     }).ToArray()
                 }).ToArray()
             }

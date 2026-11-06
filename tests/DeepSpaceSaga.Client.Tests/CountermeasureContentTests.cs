@@ -56,46 +56,6 @@ public class CountermeasureContentTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Shared_module_has_same_values_for_both_sides(bool output)
-    {
-        string root = output ? AppContext.BaseDirectory : Path.GetFullPath(Path.Combine(AppContext.BaseDirectory,
-            "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios", "PlayerShipOnly", "scenario.json"));
-        var ships = scenario.GameState.SpaceObjects.Where(o => o.ObjectType is "PlayerShip" or "NpcShip").ToArray();
-        Assert.Contains(ships, o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
-        Assert.Contains(ships, o => o.ObjectType == "NpcShip");
-        var registry = Registry(output);
-        foreach (var ship in ships)
-        {
-            var defenses = ship.Modules!.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
-            Assert.Equal(ship.ObjectType == "PlayerShip" ? 2 : 1, defenses.Length);
-            var launcher = Assert.Single(ship.Modules!, m => m.ModuleTypeId == "module.torpedo.launcher.basic");
-            var defenseType = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(defenses[0].ModuleTypeId));
-            Assert.All(defenses, m => Assert.Equal(defenses[0].ModuleTypeId, m.ModuleTypeId));
-            var launcherType = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(launcher.ModuleTypeId));
-            Assert.Null(defenseType.CountermeasureAccuracy);
-            Assert.Null(launcherType.TorpedoManeuverability);
-            Assert.Null(launcherType.TorpedoRangeKm);
-            Assert.Null(defenseType.CountermeasureRangeKm);
-            Assert.Null(defenseType.CountermeasureManualRangeKm);
-            Assert.Equal(30, defenseType.RangeKm); Assert.Equal(70, launcherType.RangeKm);
-            Assert.Contains(DefenseCommandTypes.Launch, defenseType.CommandTypeIds);
-        }
-        using var engine = new DeepSpaceSaga.Engine.SimulationEngine(registry);
-        engine.LoadScenario(scenario);
-        var modules = engine.CaptureSnapshotForTests().InstalledModules.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
-        Assert.Equal(2, modules.Length);
-        Assert.All(modules, m =>
-        {
-            Assert.Contains(m.Commands, c => c.CommandTypeId == DefenseCommandTypes.Launch && c.Target == "point");
-            Assert.Null(m.Defense);
-            Assert.Null(m.ActiveCommandType);
-        });
-    }
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
     public void Retired_single_launcher_is_absent(bool output)
     {
         var registry = Registry(output);

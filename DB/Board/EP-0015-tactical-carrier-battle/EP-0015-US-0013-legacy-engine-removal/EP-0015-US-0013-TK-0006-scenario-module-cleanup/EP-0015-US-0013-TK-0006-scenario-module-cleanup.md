@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0013-legacy-engine-removal
 ticket: EP-0015-US-0013-TK-0006-scenario-module-cleanup
 title: scenario-module-cleanup
-stage: draft
+stage: done
 layer: content-data
 depends_on: ["EP-0015-US-0013-TK-0005-engine-removal-4"]
-files_touched: 4
+files_touched: 26
 serves: [AC-08, AC-07]
 created: 2026-11-05
 revision: 3
@@ -51,3 +51,38 @@ Owning project: tests/DeepSpaceSaga.Client.Tests content discovery. Сборка
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+Strip authored real-time weapons, armor and hostile AI. Remove both dedicated combat starts. Preserve ordinary hull layout, loadout, crew/cabins/rations, station data, motion and a neutral contact in PlayerShipOnly. Test the actual content of source/deployed scenario lists and the New Game snapshot, and restore exact world corpus comparisons now that the authored combat actor is a normal neutral world contact. Historical Save18/19 fixtures remain unmodified.
+
+- Edit data: src/DeepSpaceSaga.Client/Scenarios/Default/scenario.json
+- Edit data: src/DeepSpaceSaga.Client/Scenarios/Default_500/scenario.json
+- Edit data: src/DeepSpaceSaga.Client/Scenarios/Docked/scenario.json
+- Edit data: src/DeepSpaceSaga.Client/Scenarios/PlayerShipOnly/scenario.json
+- Edit data: src/DeepSpaceSaga.Client/Scenarios/Undocked/scenario.json
+- Delete data: src/DeepSpaceSaga.Client/Scenarios/CombatMukha/scenario.json
+- Delete data: src/DeepSpaceSaga.Client/Scenarios/CombatMukhaSingle/scenario.json
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/ClusterCorrectnessCorpusTests.cs
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/SystemCorrectnessCorpusTests.cs
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/FullMapCorrectnessCorpusTests.cs
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/GeneratedWorldPersistenceTests.cs
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/ScenarioGroupTranslationTests.cs
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/DebugTuningShipTests.cs
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/ModulePanelProjectionTests.cs
+- Edit Engine check: tests/DeepSpaceSaga.Engine.Tests/WeaponOperatorSchemaTests.cs
+- Edit Client check: tests/DeepSpaceSaga.Client.Tests/TetrarchLoadoutTests.cs
+- Edit Client check: tests/DeepSpaceSaga.Client.Tests/PirateScenarioTests.cs
+- Edit Client check: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0019TK0001Tests.cs
+- Edit Client check: tests/DeepSpaceSaga.Client.Tests/CountermeasureContentTests.cs
+- Edit Client check: tests/DeepSpaceSaga.Client.Tests/CombatSessionRoundtripTests.cs
+- Retire old scenario tests: tests/DeepSpaceSaga.Client.Tests/CombatScenariosContentTests.cs
+- Retire old scenario tests: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0009TK0001Tests.cs
+- Retire old scenario tests: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0009TK0002Tests.cs
+- Add: tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ScenarioModuleCleanupTests.cs
+Default now occupies 6 of the same 12 hull cells; retained world modules and cargo are asserted. Update the old full-file stress-scenario checksum after comparing all non-player rows to the authored baseline:
+- tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs
+- tests/DeepSpaceSaga.Client.Tests/StationResourceFieldContentTests.cs
+
+## Execution evidence — 2026-11-06
+
+Removed both dedicated realtime starts, 13 legacy weapon installations from five remaining files, and their authored armor/hostile AI. PlayerShipOnly retains the neutral contact, crew and world motion; it now survives Save20 alongside the player. All six source and deployed entries and the actual Default New Game stream load without old weapons; crew, scanner, ordinary maneuver and hull placement checked. The 501 non-player stress rows are byte-equivalent after JSON canonicalization. Windows: clean build/format/diff; broad Client 1987 and Engine 2172 passes before known obsolete assertions were corrected; rerun 39 Client and 101 Engine including every initially failed case, 44 economy and 2 focused cargo checks passed. Evidence under `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-world-scenarios-regression-01` and `20261106-world-scenarios-regression-03`. Long corpus final gate remains pending.

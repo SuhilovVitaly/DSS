@@ -93,7 +93,6 @@
                   }
                 ],
                 "structurePoints": 80,
-                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -109,7 +108,6 @@
                   }
                 ],
                 "structurePoints": 60,
-                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -125,7 +123,6 @@
                   }
                 ],
                 "structurePoints": 150,
-                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -150,7 +147,6 @@
                   }
                 ],
                 "structurePoints": 60,
-                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -166,7 +162,6 @@
                   }
                 ],
                 "structurePoints": 150,
-                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
@@ -182,46 +177,11 @@
                   }
                 ],
                 "structurePoints": 100,
-                "armorClass": "none",
                 "powerState": "On",
                 "operationalState": "Ready",
                 "activeCycle": null,
                 "cargo": [],
                 "fuelAmountKg": 750
-              },
-              {
-                "moduleId": "MOD-PLAYER-TORPEDO-01",
-                "moduleTypeId": "module.torpedo.launcher.basic",
-                "occupiedCells": [
-                  {
-                    "x": 3,
-                    "y": 2
-                  }
-                ],
-                "structurePoints": 60,
-                "armorClass": "none",
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": [],
-                "operatorCrewId": "CHR-0001"
-              },
-              {
-                "moduleId": "MOD-PLAYER-COUNTERMEASURE-01",
-                "moduleTypeId": "module.countermeasure.launcher.basic",
-                "occupiedCells": [
-                  {
-                    "x": 5,
-                    "y": 2
-                  }
-                ],
-                "structurePoints": 60,
-                "armorClass": "none",
-                "powerState": "On",
-                "operationalState": "Ready",
-                "activeCycle": null,
-                "cargo": [],
-                "operatorCrewId": "CHR-PLAYER-DEFENSE"
               }
             ],
             "crew": [

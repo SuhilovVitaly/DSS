@@ -63,7 +63,7 @@
 | EP-0015-US-0013-legacy-engine-removal | AC-05 | EP-0015-US-0013-TK-0009-debug-tuning-cleanup | not started |
 | EP-0015-US-0013-legacy-engine-removal | AC-06 | EP-0015-US-0013-TK-0010-legacy-save-dto-removal | not started |
 | EP-0015-US-0013-legacy-engine-removal | AC-07 | EP-0015-US-0013-TK-0001-local-client-removal, EP-0015-US-0013-TK-0002-engine-removal-1, EP-0015-US-0013-TK-0003-engine-removal-2, EP-0015-US-0013-TK-0004-engine-removal-3, EP-0015-US-0013-TK-0005-engine-removal-4, EP-0015-US-0013-TK-0006-scenario-module-cleanup, EP-0015-US-0013-TK-0007-engine-content-removal, EP-0015-US-0013-TK-0008-engine-noncombat-cleanup, EP-0015-US-0013-TK-0009-debug-tuning-cleanup, EP-0015-US-0013-TK-0010-legacy-save-dto-removal | not started |
-| EP-0015-US-0013-legacy-engine-removal | AC-08 | EP-0015-US-0013-TK-0006-scenario-module-cleanup | not started |
+| EP-0015-US-0013-legacy-engine-removal | AC-08 | EP-0015-US-0013-TK-0006-scenario-module-cleanup | PASS: all six source and deployed starts and the actual default New Game load without legacy weapons; Save20 preserves neutral contact |
 | EP-0015-US-0014-legacy-foundation-removal | AC-01 | EP-0015-US-0014-TK-0001-motion-removal | not started |
 | EP-0015-US-0014-legacy-foundation-removal | AC-02 | EP-0015-US-0014-TK-0002-contracts-dto-removal, EP-0015-US-0014-TK-0003-contracts-fields-removal | not started |
 | EP-0015-US-0014-legacy-foundation-removal | AC-03 | EP-0015-US-0014-TK-0004-content-cleanup | not started |
