@@ -41,7 +41,7 @@ public sealed class SidesAndLogTests
         var screen = await Start(fixture);
         for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
             await fixture.Route(ScreenEvent.MoveTacticalBattle);
-        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
         var before = screen.Flow.State!;
         Assert.Equal(TacticalBattlePhase.Fire, before.Phase);
         fixture.ManualAnimation = true;

@@ -46,12 +46,24 @@ public sealed class MovementAnimationTests
         Assert.Equal(BattleFormat.Localize("AnimatingMovement"), atStart.Status);
         Assert.Null(atStart.Movement);
         Assert.Equal(path.Points[0], atStart.Battle.Units.Single(u => u.Id == path.DroneId).Pose);
+        Assert.Equal(path.Points[0], Assert.Single(atStart.Battle.Paths.Single(p => p.DroneId == path.DroneId).Points));
 
-        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs / 2);
+        fixture.AdvanceAnimation(1);
+        var firstMotion = screen.CaptureFrame(1280, 720)!.Battle;
+        var firstTrail = firstMotion.Paths.Single(p => p.DroneId == path.DroneId).Points;
+        Assert.Equal(2, firstTrail.Length);
+        Assert.Equal(path.Points[0], firstTrail[0]);
+        Assert.Equal(firstMotion.Units.Single(u => u.Id == path.DroneId).Pose, firstTrail[^1]);
+        Assert.NotEqual(path.Points[1], firstTrail[^1]);
+
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs / 2 - 1);
         var mid = screen.CaptureFrame(1280, 720)!;
         var midpoint = mid.Battle.Units.Single(u => u.Id == path.DroneId).Pose;
         Assert.NotEqual(path.Points[0], midpoint);
         Assert.NotEqual(path.Points[^1], midpoint);
+        var midTrail = mid.Battle.Paths.Single(p => p.DroneId == path.DroneId).Points;
+        Assert.Equal(midpoint, midTrail[^1]);
+        Assert.InRange(midTrail.Length, firstTrail.Length + 1, path.Points.Length - 1);
         if (path.Points.Length % 2 != 0) Assert.Equal(path.Points[(path.Points.Length - 1) / 2], midpoint);
         Assert.Same(accepted, screen.Flow.State);
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Right));
@@ -68,6 +80,30 @@ public sealed class MovementAnimationTests
             screen.OnKeyDown(Key.Enter));
         Assert.Equal(1, fixture.Proxy.Moves);
         Assert.Equal(0, fixture.Proxy.Fires);
+    }
+
+    [Fact]
+    public async Task NonEmptyAutomaticSalvoUsesSlowerMovementThanAnEmptySalvo()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var before = screen.Flow.State!;
+        await fixture.Route(ScreenEvent.MoveTacticalBattle);
+        var empty = screen.Flow.State!;
+        Assert.True(empty.FireSkipped);
+        Assert.Empty(empty.Shots);
+        var shot = new TacticalShotSnapshot(before.Turn, "enemy", "target", default, default, 0.5, false, 0, false, false, false);
+
+        var fast = Create(empty);
+        var slow = Create(empty with { Shots = [shot] });
+        Assert.Equal(1350, fast.PlaybackDurationMs);
+        Assert.Equal(0.70, fast.PlaybackDurationMs / (double)slow.PlaybackDurationMs, 3);
+        Assert.True(slow.IsActive(fast.PlaybackDurationMs));
+        Assert.False(slow.IsActive(slow.PlaybackDurationMs));
+
+        TacticalBattleMovementAnimation Create(TacticalBattleSnapshot after) =>
+            TacticalBattleMovementAnimation.Create(before,
+                new("test", true, TacticalBattleRejectionCode.None, after.Phase, after, []), 0)!;
     }
 
     [Fact]
