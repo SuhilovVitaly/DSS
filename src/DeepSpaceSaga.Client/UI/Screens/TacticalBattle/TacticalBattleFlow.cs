@@ -165,7 +165,9 @@ public class TacticalBattleModalScreen : IScreen
     {
         canvas.Clear(new SKColor(2, 12, 22));
         float s = UiScale;
-        ControlVisuals.Label(canvas, L(IsSetup ? "SetupTitle" : "BattleTitle"), new(24 * s, 12 * s, width - 24 * s, 52 * s), true, s);
+        if (!IsSetup && TacticalBattleSkinRenderScope.HasBoxStyle("modal.background"))
+            TacticalBattleSkinRenderScope.Box(canvas, "modal.background", SKRect.Create(width, height), new(2, 12, 22), null, s);
+        ControlVisuals.Label(canvas, L(IsSetup ? "SetupTitle" : "BattleTitle"), new(24 * s, 12 * s, width - 24 * s, 52 * s), true, s, role: "modal.background.title");
         if (IsSetup)
         {
             var options = Flow.Options;
@@ -178,17 +180,17 @@ public class TacticalBattleModalScreen : IScreen
         else if (Flow.State is { } state)
         {
             string header = state.ScenarioName + " · " + L("Turn") + " " + BattleFormat.Number(state.Turn) + " · " + L("Phase." + state.Phase);
-            ControlVisuals.Label(canvas, header, new(24 * s, 60 * s, width - 24 * s, 90 * s), true, s);
+            ControlVisuals.Label(canvas, header, new(24 * s, 60 * s, width - 24 * s, 90 * s), true, s, role: "modal.background.summary");
             float y = 105 * s;
             foreach (var unit in state.Units)
             {
                 string row = unit.Id + " · " + L("Hull") + " " + BattleFormat.Number(unit.Hull) + "/" + BattleFormat.Number(unit.MaxHull)
                     + " · " + L("Armor") + " " + BattleFormat.Number(unit.Armor) + " · " + L("Speed") + " " + BattleFormat.Number(unit.Speed, 1)
                     + " · " + L("UnitState." + unit.State);
-                ControlVisuals.Label(canvas, row, new(24 * s, y, width - 24 * s, y + 24 * s), true, s);
+                ControlVisuals.Label(canvas, row, new(24 * s, y, width - 24 * s, y + 24 * s), true, s, role: "modal.background.row");
                 y += 26 * s;
             }
-            if (Flow.Error.Length > 0) ControlVisuals.Label(canvas, Flow.Error, new(24 * s, height - 115 * s, width - 24 * s, height - 80 * s), true, s);
+            if (Flow.Error.Length > 0) ControlVisuals.Label(canvas, Flow.Error, new(24 * s, height - 115 * s, width - 24 * s, height - 80 * s), true, s, role: "modal.error");
         }
         _action.Label = L(IsSetup ? "Start" : Flow.State?.Phase == TacticalBattlePhase.Fire ? "Fire" : "Move");
         _action.KeyHint = "Enter"; _action.Enabled = ActionEvent != ScreenEvent.None;
@@ -202,23 +204,30 @@ public class TacticalBattleModalScreen : IScreen
         if (showAction) _action.Draw(canvas, s);
         _close.Draw(canvas, s);
         if (!IsSetup && Flow.State?.Phase == TacticalBattlePhase.Over) _new.Draw(canvas, s);
-        if (Flow.Pending) ControlVisuals.Label(canvas, L("Waiting"), new(24 * s, height - 100 * s, width - 24 * s, height - 70 * s), true, s);
+        if (Flow.Pending) ControlVisuals.Label(canvas, L("Waiting"), new(24 * s, height - 100 * s, width - 24 * s, height - 70 * s), true, s, role: "modal.background.waiting");
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
         if (BlockedNotice is { Length: > 0 } notice)
-            ControlVisuals.Label(canvas, notice, new(24 * s, height - 96 * s, width - 24 * s, height - 65 * s), true, s);
+            ControlVisuals.Label(canvas, notice, new(24 * s, height - 96 * s, width - 24 * s, height - 65 * s), true, s, role: "modal.error.notice");
     }
     protected void DrawExitConfirmation(SKCanvas canvas, int width, int height)
     {
         float s = UiScale;
-        using var dim = new SKPaint { Color = new SKColor(0, 0, 0, 180) }; canvas.DrawRect(0, 0, width, height, dim);
+        TacticalBattleSkinRenderScope.Box(canvas, "modal.exit.dim", SKRect.Create(width, height), new(0, 0, 0, 180), null, s, antialias: false);
         var rect = SKRect.Create((float)(width / 2.0) - 260 * s, (float)(height / 2.0) - 90 * s, 520 * s, 180 * s);
-        GenericWindowTypeA.DrawOpaque(canvas, rect);
-        ControlVisuals.Label(canvas, L("ConfirmExit"), new(rect.Left + 24 * s, rect.Top + 24 * s, rect.Right - 24 * s, rect.Top + 72 * s), true, s);
+        if (TacticalBattleSkinRenderScope.HasBoxStyle("modal.exit"))
+            TacticalBattleSkinRenderScope.Box(canvas, "modal.exit", rect, new(2, 12, 22), XenonStyle.Cyan, s);
+        else
+            GenericWindowTypeA.DrawOpaque(canvas, rect);
+        ControlVisuals.Label(canvas, L("ConfirmExit"), new(rect.Left + 24 * s, rect.Top + 24 * s, rect.Right - 24 * s, rect.Top + 72 * s),
+            true, s, role: "modal.exit.title");
         _confirm.Label = L("ExitBattle"); _confirm.Enabled = !Flow.Pending;
         _cancel.Label = L("Cancel");
         _confirm.Bounds = SKRect.Create(rect.Left + 24 * s, rect.Bottom - 68 * s, 220 * s, 40 * s);
         _cancel.Bounds = SKRect.Create(rect.Right - 244 * s, rect.Bottom - 68 * s, 220 * s, 40 * s);
-        _confirm.Draw(canvas, s); _cancel.Draw(canvas, s);
+        using (TacticalBattleSkinRenderScope.EnterRole("modal.exit.confirm"))
+            _confirm.Draw(canvas, s);
+        using (TacticalBattleSkinRenderScope.EnterRole("modal.exit.cancel"))
+            _cancel.Draw(canvas, s);
     }
     public virtual ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {

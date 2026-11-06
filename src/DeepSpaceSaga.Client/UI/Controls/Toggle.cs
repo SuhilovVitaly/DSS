@@ -1,5 +1,6 @@
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
@@ -36,13 +37,24 @@ public sealed class Toggle(string label, bool value = false)
         if (Bounds.IsEmpty || uiScale <= 0) return;
         float size = Math.Min(Bounds.Height, 18 * uiScale);
         var box = SKRect.Create(Bounds.Left, Bounds.MidY - size / 2, size, size);
-        ControlVisuals.Frame(canvas, box, HasFocus, Enabled, uiScale);
+        string state = Value ? "checked" : "unchecked";
+        if (!Enabled) state += ".disabled";
+        else if (HasFocus) state += ".focused";
+        var role = SkinStyle.Control("control.toggle", state);
+        ControlVisuals.Frame(canvas, box, HasFocus, Enabled, uiScale, role);
         if (Value)
         {
-            using var paint = new SKPaint { IsAntialias = true, Color = Enabled ? XenonStyle.Cyan : XenonStyle.DisabledText, StrokeWidth = 2 * uiScale };
-            canvas.DrawLine(box.Left + size * 0.2f, box.MidY, box.Left + size * 0.45f, box.Bottom - size * 0.2f, paint);
-            canvas.DrawLine(box.Left + size * 0.45f, box.Bottom - size * 0.2f, box.Right - size * 0.15f, box.Top + size * 0.2f, paint);
+            var marker = SkinStyle.Control("control.toggle", $"marker.{state}");
+            float inset = size * 0.15f;
+            var imageBounds = new SKRect(box.Left + inset, box.Top + inset, box.Right - inset, box.Bottom - inset);
+            if (!SkinStyle.Image(canvas, marker, imageBounds))
+            {
+                using var paint = new SKPaint { IsAntialias = true };
+                using var dash = SkinStyle.Stroke(paint, marker, Enabled ? XenonStyle.Cyan : XenonStyle.DisabledText, 2 * uiScale, uiScale);
+                canvas.DrawLine(box.Left + size * 0.2f, box.MidY, box.Left + size * 0.45f, box.Bottom - size * 0.2f, paint);
+                canvas.DrawLine(box.Left + size * 0.45f, box.Bottom - size * 0.2f, box.Right - size * 0.15f, box.Top + size * 0.2f, paint);
+            }
         }
-        ControlVisuals.Label(canvas, Label, new(box.Right + 8 * uiScale, Bounds.Top, Bounds.Right, Bounds.Bottom), Enabled, uiScale);
+        ControlVisuals.Label(canvas, Label, new(box.Right + 8 * uiScale, Bounds.Top, Bounds.Right, Bounds.Bottom), Enabled, uiScale, role: role);
     }
 }

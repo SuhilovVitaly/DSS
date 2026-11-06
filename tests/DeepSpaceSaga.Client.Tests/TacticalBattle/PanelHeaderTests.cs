@@ -4,6 +4,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
+using Silk.NET.Input;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
@@ -81,6 +82,68 @@ public sealed class PanelHeaderTests
             using var png = bitmap.Encode(SKEncodedImageFormat.Png, 100);
             using var file = File.Create(Path.Combine(root, "battle-panel-refusal.png"));
             png.SaveTo(file);
+        }
+    }
+
+    [Fact]
+    public async Task Skin_styles_outcome_and_confirmation_without_styling_setup()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        using var setupBefore = Draw(setup);
+        await fixture.Route(ScreenEvent.StartTacticalBattle);
+        var classic = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"chrome","displayName":"Chrome","roles":{
+              "modal.exit":{"fill":"#432E62"},
+              "panel.outcome":{"fill":"#71802C"},
+              "control.toggle.all-fire-sectors":{"fill":"#3B3045"},
+              "control.toggle.enemy-forecast":{"fill":"#6D3B45"},
+              "control.toggle.enemy-rear-sectors":{"fill":"#3B5645"}
+            }}
+            """);
+        var styled = new TacticalBattleScreen(classic.Flow, classic.UiScale, skin);
+        using var classicFrame = Draw(classic);
+        using var styledFrame = Draw(styled);
+        Assert.Equal(classic.OverlayControls, styled.OverlayControls);
+        AssertToggle(styled.OverlayControls.AllFire, new(59, 48, 69));
+        AssertToggle(styled.OverlayControls.Forecast, new(109, 59, 69));
+        AssertToggle(styled.OverlayControls.Sectors, new(59, 86, 69));
+        Assert.Equal(ScreenEvent.None, styled.OnKeyDown(Key.Escape));
+        using var confirm = Draw(styled);
+        Assert.True(styled.ConfirmExit);
+        Assert.Equal(new SKColor(67, 46, 98), confirm.GetPixel(400, 281));
+        Assert.Equal(ScreenEvent.None, styled.OnKeyDown(Key.Escape));
+        Assert.False(styled.ConfirmExit);
+        using var setupAfter = Draw(setup);
+        Assert.Equal(setupBefore.Pixels, setupAfter.Pixels);
+
+        var outcome = new TacticalBattlePanelHeader("Test", "Over", SKColors.Yellow, "", "", "Victory", "", SKColors.Green, "", true);
+        using var header = new SKBitmap(400, 200);
+        using (var canvas = new SKCanvas(header))
+        using (TacticalBattleSkinRenderScope.Enter(skin))
+        {
+            canvas.Clear(SKColors.Black);
+            outcome.Draw(canvas, SKRect.Create(400, 200), 1);
+        }
+        Assert.Contains(new SKColor(113, 128, 44), header.Pixels);
+
+        void AssertToggle(SKRect bounds, SKColor expected)
+        {
+            int x = (int)bounds.Left + 4;
+            int y = (int)bounds.MidY - 6;
+            Assert.NotEqual(expected, classicFrame.GetPixel(x, y));
+            Assert.Equal(expected, styledFrame.GetPixel(x, y));
+        }
+
+        static SKBitmap Draw(IScreen screen)
+        {
+            var bitmap = new SKBitmap(1280, 720);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, 1280, 720);
+            return bitmap;
         }
     }
 
