@@ -287,7 +287,7 @@ public sealed class BattleNavigationTests
         }
         internal ScreenStack Screens => Field<ScreenStack>(Window, "_screens");
         internal int Depth => Field<int>(Window, "_modalDepth");
-        private Fixture(TacticalBattleInputSettings? inputs, float uiScale, string? saveDirectory, SimulationSpeed initialSpeed)
+        private Fixture(TacticalBattleInputSettings? inputs, float uiScale, string? saveDirectory, SimulationSpeed initialSpeed, string? settingsPath)
         {
             string settings = Path.Combine(AppContext.BaseDirectory, "Settings.json");
             Engine = SimulationEngine.CreateFromSettingsFile(settings);
@@ -297,13 +297,13 @@ public sealed class BattleNavigationTests
             Proxy.Inner = new LocalGameSessionConnection(Engine, saveDirectory);
             Handle = new GameSessionHandle(connection, deferDebugTuningWrites: true);
             Game = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, uiScale: uiScale, tacticalBattleInputs: inputs);
-            Window = new SkiaWindow(Game, this, null, createNativeWindow: false);
+            Window = new SkiaWindow(Game, this, null, createNativeWindow: false, settingsPath);
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
         }
         internal static async Task<Fixture> Create(TacticalBattleInputSettings? inputs = null, float uiScale = 1,
-            string? saveDirectory = null, SimulationSpeed initialSpeed = SimulationSpeed.Speed2)
+            string? saveDirectory = null, SimulationSpeed initialSpeed = SimulationSpeed.Speed2, string? settingsPath = null)
         {
-            var fixture = new Fixture(inputs, uiScale, saveDirectory, initialSpeed);
+            var fixture = new Fixture(inputs, uiScale, saveDirectory, initialSpeed, settingsPath);
             try
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));

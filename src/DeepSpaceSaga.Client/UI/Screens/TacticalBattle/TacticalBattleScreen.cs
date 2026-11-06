@@ -45,6 +45,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal (SKRect Forecast, SKRect Sectors, SKRect AllFire) OverlayControls =>
         (_enemyForecast.Bounds, _enemySectors.Bounds, _allFireSectors.Bounds);
     internal TacticalBattleView View => _camera.View;
+    internal string SkinId => _skin.Id;
     internal TacticalMovementFrame Movement => _orders.Capture();
     internal TacticalBattleMovePanel MovePanel => _movePanel;
     internal TacticalBattleFirePanel FirePanel => _firePanel;

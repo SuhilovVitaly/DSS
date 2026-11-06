@@ -87,6 +87,8 @@ public sealed class SkiaWindow : IDisposable
     private string? _graphicsVersion;
     private readonly MapFrameEvidence? _mapFrameEvidence = MapFrameEvidence.FromEnvironment();
     private double? _monitorRefreshHz;
+    private readonly TacticalBattleSkinCatalog _battleSkinCatalog;
+    private TacticalBattleSkin _battleSkin;
     // Optional native evidence hook: the surface still contains this screen's
     // rendered pixels, before polling transitions or swapping the framebuffer.
     internal Action<SKSurface, IScreen?>? NativeFrameRendered { get; set; }
@@ -96,7 +98,7 @@ public sealed class SkiaWindow : IDisposable
         : this(initialScreen, sessionFactory, startupStopwatch, createNativeWindow: true) { }
 
     internal SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory,
-        System.Diagnostics.Stopwatch? startupStopwatch, bool createNativeWindow)
+        System.Diagnostics.Stopwatch? startupStopwatch, bool createNativeWindow, string? settingsPath = null)
     {
         _sessionFactory = sessionFactory;
         _maneuverInputs = ManeuverInputSettings.Load(Path.Combine(AppContext.BaseDirectory, ManeuverInputSettings.RelativePath));
@@ -106,6 +108,10 @@ public sealed class SkiaWindow : IDisposable
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
+
+        SettingsFilePath = Path.GetFullPath(settingsPath ?? Path.Combine(AppContext.BaseDirectory, "Settings.json"));
+        _battleSkinCatalog = TacticalBattleSkinCatalog.Load(Path.Combine(Path.GetDirectoryName(SettingsFilePath)!, "Skins"), LogSkinWarning);
+        _battleSkin = _battleSkinCatalog.GetOrClassic(TacticalBattleSkinPreference.Read(SettingsFilePath, LogSkinWarning));
 
         _screens.SetRoot(initialScreen);
         _window = null!;
@@ -134,7 +140,12 @@ public sealed class SkiaWindow : IDisposable
             API = new GraphicsAPI(ContextAPI.OpenGL, ContextProfile.Core, ContextFlags.Default, new APIVersion(3, 3))
         };
 
-        _window = Window.Create(options);
+        try { _window = Window.Create(options); }
+        catch
+        {
+            _battleSkinCatalog.Dispose();
+            throw;
+        }
         _window.Load += OnLoad;
         _window.Render += OnRender;
         _window.Update += _ => _uiContext.Drain();
@@ -790,7 +801,7 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.OpenTacticalBattle:
                     if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen)
                     {
-                        Localization.ApplyLanguage(Localization.ReadLanguageSetting());
+                        Localization.ApplyLanguage(Localization.ReadLanguageSetting(SettingsFilePath));
                         var flow = new TacticalBattleFlow(battleSession);
                         var setup = CreateTacticalSetupView(flow);
                         await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
@@ -1035,7 +1046,7 @@ public sealed class SkiaWindow : IDisposable
         }
     }
 
-    private static bool GetShowTrajectoryPrediction()
+    private bool GetShowTrajectoryPrediction()
     {
         try
         {
@@ -1103,7 +1114,7 @@ public sealed class SkiaWindow : IDisposable
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
         new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
     private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) =>
-        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1, _battleSkin) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
     private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
     {
         await flow.OptionsTask!;
@@ -1281,12 +1292,29 @@ public sealed class SkiaWindow : IDisposable
             selectedMonitorIndex = 0;
 
         double uiScale = GetUiScale();
-        string language = Localization.ReadLanguageSetting();
+        string language = Localization.ReadLanguageSetting(SettingsFilePath);
 
         await PushModalAsync(new SettingsScreen(
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
             uiScale, SaveUiScale,
-            language, SaveLanguage));
+            language, SaveLanguage,
+            _battleSkinCatalog.Options, _battleSkin.Id, TrySelectBattleSkin));
+    }
+
+    private bool TrySelectBattleSkin(string id)
+    {
+        if (!_battleSkinCatalog.TryGet(id, out var skin) ||
+            !TacticalBattleSkinPreference.TryWrite(SettingsFilePath, id, LogSkinWarning))
+            return false;
+        _battleSkin = skin;
+        return true;
+    }
+
+    private static void LogSkinWarning(string message)
+    {
+        try { InterfaceLog.Write("TACTICAL SKIN: " + message); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>
@@ -1396,9 +1424,9 @@ public sealed class SkiaWindow : IDisposable
         await PushModalAsync(loadScreen);
     }
 
-    private static string SettingsFilePath => Path.Combine(AppContext.BaseDirectory, "Settings.json");
+    private string SettingsFilePath { get; }
 
-    private static int GetSelectedMonitorIndex()
+    private int GetSelectedMonitorIndex()
     {
         try
         {
@@ -1423,7 +1451,7 @@ public sealed class SkiaWindow : IDisposable
     /// window is not moved — monitor placement is only read once, at startup
     /// (<see cref="OnLoad"/>), so the choice takes effect on the next launch.
     /// </summary>
-    private static void SaveSelectedMonitorIndex(int index)
+    private void SaveSelectedMonitorIndex(int index)
     {
         try
         {
@@ -1455,7 +1483,7 @@ public sealed class SkiaWindow : IDisposable
     private static double ValidateUiScale(double scale) =>
         Array.Exists(AllowedUiScales, v => Math.Abs(v - scale) < 0.001) ? scale : 1.0;
 
-    private static double GetUiScale()
+    private double GetUiScale()
     {
         try
         {
@@ -1507,7 +1535,7 @@ public sealed class SkiaWindow : IDisposable
     }
 
     /// <summary>Persists the chosen language and applies it to subsequent UI lookups.</summary>
-    private static void SaveLanguage(string language)
+    private void SaveLanguage(string language)
     {
         try
         {
@@ -1751,6 +1779,7 @@ public sealed class SkiaWindow : IDisposable
         _session = null;
 
         _screens.DeactivateAll();
+        _battleSkinCatalog.Dispose();
 
         _surface?.Dispose();
         _renderTarget?.Dispose();

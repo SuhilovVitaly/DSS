@@ -6,6 +6,7 @@ using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine;
@@ -30,6 +31,11 @@ internal static class TacticalBattleNativeEvidence
         Directory.CreateDirectory(directory);
         string oldDirectory = Directory.GetCurrentDirectory();
         string settings = Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json");
+        string? skinSettings = Environment.GetEnvironmentVariable("DSS_TACTICAL_NATIVE_SETTINGS");
+        string? expectedSkin = Environment.GetEnvironmentVariable("DSS_TACTICAL_NATIVE_EXPECT_SKIN");
+        bool pickLastSkin = Environment.GetEnvironmentVariable("DSS_TACTICAL_NATIVE_PICK_LAST") == "1";
+        string language = skinSettings is null ? "Russian" : Localization.ReadLanguageSetting(skinSettings);
+        TacticalOutcomeSnapshot? outcome = null;
         string saves = Path.Combine(directory, Path.GetFileNameWithoutExtension(output) + "-slots");
         string save = Path.Combine(saves, SaveSlotNaming.ToFileName(SaveSlots.Quicksave));
         string[] size = args[4].Split('x');
@@ -47,7 +53,7 @@ internal static class TacticalBattleNativeEvidence
         bool restarted = false;
         (double X, double Y, double Zoom) originalCamera = default;
         var watch = Stopwatch.StartNew();
-        using var locale = Localization.UseLocaleForTests("Russian");
+        using var locale = Localization.UseLocaleForTests(language);
         try
         {
             Directory.SetCurrentDirectory(directory);
@@ -56,7 +62,7 @@ internal static class TacticalBattleNativeEvidence
             string world = ScenarioLoader.Serialize(engine.CaptureSaveState());
             var handle = new GameSessionHandle(new LocalGameSessionConnection(engine, saves), deferDebugTuningWrites: true);
             var game = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle, uiScale: scale);
-            using var window = new SkiaWindow(game, factory);
+            using var window = new SkiaWindow(game, factory, null, createNativeWindow: true, skinSettings);
             typeof(SkiaWindow).GetField("_session", Private)!.SetValue(window, handle);
             typeof(SkiaWindow).GetField("_gameSessionScreen", Private)!.SetValue(window, game);
             var native = Field<IWindow>(window, "_window");
@@ -86,10 +92,44 @@ internal static class TacticalBattleNativeEvidence
                             renderer = Field<string?>(window, "_graphicsRenderer");
                             Check("real-open-gl", Field<GRContext?>(window, "_grContext") is not null && !string.IsNullOrWhiteSpace(renderer));
                             Check("framebuffer-size", native.FramebufferSize.X == width && native.FramebufferSize.Y == height);
-                            Check("russian", BattleFormat.Localize("Phase.Move") == "Движение");
+                            Check(language.ToLowerInvariant(), BattleFormat.Localize("Phase.Move") ==
+                                (language == "Russian" ? "Движение" : "Movement"));
                             originalCamera = (game.CameraFocusX, game.CameraFocusY, game.CameraPixelsPerWorldUnit);
+                            if (skinSettings is not null)
+                            {
+                                RouteEvent(ScreenEvent.OpenSettings);
+                                step = 21;
+                            }
+                            else
+                            {
+                                KeyDown(Key.F8);
+                                step++;
+                            }
+                            break;
+                        case 21:
+                            if (current is not SettingsScreen preferences) return;
+                            if (pickLastSkin)
+                            {
+                                var field = SettingsLayout.SkinField(width, height);
+                                preferences.OnMouseDown(field.MidX, field.MidY, MouseButton.Left);
+                                preferences.OnKeyDown(Key.End);
+                                preferences.OnKeyDown(Key.Enter);
+                                Check("skin-preference-written", !preferences.SkinSaveFailed &&
+                                    TacticalBattleSkinPreference.Read(skinSettings!) == expectedSkin);
+                            }
+                            Check("settings-effective-skin", preferences.SelectedSkinId == expectedSkin);
+                            step = 22;
+                            break;
+                        case 22:
+                            if (current is not SettingsScreen) return;
+                            Capture(surface, "settings");
+                            RouteEvent(ScreenEvent.CloseSettings);
+                            step = 23;
+                            break;
+                        case 23:
+                            if (!ReferenceEquals(current, game)) return;
                             KeyDown(Key.F8);
-                            step++;
+                            step = 2;
                             break;
                         case 2:
                             if (current is not TacticalBattleSetupScreen setup || setup.Flow.Options is null) return;
@@ -115,6 +155,8 @@ internal static class TacticalBattleNativeEvidence
                             clock = Environment.TickCount64;
                             battle.ClockMilliseconds = () => clock;
                             Check("battle", battle.UiScale == scale && battle.Flow.State is { Seed: 1, ScenarioId: "initial", Phase: TacticalBattlePhase.Move });
+                            if (expectedSkin is not null)
+                                Check(restarted ? "restarted-battle-skin" : "battle-skin", battle.SkinId == expectedSkin);
                             if (!restarted)
                             {
                                 var bounds = battle.NewBattleBounds;
@@ -166,10 +208,17 @@ internal static class TacticalBattleNativeEvidence
                             }
                             Capture(surface, "move");
                             var overlay = battle.OverlayControls;
+                            var initialOverlays = battle.CaptureFrame(width, height)!;
+                            Check("overlay-defaults", initialOverlays.EnemyForecast && initialOverlays.EnemySectors && initialOverlays.AllFireSectors);
                             Click(battle, overlay.Forecast.MidX, overlay.Forecast.MidY);
+                            var forecastOff = battle.CaptureFrame(width, height)!;
+                            Check("forecast-toggle", !forecastOff.EnemyForecast && forecastOff.EnemySectors && forecastOff.AllFireSectors);
                             Click(battle, overlay.Sectors.MidX, overlay.Sectors.MidY);
+                            var sectorsOff = battle.CaptureFrame(width, height)!;
+                            Check("rear-sectors-toggle", !sectorsOff.EnemyForecast && !sectorsOff.EnemySectors && sectorsOff.AllFireSectors);
+                            Click(battle, overlay.AllFire.MidX, overlay.AllFire.MidY);
                             var overlays = battle.CaptureFrame(width, height)!;
-                            Check("overlay-toggles", !overlays.EnemyForecast && overlays.EnemySectors);
+                            Check("overlay-toggles", !overlays.EnemyForecast && !overlays.EnemySectors && !overlays.AllFireSectors);
                             step++;
                             break;
                         case 20:
@@ -221,7 +270,8 @@ internal static class TacticalBattleNativeEvidence
                             }
                             if (active.Flow.State!.Phase == TacticalBattlePhase.Over)
                             {
-                                Check("complete-battle", active.Flow.State.Outcome is not null && fireSeen && animationSeen && resultSeen && replaySeen);
+                                outcome = active.Flow.State.Outcome;
+                                Check("complete-battle", outcome is not null && fireSeen && animationSeen && resultSeen && replaySeen);
                                 Capture(surface, "outcome");
                                 KeyDown(Key.Escape);
                                 step++;
@@ -253,6 +303,8 @@ internal static class TacticalBattleNativeEvidence
                 catch (Exception ex) { failure = ex.ToString(); native.Close(); }
 
                 void KeyDown(Key key) => Keyboard.Invoke(window, [key]);
+                void RouteEvent(ScreenEvent evt) =>
+                    typeof(SkiaWindow).GetField("_pendingKeyboardTransition", Private)!.SetValue(window, Route.Invoke(window, [evt, null]));
             };
             try { window.Run(); }
             finally
@@ -277,7 +329,9 @@ internal static class TacticalBattleNativeEvidence
             width,
             height,
             renderer,
-            language = "Russian",
+            language,
+            skin = expectedSkin,
+            outcome,
             input = "Managed keyboard edges through the native SkiaWindow router and mouse events through the live screen; no physical input claim.",
             checks,
             captures,

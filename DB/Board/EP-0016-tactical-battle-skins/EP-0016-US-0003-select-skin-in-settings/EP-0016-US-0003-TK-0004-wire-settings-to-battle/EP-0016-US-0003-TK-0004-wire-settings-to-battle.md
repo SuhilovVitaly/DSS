@@ -3,11 +3,11 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0003-select-skin-in-settings
 ticket: EP-0016-US-0003-TK-0004-wire-settings-to-battle
 title: Связь настроек с реальным экраном боя
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0003-TK-0003-add-skin-selector, EP-0016-US-0002-TK-0005-theme-information-tabs]
-files_touched: 2
+files_touched: 6
 serves: [US3-AC1, US3-AC2, US3-AC3, US3-AC4]
 created: 2026-11-06T08:02:55Z
 revision: 2
@@ -33,6 +33,10 @@ A-03/A-04/A-09. Пакеты обнаруживаются при запуске 
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` | SkiaWindow.cs:790–831, :1091–1106, :1262–1289, :1510–1527, :1722. Вход F8 перечитывает язык, Start создаёт активный экран, New возвращает в подготовку. | Владение каталогом, подключение выбора в OpenSettingsAsync и CreateTacticalBattleView, освобождение ресурсов. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SkinBattleIntegrationTests.cs` | Новый файл. LocalizationCoverageTests.cs:29 и BattleNavigationTests.cs:20–153 показывают реальные маршруты. | Связать пакет, Settings, F8 и Render. Проверить смену локали, новый бой, выход, fallback и равенство исходов. |
+| `src/DeepSpaceSaga.Client/Localization.cs` | Читает язык из стандартного Settings.json. | Использовать тот же путь настроек окна для изолированной сквозной проверки обоих полей. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | Хранит неизменяемый выбранный скин. | Внутренняя диагностика ID для сквозной и нативной проверки. |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/BattleNavigationTests.cs` | Fixture создаёт реальное локальное подключение и SkiaWindow без GPU. | Передать изолированный путь к пользовательским настройкам. |
+| `tools/DeepSpaceSaga.Performance/TacticalBattleNativeEvidence.cs` | Реальное окно и авторитетная боевая сессия с программным вводом. | Добавить необязательный профиль скинов, проверку Settings и фиксировать фактический ID. |
 
 ## Public API after the change
 
@@ -88,3 +92,14 @@ git diff --check
 ## Self-containment check
 
 Определены точки подключения настроек и активного экрана, обновление локали при F8, fallback и сквозные проверки. Работа вне allowlist для этой интеграции не требуется.
+
+## Исполнение
+
+SkiaWindow загружает каталог один раз, показывает эффективный выбор, меняет его после успешной записи и передаёт в каждый создаваемый активный бой. Выбор языка и настройки читаются из одного файла. Подготовка использует штатный дизайн. Каталог освобождает ресурсы после деактивации экранов.
+
+- Сборка, scoped whitespace Client, Client.Tests и Performance, staged diff check и самопроверка прошли. Тактический набор и Settings: 250/250 PASS. Три сквозных теста прошли реальный маршрут Settings → F8 → Start, новый бой, повторный вход, перестановку изменений языка и скина, удаление пакета и сравнение полного итога. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us3-tk4/focused.trx`.
+- Release publish PASS. Клиентская DLL и файлы пакета побайтно совпадают с экземпляром, использованным нативным драйвером. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us3-tk4/publish-binary-verification.json`.
+- Нативный OpenGL 1280×720 на Intel Arc 140V: 38/38 выбранный внешний пакет RU, 37/37 обновлённый пакет EN после перезапуска, 37/37 fallback EN после удаления манифеста. Совпали исход, боевые итоги и 224 вызова RNG. В каждом случае проверены новый бой, вкладки, флажки, фазы, подтверждение, выход, F5 и F9. Драйвер обновлён на три действующих флажка и их реальные значения по умолчанию. В двух EN кадр подготовки побайтно одинаков, RGB заменённого PNG подтверждён на поле.
+- Нативный ввод был программным через обработчики окна. Физический ввод и отдельная художественная приёмка остаются за рамками этого evidence. Сводка `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/native/comparison.json`, проверка пикселей `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/native/pixel-comparison.json`.
+
+US3-AC1–AC4 покрыты на реальном пути клиента и в нативном окне.
