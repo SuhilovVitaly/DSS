@@ -85,7 +85,7 @@ internal static class ModulePanelNativeEvidence
                     case 0:
                         checks["openGl"] = typeof(SkiaWindow).GetField("_grContext", Private)!.GetValue(window) is not null;
                         checks["dimensions"] = native.Size.X == width && native.Size.Y == height;
-                        checks["locale"] = Localization.Combat("Panel.Engine") == (args[5] == "ru" ? "Двигатель" : "Engine");
+                        checks["locale"] = Localization.Get("World.Panel.Engine") == (args[5] == "ru" ? "Двигатель" : "Engine");
                         if (screen.IsPanelVisible) Click(screen.LastCloseRect);
                         break;
                     case 1:

@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0012-legacy-client-removal
 title: "Удаление старого боя в Client"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0011-legacy-removal-prep]
 ---
 
@@ -52,3 +52,5 @@ dependencies: [EP-0015-US-0011-legacy-removal-prep]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+All six Client tickets implemented. Latest full Client suite 2016/2016 PASS; full cross-project post-removal regression and native/human acceptance remain open.

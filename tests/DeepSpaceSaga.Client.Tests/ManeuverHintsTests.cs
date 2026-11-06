@@ -34,6 +34,6 @@ public sealed class ManeuverHintsTests
         }
         debug.ConfigureBindings(maneuver with { Accelerate = [Key.U] });
         Assert.Contains("U", debug.ControlsHint); Assert.DoesNotContain("W/", debug.ControlsHint);
-        foreach (string key in new[] { "Debug.HelpControls", "Combat.Reason.invalid_speed_payload", "Debug.Key.Up", "Debug.Key.Down", "Debug.Key.Left", "Debug.Key.Right" }) Assert.NotEqual(key, Localization.Get(key));
+        foreach (string key in new[] { "Debug.HelpControls", "World.Panel.Reason.invalid_speed_payload", "Debug.Key.Up", "Debug.Key.Down", "Debug.Key.Left", "Debug.Key.Right" }) Assert.NotEqual(key, Localization.Get(key));
     }
 }

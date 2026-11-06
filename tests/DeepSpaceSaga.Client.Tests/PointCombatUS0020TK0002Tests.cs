@@ -29,7 +29,7 @@ public class PointCombatUS0020TK0002Tests
         diagram.Update([.. modules]);
         var lines = CommandsPanel.ModuleDetails("Navigation", modules, diagram);
         foreach (var module in modules) Assert.Contains(lines, l => l.StartsWith(module.DisplayName));
-        Assert.Contains(lines, l => l.Contains(Localization.Combat("Panel.Structure")) && l.Contains("0"));
+        Assert.Contains(lines, l => l.Contains(Localization.Get("World.Panel.Structure")) && l.Contains("0"));
     }
 
     [Theory]

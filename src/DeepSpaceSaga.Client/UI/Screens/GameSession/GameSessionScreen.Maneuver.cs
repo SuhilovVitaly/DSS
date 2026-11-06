@@ -11,7 +11,7 @@ public sealed partial class GameSessionScreen
     private readonly HashSet<Key> _heldFullSpeed = [];
     private Task? _maneuverSendTask;
 
-    private static string ManeuverError(string reason) => Localization.Combat("Panel.Reason." + reason);
+    private static string ManeuverError(string reason) => Localization.WorldManeuverError(reason);
 
     private bool ManeuverEngineReady(InstalledModuleSnapshot? engine) =>
         engine is { IsDestroyed: false, PowerState: "On", OperationalState: "Ready" } &&

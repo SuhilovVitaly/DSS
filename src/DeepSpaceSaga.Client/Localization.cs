@@ -16,54 +16,31 @@ public static class Localization
     public static string Get(string key) =>
         (_testStrings ?? _strings.Value).TryGetValue(key, out var value) ? value : key;
 
-    /// <summary>Combat UI has locale-owned generic messages, never caller-supplied literal fallbacks.</summary>
-    internal static string Combat(string key, Func<string, string>? localize = null)
+    internal static string WorldManeuverError(string reason)
     {
-        var get = localize ?? Get;
-        string? Find(string suffix)
-        {
-            string full = "Combat." + suffix;
-            try { string value = get(full); return string.IsNullOrWhiteSpace(value) || value == full ? null : value; }
-            catch (KeyNotFoundException) { return null; }
-        }
-        if (Find(key) is { } translated) return translated;
-        // Profile IDs are configurable public data. Preserve unknown custom identifiers, not UI prose.
-        if (key.StartsWith("Profile.", StringComparison.Ordinal)) return key["Profile.".Length..];
-        string generic = key.StartsWith("Reason.", StringComparison.Ordinal) || key.StartsWith("Panel.Reason.", StringComparison.Ordinal) ? "CommandRejected" :
-            key.StartsWith("Forecast.", StringComparison.Ordinal) ? "Forecast.Unknown" : "Unknown";
-        return Find(generic) ?? "—";
+        string key = "World.Panel.Reason." + reason;
+        string text = Get(key);
+        return text == key ? Get("World.CommandRejected") : text;
     }
 
-    internal static string CombatModuleName(string moduleTypeId, string capturedName)
+    internal static string WorldPanelCaption(string identity) => identity switch
     {
-        string key = "Combat.Module." + moduleTypeId, translated = Get(key);
-        return translated == key ? capturedName : translated;
-    }
+        "Navigation" => Get("World.Panel.Navigation"),
+        "Maneuver" => Get("World.Panel.Maneuver"),
+        "Engine" => Get("World.Panel.Engine"),
+        "Space Control" => Get("World.Panel.SpaceControl"),
+        "Player Ship" => Get("World.Panel.PlayerShip"),
+        "Selected Object" => Get("World.Panel.SelectedObject"),
+        _ => identity
+    };
 
-    internal static string CombatPanelCaption(string identity)
+    internal static string WorldFieldLabel(string label) => label switch
     {
-        foreach (var (name, key) in new[] { ("Torpedo Launcher", "TorpedoLauncher"), ("Countermeasure Launcher", "CountermissileLauncher"),
-            ("Navigation", "Navigation"), ("Maneuver", "Maneuver"), ("Engine", "Engine"), ("Space Control", "SpaceControl"),
-            ("Player Ship", "PlayerShip"), ("Selected Object", "SelectedObject") })
-        {
-            if (!identity.StartsWith(name, StringComparison.Ordinal)) continue;
-            string suffix = identity[name.Length..];
-            if (suffix.Length == 0 || suffix.StartsWith(' ') && suffix.Trim().All(char.IsDigit)) return Combat("Panel." + key) + suffix;
-        }
-        return identity;
-    }
-
-    internal static string CombatFieldLabel(string label) => label switch
-    {
-        "Name" => Combat("Field.Name"),
-        "Speed" => Combat("Field.Speed"),
-        "Direction" => Combat("Field.Direction"),
-        "Captain" => Combat("Field.Captain"),
-        "Distance" => Combat("Field.Distance"),
-        "Target" => Combat("Target"),
-        "Travelled" => Combat("Field.Travelled"),
-        "ETA" => Combat("ETA"),
-        "Hit chance" => Combat("Field.LegacyHitChance"),
+        "Name" => Get("World.Field.Name"),
+        "Speed" => Get("World.Field.Speed"),
+        "Direction" => Get("World.Field.Direction"),
+        "Captain" => Get("World.Field.Captain"),
+        "Distance" => Get("World.Field.Distance"),
         _ => label
     };
 

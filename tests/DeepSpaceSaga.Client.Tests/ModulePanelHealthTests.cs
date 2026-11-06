@@ -16,9 +16,9 @@ public sealed class ModulePanelHealthTests
         Assert.All(panel.CommandPanelRows, row => Assert.True(row.CaptionRect.Bottom <= 480, row.Name));
         var paint = (SKPaint)typeof(CommandsPanel).GetField("_detailsPaint",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(panel)!;
-        string glyphs = string.Concat(new[] { "BarLeft", "BarFull", "BarEmpty", "BarRight", "Selected", "CriticalIcon" }
-            .Select(key => Localization.Combat("Panel." + key)));
-        foreach (char symbol in glyphs + "Точность Броня")
+        string glyphs = string.Concat(new[] { "BarLeft", "BarFull", "BarEmpty", "BarRight" }
+            .Select(key => Localization.Get("World.Panel." + key)));
+        foreach (char symbol in glyphs + Localization.Get("World.Panel.Structure"))
             Assert.True(paint.GetGlyphs(symbol.ToString()).All(g => g != 0), $"Missing U+{(int)symbol:X4} in {paint.Typeface.FamilyName}");
     }
 
@@ -32,11 +32,11 @@ public sealed class ModulePanelHealthTests
         f.Render();
         nav = Assert.Single(panel.CommandPanelRows, r => r.Name == "Navigation");
         Assert.True(nav.Opened);
-        Assert.Contains(nav.DetailLines, l => l.Contains(Localization.Combat("Panel.Structure")));
+        Assert.Contains(nav.DetailLines, l => l.Contains(Localization.Get("World.Panel.Structure")));
         panel.OnMouseMove(nav.BodyRect.MidX, nav.BodyRect.Top + 20);
         f.Render();
         Assert.Contains("/", panel.CurrentHealthTooltip);
-        Assert.Contains(Localization.Combat("Panel.Structure"), panel.CurrentHealthTooltip);
+        Assert.Contains(Localization.Get("World.Panel.Structure"), panel.CurrentHealthTooltip);
     }
 
     [Fact]

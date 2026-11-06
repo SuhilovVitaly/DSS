@@ -54,8 +54,8 @@ public sealed class CommandsPanel
                 !module.Commands.IsDefaultOrEmpty && module.Commands.Any(c => c.CommandTypeId.StartsWith("scanner.", StringComparison.Ordinal)) ? "Space Control" : "Navigation";
             if (panel != group) continue;
             lines.Add(tile.Name);
-            lines.Add($"{Localization.Combat("Panel.Structure")} {HealthBar(tile.Structure, tile.StructureMax)} {tile.Structure}");
-            if (tile.Destroyed) lines.Add(Localization.Combat("Panel.Destroyed"));
+            lines.Add($"{Localization.Get("World.Panel.Structure")} {HealthBar(tile.Structure, tile.StructureMax)} {tile.Structure}");
+            if (tile.Destroyed) lines.Add(Localization.Get("World.Panel.Destroyed"));
         }
         return lines;
     }
@@ -63,9 +63,9 @@ public sealed class CommandsPanel
     private static string HealthBar(int current, int maximum)
     {
         int filled = maximum > 0 ? (int)Math.Round(Math.Clamp((double)current / maximum, 0, 1) * 6) : 0;
-        return Localization.Combat("Panel.BarLeft") +
-            string.Concat(Enumerable.Repeat(Localization.Combat("Panel.BarFull"), filled)) +
-            string.Concat(Enumerable.Repeat(Localization.Combat("Panel.BarEmpty"), 6 - filled)) + Localization.Combat("Panel.BarRight");
+        return Localization.Get("World.Panel.BarLeft") +
+            string.Concat(Enumerable.Repeat(Localization.Get("World.Panel.BarFull"), filled)) +
+            string.Concat(Enumerable.Repeat(Localization.Get("World.Panel.BarEmpty"), 6 - filled)) + Localization.Get("World.Panel.BarRight");
     }
 
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
@@ -723,7 +723,7 @@ public sealed class CommandsPanel
             foreach (var tile in OwnModuleDiagram?.Tiles ?? [])
             {
                 if (!row.DetailLines.Any(line => line.StartsWith(tile.Name, StringComparison.Ordinal))) continue;
-                tooltips.Add($"{tile.Name}: {Localization.Combat("Panel.Structure")} {tile.Structure}/{tile.StructureMax}");
+                tooltips.Add($"{tile.Name}: {Localization.Get("World.Panel.Structure")} {tile.Structure}/{tile.StructureMax}");
             }
             CurrentHealthTooltip = tooltips.Count == 0 ? null : string.Join("\n", tooltips);
             float top = Math.Min(_pointerY + 18, viewportHeight - tooltips.Count * 18 - 4);
@@ -843,7 +843,7 @@ public sealed class CommandsPanel
 
         float textX = _hideShowButtonRect.Right + Padding + 2f;
         float textY = _captionRect.MidY + _titlePaint.TextSize / 3f;
-        canvas.DrawText(Localization.Combat("Panel.Commands"), textX, textY, _titlePaint);
+        canvas.DrawText(Localization.Get("World.Panel.Commands"), textX, textY, _titlePaint);
     }
 
     private void DrawButton(SKCanvas canvas, SKRect rect, int buttonIndex, SKBitmap? image)
@@ -887,7 +887,7 @@ public sealed class CommandsPanel
 
         float textX = row.CaptionRect.Left + 40f;
         float textY = row.CaptionRect.MidY + _moduleCaptionTextPaint.TextSize / 3f + ModuleTitleOffsetY;
-        canvas.DrawText(TruncateLabel(Localization.CombatPanelCaption(row.Name), _moduleCaptionTextPaint,
+        canvas.DrawText(TruncateLabel(Localization.WorldPanelCaption(row.Name), _moduleCaptionTextPaint,
             row.CaptionRect.Right - 6 - textX), textX, textY, _moduleCaptionTextPaint);
 
         if (row.Opened && row.BodyRect.Height > 0)

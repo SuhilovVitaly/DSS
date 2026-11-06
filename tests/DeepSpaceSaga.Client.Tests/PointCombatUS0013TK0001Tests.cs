@@ -25,8 +25,8 @@ public sealed class PointCombatUS0013TK0001Tests
         using var bitmap = new SKBitmap(480, 300); using var canvas = new SKCanvas(bitmap);
         var panel = new CommandsPanel { OwnModuleDiagram = diagram };
         panel.Render(canvas, Modules, 300, "player");
-        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(Localization.Combat("Panel.Structure")));
-        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(Localization.Combat("Panel.Destroyed")));
+        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(Localization.Get("World.Panel.Structure")));
+        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(Localization.Get("World.Panel.Destroyed")));
     }
 
     [Fact]
@@ -59,7 +59,7 @@ public sealed class PointCombatUS0013TK0001Tests
         Assert.Equal(9, screen.CommandsPanel.OwnModuleDiagram!.Tiles.Count);
         Assert.True(screen.ObjectInfoPanel.RowBodyRects[0].Height > 0);
         Assert.Equal(9, screen.CommandsPanel.OwnModuleDiagram!.Tiles.Count);
-        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains(Localization.Combat("Panel.Structure")) && s.Contains("50"));
+        Assert.Contains(screen.CommandsPanel.CommandPanelRows.SelectMany(r => r.DetailLines), s => s.Contains(Localization.Get("World.Panel.Structure")) && s.Contains("50"));
         if (Environment.GetEnvironmentVariable("DSS_POINT_RENDER_ARTIFACT_DIRECTORY") is { Length: > 0 } directory)
         {
             Directory.CreateDirectory(directory); using var image = SKImage.FromBitmap(bitmap); using var png = image.Encode(SKEncodedImageFormat.Png, 100);

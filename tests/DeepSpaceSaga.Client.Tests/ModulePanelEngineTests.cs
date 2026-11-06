@@ -17,8 +17,8 @@ public sealed class ModulePanelEngineTests
         { SpeedMps = speed, MovementType = "Linear" });
         var row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Name == "Engine");
         Assert.Contains(row.DetailLines, l => l.Contains("5.0") || l.Contains("5,0"));
-        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.AccelerationTime") + ": " + seconds + " "));
-        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.TurnTime") + ": 18 "));
+        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Get("World.Panel.AccelerationTime") + ": " + seconds + " "));
+        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Get("World.Panel.TurnTime") + ": 18 "));
         Assert.False(row.DetailsMuted);
         Assert.Contains("x1", row.TimeTooltip);
         if (speed == 3000)
@@ -28,8 +28,8 @@ public sealed class ModulePanelEngineTests
             await f.Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
             await f.Wait(() => f.Presented.CurrentSpeed == SimulationSpeed.Speed0);
             row = Assert.Single(f.Screen.CommandsPanel.CommandPanelRows, r => r.Name == "Engine");
-            Assert.Contains(row.DetailLines, l => l.Replace(',', '.').Contains(Localization.Combat("Panel.AccelerationTime") + ": 6.7 "));
-            Assert.Contains(row.DetailLines, l => l.Replace(',', '.').Contains(Localization.Combat("Panel.TurnTime") + ": 9.0 "));
+            Assert.Contains(row.DetailLines, l => l.Replace(',', '.').Contains(Localization.Get("World.Panel.AccelerationTime") + ": 6.7 "));
+            Assert.Contains(row.DetailLines, l => l.Replace(',', '.').Contains(Localization.Get("World.Panel.TurnTime") + ": 9.0 "));
             Assert.Contains("x2", row.TimeTooltip);
         }
     }
@@ -53,8 +53,8 @@ public sealed class ModulePanelEngineTests
         var row = Assert.Single(screen.CommandsPanel.CommandPanelRows, r => r.Name == "Engine");
         Assert.True(row.DetailsMuted);
         Assert.Contains(row.DetailLines, l => l.Contains("7.0") || l.Contains("7,0"));
-        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.AccelerationTime") + ": " + Localization.Combat("Panel.UnknownValue")));
-        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.Unavailable")));
+        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Get("World.Panel.AccelerationTime") + ": " + Localization.Get("World.Panel.UnknownValue")));
+        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Get("World.Panel.Unavailable")));
         Assert.DoesNotContain(row.DetailLines, l => l.Contains("NaN") || l.Contains("Infinity"));
         screen.OnDeactivated();
     }

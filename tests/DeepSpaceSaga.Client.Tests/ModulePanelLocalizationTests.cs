@@ -19,13 +19,13 @@ public sealed class ModulePanelLocalizationTests
             File.ReadAllText(Path.Combine(root, "Data/Locale", name + ".json")))!;
         var strings = Read(language);
         var required = Read("English").Keys.Concat(Read("Russian").Keys)
-            .Where(k => k.StartsWith("Combat.Panel.", StringComparison.Ordinal)).ToHashSet(StringComparer.Ordinal);
+            .Where(k => k.StartsWith("World.Panel.", StringComparison.Ordinal)).ToHashSet(StringComparer.Ordinal);
         foreach (string file in Directory.EnumerateFiles(Path.Combine(root, "UI/Screens/GameSession"), "*.cs", SearchOption.AllDirectories))
-            foreach (Match match in Regex.Matches(File.ReadAllText(file), "\"(Panel\\.[A-Za-z_][A-Za-z0-9_.]*)\""))
-                if (!match.Groups[1].Value.EndsWith('.')) required.Add("Combat." + match.Groups[1].Value);
+            foreach (Match match in Regex.Matches(File.ReadAllText(file), "\"(World\\.Panel\\.[A-Za-z_][A-Za-z0-9_.]*)\""))
+                if (!match.Groups[1].Value.EndsWith('.')) required.Add(match.Groups[1].Value);
         Validate(strings, required);
         var incomplete = new Dictionary<string, string>(strings);
-        incomplete.Remove("Combat.Panel.Engine");
+        incomplete.Remove("World.Panel.Engine");
         Assert.Throws<InvalidDataException>(() => Validate(incomplete, required));
 
         await using var fixture = await PointCombatUiFixture.Create(accuracySkill: 20);
@@ -37,9 +37,8 @@ public sealed class ModulePanelLocalizationTests
             screen.Render(canvas, 1920, 1080);
             var rows = screen.CommandsPanel.CommandPanelRows;
             Assert.Contains(rows, row => row.Name == "Engine");
-            Assert.DoesNotContain(rows.SelectMany(r => r.DetailLines), l => l.Contains("Combat.Panel.", StringComparison.Ordinal));
-            Assert.Equal(strings["Combat.Panel.Engine"], Localization.CombatPanelCaption("Engine"));
-            Assert.Equal(strings["Combat.Panel.NoOperator"], Localization.Combat("Panel.NoOperator"));
+            Assert.DoesNotContain(rows.SelectMany(r => r.DetailLines), l => l.Contains("World.Panel.", StringComparison.Ordinal));
+            Assert.Equal(strings["World.Panel.Engine"], Localization.WorldPanelCaption("Engine"));
             screen.OnDeactivated();
         }
     }
