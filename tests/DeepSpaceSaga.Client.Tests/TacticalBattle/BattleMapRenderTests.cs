@@ -195,6 +195,44 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task TraversedTrailIsVisibleOverFiringSectorsAndThroughoutSalvoPresentation()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var own = battle.Units.First(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Drone);
+        var drone = own with { Pose = new(200, 0, 180), Build = own.Build! with { Range = 500, ArcDegrees = 45 } };
+        var state = battle with
+        {
+            Phase = TacticalBattlePhase.Fire, Units = [drone], BeforeSalvoUnits = [drone],
+            Paths = [new(battle.Turn, drone.Id, [new(-220, 0, 180), drone.Pose])]
+        };
+        var plan = new TacticalFirePlan([new(drone, new(drone.Id, [], null), null)], drone.Id);
+        var frame = new TacticalBattleFrame(state, new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "",
+            EnemyForecast: false, FirePlan: plan);
+
+        AssertTrailVisible(frame);
+        var afterFire = state with { Phase = TacticalBattlePhase.Move };
+        AssertTrailVisible(frame with
+        {
+            Battle = afterFire, Presentation = TacticalBattlePresentation.SalvoFlight,
+            FirePlan = null, Salvo = new(true, false, [], [])
+        });
+        AssertTrailVisible(frame with
+        {
+            Battle = afterFire, Presentation = TacticalBattlePresentation.SalvoResults,
+            FirePlan = null, Salvo = new(false, false, [], [])
+        });
+
+        static void AssertTrailVisible(TacticalBattleFrame frame)
+        {
+            using var withTrail = Raster(frame);
+            using var withoutTrail = Raster(frame with { Battle = frame.Battle with { Paths = [] } });
+            Assert.Contains(Enumerable.Range(221, 24), x =>
+                withTrail.GetPixel(x, 360).Green > withoutTrail.GetPixel(x, 360).Green + 15);
+        }
+    }
+
+    [Fact]
     public async Task SalvoDamageSummaryDoesNotChangeTheMap()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

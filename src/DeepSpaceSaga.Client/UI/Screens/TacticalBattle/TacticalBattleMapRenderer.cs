@@ -34,7 +34,6 @@ internal static class TacticalBattleMapRenderer
         var units = VisibleUnits(frame);
         if (frame.Presentation == TacticalBattlePresentation.Current)
         {
-            DrawTrails(canvas, frame, paint);
             foreach (var unit in units)
             {
                 if (unit.Side == battle.PlayerSide || unit.Kind != TacticalUnitKind.Drone || unit.State != TacticalUnitState.Air) continue;
@@ -61,6 +60,7 @@ internal static class TacticalBattleMapRenderer
             if (frame.FirePlan is { } fire) DrawFire(canvas, frame, fire, paint);
         }
 
+        DrawTrails(canvas, frame, paint);
         DrawLabels(canvas, frame, units);
         if (frame.Salvo is { } salvo) DrawSalvo(canvas, frame, salvo, paint);
         var map = SKRect.Create(view.PixelWidth, view.PixelHeight);
@@ -218,12 +218,14 @@ internal static class TacticalBattleMapRenderer
 
     private static void DrawTrails(SKCanvas canvas, TacticalBattleFrame frame, SKPaint paint)
     {
+        if (frame.Battle.Paths.IsDefaultOrEmpty) return;
         float s = frame.UiScale;
+        paint.StrokeWidth = s;
         using var dashed = SKPathEffect.CreateDash([4 * s, 4 * s], 0);
         paint.PathEffect = dashed; paint.Style = SKPaintStyle.Stroke;
         foreach (var trail in frame.Battle.Paths)
         {
-            if (trail.Points.IsDefaultOrEmpty) continue;
+            if (trail.Points.IsDefaultOrEmpty || trail.Points.Length == 1) continue;
             var unit = frame.Battle.Units.FirstOrDefault(u => u.Id == trail.DroneId);
             if (unit is null) continue;
             paint.Color = (unit.Side == frame.Battle.PlayerSide ? Own : Enemy).WithAlpha(100);
