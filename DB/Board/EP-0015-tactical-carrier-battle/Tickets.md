@@ -1,6 +1,6 @@
 # EP-0015 execution order
 
-81 tickets, 17 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
+84 tickets, 18 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
 
 | Ticket | Layer | Story criteria | Dependency | State |
 |---|---|---|---|---|
@@ -85,3 +85,6 @@
 | [EP-0015-US-0017-TK-0002-documentation-new-contract](EP-0015-US-0017-project-documentation/EP-0015-US-0017-TK-0002-documentation-new-contract/EP-0015-US-0017-TK-0002-documentation-new-contract.md) | documentation | AC-02 | EP-0015-US-0017-TK-0001-impact-inventory | done |
 | [EP-0015-US-0017-TK-0003-documentation-legacy-rewrite](EP-0015-US-0017-project-documentation/EP-0015-US-0017-TK-0003-documentation-legacy-rewrite/EP-0015-US-0017-TK-0003-documentation-legacy-rewrite.md) | documentation | AC-03 | EP-0015-US-0017-TK-0002-documentation-new-contract | done |
 | [EP-0015-US-0017-TK-0004-board-sync](EP-0015-US-0017-project-documentation/EP-0015-US-0017-TK-0004-board-sync/EP-0015-US-0017-TK-0004-board-sync.md) | documentation | AC-04 | EP-0015-US-0017-TK-0003-documentation-legacy-rewrite | done |
+| [EP-0015-US-0018-TK-0001-engine-world-integrity](EP-0015-US-0018-review-corrections/EP-0015-US-0018-TK-0001-engine-world-integrity/EP-0015-US-0018-TK-0001-engine-world-integrity.md) | engine | AC-01 | EP-0015-US-0017-TK-0004-board-sync | todo |
+| [EP-0015-US-0018-TK-0002-ship-destroyed-screen](EP-0015-US-0018-review-corrections/EP-0015-US-0018-TK-0002-ship-destroyed-screen/EP-0015-US-0018-TK-0002-ship-destroyed-screen.md) | client | AC-02 | EP-0015-US-0018-TK-0001-engine-world-integrity | todo |
+| [EP-0015-US-0018-TK-0003-battle-exit-recovery](EP-0015-US-0018-review-corrections/EP-0015-US-0018-TK-0003-battle-exit-recovery/EP-0015-US-0018-TK-0003-battle-exit-recovery.md) | client | AC-03 | EP-0015-US-0018-TK-0002-ship-destroyed-screen | todo |
