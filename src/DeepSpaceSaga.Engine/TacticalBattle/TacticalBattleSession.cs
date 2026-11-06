@@ -179,7 +179,8 @@ internal sealed class TacticalBattleSession
         string? role = null, int? amount = null, int? engine = null, bool noAttackers = false,
         TacticalLogShot? shot = null, TacticalLogDamage? damage = null, TacticalLogUnit? unit = null) =>
         _log.Add(new(++_eventSequence, Battle.Turn, phase, kind, actor, target, role, amount, engine, noAttackers,
-            Shot: shot, Damage: damage, Unit: unit));
+            Shot: shot, Damage: damage, Unit: unit,
+            RoleName: role is null ? null : Battle.Catalog.Ai.Roles[role].Name));
     private TacticalDrone? Own(string id) => Battle.Drones.FirstOrDefault(d => d.Id == id && d.Side == PlayerSide && d.IsActive);
     private TacticalBattleRejectionCode Check(string id, ulong revision, TacticalBattlePhase phase) => id != Id ? TacticalBattleRejectionCode.WrongBattle
         : revision != Revision ? TacticalBattleRejectionCode.StaleRevision : Phase != phase ? TacticalBattleRejectionCode.WrongPhase : TacticalBattleRejectionCode.None;

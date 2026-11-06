@@ -13,7 +13,7 @@ public static class BattleLogFormatter
         {
             TacticalBattleLogKind.Started => L("Log.Started"),
             TacticalBattleLogKind.RoleChanged when entry.NoAttackers => F("Log.NoAttackers", actor),
-            TacticalBattleLogKind.RoleChanged => F("Log.Role", actor, Role(entry.RoleId)),
+            TacticalBattleLogKind.RoleChanged => F("Log.Role", actor, entry.RoleName ?? entry.RoleId ?? ""),
             TacticalBattleLogKind.FighterBreak => F("Log.FighterBreak", actor),
             TacticalBattleLogKind.NoTargets => L("Log.NoTargets"),
             TacticalBattleLogKind.ShotMissed => F("Log.ShotMiss", actor, target, chance),
@@ -43,7 +43,6 @@ public static class BattleLogFormatter
         return F("Log.Line", BattleFormat.Number(entry.Turn), phase, body);
     }
 
-    internal static string Role(string? role) => role is "fighter" or "striker" or "interceptor" ? L("Role." + role) : role ?? "";
     private static string L(string key) => BattleFormat.Localize(key);
     private static string F(string key, params object[] args) => BattleFormat.Text(string.Format(CultureInfo.InvariantCulture, L(key), args));
 }

@@ -22,7 +22,8 @@ internal static class TacticalBattleSnapshotBuilder
                 d.Status switch { TacticalDroneStatus.Air => TacticalUnitState.Air, TacticalDroneStatus.Disabled => TacticalUnitState.Disabled, _ => TacticalUnitState.Destroyed },
                 d.Role, d.Jammed, d.Engines.Select(e => new TacticalEngineSnapshot(e.Definition.Id, e.Definition.Name, e.Factor,
                     e.Definition.MassKg, e.Definition.SpeedBonus, e.Definition.SpeedChange, e.Definition.TurnDeg)).ToImmutableArray(),
-                new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver));
+                new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver,
+                battle.Catalog.Ai.Roles[d.Role].Name));
         }
         foreach (var c in battle.Carriers)
             units.Add(new(c.Id, c.Side, TacticalUnitKind.Carrier, TacticalBattleConstants.CarrierFrame, Pose(c.Pose), 0,

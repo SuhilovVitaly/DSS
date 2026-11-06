@@ -124,12 +124,12 @@ internal sealed class TacticalBattleSidesTab
         if (unit.Build is not { } build) return L("UnitState." + unit.State);
         var details = new List<string>
         {
-            build.FrameName, F("SetupSkills", N(unit.Accuracy), N(unit.Maneuver)),
+            build.FrameName, F("Sides.Pilot", build.PilotName), F("SetupSkills", N(unit.Accuracy), N(unit.Maneuver)),
             F("Sides.Gun", build.WeaponName, BattleFormat.Degrees(2 * build.ArcDegrees), N(build.Range)),
             build.ArmorName, build.ShieldCount > 0 ? F("Sides.Shield", build.ShieldName ?? "", N(build.ShieldCount)) : L("NoShield"),
             L("Speed") + " " + BattleFormat.Number(unit.Speed, 1)
         };
-        if (unit.RoleId is { Length: > 0 } role) details.Add(BattleLogFormatter.Role(role));
+        if ((unit.RoleName ?? unit.RoleId) is { Length: > 0 } role) details.Add(role);
         if (unit.Jammed) details.Add(L("Sides.Jammed"));
         foreach (var engine in unit.Engines)
             if (engine.Factor < 1) details.Add(F("Sides.Engine", engine.Name, BattleFormat.Probability(engine.Factor)));

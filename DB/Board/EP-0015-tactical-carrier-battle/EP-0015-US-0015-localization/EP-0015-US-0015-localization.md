@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0015-localization
 title: "Язык тактического боя: покрытие"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0014-legacy-foundation-removal]
 ---
 

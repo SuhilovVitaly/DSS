@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0015-localization
 ticket: EP-0015-US-0015-TK-0001-locale-coverage
 title: locale-coverage
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0014-TK-0005-tools-cleanup"]
-files_touched: 1
+files_touched: 8
 serves: [AC-01]
 created: 2026-11-05
 revision: 3
@@ -48,3 +48,20 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before edits — 2026-11-06
+
+The authoritative role catalog already defines Russian role names; the UI duplicated and changed one of those values. Project the display name alongside its stable ID on unit and journal rows and remove duplicate locale role strings. Display the catalog pilot name explicitly in the side card and test packaged locales and actual screens.
+
+- Edit: src/DeepSpaceSaga.Client/Data/Locale/English.json
+- Edit: src/DeepSpaceSaga.Client/Data/Locale/Russian.json
+- Edit: src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleLogFormatter.cs
+- Edit: src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSidesTab.cs
+- Edit: src/DeepSpaceSaga.Contracts/TacticalBattleSnapshot.cs
+- Edit: src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs
+- Edit: src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSnapshotBuilder.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/TacticalBattle/LocalizationCoverageTests.cs
+
+## Execution evidence — 2026-11-06
+
+RU/EN packaged key sets and format arity agree; direct and dynamic source keys resolve, and the retired world combat locale prefixes are absent. Authoritative catalog role names accompany stable role IDs in unit and journal rows; sides expose the pilot name from content. Both locale tests use the real setup, Engine session, rendered battle screen and actual role-change journal, verifying unchanged Russian V4 names. Scoped format, zero-warning build/diff, 167 Client, 380 Engine and 175 Contracts tests passed in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-tactical-locale-02/`. English editorial acceptance is outside scope.
