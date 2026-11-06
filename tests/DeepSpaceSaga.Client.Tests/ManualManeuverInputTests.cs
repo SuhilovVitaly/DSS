@@ -48,13 +48,11 @@ public sealed class ManualManeuverInputTests
     }
 
     [Fact]
-    public async Task Panel_aim_pause_Ctrl_actions_and_outside_combat_controls_coexist()
+    public async Task Debug_panel_and_Ctrl_actions_preserve_manual_controls()
     {
         await using var f = new Fixture();
         f.Down(Key.F12); f.Up(Key.F12); Assert.True(f.Screen.DebugPanel.Visible);
-        f.Down(Key.Q); f.Up(Key.Q); Assert.Equal(ProjectileKind.Torpedo, f.Screen.PointAim!.Kind);
-        f.Down(Key.W); f.Down(Key.D); Assert.Equal(2, f.Commands.Count); Assert.NotNull(f.Screen.PointAim);
-        f.Down(Key.Escape); f.Up(Key.Escape); Assert.Null(f.Screen.PointAim); Assert.True(f.Screen.DebugPanel.Visible);
+        f.Down(Key.W); f.Down(Key.D); Assert.Equal(2, f.Commands.Count);
         f.Down(Key.Escape); f.Up(Key.Escape); Assert.False(f.Screen.DebugPanel.Visible);
         f.Up(Key.W); f.Up(Key.D);
         int count = f.Commands.Count;
@@ -64,7 +62,6 @@ public sealed class ManualManeuverInputTests
         f.Screen.SynchronizeModifiers(false, false);
         Assert.Equal(ScreenEvent.None, f.Screen.OnKeyDown(Key.S)); f.Emit();
         Assert.Equal(SpeedDirection.Brake, f.Commands[^1].SpeedDirection); f.Screen.OnKeyUp(Key.S); f.Emit();
-        f.Down(Key.E); f.Up(Key.E); Assert.Equal(ProjectileKind.Countermissile, f.Screen.PointAim!.Kind);
     }
 
     [Fact]
@@ -83,7 +80,7 @@ public sealed class ManualManeuverInputTests
 
     private sealed class Fixture : IAsyncDisposable
     {
-        private readonly string _directory = Path.Combine("D:/DeepSpaceSaga/artifacts/validation/ep0013/manual-input-fixtures", Guid.NewGuid().ToString("N"));
+        private readonly string _directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath(), "manual-input-fixtures", Guid.NewGuid().ToString("N"));
         private readonly SimulationEngine _engine;
         private readonly SnapshotBuffer _buffer = new();
         private readonly KeyboardEdgeTracker _keys = new();

@@ -158,11 +158,10 @@ public sealed class TorpedoLauncherContentTests
         Assert.Contains(snapshot.CommandResults, result => result.CommandId == "test-fire" && result.Status == CommandResultStatus.Executed);
         Assert.Single(snapshot.Objects, o => o.OwnProjectile is not null);
         var after = engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0).GameState;
-        var installed = after.SpaceObjects.Single(o => o.ObjectId == playerId).Modules!.Single(m => m.ModuleId == launcherModuleId);
-        Assert.Null(installed.ActiveCycle);
-        Assert.Equal(60, installed.StructurePoints);
-        Assert.Null(installed.FuelAmountKg);
-        Assert.True(installed.Cargo is null || installed.Cargo.Count == 0);
+        var launcherSnapshot = Assert.Single(snapshot.InstalledModules, m => m.ModuleId == launcherModuleId);
+        Assert.Null(launcherSnapshot.ActiveCommandType);
+        Assert.Equal(60, launcherSnapshot.StructurePoints);
+        Assert.DoesNotContain(after.SpaceObjects.Single(o => o.ObjectId == playerId).Modules!, m => m.ModuleId == launcherModuleId);
         Assert.Equal(JsonSerializer.Serialize(before.TradingMap!.RngStreams), JsonSerializer.Serialize(after.TradingMap!.RngStreams));
         Assert.Equal(JsonSerializer.Serialize(before.StationResourceFields!.RngStreams), JsonSerializer.Serialize(after.StationResourceFields!.RngStreams));
     }

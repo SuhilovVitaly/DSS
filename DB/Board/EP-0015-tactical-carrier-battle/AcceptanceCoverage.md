@@ -51,7 +51,7 @@
 | EP-0015-US-0011-legacy-removal-prep | AC-02 | EP-0015-US-0011-TK-0002-save-fixtures | PASS: four writer-derived Default fixtures with active/idle Save18/19, exact provenance and deterministic loading |
 | EP-0015-US-0011-legacy-removal-prep | AC-03 | EP-0015-US-0011-TK-0003-maneuver-input-move | PASS: separate strict maneuver config; real held input and remapped debug/launch collision checks |
 | EP-0015-US-0011-legacy-removal-prep | AC-04 | EP-0015-US-0011-TK-0004-save-format-20 | PASS: Save20 byte roundtrip; four historical fixtures; corrupt payload, schema and catalog rejection; 889 Engine + 184 Client selected cases |
-| EP-0015-US-0012-legacy-client-removal | AC-01 | EP-0015-US-0012-TK-0001-client-map-removal-1, EP-0015-US-0012-TK-0002-client-map-removal-2 | not started |
+| EP-0015-US-0012-legacy-client-removal | AC-01 | EP-0015-US-0012-TK-0001-client-map-removal-1, EP-0015-US-0012-TK-0002-client-map-removal-2 | map disconnection PASS; tuning presentation pending |
 | EP-0015-US-0012-legacy-client-removal | AC-02 | EP-0015-US-0012-TK-0003-client-panels-removal, EP-0015-US-0012-TK-0004-client-stores-removal | not started |
 | EP-0015-US-0012-legacy-client-removal | AC-03 | EP-0015-US-0012-TK-0005-client-shell-removal, EP-0015-US-0012-TK-0006-client-assets-locale-removal | not started |
 | EP-0015-US-0012-legacy-client-removal | AC-04 | EP-0015-US-0012-TK-0006-client-assets-locale-removal | not started |

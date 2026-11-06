@@ -110,7 +110,7 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
     internal string DebugMap(double x, double y = 0)
     {
         var pixel = Pixel(x, y);
-        return $"point={pixel}; free={Screen.AvailableMapRect()}; aim={Screen.PointAim}; feedback={Screen.PointAimFeedback}; info={Screen.IsPanelVisible}; camera={Screen.CameraFocusX}/{Screen.CameraFocusY}/{Screen.CameraPixelsPerWorldUnit}";
+        return $"point={pixel}; free={Screen.AvailableMapRect()}; info={Screen.IsPanelVisible}; camera={Screen.CameraFocusX}/{Screen.CameraFocusY}/{Screen.CameraPixelsPerWorldUnit}";
     }
     internal (float X, float Y) Pixel(double x, double y = 0) =>
         ((float)(_width / 2d + (x - Screen.CameraFocusX) * Screen.CameraPixelsPerWorldUnit),
@@ -130,16 +130,14 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
         Render(); point = Pixel(x, y);
         Assert.True(Screen.AvailableMapRect().Contains(point.X, point.Y), DebugMap(x, y));
     }
-    internal void Aim(bool counter = false, int profile = 2)
-    { Screen.OnKeyDown(counter ? Key.E : Key.Q); Screen.OnKeyDown(profile switch { 1 => Key.Number1, 2 => Key.Number2, _ => Key.Number3 }); Render(); }
-    internal async Task<CommandResult> Launch(bool counter = false, double x = 300, double y = 0, int profile = 2)
+    internal async Task<CommandResult> Launch(double x = 300, double y = 0, int profile = 2)
     {
-        Expose(x, y); Aim(counter, profile); Click(x, y);
-        Assert.True(Screen.LastPointCommandId is not null, DebugMap(x, y));
-        string id = Screen.LastPointCommandId!;
+        string profileId = profile switch { 1 => "slow", 2 => "medium", _ => "fast" };
+        await Handle.SendPointLaunchAsync(Player, Torpedo, ProjectileKind.Torpedo, x, y, profileId, out string id);
         await Wait(() => Handle.Buffer.FindCommandResult(id) is not null);
         return Handle.Buffer.FindCommandResult(id)!;
     }
+
     internal async Task<AuthoritativeSnapshot> AdvanceTo(long motion)
     {
         await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);

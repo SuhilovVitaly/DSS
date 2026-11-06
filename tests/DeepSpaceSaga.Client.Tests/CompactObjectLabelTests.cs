@@ -46,7 +46,7 @@ public class CompactObjectLabelTests
     [Theory]
     [InlineData(SpaceObjectType.Missile)]
     [InlineData(SpaceObjectType.Countermeasure)]
-    public void Real_screen_projectile_label_follows_hover_and_selection_without_hiding_object(string type)
+    public void World_map_never_labels_or_selects_retired_projectiles(string type)
     {
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(new(1, 0, SimulationSpeed.Speed0,
@@ -61,20 +61,12 @@ public class CompactObjectLabelTests
         Assert.DoesNotContain("projectile", screen.MapLabels.Keys);
         screen.OnMouseMove(440, 260);
         Render();
-        Assert.Contains("projectile", screen.MapLabels.Keys);
-        screen.OnMouseMove(0, 0);
-        Render();
-        Assert.DoesNotContain("projectile", screen.MapLabels.Keys);
+        Assert.NotEqual("projectile", screen.ActiveObjectId);
         screen.OnMouseDown(440, 260);
         Render();
-        Assert.Contains("projectile", screen.MapLabels.Keys);
-        screen.OnMouseMove(0, 0);
-        Render();
-        Assert.Contains("projectile", screen.MapLabels.Keys);
-        screen.OnMouseDown(640, 360);
-        Render();
+        Assert.NotEqual("projectile", screen.SelectedObjectId);
         Assert.DoesNotContain("projectile", screen.MapLabels.Keys);
-        Assert.Contains(screen.RenderStates, state => state.Source.ObjectId == "projectile");
+        Assert.DoesNotContain(screen.RenderStates, state => state.Source.ObjectId == "projectile");
         screen.OnDeactivated();
     }
 

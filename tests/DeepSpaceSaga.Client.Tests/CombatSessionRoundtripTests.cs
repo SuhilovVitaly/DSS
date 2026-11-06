@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class CombatSessionRoundtripTests
 {
     [Fact]
-    public async Task Local_session_file_save_restores_combat_snapshots()
+    public async Task Local_session_file_save_restores_world_without_legacy_combat()
     {
         await using var fixture = await CombatSessionFixture.Create();
         await fixture.Launch("session-launch");
@@ -19,15 +19,13 @@ public sealed class CombatSessionRoundtripTests
         Assert.Equal(before.MotionTimeMs, restored.MotionTimeMs);
         Assert.Equal(before.GameTimeMs, restored.GameTimeMs);
         Assert.Equal(SimulationSpeed.Speed0, restored.CurrentSpeed);
-        Assert.Equal(JsonSerializer.Serialize(before.Objects), JsonSerializer.Serialize(restored.Objects));
-        Assert.Equal(JsonSerializer.Serialize(before.InstalledModules), JsonSerializer.Serialize(restored.InstalledModules));
+        var player = Assert.Single(restored.Objects, o => o.ObjectId == CombatSessionFixture.Player);
+        var previous = Assert.Single(before.Objects, o => o.ObjectId == CombatSessionFixture.Player);
+        Assert.Equal((previous.X, previous.Y, previous.SpeedKmS, previous.Direction), (player.X, player.Y, player.SpeedKmS, player.Direction));
+        Assert.NotEmpty(restored.InstalledModules);
+        Assert.DoesNotContain(restored.InstalledModules, m => m.Defense is not null || m.LauncherCombat is not null);
+        Assert.DoesNotContain(restored.Objects, o => o.OwnProjectile is not null || o.ObjectId == CombatSessionFixture.Target);
         Assert.Empty(restored.CombatImpacts);
-        Assert.NotNull(Assert.Single(restored.Objects.Where(o => o.OwnProjectile is not null)).OwnProjectile);
-        await fixture.Restored!.SendCommandAsync(CombatSessionFixture.PointLaunch("session-launch"));
-        await fixture.Restored.SaveAsync("again");
-        var saved = ScenarioLoader.LoadFromFile(Path.Combine(fixture.DirectoryPath, "again.json"), true);
-        Assert.Single(saved.GameState.PointCombatState!.Projectiles);
-        Assert.Equal(1, saved.GameState.CombatState!.ProjectileSequence);
     }
 }
 

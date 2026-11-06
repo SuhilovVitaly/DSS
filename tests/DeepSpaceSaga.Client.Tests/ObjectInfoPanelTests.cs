@@ -579,7 +579,7 @@ public class ObjectInfoPanelTests
         Assert.Equal(162f, ObjectInfoPanel.RowBodyHeight);
         Assert.Equal(162f, screen.ObjectInfoPanel.RowBodyRects[0].Height);
         Assert.All(screen.ObjectInfoPanel.RowBodyRects, r => Assert.InRange(r.Height, 1f, 162f));
-        Assert.True(screen.ObjectInfoPanel.Bounds.Bottom <= screen.CombatReportsBounds.Top);
+        Assert.True(screen.ObjectInfoPanel.Bounds.Bottom <= ScreenHeight);
         var clipped = screen.ObjectInfoPanel.RowBodyRects[1];
         Assert.True(screen.ObjectInfoPanel.Scroll(clipped.MidX, clipped.MidY, -1));
         Assert.True(screen.ObjectInfoPanel.ScrollOffset(1) > 0);

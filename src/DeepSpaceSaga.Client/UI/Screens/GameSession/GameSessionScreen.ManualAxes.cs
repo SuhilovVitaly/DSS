@@ -18,21 +18,21 @@ public sealed partial class GameSessionScreen
             if (_heldFullSpeed.Add(key) && _heldFullSpeed.Count == 1)
             {
                 _speedAxisKeys.Clear(); _speedLatchRequested = true;
-                _heldEvade = null; CurrentEvadePreview = null; ReconcileManualAxes();
+                ReconcileManualAxes();
             }
             return true;
         }
         if (ManeuverInputs.TurnLeft.Contains(key) || ManeuverInputs.TurnRight.Contains(key))
         {
             if (!_turnAxisKeys.Contains(key)) _turnAxisKeys.Add(key);
-            _heldEvade = null; CurrentEvadePreview = null; ReconcileManualAxes(); return true;
+            ReconcileManualAxes(); return true;
         }
         if (ManeuverInputs.Accelerate.Contains(key) || ManeuverInputs.Brake.Contains(key))
         {
             if (!_speedAxisKeys.Contains(key))
             {
                 _speedAxisKeys.Add(key); _speedLatchRequested = false;
-                _heldEvade = null; CurrentEvadePreview = null; ReconcileManualAxes();
+                ReconcileManualAxes();
             }
             return true;
         }
@@ -90,6 +90,6 @@ public sealed partial class GameSessionScreen
             LastManeuverCommandId = id;
             if (active) _heldSpeed = (owner, module, direction, latched, id);
         }
-        catch (Exception) { ManeuverFeedback = PointLaunchReason("send_failed"); }
+        catch (Exception) { ManeuverFeedback = ManeuverError("send_failed"); }
     }
 }

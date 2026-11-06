@@ -22,18 +22,6 @@ if (args.Contains("--debug-window"))
     return;
 }
 
-if (args.Contains("--reports-window"))
-{
-    Environment.ExitCode = CombatReportsNativeEvidence.Run(args);
-    return;
-}
-
-if (args.Contains("--combat-window"))
-{
-    Environment.ExitCode = PointCombatNativeEvidence.Run(args);
-    return;
-}
-
 if (args.Contains("--solar-window"))
 {
     Environment.ExitCode = SolarNativeEvidence.Run(args);

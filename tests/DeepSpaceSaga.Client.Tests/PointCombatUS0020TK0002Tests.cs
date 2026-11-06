@@ -41,12 +41,12 @@ public class PointCombatUS0020TK0002Tests
     public async Task Panels_survive_resize_and_selection(int width, int height, float scale)
     {
         await using var f = await PointCombatUiFixture.Create(width, height, scale);
-        Assert.NotEmpty(f.Screen.CommandsPanel.OwnModuleDiagram!.Tiles);
+        Assert.Contains(f.Screen.CommandsPanel.CommandPanelRows, row => row.Name == "Engine");
         Assert.Contains(f.Screen.CommandsPanel.CommandPanelRows, r => !r.DetailLines.IsDefaultOrEmpty);
         using var bitmap = new SKBitmap(width + 100, height + 100);
         using var canvas = new SKCanvas(bitmap);
         f.Screen.Render(canvas, width + 100, height + 100);
         Assert.True(f.Screen.ObjectInfoPanel.RowBodyRects[0].Height > 0);
-        Assert.True(f.Screen.CombatReportsBounds.Height > 0);
+        Assert.Contains(f.Screen.CommandsPanel.CommandPanelRows, row => row.Name == "Navigation");
     }
 }

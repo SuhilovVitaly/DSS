@@ -449,11 +449,15 @@ public class LocalSessionIntegrationTests
                 else Assert.Equal(sourceShip.SpeedMps, savedShip.SpeedMps);
                 var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settingsPath, out _, out _);
                 long fuelPrice = registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex("item.fuel")).BasePriceCredits!.Value;
-                var expectedModules = sourceShip.Modules!.Select(m =>
+                var expectedModules = sourceShip.Modules!.Where(m => !m.ModuleTypeId.StartsWith("module.torpedo.", StringComparison.Ordinal) &&
+                    !m.ModuleTypeId.StartsWith("module.countermeasure.", StringComparison.Ordinal) && m.ModuleTypeId != "module.combat.laser").Select(m =>
                 {
                     var type = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId));
                     m = m with
                     {
+                        ArmorClass = "none",
+                        Armor = null,
+                        AutoDefenseEnabled = false,
                         Cargo = m.Cargo?.Select(c => c.CostBasisCredits is not null ? c : c with
                         {
                             CostBasisCredits = checked(c.Quantity * registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(c.ItemTypeId)).BasePriceCredits!.Value),
@@ -1224,7 +1228,7 @@ public class LocalSessionIntegrationTests
             string path = Path.Combine(dir, "economy-roundtrip.json");
             var disk = ScenarioLoader.LoadFromFile(path, true);
             Assert.Equal(EconomicState(f.Save), EconomicState(disk));
-            Assert.Equal(19, disk.SaveFormatVersion); Assert.NotNull(disk.GameState.TradingMap);
+            Assert.Equal(20, disk.SaveFormatVersion); Assert.NotNull(disk.GameState.TradingMap);
             Assert.NotNull(disk.GameState.StationResourceFields); Assert.NotNull(disk.GameState.TradingEconomyContinuation);
             Assert.Single(disk.GameState.VoyageLedgers!);
             Assert.Equal(inFlight ? VoyageFinanceStates.InTransit : VoyageFinanceStates.AwaitingRealization, disk.GameState.VoyageLedgers![0].Finance.State);
@@ -1406,7 +1410,6 @@ public class LocalSessionIntegrationTests
         {
             GameTimeMs = 1000,
             SimulationTimeMs = 1000,
-            CombatState = save.GameState.CombatState! with { LastProcessedMotionTimeMs = 1000 },
             MasterSeed = includeMasterSeed ? 42UL : null,
             SolarSystem = null,
             ClusterMap = null,

@@ -30,41 +30,6 @@ public sealed class PointCombatUS0013TK0002Tests
     }
 
     [Fact]
-    public async Task Weapon_panels_show_profile_reload_and_operator_without_rolls()
-    {
-        await using var world = new PointCombatSessionFixture(PointCombatSessionFixture.Registry(.02));
-        var buffer = new SnapshotBuffer(() => 0); buffer.Update(world.Engine.CaptureSnapshot());
-        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
-        using var bitmap = new SKBitmap(1920, 1800); using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, 1920, 1800);
-        var rows = screen.CommandsPanel.CommandPanelRows.Where(r => r.Weapon is not null).ToArray();
-        Assert.Equal(buffer.Presented!.Snapshot.InstalledModules.Count(m => m.LauncherCombat is not null || m.Defense is not null), rows.Length);
-        Assert.Contains(rows, r => r.Weapon!.ModuleId == PointCombatSessionFixture.Torpedo);
-        foreach (var row in rows)
-        {
-            Assert.False(row.ReloadRingRect.IsEmpty); Assert.NotNull(row.OperatorText);
-            Assert.Contains(Localization.Combat("Panel.Accuracy"), row.OperatorText);
-            Assert.Contains(Localization.Combat("Panel.Sigma"), row.OperatorText);
-            Assert.DoesNotContain(row.DetailLines, line => line.Contains("шанс", StringComparison.OrdinalIgnoreCase) || line.Contains("chance", StringComparison.OrdinalIgnoreCase) || line.Contains("roll", StringComparison.OrdinalIgnoreCase));
-            Assert.DoesNotContain(row.Buttons, b => b.CommandTypeId is CombatCommandTypes.Fire or CombatCommandTypes.SelfDestruct or DefenseCommandTypes.Fire or DefenseCommandTypes.Enable or DefenseCommandTypes.Disable);
-        }
-        screen.OnKeyDown(Key.Q); screen.OnKeyDown(Key.Number2); screen.Render(canvas, 1920, 1800);
-        var torpedo = Assert.Single(screen.CommandsPanel.CommandPanelRows, r => r.Weapon?.ModuleId == PointCombatSessionFixture.Torpedo);
-        Assert.Contains(torpedo.DetailLines, line => line.StartsWith("2" + Localization.Combat("Panel.Selected") + "\tmedium", StringComparison.Ordinal));
-        Assert.Contains(torpedo.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch && b.Label!.EndsWith(" Q"));
-        Assert.Contains(torpedo.Buttons, b => b.CommandTypeId == CombatCommandTypes.Detonate && b.Label == GameSessionScreen.CombatText("Detonate", "Подрыв"));
-        var toggle = torpedo.RangeToggleRect; Assert.True(torpedo.RangeVisible);
-        screen.CommandsPanel.OnMouseDown(toggle.MidX, toggle.MidY); screen.Render(canvas, 1920, 1800);
-        Assert.False(screen.CommandsPanel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == PointCombatSessionFixture.Torpedo).RangeVisible);
-        if (Environment.GetEnvironmentVariable("DSS_POINT_RENDER_ARTIFACT_DIRECTORY") is { Length: > 0 } directory)
-        {
-            Directory.CreateDirectory(directory); using var image = SKImage.FromBitmap(bitmap); using var png = image.Encode(SKEncodedImageFormat.Png, 100);
-            using var file = File.Create(Path.Combine(directory, "weapon-panels-headless.png")); png.SaveTo(file);
-        }
-        screen.OnDeactivated();
-    }
-
-    [Fact]
     public async Task Counter_effective_scatter_is_authoritative_and_foreign_projection_stays_hidden()
     {
         var source = PointCombatSessionFixture.Registry();
@@ -102,41 +67,5 @@ public sealed class PointCombatUS0013TK0002Tests
         var after = panel.CommandPanelRows.Single(r => r.Weapon is not null);
         Assert.Equal(30, after.RemainingReloadRealSeconds); Assert.Equal(before.ReloadFraction, after.ReloadFraction);
         Assert.Equal(.25, after.ReloadFraction);
-    }
-
-    [Fact]
-    public async Task Detonate_button_submits_selected_own_flight_through_real_transport()
-    {
-        await using var world = new PointCombatSessionFixture();
-        long uiMs = 0;
-        await using var handle = new GameSessionHandle(world.Connection, new SnapshotBuffer(() => uiMs * Stopwatch.Frequency / 1000));
-        var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle, timestampProvider: () => uiMs * Stopwatch.Frequency / 1000);
-        using var bitmap = new SKBitmap(1920, 1800); using var canvas = new SKCanvas(bitmap);
-        async Task Wait(Func<bool> predicate)
-        {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(12));
-            while (true)
-            {
-                uiMs += 16; screen.Render(canvas, 1920, 1800); Assert.Null(handle.Failure);
-                if (predicate()) return;
-                await Task.Delay(10, timeout.Token);
-            }
-        }
-        await Wait(() => screen.RenderStates.Any(s => s.IsPlayerShip));
-        await handle.SendPointLaunchAsync(PointCombatSessionFixture.Player, PointCombatSessionFixture.Torpedo, ProjectileKind.Torpedo, 600, 0, "fast", out _);
-        await handle.SetSpeedAsync(SimulationSpeed.Speed1); world.SetReal(2000); await handle.SetSpeedAsync(SimulationSpeed.Speed0);
-        await Wait(() => handle.Buffer.Presented!.Snapshot.MotionTimeMs >= 500 &&
-            screen.RenderStates.Any(s => s.Source.OwnProjectile is not null && s.Pose.X > 40));
-        var flight = Assert.Single(screen.RenderStates, s => s.Source.OwnProjectile is not null);
-        float x = (float)(960 + (flight.Pose.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
-        float y = (float)(900 + (flight.Pose.Y - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit);
-        screen.OnMouseDown(x, y); screen.Render(canvas, 1920, 1800);
-        Assert.Equal(flight.Source.ObjectId, screen.SelectedObjectId);
-        var button = Assert.Single(screen.CommandsPanel.AllCommandButtons, b => b.CommandTypeId == CombatCommandTypes.Detonate);
-        Assert.True(button.Enabled);
-        screen.CommandsPanel.OnMouseDown(button.Rect.MidX, button.Rect.MidY);
-        await Wait(() => handle.Buffer.Presented!.Snapshot.CombatJournal.Any(e => e.Type == CombatEventType.ManuallyDetonated && e.ProjectileObjectId == flight.Source.ObjectId));
-        Assert.DoesNotContain(handle.Buffer.Presented!.Snapshot.Objects, o => o.ObjectId == flight.Source.ObjectId);
-        screen.OnDeactivated();
     }
 }

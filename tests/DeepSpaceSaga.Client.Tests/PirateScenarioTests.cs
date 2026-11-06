@@ -25,7 +25,7 @@ public sealed class PirateScenarioTests
     public void Three_distinct_operators_fit_three_cabins()
     {
         using var engine = Create();
-        var saved = engine.CaptureSaveState();
+        var saved = ScenarioLoader.LoadFromFile(ScenarioPath);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
         foreach (var ship in saved.GameState.SpaceObjects.Where(o => o.ObjectType is "PlayerShip" or "NpcShip"))
         {
@@ -65,60 +65,6 @@ public sealed class PirateScenarioTests
             Assert.All(modules, m => Assert.True(m.AutoDefenseEnabled));
         }
     }
-    [Fact]
-    public void Pirate_initial_identity_is_preserved_and_motion_enters_configured_flank_approach()
-    {
-        Assert.Contains(ScenarioRepository.ListScenarios(Path.Combine(ClientRoot, "Scenarios")), s => s.ScenarioPath == ScenarioPath);
-        using var engine = Create();
-        var snapshot = engine.CaptureSnapshotForTests();
-        Assert.Equal(2, snapshot.Objects.Count(o => o.ObjectType is "PlayerShip" or "NpcShip"));
-        Assert.All(snapshot.Objects.Where(o => o.ObjectType is "PlayerShip" or "NpcShip"), o => Assert.Null(o.HullCombat));
-        var launcher = Assert.Single(snapshot.InstalledModules, m => m.LauncherCombat is not null).LauncherCombat!;
-        Assert.Equal(6, launcher.Profiles!.Value[0].SpeedKmS);
-        Assert.Equal(new[] { 6d, 10d, 16d }, launcher.Profiles!.Value.Select(p => p.SpeedKmS));
-        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("TurnRateDegPerSec"));
-        Assert.Equal(200, launcher.Damage);
-        Assert.Equal(70, launcher.RangeKm);
-        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("Maneuverability"));
-        Assert.True(launcher.ActiveTorpedoIds.IsDefaultOrEmpty);
-        var pirate = Pirate(snapshot);
-        var playerPose = snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId);
-        Assert.Equal(-10000, pirate.X - playerPose.X, 6);
-        Assert.Equal(-5000, pirate.Y - playerPose.Y, 6);
-        Assert.Equal((0.4d, 120d), (pirate.SpeedKmS, pirate.Direction));
-        Assert.Equal(PlayerRelation.Enemy, pirate.RelationToPlayer);
-        Assert.Equal(SpaceObjectType.NpcShip, pirate.RenderObjectType);
-        Assert.Equal(new SKColor(240, 128, 136), SpaceMapColorResolver.GetColor(pirate.RenderObjectType, pirate.RelationToPlayer));
-        Assert.False(string.IsNullOrWhiteSpace(pirate.DisplayName));
-        Assert.False(string.IsNullOrWhiteSpace(pirate.CaptainDisplayName));
-        Assert.False(string.IsNullOrWhiteSpace(pirate.CaptainPortraitImage));
-        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0).GameState;
-        var player = save.SpaceObjects.Single(o => o.ObjectId == save.PlayerShipObjectId);
-        var npc = save.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId);
-        Assert.Equal(JsonSerializer.Serialize(player.HullLayout), JsonSerializer.Serialize(npc.HullLayout));
-        Assert.Equal(player.Image, npc.Image);
-        var originalPlayerModules = player.Modules!.Where(m => m.ModuleId != "MOD-PLAYER-COUNTERMEASURE-02")
-            .Select(m => m.ModuleTypeId == "living.quarters.mk1.three-cabins" ? m with { ModuleTypeId = "living.quarters.mk1" } : m).ToArray();
-        Assert.Equal(originalPlayerModules.Select(m => m.ModuleTypeId), npc.Modules!.Select(m => m.ModuleTypeId));
-        Assert.Equal(JsonSerializer.Serialize(originalPlayerModules.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })),
-            JsonSerializer.Serialize(npc.Modules!.Select(m => m with { ModuleId = "test", OperatorCrewId = m.OperatorCrewId is null ? null : m.ModuleTypeId })));
-        var startingSave = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
-        var moved = Pirate(engine.CaptureSnapshotForTests(1000));
-        Assert.NotEqual((pirate.X, pirate.Y), (moved.X, moved.Y));
-        // Point AI pursues its explicit25km orbit with the shared constrained step controller.
-        // Preserve a partitioned physics comparison instead of the removed legacy acceleration range.
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
-        using var partitioned = new SimulationEngine(registry);
-        partitioned.LoadScenario(startingSave, isSave: true);
-        partitioned.CaptureSnapshotForTests(1);
-        var split = Pirate(partitioned.CaptureSnapshotForTests(1000));
-        Assert.Equal(moved.X, split.X, 6); Assert.Equal(moved.Y, split.Y, 6);
-        Assert.Equal(moved.SpeedKmS, split.SpeedKmS, 6); Assert.Equal(moved.Direction, split.Direction, 6);
-        Assert.InRange(Math.Abs(moved.Direction - pirate.Direction), 0, 20.00000001);
-        Assert.Equal(HostileCombatPhase.FlankApproach, moved.HostileCombat!.Phase);
-        Assert.Equal(25, moved.HostileCombat.DesiredRadiusKm);
-        Assert.Null(moved.ActiveEngineCommandType);
-    }
 
     [Fact]
     public void New_games_get_fresh_seeds_and_seeded_names_are_repeatable_and_varied()
@@ -146,38 +92,10 @@ public sealed class PirateScenarioTests
     }
 
     [Fact]
-    public void Save_load_preserves_identity_relation_modules_and_motion()
-    {
-        using var engine = Create();
-        var pirate = Pirate(engine.CaptureSnapshotForTests());
-        engine.SetObjectInteractionState(null, pirate.ObjectId);
-        var save = engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0);
-        var path = Path.Combine(Path.GetTempPath(), $"pirate-save-{Guid.NewGuid():N}.json");
-        try
-        {
-            File.WriteAllText(path, JsonSerializer.Serialize(save));
-            using var restored = EngineContentLoader.CreateEngineFromSaveFile(SettingsPath, path);
-            var actual = Pirate(restored.CaptureSnapshotForTests(2000));
-            var expected = Pirate(engine.CaptureSnapshotForTests(2000));
-            // Saving creates a new linear integration baseline; addition partitioning
-            // may differ by one ULP at generated system coordinates.
-            Assert.InRange(Math.Abs(expected.X - actual.X), 0, 1e-6);
-            Assert.InRange(Math.Abs(expected.Y - actual.Y), 0, 1e-6);
-            Assert.Equal(expected.ModuleHealth.ToArray(), actual.ModuleHealth.ToArray());
-            Assert.Equal(expected with { X = actual.X, Y = actual.Y, ModuleHealth = actual.ModuleHealth }, actual);
-            restored.SetObjectInteractionState(null, pirate.ObjectId);
-            Assert.Equal(pirate.ObjectId, restored.CaptureSnapshotForTests(2000).SelectedObjectId);
-            Assert.Equal(JsonSerializer.Serialize(engine.CaptureSaveStateForTests(2000, SimulationSpeed.Speed0).GameState.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId).Modules),
-                JsonSerializer.Serialize(restored.CaptureSaveStateForTests(2000, SimulationSpeed.Speed0).GameState.SpaceObjects.Single(o => o.ObjectId == pirate.ObjectId).Modules));
-        }
-        finally { File.Delete(path); }
-    }
-
-    [Fact]
     public void Pirate_can_be_clicked_and_information_includes_generated_captain()
     {
         using var engine = Create();
-        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0);
+        var save = ScenarioLoader.LoadFromFile(ScenarioPath);
         var target = save.GameState.SpaceObjects.Single(o => o.ObjectType == SpaceObjectType.NpcShip);
         engine.LoadScenario(save with
         {
@@ -186,7 +104,7 @@ public sealed class PirateScenarioTests
                 SpaceObjects = save.GameState.SpaceObjects.Select(o => o.ObjectType == SpaceObjectType.PlayerShip
                     ? o with { PositionX = target.PositionX, PositionY = target.PositionY - 60, SpeedMps = 0, MovementType = "Stationary" } : o).ToArray()
             }
-        }, isSave: true);
+        });
         var snapshot = engine.CaptureSnapshotForTests();
         var buffer = new SnapshotBuffer();
         buffer.Update(snapshot);

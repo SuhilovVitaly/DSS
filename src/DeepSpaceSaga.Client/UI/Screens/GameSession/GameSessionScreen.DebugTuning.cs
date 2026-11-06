@@ -78,7 +78,7 @@ public sealed partial class GameSessionScreen
             if (_debugTuningPanel.Visible) PrepareDebugTuning();
             return true;
         }
-        if (key == Key.Escape && PointAim is null && _debugTuningPanel.Visible)
+        if (key == Key.Escape && _debugTuningPanel.Visible)
         { _debugTuningPanel.Visible = false; _debugResetArmedAt = null; return true; }
         return false;
     }

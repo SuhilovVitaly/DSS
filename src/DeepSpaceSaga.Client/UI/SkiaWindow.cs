@@ -361,7 +361,6 @@ public sealed class SkiaWindow : IDisposable
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
-            if (screen is GameSessionScreen reportScreen) reportScreen.PrepareCombatReports();
             screen.Render(canvas, windowSize.X, windowSize.Y);
             if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
             index++;
@@ -591,8 +590,7 @@ public sealed class SkiaWindow : IDisposable
         // inside the locked HandleScreenEvent switch. See LoadScreen's doc comment.
         var currentScreen = _screens.Current;
         if (currentScreen is GameSessionScreen game && _keyboard is not null)
-            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
-                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight));
         var screenEvent = currentScreen.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
         string? payload = screenEvent == ScreenEvent.LoadSlotRequested && currentScreen is LoadScreen loadScreen
             ? loadScreen.LastRequestedSlotId
@@ -683,8 +681,7 @@ public sealed class SkiaWindow : IDisposable
 
         if (_screens.Current is GameSessionScreen game)
         {
-            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
-                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight));
             bool aimPressed = Array.IndexOf(_keyboardPressedKeys, _combatInputs.TorpedoAim, 0, pressedCount) >= 0 ||
                 Array.IndexOf(_keyboardPressedKeys, _combatInputs.CountermissileAim, 0, pressedCount) >= 0;
             if (aimPressed && _mouse is not null && !_keyboard.IsKeyPressed(Key.ControlLeft) && !_keyboard.IsKeyPressed(Key.ControlRight))
@@ -1741,7 +1738,6 @@ public sealed class SkiaWindow : IDisposable
         _savedSpeed = SimulationSpeed.Speed0;
         _pendingUndockCommandId = null;
         // The root may already be inactive under an overlay; ReplaceAll deactivates only Current.
-        _gameSessionScreen?.DisposeCombatReports();
         _gameSessionScreen?.DisposeDebugTuning();
         _gameSessionScreen = null;
         _screens.ReplaceAll(new DefeatScreen((float)GetUiScale(), _session.Buffer.Presented?.Snapshot.Encounter));

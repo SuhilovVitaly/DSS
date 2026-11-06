@@ -45,53 +45,6 @@ public sealed class PointCombatUS0016TK0001Tests
     }
 
     [Theory]
-    [InlineData("English", 1f)]
-    [InlineData("English", 1.5f)]
-    [InlineData("Russian", 1f)]
-    [InlineData("Russian", 1.5f)]
-    public async Task Actual_point_screen_uses_selected_locale_without_changing_identities(string language, float scale)
-    {
-        await using var world = new PointCombatSessionFixture(PointCombatSessionFixture.Registry(.02));
-        var scene = world.Engine.CaptureSnapshot(); var locale = Localization.LoadLocaleFile(language)!;
-        using (Localization.UseLocaleForTests(language))
-        {
-            var buffer = new SnapshotBuffer(() => 0); buffer.Update(scene);
-            var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0, uiScale: scale);
-            using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
-            screen.Render(canvas, 1920, 1080); screen.OnMouseMove(1000, 500); screen.OnKeyDown(Key.Q); screen.OnKeyDown(Key.Number2);
-            screen.Render(canvas, 1920, 1080);
-            Assert.Equal("medium", screen.PointAim!.ProfileId); Assert.NotNull(screen.CurrentTorpedoAimPreview);
-            var row = Assert.Single(screen.CommandsPanel.CommandPanelRows, p => p.Weapon?.ModuleId == PointCombatSessionFixture.Torpedo);
-            Assert.StartsWith("Torpedo Launcher", row.Name); Assert.Equal(row.Name, row.Weapon!.Caption); // internal identity stays in its domain
-            Assert.Contains(row.DetailLines, line => line.StartsWith("2" + locale["Combat.Panel.Selected"] + "\t" + locale["Combat.Profile.medium"], StringComparison.Ordinal));
-            Assert.Contains(row.DetailLines, line => line.Contains(locale["Combat.KilometersPerSecond"], StringComparison.Ordinal));
-            if (!row.Opened)
-            {
-                float x = row.CaptionRect.MidX * scale, y = row.CaptionRect.MidY * scale;
-                screen.OnMouseMove(x, y); screen.OnMouseDown(x, y); screen.OnMouseMove(1000, 500);
-                screen.Render(canvas, 1920, 1080);
-                row = Assert.Single(screen.CommandsPanel.CommandPanelRows, p => p.Weapon?.ModuleId == PointCombatSessionFixture.Torpedo);
-            }
-            Assert.Contains(row.Buttons, b => b.CommandTypeId == CombatCommandTypes.Launch && b.Label == locale["Combat.Aim"] + " Q");
-            Assert.True(screen.AvailableMapRect().Contains(screen.TorpedoAimLabelBounds));
-            foreach (var tile in screen.CommandsPanel.OwnModuleDiagram!.Tiles)
-            {
-                var module = scene.InstalledModules.Single(m => m.ModuleId == tile.Id);
-                Assert.Equal(locale["Combat.Module." + module.ModuleTypeId], tile.Name);
-            }
-            Assert.Equal(locale["Combat.UnknownObject"], ObjectLabelText.Build(SpaceObjectType.UnknownSpaceObject, "hidden-name", "hidden-id"));
-            Assert.Equal(locale["Combat.Panel.TorpedoLauncher"] + " 2", Localization.CombatPanelCaption("Torpedo Launcher 2"));
-            Assert.DoesNotContain("Combat.", string.Join('\n', row.DetailLines));
-            if (scale == 1 && Environment.GetEnvironmentVariable("DSS_POINT_RENDER_ARTIFACT_DIRECTORY") is { Length: > 0 } directory)
-            {
-                Directory.CreateDirectory(directory); using var image = SKImage.FromBitmap(bitmap); using var png = image.Encode(SKEncodedImageFormat.Png, 100);
-                using var file = File.Create(Path.Combine(directory, "combat-locale-" + language + ".png")); png.SaveTo(file);
-            }
-            screen.OnDeactivated();
-        }
-    }
-
-    [Theory]
     [InlineData("English")]
     [InlineData("Russian")]
     public void Report_profiles_and_generic_errors_use_the_requested_dictionary(string language)

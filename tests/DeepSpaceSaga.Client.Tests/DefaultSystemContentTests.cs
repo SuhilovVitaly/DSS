@@ -43,7 +43,9 @@ public sealed class DefaultSystemContentTests
             var actual = saved.GameState.SpaceObjects.Single(o => o.ObjectId == original.ObjectId);
             if (original.ObjectType != SpaceObjectType.Station) Assert.Equal(original.SpeedMps, actual.SpeedMps);
             else Assert.NotNull(actual.Orbit);
-            Assert.Equal((original.Modules ?? []).Select(m => (m.ModuleId, m.ModuleTypeId)),
+            Assert.Equal((original.Modules ?? []).Where(m => !m.ModuleTypeId.StartsWith("module.torpedo.", StringComparison.Ordinal) &&
+                !m.ModuleTypeId.StartsWith("module.countermeasure.", StringComparison.Ordinal) && m.ModuleTypeId != "module.combat.laser")
+                .Select(m => (m.ModuleId, m.ModuleTypeId)),
                 (actual.Modules ?? []).Select(m => (m.ModuleId, m.ModuleTypeId)));
             foreach (var item in original.Inventory ?? [])
                 Assert.Contains(actual.Inventory!, i => i.ItemTypeId == item.ItemTypeId && i.Quantity == item.Quantity);

@@ -8,21 +8,6 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class PhaseThreeLocaleTests
 {
-    [Fact]
-    public async Task Hovered_point_command_uses_actual_localized_screen_label()
-    {
-        await using var world = await PointCombatUiFixture.Create();
-        const string id = "MOD-PLAYER-COUNTERMEASURE-01";
-        var row = world.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == id);
-        if (!row.Opened) { world.Screen.OnMouseDown(row.CaptionRect.MidX, row.CaptionRect.MidY); world.Render(); }
-        var button = world.Screen.CommandsPanel.AllCommandButtons.Single(b => b.Weapon?.ModuleId == id && b.CommandTypeId == DefenseCommandTypes.Launch);
-        world.Screen.OnMouseMove(button.Rect.MidX, button.Rect.MidY); world.Render();
-        string expected = Localization.Get("Combat.Aim") + " " + world.Screen.CombatInputs.CountermissileAim;
-        var hovered = world.Screen.CommandsPanel.CommandPanelRows.Single(r => r.Weapon?.ModuleId == id);
-        Assert.Equal(expected, hovered.HoverText);
-        Assert.Equal(Localization.Combat("Ready"), hovered.StatusBarText);
-        Assert.Null(world.Screen.LastPointCommandId); Assert.Equal(0, world.Engine.ReceivedCommandCount);
-    }
 
     [Fact]
     public void Both_locales_cover_phase_three_keys_in_source_and_output()

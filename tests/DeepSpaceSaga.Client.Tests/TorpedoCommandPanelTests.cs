@@ -16,23 +16,6 @@ public sealed class TorpedoCommandPanelTests
             Profiles: [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)], ScatterPercent: .02));
 
     [Theory]
-    [InlineData(1, "slow")]
-    [InlineData(2, "medium")]
-    [InlineData(3, "fast")]
-    public async Task Paused_point_profile_selection_is_local_and_has_no_mode_reload_rng_or_optimistic_launch(int key, string expected)
-    {
-        await using var f = await PointCombatUiFixture.Create();
-        var before = f.Engine.CaptureLaunchScatterState();
-        f.Aim(profile: key);
-        Assert.Equal(expected, f.Screen.PointAim!.ProfileId); Assert.Equal(ProjectileKind.Torpedo, f.Screen.PointAim.Kind);
-        var launcher = f.Presented.InstalledModules.Single(m => m.ModuleId == PointCombatUiFixture.Torpedo).LauncherCombat!;
-        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("ModeId")); Assert.Null(launcher.ReadyAtMotionTimeMs);
-        Assert.Equal(before, f.Engine.CaptureLaunchScatterState()); Assert.Null(f.Screen.LastPointCommandId);
-        Assert.DoesNotContain(f.Presented.Objects, o => o.OwnProjectile is not null);
-        Assert.Equal(0, f.Presented.MotionTimeMs); Assert.Equal(SimulationSpeed.Speed0, f.Presented.CurrentSpeed);
-    }
-
-    [Theory]
     [InlineData(720, 1f)]
     [InlineData(720, 1.5f)]
     [InlineData(600, 1.5f)]

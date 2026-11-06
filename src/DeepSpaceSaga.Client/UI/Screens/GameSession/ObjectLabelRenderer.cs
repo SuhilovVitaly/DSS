@@ -149,7 +149,7 @@ internal sealed class ObjectLabelRenderer
                 // Visibility filter: skip objects whose marker/glyph is fully outside viewport.
                 // Marker radius from the shared policy (player ship included) so the
                 // viewport culling matches the drawn marker size.
-                float markerRadius = GameSessionScreen.HasCombatMarker(state.Source) ? GameSessionScreen.CombatMarkerRadius : TacticalMapMarkerPolicy.GetMarkerRadiusPx(
+                float markerRadius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                     state.IsPlayerShip ? SpaceObjectType.PlayerShip : predicted.RenderObjectType);
                 if (objSx < -markerRadius || objSx > viewportW + markerRadius ||
                     objSy < -markerRadius || objSy > viewportH + markerRadius)

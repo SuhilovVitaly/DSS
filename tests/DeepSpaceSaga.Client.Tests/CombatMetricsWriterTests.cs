@@ -37,7 +37,7 @@ public sealed class CombatMetricsWriterTests
                 Assert.False(foreign.GetProperty("observedProjectile").TryGetProperty("detonationX", out _));
                 Assert.All(facts, o => { Assert.False(o.TryGetProperty("torpedo", out _)); Assert.False(o.TryGetProperty("countermeasure", out _)); });
                 var visual = frames.Single(r => r.GetProperty("kind").GetString() == "visual").GetProperty("objects").EnumerateArray();
-                Assert.Contains(visual, o => o.GetProperty("objectId").GetString() == own.GetProperty("objectId").GetString());
+                Assert.DoesNotContain(visual, o => o.GetProperty("objectId").GetString() == own.GetProperty("objectId").GetString());
             }
             finally { foreach (var record in records) record.Dispose(); }
         }
@@ -101,41 +101,6 @@ public sealed class CombatMetricsWriterTests
 
     private static AuthoritativeSnapshot MetricsSnapshot(long sequence) => new((ulong)sequence, 0, SimulationSpeed.Speed0, [],
         InstalledModules: [new("torp", "module.torpedo.launcher.basic", "Torpedo", 1, [], LauncherCombat: new(150))]);
-
-    [Fact]
-    public async Task Real_session_automatically_records_authoritative_and_rendered_combat_state()
-    {
-        string directory = Path.Combine(Path.GetTempPath(), "dss-combat-metrics-" + Guid.NewGuid().ToString("N"));
-        try
-        {
-            string client = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
-            var connection = LocalGameSessionConnection.CreateFromScenarioFile(Path.Combine(client, "Settings.json"),
-                Path.Combine(client, "Scenarios/CombatMukha/scenario.json"));
-            var metrics = new CombatMetricsWriter(directory);
-            await using var handle = new GameSessionHandle(connection, new SnapshotBuffer(), metrics);
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            while (handle.Buffer.Latest is null)
-            {
-                Assert.Null(handle.Failure);
-                await Task.Delay(10, timeout.Token);
-            }
-            var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
-            using var bitmap = new SKBitmap(1280, 720);
-            using var canvas = new SKCanvas(bitmap);
-            screen.Render(canvas, 1280, 720);
-            await handle.DisposeAsync();
-            Assert.Null(metrics.Error);
-            var records = File.ReadAllLines(metrics.FilePath!).Skip(1).Select(line =>
-            {
-                using var json = JsonDocument.Parse(line);
-                return json.RootElement.GetProperty("frame").GetProperty("kind").GetString();
-            }).ToArray();
-            Assert.Contains("authoritative", records);
-            Assert.Contains("visual", records);
-            screen.OnDeactivated();
-        }
-        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
-    }
 
     [Fact]
     public async Task Records_authoritative_geometry_events_and_throttled_visuals_without_mutating_snapshot()
