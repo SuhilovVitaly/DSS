@@ -1,6 +1,6 @@
 # EP-0015 execution order
 
-84 tickets, 18 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
+97 tickets, 19 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
 
 | Ticket | Layer | Story criteria | Dependency | State |
 |---|---|---|---|---|
@@ -88,8 +88,16 @@
 | [EP-0015-US-0018-TK-0001-engine-world-integrity](EP-0015-US-0018-review-corrections/EP-0015-US-0018-TK-0001-engine-world-integrity/EP-0015-US-0018-TK-0001-engine-world-integrity.md) | engine | AC-01 | EP-0015-US-0017-TK-0004-board-sync | done |
 | [EP-0015-US-0018-TK-0002-ship-destroyed-screen](EP-0015-US-0018-review-corrections/EP-0015-US-0018-TK-0002-ship-destroyed-screen/EP-0015-US-0018-TK-0002-ship-destroyed-screen.md) | client | AC-02 | EP-0015-US-0018-TK-0001-engine-world-integrity | done |
 | [EP-0015-US-0018-TK-0003-battle-exit-recovery](EP-0015-US-0018-review-corrections/EP-0015-US-0018-TK-0003-battle-exit-recovery/EP-0015-US-0018-TK-0003-battle-exit-recovery.md) | client | AC-03 | EP-0015-US-0018-TK-0002-ship-destroyed-screen | done |
-| [EP-0015-US-0019-TK-0001-setup-combobox-chevron](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0001-setup-combobox-chevron/EP-0015-US-0019-TK-0001-setup-combobox-chevron.md) | client | AC-01 | — | approved |
-| [EP-0015-US-0019-TK-0002-enemy-straight-forecast](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0002-enemy-straight-forecast/EP-0015-US-0019-TK-0002-enemy-straight-forecast.md) | client | AC-02 | — | approved |
-| [EP-0015-US-0019-TK-0003-battle-overlay-settings](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0003-battle-overlay-settings/EP-0015-US-0019-TK-0003-battle-overlay-settings.md) | client | AC-03 | EP-0015-US-0019-TK-0002-enemy-straight-forecast | approved |
-| [EP-0015-US-0019-TK-0004-fire-target-indicators](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0004-fire-target-indicators/EP-0015-US-0019-TK-0004-fire-target-indicators.md) | client | AC-04 | — | approved |
-| [EP-0015-US-0019-TK-0005-named-wrecks-on-impact](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0005-named-wrecks-on-impact/EP-0015-US-0019-TK-0005-named-wrecks-on-impact.md) | engine + client | AC-05 | — | approved |
+| [EP-0015-US-0019-TK-0001-setup-combobox-chevron](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0001-setup-combobox-chevron/EP-0015-US-0019-TK-0001-setup-combobox-chevron.md) | client | AC-01 | — | done |
+| [EP-0015-US-0019-TK-0002-enemy-straight-forecast](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0002-enemy-straight-forecast/EP-0015-US-0019-TK-0002-enemy-straight-forecast.md) | client | AC-02 | — | done |
+| [EP-0015-US-0019-TK-0003-battle-overlay-settings](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0003-battle-overlay-settings/EP-0015-US-0019-TK-0003-battle-overlay-settings.md) | client | AC-03 | EP-0015-US-0019-TK-0002-enemy-straight-forecast | done |
+| [EP-0015-US-0019-TK-0004-fire-target-indicators](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0004-fire-target-indicators/EP-0015-US-0019-TK-0004-fire-target-indicators.md) | client | AC-04 | — | done |
+| [EP-0015-US-0019-TK-0005-named-wrecks-on-impact](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0005-named-wrecks-on-impact/EP-0015-US-0019-TK-0005-named-wrecks-on-impact.md) | contracts + engine + client | AC-05 | — | done |
+| [EP-0015-US-0019-TK-0006-remove-salvo-map-summary](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0006-remove-salvo-map-summary/EP-0015-US-0019-TK-0006-remove-salvo-map-summary.md) | client | AC-06 | EP-0015-US-0019-TK-0005-named-wrecks-on-impact | done |
+| [EP-0015-US-0019-TK-0007-follow-game-language](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0007-follow-game-language/EP-0015-US-0019-TK-0007-follow-game-language.md) | client | AC-07 | EP-0015-US-0019-TK-0006-remove-salvo-map-summary | done |
+| [EP-0015-US-0019-TK-0008-offscreen-unit-arrows](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0008-offscreen-unit-arrows/EP-0015-US-0019-TK-0008-offscreen-unit-arrows.md) | client | AC-08 | — | done |
+| [EP-0015-US-0019-TK-0009-disabled-drone-cross](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0009-disabled-drone-cross/EP-0015-US-0019-TK-0009-disabled-drone-cross.md) | client | AC-09 | EP-0015-US-0019-TK-0004-fire-target-indicators | done |
+| [EP-0015-US-0019-TK-0010-slower-battle-playback](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0010-slower-battle-playback/EP-0015-US-0019-TK-0010-slower-battle-playback.md) | client | AC-10 | EP-0015-US-0019-TK-0005-named-wrecks-on-impact | done |
+| [EP-0015-US-0019-TK-0011-enemy-target-count-badges](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0011-enemy-target-count-badges/EP-0015-US-0019-TK-0011-enemy-target-count-badges.md) | client | AC-11 | EP-0015-US-0019-TK-0004-fire-target-indicators | done |
+| [EP-0015-US-0019-TK-0012-smaller-disabled-medical-cross](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0012-smaller-disabled-medical-cross/EP-0015-US-0019-TK-0012-smaller-disabled-medical-cross.md) | client | AC-12 | EP-0015-US-0019-TK-0009-disabled-drone-cross | done |
+| [EP-0015-US-0019-TK-0013-refresh-battle-ui-locale](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0013-refresh-battle-ui-locale/EP-0015-US-0019-TK-0013-refresh-battle-ui-locale.md) | client | AC-13 | EP-0015-US-0019-TK-0007-follow-game-language | done |

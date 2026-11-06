@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0001-setup-combobox-chevron
-stage: approved
+stage: done
 layer: client
 depends_on: []
 files_touched:
@@ -27,3 +27,7 @@ XenonComboBox.DrawClosed растягивает изображение поля 
 ## Definition of Done
 
 Критерий покрыт проверкой в Dss-Main. Результат проверок записан отдельно от ручной приёмки. Отдельный коммит опубликован в ветке эпика.
+
+## Исполнение
+
+Коммит `85580bab` опубликован в ветке эпика. 24/24 в WidgetsListsTests и SetupScreenTests. Проверены одинаковые размеры шеврона в обычном и сфокусированном поле разной ширины. Ручная приёмка открыта.

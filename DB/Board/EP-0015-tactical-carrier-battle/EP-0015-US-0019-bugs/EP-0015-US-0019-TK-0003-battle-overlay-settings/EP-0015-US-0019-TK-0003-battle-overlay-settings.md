@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0003-battle-overlay-settings
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0015-US-0019-TK-0002-enemy-straight-forecast]
 files_touched:
@@ -30,3 +30,7 @@ files_touched:
 ## Definition of Done
 
 Критерий покрыт проверкой в Dss-Main. Результат проверок записан отдельно от ручной приёмки. Отдельный коммит опубликован в ветке эпика.
+
+## Исполнение
+
+Коммит `adb3e8f2` опубликован в ветке эпика. 18/18 в BattleMapRenderTests, FirePlanningTests, PanelHeaderTests и MouseRoutingTests. Четыре ключа подтверждены в собранных RU/EN JSON. Три теста LocalizationCoverageTests зависят от стандартного относительного пути к исходникам, который меняется с --artifacts-path. Ручная приёмка открыта.
