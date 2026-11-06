@@ -15,13 +15,16 @@ internal sealed partial class TacticalBattleSkin
         ImmutableDictionary<string, ImmutableDictionary<string, object>>.Empty);
 
     private readonly ImmutableDictionary<string, ImmutableDictionary<string, object>> _roles;
+    private readonly ImmutableDictionary<string, IDisposable> _resources;
 
     private TacticalBattleSkin(string id, string displayName,
-        ImmutableDictionary<string, ImmutableDictionary<string, object>> roles)
+        ImmutableDictionary<string, ImmutableDictionary<string, object>> roles,
+        ImmutableDictionary<string, IDisposable>? resources = null)
     {
         Id = id;
         DisplayName = displayName;
         _roles = roles;
+        _resources = resources ?? ImmutableDictionary<string, IDisposable>.Empty;
     }
 
     internal string Id { get; }
@@ -32,6 +35,15 @@ internal sealed partial class TacticalBattleSkin
     internal ImmutableArray<float> Dash(string role) => Find(role, "dash", default(ImmutableArray<float>));
     internal string Shape(string role, string fallback = "native") => Find(role, "shape", fallback);
     internal string? Resource(string role, string property) => Find<string?>(role, property, null);
+
+    internal SKImage? Image(string role) => LoadedResource<SKImage>(role, "image");
+    internal SKTypeface? Typeface(string role) => LoadedResource<SKTypeface>(role, "font");
+
+    internal TacticalBattleSkin WithResources(Dictionary<string, IDisposable> resources) =>
+        new(Id, DisplayName, _roles, resources.ToImmutableDictionary(StringComparer.Ordinal));
+
+    private T? LoadedResource<T>(string role, string property) where T : class =>
+        Resource(role, property) is { } path && _resources.TryGetValue(path, out var resource) ? resource as T : null;
 
     internal float Metric(string role, string metric, float fallback) => Find(role, $"metrics.{metric}", fallback);
 
@@ -93,6 +105,10 @@ internal sealed partial class TacticalBattleSkin
             }
 
             return new TacticalBattleSkin(id, nameTrimmed, parsed.ToImmutable());
+        }
+        catch (InvalidOperationException ex)
+        {
+            throw new FormatException("Invalid Unicode string in the skin JSON.", ex);
         }
         catch (JsonException ex)
         {
@@ -166,7 +182,7 @@ internal sealed partial class TacticalBattleSkin
     {
         string path = String(value, field);
         if (path.Length > 240 || !path.StartsWith("assets/", StringComparison.Ordinal) ||
-            !AssetPath().IsMatch(path) || path.Split('/').Any(segment => segment is "." or ".." || segment.EndsWith('.')))
+            !AssetPath().IsMatch(path) || path.Split('/').Any(segment => segment.EndsWith('.') || ReservedDevice().IsMatch(segment)))
             throw Invalid(field, "expected a simple relative path below assets/");
 
         string ext = Path.GetExtension(path);
@@ -211,4 +227,7 @@ internal sealed partial class TacticalBattleSkin
 
     [GeneratedRegex(@"\Aassets/(?:[A-Za-z0-9._-]+/)*[A-Za-z0-9._-]+\z", RegexOptions.CultureInvariant)]
     private static partial Regex AssetPath();
+
+    [GeneratedRegex(@"\A(?:CON|PRN|AUX|NUL|COM[0-9]|LPT[0-9])(?:\.|\z)", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant)]
+    private static partial Regex ReservedDevice();
 }
