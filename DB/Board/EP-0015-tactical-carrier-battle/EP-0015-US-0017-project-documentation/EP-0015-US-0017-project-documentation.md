@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0017-project-documentation
 title: "Документация проекта"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0001-content-and-loader, EP-0015-US-0002-deterministic-core, EP-0015-US-0003-battle-rules, EP-0015-US-0004-battle-ai, EP-0015-US-0005-session-contracts, EP-0015-US-0006-client-input-and-controls, EP-0015-US-0007-launch-and-setup, EP-0015-US-0008-battle-map, EP-0015-US-0009-fire-and-results, EP-0015-US-0010-battle-end, EP-0015-US-0011-legacy-removal-prep, EP-0015-US-0012-legacy-client-removal, EP-0015-US-0013-legacy-engine-removal, EP-0015-US-0014-legacy-foundation-removal, EP-0015-US-0015-localization, EP-0015-US-0016-balance-and-native-acceptance]
 ---
 

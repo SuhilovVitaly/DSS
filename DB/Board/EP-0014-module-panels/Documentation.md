@@ -11,6 +11,9 @@ baseline: "codex/ep-0013-debug-tuning-panel @ 87ebd2c4de47256dc20ea2b404dd303ac8
 
 # EP-0014 — Панели модулей
 
+> **Заменено для боя реального времени (2026-11-06).** Действующий контракт — [тактический бой V4](../../Documentation/04-Engineering/TacticalBattle.md), состояние поставки — [EP-0015](../EP-0015-tactical-carrier-battle/ExecutionStatus.md). Эта запись относится к снятому бою и его боевым панелям, настройкам и результатам. Небоевые модули, ручное управление и настройка двигателей описаны в текущей документации. Предыдущие решения и результаты ниже сохранены как история.
+
+
 ## Execution authorization2026-10-22
 
 User explicitly invoked epic-executor for this Board epic. Draft implementation, necessary scope updates, per-ticket commit and immediate push are authorized by EpicExecutionPrompt. [Tickets](Tickets.md) is the current20-ticket map and supersedes the historical18-ticket proposal below. No human acceptance is asserted. G-02: preparation aim also permitted for destroyed modules; launch remains blocked. G-04: display core=authoritative R times fraction. G-05: decimal penetration. G-06: stable warmed CommandsPanel.Render allocation boundary. Existing graph found at src/graphify-out; prior G-08 absence claim is superseded. Final US6 includes full project impact audit and Graphify rebuild.

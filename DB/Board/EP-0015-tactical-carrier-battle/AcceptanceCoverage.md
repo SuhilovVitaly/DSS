@@ -76,4 +76,4 @@
 | EP-0015-US-0017-project-documentation | AC-01 | EP-0015-US-0017-TK-0001-impact-inventory | PASS: functional diff, active docs and historical boundary inventoried |
 | EP-0015-US-0017-project-documentation | AC-02 | EP-0015-US-0017-TK-0002-documentation-new-contract | PASS: current tactical/session, F8, Save20, data and validation contracts published |
 | EP-0015-US-0017-project-documentation | AC-03 | EP-0015-US-0017-TK-0003-documentation-legacy-rewrite | PASS: three retired live documents removed; world, engine tuning and tool guides current; 300 links validated |
-| EP-0015-US-0017-project-documentation | AC-04 | EP-0015-US-0017-TK-0004-board-sync | not started |
+| EP-0015-US-0017-project-documentation | AC-04 | EP-0015-US-0017-TK-0004-board-sync | PASS: historical pointers, ticket-to-commit mapping and fresh graph verified; exact Raid remains open |

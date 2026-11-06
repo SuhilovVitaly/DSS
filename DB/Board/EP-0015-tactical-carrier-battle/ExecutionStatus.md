@@ -2,19 +2,19 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 79/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; возврат из песочницы проверен; начинается подготовка удаления старого боя. Остальные 2 тикетов и завершающая документационная история остаются открытыми.
+Техническая реализация и документация опубликованы: 80/81 тикетов. Единственный открытый технический тикет — US-0016 TK-0001, точный паритет «Налёта».
 
-- Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
-- Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
-- Принятые уточнения D-USER-14/15: исходники — `VData/Planning/V4.0` Markdown; JSON создаются по таблицам; Python-симулятор не нужен. Служебный коммит `06c5fc69032de5b7b7fe94d19079b5284998846c`, push и remote SHA проверены. Прежний preflight-блокер отсутствующих исходников снят этими указаниями.
-- История US-0017 уже существует, зависит от всех функциональных историй и выполняется последней.
-- Linux route работает: GitHub Actions run 42086320971 PASS на Ubuntu 24.04 / CPython 3.12.3 / glibc 2.39. Это bootstrap/export + текущие Motion/content tests; геометрия дополнительно проверена на Windows/Linux в PlatformValidation.md; core battle/AI реализован и проверен 90 эталонами Windows/Linux; сессия/соединение и модальная навигация реализованы; вход F8 реализован; полные экраны ещё впереди.
+Ветка codex/ep-0015-tactical-carrier-battle, origin https://github.com/SuhilovVitaly/DSS. Отмена запрета GitHub: 22bb633145d479391b985eb73d148bb7cad7de94. Уточнения D-USER-14/15, Markdown → JSON без справочной реализации: 06c5fc69032de5b7b7fe94d19079b5284998846c. Оба служебных коммита опубликованы и проверены.
 
-## Проверки
+- [Итоговая проверка](FinalValidation.md): полная разбитая регрессия, golden/trace, Save20, Release, четыре OpenGL окна, оставшиеся gates.
+- [Платформенные доказательства](PlatformValidation.md) и [инвентаризация удаления](RemovalInventory.md) хранят срезы и пределы наблюдений.
+- Единственный открытый технический критерий: US-0016 TK-0001, точный счётчик Raid 856/140 вместо 857/139. Ни эталон, ни assertion не изменены. Human/physical/independent review остаются открытыми отдельно.
 
-[ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Это исходный регрессионный срез. Core/session parity уже PASS; полная нативная и продуктовая приёмка пока NOT RUN.
+## Graphify и итоговая сверка
 
-Продолжение: US-0017 TK-0004. TK-0001 exact Raid parity is open; independent performance and native checks continue. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
+Перестроено локально из итогового дерева с 711 исходниками и 454 Markdown, включая заключительные Board правки. 16 516 узлов, 49 268 связей, 499 групп, 1 165 проверенных input hashes и 10 смысловых источников; отсутствующих источников, некорректных позиций, оборванных связей и self-loops в производном графе — 0. Tree-sitter предупредил о частичном разборе теста ModulePanelLocalizationTests (контекстный идентификатор required); C# сборка и тест валидны. HTML агрегирует группы; JSON содержит полный граф. Ссылки навигации не заменяют приёмку.
+
+Граф: D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-final-graphify-01/graph/; verification.json и source-manifest.json. Сверка Board: 81 каноническая карточка, 80 предыдущих SHA указывают на коммит с соответствующей карточкой. Последняя запись использует SHA итогового коммита, подтверждённый при push. 300 относительных ссылок действующей документации проверены.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -87,7 +87,7 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0013-TK-0007-engine-content-removal | 418b5f9a30223fe264a1eec9ea55b97ae6163e2f | PASS: remote SHA verified | origin | Windows build/format; 544 Engine + 191 Client final targets; 44 EconomyBalance PASS |
 | EP-0015-US-0013-TK-0008-engine-noncombat-cleanup | 367c0a7045717a1ff9ad8f24a731cc71edbe976c | PASS: remote SHA verified | origin | Windows build/format; 745 Engine + 239 Client PASS |
 | EP-0015-US-0013-TK-0009-debug-tuning-cleanup | 932d0ee6f23f05cf22b362a47409a1623e8a15bf | PASS: remote SHA verified | origin | Windows build/format; 284 Contracts + 56 Engine + 185 Client PASS |
-| EP-0015-US-0013-TK-0010-legacy-save-dto-removal | current ticket commit | SHA checked immediately after push | origin | Windows build/format; 637 Engine + 201 Client PASS; archival migration and defects |
+| EP-0015-US-0013-TK-0010-legacy-save-dto-removal | 5f34ff52ee2b84bc7498802babbd95fb5f97b276 | PASS: remote SHA verified | origin | Windows build/format; 637 Engine + 201 Client PASS; archival migration and defects |
 | EP-0015-US-0014-TK-0001-motion-removal | bb1ee974544b16af5943722054d867c6bc680929 | PASS: remote SHA verified | origin | Motion 1267, Engine 764, Client 265 |
 | EP-0015-US-0014-TK-0002-contracts-dto-removal | 078928b0212f0694118563755f67fb0d0f328980 | PASS: remote SHA verified | origin | Contracts 175, Motion 1267, Engine 2024, Client 1967, Economy 42, Performance 9 |
 | EP-0015-US-0014-TK-0003-contracts-fields-removal | adff8335582e2cd37eed033a4c19bde3b43e4843 | PASS: remote SHA verified | origin | Contracts 175, Motion 1267, Engine 2024, Client 1961, Economy 42, Performance 9 |
@@ -99,4 +99,5 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0016-TK-0003-native-acceptance | 44d2bcd2e6745e1aea83f18221abe0fb4110b3f5 | PASS: remote SHA verified | origin | 4 native OpenGL cases x 31 checks; Russian, F8 to F5/F9; hardware input NOT RUN |
 | EP-0015-US-0017-TK-0001-impact-inventory | c0bfa7a068d19ee51993ddc1b94b6aefee9cef53 | PASS: remote SHA verified | origin | functional diff and documentation ownership review PASS |
 | EP-0015-US-0017-TK-0002-documentation-new-contract | 8ba80e6578d7eadb9939a5055d6367392562ccab | PASS: remote SHA verified | origin | 75 relative links PASS, source and content review |
-| EP-0015-US-0017-TK-0003-documentation-legacy-rewrite | current ticket commit | SHA checked immediately after push | origin | 300 relative links; Markdown-only; stale live refs absent; diff clean |
+| EP-0015-US-0017-TK-0003-documentation-legacy-rewrite | bb0a76c877d484ae040b41f8b61b9a8ed515df10 | PASS: remote SHA verified | origin | 300 relative links; Markdown-only; stale live refs absent; diff clean |
+| EP-0015-US-0017-TK-0004-board-sync | current ticket commit | SHA checked immediately after push | origin | 81 canonical cards, 80 prior SHA/file correspondences; 1165 graph hashes; 300 live links PASS |

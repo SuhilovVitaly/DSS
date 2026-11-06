@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0017-project-documentation
 ticket: EP-0015-US-0017-TK-0004-board-sync
 title: board-sync
-stage: draft
+stage: done
 layer: documentation
 depends_on: ["EP-0015-US-0017-TK-0003-documentation-legacy-rewrite"]
-files_touched: 12
+files_touched: 17
 serves: [AC-04]
 created: 2026-11-05
 revision: 3
@@ -50,3 +50,28 @@ Engine владеет исходами, RNG и командами; Contracts н�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Synchronize current Board and historical owners, validate ticket/commit correspondence and rebuild Graphify with the final source tree. Exact Raid parity remains open; documentation completion does not close that acceptance criterion.
+
+- DB/Board/EP-0006-basic-torpedo-combat/Documentation.md
+- DB/Board/EP-0007-countermeasure-combat/Documentation.md
+- DB/Board/EP-0008-player-defense-and-hostile-combat/Documentation.md
+- DB/Board/EP-0009-battle/Documentation.md
+- DB/Board/EP-0010-combat-reports/Documentation.md
+- DB/Board/EP-0012-combat-rebuild/Documentation.md
+- DB/Board/EP-0013-debug-tuning-panel/Documentation.md
+- DB/Board/EP-0014-module-panels/Documentation.md
+- DB/Board/EP-0015-tactical-carrier-battle/Documentation.md
+- DB/Board/EP-0015-tactical-carrier-battle/ExecutionStatus.md
+- DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md
+- DB/Board/EP-0015-tactical-carrier-battle/DocumentationImpact.md
+- DB/Board/EP-0015-tactical-carrier-battle/AcceptanceCoverage.md
+- DB/Board/EP-0015-tactical-carrier-battle/Tickets.md
+- DB/Board/EP-0015-tactical-carrier-battle/EP-0015-US-0013-legacy-engine-removal/EP-0015-US-0013-legacy-engine-removal.md
+- DB/Board/EP-0015-tactical-carrier-battle/EP-0015-US-0016-balance-and-native-acceptance/EP-0015-US-0016-balance-and-native-acceptance.md
+- DB/Board/EP-0015-tactical-carrier-battle/EP-0015-US-0017-project-documentation/EP-0015-US-0017-project-documentation.md
+## Evidence
+
+Canonical Board and superseded links are synchronized. The measured graph verification and exact paths are recorded in ExecutionStatus; source hashes cover these final document contents. The independently recorded Raid mismatch remains an open acceptance item.

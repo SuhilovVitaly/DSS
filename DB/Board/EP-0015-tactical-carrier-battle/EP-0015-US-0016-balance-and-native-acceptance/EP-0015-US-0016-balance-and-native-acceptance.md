@@ -45,3 +45,6 @@ dependencies: [EP-0015-US-0015-localization]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+## Итог выполнения
+
+AC-02 Release performance и AC-03 native managed-window пройдены, протокол в [FinalValidation](../FinalValidation.md). AC-01 остаётся открытым: четыре серии точно совпали; «Налёт» — 856/140 против 857/139, одинаковые результаты по всем сидам на Windows и Ubuntu. Полная продуктовая/физическая приёмка остаётся отдельной.
