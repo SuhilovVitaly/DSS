@@ -100,7 +100,8 @@ public sealed class LocalSessionBattleTests
                 state = (await Next(connection, state, sequence, false)).State!;
             Assert.Equal(phase, state.Phase);
             Assert.True(engine.CaptureSnapshot().IsTacticalBattleActive);
-            Assert.Equal(SessionOutcomeState.Running, engine.CaptureSnapshot().EffectiveOutcome.State);
+            var world = engine.CaptureSnapshot();
+            Assert.False(Assert.Single(world.Objects, o => o.ObjectId == world.PlayerShipObjectId).IsDestroyed);
             Assert.Equal(SimulationEngine.TacticalBattleActiveReason,
                 (await Assert.ThrowsAsync<InvalidOperationException>(() => connection.SaveAsync("quicksave").AsTask())).Message);
             Assert.Equal(originalSlot, await File.ReadAllBytesAsync(slot));

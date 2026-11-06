@@ -109,8 +109,6 @@ public sealed class PointCombatUS0012TK0001Tests
         { Screen.OnDeactivated(); _canvas.Dispose(); _bitmap.Dispose(); await Handle.DisposeAsync(); await World.DisposeAsync(); }
     }
     private static ObjectMotionSnapshot Player => new("player", 0, 0, 0, 0, MaxSpeedKmS: 6, RenderObjectType: SpaceObjectType.PlayerShip);
-    private static ObjectMotionSnapshot Foreign(string id, double x) => new(id, x, 0, 6, 270,
-        RenderObjectType: SpaceObjectType.Missile, ObservedProjectile: new(ProjectileKind.Torpedo, x, 0, -1, 0, 6, "slow", 9));
 
     [Fact]
     public async Task Arrow_hold_release_and_shift_send_turn_and_full_speed()
@@ -159,7 +157,7 @@ public sealed class PointCombatUS0012TK0001Tests
     public async Task Outside_combat_arrows_use_the_same_continuous_turn_command()
     {
         await using var s = await Session.Create(combat: false);
-        Assert.Null(s.Handle.Buffer.Presented!.Snapshot.Encounter);
+        Assert.False(s.Handle.Buffer.Presented!.Snapshot.IsTacticalBattleActive);
         s.Down(Key.Left);
         await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).TurnHoldRateDegPerSec < 0);
         Assert.Equal(ShipEngineCommandTypes.TurnHold, s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).ActiveEngineCommandType);

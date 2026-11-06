@@ -1425,8 +1425,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var obj in snapshot.Objects)
         {
-            if (obj.OwnProjectile is not null || obj.ObservedProjectile is not null ||
-                obj.RenderObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure or SpaceObjectType.Wreck) continue;
+            if (obj.RenderObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure or SpaceObjectType.Wreck) continue;
             var predicted = PredictRenderMotion(obj, ed);
             if (obj.ObjectId == playerShipObjectId) _profilePlayerRaw = predicted;
             if (obj.ObjectId == _profileTargetId) _profileTargetRaw = predicted;

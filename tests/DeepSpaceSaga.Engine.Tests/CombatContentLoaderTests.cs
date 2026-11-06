@@ -66,7 +66,6 @@ public sealed class CombatContentLoaderTests : IDisposable
         Assert.Equal(0, GameDataRegistry.Create([], [], [], []).ShipClasses.Count);
         Assert.Equal(original.CatalogCompatibility, legacy.CatalogCompatibility);
         var engine = EngineContentLoader.CreateEngineFromSettingsFile(SettingsPath);
-        Assert.Null(Assert.Single(engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0).Objects).HullCombat);
     }
 
     [Theory]

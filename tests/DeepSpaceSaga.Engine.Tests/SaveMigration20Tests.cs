@@ -48,6 +48,27 @@ public sealed class SaveMigration20Tests
     }
 
     [Fact]
+    public void ArchivedPendingCommandsDropCombatAndKeepOrdinaryCommands()
+    {
+        var archive = Fixture("Default-Save19-combat.json");
+        archive["gameState"]!["pendingCommands"] = JsonNode.Parse("""
+            [
+              {"CommandId":"retired","ClientSequence":71,"ObjectId":"SPC-0001","ModuleId":"removed",
+               "CommandType":"torpedo.launch","ProfileId":"fast","TargetWorldX":10,"TargetWorldY":20},
+              {"CommandId":"keep","ClientSequence":72,"ObjectId":"SPC-0001","ModuleId":"MOD-PLAYER-ENGINE-01",
+               "CommandType":"engine.orbit","TargetWorldX":30,"TargetWorldY":40,
+               "ModeId":null,"ProfileId":null,"ThreatProjectileId":null,"EvadeSide":null}
+            ]
+            """);
+        var pending = Assert.Single(Load(archive).GameState.PendingCommands!);
+        Assert.Equal(("keep", ShipEngineCommandTypes.Orbit, 30d, 40d),
+            (pending.CommandId, pending.CommandType, pending.TargetWorldX!.Value, pending.TargetWorldY!.Value));
+        archive["saveFormatVersion"] = 20;
+        foreach (string field in Obsolete) archive["gameState"]!.AsObject().Remove(field);
+        Assert.Throws<ScenarioException>(() => Load(archive));
+    }
+
+    [Fact]
     public void OldSchemaViolationsAndDamagedLegacyCombatAreRejectedBeforeDiscard()
     {
         var save18 = Fixture("Default-Save18-combat.json");

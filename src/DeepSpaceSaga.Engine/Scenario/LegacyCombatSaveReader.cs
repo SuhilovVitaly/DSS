@@ -230,12 +230,40 @@ internal static class LegacyCombatSaveReader
                 writer.WritePropertyName("gameState");
                 writer.WriteStartObject();
                 foreach (var item in world.EnumerateObject())
-                    if (!Sections.Contains(item.Name)) item.WriteTo(writer);
+                {
+                    if (Sections.Contains(item.Name)) continue;
+                    if (item.Name == "pendingCommands" && item.Value.ValueKind == JsonValueKind.Array)
+                        WriteCommands(writer, item);
+                    else item.WriteTo(writer);
+                }
                 writer.WriteEndObject();
             }
             writer.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
+    // Save18/19 stored command DTOs inside the world payload. The current schema is strict,
+    // so strip only known retired members here and continue to validate all other world fields.
+    private static void WriteCommands(Utf8JsonWriter writer, JsonProperty list)
+    {
+        writer.WritePropertyName(list.Name);
+        writer.WriteStartArray();
+        foreach (var row in list.Value.EnumerateArray())
+        {
+            if (row.ValueKind != JsonValueKind.Object) { row.WriteTo(writer); continue; }
+            if (row.TryGetProperty("CommandType", out var type) && type.ValueKind == JsonValueKind.String &&
+                SaveMigration20.CombatCommand(type.GetString())) { _ = Id(row, "CommandId"); continue; }
+            writer.WriteStartObject();
+            foreach (var property in row.EnumerateObject())
+            {
+                if (property.Name is "ModeId" or "ProfileId" or "ThreatProjectileId" or "EvadeSide")
+                    continue;
+                property.WriteTo(writer);
+            }
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
     }
 
     private static void ValidateFlight(JsonElement flight, long time, JsonElement? pose)

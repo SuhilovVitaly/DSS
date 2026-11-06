@@ -31,7 +31,7 @@ public sealed class PointCombatUS0019TK0002Tests
         Assert.Equal(500_000_000L, actual.MotionTimeMs);
         Assert.Equal(150_000_000_000L, actual.GameTimeMs);
         Assert.Equal(SimulationSpeed.Speed4, actual.CurrentSpeed);
-        Assert.Null(actual.Encounter);
+        Assert.False(actual.IsTacticalBattleActive);
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(2), $"Peaceful gap took {watch.Elapsed.TotalMilliseconds:0.0}ms.");
     }
 }

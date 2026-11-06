@@ -133,8 +133,6 @@ public sealed class TetrarchLoadoutTests
         var snapshot = engine.CaptureSnapshot();
         var ship = snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId);
         Assert.Equal("Images/CelestialObjects/Spacecraft/ship-tetrarch-class.png", ship.Image);
-        Assert.Null(ship.HullCombat);
-        Assert.All(snapshot.InstalledModules, m => Assert.Null(m.LauncherCombat));
     }
 
     private static ScenarioFile AssertScenarioLoadout(string root, string name)
@@ -158,7 +156,6 @@ public sealed class TetrarchLoadoutTests
         foreach (var ship in ships)
         {
             var actual = Assert.Single(snapshot.Objects, o => o.ObjectId == ship.ObjectId);
-            Assert.Null(actual.HullCombat);
             Assert.Equal(ship.IsDocked, actual.IsDocked);
             Assert.Equal(ship.DockedStationObjectId, actual.DockedStationObjectId);
         }

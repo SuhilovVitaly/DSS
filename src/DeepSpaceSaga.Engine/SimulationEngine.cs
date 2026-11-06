@@ -699,8 +699,6 @@ public sealed partial class SimulationEngine : IDisposable
                 {
                     X = linear ? x : motion.X,
                     Y = linear ? y : motion.Y,
-                    Torpedo = null,
-                    Countermeasure = null,
                     TurnHoldRateDegPerSec = isPlayerShipRow ? motion.TurnHoldRateDegPerSec : null,
                     SpeedHoldAccelerationKmS2 = isPlayerShipRow ? motion.SpeedHoldAccelerationKmS2 : null,
                     SpeedHoldLatched = isPlayerShipRow && motion.SpeedHoldLatched,

@@ -44,8 +44,6 @@ public sealed class NpcObservedTrajectoryTests
             TurnStepRemainingMs = 1000,
             NavigationTargetX = 999,
             NavigationTargetY = -999,
-            HostileCombat = new("player", "engine", "weapon", 50, true, HostileCombatPhase.Pursuit,
-                new(2000, 100, 0, Npc.X, Npc.Y, 1, 90, 2, 20))
         };
         Assert.Equal(projector.Project(Npc, 10), projector.Project(hidden, 10));
         Assert.Equal(projector.Project(Npc), projector.Project(hidden));
@@ -57,7 +55,7 @@ public sealed class NpcObservedTrajectoryTests
     }
 
     [Fact]
-    public void NpcWithoutHostileCombatUsesSameObservationRule()
+    public void NpcArcUsesConfirmedObservations()
     {
         var buffer = LegacyTrend();
         Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));

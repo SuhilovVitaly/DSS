@@ -44,7 +44,8 @@ public sealed class WorldGuardTests
             }
             Assert.Equal(TacticalBattlePhase.Over, engine.GetTacticalBattleState()!.Phase);
         }
-        Assert.Equal(SessionOutcomeState.Running, engine.CaptureSnapshot().EffectiveOutcome.State);
+        var world = engine.CaptureSnapshot();
+        Assert.False(Assert.Single(world.Objects, o => o.ObjectId == world.PlayerShipObjectId).IsDestroyed);
         AssertDenied(() => engine.CaptureSaveState()); // over remains active until Exit
         Assert.True(engine.ExitTacticalBattle(new("exit", "start")).Accepted);
         Assert.False(engine.CaptureSnapshot().IsTacticalBattleActive);

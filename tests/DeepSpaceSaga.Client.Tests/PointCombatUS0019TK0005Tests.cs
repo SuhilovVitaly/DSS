@@ -79,7 +79,7 @@ public sealed class PointCombatUS0019TK0005Tests
         var rightDone = At(engine, 1750);
         Assert.Equal(4, Ship(rightDone).Direction, 8);
         Assert.Contains(rightDone.CommandResults, r => r.CommandId == "catalog-step-right" && r.Status == CommandResultStatus.Executed);
-        engine.ReceiveCommand(new("retired-evade", 5, Player, EngineModule, ManeuverCommandTypes.Evade));
+        engine.ReceiveCommand(new("retired-evade", 5, Player, EngineModule, "maneuver.evade"));
         var rejected = At(engine, 1750);
         Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(rejected.CommandResults).ReasonCode);
         var before = Ship(rightDone);

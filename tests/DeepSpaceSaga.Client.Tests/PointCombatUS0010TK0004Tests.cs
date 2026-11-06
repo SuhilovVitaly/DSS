@@ -14,7 +14,7 @@ public sealed class PointCombatUS0010TK0004Tests
     private static ObjectMotionSnapshot Player(double turn = 0) => new("player", 0, 0, 1, 0,
         RenderObjectType: SpaceObjectType.PlayerShip, MaxSpeedKmS: 5, TurnHoldRateDegPerSec: turn == 0 ? null : turn);
     private static AuthoritativeSnapshot Scene(params ObjectMotionSnapshot[] objects) => new(1, 0, SimulationSpeed.Speed1,
-        objects.ToImmutableArray(), "player", CombatJournal: [], Encounter: new(CombatEncounterState.Active, 0, null, new()));
+        objects.ToImmutableArray(), "player");
 
     private static void AssertOutsidePanels(GameSessionScreen screen, SKRect free, float scale)
     {

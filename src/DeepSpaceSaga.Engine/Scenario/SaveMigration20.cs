@@ -84,7 +84,7 @@ internal static class SaveMigration20
         Equal(obj.ObjectType, "NpcShip") && (obj.Ai is not null || Equal(obj.RelationToPlayer, "Enemy"));
     private static bool ProjectileModule(string? type) => Prefix(type, "module.torpedo.") || Prefix(type, "module.countermeasure.");
     private static bool CombatModule(string? type) => ProjectileModule(type) || Prefix(type, "module.combat.");
-    private static bool CombatCommand(string? type) => Prefix(type, "torpedo.") || Prefix(type, "defense.") || Prefix(type, "combat.") || Equal(type, "maneuver.evade");
+    internal static bool CombatCommand(string? type) => Prefix(type, "torpedo.") || Prefix(type, "defense.") || Prefix(type, "combat.") || Equal(type, "maneuver.evade");
     private static bool Ammo(string? type) => Prefix(type, "item.ammo.torpedo") || Prefix(type, "item.ammo.countermeasure");
     private static bool Prefix(string? value, string prefix) => value?.StartsWith(prefix, StringComparison.OrdinalIgnoreCase) == true;
     private static bool Equal(string? value, string other) => string.Equals(value, other, StringComparison.OrdinalIgnoreCase);

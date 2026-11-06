@@ -37,7 +37,7 @@ public sealed class PointCombatUS0013TK0001Tests
     {
         var snapshot = new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0,
             [new("player", 0, 0, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip)], "player",
-            InstalledModules: Modules, CombatJournal: [], Encounter: new(CombatEncounterState.Active, 0, null, new()));
+            InstalledModules: Modules);
         var buffer = new SnapshotBuffer(() => 0); buffer.Update(snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0, uiScale: scale);
         using var bitmap = new SKBitmap(width, height); using var canvas = new SKCanvas(bitmap);

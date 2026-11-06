@@ -52,12 +52,6 @@ public sealed record AuthoritativeSnapshot(
     long? RouteArrivalGameTimeMs = null,
     long? SimulationTimeMs = null,
     VoyageSnapshot? Voyage = null,
-    /// <summary>Retained session contact journal. Default/empty means no facts;
-    /// repeated entries are deduplicated by EventId, with a reset on session replacement.</summary>
-    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatImpactSnapshot>))]
-    ImmutableArray<CombatImpactSnapshot> CombatImpacts = default,
-    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CombatJournalEntry>))]
-    ImmutableArray<CombatJournalEntry> CombatJournal = default,
     [property: JsonPropertyName("solarSystemMap")] SolarSystemMapSnapshot? SolarSystemMap = null,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<TradingRouteSnapshot>))]
     ImmutableArray<TradingRouteSnapshot> TradingRoutes = default,
@@ -70,15 +64,6 @@ public sealed record AuthoritativeSnapshot(
     ImmutableArray<StationMarketKnowledgeSnapshot> StationMarketKnowledge = default,
     [property: JsonPropertyName("clusterMap")] StationClusterMapSnapshot? ClusterMap = null,
     [property: JsonPropertyName("aiMap")] AiMapEnvironmentSnapshot? AiMap = null,
-    /// <summary>Current session outcome, repeated on every modern snapshot. Null only for older producers.</summary>
-    SessionOutcomeSnapshot? Outcome = null,
-    /// <summary>New report deltas above a fixed bootstrap baseline, independent of SnapshotSequence.
-    /// Null denotes a legacy producer and must not clear pending reports. Empty batches still carry
-    /// the baseline/latest watermark; history from a loaded save is never replayed as new reports.</summary>
-    CombatReportBatchSnapshot? CombatReports = null,
-    /// <summary>Confirmed encounter state, distinct from terminal session Outcome.</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    CombatEncounterSnapshot? Encounter = null,
     /// <summary>Confirmed debug overlay; omitted from compact frames when its revision is unchanged.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     DebugTuningSnapshot? DebugTuning = null,
@@ -88,9 +73,6 @@ public sealed record AuthoritativeSnapshot(
     /// <summary>Transient sandbox battle; false for legacy producers. Battle state is never part of a world save.</summary>
     bool IsTacticalBattleActive = false)
 {
-    [JsonIgnore]
-    public SessionOutcomeSnapshot EffectiveOutcome => Outcome ?? SessionOutcomeSnapshot.Running;
-
     /// <summary>Motion/cycle timestamp; legacy snapshots use GameTimeMs for both domains.</summary>
     [JsonIgnore]
     public long MotionTimeMs => SimulationTimeMs ?? GameTimeMs;

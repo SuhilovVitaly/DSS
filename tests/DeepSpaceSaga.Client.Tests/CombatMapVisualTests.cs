@@ -11,12 +11,7 @@ public sealed class CombatMapVisualTests
 {
     private static ObjectMotionSnapshot Ship(string id, double x, double y, int hp = 450) =>
         new(id, x, y, 0, 0, RenderObjectType: id == "player" ? SpaceObjectType.PlayerShip : SpaceObjectType.NpcShip,
-            HullCombat: new("ship.tetrarch", 1, 450),
             ModuleHealth: [new("engine", "Engine", 0, 0, hp, 450, null, false)]);
-
-    private static ObjectMotionSnapshot Missile(double x, double y) =>
-        new("torpedo", x, y, 3, 0, RenderObjectType: SpaceObjectType.Missile,
-            OwnProjectile: new(ProjectileKind.Torpedo, "player", "launcher", x, y, x, y, x, y - 600, 0, 10000, 6, "slow", 9, 200, 20));
 
     [Fact]
     public void Known_ship_labels_remain_visible_without_aggregate_health()
@@ -24,8 +19,8 @@ public sealed class CombatMapVisualTests
         var renderer = new ObjectLabelRenderer();
         var known = Enumerable.Range(0, 8).Select(i => Ship(i == 0 ? "player" : "ship" + i, 100 + i * 180, 200)).ToArray();
         var unknown = Ship("hidden", 200, 400) with { RenderObjectType = SpaceObjectType.UnknownSpaceObject };
-        var legacy = Ship("legacy", 400, 400) with { ModuleHealth = default, HullCombat = new("ship.tetrarch", 450, 450) };
-        var other = Ship("other", 600, 400) with { HullCombat = new("ship.other", 0, 450) };
+        var legacy = Ship("legacy", 400, 400) with { ModuleHealth = default };
+        var other = Ship("other", 600, 400);
         var states = known.Concat([unknown, legacy, other]).Select(o => new ObjectRenderState(o, o, o.ObjectId == "player")).ToArray();
         var camera = new CameraState(960, 540, 1);
         renderer.ComputeGeometries(states, .02, 1920, 1080, camera, mapSettings: new() { MaximumLabels = 4 });

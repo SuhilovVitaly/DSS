@@ -579,14 +579,13 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Existing_commands_keep_icons_and_torpedo_uses_text_fallback()
+    public void Existing_commands_keep_icons()
     {
         Assert.Equal(
             CommandsPanel.Panels.SelectMany(panel => panel.CommandTypeIds)
-                .Where(id => id is not (CombatCommandTypes.Launch or CombatCommandTypes.Detonate or DefenseCommandTypes.Launch))
                 .OrderBy(k => k, StringComparer.Ordinal),
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
-        Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey(CombatCommandTypes.Fire));
+        Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey("torpedo.fire"));
     }
 
     [Fact]

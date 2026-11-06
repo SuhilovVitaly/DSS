@@ -122,7 +122,6 @@ public sealed class PirateScenarioTests
         Assert.Null(pirate.CaptainPortraitImage);
         Assert.Null(pirate.DisplayName);
         Assert.Null(pirate.RelationToPlayer);
-        Assert.Null(pirate.HullCombat);
         Assert.Equal(SpaceObjectType.UnknownSpaceObject, pirate.RenderObjectType);
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(source with
         {

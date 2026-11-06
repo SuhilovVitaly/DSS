@@ -39,7 +39,7 @@ public sealed class PointCombatUS0019TK0001Tests
             Assert.Equal(expectedCounts[entry.ScenarioId].Contacts, scenario.GameState.SpaceObjects.Count(o => o.ObjectType == SpaceObjectType.NpcShip));
             using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(root, "Settings.json"), entry.ScenarioPath);
             var actual = engine.CaptureSnapshotForTests();
-            Assert.NotNull(engine.PlayerShipObjectId); Assert.Null(actual.Encounter);
+            Assert.NotNull(engine.PlayerShipObjectId); Assert.False(actual.IsTacticalBattleActive);
         }
 
         var pirate = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));

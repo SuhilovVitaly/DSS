@@ -24,10 +24,7 @@ public sealed class CombatSessionRoundtripTests
         var previous = Assert.Single(before.Objects, o => o.ObjectId == CombatSessionFixture.Player);
         Assert.Equal((previous.X, previous.Y, previous.SpeedKmS, previous.Direction), (player.X, player.Y, player.SpeedKmS, player.Direction));
         Assert.NotEmpty(restored.InstalledModules);
-        Assert.DoesNotContain(restored.InstalledModules, m => m.Defense is not null || m.LauncherCombat is not null);
-        Assert.DoesNotContain(restored.Objects, o => o.OwnProjectile is not null);
         Assert.Equal(PlayerRelation.Neutral, Assert.Single(restored.Objects, o => o.ObjectId == CombatSessionFixture.Target).RelationToPlayer);
-        Assert.True(restored.CombatImpacts.IsDefaultOrEmpty);
     }
 }
 
@@ -74,7 +71,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
         await First(fixture.Connection);
         return fixture;
     }
-    internal static PlayerCommand PointLaunch(string id) => new(id, 1, Player, EngineModule, CombatCommandTypes.Launch, TargetWorldX: 600, TargetWorldY: 0, ProfileId: "fast");
+    internal static PlayerCommand PointLaunch(string id) => new(id, 1, Player, EngineModule, "torpedo.launch", TargetWorldX: 600, TargetWorldY: 0);
     internal async Task<AuthoritativeSnapshot> Launch(string id)
     {
         await Connection.SendCommandAsync(PointLaunch(id));
