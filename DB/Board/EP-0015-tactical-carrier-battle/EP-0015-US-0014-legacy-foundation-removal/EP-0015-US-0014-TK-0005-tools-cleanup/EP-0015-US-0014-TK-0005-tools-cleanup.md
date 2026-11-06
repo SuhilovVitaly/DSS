@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0014-legacy-foundation-removal
 ticket: EP-0015-US-0014-TK-0005-tools-cleanup
 title: tools-cleanup
-stage: draft
+stage: done
 layer: tooling
 depends_on: ["EP-0015-US-0014-TK-0004-content-cleanup"]
-files_touched: 10
+files_touched: 9
 serves: [AC-04, AC-05]
 created: 2026-11-05
 revision: 3
@@ -55,3 +55,21 @@ Engine владеет исходами, RNG и командами; Contracts н�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before edits — 2026-11-06
+
+Delete the seven tracked files of the retired Python world combat model. The old native evidence and analyzer were removed with their compiled callers. Correct the remaining native debug check to the actual engine-only title and replace stale Graphify runtime anchors with current tactical contracts. Keep map, solar, station, module and debug profiling, as well as standalone tools outside scope.
+
+- Delete: src/DeepSpaceSaga.CombatSim/.gitignore
+- Delete: src/DeepSpaceSaga.CombatSim/combatsim/__init__.py
+- Delete: src/DeepSpaceSaga.CombatSim/combatsim/__main__.py
+- Delete: src/DeepSpaceSaga.CombatSim/combatsim/core.py
+- Delete: src/DeepSpaceSaga.CombatSim/combatsim/gamedata.py
+- Delete: src/DeepSpaceSaga.CombatSim/README.md
+- Delete: src/DeepSpaceSaga.CombatSim/tests/test_core.py
+- Edit: tools/graphify/rebuild.py
+- Edit: tools/DeepSpaceSaga.Performance/DebugTuningNativeEvidence.cs
+
+## Execution evidence — 2026-11-06
+
+Deleted the tracked realtime Python world combat model. The analyzer and obsolete native tools had already been removed with their dependent code. Graphify now binds to current TacticalBattle owners and the legacy migration boundary; Python syntax, source paths and named tokens checked. World profiling stays in place; native debug now expects the engine-only title. rg found no retired implementation symbols in live code/tool sources; archived save-field strings and fixtures are retained intentionally. Scoped format, zero-warning build, diff check. Complete regression: 175 Contracts, 1,267 Motion, 2,138 Engine (2,024 regular + 114 exact corpus IDs), 1,963 Client, all 61 Economy tests and all 9 Performance tests. Primary matrix: `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-legacy-foundation-full-02/matrix.json`; concurrent Performance process hit the 300 s cap, then its 7 and 2 test partitions both passed in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-legacy-foundation-performance-partitions-01/`.

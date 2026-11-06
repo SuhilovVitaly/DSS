@@ -89,7 +89,7 @@ internal static class DebugTuningNativeEvidence
                             checks["f12Opens"] = screen.DebugPanel.Visible;
                             checks["physicalPanelWidth"] = Math.Abs(screen.DebugPanel.Bounds.Width * scale - 360 * scale) < .01;
                             checks["actualUiScale"] = Math.Abs(screen.UiScale - scale) < .001;
-                            checks["localeTitle"] = Localization.Get("Debug.Title") == (args[4] == "ru" ? "Отладка боя" : "Combat tuning");
+                            checks["localeTitle"] = Localization.Get("Debug.Title") == (args[4] == "ru" ? "Отладка двигателей" : "Engine tuning");
                             var row = screen.DebugPanel.RowBounds(0);
                             screen.OnMouseDown((row.Right - 45) * scale, row.MidY * scale); Publish(); stage++; break;
                         case 2:

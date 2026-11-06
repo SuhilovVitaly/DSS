@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0014-legacy-foundation-removal
 title: "Удаление старого боя в Motion, Contracts, контенте и инструментах"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0013-legacy-engine-removal]
 ---
 

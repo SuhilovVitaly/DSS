@@ -67,8 +67,8 @@
 | EP-0015-US-0014-legacy-foundation-removal | AC-01 | EP-0015-US-0014-TK-0001-motion-removal | PASS: seven obsolete Motion implementations removed; ordinary kinematics and tactical regression pass |
 | EP-0015-US-0014-legacy-foundation-removal | AC-02 | EP-0015-US-0014-TK-0002-contracts-dto-removal, EP-0015-US-0014-TK-0003-contracts-fields-removal | PASS: old public realtime combat DTOs, payload and scalars removed; ordinary transport and structure roundtrip |
 | EP-0015-US-0014-legacy-foundation-removal | AC-03 | EP-0015-US-0014-TK-0004-content-cleanup | PASS: all six source and deployed scenarios load; retired definitions absent and Save20 writes world-only objects |
-| EP-0015-US-0014-legacy-foundation-removal | AC-04 | EP-0015-US-0014-TK-0005-tools-cleanup | not started |
-| EP-0015-US-0014-legacy-foundation-removal | AC-05 | EP-0015-US-0014-TK-0001-motion-removal, EP-0015-US-0014-TK-0002-contracts-dto-removal, EP-0015-US-0014-TK-0003-contracts-fields-removal, EP-0015-US-0014-TK-0004-content-cleanup, EP-0015-US-0014-TK-0005-tools-cleanup | not started |
+| EP-0015-US-0014-legacy-foundation-removal | AC-04 | EP-0015-US-0014-TK-0005-tools-cleanup | PASS: live symbol scan clean; complete partitioned solution regression green |
+| EP-0015-US-0014-legacy-foundation-removal | AC-05 | EP-0015-US-0014-TK-0001-motion-removal, EP-0015-US-0014-TK-0002-contracts-dto-removal, EP-0015-US-0014-TK-0003-contracts-fields-removal, EP-0015-US-0014-TK-0004-content-cleanup, EP-0015-US-0014-TK-0005-tools-cleanup | PASS: live symbol scan clean; complete partitioned solution regression green |
 | EP-0015-US-0015-localization | AC-01 | EP-0015-US-0015-TK-0001-locale-coverage | not started |
 | EP-0015-US-0016-balance-and-native-acceptance | AC-01 | EP-0015-US-0016-TK-0001-series-parity | not started |
 | EP-0015-US-0016-balance-and-native-acceptance | AC-02 | EP-0015-US-0016-TK-0002-performance | not started |
