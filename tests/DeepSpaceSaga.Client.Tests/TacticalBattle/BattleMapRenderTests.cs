@@ -250,7 +250,7 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
-    public async Task DisabledDroneShowsRedCrossInTheLabelInMoveAndFire()
+    public async Task DisabledDroneShowsSmallMedicalCrossInTheLabelInMoveAndFire()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         var battle = (await Start(fixture)).Flow.State!;
@@ -268,9 +268,13 @@ public sealed class BattleMapRenderTests
         });
         Assert.Equal(FindCross(movement), FindCross(firing));
         var cross = FindCross(movement);
-        Assert.InRange(cross.Width, 14, 16);
-        Assert.InRange(cross.Height, 14, 16);
+        Assert.InRange(cross.Width, 8, 10);
+        Assert.InRange(cross.Height, 8, 10);
         Assert.True(cross.Right < 440 && cross.Top >= 374);
+        Assert.True(IsRed(movement.GetPixel(cross.MidX, cross.MidY)));
+        Assert.Contains(Enumerable.Range(cross.MidX - 1, 3), x => IsRed(movement.GetPixel(x, cross.Top + 2)));
+        Assert.Contains(Enumerable.Range(cross.MidY - 1, 3), y => IsRed(movement.GetPixel(cross.Left + 2, y)));
+        Assert.False(IsRed(movement.GetPixel(cross.Left + 1, cross.Top + 1)));
 
         var wreck = drone with { State = TacticalUnitState.Destroyed, Hull = 0 };
         using var destroyed = Raster(frame with { Battle = frame.Battle with { Units = [wreck] } });
@@ -283,13 +287,15 @@ public sealed class BattleMapRenderTests
                 for (int x = 350; x < 470; x++)
                 {
                     var color = bitmap.GetPixel(x, y);
-                    if (color.Red < 150 || color.Green > 75 || color.Blue > 75) continue;
+                    if (!IsRed(color)) continue;
                     var pixel = SKRectI.Create(x, y, 1, 1);
                     if (bounds.IsEmpty) bounds = pixel;
                     else bounds.Union(pixel);
                 }
             return bounds;
         }
+
+        static bool IsRed(SKColor color) => color.Red >= 150 && color.Green <= 75 && color.Blue <= 75;
     }
 
     [Fact]

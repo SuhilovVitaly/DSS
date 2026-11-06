@@ -383,7 +383,7 @@ internal static class TacticalBattleMapRenderer
             bool disabledDrone = !carrier && disabled;
             int targets = TargetCount(frame, unit);
             string badge = targets > 0 ? BattleFormat.Number(targets) : "";
-            float badgeSize = disabledDrone || targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
+            float badgeSize = disabledDrone ? 10 * s : targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
             float badgeSpace = badgeSize > 0 ? badgeSize + 4 * s : 0;
             float w = (float)PyMath.Max(30 * s, text.MeasureText(value)) + 4 * s + badgeSpace;
             float h = (carrier || wreck ? 15 : 25) * s;
@@ -393,9 +393,12 @@ internal static class TacticalBattleMapRenderer
             if (disabledDrone)
             {
                 bars.Color = new(231, 67, 70);
-                bars.StrokeWidth = 2 * s;
-                DrawCross(canvas, new(rect.Left + badgeSize * 0.5f, rect.Top + badgeSize * 0.5f),
-                    badgeSize * 0.5f - s, bars);
+                bars.StrokeWidth = 1.5f * s;
+                float half = badgeSize * 0.5f;
+                float radius = half - bars.StrokeWidth * 0.5f;
+                float cx = rect.Left + half, cy = rect.Top + half;
+                canvas.DrawLine(cx - radius, cy, cx + radius, cy, bars);
+                canvas.DrawLine(cx, cy - radius, cx, cy + radius, bars);
                 bars.StrokeWidth = s;
             }
             else if (targets > 0)
