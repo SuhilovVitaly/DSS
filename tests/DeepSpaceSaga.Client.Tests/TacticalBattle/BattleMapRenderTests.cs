@@ -164,6 +164,23 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task SalvoDamageSummaryDoesNotChangeTheMap()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var wreck = battle.Units.First(u => u.Kind == TacticalUnitKind.Drone) with
+        {
+            Pose = new(0, 0, 0), State = TacticalUnitState.Destroyed, Hull = 0
+        };
+        var salvo = new TacticalSalvoFrame(false, false, [], [new(wreck, 20, 40, true)]);
+        var frame = new TacticalBattleFrame(battle with { Units = [wreck], Paths = [] },
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", TacticalBattlePresentation.SalvoResults, Salvo: salvo);
+        using var withDamage = Raster(frame);
+        using var withoutDamage = Raster(frame with { Salvo = salvo with { Damage = [] } });
+        Assert.True(withDamage.Pixels.AsSpan().SequenceEqual(withoutDamage.Pixels));
+    }
+
+    [Fact]
     public async Task GridRulerAndActualPanelTogglesChangeOnlyPresentation()
     {
         Assert.Equal(40, TacticalBattleMapRenderer.GridStep(1800));

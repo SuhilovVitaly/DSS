@@ -118,22 +118,6 @@ internal static class TacticalBattleMapRenderer
             string caption = shot.Hit ? BattleFormat.Signed(-shot.Damage) : BattleFormat.Localize("SalvoMiss");
             canvas.DrawText(caption, to.X + 6 * scale, to.Y - (11 + 14 * (float)fraction) * scale, text);
         }
-        foreach (var damage in salvo.Damage)
-        {
-            var p = frame.View.Project(damage.Unit.Pose);
-            string status = damage.StateChanged ? damage.Unit.State switch
-            {
-                TacticalUnitState.Destroyed when damage.Unit.Kind == TacticalUnitKind.Carrier => " " + BattleFormat.Localize("SalvoCarrierDestroyed"),
-                TacticalUnitState.Destroyed => " " + BattleFormat.Localize("SalvoDestroyed"),
-                TacticalUnitState.Disabled => " " + BattleFormat.Localize("SalvoDisabled"),
-                _ => ""
-            } : "";
-            string label = string.Format(System.Globalization.CultureInfo.InvariantCulture, BattleFormat.Localize("SalvoDamage"),
-                BattleFormat.Signed(-damage.Armor), BattleFormat.Signed(-damage.Hull)) + status;
-            text.Color = new(255, 198, 148);
-            canvas.DrawText(label, p.X + 10 * scale, p.Y - 26 * scale, text);
-        }
-
         static SKPoint Lerp(SKPoint from, SKPoint to, double fraction) =>
             new(from.X + (float)((to.X - from.X) * fraction), from.Y + (float)((to.Y - from.Y) * fraction));
     }
