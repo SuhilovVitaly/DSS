@@ -132,6 +132,19 @@ public sealed class ContentLoaderTests
     }
 
     [Fact]
+    public void UnknownDamageEffectReportsExactFieldAndKeepsWorldAvailable()
+    {
+        using var fixture = new Fixture();
+        fixture.Change("rules.json", "/systems/table/0/effect", "\"weaponJamed\"");
+        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(fixture.Settings);
+        var availability = engine.GetTacticalBattleOptions().Availability;
+        Assert.False(availability.Available);
+        Assert.Equal("rules.json", availability.Issue!.File);
+        Assert.Equal("$.systems.table[0].effect", availability.Issue.Field);
+        Assert.NotEmpty(engine.CaptureSnapshot().Objects);
+    }
+
+    [Fact]
     public void CorruptBattleDataDoesNotPreventNewScenarioOrFileSaveLoad()
     {
         using var fixture = new Fixture();

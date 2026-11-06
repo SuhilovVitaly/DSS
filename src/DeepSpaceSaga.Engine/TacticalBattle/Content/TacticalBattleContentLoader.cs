@@ -209,8 +209,14 @@ internal static class TacticalBattleContentLoader
         Require(r.DeployScatter.Xy >= 0 && r.DeployScatter.CourseDeg >= 0, "rules.json", "$.deployScatter", "Scatter must not be negative.");
         Require(r.Hit.MinChance >= 0 && r.Hit.MaxChance <= 100 && r.Hit.MinChance <= r.Hit.MaxChance, "rules.json", "$.hit", "Invalid chance limits.");
         Require(r.Rear.ArcHalfDeg is >= 0 and <= 180 && r.Hit.RearBonusArcDeg is >= 0 and <= 180, "rules.json", "$.rear/hit", "Invalid arc.");
-        Require(r.Systems.MinHullLoss >= 0 && !r.Systems.Table.IsEmpty && r.Systems.Table.All(e => e.Weight >= 0 && !string.IsNullOrWhiteSpace(e.Effect))
+        Require(r.Systems.MinHullLoss >= 0 && !r.Systems.Table.IsEmpty && r.Systems.Table.All(e => e.Weight >= 0)
             && r.Systems.Table.Any(e => e.Weight > 0), "rules.json", "$.systems", "Invalid system damage table.");
+        for (int i = 0; i < r.Systems.Table.Length; i++)
+        {
+            string effect = r.Systems.Table[i].Effect;
+            Require(effect is "weaponJammed" or "engineDamaged", "rules.json", $"$.systems.table[{i}].effect",
+                "Expected weaponJammed or engineDamaged.");
+        }
         Require(c.Frames.Contains(TacticalBattleConstants.CarrierFrame), "Frames", "$.carrier", "Carrier frame is required.");
         foreach (var (id, frame) in c.Frames.Entries)
         {
