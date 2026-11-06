@@ -292,9 +292,7 @@ internal static class TacticalBattleMapRenderer
         paint.StrokeWidth = 1.5f * scale;
         if (unit.Kind == TacticalUnitKind.Drone && unit.State == TacticalUnitState.Destroyed)
         {
-            float r = 6 * scale;
-            canvas.DrawLine(p.X - r, p.Y - r, p.X + r, p.Y + r, paint);
-            canvas.DrawLine(p.X - r, p.Y + r, p.X + r, p.Y - r, paint);
+            DrawCross(canvas, p, 6 * scale, paint);
             return;
         }
         if (unit.Kind == TacticalUnitKind.Carrier)
@@ -325,6 +323,12 @@ internal static class TacticalBattleMapRenderer
             canvas.DrawCircle(p, 12 * scale, paint);
         }
         paint.Style = SKPaintStyle.Fill;
+    }
+
+    private static void DrawCross(SKCanvas canvas, SKPoint center, float radius, SKPaint paint)
+    {
+        canvas.DrawLine(center.X - radius, center.Y - radius, center.X + radius, center.Y + radius, paint);
+        canvas.DrawLine(center.X - radius, center.Y + radius, center.X + radius, center.Y - radius, paint);
     }
 
     internal static void DrawDrone(SKCanvas canvas, SKPoint p, double course, string frameId, float scale, SKPaint paint)
@@ -376,16 +380,26 @@ internal static class TacticalBattleMapRenderer
                     ? " · " + BattleFormat.Localize("UnitDisabledShort") : "+" + BattleFormat.Number(unit.Armor);
             }
             value = BattleFormat.Text(value);
-            int targets = frame.FirePlan?.Rows.FirstOrDefault(row => row.Drone.Id == unit.Id)?.Group.List.Length ?? 0;
+            bool disabledDrone = !carrier && disabled;
+            int targets = unit.State == TacticalUnitState.Air
+                ? frame.FirePlan?.Rows.FirstOrDefault(row => row.Drone.Id == unit.Id)?.Group.List.Length ?? 0 : 0;
             string badge = targets > 0 ? BattleFormat.Number(targets) : "";
-            float badgeSize = targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
-            float badgeSpace = targets > 0 ? badgeSize + 4 * s : 0;
+            float badgeSize = disabledDrone || targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
+            float badgeSpace = badgeSize > 0 ? badgeSize + 4 * s : 0;
             float w = (float)PyMath.Max(30 * s, text.MeasureText(value)) + 4 * s + badgeSpace;
             float h = (carrier || wreck ? 15 : 25) * s;
             if (!TryPlace(p, w, h, viewport, occupied, s, out var rect)) continue;
             bars.Color = new(116, 145, 164, 100);
             canvas.DrawLine(p, new SKPoint(rect.MidX, rect.Top), bars);
-            if (targets > 0)
+            if (disabledDrone)
+            {
+                bars.Color = new(231, 67, 70);
+                bars.StrokeWidth = 2 * s;
+                DrawCross(canvas, new(rect.Left + badgeSize * 0.5f, rect.Top + badgeSize * 0.5f),
+                    badgeSize * 0.5f - s, bars);
+                bars.StrokeWidth = s;
+            }
+            else if (targets > 0)
             {
                 var square = SKRect.Create(rect.Left, rect.Top, badgeSize, badgeSize);
                 bars.Color = new(243, 146, 49);

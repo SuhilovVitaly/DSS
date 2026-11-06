@@ -219,6 +219,49 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task DisabledDroneShowsRedCrossInTheLabelInMoveAndFire()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var drone = battle.Units.First(u => u.Kind == TacticalUnitKind.Drone) with
+        {
+            Id = "Drone", Pose = new(0, 0, 0), State = TacticalUnitState.Disabled
+        };
+        var frame = new TacticalBattleFrame(battle with { Units = [drone], Paths = [] },
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemyForecast: false);
+        using var movement = Raster(frame);
+        using var firing = Raster(frame with
+        {
+            Battle = frame.Battle with { Phase = TacticalBattlePhase.Fire },
+            FirePlan = new([], null)
+        });
+        Assert.Equal(FindCross(movement), FindCross(firing));
+        var cross = FindCross(movement);
+        Assert.InRange(cross.Width, 14, 16);
+        Assert.InRange(cross.Height, 14, 16);
+        Assert.True(cross.Right < 440 && cross.Top >= 374);
+
+        var wreck = drone with { State = TacticalUnitState.Destroyed, Hull = 0 };
+        using var destroyed = Raster(frame with { Battle = frame.Battle with { Units = [wreck] } });
+        Assert.True(FindCross(destroyed).IsEmpty);
+
+        static SKRectI FindCross(SKBitmap bitmap)
+        {
+            var bounds = SKRectI.Empty;
+            for (int y = 374; y < 400; y++)
+                for (int x = 350; x < 470; x++)
+                {
+                    var color = bitmap.GetPixel(x, y);
+                    if (color.Red < 150 || color.Green > 75 || color.Blue > 75) continue;
+                    var pixel = SKRectI.Create(x, y, 1, 1);
+                    if (bounds.IsEmpty) bounds = pixel;
+                    else bounds.Union(pixel);
+                }
+            return bounds;
+        }
+    }
+
+    [Fact]
     public async Task GridRulerAndActualPanelTogglesChangeOnlyPresentation()
     {
         Assert.Equal(40, TacticalBattleMapRenderer.GridStep(1800));
