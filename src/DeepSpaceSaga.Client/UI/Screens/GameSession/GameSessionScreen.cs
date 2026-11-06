@@ -225,7 +225,6 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private const float ObjectHitTestRadiusPx = 30f;
 
-    internal static string CombatText(string key, string fallback) => Localization.Combat(key);
     private SimulationSpeed PanelDisplaySpeed
     {
         get
@@ -762,7 +761,7 @@ public sealed partial class GameSessionScreen : IScreen
             _lastNonPauseSpeed = speed;
 
         if (_handle is not null)
-            _ = _handle.SetSpeedAsync(speed, manualResume: true);
+            _ = _handle.SetSpeedAsync(speed);
         else
             _buffer.CurrentSpeed = speed; // fallback for tests
     }
@@ -1114,7 +1113,6 @@ public sealed partial class GameSessionScreen : IScreen
 
     public void Render(SKCanvas canvas, int width, int height)
     {
-        _buffer.PreparePresentation();
         RefreshManeuverInput();
         BeginFrameProfile();
         DisplayedPlayerTrajectoryEnd = null;
@@ -1954,8 +1952,6 @@ public sealed partial class GameSessionScreen : IScreen
     {
         string text = GameTimeDisplay.Minutes(_buffer.Presented?.Snapshot.GameTimeMs)
             + " · " + GameTimeDisplay.Status(_buffer.CurrentSpeed);
-        if (_buffer.AutomaticPresentationPause) text += " · Отображение боя отстаёт — игра приостановлена";
-        else if (_buffer.PresentationPauseRequested) text += " · Запрошена пауза: отображение боя отстаёт";
         if (_buffer.Presented?.Snapshot.MissingRations > 0) text += " · Не хватает рационов";
         float width = _gameTimeTextPaint.MeasureText(text) + 24;
         float left = BottomControlLeft(width);

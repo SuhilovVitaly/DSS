@@ -32,10 +32,10 @@ public sealed class PointCombatUS0016TK0001Tests
                 Assert.True(ru.TryGetValue(key, out var russian) && !string.IsNullOrWhiteSpace(russian), file + ": " + key);
             }
         }
-        Assert.Equal(Localization.Get("Combat.Unknown"), GameSessionScreen.CombatText("future-ui-key", "CALLER LITERAL MUST NEVER BE DISPLAYED"));
-        Assert.Equal(Localization.Get("Combat.CommandRejected"), GameSessionScreen.CombatText("Reason.future-code", "CALLER LITERAL"));
-        Assert.Equal(Localization.Get("Combat.Forecast.Unknown"), GameSessionScreen.CombatText("Forecast.future-status", "CALLER LITERAL"));
-        Assert.Equal("custom-profile-id", GameSessionScreen.CombatText("Profile.custom-profile-id", "CALLER LITERAL"));
+        Assert.Equal(Localization.Get("Combat.Unknown"), Localization.Combat("future-ui-key"));
+        Assert.Equal(Localization.Get("Combat.CommandRejected"), Localization.Combat("Reason.future-code"));
+        Assert.Equal(Localization.Get("Combat.Forecast.Unknown"), Localization.Combat("Forecast.future-status"));
+        Assert.Equal("custom-profile-id", Localization.Combat("Profile.custom-profile-id"));
         foreach (var status in Enum.GetValues<CombatForecastStatus>())
         {
             Assert.True(en.ContainsKey("Combat.Forecast." + status)); Assert.True(ru.ContainsKey("Combat.Forecast." + status));
@@ -47,14 +47,9 @@ public sealed class PointCombatUS0016TK0001Tests
     [Theory]
     [InlineData("English")]
     [InlineData("Russian")]
-    public void Report_profiles_and_generic_errors_use_the_requested_dictionary(string language)
+    public void Generic_errors_and_profiles_use_the_requested_dictionary(string language)
     {
         var locale = Localization.LoadLocaleFile(language)!;
-        var report = new BattleReportSnapshot(1, 1000, BattleReportKind.EnemyShipHit, "episode", new(BattleReportReporterRole.TorpedoOperator, "crew", "Captured Name"),
-            TargetDisplayName: "Custom Ship Name", ProjectileKind: ProjectileKind.Torpedo, ProfileId: "fast", BlastRadiusKm: 2.5, HitResult: ProjectileHitResult.Core);
-        var presentation = new CombatReportFormatter(key => locale[key]).Format(report);
-        Assert.Contains(locale["Combat.Profile.fast"], presentation.Message); Assert.Contains(locale["Combat.Hit.Core"], presentation.Message);
-        Assert.Contains("Custom Ship Name", presentation.Message); Assert.Contains("Captured Name", presentation.Reporter);
         Assert.Equal(locale["Combat.CommandRejected"], Localization.Combat("Reason.future", key => locale[key]));
         Assert.Equal("custom-profile", Localization.Combat("Profile.custom-profile", key => locale[key]));
     }

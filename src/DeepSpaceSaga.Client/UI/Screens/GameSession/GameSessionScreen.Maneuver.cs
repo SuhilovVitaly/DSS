@@ -9,8 +9,6 @@ public sealed partial class GameSessionScreen
     internal string? ManeuverFeedback { get; private set; }
     private (string Owner, string Module, TurnDirection Direction)? _heldTurn;
     private readonly HashSet<Key> _heldFullSpeed = [];
-    private Guid? _maneuverSession;
-    private bool _maneuverInitialized;
     private Task? _maneuverSendTask;
 
     private static string ManeuverError(string reason) => Localization.Combat("Panel.Reason." + reason);
@@ -22,17 +20,6 @@ public sealed partial class GameSessionScreen
 
     private void RefreshManeuverInput()
     {
-        var session = _buffer.PresentationSessionId;
-        if (!_maneuverInitialized || session != _maneuverSession)
-        {
-            CancelManeuverInput(sendReleases: false);
-            LastManeuverCommandId = null;
-            ManeuverFeedback = null;
-            _maneuverSession = session;
-            _maneuverInitialized = true;
-            _ = _maneuverSendTask?.Exception;
-            _maneuverSendTask = null;
-        }
         if (_maneuverSendTask is { IsFaulted: true } or { IsCanceled: true })
         {
             _ = _maneuverSendTask.Exception;
@@ -71,7 +58,7 @@ public sealed partial class GameSessionScreen
 
     private void SendHeldTurn(string owner, string module, TurnDirection direction, bool active)
     {
-        if (_handle is null || _maneuverSession != _buffer.PresentationSessionId) return;
+        if (_handle is null) return;
         try
         {
             _maneuverSendTask = _handle.SendTurnHoldAsync(owner, module, direction, active, out var id).AsTask();

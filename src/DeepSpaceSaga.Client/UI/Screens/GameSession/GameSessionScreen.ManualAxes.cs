@@ -83,7 +83,7 @@ public sealed partial class GameSessionScreen
 
     private void SendHeldSpeed(string owner, string module, SpeedDirection direction, bool active, bool latched)
     {
-        if (_handle is null || _maneuverSession != _buffer.PresentationSessionId) return;
+        if (_handle is null) return;
         try
         {
             _maneuverSendTask = _handle.SendSpeedHoldAsync(owner, module, direction, active, latched, out string id).AsTask();

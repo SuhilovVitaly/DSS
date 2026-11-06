@@ -208,7 +208,6 @@ public class DefeatNavigationTests
             while (!Handle.IsDefeated)
             {
                 _presentationNow += System.Diagnostics.Stopwatch.Frequency / 10;
-                Handle.Buffer.PreparePresentation();
                 Assert.Null(Handle.Failure);
                 await Task.Delay(10, timeout.Token);
             }

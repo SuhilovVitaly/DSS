@@ -14,7 +14,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     private readonly IGameSessionConnection _connection;
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _receiveTask;
-    private readonly Task _presentationWatchdogTask;
     internal CombatMetricsWriter CombatMetrics { get; }
     internal DebugTuningFileWriter DebugTuningFiles { get; }
     private readonly Task _interactionStateSenderTask;
@@ -63,11 +62,9 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
         DebugTuningFiles = debugTuningFiles ?? new(warning: WriteDiagnostic);
 
         Buffer = buffer;
-        Buffer.PresentationDiagnostic += CombatMetrics.RecordPresentation;
 
         // Background loop: connection → buffer
         _receiveTask = Task.Run(() => ReceiveLoopAsync(_cts.Token));
-        _presentationWatchdogTask = Task.Run(() => PresentationWatchdogAsync(_cts.Token));
 
         // Background loop: coalesced ActiveObjectId/SelectedObjectId → connection
         _interactionStateSenderTask = Task.Run(() => InteractionStateSenderLoopAsync(_cts.Token));
@@ -152,13 +149,8 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
         return SubmitCommandAsync(command, cancellationToken);
     }
 
-    private async ValueTask SubmitCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default)
-    {
-        if (_connection is ICombatPresentationConnection presentation)
-            Buffer.RecordAcceptance(await presentation.SubmitCommandAsync(command, cancellationToken));
-        else
-            await _connection.SendCommandAsync(command, cancellationToken);
-    }
+    private ValueTask SubmitCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default) =>
+        _connection.SendCommandAsync(command, cancellationToken);
 
     public ValueTask SendPointLaunchAsync(string objectId, string moduleId, ProjectileKind kind,
         double x, double y, string profileId, out string commandId)
@@ -344,22 +336,11 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     /// synchronously; for network connections the speed is confirmed before the
     /// client-side state is updated.
     /// </summary>
-    public async ValueTask SetSpeedAsync(SimulationSpeed speed, bool manualResume = false)
+    public async ValueTask SetSpeedAsync(SimulationSpeed speed)
     {
         if (IsDefeated) { Buffer.CurrentSpeed = SimulationSpeed.Speed0; return; }
-        if (_connection is ICombatPresentationConnection presentation)
-        {
-            var acknowledgement = manualResume && speed != SimulationSpeed.Speed0
-                ? await presentation.ResumePresentationAsync(speed)
-                : await presentation.SetPresentationSpeedAsync(speed);
-            Buffer.ConfirmPresentationControl(acknowledgement);
-            Buffer.CurrentSpeed = Failure is null && !IsDefeated ? acknowledgement.CurrentSpeed : SimulationSpeed.Speed0;
-        }
-        else
-        {
-            await _connection.SetSimulationSpeedAsync(speed);
-            Buffer.CurrentSpeed = Failure is null && !IsDefeated ? speed : SimulationSpeed.Speed0;
-        }
+        await _connection.SetSimulationSpeedAsync(speed);
+        Buffer.CurrentSpeed = Failure is null && !IsDefeated ? speed : SimulationSpeed.Speed0;
     }
 
     /// <summary>Capture and persist the current authoritative world state into the given save slot.</summary>
@@ -387,22 +368,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     {
         try
         {
-            if (_connection is ICombatPresentationConnection presentation)
-            {
-                await foreach (var update in presentation.ReadCombatUpdatesAsync(ct))
-                {
-                    if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
-                    if (!update.Frames.IsDefaultOrEmpty)
-                        foreach (var frame in update.Frames) CombatMetrics.Record(frame.State);
-                    if (update.FullSnapshot is { } full) CombatMetrics.Record(full);
-                    // Enable and enqueue authoritative diagnostics before publishing a
-                    // bootstrap that the UI may render immediately on another thread.
-                    Buffer.UpdatePresentation(update);
-                    ObserveDebugTuningFiles();
-                }
-                if (!ct.IsCancellationRequested) Fail(new IOException("The combat connection closed unexpectedly."));
-                return;
-            }
             await foreach (var snapshot in _connection.ReadSnapshotsAsync(ct))
             {
                 if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
@@ -417,23 +382,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
                 if (Failure is not null) Buffer.CurrentSpeed = SimulationSpeed.Speed0;
             }
             if (!ct.IsCancellationRequested) Fail(new IOException("The simulation connection closed unexpectedly."));
-        }
-        catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
-        catch (Exception error) { Fail(error); }
-    }
-
-    private async Task PresentationWatchdogAsync(CancellationToken ct)
-    {
-        if (_connection is not ICombatPresentationConnection presentation) return;
-        try
-        {
-            using var timer = new PeriodicTimer(TimeSpan.FromMilliseconds(100));
-            while (await timer.WaitForNextTickAsync(ct))
-            {
-                bool pause = Failure is not null || Buffer.PresentationPauseRequested;
-                await presentation.ReportPresentationProgressAsync(Buffer.PresentationSessionId ?? Guid.Empty,
-                    Buffer.ContiguousPresentationSequence, pause, ct);
-            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (Exception error) { Fail(error); }
@@ -527,13 +475,10 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
         _cts.Cancel();
         _interactionStateChannel.Writer.TryComplete();
 
-        try { await _presentationWatchdogTask.ConfigureAwait(false); }
-        catch (OperationCanceledException) { }
         try { await _receiveTask.ConfigureAwait(false); } catch { }
         try { await _interactionStateSenderTask.ConfigureAwait(false); } catch { }
 
         _cts.Dispose();
-        Buffer.PresentationDiagnostic -= CombatMetrics.RecordPresentation;
         await CombatMetrics.DisposeAsync().ConfigureAwait(false);
         await DebugTuningFiles.DisposeAsync().ConfigureAwait(false);
 

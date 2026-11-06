@@ -75,7 +75,6 @@ public class PhaseThreeSessionRoundtripTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         while (true)
         {
-            handle.Buffer.PreparePresentation();
             if (handle.Buffer.Presented is { } latest && predicate?.Invoke(latest.Snapshot) != false) return latest.Snapshot;
             Assert.Null(handle.Failure);
             await Task.Delay(10, timeout.Token);
