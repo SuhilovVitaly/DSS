@@ -3,7 +3,7 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0003-select-skin-in-settings
 ticket: EP-0016-US-0003-TK-0003-add-skin-selector
 title: Переключатель скина в настройках
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0003-TK-0002-localize-skin-selector]
@@ -81,3 +81,9 @@ git diff --check
 ## Self-containment check
 
 Границы, способ интеграции и источник локализации определены. Тестовый callback позволяет проверять реальное UI без записи пользовательского Settings.json.
+
+## Исполнение
+
+В Settings добавлена строка с каталогом скинов. Список прокручивается и рисуется поверх соседних строк. Отмена и неудачная запись сохраняют прежний ID, отказ показывает локализованную подпись. Выбор различает разные ID с одинаковыми именами. Старый конструктор оставляет прежнюю компоновку.
+
+Сборка и `dotnet test --no-restore --filter "FullyQualifiedName~SettingsScreenTests|FullyQualifiedName~LocalizationCoverageTests"` — 15/15 PASS. Проверены 640×480 и 1280×720, порядок обработки выпадающего списка и прежние активы. Scoped whitespace Client и staged diff check прошли, в тестовом файле formatter отметил только существующий цикл PixelSignature. Самопроверка выполнена. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us3-tk3/focused.trx`.
