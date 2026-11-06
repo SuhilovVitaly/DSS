@@ -16,6 +16,12 @@ if (args.Length == 3 && args[2] == "--tactical-performance")
     return;
 }
 
+if (args.Length >= 3 && args[2] == "--tactical-window")
+{
+    Environment.ExitCode = TacticalBattleNativeEvidence.Run(args);
+    return;
+}
+
 if (args.Contains("--module-panels-window"))
 {
     Environment.ExitCode = ModulePanelNativeEvidence.Run(args);

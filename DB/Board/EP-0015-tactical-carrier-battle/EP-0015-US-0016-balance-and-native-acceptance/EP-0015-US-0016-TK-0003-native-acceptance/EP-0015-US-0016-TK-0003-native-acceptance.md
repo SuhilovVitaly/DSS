@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0016-balance-and-native-acceptance
 ticket: EP-0015-US-0016-TK-0003-native-acceptance
 title: native-acceptance
-stage: draft
+stage: done
 layer: client-tools
 depends_on: ["EP-0015-US-0016-TK-0002-performance"]
-files_touched: 2
+files_touched: 3
 serves: [AC-03]
 created: 2026-11-05
 revision: 3
@@ -49,3 +49,15 @@ Engine владеет исходами, RNG и командами; Contracts н�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Run the Russian F8 battle through a real SkiaWindow/OpenGL framebuffer at both sizes and UI scales. Exercise keyboard routing and live mouse callbacks, capture GPU images and draw-plus-flush timings, and verify F5/F9 with isolated saves. Keep physical/human gates separate. The known Raid parity gap is independent.
+
+- tools/DeepSpaceSaga.Performance/TacticalBattleNativeEvidence.cs
+- tools/DeepSpaceSaga.Performance/Program.cs
+- DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md
+
+## Execution evidence — 2026-11-06
+
+Actual SkiaWindow/OpenGL native matrix on Intel Arc 140V, Russian: 1280x720 and 1920x1080 at 1 and 1.5. Four runs each passed 31 managed interaction assertions from F8 through battle completion, full world/camera preservation, and real F5/F9. Native 1920x1080 draw+flush max 4.8424 ms; Windows Release build and scoped format/diff clean. GPU captures and reports at `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-tactical-native-02/`. Managed input into live screen/router only; physical input and human/product review NOT RUN.
