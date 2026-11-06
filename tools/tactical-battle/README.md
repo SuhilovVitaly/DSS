@@ -24,7 +24,7 @@ Windows validation example (create the destination first):
 ```powershell
 $run = 'D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/<unique-run>'
 New-Item -ItemType Directory -Force $run
-dotnet test tests/DeepSpaceSaga.Engine.Tests --filter FullyQualifiedName~TacticalBattle --results-directory $run --logger trx
+dotnet test tests/DeepSpaceSaga.Engine.Tests --filter 'FullyQualifiedName~TacticalBattle&Category!=LongRunning' --results-directory $run --logger trx
 ```
 
 Set `DSS_VALIDATION_ROOT` to an absolute diagnostic directory to choose fixture
@@ -33,3 +33,5 @@ TRX and other diagnostics belong in the workspace validation root.
 
 Reference Markdown is independent evidence from the original implementation.
 The exporter does not generate or alter battle, series or trace expectations.
+
+For independent reference checks and single-tactic LongRunning commands, see [V4 sources and validation](../../DB/Documentation/06-Tooling/CarrierWingSim.md).
