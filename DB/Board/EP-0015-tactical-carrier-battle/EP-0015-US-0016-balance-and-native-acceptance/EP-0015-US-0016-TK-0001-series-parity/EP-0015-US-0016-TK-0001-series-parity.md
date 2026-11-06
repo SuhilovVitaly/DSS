@@ -59,3 +59,14 @@ Execute the complete independent published seed range once per tactic. Verify ex
 ## Cross-platform diagnosis before parity signoff
 
 Windows Release: four tactics match exactly; raid 856/140 vs 857/139 wins/losses with the remaining published counters matching. Retain the independent fixtures and exact assertion. Reopen G-03 numerical validation: the ordinary exact geometry sample does not cover every call. Add a read-only Ubuntu diagnostic on the existing approved runner for the same unchanged core and a Windows per-seed comparison. It reports the actual result even if the exact comparison fails; it is not a PASS for AC-01. The ticket remains in progress.
+
+## Executed series — 2026-11-06
+
+Release, one exact test/process per tactic (seeds 1–1000): Dogfight, Defence, Balanced and Commander PASS. Raid FAIL: 856/140 wins/losses, expected 857/139; 550 wins with at most one loss, 378 without loss and 4 draws match. Rounded turns/losses and carrier-death measurements agree in the observed totals. Default goal: 80.9% and 57.2%, both inside the configured tolerance. No expectations were regenerated from the Engine.
+
+- Windows series TRX and totals: D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-tactical-series-01/series-summary.json.
+- Windows Debug/Release signatures (outcome, turns, side losses, carrier HP, RNG calls): 1,000/1,000 identical.
+- [Ubuntu run 42151679409](https://github.com/SuhilovVitaly/DSS/actions/runs/42151679409), diagnostic commit 2bbd4eac958c6e0eb936bebea730a219295e69d7: same failed comparison; all 1,000 signatures match Windows. Downloaded archive SHA verified; targeted TRX and comparison at D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-tactical-series-probe-linux-01/.
+- Audited specified assembly, RNG consumption, tactics, geometry calls and salvo ordering. The available independent Raid golden seeds match; the published aggregate cannot identify the seed or expected intermediate state of this discrepancy. Cause remains unproven. Keep the exact LongRunning check and leave AC-01 open. Performance and native verification can proceed against the current implementation; neither depends on changing the series expectation.
+
+Reproduce from DSS: dotnet test tests/DeepSpaceSaga.Engine.Tests -c Release --no-build --filter "FullyQualifiedName~SeriesParityTests.Raid&Category=LongRunning" --results-directory <absolute-run> --logger trx. Use Dogfight, Defence, Balanced and Commander in separate processes. The optional DSS_RAID_SIGNATURES points to an absolute diagnostic file.
