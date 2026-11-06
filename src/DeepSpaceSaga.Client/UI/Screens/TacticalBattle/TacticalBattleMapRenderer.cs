@@ -45,7 +45,9 @@ internal static class TacticalBattleMapRenderer
                     var end = unit.Pose with { X = unit.Pose.X + vector.X, Y = unit.Pose.Y + vector.Y };
                     paint.Color = Enemy.WithAlpha(112);
                     canvas.DrawLine(view.Project(unit.Pose), view.Project(end), paint);
-                    DrawArc(canvas, view, end, 55, battle.Rules.RearArc, end.Course + 180, paint, filled: false);
+                    DrawRearSector(canvas, view, end, 55, battle.Rules.RearArc, paint);
+                    paint.Color = Enemy.WithAlpha(210);
+                    canvas.DrawCircle(view.Project(end), 3 * scale, paint);
                 }
                 if (frame.EnemySectors && !unit.Jammed && unit.Build is { } build)
                 {
@@ -130,8 +132,7 @@ internal static class TacticalBattleMapRenderer
         foreach (var enemy in frame.Battle.Units)
         {
             if (enemy.Side == frame.Battle.PlayerSide || enemy.State != TacticalUnitState.Air) continue;
-            paint.Color = Enemy.WithAlpha(112);
-            DrawArc(canvas, view, enemy.Pose, 70, frame.Battle.Rules.RearArc, enemy.Pose.Course + 180, paint, filled: false);
+            DrawRearSector(canvas, view, enemy.Pose, 70, frame.Battle.Rules.RearArc, paint);
         }
         if (plan.Selected is not { } selected) return;
         var source = view.Project(selected.Drone.Pose);
@@ -244,6 +245,25 @@ internal static class TacticalBattleMapRenderer
         paint.Style = filled ? SKPaintStyle.Fill : SKPaintStyle.Stroke;
         canvas.DrawArc(SKRect.Create(center.X - r, center.Y - r, 2 * r, 2 * r),
             (float)(course - halfAngle), (float)(2 * halfAngle), filled, paint);
+        paint.Style = SKPaintStyle.Fill;
+    }
+
+    private static void DrawRearSector(SKCanvas canvas, TacticalBattleView view, TacticalPoseSnapshot pose,
+        double radius, double halfAngle, SKPaint paint)
+    {
+        var center = view.Project(pose);
+        float r = (float)(radius * view.PixelsPerUnit);
+        using var sector = new SKPath();
+        sector.MoveTo(center);
+        sector.ArcTo(SKRect.Create(center.X - r, center.Y - r, 2 * r, 2 * r),
+            (float)(pose.Course + 180 - halfAngle), (float)(2 * halfAngle), false);
+        sector.Close();
+        var red = new SKColor(127, 27, 35);
+        paint.Color = red.WithAlpha(100);
+        canvas.DrawPath(sector, paint);
+        paint.Color = red.WithAlpha(190);
+        paint.Style = SKPaintStyle.Stroke;
+        canvas.DrawPath(sector, paint);
         paint.Style = SKPaintStyle.Fill;
     }
 

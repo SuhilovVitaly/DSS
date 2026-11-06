@@ -53,6 +53,26 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task StraightForecastShowsEndpointAndFilledRearSector()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var battle = screen.Flow.State!;
+        var enemy = battle.Units.First(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Drone) with
+        {
+            Pose = new(-100, 0, 0), Speed = 150
+        };
+        var frame = new TacticalBattleFrame(battle with { Units = [enemy], Paths = [], Rules = battle.Rules with { RearArc = 45 } },
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "");
+        using var on = Raster(frame);
+        using var off = Raster(frame with { EnemyForecast = false });
+        Assert.True(on.GetPixel(490, 360).Red > 160); // endpoint at x = 50
+        Assert.True(on.GetPixel(463, 369).Red > off.GetPixel(463, 369).Red + 25); // inside sector
+        Assert.True(on.GetPixel(470, 379).Red > on.GetPixel(470, 376).Red); // radial edge
+        Assert.Equal(off.GetPixel(470, 384), on.GetPixel(470, 384)); // outside sector
+    }
+
+    [Fact]
     public async Task GridRulerAndActualPanelTogglesChangeOnlyPresentation()
     {
         Assert.Equal(40, TacticalBattleMapRenderer.GridStep(1800));
