@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0013-legacy-engine-removal
 ticket: EP-0015-US-0013-TK-0009-debug-tuning-cleanup
 title: debug-tuning-cleanup
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0013-TK-0008-engine-noncombat-cleanup"]
-files_touched: 6
+files_touched: 4
 serves: [AC-05, AC-07]
 created: 2026-11-05
 revision: 3
@@ -51,3 +51,15 @@ Engine.Tests DebugTuning. Сборка, scoped format, `git diff --check`. Пр�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+Runtime flight/reload tuning was removed in TK4 and catalog values in TK7. Version the shared file syntax to schema 2, write only world propulsion overrides, keep schema 1 files with only ships (including the old writer's empty launchers object) readable, and reject old combat overrides atomically with an actionable Interface.log message. Historical saved overlays remain under the Save18/19 migration. Test Engine bootstrap and the actual Client warning adapter.
+
+- Edit: src/DeepSpaceSaga.Contracts/DebugTuningFileFormat.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/DebugTuningStartupTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/DebugTuningFileWriterTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/DebugTuningDefaultsFileTests.cs
+
+## Execution evidence — 2026-11-06
+
+Debug tuning now writes schema 2 with six propulsion values under ships. Schema 1 files containing only world overrides (including an empty launchers object) remain readable; nonempty legacy weapon overrides are refused atomically with a concrete edit suggestion. The actual LocalClient startup warning callback writes the path and rejection to Interface.log and applies no partial overlay. Windows solution build and scoped format/diff clean; 284 Contracts, 56 Engine and 185 Client passed in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-world-debug-schema2-01`.

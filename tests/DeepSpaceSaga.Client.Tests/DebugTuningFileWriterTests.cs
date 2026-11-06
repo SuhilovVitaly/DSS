@@ -38,7 +38,8 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         string json = File.ReadAllText(writer.CurrentPath);
         Assert.Contains("\n  \"schemaVersion\"", json);
         using var document = JsonDocument.Parse(json);
-        Assert.Equal(1, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal(2, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.False(document.RootElement.TryGetProperty("launchers", out _));
         Assert.True(document.RootElement.GetProperty("writtenAtUtc").TryGetDateTime(out _));
         Assert.True(DebugTuningFileFormat.TryParse(json, catalog.Defaults, out var patch, out var reason), reason);
         Assert.Equal(6, patch.Values.Length);

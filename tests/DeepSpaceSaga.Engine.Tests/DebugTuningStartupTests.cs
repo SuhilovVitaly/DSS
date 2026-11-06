@@ -10,12 +10,14 @@ public sealed class DebugTuningStartupTests : IDisposable
     public DebugTuningStartupTests() => Directory.CreateDirectory(_directory);
     private void Write(string json) => File.WriteAllText(PathName, json);
 
-    [Fact]
-    public void Partial_file_fills_catalog_defaults_and_file_edits_are_not_live()
+    [Theory]
+    [InlineData("{\"schemaVersion\":1,\"launchers\":{},\"ships\":{\"module.engine.strizh\":{\"maxSpeedKmS\":12}}}")]
+    [InlineData("{\"schemaVersion\":2,\"ships\":{\"module.engine.strizh\":{\"maxSpeedKmS\":12}}}")]
+    public void Partial_file_fills_catalog_defaults_and_file_edits_are_not_live(string input)
     {
         using var engine = PointCombatUS0018TK0002Tests.Create();
         var defaults = engine.CaptureSnapshotForTests().DebugTuning!.Defaults;
-        Write("{\"schemaVersion\":1,\"ships\":{\"module.engine.strizh\":{\"maxSpeedKmS\":12}}}");
+        Write(input);
         engine.ApplyStartupDebugTuningFile(PathName);
         var state = engine.CaptureSnapshotForTests().DebugTuning!;
         Assert.Null(state.StartupError); Assert.Equal(1, state.Revision);
@@ -30,7 +32,7 @@ public sealed class DebugTuningStartupTests : IDisposable
     [Theory]
     [InlineData("{")]
     [InlineData("null")]
-    [InlineData("{\"schemaVersion\":2}")]
+    [InlineData("{\"schemaVersion\":3}")]
     [InlineData("{\"schemaVersion\":\"1\"}")]
     [InlineData("{\"schemaVersion\":1,\"unknown\":0}")]
     [InlineData("{\"schemaVersion\":1,\"schemaVersion\":1}")]
