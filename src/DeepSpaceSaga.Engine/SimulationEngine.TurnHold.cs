@@ -1,5 +1,4 @@
 using DeepSpaceSaga.Contracts;
-using DeepSpaceSaga.Motion;
 
 namespace DeepSpaceSaga.Engine;
 
@@ -28,7 +27,7 @@ public sealed partial class SimulationEngine
             if (owner.IsDocked || !CanExecuteEngineCommand(module, type, time) || type.AngularInertiaDegPerSec is not > 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.EngineDisabled);
             var sampled = RuntimeMotion.At(owner, time);
-            var pose = ClearEvasionControls(sampled) with
+            var pose = ClearSteeringControls(sampled) with
             {
                 SpeedHoldAccelerationKmS2 = sampled.SpeedHoldAccelerationKmS2,
                 SpeedHoldLatched = sampled.SpeedHoldLatched
@@ -71,7 +70,7 @@ public sealed partial class SimulationEngine
     private void StopAllTurnHolds()
     {
         for (int i = 0; i < _objects.Count; i++)
-            if (HasManualHolds(_objects[i].InitialMotion)) StopManualHolds(i, _combatProcessedTimeMs);
+            if (HasManualHolds(_objects[i].InitialMotion)) StopManualHolds(i, _appliedMotionTimeMs);
     }
 
     private CommandStartOutcome ExecuteTurnHoldOverride(PlayerCommand command, long time, Func<CommandStartOutcome> execute)
@@ -85,16 +84,30 @@ public sealed partial class SimulationEngine
         return result;
     }
 
-    private static SpaceObjectRuntime InterruptDamagedTurnHold(SpaceObjectRuntime ship, double time)
+    private static ObjectMotionSnapshot ClearSteeringControls(ObjectMotionSnapshot pose) => pose with
     {
-        if (!HasManualHolds(ship.InitialMotion)) return ship;
-        var pose = CurrentManeuverForecast.Sample(ship.InitialMotion, Math.Max(0, time - ship.StartGameTimeMs));
-        long anchor = (long)Math.Floor(time);
-        var p = LinearMotionPredictor.PredictStraightPose(pose.X, pose.Y, pose.Direction, pose.SpeedKmS, anchor - time);
-        return ship with
-        {
-            InitialMotion = ClearEvasionControls(pose) with { X = p.X, Y = p.Y },
-            StartGameTimeMs = anchor
-        };
-    }
+        TurnHoldRateDegPerSec = null,
+        SpeedHoldAccelerationKmS2 = null,
+        SpeedHoldLatched = false,
+        EngineManeuver = null,
+        Orbit = null,
+        OrbitSampleSimulationTimeMs = null,
+        ActiveEngineCommandType = null,
+        TurnStepDegrees = 0,
+        TurnStepRemainingMs = 0,
+        TurnStepIntervalMs = 0,
+        NavigationTargetX = null,
+        NavigationTargetY = null,
+        NavigationAngularInertiaDegPerSec = 0,
+        NavigationLockedCourseDegrees = null,
+        NavigationPhase = null,
+        NavigationEscapeCourseDegrees = null,
+        NavigationRequiredDepartureDistance = null,
+        NavigationTargetSpeedKmS = null,
+        NavigationTargetDirectionDegrees = null,
+        NavigationApproachTrailDistanceWorldUnits = null,
+        ApproachRoute = null,
+        NavigationTargetObjectId = null
+    };
+
 }

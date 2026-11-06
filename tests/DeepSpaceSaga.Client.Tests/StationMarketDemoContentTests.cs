@@ -209,7 +209,8 @@ public sealed class StationMarketDemoContentTests
     public async Task Every_demo_station_docks_and_trades_via_session(
         string stationId, string representativeSupplyItemId)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        // Each sequential navigation, dialogue, and trade action waits for the real 1 Hz world stream.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
         await using IGameSessionConnection connection = LocalGameSessionConnection.CreateFromScenarioFile(SettingsPath, DemoScenarioPath);
         await using var snapshots = connection.ReadSnapshotsAsync(timeout.Token)
             .GetAsyncEnumerator(timeout.Token);

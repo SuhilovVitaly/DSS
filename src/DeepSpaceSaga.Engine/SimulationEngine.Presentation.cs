@@ -17,8 +17,6 @@ public sealed partial class SimulationEngine
     private bool _presentationBootstrap;
     private bool _automaticPresentationPause;
     private SimulationSpeed _presentationIntervalSpeed;
-    private int _presentationImpactCursor;
-    private int _presentationJournalCursor;
     private long _presentationAck;
     private long _presentationProgressAt;
     private Func<long> _presentationTimestamp = Stopwatch.GetTimestamp;
@@ -28,8 +26,6 @@ public sealed partial class SimulationEngine
         _presentationSession = Guid.NewGuid();
         _presentationSequence = 0;
         _presentationAck = 0;
-        _presentationImpactCursor = 0;
-        _presentationJournalCursor = 0;
         _presentationFrames.Clear();
         _presentationWorldObjectIds.Clear();
         _automaticPresentationPause = false;
@@ -136,8 +132,6 @@ public sealed partial class SimulationEngine
         var state = BuildSnapshot(new(calendar, clock.Speed, (long)Math.Ceiling(time)),
             presentationOnly: true, prepareWorld: false);
         state = state with { CurrentSpeed = IsDefeated ? SimulationSpeed.Speed0 : _presentationIntervalSpeed };
-        _presentationImpactCursor = _combatImpacts.Count;
-        _presentationJournalCursor = _combatJournal.Count;
         AddPresentationFrame(time, state);
     }
 
@@ -160,8 +154,6 @@ public sealed partial class SimulationEngine
             var state = BuildSnapshot(clock, presentationOnly: true);
             // Includes commands, terminal outcomes and control acknowledgements after world advancement.
             if (_collectPresentation) AddPresentationFrame(state.MotionTimeMs, state);
-            _presentationImpactCursor = _combatImpacts.Count;
-            _presentationJournalCursor = _combatJournal.Count;
             AuthoritativeSnapshot? full = fullSnapshot || _presentationBootstrap
                 ? BuildSnapshot(new(state.GameTimeMs, state.CurrentSpeed, state.MotionTimeMs), prepareWorld: false) : null;
             _presentationBootstrap = false;

@@ -29,35 +29,12 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
     internal AuthoritativeSnapshot Latest => Handle.Buffer.Latest!.Snapshot;
     internal AuthoritativeSnapshot Presented => Handle.Buffer.Presented!.Snapshot;
 
-    private PointCombatUiFixture(int width, int height, float scale, int hostileShots, int? accuracySkill,
+    private PointCombatUiFixture(int width, int height, float scale, int? accuracySkill,
         Func<SpaceObjectData, SpaceObjectData>? configure)
     {
         (_width, _height, Scale) = (width, height, scale);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
         var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
-        if (hostileShots is < 0 or > 16) throw new ArgumentOutOfRangeException(nameof(hostileShots));
-        var template = source.GameState.SpaceObjects.Single(o => o.ObjectId == Enemy);
-        var extraEnemies = Enumerable.Range(0, hostileShots).Select(i =>
-        {
-            string suffix = "-budget-" + i;
-            return template with
-            {
-                ObjectId = Enemy + suffix,
-                Ai = null,
-                PositionX = 300 + i * 10,
-                PositionY = 0,
-                SpeedMps = 0,
-                MovementType = "Stationary",
-                DirectionDegrees = 270,
-                Modules = template.Modules!.Select(m => m with
-                {
-                    ModuleId = m.ModuleId + suffix,
-                    OperatorCrewId = m.OperatorCrewId is null ? null : m.OperatorCrewId + suffix,
-                    PowerState = m.ModuleTypeId == "module.torpedo.launcher.basic" ? "On" : "Off"
-                }).ToArray(),
-                Crew = template.Crew!.Select(c => c with { CrewId = c.CrewId + suffix }).ToArray()
-            };
-        }).ToArray();
         Engine = new(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
         Engine.LoadScenario(source with
         {
@@ -76,15 +53,9 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
                     Crew = o.ObjectId == Player && accuracySkill is { } skill
                         ? o.Crew!.Select(c => c with { AccuracySkill = skill }).ToArray() : o.Crew,
                     Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == Player ? "On" : "Off" }).ToArray()
-                }).Concat(extraEnemies).Select(o => configure?.Invoke(o) ?? o).ToArray()
+                }).Select(o => configure?.Invoke(o) ?? o).ToArray()
             }
         });
-        for (int i = 0; i < hostileShots; i++)
-        {
-            string suffix = "-budget-" + i;
-            Assert.Equal(CommandStartDisposition.Started, Engine.TryStartHostilePointLaunch(Enemy + suffix,
-                "MOD-PIRATE-TORPEDO-01" + suffix, -100, 0, "slow", 0).Disposition);
-        }
         Engine.SetPresentationTimestampForTests(() => 0);
         Connection = new(Engine);
         Handle = new(Connection, new SnapshotBuffer(() => UiMs * Stopwatch.Frequency / 1000));
@@ -93,10 +64,10 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
         _bitmap = new(width, height); _canvas = new(_bitmap);
     }
     internal static async Task<PointCombatUiFixture> Create(int width = 1920, int height = 1080, float scale = 1,
-        int hostileShots = 0, int? accuracySkill = null,
+        int? accuracySkill = null,
         Func<SpaceObjectData, SpaceObjectData>? configure = null)
     {
-        var f = new PointCombatUiFixture(width, height, scale, hostileShots, accuracySkill, configure);
+        var f = new PointCombatUiFixture(width, height, scale, accuracySkill, configure);
         await f.Wait(() => f.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0 && f.Screen.RenderStates.Any(o => o.IsPlayerShip));
         f.Screen.OnActivated(); f.Render();
         if (f.Screen.IsPanelVisible)

@@ -16,13 +16,13 @@ public sealed partial class SimulationEngine
         _defeatToMotion = clock.MotionTimeMs;
     }
 
-    private void RecordPlayerDefeat(string playerId, string wreckId, double motionTime, long deathEventId)
+    private void RecordPlayerDefeat(string playerId, long motionTime)
     {
         if (playerId != PlayerShipObjectId || IsDefeated) return;
         decimal fraction = _defeatToMotion == _defeatFromMotion ? 0 :
             Math.Clamp(((decimal)motionTime - _defeatFromMotion) / (_defeatToMotion - (decimal)_defeatFromMotion), 0, 1);
         long calendar = _defeatFromCalendar + (long)decimal.Floor((_defeatToCalendar - (decimal)_defeatFromCalendar) * fraction);
-        _sessionOutcome = new(SessionOutcomeState.Defeated, playerId, wreckId, deathEventId, motionTime, calendar);
+        _sessionOutcome = new(SessionOutcomeState.Defeated, playerId, DeathMotionTimeMs: motionTime, DeathGameTimeMs: calendar);
         var stopped = DefeatedClock;
         _clock.StopAtTerminal(stopped.GameTimeMs, stopped.MotionTimeMs);
     }
@@ -35,7 +35,7 @@ public sealed partial class SimulationEngine
         if (!IsDefeated) return false;
         _processedWorldTimeMs = DefeatedClock.GameTimeMs;
         _processedSimulationTimeMs = DefeatedClock.MotionTimeMs;
-        _combatProcessedTimeMs = DefeatedClock.MotionTimeMs;
+        _appliedMotionTimeMs = DefeatedClock.MotionTimeMs;
         return true;
     }
 

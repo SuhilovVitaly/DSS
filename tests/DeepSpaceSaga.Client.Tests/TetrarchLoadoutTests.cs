@@ -163,18 +163,7 @@ public sealed class TetrarchLoadoutTests
             Assert.Equal(ship.DockedStationObjectId, actual.DockedStationObjectId);
         }
         var launcher = Assert.Single(snapshot.InstalledModules, m => m.ModuleTypeId == LauncherId);
-        Assert.NotNull(launcher.LauncherCombat);
-        Assert.Equal(6, launcher.LauncherCombat.Profiles!.Value[0].SpeedKmS);
-        Assert.Equal(new[] { 6d, 10d, 16d }, launcher.LauncherCombat.Profiles!.Value.Select(p => p.SpeedKmS));
-        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("TurnRateDegPerSec"));
-        Assert.Equal(200, launcher.LauncherCombat.Damage);
-        Assert.Equal(70, launcher.LauncherCombat.RangeKm);
-        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("Maneuverability"));
-        Assert.True(launcher.LauncherCombat.ActiveTorpedoIds.IsDefaultOrEmpty);
-        var assignedOperator = Assert.IsType<WeaponOperatorSnapshot>(launcher.LauncherCombat.Operator);
-        Assert.Equal("CHR-0001", assignedOperator.CrewId);
-        Assert.Equal(0, assignedOperator.Skill);
-        Assert.Equal(0m, assignedOperator.EffectiveRating);
+        Assert.Null(launcher.LauncherCombat);
         Assert.Equal("Ready", launcher.OperationalState);
         Assert.Equal("On", launcher.PowerState);
         Assert.Equal(new[] { CombatCommandTypes.Launch, CombatCommandTypes.Detonate }, launcher.CommandTypeIds);

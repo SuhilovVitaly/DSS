@@ -79,15 +79,11 @@ public sealed class PointCombatUS0019TK0005Tests
         var rightDone = At(engine, 1750);
         Assert.Equal(4, Ship(rightDone).Direction, 8);
         Assert.Contains(rightDone.CommandResults, r => r.CommandId == "catalog-step-right" && r.Status == CommandResultStatus.Executed);
-        Assert.Equal(CommandStartDisposition.Started,
-            engine.TryStartHostilePointLaunch("SPC-0002", "MOD-PIRATE-TORPEDO-01", 0, 0, "slow", 1750).Disposition);
-        string threat = Assert.Single(At(engine, 1750).Objects, o => o.ObservedProjectile is not null).ObjectId;
-        engine.ReceiveCommand(new("catalog-evade", 5, Player, EngineModule, ManeuverCommandTypes.Evade,
-            ThreatProjectileId: threat, EvadeSide: EvadeSide.Left));
-        var evading = At(engine, 1750);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(evading.CommandResults).Status);
-        Assert.NotNull(Ship(evading).Evasion); Assert.Equal(Ship(rightDone).SpeedKmS, Ship(evading).SpeedKmS);
-        Assert.Equal(Ship(rightDone).Direction, Ship(evading).Direction);
-        Assert.Null(evading.Encounter);
+        engine.ReceiveCommand(new("retired-evade", 5, Player, EngineModule, ManeuverCommandTypes.Evade));
+        var rejected = At(engine, 1750);
+        Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(rejected.CommandResults).ReasonCode);
+        var before = Ship(rightDone);
+        var after = Ship(rejected);
+        Assert.Equal((before.X, before.Y, before.Direction, before.SpeedKmS), (after.X, after.Y, after.Direction, after.SpeedKmS));
     }
 }

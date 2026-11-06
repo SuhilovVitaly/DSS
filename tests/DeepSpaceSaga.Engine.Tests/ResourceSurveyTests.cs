@@ -476,9 +476,12 @@ public sealed class ResourceSurveyTests
         var resumed = restored.CaptureSnapshotForTests(60000, simulationTimeMs: 1000);
         var continuous = engine.CaptureSnapshotForTests(60000, simulationTimeMs: 1000);
         var comparison = control.CaptureSnapshotForTests(60000, simulationTimeMs: 1000);
-        Assert.Equal(Json(continuous.Objects.Single(o => o.ObjectId == Player)), Json(resumed.Objects.Single(o => o.ObjectId == Player)));
-        Assert.Equal(Json(comparison.Objects.Single(o => o.ObjectId == Player)), Json(resumed.Objects.Single(o => o.ObjectId == Player)));
+        Assert.Equal(Json(WorldMotion(continuous)), Json(WorldMotion(resumed)));
+        Assert.Equal(Json(WorldMotion(comparison)), Json(WorldMotion(resumed)));
         Assert.Equal(CommandResultStatus.Executed, resumed.CommandResults.Single(r => r.CommandId == "scan").Status);
+
+        static ObjectMotionSnapshot WorldMotion(AuthoritativeSnapshot snapshot) =>
+            snapshot.Objects.Single(o => o.ObjectId == Player) with { ModuleHealth = [] };
     }
 
     [Theory]

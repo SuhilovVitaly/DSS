@@ -89,11 +89,11 @@ public sealed class SpeedHoldEngineTests
     }
 
     [Fact]
-    public void Invalid_patch_is_atomic_and_debug_patch_reanchors_both_controls_without_rng()
+    public void Invalid_patch_is_atomic_and_debug_patch_reanchors_both_controls()
     {
         using var engine = DebugTuningShipTests.Create(3000);
         engine.ReceiveCommand(Speed()); engine.ReceiveCommand(Turn()); At(engine);
-        var before = Player(At(engine, 1000)); var rng = engine.CaptureLaunchScatterState();
+        var before = Player(At(engine, 1000));
         engine.ReceiveCommand(Speed("bad") with { SpeedDirection = (SpeedDirection)999 });
         var state = At(engine, 1000); Assert.Equal(CommandReasonCodes.InvalidSpeedPayload, Assert.Single(state.CommandResults).ReasonCode);
         Equal(Player(state), before.X, before.Y, before.SpeedKmS, before.Direction);
@@ -102,26 +102,7 @@ public sealed class SpeedHoldEngineTests
         var after = Player(At(engine, 1000)); Equal(after, before.X, before.Y, before.SpeedKmS, before.Direction);
         Assert.Equal(1.2, after.SpeedHoldAccelerationKmS2); Assert.Equal(40, after.TurnHoldRateDegPerSec);
         var expected = CurrentManeuverForecast.Sample(after, 1000); var later = Player(At(engine, 2000));
-        Equal(later, expected.X, expected.Y, expected.SpeedKmS, expected.Direction); Assert.Equal(rng, engine.CaptureLaunchScatterState());
-    }
-
-    [Fact]
-    public void Evasion_releases_both_axes_and_new_hold_cancels_evasion_at_continuous_pose()
-    {
-        using var engine = DebugTuningShipTests.Create(3000, enemyWeapon: true);
-        var initial = At(engine);
-        var npc = engine.CaptureSaveState().GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.NpcShip);
-        string launcher = npc.Modules!.First(m => m.ModuleTypeId.Contains("torpedo", StringComparison.Ordinal)).ModuleId;
-        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(npc.ObjectId, launcher, npc.PositionX + 600, npc.PositionY, "slow", 0).Disposition);
-        string threat = At(engine).Objects.Single(o => o.ObservedProjectile is not null).ObjectId;
-        engine.ReceiveCommand(Speed()); engine.ReceiveCommand(Turn()); At(engine);
-        engine.ReceiveCommand(new("evade", 1, PlayerId, EngineId, ManeuverCommandTypes.Evade, ThreatProjectileId: threat, EvadeSide: EvadeSide.Right));
-        var evading = Player(At(engine)); Assert.NotNull(evading.Evasion); Assert.Null(evading.SpeedHoldAccelerationKmS2); Assert.Null(evading.TurnHoldRateDegPerSec);
-        var before = Player(At(engine, 100)); engine.ReceiveCommand(Speed("interrupt"));
-        var state = At(engine, 100); var after = Player(state);
-        Assert.Null(after.Evasion); Assert.Equal(.6, after.SpeedHoldAccelerationKmS2);
-        Equal(after, before.X, before.Y, before.SpeedKmS, before.Direction);
-        Assert.Contains(state.CommandResults, r => r.CommandId == "evade" && r.Status == CommandResultStatus.Cancelled);
+        Equal(later, expected.X, expected.Y, expected.SpeedKmS, expected.Direction);
     }
 
     [Fact]

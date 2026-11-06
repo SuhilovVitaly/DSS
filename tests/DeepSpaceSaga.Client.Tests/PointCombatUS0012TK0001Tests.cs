@@ -38,7 +38,7 @@ public sealed class PointCombatUS0012TK0001Tests
     [InlineData(Key.Right)]
     public async Task Native_focus_loss_clears_input_before_keyboard_resync(Key key)
     {
-        await using var f = await PointCombatUiFixture.Create(hostileShots: 1);
+        await using var f = await PointCombatUiFixture.Create();
         using var window = new SkiaWindow(f.Screen, f, null, createNativeWindow: false);
         typeof(SkiaWindow).GetField("_window", BindingFlags.Instance | BindingFlags.NonPublic)!
             .SetValue(window, DispatchProxy.Create<IWindow, WindowProxy>());
@@ -83,7 +83,7 @@ public sealed class PointCombatUS0012TK0001Tests
         private readonly SKCanvas _canvas;
         private Session(bool enabled, bool combat, ManeuverInputSettings? maneuver)
         {
-            World = new(engineEnabled: enabled, launchHostile: combat, enemyX: combat ? 400 : 2000);
+            World = new(engineEnabled: enabled, enemyX: combat ? 400 : 2000);
             Handle = new(World.Connection); Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle, maneuverInputs: maneuver);
             _keys = new(maneuver: maneuver); _canvas = new(_bitmap);
         }

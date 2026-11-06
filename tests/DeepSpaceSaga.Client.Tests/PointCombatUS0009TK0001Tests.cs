@@ -16,7 +16,7 @@ public sealed class PointCombatUS0009TK0001Tests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void Mukha_v3_loads_and_is_discoverable_with_exact_approved_geometry_and_catalog(bool deployed)
+    public void Legacy_scenario_still_loads_its_authored_geometry_but_no_longer_fires(bool deployed)
     {
         string root = deployed ? AppContext.BaseDirectory : Source;
         string path = Path.Combine(root, Relative);
@@ -65,47 +65,10 @@ public sealed class PointCombatUS0009TK0001Tests
         engine.ReceiveCommand(new("scenario-point-launch", 1, player.ObjectId, "MOD-PLAYER-TORPEDO-01", CombatCommandTypes.Launch,
             TargetWorldX: 0, TargetWorldY: 600, ProfileId: "fast"));
         var launched = At(engine);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(launched.CommandResults).Status);
-        var flight = Assert.Single(launched.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
-        Assert.Equal((16d, 2.5, 200), (flight.SpeedKmS, flight.BlastRadiusKm, flight.Damage));
+        Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(launched.CommandResults).ReasonCode);
+        Assert.DoesNotContain(launched.Objects, o => o.OwnProjectile is not null);
     }
 
     public static IEnumerable<object[]> PursuitCases() =>
         Enumerable.Range(0, 3).SelectMany(i => new[] { 0d, 90d, 180d, 270d }.Select(direction => new object[] { i, direction }));
-
-    [Theory]
-    [MemberData(nameof(PursuitCases))]
-    public void Actual_approved_spawn_enters_launch_range_against_maximum_speed_player_within_sixty_seconds(int index, double direction)
-    {
-        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Source, "Settings.json"), out _, out _);
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(Source, Relative));
-        string playerId = scenario.GameState.PlayerShipObjectId!;
-        var enemy = scenario.GameState.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.NpcShip).ElementAt(index);
-        // Isolate every real spawn/controller pair. Disable weapons only to prevent deaths from truncating the pursuit diagnostic.
-        scenario = scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                MasterSeed = 42,
-                SpaceObjects = scenario.GameState.SpaceObjects.Where(o => o.ObjectId == playerId || o.ObjectId == enemy.ObjectId)
-                .Select(o => o with
-                {
-                    SpeedMps = o.ObjectId == playerId ? 5000 : o.SpeedMps,
-                    DirectionDegrees = o.ObjectId == playerId ? direction : o.DirectionDegrees,
-                    Modules = o.Modules!.Select(m => m.ModuleTypeId.Contains("torpedo", StringComparison.Ordinal) ? m with { PowerState = "Off" } : m).ToArray()
-                }).ToArray()
-            }
-        };
-        using var engine = new SimulationEngine(registry); engine.LoadScenario(scenario);
-        long? reached = null;
-        for (long time = 0; time <= 60000; time += 100)
-        {
-            var scene = At(engine, time);
-            var player = scene.Objects.Single(o => o.ObjectId == playerId);
-            var target = scene.Objects.Single(o => o.ObjectId == enemy.ObjectId);
-            double dx = (target.X - player.X) / 10, dy = (target.Y - player.Y) / 10;
-            if (dx * dx + dy * dy <= 70 * 70) { reached = time; break; }
-        }
-        Assert.True(reached.HasValue, $"Approved spawn {index}, player heading {direction}: no 70km range entry by 60 physical seconds.");
-    }
 }

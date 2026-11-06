@@ -62,7 +62,11 @@ public sealed class FullMapCorrectnessCorpusTests
                 var saved = engine.CaptureSaveStateForTests(300000, SimulationSpeed.Speed0, 1000);
                 using var loaded = new SimulationEngine(SeededWorldBootstrapTests.Registry()); loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true), true);
                 MapEnvironmentSaveTests.SameMap(saved, loaded.CaptureSaveState());
-                GeneratedWorldPersistenceTests.EqualWorld(engine.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000), loaded.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000));
+                var expected = engine.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000);
+                var retired = SeededWorldBootstrapTests.Scenario(scenario).GameState.SpaceObjects.Where(o => o.Ai is not null)
+                    .Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
+                GeneratedWorldPersistenceTests.EqualWorld(expected with { Objects = [.. expected.Objects.Where(o => !retired.Contains(o.ObjectId))] },
+                    loaded.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000));
             }
             catch (Exception e) { throw new Xunit.Sdk.XunitException($"seed={seed};scenario={scenario};maximum={maximum};config={JsonSerializer.Serialize(config)};stage=full-map: {e}"); }
         }

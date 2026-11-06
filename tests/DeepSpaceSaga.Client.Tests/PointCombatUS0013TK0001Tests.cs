@@ -34,10 +34,10 @@ public sealed class PointCombatUS0013TK0001Tests
     {
         var source = PointCombatSessionFixture.Registry();
         // Use an installed role rather than assuming a particular module registry order.
-        await using var baseline = new PointCombatSessionFixture(source, launchHostile: false);
+        await using var baseline = new PointCombatSessionFixture(source);
         string role = baseline.Engine.CaptureSnapshot().InstalledModules.First(m => m.CombatRole is not null).CombatRole!;
         var rules = source.CombatRules! with { ShipDestruction = source.CombatRules!.ShipDestruction with { CriticalRoles = [role] } };
-        await using var world = new PointCombatSessionFixture(PointCombatSessionFixture.Registry(rules: rules), launchHostile: false);
+        await using var world = new PointCombatSessionFixture(PointCombatSessionFixture.Registry(rules: rules));
         var snapshot = world.Engine.CaptureSnapshot();
         Assert.Contains(snapshot.InstalledModules, m => m.IsCritical);
         foreach (var module in snapshot.InstalledModules) Assert.Equal(module.CombatRole == role, module.IsCritical);

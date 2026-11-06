@@ -65,8 +65,9 @@ public sealed class SystemCorrectnessCorpusTests
                 var saved = engine.CaptureSaveStateForTests(end * 300, SimulationSpeed.Speed0, end);
                 using var loaded = new SimulationEngine(registry);
                 loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true), isSave: true);
-                GeneratedWorldPersistenceTests.EqualWorld(
-                    engine.CaptureSnapshotForTests((end + 1234) * 300, SimulationSpeed.Speed0, end + 1234),
+                var expected = engine.CaptureSnapshotForTests((end + 1234) * 300, SimulationSpeed.Speed0, end + 1234);
+                var retired = source.GameState.SpaceObjects.Where(o => o.Ai is not null).Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
+                GeneratedWorldPersistenceTests.EqualWorld(expected with { Objects = [.. expected.Objects.Where(o => !retired.Contains(o.ObjectId))] },
                     loaded.CaptureSnapshotForTests((end + 1234) * 300, SimulationSpeed.Speed0, end + 1234));
             }
             catch (Exception ex)

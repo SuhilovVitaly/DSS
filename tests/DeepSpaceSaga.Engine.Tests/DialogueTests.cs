@@ -142,8 +142,9 @@ public class DialogueTests
         Assert.False(loaded.CaptureSnapshotForTests(59999).Objects.Single(o => o.ObjectId == "SPC-0001").IsDestroyed);
         var defeated = loaded.CaptureSnapshotForTests(60000);
         Assert.Equal(SessionOutcomeState.Defeated, defeated.EffectiveOutcome.State);
-        Assert.DoesNotContain(defeated.Objects, o => o.ObjectId == "SPC-0001");
-        Assert.Single(defeated.CombatJournal, e => e.Type == CombatEventType.ShipDestroyed && e.DestroyReason == "station-security");
+        Assert.Equal(60000, defeated.MotionTimeMs);
+        Assert.True(Assert.Single(defeated.Objects, o => o.ObjectId == "SPC-0001").IsDestroyed);
+        Assert.Equal(SimulationSpeed.Speed0, defeated.CurrentSpeed);
         Assert.Throws<InvalidOperationException>(() => loaded.CaptureSaveStateForTests(60000, SimulationSpeed.Speed0));
     }
     [Fact]
@@ -232,6 +233,7 @@ public class DialogueTests
         // The ship travels 180 km at the deadline, 210 km by the next snapshot.
         var defeated = engine.CaptureSnapshotForTests(70000);
         Assert.Equal(SessionOutcomeState.Defeated, defeated.EffectiveOutcome.State);
-        Assert.DoesNotContain(defeated.Objects, o => o.ObjectId == "SPC-0001");
+        Assert.Equal(60000, defeated.MotionTimeMs);
+        Assert.True(Assert.Single(defeated.Objects, o => o.ObjectId == "SPC-0001").IsDestroyed);
     }
 }

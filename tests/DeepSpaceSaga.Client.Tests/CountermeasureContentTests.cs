@@ -83,12 +83,12 @@ public class CountermeasureContentTests
         }
         using var engine = new DeepSpaceSaga.Engine.SimulationEngine(registry);
         engine.LoadScenario(scenario);
-        var modules = engine.CaptureSnapshotForTests().InstalledModules.Where(m => m.Defense is not null).ToArray();
+        var modules = engine.CaptureSnapshotForTests().InstalledModules.Where(m => m.ModuleTypeId == "module.countermeasure.launcher.basic").ToArray();
         Assert.Equal(2, modules.Length);
         Assert.All(modules, m =>
         {
             Assert.Contains(m.Commands, c => c.CommandTypeId == DefenseCommandTypes.Launch && c.Target == "point");
-            Assert.Equal(DefenseState.Ready, m.Defense!.State);
+            Assert.Null(m.Defense);
             Assert.Null(m.ActiveCommandType);
         });
     }

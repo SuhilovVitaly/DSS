@@ -6,7 +6,7 @@ using DeepSpaceSaga.Engine.Scenario;
 
 namespace DeepSpaceSaga.Client.Tests;
 
-/// <summary>Real point executor/session over an explicit calibrated Basic6km/s,4deg/s scenario; current shipped scenario acceptance is US19-TK1.</summary>
+/// <summary>Local world session over an explicit calibrated Basic6km/s,4deg/s scenario.</summary>
 internal sealed class PointCombatSessionFixture : IAsyncDisposable
 {
     internal const string Player = "SPC-0001", Enemy = "SPC-0002", Torpedo = "MOD-PLAYER-TORPEDO-01";
@@ -75,7 +75,7 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
             combatRules: rules ?? source.CombatRules! with { Chance = null, Blast = new(.3), Scatter = new(15, .0333, .3), Npc = new(1400, 30, 200), CombatStartRangeKm = 100 });
     }
 
-    internal PointCombatSessionFixture(GameDataRegistry? registry = null, bool engineEnabled = false, bool launchHostile = true, double enemyX = 400)
+    internal PointCombatSessionFixture(GameDataRegistry? registry = null, bool engineEnabled = false, double enemyX = 400)
     {
         var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));
         Engine = new(registry ?? Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
@@ -102,13 +102,9 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
             }
         });
         Engine.SetPresentationTimestampForTests(() => 0);
-        if (launchHostile)
-            Assert.Equal(CommandStartDisposition.Started, Engine.TryStartHostilePointLaunch(Enemy, "MOD-PIRATE-TORPEDO-01", enemyX + 300, 0, "slow", 0).Disposition);
         Connection = new(Engine);
     }
 
     internal void SetReal(long milliseconds) => Interlocked.Exchange(ref _realMs, milliseconds);
-    internal static PlayerCommand Launch(string id = "point-launch") => new(id, 1, Player, Torpedo, CombatCommandTypes.Launch,
-        TargetWorldX: 600, TargetWorldY: 0, ProfileId: "fast");
     public async ValueTask DisposeAsync() => await Connection.DisposeAsync();
 }

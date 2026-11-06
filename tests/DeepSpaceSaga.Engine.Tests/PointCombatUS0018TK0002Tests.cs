@@ -38,48 +38,6 @@ public sealed class PointCombatUS0018TK0002Tests
         new(id, 1, Player, Launcher, CombatCommandTypes.Launch, TargetWorldX: 600, TargetWorldY: 0, ProfileId: profile);
 
     [Theory]
-    [InlineData("torpedo.fire")]
-    [InlineData("torpedo.selfDestruct")]
-    [InlineData("torpedo.setMode")]
-    [InlineData("defense.fire")]
-    [InlineData("defense.enable")]
-    [InlineData("defense.disable")]
-    public void Legacy_commands_are_rejected_and_profiles_are_captured(string retired)
-    {
-        using var engine = Create(); var before = engine.CaptureLaunchScatterState();
-        engine.ReceiveCommand(new("retired", 1, Player, Launcher, retired, TargetObjectId: Enemy, ModeId: "overheat", ProfileId: "fast"));
-        var state = At(engine); var result = Assert.Single(state.CommandResults);
-        Assert.Equal(CommandResultStatus.Rejected, result.Status); Assert.Equal(CommandReasonCodes.UnknownCommandType, result.ReasonCode);
-        Assert.Equal(before, engine.CaptureLaunchScatterState()); Assert.Equal(0, state.MotionTimeMs);
-        Assert.DoesNotContain(state.Objects, o => o.OwnProjectile is not null);
-        var launcher = state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
-        Assert.Null(launcher.ReadyAtMotionTimeMs); Assert.Equal(new[] { "slow", "medium", "fast" }, launcher.Profiles!.Value.Select(p => p.ProfileId));
-    }
-
-    [Theory]
-    [InlineData("slow", 6d, 9d)]
-    [InlineData("medium", 10d, 5d)]
-    [InlineData("fast", 16d, 2.5d)]
-    public void Point_launch_captures_profile_fuse_and_fixed_reload_without_a_standard_mode(string profile, double speed, double radius)
-    {
-        using var engine = Create(); engine.ReceiveCommand(Launch(profile: profile)); var state = At(engine);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(state.CommandResults).Status);
-        var flight = Assert.Single(state.Objects, o => o.OwnProjectile is not null).OwnProjectile!;
-        Assert.Equal(profile, flight.ProfileId); Assert.Equal(speed, flight.SpeedKmS); Assert.Equal(radius, flight.BlastRadiusKm);
-        Assert.Equal(200, flight.Damage); Assert.Equal(20m, flight.ArmorPiercingPercent);
-        double duration = double.Hypot(flight.DetonationX - flight.StartX, flight.DetonationY - flight.StartY) / (speed * 10) * 1000;
-        Assert.Equal(duration, flight.DetonationMotionTimeMs, 8);
-        var launcher = state.InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat!;
-        Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("ModeId")); Assert.Null(typeof(LauncherCombatSnapshot).GetProperty("IsBrokenUntilDock")); Assert.Equal(10000, launcher.ReadyAtMotionTimeMs);
-        Assert.Empty(Registry().FireModes);
-        var save = engine.CaptureSaveState();
-        using var restored = new SimulationEngine(Registry()); restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
-        Assert.Equal(JsonSerializer.Serialize(flight), JsonSerializer.Serialize(Assert.Single(At(restored).Objects, o => o.OwnProjectile is not null).OwnProjectile));
-        Assert.DoesNotContain("ModeId", JsonSerializer.Serialize(At(restored).InstalledModules.Single(m => m.ModuleId == Launcher).LauncherCombat));
-        Assert.Equal(engine.CaptureLaunchScatterState(), restored.CaptureLaunchScatterState());
-    }
-
-    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void Point_modules_reject_retired_modes_even_when_rules_are_omitted(bool omitRules)

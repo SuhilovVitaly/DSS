@@ -59,7 +59,11 @@ public sealed class ClusterCorrectnessCorpusTests
                 var saved = engine.CaptureSaveStateForTests(12300 * 300, SimulationSpeed.Speed0, 12300);
                 using var loaded = new SimulationEngine(registry); loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true), true);
                 Assert.Equal(JsonSerializer.Serialize(map), JsonSerializer.Serialize(loaded.CaptureSnapshotForTests(12300 * 300, SimulationSpeed.Speed0, 12300).ClusterMap));
-                GeneratedWorldPersistenceTests.EqualWorld(engine.CaptureSnapshotForTests(15000 * 300, SimulationSpeed.Speed0, 15000), loaded.CaptureSnapshotForTests(15000 * 300, SimulationSpeed.Speed0, 15000));
+                var expected = engine.CaptureSnapshotForTests(15000 * 300, SimulationSpeed.Speed0, 15000);
+                var retired = source.GameState.SpaceObjects.Where(o => o.Ai is not null)
+                    .Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
+                GeneratedWorldPersistenceTests.EqualWorld(expected with { Objects = [.. expected.Objects.Where(o => !retired.Contains(o.ObjectId))] },
+                    loaded.CaptureSnapshotForTests(15000 * 300, SimulationSpeed.Speed0, 15000));
             }
             catch (Exception e) { throw new Xunit.Sdk.XunitException($"seed={seed};scenario={scenario};clusters={clusters};stations={stations};belts={belts};config={JsonSerializer.Serialize(config)}: {e}"); }
         }

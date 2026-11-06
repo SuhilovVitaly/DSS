@@ -123,49 +123,6 @@ public sealed class TorpedoLauncherContentTests
         Assert.Equal(200, Launcher(Load(ClientRoot)).TorpedoDamage);
     }
 
-    [Fact]
-    public void Point_launch_does_not_start_generic_module_cycle_or_consume_economy_rng()
-    {
-        using var temporary = new TemporaryContent();
-        // Install only in a temporary scenario fixture; production loadouts belong to later tickets.
-        var scenario = JsonNode.Parse(File.ReadAllText(Path.Combine(ClientRoot, "Scenarios/Default/scenario.json")))!;
-        var state = scenario["gameState"]!;
-        string playerId = state["playerShipObjectId"]!.GetValue<string>();
-        var player = state["spaceObjects"]!.AsArray().Single(o => o!["objectId"]!.GetValue<string>() == playerId)!;
-        var modules = player["modules"]!.AsArray();
-        var launcher = modules.FirstOrDefault(m => m!["moduleTypeId"]!.GetValue<string>() == LauncherId);
-        if (launcher is null)
-        {
-            player["hullLayout"]!["cells"]!.AsArray().Add(new JsonObject { ["x"] = 3, ["y"] = 2 });
-            launcher = JsonNode.Parse("""
-                {"moduleId":"MOD-TEST-LAUNCHER","moduleTypeId":"module.torpedo.launcher.basic",
-                 "occupiedCells":[{"x":3,"y":2}],"structurePoints":60,"powerState":"On","operationalState":"Ready"}
-                """)!;
-            modules.Add(launcher);
-        }
-        string launcherModuleId = launcher["moduleId"]!.GetValue<string>();
-        string scenarioPath = Path.Combine(temporary.Path, "scenario.json");
-        File.WriteAllText(scenarioPath, scenario.ToJsonString());
-        using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"), scenarioPath);
-        var initial = engine.CaptureSnapshotForTests(0, SimulationSpeed.Speed0);
-        string targetId = initial.Objects.First(o => o.ObjectId != playerId).ObjectId;
-        var before = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0).GameState;
-
-        var carrier = initial.Objects.Single(o => o.ObjectId == playerId);
-        engine.ReceiveCommand(new PlayerCommand("test-fire", 1, playerId, launcherModuleId, CombatCommandTypes.Launch,
-            TargetWorldX: carrier.X + 100, TargetWorldY: carrier.Y, ProfileId: "slow"));
-        var snapshot = engine.CaptureSnapshotForTests(1000, SimulationSpeed.Speed1);
-        Assert.Contains(snapshot.CommandResults, result => result.CommandId == "test-fire" && result.Status == CommandResultStatus.Executed);
-        Assert.Single(snapshot.Objects, o => o.OwnProjectile is not null);
-        var after = engine.CaptureSaveStateForTests(1000, SimulationSpeed.Speed0).GameState;
-        var launcherSnapshot = Assert.Single(snapshot.InstalledModules, m => m.ModuleId == launcherModuleId);
-        Assert.Null(launcherSnapshot.ActiveCommandType);
-        Assert.Equal(60, launcherSnapshot.StructurePoints);
-        Assert.DoesNotContain(after.SpaceObjects.Single(o => o.ObjectId == playerId).Modules!, m => m.ModuleId == launcherModuleId);
-        Assert.Equal(JsonSerializer.Serialize(before.TradingMap!.RngStreams), JsonSerializer.Serialize(after.TradingMap!.RngStreams));
-        Assert.Equal(JsonSerializer.Serialize(before.StationResourceFields!.RngStreams), JsonSerializer.Serialize(after.StationResourceFields!.RngStreams));
-    }
-
     private sealed class TemporaryContent : IDisposable
     {
         public string Path { get; } = Directory.CreateTempSubdirectory("dss-launcher-content-").FullName;

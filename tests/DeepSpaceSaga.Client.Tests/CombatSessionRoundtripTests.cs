@@ -13,7 +13,8 @@ public sealed class CombatSessionRoundtripTests
     public async Task Local_session_file_save_restores_world_without_legacy_combat()
     {
         await using var fixture = await CombatSessionFixture.Create();
-        await fixture.Launch("session-launch");
+        var rejected = await fixture.Launch("retired-session-launch");
+        Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(rejected.CommandResults).ReasonCode);
         var before = await fixture.Advance(1000);
         var restored = await fixture.SaveAndRestore();
         Assert.Equal(before.MotionTimeMs, restored.MotionTimeMs);
@@ -25,7 +26,7 @@ public sealed class CombatSessionRoundtripTests
         Assert.NotEmpty(restored.InstalledModules);
         Assert.DoesNotContain(restored.InstalledModules, m => m.Defense is not null || m.LauncherCombat is not null);
         Assert.DoesNotContain(restored.Objects, o => o.OwnProjectile is not null || o.ObjectId == CombatSessionFixture.Target);
-        Assert.Empty(restored.CombatImpacts);
+        Assert.True(restored.CombatImpacts.IsDefaultOrEmpty);
     }
 }
 
@@ -73,9 +74,9 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
                     Ai = null,
                     PositionX = o.ObjectId == Player ? 0 : 600,
                     PositionY = 0,
-                    SpeedMps = 0,
+                    SpeedMps = o.ObjectId == Player ? 1000 : 0,
                     DirectionDegrees = 90,
-                    MovementType = "Stationary",
+                    MovementType = o.ObjectId == Player ? "Linear" : "Stationary",
                     Modules = o.Modules!.Select(m => m with { PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != Player ? "Off" : "On" }).ToArray()
                 }).ToArray()
             }

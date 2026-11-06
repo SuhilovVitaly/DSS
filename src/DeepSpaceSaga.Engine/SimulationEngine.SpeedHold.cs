@@ -9,7 +9,7 @@ public sealed partial class SimulationEngine
     private void StopManualHolds(int index, long time)
     {
         var owner = _objects[index];
-        _objects[index] = owner with { InitialMotion = ClearEvasionControls(RuntimeMotion.At(owner, time)), StartGameTimeMs = time };
+        _objects[index] = owner with { InitialMotion = ClearSteeringControls(RuntimeMotion.At(owner, time)), StartGameTimeMs = time };
     }
 
     private CommandStartOutcome TrySpeedHold(PlayerCommand command, long time)
@@ -48,7 +48,7 @@ public sealed partial class SimulationEngine
                 RecordCommandResultFromCycle(cycle, CommandResultStatus.Cancelled, time);
                 modules = modules.SetItem(i, current with { ActiveCycle = null });
             }
-            var motion = ClearEvasionControls(pose) with
+            var motion = ClearSteeringControls(pose) with
             {
                 TurnHoldRateDegPerSec = pose.TurnHoldRateDegPerSec,
                 SpeedHoldAccelerationKmS2 = type.LinearInertiaMps2.Value / 1000.0 * (direction == SpeedDirection.Accelerate ? 1 : -1),

@@ -216,7 +216,12 @@ public sealed partial class SimulationEngine
 
     private void UpdateStationSecurity(long time)
     {
-        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time,
-            (objectId, deathTime) => DestroyShip(objectId, "station-security", deathTime));
+        int index = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed);
+        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time);
+        if (index < 0 || _objects[index] is not { IsDestroyed: true } ship) return;
+        _objects[index] = ship with { InitialMotion = ClearSteeringControls(ship.InitialMotion) };
+        if (SelectedObjectId == ship.InitialMotion.ObjectId) SelectedObjectId = null;
+        if (ActiveObjectId == ship.InitialMotion.ObjectId) ActiveObjectId = null;
+        RecordPlayerDefeat(ship.InitialMotion.ObjectId, ship.StartGameTimeMs);
     }
 }
