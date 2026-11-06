@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using System.Globalization;
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
@@ -166,29 +167,76 @@ public sealed class DropDown<T>
     public void Draw(SKCanvas canvas)
     {
         if (Bounds.IsEmpty) return;
-        canvas.Save(); canvas.ClipRect(Bounds);
-        canvas.Translate(Bounds.Left, Bounds.Top); canvas.Scale(_scale);
-        XenonComboBox.DrawClosed(canvas, SKRect.Create(0, 0, Bounds.Width / _scale, Bounds.Height / _scale), "", "", HasFocus && Enabled);
+        var role = SkinStyle.Control("control.dropdown", !Enabled ? "disabled" : HasFocus ? "focused" : "normal");
+        canvas.Save();
+        canvas.ClipRect(Bounds);
+        if (SkinStyle.HasBoxStyle(role))
+        {
+            ControlVisuals.Frame(canvas, Bounds, HasFocus, Enabled, _scale, role);
+            DrawChevron(canvas, role);
+        }
+        else
+        {
+            canvas.Translate(Bounds.Left, Bounds.Top);
+            canvas.Scale(_scale);
+            XenonComboBox.DrawClosed(canvas, SKRect.Create(0, 0, Bounds.Width / _scale, Bounds.Height / _scale), "", "", HasFocus && Enabled);
+        }
         canvas.Restore();
-        ControlVisuals.Label(canvas, DisplayCaption, new(Bounds.Left + 44 * _scale, Bounds.Top, Bounds.Right - 12 * _scale, Bounds.Bottom), Enabled, _scale);
+        using var paint = ControlText.Paint(_scale, role, SelectedLabel, Enabled);
+        string caption = ControlText.Ellipsize(SelectedLabel, Math.Max(0, Bounds.Width - 56 * _scale), paint);
+        ControlVisuals.DrawLabel(canvas, caption, new(Bounds.Left + 44 * _scale, Bounds.Top, Bounds.Right - 12 * _scale, Bounds.Bottom), paint);
     }
+
+    private void DrawChevron(SKCanvas canvas, SkinStyle.Role role)
+    {
+        var mark = SkinStyle.Control("control.dropdown", "marker");
+        float size = Math.Clamp(SkinStyle.Number(mark, "size", 10), 2, 22) * _scale;
+        var center = new SKPoint(Bounds.Left + 22 * _scale, Bounds.MidY);
+        var bounds = SKRect.Create(center.X - size / 2, center.Y - size / 2, size, size);
+        if (SkinStyle.Image(canvas, mark, bounds)) return;
+        using var paint = new SKPaint
+        {
+            IsAntialias = true,
+            StrokeWidth = SkinStyle.Number(mark, "strokeWidth", 1.5f) * _scale,
+            Color = SkinStyle.Color(mark, "stroke", SkinStyle.Color(role, "text", MenuStyle.ColorText)),
+            Style = SKPaintStyle.Stroke,
+        };
+        using var path = new SKPath();
+        path.MoveTo(bounds.Left, center.Y - size / 4);
+        path.LineTo(center.X, center.Y + size / 4);
+        path.LineTo(bounds.Right, center.Y - size / 4);
+        canvas.DrawPath(path, paint);
+    }
+
     /// <summary>Draw after other controls so the popup cannot be covered by later rows.</summary>
     public void DrawPopup(SKCanvas canvas)
     {
         if (!IsOpen || !Enabled || PopupBounds.IsEmpty) return;
-        ControlVisuals.Frame(canvas, PopupBounds, true, true, _scale);
-        using var paint = ControlText.Paint(_scale);
+        var popupRole = SkinStyle.Control("control.dropdown", "popup");
+        ControlVisuals.Frame(canvas, PopupBounds, true, true, _scale, popupRole);
         for (int row = 0; row < _visibleRows; row++)
         {
             int index = FirstVisibleIndex + row;
             var rect = SKRect.Create(PopupBounds.Left, PopupBounds.Top + row * 30 * _scale, PopupBounds.Width, 30 * _scale);
-            canvas.Save(); canvas.Translate(rect.Left, rect.Top); canvas.Scale(_scale);
-            XenonComboBox.DrawOption(canvas, SKRect.Create(0, 0, rect.Width / _scale, 30), "", index == _highlighted);
-            canvas.Restore();
-            string caption = ControlText.Ellipsize(_label(Items[index]), Math.Max(0, rect.Width - 36 * _scale), paint);
-            ControlVisuals.Label(canvas, caption, new(rect.Left + 24 * _scale, rect.Top, rect.Right - 12 * _scale, rect.Bottom), true, _scale);
+            bool active = index == _highlighted;
+            var role = SkinStyle.Control("control.dropdown", active ? "option.active" : "option");
+            if (SkinStyle.HasBoxStyle(role))
+                ControlVisuals.Frame(canvas, rect, active, true, _scale, role);
+            else
+            {
+                canvas.Save();
+                canvas.Translate(rect.Left, rect.Top);
+                canvas.Scale(_scale);
+                XenonComboBox.DrawOption(canvas, SKRect.Create(0, 0, rect.Width / _scale, 30), "", active);
+                canvas.Restore();
+            }
+            string label = _label(Items[index]);
+            using var paint = ControlText.Paint(_scale, role, label);
+            string caption = ControlText.Ellipsize(label, Math.Max(0, rect.Width - 36 * _scale), paint);
+            ControlVisuals.DrawLabel(canvas, caption, new(rect.Left + 24 * _scale, rect.Top, rect.Right - 12 * _scale, rect.Bottom), paint);
         }
     }
+
     public void DrawTooltip(SKCanvas canvas, SKRect viewport, long? nowMs = null)
     {
         if (_hoverText is not null && (nowMs ?? Environment.TickCount64) - _hoverAt >= MenuStyle.TooltipHoverDelaySeconds * 1000)
@@ -219,7 +267,18 @@ internal static class ControlText
         foreach (var pair in Substitutions.Value) text = text.Replace(pair.Symbol, pair.Replacement, StringComparison.Ordinal);
         return text;
     }
-    internal static SKPaint Paint(float scale) => new() { IsAntialias = true, Typeface = MenuStyle.TypefaceRegular, TextSize = 14 * scale, Color = MenuStyle.ColorText };
+    internal static SKPaint Paint(float scale, SkinStyle.Role? role = null, string? text = null, bool enabled = true)
+    {
+        var paint = new SKPaint
+        {
+            IsAntialias = true,
+            Typeface = MenuStyle.TypefaceRegular,
+            TextSize = 14 * scale,
+            Color = enabled ? MenuStyle.ColorText : XenonStyle.DisabledText,
+        };
+        SkinStyle.Text(paint, role ?? SkinStyle.Control("control.label"), scale, text is null ? null : SafeSymbols(text));
+        return paint;
+    }
     internal static string Ellipsize(string text, float width, SKPaint paint)
     {
         text = SafeSymbols(text);
@@ -262,17 +321,21 @@ internal static class ControlText
     internal static void Tooltip(SKCanvas canvas, string text, SKPoint pointer, SKRect viewport, float scale)
     {
         if (viewport.Width <= 16 * scale || viewport.Height <= 16 * scale) return;
-        using var paint = Paint(scale);
+        var role = SkinStyle.Control("control.tooltip");
+        using var paint = Paint(scale, role, text);
         float width = Math.Min(400 * scale, viewport.Width - 16 * scale);
         var lines = Wrap(text, width - 16 * scale, paint);
-        float height = Math.Min(viewport.Height - 8 * scale, lines.Length * 18 * scale + 16 * scale);
+        float lineHeight = SkinStyle.Has(role, "fontSize") || SkinStyle.Has(role, "font")
+            ? Math.Max(18 * scale, paint.FontSpacing)
+            : 18 * scale;
+        float height = Math.Min(viewport.Height - 8 * scale, lines.Length * lineHeight + 16 * scale);
         float left = Math.Clamp(pointer.X + 12 * scale, viewport.Left + 4 * scale, viewport.Right - width - 4 * scale);
         float top = pointer.Y + height + 16 * scale <= viewport.Bottom ? pointer.Y + 16 * scale : pointer.Y - height - 12 * scale;
         top = Math.Clamp(top, viewport.Top + 4 * scale, viewport.Bottom - height - 4 * scale);
         var rect = SKRect.Create(left, top, width, height);
-        ControlVisuals.Frame(canvas, rect, true, true, scale);
+        ControlVisuals.Frame(canvas, rect, true, true, scale, role);
         canvas.Save(); canvas.ClipRect(rect);
-        for (int i = 0; i < lines.Length; i++) canvas.DrawText(lines[i], left + 8 * scale, top + 8 * scale - paint.FontMetrics.Ascent + i * 18 * scale, paint);
+        for (int i = 0; i < lines.Length; i++) canvas.DrawText(lines[i], left + 8 * scale, top + 8 * scale - paint.FontMetrics.Ascent + i * lineHeight, paint);
         canvas.Restore();
     }
 }

@@ -3,11 +3,11 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0002-migrate-battle-rendering
 ticket: EP-0016-US-0002-TK-0001-theme-shared-primitives
 title: Оформление общих элементов боя
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0001-TK-0003-ship-reference-pack]
-files_touched: 4
+files_touched: 5
 serves: [US2-AC1, US2-AC2, US2-AC4]
 created: 2026-11-06T08:02:55Z
 revision: 2
@@ -35,6 +35,7 @@ A-07. Синхронная область оформления ограниче�
 | `src/DeepSpaceSaga.Client/UI/Controls/TabStrip.cs` | TabStrip.cs:57 и :70. Здесь рисуются вкладки и определены ControlVisuals.Frame/Label. | Подключить стили вкладок, общих рамок и подписей с сохранением прежнего API. |
 | `src/DeepSpaceSaga.Client/UI/Controls/DropDown.cs` | DropDown.cs:166, :176, :192, :199, :222, :239, :265. Здесь выпадающий список, ControlText и подсказки. | Оформить закрытый и открытый список, варианты и подсказки. Использовать один шрифт для измерения и рисования. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/WidgetsListsTests.cs` | WidgetsListsTests.cs:13, :61, :104, :173 проверяет списки, перенос и raster. | Тесты состояния стиля и отображения двух скинов. Сохранить действующие проверки ввода. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkin.cs` | Модель v1 и частичное наследование. | Проверка наличия типизированного значения для выбора между штатным PNG виджета и оформлением роли. |
 
 ## Public API after the change
 
@@ -83,3 +84,11 @@ git diff --check
 ## Self-containment check
 
 Scope, общие роли и исходные виджеты определены. Render подключается следующим тикетом.
+
+## Исполнение
+
+Синхронная область восстанавливает скин и роль при вложенном вызове и исключении. Общие рамки, подписи, вкладки, список и подсказки принимают переопределения. Штатные Xenon PNG сохраняются при отсутствии визуальных переопределений. Для стилизованных строк одна метрика используется для измерения и вывода. При отсутствии глифов берётся штатный шрифт.
+
+- Исходная отрисовка из 81e6d87183504b1e6f2e4977c112d57cd40c7923, снятая на 3842ca16 до изменения рендера: 186/186 тактических тестов PASS. Windows, Skia CPU raster, входы и масштаб фиксируют существующие тестовые сцены. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/baseline/`.
+- `dotnet test --no-restore --filter "FullyQualifiedName~WidgetsListsTests|FullyQualifiedName~SetupScreenTests"`: 26/26 PASS. Восемь PNG списков и подготовки совпали побайтно с исходными. Тест сравнил Classic, альтернативную роль и выход из области. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us2-tk1/focused.trx`.
+- Сборка, scoped whitespace и staged diff check прошли. Проверены US2-AC1/2/4 в части общих виджетов. Production Render подключается следующим тикетом. Нативная проверка здесь не проводилась.

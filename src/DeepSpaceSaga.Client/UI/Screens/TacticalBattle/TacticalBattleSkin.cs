@@ -53,7 +53,7 @@ internal sealed partial class TacticalBattleSkin
         where property.Key is "image" or "font"
         select (role.Key, property.Key, (string)property.Value);
 
-    private T Find<T>(string role, string property, T fallback)
+    internal T Find<T>(string role, string property, T fallback)
     {
         while (true)
         {
