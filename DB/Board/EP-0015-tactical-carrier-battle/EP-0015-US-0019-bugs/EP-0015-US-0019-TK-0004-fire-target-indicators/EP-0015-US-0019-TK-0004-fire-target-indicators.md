@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0004-fire-target-indicators
-stage: approved
+stage: done
 layer: client
 depends_on: []
 files_touched:
@@ -27,3 +27,7 @@ files_touched:
 ## Definition of Done
 
 Критерий покрыт проверкой в Dss-Main. Результат проверок записан отдельно от ручной приёмки. Отдельный коммит опубликован в ветке эпика.
+
+## Исполнение
+
+Коммит `c47dc493` опубликован в ветке эпика. 7/7 в BattleMapRenderTests и FirePlanningTests. Проверены оранжевый индикатор и разные цвета выбранной и альтернативной стрелок. Ручная приёмка открыта.
