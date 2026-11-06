@@ -64,6 +64,7 @@
 - [Отладка двигателей](04-Engineering/DebugTuning.md) и [панель F12](04-Engineering/DebugTuningPanel.md).
 - [Ручное управление кораблём](04-Engineering/ManualManeuver.md).
 - [Каталог товаров и совместимость](04-Engineering/ItemCatalogSchema.md).
+- [Принципы моддинга и архивный прототип C#-мода](04-Engineering/Modding.md).
 - [Прогноз движения NPC по наблюдениям](04-Engineering/NpcObservedTrajectories.md).
 - [Тактический бой V4](04-Engineering/TacticalBattle.md).
 - [Сохранения и восстановление](04-Engineering/SaveFormat.md).
