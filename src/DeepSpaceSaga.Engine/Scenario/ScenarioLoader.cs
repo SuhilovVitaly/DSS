@@ -61,17 +61,24 @@ public static class ScenarioLoader
     public static ScenarioFile LoadFromJson(string json, bool allowNonZeroGameTime = false, bool isSave = false)
     {
         ScenarioFile scenario;
+        HashSet<string>? legacyActors = null;
         try
         {
-            // Inspect the envelope before deserializing historical payloads or invoking migrations.
-            if (isSave)
+            using var envelope = JsonDocument.Parse(json);
+            if (envelope.RootElement.ValueKind != JsonValueKind.Object)
+                throw new JsonException("Scenario envelope must be an object.");
+            var root = envelope.RootElement;
+            int version = root.TryGetProperty("saveFormatVersion", out var field) &&
+                field.ValueKind == JsonValueKind.Number && field.TryGetInt32(out int parsed) ? parsed : 0;
+            if (isSave) RequireSupportedSaveVersion(version);
+            if (root.TryGetProperty("gameState", out var state) && LegacyCombatSaveReader.HasSections(state))
             {
-                using var envelope = JsonDocument.Parse(json);
-                if (envelope.RootElement.ValueKind != JsonValueKind.Object) throw new JsonException("Save envelope must be an object.");
-                int version = envelope.RootElement.TryGetProperty("saveFormatVersion", out var field) &&
-                    field.ValueKind == JsonValueKind.Number && field.TryGetInt32(out int parsed) ? parsed : 0;
-                RequireSupportedSaveVersion(version);
+                if (version is not (18 or SaveMigration20.PreviousVersion))
+                    throw new ScenarioException("Invalid save: obsolete real-time combat data. Save was not modified.");
+                json = LegacyCombatSaveReader.ExtractWorld(root, version, out legacyActors);
             }
+            else if (isSave && version is 18 or SaveMigration20.PreviousVersion)
+                throw new ScenarioException("Invalid legacy combat save: missing continuation envelopes. Save was not modified.");
             scenario = JsonSerializer.Deserialize<ScenarioFile>(json, JsonOptions)
                        ?? throw new ScenarioException("Scenario JSON deserialized to null.");
         }
@@ -80,7 +87,8 @@ public static class ScenarioLoader
             throw new ScenarioException($"Invalid scenario JSON: {ex.Message}", ex);
         }
 
-        if (isSave) scenario = SaveMigration20.Upgrade(scenario, allowNonZeroGameTime);
+        if (isSave || legacyActors is not null)
+            scenario = SaveMigration20.Upgrade(scenario, allowNonZeroGameTime, legacyActors);
         return ValidateAndNormalize(scenario, allowNonZeroGameTime);
     }
 
@@ -127,16 +135,6 @@ public static class ScenarioLoader
             SpaceObjects = objects
         };
         normalizedState = TradingMapDataValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
-        if (scenario.SaveFormatVersion < SaveFormat.CurrentSaveFormatVersion)
-        {
-            normalizedState = PointCombatSaveValidation.NormalizeReferences(normalizedState);
-            PointCombatSaveValidation.Validate(normalizedState.PointCombatState, normalizedState.MotionTimeMs);
-            PointCombatContinuationValidation.Validate(normalizedState, scenario.SaveFormatVersion);
-            normalizedState = CombatSaveValidation.NormalizeReferences(normalizedState);
-            normalizedState = CountermeasureSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
-            CombatSaveValidation.Validate(normalizedState, scenario.SaveFormatVersion);
-            normalizedState = HostileCombatSaveValidation.ValidateAndNormalize(normalizedState, scenario.SaveFormatVersion);
-        }
         return TradingEconomySaveMigration.Normalize(scenario with { GameState = normalizedState });
     }
 
@@ -215,7 +213,6 @@ public static class ScenarioLoader
         if (gs is null)
             throw new ScenarioException("Missing gameState.");
         if (scenario.SaveFormatVersion == SaveFormat.CurrentSaveFormatVersion) SaveMigration20.RequireWorldOnly(gs);
-        else CombatReportsSaveValidation.Validate(gs.CombatReportsState);
         if (scenario.SaveFormatVersion >= TradingEconomySaveMigration.ManifestSaveVersion && gs.MasterSeed is null)
             throw new ScenarioException("Trading economy save: missing masterSeed. Save was not modified.");
         if (scenario.SaveFormatVersion >= 7 && gs.CatalogCompatibility is null)

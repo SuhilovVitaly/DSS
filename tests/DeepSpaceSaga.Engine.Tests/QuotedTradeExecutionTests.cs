@@ -105,11 +105,6 @@ public class QuotedTradeExecutionTests
             {
                 TradingEconomyContinuation = null, // A fresh scenario has no continuation manifest.
                 // Recreate a fresh scenario rather than importing a current combat continuation.
-                PointCombatState = null,
-                CombatState = null,
-                DefenseState = null,
-                HostileCombatState = null,
-                CombatReportsState = null,
 
                 MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,

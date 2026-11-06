@@ -15,8 +15,6 @@ public sealed class TradingEconomySaveSchemaTests
         // Internal historical-economy scenarios carry no point weapon continuation.
         // Public old saves are still rejected before deserialization. Their money,
         // cargo, crew, navigation and market payloads remain the subject of these tests.
-        var weapons = (source.GameState.CombatState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? [])
-            .Concat(source.GameState.DefenseState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? []).ToHashSet();
         return source with
         {
             SaveFormatVersion = version,
@@ -26,15 +24,7 @@ public sealed class TradingEconomySaveSchemaTests
                 VoyageLedgers = null,
                 VoyageFuelSettlements = null,
                 EngineIdentityCounters = null,
-                MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge,
-                PointCombatState = null,
-                CombatState = version >= 10 ? new(2, source.GameState.MotionTimeMs, 0, 0, 0, long.MaxValue, [], [], [],
-                    HitLocationRngState: 0) : null,
-                DefenseState = version >= 11 ? new(version == 16 ? 2 : 3, 0, 1, 0, 0, 0, [], [], []) : null,
-                HostileCombatState = null,
-                CombatReportsState = null,
-                SpaceObjects = version == 0 ? source.GameState.SpaceObjects : source.GameState.SpaceObjects.Select(o => o with
-                { Modules = o.Modules?.Where(m => !weapons.Contains((o.ObjectId, m.ModuleId))).ToArray() }).ToArray()
+                MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge
             }
         };
     }
@@ -58,9 +48,7 @@ public sealed class TradingEconomySaveSchemaTests
             VoyageLedgers = null,
             VoyageFuelSettlements = null,
             EngineIdentityCounters = null,
-            MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge,
-            HostileCombatState = current.GameState.HostileCombatState is { } hostile ? hostile with { Version = 2 } : null,
-            PointCombatState = null
+            MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge
         };
         if (version <= 8) state = state with
         {

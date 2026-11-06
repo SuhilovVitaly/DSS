@@ -944,8 +944,6 @@ public sealed class CargoCostPersistenceTests
             GameState = save.GameState with
             {
                 CatalogCompatibility = null,
-                DefenseState = null,
-                CombatState = null,
                 SpaceObjects = [ship with { IsDocked = false, DockedStationObjectId = null,
                 Modules = ship.Modules!.Where(m => m.ModuleId == Cargo).ToArray() }]
             }

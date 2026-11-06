@@ -15,7 +15,7 @@ public sealed class CombatReportsSaveSchemaTests
             """{"version":1,"sequence":17,"reportedRangeTargetIds":["no-longer-in-world"]}""");
         var world = ScenarioLoader.LoadFromJson(root.ToJsonString(), allowNonZeroGameTime: true, isSave: true);
         Assert.Equal(20, world.SaveFormatVersion);
-        Assert.Null(world.GameState.CombatReportsState);
+        Assert.DoesNotContain("\"combatReportsState\"", ScenarioLoader.Serialize(world), StringComparison.Ordinal);
     }
 
     private static JsonNode Fixture() =>
@@ -39,12 +39,6 @@ public sealed class CombatReportsSaveSchemaTests
         root["gameState"]!["combatReportsState"] = JsonNode.Parse(state);
         Assert.Throws<ScenarioException>(() => engine.LoadScenario(ScenarioLoader.LoadFromJson(root.ToJsonString(), true, isSave: true), true));
         Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(engine.CaptureSaveState()));
-    }
-
-    [Fact]
-    public void DestroyedTargetIdsRemainValid()
-    {
-        CombatReportsSaveValidation.Validate(new(1, 17, ["no-longer-in-world"]));
     }
 
     [Fact]

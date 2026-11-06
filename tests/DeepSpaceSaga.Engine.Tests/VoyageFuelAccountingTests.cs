@@ -82,8 +82,6 @@ public sealed class VoyageFuelAccountingTests
         {
             GameState = template.GameState with
             {
-                DefenseState = null,
-                CombatState = null,
                 CatalogCompatibility = null,
                 SolarSystem = null,
                 SpaceObjects = [ship with { DockedStationObjectId = null, IsDocked = false, Modules = ship.Modules!.Where(m => m.ModuleId == Tank)

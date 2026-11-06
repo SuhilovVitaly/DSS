@@ -464,8 +464,6 @@ public sealed partial class SimulationEngine : IDisposable
         ValidateVoyageFuelSave(gs, restoredVoyage, runtimeObjects, clusterMap);
         var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
-        if (gs.CombatReactionDelays is { Count: > 0 })
-            throw new ScenarioException("Retired randomized combat reaction continuation is unsupported.");
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         lock (_worldStateLock)
         {

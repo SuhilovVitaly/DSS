@@ -91,8 +91,6 @@ public sealed record GameStateData(
     [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
     [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
-    [property: JsonPropertyName("combatState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CombatStateData? CombatState = null,
-    [property: JsonPropertyName("defenseState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CountermeasureStateData? DefenseState = null,
     [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
     [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
     [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
@@ -103,12 +101,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("engineIdentityCounters")] EngineIdentityCountersData? EngineIdentityCounters = null,
     [property: JsonPropertyName("clusterMap")] DeepSpaceSaga.Contracts.StationClusterMapSnapshot? ClusterMap = null,
     [property: JsonPropertyName("aiMap")] DeepSpaceSaga.Contracts.AiMapEnvironmentSnapshot? AiMap = null,
-    [property: JsonPropertyName("hostileCombatState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] HostileCombatSaveData? HostileCombatState = null,
     /// <summary>Fractional physical milliseconds, in quarters. Absent in older saves (zero).</summary>
     [property: JsonPropertyName("motionQuarterRemainder")] int MotionQuarterRemainder = 0,
-    [property: JsonPropertyName("combatReportsState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] CombatReportsSaveData? CombatReportsState = null,
-    [property: JsonPropertyName("combatReactionDelays"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null,
-    [property: JsonPropertyName("pointCombatState"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)] PointCombatStateData? PointCombatState = null,
     [property: JsonPropertyName("debugTuning"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     IReadOnlyList<DeepSpaceSaga.Contracts.DebugTuningValue>? DebugTuning = null)
 {

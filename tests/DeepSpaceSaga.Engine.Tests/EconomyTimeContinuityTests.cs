@@ -80,7 +80,7 @@ public class EconomyTimeContinuityTests
         if (legacyMotion)
         {
             save = TradingEconomySaveSchemaTests.WithoutNewContinuation(save, 5);
-            save = save with { GameState = save.GameState with { SimulationTimeMs = null, CombatState = null } };
+            save = save with { GameState = save.GameState with { SimulationTimeMs = null } };
         }
         using var loaded = CreateIntervalEngine();
         loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true));
@@ -158,7 +158,6 @@ public class EconomyTimeContinuityTests
             {
                 SimulationTimeMs = 0,
                 MasterSeed = 17,
-                PointCombatState = null,
                 CatalogCompatibility = IntervalRegistry.CatalogCompatibility,
                 MarketEventCatalogFingerprint = null,
                 TradingMap = null,
@@ -590,11 +589,6 @@ public class EconomyTimeContinuityTests
             {
                 TradingEconomyContinuation = null, // A fresh scenario has no continuation manifest.
                 // Recreate a fresh scenario rather than importing a current combat continuation.
-                PointCombatState = null,
-                CombatState = null,
-                DefenseState = null,
-                HostileCombatState = null,
-                CombatReportsState = null,
 
                 MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,

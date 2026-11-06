@@ -27,10 +27,6 @@ public sealed class SaveFixturesTests
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, saved.SaveFormatVersion);
         Assert.Equal("quicksave", saved.Metadata.ScenarioId);
         Assert.NotNull(saved.GameState.CatalogCompatibility);
-        Assert.Null(saved.GameState.PointCombatState);
-        Assert.Null(saved.GameState.DefenseState);
-        Assert.Null(saved.GameState.HostileCombatState);
-        Assert.Null(saved.GameState.CombatReportsState);
         Assert.DoesNotContain(saved.GameState.SpaceObjects, o => o.ObjectId == "SPC-MUKHA-01");
         var registry = Registry();
         using var a = new SimulationEngine(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));

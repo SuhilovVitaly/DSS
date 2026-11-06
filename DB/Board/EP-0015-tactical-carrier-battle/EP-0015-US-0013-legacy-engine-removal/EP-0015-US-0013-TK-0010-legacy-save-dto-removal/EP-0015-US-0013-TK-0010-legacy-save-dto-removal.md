@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0013-legacy-engine-removal
 ticket: EP-0015-US-0013-TK-0010-legacy-save-dto-removal
 title: legacy-save-dto-removal
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0013-TK-0009-debug-tuning-cleanup"]
-files_touched: 10
+files_touched: 22
 serves: [AC-06, AC-07]
 created: 2026-11-05
 revision: 3
@@ -52,3 +52,33 @@ Engine.Tests SaveMigration20Tests. Сборка, scoped format, `git diff --chec
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+Retire all eight typed combat save schemas and move archival validation into one read-only JSON boundary. Save18/19 must still validate archive versions, flight/owner/deadline geometry, launch evidence, named RNG counters, actor identities and reports before dropping obsolete payloads. Save20 rejects old combat sections and writes no continuation. The normal world validation, economic manifest and catalog guards remain authoritative; tests use the unchanged historical bytes with controlled mutations rather than constructing runtime combat DTOs.
+
+- Delete: src/DeepSpaceSaga.Engine/Scenario/CombatReactionSaveData.cs
+- Delete: src/DeepSpaceSaga.Engine/Scenario/CombatReportsSaveData.cs
+- Delete: src/DeepSpaceSaga.Engine/Scenario/CombatReportsSaveValidation.cs
+- Delete: src/DeepSpaceSaga.Engine/Scenario/CombatSaveData.cs
+- Delete: src/DeepSpaceSaga.Engine/Scenario/CountermeasureSaveData.cs
+- Delete: src/DeepSpaceSaga.Engine/Scenario/HostileCombatSaveData.cs
+- Delete: src/DeepSpaceSaga.Engine/Scenario/PointCombatContinuationValidation.cs
+- Delete: src/DeepSpaceSaga.Engine/Scenario/PointCombatSaveData.cs
+- Add: src/DeepSpaceSaga.Engine/Scenario/LegacyCombatSaveReader.cs
+- Edit: src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs
+- Edit: src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs
+- Edit: src/DeepSpaceSaga.Engine/Scenario/SaveMigration20.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/CombatReportsSaveSchemaTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/SaveFixturesTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/SaveMigration20Tests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/EconomyTimeContinuityTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/QuotedTradeExecutionTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/VoyageFuelAccountingTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0003Tests.cs
+
+## Execution evidence — 2026-11-06
+
+Removed the eight typed real-time combat save files and all six combat section members from GameStateData. A JSON-only archival reader validates envelope versions, known identities, finite flight geometry/deadlines, launch facts, RNG cursors, hostile/evasion/dodge history and report metadata before removing those sections. The world loader still validates the preserved economic continuation, clocks and catalog. Original active/inactive Save18/19 fixtures loaded and continued deterministically; 18 controlled defects rejected atomically, as did older unsupported versions and combat sections under Save20. Windows build and scoped format/diff clean; 637 Engine and 201 Client passed in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-legacy-save-reader-02`. Extended full corpus is tracked separately for final validation.
