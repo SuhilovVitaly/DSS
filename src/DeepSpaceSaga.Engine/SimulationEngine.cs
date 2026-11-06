@@ -149,19 +149,18 @@ public sealed partial class SimulationEngine : IDisposable
     {
         ArgumentNullException.ThrowIfNull(command);
         ArgumentException.ThrowIfNullOrWhiteSpace(command.CommandId);
-        lock (_worldStateLock)
-            lock (_commandGate)
+        // Only _commandGate: sending a command never waits for long world operations.
+        lock (_commandGate)
+        {
+            if (!_knownCommands.Add(command.CommandId))
             {
-                if (!_knownCommands.Add(command.CommandId))
-                {
-                    if (_commandReceipts.TryGetValue(command.CommandId, out var result)) _replayedResults[command.CommandId] = result;
-                    return;
-                }
-                _receivedCommandCount++;
-                if (_tacticalBattleSession is not null)
-                    RecordCommandResult(command, CommandResultStatus.Rejected, _processedWorldTimeMs, TacticalBattleActiveReason);
-                else _pendingCommands.Add(command);
+                if (_commandReceipts.TryGetValue(command.CommandId, out var result)) _replayedResults[command.CommandId] = result;
+                return;
             }
+            _receivedCommandCount++;
+            if (_tacticalBattleCommandBlock) _tacticalBattleRefusedCommands.Add((command, _tacticalBattleCommandTimeMs));
+            else _pendingCommands.Add(command);
+        }
     }
 
     /// <summary>Set the authoritative simulation speed (e.g. Speed0 for pause).</summary>
@@ -477,6 +476,7 @@ public sealed partial class SimulationEngine : IDisposable
             SelectedObjectId = null;
             _clock.Reset(gs.GameTimeMs, speed, gs.MotionTimeMs, gs.MotionQuarterRemainder);
             _stationSecurityStop = null;
+            lock (_commandGate) _tacticalBattleRefusedCommands.Clear();
             _nextEngineCycleId = 0;
             _nextShipEventId = 0;
             _shipEvents.Clear();
@@ -661,6 +661,14 @@ public sealed partial class SimulationEngine : IDisposable
                 ReconcileVoyageAfterDialogue();
                 SynchronizeOrbitalBindings(_objects, gameTimeMs);
                 UpdateStationSecurity(gameTimeMs);
+                // A stop raised by this late pass publishes its own clock, exactly as the next
+                // snapshot will, instead of the earlier capture.
+                if (_stationSecurityStop is { } lateStop)
+                {
+                    ApplyStationSecurityStop();
+                    clockState = lateStop;
+                    gameTimeMs = lateStop.MotionTimeMs;
+                }
                 ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
             }
             // Re-validate on every snapshot (not only when the client reports new
@@ -1080,6 +1088,8 @@ public sealed partial class SimulationEngine : IDisposable
         ReconcileVoyageAfterDialogue();
         SynchronizeOrbitalBindings(_objects, gameTimeMs);
         UpdateStationSecurity(gameTimeMs);
+        // A deadline armed by the commands above can destroy the ship here: never write that world.
+        ThrowIfStoppedByStationSecurity();
         ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
 
         var spaceObjects = new List<SpaceObjectData>(_objects.Count);
@@ -2230,6 +2240,7 @@ public sealed partial class SimulationEngine : IDisposable
             _commandResults.AddRange(_replayedResults.Values);
             _replayedResults.Clear();
         }
+        RecordTacticalBattleRefusedCommands();
         var commands = DrainPendingCommands();
         List<PlayerCommand>? deferred = null;
 

@@ -14,6 +14,13 @@ public sealed partial class SimulationEngine
         if (_tacticalBattleSession is not null) throw new InvalidOperationException(TacticalBattleActiveReason);
     }
     private TacticalBattleSession? _tacticalBattleSession;
+    // ReceiveCommand's view of the battle, guarded by _commandGate so sending a world command never
+    // waits for _worldStateLock. Written only together with _tacticalBattleSession (world lock held).
+    private bool _tacticalBattleCommandBlock;
+    private long _tacticalBattleCommandTimeMs;
+    // World commands refused while the battle is active. Their results are recorded under the world
+    // lock by the next ApplyPendingCommands, even if the battle has ended in between.
+    private readonly List<(PlayerCommand Command, long TimeMs)> _tacticalBattleRefusedCommands = new();
     private const int TacticalResponseLimit = 16;
     // Keep identities for the Engine lifetime, independently of the snapshots needed for recent retries.
     private readonly Dictionary<string, (Type RequestType, string Fingerprint)> _tacticalIdentities = new(StringComparer.Ordinal);
@@ -55,6 +62,7 @@ public sealed partial class SimulationEngine
             var session = TacticalBattleSession.TryCreate(catalog, request, out var code);
             if (session is null) return RejectTactical(request.CommandId, code);
             _tacticalBattleSession = session;
+            SetTacticalBattleCommandBlock(true);
             return session.Initial(request.CommandId);
         });
     }
@@ -79,6 +87,7 @@ public sealed partial class SimulationEngine
             if (_tacticalBattleSession.Id != request.BattleId) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongBattle);
             var response = _tacticalBattleSession.Exit(request.CommandId);
             _tacticalBattleSession = null;
+            SetTacticalBattleCommandBlock(false);
             _tacticalResponses.Clear();
             _tacticalResponseOrder.Clear();
             return response;
@@ -107,6 +116,31 @@ public sealed partial class SimulationEngine
             return response;
         }
     }
+    // Caller holds _worldStateLock (lock order _worldStateLock -> _commandGate). The world is paused
+    // for the whole battle, so the processed calendar time captured here stays current until exit.
+    private void SetTacticalBattleCommandBlock(bool active)
+    {
+        lock (_commandGate)
+        {
+            _tacticalBattleCommandBlock = active;
+            _tacticalBattleCommandTimeMs = _processedWorldTimeMs;
+        }
+    }
+
+    // Caller holds _worldStateLock.
+    private void RecordTacticalBattleRefusedCommands()
+    {
+        (PlayerCommand Command, long TimeMs)[] refused;
+        lock (_commandGate)
+        {
+            if (_tacticalBattleRefusedCommands.Count == 0) return;
+            refused = [.. _tacticalBattleRefusedCommands];
+            _tacticalBattleRefusedCommands.Clear();
+        }
+        foreach (var (command, timeMs) in refused)
+            RecordCommandResult(command, CommandResultStatus.Rejected, timeMs, TacticalBattleActiveReason);
+    }
+
     private TacticalBattleResponse RejectTactical(string commandId, TacticalBattleRejectionCode code) =>
         _tacticalBattleSession?.Reject(commandId, code) ?? new(commandId, false, code, null, null, []);
 }

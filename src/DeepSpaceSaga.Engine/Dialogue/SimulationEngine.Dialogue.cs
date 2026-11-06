@@ -17,9 +17,24 @@ public sealed partial class SimulationEngine
         ArgumentNullException.ThrowIfNull(command);
         lock (_worldStateLock)
         {
-            ThrowIfTacticalBattleActive();
-            _pendingDialogueCommands.Enqueue(command);
+            if (_tacticalBattleSession is not null) RejectDialogueCommandDuringTacticalBattle(command);
+            else _pendingDialogueCommands.Enqueue(command);
         }
+    }
+
+    // Mirrors the ordinary queue's duplicate handling, but answers at once so the command can
+    // never apply after the battle ends. Only the dialogue command journal and events change.
+    private void RejectDialogueCommandDuringTacticalBattle(DialogueCommand command)
+    {
+        if (string.IsNullOrWhiteSpace(command.CommandId)) return;
+        long time = _clock.Capture().MotionTimeMs;
+        if (_dialogue.ProcessedCommandIds.Contains(command.CommandId))
+        {
+            _dialogue.Emit(command.DialogueInstanceId, "dialogue_duplicate", time, command.CommandId);
+            return;
+        }
+        _dialogue.ProcessedCommandIds = _dialogue.ProcessedCommandIds.Add(command.CommandId);
+        _dialogue.Emit(command.DialogueInstanceId, TacticalBattleActiveReason, time, command.CommandId);
     }
 
     private void ValidateDialogueState(DialogueSaveState? save, IReadOnlyList<SpaceObjectRuntime> objects)

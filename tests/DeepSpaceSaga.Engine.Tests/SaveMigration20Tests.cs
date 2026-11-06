@@ -87,6 +87,43 @@ public sealed class SaveMigration20Tests
     }
 
     [Fact]
+    public void MigratedSave19WithStationDialogueAndIncidentLoadsWithoutReferencesToTheRemovedHostile()
+    {
+        const string hostile = "SPC-MUKHA-01", station = "SPC-0002";
+        var archive = Fixture("Default-Save19-combat.json");
+        long time = archive["gameState"]!["gameTimeMs"]!.GetValue<long>();
+        var dialogue = new DeepSpaceSaga.Engine.Dialogue.DialogueSaveState(
+            new DialogueState("dialogue-1", "dialogue.station-docking", station, "CHR-0003", "pirate_warning", 1, false, [],
+                "Dialogue.Docking.PirateWarning", "Dock Operator", null, null,
+                System.Collections.Immutable.ImmutableDictionary<string, string>.Empty),
+            DeepSpaceSaga.Engine.Dialogue.DialogueProgressState.Empty with
+            {
+                StationAccessStates = System.Collections.Immutable.ImmutableDictionary<string, StationAccessState>.Empty
+                    .Add(station, new(station, true)),
+                SecurityIncidents = [new("dialogue-1-0-0", station, "piracy", time, time + 60_000)]
+            },
+            [], 1, 0, null);
+        archive["gameState"]!["dialogueState"] = JsonSerializer.SerializeToNode(dialogue);
+        Assert.Contains(hostile, archive.ToJsonString(), StringComparison.Ordinal);
+
+        var migrated = Load(archive);
+        using var engine = Create();
+        engine.LoadScenario(migrated, isSave: true);
+
+        var snapshot = engine.CaptureSnapshot();
+        Assert.DoesNotContain(snapshot.Objects, o => o.ObjectId == hostile);
+        Assert.Equal(station, snapshot.ActiveDialogue!.StationObjectId);
+        Assert.Contains(snapshot.Objects, o => o.ObjectId == station);
+        var save = engine.CaptureSaveState();
+        string json = ScenarioLoader.Serialize(save);
+        Assert.DoesNotContain("MUKHA", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(station, Assert.Single(save.GameState.DialogueState!.Progress.SecurityIncidents).StationObjectId);
+        using var restored = Create();
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(json, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        Assert.Equal(json, ScenarioLoader.Serialize(restored.CaptureSaveState()));
+    }
+
+    [Fact]
     public void ArchivedPendingCommandsDropCombatAndKeepOrdinaryCommands()
     {
         var archive = Fixture("Default-Save19-combat.json");

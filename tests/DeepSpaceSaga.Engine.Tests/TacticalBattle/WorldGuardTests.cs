@@ -101,7 +101,7 @@ public sealed class WorldGuardTests
         engine.StartTacticalBattle(new("start", 1));
         AssertDenied(() => engine.CaptureSaveState());
         AssertDenied(() => engine.LoadScenario(before, isSave: true));
-        AssertDenied(() => engine.ReceiveDialogueCommand(new("dialogue", DialogueAction.Start, "instance", 0)));
+        engine.ReceiveDialogueCommand(new("dialogue", DialogueAction.Start, "instance", 0));
         Assert.Equal(SimulationEngine.TacticalBattleActiveReason, engine.TrySetSpeed(SimulationSpeed.Speed2));
         Assert.Null(engine.TrySetSpeed(SimulationSpeed.Speed0));
         var travel = engine.TravelStation(new("travel", StationDistrict.Market));
@@ -111,11 +111,77 @@ public sealed class WorldGuardTests
         Assert.Equal(SimulationSpeed.Speed0, travel.Snapshot.CurrentSpeed);
         Assert.Equal(SimulationEngine.TacticalBattleActiveReason, Assert.Single(travel.Snapshot.CommandResults).ReasonCode);
         Assert.Contains(travel.Snapshot.DialogueEvents, e => e.CommandId == "queued-dialogue" && e.EventCode == SimulationEngine.TacticalBattleActiveReason);
+        Assert.Contains(travel.Snapshot.DialogueEvents, e => e.CommandId == "dialogue" && e.EventCode == SimulationEngine.TacticalBattleActiveReason);
         engine.ExitTacticalBattle(new("exit", "start"));
         Assert.Null(engine.TrySetSpeed(SimulationSpeed.Speed1));
         engine.SetSpeed(SimulationSpeed.Speed0);
         engine.LoadScenario(before, isSave: true);
         Assert.False(engine.CaptureSnapshot().IsTacticalBattleActive);
+    }
+
+    [Fact]
+    public async Task DialogueCommandDuringBattleIsProcessedAsARejectionWithoutThrowing()
+    {
+        using var engine = Engine();
+        var before = engine.CaptureSaveState();
+        string directory = Path.Combine(Path.GetTempPath(), "tactical-dialogue-" + Guid.NewGuid().ToString("N"));
+        await using var connection = new LocalGameSessionConnection(engine, directory);
+        var command = new DialogueCommand("battle-dialogue", DialogueAction.Start, "", 0, DialogueDefinitionId: "dialogue.unknown");
+        Assert.True(engine.StartTacticalBattle(new("start", 1)).Accepted);
+
+        await connection.SendDialogueCommandAsync(command);
+
+        var rejection = Assert.Single(engine.CaptureSnapshot().DialogueEvents, e => e.CommandId == command.CommandId);
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, rejection.EventCode);
+        Assert.True(engine.ExitTacticalBattle(new("exit", "start")).Accepted);
+        // Processed during the battle: neither the next tick nor a retry applies it to the world.
+        var afterExit = engine.CaptureSnapshot();
+        Assert.Null(afterExit.ActiveDialogue);
+        Assert.Equal(rejection, Assert.Single(afterExit.DialogueEvents, e => e.CommandId == command.CommandId));
+        engine.ReceiveDialogueCommand(command);
+        Assert.Equal("dialogue_duplicate", engine.CaptureSnapshot().DialogueEvents.Last(e => e.CommandId == command.CommandId).EventCode);
+        Assert.False(Directory.Exists(directory));
+
+        // Only the dialogue command journal records the rejection; the world is unchanged.
+        var after = engine.CaptureSaveState();
+        Assert.Contains(command.CommandId, after.GameState.DialogueState!.ProcessedCommandIds);
+        Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(after with
+        { GameState = after.GameState with { DialogueState = before.GameState.DialogueState } }));
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(before.GameState.DialogueState!.Progress),
+            System.Text.Json.JsonSerializer.Serialize(after.GameState.DialogueState.Progress));
+    }
+
+    [Fact]
+    public void ReceiveCommandDoesNotWaitForTheWorldLockAndStillRefusesWorldCommandsInBattle()
+    {
+        using var engine = Engine();
+        string ship = engine.CaptureSnapshot().PlayerShipObjectId!;
+        Assert.True(engine.StartTacticalBattle(new("start", 1)).Accepted);
+        object worldLock = typeof(SimulationEngine)
+            .GetField("_worldStateLock", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .GetValue(engine)!;
+        using var held = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var holder = new Thread(() => { lock (worldLock) { held.Set(); release.Wait(); } }) { IsBackground = true };
+        holder.Start();
+        Assert.True(held.Wait(TimeSpan.FromSeconds(30)));
+        bool completed;
+        try
+        {
+            var sender = new Thread(() => engine.ReceiveCommand(new("world-during-lock", 0, ship, "none", "unknown"))) { IsBackground = true };
+            sender.Start();
+            completed = sender.Join(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            holder.Join();
+        }
+        Assert.True(completed, "ReceiveCommand waited for _worldStateLock.");
+
+        var result = Assert.Single(engine.CaptureSnapshot().CommandResults);
+        Assert.Equal(("world-during-lock", CommandResultStatus.Rejected, SimulationEngine.TacticalBattleActiveReason),
+            (result.CommandId, result.Status, result.ReasonCode));
     }
 
     [Theory]
