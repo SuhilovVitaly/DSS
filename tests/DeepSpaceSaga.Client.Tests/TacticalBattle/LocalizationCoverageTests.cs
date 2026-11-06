@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
@@ -8,12 +9,56 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
-[Collection("InterfaceLog")]
+[CollectionDefinition("Battle localization", DisableParallelization = true)]
+public sealed class BattleLocalizationCollection;
+
+[Collection("Battle localization")]
 public sealed class LocalizationCoverageTests
 {
     private const string Prefix = "TacticalBattle.";
-    private static readonly string Source = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+    private static readonly string Source = SourceDirectory();
+
+    private static string SourceDirectory([CallerFilePath] string sourceFile = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(sourceFile)!, "../../../src/DeepSpaceSaga.Client"));
+
+    [Fact]
+    public async Task ApplyingGameLanguageUpdatesNewBattleScreensAndJournal()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        await fixture.PressKey(Silk.NET.Input.Key.F8);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        Assert.True((await setup.Flow.StartAsync(setup.BuildStartRequest()))!.Accepted);
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        string saved = Localization.ReadLanguageSetting();
+        try
+        {
+            Check("English", "Movement", "Log", "Battle started.", "Enemy drones:", "disabled");
+            Check("Russian", "Движение", "Журнал", "Бой начался.", "Дронов противника:", "выведен");
+            Check("English", "Movement", "Log", "Battle started.", "Enemy drones:", "disabled");
+        }
+        finally
+        {
+            Localization.ApplyLanguage(saved);
+        }
+
+        void Check(string language, string phase, string tab, string started, string opponents, string disabled)
+        {
+            Localization.ApplyLanguage(language);
+            var preparation = new TacticalBattleSetupScreen(setup.Flow, 1);
+            preparation.Render(canvas, 1280, 720);
+            Assert.Contains(opponents, preparation.ScenarioSummary);
+
+            var battle = new TacticalBattleScreen(setup.Flow, 1);
+            battle.Render(canvas, 1280, 720);
+            var frame = battle.CaptureFrame(1280, 720)!;
+            Assert.Equal(phase, TacticalBattlePanelHeader.Capture(frame).Phase);
+            Assert.Equal(tab, battle.PanelTabs.Items.Single(i => i.Id == "log").Label);
+            Assert.Contains(started, BattleLogFormatter.Format(frame.Battle.Log.First(e => e.Kind == TacticalBattleLogKind.Started)));
+            Assert.Equal(disabled, BattleFormat.Localize("UnitDisabledShort"));
+        }
+    }
 
     [Fact]
     public void RequiredScreenKeysResolveWithMatchingFormatsInBothPackagedLanguages()
