@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
@@ -18,7 +19,7 @@ public sealed class DefeatScreen : IScreen
 
     internal DefeatLayout Layout => _layout;
     internal float StatsScrollOffset => _statsScroll;
-    internal IReadOnlyList<string> StatsLines => _encounter is null ? [] : CombatSummaryPanel.FormatStats(_encounter);
+    internal IReadOnlyList<string> StatsLines => _encounter is null ? [] : FormatStats(_encounter);
 
     public DefeatScreen(float uiScale = 1, CombatEncounterSnapshot? encounter = null)
     { _uiScale = float.IsFinite(uiScale) && uiScale > 0 ? uiScale : 1; _encounter = encounter; }
@@ -72,7 +73,7 @@ public sealed class DefeatScreen : IScreen
         canvas.DrawText(text, _layout.Panel.MidX, _layout.Panel.Top + 70 * _layout.Scale, title);
         if (_encounter is not null)
         {
-            _statsScrollLimit = CombatSummaryPanel.DrawStats(canvas, _layout.Stats, StatsLines, Math.Max(8, 12 * _layout.Scale), _statsScroll);
+            _statsScrollLimit = DrawStats(canvas, _layout.Stats, StatsLines, Math.Max(8, 12 * _layout.Scale), _statsScroll);
             _statsScroll = Math.Clamp(_statsScroll, 0, _statsScrollLimit);
         }
         Draw(_layout.Load, "Combat.Defeat.Load", ScreenEvent.OpenLoadWindow);
@@ -84,5 +85,67 @@ public sealed class DefeatScreen : IScreen
             GenericButtonTypeA.Draw(canvas, rect, Localization.Get(key),
                 action == _focused || action == _hovered ? ButtonState.Hovered : ButtonState.Normal);
         }
+    }
+
+    private static string Duration(double realSeconds)
+    {
+        double value = double.IsFinite(realSeconds) ? Math.Clamp(realSeconds, 0, 1e12) : 0;
+        return FormattableString.Invariant($"{Math.Floor(value / 3600):00}:{Math.Floor(value / 60) % 60:00}:{Math.Floor(value) % 60:00}");
+    }
+    private static IReadOnlyList<string> FormatStats(CombatEncounterSnapshot encounter)
+    {
+        string T(string key) => Localization.Combat("Stats." + key);
+        var s = encounter.Stats;
+        return [
+            $"{Localization.Combat("Duration")}: {Duration(encounter.DurationSeconds * 4)}",
+            $"{T("TorpedoesLaunched")}: {s.TorpedoesLaunched}",
+            $"{T("CountermissilesLaunched")}: {s.CountermissilesLaunched}",
+            $"{T("EnemyTorpedoesLaunched")}: {s.EnemyTorpedoesLaunched}",
+            $"{T("TorpedoesIntercepted")}: {s.TorpedoesIntercepted}",
+            $"{T("PlayerHitsReceived")}: {s.PlayerHitsReceived}",
+            $"{T("EnemyHitsDealt")}: {s.EnemyHitsDealt}",
+            $"{T("PlayerEvasions")}: {s.PlayerEvasions}",
+            $"{T("EnemiesDestroyed")}: {s.EnemiesDestroyed}",
+            $"{T("ArmorDamageTaken")}: {s.ArmorDamageTaken}",
+            $"{T("StructureDamageTaken")}: {s.StructureDamageTaken}"
+        ];
+    }
+    private static float DrawStats(SKCanvas canvas, SKRect rect, IReadOnlyList<string> lines, float fontSize, float scroll)
+    {
+        using var text = new SKPaint { Color = MenuStyle.ColorText, TextSize = fontSize, IsAntialias = true, Typeface = MenuStyle.TypefaceRegular };
+        var wrapped = lines.SelectMany(line => WrapStats(line, Math.Max(1, rect.Width - 6), text)).ToArray();
+        float step = fontSize + 4, max = Math.Max(0, wrapped.Length * step - rect.Height);
+        float offset = Math.Clamp(scroll, 0, max);
+        canvas.Save(); canvas.ClipRect(rect);
+        for (int i = 0; i < wrapped.Length; i++) canvas.DrawText(wrapped[i], rect.Left, rect.Top + fontSize + i * step - offset, text);
+        if (max > 0 && rect.Height > 0)
+        {
+            float height = Math.Max(8, rect.Height * rect.Height / (rect.Height + max));
+            float top = rect.Top + (rect.Height - height) * offset / max;
+            canvas.DrawRect(new SKRect(rect.Right - 3, top, rect.Right, top + height), text);
+        }
+        canvas.Restore(); return max;
+    }
+
+    private static ImmutableArray<string> WrapStats(string text, float width, SKPaint paint)
+    {
+        var lines = ImmutableArray.CreateBuilder<string>();
+        foreach (string paragraph in text.Split('\n'))
+        {
+            string rest = paragraph;
+            while (rest.Length > 0)
+            {
+                int count = Math.Clamp((int)paint.BreakText(rest, Math.Max(1, width)), 1, rest.Length);
+                if (count < rest.Length)
+                {
+                    int space = rest.LastIndexOf(' ', count - 1, count);
+                    if (space > 0) count = space;
+                    if (count > 0 && char.IsHighSurrogate(rest[count - 1]) && count < rest.Length && char.IsLowSurrogate(rest[count])) count++;
+                }
+                lines.Add(rest[..count].Trim());
+                rest = rest[count..].TrimStart();
+            }
+        }
+        return lines.ToImmutable();
     }
 }

@@ -28,7 +28,7 @@ public class CompactObjectLabelTests
             RenderObjectType: SpaceObjectType.NpcShip, DisplayName: "Ship",
             ModuleHealth: [new("engine", "Engine", 0, 0, 225, 450, null, false)]);
         ObjectRenderState[] states = [new(ship, ship, false)];
-        var renderer = new ObjectLabelRenderer(CombatVisualSettings.Default with { HullHp = hp });
+        var renderer = new ObjectLabelRenderer();
         var camera = new CameraState(400, 300, 1);
         renderer.ComputeGeometries(states, .02, 800, 600, camera);
         using var bitmap = new SKBitmap(800, 600);

@@ -36,19 +36,4 @@ public class PhaseThreeLocaleTests
                 Assert.Contains("Combat.Reason." + reason, keys);
         }
     }
-
-    [Fact]
-    public void Runtime_status_and_journal_use_locale_keys_without_skill_multiplier()
-    {
-        Assert.Equal(Localization.Get("Combat.Reason.target_out_of_range"), GameSessionScreen.DefenseReasonText("target_out_of_range"));
-        Assert.Equal(Localization.Get("Combat.CommandRejected"), GameSessionScreen.DefenseReasonText("future_reason"));
-        var op = new WeaponOperatorSnapshot("crew", "Alex", WeaponSkillType.CountermeasureDefense, 99, 55, 55);
-        var entry = new CombatJournalEntry(1, 1000, CombatEventType.Expired, "ship", "torpedo", "pr", 0, 0,
-            500, RatingBreakdown: new(op, 5), Damage: 0);
-        var lines = CombatJournalPanel.Format(entry);
-        Assert.Contains(lines, l => l.Contains(Localization.Get("Combat.Event.Expired")));
-        Assert.DoesNotContain(lines, l => l.Contains($"{50m:0.0}%") || l.Contains(Localization.Get("Combat.NoRoll")));
-        Assert.DoesNotContain(lines, l => l.Contains(Localization.Get("Combat.SkillMetadata")) || l.Contains("99"));
-        Assert.DoesNotContain(lines, l => l.Contains("/50") || l.Contains("×"));
-    }
 }

@@ -26,13 +26,10 @@ public class PointCombatUS0020TK0002Tests
             StructureCurrent: i == 3 ? 0 : 50, StructureMax: 100, IsDestroyed: i == 3,
             IsCritical: i == 1, DisabledUntilMotionTimeMs: i == 2 ? 8000 : null)).ToArray();
         var diagram = new ModuleDiagram();
-        diagram.Update(null, 1, "ship", [.. modules], [], 0, .25, 0);
-        var lines = CommandsPanel.ModuleDetails("Navigation", null, modules, diagram);
+        diagram.Update([.. modules]);
+        var lines = CommandsPanel.ModuleDetails("Navigation", modules, diagram);
         foreach (var module in modules) Assert.Contains(lines, l => l.StartsWith(module.DisplayName));
-        Assert.Contains(lines, l => l.Contains(Localization.Combat("Panel.Armor")) && l.Contains("20"));
-        Assert.Contains(lines, l => l.Contains(Localization.Combat("Disabled")) && l.Contains("32"));
         Assert.Contains(lines, l => l.Contains(Localization.Combat("Panel.Structure")) && l.Contains("0"));
-        Assert.Contains(lines, l => l.EndsWith(" " + Localization.Combat("Panel.CriticalIcon")));
     }
 
     [Theory]

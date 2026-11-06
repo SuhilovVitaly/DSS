@@ -11,7 +11,6 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal sealed class ObjectLabelRenderer
 {
-    private readonly CombatVisualSettings _combatSettings;
     internal IReadOnlyDictionary<string, ObjectLabelGeometry> Geometries => _geometries;
     internal static bool HasSelectableShipLabel(ObjectMotionSnapshot source) =>
         !source.IsDestroyed && source.RenderObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip;
@@ -41,9 +40,8 @@ internal sealed class ObjectLabelRenderer
     private readonly List<SKRect> _occupiedPlaques = new();
     private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width, float MaximumWidth);
 
-    public ObjectLabelRenderer(CombatVisualSettings? combatSettings = null)
+    public ObjectLabelRenderer()
     {
-        _combatSettings = combatSettings ?? CombatVisualSettings.Default;
         var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
 
         _leaderLinePaint = new SKPaint
@@ -306,9 +304,6 @@ internal sealed class ObjectLabelRenderer
                 ? SpaceMapColorResolver.PlayerShipColor
                 : predicted.RenderObjectType switch
                 {
-                    SpaceObjectType.Missile => _combatSettings.Torpedo,
-                    SpaceObjectType.Countermeasure => _combatSettings.Countermeasure,
-                    SpaceObjectType.Wreck => _combatSettings.Wreck,
                     _ => SpaceMapColorResolver.GetColor(predicted.RenderObjectType, predicted.RelationToPlayer)
                 };
 

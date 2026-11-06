@@ -57,23 +57,6 @@ public sealed class CombatVisualSettingsTests
     }
 
     [Fact]
-    public void Rendering_does_not_read_palette_from_disk()
-    {
-        WithPalette(path =>
-        {
-            var settings = CombatVisualSettings.Load(path);
-            var screen = new GameSessionScreen(new SnapshotBuffer(), new LinearMotionPredictor(), combatSettings: settings);
-            File.Delete(path);
-            using var bitmap = new SKBitmap(1280, 720);
-            using var canvas = new SKCanvas(bitmap);
-            screen.Render(canvas, 1280, 720);
-            screen.OnMouseMove(600, 400);
-            screen.Render(canvas, 1280, 720);
-            Assert.Same(settings, screen.CombatSettings);
-        });
-    }
-
-    [Fact]
     public void PaletteRgbaDefaults_match_production_and_optional_v1_fallback()
     {
         WithPalette(path =>

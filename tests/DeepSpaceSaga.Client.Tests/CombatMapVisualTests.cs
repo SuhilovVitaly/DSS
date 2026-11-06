@@ -21,8 +21,7 @@ public sealed class CombatMapVisualTests
     [Fact]
     public void Known_ship_labels_remain_visible_without_aggregate_health()
     {
-        var palette = CombatVisualSettings.Default with { HullHp = new SKColor(20, 210, 100) };
-        var renderer = new ObjectLabelRenderer(palette);
+        var renderer = new ObjectLabelRenderer();
         var known = Enumerable.Range(0, 8).Select(i => Ship(i == 0 ? "player" : "ship" + i, 100 + i * 180, 200)).ToArray();
         var unknown = Ship("hidden", 200, 400) with { RenderObjectType = SpaceObjectType.UnknownSpaceObject };
         var legacy = Ship("legacy", 400, 400) with { ModuleHealth = default, HullCombat = new("ship.tetrarch", 450, 450) };
@@ -42,7 +41,7 @@ public sealed class CombatMapVisualTests
         Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(unknown));
         Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(legacy));
         Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(other));
-        Assert.DoesNotContain(palette.HullHp, bitmap.Pixels);
+        Assert.DoesNotContain(new SKColor(20, 210, 100), bitmap.Pixels);
     }
 
     [Theory]
@@ -55,7 +54,7 @@ public sealed class CombatMapVisualTests
         var obj = Ship("player", 300, 200, hp);
         ObjectRenderState[] states = [new(obj, obj, true)];
         var hpColor = new SKColor(123, 45, 67);
-        var renderer = new ObjectLabelRenderer(CombatVisualSettings.Default with { HullHp = hpColor });
+        var renderer = new ObjectLabelRenderer();
         var camera = new CameraState(400, 300, 1);
         renderer.ComputeGeometries(states, .02, 800, 600, camera);
         using var bitmap = new SKBitmap(800, 600);

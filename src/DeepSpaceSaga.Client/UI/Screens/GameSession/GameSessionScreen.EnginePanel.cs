@@ -23,8 +23,6 @@ public sealed partial class GameSessionScreen
             $"{Localization.Combat("Panel.AccelerationTime")}: {EngineDuration(accelerationTime)} · {Localization.Combat("Panel.TurnTime")}: {EngineDuration(turnTime)}"
         ];
         if (module.IsDestroyed) lines.Add(Localization.Combat("Panel.Destroyed"));
-        else if (module.DisabledUntilMotionTimeMs is { } disabled && disabled > _panelMotionTime)
-            lines.Add(Localization.Combat("Panel.Disabled") + " " + EngineDuration((disabled - _panelMotionTime) / 1000));
         else if (module.PowerState != "On" || module.OperationalState != "Ready") lines.Add(Localization.Combat("Panel.Unavailable"));
         return lines;
     }
@@ -35,15 +33,13 @@ public sealed partial class GameSessionScreen
 
     private string? GetEnginePanelTimeTooltip(string panel)
     {
-        if (panel != "Engine" || PanelEngine is not { EngineMotion: { } limits } module) return null;
+        if (panel != "Engine" || PanelEngine is not { EngineMotion: { } limits }) return null;
         double speed = FindPlayerShip(_renderStates)?.Pose.SpeedKmS ?? 0;
         List<string> lines = [];
         if (limits.AccelerationKmS2 > 0)
             lines.Add(Localization.Combat("Panel.AccelerationTime") + ": " + PanelTime.Tooltip(Math.Max(0, limits.MaxSpeedKmS - speed) / limits.AccelerationKmS2, PanelDisplaySpeed));
         if (limits.TurnRateDegPerSec > 0)
             lines.Add(Localization.Combat("Panel.TurnTime") + ": " + PanelTime.Tooltip(90 / limits.TurnRateDegPerSec, PanelDisplaySpeed));
-        if (module.DisabledUntilMotionTimeMs is { } disabled && disabled > _panelMotionTime)
-            lines.Add(Localization.Combat("Panel.Disabled") + ": " + PanelTime.Tooltip((disabled - _panelMotionTime) / 1000, PanelDisplaySpeed));
         return string.Join('\n', lines);
     }
 }

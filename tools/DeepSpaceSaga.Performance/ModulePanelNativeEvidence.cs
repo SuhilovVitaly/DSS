@@ -141,8 +141,7 @@ internal static class ModulePanelNativeEvidence
                     r.Opened,
                     caption = new { r.CaptionRect.Left, r.CaptionRect.Top, r.CaptionRect.Right, r.CaptionRect.Bottom },
                     body = new { r.BodyRect.Left, r.BodyRect.Top, r.BodyRect.Right, r.BodyRect.Bottom },
-                    r.DetailLines,
-                    r.ReloadTimerText
+                    r.DetailLines
                 })
             });
         }

@@ -47,14 +47,14 @@ public sealed class ModulePanelEngineTests
         {
             SnapshotSequence = snapshot.SnapshotSequence + 1,
             InstalledModules = [.. snapshot.InstalledModules.Select(m => m.EngineMotion is null ? m : m with
-            { EngineMotion = new(7, 0, 0), DisabledUntilMotionTimeMs = 5000 })]
+            { EngineMotion = new(7, 0, 0), PowerState = "Off" })]
         };
         buffer.Update(snapshot); screen.Render(canvas, 1920, 1080);
         var row = Assert.Single(screen.CommandsPanel.CommandPanelRows, r => r.Name == "Engine");
         Assert.True(row.DetailsMuted);
         Assert.Contains(row.DetailLines, l => l.Contains("7.0") || l.Contains("7,0"));
         Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.AccelerationTime") + ": " + Localization.Combat("Panel.UnknownValue")));
-        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.Disabled") + " 20 "));
+        Assert.Contains(row.DetailLines, l => l.Contains(Localization.Combat("Panel.Unavailable")));
         Assert.DoesNotContain(row.DetailLines, l => l.Contains("NaN") || l.Contains("Infinity"));
         screen.OnDeactivated();
     }

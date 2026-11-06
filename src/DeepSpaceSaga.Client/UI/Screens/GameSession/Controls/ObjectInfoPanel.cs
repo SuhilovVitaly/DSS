@@ -217,19 +217,6 @@ public sealed class ObjectInfoPanel
             }
             if (d.DistanceKm is { } distanceKm)
                 lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
-            if (d.HostileCombat is { } hostile && d.RenderObjectType == SpaceObjectType.NpcShip && d.RelationToPlayer == PlayerRelation.Enemy)
-            {
-                lines.Add((GameSessionScreen.CombatText("Maneuver", "Манёвр"), hostile.Phase switch
-                {
-                    HostileCombatPhase.Pursuit => GameSessionScreen.CombatText("Phase.Pursuit", "Сближение"),
-                    HostileCombatPhase.OrbitEntry => GameSessionScreen.CombatText("Phase.OrbitEntry", "Выход на орбиту"),
-                    HostileCombatPhase.OrbitHold => GameSessionScreen.CombatText("Phase.OrbitHold", "Удержание орбиты"),
-                    HostileCombatPhase.FlankApproach => GameSessionScreen.CombatText("Phase.FlankApproach", "Заход с фланга"),
-                    HostileCombatPhase.Retreat => GameSessionScreen.CombatText("Phase.Retreat", "Отход"),
-                    _ => "—"
-                }));
-                lines.Add((GameSessionScreen.CombatText("DesiredRadius", "Радиус орбиты"), $"{hostile.DesiredRadiusKm:0.##} " + GameSessionScreen.CombatText("Kilometers", "км")));
-            }
             if (d.ClusterName is { } cluster)
             {
                 lines.Add(("Cluster", cluster));
@@ -459,11 +446,7 @@ public sealed class ObjectInfoPanel
         var image = data is { } d ? ResolveObjectImage(d) : null;
         if (image is not null)
         {
-            canvas.Save();
-            if (data is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy })
-                canvas.Scale(-1, 1, imageRect.MidX, imageRect.MidY);
             canvas.DrawBitmap(image, imageRect, _imagePaint);
-            canvas.Restore();
         }
         else
             canvas.DrawRect(imageRect, _imagePlaceholderPaint);
@@ -576,7 +559,6 @@ public readonly record struct ObjectInfoPanelData(
     string? CaptainDisplayName = null,
     string? RelationToPlayer = null,
     double? DistanceKm = null,
-    TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null,
     StationMarketKnowledgeSnapshot? MarketKnowledge = null,
     string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null,
     string? ResourceCluster = null, string? ResourceOwner = null,
@@ -584,8 +566,4 @@ public readonly record struct ObjectInfoPanelData(
     string? Owner = null, string? BaseType = null,
     double? DefenceRadiusKm = null, double? PatrolRadiusKm = null,
     string? FieldKind = null, double? FieldIntensity = null, string? PoiDescription = null,
-    HostileCombatSnapshot? HostileCombat = null,
     IReadOnlyList<ModuleHealthSnapshot>? Modules = null, long MotionTimeMs = 0);
-
-/// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
-public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

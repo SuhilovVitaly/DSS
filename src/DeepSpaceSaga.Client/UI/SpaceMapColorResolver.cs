@@ -17,10 +17,6 @@ internal static class SpaceMapColorResolver
         return objectType switch
         {
             SpaceObjectType.UnknownSpaceObject => FallbackColor,
-            SpaceObjectType.Missile => TacticalMapPalette.Torpedo,
-            SpaceObjectType.Countermeasure => TacticalMapPalette.Countermeasure,
-            SpaceObjectType.Explosion => TacticalMapPalette.Explosion,
-            SpaceObjectType.Wreck => TacticalMapPalette.Wreck,
             SpaceObjectType.PlayerShip => PlayerShipColor,
             SpaceObjectType.NpcShip => relationToPlayer switch
             {

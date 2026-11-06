@@ -573,7 +573,7 @@ public class ObjectInfoPanelTests
     {
         var (buffer, screen) = CreateScreen();
         UpdateBufferWithShip(buffer, PlayerShipId);
-        RenderScreen(screen);
+        RenderScreen(screen, height: 510);
 
         // 150px image + 6px padding above and below.
         Assert.Equal(162f, ObjectInfoPanel.RowBodyHeight);

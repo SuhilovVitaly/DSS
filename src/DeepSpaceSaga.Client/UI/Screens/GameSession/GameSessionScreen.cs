@@ -15,7 +15,6 @@ public sealed partial class GameSessionScreen : IScreen
 {
     private readonly SnapshotBuffer _buffer;
     private readonly ModuleDiagram _moduleDiagram = new();
-    internal CombatVisualSettings CombatSettings { get; }
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
@@ -111,7 +110,6 @@ public sealed partial class GameSessionScreen : IScreen
 
     // Speed state
     private SimulationSpeed _lastNonPauseSpeed = SimulationSpeed.Speed1;
-    private double _panelMotionTime;
     private SKRect _lastSpeedPanelRect;
     private readonly SKRect[] _speedButtonRects = new SKRect[7];
     private SimulationSpeed[] _renderedSpeedValues = PeaceSpeedValues;
@@ -228,7 +226,6 @@ public sealed partial class GameSessionScreen : IScreen
     private const float ObjectHitTestRadiusPx = 30f;
 
     internal static string CombatText(string key, string fallback) => Localization.Combat(key);
-    internal static string DefenseReasonText(string reason) => Localization.Combat("Reason." + reason);
     private SimulationSpeed PanelDisplaySpeed
     {
         get
@@ -336,7 +333,6 @@ public sealed partial class GameSessionScreen : IScreen
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
-        CombatSettings = combatSettings ?? CombatVisualSettings.Default;
         var legacyKeys = (combatInputs ?? CombatInputSettings.Default).Validate().MappedKeys;
         ManeuverInputs = (maneuverInputs ?? ManeuverInputSettings.Default).Validate(legacyKeys);
         _tacticalBattleInputs = tacticalBattleInputs ?? TacticalBattleInputSettings.Default;
@@ -356,7 +352,7 @@ public sealed partial class GameSessionScreen : IScreen
         _trailStore = new ObjectTrailStore(_predictor, _timestampProvider);
         _futureTrajectoryProjector = new FutureTrajectoryProjector(_predictor);
         _navigationTrajectoryProjector = new NavigationTrajectoryProjector();
-        _labelRenderer = new ObjectLabelRenderer(CombatSettings);
+        _labelRenderer = new ObjectLabelRenderer();
         _depthRenderer = new TacticalMapDepthRenderer();
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
@@ -386,7 +382,7 @@ public sealed partial class GameSessionScreen : IScreen
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel,
-            motionTime: () => _panelMotionTime, motionMultiplier: () => PanelDisplaySpeed.MotionTimeMultiplier(),
+            motionMultiplier: () => PanelDisplaySpeed.MotionTimeMultiplier(),
             groupDetails: GetEnginePanelDetails, groupTimeTooltip: GetEnginePanelTimeTooltip);
         _objectInfoPanel = new ObjectInfoPanel();
     }
@@ -805,7 +801,6 @@ public sealed partial class GameSessionScreen : IScreen
     internal bool IsModuleCommandEnabled(string commandType)
     {
         if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return false;
-        if (commandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or "defense.fire" or "defense.enable" or "defense.disable") return false;
         var snapshot = _buffer.Presented?.Snapshot;
         if (commandType == NavigationComputerCommandTypes.Dock && AiMapPresentation.Base(snapshot, _selectedObjectId) is not null)
             return false;
@@ -854,7 +849,6 @@ public sealed partial class GameSessionScreen : IScreen
     {
         if ((_selectedFieldId is not null || _selectedPoiId is not null) && FindCommandTarget(commandType) == "object") return;
         if (commandType == NavigationComputerCommandTypes.Dock && !IsModuleCommandEnabled(commandType)) return;
-        if (commandType is "torpedo.fire" or "torpedo.selfDestruct" or "torpedo.setMode" or "defense.fire" or "defense.enable" or "defense.disable") return;
         if (commandType == ScannerCommandTypes.StructuralScan && !IsModuleCommandEnabled(commandType)) return;
 
         string? moduleId = ResolveModuleId(commandType);
@@ -1350,25 +1344,19 @@ public sealed partial class GameSessionScreen : IScreen
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
         var playerShip = FindPlayerShip(_renderStates);
-        _panelMotionTime = prediction is null ? buffered?.Snapshot.MotionTimeMs ?? 0 : GetPredictedGameTimeMs(prediction);
-        _commandsPanel.DestroyedModuleLimit = buffered?.Snapshot.DestroyedModuleLimit;
         _commandsPanel.PresentationRevision = HashCode.Combine(buffered?.Snapshot.SnapshotSequence, _mouseX, _mouseY, _selectedObjectId);
-        _commandsPanel.OwnModuleDiagram = null;
-        if (buffered?.Snapshot is { Encounter: not null } moduleSnapshot && playerShip is not null)
+        if (buffered?.Snapshot is { } moduleSnapshot)
         {
-            _moduleDiagram.Update(_buffer.PresentationSessionId, moduleSnapshot.SnapshotSequence, moduleSnapshot.PlayerShipObjectId!,
-                moduleSnapshot.InstalledModules, moduleSnapshot.CombatJournal, _panelMotionTime,
-                PanelDisplaySpeed.MotionTimeMultiplier(), _timestampProvider() * (1000d / Stopwatch.Frequency));
+            _moduleDiagram.Update(moduleSnapshot.InstalledModules);
             _commandsPanel.OwnModuleDiagram = _moduleDiagram;
         }
+        else _commandsPanel.OwnModuleDiagram = null;
         _commandsPanel.Render(canvas,
             buffered?.Snapshot.InstalledModules ?? ImmutableArray<InstalledModuleSnapshot>.Empty, commandsBottom,
             buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
         float rightHudTop = ComputeScaleSpeedRowY() - 62 - (buffered?.Snapshot.AiMap is null ? 0 : 28) - 27 - 8 - TacticalBattleEntryHeight;
-        var rightColumn = GameSessionRightColumnLayout.Create(_uiViewportW, _uiViewportH, PanelMargin,
-            rightHudTop, ObjectInfoPanel.ResolveWidth(_uiViewportW, _uiViewportH));
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
@@ -1377,7 +1365,7 @@ public sealed partial class GameSessionScreen : IScreen
         // 8. Object Info panel (top-right) — Player Ship + Selected/Active Object rows
         // Reserve the two-row toolbar at narrow widths; overflowing details remain scrollable.
         _objectInfoPanel.Render(canvas, _uiViewportW, PanelMargin,
-            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, rightColumn.ObjectInfoMaximumBottom);
+            ToObjectInfoPanelData(playerShip), SelectedOrActiveObjectInfo, _uiViewportH, Math.Max(PanelMargin, rightHudTop - 8));
 
         // 9. Mechanics panel (bottom-center) — Finance/Ship buttons
         DrawMechanicsPanel(canvas);
@@ -2408,15 +2396,12 @@ public sealed partial class GameSessionScreen : IScreen
         var resource = ClusterMapPresentation.Resource(_buffer.Presented?.Snapshot, p.ObjectId);
         var resourceCluster = resource is null ? null : _buffer.Presented?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == resource.ClusterId)?.Name;
         return new ObjectInfoPanelData(p.ObjectId, survey is not null ? p.ObjectId : p.DisplayName,
-            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, null, null, market,
+            p.SpeedKmS, p.Direction, p.RenderObjectType, p.Image, survey, s.Source.CaptainDisplayName, s.Source.RelationToPlayer, distanceKm, market,
             cluster?.ClusterName, cluster?.Profile, cluster?.Directions, resourceCluster, resource?.AnchorStationId,
             cluster is not null && distanceKm is { } distance && player is { } playerState
                 ? ClusterMapPresentation.EstimateStraightDays(distance * 10, playerState.Source.MaxSpeedKmS ?? 0) : null,
             cluster is null ? null : _travelEstimateMotionTimeMs, ai?.Owner, ai?.BaseType,
             territory?.DefenceRadiusKm, territory?.PatrolRadiusKm,
-            HostileCombat: p.ObjectId == _selectedObjectId && s.Source.ObjectType == SpaceObjectType.NpcShip &&
-                p.RenderObjectType == SpaceObjectType.NpcShip && s.Source.RelationToPlayer == PlayerRelation.Enemy
-                ? s.Source.HostileCombat : null,
             MotionTimeMs: _buffer.Presented?.Snapshot.MotionTimeMs ?? 0);
     }
 
