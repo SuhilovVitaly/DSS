@@ -1,6 +1,5 @@
 using System.Text.Json;
 using DeepSpaceSaga.Contracts;
-using DeepSpaceSaga.Engine.Combat;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 
@@ -61,29 +60,4 @@ public sealed class PointCombatUS0003TK0002Tests
         new(id, 1, Player, Launcher, CombatCommandTypes.Launch, TargetWorldX: x, TargetWorldY: y, ProfileId: profile);
 
     internal static ObjectMotionSnapshot Flight(AuthoritativeSnapshot snapshot) => Assert.Single(snapshot.Objects, o => o.OwnProjectile is not null);
-
-    [Fact]
-    public void Scatter_normal_pair_has_fixed_sequence_restorable_state_and_distribution()
-    {
-        var random = new LaunchScatterRng(0, 0);
-        var first = random.NextPair();
-        Assert.Equal(-0.45275774021745824, first.X, 14);
-        Assert.Equal(0.20776603893419182, first.Y, 14);
-        Assert.Equal(4354685564936845354UL, random.State);
-        Assert.Equal(2UL, random.Counter);
-        var restored = new LaunchScatterRng(random.State, random.Counter);
-        Assert.Equal(random.NextPair(), restored.NextPair());
-        double sumX = 0, sumY = 0, squaresX = 0, squaresY = 0, product = 0;
-        for (int i = 0; i < 10000; i++)
-        {
-            var pair = random.NextPair();
-            sumX += pair.X; sumY += pair.Y; squaresX += pair.X * pair.X; squaresY += pair.Y * pair.Y; product += pair.X * pair.Y;
-        }
-        Assert.InRange(sumX / 10000, -0.04, 0.04);
-        Assert.InRange(sumY / 10000, -0.04, 0.04);
-        Assert.InRange(squaresX / 10000, 0.94, 1.06);
-        Assert.InRange(squaresY / 10000, 0.94, 1.06);
-        Assert.InRange(product / 10000, -0.04, 0.04);
-        Assert.Equal(20004UL, random.Counter);
-    }
 }

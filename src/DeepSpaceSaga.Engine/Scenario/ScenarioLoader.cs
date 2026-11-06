@@ -481,7 +481,7 @@ public static class ScenarioLoader
                     $"Asteroid '{obj.ObjectId}' massKg {obj.MassKg} is outside 1,000,000..1,000,000,000.");
         }
 
-        SimulationEngine.ValidateWeaponAssignments(obj);
+        ValidateCrewAssignments(obj);
 
         if (obj.Modules is { Count: > 0 })
         {
@@ -489,6 +489,30 @@ public static class ScenarioLoader
             {
                 ValidateModule(obj.ObjectId, module, armorClasses);
             }
+        }
+    }
+
+    private static void ValidateCrewAssignments(SpaceObjectData obj)
+    {
+        var crewIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var crew in obj.Crew ?? [])
+        {
+            if (crew is null)
+                throw new ScenarioException($"Ship '{obj.ObjectId}' has a null crew member.");
+            crewIds.Add(crew.CrewId);
+            if (crew.AccuracySkill is < 0 or > 30)
+                throw new ScenarioException($"Crew '{crew.CrewId}' accuracySkill must be in 0..30.");
+            if (crew.ManeuverabilitySkill is < 0 or > 30)
+                throw new ScenarioException($"Crew '{crew.CrewId}' maneuverabilitySkill must be in 0..30.");
+        }
+        var assigned = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var module in obj.Modules ?? [])
+        {
+            if (module?.OperatorCrewId is not { } crewId) continue;
+            if (!crewIds.Contains(crewId))
+                throw new ScenarioException($"Module '{module.ModuleId}' operator '{crewId}' must belong to ship '{obj.ObjectId}'.");
+            if (!assigned.Add(crewId))
+                throw new ScenarioException($"Crew '{crewId}' cannot operate two modules on ship '{obj.ObjectId}'.");
         }
     }
 

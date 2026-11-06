@@ -37,13 +37,13 @@ internal static class PointCombatContinuationValidation
         var launchById = launches.ToDictionary(e => e.ProjectileObjectId, StringComparer.OrdinalIgnoreCase);
         Require(point.LaunchScatter.Counter == (ulong)launches.Length * 2,
             "scatter counter does not match accepted launches.");
-        ulong seed = RngStreamSeedDerivation.DeriveStreamSeed(state.MasterSeed.Value, RngStreamNames.LaunchScatter);
+        ulong seed = RngStreamSeedDerivation.DeriveStreamSeed(state.MasterSeed.Value, "launch_scatter");
         Require(point.LaunchScatter.State == unchecked(seed + point.LaunchScatter.Counter * 0x9E3779B97F4A7C15UL),
             "scatter state/counter mismatch.");
         Require(point.NpcDodge.Counter == (ulong)point.DodgeThreats.Count(d => d.RollSucceeded is not null),
             "NPC roll counter does not match evaluated episodes.");
         if (point.NpcDodge.Counter == 0)
-            Require(point.NpcDodge.State == RngStreamSeedDerivation.DeriveStreamSeed(state.MasterSeed.Value, RngStreamNames.NpcDodge),
+            Require(point.NpcDodge.State == RngStreamSeedDerivation.DeriveStreamSeed(state.MasterSeed.Value, "npc_dodge"),
                 "NPC initial RNG state mismatch.");
         var legacyIds = combat.Projectiles.Where(p => p is not null).Select(p => p.ObjectId)
             .Concat(defense.Projectiles.Where(p => p is not null).Select(p => p.ObjectId)).ToHashSet(StringComparer.OrdinalIgnoreCase);

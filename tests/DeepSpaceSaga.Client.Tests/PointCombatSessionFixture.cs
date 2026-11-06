@@ -101,7 +101,6 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
                 }).ToArray()
             }
         });
-        Engine.SetPresentationTimestampForTests(() => 0);
         Connection = new(Engine);
     }
 

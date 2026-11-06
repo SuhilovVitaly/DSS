@@ -141,7 +141,6 @@ public class DialogueTests
         Assert.Equal("station_access_denied", Assert.Single(Start(loaded, "retry").CommandResults).ReasonCode);
         Assert.False(loaded.CaptureSnapshotForTests(59999).Objects.Single(o => o.ObjectId == "SPC-0001").IsDestroyed);
         var defeated = loaded.CaptureSnapshotForTests(60000);
-        Assert.Equal(SessionOutcomeState.Defeated, defeated.EffectiveOutcome.State);
         Assert.Equal(60000, defeated.MotionTimeMs);
         Assert.True(Assert.Single(defeated.Objects, o => o.ObjectId == "SPC-0001").IsDestroyed);
         Assert.Equal(SimulationSpeed.Speed0, defeated.CurrentSpeed);
@@ -232,7 +231,6 @@ public class DialogueTests
         engine.LoadScenario(save);
         // The ship travels 180 km at the deadline, 210 km by the next snapshot.
         var defeated = engine.CaptureSnapshotForTests(70000);
-        Assert.Equal(SessionOutcomeState.Defeated, defeated.EffectiveOutcome.State);
         Assert.Equal(60000, defeated.MotionTimeMs);
         Assert.True(Assert.Single(defeated.Objects, o => o.ObjectId == "SPC-0001").IsDestroyed);
     }

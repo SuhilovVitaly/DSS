@@ -6,7 +6,7 @@ public sealed partial class SimulationEngine
 {
     private CommandStartOutcome TryApplyDebugTuning(PlayerCommand command, long time)
     {
-        if (!_hasLoadedScenario || _disposed || IsDefeated)
+        if (!_hasLoadedScenario || _disposed || IsStoppedByStationSecurity)
             return CommandStartOutcome.Rejected(DebugTuningReasonCodes.SessionNotRunning);
         if (!_debugTuning.TryApply(command.DebugTuning, out var candidate, out var reason))
             return CommandStartOutcome.Rejected(reason!);
@@ -20,12 +20,7 @@ public sealed partial class SimulationEngine
         return CommandStartOutcome.Started;
     }
 
-    private DebugTuningSnapshot? CaptureDebugTuning(bool compact)
-    {
-        var snapshot = _debugStartupError is null ? _debugTuning.Snapshot : _debugTuning.Snapshot with { StartupError = _debugStartupError };
-        if (!compact) return snapshot;
-        if (_lastDebugPresentationRevision == snapshot.Revision) return null;
-        _lastDebugPresentationRevision = snapshot.Revision;
-        return snapshot;
-    }
+    private DebugTuningSnapshot CaptureDebugTuning() => _debugStartupError is null
+        ? _debugTuning.Snapshot
+        : _debugTuning.Snapshot with { StartupError = _debugStartupError };
 }

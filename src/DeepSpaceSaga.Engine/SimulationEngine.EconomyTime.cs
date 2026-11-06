@@ -12,8 +12,8 @@ public sealed partial class SimulationEngine
 
     private void AdvanceWorldTo(long gameTimeMs, long simulationTimeMs)
     {
-        if (CommitDefeatBoundary()) return;
-        PrepareDefeatTimeMapping(new(gameTimeMs, SimulationSpeed.Speed0, simulationTimeMs));
+        if (ApplyStationSecurityStop()) return;
+        PrepareStationSecurityClock(gameTimeMs, simulationTimeMs);
         long fromCalendar = _processedWorldTimeMs;
         long fromSimulation = _processedSimulationTimeMs;
         // Both timestamps come from the same clock. Map each calendar boundary onto
@@ -59,7 +59,7 @@ public sealed partial class SimulationEngine
             // Keep equal-time effects ordered: start above, motion, completion, market hour,
             // pending unload, meal, fee, deadline, then commit the calendar cursor.
             AdvanceMotionTo(MotionAt(next), SurveyCalendarAt);
-            if (CommitDefeatBoundary()) return;
+            if (ApplyStationSecurityStop()) return;
             CompleteResourceSurveys(next);
             CompleteProduction(next);
             if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketEventAndHour(next);
@@ -72,7 +72,7 @@ public sealed partial class SimulationEngine
             _processedWorldTimeMs = next;
         }
         AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
-        if (CommitDefeatBoundary()) return;
+        if (ApplyStationSecurityStop()) return;
         SynchronizeOrbitalBindings(_objects, simulationTimeMs);
         _processedSimulationTimeMs = simulationTimeMs;
         UpdateVoyageForMotion(simulationTimeMs);

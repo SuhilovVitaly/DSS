@@ -23,7 +23,6 @@ public sealed partial class SimulationEngine : IDisposable
     private readonly GameDataRegistry _catalogRegistry;
     private DebugTuningState _debugTuning;
     private bool _hasLoadedScenario;
-    private long _lastDebugPresentationRevision = -1;
     private readonly ImmutableArray<string> _femaleCrewPortraits;
     private readonly LinearMotionPredictor _motion = new();
     private readonly List<SpaceObjectRuntime> _objects = new();
@@ -174,21 +173,10 @@ public sealed partial class SimulationEngine : IDisposable
         lock (_worldStateLock)
         {
             if (_tacticalBattleSession is not null && speed != SimulationSpeed.Speed0) return TacticalBattleActiveReason;
-            CheckPresentationLease();
-            if (IsDefeated) return CommandReasonCodes.SessionDefeated;
+            if (IsStoppedByStationSecurity) return StationSecurityStoppedReason;
             if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
-            if (_automaticPresentationPause && speed != SimulationSpeed.Speed0) return null;
             if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return null; }
-            _presentationIntervalSpeed = _clock.Speed;
             _clock.SetSpeed(speed);
-
-            if (_collectPresentation)
-            {
-                var clock = _clock.Capture();
-                BuildSnapshot(clock, presentationOnly: true);
-                _presentationIntervalSpeed = _clock.Speed;
-                CapturePresentationFrame(IsDefeated ? DefeatedClock.MotionTimeMs : clock.MotionTimeMs);
-            }
             return null;
         }
     }
@@ -492,7 +480,7 @@ public sealed partial class SimulationEngine : IDisposable
             ActiveObjectId = null;
             SelectedObjectId = null;
             _clock.Reset(gs.GameTimeMs, speed, gs.MotionTimeMs, gs.MotionQuarterRemainder);
-            _sessionOutcome = SessionOutcomeSnapshot.Running;
+            _stationSecurityStop = null;
             _nextEngineCycleId = 0;
             _nextShipEventId = 0;
             _shipEvents.Clear();
@@ -515,7 +503,6 @@ public sealed partial class SimulationEngine : IDisposable
             // RNG-generated).
             PlayerCredits = gs.PlayerTokens ?? 0;
 
-            ResetPresentationSession();
             _objects.Clear();
             _objects.AddRange(runtimeObjects);
             _appliedMotionTimeMs = gs.MotionTimeMs;
@@ -644,7 +631,7 @@ public sealed partial class SimulationEngine : IDisposable
             return BuildSnapshot(advanceClock ? _clock.UpdateAndCapture() : _clock.Capture());
     }
 
-    private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState, bool presentationOnly = false, bool prepareWorld = true)
+    private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState)
     {
         lock (_worldStateLock)
         {
@@ -663,34 +650,23 @@ public sealed partial class SimulationEngine : IDisposable
             // snap. Completion is itself correctly gated on gameTimeMs progression already (its
             // loop condition no-ops when no time has passed), so no external speed check is
             // needed here.
-            if (prepareWorld)
+            AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
+            if (_stationSecurityStop is { } stopped)
             {
-                AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
-                if (IsDefeated)
-                {
-                    clockState = DefeatedClock;
-                    gameTimeMs = clockState.MotionTimeMs;
-                }
-                ApplyPendingCommands(gameTimeMs);
-                if (IsDefeated)
-                {
-                    CommitDefeatBoundary();
-                    clockState = DefeatedClock;
-                    gameTimeMs = clockState.MotionTimeMs;
-                    RejectDefeatedDialogueCommands(gameTimeMs);
-                }
-                else
-                {
-                    ApplyPendingDialogueCommands(gameTimeMs);
-                    ReconcileVoyageAfterDialogue();
-                    SynchronizeOrbitalBindings(_objects, gameTimeMs);
-                    UpdateStationSecurity(gameTimeMs);
-                    ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
-                }
-
+                clockState = stopped;
+                gameTimeMs = stopped.MotionTimeMs;
             }
-
-
+            ApplyPendingCommands(gameTimeMs);
+            if (IsStoppedByStationSecurity)
+                RejectCommandsAfterStationSecurityStop(gameTimeMs);
+            else
+            {
+                ApplyPendingDialogueCommands(gameTimeMs);
+                ReconcileVoyageAfterDialogue();
+                SynchronizeOrbitalBindings(_objects, gameTimeMs);
+                UpdateStationSecurity(gameTimeMs);
+                ValidateResourceSurveys(gameTimeMs, _ => _processedWorldTimeMs);
+            }
             // Re-validate on every snapshot (not only when the client reports new
             // interaction state): if the selected/active object disappeared from the
             // world, the property and every subsequent snapshot must reflect that
@@ -701,7 +677,6 @@ public sealed partial class SimulationEngine : IDisposable
             var objects = ImmutableArray.CreateBuilder<ObjectMotionSnapshot>();
             foreach (var obj in _objects)
             {
-                if (presentationOnly && !IsPresentationObject(obj)) continue;
                 long elapsed = gameTimeMs - obj.StartGameTimeMs;
                 var cycleMotion = GetActiveEngineCycleMotion(obj, gameTimeMs);
                 // Project ordinary objects straight into the outgoing DTO: avoid
@@ -790,12 +765,12 @@ public sealed partial class SimulationEngine : IDisposable
                 .GroupBy(r => r.CommandId)
                 .Select(g => g.Last())
                 .ToImmutableArray();
-            if (!presentationOnly) _commandResults.Clear();
+            _commandResults.Clear();
 
             // Drain ship events — no deduplication needed: each event has a
             // unique EventId and is recorded exactly once.
             var shipEvents = _shipEvents.ToImmutableArray();
-            if (!presentationOnly) _shipEvents.Clear();
+            _shipEvents.Clear();
 
             var installedModules = BuildInstalledModuleProjection(gameTimeMs);
 
@@ -811,7 +786,7 @@ public sealed partial class SimulationEngine : IDisposable
                 ActiveObjectId: ActiveObjectId,
                 SelectedObjectId: SelectedObjectId,
                 PlayerCredits: PlayerCredits,
-                DockedStationTrade: presentationOnly ? null : BuildDockedStationTradeProjection(),
+                DockedStationTrade: BuildDockedStationTradeProjection(),
                 PlayerCrewCount: ResolvePlayerCrewCount(),
                 ActiveDialogue: BuildDialogueSnapshot(gameTimeMs),
                 DialogueEvents: _dialogue.Events.ToImmutableArray(),
@@ -821,14 +796,13 @@ public sealed partial class SimulationEngine : IDisposable
                 PortFees: BuildPortFeeSnapshot(), MissingRations: _economyTime.MissingRations,
                 ActiveContracts: (_economyTime.ActiveContracts ?? []).ToImmutableArray(),
                 RouteArrivalGameTimeMs: _economyTime.RouteArrivalGameTimeMs, SimulationTimeMs: gameTimeMs,
-                Voyage: presentationOnly ? null : BuildVoyageSnapshot(),
-                SolarSystemMap: presentationOnly ? null : _solarSystem,
-                TradingRoutes: presentationOnly ? default : BuildTradingRouteProjection(clockState.GameTimeMs),
+                Voyage: BuildVoyageSnapshot(),
+                SolarSystemMap: _solarSystem,
+                TradingRoutes: BuildTradingRouteProjection(clockState.GameTimeMs),
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
-                VoyageFinances: presentationOnly ? default : BuildVoyageFinanceProjection(),
-                StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
-                Outcome: _sessionOutcome,
-                DebugTuning: CaptureDebugTuning(presentationOnly),
+                VoyageFinances: BuildVoyageFinanceProjection(),
+                StationMarketKnowledge: BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: _clusterMap, AiMap: _aiMap,
+                DebugTuning: CaptureDebugTuning(),
                 IsTacticalBattleActive: _tacticalBattleSession is not null);
             return snapshot;
         }
@@ -1094,7 +1068,7 @@ public sealed partial class SimulationEngine : IDisposable
     private ScenarioFile CaptureSaveStateCore(SimulationClockState clockState)
     {
         ThrowIfTacticalBattleActive();
-        ThrowIfDefeated();
+        ThrowIfStoppedByStationSecurity();
         long gameTimeMs = clockState.MotionTimeMs;
         bool dialogueWasActive = _dialogue.Active is not null;
 
@@ -1104,7 +1078,7 @@ public sealed partial class SimulationEngine : IDisposable
         // ticked since) would be captured stale. Idempotent: a cycle already caught up to
         // gameTimeMs is a no-op here (same guard BuildSnapshot relies on).
         AdvanceWorldTo(clockState.GameTimeMs, gameTimeMs);
-        ThrowIfDefeated();
+        ThrowIfStoppedByStationSecurity();
 
         // Mirror BuildSnapshot's other half: a command the player sent in the narrow
         // window between the last 1 Hz tick and this save (e.g. F5 pressed right after
@@ -2436,11 +2410,11 @@ public sealed partial class SimulationEngine : IDisposable
     {
         if (command.CommandType == DebugTuningCommandTypes.Apply)
             return TryApplyDebugTuning(command, gameTimeMs);
-        if (IsDefeated)
+        if (IsStoppedByStationSecurity)
             return command.CommandType is TradeCommandTypes.Buy or TradeCommandTypes.Sell or TradeCommandTypes.Refuel &&
                 (command.QuoteId is not null || command.MarketRevision is not null)
-                    ? RejectQuotedTrade(command, CommandReasonCodes.SessionDefeated)
-                    : CommandStartOutcome.Rejected(CommandReasonCodes.SessionDefeated);
+                    ? RejectQuotedTrade(command, StationSecurityStoppedReason)
+                    : CommandStartOutcome.Rejected(StationSecurityStoppedReason);
         if (command.CommandType == ScannerCommandTypes.StructuralScan)
             return TryStartResourceSurvey(command, gameTimeMs);
 
@@ -3498,7 +3472,7 @@ public sealed partial class SimulationEngine : IDisposable
 
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt)
     {
-        if (IsDefeated) return;
+        if (IsStoppedByStationSecurity) return;
         if (!HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
@@ -3525,11 +3499,10 @@ public sealed partial class SimulationEngine : IDisposable
             _appliedMotionTimeMs = next;
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);
-            if (IsDefeated) return;
+            if (IsStoppedByStationSecurity) return;
             CompleteActiveEngineCycles(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
-            CapturePresentationFrame(next);
             if (next >= gameTimeMs) break;
         }
     }

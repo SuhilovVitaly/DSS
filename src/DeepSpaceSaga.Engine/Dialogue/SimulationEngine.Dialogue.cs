@@ -222,6 +222,6 @@ public sealed partial class SimulationEngine
         _objects[index] = ship with { InitialMotion = ClearSteeringControls(ship.InitialMotion) };
         if (SelectedObjectId == ship.InitialMotion.ObjectId) SelectedObjectId = null;
         if (ActiveObjectId == ship.InitialMotion.ObjectId) ActiveObjectId = null;
-        RecordPlayerDefeat(ship.InitialMotion.ObjectId, ship.StartGameTimeMs);
+        StopAtStationSecurityDeadline(ship.StartGameTimeMs);
     }
 }

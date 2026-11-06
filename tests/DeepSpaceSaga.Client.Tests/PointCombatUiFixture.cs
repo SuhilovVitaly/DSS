@@ -56,7 +56,6 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
                 }).Select(o => configure?.Invoke(o) ?? o).ToArray()
             }
         });
-        Engine.SetPresentationTimestampForTests(() => 0);
         Connection = new(Engine);
         Handle = new(Connection, new SnapshotBuffer(() => UiMs * Stopwatch.Frequency / 1000));
         Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle,

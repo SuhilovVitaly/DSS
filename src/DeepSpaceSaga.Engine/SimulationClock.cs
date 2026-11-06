@@ -22,7 +22,6 @@ public sealed class SimulationClock
     private readonly object _lock = new();
     private long _lastRealTick;
     private readonly Func<long> _realTimeMs;
-    private bool _terminalStopped;
     private int _motionQuarterRemainder;
 
     public SimulationClock(SimulationSpeed initialSpeed = SimulationSpeed.Speed1)
@@ -101,29 +100,6 @@ public sealed class SimulationClock
         }
     }
 
-    internal long CaptureRealTime() => _realTimeMs();
-
-    /// <summary>Consume one bounded part of a fixed captured real interval, retaining the remainder for the next part.</summary>
-    internal (SimulationClockState State, bool More) AdvanceBounded(long realDeadline, long maxRealDeltaMs)
-    {
-        ArgumentOutOfRangeException.ThrowIfNegativeOrZero(maxRealDeltaMs);
-        lock (_lock)
-        {
-            if (_terminalStopped) return (new(GameTimeMs, Speed, SimulationTimeMs, _motionQuarterRemainder), false);
-            long delta = Math.Max(0, realDeadline - _lastRealTick);
-            long step = Math.Min(delta, maxRealDeltaMs);
-            Advance(step);
-            _lastRealTick += step;
-            return (new(GameTimeMs, Speed, SimulationTimeMs, _motionQuarterRemainder), step < delta);
-        }
-    }
-
-    /// <summary>Change speed at an already processed real boundary without consuming pending elapsed time.</summary>
-    internal void SetSpeedAtProcessedBoundary(SimulationSpeed speed)
-    {
-        lock (_lock) { if (!_terminalStopped) Speed = speed; }
-    }
-
     /// <summary>
     /// Reset the clock to a known initial state for New Game.
     /// Sets GameTimeMs and Speed directly, without accumulating any real time.
@@ -134,7 +110,6 @@ public sealed class SimulationClock
         if (motionQuarterRemainder is < 0 or > 3) throw new ArgumentOutOfRangeException(nameof(motionQuarterRemainder));
         lock (_lock)
         {
-            _terminalStopped = false;
             _motionQuarterRemainder = motionQuarterRemainder;
             GameTimeMs = gameTimeMs;
             // Legacy saves used one timestamp for both domains. Preserve their baselines.
@@ -154,7 +129,6 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            if (_terminalStopped) return;
             long now = _realTimeMs();
             long deltaReal = now - _lastRealTick;
 
@@ -167,20 +141,6 @@ public sealed class SimulationClock
         }
     }
 
-    /// <summary>Expire a transport lease without accumulating an unobserved real-time backlog.</summary>
-    internal void PauseAtRealTime(long deadlineRealMs)
-    {
-        lock (_lock)
-        {
-            if (_terminalStopped) return;
-            long now = _realTimeMs();
-            long boundary = Math.Max(_lastRealTick, Math.Min(now, deadlineRealMs));
-            Advance(boundary - _lastRealTick);
-            _lastRealTick = now;
-            Speed = SimulationSpeed.Speed0;
-        }
-    }
-
     /// <summary>
     /// Reset the real-time baseline without advancing GameTimeMs.
     /// Use at the start of a new loop to prevent counting backlog time.
@@ -189,21 +149,6 @@ public sealed class SimulationClock
     {
         lock (_lock)
         {
-            _lastRealTick = _realTimeMs();
-        }
-    }
-
-    /// <summary>Latch the first terminal boundary until an explicit new-world Reset.</summary>
-    internal void StopAtTerminal(long gameTimeMs, long simulationTimeMs)
-    {
-        lock (_lock)
-        {
-            if (_terminalStopped) return;
-            _terminalStopped = true;
-            _motionQuarterRemainder = 0;
-            GameTimeMs = gameTimeMs;
-            SimulationTimeMs = simulationTimeMs;
-            Speed = SimulationSpeed.Speed0;
             _lastRealTick = _realTimeMs();
         }
     }
