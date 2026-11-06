@@ -123,6 +123,36 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task EnemyDroneShowsAllAdmissibleTargetsIncludingTheCarrier()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var enemy = battle.Units.First(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Drone);
+        enemy = enemy with { Pose = new(-100, 0, 0), Build = enemy.Build! with { Range = 100, ArcDegrees = 30 } };
+        var own = battle.Units.First(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Drone);
+        var carrier = battle.Units.First(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Carrier);
+        var frame = new TacticalBattleFrame(battle with
+        {
+            Phase = TacticalBattlePhase.Fire, Paths = [], Incoming = [],
+            Units = [enemy, carrier with { Pose = new(0, 0, 0) }, own with { Pose = new(-70, 0, 0) },
+                own with { Id = "disabled", State = TacticalUnitState.Disabled, Pose = new(-55, 0, 0) },
+                own with { Id = "out of range", Pose = new(1, 0, 0) },
+                own with { Id = "out of arc", Pose = new(-100, 50, 0) },
+                enemy with { Id = "ally", Jammed = true, Pose = new(-60, 5, 0) }]
+        }, new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemyForecast: false, FirePlan: new([], null));
+        Assert.Equal(2, TacticalBattleMapRenderer.TargetCount(frame, enemy));
+        Assert.Equal(0, TacticalBattleMapRenderer.TargetCount(frame, enemy with { Jammed = true }));
+        Assert.Equal(0, TacticalBattleMapRenderer.TargetCount(frame, enemy with { State = TacticalUnitState.Disabled }));
+        Assert.Equal(0, TacticalBattleMapRenderer.TargetCount(frame with { FirePlan = null }, enemy));
+
+        using var firing = Raster(frame);
+        using var moving = Raster(frame with { FirePlan = null });
+        var orange = new SKColor(243, 146, 49);
+        Assert.Contains(orange, firing.Pixels);
+        Assert.DoesNotContain(orange, moving.Pixels);
+    }
+
+    [Fact]
     public async Task WreckMarkerAndNameAppearAtLethalArrivalBeforeSalvoEnds()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

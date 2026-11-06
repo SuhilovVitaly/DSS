@@ -381,8 +381,7 @@ internal static class TacticalBattleMapRenderer
             }
             value = BattleFormat.Text(value);
             bool disabledDrone = !carrier && disabled;
-            int targets = unit.State == TacticalUnitState.Air
-                ? frame.FirePlan?.Rows.FirstOrDefault(row => row.Drone.Id == unit.Id)?.Group.List.Length ?? 0 : 0;
+            int targets = TargetCount(frame, unit);
             string badge = targets > 0 ? BattleFormat.Number(targets) : "";
             float badgeSize = disabledDrone || targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
             float badgeSpace = badgeSize > 0 ? badgeSize + 4 * s : 0;
@@ -424,6 +423,27 @@ internal static class TacticalBattleMapRenderer
                 canvas.DrawRect(labelX, y, 30 * s * (float)PyMath.Clamp(amount / (double)max, 0, 1), 3 * s, bars);
             }
         }
+    }
+
+    internal static int TargetCount(TacticalBattleFrame frame, TacticalUnitSnapshot shooter)
+    {
+        if (frame.FirePlan is not { } plan || shooter.Kind != TacticalUnitKind.Drone ||
+            shooter.State != TacticalUnitState.Air || shooter.Jammed) return 0;
+        if (shooter.Side == frame.Battle.PlayerSide)
+            return plan.Rows.FirstOrDefault(row => row.Drone.Id == shooter.Id)?.Group.List.Length ?? 0;
+        if (shooter.Build is not { } weapon) return 0;
+
+        // Only public geometry is needed for the count. Incoming describes assigned shots.
+        int count = 0;
+        foreach (var target in frame.Battle.Units)
+        {
+            if (target.Side == shooter.Side || target.State is not (TacticalUnitState.Air or TacticalUnitState.Alive)) continue;
+            double distance = TacticalGeometry.Dist(shooter.Pose.X, shooter.Pose.Y, target.Pose.X, target.Pose.Y);
+            double angle = TacticalGeometry.Norm(TacticalGeometry.Bearing(shooter.Pose.X, shooter.Pose.Y,
+                target.Pose.X, target.Pose.Y) - shooter.Pose.Course);
+            if (distance <= weapon.Range && Math.Abs(angle) <= weapon.ArcDegrees) count++;
+        }
+        return count;
     }
 
     private static void DrawOffscreenMarkers(SKCanvas canvas, TacticalBattleFrame frame,
