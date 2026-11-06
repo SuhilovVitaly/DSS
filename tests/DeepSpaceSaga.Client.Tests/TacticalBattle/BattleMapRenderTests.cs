@@ -95,6 +95,34 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task FirePlanShowsCandidateBadgeAndDistinctAlternativeArrow()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var shooter = battle.Units.First(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Drone) with
+        {
+            Pose = new(-200, 0, 0)
+        };
+        var enemies = battle.Units.Where(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Drone).Take(2).ToArray();
+        var chosen = enemies[0] with { Pose = new(100, 0, 180) };
+        var other = enemies[1] with { Pose = new(-200, 200, 180) };
+        var group = new TacticalTargetGroupSnapshot(shooter.Id,
+            [new(chosen.Id, 300, 0, false, 0.7, 0), new(other.Id, 200, 0, false, 0.5, 0)], chosen.Id);
+        var frame = new TacticalBattleFrame(battle with { Units = [shooter, chosen, other], Paths = [] },
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemyForecast: false,
+            FirePlan: new([new(shooter, group, chosen.Id)], shooter.Id));
+        using var planned = Raster(frame);
+        using var noPlan = Raster(frame with { FirePlan = null });
+        var alternative = planned.GetPixel(240, 445);
+        Assert.InRange(alternative.Red, 30, 74);
+        Assert.True(planned.GetPixel(370, 360).Blue > alternative.Blue + 50);
+        Assert.NotEqual(noPlan.GetPixel(240, 445), alternative);
+        var orange = new SKColor(243, 146, 49);
+        Assert.Contains(orange, planned.Pixels);
+        Assert.DoesNotContain(orange, noPlan.Pixels);
+    }
+
+    [Fact]
     public async Task GridRulerAndActualPanelTogglesChangeOnlyPresentation()
     {
         Assert.Equal(40, TacticalBattleMapRenderer.GridStep(1800));

@@ -136,24 +136,38 @@ internal static class TacticalBattleMapRenderer
         }
         if (plan.Selected is not { } selected) return;
         var source = view.Project(selected.Drone.Pose);
-        foreach (var candidate in selected.Group.List)
+        foreach (var candidate in selected.Group.List.OrderBy(c => c.TargetId == selected.TargetId))
         {
             var target = frame.Battle.Units.FirstOrDefault(u => u.Id == candidate.TargetId);
             if (target is null) continue;
             var endpoint = view.Project(target.Pose);
             bool chosen = candidate.TargetId == selected.TargetId;
-            paint.Color = chosen && candidate.Rear ? new(253, 143, 104) : new(145, 224, 238);
+            paint.Color = !chosen ? new(74, 80, 87) : candidate.Rear ? new(253, 143, 104) : new(145, 224, 238);
             paint.StrokeWidth = (chosen ? 1.7f : 1) * s;
+            float radius = (target.Kind == TacticalUnitKind.Carrier ? 20 : 14) * s;
             paint.Style = SKPaintStyle.Stroke;
-            canvas.DrawCircle(endpoint, (target.Kind == TacticalUnitKind.Carrier ? 20 : 14) * s, paint);
+            canvas.DrawCircle(endpoint, radius, paint);
             paint.Style = SKPaintStyle.Fill;
-            if (!chosen) continue;
-            canvas.DrawLine(source, endpoint, paint);
+            DrawTargetArrow(canvas, source, endpoint, radius, s, paint);
             float x = (source.X + endpoint.X) * 0.5f;
             float y = (source.Y + endpoint.Y) * 0.5f;
             string label = BattleFormat.Probability(candidate.Chance) + (candidate.Rear ? " " + BattleFormat.Localize("FireRearShort") : "");
             ControlVisuals.Label(canvas, label, new(x, y - 23 * s, x + 104 * s, y - 3 * s), true, s);
         }
+    }
+
+    private static void DrawTargetArrow(SKCanvas canvas, SKPoint source, SKPoint target, float radius, float scale, SKPaint paint)
+    {
+        float dx = target.X - source.X, dy = target.Y - source.Y;
+        float distance = (float)TacticalGeometry.Hypot(dx, dy);
+        if (distance <= radius) return;
+        float ux = dx / distance, uy = dy / distance;
+        var tip = new SKPoint(target.X - ux * radius, target.Y - uy * radius);
+        float length = Math.Min(8 * scale, distance - radius);
+        var basePoint = new SKPoint(tip.X - ux * length, tip.Y - uy * length);
+        canvas.DrawLine(source, tip, paint);
+        canvas.DrawLine(tip, new SKPoint(basePoint.X - uy * length * 0.55f, basePoint.Y + ux * length * 0.55f), paint);
+        canvas.DrawLine(tip, new SKPoint(basePoint.X + uy * length * 0.55f, basePoint.Y - ux * length * 0.55f), paint);
     }
 
     private static void DrawMovement(SKCanvas canvas, TacticalBattleFrame frame, TacticalMovementFrame movement, SKPaint paint)
@@ -352,25 +366,38 @@ internal static class TacticalBattleMapRenderer
             value += carrier ? "/" + BattleFormat.Number(unit.MaxHull) : disabled
                 ? " · " + BattleFormat.Localize("UnitDisabledShort") : "+" + BattleFormat.Number(unit.Armor);
             value = BattleFormat.Text(value);
-            float w = (float)PyMath.Max(30 * s, text.MeasureText(value)) + 4 * s;
+            int targets = frame.FirePlan?.Rows.FirstOrDefault(row => row.Drone.Id == unit.Id)?.Group.List.Length ?? 0;
+            string badge = targets > 0 ? BattleFormat.Number(targets) : "";
+            float badgeSize = targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
+            float badgeSpace = targets > 0 ? badgeSize + 4 * s : 0;
+            float w = (float)PyMath.Max(30 * s, text.MeasureText(value)) + 4 * s + badgeSpace;
             float h = (carrier ? 15 : 25) * s;
             if (!TryPlace(p, w, h, viewport, occupied, s, out var rect)) continue;
-            text.Color = disabled || unit.State == TacticalUnitState.Destroyed ? new(144, 151, 159) : new(226, 235, 242);
             bars.Color = new(116, 145, 164, 100);
             canvas.DrawLine(p, new SKPoint(rect.MidX, rect.Top), bars);
-            canvas.DrawText(value, rect.Left + 2 * s, rect.Top - text.FontMetrics.Ascent, text);
+            if (targets > 0)
+            {
+                var square = SKRect.Create(rect.Left, rect.Top, badgeSize, badgeSize);
+                bars.Color = new(243, 146, 49);
+                canvas.DrawRect(square, bars);
+                text.Color = new(21, 22, 26);
+                canvas.DrawText(badge, square.MidX - text.MeasureText(badge) * 0.5f,
+                    square.MidY - (text.FontMetrics.Ascent + text.FontMetrics.Descent) * 0.5f, text);
+            }
+            float labelX = rect.Left + badgeSpace + 2 * s;
+            text.Color = disabled || unit.State == TacticalUnitState.Destroyed ? new(144, 151, 159) : new(226, 235, 242);
+            canvas.DrawText(value, labelX, rect.Top - text.FontMetrics.Ascent, text);
             if (carrier) continue;
             DrawBar(rect.Top + 15 * s, unit.Armor, unit.MaxArmor, disabled ? Inactive : new(126, 159, 181));
             DrawBar(rect.Top + 20 * s, unit.Hull, unit.MaxHull, disabled ? Inactive : Own);
 
             void DrawBar(float y, int amount, int max, SKColor color)
             {
-                float x = rect.Left + 2 * s;
                 bars.Color = new(30, 50, 65);
-                canvas.DrawRect(x, y, 30 * s, 3 * s, bars);
+                canvas.DrawRect(labelX, y, 30 * s, 3 * s, bars);
                 if (max <= 0) return;
                 bars.Color = color;
-                canvas.DrawRect(x, y, 30 * s * (float)PyMath.Clamp(amount / (double)max, 0, 1), 3 * s, bars);
+                canvas.DrawRect(labelX, y, 30 * s * (float)PyMath.Clamp(amount / (double)max, 0, 1), 3 * s, bars);
             }
         }
     }
