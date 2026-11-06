@@ -19,17 +19,20 @@ internal static class SaveMigration20
         return validated with
         {
             SaveFormatVersion = SaveFormat.CurrentSaveFormatVersion,
-            GameState = WorldOnly(validated.GameState, archivedActors)
+            GameState = ProjectWorld(validated.GameState, removeLegacyHostiles: true, archivedActors)
         };
     }
 
-    internal static GameStateData WorldOnly(GameStateData state, HashSet<string>? archivedActors = null)
+    internal static GameStateData WorldOnly(GameStateData state) =>
+        ProjectWorld(state, removeLegacyHostiles: false, archivedActors: null);
+
+    private static GameStateData ProjectWorld(GameStateData state, bool removeLegacyHostiles, HashSet<string>? archivedActors)
     {
         var removedObjects = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         var removedModules = new Dictionary<string, HashSet<string>>(StringComparer.OrdinalIgnoreCase);
         foreach (var obj in state.SpaceObjects)
         {
-            if (CombatObject(obj) || archivedActors?.Contains(obj.ObjectId) == true)
+            if (CombatObject(obj) || (removeLegacyHostiles && LegacyHostile(obj)) || archivedActors?.Contains(obj.ObjectId) == true)
             {
                 removedObjects.Add(obj.ObjectId);
                 continue;
@@ -76,7 +79,8 @@ internal static class SaveMigration20
     }
 
     private static bool CombatObject(SpaceObjectData obj) =>
-        Equal(obj.ObjectType, "Missile") || Equal(obj.ObjectType, "Countermeasure") || Equal(obj.ObjectType, "Wreck") ||
+        Equal(obj.ObjectType, "Missile") || Equal(obj.ObjectType, "Countermeasure") || Equal(obj.ObjectType, "Wreck");
+    private static bool LegacyHostile(SpaceObjectData obj) =>
         Equal(obj.ObjectType, "NpcShip") && Equal(obj.RelationToPlayer, "Enemy");
     private static bool ProjectileModule(string? type) => Prefix(type, "module.torpedo.") || Prefix(type, "module.countermeasure.");
     private static bool CombatModule(string? type) => ProjectileModule(type) || Prefix(type, "module.combat.");

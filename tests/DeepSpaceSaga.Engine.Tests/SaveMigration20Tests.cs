@@ -30,6 +30,45 @@ public sealed class SaveMigration20Tests
     [Theory]
     [InlineData("Default-Save18-combat.json")]
     [InlineData("Default-Save19-combat.json")]
+    public void MigrationDiscardsArchivedHostileActors(string name)
+    {
+        var archive = Fixture(name);
+        Assert.Contains(archive["gameState"]!["spaceObjects"]!.AsArray(),
+            o => (string?)o!["objectId"] == "SPC-MUKHA-01");
+        Assert.DoesNotContain(Load(archive).GameState.SpaceObjects, o => o.ObjectId == "SPC-MUKHA-01");
+    }
+
+    [Fact]
+    public void Save20RoundTripKeepsLiveHostileNpc()
+    {
+        string path = Path.Combine(SaveFixturesTests.ClientRoot, "Scenarios/PlayerShipOnly/scenario.json");
+        var scenario = ScenarioLoader.LoadFromFile(path);
+        var npc = Assert.Single(scenario.GameState.SpaceObjects, o => o.ObjectType == "NpcShip");
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == npc.ObjectId
+                    ? o with { RelationToPlayer = "enemy" }
+                    : o).ToArray()
+            }
+        };
+
+        using var engine = Create();
+        engine.LoadScenario(scenario);
+        Assert.Contains(engine.CaptureSnapshot().Objects, o => o.ObjectId == npc.ObjectId);
+
+        string json = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        using var restored = Create();
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(json, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        var savedNpc = Assert.Single(restored.CaptureSaveState().GameState.SpaceObjects, o => o.ObjectId == npc.ObjectId);
+        Assert.Equal("enemy", savedNpc.RelationToPlayer);
+        Assert.Equal(npc.ObjectType, savedNpc.ObjectType);
+    }
+
+    [Theory]
+    [InlineData("Default-Save18-combat.json")]
+    [InlineData("Default-Save19-combat.json")]
     public void MigrationRemovesCombatAndKeepsWorldClocksSeedAndCatalog(string name)
     {
         string json = File.ReadAllText(Path.Combine(SaveFixturesTests.Fixtures, name));

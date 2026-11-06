@@ -71,3 +71,7 @@ Include `TradingVoyageFixture.cs`, `EconomyTimeContinuityTests.cs` and `Generate
 ## Execution evidence — 2026-11-06
 
 The production writer emits Save20 with no legacy combat envelopes. Both file and typed load paths accept 18/19, validate the legacy payload, project the ordinary world and retain strict catalog checks. All four tracked fixtures continue deterministically. Windows build (0 warnings/errors), scoped format and diff check PASS; 889 Engine and 184 Client cases PASS in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-save20-world-regression-03`. The broader intermediate audit (`20261106-save20-regression-audit`) was not green; it found obsolete combat continuation expectations and noncombat test-fixture regressions. The world regressions were fixed and rerun; legacy-only expectations are carried to their owning removal cuts.
+
+## Post-review correction
+
+Live hostile NPCs survive ordinary Save20 capture and validated reload. Enemy actor removal is restricted to legacy projection; archived actors are still removed in both formats. The new NPC round-trip failed against the baseline and passed after the fix. Windows focused regression 14/14 and scoped format PASS. Evidence in D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-review-save20-green/test.log.
