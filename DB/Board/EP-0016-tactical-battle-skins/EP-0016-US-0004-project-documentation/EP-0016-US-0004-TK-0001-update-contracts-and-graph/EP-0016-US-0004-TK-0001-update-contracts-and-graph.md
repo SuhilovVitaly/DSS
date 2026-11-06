@@ -1,9 +1,9 @@
 ---
 epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0004-project-documentation
-ticket: EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph
+ticket: EP-0016-US-0004-TK-0001-update-contracts-and-graph
 title: Синхронизировать контракты скинов, Board и Graphify
-stage: approved
+stage: done
 layer: documentation
 depends_on: [EP-0016-US-0003-TK-0005-correct-shared-style-fallbacks]
 serves: [US4-AC1, US4-AC2, US4-AC3]
@@ -17,3 +17,11 @@ serves: [US4-AC1, US4-AC2, US4-AC3]
 2. Актуализировать канонические контракты и навигацию, сохранив исторические свидетельства. Обновить эпик, карту тикетов, evidence и соответствие тикетов SHA.
 3. Проверить ссылки, ID, зависимости и diff. Перестроить и проверить Graphify по текущим исходникам и документам. Хранить машинные результаты в workspace artifacts.
 4. Опубликовать отдельный коммит, сверить его SHA на origin и итоговое состояние ветки.
+
+## Исполнение
+
+Канонический контракт, настройки, экран боя, моддинг, поставка пакетов, нативный инструмент и навигация актуализированы. Исторические результаты соседнего эпика сохранены. [ExecutionStatus](../../ExecutionStatus.md) содержит инвентаризацию, покрытия, ограничения и опубликованные SHA.
+
+Проверены 31 Markdown, 201 относительная ссылка, канонический формат ID, 4 истории, 14 тикетов и порядок всех зависимостей. Graphify перестроен по финальным файлам. 1221 хеш исходников и документов совпал, 10 семантических источников проверены. См. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/final/documentation-verification.json`, `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/graph-final/verification.json`.
+
+Release-регрессия 5716/5716, 23/23 PNG Classic, пять нативных маршрутов и повторный Release publish подтверждены в отчёте. Документационный diff проверен отдельно.

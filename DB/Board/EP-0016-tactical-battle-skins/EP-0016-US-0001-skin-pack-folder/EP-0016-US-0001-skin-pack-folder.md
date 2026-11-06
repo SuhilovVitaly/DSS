@@ -2,7 +2,7 @@
 epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0001-skin-pack-folder
 title: Папка со скинами пошагового боя
-stage: approved
+stage: done
 dependencies: []
 created: 2026-11-06T07:54:54Z
 source_request: "Папка с пакетами, распознавание без пересборки и возможность описать дизайн всего окна пошагового боя."

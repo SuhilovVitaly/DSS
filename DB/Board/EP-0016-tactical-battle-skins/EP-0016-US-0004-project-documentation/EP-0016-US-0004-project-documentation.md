@@ -2,7 +2,7 @@
 epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0004-project-documentation
 title: Документация скинов и итоговая сверка
-stage: approved
+stage: done
 dependencies: [EP-0016-US-0001-skin-pack-folder, EP-0016-US-0002-migrate-battle-rendering, EP-0016-US-0003-select-skin-in-settings]
 ---
 
@@ -14,4 +14,4 @@ dependencies: [EP-0016-US-0001-skin-pack-folder, EP-0016-US-0002-migrate-battle-
 - **US4-AC2.** Board связывает критерии с фактическими проверками и опубликованными SHA. Ссылки, ID, количество и зависимости проверены. Остаточные gates указаны раздельно.
 - **US4-AC3.** Навигационный граф перестроен после кода и текстов. Результат и ограничения проверены и зафиксированы.
 
-[EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph](EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph/EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph.md) выполняется после функциональных историй и итогового review.
+[EP-0016-US-0004-TK-0001-update-contracts-and-graph](EP-0016-US-0004-TK-0001-update-contracts-and-graph/EP-0016-US-0004-TK-0001-update-contracts-and-graph.md) выполняется после функциональных историй и итогового review.

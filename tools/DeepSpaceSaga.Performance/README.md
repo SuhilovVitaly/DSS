@@ -143,5 +143,7 @@ and draw/flush timings. Physical input, scanout timing and human/product review
 are separate. Old realtime combat flags have been removed; their runs remain
 historical evidence in the [Board](../../DB/Board).
 
+For a skin verification case, point `DSS_TACTICAL_NATIVE_SETTINGS` at an isolated `Settings.json` with its own sibling `Skins` directory and set `DSS_TACTICAL_NATIVE_EXPECT_SKIN` to the effective ID. Set `DSS_TACTICAL_NATIVE_PICK_LAST=1` to choose the last catalog entry through the live Settings overlay before F8. The native report records the outcome and the effective-skin checks for both active battle entries. Use the same seed, viewport and scale when comparing runs. [Skin authoring contract](../../DB/Documentation/04-Engineering/TacticalBattleSkins.md)
+
 Current rules and evidence: [TacticalBattle](../../DB/Documentation/04-Engineering/TacticalBattle.md),
 [FinalValidation](../../DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md).

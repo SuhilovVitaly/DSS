@@ -16,4 +16,6 @@
 
 Move и Fire проверяют идентификатор боя и ожидаемую ревизию. Engine хранит до 16 последних ответов и освобождает прежние ответы при успешном выходе из боя. Повтор с теми же ID и данными получает сохранённый ответ либо код `ReceiptExpired` без снимка. Команда не применяется повторно в течение жизни Engine. Повторное использование ID для другого запроса возвращает `IdentityConflict`. Актуальный снимок доступен через `GetTacticalBattleState`. В клиентском прогнозе оценки движения и попаданий не потребляют RNG и не меняют приказы без ввода. Наблюдение за кадром или повтор анимации не вызывает Engine.
 
+Client разрешает [скин боя](TacticalBattleSkins.md) при создании активного окна. Каталог и предпочтение относятся к клиенту, отрисовка читает готовые ресурсы под синхронной областью стиля. Save20 хранит состояние мира.
+
 Границы кода: [Contracts](../../../src/DeepSpaceSaga.Contracts/TacticalBattleRequests.cs), [SimulationEngine](../../../src/DeepSpaceSaga.Engine/SimulationEngine.TacticalBattle.cs), [TacticalBattleSession](../../../src/DeepSpaceSaga.Engine/TacticalBattle/TacticalBattleSession.cs), [Motion](../../../src/DeepSpaceSaga.Motion/TacticalBattle/), [Client](../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/). Методика сверки — [источники и проверки V4](../06-Tooling/CarrierWingSim.md).
