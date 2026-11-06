@@ -63,13 +63,35 @@ public sealed class BattleMapRenderTests
             Pose = new(-100, 0, 0), Speed = 150
         };
         var frame = new TacticalBattleFrame(battle with { Units = [enemy], Paths = [], Rules = battle.Rules with { RearArc = 45 } },
-            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "");
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemySectors: true);
         using var on = Raster(frame);
-        using var off = Raster(frame with { EnemyForecast = false });
+        using var off = Raster(frame with { EnemyForecast = false, EnemySectors = false });
         Assert.True(on.GetPixel(490, 360).Red > 160); // endpoint at x = 50
         Assert.True(on.GetPixel(463, 369).Red > off.GetPixel(463, 369).Red + 25); // inside sector
         Assert.True(on.GetPixel(470, 379).Red > on.GetPixel(470, 376).Red); // radial edge
         Assert.Equal(off.GetPixel(470, 384), on.GetPixel(470, 384)); // outside sector
+    }
+
+    [Fact]
+    public async Task SelectedOnlyFiringSectorHidesOtherDronesArcs()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var own = battle.Units.Where(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Drone).Take(2).ToArray();
+        var selected = own[0] with { Pose = new(-100, -100, 0), Build = own[0].Build! with { Range = 90, ArcDegrees = 30 } };
+        var other = own[1] with { Pose = new(-100, 100, 0), Build = own[1].Build! with { Range = 90, ArcDegrees = 30 } };
+        var plan = new TacticalFirePlan([Row(selected), Row(other)], selected.Id);
+        var frame = new TacticalBattleFrame(battle with { Units = [selected, other], Paths = [] },
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", FirePlan: plan);
+        using var all = Raster(frame);
+        using var one = Raster(frame with { AllFireSectors = false });
+        Assert.Equal(all.GetPixel(408, 260), one.GetPixel(408, 260));
+        Assert.True(all.GetPixel(408, 460).Green > one.GetPixel(408, 460).Green);
+        using var switched = Raster(frame with { AllFireSectors = false, FirePlan = plan with { SelectedDroneId = other.Id } });
+        Assert.True(switched.GetPixel(408, 460).Green > one.GetPixel(408, 460).Green);
+        Assert.True(switched.GetPixel(408, 260).Green < one.GetPixel(408, 260).Green);
+
+        static TacticalFirePlanRow Row(TacticalUnitSnapshot unit) => new(unit, new(unit.Id, [], null), null);
     }
 
     [Fact]
@@ -89,15 +111,20 @@ public sealed class BattleMapRenderTests
         screen.Render(canvas, 1280, 720);
         Save(bitmap, "battle-map-initial.png");
         using var defaultMap = bitmap.Copy();
-        var (forecast, _) = screen.OverlayControls;
+        var (forecast, sectors, allFire) = screen.OverlayControls;
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(forecast.MidX, forecast.MidY, MouseButton.Left));
         screen.Render(canvas, 1280, 720);
         Assert.True(ChangedPixels(defaultMap, bitmap) > 25);
         using var noForecast = bitmap.Copy();
-        var (_, sectors) = screen.OverlayControls;
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(sectors.MidX, sectors.MidY, MouseButton.Left));
         screen.Render(canvas, 1280, 720);
-        Assert.True(ChangedPixels(noForecast, bitmap) > 100);
+        Assert.True(ChangedPixels(noForecast, bitmap) > 25);
+        Assert.True(screen.CaptureFrame(1280, 720)!.AllFireSectors);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(allFire.MidX, allFire.MidY, MouseButton.Left));
+        var visibility = screen.CaptureFrame(1280, 720)!;
+        Assert.False(visibility.AllFireSectors);
+        Assert.False(visibility.EnemyForecast);
+        Assert.False(visibility.EnemySectors);
         Assert.Same(state, screen.Flow.State);
         Assert.NotEqual(bitmap.GetPixel(20, 702), bitmap.GetPixel(20, 706));
 

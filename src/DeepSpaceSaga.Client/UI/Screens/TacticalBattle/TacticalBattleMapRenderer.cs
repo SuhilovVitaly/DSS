@@ -38,21 +38,24 @@ internal static class TacticalBattleMapRenderer
             DrawTrails(canvas, frame, paint);
             foreach (var unit in units)
             {
-                if (unit.Side == battle.PlayerSide || unit.State != TacticalUnitState.Air) continue;
-                if (frame.EnemyForecast && frame.FirePlan is null)
+                if (unit.Side == battle.PlayerSide || unit.Kind != TacticalUnitKind.Drone || unit.State != TacticalUnitState.Air) continue;
+                var end = unit.Pose;
+                if (frame.EnemyForecast)
                 {
                     var vector = TacticalGeometry.Vec(unit.Pose.Course, unit.Speed);
-                    var end = unit.Pose with { X = unit.Pose.X + vector.X, Y = unit.Pose.Y + vector.Y };
+                    end = unit.Pose with { X = unit.Pose.X + vector.X, Y = unit.Pose.Y + vector.Y };
+                }
+                if (frame.EnemySectors)
+                {
+                    bool firing = frame.FirePlan is not null;
+                    DrawRearSector(canvas, view, firing ? unit.Pose : end, firing ? 70 : 55, battle.Rules.RearArc, paint);
+                }
+                if (frame.EnemyForecast)
+                {
                     paint.Color = Enemy.WithAlpha(112);
                     canvas.DrawLine(view.Project(unit.Pose), view.Project(end), paint);
-                    DrawRearSector(canvas, view, end, 55, battle.Rules.RearArc, paint);
                     paint.Color = Enemy.WithAlpha(210);
                     canvas.DrawCircle(view.Project(end), 3 * scale, paint);
-                }
-                if (frame.EnemySectors && !unit.Jammed && unit.Build is { } build)
-                {
-                    paint.Color = Enemy.WithAlpha(40);
-                    DrawArc(canvas, view, unit.Pose, build.Range, build.ArcDegrees, unit.Pose.Course, paint, filled: true);
                 }
             }
             if (frame.Movement is { } movement) DrawMovement(canvas, frame, movement, paint);
@@ -126,13 +129,10 @@ internal static class TacticalBattleMapRenderer
         foreach (var row in plan.Rows)
         {
             if (row.Drone.Jammed || row.Drone.Build is not { } gun) continue;
-            paint.Color = Own.WithAlpha(row.Drone.Id == plan.SelectedDroneId ? (byte)52 : (byte)18);
+            bool selectedSector = row.Drone.Id == plan.SelectedDroneId;
+            if (!frame.AllFireSectors && !selectedSector) continue;
+            paint.Color = Own.WithAlpha(selectedSector ? (byte)52 : (byte)18);
             DrawArc(canvas, view, row.Drone.Pose, gun.Range, gun.ArcDegrees, row.Drone.Pose.Course, paint, filled: true);
-        }
-        foreach (var enemy in frame.Battle.Units)
-        {
-            if (enemy.Side == frame.Battle.PlayerSide || enemy.State != TacticalUnitState.Air) continue;
-            DrawRearSector(canvas, view, enemy.Pose, 70, frame.Battle.Rules.RearArc, paint);
         }
         if (plan.Selected is not { } selected) return;
         var source = view.Project(selected.Drone.Pose);
