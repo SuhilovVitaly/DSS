@@ -96,7 +96,7 @@ public sealed class FirePlanningTests
         var screen = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
         for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
             await fixture.Route(ScreenEvent.MoveTacticalBattle);
-        fixture.AdvanceAnimation(1000);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
         Assert.Equal(TacticalBattlePhase.Fire, screen.Flow.State?.Phase);
         return screen;
     }

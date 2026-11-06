@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 /// <summary>Presentation of an accepted movement; the accepted endpoint remains unmodified.</summary>
 internal sealed class TacticalBattleMovementAnimation
 {
-    internal const long DurationMs = 900;
+    internal const long DurationMs = 1350;
     private readonly TacticalBattleSnapshot _before;
     private readonly ImmutableArray<TacticalMovementPath> _paths;
     private readonly long _startMs;

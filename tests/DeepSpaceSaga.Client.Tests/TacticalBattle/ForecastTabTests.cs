@@ -50,7 +50,7 @@ public sealed class ForecastTabTests
         var screen = await Start(fixture);
         for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
             await fixture.Route(ScreenEvent.MoveTacticalBattle);
-        fixture.AdvanceAnimation(1000);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
         var frame = screen.CaptureFrame(1280, 720)!;
         Assert.Equal(TacticalBattlePhase.Fire, frame.Battle.Phase);
         var forecast = TacticalBattleForecastTab.PredictFire(frame.Battle, frame.FirePlan!);

@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class MovementAnimationTests
 {
     [Fact]
-    public async Task PendingAndNineHundredMillisecondPlaybackBlockMouseEnterAndQueuedCommands()
+    public async Task PendingAndMovementPlaybackBlockMouseEnterAndQueuedCommands()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         var screen = await Start(fixture);
@@ -47,7 +47,7 @@ public sealed class MovementAnimationTests
         Assert.Null(atStart.Movement);
         Assert.Equal(path.Points[0], atStart.Battle.Units.Single(u => u.Id == path.DroneId).Pose);
 
-        fixture.AdvanceAnimation(450);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs / 2);
         var mid = screen.CaptureFrame(1280, 720)!;
         var midpoint = mid.Battle.Units.Single(u => u.Id == path.DroneId).Pose;
         Assert.NotEqual(path.Points[0], midpoint);
@@ -57,7 +57,7 @@ public sealed class MovementAnimationTests
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Right));
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Enter));
 
-        fixture.AdvanceAnimation(449);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs / 2 - 1);
         Assert.True(screen.CaptureFrame(1280, 720)!.Pending);
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.KeypadEnter));
         fixture.AdvanceAnimation(1);
@@ -88,7 +88,7 @@ public sealed class MovementAnimationTests
         var moving = TacticalBattlePanelHeader.Capture(screen.CaptureFrame(1280, 720)!);
         Assert.Empty(moving.Outcome);
         Assert.False(moving.ShowNew);
-        fixture.AdvanceAnimation(900);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
         var final = TacticalBattlePanelHeader.Capture(screen.CaptureFrame(1280, 720)!);
         Assert.Equal(BattleFormat.Localize("Outcome.Draw"), final.Outcome);
         Assert.True(final.ShowNew);

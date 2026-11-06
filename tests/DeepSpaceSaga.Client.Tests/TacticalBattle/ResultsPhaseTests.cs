@@ -17,7 +17,7 @@ public sealed class ResultsPhaseTests
         var screen = await Start(fixture);
         for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
             await fixture.Route(ScreenEvent.MoveTacticalBattle);
-        fixture.AdvanceAnimation(1000);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
         Assert.Equal(TacticalBattlePhase.Fire, screen.Flow.State?.Phase);
         fixture.ManualAnimation = true;
         await fixture.Route(ScreenEvent.FireTacticalBattle);
@@ -31,7 +31,7 @@ public sealed class ResultsPhaseTests
         Assert.All(first.Salvo!.Flights, shot => Assert.False(shot.Flying));
         Assert.Empty(first.Salvo.Damage);
 
-        fixture.AdvanceAnimation(299);
+        fixture.AdvanceAnimation((long)TacticalBattleResults.InitialDelayMs - 1);
         Assert.All(screen.CaptureFrame(1280, 720)!.Salvo!.Flights, shot => Assert.False(shot.Flying));
         fixture.AdvanceAnimation(1);
         var launch = screen.CaptureFrame(1280, 720)!.Salvo!;
@@ -49,6 +49,9 @@ public sealed class ResultsPhaseTests
         Assert.Equal(TacticalBattlePresentation.SalvoResults, skipped.Presentation);
         Assert.Equal(state.Shots.Count(s => s.Hit), skipped.Salvo!.Hits);
         Save(screen, "salvo-resolved.png");
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1280, 720);
         var replay = screen.ReplaySalvoBounds;
         Assert.False(replay.IsEmpty);
         Assert.Equal(ScreenEvent.None, screen.OnMouseDown(replay.MidX, replay.MidY, MouseButton.Left));
@@ -73,7 +76,7 @@ public sealed class ResultsPhaseTests
         Assert.Empty(screen.Flow.State.Shots);
         Assert.False(screen.HasSalvoPresentation);
         Assert.True(screen.CaptureFrame(1280, 720)!.Pending);
-        fixture.AdvanceAnimation(900);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
         var ready = screen.CaptureFrame(1280, 720)!;
         Assert.False(ready.Pending);
         Assert.Null(ready.Salvo);
@@ -98,12 +101,12 @@ public sealed class ResultsPhaseTests
         var captured = after with { FireSkipped = true, Shots = Enumerable.Repeat(after.Shots[0], 12).ToImmutableArray() };
         var response = new TacticalBattleResponse("fixture", true, TacticalBattleRejectionCode.None, captured.Phase, captured, []);
         var results = TacticalBattleResults.Create(before with { Phase = TacticalBattlePhase.Move }, response, 900)!;
-        Assert.Equal(3000, results.EndMs, 8);
+        Assert.Equal(TacticalBattleResults.CapMs, results.EndMs, 8);
         Assert.True(results.Capture(900).AutoFire);
-        Assert.True(results.Capture(3899).InFlight);
-        Assert.False(results.Capture(3900).InFlight);
-        Assert.True(results.Capture(3900).Flights[^1].Flash);
-        Assert.False(results.Capture(4350).Flights[^1].Flash);
+        Assert.True(results.Capture(900 + (long)TacticalBattleResults.CapMs - 1).InFlight);
+        Assert.False(results.Capture(900 + (long)TacticalBattleResults.CapMs).InFlight);
+        Assert.True(results.Capture(900 + (long)TacticalBattleResults.CapMs).Flights[^1].Flash);
+        Assert.False(results.Capture(900 + (long)(TacticalBattleResults.CapMs + TacticalBattleResults.FlashMs)).Flights[^1].Flash);
     }
 
     private static async Task<TacticalBattleScreen> Start(BattleNavigationTests.Fixture fixture)

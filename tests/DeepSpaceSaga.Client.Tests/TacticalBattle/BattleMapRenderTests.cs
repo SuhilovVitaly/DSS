@@ -137,8 +137,9 @@ public sealed class BattleMapRenderTests
         var frame = new TacticalBattleFrame(battle with { Units = [destroyed], BeforeSalvoUnits = [enemy], Paths = [] },
             new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", TacticalBattlePresentation.SalvoFlight, EnemyForecast: false);
         var results = new TacticalBattleResults(frame.Battle, [shot, shot with { Hit = false, LethalImpact = false }], [], 0);
-        using var flying = Raster(frame with { Salvo = results.Capture(949) });
-        var arrival = results.Capture(950);
+        long arrivalMs = (long)(TacticalBattleResults.InitialDelayMs + TacticalBattleResults.FlightMs);
+        using var flying = Raster(frame with { Salvo = results.Capture(arrivalMs - 1) });
+        var arrival = results.Capture(arrivalMs);
         Assert.True(arrival.InFlight);
         using var impact = Raster(frame with { Salvo = arrival });
         using var movement = Raster(frame with { Presentation = TacticalBattlePresentation.Current });

@@ -24,7 +24,7 @@ public sealed record TacticalSalvoFrame(bool InFlight, bool AutoFire, ImmutableA
 internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, ImmutableArray<TacticalShotSnapshot> Shots,
     ImmutableArray<TacticalSalvoDamage> Damage, long StartedMs, bool Skipped = false)
 {
-    internal const double InitialDelayMs = 300, NominalStepMs = 380, FlightMs = 650, FlashMs = 450, CapMs = 3000;
+    internal const double InitialDelayMs = 300, NominalStepMs = 570, FlightMs = 975, FlashMs = 450, CapMs = 4500;
 
     internal static TacticalBattleResults? Create(TacticalBattleSnapshot? before, TacticalBattleResponse response, long startMs)
     {
