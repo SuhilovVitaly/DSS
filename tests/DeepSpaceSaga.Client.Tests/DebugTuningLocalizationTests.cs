@@ -43,7 +43,8 @@ public sealed class DebugTuningLocalizationTests
         long before = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 100; i++) { panel.Prepare(800, 1100, snapshot); panel.SetFeedback(null, null, false, false, status, 1); panel.Render(canvas); }
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
-        const string directory = "D:/DeepSpaceSaga/artifacts/validation/ep0013/panel-locales-20261022";
+        if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is not { Length: > 0 } root) return;
+        string directory = Path.Combine(root, "debug-panel-locales");
         Directory.CreateDirectory(directory);
         Save("top");
         panel.ToggleHelp(panel.Bounds.Right - 20, panel.Bounds.Top + 15);

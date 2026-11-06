@@ -20,7 +20,7 @@ public sealed partial class GameSessionScreen
 
     private void InitializeDebugTuning()
     {
-        _debugTuningPanel.ConfigureBindings(CombatInputs, ManeuverInputs);
+        _debugTuningPanel.ConfigureBindings(ManeuverInputs);
         if (_handle is not null) _handle.Closing += DisposeDebugTuning;
     }
 

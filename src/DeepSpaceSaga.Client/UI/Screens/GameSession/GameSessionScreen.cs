@@ -16,7 +16,6 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly SnapshotBuffer _buffer;
     private readonly ModuleDiagram _moduleDiagram = new();
     internal CombatVisualSettings CombatSettings { get; }
-    private CombatInputSettings CombatInputs { get; }
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
@@ -338,8 +337,8 @@ public sealed partial class GameSessionScreen : IScreen
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
         CombatSettings = combatSettings ?? CombatVisualSettings.Default;
-        CombatInputs = (combatInputs ?? CombatInputSettings.Default).Validate();
-        ManeuverInputs = (maneuverInputs ?? ManeuverInputSettings.Default).Validate(CombatInputs.MappedKeys);
+        var legacyKeys = (combatInputs ?? CombatInputSettings.Default).Validate().MappedKeys;
+        ManeuverInputs = (maneuverInputs ?? ManeuverInputSettings.Default).Validate(legacyKeys);
         _tacticalBattleInputs = tacticalBattleInputs ?? TacticalBattleInputSettings.Default;
         _predictor = predictor;
         _handle = handle;

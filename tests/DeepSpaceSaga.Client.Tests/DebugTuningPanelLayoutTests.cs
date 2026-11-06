@@ -10,7 +10,8 @@ public sealed class DebugTuningPanelLayoutTests
     private static DebugTuningSnapshot Snapshot()
     {
         var values = ImmutableArray.CreateBuilder<DebugTuningValue>();
-        foreach (string module in DebugTuningPanel.ModuleIds)
+        foreach (string module in new[] { "module.engine.tetrarch", "module.engine.strizh",
+                     "module.torpedo.launcher.basic", "module.torpedo.launcher.light", "module.countermeasure.launcher.basic" })
         {
             if (module.Contains("engine", StringComparison.Ordinal))
             {
@@ -36,8 +37,8 @@ public sealed class DebugTuningPanelLayoutTests
     public void CatalogRowsSectionsScalingAndScroll(float scale)
     {
         using var panel = new DebugTuningPanel(k => k) { Visible = true };
-        panel.Prepare(1920 / scale, 1080 / scale, Snapshot());
-        Assert.Equal(25, panel.RowCount); Assert.Equal(5, panel.SectionCount);
+        panel.Prepare(1920 / scale, 380, Snapshot());
+        Assert.Equal(6, panel.RowCount); Assert.Equal(2, panel.SectionCount);
         Assert.Equal(360 * scale, panel.Bounds.Width * scale);
         Assert.True(panel.GetRow(0).Modified); Assert.Equal(5, panel.GetRow(0).Default);
         Assert.True(panel.Scroll(panel.Bounds.MidX, panel.Bounds.MidY, -100));

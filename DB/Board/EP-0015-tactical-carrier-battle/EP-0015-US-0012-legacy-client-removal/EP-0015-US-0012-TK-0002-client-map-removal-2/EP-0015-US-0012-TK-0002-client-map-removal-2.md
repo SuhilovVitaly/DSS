@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0012-legacy-client-removal
 ticket: EP-0015-US-0012-TK-0002-client-map-removal-2
 title: client-map-removal-2
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0012-TK-0001-client-map-removal-1"]
-files_touched: 6
+files_touched: 10
 serves: [AC-01, AC-05]
 created: 2026-11-05
 revision: 3
@@ -54,3 +54,21 @@ Client.Tests регрессия карты. Сборка, scoped format, `git di
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+The five named realtime render/input partials were removed together with their shared private state in TK-0001 (verified SHA `bb267c7d9e9d08fcdf7f97b4142e60030f98278e`). This ticket removes debug tuning weapon presentation, keeps editable engine rows, actual maneuver bindings, help, capture and resets, and redirects the three historical debug test destinations to the current run. Existing authoritative tuning schema remains through the Engine removal tickets.
+- src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.cs
+- src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.DebugTuning.cs
+- src/DeepSpaceSaga.Client/UI/Screens/GameSession/Controls/DebugTuningPanel.cs
+- tests/DeepSpaceSaga.Client.Tests/DebugTuningPanelLayoutTests.cs
+- tests/DeepSpaceSaga.Client.Tests/DebugTuningLocalizationTests.cs
+- tests/DeepSpaceSaga.Client.Tests/DebugTuningDefaultsFileTests.cs
+- tests/DeepSpaceSaga.Client.Tests/DebugTuningFileWriterTests.cs
+- src/DeepSpaceSaga.Client/Data/Locale/English.json
+- src/DeepSpaceSaga.Client/Data/Locale/Russian.json
+
+Direct consumer: 	ests/DeepSpaceSaga.Client.Tests/ManeuverHintsTests.cs verifies only the current maneuver help; old threat panel assertions belong to the retired map.
+
+## Execution evidence — 2026-11-06
+
+Debug tuning now shows six engine parameters in two sections and lists only live maneuver/debug bindings in RU and EN. Existing authoritative reset, edits, persistence and hover/input coverage remain. Redirected historical test output paths to the configured validation root. Windows build 0 warnings/errors, format and diff PASS; 256 selected Client cases PASS in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-map-removal-tuning-02` (includes locale renders, map input and tactical entry). Native/human acceptance and full post-removal regression remain open.
