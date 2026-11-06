@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0017-keep-trails-during-fire
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0015-US-0019-TK-0016-live-movement-trails]
 files_touched:
@@ -19,3 +19,7 @@ files_touched:
 ## Проверка
 
 Целевые тесты в Dss-Main: `BattleMapRenderTests|ResultsPhaseTests|FirePlanningTests`. Проверить `git diff --check`, отдельно зафиксировать ручную приёмку.
+
+## Исполнение
+
+Коммит `c11afb7b` опубликован. 42/42 итоговых проверок. Растр подтвердил след поверх сектора при планировании, во время полёта снарядов и на результатах. Ручная приёмка открыта.

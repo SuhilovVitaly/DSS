@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0016-live-movement-trails
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0015-US-0019-TK-0015-slower-movement-into-fire]
 files_touched:
@@ -19,3 +19,7 @@ files_touched:
 ## Проверка
 
 Целевые тесты в Dss-Main: `MovementAnimationTests|BattleMapRenderTests`. Проверить `git diff --check`, отдельно зафиксировать ручную приёмку.
+
+## Исполнение
+
+Коммит `8ea46a14` опубликован. 14/14 проверок движения и карты. На первом движущемся кадре след имеет начальную и интерполированную конечную точку, которая совпадает с позицией дрона. Ручная приёмка открыта.

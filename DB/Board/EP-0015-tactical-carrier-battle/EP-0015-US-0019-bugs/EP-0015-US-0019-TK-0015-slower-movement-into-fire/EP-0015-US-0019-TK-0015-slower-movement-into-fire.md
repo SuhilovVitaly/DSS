@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0015-slower-movement-into-fire
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0015-US-0019-TK-0010-slower-battle-playback]
 files_touched:
@@ -25,3 +25,7 @@ files_touched:
 ## Проверка
 
 Целевые тесты в Dss-Main: `MovementAnimationTests|ResultsPhaseTests|BattleNavigationTests|FirePlanningTests|ForecastTabTests|SidesAndLogTests`. Проверить `git diff --check`, отдельно зафиксировать ручную приёмку.
+
+## Исполнение
+
+Коммит `042de945` опубликован. 21/21 целевых тестов. Проверены границы ручного перехода и расчёт длительности для непустого автоматического залпа. Ручная приёмка открыта.
