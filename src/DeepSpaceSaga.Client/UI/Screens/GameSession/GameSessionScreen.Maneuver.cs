@@ -13,10 +13,9 @@ public sealed partial class GameSessionScreen
 
     private static string ManeuverError(string reason) => Localization.WorldManeuverError(reason);
 
-    private bool ManeuverEngineReady(InstalledModuleSnapshot? engine) =>
+    private static bool ManeuverEngineReady(InstalledModuleSnapshot? engine) =>
         engine is { IsDestroyed: false, PowerState: "On", OperationalState: "Ready" } &&
-        (engine.StructureMax > 0 ? engine.StructureCurrent > 0 : engine.StructurePoints > 0) &&
-        !(engine.DisabledUntilMotionTimeMs is { } until && until > (_buffer.Presented?.Snapshot.MotionTimeMs ?? 0));
+        (engine.StructureMax > 0 ? engine.StructureCurrent > 0 : engine.StructurePoints > 0);
 
     private void RefreshManeuverInput()
     {

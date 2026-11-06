@@ -126,7 +126,7 @@ public sealed class ManualManeuverInputTests
             if (Disabled) snapshot = snapshot with
             {
                 InstalledModules = snapshot.InstalledModules.Select(m => m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal)
-                ? m with { DisabledUntilMotionTimeMs = long.MaxValue } : m).ToImmutableArray()
+                ? m with { OperationalState = "Disabled" } : m).ToImmutableArray()
             };
             _buffer.Update(snapshot);
         }

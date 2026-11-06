@@ -36,7 +36,7 @@ public sealed partial class SimulationEngine
         }
         else
         {
-            if (owner.IsDocked || !CanExecuteEngineCommand(module, type, time) || type.LinearInertiaMps2 is not > 0 || type.MaxSpeedMps is not > 0)
+            if (owner.IsDocked || !CanExecuteEngineCommand(module, type) || type.LinearInertiaMps2 is not > 0 || type.MaxSpeedMps is not > 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.EngineDisabled);
             var modules = owner.Modules;
             for (int i = 0; i < modules.Length; i++)

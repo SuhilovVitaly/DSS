@@ -24,7 +24,7 @@ public sealed partial class SimulationEngine
         }
         else
         {
-            if (owner.IsDocked || !CanExecuteEngineCommand(module, type, time) || type.AngularInertiaDegPerSec is not > 0)
+            if (owner.IsDocked || !CanExecuteEngineCommand(module, type) || type.AngularInertiaDegPerSec is not > 0)
                 return CommandStartOutcome.Rejected(CommandReasonCodes.EngineDisabled);
             var sampled = RuntimeMotion.At(owner, time);
             var pose = ClearSteeringControls(sampled) with

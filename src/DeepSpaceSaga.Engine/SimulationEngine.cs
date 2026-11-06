@@ -419,8 +419,7 @@ public sealed partial class SimulationEngine : IDisposable
                 MarketBudgetCredits: ResolveMarketBudget(
                     obj, isStation ? marketProfile : null, stationSize, credits, loadingSave, scenario.SaveFormatVersion),
                 RelationToPlayer: obj.RelationToPlayer,
-                ShipClassId: obj.ShipClassId,
-                AttackAi: obj.Ai));
+                ShipClassId: obj.ShipClassId));
         }
 
         StationClusterSaveValidation.Validate(gs, _registry);
@@ -745,8 +744,8 @@ public sealed partial class SimulationEngine : IDisposable
                         ? obj.Modules.Select(m =>
                         {
                             var type = _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex);
-                            return new ModuleHealthSnapshot(m.ModuleId, type.DisplayName, m.Armor, m.ArmorMax,
-                                m.StructurePoints, type.StructurePointsMax, m.DisabledUntilMotionTimeMs, m.Destroyed);
+                            return new ModuleHealthSnapshot(m.ModuleId, type.DisplayName, 0, 0,
+                                m.StructurePoints, type.StructurePointsMax, null, m.Destroyed);
                         }).ToImmutableArray()
                         : ImmutableArray<ModuleHealthSnapshot>.Empty
                 });
@@ -958,7 +957,6 @@ public sealed partial class SimulationEngine : IDisposable
                 CargoCapacityKg: moduleType.CargoCapacityKg,
                 StructureCurrent: module.StructurePoints,
                 StructureMax: moduleType.StructurePointsMax,
-                DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 IsDestroyed: module.Destroyed,
                 EngineMotion: IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is { } maxSpeed &&
                     moduleType.LinearInertiaMps2 is { } acceleration && moduleType.AngularInertiaDegPerSec is { } turnRate
@@ -1152,8 +1150,7 @@ public sealed partial class SimulationEngine : IDisposable
                 RelationToPlayer: obj.RelationToPlayer,
                 ShipClassId: obj.ShipClassId,
                 Orbit: obj.IsDocked ? null : obj.InitialMotion.Orbit,
-                WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY,
-                Ai: obj.ObjectType == SpaceObjectType.NpcShip ? obj.AttackAi : null));
+                WorldOffsetX: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetX, WorldOffsetY: obj.IsDocked ? 0 : obj.InitialMotion.WorldOffsetY));
         }
 
         var gameState = new GameStateData(
@@ -1217,11 +1214,7 @@ public sealed partial class SimulationEngine : IDisposable
                     ? module.LastTurnGameTimeMs
                     : null,
                 OperatorCrewId: module.OperatorCrewId,
-                AutoDefenseEnabled: module.AutoDefenseEnabled,
                 FuelCostBasisCredits: moduleType.FuelCapacityKg is > 0 ? module.FuelCostBasisCredits : null,
-                ArmorClass: module.ArmorClass,
-                Armor: module.ArmorClass == "none" ? null : module.Armor,
-                DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 Destroyed: module.Destroyed));
         }
 
@@ -1373,12 +1366,7 @@ public sealed partial class SimulationEngine : IDisposable
                 lastTurnGameTimeMs,
                 availableCapacityKg,
                 module.OperatorCrewId,
-                module.AutoDefenseEnabled,
                 ResolveFuelCostBasis(module, moduleType, fuelAmountKg, obj.ObjectId),
-                "none",
-                0,
-                0,
-                module.DisabledUntilMotionTimeMs,
                 module.Destroyed));
         }
 
@@ -2462,8 +2450,8 @@ public sealed partial class SimulationEngine : IDisposable
         if (!IsNavigationCommandType(moduleType, command.CommandType))
             return CommandStartOutcome.Rejected(CommandReasonCodes.UnknownCommandType);
 
-        if (!CanExecuteModuleCommand(module, gameTimeMs))
-            return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, gameTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
+        if (!CanExecuteModuleCommand(module))
+            return CommandStartOutcome.Rejected(DestroyedModuleReason(module) ?? CommandReasonCodes.ModuleUnavailable);
 
         if (command.CommandType == NavigationComputerCommandTypes.Undock)
         {
@@ -2617,17 +2605,11 @@ public sealed partial class SimulationEngine : IDisposable
     /// parameters (MaxSpeedMps/TurnStepDegrees/inertia) — NavigationComputer (and other
     /// non-Engine module types) never define those.
     /// </summary>
-    private static string? ModuleCombatUnavailableReason(InstalledModuleRuntime module, double motionTimeMs)
+    private static string? DestroyedModuleReason(InstalledModuleRuntime module) =>
+        module.Destroyed ? CommandReasonCodes.ModuleDestroyed : null;
+    private static bool CanExecuteModuleCommand(InstalledModuleRuntime module)
     {
-        if (module.Destroyed) return CommandReasonCodes.ModuleDestroyed;
-        if (module.DisabledUntilMotionTimeMs is { } until && motionTimeMs < until)
-            return CommandReasonCodes.ModuleDisabled;
-        return null;
-    }
-
-    private static bool CanExecuteModuleCommand(InstalledModuleRuntime module, double motionTimeMs)
-    {
-        return ModuleCombatUnavailableReason(module, motionTimeMs) is null &&
+        return DestroyedModuleReason(module) is null &&
                string.Equals(module.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
                string.Equals(module.OperationalState, "Ready", StringComparison.OrdinalIgnoreCase) &&
                module.StructurePoints > 0;
@@ -2975,8 +2957,8 @@ public sealed partial class SimulationEngine : IDisposable
             return CommandStartOutcome.Started;
         }
 
-        if (!CanExecuteEngineCommand(module, moduleType, gameTimeMs))
-            return CommandStartOutcome.Rejected(ModuleCombatUnavailableReason(module, gameTimeMs) ?? CommandReasonCodes.ModuleUnavailable);
+        if (!CanExecuteEngineCommand(module, moduleType))
+            return CommandStartOutcome.Rejected(DestroyedModuleReason(module) ?? CommandReasonCodes.ModuleUnavailable);
 
         if (command.CommandType == NavigationComputerCommandTypes.Approach &&
             (PredictMotion(obj, Math.Max(0, gameTimeMs - obj.StartGameTimeMs)).SpeedKmS <= 0 ||
@@ -3194,14 +3176,13 @@ public sealed partial class SimulationEngine : IDisposable
     private static bool IsEngineCategory(ModuleTypeDefinition moduleType) =>
         moduleType.CategoryTypeId is null or "module.engine";
 
-    private static bool CanExecuteEngineCommand(InstalledModuleRuntime module, ModuleTypeDefinition moduleType,
-        double motionTimeMs)
+    private static bool CanExecuteEngineCommand(InstalledModuleRuntime module, ModuleTypeDefinition moduleType)
     {
         return IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is > 0 &&
                moduleType.TurnStepDegrees is > 0 &&
                moduleType.LinearInertiaMps2 is > 0 &&
                moduleType.AngularInertiaDegPerSec is > 0 &&
-               CanExecuteModuleCommand(module, motionTimeMs);
+               CanExecuteModuleCommand(module);
     }
 
     private ActiveCycleData CreateEngineCycle(
@@ -3342,7 +3323,7 @@ public sealed partial class SimulationEngine : IDisposable
         foreach (var module in obj.Modules.OrderBy(m => m.ModuleId, StringComparer.Ordinal))
         {
             var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-            if (CanExecuteModuleCommand(module, _processedWorldTimeMs) &&
+            if (CanExecuteModuleCommand(module) &&
                 IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is > 0)
                 return moduleType.MaxSpeedMps.Value / 1000.0;
         }
@@ -3355,7 +3336,7 @@ public sealed partial class SimulationEngine : IDisposable
         {
             if (module.ActiveCycle is not { } cycle) continue;
             var type = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-            if (!CanExecuteEngineCommand(module, type, time) || cycle.CommandType is not
+            if (!CanExecuteEngineCommand(module, type) || cycle.CommandType is not
                 (ShipEngineCommandTypes.Accelerate or ShipEngineCommandTypes.Brake or
                  ShipEngineCommandTypes.TurnLeftStep or ShipEngineCommandTypes.TurnRightStep or
                  ShipEngineCommandTypes.SpeedSynchronization or ShipEngineCommandTypes.DirectionSynchronization)) continue;
@@ -3389,7 +3370,7 @@ public sealed partial class SimulationEngine : IDisposable
                 continue;
 
             var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-            if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType, gameTimeMs))
+            if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
                 continue;
 
             if (cycle.CommandType == ShipEngineCommandTypes.Orbit)
@@ -3515,13 +3496,11 @@ public sealed partial class SimulationEngine : IDisposable
                     }
 
                     var moduleType = _registry.ModuleTypes.GetDefinition(module.ModuleTypeIndex);
-                    if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType, gameTimeMs))
+                    if (!IsEngineCommandType(moduleType, cycle.CommandType) || !CanExecuteEngineCommand(module, moduleType))
                     {
                         // Derive interruption reason from module state before clearing the cycle.
                         string? interruptReason = module.Destroyed || module.StructurePoints <= 0
                             ? ShipEventReasonCodes.ModuleDestroyed
-                            : ModuleCombatUnavailableReason(module, gameTimeMs) is not null
-                                ? ShipEventReasonCodes.ModuleDisabled
                             : !string.Equals(module.PowerState, "On", StringComparison.Ordinal)
                                 ? ShipEventReasonCodes.PowerOff
                                 : !string.Equals(module.OperationalState, "Ready", StringComparison.Ordinal)
@@ -4043,8 +4022,7 @@ internal sealed record SpaceObjectRuntime(
     /// </summary>
     long MarketRevision = 0,
     string? RelationToPlayer = null,
-    string? ShipClassId = null,
-    AttackAiData? AttackAi = null);
+    string? ShipClassId = null);
 
 /// <summary>One crew member aboard a ship (see <see cref="ShipCrewMemberData"/>).</summary>
 internal sealed record CrewMemberRuntime(string Id, string DisplayName,
@@ -4106,12 +4084,7 @@ internal sealed record InstalledModuleRuntime(
     long? LastTurnGameTimeMs = null,
     long? AvailableCapacityKg = null,
     string? OperatorCrewId = null,
-    bool AutoDefenseEnabled = true,
     long FuelCostBasisCredits = 0,
-    string ArmorClass = "none",
-    int Armor = 0,
-    int ArmorMax = 0,
-    double? DisabledUntilMotionTimeMs = null,
     bool Destroyed = false);
 
 internal sealed record CargoStackRuntime(

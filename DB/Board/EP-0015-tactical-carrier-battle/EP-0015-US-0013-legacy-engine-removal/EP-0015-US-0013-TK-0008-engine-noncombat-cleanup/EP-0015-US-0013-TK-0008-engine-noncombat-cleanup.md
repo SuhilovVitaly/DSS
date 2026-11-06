@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0013-legacy-engine-removal
 ticket: EP-0015-US-0013-TK-0008-engine-noncombat-cleanup
 title: engine-noncombat-cleanup
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0013-TK-0007-engine-content-removal"]
-files_touched: 4
+files_touched: 11
 serves: [AC-04, AC-07]
 created: 2026-11-05
 revision: 3
@@ -51,3 +51,22 @@ Engine.Tests. Сборка, scoped format, `git diff --check`. Процессы 
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+Keep manual axes, steering/cancel receipts, normal module readiness, scanning, trade and dialogue. Strip dormant realtime flight/evasion branches, hostile actor state, and module combat timers/armor from world runtime. Client control readiness uses power, operational status and structure. Historical Save18/19 data still validates and drops through its owning reader; the ordinary structure projection remains.
+
+- Edit: src/DeepSpaceSaga.Engine/RuntimeMotion.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.TurnHold.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.SpeedHold.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.ResourceSurvey.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.TradeExecution.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.TradeQuotes.cs
+- Edit: src/DeepSpaceSaga.Client/UI/Screens/GameSession/GameSessionScreen.Maneuver.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/ResourceSurveyTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/ModuleHealthProjectionTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/ManualManeuverInputTests.cs
+
+## Execution evidence — 2026-11-06
+
+Removed dormant world projectile/evasion motion, hostile runtime state, auto-defense and armor/disable timers. Manual axes and module readiness use power, operational state and structure; ordinary destroyed-module reasons remain. Preserved held turns, saved steering receipts, scanner availability and interruption, docking, dialogue, clock and trade. Windows clean solution build, scoped format and diff check; 745 Engine and 239 Client checks passed in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-world-controls-regression-01`.
