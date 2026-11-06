@@ -805,7 +805,7 @@ public sealed class SkiaWindow : IDisposable
                     if (_screens.Current is TacticalBattleModalScreen { CanStart: true } preparation)
                     {
                         var started = await preparation.Flow.StartAsync(preparation.BuildStartRequest());
-                        if (started?.Accepted == true && ReferenceEquals(_screens.Current, preparation))
+                        if ((started?.Accepted == true || preparation.Flow.State is not null) && ReferenceEquals(_screens.Current, preparation))
                             _screens.Replace(CreateTacticalBattleView(preparation.Flow));
                     }
                     break;
@@ -827,7 +827,7 @@ public sealed class SkiaWindow : IDisposable
                     {
                         if (modal is TacticalBattleScreen { TurnBusy: true }) break;
                         if (evt == ScreenEvent.NewTacticalBattle && modal is not TacticalBattleScreen { CanStartNewBattle: true }) break;
-                        if (modal.Flow.State is not null && !await modal.Flow.ExitAsync()) break;
+                        if (!await modal.Flow.ExitAsync()) break;
                         if (evt == ScreenEvent.NewTacticalBattle) _screens.Replace(CreateTacticalSetupView(modal.Flow));
                         else await PopModalAsync();
                     }

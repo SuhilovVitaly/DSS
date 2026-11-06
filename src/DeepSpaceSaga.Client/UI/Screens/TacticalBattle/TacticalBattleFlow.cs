@@ -55,12 +55,29 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     }
     public Task<TacticalBattleResponse?> MoveAsync(MoveTacticalBattleRequest request) => Submit(() => Session.MoveTacticalBattleAsync(request));
     public Task<TacticalBattleResponse?> FireAsync(FireTacticalBattleRequest request) => Submit(() => Session.FireTacticalBattleAsync(request));
+    /// <summary>Exits the battle the engine reports, which can differ from ours after a lost response; true once none is active.</summary>
     public async Task<bool> ExitAsync()
     {
-        var state = State;
-        if (state is null) return true;
-        return (await Submit(() => Session.ExitTacticalBattleAsync(new(NewIdentity("exit"), state.BattleId)), exiting: true))?.Accepted == true;
+        for (int attempt = 0; attempt < 2; attempt++)
+        {
+            var state = State ?? await Session.GetTacticalBattleStateAsync();
+            if (state is null) return Forget();
+            var response = await Submit(() => Session.ExitTacticalBattleAsync(new(NewIdentity("exit"), state.BattleId)), exiting: true);
+            if (response is null) return false;
+            if (response.Accepted) return true;
+            if (response.Code == TacticalBattleRejectionCode.NoBattle) return Forget();
+            if (response.Code == TacticalBattleRejectionCode.WrongBattle && response.State is not null) continue; // Submit adopted the live battle
+            return await Session.GetTacticalBattleStateAsync() is null && Forget();
+        }
+        return false;
     }
+    private bool Forget()
+    {
+        Volatile.Write(ref _state, null);
+        return true;
+    }
+    private static bool IsLiveBattleRefusal(TacticalBattleResponse response) => !response.Accepted &&
+        response.Code is TacticalBattleRejectionCode.AlreadyActive or TacticalBattleRejectionCode.WrongBattle;
     private async Task<TacticalBattleResponse?> Submit(Func<ValueTask<TacticalBattleResponse>> send, bool starting = false, bool exiting = false)
     {
         if (Interlocked.CompareExchange(ref _pending, 1, 0) != 0) return null;
@@ -69,7 +86,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
             var response = await send();
             var previous = State;
             if (response.Accepted && exiting) Volatile.Write(ref _state, null);
-            else if (response.State is { } state && (starting && response.Accepted || previous is not null && state.BattleId == previous.BattleId && state.Revision >= previous.Revision))
+            else if (response.State is { } state && (starting && response.Accepted || IsLiveBattleRefusal(response) || previous is not null && state.BattleId == previous.BattleId && state.Revision >= previous.Revision))
                 Volatile.Write(ref _state, state);
             Volatile.Write(ref _error, response.Accepted ? "" : BattleFormat.Text(GameSessionHandle.TacticalBattleRefusalText(response.Code) + " " + Issue(response.ContentError)));
             return response;

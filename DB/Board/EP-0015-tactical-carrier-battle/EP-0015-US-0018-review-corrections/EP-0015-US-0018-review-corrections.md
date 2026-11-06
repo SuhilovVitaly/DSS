@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0018-review-corrections
 title: "Исправления по код-ревью эпика"
-stage: in-progress
+stage: done
 dependencies: [EP-0015-US-0017-project-documentation]
 ---
 
@@ -54,3 +54,7 @@ Automated, native/input и product/human acceptance фиксируются ра�
 ## Не исправляется в этой истории
 
 Находки ревью №9 (копия журнала в каждом ответе, неочищаемые `_tacticalIdentities`) и №10 (пересчёт `TacticalDrone.Limits`) — производительность, низкий приоритет, вне объёма по решению пользователя.
+
+## Execution review — 2026-11-06
+
+Все три тикета выполнены. №1–№6 и №8 исправлены, №7 подтверждён регрессионным тестом без правки кода. Не прогнаны 111 тестов тяжёлых корпусов Engine (превышают cap 300000 ms на класс). Известные посторонние падения: `ContentSyncTests` (нет `pwsh`), `SeriesParity.Raid` (US-0016 TK-0001), `ResultsPhaseTests.ActualSalvoWaits…` (падает и на baseline). Native/physical и human acceptance не выполнялись.

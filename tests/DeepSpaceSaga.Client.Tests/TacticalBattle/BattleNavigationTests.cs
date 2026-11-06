@@ -72,6 +72,84 @@ public sealed class BattleNavigationTests
     }
 
     [Fact]
+    public async Task ExitClosesTheModalWhenTheEngineNoLongerHasThisBattle()
+    {
+        await using var fixture = await Fixture.Create();
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = (TacticalBattleModalScreen)fixture.Screens.Current;
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(setup.OnKeyDown(Key.Enter));
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        // The exit was processed but its response was lost: the engine has no battle, the client still shows one.
+        Assert.True(fixture.Engine.ExitTacticalBattle(new("TB-lost-exit", battle.Flow.State!.BattleId)).Accepted);
+
+        await fixture.Route(ScreenEvent.CloseTacticalBattle);
+
+        Assert.Null(battle.Flow.State);
+        Assert.Same(fixture.Game, fixture.Screens.Current);
+        Assert.Equal(0, fixture.Depth);
+        Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
+    }
+
+    [Fact]
+    public async Task ExitOfAStaleBattleExitsTheLiveEngineBattleInstead()
+    {
+        await using var fixture = await Fixture.Create();
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = (TacticalBattleModalScreen)fixture.Screens.Current;
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(setup.OnKeyDown(Key.Enter));
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        var request = battle.Flow.LastStart!;
+        Assert.True(fixture.Engine.ExitTacticalBattle(new("TB-other-exit", battle.Flow.State!.BattleId)).Accepted);
+        var live = fixture.Engine.StartTacticalBattle(request with { CommandId = "TB-other-start" });
+        Assert.True(live.Accepted);
+
+        await fixture.Route(ScreenEvent.CloseTacticalBattle);
+
+        Assert.False(fixture.Engine.IsTacticalBattleActive);
+        Assert.Same(fixture.Game, fixture.Screens.Current);
+        Assert.Equal(0, fixture.Depth);
+    }
+
+    [Fact]
+    public async Task RejectedStartAdoptsTheLiveBattleSoItCanBeExited()
+    {
+        await using var fixture = await Fixture.Create();
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = (TacticalBattleModalScreen)fixture.Screens.Current;
+        await setup.Flow.OptionsTask!;
+        // A start was accepted but its response never reached this modal.
+        var orphan = fixture.Engine.StartTacticalBattle(setup.BuildStartRequest() with { CommandId = "TB-orphan-start" });
+        Assert.True(orphan.Accepted);
+
+        await fixture.Route(ScreenEvent.StartTacticalBattle);
+
+        var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        Assert.Equal(orphan.State!.BattleId, battle.Flow.State!.BattleId);
+        await fixture.Route(ScreenEvent.CloseTacticalBattle);
+        Assert.False(fixture.Engine.IsTacticalBattleActive);
+        Assert.Same(fixture.Game, fixture.Screens.Current);
+        Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
+    }
+
+    [Fact]
+    public async Task ClosingSetupExitsAnOrphanedEngineBattle()
+    {
+        await using var fixture = await Fixture.Create();
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = (TacticalBattleModalScreen)fixture.Screens.Current;
+        await setup.Flow.OptionsTask!;
+        Assert.True(fixture.Engine.StartTacticalBattle(setup.BuildStartRequest() with { CommandId = "TB-orphan-start" }).Accepted);
+
+        await fixture.Route(ScreenEvent.CloseTacticalBattle);
+
+        Assert.False(fixture.Engine.IsTacticalBattleActive);
+        Assert.Same(fixture.Game, fixture.Screens.Current);
+        Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
+    }
+
+    [Fact]
     public async Task ActiveEscapeRequiresConfirmationAndActualExitPrecedesResume()
     {
         await using var fixture = await Fixture.Create();

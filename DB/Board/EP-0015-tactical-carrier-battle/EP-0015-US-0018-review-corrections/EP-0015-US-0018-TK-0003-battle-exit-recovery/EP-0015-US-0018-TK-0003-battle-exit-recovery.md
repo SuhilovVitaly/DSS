@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0018-review-corrections
 ticket: EP-0015-US-0018-TK-0003-battle-exit-recovery
 title: battle-exit-recovery
-stage: todo
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0018-TK-0002-ship-destroyed-screen"]
-files_touched: 4
+files_touched: 3
 serves: [AC-03]
 created: 2026-11-06
 revision: 1
@@ -45,3 +45,13 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. TDD. Сборка, scoped form
 
 ## Definition of Done
 AC-03 выполнен и проверен; лимит files_touched соблюдён; результаты записаны в карточку; отдельный коммит тикета; push в `origin` (D-USER-14/15).
+
+## Execution evidence — 2026-11-06
+
+Изменены 3 из 4 разрешённых файлов (`BattleEndTests.cs` не понадобился).
+
+- №3 `TacticalBattleFlow.ExitAsync`: выходит из боя, который сообщает движок (`State` или `GetTacticalBattleStateAsync`); нет боя или `NoBattle` — состояние очищается, `true`; `WrongBattle` с живым снимком — один повтор для живого боя; прочие отказы — `true` только если движок подтверждает отсутствие боя.
+- №4 `Submit`: отказы `AlreadyActive`/`WrongBattle` с живым снимком принимаются.
+- `SkiaWindow`: выход вызывается всегда (без условия `Flow.State is not null`); старт, отклонённый с живым боем, открывает экран этого боя.
+
+Тесты `BattleNavigationTests` (4 новых): `ExitClosesTheModalWhenTheEngineNoLongerHasThisBattle`, `ExitOfAStaleBattleExitsTheLiveEngineBattleInstead`, `RejectedStartAdoptsTheLiveBattleSoItCanBeExited`, `ClosingSetupExitsAnOrphanedEngineBattle`. Red: все 4 падают при baseline-версии Flow и двух строк SkiaWindow (`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/us0018-tk0203-20261106-red/`). Green и общие проверки — как в TK-0002.
