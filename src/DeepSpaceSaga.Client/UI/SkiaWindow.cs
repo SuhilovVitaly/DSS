@@ -790,6 +790,7 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.OpenTacticalBattle:
                     if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen)
                     {
+                        Localization.ApplyLanguage(Localization.ReadLanguageSetting());
                         var flow = new TacticalBattleFlow(battleSession);
                         var setup = CreateTacticalSetupView(flow);
                         await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
@@ -1264,7 +1265,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is SettingsScreen)
             return;
 
-        var monitors = Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
+        var monitors = _window is null ? [] : Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
         InterfaceLog.Write(
             $"DIAG Monitors found: {monitors.Length} — " +
             string.Join(" | ", monitors.Select(m =>
