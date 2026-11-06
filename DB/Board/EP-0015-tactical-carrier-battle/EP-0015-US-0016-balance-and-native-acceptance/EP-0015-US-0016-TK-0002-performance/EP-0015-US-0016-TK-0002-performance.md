@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0016-balance-and-native-acceptance
 ticket: EP-0015-US-0016-TK-0002-performance
 title: performance
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0016-TK-0001-series-parity"]
-files_touched: 2
+files_touched: 4
 serves: [AC-02]
 created: 2026-11-05
 revision: 3
@@ -49,3 +49,16 @@ Performance tool; значения в ExecutionStatus. Сборка, scoped form
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Measure independent Release gates without changing balance or the open Raid reference assertion. Use real Engine steps and CPU Skia frames. Add an internal draw-and-flush observation callback for the subsequent real-window confirmation; it is inert without the evidence consumer.
+
+- tools/DeepSpaceSaga.Performance/TacticalBattlePerformance.cs
+- tools/DeepSpaceSaga.Performance/Program.cs
+- src/DeepSpaceSaga.Client/UI/SkiaWindow.cs
+- DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md
+
+## Execution evidence — 2026-11-06
+
+Release benchmark on the execution Windows VDI: 2,029 complete authoritative turns p95 0.4454 ms, 1,000 warmed aim calls max 0.2442 ms, 1,400 real screen Skia raster frames 1920x1080 worst phase p95 4.4156 ms / max 9.4828 ms, 1,000 full default battles 1.1292 s. No monitor presentation claim; native draw/flush will be measured separately. Scoped format and zero-warning Release build, 167 Tactical Client tests, diff check. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-tactical-release-performance-01/performance.json`.

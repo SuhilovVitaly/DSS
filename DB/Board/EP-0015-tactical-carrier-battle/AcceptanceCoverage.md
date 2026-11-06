@@ -71,7 +71,7 @@
 | EP-0015-US-0014-legacy-foundation-removal | AC-05 | EP-0015-US-0014-TK-0001-motion-removal, EP-0015-US-0014-TK-0002-contracts-dto-removal, EP-0015-US-0014-TK-0003-contracts-fields-removal, EP-0015-US-0014-TK-0004-content-cleanup, EP-0015-US-0014-TK-0005-tools-cleanup | PASS: live symbol scan clean; complete partitioned solution regression green |
 | EP-0015-US-0015-localization | AC-01 | EP-0015-US-0015-TK-0001-locale-coverage | PASS: packaged RU/EN keys, real setup and battle, canonical catalog pilot and role names |
 | EP-0015-US-0016-balance-and-native-acceptance | AC-01 | EP-0015-US-0016-TK-0001-series-parity | FAIL: Raid 856/140 vs 857/139; other four tactics exact, Linux and Windows signatures agree |
-| EP-0015-US-0016-balance-and-native-acceptance | AC-02 | EP-0015-US-0016-TK-0002-performance | not started |
+| EP-0015-US-0016-balance-and-native-acceptance | AC-02 | EP-0015-US-0016-TK-0002-performance | PASS: Release limits met; turn p95 0.445 ms, aim max 0.244 ms, raster frame max 9.483 ms, series 1.129 s |
 | EP-0015-US-0016-balance-and-native-acceptance | AC-03 | EP-0015-US-0016-TK-0003-native-acceptance | not started |
 | EP-0015-US-0017-project-documentation | AC-01 | EP-0015-US-0017-TK-0001-impact-inventory | not started |
 | EP-0015-US-0017-project-documentation | AC-02 | EP-0015-US-0017-TK-0002-documentation-new-contract | not started |
