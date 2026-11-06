@@ -29,20 +29,6 @@ public sealed class PointCombatUS0013TK0001Tests
         Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(Localization.Get("World.Panel.Destroyed")));
     }
 
-    [Fact]
-    public async Task Critical_flag_comes_from_actual_configured_engine_rules()
-    {
-        var source = PointCombatSessionFixture.Registry();
-        // Use an installed role rather than assuming a particular module registry order.
-        await using var baseline = new PointCombatSessionFixture(source);
-        string role = baseline.Engine.CaptureSnapshot().InstalledModules.First(m => m.CombatRole is not null).CombatRole!;
-        var rules = source.CombatRules! with { ShipDestruction = source.CombatRules!.ShipDestruction with { CriticalRoles = [role] } };
-        await using var world = new PointCombatSessionFixture(PointCombatSessionFixture.Registry(rules: rules));
-        var snapshot = world.Engine.CaptureSnapshot();
-        Assert.Contains(snapshot.InstalledModules, m => m.IsCritical);
-        foreach (var module in snapshot.InstalledModules) Assert.Equal(module.CombatRole == role, module.IsCritical);
-    }
-
     [Theory]
     [InlineData(1f, 1920, 1080)]
     [InlineData(1.5f, 1920, 1080)]

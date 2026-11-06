@@ -33,7 +33,7 @@ public sealed class DebugTuningDefaultsFileTests : IDisposable
             Assert.Equal(5, document.RootElement.GetProperty("ships").GetProperty("module.engine.tetrarch").GetProperty("maxSpeedKmS").GetDouble());
             var catalog = LocalGameSessionConnection.LoadDebugTuningDefaults(SettingsPath);
             Assert.True(DebugTuningFileFormat.TryParse(json, catalog.Defaults, out var patch, out var reason), reason);
-            Assert.Equal(25, patch.Values.Length);
+            Assert.Equal(6, patch.Values.Length);
             Assert.Equal(catalog.Defaults.ToArray(), patch.Values.ToArray());
         }
     }

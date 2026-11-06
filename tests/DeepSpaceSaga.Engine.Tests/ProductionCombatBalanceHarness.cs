@@ -31,7 +31,6 @@ internal sealed class ProductionCombatBalanceHarness
         {
             Modules = Enumerable.Range(0, _registry.ModuleTypes.Count).Select(_registry.ModuleTypes.GetDefinition).ToArray(),
             Classes = Enumerable.Range(0, _registry.ShipClasses.Count).Select(_registry.ShipClasses.GetDefinition).ToArray(),
-            _registry.CombatRules
         })));
     }
 

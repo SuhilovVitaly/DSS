@@ -6,7 +6,6 @@
       "type": "module.engine",
       "massKg": 5000,
       "structurePointsMax": 150,
-      "combatRole": "engine",
       "powerConsumptionW": 0,
       "maxSpeedMps": 6000,
       "turnStepDegrees": 1,
@@ -15,8 +14,7 @@
       "baseCycleTimeMs": 1000,
       "fuelCapacityKg": 1000,
       "fuelEfficiencyKmPerKg": 200,
-      "baseSuccessChancePercent": 100,
-      "maneuverability": 10
+      "baseSuccessChancePercent": 100
     },
     {
       "typeId": "module.engine.strizh",
@@ -24,7 +22,6 @@
       "type": "module.engine",
       "massKg": 5000,
       "structurePointsMax": 150,
-      "combatRole": "engine",
       "powerConsumptionW": 0,
       "maxSpeedMps": 8000,
       "turnStepDegrees": 1,
@@ -33,8 +30,7 @@
       "baseCycleTimeMs": 1000,
       "fuelCapacityKg": 1000,
       "fuelEfficiencyKmPerKg": 200,
-      "baseSuccessChancePercent": 100,
-      "maneuverability": 40
+      "baseSuccessChancePercent": 100
     },
     {
       "typeId": "module.engine.tetrarch",
@@ -42,7 +38,6 @@
       "type": "module.engine",
       "massKg": 5000,
       "structurePointsMax": 150,
-      "combatRole": "engine",
       "powerConsumptionW": 0,
       "maxSpeedMps": 5000,
       "turnStepDegrees": 1,
@@ -51,8 +46,7 @@
       "baseCycleTimeMs": 1000,
       "fuelCapacityKg": 1000,
       "fuelEfficiencyKmPerKg": 200,
-      "baseSuccessChancePercent": 100,
-      "maneuverability": 10
+      "baseSuccessChancePercent": 100
     }
   ]
 }

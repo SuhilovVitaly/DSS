@@ -1,7 +1,7 @@
 using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
-using static DeepSpaceSaga.Engine.Tests.PointCombatUS0003TK0002Tests;
+using static DeepSpaceSaga.Engine.Tests.PointCombatUS0018TK0002Tests;
 
 namespace DeepSpaceSaga.Engine.Tests;
 

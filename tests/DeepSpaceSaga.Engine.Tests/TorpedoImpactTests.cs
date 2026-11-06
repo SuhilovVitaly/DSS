@@ -2,15 +2,14 @@ using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
-using Point = DeepSpaceSaga.Engine.Tests.PointCounterFixture;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class TorpedoImpactTests
 {
     internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
-    internal static readonly string ClientRoot = Point.Root;
-    internal static readonly Lazy<GameDataRegistry> Registry = new(() => Point.Registry());
+    internal static readonly string ClientRoot = SeededWorldBootstrapTests.ClientRoot;
+    internal static readonly Lazy<GameDataRegistry> Registry = new(() => PointCombatUS0018TK0002Tests.Registry());
     internal static ScenarioFile Scenario(Func<SpaceObjectData, SpaceObjectData>? configure = null,
         params SpaceObjectData[] extras)
     {
@@ -43,28 +42,6 @@ public sealed class TorpedoImpactTests
             }
         };
     }
-    internal static SpaceObjectData FragileForOneHit(SpaceObjectData ship) => ship with
-    {
-        Modules = ship.Modules!.Select(module => module.ModuleTypeId is "module.container.basic" or "module.scanner.mk1"
-            ? module with { StructurePoints = 0, Destroyed = true } : module).ToArray()
-    };
-
-    internal static ScenarioFile InRangePlayerAttackScenario(ScenarioFile scenario)
-    {
-        var player = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == Player);
-        return scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with
-                {
-                    PositionX = player.PositionX + (o.PositionX - player.PositionX) * 0.1,
-                    PositionY = player.PositionY + (o.PositionY - player.PositionY) * 0.1,
-                    Modules = o.Modules!.Select(m => m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? m with { PowerState = "Off" } : m).ToArray()
-                } : o).ToArray()
-            }
-        };
-    }
 
     internal static SimulationEngine Create(ScenarioFile? scenario = null, GameDataRegistry? registry = null)
     {
@@ -76,7 +53,4 @@ public sealed class TorpedoImpactTests
         engine.CaptureSnapshotForTests(calendar ?? motion, simulationTimeMs: motion);
     internal static SpaceObjectData Obstacle(string id, double x, double y) =>
         new(id, SpaceObjectType.Asteroid, "Permanent", id, x, y, 0, 0, "Stationary", 1_000_000, "Silicate", null, IsKnown: true);
-
-    internal static PlayerCommand LaunchAt(string id, double x = 0, double y = -100, string profile = "medium") =>
-        new(id, 1, Player, Launcher, CombatCommandTypes.Launch, TargetWorldX: x, TargetWorldY: y, ProfileId: profile);
 }

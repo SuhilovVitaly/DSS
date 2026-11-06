@@ -15,66 +15,8 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
     internal LocalGameSessionConnection Connection { get; }
     private long _realMs;
 
-    private static IEnumerable<T> All<T>(TypeRegistry<T> source) where T : ITypeDefinition => Enumerable.Range(0, source.Count).Select(source.GetDefinition);
-    internal static GameDataRegistry Registry(double scatterPercent = 0, CombatRulesDefinition? rules = null)
-    {
-        var source = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
-        var commands = new[]
-        {
-            new CommandDefinition(CombatCommandTypes.Launch, "Launch", Target: "point", Type: "module.torpedo.launcher"),
-            new CommandDefinition(CombatCommandTypes.Detonate, "Detonate", Target: "object", Type: "module.torpedo.launcher"),
-            new CommandDefinition(DefenseCommandTypes.Launch, "Launch counter", Target: "point", Type: "module.countermeasure.launcher")
-        };
-        return GameDataRegistry.Create(All(source.ModuleCategories).Select(c => c.TypeId switch
-            {
-                "module.torpedo.launcher" => c with { CommandTypeIds = [CombatCommandTypes.Launch, CombatCommandTypes.Detonate] },
-                "module.countermeasure.launcher" => c with { CommandTypeIds = [DefenseCommandTypes.Launch] },
-                _ => c
-            }),
-            All(source.ModuleTypes).Select(m => m.CategoryTypeId switch
-            {
-                "module.torpedo.launcher" => m with
-                {
-                    CommandTypeIds = [CombatCommandTypes.Launch, CombatCommandTypes.Detonate],
-                    TorpedoManeuverability = null,
-                    TorpedoRangeKm = null,
-                    TorpedoSpeedKmS = null,
-                    TorpedoTurnRateDegPerSec = null,
-                    Accuracy = null,
-                    LauncherReloadMs = null,
-                    TorpedoMaxFlightTimeMs = null,
-                    TorpedoDamage = 200,
-                    ArmorPiercingPercent = 20,
-                    ArmorDamagePercent = 100,
-                    RangeKm = 70,
-                    ReloadMs = 10000,
-                    ScatterPercent = scatterPercent,
-                    Profiles = [new("slow", 6, 9), new("medium", 10, 5), new("fast", 16, 2.5)]
-                },
-                "module.countermeasure.launcher" => m with
-                {
-                    CommandTypeIds = [DefenseCommandTypes.Launch],
-                    RangeKm = 30,
-                    ReloadMs = 12500,
-                    ScatterPercent = 0,
-                    Profiles = [new("wide", 15, 1), new("fast", 25, .5)],
-                    CountermeasureAccuracy = null,
-                    CountermeasureRangeKm = null,
-                    CountermeasureManualRangeKm = null,
-                    CountermeasureSpeedKmS = null,
-                    CountermeasureTurnRateDegPerSec = null,
-                    CountermeasureReloadMs = null,
-                    CountermeasureMaxFlightTimeMs = null,
-                    Barrels = null,
-                    BurstIntervalMs = null
-                },
-                _ => m
-            }), All(source.ItemTypes), All(source.CommandDefinitions).Concat(commands).GroupBy(c => c.TypeId).Select(g => g.Last()),
-            All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
-            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: rules ?? source.CombatRules! with { Chance = null, Blast = new(.3), Scatter = new(15, .0333, .3), Npc = new(1400, 30, 200), CombatStartRangeKm = 100 });
-    }
-
+    internal static GameDataRegistry Registry() =>
+        EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
     internal PointCombatSessionFixture(GameDataRegistry? registry = null, bool engineEnabled = false, double enemyX = 400)
     {
         var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios", "PlayerShipOnly", "scenario.json"));

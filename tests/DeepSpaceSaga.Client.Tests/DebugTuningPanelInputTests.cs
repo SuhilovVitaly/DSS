@@ -125,7 +125,7 @@ public sealed class DebugTuningPanelInputTests
             tick += 2 * System.Diagnostics.Stopwatch.Frequency;
             screen.OnMouseDown(reset.MidX * scale, reset.MidY * scale); Assert.Equal(3, connection.Commands.Count);
             screen.OnMouseDown(reset.MidX * scale, reset.MidY * scale); Assert.Equal(4, connection.Commands.Count);
-            var resetCommand = connection.Commands[3]; Assert.Equal(25, resetCommand.DebugTuning!.Values.Length);
+            var resetCommand = connection.Commands[3]; Assert.Equal(6, resetCommand.DebugTuning!.Values.Length);
             await handle.FlushDebugTuningAsync(); Assert.True(File.Exists(handle.DebugTuningFiles.CurrentPath));
             buffer.Update(snapshot with
             {

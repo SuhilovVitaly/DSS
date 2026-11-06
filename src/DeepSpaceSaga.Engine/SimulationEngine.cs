@@ -255,8 +255,7 @@ public sealed partial class SimulationEngine : IDisposable
     {
         if (isSave && scenario.SaveFormatVersion != SaveFormat.CurrentSaveFormatVersion)
             throw new ScenarioException("Save was not migrated to the current format.");
-        scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true,
-            armorClasses: _registry.CombatRules?.ArmorClasses);
+        scenario = ScenarioLoader.ValidateAndNormalize(scenario, allowNonZeroGameTime: true);
         var gs = scenario.GameState;
         PlacementValidationResult? aiPlacementValidation = null;
         if ((isSave || scenario.SaveFormatVersion > 0) && gs.MarketEventCatalogFingerprint is { } eventFingerprint && eventFingerprint != _registry.StationMarketEventCatalogFingerprint)
@@ -957,14 +956,10 @@ public sealed partial class SimulationEngine : IDisposable
                 AvailableCapacityKg: module.AvailableCapacityKg,
                 CabinesCount: moduleType.CabinesCount,
                 CargoCapacityKg: moduleType.CargoCapacityKg,
-                ArmorCurrent: module.Armor,
-                ArmorMax: module.ArmorMax,
                 StructureCurrent: module.StructurePoints,
                 StructureMax: moduleType.StructurePointsMax,
                 DisabledUntilMotionTimeMs: module.DisabledUntilMotionTimeMs,
                 IsDestroyed: module.Destroyed,
-                CombatRole: moduleType.CombatRole,
-                IsCritical: moduleType.CombatRole is { } role && _registry.CombatRules?.ShipDestruction.CriticalRoles.Contains(role) == true,
                 EngineMotion: IsEngineCategory(moduleType) && moduleType.MaxSpeedMps is { } maxSpeed &&
                     moduleType.LinearInertiaMps2 is { } acceleration && moduleType.AngularInertiaDegPerSec is { } turnRate
                     ? new(maxSpeed / 1000.0, acceleration / 1000.0, turnRate) : null));
@@ -1346,11 +1341,6 @@ public sealed partial class SimulationEngine : IDisposable
                 throw new ScenarioException(
                     $"Module '{module.ModuleId}' structurePoints {module.StructurePoints} is outside 0..{moduleType.StructurePointsMax}.");
             }
-            int armorMax = _registry.CombatRules?.ArmorClasses.GetValueOrDefault(module.ArmorClass) ?? 0;
-            int armor = module.Armor ?? armorMax;
-            if (armor < 0 || armor > armorMax)
-                throw new ScenarioException($"Module '{module.ModuleId}' armor {armor} is outside 0..{armorMax}.");
-
             var cargo = BuildRuntimeCargo(obj, module, saveVersion);
 
             // Fuel: engine module types carry a FuelCapacityKg; the installed instance
@@ -1385,9 +1375,9 @@ public sealed partial class SimulationEngine : IDisposable
                 module.OperatorCrewId,
                 module.AutoDefenseEnabled,
                 ResolveFuelCostBasis(module, moduleType, fuelAmountKg, obj.ObjectId),
-                module.ArmorClass,
-                armor,
-                armorMax,
+                "none",
+                0,
+                0,
                 module.DisabledUntilMotionTimeMs,
                 module.Destroyed));
         }
@@ -2235,8 +2225,6 @@ public sealed partial class SimulationEngine : IDisposable
             return PlayerRelation.Self;
         if (obj.ObjectType == SpaceObjectType.NpcShip)
             return obj.RelationToPlayer ?? PlayerRelation.Neutral;
-        if (_registry.CombatRules?.IsPointAim == true && obj.ObjectType == SpaceObjectType.Wreck)
-            return obj.RelationToPlayer;
         return null;
     }
 

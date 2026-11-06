@@ -47,7 +47,7 @@ public sealed class TradingEconomySaveSchemaTests
         return GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
             All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint, stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
     }
 
     private static ScenarioFile Legacy(ScenarioFile current, int version)

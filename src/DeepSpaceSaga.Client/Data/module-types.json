@@ -29,9 +29,7 @@
         "navigation.approach",
         "trade.refuel",
         "engine.turnHold",
-        "engine.speedHold",
-        "maneuver.evade",
-        "combat.acknowledgeResults"
+        "engine.speedHold"
       ]
     },
     {
@@ -79,29 +77,6 @@
       "displayName": "Habitation Module",
       "slotSize": 1,
       "commandTypeIds": []
-    },
-    {
-      "typeId": "module.combat.laser",
-      "displayName": "Combat Laser",
-      "slotSize": 1,
-      "commandTypeIds": []
-    },
-    {
-      "typeId": "module.torpedo.launcher",
-      "displayName": "Torpedo Launcher",
-      "slotSize": 1,
-      "commandTypeIds": [
-        "torpedo.launch",
-        "torpedo.detonate"
-      ]
-    },
-    {
-      "typeId": "module.countermeasure.launcher",
-      "displayName": "Countermeasure Launcher",
-      "slotSize": 1,
-      "commandTypeIds": [
-        "defense.launch"
-      ]
     },
     {
       "typeId": "living.quarters",

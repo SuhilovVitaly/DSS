@@ -1,6 +1,4 @@
 using System.Collections.Immutable;
-using System.Text.Json.Serialization;
-using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Engine.Content;
 
@@ -35,37 +33,5 @@ internal sealed record ModuleTypeDefinition(
     /// placeholder.
     /// </summary>
     long? BasePriceCredits = null,
-    /// <summary>Hull damage per contact in integer hit points; null for non-launchers.</summary>
-    int? TorpedoDamage = null,
-    /// <summary>Projectile's own constant speed in km/s, without carrier velocity.</summary>
-    double? TorpedoSpeedKmS = null,
-    /// <summary>Positive maximum projectile turn rate in degrees per physical second.</summary>
-    double? TorpedoTurnRateDegPerSec = null,
-    double? CountermeasureSpeedKmS = null,
-    double? CountermeasureTurnRateDegPerSec = null,
-    double? CountermeasureRangeKm = null,
-    long? CountermeasureReloadMs = null,
     string? CategoryTypeId = null,
-    long? FuelEfficiencyKmPerKg = null,
-    decimal? TorpedoManeuverability = null,
-    double? TorpedoRangeKm = null,
-    decimal? CountermeasureAccuracy = null,
-    double? CountermeasureManualRangeKm = null,
-    long? CountermeasureMaxFlightTimeMs = null,
-    decimal? Accuracy = null,
-    decimal? ArmorPiercingPercent = null,
-    decimal? ArmorDamagePercent = null,
-    long? LauncherReloadMs = null,
-    long? TorpedoMaxFlightTimeMs = null,
-    int? Barrels = null,
-    long? BurstIntervalMs = null,
-    decimal? Maneuverability = null,
-    string? CombatRole = null,
-    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<LaunchProfileSnapshot>))]
-    ImmutableArray<LaunchProfileSnapshot> Profiles = default,
-    double? RangeKm = null,
-    long? ReloadMs = null,
-    double? ScatterPercent = null) : ITypeDefinition
-{
-    internal bool IsPointLauncher => !Profiles.IsDefault || RangeKm.HasValue || ReloadMs.HasValue || ScatterPercent.HasValue;
-}
+    long? FuelEfficiencyKmPerKg = null) : ITypeDefinition;

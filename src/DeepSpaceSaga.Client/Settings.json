@@ -13,7 +13,6 @@
     "stationResourceFields": "Data/World/station-resource-fields.json",
     "shipClasses": "Data/Ships/ship-classes.json",
     "solarSystem": "Data/Maps/solar-system.json",
-    "combatRules": "Data/Combat/combat-rules.json",
     "tacticalBattle": "Data/TacticalBattle"
   },
   "economy": {

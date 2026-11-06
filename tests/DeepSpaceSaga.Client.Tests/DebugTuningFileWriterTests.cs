@@ -24,7 +24,7 @@ public sealed class DebugTuningFileWriterTests : IDisposable
     public DebugTuningFileWriterTests() => Directory.CreateDirectory(_directory);
 
     [Fact]
-    public async Task Confirmed_revision_writes_all_twenty_five_values_utf8_schema_and_timestamp()
+    public async Task Confirmed_revision_writes_all_six_world_values_utf8_schema_and_timestamp()
     {
         var catalog = Catalog();
         await using var writer = new DebugTuningFileWriter(_directory);
@@ -41,7 +41,7 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         Assert.Equal(1, document.RootElement.GetProperty("schemaVersion").GetInt32());
         Assert.True(document.RootElement.GetProperty("writtenAtUtc").TryGetDateTime(out _));
         Assert.True(DebugTuningFileFormat.TryParse(json, catalog.Defaults, out var patch, out var reason), reason);
-        Assert.Equal(25, patch.Values.Length);
+        Assert.Equal(6, patch.Values.Length);
         Assert.Equal(Change(catalog, 1).Values.ToArray(), patch.Values.ToArray());
         Assert.Equal(1, writer.Status.Revision); Assert.Null(writer.Status.Error);
         Assert.Empty(Directory.GetFiles(_directory, "*.tmp-*"));
@@ -125,7 +125,7 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         Assert.Equal(1, writer.Status.Revision);
         var catalog = session.Buffer.Latest.Snapshot.DebugTuning!;
         Assert.True(DebugTuningFileFormat.TryParse(File.ReadAllText(writer.CurrentPath), catalog.Defaults, out var patch, out _));
-        Assert.Equal(25, patch.Values.Length);
+        Assert.Equal(6, patch.Values.Length);
         Assert.Equal(5.5, patch.Values[0].Value);
         await Task.WhenAll(session.DisposeAsync().AsTask(), session.DisposeAsync().AsTask());
         Assert.Equal(1, writer.Status.Revision);

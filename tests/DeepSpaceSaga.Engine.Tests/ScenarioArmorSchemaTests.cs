@@ -5,19 +5,6 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class ScenarioArmorSchemaTests
 {
-    [Fact]
-    public void Unknown_armor_class_rejected()
-    {
-        var scenario = TorpedoImpactTests.Scenario(o => o.ObjectId != Player ? o : o with
-        {
-            Modules = o.Modules!.Select(m => m.ModuleId == "MOD-PLAYER-ENGINE-01" ? m with { ArmorClass = "unknown" } : m).ToArray()
-        });
-        using var engine = Create();
-        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
-        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(scenario));
-        Assert.Contains("armorClass", error.Message, StringComparison.Ordinal);
-        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
-    }
 
     [Fact]
     public void Save20_keeps_world_module_structure_and_drops_legacy_armor()

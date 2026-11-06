@@ -8,7 +8,6 @@ namespace DeepSpaceSaga.Engine;
 internal sealed class DebugTuningState
 {
     private static readonly string[] Engines = ["module.engine.tetrarch", "module.engine.strizh"];
-    private static readonly string[] Launchers = ["module.torpedo.launcher.basic", "module.torpedo.launcher.light", "module.countermeasure.launcher.basic"];
 
     internal GameDataRegistry Registry { get; }
     internal DebugTuningSnapshot Snapshot { get; }
@@ -57,23 +56,11 @@ internal sealed class DebugTuningState
         {
             int index = Registry.ModuleTypes.GetIndex(entry.ModuleTypeId);
             var definition = definitions[index];
-            if (entry.ProfileId is { } profile)
-            {
-                int p = 0;
-                while (definition.Profiles[p].ProfileId != profile) p++;
-                var current = definition.Profiles[p];
-                definitions[index] = definition with
-                {
-                    Profiles = definition.Profiles.SetItem(p, entry.Field == "speedKmS"
-                        ? current with { SpeedKmS = entry.Value } : current with { BlastRadiusKm = entry.Value })
-                };
-            }
-            else definitions[index] = entry.Field switch
+            definitions[index] = entry.Field switch
             {
                 "maxSpeedKmS" => definition with { MaxSpeedMps = (int)Math.Round(entry.Value * 1000, MidpointRounding.AwayFromZero) },
                 "accelerationMps2" => definition with { LinearInertiaMps2 = (int)entry.Value },
                 "turnRateDegPerSec" => definition with { AngularInertiaDegPerSec = (int)entry.Value },
-                "reloadMs" => definition with { ReloadMs = (long)entry.Value },
                 _ => throw new InvalidOperationException("Validated tuning field was not mapped.")
             };
         }
@@ -90,9 +77,6 @@ internal sealed class DebugTuningState
         "maxSpeedKmS" => (.1, 50, false),
         "accelerationMps2" => (10, 20000, true),
         "turnRateDegPerSec" => (1, 360, true),
-        "reloadMs" => (100, 600000, true),
-        "speedKmS" => (.1, 100, false),
-        "blastRadiusKm" => (.05, 50, false),
         _ => throw new InvalidOperationException("Unknown tuning field.")
     };
 
@@ -106,21 +90,6 @@ internal sealed class DebugTuningState
             if (type.MaxSpeedMps is { } speed) result.Add(new(id, "maxSpeedKmS", speed / 1000.0));
             if (type.LinearInertiaMps2 is { } acceleration) result.Add(new(id, "accelerationMps2", acceleration));
             if (type.AngularInertiaDegPerSec is { } turn) result.Add(new(id, "turnRateDegPerSec", turn));
-        }
-        foreach (string id in Launchers)
-        {
-            if (!registry.ModuleTypes.Contains(id)) continue;
-            var type = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(id));
-            if (type.ReloadMs is { } reload) result.Add(new(id, "reloadMs", reload));
-            if (type.Profiles.IsDefault) continue;
-            string[] profiles = id == Launchers[2] ? ["wide", "fast"] : ["slow", "medium", "fast"];
-            foreach (string profile in profiles)
-            {
-                var p = type.Profiles.FirstOrDefault(p => p.ProfileId == profile);
-                if (p is null) continue;
-                result.Add(new(id, "speedKmS", p.SpeedKmS, profile));
-                result.Add(new(id, "blastRadiusKm", p.BlastRadiusKm, profile));
-            }
         }
         return result.ToImmutable();
     }

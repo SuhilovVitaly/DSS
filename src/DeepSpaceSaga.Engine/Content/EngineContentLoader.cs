@@ -178,7 +178,6 @@ public static class EngineContentLoader
                 throw new ContentException($"{settingsPath}: typeData.shipClasses contains an empty content path.");
             shipClasses = LoadShipClasses(Resolve(basePath, declaredShipClassPath));
         }
-        var (combatRules, fireModes) = LoadCombatRulesAndModes(settingsPath);
         var dialogues = settings.TypeData.Dialogues is null ? null : DialogueContentLoader.Load(Resolve(basePath, settings.TypeData.Dialogues));
         var quests = settings.TypeData.Quests is null ? null : DialogueContentLoader.LoadQuests(Resolve(basePath, settings.TypeData.Quests));
         if (profiles is not null)
@@ -197,35 +196,7 @@ public static class EngineContentLoader
             dialogues, quests, catalogVersion: catalog.Version,
             legacyCatalogFingerprint: settings.Economy?.LegacyCatalogFingerprint, stationMarketProfiles: profiles,
             shipClasses: shipClasses, stationMarketEvents: marketEvents, requireCompleteMarketEventSet: marketEvents is not null,
-            combatRules: combatRules, fireModes: fireModes,
             tacticalBattle: TacticalBattleContentLoader.FromSettings(settingsPath, basePath, settings.TypeData.TacticalBattle));
-    }
-
-    internal static CombatRulesDefinition LoadCombatRules(string path)
-    {
-        try { return CombatContentValidation.Rules(ReadJson<CombatRulesDefinition>(path, "combat rules")); }
-        catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
-    }
-
-    internal static (CombatRulesDefinition? Rules, ImmutableArray<FireModeDefinition> Modes)
-        LoadCombatRulesAndModes(string settingsPath)
-    {
-        var paths = ReadJson<EngineSettingsFile>(settingsPath, "settings").TypeData;
-        if (paths is null) throw new ContentException($"{settingsPath}: missing typeData.");
-        if (paths.CombatRules is null && paths.FireModes is null) return (null, []);
-        if (string.IsNullOrWhiteSpace(paths.CombatRules))
-            throw new ContentException($"{settingsPath}: typeData.combatRules must name a file.");
-        string root = Path.GetDirectoryName(Path.GetFullPath(settingsPath))!;
-        var rules = LoadCombatRules(Resolve(root, paths.CombatRules));
-        if (paths.FireModes is not null)
-            throw new ContentException($"{settingsPath}: typeData.fireModes is retired.");
-        return (rules, []);
-    }
-
-    internal static ImmutableArray<FireModeDefinition> LoadFireModes(string path)
-    {
-        try { return CombatContentValidation.Modes(ReadJson<FireModesFile>(path, "fire modes")); }
-        catch (ContentException ex) { throw new ContentException($"{path}: {ex.Message}", ex); }
     }
 
     internal static IReadOnlyList<StationMarketEventDefinition> LoadStationMarketEvents(string path)
@@ -460,10 +431,9 @@ public static class EngineContentLoader
             if (!categoriesByTypeId.TryGetValue(dto.Type, out var category))
             {
                 throw new ContentException(
-                    $"Module implementation '{dto.TypeId}' references unknown module type '{dto.Type}'.");
+                    $"{filePath}: Module implementation '{dto.TypeId}' references unknown module type '{dto.Type}'.");
             }
 
-            ValidateTorpedoParameters(dto, category, filePath);
             ValidateEngineParameters(dto, category);
             if (dto.FuelEfficiencyKmPerKg is { } efficiency && (efficiency <= 0 || category.TypeId != "module.engine"))
                 throw new ContentException($"Module '{dto.TypeId}': fuelEfficiencyKmPerKg must be positive and owned by module.engine.");
@@ -505,77 +475,10 @@ public static class EngineContentLoader
                 baseSuccessChancePercent,
                 dto.CabinesCount,
                 dto.BasePriceCredits,
-                dto.TorpedoDamage,
-                dto.TorpedoSpeedKmS,
-                dto.TorpedoTurnRateDegPerSec,
-                dto.CountermeasureSpeedKmS,
-                dto.CountermeasureTurnRateDegPerSec,
-                dto.CountermeasureRangeKm,
-                dto.CountermeasureReloadMs,
                 category.TypeId,
-                dto.FuelEfficiencyKmPerKg,
-                dto.TorpedoManeuverability,
-                dto.TorpedoRangeKm,
-                dto.CountermeasureAccuracy,
-                dto.CountermeasureManualRangeKm,
-                dto.CountermeasureMaxFlightTimeMs,
-                dto.Accuracy,
-                dto.ArmorPiercingPercent,
-                dto.ArmorDamagePercent,
-                dto.LauncherReloadMs,
-                dto.TorpedoMaxFlightTimeMs,
-                dto.Barrels,
-                dto.BurstIntervalMs,
-                dto.Maneuverability,
-                dto.CombatRole,
-                ReadLauncherProfiles(dto, filePath), dto.RangeKm, dto.ReloadMs, dto.ScatterPercent);
-            try { GameDataRegistry.ValidateWeaponRatings(definition); }
-            catch (ContentException error) { throw new ContentException($"{filePath}: {error.Message}", error); }
+                dto.FuelEfficiencyKmPerKg);
             return definition;
         });
-    }
-
-    private static void ValidateTorpedoParameters(
-        ModuleImplementationDto dto, ModuleCategoryDefinition category, string filePath)
-    {
-        if (dto.Profiles is not null || dto.RangeKm.HasValue || dto.ReloadMs.HasValue || dto.ScatterPercent.HasValue)
-        {
-            if (category.TypeId is not ("module.torpedo.launcher" or "module.countermeasure.launcher"))
-                throw new ContentException($"{filePath}: Module '{dto.TypeId}': profiles require a torpedo or countermissile launcher.");
-            return; // The complete point-launch schema is validated by GameDataRegistry below.
-        }
-        bool isLauncher = string.Equals(category.TypeId, "module.torpedo.launcher", StringComparison.Ordinal);
-        bool hasParameters = dto.TorpedoDamage.HasValue || dto.TorpedoSpeedKmS.HasValue || dto.TorpedoTurnRateDegPerSec.HasValue;
-        if (!isLauncher)
-        {
-            if (hasParameters)
-                throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedo parameters require category module.torpedo.launcher.");
-            return;
-        }
-
-        if (dto.TorpedoDamage is not > 0)
-            throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoDamage is required and must be a positive integer.");
-        if (dto.TorpedoSpeedKmS is not > 0 || !double.IsFinite(dto.TorpedoSpeedKmS.Value))
-            throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoSpeedKmS is required and must be positive and finite.");
-        if (dto.TorpedoTurnRateDegPerSec is not > 0 || !double.IsFinite(dto.TorpedoTurnRateDegPerSec.Value))
-            throw new ContentException($"{filePath}: Module '{dto.TypeId}': torpedoTurnRateDegPerSec is required and must be positive and finite.");
-    }
-
-    private static ImmutableArray<LaunchProfileSnapshot> ReadLauncherProfiles(ModuleImplementationDto dto, string filePath)
-    {
-        if (dto.Profiles is null) return default;
-        var result = ImmutableArray.CreateBuilder<LaunchProfileSnapshot>(dto.Profiles.Count);
-        for (int index = 0; index < dto.Profiles.Count; index++)
-        {
-            var profile = dto.Profiles[index];
-            string source = $"{filePath}: Module '{dto.TypeId}', profiles[{index}]";
-            if (profile is null) throw new ContentException($"{source} must not be null.");
-            if (profile.Id is null) throw new ContentException($"{source}.id is required.");
-            if (profile.SpeedKmS is null) throw new ContentException($"{source}.speedKmS is required.");
-            if (profile.BlastRadiusKm is null) throw new ContentException($"{source}.blastRadiusKm is required.");
-            result.Add(new(profile.Id, profile.SpeedKmS.Value, profile.BlastRadiusKm.Value));
-        }
-        return result.MoveToImmutable();
     }
 
     private static void ValidateEngineParameters(ModuleImplementationDto dto, ModuleCategoryDefinition category)
@@ -899,8 +802,6 @@ public static class EngineContentLoader
         [property: JsonPropertyName("shipClasses"), JsonConverter(typeof(DeclaredShipClassPathConverter))] string? ShipClasses = null,
         [property: JsonPropertyName("solarSystem"), JsonConverter(typeof(DeclaredSolarSystemPathConverter))] string? SolarSystem = null,
         [property: JsonPropertyName("stationMarketEvents"), JsonConverter(typeof(DeclaredProfilePathConverter))] string? StationMarketEvents = null,
-        [property: JsonPropertyName("combatRules")] string? CombatRules = null,
-        [property: JsonPropertyName("fireModes")] string? FireModes = null,
         [property: JsonPropertyName("tacticalBattle")] JsonElement TacticalBattle = default);
 
     private sealed class DeclaredShipClassPathConverter : JsonConverter<string>
@@ -1001,38 +902,7 @@ public static class EngineContentLoader
         [property: JsonPropertyName("baseSuccessChancePercent")] int? BaseSuccessChancePercent,
         [property: JsonPropertyName("cabines")] int? CabinesCount,
         [property: JsonPropertyName("basePriceCredits")] long? BasePriceCredits = null,
-        [property: JsonPropertyName("torpedoDamage")] int? TorpedoDamage = null,
-        [property: JsonPropertyName("torpedoSpeedKmS")] double? TorpedoSpeedKmS = null,
-        [property: JsonPropertyName("torpedoTurnRateDegPerSec")] double? TorpedoTurnRateDegPerSec = null,
-        [property: JsonPropertyName("torpedoManeuverability")] decimal? TorpedoManeuverability = null,
-        [property: JsonPropertyName("torpedoRangeKm")] double? TorpedoRangeKm = null,
-        [property: JsonPropertyName("countermeasureAccuracy")] decimal? CountermeasureAccuracy = null,
-        [property: JsonPropertyName("countermeasureManualRangeKm")] double? CountermeasureManualRangeKm = null,
-        [property: JsonPropertyName("countermeasureMaxFlightTimeMs")] long? CountermeasureMaxFlightTimeMs = null,
-        [property: JsonPropertyName("countermeasureSpeedKmS")] double? CountermeasureSpeedKmS = null,
-        [property: JsonPropertyName("countermeasureTurnRateDegPerSec")] double? CountermeasureTurnRateDegPerSec = null,
-        [property: JsonPropertyName("countermeasureRangeKm")] double? CountermeasureRangeKm = null,
-        [property: JsonPropertyName("countermeasureReloadMs")] long? CountermeasureReloadMs = null,
-        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null,
-        [property: JsonPropertyName("accuracy")] decimal? Accuracy = null,
-        [property: JsonPropertyName("armorPiercingPercent")] decimal? ArmorPiercingPercent = null,
-        [property: JsonPropertyName("armorDamagePercent")] decimal? ArmorDamagePercent = null,
-        [property: JsonPropertyName("launcherReloadMs")] long? LauncherReloadMs = null,
-        [property: JsonPropertyName("torpedoMaxFlightTimeMs")] long? TorpedoMaxFlightTimeMs = null,
-        [property: JsonPropertyName("barrels")] int? Barrels = null,
-        [property: JsonPropertyName("burstIntervalMs")] long? BurstIntervalMs = null,
-        [property: JsonPropertyName("maneuverability")] decimal? Maneuverability = null,
-        [property: JsonPropertyName("combatRole")] string? CombatRole = null,
-        [property: JsonPropertyName("profiles")] IReadOnlyList<LauncherProfileDto?>? Profiles = null,
-        [property: JsonPropertyName("rangeKm")] double? RangeKm = null,
-        [property: JsonPropertyName("reloadMs")] long? ReloadMs = null,
-        [property: JsonPropertyName("scatterPercent")] double? ScatterPercent = null);
-
-    private sealed record LauncherProfileDto(
-        [property: JsonPropertyName("id")] string? Id = null,
-        [property: JsonPropertyName("speedKmS")] double? SpeedKmS = null,
-        [property: JsonPropertyName("blastRadiusKm")] double? BlastRadiusKm = null);
-
+        [property: JsonPropertyName("fuelEfficiencyKmPerKg")] long? FuelEfficiencyKmPerKg = null);
     private sealed record ItemTypesFile(
         [property: JsonPropertyName("itemTypes")] IReadOnlyList<ItemTypeDefinitionDto?>? ItemTypes,
         [property: JsonPropertyName("schemaVersion")] int SchemaVersion = 1,

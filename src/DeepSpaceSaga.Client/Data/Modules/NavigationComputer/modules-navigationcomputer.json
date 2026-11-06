@@ -7,8 +7,7 @@
       "massKg": 4000,
       "structurePointsMax": 150,
       "powerConsumptionW": 0,
-      "baseCycleTimeMs": 1000,
-      "combatRole": "bridge"
+      "baseCycleTimeMs": 1000
     }
   ]
 }

@@ -34,20 +34,4 @@ public sealed class PointCombatUS0018TK0002Tests
         return engine;
     }
     internal static AuthoritativeSnapshot At(SimulationEngine engine, long time = 0) => engine.CaptureSnapshotForTests(time * 300, SimulationSpeed.Speed0, time);
-    internal static PlayerCommand Launch(string id = "point", string profile = "slow") =>
-        new(id, 1, Player, Launcher, CombatCommandTypes.Launch, TargetWorldX: 600, TargetWorldY: 0, ProfileId: profile);
-
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Point_modules_reject_retired_modes_even_when_rules_are_omitted(bool omitRules)
-    {
-        var source = Registry();
-        static IEnumerable<T> All<T>(TypeRegistry<T> types) where T : ITypeDefinition => Enumerable.Range(0, types.Count).Select(types.GetDefinition);
-        var error = Assert.Throws<ContentException>(() => GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
-            All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
-            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: omitRules ? null : source.CombatRules, fireModes: [new("standard", "Standard", 0, 0, 0, 1, ["module.torpedo.launcher", "module.countermeasure.launcher"])]));
-        Assert.Contains("point", error.Message, StringComparison.OrdinalIgnoreCase);
-    }
 }

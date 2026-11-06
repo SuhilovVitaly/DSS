@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0013-legacy-engine-removal
 ticket: EP-0015-US-0013-TK-0007-engine-content-removal
 title: engine-content-removal
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0013-TK-0006-scenario-module-cleanup"]
-files_touched: 6
+files_touched: 65
 serves: [AC-03, AC-07]
 created: 2026-11-05
 revision: 3
@@ -51,3 +51,78 @@ Engine.Tests; сборка EconomyBalance. Сборка, scoped format, `git dif
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+Strict Settings and module directory loaders require simultaneous removal of obsolete schema fields and registered JSON. Move that owning cut forward from US14 TK4; keep its full content inventory/deployment check and remaining ship-class cleanup there. Preserve world engines, module structure, docking, crew, markets, and TacticalBattle content. Economy catalog identity hashes only item economics; the five removed definition files and fields do not participate, and the historical fixture fingerprint must continue to match. Remove battle tuning values now; the version bump and retired-file diagnostics belong to TK9.
+
+- Delete: src/DeepSpaceSaga.Engine/Content/CombatRulesDefinition.cs
+- Delete: src/DeepSpaceSaga.Client/Data/Combat/combat-rules.json
+- Delete: src/DeepSpaceSaga.Client/Data/Commands/CountermeasureLauncher/commands.json
+- Delete: src/DeepSpaceSaga.Client/Data/Commands/TorpedoLauncher/commands.json
+- Delete: src/DeepSpaceSaga.Client/Data/Modules/CountermeasureLauncher/modules-countermeasurelauncher.json
+- Delete: src/DeepSpaceSaga.Client/Data/Modules/TorpedoLauncher/modules-torpedolauncher.json
+- Edit: src/DeepSpaceSaga.Engine/Content/EngineContentLoader.cs
+- Edit: src/DeepSpaceSaga.Engine/Content/GameDataRegistry.cs
+- Edit: src/DeepSpaceSaga.Engine/Content/ModuleTypeDefinition.cs
+- Edit: src/DeepSpaceSaga.Engine/DebugTuningState.cs
+- Edit: src/DeepSpaceSaga.Engine/SimulationEngine.cs
+- Edit: src/DeepSpaceSaga.Client/Settings.json
+- Edit: src/DeepSpaceSaga.Client/Data/module-types.json
+- Edit: src/DeepSpaceSaga.Client/Data/Commands/Engine/commands.json
+- Edit: src/DeepSpaceSaga.Client/Data/Modules/Engine/modules-engine.json
+- Edit: src/DeepSpaceSaga.Client/Data/Modules/NavigationComputer/modules-navigationcomputer.json
+- Edit: tools/DeepSpaceSaga.EconomyBalance/ClusterBalanceRun.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/ProductionCombatBalanceHarness.cs
+Test scope: retire obsolete catalog rules and only their weapon fixtures. Reuse the real world registry in preserved steering, economy, dialogue, loadout, Save20 and debug checks. Keep malformed/duplicate/optional ship-class and world module bootstrap coverage.
+- Delete: tests/DeepSpaceSaga.Engine.Tests/CombatRulesContentTests.cs
+- Delete: tests/DeepSpaceSaga.Engine.Tests/CountermeasureContentLoaderTests.cs
+- Delete: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0001TK0004Tests.cs
+- Delete: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0001TK0005Tests.cs
+- Delete: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0003TK0002Tests.cs
+- Delete: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0004TK0001Tests.cs
+- Delete: tests/DeepSpaceSaga.Engine.Tests/PointCounterFixture.cs
+- Delete: tests/DeepSpaceSaga.Client.Tests/CountermeasureContentTests.cs
+- Delete: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0001Tests.cs
+- Delete: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0002Tests.cs
+- Delete: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0004Tests.cs
+- Delete: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0005Tests.cs
+- Delete: tests/DeepSpaceSaga.Client.Tests/TorpedoLauncherContentTests.cs
+- Delete: tests/DeepSpaceSaga.Client.Tests/TorpedoCommandContentTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/CatalogCompatibilityTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/CombatForecastEngineManeuverTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/DialogueEffectTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/EconomyTimeContinuityTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/QuotedTradeExecutionTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/RouteRiskIntegrationTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/TradingEconomySaveSchemaTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/VoyageProfitAccountingTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/VoyageFuelLifecycleTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/VoyageFuelAccountingTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/CombatContentLoaderTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/DebugTuningStateTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0018TK0002Tests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/TorpedoImpactTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0006TK0003Tests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0009TK0004Tests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/DebugTuningSaveTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/DebugTuningStartupTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/ModulePanelProjectionTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/ScenarioArmorSchemaTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/ModuleHealthBootstrapTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/ScenarioEngineTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/PointCombatSessionFixture.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0013TK0001Tests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/ModuleStructureCatalogTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/TetrarchClassContentTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0003Tests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/PointCombatUS0019TK0005Tests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/DebugTuningDefaultsFileTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/EngineCategoryDispatchTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/DebugTuningFileWriterTests.cs
+- Edit: tests/DeepSpaceSaga.Client.Tests/DebugTuningPanelInputTests.cs
+The recursive loader also found the unused laser implementation after its category was removed. Delete that obsolete definition in this same coherent cut:
+- src/DeepSpaceSaga.Client/Data/Modules/CombatLaser/modules-combatlaser.json
+
+## Execution evidence — 2026-11-06
+
+Removed live rules loading, weapon/rating fields and validators, old weapon/laser definitions, obsolete engine command ids and the Settings key. The world catalog retains module structure, propulsion, ship class identity, the tactical catalog, and unchanged item economics; all historical Save18/19 fixtures and catalog guards passed without an identity bypass. Economy tool uses the world registry. Debug catalog now has six propulsion values; schema migration is TK9. Windows build clean, format/diff PASS; broad run 2021 Engine, 1965 Client, 44 EconomyBalance passes, with the four identified expectation/path defects corrected. The fresh targeted pass covers all four cases plus historical saves, catalog, tactical, and debug: 544 Engine and 191 Client. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-world-catalog-regression-03` and `20261106-world-catalog-regression-04`.

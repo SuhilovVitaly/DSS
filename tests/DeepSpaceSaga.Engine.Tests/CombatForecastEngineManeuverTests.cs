@@ -82,7 +82,7 @@ public sealed class CombatForecastEngineManeuverTests
             All(sourceRegistry.CommandDefinitions).Select(c => c.TypeId == command ? c with { TimeFactor = 1000 } : c),
             All(sourceRegistry.FactoryTypes), All(sourceRegistry.Recipes), All(sourceRegistry.Dialogues), All(sourceRegistry.Quests),
             stationMarketProfiles: All(sourceRegistry.StationMarketProfiles), shipClasses: All(sourceRegistry.ShipClasses),
-            stationMarketEvents: All(sourceRegistry.StationMarketEvents), combatRules: sourceRegistry.CombatRules);
+            stationMarketEvents: All(sourceRegistry.StationMarketEvents));
         scenario = scenario with
         {
             GameState = scenario.GameState with
@@ -139,7 +139,7 @@ public sealed class CombatForecastEngineManeuverTests
             All(source.CommandDefinitions).Select(c => c.TypeId == command ? c with { TimeFactor = 1000 } : c),
             All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
-            stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules, fireModes: source.FireModes);
+            stationMarketEvents: All(source.StationMarketEvents));
         using var engine = TorpedoImpactTests.Create(TorpedoImpactTests.Scenario(o => o with
         { SpeedMps = 1000, MovementType = "Linear" }), registry);
         engine.ReceiveCommand(new("phase", 1, TorpedoImpactTests.Player, "MOD-PLAYER-ENGINE-01", command,

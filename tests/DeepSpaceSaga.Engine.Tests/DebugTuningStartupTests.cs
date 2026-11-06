@@ -1,12 +1,11 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.LocalClient;
-using static DeepSpaceSaga.Engine.Tests.PointCombatUS0003TK0002Tests;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class DebugTuningStartupTests : IDisposable
 {
-    private readonly string _directory = Path.Combine("D:/DeepSpaceSaga/artifacts/validation/ep0013/startup-fixtures", Guid.NewGuid().ToString("N"));
+    private readonly string _directory = Path.Combine(Path.GetTempPath(), "dss-debug-startup-" + Guid.NewGuid().ToString("N"));
     private string PathName => Path.Combine(_directory, "debug-tuning.json");
     public DebugTuningStartupTests() => Directory.CreateDirectory(_directory);
     private void Write(string json) => File.WriteAllText(PathName, json);

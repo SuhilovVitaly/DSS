@@ -2,7 +2,7 @@ using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using DeepSpaceSaga.Engine.Content;
-using static DeepSpaceSaga.Engine.Tests.PointCombatUS0003TK0002Tests;
+using static DeepSpaceSaga.Engine.Tests.TorpedoImpactTests;
 
 namespace DeepSpaceSaga.Engine.Tests;
 
@@ -11,8 +11,8 @@ public sealed class PointCombatUS0006TK0003Tests
     private const string Engine = "MOD-PLAYER-ENGINE-01";
     private static AuthoritativeSnapshot At(SimulationEngine engine, long time = 0) => engine.CaptureSnapshotForTests(time * 4, simulationTimeMs: time);
     private static ObjectMotionSnapshot Ship(AuthoritativeSnapshot snapshot) => snapshot.Objects.Single(o => o.ObjectId == Player);
-    private static SimulationEngine Battle() => Create(o => o.ObjectId == Player ? o with
-    { SpeedMps = 2000, DirectionDegrees = 0, MovementType = "Linear" } : o);
+    private static SimulationEngine Battle() => Create(TorpedoImpactTests.Scenario(o => o.ObjectId == Player ? o with
+    { SpeedMps = 2000, DirectionDegrees = 0, MovementType = "Linear" } : o));
     private static PlayerCommand Hold(string id = "hold", TurnDirection direction = TurnDirection.Right, bool? active = true) =>
         new(id, 1, Player, Engine, ShipEngineCommandTypes.TurnHold, TurnDirection: direction, Active: active);
 

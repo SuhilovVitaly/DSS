@@ -10,7 +10,7 @@ public sealed class ModuleHealthBootstrapTests
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
 
     [Fact]
-    public void Light_armor_module_starts_60_150()
+    public void Legacy_armor_does_not_change_world_structure()
     {
         var loaded = EngineContentLoader.LoadFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"));
         string playerId = loaded.DefaultScenario.GameState.PlayerShipObjectId;
@@ -30,8 +30,8 @@ public sealed class ModuleHealthBootstrapTests
         using var engine = new SimulationEngine(loaded.Registry);
         engine.LoadScenario(scenario);
         var module = engine.CaptureSnapshot().InstalledModules[0];
-        Assert.Equal(60, module.ArmorCurrent);
-        Assert.Equal(60, module.ArmorMax);
+        Assert.Equal(0, module.ArmorCurrent);
+        Assert.Equal(0, module.ArmorMax);
         Assert.Equal(150, module.StructureCurrent);
         Assert.Equal(150, module.StructureMax);
         Assert.False(module.IsDestroyed);
