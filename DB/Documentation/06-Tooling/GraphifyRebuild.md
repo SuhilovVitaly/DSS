@@ -1,7 +1,7 @@
 # Перестройка навигационного графа
 
 `tools/graphify/rebuild.py` выполняет offline AST extraction и Markdown structure
-для code/docs/Board, включая EP-0013 и EP-0014, и объединяет свежие host-agent semantic
+для code/docs/Board, включая EP-0015 и связанный исторический Board, и объединяет свежие host-agent semantic
 fragments. Реальная игра и внешний API не запускаются. Для нового rebuild нужны
 Python с установленным Graphify и результаты semantic чтения по текущим hashes.
 
@@ -33,4 +33,4 @@ AST cache также располагается там. Семантически
 Graphify — средство навигации. Ни связность графа, ни INFERRED edge не доказывают
 Engine outcome, native FPS, звук, физический ввод или human/product acceptance.
 Текущий результат перестройки и residual gates публикуются в
-[ExecutionStatus EP-0014](../../Board/EP-0014-module-panels/ExecutionStatus.md).
+[ExecutionStatus EP-0015](../../Board/EP-0015-tactical-carrier-battle/ExecutionStatus.md).

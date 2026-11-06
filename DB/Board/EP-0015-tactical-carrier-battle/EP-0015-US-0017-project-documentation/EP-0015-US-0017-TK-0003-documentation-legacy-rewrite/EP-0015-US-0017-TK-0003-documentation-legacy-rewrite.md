@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0017-project-documentation
 ticket: EP-0015-US-0017-TK-0003-documentation-legacy-rewrite
 title: documentation-legacy-rewrite
-stage: draft
+stage: done
 layer: documentation
 depends_on: ["EP-0015-US-0017-TK-0002-documentation-new-contract"]
-files_touched: 14
+files_touched: 17
 serves: [AC-03]
 created: 2026-11-05
 revision: 3
@@ -52,3 +52,29 @@ Engine владеет исходами, RNG и командами; Contracts н�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Rewrite the live world, UI, input, debug, save and tooling contracts after realtime combat retirement. Delete three obsolete live descriptions; old runs and writer procedures remain historical in Git/Board. Update dependent navigation and source/tool documentation without modifying noncanonical VData copies.
+
+- DB/Documentation/04-Engineering/DebugTuning.md
+- DB/Documentation/04-Engineering/DebugTuningPanel.md
+- DB/Documentation/04-Engineering/ManualManeuver.md
+- DB/Documentation/04-Engineering/NpcObservedTrajectories.md
+- DB/Documentation/02-FirstRelease/Mechanics/CommandPanels.md
+- DB/Documentation/02-FirstRelease/Screens/Save.md
+- DB/Documentation/03-Design/TacticalMapSpecification.md
+- DB/Documentation/06-Tooling/GameSessionScreenUI.md
+- DB/Documentation/01-Requirements/FirstReleaseRequirements.md
+- DB/Documentation/README.md
+- DB/Documentation/00-Process/CLAUDE.md
+- DB/Documentation/06-Tooling/GraphifyRebuild.md
+- tools/DeepSpaceSaga.Performance/README.md
+- tests/DeepSpaceSaga.Engine.Tests/Fixtures/Saves/README.md
+- DB/Documentation/04-Engineering/PointAimCombat.md
+- DB/Documentation/04-Engineering/CombatReports.md
+- DB/Documentation/02-FirstRelease/Screens/Defeat.md
+
+## Execution evidence — 2026-11-06
+
+Removed PointAimCombat, CombatReports and Defeat from current documentation; updated Save screen, world controls/modules/forecast, engine tuning, requirements, navigation, design and live tooling. Historical writer procedure and evidence remain historical; source links point to current owners. All 300 relative links across 60 canonical and adjacent guide paths passed; Markdown-only and stale live references checks passed, diff clean.

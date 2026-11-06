@@ -18,13 +18,7 @@ Current evidence belongs to [EP-0014](../../DB/Board/EP-0014-module-panels/Final
 
 ## Current EP-0012 contract — 2026-10-21
 
-Current --combat-window routes PointCombatNativeEvidence, a real SkiaWindow/OpenGL run over actual production Engine snapshots. Command: `dotnet run --no-build --project tools/DeepSpaceSaga.Performance -- <repo> <report.json> --combat-window <0.8|1|1.2|1.5> <1280x720|1920x1080> <ru|en> <input|win|defeat> [--audio] [--clean-flight]`. Build first; hard process cap300000ms, internal3min guard. Output includes PNGs, actual locale/scale/GPU, checks, public commands and explicit NOT RUN limits. Terminal replays use unchanged shared production input policy. Tool temporarily changes deployed Settings and restores bytes. Clean-flight cancels overlapping preview before independent radius sampling. Managed callbacks/controlled clocks are not physical keyboard/mouse, normal transport, input-to-photon or auditory acceptance. Old CombatNativeEvidence/guided arguments below are historical, while unrelated map/report/performance commands retain their scope. [Point-aim combat contract](../../DB/Documentation/04-Engineering/PointAimCombat.md).
-
 ## Актуализация EP-0008 — 2026-10-12
-
-EP-0008 final review and recorded native matrix are linked below. The user currently defers all game/native launches: do not execute the native combat harness until that restriction is lifted. Historical13/14 completed interactions and failed frame-time target are not full acceptance. Automated solution tests and headless performance checks remain distinct from native evidence.
-
-[Текущий контракт](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/01-Requirements/EngineRequirements.md#phase-three-combat) · [Проверки и ограничения](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/04-Engineering/PhaseThreeCombatAcceptance.md).
 
 
 The existing positional command runs CPU/raster benchmarks. `--window-probe`
@@ -126,29 +120,28 @@ Rows distinguish real entities, descriptors, configured decoration samples, laye
 
 Current measurements: scripted native8/8 PASS, FPS target0/8 PASS (p9950.5839–54.4007ms vs12.5ms), with VSync reported100Hz on Intel Arc140V. Fresh baseline/empty-window controls also fail; exact driver/OS cause unproven. Do not claim GPU execution, physical scanout or human playthrough. Compact results and source/raw hashes are retained in [EP-0004 evidence](../../DB/Board/EP-0004-ai-territories-and-map-environment/ImplementationStatus.md); temporary native JSON/PNG were removed after review. [Current map contract](../../DB/Documentation/04-Engineering/AiMapEnvironment.md).
 
-## EP-0008 combat native evidence
+## Tactical battle V4
 
-Build Release, then run each native case sequentially without concurrent tests/builds:
+Build Release, create an absolute evidence directory and run the requested mode
+from the DSS repository root. The example uses a new diagnostic run.
 
 ```powershell
-dotnet build tools/DeepSpaceSaga.Performance/DeepSpaceSaga.Performance.csproj -c Release --no-restore
-dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/ep8-native/combat.json --combat-window 1.5 1280x720
-dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/ep8-native/recovery.json --combat-window 1.5 1280x720 --recovery
-dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/ep8-native/no-solution.json --combat-window 1.5 1280x720 --no-solution
+$run = 'D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/<unique-run>'
+New-Item -ItemType Directory -Force $run
+$env:DSS_VALIDATION_ROOT = $run
+dotnet build tools/DeepSpaceSaga.Performance -c Release --no-restore
+$dll = 'tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll'
+dotnet $dll 'D:/DeepSpaceSaga/DSS' "$run/performance.json" --tactical-performance
+dotnet $dll 'D:/DeepSpaceSaga/DSS' "$run/native.json" --tactical-window 1.5 1920x1080
 ```
 
-Matrix:1280x720 and1920x1080, scale1/1.2/1.5, normal and recovery. No-solution uses a deliberately slow, short-lived, zero-accuracy custom defense module; it is not a balance claim about production defaults. Do not combine that option with recovery (its registry intentionally differs from production save loader content). The runner uses production content and real LocalSession, setting a separate initial fixture with8 Enemy NPCs before NewGame. It never sends player commands on behalf of NPCs or edits positions/HP during battle. Two manual PR launches, independent auto toggle, preview equality, selected target, zoom, x100/pause and journal scrolling use actual screen input handlers. Recovery uses real terminal routing, native Defeat/Load presentation, cancel and a separate pre-death save slot.
+Use a 300-second process-tree cap and separate output per case. The Release
+benchmark reports authoritative turn and series time, warm mouse aiming and
+CPU Skia drawing. The native mode uses a real OpenGL framebuffer, an isolated
+slot, the live keyboard router and screen mouse callbacks. It saves phase PNGs
+and draw/flush timings. Physical input, scanout timing and human/product review
+are separate. Old realtime combat flags have been removed; their runs remain
+historical evidence in the [Board](../../DB/Board).
 
-The executable temporarily applies the selected UI scale to its own output Settings.json and restores original bytes in finally. It does not edit source Settings.json or user slots. A deterministic injected clock advances5 physical milliseconds per measured render in the normal case; the recovery case remains paused after Load. These cases prove rendering and transport interactions, not real-time AI throughput. Full generated-world battle/clock/AI continuity is tested separately by PhaseThreeCombatEndToEndTests/PhaseThreeDeterminismTests.
-
-Reports contain720 presented frames (120 warmup/600 measured), actual OpenGL hardware, CPU submit and completed-swap intervals, plus combatInteraction checks. Exit0 means interaction/report completion, not a passed80FPS target. Inspect targetVerdict independently; GPU execution/physical scanout and human playthrough are not measured. PNGs capture actual native surfaces at preview/two-PR/journal/defeat/load stages. Reports and separate *.slots files remain at the requested output location for review.
-
-## EP-0010 report window evidence — 2026-10-16
-
-`CombatReportsNativeEvidence` / Program flag `--reports-window` prepares a real-window report UI matrix over paused production CombatMukha seed1 with explicit synthetic UI report fixtures. Arguments after the DLL: DSS root, output JSON, `--reports-window`, scale, dimensions, language; optional `--art` captures8 variants and `--performance` collects600-frame samples. This is owner-operated tooling. **User instruction: never launch the game autonomously. Agents must not execute the game or this native/performance harness without a new explicit user request.** Building and headless unit tests are allowed.
-
-The one existing1280×720/UI100/English sample contains64 frames and UI checks; it does not complete the full matrix, native Save/Load/Defeated or performance acceptance. The run without `--performance` has zero measured perf samples; `targetPassed=false` is unmeasured, not a measured FPS failure. [Actual evidence/limitations](../../DB/Board/EP-0010-combat-reports/evidence/NativeAcceptance.md), [performance status](../../DB/Board/EP-0010-combat-reports/evidence/Performance.md). Raster/headless tests cannot establish GPU/scanout FPS or human acceptance.
-
-## US20 native run — 2026-10-21
-
-The harness now checks the exact allowed combat speed set, restored right ship card/left health details, torpedo aim exit and absence of forward foreign geometry. Counter fixture uses displayed poses and searches a candidate through production preview; the recorded run still has two failed CM launch/detonation assertions. Do not call the whole native scenario PASS. Physical hardware input and hearing remain NOT RUN. [Raw evidence and current limits](../../DB/Board/EP-0012-combat-rebuild/EP-0012-US-0020-bugs/ExecutionStatus.md).
+Current rules and evidence: [TacticalBattle](../../DB/Documentation/04-Engineering/TacticalBattle.md),
+[FinalValidation](../../DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md).
