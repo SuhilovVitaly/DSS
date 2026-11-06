@@ -1,3 +1,4 @@
+using System.Text.Json;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.LocalClient;
@@ -27,7 +28,6 @@ public sealed class ScenarioModuleCleanupTests
             var authored = ScenarioLoader.LoadFromFile(entry.ScenarioPath);
             Assert.All(authored.GameState.SpaceObjects, o =>
             {
-                Assert.Null(o.Ai);
                 Assert.NotEqual(PlayerRelation.Enemy, o.RelationToPlayer);
                 Assert.DoesNotContain(o.Modules ?? [], m => IsCombatModule(m.ModuleTypeId));
             });
@@ -35,6 +35,32 @@ public sealed class ScenarioModuleCleanupTests
             AssertWorld(engine.CaptureSnapshot());
         }
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void CurrentContentHasOnlyWorldShipIdentityAndNoLegacyDefinitions(bool deployed)
+    {
+        string root = deployed ? AppContext.BaseDirectory : Source;
+        using var settings = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Settings.json")));
+        Assert.DoesNotContain("\"combatRules\"", settings.RootElement.GetRawText());
+        Assert.Empty(ContentFiles(Path.Combine(root, "Data", "Combat")));
+        Assert.Empty(ContentFiles(Path.Combine(root, "Data", "CombatV3")));
+        foreach (string area in new[] { "Commands", "Modules" })
+            foreach (string retired in new[] { "TorpedoLauncher", "CountermeasureLauncher", "CombatLaser" })
+                Assert.Empty(ContentFiles(Path.Combine(root, "Data", area, retired)));
+        using var classes = JsonDocument.Parse(File.ReadAllText(Path.Combine(root, "Data", "Ships", "ship-classes.json")));
+        Assert.Equal(new[] { "ship.tetrarch", "ship.mukha", "ship.shmel" },
+            classes.RootElement.GetProperty("shipClasses").EnumerateArray().Select(row =>
+            {
+                var field = Assert.Single(row.EnumerateObject());
+                Assert.Equal("typeId", field.Name);
+                return field.Value.GetString();
+            }));
+    }
+
+    private static IEnumerable<string> ContentFiles(string directory) => Directory.Exists(directory)
+        ? Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories) : [];
 
     [Fact]
     public async Task DefaultNewGameHasWorldControlsWithoutLegacyWeapons()

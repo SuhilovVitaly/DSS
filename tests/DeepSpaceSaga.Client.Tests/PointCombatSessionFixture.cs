@@ -33,7 +33,6 @@ internal sealed class PointCombatSessionFixture : IAsyncDisposable
                     PositionY = 0,
                     SpeedMps = 0,
                     MovementType = "Stationary",
-                    Ai = null,
                     IsKnown = true,
                     Modules = o.Modules!.Select(m => m with
                     {

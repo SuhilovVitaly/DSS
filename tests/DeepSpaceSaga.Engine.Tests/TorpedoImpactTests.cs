@@ -23,12 +23,10 @@ public sealed class TorpedoImpactTests
                 {
                     var configured = o with
                     {
-                        Ai = null,
                         Modules = o.Modules?.Select(m => m with
                         {
                             // Explicit6km/s,4deg/s Basic engine calibration for generic motion regressions.
                             ModuleTypeId = m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal) ? "module.engine.basic" : m.ModuleTypeId,
-                            AutoDefenseEnabled = false,
                             PowerState = o.ObjectType == SpaceObjectType.NpcShip && (m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal) || m.ModuleTypeId == "module.torpedo.launcher.basic") ? "Off" : m.PowerState
                         }).ToArray(),
                         PositionX = 0,

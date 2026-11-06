@@ -52,7 +52,6 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
                 MasterSeed = 42,
                 SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
                 {
-                    Ai = null,
                     PositionX = o.ObjectId == Player ? 0 : 600,
                     PositionY = 0,
                     SpeedMps = o.ObjectId == Player ? 1000 : 0,

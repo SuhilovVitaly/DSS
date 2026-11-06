@@ -317,21 +317,9 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("relationToPlayer")] string? RelationToPlayer = null,
     /// <summary>Explicit ship class identity; never inferred from image, name or hull geometry.</summary>
     [property: JsonPropertyName("shipClassId")] string? ShipClassId = null,
-    /// <summary>Current hull HP. Null on a classified new ship means the configured maximum.</summary>
-    [property: JsonPropertyName("hullHitPoints")] int? HullHitPoints = null,
-    [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null,
     [property: JsonPropertyName("orbit")] DeepSpaceSaga.Contracts.OrbitalElements? Orbit = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
-    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
-    [property: JsonPropertyName("ai")] AttackAiData? Ai = null);
-
-/// <summary>Configured NPC attack geometry; absent means the EP-0008 orbit defaults.</summary>
-public sealed record AttackAiData(
-    [property: JsonRequired, JsonPropertyName("standoffKm")] double StandoffKm,
-    [property: JsonRequired, JsonPropertyName("bandKm")] double BandKm,
-    [property: JsonRequired, JsonPropertyName("flankOffsetDeg")] double FlankOffsetDeg,
-    [property: JsonPropertyName("fireThreshold")] double FireThreshold = 0.3,
-    [property: JsonPropertyName("assumedTargetDodge")] double AssumedTargetDodge = 0.25);
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -471,11 +459,7 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null,
     [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
     [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
-    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true,
     [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null,
-    [property: JsonPropertyName("armorClass")] string ArmorClass = "none",
-    [property: JsonPropertyName("armor")] int? Armor = null,
-    [property: JsonPropertyName("disabledUntilMotionTimeMs")] double? DisabledUntilMotionTimeMs = null,
     [property: JsonPropertyName("destroyed")] bool Destroyed = false);
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>

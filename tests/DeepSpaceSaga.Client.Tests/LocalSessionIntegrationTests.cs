@@ -438,9 +438,6 @@ public class LocalSessionIntegrationTests
                     var type = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId));
                     m = m with
                     {
-                        ArmorClass = "none",
-                        Armor = null,
-                        AutoDefenseEnabled = false,
                         Cargo = m.Cargo?.Select(c => c.CostBasisCredits is not null ? c : c with
                         {
                             CostBasisCredits = checked(c.Quantity * registry.ItemTypes.GetDefinition(registry.ItemTypes.GetIndex(c.ItemTypeId)).BasePriceCredits!.Value),

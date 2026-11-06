@@ -26,7 +26,6 @@ public sealed class PointCombatUS0018TK0002Tests
                     PositionY = 0,
                     SpeedMps = 0,
                     MovementType = "Stationary",
-                    Ai = null,
                     Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == Player ? "On" : "Off" }).ToArray()
                 }).ToArray()
             }

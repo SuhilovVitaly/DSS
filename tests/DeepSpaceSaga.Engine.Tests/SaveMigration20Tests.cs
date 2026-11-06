@@ -104,7 +104,7 @@ public sealed class SaveMigration20Tests
     private static void AssertWorld(ScenarioFile save)
     {
         Assert.Equal(20, save.SaveFormatVersion);
-        Assert.DoesNotContain(save.GameState.SpaceObjects, o => o.ObjectType is "Missile" or "Countermeasure" or "Wreck" || o.Ai is not null);
+        Assert.DoesNotContain(save.GameState.SpaceObjects, o => o.ObjectType is "Missile" or "Countermeasure" or "Wreck");
         var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
         Assert.Contains(player.Modules!, m => m.ModuleTypeId.Contains("scanner", StringComparison.Ordinal));
         Assert.Contains(player.Modules!, m => m.ModuleTypeId.Contains("engine", StringComparison.Ordinal));

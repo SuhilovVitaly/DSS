@@ -108,7 +108,6 @@ public sealed class ManualManeuverInputTests
                     SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
                     {
                         SpeedMps = o.ObjectId == source.GameState.PlayerShipObjectId ? 3000 : o.SpeedMps,
-                        Ai = null,
                         Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off" }).ToArray()
                     }).ToArray()
                 }

@@ -98,10 +98,9 @@ public static class ScenarioLoader
             throw new ScenarioException($"incompatible_save_version: expected {SaveFormat.CurrentSaveFormatVersion}, found {version}. Save was not modified.");
     }
 
-    internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime,
-        IReadOnlyDictionary<string, int>? armorClasses = null)
+    internal static ScenarioFile ValidateAndNormalize(ScenarioFile scenario, bool allowNonZeroGameTime)
     {
-        Validate(scenario, allowNonZeroGameTime, armorClasses);
+        Validate(scenario, allowNonZeroGameTime);
         var gs = scenario.GameState;
         var ids = gs.SpaceObjects.ToDictionary(o => o.ObjectId, o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
         if ((gs.CommandReceipts?.Any(r => r is null || string.IsNullOrWhiteSpace(r.CommandId)) ?? false) ||
@@ -204,8 +203,7 @@ public static class ScenarioLoader
         };
     }
 
-    private static void Validate(ScenarioFile scenario, bool allowNonZeroGameTime = false,
-        IReadOnlyDictionary<string, int>? armorClasses = null)
+    private static void Validate(ScenarioFile scenario, bool allowNonZeroGameTime = false)
     {
         if (scenario.SaveFormatVersion < 0 || scenario.SaveFormatVersion > SaveFormat.CurrentSaveFormatVersion)
             throw new ScenarioException($"Unsupported saveFormatVersion: {scenario.SaveFormatVersion}.");
@@ -274,18 +272,7 @@ public static class ScenarioLoader
         // Validate each object (nulls already caught in the duplicate-check loop)
         foreach (var obj in objects)
         {
-            ValidateObject(obj, armorClasses);
-            if (scenario.SaveFormatVersion >= 17 && obj.ObjectType is (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) &&
-                obj.Modules?.Any(m => m.ArmorClass != "none" && m.Armor is null) == true)
-                throw new ScenarioException($"Object '{obj.ObjectId}' has a module without saved armor.");
-            if (obj.Ai is { } ai &&
-                (!obj.ObjectType.Equals(SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
-                 !double.IsFinite(ai.StandoffKm) || ai.StandoffKm <= 0 ||
-                 !double.IsFinite(ai.BandKm) || ai.BandKm < 0 || ai.BandKm >= ai.StandoffKm ||
-                 !double.IsFinite(ai.FlankOffsetDeg) || Math.Abs(ai.FlankOffsetDeg) > 180 ||
-                 !double.IsFinite(ai.FireThreshold) || ai.FireThreshold is < 0 or > 1 ||
-                 !double.IsFinite(ai.AssumedTargetDodge) || ai.AssumedTargetDodge is < 0 or > 1))
-                throw new ScenarioException($"Object '{obj.ObjectId}' has invalid NPC attack ai parameters.");
+            ValidateObject(obj, scenario.SaveFormatVersion is 18 or 19);
             foreach (var module in obj.Modules ?? [])
                 foreach (var stack in module.Cargo ?? []) ValidateCargoCostMetadata(stack, scenario.SaveFormatVersion);
             ValidateMarketProfileMetadata(scenario.SaveFormatVersion, obj);
@@ -395,15 +382,18 @@ public static class ScenarioLoader
         }
     }
 
-    private static void ValidateObject(SpaceObjectData obj, IReadOnlyDictionary<string, int>? armorClasses)
+    private static bool IsArchivedObjectType(string type) =>
+        type.Equals("Wreck", StringComparison.OrdinalIgnoreCase) ||
+        type.Equals("Missile", StringComparison.OrdinalIgnoreCase) ||
+        type.Equals("Countermeasure", StringComparison.OrdinalIgnoreCase);
+
+    private static void ValidateObject(SpaceObjectData obj, bool allowArchivedTypes)
     {
         if (obj.ShipClassId is not null &&
             (string.IsNullOrWhiteSpace(obj.ShipClassId) ||
              !(string.Equals(obj.ObjectType, SpaceObjectType.PlayerShip, StringComparison.OrdinalIgnoreCase) ||
                string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase))))
             throw new ScenarioException($"Object '{obj.ObjectId}' has invalid shipClassId or is not a ship.");
-        if (obj.HullHitPoints is not null && (obj.ShipClassId is null || obj.HullHitPoints <= 0))
-            throw new ScenarioException($"Object '{obj.ObjectId}' hullHitPoints requires a ship class and positive HP.");
 
         if (!double.IsFinite(obj.SpeedMps) || obj.SpeedMps < 0 || !double.IsFinite(obj.DirectionDegrees))
             throw new ScenarioException($"Invalid precise motion for '{obj.ObjectId}'.");
@@ -412,7 +402,7 @@ public static class ScenarioLoader
 
         if (string.IsNullOrWhiteSpace(obj.ObjectType))
             throw new ScenarioException($"Missing objectType for '{obj.ObjectId}'.");
-        if (!KnownObjectTypes.Contains(obj.ObjectType))
+        if (!KnownObjectTypes.Contains(obj.ObjectType) || (!allowArchivedTypes && IsArchivedObjectType(obj.ObjectType)))
             throw new ScenarioException($"Unknown objectType '{obj.ObjectType}' for '{obj.ObjectId}'.");
 
         if (obj.RelationToPlayer is { } relation &&
@@ -484,7 +474,7 @@ public static class ScenarioLoader
         {
             foreach (var module in obj.Modules)
             {
-                ValidateModule(obj.ObjectId, module, armorClasses);
+                ValidateModule(obj.ObjectId, module);
             }
         }
     }
@@ -513,8 +503,7 @@ public static class ScenarioLoader
         }
     }
 
-    private static void ValidateModule(string objectId, ShipModuleData module,
-        IReadOnlyDictionary<string, int>? armorClasses)
+    private static void ValidateModule(string objectId, ShipModuleData module)
     {
         if (module is null)
             throw new ScenarioException($"Object '{objectId}' modules contains a null element.");
@@ -523,16 +512,6 @@ public static class ScenarioLoader
             throw new ScenarioException($"Object '{objectId}' has a module with empty moduleId.");
         if (string.IsNullOrWhiteSpace(module.ModuleTypeId))
             throw new ScenarioException($"Module '{module.ModuleId}' is missing moduleTypeId.");
-
-        if (string.IsNullOrWhiteSpace(module.ArmorClass) ||
-            (armorClasses is not null && !armorClasses.ContainsKey(module.ArmorClass)))
-            throw new ScenarioException($"Module '{module.ModuleId}' has unknown armorClass '{module.ArmorClass}'.");
-        if (module.Armor is < 0 ||
-            (module.Armor is { } armor && armorClasses is not null && armor > armorClasses[module.ArmorClass]))
-            throw new ScenarioException($"Module '{module.ModuleId}' armor exceeds its armorClass capacity.");
-        if (module.DisabledUntilMotionTimeMs is { } disabledUntil &&
-            (double.IsNaN(disabledUntil) || double.IsInfinity(disabledUntil) || disabledUntil < 0))
-            throw new ScenarioException($"Module '{module.ModuleId}' has invalid disabledUntilMotionTimeMs.");
 
         if (module.OccupiedCells is null || module.OccupiedCells.Count == 0)
             throw new ScenarioException($"Module '{module.ModuleId}' must occupy at least one cell.");

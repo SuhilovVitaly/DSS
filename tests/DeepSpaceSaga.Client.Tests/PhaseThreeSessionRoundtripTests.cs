@@ -107,14 +107,13 @@ public class PhaseThreeSessionRoundtripTests
                     MasterSeed = 42,
                     SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
                     {
-                        Ai = ai ? o.Ai : null,
                         PositionX = 0,
                         PositionY = o.ObjectId == Player ? 0 : -200,
                         DirectionDegrees = o.ObjectId == Player ? 0 : 180,
                         SpeedMps = 0,
                         MovementType = "Stationary",
                         Modules = o.Modules!.Select(m => m with
-                        { AutoDefenseEnabled = false, PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != Player ? "Off" : "On" }).ToArray()
+                        { PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != Player ? "Off" : "On" }).ToArray()
                     }).ToArray()
                 }
             };

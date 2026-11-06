@@ -32,7 +32,6 @@ public class WeaponOperatorSchemaTests
         Modules = o.Modules?.Select(m => m with
         {
             OperatorCrewId = m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal) ? "operator-" + o.ObjectId : null,
-            AutoDefenseEnabled = false
         }).ToArray()
     });
 
@@ -99,13 +98,13 @@ public class WeaponOperatorSchemaTests
         var scenario = TorpedoImpactTests.Scenario(o => o with
         {
             Crew = [new ShipCrewMemberData("legacy", "Legacy")],
-            Modules = o.Modules?.Select(m => m with { OperatorCrewId = null, AutoDefenseEnabled = true }).ToArray()
+            Modules = o.Modules?.Select(m => m with { OperatorCrewId = null }).ToArray()
         });
         using var engine = Create(scenario);
         var player = engine.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Player);
         Assert.Equal(0, Assert.Single(player.Crew!).AccuracySkill);
         Assert.Equal(0, Assert.Single(player.Crew!).ManeuverabilitySkill);
-        Assert.All(player.Modules!, m => { Assert.Null(m.OperatorCrewId); Assert.False(m.AutoDefenseEnabled); });
+        Assert.All(player.Modules!, m => Assert.Null(m.OperatorCrewId));
     }
 
     [Fact]
@@ -118,7 +117,6 @@ public class WeaponOperatorSchemaTests
         Assert.Equal(0, Assert.Single(player.Crew!).AccuracySkill);
         Assert.Equal(30, Assert.Single(player.Crew!).ManeuverabilitySkill);
         Assert.Equal("operator-" + Player, Assert.Single(player.Modules!, m => m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal)).OperatorCrewId);
-        Assert.All(player.Modules!, m => Assert.False(m.AutoDefenseEnabled));
     }
 
     [Fact]

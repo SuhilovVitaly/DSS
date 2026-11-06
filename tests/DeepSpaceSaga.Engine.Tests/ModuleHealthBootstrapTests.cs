@@ -10,7 +10,7 @@ public sealed class ModuleHealthBootstrapTests
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
 
     [Fact]
-    public void Legacy_armor_does_not_change_world_structure()
+    public void Configured_structure_is_projected()
     {
         var loaded = EngineContentLoader.LoadFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"));
         string playerId = loaded.DefaultScenario.GameState.PlayerShipObjectId;
@@ -22,7 +22,7 @@ public sealed class ModuleHealthBootstrapTests
                     ? obj with
                     {
                         Modules = obj.Modules!.Select((module, index) => index == 0
-                        ? module with { ArmorClass = "light", StructurePoints = 150 } : module).ToArray()
+                        ? module with { StructurePoints = 150 } : module).ToArray()
                     }
                     : obj).ToArray()
             }
@@ -36,7 +36,7 @@ public sealed class ModuleHealthBootstrapTests
     }
 
     [Fact]
-    public void Legacy_modules_no_armor()
+    public void Default_modules_have_structure()
     {
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"));
         Assert.All(engine.CaptureSnapshot().InstalledModules, module =>
@@ -61,10 +61,7 @@ public sealed class ModuleHealthBootstrapTests
                         Modules = obj.Modules!.Select((module, index) => index == 0
                         ? module with
                         {
-                            ArmorClass = "light",
-                            Armor = 17,
                             StructurePoints = 90,
-                            DisabledUntilMotionTimeMs = 1200
                         } : module).ToArray()
                     }
                     : obj).ToArray()

@@ -49,7 +49,6 @@ internal static class ModulePanelNativeEvidence
                 CurrentSpeed = "Speed0",
                 SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
                 {
-                    Ai = null,
                     PositionX = o.ObjectId == source.GameState.PlayerShipObjectId ? 0 : 300,
                     PositionY = 0,
                     SpeedMps = o.ObjectId == source.GameState.PlayerShipObjectId ? 3000 : 0,

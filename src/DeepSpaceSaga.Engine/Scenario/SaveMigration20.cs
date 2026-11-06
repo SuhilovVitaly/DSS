@@ -45,10 +45,6 @@ internal static class SaveMigration20
                     (CombatCommand(cycle.CommandType) || Removed(cycle.TargetObjectId) || Removed(cycle.ObjectId));
                 return m with
                 {
-                    ArmorClass = "none",
-                    Armor = null,
-                    AutoDefenseEnabled = false,
-                    DisabledUntilMotionTimeMs = null,
                     ActiveCycle = clearCycle ? null : m.ActiveCycle,
                     Cargo = m.Cargo?.Where(c => !Ammo(c.ItemTypeId)).ToArray()
                 };
@@ -81,7 +77,7 @@ internal static class SaveMigration20
 
     private static bool CombatObject(SpaceObjectData obj) =>
         Equal(obj.ObjectType, "Missile") || Equal(obj.ObjectType, "Countermeasure") || Equal(obj.ObjectType, "Wreck") ||
-        Equal(obj.ObjectType, "NpcShip") && (obj.Ai is not null || Equal(obj.RelationToPlayer, "Enemy"));
+        Equal(obj.ObjectType, "NpcShip") && Equal(obj.RelationToPlayer, "Enemy");
     private static bool ProjectileModule(string? type) => Prefix(type, "module.torpedo.") || Prefix(type, "module.countermeasure.");
     private static bool CombatModule(string? type) => ProjectileModule(type) || Prefix(type, "module.combat.");
     internal static bool CombatCommand(string? type) => Prefix(type, "torpedo.") || Prefix(type, "defense.") || Prefix(type, "combat.") || Equal(type, "maneuver.evade");

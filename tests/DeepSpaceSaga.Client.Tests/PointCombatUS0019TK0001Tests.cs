@@ -52,7 +52,6 @@ public sealed class PointCombatUS0019TK0001Tests
         {
             Assert.Contains(ship.Modules!, m => m.ModuleTypeId == "module.engine.tetrarch");
         }
-        Assert.Null(enemy.Ai);
         Assert.Equal(PlayerRelation.Neutral, enemy.RelationToPlayer);
         using var control = new SimulationEngine(registry); control.LoadScenario(pirate);
         control.ReceiveCommand(new("default-tetrarch-hold", 1, player.ObjectId, "MOD-PLAYER-ENGINE-01", ShipEngineCommandTypes.TurnHold,

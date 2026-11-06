@@ -32,7 +32,6 @@ public sealed class TetrarchLoadoutTests
             Assert.All(ship.Modules ?? [], module =>
             {
                 Assert.InRange(module.StructurePoints, 0, 150);
-                Assert.Equal("none", module.ArmorClass);
             });
             Assert.All(ship.Crew ?? [], member =>
             {
@@ -122,7 +121,6 @@ public sealed class TetrarchLoadoutTests
         var scenario = ScenarioLoader.LoadFromFile(path);
         var player = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == scenario.GameState.PlayerShipObjectId);
         Assert.Null(player.ShipClassId);
-        Assert.Null(player.HullHitPoints);
         Assert.Equal(3, player.HullLayout!.Cells.Count);
         Assert.Equal(new[] { (4, 0), (4, 1), (4, 2) }, player.HullLayout.Cells.Select(c => (c.X, c.Y)));
         Assert.Equal(3, player.Modules!.Count);
@@ -166,7 +164,6 @@ public sealed class TetrarchLoadoutTests
     private static void AssertLoadout(SpaceObjectData ship, bool stressLoadout, bool threeCabins, bool tetrarchEngine)
     {
         Assert.Equal("ship.tetrarch", ship.ShipClassId);
-        Assert.Null(ship.HullHitPoints); // New games resolve the maximum from class content.
         Assert.NotNull(ship.HullLayout);
         Assert.Equal((9, 9), (ship.HullLayout.Width, ship.HullLayout.Height));
         var cells = ship.HullLayout.Cells.Select(c => (c.X, c.Y)).ToArray();

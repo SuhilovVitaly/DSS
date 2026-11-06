@@ -49,7 +49,6 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
                     SpeedMps = 0,
                     DirectionDegrees = o.ObjectId == Player ? 90 : 270,
                     MovementType = "Stationary",
-                    Ai = null,
                     Crew = o.ObjectId == Player && accuracySkill is { } skill
                         ? o.Crew!.Select(c => c with { AccuracySkill = skill }).ToArray() : o.Crew,
                     Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == Player ? "On" : "Off" }).ToArray()

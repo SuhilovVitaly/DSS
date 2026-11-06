@@ -47,6 +47,11 @@ internal static class LegacyCombatSaveReader
         var defenseModules = Launchers(defense, "Launchers", "OwnerObjectId", "ModuleId", "State", objects);
 
         actors = new(StringComparer.OrdinalIgnoreCase);
+        foreach (var (id, row) in objects)
+        {
+            ValidateRetiredObjectFields(row);
+            if (Present(row, "ai")) actors.Add(id);
+        }
         foreach (var row in UniqueRows(hostile, "Actors", "ObjectId"))
         {
             Require(objects.TryGetValue(row.Key, out var owner) && TypeIs(owner, "NpcShip") &&
@@ -234,6 +239,7 @@ internal static class LegacyCombatSaveReader
                     if (Sections.Contains(item.Name)) continue;
                     if (item.Name == "pendingCommands" && item.Value.ValueKind == JsonValueKind.Array)
                         WriteCommands(writer, item);
+                    else if (item.Name == "spaceObjects") WriteObjects(writer, item);
                     else item.WriteTo(writer);
                 }
                 writer.WriteEndObject();
@@ -241,6 +247,69 @@ internal static class LegacyCombatSaveReader
             writer.WriteEndObject();
         }
         return Encoding.UTF8.GetString(buffer.WrittenSpan);
+    }
+
+    private static void ValidateRetiredObjectFields(JsonElement row)
+    {
+        if (Present(row, "hullHitPoints"))
+            Require(Present(row, "shipClassId") && Id(row, "shipClassId").Length > 0 &&
+                Int(row, "hullHitPoints") is > 0 and <= int.MaxValue, "invalid hullHitPoints");
+        if (Present(row, "hullHitPointsMax"))
+            Require(Int(row, "hullHitPointsMax") is >= int.MinValue and <= int.MaxValue, "invalid hullHitPointsMax");
+        if (Present(row, "ai"))
+        {
+            var ai = Object(Field(row, "ai"));
+            double standoff = Num(ai, "standoffKm"), band = Num(ai, "bandKm");
+            Require(TypeIs(row, "NpcShip") && standoff > 0 && band >= 0 && band < standoff &&
+                Math.Abs(Num(ai, "flankOffsetDeg")) <= 180 &&
+                (!ai.TryGetProperty("fireThreshold", out _) || Num(ai, "fireThreshold") is >= 0 and <= 1) &&
+                (!ai.TryGetProperty("assumedTargetDodge", out _) || Num(ai, "assumedTargetDodge") is >= 0 and <= 1) &&
+                ai.EnumerateObject().All(p => p.Name is "standoffKm" or "bandKm" or "flankOffsetDeg" or "fireThreshold" or "assumedTargetDodge"),
+                "invalid NPC attack ai");
+        }
+        if (!Present(row, "modules")) return;
+        foreach (var module in Rows(row, "modules"))
+        {
+            Object(module);
+            string armorClass = module.TryGetProperty("armorClass", out _) ? Id(module, "armorClass") : "none";
+            Require(Present(module, "armor") ? Int(module, "armor") is >= 0 and <= int.MaxValue :
+                armorClass == "none" || !TypeIs(row, "PlayerShip") && !TypeIs(row, "NpcShip"), "invalid saved armor");
+            if (Present(module, "disabledUntilMotionTimeMs"))
+                Require(Num(module, "disabledUntilMotionTimeMs") >= 0, "invalid module disable time");
+            if (module.TryGetProperty("autoDefenseEnabled", out _)) _ = Bool(module, "autoDefenseEnabled");
+        }
+    }
+
+    private static void WriteObjects(Utf8JsonWriter writer, JsonProperty list)
+    {
+        writer.WritePropertyName(list.Name);
+        writer.WriteStartArray();
+        foreach (var row in list.Value.EnumerateArray())
+        {
+            writer.WriteStartObject();
+            foreach (var property in row.EnumerateObject())
+            {
+                if (property.Name is "ai" or "hullHitPoints" or "hullHitPointsMax") continue;
+                if (property.Name != "modules" || property.Value.ValueKind != JsonValueKind.Array)
+                {
+                    property.WriteTo(writer);
+                    continue;
+                }
+                writer.WritePropertyName(property.Name);
+                writer.WriteStartArray();
+                foreach (var module in property.Value.EnumerateArray())
+                {
+                    writer.WriteStartObject();
+                    foreach (var field in module.EnumerateObject())
+                        if (field.Name is not ("armorClass" or "armor" or "autoDefenseEnabled" or "disabledUntilMotionTimeMs"))
+                            field.WriteTo(writer);
+                    writer.WriteEndObject();
+                }
+                writer.WriteEndArray();
+            }
+            writer.WriteEndObject();
+        }
+        writer.WriteEndArray();
     }
 
     // Save18/19 stored command DTOs inside the world payload. The current schema is strict,

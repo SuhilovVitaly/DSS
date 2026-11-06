@@ -53,8 +53,7 @@ public sealed class PointCombatUS0019TK0005Tests
                     DirectionDegrees = 0,
                     SpeedMps = o.ObjectId == Player ? 1000 : 0,
                     MovementType = "Linear",
-                    Ai = null,
-                    Modules = o.Modules!.Select(m => m with { ModuleTypeId = m.ModuleTypeId == "module.engine.tetrarch" ? "module.engine.basic" : m.ModuleTypeId, AutoDefenseEnabled = false, PowerState = "On" }).ToArray()
+                    Modules = o.Modules!.Select(m => m with { ModuleTypeId = m.ModuleTypeId == "module.engine.tetrarch" ? "module.engine.basic" : m.ModuleTypeId, PowerState = "On" }).ToArray()
                 }).ToArray()
             }
         };

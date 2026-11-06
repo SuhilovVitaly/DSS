@@ -66,7 +66,7 @@
 | EP-0015-US-0013-legacy-engine-removal | AC-08 | EP-0015-US-0013-TK-0006-scenario-module-cleanup | PASS: all six source and deployed starts and the actual default New Game load without legacy weapons; Save20 preserves neutral contact |
 | EP-0015-US-0014-legacy-foundation-removal | AC-01 | EP-0015-US-0014-TK-0001-motion-removal | PASS: seven obsolete Motion implementations removed; ordinary kinematics and tactical regression pass |
 | EP-0015-US-0014-legacy-foundation-removal | AC-02 | EP-0015-US-0014-TK-0002-contracts-dto-removal, EP-0015-US-0014-TK-0003-contracts-fields-removal | PASS: old public realtime combat DTOs, payload and scalars removed; ordinary transport and structure roundtrip |
-| EP-0015-US-0014-legacy-foundation-removal | AC-03 | EP-0015-US-0014-TK-0004-content-cleanup | not started |
+| EP-0015-US-0014-legacy-foundation-removal | AC-03 | EP-0015-US-0014-TK-0004-content-cleanup | PASS: all six source and deployed scenarios load; retired definitions absent and Save20 writes world-only objects |
 | EP-0015-US-0014-legacy-foundation-removal | AC-04 | EP-0015-US-0014-TK-0005-tools-cleanup | not started |
 | EP-0015-US-0014-legacy-foundation-removal | AC-05 | EP-0015-US-0014-TK-0001-motion-removal, EP-0015-US-0014-TK-0002-contracts-dto-removal, EP-0015-US-0014-TK-0003-contracts-fields-removal, EP-0015-US-0014-TK-0004-content-cleanup, EP-0015-US-0014-TK-0005-tools-cleanup | not started |
 | EP-0015-US-0015-localization | AC-01 | EP-0015-US-0015-TK-0001-locale-coverage | not started |
