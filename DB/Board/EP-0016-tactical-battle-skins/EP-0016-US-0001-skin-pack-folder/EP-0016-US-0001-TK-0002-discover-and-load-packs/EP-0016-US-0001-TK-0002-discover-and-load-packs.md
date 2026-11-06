@@ -10,7 +10,7 @@ depends_on: [EP-0016-US-0001-TK-0001-skin-manifest]
 files_touched: 3
 serves: [US1-AC1, US1-AC2, US1-AC3]
 created: 2026-11-06T08:02:55Z
-revision: 1
+revision: 2
 ---
 
 # Обнаружение и проверка пакетов
@@ -31,7 +31,7 @@ A-04/A-05. Каталог строится один раз при запуске
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkinCatalog.cs` | Новый файл. Обычные настройки и боевые данные разрешаются относительно AppContext.BaseDirectory в SkiaWindow.cs:100 и :1372. | Обнаружение, диагностика, загрузка ресурсов и владение их временем жизни. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkinCatalog.cs` | Новый файл. SkiaWindow.SettingsFilePath и Localization.ReadLanguageSetting разрешают Settings.json относительно AppContext.BaseDirectory. | Обнаружение, диагностика, загрузка ресурсов и владение их временем жизни. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkin.cs` | Модель и Parse из US-0001-TK-0001. | При необходимости передача ссылок и проверенных ресурсов каталогу. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SkinCatalogTests.cs` | Новый файл. Для тестов использовать каталог во временной директории процесса с уборкой. | Настоящие файлы manifest/PNG, плохие данные и независимость от порядка каталогов. |
 

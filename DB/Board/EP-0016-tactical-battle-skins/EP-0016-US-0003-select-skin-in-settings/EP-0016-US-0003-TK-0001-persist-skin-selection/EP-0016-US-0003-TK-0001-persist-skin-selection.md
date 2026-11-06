@@ -10,7 +10,7 @@ depends_on: [EP-0016-US-0001-TK-0002-discover-and-load-packs, EP-0016-US-0002-TK
 files_touched: 2
 serves: [US3-AC2, US3-AC3]
 created: 2026-11-06T08:02:55Z
-revision: 1
+revision: 2
 ---
 
 # Хранение выбранного скина
@@ -31,7 +31,7 @@ A-09. Используется Settings.json, gameSettings.tacticalBattleSkinId.
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkinPreference.cs` | Новый файл. SkiaWindow.cs:1372, :1431–1477 и :1514–1535 задают существующий путь и формат gameSettings. | Чтение выбранного ID и безопасная запись одного свойства. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkinPreference.cs` | Новый файл. SkiaWindow.SettingsFilePath и SaveLanguage используют тот же Settings.json. Localization.ReadLanguageSetting читает gameSettings.language. | Чтение выбранного ID и безопасная запись одного свойства. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SkinPreferenceTests.cs` | Новый файл. Тесты пишут реальные временные файлы, отдельно от runtime settings. | Проверить round-trip, отсутствующие значения, повреждения и ошибку записи. |
 
 ## Public API after the change
@@ -42,7 +42,7 @@ Internal static TacticalBattleSkinPreference с Read(string path, Action<string>
 
 1. Использовать существующее дерево gameSettings. При отсутствии файла или gameSettings создать нужный объект. Прочие поля сохранить. Если существующий документ повреждён или root/gameSettings неверного типа, отказать в записи с диагностикой.
 2. Писать во временный соседний файл и заменять целевой только после успешной записи. Удалять временный файл при отказе. Не менять файл, если ID уже сохранён. Проверять формат ID по правилам US-0001, включая classic.
-3. Проверить повторное чтение с новым объектом/процессным состоянием, сохранение соседних полей и fallback при чтении. Закрепить отказ записи без изменения исходного файла.
+3. Проверить повторное чтение с новым объектом/процессным состоянием, сохранение `gameSettings.language` и остальных соседних полей, а также fallback при чтении. Закрепить отказ записи без изменения исходного файла. Реальная смена языка после выбора скина проверяется в TK-0004.
 
 ## Out of scope
 
@@ -50,7 +50,7 @@ Internal static TacticalBattleSkinPreference с Read(string path, Action<string>
 
 ## Invariants
 
-Settings.json принадлежит клиенту (SkiaWindow.cs:1372). Сохранение мира исключает параметры временного боя (EngineRequirements.md:108–117).
+Settings.json принадлежит клиенту (`SkiaWindow.SettingsFilePath`). Сохранение мира исключает параметры временного боя (EngineRequirements.md:108–117).
 
 ## Tests
 

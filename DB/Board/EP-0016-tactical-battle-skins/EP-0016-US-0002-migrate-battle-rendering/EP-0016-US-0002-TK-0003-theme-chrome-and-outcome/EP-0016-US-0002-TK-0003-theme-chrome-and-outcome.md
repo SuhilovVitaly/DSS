@@ -10,7 +10,7 @@ depends_on: [EP-0016-US-0002-TK-0002-theme-field-and-salvo]
 files_touched: 5
 serves: [US2-AC1, US2-AC2, US2-AC4]
 created: 2026-11-06T08:02:55Z
-revision: 1
+revision: 2
 ---
 
 # Оформление панелей, окон и результата боя
@@ -31,10 +31,10 @@ A-01/A-07. Общий базовый modal используется также �
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFlow.cs` | TacticalBattleFlow.cs:86, :147–204. Базовый рендер ожидания и подтверждение выхода используют общие стили. | Покрыть фон, текст, ошибки, затемнение и рамку модального подтверждения при активном scope. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFlow.cs` | TacticalBattleModalScreen.Render и DrawExitConfirmation. Базовый рендер ожидания и подтверждения выхода использует общие стили. | Покрыть фон, текст, ошибки, затемнение и рамку подтверждения при активном scope. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattlePanelHeader.cs` | TacticalBattlePanelHeader.cs:13, :33, :40, :62–94. Фазы, потери, исход и сообщения. | Покрыть фазы, состояния и итог, сохранив Capture API и вычисление отображаемых фактов. |
 | `src/DeepSpaceSaga.Client/UI/Controls/ShortcutButton.cs` | ShortcutButton.cs:37–48. Кнопки используют GenericButtonTypeA и ControlText.Tooltip. | В боевой области дать стилю заменить вид всех состояний и маркера. При отсутствии override оставить исходное оформление. |
-| `src/DeepSpaceSaga.Client/UI/Controls/Toggle.cs` | Toggle.cs:34–44. Текущие рамка и цвет галочки зависят от enabled. | Роли рамки, галочки, подписи и состояния. |
+| `src/DeepSpaceSaga.Client/UI/Controls/Toggle.cs` | Toggle.Draw рисует рамку, подпись и галочку. Три экземпляра вызываются в TacticalBattleScreen.cs:173–175. | Общая роль и точечная роль флажка. Штатный рендер вне боя. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/PanelHeaderTests.cs` | PanelHeaderTests.cs:14 и :63. Проверяет допуск потерь и причину отказа. | Растры панели, результата и подтверждения в двух скинах, проверка отсутствия эффекта в подготовке. |
 
 ## Public API after the change
@@ -44,7 +44,7 @@ No public API change. Рендер-область поставляет стил�
 ## Implementation steps
 
 1. Использовать существующие значения GenericWindowTypeA/GenericButtonTypeA для Classic. Добавить стилизованный путь при наличии override для рамки, фона/изображения, заголовка и текста, кнопок и маркеров. Сохранить расчёт Bounds и обработку нажатий. Подготовка использует прежнюю ветку.
-2. Применить роли фаз, ожидания, ошибки и исходов с отдельными состояниями. Оформить полупрозрачное затемнение, подтверждение выхода, его кнопки, подсказки, переключатели и индикаторы фокуса/hover/disabled. Для виджетов без фазы pressed не вводить новое поведение.
+2. Применить роли фаз, ожидания, ошибки и исходов с отдельными состояниями. Оформить затемнение, подтверждение, кнопки и подсказки. В Toggle прочитать `CurrentRole` флажка из TK-0002 с наследованием общего `control.toggle`. Сохранить подписи текущей локали, значения по умолчанию и независимое переключение. Состояния фокуса/hover/disabled оформлять там, где виджет их поддерживает.
 3. Растровыми тестами показать отличия от Classic для итога и подтверждения, затем перерисовать подготовку тем же canvas без эффекта темы. Проверить, что правило скрытия потерь до прибытия сохраняется.
 
 ## Out of scope
@@ -53,13 +53,13 @@ No public API change. Рендер-область поставляет стил�
 
 ## Invariants
 
-TacticalBattlePanelHeader.cs:17–42 управляет видимостью потерь и вычислением исхода. TacticalBattleFlow.cs:196–204 и существующие события задают назначение кнопок.
+TacticalBattlePanelHeader.cs:17–42 управляет видимостью потерь и вычислением исхода. TacticalBattleFlow.ExitAsync сохраняет восстановление при NoBattle/WrongBattle. Отдельный ShipDestroyedScreen находится за пределами боевого scope.
 
 ## Tests
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
-- `PanelHeaderTests.Skin_styles_outcome_and_confirmation_without_styling_setup`
+- `PanelHeaderTests.Skin_styles_outcome_and_confirmation_without_styling_setup` — включить сравнение трёх флажков с независимыми переопределениями и одинаковыми Bounds и значениями.
 - `PanelHeaderTests.RealSalvoLossesStayHiddenUntilArrivalAndOutcomeUsesPlayerPerspective`
 - `PanelHeaderTests.ActualEngineRefusalIsShownInPanelWithoutChangingPhaseOrSeed`
 

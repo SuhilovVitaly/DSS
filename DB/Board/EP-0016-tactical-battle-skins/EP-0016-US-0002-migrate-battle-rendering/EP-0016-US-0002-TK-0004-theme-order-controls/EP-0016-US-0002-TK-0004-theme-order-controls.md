@@ -10,7 +10,7 @@ depends_on: [EP-0016-US-0002-TK-0003-theme-chrome-and-outcome]
 files_touched: 5
 serves: [US2-AC1, US2-AC2, US2-AC4]
 created: 2026-11-06T08:02:55Z
-revision: 1
+revision: 2
 ---
 
 # Оформление приказов движения и стрельбы
@@ -53,7 +53,7 @@ No API change. Карточки и подписи могут передават�
 
 ## Invariants
 
-BuildMoveRequest/BuildFireRequest определены в TacticalBattleScreen.cs:269 и :276. Стили меняют рисунок, события используют прежние Bounds и состояние.
+Приказы формируют `TacticalBattleScreen.BuildMoveRequest` и `BuildFireRequest`. Стили меняют рисунок, события используют прежние Bounds и состояние.
 
 ## Tests
 

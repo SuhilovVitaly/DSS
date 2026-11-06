@@ -10,7 +10,7 @@ depends_on: [EP-0016-US-0003-TK-0003-add-skin-selector, EP-0016-US-0002-TK-0005-
 files_touched: 2
 serves: [US3-AC1, US3-AC2, US3-AC3, US3-AC4]
 created: 2026-11-06T08:02:55Z
-revision: 1
+revision: 2
 ---
 
 # Связь настроек с реальным экраном боя
@@ -31,8 +31,8 @@ A-03/A-04/A-09. Пакеты обнаруживаются при запуске 
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` | SkiaWindow.cs:100, :798, :1078–1081, :1236–1263, :1372, :1725–1762. Точки старта, настройки, создание боя и Dispose. | Владение каталогом, разрешение сохранённого ID, подключение обоих production entry points и освобождение ресурсов. |
-| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SkinBattleIntegrationTests.cs` | Новый файл. BattleNavigationTests.cs:193 использует реальную боевую fixture, SettingsScreenTests.cs:46 растровую поверхность. | Связать реальную папку, выбор и Render, покрыть новый выбор, рестарт, fallback и сравнение игрового результата. |
+| `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs` | SkiaWindow.cs:790–831, :1091–1106, :1262–1289, :1510–1527, :1722. Вход F8 перечитывает язык, Start создаёт активный экран, New возвращает в подготовку. | Владение каталогом, подключение выбора в OpenSettingsAsync и CreateTacticalBattleView, освобождение ресурсов. |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SkinBattleIntegrationTests.cs` | Новый файл. LocalizationCoverageTests.cs:29 и BattleNavigationTests.cs:20–153 показывают реальные маршруты. | Связать пакет, Settings, F8 и Render. Проверить смену локали, новый бой, выход, fallback и равенство исходов. |
 
 ## Public API after the change
 
@@ -42,9 +42,9 @@ No public API change. Разрешить internal factory/helper внутри Sk
 
 1. Инициализировать каталог из Path.Combine(AppContext.BaseDirectory, "Skins") один раз, диагностика через безопасный callback InterfaceLog. Прочитать предпочтение, определить фактический ID. Каталог живёт дольше созданных экранов и освобождается после завершения их рисования. Уничтожение повторно безопасно.
 2. В OpenSettingsAsync передать варианты, локализованный Classic, эффективный ID и callback, принимающий только доступный ID. Публиковать его в памяти после успешной записи через TacticalBattleSkinPreference. При ошибке настройки показывают прежний активный ID.
-3. В CreateTacticalBattleView передать разрешённый скин настоящему TacticalBattleScreen. Setup и мир остаются вне боевого scope. Пройти вход F8, новый бой, выход и повторный вход. При новом запуске без выбранного пакета показать Classic в настройках и в бою.
-4. Автоматически пройти реальную папку и JSON, SettingsScreen с callback, создание настоящего боевого экрана и Render двух скинов из одной seed/сценарной фикстуры. Проверить исходы, отсутствие изменения сохранения мира и данные подсказок, а не только изменение цвета.
-5. Провести нативную проверку на доступной платформе на опубликованном клиенте: скопировать пакет, запустить, выбрать, открыть бой, пройти движение, огонь, эффект, вкладки, итог и подтверждение. Изменить только manifest и ресурс пакета, перезапустить и увидеть новый дизайн. Повторить после удаления пакета. Отдельно зафиксировать платформу, версии, скриншоты по ролям и непроведённые проверки.
+3. В CreateTacticalBattleView передать разрешённый скин настоящему TacticalBattleScreen. Сохранить `Localization.ApplyLanguage(Localization.ReadLanguageSetting())` при F8 перед созданием подготовки. Пройти F8 → Start, «Новый бой» → Start, выход и повторный вход. При новом запуске без выбранного пакета показать Classic в настройках и в бою.
+4. Автоматически пройти реальную папку, JSON, настройки, F8 и Render двух скинов из одной seed/сценарной фикстуры. Через настройки сменить язык и скин в обоих порядках, прочитать оба сохранённых поля и проверить язык на подготовке и в новом активном бою. Сравнить игровые факты, исходы, сохранение мира и данные подсказок. Выход, включая восстановление при потерянном или устаревшем бое, прогнать существующими тестами навигации.
+5. На опубликованном клиенте скопировать пакет, запустить, выбрать скин и открыть бой. Пройти движение, огонь, залп, вкладки, итог и подтверждение. Повторить F8 со вторым языком после смены в Settings. Изменить только manifest и ресурс, перезапустить и проверить новый вид. Повторить после удаления пакета. Отдельно зафиксировать платформу, версии, скриншоты по ролям и непроведённые проверки.
 
 ## Out of scope
 
@@ -52,7 +52,7 @@ No public API change. Разрешить internal factory/helper внутри Sk
 
 ## Invariants
 
-Активный бой создаётся CreateTacticalBattleView (SkiaWindow.cs:798, :1080). Основной экран настроек уже доступен через OpenSettingsAsync. Одинаковые seed и приказы дают одинаковое игровое состояние.
+Активный бой создаётся `CreateTacticalBattleView`. Скин действует внутри Render активного боя, а подготовка, мир и `ShipDestroyedScreen` используют свой штатный рендер. `TacticalBattleFlow.ExitAsync` и возврат камеры и скорости мира сохраняют действующий контракт EP-0015. При одинаковых исходных данных, seed и приказах тема даёт те же игровые факты.
 
 ## Tests
 
@@ -62,18 +62,21 @@ No public API change. Разрешить internal factory/helper внутри Sk
 - `SkinBattleIntegrationTests.Missing_pack_falls_back_and_battle_state_is_skin_independent`
 - `BattleNavigationTests.RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed`
 - `BattleNavigationTests.ActiveEscapeRequiresConfirmationAndActualExitPrecedesResume`
+- `LocalizationCoverageTests.SavedRussianFromSettingsIsUsedByActualSalvoPanelAndTabs`
+- `BattleNavigationTests.ExitClosesTheModalWhenTheEngineNoLongerHasThisBattle`
+- `BattleNavigationTests.ExitOfAStaleBattleExitsTheLiveEngineBattleInstead`
+- `SkinBattleIntegrationTests.Language_and_skin_survive_settings_changes_and_real_f8_start`
 
 Будущие команды из корня DSS. Заменить `<run>` уникальным ID, создать каталог результатов заранее, ограничить дерево каждого тестового процесса 300000 ms и сохранять его вывод рядом с TRX.
 
 ```powershell
 dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore
+dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter "FullyQualifiedName~LocalizationCoverageTests.SavedRussianFromSettingsIsUsedByActualSalvoPanelAndTabs|FullyQualifiedName~BattleNavigationTests.ExitClosesTheModalWhenTheEngineNoLongerHasThisBattle|FullyQualifiedName~BattleNavigationTests.ExitOfAStaleBattleExitsTheLiveEngineBattleInstead|FullyQualifiedName~SkinBattleIntegrationTests.Language_and_skin_survive_settings_changes_and_real_f8_start" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0016/<run>/us3-tk4" --logger "trx;LogFileName=locale-and-recovery.trx"
 dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter "FullyQualifiedName~SkinBattleIntegrationTests.Installed_pack_flows_from_settings_to_real_battle_and_survives_restart|FullyQualifiedName~SkinBattleIntegrationTests.Missing_pack_falls_back_and_battle_state_is_skin_independent|FullyQualifiedName~BattleNavigationTests.RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed|FullyQualifiedName~BattleNavigationTests.ActiveEscapeRequiresConfirmationAndActualExitPrecedesResume" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0016/<run>/us3-tk4" --logger "trx;LogFileName=focused.trx"
 dotnet format whitespace src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore --include src/DeepSpaceSaga.Client/UI/SkiaWindow.cs --verify-no-changes
 dotnet format whitespace tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --include tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SkinBattleIntegrationTests.cs --verify-no-changes
 git diff --check
 ```
-
-Регрессии из реального маршрута: BattleNavigationTests.RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed; BattleNavigationTests.ActiveEscapeRequiresConfirmationAndActualExitPrecedesResume.
 
 ## Definition of Done
 
@@ -84,4 +87,4 @@ git diff --check
 
 ## Self-containment check
 
-Определены обе production точки подключения, источник данных, fallback и end-to-end сценарий. Работа вне allowlist для этой интеграции не требуется.
+Определены точки подключения настроек и активного экрана, обновление локали при F8, fallback и сквозные проверки. Работа вне allowlist для этой интеграции не требуется.

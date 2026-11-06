@@ -10,7 +10,7 @@ depends_on: []
 files_touched: 2
 serves: [US1-AC1]
 created: 2026-11-06T08:02:55Z
-revision: 1
+revision: 2
 ---
 
 # Контракт пакета оформления
@@ -31,7 +31,7 @@ A-04/A-05 из эпика. Схема v1 использует именованн
 
 | File | Current state | Allowed change |
 |---|---|---|
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkin.cs` | Новый файл. Сейчас SKColor и размеры задаются в TacticalBattleMapRenderer.cs:11, :67 и TacticalBattleScreen.cs:117. | Модель, строгий разбор манифеста и типизированный доступ к значениям. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkin.cs` | Новый файл. Цвета и размеры задаются в TacticalBattleMapRenderer.Draw, DrawSalvo и DrawLabels, фон панели — в TacticalBattleScreen.DrawPanel. | Модель, строгий разбор манифеста и типизированный доступ к значениям. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/SkinManifestTests.cs` | Новый файл. Доступ к internal уже настроен в DeepSpaceSaga.Client.csproj:92. | Именованные проверки схемы, диапазонов и наследования. |
 
 ## Public API after the change
