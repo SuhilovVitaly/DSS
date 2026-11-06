@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0013-refresh-battle-ui-locale
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0015-US-0019-TK-0007-follow-game-language]
 files_touched:
@@ -23,3 +23,7 @@ files_touched:
 ## Проверка
 
 В Dss-Main запустить проверки DeepSpaceSaga.Client.Tests `LocalizationCoverageTests` и `git diff --check`. Каждый тикет опубликовать отдельным коммитом. Ручную приёмку фиксировать отдельно.
+
+## Исполнение
+
+Коммит `f6adcf9a` опубликован. 10/10 проверок настроек и локализации. Тест выбирает русский через Settings, открывает F8 при старом английском словаре и проверяет результат залпа, пять кнопок, все четыре вкладки и их данные. В локальном bin/Debug/net8.0 Dss-Main выставлено Russian по ранее сохранённому выбору DSS. Ручная приёмка открыта.

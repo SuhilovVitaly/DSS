@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0010-slower-battle-playback
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0015-US-0019-TK-0005-named-wrecks-on-impact]
 files_touched:
@@ -30,3 +30,7 @@ files_touched:
 ## Проверка
 
 В Dss-Main запустить проверки DeepSpaceSaga.Client.Tests `MovementAnimationTests|ResultsPhaseTests|BattleNavigationTests|BattleMapRenderTests|FirePlanningTests|ForecastTabTests|SidesAndLogTests` и `git diff --check`. Каждый тикет опубликовать отдельным коммитом. Ручную приёмку фиксировать отдельно.
+
+## Исполнение
+
+Коммит `b0870cef` опубликован. 29/29 проверок движения, стрельбы, навигации и карты. Проверены временные границы, пропуск, повтор и отсутствие повторной команды стрельбы. Ручная приёмка открыта.
