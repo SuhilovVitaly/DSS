@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 76/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; возврат из песочницы проверен; начинается подготовка удаления старого боя. Остальные 5 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 77/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; возврат из песочницы проверен; начинается подготовка удаления старого боя. Остальные 4 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Это исходный регрессионный срез. Core/session parity уже PASS; полная нативная и продуктовая приёмка пока NOT RUN.
 
-Продолжение: US-0017 TK-0001. TK-0001 exact Raid parity is open; independent performance and native checks continue. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
+Продолжение: US-0017 TK-0002. TK-0001 exact Raid parity is open; independent performance and native checks continue. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -96,4 +96,5 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0015-TK-0001-locale-coverage | 904163eb46ac5bf07a45aec24c689808bafbef46 | PASS: remote SHA verified | origin | Contracts 175, Engine 380, Client 167 |
 | EP-0015-US-0016-TK-0001-series-parity | 2bbd4eac958c6e0eb936bebea730a219295e69d7 (diagnostic) | PASS: remote SHA verified | origin | 4/5 tactics exact; Raid FAIL identical across Windows and Ubuntu, AC-01 open |
 | EP-0015-US-0016-TK-0002-performance | bda8d373a64e27e36c1a590e4b09b8be0d88e980 | PASS: remote SHA verified | origin | Release build + 167 Client; all benchmark thresholds PASS |
-| EP-0015-US-0016-TK-0003-native-acceptance | current ticket commit | SHA checked immediately after push | origin | 4 native OpenGL cases x 31 checks; Russian, F8 to F5/F9; hardware input NOT RUN |
+| EP-0015-US-0016-TK-0003-native-acceptance | 44d2bcd2e6745e1aea83f18221abe0fb4110b3f5 | PASS: remote SHA verified | origin | 4 native OpenGL cases x 31 checks; Russian, F8 to F5/F9; hardware input NOT RUN |
+| EP-0015-US-0017-TK-0001-impact-inventory | current ticket commit | SHA checked immediately after push | origin | functional diff and documentation ownership review PASS |

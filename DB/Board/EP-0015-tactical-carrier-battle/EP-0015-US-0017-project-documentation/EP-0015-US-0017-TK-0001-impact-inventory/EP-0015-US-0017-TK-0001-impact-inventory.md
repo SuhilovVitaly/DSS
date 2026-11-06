@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0017-project-documentation
 ticket: EP-0015-US-0017-TK-0001-impact-inventory
 title: impact-inventory
-stage: draft
+stage: done
 layer: documentation
 depends_on: ["EP-0015-US-0001-TK-0004-content-sync", "EP-0015-US-0002-TK-0006-platform-determinism", "EP-0015-US-0003-TK-0004-turn-and-outcome", "EP-0015-US-0004-TK-0004-golden-battles", "EP-0015-US-0005-TK-0006-session-tests", "EP-0015-US-0006-TK-0006-text-and-numbers", "EP-0015-US-0007-TK-0004-battle-keys-guard", "EP-0015-US-0008-TK-0005-movement-animation", "EP-0015-US-0009-TK-0004-forecast-tab", "EP-0015-US-0010-TK-0002-sandbox-flow", "EP-0015-US-0011-TK-0004-save-format-20", "EP-0015-US-0012-TK-0006-client-assets-locale-removal", "EP-0015-US-0013-TK-0010-legacy-save-dto-removal", "EP-0015-US-0014-TK-0005-tools-cleanup", "EP-0015-US-0015-TK-0001-locale-coverage", "EP-0015-US-0016-TK-0003-native-acceptance"]
 files_touched: 1
@@ -48,3 +48,13 @@ Engine владеет исходами, RNG и командами; Contracts н�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Audit current Board, canonical product documents and live tool/fixture guides against the functional diff. Legacy VData Board/Documentation copies are not owners and remain untouched.
+
+- DB/Board/EP-0015-tactical-carrier-battle/DocumentationImpact.md
+
+## Execution evidence — 2026-11-06
+
+Reviewed the actual functional diff at 44d2bcd2 against a9404103, current owning files and stale contract references. DocumentationImpact records canonical/live owners, obsolete documents to remove, adjacent tool/fixture guides, Board history and graph rebuild. Noncanonical VData copies remain untouched. Content review and diff check passed.
