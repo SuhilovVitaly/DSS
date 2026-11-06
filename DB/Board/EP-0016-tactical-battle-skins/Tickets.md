@@ -1,6 +1,6 @@
 # EP-0016 — Карта тикетов
 
-[Эпик и требования](Documentation.md) · 3 утверждённые истории, 12 тикетов. Статус карт — автоматический workflow epic-writer. Порядок строк соблюдает зависимости.
+[Эпик и требования](Documentation.md) · 4 истории, 13 тикетов, включая завершающую историю исполнения. Статус карт — автоматический workflow epic-writer. Порядок строк соблюдает зависимости.
 
 Входная база для исполнения и сравнения Classic указана в [Grounding](Documentation.md#grounding). Сверка EP-0015 уточнила охват в действующих тикетах. TK-0003 истории US-0001 готовит contrast с новыми ролями, TK-0001–0003 истории US-0002 фиксируют эталон и переносят карту и флажки, TK-0001 и TK-0004 истории US-0003 проверяют совместимость с сохранением локали и реальным маршрутом боя.
 
@@ -18,6 +18,7 @@
 | [EP-0016-US-0003-TK-0002-localize-skin-selector](EP-0016-US-0003-select-skin-in-settings/EP-0016-US-0003-TK-0002-localize-skin-selector/EP-0016-US-0003-TK-0002-localize-skin-selector.md) | Локализация переключателя | content-data | `EP-0016-US-0003-TK-0001-persist-skin-selection` | US3-AC1, US3-AC3 |
 | [EP-0016-US-0003-TK-0003-add-skin-selector](EP-0016-US-0003-select-skin-in-settings/EP-0016-US-0003-TK-0003-add-skin-selector/EP-0016-US-0003-TK-0003-add-skin-selector.md) | Переключатель скина в настройках | client | `EP-0016-US-0003-TK-0002-localize-skin-selector` | US3-AC1, US3-AC3 |
 | [EP-0016-US-0003-TK-0004-wire-settings-to-battle](EP-0016-US-0003-select-skin-in-settings/EP-0016-US-0003-TK-0004-wire-settings-to-battle/EP-0016-US-0003-TK-0004-wire-settings-to-battle.md) | Связь настроек с реальным экраном боя | client | `EP-0016-US-0003-TK-0003-add-skin-selector`, `EP-0016-US-0002-TK-0005-theme-information-tabs` | US3-AC1, US3-AC2, US3-AC3, US3-AC4 |
+| [EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph](EP-0016-US-0004-project-documentation/EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph/EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph.md) | Итоговая документация и граф | documentation | `EP-0016-US-0003-TK-0004-wire-settings-to-battle` | US4-AC1, US4-AC2, US4-AC3 |
 
 ## Контроль передачи
 
