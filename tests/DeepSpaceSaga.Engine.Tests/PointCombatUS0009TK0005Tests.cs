@@ -29,44 +29,6 @@ public sealed class PointCombatUS0009TK0005Tests
     private static ScenarioFile Save(SimulationEngine engine) => engine.CaptureSaveStateForTests(400, SimulationSpeed.Speed0, 100);
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void Historical_npc_dodge_survives_a_second_encounter_and_save_reload(bool acknowledge)
-    {
-        using var engine = PointCombatUS0008TK0001Tests.Battle(extraEnemy: true, extraHasAi: false);
-        var won = PointCombatUS0008TK0001Tests.Win(engine);
-        Assert.Equal(CombatEncounterState.Won, won.Encounter!.State);
-        Assert.Equal(Target, Assert.Single(engine.CaptureNpcDodgeThreats()).OwnerId);
-        if (acknowledge)
-        {
-            engine.ReceiveCommand(new("ack", 1, Player, "", CombatEncounterCommandTypes.AcknowledgeResults));
-            Assert.Equal(CombatEncounterState.Idle, At(engine, 2500).Encounter!.State);
-        }
-        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(
-            "other-enemy", "other-MOD-PIRATE-TORPEDO-01", 1700, 0, "slow", 2500).Disposition);
-        Assert.Equal(CombatEncounterState.Active, At(engine, 2500).Encounter!.State);
-        var save = engine.CaptureSaveStateForTests(10000, SimulationSpeed.Speed0, 2500);
-        Assert.DoesNotContain(Target, save.GameState.PointCombatState!.Encounter.EnemyIds);
-        var loaded = ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true);
-
-        var source = Registry(scatter: 0);
-        var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
-            All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
-            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents),
-            combatRules: source.CombatRules! with
-            { ShipDestruction = source.CombatRules.ShipDestruction with { DestroyedModuleFraction = .01m } });
-        using var restored = new SimulationEngine(registry);
-        restored.LoadScenario(loaded, true);
-        foreach (long time in new long[] { 2500, 3500, 8000 })
-        {
-            At(engine, time); At(restored, time);
-            Assert.Equal(ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(time * 4, SimulationSpeed.Speed0, time)),
-                ScenarioLoader.Serialize(restored.CaptureSaveStateForTests(time * 4, SimulationSpeed.Speed0, time)));
-            Assert.Equal(engine.CaptureNpcDodgeRngState(), restored.CaptureNpcDodgeRngState());
-        }
-    }
-
-    [Theory]
     [InlineData("position")]
     [InlineData("deadline")]
     [InlineData("speed")]
@@ -152,44 +114,6 @@ public sealed class PointCombatUS0009TK0005Tests
             Assert.Equal(bytes, File.ReadAllBytes(path)); Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(Save(engine)));
         }
         finally { File.Delete(path); }
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(300)]
-    public void Zero_reload_point_defense_is_immediately_ready_and_roundtrips_overlapping_flights(double x)
-    {
-        var source = CounterRegistry(scatter: 0, torpedoScatter: 0);
-        var registry = GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes).Select(m => m.CategoryTypeId == "module.countermeasure.launcher"
-            ? m with { ReloadMs = 0 } : m), All(source.ItemTypes), All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
-            stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
-        using var engine = new SimulationEngine(registry); engine.LoadScenario(TorpedoImpactTests.Scenario(o => o with { Ai = null }));
-        engine.ReceiveCommand(CounterLaunch("zero-1", x)); engine.ReceiveCommand(CounterLaunch("zero-2", x)); var launched = At(engine);
-        var defense = launched.InstalledModules.Single(m => m.ModuleId == Defense).Defense!;
-        Assert.Equal(DefenseState.Ready, defense.State); Assert.Null(defense.ReloadDueMotionTimeMs); Assert.Equal(0, defense.ReadyAtMotionTimeMs);
-        Assert.Equal(2, defense.ActiveProjectileIds!.Value.Length);
-        var save = engine.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0);
-        Assert.Equal(0UL, save.GameState.DefenseState!.RngCounter); Assert.Equal(0UL, save.GameState.CombatState!.TorpedoHitRngCounter);
-        Assert.Equal(4UL, save.GameState.PointCombatState!.LaunchScatter.Counter);
-        using var restored = new SimulationEngine(registry); restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), true);
-        Assert.Equal(ScenarioLoader.Serialize(save), ScenarioLoader.Serialize(restored.CaptureSaveStateForTests(0, SimulationSpeed.Speed0, 0)));
-        foreach (long time in new long[] { 1, 2000, 2500 })
-        {
-            At(engine, time); At(restored, time);
-            Assert.Equal(ScenarioLoader.Serialize(engine.CaptureSaveStateForTests(time * 4, SimulationSpeed.Speed0, time)),
-                ScenarioLoader.Serialize(restored.CaptureSaveStateForTests(time * 4, SimulationSpeed.Speed0, time)));
-        }
-    }
-
-    [Fact]
-    public void Point_validation_uses_no_legacy_interception_or_guidance_helper()
-    {
-        string root = Path.GetFullPath(Path.Combine(TorpedoImpactTests.ClientRoot, "..", "DeepSpaceSaga.Engine"));
-        foreach (string relative in new[] { "Scenario/PointCombatSaveData.cs", "Scenario/PointCombatContinuationValidation.cs", "SimulationEngine.PointCombatPersistence.cs" })
-        {
-            string source = File.ReadAllText(Path.Combine(root, relative));
-            Assert.DoesNotContain("InterceptionMath", source); Assert.DoesNotContain("TorpedoGuidanceMath", source);
-        }
     }
 
     [Theory]

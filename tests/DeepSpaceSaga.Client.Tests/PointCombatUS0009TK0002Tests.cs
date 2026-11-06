@@ -32,7 +32,7 @@ public sealed class PointCombatUS0009TK0002Tests
             Assert.DoesNotContain(scenario.GameState.SpaceObjects.SelectMany(o => o.Modules ?? []), m => m.ModuleTypeId == retired);
             using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(root, "Settings.json"), entry.ScenarioPath);
             Assert.NotNull(engine.PlayerShipObjectId);
-            Assert.NotNull(engine.CaptureSnapshotForTests().Encounter);
+            Assert.Null(engine.CaptureSnapshotForTests().Encounter);
             if (entry.ScenarioId == "combat_mukha_single")
                 Assert.Single(scenario.GameState.SpaceObjects, o => o.ObjectType == SpaceObjectType.NpcShip);
         }

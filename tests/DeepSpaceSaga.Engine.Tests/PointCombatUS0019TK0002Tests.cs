@@ -36,7 +36,7 @@ public sealed class PointCombatUS0019TK0002Tests
             var a = baseline.CaptureSnapshotForTests(time * 4, simulationTimeMs: time);
             var b = shifted.CaptureSnapshotForTests(time * 4, simulationTimeMs: time);
             Assert.Equal(a.EffectiveOutcome.State, b.EffectiveOutcome.State);
-            Assert.Equal(a.Encounter!.State, b.Encounter!.State); Assert.Equal(a.Encounter.Stats, b.Encounter.Stats);
+            Assert.Null(a.Encounter); Assert.Null(b.Encounter);
             Assert.Equal(a.Objects.Select(o => o.ObjectId), b.Objects.Select(o => o.ObjectId));
             foreach (var original in a.Objects)
             {
@@ -75,7 +75,7 @@ public sealed class PointCombatUS0019TK0002Tests
         Assert.Equal(500_000_000L, actual.MotionTimeMs);
         Assert.Equal(150_000_000_000L, actual.GameTimeMs);
         Assert.Equal(SimulationSpeed.Speed4, actual.CurrentSpeed);
-        Assert.Equal(CombatEncounterState.Idle, actual.Encounter!.State);
+        Assert.Null(actual.Encounter);
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(2), $"Peaceful gap took {watch.Elapsed.TotalMilliseconds:0.0}ms.");
     }
 }

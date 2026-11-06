@@ -86,7 +86,6 @@ public sealed partial class SimulationEngine
         if (!continuing && owner.InitialMotion.ObjectId == PlayerShipObjectId)
         {
             _playerEvasionEpisodes++;
-            RecordEncounterEvasion(threatId!);
         }
         return CommandStartOutcome.Started;
     }

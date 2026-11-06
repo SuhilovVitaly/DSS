@@ -9,10 +9,9 @@ public sealed partial class SimulationEngine
     {
         var committed = ProjectPointCombatFact(entry) with { EventId = checked(++_combatJournalSequence) };
         _combatJournal.Add(committed);
-        ObserveEncounterFact(committed);
     }
 
-    private CombatJournalEntry ProjectPointCombatFact(CombatJournalEntry entry) => !UsesPointEncounters ? entry : entry with
+    private CombatJournalEntry ProjectPointCombatFact(CombatJournalEntry entry) => _registry.CombatRules?.IsPointAim != true ? entry : entry with
     {
         ChanceTenths = null,
         Roll = null,

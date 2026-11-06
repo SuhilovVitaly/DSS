@@ -27,7 +27,7 @@ public sealed class CombatScenariosContentTests
         Assert.Equal(enemies + 1, snapshot.Objects.Count(o => o.ObjectType is SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip));
         var fighting = engine.CaptureSnapshotForTests(1, simulationTimeMs: 1);
         Assert.Equal(enemies, fighting.Objects.Count(o => o.HostileCombat?.DesiredRadiusKm == 25));
-        Assert.Equal(CombatEncounterState.Active, snapshot.Encounter!.State);
+        Assert.Null(snapshot.Encounter);
         Assert.Equal(SimulationSpeed.Speed0, snapshot.CurrentSpeed);
         Assert.All(snapshot.InstalledModules.Where(m => m.LauncherCombat is not null), m =>
             Assert.Equal(new[] { "slow", "medium", "fast" }, m.LauncherCombat!.Profiles!.Value.Select(p => p.ProfileId)));

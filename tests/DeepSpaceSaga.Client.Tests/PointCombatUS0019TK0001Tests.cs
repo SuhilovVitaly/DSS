@@ -41,7 +41,7 @@ public sealed class PointCombatUS0019TK0001Tests
             Assert.Equal(expectedCounts[entry.ScenarioId].Enemies, scenario.GameState.SpaceObjects.Count(o => o.ObjectType == SpaceObjectType.NpcShip));
             using var engine = EngineContentLoader.CreateEngineFromScenarioFile(Path.Combine(root, "Settings.json"), entry.ScenarioPath);
             var actual = engine.CaptureSnapshotForTests();
-            Assert.NotNull(engine.PlayerShipObjectId); Assert.NotNull(actual.Encounter);
+            Assert.NotNull(engine.PlayerShipObjectId); Assert.Null(actual.Encounter);
             Assert.All(actual.InstalledModules.Where(m => m.Defense is not null), m => Assert.NotNull(m.Defense));
             Assert.All(scenario.GameState.SpaceObjects.SelectMany(o => o.Modules ?? []).Where(m => m.ModuleTypeId.Contains("torpedo.launcher", StringComparison.Ordinal)),
                 m => Assert.True(registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(m.ModuleTypeId)).IsPointLauncher));

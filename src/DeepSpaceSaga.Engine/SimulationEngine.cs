@@ -177,14 +177,11 @@ public sealed partial class SimulationEngine : IDisposable
             CheckPresentationLease();
             if (IsDefeated) return CommandReasonCodes.SessionDefeated;
             if (!Enum.IsDefined(speed)) throw new ArgumentOutOfRangeException(nameof(speed));
-            if (UsesPointEncounters) AdvancePointClockWorld();
-            if (IsDefeated) return CommandReasonCodes.SessionDefeated;
-            if (_encounterState == CombatEncounterState.Active && !speed.IsAllowedInCombat()) return CommandReasonCodes.CombatSpeedLocked;
             if (_automaticPresentationPause && speed != SimulationSpeed.Speed0) return null;
             if (_dialogue.Active is not null) { _dialogue.ResumeSpeed = speed; return null; }
             _presentationIntervalSpeed = _clock.Speed;
-            if (UsesPointEncounters) _clock.SetSpeedAtProcessedBoundary(speed);
-            else _clock.SetSpeed(speed);
+            _clock.SetSpeed(speed);
+
             if (_collectPresentation)
             {
                 var clock = _clock.Capture();
@@ -563,7 +560,6 @@ public sealed partial class SimulationEngine : IDisposable
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-            ResetEncounter(gs.MotionTimeMs);
 
         }
     }
@@ -666,7 +662,7 @@ public sealed partial class SimulationEngine : IDisposable
         // Clock capture and world advancement share the same session lock. A pause
         // or explicit time command cannot overtake a previously captured clock value.
         lock (_worldStateLock)
-            return BuildSnapshot(advanceClock ? UsesPointEncounters ? AdvancePointClockWorld() : _clock.UpdateAndCapture() : _clock.Capture());
+            return BuildSnapshot(advanceClock ? _clock.UpdateAndCapture() : _clock.Capture());
     }
 
     private AuthoritativeSnapshot BuildSnapshot(SimulationClockState clockState, bool presentationOnly = false, bool prepareWorld = true)
@@ -715,7 +711,6 @@ public sealed partial class SimulationEngine : IDisposable
 
             }
 
-            EvaluateEncounter(gameTimeMs);
 
             // Re-validate on every snapshot (not only when the client reports new
             // interaction state): if the selected/active object disappeared from the
@@ -830,7 +825,6 @@ public sealed partial class SimulationEngine : IDisposable
 
             var installedModules = BuildInstalledModuleProjection(gameTimeMs);
 
-            if (UsesPointEncounters) clockState = clockState with { Speed = _clock.Speed };
             var snapshot = new AuthoritativeSnapshot(
                 SnapshotSequence: _nextSequence++,
                 GameTimeMs: clockState.GameTimeMs,
@@ -860,7 +854,7 @@ public sealed partial class SimulationEngine : IDisposable
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: presentationOnly ? default : BuildVoyageFinanceProjection(),
                 StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
-                Outcome: _sessionOutcome, Encounter: CaptureEncounter(gameTimeMs),
+                Outcome: _sessionOutcome,
                 DebugTuning: CaptureDebugTuning(presentationOnly),
                 DestroyedModuleLimit: CaptureOwnDestroyedModuleLimit(),
                 IsTacticalBattleActive: _tacticalBattleSession is not null);
@@ -2301,7 +2295,7 @@ public sealed partial class SimulationEngine : IDisposable
             return PlayerRelation.Self;
         if (obj.ObjectType == SpaceObjectType.NpcShip)
             return obj.RelationToPlayer ?? PlayerRelation.Neutral;
-        if (UsesPointEncounters && obj.ObjectType == SpaceObjectType.Wreck)
+        if (_registry.CombatRules?.IsPointAim == true && obj.ObjectType == SpaceObjectType.Wreck)
             return obj.RelationToPlayer;
         return null;
     }
@@ -2481,8 +2475,6 @@ public sealed partial class SimulationEngine : IDisposable
                 (command.QuoteId is not null || command.MarketRevision is not null)
                     ? RejectQuotedTrade(command, CommandReasonCodes.SessionDefeated)
                     : CommandStartOutcome.Rejected(CommandReasonCodes.SessionDefeated);
-        if (command.CommandType == CombatEncounterCommandTypes.AcknowledgeResults)
-            return AcknowledgeEncounter(command, gameTimeMs);
         if (command.CommandType == ScannerCommandTypes.StructuralScan)
             return TryStartResourceSurvey(command, gameTimeMs);
 
@@ -3558,11 +3550,10 @@ public sealed partial class SimulationEngine : IDisposable
     private void AdvanceMotionTo(long gameTimeMs, Func<long, long> surveyCalendarAt, long? playerCommandBoundary = null)
     {
         if (IsDefeated) return;
-        EvaluateEncounter(_combatProcessedTimeMs);
         CompleteEvasions(_combatProcessedTimeMs);
         if (gameTimeMs > _combatProcessedTimeMs)
             RefreshHostileCombat(_combatProcessedTimeMs);
-        if (!UsesPointEncounters && !HasPendingNpcDodge && !HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
+        if (!HasPendingNpcDodge && !HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
@@ -3590,11 +3581,9 @@ public sealed partial class SimulationEngine : IDisposable
                     _objects.Any(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed) &&
                     _objects.Any(o => o.InitialMotion.ObjectId == incident.StationObjectId && o.SecurityZoneRadiusKm is not null))
                     next = Math.Min(next, incident.DeadlineGameTimeMs);
-            next = NextEncounterBoundary(_combatProcessedTimeMs, next);
             bool advanced = next > _combatProcessedTimeMs;
             AdvanceCombatTo(next, processPlayerBeforeNpc: next == playerCommandBoundary);
             if (IsDefeated) return;
-            EvaluateEncounter(next);
             CompleteEvasions(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
             UpdateStationSecurity(next);

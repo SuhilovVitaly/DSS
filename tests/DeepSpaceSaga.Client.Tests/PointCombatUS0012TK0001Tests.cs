@@ -159,7 +159,7 @@ public sealed class PointCombatUS0012TK0001Tests
     public async Task Outside_combat_arrows_use_the_same_continuous_turn_command()
     {
         await using var s = await Session.Create(combat: false);
-        Assert.NotEqual(CombatEncounterState.Active, s.Handle.Buffer.Presented!.Snapshot.Encounter!.State);
+        Assert.Null(s.Handle.Buffer.Presented!.Snapshot.Encounter);
         s.Down(Key.Left);
         await s.Wait(() => s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).TurnHoldRateDegPerSec < 0);
         Assert.Equal(ShipEngineCommandTypes.TurnHold, s.World.Engine.CaptureSnapshot().Objects.Single(o => o.ObjectId == PointCombatSessionFixture.Player).ActiveEngineCommandType);

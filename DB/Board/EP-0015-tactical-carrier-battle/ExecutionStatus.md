@@ -2,7 +2,7 @@
 
 ## Текущее состояние — 2026-11-06
 
-Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 60/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; возврат из песочницы проверен; начинается подготовка удаления старого боя. Остальные 21 тикетов и завершающая документационная история остаются открытыми.
+Исполнение продолжается. Все четыре тикета US-0001 выполнены технически и проверены; 61/81 тикетов. Бой запускается из карты; форма подготовки, поле и приказы движения реализованы; планирование стрельбы и показ залпа реализованы; вкладки и прогноз реализованы; возврат из песочницы проверен; начинается подготовка удаления старого боя. Остальные 20 тикетов и завершающая документационная история остаются открытыми.
 
 - Ветка `codex/ep-0015-tactical-carrier-battle`, remote `origin` = `https://github.com/SuhilovVitaly/DSS`.
 - Отмена запрета GitHub зафиксирована служебным коммитом `22bb633145d479391b985eb73d148bb7cad7de94`, push и remote SHA проверены.
@@ -14,7 +14,7 @@
 
 [ContentValidation.md](ContentValidation.md): build PASS (0 warnings/errors), 5402/5402 теста в шести проектах, scoped format и diff check PASS. Длительные Engine/Economy corpora проверены полными разделёнными наборами по точным ID, без ослабления assertions. Это исходный регрессионный срез. Core/session parity уже PASS; полная нативная и продуктовая приёмка пока NOT RUN.
 
-Продолжение: US-0013 TK-0003. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
+Продолжение: US-0013 TK-0004. US-0005 и US-0007 технически завершены. US-0001 технически завершена, включая сообщение и лог ошибки данных на входе F8.
 
 Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run 42090979851 PASS → schema-2 JSON imported. Numeric expectations unchanged; rearHits name corrected per Combat §7.1. Final repair SHA 0497bcbbc2fe748c73567690450eacc2aaaaf2b2, remote verified.
 
@@ -79,4 +79,5 @@ Reference repair: service fdc52ee5ebd1b16f398e3204a24fe4ee4d119e92 → Linux run
 | EP-0015-US-0012-TK-0005-client-shell-removal | 3e4d81c0124fe17df28d5bf7fe0fea2caf81eaee | PASS: remote SHA verified | origin | Client 2026/2026; solution build/format/diff PASS |
 | EP-0015-US-0012-TK-0006-client-assets-locale-removal | fbcb665527d4e6c62f3c891b32c530ea83fe5184 | PASS: remote SHA verified | origin | Client 2016/2016; assets absent; 546 RU/EN keys; build/format/diff PASS |
 | EP-0015-US-0013-TK-0001-local-client-removal | 453afb5adc76890cb19d90cf9ffd6d314e2412ca | PASS: remote SHA verified | origin | 2012 Client + 561 Engine PASS; build/format/diff PASS |
-| EP-0015-US-0013-TK-0002-engine-removal-1 | current ticket commit | SHA checked immediately after push | origin | 877 Engine + 223 Client selected PASS; build/format/diff PASS |
+| EP-0015-US-0013-TK-0002-engine-removal-1 | 6e3f23933b3a155bf9b8704d2073d6ccce80ee89 | PASS: remote SHA verified | origin | 877 Engine + 223 Client selected PASS; build/format/diff PASS |
+| EP-0015-US-0013-TK-0003-engine-removal-2 | current ticket commit | SHA checked immediately after push | origin | Windows build/format; 2012 Client + 919 Engine + 2 EconomyBalance PASS |
