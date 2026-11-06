@@ -299,11 +299,33 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task BattleGridNestsFiveByFiveAndKeepsItsWorldAlignmentWhenZoomingAndPanning()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State! with { Units = [], Paths = [] };
+        using var near = Render(1);
+        using var fading = Render(0.75);
+        using var far = Render(0.5);
+        using var farther = Render(0.1);
+        using var panned = Render(0.5, -200);
+        var background = near.GetPixel(25, 13);
+        for (int x = 40; x < 200; x += 40)
+            Assert.True(near.GetPixel(x, 13).Blue > background.Blue);
+        Assert.True(near.GetPixel(200, 13).Blue > near.GetPixel(40, 13).Blue);
+        Assert.InRange(fading.GetPixel(30, 13).Blue, background.Blue + 1, near.GetPixel(40, 13).Blue - 1);
+        Assert.Equal(background, far.GetPixel(20, 13));
+        Assert.True(far.GetPixel(100, 13).Blue > background.Blue);
+        Assert.Equal(background, farther.GetPixel(20, 13));
+        Assert.True(farther.GetPixel(100, 13).Blue > background.Blue);
+        Assert.Equal(far.GetPixel(0, 13), panned.GetPixel(100, 13));
+
+        SKBitmap Render(double ppu, double worldLeft = 0) => Raster(new(battle,
+            new(880, 720, worldLeft + 439.5 / ppu, 359.5 / ppu, ppu), SKRect.Empty, 1, false, ""));
+    }
+
+    [Fact]
     public async Task GridRulerAndActualPanelTogglesChangeOnlyPresentation()
     {
-        Assert.Equal(40, TacticalBattleMapRenderer.GridStep(1800));
-        Assert.Equal(80, TacticalBattleMapRenderer.GridStep(3600));
-        Assert.Equal(20, TacticalBattleMapRenderer.GridStep(900));
         Assert.Equal(100, TacticalBattleMapRenderer.RulerLength(1, 1));
         Assert.Equal(20, TacticalBattleMapRenderer.RulerLength(5, 1));
         Assert.Equal(10, TacticalBattleMapRenderer.RulerLength(20, 2));
@@ -346,7 +368,7 @@ public sealed class BattleMapRenderTests
     {
         var bitmap = new SKBitmap(frame.View.PixelWidth, frame.View.PixelHeight);
         using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(new SKColor(2, 12, 22));
+        canvas.Clear(TacticalBattleMapRenderer.Background);
         TacticalBattleMapRenderer.Draw(canvas, frame);
         return bitmap;
     }

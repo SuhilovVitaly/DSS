@@ -116,7 +116,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             base.Render(canvas, width, height);
             return;
         }
-        canvas.Clear(new SKColor(2, 12, 22));
+        canvas.Clear(TacticalBattleMapRenderer.Background);
         canvas.Save();
         canvas.ClipRect(SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight));
         TacticalBattleMapRenderer.Draw(canvas, frame);

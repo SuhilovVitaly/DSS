@@ -12,10 +12,9 @@ internal static class TacticalBattleMapRenderer
     internal static readonly SKColor Enemy = new(232, 98, 58);
     internal static readonly SKColor Inactive = new(85, 85, 85);
     internal static readonly SKColor Jammed = new(247, 207, 77);
-    private static readonly SKColor Grid = new(17, 37, 54);
+    private static readonly TacticalMapSettings GridSettings = new();
+    internal static readonly SKColor Background = new(2, 12, 22);
     private static readonly SKColor Ruler = new(135, 175, 197);
-
-    internal static double GridStep(double width) => 40 * Math.Pow(2, Math.Round(Math.Log2(width / 1800.0), MidpointRounding.ToEven));
 
     internal static double RulerLength(double pixelsPerUnit, float uiScale)
     {
@@ -30,7 +29,8 @@ internal static class TacticalBattleMapRenderer
         float scale = frame.UiScale;
         var battle = frame.Battle;
         using var paint = new SKPaint { IsAntialias = true, StrokeWidth = scale };
-        DrawGrid(canvas, view, paint);
+        GridRenderer.DrawLines(canvas, view.CenterX, view.CenterY, view.PixelsPerUnit, view.PixelWidth, view.PixelHeight,
+            GridSettings, paint, Background, baseStep: 8);
         var units = VisibleUnits(frame);
         if (frame.Presentation == TacticalBattlePresentation.Current)
         {
@@ -213,27 +213,6 @@ internal static class TacticalBattleMapRenderer
             canvas.DrawCircle(p, 7 * frame.UiScale, paint);
             paint.Style = SKPaintStyle.Fill;
             DrawDrone(canvas, p, end.Course, row.Unit.FrameId, frame.UiScale, paint);
-        }
-    }
-
-    private static void DrawGrid(SKCanvas canvas, TacticalBattleView view, SKPaint paint)
-    {
-        double step = GridStep(view.WorldWidth);
-        var (left, top) = view.Unproject(0, 0);
-        var (right, bottom) = view.Unproject(view.PixelWidth, view.PixelHeight);
-        paint.Color = Grid;
-        // Caps also keep a pathological one-pixel viewport bounded.
-        double firstX = Math.Ceiling(left / (double)step) * step;
-        double firstY = Math.Ceiling(top / (double)step) * step;
-        for (int i = 0; i < 2048 && firstX + i * step <= right; i++)
-        {
-            float x = view.Project(firstX + i * step, 0).X;
-            canvas.DrawLine(x, 0, x, view.PixelHeight, paint);
-        }
-        for (int i = 0; i < 2048 && firstY + i * step <= bottom; i++)
-        {
-            float y = view.Project(0, firstY + i * step).Y;
-            canvas.DrawLine(0, y, view.PixelWidth, y, paint);
         }
     }
 

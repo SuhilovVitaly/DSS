@@ -1,6 +1,6 @@
 # EP-0015 execution order
 
-84 tickets, 18 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
+97 tickets, 19 stories. Порядок — по реальным зависимостям: сначала данные и детерминированное ядро, затем правила и ИИ с проверкой эталонами, сессия, UI, удаление старого боя, локализация, приёмка, документация последней. Зависимость ниже — предыдущий тикет истории или истории-предшественники.
 
 | Ticket | Layer | Story criteria | Dependency | State |
 |---|---|---|---|---|
@@ -101,3 +101,4 @@
 | [EP-0015-US-0019-TK-0011-enemy-target-count-badges](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0011-enemy-target-count-badges/EP-0015-US-0019-TK-0011-enemy-target-count-badges.md) | client | AC-11 | EP-0015-US-0019-TK-0004-fire-target-indicators | done |
 | [EP-0015-US-0019-TK-0012-smaller-disabled-medical-cross](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0012-smaller-disabled-medical-cross/EP-0015-US-0019-TK-0012-smaller-disabled-medical-cross.md) | client | AC-12 | EP-0015-US-0019-TK-0009-disabled-drone-cross | done |
 | [EP-0015-US-0019-TK-0013-refresh-battle-ui-locale](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0013-refresh-battle-ui-locale/EP-0015-US-0019-TK-0013-refresh-battle-ui-locale.md) | client | AC-13 | EP-0015-US-0019-TK-0007-follow-game-language | done |
+| [EP-0015-US-0019-TK-0014-nested-battle-grid](EP-0015-US-0019-bugs/EP-0015-US-0019-TK-0014-nested-battle-grid/EP-0015-US-0019-TK-0014-nested-battle-grid.md) | client | AC-14 | EP-0015-US-0008-TK-0003-battle-map-render | done |
