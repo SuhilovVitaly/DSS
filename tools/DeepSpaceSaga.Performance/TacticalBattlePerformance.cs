@@ -39,8 +39,9 @@ internal static class TacticalBattlePerformance
         double seriesSeconds = Stopwatch.GetElapsedTime(seriesStart).TotalSeconds;
 
         string settings = Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json");
-        await using var handle = new GameSessionHandle(LocalGameSessionConnection.CreateFromSettingsFile(settings),
-            deferDebugTuningWrites: true);
+        var connection = LocalGameSessionConnection.CreateFromSettingsFile(settings);
+        await using var handle = new GameSessionHandle(connection, deferDebugTuningWrites: true);
+        await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed0);
         var flow = new TacticalBattleFlow(handle);
         if ((await flow.StartAsync(new("performance", 1)))?.Accepted != true)
             throw new InvalidOperationException("Tactical start rejected.");

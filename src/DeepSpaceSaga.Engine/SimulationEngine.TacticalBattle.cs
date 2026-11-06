@@ -45,6 +45,8 @@ public sealed partial class SimulationEngine
                 return new(request.CommandId, false, TacticalBattleRejectionCode.Unavailable, null, null, [],
                     error is null ? null : new(error.File, error.Field, error.Message));
             }
+            if (_clock.Speed != SimulationSpeed.Speed0)
+                return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WorldNotPaused);
             var session = TacticalBattleSession.TryCreate(catalog, request, out var code);
             if (session is null) return RejectTactical(request.CommandId, code);
             _tacticalBattleSession = session;

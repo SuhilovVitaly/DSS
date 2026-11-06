@@ -19,7 +19,8 @@ public enum TacticalBattleRejectionCode
     None = 0, Unavailable = 1, NoBattle = 2, AlreadyActive = 3, WrongPhase = 4, WrongBattle = 5,
     StaleRevision = 6, InvalidIdentity = 7, IdentityConflict = 8, UnknownScenario = 9, UnknownTactic = 10,
     InvalidDrone = 11, DuplicateDrone = 12, InvalidNumber = 13, UnknownWeapon = 14, UnknownArmor = 15,
-    UnknownShield = 16, InvalidShieldCount = 17, InvalidTarget = 18, InvalidRequest = 19, Unsupported = 20
+    UnknownShield = 16, InvalidShieldCount = 17, InvalidTarget = 18, InvalidRequest = 19, Unsupported = 20,
+    WorldNotPaused = 21
 }
 /// <summary>NewEvents is a delta for this command. State.Log, when present, is the full journal.</summary>
 public sealed record TacticalBattleResponse(string CommandId, bool Accepted, TacticalBattleRejectionCode Code,

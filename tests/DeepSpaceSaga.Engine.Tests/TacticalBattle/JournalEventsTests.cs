@@ -84,5 +84,6 @@ public sealed class JournalEventsTests
     }
 
     private static SimulationEngine Create() =>
-        new(GameDataRegistry.Create([], [], [], [], tacticalBattle: Availability.Available(AssemblyTests.Catalog())));
+        new(GameDataRegistry.Create([], [], [], [], tacticalBattle: Availability.Available(AssemblyTests.Catalog())),
+            clock: new SimulationClock(SimulationSpeed.Speed0));
 }

@@ -184,6 +184,7 @@
   "TacticalBattle.Refusal.InvalidTarget": "Выбранная цель недоступна этой пушке.",
   "TacticalBattle.Refusal.InvalidRequest": "Приказ не удалось прочитать.",
   "TacticalBattle.Refusal.Unsupported": "Это соединение не поддерживает бой.",
+  "TacticalBattle.Refusal.WorldNotPaused": "Поставьте мир на паузу перед началом боя.",
   "World.Panel.Acceleration": "Ускорение",
   "World.Panel.AccelerationTime": "Разгон до максимума",
   "World.Panel.AccelerationUnit": "км/с²",

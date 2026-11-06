@@ -15,6 +15,26 @@ public sealed class WorldGuardTests
     }
 
     [Theory]
+    [InlineData(SimulationSpeed.Speed1)]
+    [InlineData(SimulationSpeed.Speed2)]
+    public void DirectStartRequiresPausedWorld(SimulationSpeed speed)
+    {
+        using var engine = Engine();
+        engine.SetSpeed(speed);
+        var response = engine.StartTacticalBattle(new("running", 1));
+        Assert.False(response.Accepted);
+        Assert.Equal(TacticalBattleRejectionCode.WorldNotPaused, response.Code);
+        Assert.Equal(speed, engine.CurrentSpeed);
+        Assert.Null(engine.GetTacticalBattleState());
+
+        engine.SetSpeed(SimulationSpeed.Speed0);
+        Assert.True(engine.StartTacticalBattle(new("paused", 1)).Accepted);
+        long pausedTime = engine.CaptureSnapshot(advanceClock: true).GameTimeMs;
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, engine.TrySetSpeed(speed));
+        Assert.Equal(pausedTime, engine.CaptureSnapshot(advanceClock: true).GameTimeMs);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void ExitAndTacticalDefeatPreserveTheCompleteSavedWorld(bool defeat)

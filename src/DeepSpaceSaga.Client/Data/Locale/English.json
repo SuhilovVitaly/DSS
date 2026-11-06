@@ -184,6 +184,7 @@
   "TacticalBattle.Refusal.InvalidTarget": "The selected target is unavailable to this gun.",
   "TacticalBattle.Refusal.InvalidRequest": "The order could not be read.",
   "TacticalBattle.Refusal.Unsupported": "This connection does not support battles.",
+  "TacticalBattle.Refusal.WorldNotPaused": "Pause the world before starting a battle.",
   "World.Panel.Acceleration": "Acceleration",
   "World.Panel.AccelerationTime": "To maximum",
   "World.Panel.AccelerationUnit": "km/s²",
