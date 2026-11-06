@@ -132,8 +132,6 @@ internal sealed class ObjectLabelRenderer
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
                 bool focused = objectId == selectedObjectId || objectId == hoveredObjectId;
-                if (predicted.RenderObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure && !focused)
-                    continue;
                 bool important = focused || state.IsPlayerShip || HasSelectableShipLabel(state.Source) || isImportant?.Invoke(objectId) == true ||
                     predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
                 if (important != (pass == 0)) continue;

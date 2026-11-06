@@ -14,7 +14,7 @@ public sealed class ModulePanelContractTests
             PlayerShipObjectId: "own", InstalledModules: [module]);
         string json = JsonSerializer.Serialize(frame);
         foreach (string field in new[] { "HullCombat", "OwnProjectile", "CombatReports", "CombatJournal", "Encounter",
-            "Outcome", "LauncherCombat", "Defense", "DefensePreview", "Operator" })
+            "Outcome", "DestroyedModuleLimit", "ArmorCurrent", "ArmorMax", "DisabledUntilMotionTimeMs", "CombatRole", "IsCritical", "LauncherCombat", "Defense", "DefensePreview", "Operator" })
             Assert.DoesNotContain($"\"{field}\"", json);
         var copy = JsonSerializer.Deserialize<AuthoritativeSnapshot>(json)!;
         Assert.Equal("own", copy.PlayerShipObjectId);

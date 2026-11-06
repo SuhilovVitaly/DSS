@@ -53,7 +53,7 @@ public sealed class ScenarioModuleCleanupTests
         Assert.NotNull(snapshot.PlayerShipObjectId);
         Assert.NotEmpty(snapshot.InstalledModules);
         Assert.DoesNotContain(snapshot.InstalledModules, m => IsCombatModule(m.ModuleTypeId));
-        Assert.DoesNotContain(snapshot.Objects, o => o.ObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure or SpaceObjectType.Wreck);
+        Assert.DoesNotContain(snapshot.Objects, o => o.ObjectType is "Missile" or "Countermeasure" or "Wreck");
     }
 
     private static bool IsCombatModule(string id) =>

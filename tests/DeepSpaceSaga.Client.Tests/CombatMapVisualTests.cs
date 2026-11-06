@@ -11,7 +11,7 @@ public sealed class CombatMapVisualTests
 {
     private static ObjectMotionSnapshot Ship(string id, double x, double y, int hp = 450) =>
         new(id, x, y, 0, 0, RenderObjectType: id == "player" ? SpaceObjectType.PlayerShip : SpaceObjectType.NpcShip,
-            ModuleHealth: [new("engine", "Engine", 0, 0, hp, 450, null, false)]);
+            ModuleHealth: [new("engine", "Engine", hp, 450, false)]);
 
     [Fact]
     public void Known_ship_labels_remain_visible_without_aggregate_health()
@@ -57,7 +57,6 @@ public sealed class CombatMapVisualTests
         renderer.DrawPlaques(canvas, states, 0, SimulationSpeed.Speed0, 800, 600, camera);
         Assert.Equal(ObjectLabelLayout.PlaqueHeight, renderer.Geometries["player"].PlaqueRect.Height);
         Assert.DoesNotContain(hpColor, bitmap.Pixels);
-        Assert.False(ObjectLabelRenderer.HasSelectableShipLabel(obj with { RenderObjectType = SpaceObjectType.Wreck }));
     }
 
     [Fact]
@@ -65,7 +64,7 @@ public sealed class CombatMapVisualTests
     {
         var ship = Ship("player", 0, 0) with
         {
-            ModuleHealth = [new("a", "A", 10, 20, 20, 40, null, false), new("b", "B", 0, 20, 40, 80, null, false)]
+            ModuleHealth = [new("a", "A", 20, 40, false), new("b", "B", 40, 80, false)]
         };
         Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship));
         Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship with { ModuleHealth = [] }));

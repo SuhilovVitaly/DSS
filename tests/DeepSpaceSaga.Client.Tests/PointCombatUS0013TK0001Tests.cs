@@ -10,9 +10,8 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class PointCombatUS0013TK0001Tests
 {
     private static ImmutableArray<InstalledModuleSnapshot> Modules => Enumerable.Range(0, 9).Select(i =>
-        new InstalledModuleSnapshot("m" + i, "type", "Module " + i, i, [], ArmorCurrent: 20, ArmorMax: 40,
-            StructureCurrent: 50, StructureMax: 100, IsDestroyed: i < 3, IsCritical: i == 4,
-            DisabledUntilMotionTimeMs: i == 5 ? 8000 : null)).ToImmutableArray();
+        new InstalledModuleSnapshot("m" + i, "type", "Module " + i, i, [],
+            StructureCurrent: 50, StructureMax: 100, IsDestroyed: i < 3)).ToImmutableArray();
 
     [Fact]
     public void Module_rows_keep_structure_and_destroyed_state()

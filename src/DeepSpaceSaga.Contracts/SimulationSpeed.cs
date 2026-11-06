@@ -32,9 +32,6 @@ public static class SimulationSpeedExtensions
 {
     public const int BaseGameSecondsPerRealSecond = 300;
 
-    public static bool IsAllowedInCombat(this SimulationSpeed speed) => speed is SimulationSpeed.Speed0 or
-        SimulationSpeed.Speed1 or SimulationSpeed.SpeedDouble or SimulationSpeed.Speed2 or SimulationSpeed.SpeedTen;
-
     /// <summary>Physical motion and ship-cycle seconds per real second.</summary>
     public static double MotionTimeMultiplier(this SimulationSpeed speed) => (int)speed / 4.0;
 

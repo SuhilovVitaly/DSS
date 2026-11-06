@@ -24,7 +24,6 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly ObjectLabelRenderer _labelRenderer;
     private readonly TacticalMapDepthRenderer _depthRenderer;
     private readonly List<ObjectRenderState> _renderStates = new();
-    private readonly HashSet<string> _missileTrailIds = new(StringComparer.Ordinal);
     private readonly List<FutureTrajectoryPoint> _futureTrajectoryPoints = new(FutureTrajectoryProjector.MaxSamplePoints);
     private readonly SolarSystemLayerRenderer _solarSystemLayer = new();
     private readonly Dictionary<string, RenderMotion> _pausedVisualAnchors = new(StringComparer.Ordinal);
@@ -1425,7 +1424,6 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var obj in snapshot.Objects)
         {
-            if (obj.RenderObjectType is SpaceObjectType.Missile or SpaceObjectType.Countermeasure or SpaceObjectType.Wreck) continue;
             var predicted = PredictRenderMotion(obj, ed);
             if (obj.ObjectId == playerShipObjectId) _profilePlayerRaw = predicted;
             if (obj.ObjectId == _profileTargetId) _profileTargetRaw = predicted;
@@ -1669,17 +1667,14 @@ public sealed partial class GameSessionScreen : IScreen
     private void DrawObjectTrails(SKCanvas canvas, int width, int height)
     {
         string? playerShipId = null;
-        _missileTrailIds.Clear();
         foreach (var state in _renderStates)
         {
             if (state.IsPlayerShip)
                 playerShipId = state.Pose.ObjectId;
-            if (state.Source.RenderObjectType == SpaceObjectType.Missile) _missileTrailIds.Add(state.Pose.ObjectId);
         }
 
         foreach (var kvp in _trailStore.Trails)
         {
-            if (_missileTrailIds.Contains(kvp.Key)) continue;
             if (_camera.PixelsPerWorldUnit < _mapSettings.TrailDetailPpu && !IsImportantMapObject(kvp.Key)) continue;
             var points = kvp.Value;
             if (points.Count < 2)

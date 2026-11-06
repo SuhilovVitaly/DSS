@@ -155,10 +155,9 @@ public sealed record EngineManeuverSnapshot(string CommandType, double CycleRema
     // at MotionSampleTimeMs; add the update's elapsed inertia on completion.
     bool CompletesOnMotionUpdate = false, double? MotionSampleTimeMs = null);
 
-/// <summary>Confirmed module durability and temporary disable state for ship inspection.</summary>
+/// <summary>Confirmed module structure for ship inspection.</summary>
 public sealed record ModuleHealthSnapshot(string ModuleId, string DisplayName,
-    int ArmorCurrent, int ArmorMax, int StructureCurrent, int StructureMax,
-    double? DisabledUntilMotionTimeMs, bool IsDestroyed);
+    int StructureCurrent, int StructureMax, bool IsDestroyed);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

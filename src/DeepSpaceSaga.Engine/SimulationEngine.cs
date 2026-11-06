@@ -740,8 +740,8 @@ public sealed partial class SimulationEngine : IDisposable
                         ? obj.Modules.Select(m =>
                         {
                             var type = _registry.ModuleTypes.GetDefinition(m.ModuleTypeIndex);
-                            return new ModuleHealthSnapshot(m.ModuleId, type.DisplayName, 0, 0,
-                                m.StructurePoints, type.StructurePointsMax, null, m.Destroyed);
+                            return new ModuleHealthSnapshot(m.ModuleId, type.DisplayName,
+                                m.StructurePoints, type.StructurePointsMax, m.Destroyed);
                         }).ToImmutableArray()
                         : ImmutableArray<ModuleHealthSnapshot>.Empty
                 });

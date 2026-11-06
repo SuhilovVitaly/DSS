@@ -417,7 +417,7 @@ public static class ScenarioLoader
 
         if (obj.RelationToPlayer is { } relation &&
             (!(string.Equals(obj.ObjectType, SpaceObjectType.NpcShip, StringComparison.OrdinalIgnoreCase) ||
-               string.Equals(obj.ObjectType, SpaceObjectType.Wreck, StringComparison.OrdinalIgnoreCase)) ||
+               string.Equals(obj.ObjectType, "Wreck", StringComparison.OrdinalIgnoreCase)) ||
              relation is not (PlayerRelation.Enemy or PlayerRelation.Friend or PlayerRelation.Neutral)))
             throw new ScenarioException($"Invalid relationToPlayer for '{obj.ObjectId}'.");
 
@@ -426,7 +426,7 @@ public static class ScenarioLoader
         if (!KnownPersistenceTypes.Contains(obj.PersistenceType))
             throw new ScenarioException($"Unknown persistenceType '{obj.PersistenceType}' for '{obj.ObjectId}'.");
 
-        if (string.Equals(obj.ObjectType, SpaceObjectType.Wreck, StringComparison.OrdinalIgnoreCase) &&
+        if (string.Equals(obj.ObjectType, "Wreck", StringComparison.OrdinalIgnoreCase) &&
             (!string.Equals(obj.PersistenceType, "Permanent", StringComparison.OrdinalIgnoreCase) ||
              !string.Equals(obj.MovementType, "Stationary", StringComparison.OrdinalIgnoreCase) ||
              obj.SpeedMps != 0 || obj.DirectionDegrees != 0 || obj.IsDestroyed || obj.IsDocked ||

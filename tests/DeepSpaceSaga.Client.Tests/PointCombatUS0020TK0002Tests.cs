@@ -22,9 +22,8 @@ public class PointCombatUS0020TK0002Tests
     public void Module_details_are_available_on_left()
     {
         InstalledModuleSnapshot[] modules = Enumerable.Range(0, 4).Select(i => new InstalledModuleSnapshot(
-            "m" + i, "type", "Module " + i, i, [], ArmorCurrent: 20, ArmorMax: 40,
-            StructureCurrent: i == 3 ? 0 : 50, StructureMax: 100, IsDestroyed: i == 3,
-            IsCritical: i == 1, DisabledUntilMotionTimeMs: i == 2 ? 8000 : null)).ToArray();
+            "m" + i, "type", "Module " + i, i, [],
+            StructureCurrent: i == 3 ? 0 : 50, StructureMax: 100, IsDestroyed: i == 3)).ToArray();
         var diagram = new ModuleDiagram();
         diagram.Update([.. modules]);
         var lines = CommandsPanel.ModuleDetails("Navigation", modules, diagram);

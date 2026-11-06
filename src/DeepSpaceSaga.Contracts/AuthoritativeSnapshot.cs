@@ -67,9 +67,6 @@ public sealed record AuthoritativeSnapshot(
     /// <summary>Confirmed debug overlay; omitted from compact frames when its revision is unchanged.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     DebugTuningSnapshot? DebugTuning = null,
-    /// <summary>Authoritative destruction threshold for PlayerShipObjectId only; absent for legacy producers.</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    int? DestroyedModuleLimit = null,
     /// <summary>Transient sandbox battle; false for legacy producers. Battle state is never part of a world save.</summary>
     bool IsTacticalBattleActive = false)
 {

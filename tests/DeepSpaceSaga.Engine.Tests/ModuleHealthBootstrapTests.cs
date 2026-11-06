@@ -30,12 +30,9 @@ public sealed class ModuleHealthBootstrapTests
         using var engine = new SimulationEngine(loaded.Registry);
         engine.LoadScenario(scenario);
         var module = engine.CaptureSnapshot().InstalledModules[0];
-        Assert.Equal(0, module.ArmorCurrent);
-        Assert.Equal(0, module.ArmorMax);
         Assert.Equal(150, module.StructureCurrent);
         Assert.Equal(150, module.StructureMax);
         Assert.False(module.IsDestroyed);
-        Assert.Null(module.DisabledUntilMotionTimeMs);
     }
 
     [Fact]
@@ -44,8 +41,6 @@ public sealed class ModuleHealthBootstrapTests
         using var engine = EngineContentLoader.CreateEngineFromSettingsFile(Path.Combine(ClientRoot, "Settings.json"));
         Assert.All(engine.CaptureSnapshot().InstalledModules, module =>
         {
-            Assert.Equal(0, module.ArmorCurrent);
-            Assert.Equal(0, module.ArmorMax);
             Assert.Equal(150, module.StructureMax);
             Assert.False(module.IsDestroyed);
         });
@@ -82,9 +77,6 @@ public sealed class ModuleHealthBootstrapTests
         using var restored = new SimulationEngine(loaded.Registry);
         restored.LoadScenario(save, isSave: true);
         var module = restored.CaptureSnapshot().InstalledModules[0];
-        Assert.Equal(0, module.ArmorCurrent);
-        Assert.Equal(0, module.ArmorMax);
         Assert.Equal(90, module.StructureCurrent);
-        Assert.Null(module.DisabledUntilMotionTimeMs);
     }
 }

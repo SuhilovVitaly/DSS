@@ -26,9 +26,7 @@ public sealed class ModuleHealthProjectionTests
             Assert.Equal(source.Modules!.Select(m => m.ModuleId), ship.ModuleHealth.Select(m => m.ModuleId));
         }
         var configured = known.Objects.Single(o => o.ObjectId == Player).ModuleHealth[0];
-        Assert.Equal(0, configured.ArmorCurrent);
         Assert.Equal(12, configured.StructureCurrent);
-        Assert.Null(configured.DisabledUntilMotionTimeMs);
         Assert.False(configured.IsDestroyed);
 
         Assert.Empty(known.Objects.Single(o => o.ObjectId == Target).ModuleHealth);

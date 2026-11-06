@@ -26,7 +26,7 @@ public class CompactObjectLabelTests
         var hp = new SKColor(60, 180, 120);
         var ship = new ObjectMotionSnapshot("ship", 300, 200, 0, 0,
             RenderObjectType: SpaceObjectType.NpcShip, DisplayName: "Ship",
-            ModuleHealth: [new("engine", "Engine", 0, 0, 225, 450, null, false)]);
+            ModuleHealth: [new("engine", "Engine", 225, 450, false)]);
         ObjectRenderState[] states = [new(ship, ship, false)];
         var renderer = new ObjectLabelRenderer();
         var camera = new CameraState(400, 300, 1);
@@ -43,53 +43,12 @@ public class CompactObjectLabelTests
         Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship));
     }
 
-    [Theory]
-    [InlineData(SpaceObjectType.Missile)]
-    [InlineData(SpaceObjectType.Countermeasure)]
-    public void World_map_never_labels_or_selects_retired_projectiles(string type)
-    {
-        var buffer = new SnapshotBuffer(() => 0);
-        buffer.Update(new(1, 0, SimulationSpeed.Speed0,
-            [new("player", 0, 0, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip),
-             new("projectile", -200, -100, 0, 0, RenderObjectType: type, DisplayName: "Projectile")], "player"));
-        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
-        using var bitmap = new SKBitmap(1280, 720);
-        using var canvas = new SKCanvas(bitmap);
-        void Render() => screen.Render(canvas, 1280, 720);
-
-        Render();
-        Assert.DoesNotContain("projectile", screen.MapLabels.Keys);
-        screen.OnMouseMove(440, 260);
-        Render();
-        Assert.NotEqual("projectile", screen.ActiveObjectId);
-        screen.OnMouseDown(440, 260);
-        Render();
-        Assert.NotEqual("projectile", screen.SelectedObjectId);
-        Assert.DoesNotContain("projectile", screen.MapLabels.Keys);
-        Assert.DoesNotContain(screen.RenderStates, state => state.Source.ObjectId == "projectile");
-        screen.OnDeactivated();
-    }
-
-    [Fact]
-    public void Selected_and_hovered_projectiles_both_get_labels_at_low_zoom()
-    {
-        var torpedo = new ObjectMotionSnapshot("torpedo", -200, 0, 0, 0, RenderObjectType: SpaceObjectType.Missile);
-        var defense = new ObjectMotionSnapshot("defense", 200, 0, 0, 0, RenderObjectType: SpaceObjectType.Countermeasure);
-        ObjectRenderState[] states = [new(torpedo, torpedo, false), new(defense, defense, false)];
-        var renderer = new ObjectLabelRenderer();
-        renderer.ComputeGeometries(states, .02, 800, 600, new(0, 0, .1),
-            mapSettings: new() { MaximumLabels = 0 }, selectedObjectId: "torpedo", hoveredObjectId: "defense");
-        Assert.Equal(2, renderer.Geometries.Count);
-        renderer.ComputeGeometries(states, .02, 800, 600, new(0, 0, .1));
-        Assert.Empty(renderer.Geometries);
-    }
-
     [Fact]
     public void Marker_under_player_plaque_wins_hover_and_click_but_plaque_stays_clickable()
     {
         var player = new ObjectMotionSnapshot("player", 0, 0, 0, 0,
             RenderObjectType: SpaceObjectType.PlayerShip, DisplayName: "Player Ship",
-            ModuleHealth: [new("engine", "Engine", 0, 0, 450, 450, null, false)]);
+            ModuleHealth: [new("engine", "Engine", 450, 450, false)]);
         var buffer = new SnapshotBuffer(() => 0);
         buffer.Update(new(1, 0, SimulationSpeed.Speed0, [player], "player"));
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
