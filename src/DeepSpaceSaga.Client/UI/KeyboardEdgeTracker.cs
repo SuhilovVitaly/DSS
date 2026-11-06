@@ -23,17 +23,16 @@ internal sealed class KeyboardEdgeTracker
     private IKeyboard? _keyboard;
     private Func<Key, bool>? _reader;
 
-    internal KeyboardEdgeTracker(CombatInputSettings? bindings = null, TacticalBattleInputSettings? tactical = null,
+    internal KeyboardEdgeTracker(TacticalBattleInputSettings? tactical = null,
         ManeuverInputSettings? maneuver = null)
     {
-        var input = (bindings ?? CombatInputSettings.Default).Validate();
         var battle = tactical ?? TacticalBattleInputSettings.Default;
-        var flight = (maneuver ?? ManeuverInputSettings.Default).Validate(input.MappedKeys);
+        var flight = (maneuver ?? ManeuverInputSettings.Default).Validate();
         RepeatDelayMilliseconds = battle.RepeatDelayMs;
         RepeatPeriodMilliseconds = battle.RepeatPeriodMs;
-        // Modifiers precede actions; aim entry precedes profile/speed keys in the same poll.
-        _keys = new[] { Key.ControlLeft, Key.ControlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight, input.TorpedoAim, input.CountermissileAim }
-            .Concat(StandardKeys).Concat(input.MappedKeys).Concat(flight.MappedKeys).Append(battle.TacticalBattle).Distinct().ToArray();
+        // Modifiers precede actions so shortcuts see the current key state.
+        _keys = new[] { Key.ControlLeft, Key.ControlRight, Key.AltLeft, Key.AltRight, Key.ShiftLeft, Key.ShiftRight }
+            .Concat(StandardKeys).Concat(flight.MappedKeys).Append(battle.TacticalBattle).Distinct().ToArray();
     }
 
     private Func<Key, bool> Reader(IKeyboard keyboard)

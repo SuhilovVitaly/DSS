@@ -81,15 +81,15 @@ public sealed class PointCombatUS0012TK0001Tests
         private readonly Key[] _pressed = new Key[64], _released = new Key[64];
         private readonly SKBitmap _bitmap = new(1920, 1200);
         private readonly SKCanvas _canvas;
-        private Session(bool enabled, CombatInputSettings? bindings, bool combat, ManeuverInputSettings? maneuver)
+        private Session(bool enabled, bool combat, ManeuverInputSettings? maneuver)
         {
             World = new(engineEnabled: enabled, launchHostile: combat, enemyX: combat ? 400 : 2000);
-            Handle = new(World.Connection); Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle, combatInputs: bindings, maneuverInputs: maneuver);
-            _keys = new(bindings, maneuver: maneuver); _canvas = new(_bitmap);
+            Handle = new(World.Connection); Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle, maneuverInputs: maneuver);
+            _keys = new(maneuver: maneuver); _canvas = new(_bitmap);
         }
-        internal static async Task<Session> Create(bool enabled = true, CombatInputSettings? bindings = null, bool combat = true,
+        internal static async Task<Session> Create(bool enabled = true, bool combat = true,
             ManeuverInputSettings? maneuver = null)
-        { var s = new Session(enabled, bindings, combat, maneuver); await s.Wait(() => s.Screen.RenderStates.Any(o => o.IsPlayerShip)); return s; }
+        { var s = new Session(enabled, combat, maneuver); await s.Wait(() => s.Screen.RenderStates.Any(o => o.IsPlayerShip)); return s; }
         internal void Render() => Screen.Render(_canvas, 1920, 1200);
         private void Poll()
         {

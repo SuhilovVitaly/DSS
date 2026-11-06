@@ -119,13 +119,13 @@ public sealed class TacticalBattleInputSettingsTests
     {
         using var fixture = new FileFixture("{}");
         var messages = new List<string>();
-        var game = CombatInputSettings.Default with { TorpedoAim = Key.F8 };
+        var game = ManeuverInputSettings.Default with { DebugPanel = Key.F8 };
         var result = TacticalBattleInputSettings.Load(fixture.Path, game, messages.Add);
         Assert.Equal(Key.F8, result.TacticalBattle);
         Assert.Equal(400, result.RepeatDelayMs);
         Assert.Equal(80, result.RepeatPeriodMs);
         Assert.False(result.ShortcutAvailable);
-        Assert.Equal(Key.F8, game.TorpedoAim);
+        Assert.Equal(Key.F8, game.DebugPanel);
         Assert.Equal(2, messages.Count);
         Assert.Contains("F8", messages[1]);
     }

@@ -73,7 +73,7 @@ public sealed class DebugTuningPanelInputTests
             var buffer = new SnapshotBuffer(); buffer.Update(snapshot);
             var connection = new ProbeConnection();
             long tick = 0;
-            await using var handle = new GameSessionHandle(connection, buffer, new CombatMetricsWriter(Path.Combine(directory, "metrics")), new DebugTuningFileWriter(directory));
+            await using var handle = new GameSessionHandle(connection, buffer, new DebugTuningFileWriter(directory));
             var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle, uiScale: scale, timestampProvider: () => tick,
                 maneuverInputs: ManeuverInputSettings.Default with { DebugPanel = Key.F11 });
             using var surface = SKSurface.Create(new SKImageInfo(1920, 1200));

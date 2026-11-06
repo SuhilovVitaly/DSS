@@ -322,18 +322,12 @@ public sealed partial class GameSessionScreen : IScreen
         float uiScale = 1.0f,
         TacticalMapSettings? mapSettings = null,
         string? tacticalMapSnapshotDirectory = null,
-        CombatVisualSettings? combatSettings = null,
-        CombatInputSettings? combatInputs = null,
-        Action<CombatAlertCue>? alertAudio = null,
-        Action? activateAudio = null,
-        Action? deactivateAudio = null, bool playInitialCombatStart = false,
         TacticalBattleInputSettings? tacticalBattleInputs = null,
         ManeuverInputSettings? maneuverInputs = null)
     {
         _buffer = buffer;
         _selectedObjectId = buffer.Latest?.Snapshot.SelectedObjectId;
-        var legacyKeys = (combatInputs ?? CombatInputSettings.Default).Validate().MappedKeys;
-        ManeuverInputs = (maneuverInputs ?? ManeuverInputSettings.Default).Validate(legacyKeys);
+        ManeuverInputs = (maneuverInputs ?? ManeuverInputSettings.Default).Validate();
         _tacticalBattleInputs = tacticalBattleInputs ?? TacticalBattleInputSettings.Default;
         _predictor = predictor;
         _handle = handle;
@@ -415,8 +409,7 @@ public sealed partial class GameSessionScreen : IScreen
         _tacticalBattleEntry.ResetInput();
         _commandsPanel.ReleasePresentationCache();
         CancelManeuverInput();
-        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated)
-            DisposeDebugTuning();
+        DisposeDebugTuning();
         _zoomTransition.Cancel();
         _isPanningMap = false;
         _isCtrlLeftDown = false;
@@ -428,7 +421,6 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         if (HandleDebugMouse(x, y, button)) return ScreenEvent.None;
-        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         // UI panels are laid out and hit-tested in logical (unscaled) space — the
         // raw window coordinates must be converted before testing against them.
         // The map (below) always uses the raw x, y.
@@ -650,7 +642,6 @@ public sealed partial class GameSessionScreen : IScreen
     public ScreenEvent OnKeyDown(Key key)
     {
         if (HandleDebugKey(key)) return ScreenEvent.None;
-        if (_buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated) return ScreenEvent.None;
         if (CanOpenTacticalBattle && _tacticalBattleInputs.ShortcutAvailable && key == _tacticalBattleInputs.TacticalBattle)
             return ScreenEvent.OpenTacticalBattle;
         if (HandleManeuverKey(key)) return ScreenEvent.None;

@@ -115,7 +115,7 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         var engine = Engine();
         var writer = new DebugTuningFileWriter(_directory);
         await using var session = new GameSessionHandle(new LocalGameSessionConnection(engine), new SnapshotBuffer(),
-            new CombatMetricsWriter(Path.Combine(_directory, "metrics")), writer);
+            writer);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         while (session.Buffer.Latest?.Snapshot.DebugTuning is null) await Task.Delay(10, timeout.Token);
         await session.Connection.SendCommandAsync(new("confirmed", 1, "", "", DebugTuningCommandTypes.Apply,

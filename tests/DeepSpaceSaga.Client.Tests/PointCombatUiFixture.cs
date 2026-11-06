@@ -29,7 +29,7 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
     internal AuthoritativeSnapshot Latest => Handle.Buffer.Latest!.Snapshot;
     internal AuthoritativeSnapshot Presented => Handle.Buffer.Presented!.Snapshot;
 
-    private PointCombatUiFixture(int width, int height, float scale, CombatInputSettings? inputs, int hostileShots, int? accuracySkill,
+    private PointCombatUiFixture(int width, int height, float scale, int hostileShots, int? accuracySkill,
         Func<SpaceObjectData, SpaceObjectData>? configure)
     {
         (_width, _height, Scale) = (width, height, scale);
@@ -89,14 +89,14 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
         Connection = new(Engine);
         Handle = new(Connection, new SnapshotBuffer(() => UiMs * Stopwatch.Frequency / 1000));
         Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle,
-            uiScale: scale, timestampProvider: () => UiMs * Stopwatch.Frequency / 1000, combatInputs: inputs);
+            uiScale: scale, timestampProvider: () => UiMs * Stopwatch.Frequency / 1000);
         _bitmap = new(width, height); _canvas = new(_bitmap);
     }
     internal static async Task<PointCombatUiFixture> Create(int width = 1920, int height = 1080, float scale = 1,
-        CombatInputSettings? inputs = null, int hostileShots = 0, int? accuracySkill = null,
+        int hostileShots = 0, int? accuracySkill = null,
         Func<SpaceObjectData, SpaceObjectData>? configure = null)
     {
-        var f = new PointCombatUiFixture(width, height, scale, inputs, hostileShots, accuracySkill, configure);
+        var f = new PointCombatUiFixture(width, height, scale, hostileShots, accuracySkill, configure);
         await f.Wait(() => f.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0 && f.Screen.RenderStates.Any(o => o.IsPlayerShip));
         f.Screen.OnActivated(); f.Render();
         if (f.Screen.IsPanelVisible)
@@ -130,14 +130,6 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
         Render(); point = Pixel(x, y);
         Assert.True(Screen.AvailableMapRect().Contains(point.X, point.Y), DebugMap(x, y));
     }
-    internal async Task<CommandResult> Launch(double x = 300, double y = 0, int profile = 2)
-    {
-        string profileId = profile switch { 1 => "slow", 2 => "medium", _ => "fast" };
-        await Handle.SendPointLaunchAsync(Player, Torpedo, ProjectileKind.Torpedo, x, y, profileId, out string id);
-        await Wait(() => Handle.Buffer.FindCommandResult(id) is not null);
-        return Handle.Buffer.FindCommandResult(id)!;
-    }
-
     internal async Task<AuthoritativeSnapshot> AdvanceTo(long motion)
     {
         await Connection.SetSimulationSpeedAsync(SimulationSpeed.Speed1);

@@ -14,7 +14,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     private readonly IGameSessionConnection _connection;
     private readonly CancellationTokenSource _cts = new();
     private readonly Task _receiveTask;
-    internal CombatMetricsWriter CombatMetrics { get; }
     internal DebugTuningFileWriter DebugTuningFiles { get; }
     private readonly Task _interactionStateSenderTask;
     private readonly Channel<(string? ActiveObjectId, string? SelectedObjectId)> _interactionStateChannel =
@@ -54,11 +53,10 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     public GameSessionHandle(IGameSessionConnection connection, bool deferDebugTuningWrites = false)
         : this(connection, new SnapshotBuffer(), debugTuningFiles: new(active: !deferDebugTuningWrites, warning: WriteDiagnostic)) { }
 
-    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer, CombatMetricsWriter? combatMetrics = null,
+    internal GameSessionHandle(IGameSessionConnection connection, SnapshotBuffer buffer,
         DebugTuningFileWriter? debugTuningFiles = null)
     {
         _connection = connection;
-        CombatMetrics = combatMetrics ?? new();
         DebugTuningFiles = debugTuningFiles ?? new(warning: WriteDiagnostic);
 
         Buffer = buffer;
@@ -87,7 +85,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
         ObserveDebugTuningFiles();
         return DebugTuningFiles.DeactivateAsync();
     }
-    public bool IsDefeated => Buffer.Presented?.Snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated;
     private int _stationTravelPending;
     public bool StationTravelPending => Volatile.Read(ref _stationTravelPending) != 0;
     public bool KeepPausedAfterStationTravel { get; private set; }
@@ -152,17 +149,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     private ValueTask SubmitCommandAsync(PlayerCommand command, CancellationToken cancellationToken = default) =>
         _connection.SendCommandAsync(command, cancellationToken);
 
-    public ValueTask SendPointLaunchAsync(string objectId, string moduleId, ProjectileKind kind,
-        double x, double y, string profileId, out string commandId)
-    {
-        if (!Enum.IsDefined(kind)) throw new ArgumentOutOfRangeException(nameof(kind));
-        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
-        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
-        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId,
-            kind == ProjectileKind.Torpedo ? CombatCommandTypes.Launch : DefenseCommandTypes.Launch,
-            TargetWorldX: x, TargetWorldY: y, ProfileId: profileId));
-    }
-
     private void ObserveDebugTuningFiles() => DebugTuningFiles.Observe(Buffer.Latest?.Snapshot, Buffer.FindCommandResult);
 
     public ValueTask SendDebugTuningAsync(DebugTuningPatch patch, out string commandId, bool resetAll = false)
@@ -177,23 +163,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     {
         try { await SubmitCommandAsync(command).ConfigureAwait(false); }
         catch { DebugTuningFiles.CancelReset(command.CommandId); throw; }
-    }
-
-    public ValueTask SendFireModeAsync(string objectId, string moduleId, string modeId, out string commandId)
-    {
-        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
-        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
-        return SubmitCommandAsync(new PlayerCommand(commandId, sequence, objectId, moduleId,
-            TorpedoLauncherCommandTypes.SetMode, ModeId: modeId));
-    }
-
-    public ValueTask SendEvadeAsync(string objectId, string moduleId, string threatProjectileId, EvadeSide side, out string commandId)
-    {
-        if (!Enum.IsDefined(side)) throw new ArgumentOutOfRangeException(nameof(side));
-        ulong sequence = (ulong)Interlocked.Increment(ref _nextClientSequence);
-        commandId = $"CMD-{sequence:D8}-{Guid.NewGuid():N}";
-        return SubmitCommandAsync(new(commandId, sequence, objectId, moduleId, ManeuverCommandTypes.Evade,
-            ThreatProjectileId: threatProjectileId, EvadeSide: side));
     }
 
     public ValueTask SendSpeedHoldAsync(string objectId, string moduleId, SpeedDirection direction, bool active, bool latched, out string commandId)
@@ -338,15 +307,13 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     /// </summary>
     public async ValueTask SetSpeedAsync(SimulationSpeed speed)
     {
-        if (IsDefeated) { Buffer.CurrentSpeed = SimulationSpeed.Speed0; return; }
         await _connection.SetSimulationSpeedAsync(speed);
-        Buffer.CurrentSpeed = Failure is null && !IsDefeated ? speed : SimulationSpeed.Speed0;
+        Buffer.CurrentSpeed = Failure is null ? speed : SimulationSpeed.Speed0;
     }
 
     /// <summary>Capture and persist the current authoritative world state into the given save slot.</summary>
     public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
     {
-        if (IsDefeated) throw new InvalidOperationException(CommandReasonCodes.SessionDefeated);
         return _connection.SaveAsync(slotId, cancellationToken);
     }
 
@@ -373,7 +340,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
                 if (ct.IsCancellationRequested || Volatile.Read(ref _disposed)) break;
                 Buffer.Update(snapshot);
                 ObserveDebugTuningFiles();
-                CombatMetrics.Record(snapshot);
                 if (!snapshot.CommandResults.IsDefaultOrEmpty)
                     foreach (var result in snapshot.CommandResults)
                         if (result.CommandType == NavigationComputerCommandTypes.Approach &&
@@ -479,7 +445,6 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
         try { await _interactionStateSenderTask.ConfigureAwait(false); } catch { }
 
         _cts.Dispose();
-        await CombatMetrics.DisposeAsync().ConfigureAwait(false);
         await DebugTuningFiles.DisposeAsync().ConfigureAwait(false);
 
         if (_connection is IAsyncDisposable asyncDisposable)

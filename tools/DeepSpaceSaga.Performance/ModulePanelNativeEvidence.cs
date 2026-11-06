@@ -63,9 +63,7 @@ internal static class ModulePanelNativeEvidence
         var world = engine.CaptureSnapshot(advanceClock: false);
         var buffer = new SnapshotBuffer(() => 0); buffer.Update(world);
         var driver = new Driver(engine); var handle = new GameSessionHandle(driver, buffer);
-        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle, uiScale: scale, timestampProvider: () => 0,
-            combatSettings: CombatVisualSettings.Load(Path.Combine(client, CombatVisualSettings.RelativePath)),
-            combatInputs: CombatInputSettings.Load(Path.Combine(client, CombatInputSettings.RelativePath)));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle, uiScale: scale, timestampProvider: () => 0);
         Environment.SetEnvironmentVariable("DSS_MAP_FRAME_EXIT", "0");
         using var window = new SkiaWindow(screen, new Factory());
         typeof(SkiaWindow).GetField("_session", Private)!.SetValue(window, handle);

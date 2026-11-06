@@ -43,7 +43,7 @@ public sealed partial class GameSessionScreen
     {
         if (_turnAxisKeys.Count == 0 && _speedAxisKeys.Count == 0 && !_speedLatchRequested && _heldTurn is null && _heldSpeed is null) return;
         if (_handle is null || _handle.Failure is not null || _buffer.Latest?.Snapshot is not { ActiveDialogue: null } snapshot ||
-            snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated || snapshot.PlayerShipObjectId is not { } owner) return;
+            snapshot.PlayerShipObjectId is not { } owner) return;
         if (snapshot.Objects.IsDefaultOrEmpty || snapshot.InstalledModules.IsDefaultOrEmpty) return;
         var ship = snapshot.Objects.FirstOrDefault(o => o.ObjectId == owner);
         if (ship is null || ship.IsDocked || ship.IsDestroyed) return;

@@ -38,7 +38,7 @@ public class CompactObjectLabelTests
         var bounds = renderer.Geometries["ship"].PlaqueRect;
         Assert.Equal(16, bounds.Height);
         Assert.DoesNotContain(hp, bitmap.Pixels);
-        Assert.DoesNotContain(TacticalMapPalette.HpEmpty, bitmap.Pixels);
+        Assert.DoesNotContain(new SKColor(35, 44, 52), bitmap.Pixels);
         Assert.True(bounds.Width > 0);
         Assert.True(ObjectLabelRenderer.HasSelectableShipLabel(ship));
     }

@@ -15,23 +15,16 @@ public sealed record TacticalBattleInputSettings
     public bool ShortcutAvailable { get; init; } = true;
     public static TacticalBattleInputSettings Default { get; } = new();
 
-    public static TacticalBattleInputSettings Load(string path, CombatInputSettings? gameBindings = null, Action<string>? warning = null,
-        ManeuverInputSettings? maneuverBindings = null)
+    public static TacticalBattleInputSettings Load(string path, ManeuverInputSettings? maneuverBindings = null, Action<string>? warning = null)
     {
         warning ??= InterfaceLog.Write;
-        var bindings = gameBindings ?? CombatInputSettings.Default;
         var maneuver = maneuverBindings ?? ManeuverInputSettings.Default;
         try
         {
-            if (gameBindings is null)
-            {
-                string gamePath = Path.Combine(Path.GetDirectoryName(path) ?? "", Path.GetFileName(CombatInputSettings.RelativePath));
-                if (File.Exists(gamePath)) bindings = CombatInputSettings.Load(gamePath, warning);
-            }
             if (maneuverBindings is null)
             {
                 string maneuverPath = Path.Combine(Path.GetDirectoryName(path) ?? "", Path.GetFileName(ManeuverInputSettings.RelativePath));
-                if (File.Exists(maneuverPath)) maneuver = ManeuverInputSettings.Load(maneuverPath, bindings.MappedKeys);
+                if (File.Exists(maneuverPath)) maneuver = ManeuverInputSettings.Load(maneuverPath);
             }
             using var document = JsonDocument.Parse(File.ReadAllText(path));
             var root = document.RootElement;
@@ -49,7 +42,7 @@ public sealed record TacticalBattleInputSettings
             if (keyValue.ValueKind != JsonValueKind.String || !Enum.TryParse<Key>(keyValue.GetString(), out var key)
                 || !Enum.IsDefined(key) || key.ToString() != keyValue.GetString() || key.ToString() == "Unknown")
                 throw Invalid("tacticalBattle", "unknown key name");
-            if (Conflicts(key, bindings, maneuver)) throw Invalid("tacticalBattle", "reserved key or game binding conflict: " + key);
+            if (Conflicts(key, maneuver)) throw Invalid("tacticalBattle", "reserved key or game binding conflict: " + key);
             int delay = Integer("repeatDelayMs"), period = Integer("repeatPeriodMs");
             if (delay < 0) throw Invalid("repeatDelayMs", "expected non-negative milliseconds");
             if (period <= 0) throw Invalid("repeatPeriodMs", "expected positive milliseconds");
@@ -61,18 +54,19 @@ public sealed record TacticalBattleInputSettings
         catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or JsonException or ArgumentException)
         {
             warning(string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle.InputDefaults"), path, error.Message));
-            bool available = !Conflicts(Default.TacticalBattle, bindings, maneuver);
+            bool available = !Conflicts(Default.TacticalBattle, maneuver);
             if (!available) warning(Localization.Get("TacticalBattle.InputDefaultConflict"));
             return Default with { ShortcutAvailable = available };
         }
         InvalidDataException Invalid(string field, string reason) => new(field + ": " + reason);
     }
 
-    private static bool Conflicts(Key key, CombatInputSettings bindings, ManeuverInputSettings maneuver) =>
+    private static bool Conflicts(Key key, ManeuverInputSettings maneuver) =>
         key is Key.I or Key.F5 or Key.F9 or Key.F10 or Key.F12 or Key.Escape or Key.Enter or Key.KeypadEnter
-            or Key.Tab or Key.Number0 or Key.Keypad0 or Key.Space or Key.F or Key.Equal or Key.Minus or Key.KeypadAdd or Key.KeypadSubtract or Key.Home or Key.End
+            or Key.Tab or Key.Number0 or Key.Keypad0 or Key.Number1 or Key.Number2 or Key.Number3 or Key.Number4 or Key.Number5
+            or Key.Space or Key.C or Key.F or Key.S or Key.Equal or Key.Minus or Key.KeypadAdd or Key.KeypadSubtract or Key.Home or Key.End
         || key.ToString().StartsWith("Control", StringComparison.Ordinal)
         || key.ToString().StartsWith("Shift", StringComparison.Ordinal)
         || key.ToString().StartsWith("Alt", StringComparison.Ordinal)
-        || bindings.MappedKeys.Contains(key) || maneuver.MappedKeys.Contains(key);
+        || maneuver.MappedKeys.Contains(key);
 }

@@ -30,7 +30,6 @@ public sealed partial class GameSessionScreen
             _buffer.FindCommandResult(id) is { Status: CommandResultStatus.Rejected or CommandResultStatus.Failed } rejected)
             ManeuverFeedback = ManeuverError(rejected.ReasonCode ?? "command_rejected");
         if (_buffer.Latest?.Snapshot is not { ActiveDialogue: null } snapshot ||
-            snapshot.EffectiveOutcome.State == SessionOutcomeState.Defeated ||
             snapshot.Objects.Any(o => o.ObjectId == snapshot.PlayerShipObjectId && o.IsDocked))
         {
             CancelManeuverInput(sendReleases: false);

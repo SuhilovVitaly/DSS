@@ -33,7 +33,7 @@ public class PhaseThreeSessionRoundtripTests
         await f.Route(quick ? ScreenEvent.QuickLoad : ScreenEvent.LoadSlotRequested, quick ? null : slot);
         Assert.Same(f.Handle, Get<GameSessionHandle>(f.Window, "_session"));
         var error = Assert.IsType<LoadScreen>(f.Screens.Current);
-        Assert.Equal(Localization.Get("Combat.LoadIncompatible"), error.ErrorMessage);
+        Assert.Equal(Localization.Get("Session.LoadIncompatible"), error.ErrorMessage);
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
         error.Render(canvas, 1280, 720);
         Assert.Equal(original, await File.ReadAllBytesAsync(path));
@@ -55,7 +55,7 @@ public class PhaseThreeSessionRoundtripTests
             JsonSerializer.Serialize(new { saveFormatVersion = SaveFormat.CurrentSaveFormatVersion, gameState = new { } }));
         await f.Route(ScreenEvent.OpenLoadWindow);
         await f.Route(ScreenEvent.LoadSlotRequested, "broken");
-        Assert.Equal(Localization.Get("Combat.LoadFailed"), Assert.IsType<LoadScreen>(f.Screens.Current).ErrorMessage);
+        Assert.Equal(Localization.Get("Session.LoadFailed"), Assert.IsType<LoadScreen>(f.Screens.Current).ErrorMessage);
         Assert.Same(f.Handle, Get<GameSessionHandle>(f.Window, "_session"));
         await f.Handle.SaveAsync("valid");
         await f.Route(ScreenEvent.LoadSlotRequested, "valid");

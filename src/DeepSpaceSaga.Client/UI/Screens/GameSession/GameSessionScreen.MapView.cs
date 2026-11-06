@@ -14,7 +14,7 @@ public sealed partial class GameSessionScreen
 {
     private readonly TacticalBattleInputSettings _tacticalBattleInputs;
     private readonly ShortcutButton _tacticalBattleEntry = new("");
-    private bool CanOpenTacticalBattle => _handle is { IsDefeated: false, Failure: null };
+    private bool CanOpenTacticalBattle => _handle is { Failure: null };
     private float TacticalBattleEntryHeight => CanOpenTacticalBattle ? 32 : 0;
     internal SKRect TacticalBattleEntryBounds => _tacticalBattleEntry.Bounds;
     internal string TacticalBattleHint => _tacticalBattleInputs.ShortcutAvailable

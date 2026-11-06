@@ -49,15 +49,9 @@ internal static class SpaceMapColorResolver
 /// <summary>Client-only semantic roles; alpha rounds once from percentage, never HSL.</summary>
 internal static class TacticalMapPalette
 {
-    internal static readonly SKColor Torpedo = new(237, 184, 106);
-    internal static readonly SKColor Countermeasure = new(118, 213, 220);
-    internal static readonly SKColor Preview = new(183, 171, 223, 140);
     internal static readonly SKColor Label = new(220, 230, 238, 242);
     internal static readonly SKColor Annotation = new(220, 230, 238, 230);
     internal static readonly SKColor LabelBackground = new(21, 32, 43, 235);
-    internal static readonly SKColor HpEmpty = new(35, 44, 52);
-    internal static readonly SKColor Explosion = new(238, 167, 122);
-    internal static readonly SKColor Wreck = new(124, 137, 152, 166);
     internal static readonly SKColor OtherTrail = new(151, 168, 184);
     internal static readonly SKColor Target = new(255, 209, 138, 230);
 

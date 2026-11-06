@@ -115,7 +115,7 @@ public sealed class ManualManeuverInputTests
             });
             Emit();
             _connection = new(_engine);
-            _handle = new(_connection, _buffer, new CombatMetricsWriter(Path.Combine(_directory, "metrics")), new DebugTuningFileWriter(_directory));
+            _handle = new(_connection, _buffer, new DebugTuningFileWriter(_directory));
             Screen = new(_buffer, new LinearMotionPredictor(), _handle);
             Render();
         }

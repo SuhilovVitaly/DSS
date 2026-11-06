@@ -17,8 +17,6 @@ public sealed class ManeuverInputSettingsTests
         Assert.Equal(new[] { Key.W, Key.Up }, settings.Accelerate);
         Assert.Equal(new[] { Key.S, Key.Down }, settings.Brake);
         Assert.Equal(new[] { Key.ShiftLeft, Key.ShiftRight }, settings.FullSpeed);
-        Assert.DoesNotContain(Key.W, CombatInputSettings.Default.MappedKeys);
-        Assert.DoesNotContain(Key.F12, CombatInputSettings.Default.MappedKeys);
     }
 
     [Fact]
@@ -34,7 +32,7 @@ public sealed class ManeuverInputSettingsTests
             json["turnLeft"] = new JsonArray("J");
             json["debugPanel"] = "F7";
             File.WriteAllText(path, json.ToJsonString());
-            var settings = ManeuverInputSettings.Load(path, CombatInputSettings.Default.MappedKeys);
+            var settings = ManeuverInputSettings.Load(path);
             var tracker = new KeyboardEdgeTracker(maneuver: settings);
             var down = new HashSet<Key> { Key.J, Key.F7 };
             var pressed = new Key[64];
@@ -49,7 +47,7 @@ public sealed class ManeuverInputSettingsTests
             Assert.Contains("accelerate", Assert.Throws<InvalidDataException>(() => ManeuverInputSettings.Load(path)).Message);
             json["accelerate"] = new JsonArray("Q");
             File.WriteAllText(path, json.ToJsonString());
-            Assert.Contains("Q", Assert.Throws<InvalidDataException>(() => ManeuverInputSettings.Load(path, CombatInputSettings.Default.MappedKeys)).Message);
+            Assert.Contains("Q", Assert.Throws<InvalidDataException>(() => ManeuverInputSettings.Load(path, [Key.Q])).Message);
             json["debugPanel"] = "I";
             File.WriteAllText(path, json.ToJsonString());
             Assert.Contains("reserved", Assert.Throws<InvalidDataException>(() => ManeuverInputSettings.Load(path)).Message);

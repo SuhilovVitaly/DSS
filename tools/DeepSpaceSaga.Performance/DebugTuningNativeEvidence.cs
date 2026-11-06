@@ -63,7 +63,7 @@ internal static class DebugTuningNativeEvidence
             var writer = new DebugTuningFileWriter(Path.Combine(directory, "DebugTuning"));
             DebugTuningFileWriter.WriteDefaults(writer.DirectoryPath, world.DebugTuning!);
             string reference = File.ReadAllText(Path.Combine(writer.DirectoryPath, "debug-tuning.defaults.json"));
-            var handle = new GameSessionHandle(new Driver(engine), buffer, new CombatMetricsWriter(Path.Combine(directory, "metrics")), writer);
+            var handle = new GameSessionHandle(new Driver(engine), buffer, writer);
             var screen = new GameSessionScreen(buffer, new DeepSpaceSaga.Motion.LinearMotionPredictor(), handle, uiScale: scale);
             Environment.SetEnvironmentVariable("DSS_MAP_FRAME_EXIT", "0");
             using var window = new SkiaWindow(screen, new Factory());
