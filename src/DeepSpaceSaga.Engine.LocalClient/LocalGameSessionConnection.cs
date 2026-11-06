@@ -1,5 +1,4 @@
 using System.Runtime.CompilerServices;
-using System.Threading.Channels;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Scenario;
 
@@ -10,7 +9,7 @@ namespace DeepSpaceSaga.Engine.LocalClient;
 /// Starts the engine loop and forwards snapshots to the client via Channel.
 /// Replaceable by NetworkGameSessionConnection without client changes.
 /// </summary>
-public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombatPresentationConnection
+public sealed class LocalGameSessionConnection : IGameSessionConnection
 {
     private readonly SimulationEngine _engine;
     private readonly SnapshotMailbox _snapshots = new();
@@ -19,9 +18,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     private readonly string? _saveDirectory;
     private readonly SemaphoreSlim _saveGate = new(1, 1);
     private volatile bool _disposed;
-    private volatile bool _usesCombatUpdates;
-    private readonly TaskCompletionSource<bool> _transportSelection = new(TaskCreationOptions.RunContinuationsAsynchronously);
-    private readonly Channel<CombatPresentationUpdate> _combatUpdates = Channel.CreateBounded<CombatPresentationUpdate>(128);
+    private readonly TaskCompletionSource _snapshotReaderStarted = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     /// <param name="saveDirectory">
     /// Directory SaveAsync writes slot files into — each slot becomes
@@ -93,70 +90,19 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
     {
         try
         {
-            // Capturing an update consumes Engine report payloads. Do not discard
-            // the bootstrap while the owning reader is still being scheduled.
-            _usesCombatUpdates = await _transportSelection.Task.WaitAsync(ct).ConfigureAwait(false);
-            await foreach (var update in _engine.RunCombatUpdatesAsync(ct))
-            {
-                if (!_usesCombatUpdates && update.FullSnapshot is { } snapshot) _snapshots.Publish(snapshot);
-                if (_usesCombatUpdates && !_combatUpdates.Writer.TryWrite(update))
-                {
-                    _engine.ReportPresentationProgress(0, pauseRequested: true);
-                    throw new InvalidOperationException("Combat update delivery overflow; simulation paused.");
-                }
-            }
+            await _snapshotReaderStarted.Task.WaitAsync(ct).ConfigureAwait(false);
+            await foreach (var snapshot in _engine.RunAsync(ct).ConfigureAwait(false))
+                _snapshots.Publish(snapshot);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { }
         catch (Exception error)
         {
-            _engine.ReportPresentationProgress(0, pauseRequested: true);
-            _combatUpdates.Writer.TryComplete(error);
             _snapshots.Complete(error);
         }
         finally
         {
-            _combatUpdates.Writer.TryComplete();
             _snapshots.Complete();
         }
-    }
-
-    public async IAsyncEnumerable<CombatPresentationUpdate> ReadCombatUpdatesAsync(
-        [EnumeratorCancellation] CancellationToken cancellationToken = default)
-    {
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _engine.EnablePresentationLease();
-        SelectTransport(combat: true);
-        await foreach (var update in _combatUpdates.Reader.ReadAllAsync(cancellationToken)) yield return update;
-    }
-
-    private void SelectTransport(bool combat)
-    {
-        if (!_transportSelection.TrySetResult(combat) && _transportSelection.Task.Result != combat)
-            throw new InvalidOperationException("A local session connection has one snapshot or combat transport reader.");
-    }
-
-    public ValueTask ReportPresentationProgressAsync(Guid sessionId, long contiguousSequence, bool pauseRequested,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        _engine.ReportPresentationProgress(contiguousSequence, pauseRequested, sessionId);
-        return ValueTask.CompletedTask;
-    }
-
-    public ValueTask<SimulationControlAcknowledgement> ResumePresentationAsync(SimulationSpeed speed, CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return ValueTask.FromResult(_engine.ResumePresentationControl(speed));
-    }
-
-    public ValueTask<SimulationControlAcknowledgement> SetPresentationSpeedAsync(SimulationSpeed speed,
-        CancellationToken cancellationToken = default)
-    {
-        cancellationToken.ThrowIfCancellationRequested();
-        ObjectDisposedException.ThrowIf(_disposed, this);
-        return ValueTask.FromResult(_engine.SetPresentationSpeed(speed));
     }
 
     public ValueTask SendCommandAsync(
@@ -192,13 +138,6 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
             return ValueTask.FromResult(action());
         }
         catch (Exception error) { return ValueTask.FromException<T>(error); }
-    }
-
-    public async ValueTask<CommandAcceptance> SubmitCommandAsync(PlayerCommand command,
-        CancellationToken cancellationToken = default)
-    {
-        await SendCommandAsync(command, cancellationToken);
-        return new(command.CommandId, true);
     }
 
     /// <summary>
@@ -255,7 +194,7 @@ public sealed class LocalGameSessionConnection : IGameSessionConnection, ICombat
         [EnumeratorCancellation] CancellationToken cancellationToken = default)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        SelectTransport(combat: false);
+        _snapshotReaderStarted.TrySetResult();
         await foreach (var snapshot in _snapshots.ReadAllAsync(cancellationToken))
         {
             yield return snapshot;

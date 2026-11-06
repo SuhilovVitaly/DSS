@@ -75,15 +75,12 @@ public sealed class PointCombatUS0002TK0005Tests
         {
             await using var connection = new LocalGameSessionConnection(engine, directory);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
-            await using var reader = connection.ReadCombatUpdatesAsync(timeout.Token).GetAsyncEnumerator();
+            await using var reader = connection.ReadSnapshotsAsync(timeout.Token).GetAsyncEnumerator();
             async Task<AuthoritativeSnapshot> Until(Func<AuthoritativeSnapshot, bool> predicate)
             {
                 while (await reader.MoveNextAsync())
                 {
-                    var update = reader.Current;
-                    await connection.ReportPresentationProgressAsync(update.SessionId, update.Sequence, false, timeout.Token);
-                    if (update.FullSnapshot is { } full && predicate(full)) return full;
-                    foreach (var frame in update.Frames) if (predicate(frame.State)) return frame.State;
+                    if (predicate(reader.Current)) return reader.Current;
                 }
                 throw new InvalidOperationException("Session ended before catalog launch result.");
             }
@@ -91,9 +88,9 @@ public sealed class PointCombatUS0002TK0005Tests
             var launch = PointCombatSessionFixture.Launch() with { TargetWorldX = 600 };
             var counter = new PlayerCommand("catalog-counter", 2, PointCombatSessionFixture.Player, "MOD-PLAYER-COUNTERMEASURE-01",
                 DefenseCommandTypes.Launch, TargetWorldX: 250, TargetWorldY: 0, ProfileId: "wide");
-            Assert.True((await connection.SubmitCommandAsync(launch, timeout.Token)).Accepted);
+            await connection.SendCommandAsync(launch, timeout.Token);
             await Until(s => s.CommandResults.Any(r => r.CommandId == launch.CommandId && r.Status == CommandResultStatus.Executed));
-            Assert.True((await connection.SubmitCommandAsync(counter, timeout.Token)).Accepted);
+            await connection.SendCommandAsync(counter, timeout.Token);
             var snapshot = await Until(s => s.CommandResults.Any(r => r.CommandId == counter.CommandId && r.Status == CommandResultStatus.Executed));
             Assert.Equal(2, snapshot.Objects.Count(o => o.OwnProjectile is not null));
             var torpedo = Assert.Single(snapshot.Objects, o => o.OwnProjectile?.Kind == ProjectileKind.Torpedo).OwnProjectile!;

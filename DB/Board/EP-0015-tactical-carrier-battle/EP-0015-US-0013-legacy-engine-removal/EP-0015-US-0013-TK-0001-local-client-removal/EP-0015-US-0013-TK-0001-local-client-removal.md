@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0013-legacy-engine-removal
 ticket: EP-0015-US-0013-TK-0001-local-client-removal
 title: local-client-removal
-stage: draft
+stage: done
 layer: engine-local-client
 depends_on: ["EP-0015-US-0012-TK-0006-client-assets-locale-removal"]
-files_touched: 2
+files_touched: 7
 serves: [AC-01, AC-07]
 created: 2026-11-05
 revision: 3
@@ -50,3 +50,17 @@ Engine.Tests (тесты соединения). Сборка, scoped format, `gi
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+Use Engine.RunAsync with the existing ordinary snapshot cadence. Start on first reader to preserve the bootstrap and prevent the world clock from advancing before subscription. Keep one mailbox, command/docking/dialogue events, Save20 and independent tactical calls. Retire only the explicit old transport tests and update mixed cases for ordinary snapshots.
+- src/DeepSpaceSaga.Engine.LocalClient/LocalGameSessionConnection.cs
+- src/DeepSpaceSaga.Engine.LocalClient/SnapshotMailbox.cs
+- tests/DeepSpaceSaga.Client.Tests/LocalSessionIntegrationTests.cs
+- tests/DeepSpaceSaga.Client.Tests/CombatReportMailboxTests.cs
+- tests/DeepSpaceSaga.Client.Tests/PointCombatUS0002TK0005Tests.cs
+- tests/DeepSpaceSaga.Engine.Tests/PointCombatUS0008TK0002Tests.cs
+- tests/DeepSpaceSaga.Client.Tests/PointCombatUS0017TK0003Tests.cs
+
+## Execution evidence — 2026-11-06
+
+LocalGameSessionConnection now runs the ordinary world snapshot iterator and starts at first subscription; the separate combat channel, progress lease and report mailbox merge are removed. Generic event coalescing, shutdown, Save20 and tactical commands remain. Client 2012/2012 and 561 selected Engine cases PASS in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-local-transport-regression-02`; solution build/format/diff PASS. Latest Client cleanup Linux run 42138414418 PASS. Full post-Engine-removal regression remains open.

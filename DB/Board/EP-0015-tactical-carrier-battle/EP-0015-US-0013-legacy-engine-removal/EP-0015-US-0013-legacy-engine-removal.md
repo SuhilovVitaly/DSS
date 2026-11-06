@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0013-legacy-engine-removal
 title: "Удаление старого боя в Engine.LocalClient и Engine"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0012-legacy-client-removal]
 ---
 

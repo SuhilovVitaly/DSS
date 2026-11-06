@@ -16,38 +16,21 @@ namespace DeepSpaceSaga.Client.Tests;
 public class LocalSessionIntegrationTests
 {
     [Fact]
-    public async Task Delayed_combat_subscription_retains_the_initial_report_bootstrap()
+    public async Task Delayed_subscription_still_delivers_the_initial_world_snapshot()
     {
-        string root = PointCombatUiFixture.Root;
-        var engine = SimulationEngine.CreateFromScenarioFile(Path.Combine(root, "Settings.json"),
-            Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
-        var source = ScenarioLoader.LoadFromFile(Path.Combine(root, "Scenarios/PlayerShipOnly/scenario.json"));
-        engine.LoadScenario(source with
-        {
-            GameState = source.GameState with
-            {
-                CurrentSpeed = "Speed0",
-                SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
-                {
-                    Ai = null,
-                    PositionX = o.ObjectId == source.GameState.PlayerShipObjectId ? 0 : 300,
-                    PositionY = 0,
-                    Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off" }).ToArray()
-                }).ToArray()
-            }
-        });
+        long realMs = 0;
+        var engine = new SimulationEngine(GameDataRegistry.Empty, clock: new SimulationClock(SimulationSpeed.Speed1, () => Interlocked.Read(ref realMs)));
+        engine.AddTestObject(new ObjectMotionSnapshot("test", 100, 200, SpeedKmS: 5, Direction: 0));
         await using var connection = new LocalGameSessionConnection(engine);
-        await Task.Delay(300);
+        Interlocked.Exchange(ref realMs, 60_000);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-        await foreach (var update in connection.ReadCombatUpdatesAsync(timeout.Token))
-        {
-            if (update.FullSnapshot is not { } bootstrap) continue;
-            var delivered = update.Frames.SelectMany(frame => frame.State.CombatReports?.Reports ?? [])
-                .Concat(bootstrap.CombatReports?.Reports ?? []).ToArray();
-            Assert.Contains(delivered, report => report.Sequence == 1 && report.Kind == BattleReportKind.EnemyInRange);
-            return;
-        }
-        Assert.Fail("Combat transport ended before its bootstrap.");
+        await using var reader = connection.ReadSnapshotsAsync(timeout.Token).GetAsyncEnumerator();
+        Assert.True(await reader.MoveNextAsync());
+        var snapshot = reader.Current;
+        Assert.Equal(0, snapshot.MotionTimeMs);
+        Assert.Equal(SimulationSpeed.Speed1, snapshot.CurrentSpeed);
+        var obj = Assert.Single(snapshot.Objects);
+        Assert.Equal(("test", 100d, 200d), (obj.ObjectId, obj.X, obj.Y));
     }
 
     [Fact]

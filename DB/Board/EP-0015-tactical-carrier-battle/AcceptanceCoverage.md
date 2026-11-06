@@ -56,7 +56,7 @@
 | EP-0015-US-0012-legacy-client-removal | AC-03 | EP-0015-US-0012-TK-0005-client-shell-removal, EP-0015-US-0012-TK-0006-client-assets-locale-removal | PASS: retired shell and resources removed |
 | EP-0015-US-0012-legacy-client-removal | AC-04 | EP-0015-US-0012-TK-0006-client-assets-locale-removal | PASS: Old assets absent in build; RU/EN key and placeholder parity; Client 2016 PASS |
 | EP-0015-US-0012-legacy-client-removal | AC-05 | EP-0015-US-0012-TK-0001-client-map-removal-1, EP-0015-US-0012-TK-0002-client-map-removal-2, EP-0015-US-0012-TK-0003-client-panels-removal, EP-0015-US-0012-TK-0004-client-stores-removal, EP-0015-US-0012-TK-0005-client-shell-removal, EP-0015-US-0012-TK-0006-client-assets-locale-removal | PASS: Old assets absent in build; RU/EN key and placeholder parity; Client 2016 PASS |
-| EP-0015-US-0013-legacy-engine-removal | AC-01 | EP-0015-US-0013-TK-0001-local-client-removal | not started |
+| EP-0015-US-0013-legacy-engine-removal | AC-01 | EP-0015-US-0013-TK-0001-local-client-removal | PASS: Ordinary LocalClient transport and coalescing; 2012 Client + 561 Engine PASS |
 | EP-0015-US-0013-legacy-engine-removal | AC-02 | EP-0015-US-0013-TK-0002-engine-removal-1, EP-0015-US-0013-TK-0003-engine-removal-2, EP-0015-US-0013-TK-0004-engine-removal-3, EP-0015-US-0013-TK-0005-engine-removal-4 | not started |
 | EP-0015-US-0013-legacy-engine-removal | AC-03 | EP-0015-US-0013-TK-0007-engine-content-removal | not started |
 | EP-0015-US-0013-legacy-engine-removal | AC-04 | EP-0015-US-0013-TK-0008-engine-noncombat-cleanup | not started |

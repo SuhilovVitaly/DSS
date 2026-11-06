@@ -181,26 +181,6 @@ public sealed class PointCombatUS0008TK0002Tests
     }
 
     [Fact]
-    public async Task Local_transport_returns_immediate_rejection_with_confirmed_speed()
-    {
-        var clock = new SimulationClock(SimulationSpeed.Speed0, () => 0);
-        using var engine = Battle(clock);
-        engine.CaptureSnapshot();
-        await using var connection = new LocalGameSessionConnection(engine);
-        var rejected = await connection.SetPresentationSpeedAsync(SimulationSpeed.Speed4);
-        Assert.Equal(CommandReasonCodes.CombatSpeedLocked, rejected.ReasonCode);
-        Assert.Equal(SimulationSpeed.Speed1, rejected.CurrentSpeed);
-        var paused = await connection.SetPresentationSpeedAsync(SimulationSpeed.Speed0);
-        Assert.Null(paused.ReasonCode);
-        Assert.Equal(SimulationSpeed.Speed0, paused.CurrentSpeed);
-        var resume = await connection.ResumePresentationAsync(SimulationSpeed.Speed3);
-        Assert.Equal(CommandReasonCodes.CombatSpeedLocked, resume.ReasonCode);
-        Assert.Equal(SimulationSpeed.Speed0, resume.CurrentSpeed);
-        await connection.SetSimulationSpeedAsync(SimulationSpeed.Speed4);
-        Assert.Equal(SimulationSpeed.Speed0, engine.CurrentSpeed);
-    }
-
-    [Fact]
     public void Watchdog_pause_is_not_overridden_by_victory_restore()
     {
         var clock = new SimulationClock(SimulationSpeed.Speed0, () => 0);
