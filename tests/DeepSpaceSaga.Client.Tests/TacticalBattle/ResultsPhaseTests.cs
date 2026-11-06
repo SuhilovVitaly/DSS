@@ -114,6 +114,42 @@ public sealed class ResultsPhaseTests
         Assert.False(results.Capture(900 + (long)(TacticalBattleResults.CapMs + TacticalBattleResults.FlashMs)).Flights[^1].Flash);
     }
 
+    [Fact]
+    public async Task Skin_changes_salvo_visuals_without_changing_arrival_or_replay()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
+            await fixture.Route(ScreenEvent.MoveTacticalBattle);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+        fixture.ManualAnimation = true;
+        await fixture.Route(ScreenEvent.FireTacticalBattle);
+        fixture.AdvanceAnimation((long)TacticalBattleResults.InitialDelayMs + 200);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        Assert.Equal(TacticalBattlePresentation.SalvoFlight, frame.Presentation);
+        var flight = Assert.Single(frame.Salvo!.Flights.Where(flight => flight.Flying));
+        var shot = flight.Shot;
+        var from = frame.View.Project(shot.From);
+        var to = TacticalBattleResults.Endpoint(from, frame.View.Project(shot.To), shot.Hit, flight.Index, 1);
+        var head = new SKPoint(from.X + (to.X - from.X) * (float)flight.Progress,
+            from.Y + (to.Y - from.Y) * (float)flight.Progress);
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"salvo","displayName":"Salvo","roles":{
+              "shot.projectile":{"fill":"#FF00FF","size":12,"shape":"diamond"},
+              "shot.flash":{"fill":"#00FFEE","metrics":{"flash-scale":2}}
+            }}
+            """);
+        using var before = BattleMapRenderTests.Raster(frame);
+        using var after = BattleMapRenderTests.Raster(frame, skin);
+        Assert.NotEqual(before.GetPixel((int)head.X, (int)head.Y), after.GetPixel((int)head.X, (int)head.Y));
+        Assert.Equal(new SKColor(255, 0, 255), after.GetPixel((int)head.X, (int)head.Y));
+
+        Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Enter));
+        Assert.Equal(TacticalBattlePresentation.SalvoResults, screen.CaptureFrame(1280, 720)!.Presentation);
+        Assert.Equal(1, fixture.Proxy.Fires);
+        Assert.Same(frame.Battle, screen.Flow.State);
+    }
+
     private static async Task<TacticalBattleScreen> Start(BattleNavigationTests.Fixture fixture)
     {
         await fixture.Route(ScreenEvent.OpenTacticalBattle);

@@ -71,7 +71,7 @@ internal static class TacticalBattleSkinRenderScope
 
     internal static ImmutableArray<float> Dash(Role role) => Value(role, "dash", default(ImmutableArray<float>));
 
-    internal static bool Image(SKCanvas canvas, Role role, SKRect bounds)
+    internal static bool Image(SKCanvas canvas, Role role, SKRect bounds, byte alpha = 255)
     {
         var image = _skin?.Image(role.Primary) ?? (role.Shared is not null ? _skin?.Image(role.Shared) : null);
         if (image is null || bounds.IsEmpty)
@@ -79,11 +79,24 @@ internal static class TacticalBattleSkinRenderScope
 
         using var paint = new SKPaint
         {
-            Color = SKColors.White.WithAlpha((byte)MathF.Round(255 * Number(role, "opacity", 1))),
+            Color = SKColors.White.WithAlpha((byte)MathF.Round(alpha * Number(role, "opacity", 1))),
             FilterQuality = SKFilterQuality.Low,
         };
         canvas.DrawImage(image, bounds, paint);
         return true;
+    }
+
+    internal static string Shape(Role role) => Value(role, "shape", "native");
+
+    internal static SKPathEffect? Stroke(SKPaint paint, Role role, SKColor color, float width, float scale, float[]? fallbackDash = null)
+    {
+        paint.Color = Color(role, "stroke", color);
+        paint.StrokeWidth = Has(role, "strokeWidth") ? Number(role, "strokeWidth", 1) * scale : width;
+        var pattern = Dash(role);
+        var lengths = pattern.IsDefault ? fallbackDash : pattern.Select(length => length * scale).ToArray();
+        var effect = lengths is { Length: > 0 } ? SKPathEffect.CreateDash(lengths, 0) : null;
+        paint.PathEffect = effect;
+        return effect;
     }
 
     internal static bool HasBoxStyle(Role role) =>

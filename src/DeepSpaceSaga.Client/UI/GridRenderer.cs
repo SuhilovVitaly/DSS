@@ -74,7 +74,7 @@ public sealed class GridRenderer
     }
 
     internal static void DrawLines(SKCanvas canvas, double focusX, double focusY, double ppu,
-        int viewportWidth, int viewportHeight, TacticalMapSettings settings, SKPaint paint, SKColor background, double baseStep)
+        int viewportWidth, int viewportHeight, TacticalMapSettings settings, SKPaint paint, SKColor background, double baseStep, Func<SKColor, SKColor>? style = null)
     {
         if (viewportWidth <= 0 || viewportHeight <= 0) return;
         double halfWidth = viewportWidth * 0.5, halfHeight = viewportHeight * 0.5;
@@ -85,7 +85,8 @@ public sealed class GridRenderer
         {
             double step = levels[level];
             if (LevelOpacity(step, ppu, settings) <= 0) continue;
-            paint.Color = LevelColor(step, ppu, settings, background);
+            var color = LevelColor(step, ppu, settings, background);
+            paint.Color = style?.Invoke(color) ?? color;
             double firstX = Math.Floor(left / step), firstY = Math.Floor(top / step);
             int nx = Math.Min(4096, (int)Math.Ceiling((right - left) / step) + 2);
             int ny = Math.Min(4096, (int)Math.Ceiling((bottom - top) / step) + 2);
