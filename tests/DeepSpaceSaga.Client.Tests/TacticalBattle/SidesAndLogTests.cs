@@ -10,6 +10,44 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SidesAndLogTests
 {
     [Fact]
+    public async Task Reference_skin_changes_sides_log_and_forecast_without_changing_visible_facts()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var classic = await Start(fixture);
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var skin = catalog.GetOrClassic("contrast");
+        var themed = new TacticalBattleScreen(classic.Flow, classic.UiScale, skin);
+        var tabs = new[]
+        {
+            (Id: "sides", Color: new SKColor(44, 35, 64)),
+            (Id: "log", Color: new SKColor(48, 34, 62)),
+            (Id: "forecast", Color: new SKColor(46, 41, 73)),
+        };
+        foreach (var (id, color) in tabs)
+        {
+            using var baseline = Draw(classic, id);
+            using var contrast = Draw(themed, id);
+            Assert.Contains(color, contrast.Pixels);
+            Assert.DoesNotContain(color, baseline.Pixels);
+            Save(contrast, "contrast-" + id + ".png");
+            if (id == "sides")
+                Assert.Equal(classic.SidesTab.Selectable.ToArray(), themed.SidesTab.Selectable.ToArray());
+        }
+        Assert.Equal(classic.LogTab.Panel.Text, themed.LogTab.Panel.Text);
+        Assert.Equal(classic.ForecastTab.Text, themed.ForecastTab.Text);
+        Assert.Same(classic.Flow.State, themed.Flow.State);
+
+        static SKBitmap Draw(TacticalBattleScreen screen, string tab)
+        {
+            screen.PanelTabs.Select(tab, notify: true);
+            var bitmap = new SKBitmap(1280, 720);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+            return bitmap;
+        }
+    }
+
+    [Fact]
     public async Task OwnSideCardSelectsActualDroneWithoutEditingItsOrder()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

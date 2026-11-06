@@ -3,7 +3,7 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0002-migrate-battle-rendering
 ticket: EP-0016-US-0002-TK-0005-theme-information-tabs
 title: Оформление сторон, журнала и прогноза
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0002-TK-0004-theme-order-controls]
@@ -84,3 +84,19 @@ git diff --check
 ## Self-containment check
 
 Файлы вкладок и их общий виджет перечислены. Матрица US-0002 и все предыдущие миграции задают проверяемый охват.
+
+## Исполнение
+
+Стороны, журнал и прогноз читают отдельные роли. Карточки сохраняют штатные интерактивные области. В журнале и прогнозе перенос, шаг строк и прокрутка используют фактический шрифт. При изменении метрик сохраняется относительная позиция прокрутки или автоматическое следование за концом.
+
+| Поверхность | Роли и потребитель | Проверка |
+|---|---|---|
+| Поле, сетка, линейка, единицы, подписи, полосы, края и обломки | `field.background/grid/ruler/unit/label/bar/offscreen` в TacticalBattleMapRenderer | BattleMapRenderTests, contrast-field.png и исходные растры |
+| Движение, прогноз, секторы и наведение | `field.move.*`, `field.fire.*` в TacticalBattleMapRenderer | BattleMapRenderTests, MovementOrdersTests и FirePlanningTests |
+| Полёт, след, краткие подписи, попадание и X | `shot.*` в TacticalBattleMapRenderer, `torpedo.*` зарезервированы | ResultsPhaseTests, BattleMapRenderTests |
+| Панель, фазы, ожидание, ошибка, итог и подтверждение | `panel.*`, `modal.*` в TacticalBattleScreen, TacticalBattlePanelHeader и TacticalBattleModalScreen | PanelHeaderTests и BattleEndTests |
+| Флажки, общие контролы, подсказки | `control.*` в общих виджетах под областью TacticalBattleScreen.Render | WidgetsListsTests, WidgetsBasicTests, PanelHeaderTests |
+| Приказы | `orders.move.*`, `orders.fire.*` в TacticalBattleMovePanel и TacticalBattleFirePanel | MovementOrdersTests и FirePlanningTests |
+| Информационные вкладки | `tabs.sides.*`, `tabs.log.*`, `tabs.forecast.*` в трёх вкладках и ScrollTextPanel | SidesAndLogTests, ForecastTabTests, contrast-sides/log/forecast PNG |
+
+Сборка, scoped whitespace, staged diff check и самопроверка прошли. `dotnet test --no-restore --filter FullyQualifiedName~TacticalBattle`: 234/234 PASS. 23/23 общих PNG Classic совпали с исходными. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us2-tk5/focused.trx`, `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us2-tk5/classic-parity.json`. Снимки Contrast для вкладок подтверждают разные стили при одинаковых данных и выборе. Проверки допущенных фактов и выхода через реальные команды прошли. Нативный прогон и итоговая приёмка вынесены в US-0003 и финальную проверку.

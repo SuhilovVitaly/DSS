@@ -4,6 +4,7 @@ using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion.TacticalBattle;
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -31,7 +32,7 @@ internal sealed class TacticalBattleSidesTab
         _selectable.Clear();
         if (bounds.IsEmpty) return;
         float s = _scale, width = (float)PyMath.Max(0, bounds.Width - 6 * s);
-        using var text = ControlText.Paint(s);
+        using var text = new SKPaint { Typeface = MenuStyle.TypefaceRegular, TextSize = 14 * s };
         float detailsWidth = (float)PyMath.Max(1, width - 16 * s);
         var rows = Cards(frame).Select(card =>
         {
@@ -46,13 +47,16 @@ internal sealed class TacticalBattleSidesTab
         bool? lastSide = null;
         canvas.Save();
         canvas.ClipRect(bounds);
+        if (SkinStyle.HasBoxStyle("tabs.sides"))
+            SkinStyle.Box(canvas, "tabs.sides", bounds, SKColors.Transparent, null, s);
         foreach (var row in rows)
         {
             var card = row.Card;
+            string side = card.Own ? "own" : "enemy";
             if (lastSide != card.Own)
             {
                 ControlVisuals.Label(canvas, F(card.Own ? "Sides.Own" : "Sides.Enemy", card.Unit.Side),
-                    SKRect.Create(bounds.Left, y, width, 24 * s), true, s);
+                    SKRect.Create(bounds.Left, y, width, 24 * s), true, s, role: $"tabs.sides.title.{side}");
                 y += 26 * s;
                 lastSide = card.Own;
             }
@@ -61,27 +65,36 @@ internal sealed class TacticalBattleSidesTab
             if (!rect.IntersectsWith(bounds)) continue;
             bool selected = card.Unit.Id == frame.SelectedDroneId;
             if (card.Selectable) _selectable.Add((card.Unit.Id, rect));
-            ControlVisuals.Frame(canvas, rect, selected, true, s);
+            string state = card.Unit.State.ToString().ToLowerInvariant();
+            string role = $"tabs.sides.card.{side}.{state}";
+            if (selected) role += ".selected";
+            ControlVisuals.Frame(canvas, rect, selected, true, s, role);
             float left = rect.Left + 8 * s, right = rect.Right - 8 * s, line = rect.Top + 4 * s;
-            ControlVisuals.Label(canvas, card.Unit.Id, new(left, line, right, line + 18 * s), true, s);
+            ControlVisuals.Label(canvas, card.Unit.Id, new(left, line, right, line + 18 * s), true, s, role: role + ".title");
             line += 20 * s;
             bool inactive = card.Unit.State is TacticalUnitState.Destroyed or TacticalUnitState.Disabled;
             if (card.Unit.MaxArmor > 0)
             {
-                ProgressBar.Draw(canvas, SKRect.Create(left, line, right - left, 5 * s),
-                    card.Unit.Armor / (double)card.Unit.MaxArmor, inactive ? TacticalBattleMapRenderer.Inactive : new(126, 159, 181));
+                using (SkinStyle.EnterRole($"tabs.sides.bar.armor.{side}.{state}"))
+                    ProgressBar.Draw(canvas, SKRect.Create(left, line, right - left, 5 * s),
+                        card.Unit.Armor / (double)card.Unit.MaxArmor, inactive ? TacticalBattleMapRenderer.Inactive : new(126, 159, 181));
                 line += 10 * s;
             }
             if (card.Unit.MaxHull > 0)
+            {
+                using var bar = SkinStyle.EnterRole($"tabs.sides.bar.hull.{side}.{state}");
                 ProgressBar.Draw(canvas, SKRect.Create(left, line, right - left, 5 * s),
                     card.Unit.Hull / (double)card.Unit.MaxHull, inactive ? TacticalBattleMapRenderer.Inactive :
                         card.Own ? TacticalBattleMapRenderer.Own : TacticalBattleMapRenderer.Enemy);
+            }
             line += 8 * s;
-            ControlVisuals.Label(canvas, card.Health, new(left, line, right, line + 18 * s), true, s);
+            ControlVisuals.Label(canvas, card.Health, new(left, line, right, line + 18 * s), true, s, role: role + ".health");
             line += 18 * s;
-            foreach (var detail in row.Lines)
+            using var details = ControlText.Paint(s, role + ".text", card.Details);
+            details.TextSize = Math.Min(details.TextSize, 16 * s);
+            foreach (var detail in ControlText.Wrap(card.Details, detailsWidth, details).Take(row.Lines.Length))
             {
-                ControlVisuals.Label(canvas, detail, new(left, line, right, line + 17 * s), true, s);
+                ControlVisuals.DrawLabel(canvas, detail, new(left, line, right, line + 17 * s), details);
                 line += 17 * s;
             }
         }
@@ -89,8 +102,11 @@ internal sealed class TacticalBattleSidesTab
         {
             float thumb = (float)(bounds.Height * (bounds.Height / (double)total));
             float offset = (bounds.Height - thumb) * (float)(_scroll / (double)_maximumScroll);
-            using var paint = new SKPaint { Color = new SKColor(75, 127, 149) };
-            canvas.DrawRect(bounds.Right - 3 * s, bounds.Top + offset, 2 * s, thumb, paint);
+            if (SkinStyle.HasBoxStyle("tabs.sides.scroll.track"))
+                SkinStyle.Box(canvas, "tabs.sides.scroll.track",
+                    SKRect.Create(bounds.Right - 3 * s, bounds.Top, 2 * s, bounds.Height), SKColors.Transparent, null, s, antialias: false);
+            SkinStyle.Box(canvas, "tabs.sides.scroll.thumb",
+                SKRect.Create(bounds.Right - 3 * s, bounds.Top + offset, 2 * s, thumb), new(75, 127, 149), null, s, antialias: false);
         }
         canvas.Restore();
     }
