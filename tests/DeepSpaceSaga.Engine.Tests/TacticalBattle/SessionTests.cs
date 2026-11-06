@@ -186,8 +186,64 @@ public sealed class SessionTests
         Assert.False(engine.IsTacticalBattleActive);
         Assert.Null(engine.GetTacticalBattleState());
         Assert.Equal(TacticalBattleLogKind.Exited, Assert.Single(exit.NewEvents).Kind);
-        Assert.Same(first, engine.StartTacticalBattle(start)); // original receipt, not a second battle
+        Assert.Same(exit, engine.ExitTacticalBattle(new("exit", frame.BattleId)));
+        var expired = engine.StartTacticalBattle(start);
+        Assert.False(expired.Accepted);
+        Assert.Equal(TacticalBattleRejectionCode.ReceiptExpired, expired.Code);
+        Assert.Null(expired.State);
         Assert.False(engine.IsTacticalBattleActive);
+    }
+
+    [Fact]
+    public void FullReceiptsAreBoundedDuringPlayAndReleasedOnExit()
+    {
+        using var engine = Engine();
+        var start = new StartTacticalBattleRequest("start", 1);
+        var frame = engine.StartTacticalBattle(start).State!;
+        var move = new MoveTacticalBattleRequest("move", frame.BattleId, frame.Revision);
+        Assert.True(engine.MoveTacticalBattle(move).Accepted);
+
+        for (int i = 0; i < 16; i++)
+            Assert.NotNull(engine.MoveTacticalBattle(move with { CommandId = $"stale-{i}" }).State);
+
+        AssertRejectedUnchanged(engine, () =>
+        {
+            var expired = engine.MoveTacticalBattle(move);
+            Assert.Null(expired.State);
+            return expired;
+        }, TacticalBattleRejectionCode.ReceiptExpired);
+        var latest = move with { CommandId = "stale-15" };
+        Assert.Same(engine.MoveTacticalBattle(latest), engine.MoveTacticalBattle(latest));
+        Assert.True(engine.ExitTacticalBattle(new("exit", frame.BattleId)).Accepted);
+        Assert.Null(engine.MoveTacticalBattle(latest).State);
+    }
+
+    [Fact]
+    public void RetiredIdentitiesStillRejectReplaysAcrossManyBattles()
+    {
+        using var engine = Engine();
+        for (int i = 0; i < 100; i++)
+        {
+            string battleId = $"start-{i}";
+            Assert.True(engine.StartTacticalBattle(new(battleId, 1)).Accepted);
+            Assert.True(engine.ExitTacticalBattle(new($"exit-{i}", battleId)).Accepted);
+        }
+
+        for (int i = 0; i < 100; i++)
+        {
+            var response = engine.StartTacticalBattle(new($"start-{i}", 1));
+            Assert.False(response.Accepted);
+            Assert.Equal(TacticalBattleRejectionCode.ReceiptExpired, response.Code);
+            Assert.Null(response.State);
+        }
+        Assert.False(engine.IsTacticalBattleActive);
+        Assert.Equal(TacticalBattleRejectionCode.IdentityConflict, engine.StartTacticalBattle(new("start-0", 2)).Code);
+
+        Assert.True(engine.StartTacticalBattle(new("current", 1)).Accepted);
+        var oldExit = engine.ExitTacticalBattle(new("exit-0", "start-0"));
+        Assert.False(oldExit.Accepted);
+        Assert.Equal(TacticalBattleRejectionCode.ReceiptExpired, oldExit.Code);
+        Assert.Equal("current", engine.GetTacticalBattleState()!.BattleId);
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using DeepSpaceSaga.Contracts;
@@ -13,7 +14,11 @@ public sealed partial class SimulationEngine
         if (_tacticalBattleSession is not null) throw new InvalidOperationException(TacticalBattleActiveReason);
     }
     private TacticalBattleSession? _tacticalBattleSession;
-    private readonly Dictionary<string, (string Signature, TacticalBattleResponse Response)> _tacticalReceipts = new(StringComparer.Ordinal);
+    private const int TacticalResponseLimit = 16;
+    // Keep identities for the Engine lifetime, independently of the snapshots needed for recent retries.
+    private readonly Dictionary<string, (Type RequestType, string Fingerprint)> _tacticalIdentities = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, TacticalBattleResponse> _tacticalResponses = new(StringComparer.Ordinal);
+    private readonly Queue<string> _tacticalResponseOrder = new();
     private static readonly JsonSerializerOptions TacticalIdentityJson = new() { NumberHandling = JsonNumberHandling.AllowNamedFloatingPointLiterals };
     public bool IsTacticalBattleActive { get { lock (_worldStateLock) return _tacticalBattleSession is not null; } }
     internal TacticalBattleSession? TacticalBattleSessionForTests => _tacticalBattleSession;
@@ -74,6 +79,8 @@ public sealed partial class SimulationEngine
             if (_tacticalBattleSession.Id != request.BattleId) return RejectTactical(request.CommandId, TacticalBattleRejectionCode.WrongBattle);
             var response = _tacticalBattleSession.Exit(request.CommandId);
             _tacticalBattleSession = null;
+            _tacticalResponses.Clear();
+            _tacticalResponseOrder.Clear();
             return response;
         });
     }
@@ -83,11 +90,20 @@ public sealed partial class SimulationEngine
         lock (_worldStateLock)
         {
             if (string.IsNullOrWhiteSpace(commandId)) return RejectTactical(commandId ?? "", TacticalBattleRejectionCode.InvalidIdentity);
-            string signature = typeof(T).Name + ":" + JsonSerializer.Serialize(request, TacticalIdentityJson);
-            if (_tacticalReceipts.TryGetValue(commandId, out var previous))
-                return previous.Signature == signature ? previous.Response : RejectTactical(commandId, TacticalBattleRejectionCode.IdentityConflict);
+            string fingerprint = Convert.ToHexString(SHA256.HashData(JsonSerializer.SerializeToUtf8Bytes(request, TacticalIdentityJson)));
+            var identity = (typeof(T), fingerprint);
+            if (_tacticalIdentities.TryGetValue(commandId, out var previous))
+            {
+                if (identity != previous) return RejectTactical(commandId, TacticalBattleRejectionCode.IdentityConflict);
+                if (_tacticalResponses.TryGetValue(commandId, out var cached)) return cached;
+                return new(commandId, false, TacticalBattleRejectionCode.ReceiptExpired, _tacticalBattleSession?.Phase, null, []);
+            }
             var response = apply();
-            _tacticalReceipts.Add(commandId, (signature, response));
+            _tacticalIdentities.Add(commandId, identity);
+            if (_tacticalResponseOrder.Count == TacticalResponseLimit)
+                _tacticalResponses.Remove(_tacticalResponseOrder.Dequeue());
+            _tacticalResponses.Add(commandId, response);
+            _tacticalResponseOrder.Enqueue(commandId);
             return response;
         }
     }
