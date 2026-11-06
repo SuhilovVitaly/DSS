@@ -63,8 +63,13 @@ internal static class TacticalBattleMapRenderer
 
         DrawLabels(canvas, frame, units);
         if (frame.Salvo is { } salvo) DrawSalvo(canvas, frame, salvo, paint);
+        var map = SKRect.Create(view.PixelWidth, view.PixelHeight);
         foreach (var unit in units)
-            DrawUnit(canvas, view.Project(unit.Pose), unit, unit.Side == battle.PlayerSide, unit.Id == frame.SelectedDroneId, scale, paint);
+        {
+            var point = view.Project(unit.Pose);
+            if (map.Contains(point.X, point.Y))
+                DrawUnit(canvas, point, unit, unit.Side == battle.PlayerSide, unit.Id == frame.SelectedDroneId, scale, paint);
+        }
         DrawRuler(canvas, view, scale, paint);
     }
 
@@ -355,6 +360,7 @@ internal static class TacticalBattleMapRenderer
             float radius = (unit.Kind == TacticalUnitKind.Carrier ? 17 : 12) * s;
             occupied.Add(SKRect.Create(p.X - radius, p.Y - radius, 2 * radius, 2 * radius));
         }
+        DrawOffscreenMarkers(canvas, frame, units, occupied, text, bars);
         foreach (var unit in units)
         {
             bool carrier = unit.Kind == TacticalUnitKind.Carrier;
@@ -404,6 +410,66 @@ internal static class TacticalBattleMapRenderer
                 canvas.DrawRect(labelX, y, 30 * s * (float)PyMath.Clamp(amount / (double)max, 0, 1), 3 * s, bars);
             }
         }
+    }
+
+    private static void DrawOffscreenMarkers(SKCanvas canvas, TacticalBattleFrame frame,
+        ImmutableArray<TacticalUnitSnapshot> units, List<SKRect> occupied, SKPaint text, SKPaint paint)
+    {
+        var view = frame.View;
+        float scale = frame.UiScale;
+        var map = SKRect.Create(view.PixelWidth, view.PixelHeight);
+        var edge = map;
+        edge.Inflate(-6 * scale, -6 * scale);
+        float height = 22 * scale, iconWidth = 24 * scale;
+        if (edge.Height < height || edge.Width < iconWidth) return;
+
+        foreach (var unit in units)
+        {
+            if (unit.State is not (TacticalUnitState.Air or TacticalUnitState.Disabled or TacticalUnitState.Alive)) continue;
+            var target = view.Project(unit.Pose);
+            if (!float.IsFinite(target.X) || !float.IsFinite(target.Y) || map.Contains(target.X, target.Y)) continue;
+            string name = ControlText.Ellipsize(BattleFormat.Text(unit.Id), edge.Width - iconWidth, text);
+            float width = iconWidth + text.MeasureText(name);
+            float dx = target.X - edge.MidX, dy = target.Y - edge.MidY;
+            float horizontal = edge.Width * 0.5f / Math.Abs(dx);
+            float vertical = edge.Height * 0.5f / Math.Abs(dy);
+            bool side = horizontal <= vertical;
+            float reach = Math.Min(horizontal, vertical);
+            float left = edge.MidX + dx * reach - width * 0.5f;
+            float top = edge.MidY + dy * reach - height * 0.5f;
+            float step = (side ? height : width) + 3 * scale;
+            for (int i = 0; i < 2 * units.Length + 1; i++)
+            {
+                // Search either side of the ray's intersection with this edge.
+                float shift = ((i + 1) / 2) * (i % 2 == 0 ? -step : step);
+                var rect = SKRect.Create(
+                    Math.Clamp(left + (side ? 0 : shift), edge.Left, Math.Max(edge.Left, edge.Right - width)),
+                    Math.Clamp(top + (side ? shift : 0), edge.Top, edge.Bottom - height), width, height);
+                if (occupied.Any(o => o.IntersectsWith(rect))) continue;
+                occupied.Add(rect);
+                DrawMarker(rect);
+                break;
+            }
+
+            void DrawMarker(SKRect rect)
+            {
+                paint.Color = new(10, 24, 36, 240);
+                canvas.DrawRect(rect, paint);
+                var center = new SKPoint(rect.Left + 10 * scale, rect.MidY);
+                float length = (float)TacticalGeometry.Hypot(target.X - center.X, target.Y - center.Y);
+                var delta = new SKPoint((target.X - center.X) / length * 6 * scale,
+                    (target.Y - center.Y) / length * 6 * scale);
+                paint.Color = unit.State == TacticalUnitState.Disabled ? new(151, 158, 167)
+                    : unit.Side == frame.Battle.PlayerSide ? Own : Enemy;
+                paint.StrokeWidth = 1.6f * scale;
+                DrawTargetArrow(canvas, new(center.X - delta.X, center.Y - delta.Y),
+                    new(center.X + delta.X, center.Y + delta.Y), 0, scale, paint);
+                text.Color = paint.Color;
+                canvas.DrawText(name, rect.Left + 20 * scale,
+                    rect.MidY - (text.FontMetrics.Ascent + text.FontMetrics.Descent) * 0.5f, text);
+            }
+        }
+        paint.StrokeWidth = scale;
     }
 
     private static bool TryPlace(SKPoint point, float width, float height, SKRect viewport, List<SKRect> occupied, float scale, out SKRect result)

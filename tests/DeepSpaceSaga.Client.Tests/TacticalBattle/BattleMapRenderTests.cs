@@ -181,6 +181,44 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task OffscreenDronesAndCarrierGetSeparateMarkersOnTheirMapEdges()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var own = battle.Units.Where(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Drone).Take(2).ToArray();
+        var enemy = battle.Units.First(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Drone);
+        var carrier = battle.Units.First(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Carrier);
+        var units = new[]
+        {
+            own[0] with { Id = "Own-1", Pose = new(520, 0, 0) },
+            own[1] with { Id = "Own-2", Pose = new(650, 0, 0) },
+            enemy with { Id = "Enemy", Pose = new(-510, -100, 0) },
+            carrier with { Id = "Carrier", Pose = new(0, -460, 0) }
+        };
+        var frame = new TacticalBattleFrame(battle with { Units = [.. units], Paths = [] },
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemyForecast: false);
+        using var outside = Raster(frame);
+        Assert.True(HasColor(outside, new(790, 349, 875, 371), TacticalBattleMapRenderer.Own));
+        Assert.True(HasColor(outside, new(790, 374, 875, 396), TacticalBattleMapRenderer.Own));
+        Assert.True(HasColor(outside, new(5, 250, 90, 300), TacticalBattleMapRenderer.Enemy));
+        Assert.True(HasColor(outside, new(390, 5, 490, 28), TacticalBattleMapRenderer.Enemy));
+
+        units[0] = units[0] with { Pose = new(0, 0, 0) };
+        units[1] = units[1] with { State = TacticalUnitState.Destroyed };
+        using var returned = Raster(frame with { Battle = frame.Battle with { Units = [.. units] } });
+        Assert.False(HasColor(returned, new(790, 349, 875, 396), TacticalBattleMapRenderer.Own));
+        Assert.Equal(TacticalBattleMapRenderer.Own, returned.GetPixel(440, 360));
+
+        static bool HasColor(SKBitmap bitmap, SKRectI bounds, SKColor color)
+        {
+            for (int y = bounds.Top; y < bounds.Bottom; y++)
+                for (int x = bounds.Left; x < bounds.Right; x++)
+                    if (bitmap.GetPixel(x, y) == color) return true;
+            return false;
+        }
+    }
+
+    [Fact]
     public async Task GridRulerAndActualPanelTogglesChangeOnlyPresentation()
     {
         Assert.Equal(40, TacticalBattleMapRenderer.GridStep(1800));
