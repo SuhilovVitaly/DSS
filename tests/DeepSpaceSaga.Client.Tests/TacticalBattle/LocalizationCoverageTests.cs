@@ -1,19 +1,144 @@
+using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.Settings;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
+using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
-[Collection("InterfaceLog")]
+[CollectionDefinition("Battle localization", DisableParallelization = true)]
+public sealed class BattleLocalizationCollection;
+
+[Collection("Battle localization")]
 public sealed class LocalizationCoverageTests
 {
     private const string Prefix = "TacticalBattle.";
-    private static readonly string Source = Path.GetFullPath(Path.Combine(
-        AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
+    private static readonly string Source = SourceDirectory();
+
+    private static string SourceDirectory([CallerFilePath] string sourceFile = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(sourceFile)!, "../../../src/DeepSpaceSaga.Client"));
+
+    [Fact]
+    public async Task SavedRussianFromSettingsIsUsedByActualSalvoPanelAndTabs()
+    {
+        string path = Path.Combine(AppContext.BaseDirectory, "Settings.json");
+        byte[] original = File.ReadAllBytes(path);
+        const int width = 1280, height = 720;
+        using var bitmap = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(bitmap);
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        try
+        {
+            await fixture.Route(ScreenEvent.OpenSettings);
+            var settings = Assert.IsType<SettingsScreen>(fixture.Screens.Current);
+            settings.Render(canvas, width, height);
+            SelectLanguage(0);
+            SelectLanguage(1);
+            Assert.Equal("Russian", Localization.ReadLanguageSetting());
+            await fixture.Route(ScreenEvent.CloseSettings);
+
+            // A dictionary previously loaded in this process can differ from the saved setting.
+            Localization.ApplyLanguage("English");
+            await fixture.PressKey(Key.F8);
+            var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+            await setup.Flow.OptionsTask!;
+            await fixture.Route(ScreenEvent.StartTacticalBattle);
+            var battle = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+            for (int i = 0; i < 30 && battle.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
+                await fixture.Route(ScreenEvent.MoveTacticalBattle);
+            Assert.Equal(TacticalBattlePhase.Fire, battle.Flow.State?.Phase);
+            await fixture.Route(ScreenEvent.FireTacticalBattle);
+            fixture.AdvanceAnimation((long)TacticalBattleResults.CapMs);
+            battle.Render(canvas, width, height);
+            var frame = battle.CaptureFrame(width, height)!;
+            Assert.Equal(TacticalBattlePresentation.SalvoResults, frame.Presentation);
+            Assert.Equal("Результаты стрельбы", TacticalBattlePanelHeader.Capture(frame).Phase);
+            Assert.Equal(new[] { "Фаза", "Стороны", "Журнал", "Прогноз" }, battle.PanelTabs.Items.Select(tab => tab.Label));
+            Assert.Equal("Всё поле", ButtonLabel("_fit"));
+            Assert.Equal("На карту", ButtonLabel("_exitBattle"));
+            Assert.Equal("Новый бой", ButtonLabel("_newBattle"));
+            Assert.Equal("К движению", ButtonLabel("_phaseAction"));
+            Assert.Equal("Ещё раз", ButtonLabel("_replaySalvo"));
+
+            SelectTab(1, "sides");
+            Assert.StartsWith("корп ", TacticalBattleSidesTab.Cards(frame).First().Health);
+            SelectTab(2, "log");
+            Assert.Contains("Бой начался.", battle.LogTab.Panel.Text);
+            SelectTab(3, "forecast");
+            Assert.Contains("Итоги по целям", battle.ForecastTab.Text);
+
+            void SelectLanguage(int index)
+            {
+                float row = SettingsLayout.PanelTop(height) + SettingsLayout.LanguageRowY;
+                settings.OnMouseDown(width * 0.5f, row + SettingsLayout.LanguageComboHeight * 0.5f, MouseButton.Left);
+                settings.OnMouseDown(width * 0.5f, row + SettingsLayout.LanguageComboHeight +
+                    (index + 0.5f) * SettingsLayout.LanguageOptionHeight, MouseButton.Left);
+            }
+
+            string ButtonLabel(string name) => Assert.IsType<ShortcutButton>(typeof(TacticalBattleScreen)
+                .GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(battle)).Label;
+
+            void SelectTab(int index, string id)
+            {
+                var tabs = battle.PanelTabs;
+                battle.OnMouseDown(tabs.Bounds.Left + tabs.Bounds.Width * (index + 0.5f) / tabs.Items.Length,
+                    tabs.Bounds.MidY, MouseButton.Left);
+                Assert.Equal(id, tabs.SelectedId);
+                battle.Render(canvas, width, height);
+            }
+        }
+        finally
+        {
+            File.WriteAllBytes(path, original);
+            Localization.ApplyLanguage(Localization.ReadLanguageSetting());
+        }
+    }
+
+    [Fact]
+    public async Task ApplyingGameLanguageUpdatesNewBattleScreensAndJournal()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        await fixture.PressKey(Silk.NET.Input.Key.F8);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        Assert.True((await setup.Flow.StartAsync(setup.BuildStartRequest()))!.Accepted);
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        string saved = Localization.ReadLanguageSetting();
+        try
+        {
+            Check("English", "Movement", "Log", "Battle started.", "Enemy drones:", "disabled");
+            Check("Russian", "Движение", "Журнал", "Бой начался.", "Дронов противника:", "выведен");
+            Check("English", "Movement", "Log", "Battle started.", "Enemy drones:", "disabled");
+        }
+        finally
+        {
+            Localization.ApplyLanguage(saved);
+        }
+
+        void Check(string language, string phase, string tab, string started, string opponents, string disabled)
+        {
+            Localization.ApplyLanguage(language);
+            var preparation = new TacticalBattleSetupScreen(setup.Flow, 1);
+            preparation.Render(canvas, 1280, 720);
+            Assert.Contains(opponents, preparation.ScenarioSummary);
+
+            var battle = new TacticalBattleScreen(setup.Flow, 1);
+            battle.Render(canvas, 1280, 720);
+            var frame = battle.CaptureFrame(1280, 720)!;
+            Assert.Equal(phase, TacticalBattlePanelHeader.Capture(frame).Phase);
+            Assert.Equal(tab, battle.PanelTabs.Items.Single(i => i.Id == "log").Label);
+            Assert.Contains(started, BattleLogFormatter.Format(frame.Battle.Log.First(e => e.Kind == TacticalBattleLogKind.Started)));
+            Assert.Equal(disabled, BattleFormat.Localize("UnitDisabledShort"));
+        }
+    }
 
     [Fact]
     public void RequiredScreenKeysResolveWithMatchingFormatsInBothPackagedLanguages()

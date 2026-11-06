@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, TacticalBattleView View, SKRect Panel,
     float UiScale, bool Pending, string Status, TacticalBattlePresentation Presentation = TacticalBattlePresentation.Current,
     bool EnemyForecast = true, bool EnemySectors = false, string? SelectedDroneId = null, TacticalMovementFrame? Movement = null,
-    TacticalFirePlan? FirePlan = null, TacticalSalvoFrame? Salvo = null);
+    TacticalFirePlan? FirePlan = null, TacticalSalvoFrame? Salvo = null, bool AllFireSectors = true);
 
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
@@ -21,7 +21,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private readonly ShortcutButton _newBattle = new("");
     private readonly ShortcutButton _replaySalvo = new("");
     private readonly Toggle _enemyForecast = new("", true);
-    private readonly Toggle _enemySectors = new("");
+    private readonly Toggle _enemySectors = new("", true);
+    private readonly Toggle _allFireSectors = new("", true);
     private readonly TacticalBattleOrders _orders = new();
     private readonly TacticalBattleMovePanel _movePanel;
     private readonly TacticalBattleFireOrders _fireOrders = new();
@@ -40,7 +41,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal Func<long> ClockMilliseconds { get; set; } = () => Environment.TickCount64;
     private SKRect _panel;
     internal SKRect NewBattleBounds => _newBattle.Bounds;
-    internal (SKRect Forecast, SKRect Sectors) OverlayControls => (_enemyForecast.Bounds, _enemySectors.Bounds);
+    internal (SKRect Forecast, SKRect Sectors, SKRect AllFire) OverlayControls =>
+        (_enemyForecast.Bounds, _enemySectors.Bounds, _allFireSectors.Bounds);
     internal TacticalBattleView View => _camera.View;
     internal TacticalMovementFrame Movement => _orders.Capture();
     internal TacticalBattleMovePanel MovePanel => _movePanel;
@@ -101,10 +103,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             Presentation: salvo is null ? TacticalBattlePresentation.Current :
                 salvo.InFlight ? TacticalBattlePresentation.SalvoFlight : TacticalBattlePresentation.SalvoResults,
             EnemyForecast: planning && _enemyForecast.Value, EnemySectors: planning && _enemySectors.Value,
-            SelectedDroneId: planning ? _orders.Selected ?? _fireOrders.Selected : null,
+            SelectedDroneId: planning ? state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Selected : _orders.Selected : null,
             Movement: planning && state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null,
             FirePlan: planning && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null,
-            Salvo: salvo);
+            Salvo: salvo, AllFireSectors: _allFireSectors.Value);
     }
 
     public override void Render(SKCanvas canvas, int width, int height)
@@ -114,7 +116,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             base.Render(canvas, width, height);
             return;
         }
-        canvas.Clear(new SKColor(2, 12, 22));
+        canvas.Clear(TacticalBattleMapRenderer.Background);
         canvas.Save();
         canvas.ClipRect(SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight));
         TacticalBattleMapRenderer.Draw(canvas, frame);
@@ -155,14 +157,20 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _exitBattle.Bounds = SKRect.Create(content.Right - col, y, col, 34 * s);
         bool results = frame.Salvo is not null;
         _newBattle.Bounds = SKRect.Create(content.Left, y + 41 * s, content.Width, 30 * s);
-        _enemyForecast.Bounds = results || header.ShowNew ? SKRect.Empty : SKRect.Create(content.Left, y + 78 * s, content.Width, 22 * s);
-        _enemySectors.Bounds = results || header.ShowNew ? SKRect.Empty : SKRect.Create(content.Left, y + 104 * s, content.Width, 22 * s);
+        bool showVisibility = !results && !header.ShowNew;
+        _allFireSectors.Bounds = showVisibility ? SKRect.Create(content.Left, y + 99 * s, content.Width, 22 * s) : SKRect.Empty;
+        _enemySectors.Bounds = showVisibility ? SKRect.Create(content.Left, y + 122 * s, content.Width, 22 * s) : SKRect.Empty;
+        _enemyForecast.Bounds = showVisibility ? SKRect.Create(content.Left, y + 145 * s, content.Width, 22 * s) : SKRect.Empty;
         _phaseAction.Bounds = !results && header.ShowNew ? SKRect.Empty :
-            SKRect.Create(content.Left, y + (results ? 78 : 135) * s, content.Width, 36 * s);
+            SKRect.Create(content.Left, y + (results ? 78 : 175) * s, content.Width, 36 * s);
         _fit.Label = L("FitField");
         _fit.Tooltip = L("FitFieldHelp");
         _enemyForecast.Label = L("EnemyForecast");
         _enemySectors.Label = L("EnemySectors");
+        _allFireSectors.Label = L("AllFireSectors");
+        if (showVisibility)
+            ControlVisuals.Label(canvas, L("VisibilitySettings"), SKRect.Create(content.Left, y + 76 * s, content.Width, 20 * s), true, s);
+        _allFireSectors.Draw(canvas, s);
         _enemyForecast.Draw(canvas, s);
         _enemySectors.Draw(canvas, s);
         _exitBattle.Label = L("ToMap"); _exitBattle.Enabled = !frame.Pending;
@@ -365,8 +373,9 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         }
         if (_fit.OnMouseDown(x, y, button)) Fit();
         else if (_exitBattle.OnMouseDown(x, y, button)) return ExitAction();
-        else if (_enemyForecast.OnMouseDown(x, y, button)) _enemySectors.HasFocus = false;
-        else if (_enemySectors.OnMouseDown(x, y, button)) _enemyForecast.HasFocus = false;
+        else if (_enemyForecast.OnMouseDown(x, y, button)) _enemySectors.HasFocus = _allFireSectors.HasFocus = false;
+        else if (_enemySectors.OnMouseDown(x, y, button)) _enemyForecast.HasFocus = _allFireSectors.HasFocus = false;
+        else if (_allFireSectors.OnMouseDown(x, y, button)) _enemyForecast.HasFocus = _enemySectors.HasFocus = false;
         else if (CanStartNewBattle && _newBattle.OnMouseDown(x, y, button)) return ScreenEvent.NewTacticalBattle;
         else if (_phaseAction.OnMouseDown(x, y, button)) return ActionEvent;
         else if (_tabs.SelectedId == "sides")
@@ -453,7 +462,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _logTab.ResetInput();
         _forecastTab.ResetInput();
         _fit.ResetInput(); _exitBattle.ResetInput(); _newBattle.ResetInput(); _phaseAction.ResetInput(); _replaySalvo.ResetInput();
-        _enemyForecast.HasFocus = _enemySectors.HasFocus = false;
+        _enemyForecast.HasFocus = _enemySectors.HasFocus = _allFireSectors.HasFocus = false;
     }
 
     private void AdvanceSalvo()

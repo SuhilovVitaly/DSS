@@ -4,17 +4,21 @@ namespace DeepSpaceSaga.Client;
 
 /// <summary>
 /// Resolves UI text by key from the JSON dictionary under Data\Locale\ that matches the
-/// language saved in Settings.json (gameSettings.language, written by SkiaWindow's
-/// SaveLanguage). Loaded once and cached, same "applies after restart" model as the
-/// other gameSettings-backed values in SkiaWindow.cs — no live-switch support yet.
+/// language saved in Settings.json. The settings screen publishes a new dictionary
+/// after saving the player's selection.
 /// </summary>
 public static class Localization
 {
-    private static readonly Lazy<Dictionary<string, string>> _strings = new(Load);
+    private static readonly Lazy<Dictionary<string, string>> _startupStrings = new(() => Load(ReadLanguageSetting()));
+    private static Dictionary<string, string>? _selectedStrings;
     [ThreadStatic] private static Dictionary<string, string>? _testStrings;
 
     public static string Get(string key) =>
-        (_testStrings ?? _strings.Value).TryGetValue(key, out var value) ? value : key;
+        (_testStrings ?? Volatile.Read(ref _selectedStrings) ?? _startupStrings.Value)
+            .TryGetValue(key, out var value) ? value : key;
+
+    internal static void ApplyLanguage(string language) =>
+        Volatile.Write(ref _selectedStrings, Load(language));
 
     internal static string WorldManeuverError(string reason)
     {
@@ -44,7 +48,7 @@ public static class Localization
         _ => label
     };
 
-    /// <summary>Thread-local test seam using the actual locale files; runtime language still applies after restart.</summary>
+    /// <summary>Thread-local test seam using the actual locale files.</summary>
     internal static IDisposable UseLocaleForTests(string language)
     {
         var previous = _testStrings;
@@ -60,9 +64,8 @@ public static class Localization
         }
     }
 
-    private static Dictionary<string, string> Load()
+    private static Dictionary<string, string> Load(string language)
     {
-        var language = ReadLanguageSetting();
         var strings = LoadLocaleFile(language);
         if (strings is { Count: > 0 })
             return strings;
@@ -70,7 +73,7 @@ public static class Localization
         return LoadLocaleFile("English") ?? new Dictionary<string, string>();
     }
 
-    private static string ReadLanguageSetting()
+    internal static string ReadLanguageSetting()
     {
         try
         {

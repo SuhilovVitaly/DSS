@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Engine.TacticalBattle;
 
 internal sealed record TacticalCandidate(TacticalUnit Target, double Distance, double Angle, TacticalHitTerms Terms);
 internal sealed record TacticalShot(TacticalDrone Shooter, TacticalUnit Target, double Distance, double Angle,
-    double Chance, bool Hit, int Damage, bool Rear, bool Kill, int SoloHullLoss);
+    double Chance, bool Hit, int Damage, bool Rear, bool Kill, int SoloHullLoss, bool LethalImpact = false);
 internal sealed record TacticalDamage(string TargetId, int Hull, int Armor, bool RearKill);
 internal sealed record TacticalSystemChange(string TargetId, string Effect, int? EngineIndex = null);
 internal sealed record TacticalSalvoResult(ImmutableArray<TacticalShot> Shots, ImmutableArray<TacticalDamage> Damage,
@@ -80,6 +80,7 @@ internal static class TacticalBattleSalvo
             var hits = shots.Where(s => s.Hit && ReferenceEquals(s.Target, target)).ToArray();
             long hullLoss = 0;
             int armorLoss = 0;
+            TacticalShot? lethal = null;
             foreach (var shot in hits)
             {
                 if (shot.Rear) hullLoss += shot.Damage;
@@ -89,7 +90,9 @@ internal static class TacticalBattleSalvo
                     hullLoss += split.Hull;
                     armorLoss += split.Armor;
                 }
+                if (lethal is null && (shot.Kill || hullLoss >= target.Hull)) lethal = shot;
             }
+            if (lethal is not null) shots[shots.IndexOf(lethal)] = lethal with { LethalImpact = true };
             bool rearKill = hits.Any(s => s.Kill);
             if (rearKill) hullLoss = target.Hull;
             int actualHull = (int)PyMath.Min(hullLoss, target.Hull);

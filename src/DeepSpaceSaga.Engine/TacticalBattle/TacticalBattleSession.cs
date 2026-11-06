@@ -127,7 +127,8 @@ internal sealed class TacticalBattleSession
         var salvo = Battle.LastSalvo!;
         _shots = salvo.Shots.Select(s => new TacticalShotSnapshot(turn, s.Shooter.Id, s.Target.Id,
             TacticalBattleSnapshotBuilder.Pose(s.Shooter.Pose), TacticalBattleSnapshotBuilder.Pose(s.Target.Pose),
-            s.Chance, s.Hit, s.Damage, s.Rear, s.Kill, s.Target.Hull <= 0)).ToImmutableArray();
+            s.Chance, s.Hit, s.Damage, s.Rear, s.Kill, s.Target.Hull <= 0)
+            { LethalImpact = s.LethalImpact }).ToImmutableArray();
         foreach (var shot in _shots)
             Add(shot.Kill ? TacticalBattleLogKind.RearKill : shot.Hit ? TacticalBattleLogKind.ShotHit : TacticalBattleLogKind.ShotMissed,
                 TacticalBattlePhase.Fire, shot.ShooterId, shot.TargetId, amount: shot.Damage, shot: new(shot.Chance, shot.Rear));

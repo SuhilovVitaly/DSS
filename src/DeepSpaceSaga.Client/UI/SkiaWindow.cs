@@ -55,7 +55,6 @@ public sealed class SkiaWindow : IDisposable
     private string? _pendingUndockCommandId;
     private GameSessionScreen? _gameSessionScreen;
     private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
-    private static readonly string[] AllowedLanguages = { "English", "Russian" };
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private readonly StationTradeNavigation _stationNavigation;
     private Task? _stationCleanupTask;
@@ -791,6 +790,7 @@ public sealed class SkiaWindow : IDisposable
                 case ScreenEvent.OpenTacticalBattle:
                     if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen)
                     {
+                        Localization.ApplyLanguage(Localization.ReadLanguageSetting());
                         var flow = new TacticalBattleFlow(battleSession);
                         var setup = CreateTacticalSetupView(flow);
                         await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
@@ -1265,7 +1265,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is SettingsScreen)
             return;
 
-        var monitors = Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
+        var monitors = _window is null ? [] : Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
         InterfaceLog.Write(
             $"DIAG Monitors found: {monitors.Length} — " +
             string.Join(" | ", monitors.Select(m =>
@@ -1281,7 +1281,7 @@ public sealed class SkiaWindow : IDisposable
             selectedMonitorIndex = 0;
 
         double uiScale = GetUiScale();
-        string language = GetLanguage();
+        string language = Localization.ReadLanguageSetting();
 
         await PushModalAsync(new SettingsScreen(
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
@@ -1506,38 +1506,7 @@ public sealed class SkiaWindow : IDisposable
         _gameSessionScreen?.SetUiScale((float)scale);
     }
 
-    /// <summary>
-    /// Falls back to "English" whenever the persisted value is missing, malformed,
-    /// or outside the allowed set — an invalid language must never break startup.
-    /// </summary>
-    private static string ValidateLanguage(string? language) =>
-        language is not null && Array.Exists(AllowedLanguages, v => v == language) ? language : "English";
-
-    private static string GetLanguage()
-    {
-        try
-        {
-            if (!File.Exists(SettingsFilePath))
-                return "English";
-
-            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFilePath));
-            if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
-                gs.TryGetProperty("language", out var language))
-                return ValidateLanguage(language.GetString());
-
-            return "English";
-        }
-        catch
-        {
-            return "English";
-        }
-    }
-
-    /// <summary>
-    /// Persists the chosen language immediately (per requirements), but there is no
-    /// runtime localization system yet — same "applies after restart" caveat as
-    /// <see cref="SaveSelectedMonitorIndex"/> until one is wired up.
-    /// </summary>
+    /// <summary>Persists the chosen language and applies it to subsequent UI lookups.</summary>
     private static void SaveLanguage(string language)
     {
         try
@@ -1555,6 +1524,7 @@ public sealed class SkiaWindow : IDisposable
             gameSettings["language"] = language;
 
             File.WriteAllText(SettingsFilePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            Localization.ApplyLanguage(language);
             InterfaceLog.Write($"Settings: language saved = {language}");
         }
         catch (Exception ex)
