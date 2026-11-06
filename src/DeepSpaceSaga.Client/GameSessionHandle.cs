@@ -85,6 +85,10 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
         ObserveDebugTuningFiles();
         return DebugTuningFiles.DeactivateAsync();
     }
+    /// <summary>The accepted world shows the player ship destroyed (station security); the session is terminal.</summary>
+    public bool IsPlayerShipDestroyed => Buffer.Presented?.Snapshot is { PlayerShipObjectId: { } playerId } snapshot &&
+        snapshot.Objects.Any(o => o.IsDestroyed && string.Equals(o.ObjectId, playerId, StringComparison.Ordinal));
+
     private int _stationTravelPending;
     public bool StationTravelPending => Volatile.Read(ref _stationTravelPending) != 0;
     public bool KeepPausedAfterStationTravel { get; private set; }
@@ -307,6 +311,7 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     /// </summary>
     public async ValueTask SetSpeedAsync(SimulationSpeed speed)
     {
+        if (IsPlayerShipDestroyed) { Buffer.CurrentSpeed = SimulationSpeed.Speed0; return; }
         await _connection.SetSimulationSpeedAsync(speed);
         Buffer.CurrentSpeed = Failure is null ? speed : SimulationSpeed.Speed0;
     }
@@ -314,6 +319,7 @@ public sealed partial class GameSessionHandle : IAsyncDisposable
     /// <summary>Capture and persist the current authoritative world state into the given save slot.</summary>
     public ValueTask SaveAsync(string slotId, CancellationToken cancellationToken = default)
     {
+        if (IsPlayerShipDestroyed) return ValueTask.FromException(new InvalidOperationException("player_destroyed"));
         return _connection.SaveAsync(slotId, cancellationToken);
     }
 

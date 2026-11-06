@@ -319,6 +319,9 @@
   "MainMenu.Settings": "НАСТРОЙКИ",
   "MainMenu.Credits": "АВТОРЫ",
   "MainMenu.Exit": "ВЫХОД",
+  "ShipDestroyed.Title": "КОРАБЛЬ УНИЧТОЖЕН",
+  "ShipDestroyed.Load": "ЗАГРУЗИТЬ",
+  "ShipDestroyed.MainMenu": "ГЛАВНОЕ МЕНЮ",
 
   "GameMenu.Status": "МЕНЮ ИГРЫ // СИМУЛЯЦИЯ ПРИОСТАНОВЛЕНА",
   "GameMenu.Resume": "ПРОДОЛЖИТЬ",

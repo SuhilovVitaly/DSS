@@ -9,6 +9,7 @@ using DeepSpaceSaga.Client.UI.Screens.Finance;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Load;
+using DeepSpaceSaga.Client.UI.Screens.ShipDestroyed;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
@@ -58,6 +59,8 @@ public sealed class SkiaWindow : IDisposable
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private readonly StationTradeNavigation _stationNavigation;
     private Task? _stationCleanupTask;
+    private GameSessionHandle? _shipDestroyedSession;
+    private Task? _shipDestroyedTransitionTask;
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
@@ -429,6 +432,12 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
+        if (_session?.IsPlayerShipDestroyed == true)
+        {
+            if (!ReferenceEquals(_shipDestroyedSession, _session) && (_shipDestroyedTransitionTask?.IsCompleted ?? true))
+                _shipDestroyedTransitionTask = HandleScreenEvent(ScreenEvent.None);
+            return;
+        }
         if (_screens.Current is TacticalBattleModalScreen) return;
         RequestStationCleanup();
         if (_screens.Current is StationScreen && _pendingUndockCommandId is { } pendingId &&
@@ -766,6 +775,8 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             if (_closing) return;
+            if (EnsureShipDestroyedScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or ScreenEvent.Exit or
+                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad)) return;
             if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
                 (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
                 ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle))
@@ -1071,8 +1082,22 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
+        if (EnsureShipDestroyedScreen() && screen is not LoadScreen) return;
         _screens.Push(screen);
         _modalDepth++;
+    }
+
+    /// <summary>Replaces the whole stack with the terminal screen once per destroyed session.</summary>
+    private bool EnsureShipDestroyedScreen()
+    {
+        if (_session?.IsPlayerShipDestroyed != true) return false;
+        if (ReferenceEquals(_shipDestroyedSession, _session)) return true;
+        _shipDestroyedSession = _session;
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed0;
+        _pendingUndockCommandId = null;
+        _screens.ReplaceAll(new ShipDestroyedScreen((float)GetUiScale()));
+        return true;
     }
 
     private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
@@ -1094,6 +1119,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task PopModalAsync()
     {
+        if (_screens.Current is ShipDestroyedScreen) return;
         _screens.Pop();
         _modalDepth--;
 
@@ -1280,6 +1306,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task OpenSaveWindowAsync()
     {
+        if (_session?.IsPlayerShipDestroyed == true) return;
         // Guard: don't push overlay on top of another overlay
         if (_screens.Current is SaveScreen)
             return;
@@ -1320,7 +1347,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task SaveToSlotAsync(string slotId)
     {
-        if (_session is null)
+        if (_session is null || _session.IsPlayerShipDestroyed)
             return;
 
         try
@@ -1552,7 +1579,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task QuickSaveAsync()
     {
-        if (_session is null || _quickSaveLoadInFlight)
+        if (_session is null || _session.IsPlayerShipDestroyed || _quickSaveLoadInFlight)
             return;
 
         _quickSaveLoadInFlight = true;

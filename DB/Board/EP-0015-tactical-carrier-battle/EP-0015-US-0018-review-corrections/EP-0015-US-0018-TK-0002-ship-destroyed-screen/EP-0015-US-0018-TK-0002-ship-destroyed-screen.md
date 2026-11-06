@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0018-review-corrections
 ticket: EP-0015-US-0018-TK-0002-ship-destroyed-screen
 title: ship-destroyed-screen
-stage: todo
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0018-TK-0001-engine-world-integrity"]
 files_touched: 7
@@ -48,3 +48,14 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. TDD. Сборка, scoped form
 
 ## Definition of Done
 AC-02 выполнен и проверен; лимит files_touched соблюдён; результаты записаны в карточку; отдельный коммит тикета; push в `origin` (D-USER-14/15).
+
+## Execution evidence — 2026-11-06
+
+Baseline `eec6c24b`. Изменены все 7 разрешённых файлов.
+
+- `ShipDestroyedScreen` (новый): непрозрачный терминальный экран, заголовок «КОРАБЛЬ УНИЧТОЖЕН», «ЗАГРУЗИТЬ» → `OpenLoadWindow`, «ГЛАВНОЕ МЕНЮ» → `MainMenu`; Tab/стрелки переключают фокус, Enter/Space выбирают, левая кнопка мыши — попадание по кнопке.
+- `GameSessionHandle.IsPlayerShipDestroyed` — строка `PlayerShipObjectId` с `IsDestroyed` в принятом snapshot; `SetSpeedAsync` держит Speed0 без обращения к соединению, `SaveAsync` отклоняет `player_destroyed`.
+- `SkiaWindow`: `PollGameSessionAutoTransition` запускает переход; `EnsureShipDestroyedScreen` один раз на сессию заменяет стек (`ReplaceAll`), обнуляет модальную глубину; пропускаются только None/MainMenu/Exit/Load/QuickLoad; `PushModalAsync` допускает лишь LoadScreen, `PopModalAsync` не снимает терминальный экран; F5, окно и слот сохранения заблокированы.
+- Ключи `ShipDestroyed.Title/Load/MainMenu` в RU/EN; одна фраза в `Docking.md`.
+
+Тесты `ShipDestroyedScreenTests` (5): переход, блокировки сохранения/скорости/мировых событий и возврат из Load, клавиатура/мышь, обе локали. Red на baseline — тип экрана и `IsPlayerShipDestroyed` отсутствуют (компиляция). Артефакты: `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/us0018-tk0203-20261106-green/`: сборка решения 0 warnings/0 errors, scoped format и `git diff --check` PASS, целевые 15/15 PASS, Client.Tests 1974/1975 — единственное падение `ResultsPhaseTests.ActualSalvoWaitsForArrivalAndSkipReplayContinueNeverSendAnotherShot` (`ReplaySalvoBounds` пуст) воспроизводится на неизменённом `eec6c24b` и к тикету не относится. Native/human не выполнялись.

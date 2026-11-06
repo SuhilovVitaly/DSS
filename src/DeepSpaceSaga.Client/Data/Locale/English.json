@@ -319,6 +319,9 @@
   "MainMenu.Settings": "SETTINGS",
   "MainMenu.Credits": "CREDITS",
   "MainMenu.Exit": "EXIT",
+  "ShipDestroyed.Title": "SHIP DESTROYED",
+  "ShipDestroyed.Load": "LOAD",
+  "ShipDestroyed.MainMenu": "MAIN MENU",
 
   "GameMenu.Status": "GAME MENU // SIMULATION PAUSED",
   "GameMenu.Resume": "RESUME",
