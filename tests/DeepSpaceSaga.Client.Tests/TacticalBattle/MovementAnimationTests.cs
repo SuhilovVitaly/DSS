@@ -71,6 +71,30 @@ public sealed class MovementAnimationTests
     }
 
     [Fact]
+    public async Task NonEmptyAutomaticSalvoUsesSlowerMovementThanAnEmptySalvo()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var before = screen.Flow.State!;
+        await fixture.Route(ScreenEvent.MoveTacticalBattle);
+        var empty = screen.Flow.State!;
+        Assert.True(empty.FireSkipped);
+        Assert.Empty(empty.Shots);
+        var shot = new TacticalShotSnapshot(before.Turn, "enemy", "target", default, default, 0.5, false, 0, false, false, false);
+
+        var fast = Create(empty);
+        var slow = Create(empty with { Shots = [shot] });
+        Assert.Equal(1350, fast.PlaybackDurationMs);
+        Assert.Equal(0.70, fast.PlaybackDurationMs / (double)slow.PlaybackDurationMs, 3);
+        Assert.True(slow.IsActive(fast.PlaybackDurationMs));
+        Assert.False(slow.IsActive(slow.PlaybackDurationMs));
+
+        TacticalBattleMovementAnimation Create(TacticalBattleSnapshot after) =>
+            TacticalBattleMovementAnimation.Create(before,
+                new("test", true, TacticalBattleRejectionCode.None, after.Phase, after, []), 0)!;
+    }
+
+    [Fact]
     public async Task AcceptedTerminalMovementShowsOutcomeOnlyAfterPlayback()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

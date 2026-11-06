@@ -293,7 +293,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (Flow.State is not { } state) return;
         long now = ClockMilliseconds();
         var animation = TacticalBattleMovementAnimation.Create(before, response, now);
-        var results = TacticalBattleResults.Create(before, response, now + (animation is null ? 0 : TacticalBattleMovementAnimation.DurationMs));
+        var results = TacticalBattleResults.Create(before, response, now + (animation?.PlaybackDurationMs ?? 0));
         Volatile.Write(ref _presentation, new(state, animation, results));
     }
 

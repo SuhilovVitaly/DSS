@@ -8,15 +8,19 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 internal sealed class TacticalBattleMovementAnimation
 {
     internal const long DurationMs = 1350;
+    internal const long FireTransitionDurationMs = 1929; // 1350 / 0.70, rounded to the nearest millisecond.
+    internal long PlaybackDurationMs { get; }
     private readonly TacticalBattleSnapshot _before;
     private readonly ImmutableArray<TacticalMovementPath> _paths;
     private readonly long _startMs;
 
-    private TacticalBattleMovementAnimation(TacticalBattleSnapshot before, ImmutableArray<TacticalMovementPath> paths, long startMs)
+    private TacticalBattleMovementAnimation(TacticalBattleSnapshot before, ImmutableArray<TacticalMovementPath> paths,
+        long startMs, long durationMs)
     {
         _before = before;
         _paths = paths;
         _startMs = startMs;
+        PlaybackDurationMs = durationMs;
     }
 
     internal static TacticalBattleMovementAnimation? Create(TacticalBattleSnapshot? before, TacticalBattleResponse response, long nowMs)
@@ -24,14 +28,16 @@ internal sealed class TacticalBattleMovementAnimation
         if (before is not { Phase: TacticalBattlePhase.Move } || !response.Accepted || response.State is not { } after ||
             after.BattleId != before.BattleId || after.Revision <= before.Revision) return null;
         var paths = after.Paths.Where(p => p.Turn == before.Turn && p.Points.Length > 1).ToImmutableArray();
-        return paths.IsEmpty ? null : new(before, paths, nowMs);
+        bool leadsToFire = after.Phase == TacticalBattlePhase.Fire ||
+            after.FireSkipped && after.Shots.Any(shot => shot.Turn == before.Turn);
+        return paths.IsEmpty ? null : new(before, paths, nowMs, leadsToFire ? FireTransitionDurationMs : DurationMs);
     }
 
-    internal bool IsActive(long nowMs) => nowMs - _startMs < DurationMs;
+    internal bool IsActive(long nowMs) => nowMs - _startMs < PlaybackDurationMs;
 
     internal TacticalBattleSnapshot Interpolate(long nowMs)
     {
-        double fraction = PyMath.Clamp((nowMs - _startMs) / (double)DurationMs, 0, 1);
+        double fraction = PyMath.Clamp((nowMs - _startMs) / (double)PlaybackDurationMs, 0, 1);
         return _before with
         {
             Units = _before.Units.Select(u =>

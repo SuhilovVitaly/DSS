@@ -280,7 +280,7 @@ public sealed class BattleNavigationTests
         internal void AdvanceAnimation(long ms) => Interlocked.Add(ref _clockMilliseconds, ms);
         internal void FinishPresentation()
         {
-            AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
+            AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
             if (Screens.Current is not TacticalBattleScreen { HasSalvoPresentation: true } battle) return;
             battle.OnKeyDown(Key.Enter);
             if (battle.HasSalvoPresentation) battle.OnKeyDown(Key.Enter);
@@ -321,7 +321,7 @@ public sealed class BattleNavigationTests
             if (!ManualAnimation)
             {
                 if (evt is ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle) FinishPresentation();
-                else AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
+                else AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
             }
             await (Task)typeof(SkiaWindow).GetMethod("HandleScreenEvent", BindingFlags.Instance | BindingFlags.NonPublic)!
                 .Invoke(Window, new object?[] { evt, null })!;

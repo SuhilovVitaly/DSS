@@ -17,8 +17,13 @@ public sealed class ResultsPhaseTests
         var screen = await Start(fixture);
         for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
             await fixture.Route(ScreenEvent.MoveTacticalBattle);
-        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs);
         Assert.Equal(TacticalBattlePhase.Fire, screen.Flow.State?.Phase);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs - 1);
+        Assert.True(screen.TurnBusy);
+        Assert.Null(screen.CaptureFrame(1280, 720)!.FirePlan);
+        fixture.AdvanceAnimation(1);
+        Assert.False(screen.TurnBusy);
+        Assert.NotNull(screen.CaptureFrame(1280, 720)!.FirePlan);
         fixture.ManualAnimation = true;
         await fixture.Route(ScreenEvent.FireTacticalBattle);
         var state = screen.Flow.State!;
