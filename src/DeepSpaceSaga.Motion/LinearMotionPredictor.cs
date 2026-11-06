@@ -43,21 +43,17 @@ public sealed class LinearMotionPredictor : IMotionPredictor
     }
 
     public static bool IsLinear(ObjectMotionSnapshot state) =>
-        state.SpeedHoldAccelerationKmS2 is null && state.TurnHoldRateDegPerSec is null && state.Evasion is null && state.OwnProjectile is null && state.ObservedProjectile is null &&
-        state.Orbit is null && state.Torpedo is null && state.Countermeasure is null && state.HostileCombat is null && state.EngineManeuver is null &&
+        state.SpeedHoldAccelerationKmS2 is null && state.TurnHoldRateDegPerSec is null &&
+        state.Orbit is null && state.EngineManeuver is null &&
         state.ActiveEngineCommandType is not (NavigationComputerCommandTypes.Approach or ShipEngineCommandTypes.Orbit) &&
         (state.TurnStepDegrees == 0 || state.TurnStepIntervalMs <= 0);
 
     public ObjectMotionSnapshot Predict(ObjectMotionSnapshot state, long elapsedMs)
     {
-        if (state.SpeedHoldAccelerationKmS2 is not null || state.TurnHoldRateDegPerSec is not null || state.Evasion is not null || state.OwnProjectile is not null || state.ObservedProjectile is not null)
+        if (state.SpeedHoldAccelerationKmS2 is not null || state.TurnHoldRateDegPerSec is not null)
             return CurrentManeuverForecast.Sample(state, elapsedMs);
         if (state.Orbit is { } orbit)
             return OrbitalMotionMath.At(state, orbit, checked((state.OrbitSampleSimulationTimeMs ?? orbit.EpochSimulationTimeMs) + elapsedMs));
-        if (state.Countermeasure is not null || state.Torpedo is not null)
-            throw new ArgumentException("Retired guided projectile snapshots are unsupported.", nameof(state));
-        if (state.HostileCombat is not null)
-            return HostileOrbitMath.Predict(state, elapsedMs);
         if (elapsedMs >= 0 && CurrentManeuverForecast.ValidEngineManeuver(state))
             return CurrentManeuverForecast.Sample(state, elapsedMs);
 

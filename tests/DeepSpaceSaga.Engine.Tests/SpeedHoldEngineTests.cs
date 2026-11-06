@@ -26,9 +26,8 @@ public sealed class SpeedHoldEngineTests
         engine.ReceiveCommand(speedFirst ? Turn() : Speed());
         var accepted = Player(At(engine));
         Assert.Equal(.6, accepted.SpeedHoldAccelerationKmS2); Assert.Equal(20, accepted.TurnHoldRateDegPerSec);
-        var expected = HostileOrbitMath.Sample(new(0, long.MaxValue, 0, initial.X, initial.Y, 3, 0, .6, 20), 2000);
         var after = Player(At(engine, 2000));
-        Equal(after, expected.X, expected.Y, 4.2, 40);
+        Equal(after, initial.X + 25.4245396001, initial.Y - 65.8204742163, 4.2, 40);
         engine.ReceiveCommand(Turn("other-release", TurnDirection.Left, false));
         engine.ReceiveCommand(Speed("other-speed-release", SpeedDirection.Brake, false));
         var unchanged = Player(At(engine, 2000)); Assert.Equal(.6, unchanged.SpeedHoldAccelerationKmS2); Assert.Equal(20, unchanged.TurnHoldRateDegPerSec);

@@ -16,20 +16,12 @@ public static class HoldMotion
         double capMs = acceleration > 0 ? Math.Max(0, (state.MaxSpeedKmS!.Value - state.SpeedKmS) / acceleration) * 1000 :
             acceleration < 0 ? -state.SpeedKmS / acceleration * 1000 : double.PositiveInfinity;
         double poweredMs = Math.Min(elapsedMs, capMs);
-        var segment = new HostileMotionSegment(0, long.MaxValue, 0, state.X, state.Y, state.SpeedKmS, state.Direction, acceleration, rate);
-        var pose = HostileOrbitMath.Sample(segment, poweredMs);
+        var pose = SampleArc(state.X, state.Y, state.SpeedKmS, state.Direction, acceleration, rate, poweredMs);
         bool capped = elapsedMs >= capMs;
         if (capped)
         {
             double limit = acceleration > 0 ? state.MaxSpeedKmS!.Value : 0;
-            pose = HostileOrbitMath.Sample(segment with
-            {
-                StartX = pose.X,
-                StartY = pose.Y,
-                StartSpeedKmS = limit,
-                StartDirectionDegrees = pose.Direction,
-                AccelerationKmS2 = 0
-            }, elapsedMs - poweredMs);
+            pose = SampleArc(pose.X, pose.Y, limit, pose.Direction, 0, rate, elapsedMs - poweredMs);
         }
         bool releaseLatch = state.SpeedHoldLatched && acceleration > 0 && capped;
         return state with
@@ -41,5 +33,22 @@ public static class HoldMotion
             SpeedHoldAccelerationKmS2 = releaseLatch ? null : state.SpeedHoldAccelerationKmS2,
             SpeedHoldLatched = !releaseLatch && state.SpeedHoldLatched
         };
+    }
+
+    // Exact integral of constant thrust and turn rate. The series keeps the
+    // straight-course limit well conditioned for very small steering angles.
+    private static (double X, double Y, double SpeedKmS, double Direction) SampleArc(
+        double x, double y, double speed, double direction, double acceleration, double rate, double elapsedMs)
+    {
+        double t = elapsedMs / 1000;
+        double h = rate * Math.PI / 180 * t / 2;
+        double sinc = Math.Abs(h) < 1e-4 ? 1 - h * h / 6 + Math.Pow(h, 4) / 120 : Math.Sin(h) / h;
+        double slope = Math.Abs(h) < 1e-4 ? h / 3 - h * h * h / 30 : (Math.Sin(h) - h * Math.Cos(h)) / (h * h);
+        double mid = direction * Math.PI / 180 + h;
+        double forward = t * (speed + acceleration * t / 2) * sinc;
+        double lateral = acceleration * t * t / 2 * slope;
+        return (x + 10 * (forward * Math.Sin(mid) + lateral * Math.Cos(mid)),
+            y + 10 * (-forward * Math.Cos(mid) + lateral * Math.Sin(mid)), speed + acceleration * t,
+            ((direction + rate * t) % 360 + 360) % 360);
     }
 }

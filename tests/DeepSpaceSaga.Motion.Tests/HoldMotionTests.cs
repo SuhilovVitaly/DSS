@@ -8,34 +8,30 @@ public sealed class HoldMotionTests
         new("player", 0, 0, speed, 0, MaxSpeedKmS: 5, TurnHoldRateDegPerSec: turn, SpeedHoldAccelerationKmS2: acceleration, SpeedHoldLatched: latched);
 
     [Theory]
-    [InlineData(0, -20, 320, 3)]
-    [InlineData(0, 20, 40, 3)]
-    [InlineData(.6, 0, 0, 4.2)]
-    [InlineData(-.6, 0, 0, 1.8)]
-    [InlineData(.6, 20, 40, 4.2)]
-    public void Source_table_two_second_cases_match_analytical_orbit(double acceleration, double turn, double direction, double speed)
+    [InlineData(0, -20, 320, 3, -20.1069990044, -55.2435257375)]
+    [InlineData(0, 20, 40, 3, 20.1069990044, -55.2435257375)]
+    [InlineData(.6, 0, 0, 4.2, 0, -72)]
+    [InlineData(-.6, 0, 0, 1.8, 0, -48)]
+    [InlineData(.6, 20, 40, 4.2, 25.4245396001, -65.8204742163)]
+    public void Source_table_two_second_cases_match_analytical_orbit(double acceleration, double turn, double direction, double speed, double x, double y)
     {
         var ship = Ship(acceleration, turn);
-        var expected = HostileOrbitMath.Sample(new(0, long.MaxValue, 0, 0, 0, 3, 0, acceleration, turn), 2000);
         var actual = CurrentManeuverForecast.Sample(ship, 2000);
-        EqualPose(actual, expected.X, expected.Y, direction, speed);
+        EqualPose(actual, x, y, direction, speed);
         Assert.False(LinearMotionPredictor.IsLinear(ship));
-        EqualPose(new LinearMotionPredictor().Predict(ship, 2000), expected.X, expected.Y, direction, speed);
+        EqualPose(new LinearMotionPredictor().Predict(ship, 2000), x, y, direction, speed);
     }
 
     [Theory]
-    [InlineData(.6, 20, false)]
-    [InlineData(.6, -20, true)]
-    [InlineData(-.6, 20, false)]
-    [InlineData(-.6, 0, false)]
-    public void Speed_boundary_splits_exactly_and_is_invariant_to_physical_step_partition(double acceleration, double turn, bool latched)
+    [InlineData(.6, 20, false, 21.4307704894, -62.3342452116)]
+    [InlineData(.6, -20, true, -21.4307704894, -62.3342452116)]
+    [InlineData(-.6, 20, false, 37.4496720927, -57.7928953549)]
+    [InlineData(-.6, 0, false, 0, -75)]
+    public void Speed_boundary_splits_exactly_and_is_invariant_to_physical_step_partition(double acceleration, double turn, bool latched, double x, double y)
     {
         var ship = Ship(acceleration, turn, latched: latched);
-        double cap = acceleration > 0 ? (5 - 3) / acceleration * 1000 : -3 / acceleration * 1000;
-        var powered = HostileOrbitMath.Sample(new(0, long.MaxValue, 0, 0, 0, 3, 0, acceleration, turn), cap);
-        var expected = HostileOrbitMath.Sample(new(0, long.MaxValue, 0, powered.X, powered.Y, acceleration > 0 ? 5 : 0, powered.Direction, 0, turn), 20000 - cap);
         var direct = HoldMotion.Sample(ship, 20000);
-        EqualPose(direct, expected.X, expected.Y, expected.Direction, expected.SpeedKmS);
+        EqualPose(direct, x, y, turn == 0 ? 0 : turn > 0 ? 40 : 320, acceleration > 0 ? 5 : 0);
         var partitioned = ship;
         for (int elapsed = 0; elapsed < 20000; elapsed += 17) partitioned = HoldMotion.Sample(partitioned, Math.Min(17, 20000 - elapsed));
         EqualPose(partitioned, direct.X, direct.Y, direct.Direction, direct.SpeedKmS);

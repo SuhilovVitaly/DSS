@@ -34,21 +34,8 @@ public sealed class PointCombatLegacyRemovalKinematicsTests
     public void Generic_current_acceleration_clamps_without_reversing(double acceleration, double expected)
     {
         var ship = new ObjectMotionSnapshot("ship", 0, -300, 1, 90, MaxSpeedKmS: 2,
-            HostileCombat: new("owner", "engine", "launcher", 50, true, HostileCombatPhase.Pursuit,
-                new(0, 100, 0, 0, -300, 1, 90, acceleration, 30)));
+            SpeedHoldAccelerationKmS2: acceleration, TurnHoldRateDegPerSec: 30);
         var sample = CurrentManeuverForecast.Sample(ship, 10000);
         Assert.Equal(expected, sample.SpeedKmS); Assert.InRange(sample.Direction, 0, 360);
-    }
-
-    [Fact]
-    public void Retired_guided_payloads_are_rejected_instead_of_activating_an_alternate_predictor()
-    {
-        var legacy = new ObjectMotionSnapshot("old", 0, 0, 3, 0, Torpedo: new("owner", "module", "target", 0, 3, 90, 200, 0,
-            new(0, 1, TorpedoRoutePhase.Straight, false, [new(0, 0, 0, 3, 0, 0)])));
-        Assert.False(LinearMotionPredictor.IsLinear(legacy));
-        Assert.Throws<ArgumentException>(() => new LinearMotionPredictor().Predict(legacy, 1));
-        Assert.Throws<ArgumentException>(() => CombatForecast.Torpedo(legacy, new("target", 100, 0, 0, 0), 0));
-        foreach (string name in new[] { "TorpedoGuidance" + "Math", "CountermeasureGuidance" + "Math", "CombatGuidance" + "Rules" })
-            Assert.Null(typeof(LinearMotionPredictor).Assembly.GetType("DeepSpaceSaga.Motion." + name));
     }
 }

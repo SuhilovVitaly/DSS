@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0014-legacy-foundation-removal
 ticket: EP-0015-US-0014-TK-0001-motion-removal
 title: motion-removal
-stage: draft
+stage: done
 layer: motion
 depends_on: ["EP-0015-US-0013-TK-0010-legacy-save-dto-removal"]
-files_touched: 7
+files_touched: 21
 serves: [AC-01, AC-05]
 created: 2026-11-05
 revision: 3
@@ -49,3 +49,35 @@ Motion.Tests. Сборка, scoped format, `git diff --check`. Процессы 
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+## Scope correction before edits — 2026-11-06
+
+Remove all seven obsolete realtime Motion files. Retain the ordinary turn/speed analytical arc as a local world-motion operation with plain inputs, and keep CurrentManeuverForecast for real engine cycles, manual axes and the map trajectory. Contracts and TacticalBattle math are unchanged.
+
+- Delete motion: src/DeepSpaceSaga.Motion/BlastMath.cs
+- Delete motion: src/DeepSpaceSaga.Motion/BlastThreatMath.cs
+- Delete motion: src/DeepSpaceSaga.Motion/CombatForecast.cs
+- Delete motion: src/DeepSpaceSaga.Motion/CombatRangeMath.cs
+- Delete motion: src/DeepSpaceSaga.Motion/EvasionMotionMath.cs
+- Delete motion: src/DeepSpaceSaga.Motion/TorpedoCollisionMath.cs
+- Delete motion: src/DeepSpaceSaga.Motion/HostileOrbitMath.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/CombatRangeMathTests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/TorpedoCollisionTests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0018TK0004Tests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0007TK0001Tests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0006TK0002Tests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0006TK0001Tests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/PointCombatUS0003TK0001Tests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/HostileOrbitMathTests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/FlankApproachTests.cs
+- Delete tests of removed rules: tests/DeepSpaceSaga.Motion.Tests/EvasionSteeringTests.cs
+- Edit: src/DeepSpaceSaga.Motion/CurrentManeuverForecast.cs
+- Edit: src/DeepSpaceSaga.Motion/LinearMotionPredictor.cs
+- Edit: src/DeepSpaceSaga.Motion/HoldMotion.cs
+- Edit: tests/DeepSpaceSaga.Motion.Tests/PointCombatLegacyRemovalKinematicsTests.cs
+- Edit: tests/DeepSpaceSaga.Motion.Tests/HoldMotionTests.cs
+- Edit: tests/DeepSpaceSaga.Engine.Tests/SpeedHoldEngineTests.cs
+The initial build identified both suites' use of the retired orbit sampler as a movement oracle. Preserve their checks using fixed positions from independent numerical integration of thrust and heading, including the split at the speed limit.
+
+## Execution evidence — 2026-11-06
+
+Removed seven realtime motion rule implementations and their obsolete tests. World turn/acceleration arcs, ordinary trajectories and inertial cycles retain independent numeric and step-partition checks. Scoped formatting and zero-warning solution build; 1,267 Motion, 764 Engine and 265 Client tests passed in `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-world-motion-regression-03/`.
