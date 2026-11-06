@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0008-offscreen-unit-arrows
-stage: approved
+stage: done
 layer: client
 depends_on: []
 files_touched:
@@ -23,3 +23,7 @@ files_touched:
 ## Tests и Definition of Done
 
 В Dss-Main проходят целевые проверки DeepSpaceSaga.Client.Tests с фильтром `BattleMapRenderTests|BattleCameraTests` и `git diff --check`. Опубликовать отдельный коммит ветки эпика. Ручную приёмку записать отдельно.
+
+## Исполнение
+
+Коммит `59f24944` опубликован. 12/12 в BattleMapRenderTests и BattleCameraTests. Растровая проверка меток у разных краёв, разнесения двух меток и исчезновения указателя после возвращения объекта в кадр. Ручная приёмка открыта.

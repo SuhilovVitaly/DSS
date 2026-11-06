@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0019-bugs
 ticket: EP-0015-US-0019-TK-0007-follow-game-language
-stage: approved
+stage: done
 layer: client
 depends_on: [EP-0015-US-0019-TK-0006-remove-salvo-map-summary]
 files_touched:
@@ -24,3 +24,7 @@ Localization.Get использует словарь, загруженный е�
 ## Tests и Definition of Done
 
 В Dss-Main проходят целевые проверки DeepSpaceSaga.Client.Tests с фильтром `LocalizationCoverageTests` и `git diff --check`. Опубликовать отдельный коммит ветки эпика. Ручную приёмку записать отдельно.
+
+## Исполнение
+
+Коммит `ae1df209` опубликован. 18/18 в LocalizationCoverageTests и базовом LocalizationTests. Проверено переключение EN → RU → EN на подготовке, фазе, вкладке журнала, тексте событий и подписи состояния. Четыре проверки локализации других панелей в широком фильтре упали на жёстко заданных путях к исходникам при --artifacts-path. Ручная приёмка открыта.
