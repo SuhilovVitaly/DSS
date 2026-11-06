@@ -3,6 +3,7 @@ using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Motion.TacticalBattle;
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -39,9 +40,12 @@ internal sealed class TacticalBattleMovePanel
         if (bounds.IsEmpty) return;
         canvas.Save();
         canvas.ClipRect(bounds);
+        if (SkinStyle.HasBoxStyle("orders.move"))
+            SkinStyle.Box(canvas, "orders.move", bounds, SKColors.Transparent, null, scale);
         if (frame.SelectedOrder is not { } selected)
         {
-            ControlVisuals.Label(canvas, L("NoAirDrones"), new(bounds.Left, bounds.Top, bounds.Right, bounds.Top + 26 * scale), true, scale);
+            ControlVisuals.Label(canvas, L("NoAirDrones"), new(bounds.Left, bounds.Top, bounds.Right, bounds.Top + 26 * scale), true, scale,
+                role: "orders.move.empty");
             canvas.Restore();
             return;
         }
@@ -58,13 +62,15 @@ internal sealed class TacticalBattleMovePanel
         _speed.SetRange(selected.MinimumSpeed, selected.MaximumSpeed);
         _speed.SetValue(selected.Order.Speed);
         _speed.Enabled = enabled;
-        _speed.Draw(canvas, scale);
+        using (SkinStyle.EnterRole("orders.move.slider.speed"))
+            _speed.Draw(canvas, scale);
         Line(L("TurnAngle") + " " + BattleFormat.Signed(selected.Order.Turn, 1) + "°", top + 72 * scale, enabled);
         _turn.Bounds = SKRect.Create(left + 6 * scale, top + 94 * scale, _speed.Bounds.Width, 22 * scale);
         _turn.SetRange(-selected.MaximumTurn, selected.MaximumTurn);
         _turn.SetValue(selected.Order.Turn);
         _turn.Enabled = enabled;
-        _turn.Draw(canvas, scale);
+        using (SkinStyle.EnterRole("orders.move.slider.turn"))
+            _turn.Draw(canvas, scale);
         Wrapped(Format("MoveLimits", BattleFormat.Number(selected.MinimumSpeed, 1), BattleFormat.Number(selected.MaximumSpeed, 1),
             BattleFormat.Degrees(selected.MaximumTurn, 1), BattleFormat.Degrees(selected.TurnAtMinimum, 1)), top + 117 * scale);
 
@@ -79,34 +85,44 @@ internal sealed class TacticalBattleMovePanel
             var row = frame.Orders[i];
             var rect = SKRect.Create(left, top + (268 + i * 28) * scale, width, 25 * scale);
             _cards.Add((row.Unit.Id, rect));
-            ControlVisuals.Frame(canvas, rect, row.Unit.Id == frame.Selected, enabled, scale);
+            bool selectedCard = row.Unit.Id == frame.Selected;
+            string state = selectedCard ? "selected" : "normal";
+            if (row.Touched) state += ".edited";
+            string role = $"orders.move.card.{state}";
+            ControlVisuals.Frame(canvas, rect, selectedCard, enabled, scale, role);
             ControlVisuals.Label(canvas, row.Unit.Id + " · " + L(row.Touched ? "MoveEdited" : "MoveSuggested"),
-                new(rect.Left + 8 * scale, rect.Top, rect.Right, rect.Bottom), true, scale);
+                new(rect.Left + 8 * scale, rect.Top, rect.Right, rect.Bottom), true, scale, role: role);
         }
         if (_maximumScroll > 0)
         {
             double fraction = bounds.Height / (double)fullHeight;
             float thumbHeight = (float)(bounds.Height * fraction);
             float y = bounds.Top + (bounds.Height - thumbHeight) * (float)(_scroll / (double)_maximumScroll);
-            using var paint = new SKPaint { Color = new SKColor(75, 127, 149) };
-            canvas.DrawRect(bounds.Right - 3 * scale, y, 2 * scale, thumbHeight, paint);
+            if (SkinStyle.HasBoxStyle("orders.move.scroll.track"))
+                SkinStyle.Box(canvas, "orders.move.scroll.track",
+                    SKRect.Create(bounds.Right - 3 * scale, bounds.Top, 2 * scale, bounds.Height), SKColors.Transparent, null, scale, antialias: false);
+            SkinStyle.Box(canvas, "orders.move.scroll.thumb",
+                SKRect.Create(bounds.Right - 3 * scale, y, 2 * scale, thumbHeight), new(75, 127, 149), null, scale, antialias: false);
         }
         canvas.Restore();
 
         void Line(string text, float y, bool active) =>
-            ControlVisuals.Label(canvas, text, new(left, y, right, y + 21 * scale), active, scale);
+            ControlVisuals.Label(canvas, text, new(left, y, right, y + 21 * scale), active, scale,
+                role: active ? "orders.move.text" : "orders.move.text.disabled");
         void Wrapped(string text, float y)
         {
-            using var paint = ControlText.Paint(scale);
+            using var paint = ControlText.Paint(scale, "orders.move.text", text);
+            paint.TextSize = Math.Min(paint.TextSize, 17 * scale);
             foreach (string line in ControlText.Wrap(text, width, paint).Take(2))
             {
-                Line(line, y, true);
+                ControlVisuals.DrawLabel(canvas, line, new(left, y, right, y + 21 * scale), paint);
                 y += 18 * scale;
             }
         }
         void Button(ShortcutButton button, string key, SKRect rect)
         {
             button.Label = L(key); button.Bounds = rect; button.Enabled = enabled;
+            using var role = SkinStyle.EnterRole("orders.move.button." + key.ToLowerInvariant());
             button.Draw(canvas, scale);
         }
     }
@@ -142,7 +158,11 @@ internal sealed class TacticalBattleMovePanel
         _scroll = (float)PyMath.Clamp(_scroll + delta / 100.0 * 36 * _scale, 0, _maximumScroll);
         return true;
     }
-    internal void DrawTooltip(SKCanvas canvas, SKRect viewport) => _aiAll.DrawTooltip(canvas, viewport, _scale);
+    internal void DrawTooltip(SKCanvas canvas, SKRect viewport)
+    {
+        using var role = SkinStyle.EnterRole("orders.move.tooltip");
+        _aiAll.DrawTooltip(canvas, viewport, _scale);
+    }
     internal void ResetInput()
     {
         _speed.ResetInput(); _turn.ResetInput(); _straight.ResetInput(); _suggest.ResetInput(); _aiAll.ResetInput();

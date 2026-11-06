@@ -3,11 +3,11 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0002-migrate-battle-rendering
 ticket: EP-0016-US-0002-TK-0004-theme-order-controls
 title: Оформление приказов движения и стрельбы
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0002-TK-0003-theme-chrome-and-outcome]
-files_touched: 5
+files_touched: 7
 serves: [US2-AC1, US2-AC2, US2-AC4]
 created: 2026-11-06T08:02:55Z
 revision: 2
@@ -36,6 +36,8 @@ A-07/A-08. Внешний вид рукоятки, карточки и стро�
 | `src/DeepSpaceSaga.Client/UI/Controls/Slider.cs` | Slider.cs:80–94. Цвета, фокус, толщина и рукоятка. | Подключить роли ползунка, сохранить управление и диапазон. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/MovementOrdersTests.cs` | Текущий набор проверяет приказы движения. Рендер использует TacticalBattleMovePanel.cs:33. | Добавить сравнение растров и команд с темой. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/FirePlanningTests.cs` | Текущий набор проверяет выбор цели. Рендер использует TacticalBattleFirePanel.cs:30. | Добавить проверку вида выбранной цели, popup и режима без выстрела. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkin.cs` | Наследование ролей. | Ограничить поиск локального стиля границей роли виджета. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSkinRenderScope.cs` | Скоп рендера и локальный fallback. | Сохранить стиль общего контрола при отсутствии явного локального значения. |
 
 ## Public API after the change
 
@@ -82,3 +84,9 @@ git diff --check
 ## Self-containment check
 
 Указаны все вызываемые виджеты. Остальные общие стили подключены в TK-0001/TK-0003.
+
+## Исполнение
+
+Карточки, прокрутка, подписи, кнопки, сообщения, списки и ползунки читают роли приказов. Локальный стиль переопределяет общий стиль виджета только внутри роли этого виджета. Layout и области ввода используют прежние размеры.
+
+Сборка и `dotnet test --no-restore --filter FullyQualifiedName~TacticalBattle` — 233/233 PASS. Растры приказов при 0.8 и 1.5, геометрия ползунка, выбор без выстрела и запросы проверены с двумя темами. 23/23 PNG Classic идентичны. Scoped whitespace, staged diff check и самопроверка прошли. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us2-tk4/focused.trx`, `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us2-tk4/classic-parity.json`.

@@ -36,7 +36,7 @@ internal static class TacticalBattleSkinRenderScope
         }
     }
 
-    internal readonly record struct Role(string Primary, string? Shared = null)
+    internal readonly record struct Role(string Primary, string? Shared = null, string? ScopeRoot = null)
     {
         public static implicit operator Role(string role) => new(role);
     }
@@ -46,7 +46,7 @@ internal static class TacticalBattleSkinRenderScope
         string fallback = detail is null ? shared : $"{shared}.{detail}";
         if (_role is null)
             return new(fallback);
-        return new(detail is null ? _role : $"{_role}.{detail}", fallback);
+        return new(detail is null ? _role : $"{_role}.{detail}", fallback, _role);
     }
 
     private static T Value<T>(Role role, string property, T fallback)
@@ -55,7 +55,7 @@ internal static class TacticalBattleSkinRenderScope
             return fallback;
         if (role.Shared is not null)
             fallback = _skin.Find(role.Shared, property, fallback);
-        return _skin.Find(role.Primary, property, fallback);
+        return _skin.Find(role.Primary, property, fallback, role.ScopeRoot);
     }
 
     internal static bool Has(Role role, string property) => Value<object?>(role, property, null) is not null;
@@ -73,7 +73,7 @@ internal static class TacticalBattleSkinRenderScope
 
     internal static bool Image(SKCanvas canvas, Role role, SKRect bounds, byte alpha = 255)
     {
-        var image = _skin?.Image(role.Primary) ?? (role.Shared is not null ? _skin?.Image(role.Shared) : null);
+        var image = _skin?.LoadedResource<SKImage>(Value<string?>(role, "image", null));
         if (image is null || bounds.IsEmpty)
             return false;
 
@@ -143,7 +143,7 @@ internal static class TacticalBattleSkinRenderScope
     {
         paint.Color = Color(role, "text", paint.Color);
         if (Has(role, "fontSize")) paint.TextSize = Number(role, "fontSize", 14) * scale;
-        var typeface = _skin?.Typeface(role.Primary) ?? (role.Shared is not null ? _skin?.Typeface(role.Shared) : null);
+        var typeface = _skin?.LoadedResource<SKTypeface>(Value<string?>(role, "font", null));
         if (typeface is null || string.IsNullOrEmpty(text))
             return;
         var fallback = paint.Typeface;

@@ -36,14 +36,14 @@ internal sealed partial class TacticalBattleSkin
     internal string Shape(string role, string fallback = "native") => Find(role, "shape", fallback);
     internal string? Resource(string role, string property) => Find<string?>(role, property, null);
 
-    internal SKImage? Image(string role) => LoadedResource<SKImage>(role, "image");
-    internal SKTypeface? Typeface(string role) => LoadedResource<SKTypeface>(role, "font");
+    internal SKImage? Image(string role) => LoadedResource<SKImage>(Resource(role, "image"));
+    internal SKTypeface? Typeface(string role) => LoadedResource<SKTypeface>(Resource(role, "font"));
 
     internal TacticalBattleSkin WithResources(Dictionary<string, IDisposable> resources) =>
         new(Id, DisplayName, _roles, resources.ToImmutableDictionary(StringComparer.Ordinal));
 
-    private T? LoadedResource<T>(string role, string property) where T : class =>
-        Resource(role, property) is { } path && _resources.TryGetValue(path, out var resource) ? resource as T : null;
+    internal T? LoadedResource<T>(string? path) where T : class =>
+        path is not null && _resources.TryGetValue(path, out var resource) ? resource as T : null;
 
     internal float Metric(string role, string metric, float fallback) => Find(role, $"metrics.{metric}", fallback);
 
@@ -53,7 +53,7 @@ internal sealed partial class TacticalBattleSkin
         where property.Key is "image" or "font"
         select (role.Key, property.Key, (string)property.Value);
 
-    internal T Find<T>(string role, string property, T fallback)
+    internal T Find<T>(string role, string property, T fallback, string? stop = null)
     {
         while (true)
         {
@@ -61,7 +61,7 @@ internal sealed partial class TacticalBattleSkin
                 return typed;
 
             int parent = role.LastIndexOf('.');
-            if (parent < 0)
+            if (parent < 0 || role == stop)
                 return fallback;
             role = role[..parent];
         }

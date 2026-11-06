@@ -10,6 +10,45 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class MovementOrdersTests
 {
+    [Theory]
+    [InlineData(0.8f)]
+    [InlineData(1.5f)]
+    public async Task Movement_panel_skin_changes_pixels_and_preserves_issued_order(float scale)
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create(uiScale: scale);
+        var classic = await Start(fixture);
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"move","displayName":"Move","roles":{
+              "orders.move":{"fill":"#342B5A"},
+              "control.slider.thumb":{"fill":"#FF45AA"},
+              "orders.move.slider.turn.thumb":{"fill":"#29DDBA"}
+            }}
+            """);
+        var themed = new TacticalBattleScreen(classic.Flow, scale, skin);
+        using var classicPixels = Draw(classic);
+        using var themedPixels = Draw(themed);
+        Assert.Equal(classic.MovePanel.SpeedBounds, themed.MovePanel.SpeedBounds);
+        Assert.Contains(new SKColor(255, 69, 170), themedPixels.Pixels);
+        Assert.Contains(new SKColor(41, 221, 186), themedPixels.Pixels);
+        Assert.DoesNotContain(new SKColor(255, 69, 170), classicPixels.Pixels);
+
+        var slider = classic.MovePanel.SpeedBounds;
+        float x = slider.Left + slider.Width * 0.85f;
+        classic.OnMouseDown(x, slider.MidY, MouseButton.Left);
+        themed.OnMouseDown(x, slider.MidY, MouseButton.Left);
+        classic.OnMouseUp(x, slider.MidY, MouseButton.Left);
+        themed.OnMouseUp(x, slider.MidY, MouseButton.Left);
+        Assert.Equal(Assert.Single(classic.BuildMoveRequest().Orders), Assert.Single(themed.BuildMoveRequest().Orders));
+
+        static SKBitmap Draw(TacticalBattleScreen screen)
+        {
+            var bitmap = new SKBitmap(1600, 1000);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+            return bitmap;
+        }
+    }
+
     [Fact]
     public async Task KeyboardEditsOnlySelectedDroneAndEngineUsesSuggestionsForUntouchedDrones()
     {

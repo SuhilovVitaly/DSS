@@ -1,5 +1,6 @@
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
@@ -80,16 +81,27 @@ public sealed class Slider
     public void Draw(SKCanvas canvas, float uiScale = 1)
     {
         if (Bounds.IsEmpty || uiScale <= 0) return;
-        using var paint = new SKPaint { IsAntialias = true, StrokeWidth = 3 * uiScale, Color = MenuStyle.ColorButtonBorder };
-        canvas.DrawLine(Bounds.Left, Bounds.MidY, Bounds.Right, Bounds.MidY, paint);
+        using var paint = new SKPaint { IsAntialias = true };
+        using (SkinStyle.Stroke(paint, SkinStyle.Control("control.slider", "track"), MenuStyle.ColorButtonBorder, 3 * uiScale, uiScale))
+            canvas.DrawLine(Bounds.Left, Bounds.MidY, Bounds.Right, Bounds.MidY, paint);
         float fraction = Maximum == Minimum ? 0 : (float)((Value - Minimum) / (Maximum - Minimum));
         float x = Bounds.Left + fraction * Bounds.Width;
-        paint.Color = Enabled ? XenonStyle.Cyan : XenonStyle.DisabledText;
-        canvas.DrawLine(Bounds.Left, Bounds.MidY, x, Bounds.MidY, paint);
-        canvas.DrawCircle(x, Bounds.MidY, 6 * uiScale, paint);
+        string state = !Enabled ? "disabled" : IsDragging ? "active" : HasFocus ? "focused" : "normal";
+        var color = Enabled ? XenonStyle.Cyan : XenonStyle.DisabledText;
+        using (SkinStyle.Stroke(paint, SkinStyle.Control("control.slider", $"track.value.{state}"), color, 3 * uiScale, uiScale))
+            canvas.DrawLine(Bounds.Left, Bounds.MidY, x, Bounds.MidY, paint);
+        paint.PathEffect = null;
+        var thumb = SkinStyle.Control("control.slider", $"thumb.{state}");
+        float radius = Math.Clamp(SkinStyle.Number(thumb, "size", 12) / 2, 1, 10) * uiScale;
+        if (!SkinStyle.Image(canvas, thumb, SKRect.Create(x - radius, Bounds.MidY - radius, radius * 2, radius * 2)))
+        {
+            paint.Color = SkinStyle.Color(thumb, "fill", color);
+            canvas.DrawCircle(x, Bounds.MidY, radius, paint);
+        }
         if (HasFocus)
         {
-            paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = uiScale;
+            paint.Style = SKPaintStyle.Stroke;
+            using var stroke = SkinStyle.Stroke(paint, SkinStyle.Control("control.slider", "focus"), color, uiScale, uiScale);
             canvas.DrawRect(Bounds, paint);
         }
     }
