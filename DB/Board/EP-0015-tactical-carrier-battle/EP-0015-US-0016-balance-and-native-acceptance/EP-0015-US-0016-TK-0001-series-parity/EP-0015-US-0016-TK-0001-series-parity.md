@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0016-balance-and-native-acceptance
 ticket: EP-0015-US-0016-TK-0001-series-parity
 title: series-parity
-stage: draft
+stage: in-progress
 layer: engine
 depends_on: ["EP-0015-US-0015-TK-0001-locale-coverage"]
-files_touched: 1
+files_touched: 2
 serves: [AC-01]
 created: 2026-11-05
 revision: 3
@@ -48,3 +48,14 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests; process-tree cap 300000 ms н�
 
 ## Self-containment check
 Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Execute the complete independent published seed range once per tactic. Verify exact recoverable counts and separately compare only published rounding for means and carrier loss rates. Keep normal Linux CI short via the LongRunning filter.
+
+- tests/DeepSpaceSaga.Engine.Tests/TacticalBattle/SeriesParityTests.cs
+- .github/workflows/tactical-battle.yml
+
+## Cross-platform diagnosis before parity signoff
+
+Windows Release: four tactics match exactly; raid 856/140 vs 857/139 wins/losses with the remaining published counters matching. Retain the independent fixtures and exact assertion. Reopen G-03 numerical validation: the ordinary exact geometry sample does not cover every call. Add a read-only Ubuntu diagnostic on the existing approved runner for the same unchanged core and a Windows per-seed comparison. It reports the actual result even if the exact comparison fails; it is not a PASS for AC-01. The ticket remains in progress.

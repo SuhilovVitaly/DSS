@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0016-balance-and-native-acceptance
 title: "Приёмка баланса, производительности и нативная проверка"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0015-localization]
 ---
 

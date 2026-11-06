@@ -44,7 +44,13 @@ jobs:
       - name: Motion tests
         run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Motion.Tests --no-build --results-directory "$DSS_VALIDATION_ROOT/motion" --logger trx
       - name: Tactical Engine tests
-        run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Engine.Tests --no-build --filter FullyQualifiedName~TacticalBattle --results-directory "$DSS_VALIDATION_ROOT/engine" --logger trx
+        run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Engine.Tests --no-build --filter 'FullyQualifiedName~TacticalBattle&Category!=LongRunning' --results-directory "$DSS_VALIDATION_ROOT/engine" --logger trx
+      - name: Diagnose exact Raid series on Ubuntu
+        if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[raid-probe]')
+        continue-on-error: true
+        run: |
+          export DSS_RAID_SIGNATURES="$DSS_VALIDATION_ROOT/raid-signatures.txt"
+          timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Engine.Tests --filter 'FullyQualifiedName~SeriesParityTests.Raid&Category=LongRunning' --results-directory "$DSS_VALIDATION_ROOT/series-raid" --logger trx --logger 'console;verbosity=detailed'
       - name: Tactical Client tests
         run: timeout --kill-after=10s 300s dotnet test tests/DeepSpaceSaga.Client.Tests --no-build --filter FullyQualifiedName~TacticalBattle --results-directory "$DSS_VALIDATION_ROOT/client" --logger trx
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
