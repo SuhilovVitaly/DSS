@@ -9,6 +9,29 @@ public sealed class WidgetsListsTests
 {
     private static readonly SKRect Viewport = new(0, 0, 1280, 720);
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void DropDownChevronKeepsItsWidthAcrossFieldWidths(bool focused)
+    {
+        using var normal = Draw(355);
+        using var wide = Draw(650);
+        Assert.True(normal.GetPixel(20, 17).Blue > 140);
+        for (int y = 5; y < 29; y++)
+            for (int x = 3; x < 39; x++)
+                Assert.Equal(normal.GetPixel(x, y), wide.GetPixel(x, y));
+
+        SKBitmap Draw(int width)
+        {
+            var list = new DropDown<int>([1], _ => "Option") { HasFocus = focused };
+            list.Layout(SKRect.Create(width, 34), Viewport);
+            var bitmap = new SKBitmap(width, 34);
+            using var canvas = new SKCanvas(bitmap);
+            list.Draw(canvas);
+            return bitmap;
+        }
+    }
+
     [Fact]
     public void DropDownKeyboardMouseOutsideClickAndReloadPreserveRealSelection()
     {
