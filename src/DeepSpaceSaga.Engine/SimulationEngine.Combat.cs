@@ -11,7 +11,6 @@ public sealed partial class SimulationEngine
     private ModuleHitLocationRng _moduleHitLocationRng = new(0);
     private Dictionary<(string ObjectId, string ModuleId), LauncherCombatSnapshot> _launcherCombat = new();
     private long _torpedoSequence;
-    private long _combatImpactSequence;
     private long _wreckSequence;
     private readonly List<CombatImpactSnapshot> _combatImpacts = new();
     private readonly HashSet<string> _processedLaunchCommandIds = new(StringComparer.Ordinal);

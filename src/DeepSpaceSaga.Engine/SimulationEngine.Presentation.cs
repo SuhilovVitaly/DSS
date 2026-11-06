@@ -180,7 +180,6 @@ public sealed partial class SimulationEngine
             {
                 _commandResults.Clear();
                 _shipEvents.Clear();
-                _pendingCombatReports.Clear();
             }
             return result;
         }

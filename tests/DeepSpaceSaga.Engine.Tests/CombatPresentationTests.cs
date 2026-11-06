@@ -33,7 +33,6 @@ public sealed class CombatPresentationTests
         Assert.Equal(fact.MotionTimeMs, frame.MotionTimeMs);
         Assert.InRange(Math.Abs(frame.State.GameTimeMs - fact.MotionTimeMs * 300), 0, 1);
         Assert.Contains(frame.State.CombatJournal, e => e.Type == CombatEventType.Hit);
-        Assert.NotEmpty(frame.State.CombatReports!.Reports);
         Assert.DoesNotContain(frame.State.Objects, o => o.ObjectId == fact.ProjectileObjectId);
         Assert.Contains(fact.ProjectileObjectId, frame.RemovedObjectIds);
         Assert.Equal(bootstrap.SessionId, contact.SessionId);

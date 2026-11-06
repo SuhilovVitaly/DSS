@@ -18,7 +18,6 @@ public class PointCombatUS0020TK0005Tests
         var fact = Assert.Single(Reloads(scene));
         Assert.Equal(Launcher, fact.LauncherModuleId); Assert.Equal(10000, fact.MotionTimeMs);
         Assert.Empty(fact.ProjectileObjectId);
-        Assert.Single(scene.CombatReports!.Reports.Where(r => r.Kind == BattleReportKind.PlayerTorpedoReloadCompleted));
         Assert.Single(Reloads(At(engine, 20000)));
     }
 
@@ -60,22 +59,6 @@ public class PointCombatUS0020TK0005Tests
         Assert.Equal(10000, Assert.Single(Reloads(At(engine, 30000))).MotionTimeMs);
     }
 
-    [Theory]
-    [InlineData(5000, 1)]
-    [InlineData(10000, 0)]
-    public void Reload_newgame_save_load_and_duplicate_delivery(long savedAt, int expectedNew)
-    {
-        using var engine = Create(scatter: 0);
-        Assert.Empty(Reloads(At(engine)));
-        engine.ReceiveCommand(Launch()); At(engine); At(engine, savedAt);
-        var save = engine.CaptureSaveStateForTests(savedAt * 300, SimulationSpeed.Speed0, savedAt);
-        using var loaded = new SimulationEngine(Registry(scatter: 0)); loaded.LoadScenario(DeepSpaceSaga.Engine.Scenario.ScenarioLoader.LoadFromJson(DeepSpaceSaga.Engine.Scenario.ScenarioLoader.Serialize(save), true, true), true);
-        var scene = At(loaded, 20000);
-        Assert.Equal(expectedNew, scene.CombatReports!.Reports.Count(r => r.Kind == BattleReportKind.PlayerTorpedoReloadCompleted));
-        Assert.Single(Reloads(scene));
-        Assert.Single(Reloads(At(loaded, 20000)));
-    }
-
     [Fact]
     public void Reload_presented_scene_and_privacy()
     {
@@ -83,6 +66,5 @@ public class PointCombatUS0020TK0005Tests
         engine.TryStartHostilePointLaunch(Target, NpcLauncher, 0, 0, "slow", 0);
         var scene = At(engine, 30000);
         Assert.Empty(Reloads(scene));
-        Assert.DoesNotContain(scene.CombatReports!.Reports, r => r.Kind == BattleReportKind.PlayerTorpedoReloadCompleted);
     }
 }

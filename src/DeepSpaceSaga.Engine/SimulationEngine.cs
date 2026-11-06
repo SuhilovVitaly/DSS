@@ -482,21 +482,9 @@ public sealed partial class SimulationEngine : IDisposable
         var restoredTrading = StageTradingContinuation(scenario with { GameState = gs }, runtimeObjects, restoredVoyage);
         var restoredKnowledge = InitializeOrLoadMarketKnowledge(gs, runtimeObjects, scenario.SaveFormatVersion, loadingSave);
         var combatState = BuildCombatState(gs.SpaceObjects, runtimeObjects);
-        StageCombatRestore(gs.CombatState, runtimeObjects, combatState);
-        StageHostileRestore(gs.HostileCombatState, runtimeObjects, gs.MotionTimeMs);
         if (gs.CombatReactionDelays is { Count: > 0 })
             throw new ScenarioException("Retired randomized combat reaction continuation is unsupported.");
         var defenses = BuildDefenseState(runtimeObjects);
-        StageDefenseRestore(gs.DefenseState, runtimeObjects, defenses);
-        // The scenario-authoring API also accepts historical unarmed economic worlds.
-        // Only those start a fresh point subsystem; every actual save and every
-        // captured point weapon continuation must retain the complete Save18 state.
-        bool requirePointContinuation = scenario.SaveFormatVersion < SaveFormat.CurrentSaveFormatVersion &&
-            loadingSave && (isSave || scenario.SaveFormatVersion >= 18 ||
-            combatState.Count > 0 || defenses.Count > 0);
-        StagePointCombatRestore(gs, requirePointContinuation, runtimeObjects, combatState, defenses);
-        var restoredReports = StageCombatReportsRestore(gs, loadingSave, runtimeObjects, combatState);
-
         ValidateDialogueState(gs.DialogueState, runtimeObjects);
         lock (_worldStateLock)
         {
@@ -550,16 +538,11 @@ public sealed partial class SimulationEngine : IDisposable
             _npcDodgeThreats.Clear();
             _combatProcessedTimeMs = gs.MotionTimeMs;
             _hostileCombat.Clear();
-            if (gs.HostileCombatState is { } hostile)
-                foreach (var row in hostile.Actors) _hostileCombat.Add(row.ObjectId,
-                    row.State with { Segment = row.State.Segment with { ElapsedMs = 0 } });
-            _nextHostileDecisionMs = gs.HostileCombatState?.NextDecisionMotionTimeMs ?? gs.MotionTimeMs;
+            _nextHostileDecisionMs = gs.MotionTimeMs;
             _torpedoSequence = 0;
-            _combatImpactSequence = 0;
             _wreckSequence = 0;
             _combatImpacts.Clear();
-            RestoreCombatState(gs.CombatState);
-            RestoreDefenseState(gs.DefenseState);
+            _processedLaunchCommandIds.Clear();
             _processedWorldTimeMs = gs.GameTimeMs;
             _processedSimulationTimeMs = gs.MotionTimeMs;
             LoadDialogueState(gs.DialogueState, gs.MotionTimeMs);
@@ -580,9 +563,7 @@ public sealed partial class SimulationEngine : IDisposable
             _neutralResourceImages = neutralResourceImages;
             RestoreCommandJournal(gs);
             RestoreResourceSurveyCommandIds();
-            RestoreCombatReports(restoredReports);
             ResetEncounter(gs.MotionTimeMs);
-            RestorePointCombatState(gs.PointCombatState);
 
         }
     }
@@ -879,11 +860,10 @@ public sealed partial class SimulationEngine : IDisposable
                 LastVoyageFuelSettlement: _lastVoyageFuelSettlement,
                 VoyageFinances: presentationOnly ? default : BuildVoyageFinanceProjection(),
                 StationMarketKnowledge: presentationOnly ? default : BuildStationMarketKnowledgeProjection(clockState.GameTimeMs), ClusterMap: presentationOnly ? null : _clusterMap, AiMap: presentationOnly ? null : _aiMap,
-                Outcome: _sessionOutcome, CombatReports: CaptureCombatReportBatch(), Encounter: CaptureEncounter(gameTimeMs),
+                Outcome: _sessionOutcome, Encounter: CaptureEncounter(gameTimeMs),
                 DebugTuning: CaptureDebugTuning(presentationOnly),
                 DestroyedModuleLimit: CaptureOwnDestroyedModuleLimit(),
                 IsTacticalBattleActive: _tacticalBattleSession is not null);
-            if (!presentationOnly) _pendingCombatReports.Clear();
             return snapshot;
         }
     }
@@ -3580,14 +3560,12 @@ public sealed partial class SimulationEngine : IDisposable
         if (IsDefeated) return;
         EvaluateEncounter(_combatProcessedTimeMs);
         CompleteEvasions(_combatProcessedTimeMs);
-        EvaluateCombatReportRange(_combatProcessedTimeMs);
         if (gameTimeMs > _combatProcessedTimeMs)
             RefreshHostileCombat(_combatProcessedTimeMs);
         if (!UsesPointEncounters && !HasPendingNpcDodge && !HasEvasionActivity && !HasActiveTorpedoes && !HasDefenseActivity && !HasHostileFireCandidates && !HasHostileMotionCandidates && !HasResourceSurveys && !_dialogue.Progress.SecurityIncidents.Any(i => !i.Completed))
         {
             CompleteActiveEngineCycles(gameTimeMs);
             _combatProcessedTimeMs = gameTimeMs;
-            EvaluateCombatReportRange(gameTimeMs);
             return;
         }
         // Visit steering boundaries and security deadlines in time order. Predicting
@@ -3624,7 +3602,6 @@ public sealed partial class SimulationEngine : IDisposable
             if (advanced && next >= _nextHostileDecisionMs) RefreshHostileCombat(next);
             UpdateStationSecurity(next);
             ValidateResourceSurveys(next, surveyCalendarAt);
-            EvaluateCombatReportRange(next);
             CapturePresentationFrame(next);
             if (next >= gameTimeMs) break;
         }
