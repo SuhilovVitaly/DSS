@@ -335,6 +335,9 @@
 
   "Settings.Title": "НАСТРОЙКИ",
   "Settings.Language": "ЯЗЫК",
+  "Settings.TacticalBattleSkin": "СКИН ПОШАГОВОГО БОЯ",
+  "Settings.TacticalBattleSkin.Classic": "Штатный",
+  "Settings.TacticalBattleSkin.SaveFailed": "Не удалось сохранить выбор скина.",
   "Settings.InterfaceScale": "МАСШТАБ ИНТЕРФЕЙСА",
   "Settings.Monitor": "МОНИТОР",
   "Settings.RestartNote": "Изменения вступят в силу после перезапуска игры",
