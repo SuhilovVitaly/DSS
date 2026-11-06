@@ -123,6 +123,47 @@ public sealed class BattleMapRenderTests
     }
 
     [Fact]
+    public async Task WreckMarkerAndNameAppearAtLethalArrivalBeforeSalvoEnds()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var enemy = battle.Units.First(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Drone) with
+        {
+            Id = "Tag-7", Pose = new(50, 0, 180)
+        };
+        var destroyed = enemy with { State = TacticalUnitState.Destroyed, Hull = 0 };
+        var shot = new TacticalShotSnapshot(battle.Turn, "shooter", enemy.Id, new(-200, 0, 0), enemy.Pose,
+            1, true, 40, false, false, true) { LethalImpact = true };
+        var frame = new TacticalBattleFrame(battle with { Units = [destroyed], BeforeSalvoUnits = [enemy], Paths = [] },
+            new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", TacticalBattlePresentation.SalvoFlight, EnemyForecast: false);
+        var results = new TacticalBattleResults(frame.Battle, [shot, shot with { Hit = false, LethalImpact = false }], [], 0);
+        using var flying = Raster(frame with { Salvo = results.Capture(949) });
+        var arrival = results.Capture(950);
+        Assert.True(arrival.InFlight);
+        using var impact = Raster(frame with { Salvo = arrival });
+        using var movement = Raster(frame with { Presentation = TacticalBattlePresentation.Current });
+        Assert.Equal(TacticalBattleMapRenderer.Enemy, flying.GetPixel(490, 360));
+        foreach (var marker in new[] { impact.GetPixel(490, 360), movement.GetPixel(490, 360) })
+        {
+            Assert.InRange(marker.Red, 83, 85);
+            Assert.Equal(marker.Red, marker.Green);
+        }
+
+        // The name has the same footprint below the marker during playback and movement.
+        using var nameless = Raster(frame with
+        {
+            Battle = frame.Battle with { Units = [destroyed with { Id = "" }] },
+            Presentation = TacticalBattlePresentation.Current
+        });
+        int textPixels = 0;
+        for (int y = 374; y < 389; y++)
+            for (int x = 465; x < 515; x++)
+                if (impact.GetPixel(x, y) == movement.GetPixel(x, y) &&
+                    movement.GetPixel(x, y) != nameless.GetPixel(x, y)) textPixels++;
+        Assert.True(textPixels > 30);
+    }
+
+    [Fact]
     public async Task GridRulerAndActualPanelTogglesChangeOnlyPresentation()
     {
         Assert.Equal(40, TacticalBattleMapRenderer.GridStep(1800));

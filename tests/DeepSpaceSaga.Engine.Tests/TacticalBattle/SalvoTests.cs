@@ -149,13 +149,27 @@ public sealed class SalvoTests
     }
 
     [Fact]
+    public void FirstImpactThatExhaustsHullGetsTheLethalMarker()
+    {
+        var (battle, a, b) = Arena(hull: 60);
+        var second = ActivateSecondA(battle);
+        b.Armor = 0;
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d.Side == "A" ? b.Id : null);
+        Assert.Equal(new[] { a.Id, second.Id }, salvo.Shots.Select(s => s.Shooter.Id));
+        Assert.Equal(new[] { false, true }, salvo.Shots.Select(s => s.LethalImpact));
+        Assert.Equal(TacticalDroneStatus.Destroyed, b.Status);
+    }
+
+    [Fact]
     public void RearKillClipsToCurrentHullAndCreditsWholeLossToWeapon()
     {
         var (battle, a, b) = Arena(hull: 1000, killChance: 1);
         b.Pose = b.Pose with { Course = 0 };
         b.Armor = 80;
         var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d == a ? b.Id : null);
-        Assert.True(Assert.Single(salvo.Shots).Kill);
+        var shot = Assert.Single(salvo.Shots);
+        Assert.True(shot.Kill);
+        Assert.True(shot.LethalImpact);
         Assert.Equal(1000, Assert.Single(salvo.Damage).Hull);
         Assert.Equal(0, b.Hull);
         Assert.Equal(80, b.Armor);

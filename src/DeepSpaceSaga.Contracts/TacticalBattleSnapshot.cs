@@ -33,7 +33,11 @@ public sealed record TacticalTargetGroupSnapshot(string DroneId, ImmutableArray<
 public sealed record TacticalIncomingShotSnapshot(string ShooterId, string TargetId, double Chance, double Distance, double Angle, bool Rear, double RearKillChance);
 /// <summary>Killed means the target is destroyed after the whole simultaneous salvo; Kill is this shot's rear-kill roll.</summary>
 public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string TargetId, TacticalPoseSnapshot From,
-    TacticalPoseSnapshot To, double Chance, bool Hit, int Damage, bool Rear, bool Kill, bool Killed);
+    TacticalPoseSnapshot To, double Chance, bool Hit, int Damage, bool Rear, bool Kill, bool Killed)
+{
+    /// <summary>The first impact that exhausts the target's hull in playback order.</summary>
+    public bool LethalImpact { get; init; }
+}
 public sealed record TacticalHitRulesSnapshot(double Base, double MinChance, double MaxChance, double RangeBonus,
     double AnglePenalty, double RearBonus, double RearBonusArc);
 public sealed record TacticalForecastRules(TacticalHitRulesSnapshot Hit, double TurnAtMaxSpeedFraction, double RearArc, int Substeps);

@@ -31,8 +31,7 @@ internal static class TacticalBattleMapRenderer
         var battle = frame.Battle;
         using var paint = new SKPaint { IsAntialias = true, StrokeWidth = scale };
         DrawGrid(canvas, view, paint);
-        bool flight = frame.Presentation == TacticalBattlePresentation.SalvoFlight && !battle.BeforeSalvoUnits.IsDefaultOrEmpty;
-        var units = flight ? battle.BeforeSalvoUnits : battle.Units;
+        var units = VisibleUnits(frame);
         if (frame.Presentation == TacticalBattlePresentation.Current)
         {
             DrawTrails(canvas, frame, paint);
@@ -63,10 +62,27 @@ internal static class TacticalBattleMapRenderer
         }
 
         DrawLabels(canvas, frame, units);
+        if (frame.Salvo is { } salvo) DrawSalvo(canvas, frame, salvo, paint);
         foreach (var unit in units)
             DrawUnit(canvas, view.Project(unit.Pose), unit, unit.Side == battle.PlayerSide, unit.Id == frame.SelectedDroneId, scale, paint);
-        if (frame.Salvo is { } salvo) DrawSalvo(canvas, frame, salvo, paint);
         DrawRuler(canvas, view, scale, paint);
+    }
+
+    private static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame frame)
+    {
+        var battle = frame.Battle;
+        if (frame.Salvo is not { InFlight: true } salvo || battle.BeforeSalvoUnits.IsDefaultOrEmpty)
+            return battle.Units;
+
+        var units = battle.BeforeSalvoUnits;
+        foreach (var flight in salvo.Flights)
+        {
+            if (!flight.Shot.LethalImpact || flight.ElapsedMs < flight.LaunchMs + TacticalBattleResults.FlightMs) continue;
+            var unit = units.FirstOrDefault(u => u.Id == flight.Shot.TargetId);
+            if (unit is not { Kind: TacticalUnitKind.Drone, State: TacticalUnitState.Air }) continue;
+            units = units.Replace(unit, unit with { State = TacticalUnitState.Destroyed, Hull = 0 });
+        }
+        return units;
     }
 
     private static void DrawSalvo(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, SKPaint paint)
@@ -95,7 +111,7 @@ internal static class TacticalBattleMapRenderer
             byte alpha = (byte)(255 * (1 - fraction));
             if (shot.Hit)
             {
-                paint.Color = (shot.Kill ? new SKColor(255, 72, 65) : new SKColor(255, 216, 110)).WithAlpha(alpha);
+                paint.Color = (shot.Kill || shot.LethalImpact ? new SKColor(255, 72, 65) : new SKColor(255, 216, 110)).WithAlpha(alpha);
                 canvas.DrawCircle(to, (5 + 8 * (float)fraction) * scale, paint);
             }
             text.Color = (shot.Hit ? new SKColor(255, 224, 173) : new SKColor(191, 206, 218)).WithAlpha(alpha);
@@ -358,20 +374,24 @@ internal static class TacticalBattleMapRenderer
         foreach (var unit in units)
         {
             bool carrier = unit.Kind == TacticalUnitKind.Carrier;
-            if (!carrier && unit.State == TacticalUnitState.Destroyed) continue;
+            bool wreck = !carrier && unit.State == TacticalUnitState.Destroyed;
             var p = view.Project(unit.Pose);
             if (!viewport.Contains(p.X, p.Y)) continue;
             bool disabled = unit.State == TacticalUnitState.Disabled;
-            string value = unit.Id + " " + BattleFormat.Number(unit.Hull);
-            value += carrier ? "/" + BattleFormat.Number(unit.MaxHull) : disabled
-                ? " · " + BattleFormat.Localize("UnitDisabledShort") : "+" + BattleFormat.Number(unit.Armor);
+            string value = unit.Id;
+            if (!wreck)
+            {
+                value += " " + BattleFormat.Number(unit.Hull);
+                value += carrier ? "/" + BattleFormat.Number(unit.MaxHull) : disabled
+                    ? " · " + BattleFormat.Localize("UnitDisabledShort") : "+" + BattleFormat.Number(unit.Armor);
+            }
             value = BattleFormat.Text(value);
             int targets = frame.FirePlan?.Rows.FirstOrDefault(row => row.Drone.Id == unit.Id)?.Group.List.Length ?? 0;
             string badge = targets > 0 ? BattleFormat.Number(targets) : "";
             float badgeSize = targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
             float badgeSpace = targets > 0 ? badgeSize + 4 * s : 0;
             float w = (float)PyMath.Max(30 * s, text.MeasureText(value)) + 4 * s + badgeSpace;
-            float h = (carrier ? 15 : 25) * s;
+            float h = (carrier || wreck ? 15 : 25) * s;
             if (!TryPlace(p, w, h, viewport, occupied, s, out var rect)) continue;
             bars.Color = new(116, 145, 164, 100);
             canvas.DrawLine(p, new SKPoint(rect.MidX, rect.Top), bars);
@@ -387,7 +407,7 @@ internal static class TacticalBattleMapRenderer
             float labelX = rect.Left + badgeSpace + 2 * s;
             text.Color = disabled || unit.State == TacticalUnitState.Destroyed ? new(144, 151, 159) : new(226, 235, 242);
             canvas.DrawText(value, labelX, rect.Top - text.FontMetrics.Ascent, text);
-            if (carrier) continue;
+            if (carrier || wreck) continue;
             DrawBar(rect.Top + 15 * s, unit.Armor, unit.MaxArmor, disabled ? Inactive : new(126, 159, 181));
             DrawBar(rect.Top + 20 * s, unit.Hull, unit.MaxHull, disabled ? Inactive : Own);
 
