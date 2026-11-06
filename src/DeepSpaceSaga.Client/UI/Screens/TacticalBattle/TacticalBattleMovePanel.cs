@@ -112,7 +112,7 @@ internal sealed class TacticalBattleMovePanel
         void Wrapped(string text, float y)
         {
             using var paint = ControlText.Paint(scale, "orders.move.text", text);
-            paint.TextSize = Math.Min(paint.TextSize, 17 * scale);
+            paint.TextSize = (float)PyMath.Min(paint.TextSize, 17 * scale);
             foreach (string line in ControlText.Wrap(text, width, paint).Take(2))
             {
                 ControlVisuals.DrawLabel(canvas, line, new(left, y, right, y + 21 * scale), paint);

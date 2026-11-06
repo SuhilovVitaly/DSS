@@ -118,7 +118,7 @@ internal static class TacticalBattleMapRenderer
                 if (SkinStyle.Has(trail, "metrics.tail-length"))
                 {
                     double length = TacticalGeometry.Hypot(to.X - from.X, to.Y - from.Y);
-                    tailFraction = Math.Clamp(SkinStyle.Number(trail, "metrics.tail-length", 0), 0, 256) * scale / Math.Max(1, length);
+                    tailFraction = PyMath.Clamp(SkinStyle.Number(trail, "metrics.tail-length", 0), 0, 256) * scale / (double)PyMath.Max(1, length);
                 }
                 var tail = Lerp(from, to, PyMath.Max(0, flight.Progress - tailFraction));
                 using (SkinStyle.Stroke(paint, trail, new(255, 220, 149, 135), 2 * scale, scale))
@@ -133,7 +133,7 @@ internal static class TacticalBattleMapRenderer
             if (shot.Hit)
             {
                 string flash = $"shot.flash.{state}";
-                float growth = (5 + 8 * (float)fraction) * Math.Clamp(SkinStyle.Number(flash, "metrics.flash-scale", 1), 0.25f, 4);
+                float growth = (5 + 8 * (float)fraction) * (float)PyMath.Clamp(SkinStyle.Number(flash, "metrics.flash-scale", 1), 0.25f, 4);
                 var color = state == "kill" ? new SKColor(255, 72, 65) : new SKColor(255, 216, 110);
                 DrawPoint(canvas, to, flash, color, growth, scale, paint, alpha: alpha);
             }
@@ -175,7 +175,7 @@ internal static class TacticalBattleMapRenderer
             var color = !chosen ? new SKColor(74, 80, 87) : candidate.Rear ? new(253, 143, 104) : new(145, 224, 238);
             float width = (chosen ? 1.7f : 1) * s;
             string ring = $"field.fire.target.{state}";
-            float radius = Math.Clamp(SkinStyle.Number(ring, "radius", target.Kind == TacticalUnitKind.Carrier ? 20 : 14), 2, 28) * s;
+            float radius = (float)PyMath.Clamp(SkinStyle.Number(ring, "radius", target.Kind == TacticalUnitKind.Carrier ? 20 : 14), 2, 28) * s;
             paint.Style = SKPaintStyle.Stroke;
             using (SkinStyle.Stroke(paint, ring, color, width, s))
                 canvas.DrawCircle(endpoint, radius, paint);
@@ -197,9 +197,10 @@ internal static class TacticalBattleMapRenderer
         float dx = target.X - source.X, dy = target.Y - source.Y;
         float distance = (float)TacticalGeometry.Hypot(dx, dy);
         if (distance <= radius) return;
-        float ux = dx / distance, uy = dy / distance;
+        float ux = (float)((double)dx / distance), uy = (float)((double)dy / distance);
         var tip = new SKPoint(target.X - ux * radius, target.Y - uy * radius);
-        float length = Math.Min(Math.Clamp(SkinStyle.Number(role, "metrics.arrow-length", 8), 1, 24) * scale, distance - radius);
+        float maximumLength = (float)PyMath.Clamp(SkinStyle.Number(role, "metrics.arrow-length", 8), 1, 24) * scale;
+        float length = (float)PyMath.Min(maximumLength, distance - radius);
         var basePoint = new SKPoint(tip.X - ux * length, tip.Y - uy * length);
         canvas.DrawLine(source, tip, paint);
         canvas.DrawLine(tip, new SKPoint(basePoint.X - uy * length * 0.55f, basePoint.Y + ux * length * 0.55f), paint);
@@ -410,7 +411,7 @@ internal static class TacticalBattleMapRenderer
 
     private static void DrawDrone(SKCanvas canvas, SKPoint p, double course, string frameId, float scale, SKPaint paint, SkinStyle.Role role)
     {
-        float size = (frameId == "heavy" ? 1.25f : 1f) * MarkerRadius(role, 8, scale) / 8;
+        float size = (frameId == "heavy" ? 1.25f : 1f) * MarkerRadius(role, 8, scale) * 0.125f;
         using var path = new SKPath();
         path.MoveTo(8 * size, 0);
         path.LineTo(-5 * size, 5 * size);
@@ -423,11 +424,11 @@ internal static class TacticalBattleMapRenderer
         canvas.Restore();
     }
 
-    private static byte FadeAlpha(byte alpha, byte progress) => (byte)((alpha * progress + 127) / 255);
+    private static byte FadeAlpha(byte alpha, byte progress) => (byte)((alpha * progress + 127) / 255d);
     private static SKColor Fade(SKColor color, byte alpha) => color.WithAlpha(FadeAlpha(color.Alpha, alpha));
 
     private static float MarkerRadius(SkinStyle.Role role, float radius, float scale) =>
-        Math.Clamp(SkinStyle.Number(role, "size", radius * 2) / 2, 0.5f, 32) * scale;
+        (float)PyMath.Clamp(SkinStyle.Number(role, "size", radius * 2) * 0.5f, 0.5f, 32) * scale;
 
     private static void DrawPoint(SKCanvas canvas, SKPoint point, SkinStyle.Role role, SKColor fallback,
         float radius, float scale, SKPaint paint, float angle = 0, byte alpha = 255)
@@ -468,7 +469,7 @@ internal static class TacticalBattleMapRenderer
             path.MoveTo(radius, 0);
             for (int i = 1; i < sides; i++)
             {
-                float radians = MathF.Tau * i / sides;
+                float radians = (float)(MathF.Tau * i / (double)sides);
                 path.LineTo(radius * MathF.Cos(radians), radius * MathF.Sin(radians));
             }
             path.Close();
@@ -525,8 +526,8 @@ internal static class TacticalBattleMapRenderer
             const string crossRole = "field.label.disabled-cross";
             if (targets > 0)
                 SetMapText(text, badgeRole, new(21, 22, 26), badge, s);
-            float badgeSize = disabledDrone ? Math.Clamp(SkinStyle.Number(crossRole, "size", 10), 4, 15) * s
-                : targets > 0 ? Math.Max(Math.Clamp(SkinStyle.Number(badgeRole, "size", 16), 12, 24) * s, text.MeasureText(badge) + 4 * s) : 0;
+            float badgeSize = disabledDrone ? (float)PyMath.Clamp(SkinStyle.Number(crossRole, "size", 10), 4, 15) * s
+                : targets > 0 ? (float)PyMath.Max((float)PyMath.Clamp(SkinStyle.Number(badgeRole, "size", 16), 12, 24) * s, text.MeasureText(badge) + 4 * s) : 0;
             float badgeSpace = badgeSize > 0 ? badgeSize + 4 * s : 0;
             float w = (float)PyMath.Max(30 * s, labelWidth) + 4 * s + badgeSpace;
             float h = (carrier || wreck ? 15 : 25) * s;
@@ -538,7 +539,7 @@ internal static class TacticalBattleMapRenderer
             {
                 using var effect = SkinStyle.Stroke(bars, crossRole, new(231, 67, 70), 1.5f * s, s);
                 float half = badgeSize * 0.5f;
-                float radius = Math.Max(s, half - bars.StrokeWidth * 0.5f);
+                float radius = (float)PyMath.Max(s, half - bars.StrokeWidth * 0.5f);
                 float cx = rect.Left + half, cy = rect.Top + half;
                 if (!DrawStyledShape(canvas, new(cx, cy), crossRole, radius, s, bars, 0))
                 {
@@ -580,7 +581,7 @@ internal static class TacticalBattleMapRenderer
         paint.TextSize = 11 * scale;
         paint.Color = fallback;
         SkinStyle.Text(paint, role, scale, value);
-        paint.TextSize = Math.Min(paint.TextSize, 14 * scale);
+        paint.TextSize = (float)PyMath.Min(paint.TextSize, 14 * scale);
     }
 
     internal static int TargetCount(TacticalBattleFrame frame, TacticalUnitSnapshot shooter)
@@ -629,20 +630,20 @@ internal static class TacticalBattleMapRenderer
             string name = ControlText.Ellipsize(label, edge.Width - iconWidth, text);
             float width = iconWidth + text.MeasureText(name);
             float dx = target.X - edge.MidX, dy = target.Y - edge.MidY;
-            float horizontal = edge.Width * 0.5f / Math.Abs(dx);
-            float vertical = edge.Height * 0.5f / Math.Abs(dy);
+            float horizontal = (float)(edge.Width * 0.5f / (double)Math.Abs(dx));
+            float vertical = (float)(edge.Height * 0.5f / (double)Math.Abs(dy));
             bool side = horizontal <= vertical;
-            float reach = Math.Min(horizontal, vertical);
+            float reach = (float)PyMath.Min(horizontal, vertical);
             float left = edge.MidX + dx * reach - width * 0.5f;
             float top = edge.MidY + dy * reach - height * 0.5f;
             float step = (side ? height : width) + 3 * scale;
             for (int i = 0; i < 2 * units.Length + 1; i++)
             {
                 // Search either side of the ray's intersection with this edge.
-                float shift = ((i + 1) / 2) * (i % 2 == 0 ? -step : step);
+                float shift = ((i + 1) >> 1) * (i % 2 == 0 ? -step : step);
                 var rect = SKRect.Create(
-                    Math.Clamp(left + (side ? 0 : shift), edge.Left, Math.Max(edge.Left, edge.Right - width)),
-                    Math.Clamp(top + (side ? shift : 0), edge.Top, edge.Bottom - height), width, height);
+                    (float)PyMath.Clamp(left + (side ? 0 : shift), edge.Left, PyMath.Max(edge.Left, edge.Right - width)),
+                    (float)PyMath.Clamp(top + (side ? shift : 0), edge.Top, edge.Bottom - height), width, height);
                 if (occupied.Any(o => o.IntersectsWith(rect))) continue;
                 occupied.Add(rect);
                 DrawMarker(rect);
@@ -655,9 +656,9 @@ internal static class TacticalBattleMapRenderer
                 var center = new SKPoint(rect.Left + 10 * scale, rect.MidY);
                 float length = (float)TacticalGeometry.Hypot(target.X - center.X, target.Y - center.Y);
                 string arrow = $"field.offscreen.arrow.{sideRole}";
-                float radius = Math.Clamp(SkinStyle.Number(arrow, "size", 12), 2, 17) * scale / 2;
-                var delta = new SKPoint((target.X - center.X) / length * radius,
-                    (target.Y - center.Y) / length * radius);
+                float radius = (float)PyMath.Clamp(SkinStyle.Number(arrow, "size", 12), 2, 17) * scale * 0.5f;
+                var delta = new SKPoint((float)((target.X - center.X) / (double)length) * radius,
+                    (float)((target.Y - center.Y) / (double)length) * radius);
                 using (SkinStyle.Stroke(paint, arrow, fallback, 1.6f * scale, scale))
                 {
                     if (!DrawStyledShape(canvas, center, arrow, radius, scale, paint,
@@ -702,7 +703,7 @@ internal static class TacticalBattleMapRenderer
         float end = x + (float)(distance * view.PixelsPerUnit);
         using (SkinStyle.Stroke(paint, "field.ruler", Ruler, scale, scale))
         {
-            float tick = Math.Clamp(SkinStyle.Number("field.ruler", "metrics.tick-size", 4), 1, 10) * scale;
+            float tick = (float)PyMath.Clamp(SkinStyle.Number("field.ruler", "metrics.tick-size", 4), 1, 10) * scale;
             canvas.DrawLine(x, y, end, y, paint);
             canvas.DrawLine(x, y - tick, x, y + tick, paint);
             canvas.DrawLine(end, y - tick, end, y + tick, paint);

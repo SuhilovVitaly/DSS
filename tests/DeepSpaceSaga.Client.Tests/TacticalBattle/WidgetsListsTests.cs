@@ -69,6 +69,22 @@ public sealed class WidgetsListsTests
         }
     }
 
+    [Fact]
+    public void Specific_frame_uses_shared_style_for_unset_properties()
+    {
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"fallback","displayName":"Fallback","roles":{
+              "control.frame":{"fill":"#7788DD"},
+              "orders.move.card.selected":{"stroke":"#009977"}
+            }}
+            """);
+        using var scope = TacticalBattleSkinRenderScope.Enter(skin);
+        using var bitmap = new SKBitmap(200, 100);
+        using var canvas = new SKCanvas(bitmap);
+        ControlVisuals.Frame(canvas, new(10, 10, 100, 40), true, true, 1, "orders.move.card.selected");
+        Assert.Equal(new SKColor(119, 136, 221), bitmap.GetPixel(30, 30));
+    }
+
     private static TacticalBattleSkin WidgetSkin() => TacticalBattleSkin.Parse("""
         {
           "schemaVersion":1,"id":"widgets","displayName":"Widgets",

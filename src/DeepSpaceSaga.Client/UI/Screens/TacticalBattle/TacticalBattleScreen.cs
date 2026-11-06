@@ -151,7 +151,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         float s = frame.UiScale;
         TacticalBattleSkinRenderScope.Box(canvas, "panel.background", panel, new(10, 24, 36), null, s, antialias: false);
         using var divider = new SKPaint { Color = TacticalBattleSkinRenderScope.Color("panel.divider", "stroke", new(30, 71, 92)) };
-        canvas.DrawRect(panel.Left, panel.Top, Math.Min(panel.Width,
+        canvas.DrawRect(panel.Left, panel.Top, (float)PyMath.Min(panel.Width,
             TacticalBattleSkinRenderScope.Number("panel.divider", "strokeWidth", 1) * s), panel.Height, divider);
         var content = new SKRect(panel.Left + 12 * s, panel.Top, panel.Right - 12 * s, panel.Bottom);
         var battle = frame.Battle;

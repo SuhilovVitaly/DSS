@@ -91,7 +91,7 @@ internal sealed class TacticalBattleSidesTab
             ControlVisuals.Label(canvas, card.Health, new(left, line, right, line + 18 * s), true, s, role: role + ".health");
             line += 18 * s;
             using var details = ControlText.Paint(s, role + ".text", card.Details);
-            details.TextSize = Math.Min(details.TextSize, 16 * s);
+            details.TextSize = (float)PyMath.Min(details.TextSize, 16 * s);
             foreach (var detail in ControlText.Wrap(card.Details, detailsWidth, details).Take(row.Lines.Length))
             {
                 ControlVisuals.DrawLabel(canvas, detail, new(left, line, right, line + 17 * s), details);

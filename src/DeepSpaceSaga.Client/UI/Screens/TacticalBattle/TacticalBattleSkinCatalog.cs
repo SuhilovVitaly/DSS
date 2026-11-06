@@ -141,7 +141,7 @@ internal sealed class TacticalBattleSkinCatalog : IDisposable
                     if (resources.Count == MaxResources)
                         throw new FormatException($"at most {MaxResources} distinct resources are allowed");
                     string fullPath = ResolveAsset(directory, reference.Path);
-                    var bytes = ReadFile(fullPath, Math.Min(MaxResourceBytes, MaxPackBytes - encodedBytes));
+                    var bytes = ReadFile(fullPath, int.Min(MaxResourceBytes, MaxPackBytes - encodedBytes));
                     encodedBytes += bytes.Length;
                     using var data = SKData.CreateCopy(bytes);
                     IDisposable resource = reference.Property == "image"
@@ -222,7 +222,7 @@ internal sealed class TacticalBattleSkinCatalog : IDisposable
 
     private static SKTypeface DecodeFont(SKData data, byte[] bytes)
     {
-        var signature = bytes.AsSpan(0, Math.Min(bytes.Length, 4));
+        var signature = bytes.AsSpan(0, int.Min(bytes.Length, 4));
         if (!signature.SequenceEqual("OTTO"u8) && !signature.SequenceEqual(new byte[] { 0, 1, 0, 0 }) &&
             !signature.SequenceEqual("true"u8))
             throw new FormatException("invalid TTF or OTF header");

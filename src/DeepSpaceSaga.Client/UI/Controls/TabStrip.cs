@@ -77,7 +77,7 @@ internal static class ControlVisuals
     {
         var fill = active && enabled ? MenuStyle.ColorButtonHover : MenuStyle.ColorButtonBg;
         var border = !enabled ? XenonStyle.DisabledText : active ? XenonStyle.Cyan : MenuStyle.ColorButtonBorder;
-        SkinStyle.Box(canvas, role ?? SkinStyle.Control("control.frame"), rect, fill, border, scale);
+        SkinStyle.Box(canvas, WithFallback(role, "control.frame"), rect, fill, border, scale);
     }
 
     internal static void Label(SKCanvas canvas, string text, SKRect rect, bool enabled, float scale,
@@ -85,9 +85,12 @@ internal static class ControlVisuals
     {
         if (rect.IsEmpty) return;
         text = ControlText.SafeSymbols(text);
-        using var paint = ControlText.Paint(scale, role ?? SkinStyle.Control("control.label"), text, enabled);
+        using var paint = ControlText.Paint(scale, WithFallback(role, "control.label"), text, enabled);
         DrawLabel(canvas, text, rect, paint, center);
     }
+
+    private static SkinStyle.Role WithFallback(SkinStyle.Role? role, string fallback) =>
+        role is { } specific ? specific with { Shared = specific.Shared ?? fallback } : SkinStyle.Control(fallback);
 
     internal static void DrawLabel(SKCanvas canvas, string text, SKRect rect, SKPaint paint, bool center = false)
     {

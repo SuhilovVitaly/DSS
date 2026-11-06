@@ -1,5 +1,6 @@
 using System.Text.Json;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Client.UI.Controls;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
@@ -30,6 +31,27 @@ public sealed class SkinCatalogTests
         Assert.Same(TacticalBattleSkin.Classic, catalog.GetOrClassic("Custom"));
         catalog.Dispose();
         catalog.Dispose();
+    }
+
+    [Fact]
+    public void Layout_separators_do_not_discard_a_font_with_all_printable_glyphs()
+    {
+        using var fixture = new PackDirectory();
+        string directory = fixture.Pack("font", "custom");
+        Directory.CreateDirectory(Path.Combine(directory, "assets"));
+        File.Copy(Path.Combine(AppContext.BaseDirectory, "UI", "Fonts", "humaroid.regular.otf"), Path.Combine(directory, "assets", "font.otf"));
+        using var catalog = TacticalBattleSkinCatalog.Load(fixture.Root);
+        var skin = catalog.GetOrClassic("custom");
+        using var scope = TacticalBattleSkinRenderScope.Enter(skin);
+        var font = Assert.IsType<SKTypeface>(skin.Typeface("field.background"));
+        Assert.NotEqual(MenuStyle.TypefaceRegular.FamilyName, font.FamilyName);
+        using var paint = new SKPaint { Typeface = MenuStyle.TypefaceRegular, TextSize = 14 };
+        TacticalBattleSkinRenderScope.Text(paint, "field.background", 1, "Alpha\r\nBeta");
+        Assert.Equal(font.FamilyName, paint.Typeface.FamilyName);
+
+        paint.Typeface = MenuStyle.TypefaceRegular;
+        TacticalBattleSkinRenderScope.Text(paint, "field.background", 1, "Alpha\n\U0010FFFF");
+        Assert.Equal(MenuStyle.TypefaceRegular.FamilyName, paint.Typeface.FamilyName);
     }
 
     [Fact]

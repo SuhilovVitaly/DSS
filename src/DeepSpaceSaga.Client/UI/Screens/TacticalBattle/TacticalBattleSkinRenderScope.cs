@@ -51,7 +51,7 @@ internal static class TacticalBattleSkinRenderScope
 
     private static T Value<T>(Role role, string property, T fallback)
     {
-        if (_skin is null)
+        if (_skin is null || ReferenceEquals(_skin, TacticalBattleSkin.Classic))
             return fallback;
         if (role.Shared is not null)
             fallback = _skin.Find(role.Shared, property, fallback);
@@ -110,26 +110,29 @@ internal static class TacticalBattleSkinRenderScope
             return;
 
         using var paint = new SKPaint { IsAntialias = antialias, Color = Color(role, "fill", fill) };
-        float radius = MathF.Min(Number(role, "radius", 0) * scale, MathF.Min(bounds.Width, bounds.Height) / 2);
+        float radius = MathF.Min(Number(role, "radius", 0) * scale, MathF.Min(bounds.Width, bounds.Height) * 0.5f);
         if (radius > 0)
             canvas.DrawRoundRect(bounds, radius, radius, paint);
         else
             canvas.DrawRect(bounds, paint);
 
-        canvas.Save();
-        if (radius > 0)
+        if (Has(role, "image"))
         {
-            using var clip = new SKRoundRect(bounds, radius, radius);
-            canvas.ClipRoundRect(clip, antialias: true);
+            canvas.Save();
+            if (radius > 0)
+            {
+                using var clip = new SKRoundRect(bounds, radius, radius);
+                canvas.ClipRoundRect(clip, antialias: true);
+            }
+            Image(canvas, role, bounds);
+            canvas.Restore();
         }
-        Image(canvas, role, bounds);
-        canvas.Restore();
 
         if (border is null && !Has(role, "stroke"))
             return;
         paint.Style = SKPaintStyle.Stroke;
         paint.Color = Color(role, "stroke", border ?? SKColors.Transparent);
-        paint.StrokeWidth = MathF.Min(Number(role, "strokeWidth", 1) * scale, MathF.Min(bounds.Width, bounds.Height) / 2);
+        paint.StrokeWidth = MathF.Min(Number(role, "strokeWidth", 1) * scale, MathF.Min(bounds.Width, bounds.Height) * 0.5f);
         var pattern = Dash(role);
         using var effect = pattern.IsDefaultOrEmpty ? null : SKPathEffect.CreateDash(pattern.Select(length => length * scale).ToArray(), 0);
         paint.PathEffect = effect;
@@ -148,7 +151,13 @@ internal static class TacticalBattleSkinRenderScope
             return;
         var fallback = paint.Typeface;
         paint.Typeface = typeface;
-        if (paint.GetGlyphs(text).Any(glyph => glyph == 0))
+        // Layout treats CR/LF and tab as separators, so they need no glyph in the font.
+        bool missing = text.AsSpan().IndexOfAny('\r', '\n', '\t') < 0
+            ? MissingGlyphs(text)
+            : text.Split(['\r', '\n', '\t'], StringSplitOptions.RemoveEmptyEntries).Any(MissingGlyphs);
+        if (missing)
             paint.Typeface = fallback;
+
+        bool MissingGlyphs(string line) => paint.GetGlyphs(line).Any(glyph => glyph == 0);
     }
 }

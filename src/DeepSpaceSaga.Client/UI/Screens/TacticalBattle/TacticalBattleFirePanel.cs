@@ -41,7 +41,7 @@ internal sealed class TacticalBattleFirePanel
             r.Drone.Id + " " + BattleFormat.Text("→") + " " + (r.TargetId ?? L("FireNoTarget")))));
         int summaryRows = ControlText.Wrap(summaryText, width, layout).Length;
         using var text = ControlText.Paint(scale, "orders.fire.text", summaryText);
-        text.TextSize = Math.Min(text.TextSize, 17 * scale);
+        text.TextSize = (float)PyMath.Min(text.TextSize, 17 * scale);
         var summary = ControlText.Wrap(summaryText, width, text);
         float fullHeight = (145 + 28 * plan.Rows.Length + 18 * summaryRows) * scale;
         _maximumScroll = (float)PyMath.Max(0, fullHeight - bounds.Height);
@@ -76,7 +76,7 @@ internal sealed class TacticalBattleFirePanel
             float y = top + 26 * scale;
             string caption = UnavailableText(selected);
             using var paint = ControlText.Paint(scale, "orders.fire.unavailable", caption);
-            paint.TextSize = Math.Min(paint.TextSize, 17 * scale);
+            paint.TextSize = (float)PyMath.Min(paint.TextSize, 17 * scale);
             foreach (var line in ControlText.Wrap(caption, width, paint).Take(2))
             {
                 ControlVisuals.DrawLabel(canvas, line, SKRect.Create(x, y, width, 18 * scale), paint);

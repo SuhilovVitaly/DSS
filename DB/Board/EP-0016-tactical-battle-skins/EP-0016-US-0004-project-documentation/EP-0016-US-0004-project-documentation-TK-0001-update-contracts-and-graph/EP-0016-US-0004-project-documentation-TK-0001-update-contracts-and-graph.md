@@ -5,7 +5,7 @@ ticket: EP-0016-US-0004-project-documentation-TK-0001-update-contracts-and-graph
 title: Синхронизировать контракты скинов, Board и Graphify
 stage: approved
 layer: documentation
-depends_on: [EP-0016-US-0003-TK-0004-wire-settings-to-battle]
+depends_on: [EP-0016-US-0003-TK-0005-correct-shared-style-fallbacks]
 serves: [US4-AC1, US4-AC2, US4-AC3]
 ---
 

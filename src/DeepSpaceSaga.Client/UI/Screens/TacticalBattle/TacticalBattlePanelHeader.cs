@@ -1,6 +1,7 @@
 using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Motion.TacticalBattle;
 using SkiaSharp;
 using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
@@ -88,7 +89,7 @@ internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKC
             SkinStyle.Box(canvas, OutcomeRole, banner, OutcomeColor.WithAlpha(48), null, scale);
             string accent = OutcomeRole + ".accent";
             marker.Color = SkinStyle.Color(accent, "fill", OutcomeColor);
-            canvas.DrawRect(content.Left, y, Math.Clamp(SkinStyle.Number(accent, "size", 3), 1, 8) * scale, banner.Height, marker);
+            canvas.DrawRect(content.Left, y, (float)PyMath.Clamp(SkinStyle.Number(accent, "size", 3), 1, 8) * scale, banner.Height, marker);
             ControlVisuals.Label(canvas, Outcome, new(content.Left + 10 * scale, y, content.Right, banner.Bottom), true, scale,
                 role: OutcomeRole);
             y = banner.Bottom + 3 * scale;
@@ -99,19 +100,19 @@ internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKC
 
         void DrawMarker(SKPoint center, string role, SKColor fallback)
         {
-            float size = Math.Clamp(SkinStyle.Number(role, "size", 8), 2, 15) * scale;
-            var bounds = SKRect.Create(center.X - size / 2, center.Y - size / 2, size, size);
+            float size = (float)PyMath.Clamp(SkinStyle.Number(role, "size", 8), 2, 15) * scale;
+            var bounds = SKRect.Create(center.X - size * 0.5f, center.Y - size * 0.5f, size, size);
             if (SkinStyle.Image(canvas, role, bounds)) return;
             marker.Color = SkinStyle.Color(role, "fill", fallback);
-            canvas.DrawCircle(center, size / 2, marker);
+            canvas.DrawCircle(center, size * 0.5f, marker);
         }
 
         void DrawLines(string text, int maximumLines, string role)
         {
             if (text.Length == 0) return;
-            int rows = Math.Min(maximumLines, ControlText.Wrap(text, content.Width, layout).Length);
+            int rows = int.Min(maximumLines, ControlText.Wrap(text, content.Width, layout).Length);
             using var styled = ControlText.Paint(scale, role, text);
-            styled.TextSize = Math.Min(styled.TextSize, 17 * scale);
+            styled.TextSize = (float)PyMath.Min(styled.TextSize, 17 * scale);
             var lines = ControlText.Wrap(text, content.Width, styled);
             for (int i = 0; i < rows; i++)
             {
