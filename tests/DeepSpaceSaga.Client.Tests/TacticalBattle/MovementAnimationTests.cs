@@ -46,12 +46,24 @@ public sealed class MovementAnimationTests
         Assert.Equal(BattleFormat.Localize("AnimatingMovement"), atStart.Status);
         Assert.Null(atStart.Movement);
         Assert.Equal(path.Points[0], atStart.Battle.Units.Single(u => u.Id == path.DroneId).Pose);
+        Assert.Equal(path.Points[0], Assert.Single(atStart.Battle.Paths.Single(p => p.DroneId == path.DroneId).Points));
 
-        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs / 2);
+        fixture.AdvanceAnimation(1);
+        var firstMotion = screen.CaptureFrame(1280, 720)!.Battle;
+        var firstTrail = firstMotion.Paths.Single(p => p.DroneId == path.DroneId).Points;
+        Assert.Equal(2, firstTrail.Length);
+        Assert.Equal(path.Points[0], firstTrail[0]);
+        Assert.Equal(firstMotion.Units.Single(u => u.Id == path.DroneId).Pose, firstTrail[^1]);
+        Assert.NotEqual(path.Points[1], firstTrail[^1]);
+
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.DurationMs / 2 - 1);
         var mid = screen.CaptureFrame(1280, 720)!;
         var midpoint = mid.Battle.Units.Single(u => u.Id == path.DroneId).Pose;
         Assert.NotEqual(path.Points[0], midpoint);
         Assert.NotEqual(path.Points[^1], midpoint);
+        var midTrail = mid.Battle.Paths.Single(p => p.DroneId == path.DroneId).Points;
+        Assert.Equal(midpoint, midTrail[^1]);
+        Assert.InRange(midTrail.Length, firstTrail.Length + 1, path.Points.Length - 1);
         if (path.Points.Length % 2 != 0) Assert.Equal(path.Points[(path.Points.Length - 1) / 2], midpoint);
         Assert.Same(accepted, screen.Flow.State);
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Right));

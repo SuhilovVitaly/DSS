@@ -38,27 +38,31 @@ internal sealed class TacticalBattleMovementAnimation
     internal TacticalBattleSnapshot Interpolate(long nowMs)
     {
         double fraction = PyMath.Clamp((nowMs - _startMs) / (double)PlaybackDurationMs, 0, 1);
+        var trails = _paths.Select(path => path with { Points = Traversed(path.Points, fraction) }).ToImmutableArray();
         return _before with
         {
+            Paths = trails,
             Units = _before.Units.Select(u =>
             {
-                var path = _paths.FirstOrDefault(p => p.DroneId == u.Id);
-                return path is null ? u : u with { Pose = Sample(path.Points, fraction) };
+                var trail = trails.FirstOrDefault(p => p.DroneId == u.Id);
+                return trail is null ? u : u with { Pose = trail.Points[^1] };
             }).ToImmutableArray()
         };
     }
 
-    private static TacticalPoseSnapshot Sample(ImmutableArray<TacticalPoseSnapshot> path, double fraction)
+    private static ImmutableArray<TacticalPoseSnapshot> Traversed(ImmutableArray<TacticalPoseSnapshot> path, double fraction)
     {
-        if (fraction <= 0) return path[0];
         double progress = fraction * (path.Length - 1);
         int index = (int)progress;
-        if (index >= path.Length - 1) return path[^1];
+        if (index >= path.Length - 1) return path;
         double f = progress - index;
+        if (f == 0) return path[..(index + 1)];
         var a = path[index];
-        if (f == 0) return a;
         var b = path[index + 1];
-        return new(a.X + (b.X - a.X) * f, a.Y + (b.Y - a.Y) * f,
-            TacticalGeometry.Norm(a.Course + TacticalGeometry.Norm(b.Course - a.Course) * f));
+        var points = ImmutableArray.CreateBuilder<TacticalPoseSnapshot>(index + 2);
+        points.AddRange(path, index + 1);
+        points.Add(new(a.X + (b.X - a.X) * f, a.Y + (b.Y - a.Y) * f,
+            TacticalGeometry.Norm(a.Course + TacticalGeometry.Norm(b.Course - a.Course) * f)));
+        return points.MoveToImmutable();
     }
 }
