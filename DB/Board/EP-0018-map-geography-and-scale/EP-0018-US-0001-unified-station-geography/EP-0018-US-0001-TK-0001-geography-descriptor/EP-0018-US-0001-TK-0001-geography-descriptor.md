@@ -5,7 +5,7 @@ ticket: EP-0018-US-0001-TK-0001-geography-descriptor
 title: "Сериализуемые правила географии нового кластера"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: locally_verified_publication_blocked
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj
 depends_on: []
@@ -85,3 +85,28 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Фактическое исполнение — 2026-11-07
+
+Реализованы ClusterGeographyRules и optional Geography в конце конструктора,
+явные camelCase JSON-поля и XML units/ownership. Legacy missing/null десериализуются
+без новых правил; resourceBindings сохраняет прежнюю default-семантику.
+V2 descriptor проходит AuthoritativeSnapshot roundtrip. Изменены только два файла
+из Code context; Engine validation и activation остаются в следующих тикетах.
+
+Проверки: focused ClusterGeographyContractTests 5/5 PASS, полный Contracts 189/189
+PASS; Release owning build PASS (0 warnings/errors), scoped format production/test
+PASS, git diff --check PASS. Self-review diff против C-02/AC-04: findings отсутствуют;
+независимого review не было. Native/product/FPS NOT RUN и к этому DTO не применяются.
+
+Evidence и точные команды: [реестр](../../ImplementationStatus.md).
+Файлы результатов: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-descriptor/.
+Начальный sandbox testhost abort и исправленная ошибка тестового ожидания не
+объявляются PASS; окончательные успешные TRX имеют имена focused-final.trx и
+contracts-full.trx. Test process-tree watchdog 300000ms; оставшийся host проверен,
+уже завершён. Disposable scripts/cache/slots не создавались.
+
+Публикация BLOCKED автоматической проверкой безопасности: push в подтверждённый
+upstream отклонён дважды даже после проверки Git config и явных полномочий
+EpicExecutionPrompt.md. Требуется прямое подтверждение пользователем конкретных
+payload и destination. Следующий тикет не начинается до успешного push.

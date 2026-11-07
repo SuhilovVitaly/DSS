@@ -25,6 +25,15 @@ public sealed record ClusterTradeLink(
     [property: JsonPropertyName("itemTypeIds"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
     ImmutableArray<string> ItemTypeIds);
 
+/// <summary>Frozen generation speed in km/s and straight-flight distances in calendar days.
+/// One world unit is 100 metres; calendar time advances 300 times faster than motion time.
+/// Semantic validation belongs to Engine, not the transport contract.</summary>
+public sealed record ClusterGeographyRules(
+    [property: JsonPropertyName("referenceSpeedKmS")] double ReferenceSpeedKmS,
+    [property: JsonPropertyName("minimumStationDays")] double MinimumStationDays,
+    [property: JsonPropertyName("neighbourMinDays")] double NeighbourMinDays,
+    [property: JsonPropertyName("neighbourMaxDays")] double NeighbourMaxDays);
+
 public sealed record StationClusterMapSnapshot(
     [property: JsonPropertyName("rulesVersion")] int RulesVersion,
     [property: JsonPropertyName("startClusterId")] string StartClusterId,
@@ -35,7 +44,8 @@ public sealed record StationClusterMapSnapshot(
     [property: JsonPropertyName("links"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ClusterTradeLink>))]
     ImmutableArray<ClusterTradeLink> Links,
     [property: JsonPropertyName("resourceBindings"), JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ClusterResourceBinding>))]
-    ImmutableArray<ClusterResourceBinding> ResourceBindings = default);
+    ImmutableArray<ClusterResourceBinding> ResourceBindings = default,
+    [property: JsonPropertyName("geography")] ClusterGeographyRules? Geography = null);
 
 /// <summary>References a canonical resource object/field. Offset is at the orbital epoch,
 /// in world units, and rotates with the owning group; composition remains in resource state.</summary>
