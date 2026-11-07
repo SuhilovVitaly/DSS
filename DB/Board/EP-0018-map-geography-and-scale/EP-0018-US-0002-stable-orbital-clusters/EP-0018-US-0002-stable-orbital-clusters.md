@@ -4,7 +4,7 @@ story: EP-0018-US-0002-stable-orbital-clusters
 title: "Кластеры остаются разнесёнными при орбитальном движении"
 stage: approved
 approval_kind: delegated-planning
-implementation_status: not_started
+implementation_status: implemented_pending_compatibility_gate
 dependencies: [EP-0018-US-0001-unified-station-geography]
 created: 2026-11-07T17:21:08Z
 source_request: "отлично. построй новый эпик на переделку карты и создай все сторис и тикеты без моего подтверждения. я хочу видеть уже готовый эпик со сторисами и тикетами"
@@ -59,3 +59,14 @@ Engine владеет географией и RNG; Client только прое�
 
 ## Gaps and backlog
 Блокирующих вопросов планирования нет. Численные assumptions проверяются по критериям истории; изменение пользовательского контракта требует явного пересмотра Board.
+
+## Review реализации истории — 2026-11-07
+
+3/3тикета реализованы. AC01/02: boundary3/5×10/12, independent nearest/centers и
+all-phase radial inequality; AC03: одинаковыеradius/period/epoch/direction,
+strong forward/return paths и cargoсемантика черезliveEngine. AC04: realAI/fields/POI
+seeds1/42/100 и horizon365dvalid, boundedfailure/atomic ingress. Последние36focused
+и2085Engine non-corpus PASS; native/fullcorpus ещёUS8. Строгийdescriptor/runtime
+preflight перенесён сюда изUS4 из-за реальногоversion1-only runtime дефекта;
+файловаяsavecompatibility/no-regeneration ещёUS4, до activation. История остаётся
+implemented_pending_compatibility_gate. Self-review findings нет, независимогоreview нет.

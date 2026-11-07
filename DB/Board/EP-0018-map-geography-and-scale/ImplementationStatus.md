@@ -99,3 +99,14 @@ PASS. Live3/5cluster Engine integration и strong directed reachability подт
 Evidence20261107-cluster-graph/focused-final.trx/log, build/format logs.
 Следующийтикет — US0002TK0003AI/environment/POI integration. После этой публикации
 будет6/29тикетов и23остаётся; story1 compatibility и story2 итоговые gates ещё открыты.
+## Полная система — US0002TK0003
+
+GraphTK0002 опубликован018c1115891043458083e27c92a6fa3e755fc2be, exactremoteSHA PASS.
+FullsystemTK0003 завершён локально:36/36focused и2085/2085Engine non-corpusPASS,
+Releasebuild0warnings/errors и scopedformat/diffPASS. Evidence20261107-full-system:
+before.trx/log/err(2FAIL), focused-final.trx/log, engine-non-corpus.trx/log,
+build.log, format-engine.log, format-tests.log. Исправлен строго, безbypass,
+v1-only finalvalidator; AI/environment/POI алгоритмы не потребовали изменений.
+Story2 код реализован, совместимостьфайлов/save-regeneration ещёUS4, поэтому
+implemented_pending_compatibility_gate. После публикации7/29тикетов,22остаётся.
+Следующийтикет — US0003TK0001 resources relocation/knowledge/exactly-once.

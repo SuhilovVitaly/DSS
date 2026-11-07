@@ -318,6 +318,7 @@ public sealed partial class SimulationEngine : IDisposable
             if (generation.PoiTemplates is { } templates)
                 gs = PointOfInterestGenerator.Generate(gs with { ClusterMap = clusterMap }, templates, resolvedMasterSeed);
         }
+        if (geographyV2) gs = gs with { ClusterMap = clusterMap };
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
         var neutralResourceImages = gs.SpaceObjects.Where(o => resourceAsteroids.ContainsKey(o.ObjectId))

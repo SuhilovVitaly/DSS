@@ -14,7 +14,7 @@ internal static class StationClusterSaveValidation
         AiBaseGenerator.ValidateWorld(state);
         var aiIds = (state.AiMap?.Bases ?? []).Select(b => b.ObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         void Require([DoesNotReturnIf(false)] bool valid, string detail) { if (!valid) throw new ScenarioException($"clusterMap: {detail}. Running world was not replaced."); }
-        Require(state.SolarSystem is not null && map.RulesVersion == 1 && !map.Clusters.IsDefaultOrEmpty &&
+        Require(state.SolarSystem is not null && (map.RulesVersion is 1 or 2) && state.SolarSystem.GeneratorVersion == map.RulesVersion && !map.Clusters.IsDefaultOrEmpty &&
             !map.Stations.IsDefaultOrEmpty && !map.Links.IsDefaultOrEmpty, "solar system, version and resolved arrays required");
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
         var clusters = new Dictionary<string, StationClusterData>(StringComparer.OrdinalIgnoreCase);
@@ -69,8 +69,11 @@ internal static class StationClusterSaveValidation
                 for (int j = i + 1; j < positions.Length; j++)
                     Require(double.Hypot(positions[i].X - positions[j].X, positions[i].Y - positions[j].Y) > 0.000001,
                         $"overlapping stations {stations[i].ObjectId}/{stations[j].ObjectId}");
-            StationClusterGenerator.ValidateGraph(stations, map.Links.Where(l => c.StationIds.Contains(l.FromStationId) && c.StationIds.Contains(l.ToStationId)).ToImmutableArray(), registry);
+            if (map.RulesVersion == 1)
+                StationClusterGenerator.ValidateGraph(stations, map.Links.Where(l => c.StationIds.Contains(l.FromStationId) && c.StationIds.Contains(l.ToStationId)).ToImmutableArray(), registry);
         }
+        if (map.RulesVersion == 2) ValidateV2Geography(map, objects, registry);
+        else Require(map.Geography is null, "legacy geography cannot carry a v2 descriptor");
         var seen = new HashSet<string>(StringComparer.Ordinal) { map.Stations[0].ObjectId };
         var queue = new Queue<string>(); queue.Enqueue(map.Stations[0].ObjectId);
         while (queue.TryDequeue(out var id)) foreach (var l in map.Links.Where(l => l.FromStationId == id)) if (seen.Add(l.ToStationId)) queue.Enqueue(l.ToStationId);
@@ -97,5 +100,62 @@ internal static class StationClusterSaveValidation
             var a = AtEpoch(owner); var f = AtEpoch(field);
             Require(Math.Abs(f.X - a.X - b.OffsetX) <= 0.000001 && Math.Abs(f.Y - a.Y - b.OffsetY) <= 0.000001, "resource offset differs from orbit");
         }
+    }
+
+    private static void ValidateV2Geography(StationClusterMapSnapshot map,
+        IReadOnlyDictionary<string, SpaceObjectData> objects, GameDataRegistry registry)
+    {
+        void Require([DoesNotReturnIf(false)] bool valid, string detail) { if (!valid) throw new ScenarioException($"clusterMap/v2: {detail}. Running world was not replaced."); }
+        var rules = map.Geography;
+        Require(rules is not null && double.IsFinite(rules.ReferenceSpeedKmS) && rules.ReferenceSpeedKmS > 0 &&
+            double.IsFinite(rules.MinimumStationDays) && rules.MinimumStationDays >= 1 &&
+            double.IsFinite(rules.NeighbourMinDays) && rules.NeighbourMinDays >= rules.MinimumStationDays &&
+            double.IsFinite(rules.NeighbourMaxDays) && rules.NeighbourMaxDays >= rules.NeighbourMinDays,
+            "missing or invalid reference speed/minimum/neighbour descriptor");
+        double units = rules!.ReferenceSpeedKmS * 86400 / 300 * 10;
+        Require(double.IsFinite(units) && units > 0, "reference speed exceeds supported range");
+        var poses = new Dictionary<string, ObjectMotionSnapshot>(StringComparer.Ordinal);
+        var radii = new List<double>();
+        foreach (var cluster in map.Clusters)
+        {
+            var reference = objects[cluster.StationIds[0]].Orbit!;
+            radii.Add(reference.SemiMajorAxis);
+            foreach (string id in cluster.StationIds)
+            {
+                var obj = objects[id];
+                Require(obj.Orbit!.SemiMajorAxis == reference.SemiMajorAxis, "members must share a circular radius");
+                poses.Add(id, OrbitalMotionMath.At(new(id, 0, 0, 0, 0), obj.Orbit!, reference.EpochSimulationTimeMs));
+            }
+            foreach (string id in cluster.StationIds)
+            {
+                double nearest = double.PositiveInfinity;
+                foreach (string other in cluster.StationIds.Where(other => other != id))
+                {
+                    double distance = double.Hypot(poses[id].X - poses[other].X, poses[id].Y - poses[other].Y);
+                    double tolerance = 1e-6 + distance * 1e-10;
+                    Require(double.IsFinite(distance) && distance + tolerance >= rules.MinimumStationDays * units, "station pair violates minimum days");
+                    nearest = Math.Min(nearest, distance);
+                }
+                double toleranceNearest = 1e-6 + nearest * 1e-10;
+                Require(nearest + toleranceNearest >= rules.NeighbourMinDays * units && nearest - toleranceNearest <= rules.NeighbourMaxDays * units,
+                    "nearest station outside configured days");
+            }
+        }
+        radii.Sort();
+        for (int i = 1; i < radii.Count; i++)
+        {
+            double gap = radii[i] - radii[i - 1];
+            Require(gap + 1e-6 + Math.Abs(gap) * 1e-10 >= rules.MinimumStationDays * units,
+                "radial lanes do not prove the all-phase station minimum");
+        }
+        var members = map.Stations.ToDictionary(s => s.ObjectId, StringComparer.Ordinal);
+        foreach (var link in map.Links.Where(l => members[l.FromStationId].ClusterId == members[l.ToStationId].ClusterId))
+        {
+            var a = poses[link.FromStationId]; var b = poses[link.ToStationId];
+            double distance = double.Hypot(a.X - b.X, a.Y - b.Y), tolerance = 1e-6 + distance * 1e-10;
+            Require(distance + tolerance >= rules.NeighbourMinDays * units && distance - tolerance <= rules.NeighbourMaxDays * units,
+                "local link violates distance eligibility");
+        }
+        StationGeographyV2.ValidateGraph(map, registry);
     }
 }

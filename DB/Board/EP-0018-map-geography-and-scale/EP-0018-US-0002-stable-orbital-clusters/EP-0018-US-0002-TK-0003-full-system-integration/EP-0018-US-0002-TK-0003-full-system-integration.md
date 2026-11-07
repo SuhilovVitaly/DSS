@@ -5,11 +5,11 @@ ticket: EP-0018-US-0002-TK-0003-full-system-integration
 title: "Размещение ИИ и слоёв среды на расширенной географии"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0002-TK-0002-cluster-link-graph]
-files_touched: 3
+files_touched: 5
 serves: [AC-04]
 created: 2026-11-07T17:21:08Z
 revision: 1
@@ -87,3 +87,40 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Уточнение scope/dependencies до исправления — 2026-11-07
+
+Реальное воспроизведение before.trx:2/3FAIL в StationClusterSaveValidation.Validate,
+который вызывается и для NewGame сAI/средой и принимает толькоRulesVersion1.
+Добавлен в Code context src/DeepSpaceSaga.Engine/Scenario/StationClusterSaveValidation.cs
+(существующий Engine validator): перенести сюда минимально необходимый строгий v2
+version/descriptor/rigid/min/neighbor/link/radial ingress изUS0004TK0001. Не применять
+временный bypass. Полный file-save ingress/strict JSON/mixed version regressions,
+loader и no-regeneration остаютсяUS0004 до shippedactivation. Allowlist теперь
+AiBaseGenerator.cs, AiTradePlacementValidator.cs, StationClusterSaveValidation.cs,
+V2FullSystemPlacementTests.cs; если AI алгоритмы уже совместимы, они не меняются.
+Scope дополнен src/DeepSpaceSaga.Engine/SimulationEngine.cs: перед final v2 candidate preflight присоединить локально построенный ClusterMap к GameStateData и выполнить тот же строгий validator также безAI. Ранее безAI map хранился только в local variable до commit, из-за чего этот общий validator не видел его. V1 pipeline не меняется.
+
+## Фактическое исполнение — 2026-11-07
+
+AI placement/365d validator, environment и POI оказались совместимы без изменения
+алгоритмов. Воспроизведён и исправлен общийv1-only cluster validator: version pair,
+required finite descriptor, same-radius rigidity, всеlocal pairs/nearest, local
+link eligibility и analytic radial separation; v1 legacy проверки сохраняются.
+Final v2 candidate всегда присоединяет ClusterMap перед общим preflight, также
+безAI; никаких validation bypass. Исходные2/3FAIL before.trx сохранены.
+
+Final36/36focusedPASS:3namedfullsystem + v2graph/bootstrap и v1 save/environment/POI
+regressions. Live seeds1/42/100:AI не входят вhuman membership, start exclusions,
+365d proof valid/clearance>0/connectivity1, validfield/POIanchors/systembounds,
+boundedAI failure attempts2 сохраняет running world. Negative descriptors/mixed
+versions отвергаются. Engine non-corpus2085/2085PASS; full corpus ещёUS8.
+Release Engine build0warnings/errors, scopedformat3changedfiles, diffcheckPASS.
+Self-review tick/story/epic findings нет, независимого review не было.
+Native/human/FPS NOT RUN; full v2file-load/no-regeneration остаётсяUS4 gate.
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-full-system/
+(before.trx/log/err; focused-final.trx/log; engine-non-corpus.trx/log; build.log;
+format-engine.log; format-tests.log). Test process-tree cap300000ms.
+Actual implementation3files: validator, SimulationEngine и namedtests; остальные
+разрешённыеAIproductionfiles не изменены. Temporaryscripts/slots/worktrees не созданы.
