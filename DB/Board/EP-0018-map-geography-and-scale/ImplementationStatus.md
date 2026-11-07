@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-07: IN PROGRESS. Опубликовано23/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0008TK0001; далее US5…US9.
+Статус на2026-11-08: IN PROGRESS. Опубликовано24/29тикетов; stories1–7 функционально реализованы; открыты US8 evidence и US9 документация. Следующий: US0008TK0002; далее US5…US9.
 
 ## Git и полномочия
 
@@ -161,3 +161,5 @@ US0006TK0003 publishedf2a4afae4026d238f16a86b28bda0e3b251ecf25 verified. US0006T
 US0006TK0004 publisheda47d95d6151eab3bff1b925bd983cd84962197d4 verified. US0007TK0001 focused46 PASS, build/format/diff PASS; map-navigation evidence, frame-context isolation and explicit station-local action.
 
 US0007TK0001 publishedad6458245c586f294fbaacc45e470ee72a74cee5 verified. US0007TK0002 focused20/fullClient2115 PASS; build/format/diff PASS, current-estimates evidence. Functional stories1–7 implemented; corpus/rendered/native/documentation gates remain.
+
+US0007TK0002 published5324df5570c0a117bf53f1a4a8ab3ec685ba0df5 verified. US0008TK0001 aggregate2788 unique Engine cases PASS:2158main+540legacy+90v2; all100seed/scenario and64human boundary combinations checked, no timeout. Source hashes, per-run TRX and metrics indexed in20261108-corpus-validation/Summary.json. Build/format/diff PASS. Stories1–7 statuses reconciled to implemented_pending_acceptance, file-save gates technically closed.

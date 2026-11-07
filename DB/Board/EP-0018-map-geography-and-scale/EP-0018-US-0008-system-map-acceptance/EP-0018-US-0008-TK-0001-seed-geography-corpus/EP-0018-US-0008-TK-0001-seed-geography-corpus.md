@@ -5,7 +5,7 @@ ticket: EP-0018-US-0008-TK-0001-seed-geography-corpus
 title: "Разбитый корпус генерации с независимым измерением расстояний"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0007-TK-0002-current-travel-estimates]
@@ -86,3 +86,11 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Corpus design before implementation
+2026-11-07: retain historical long methods as explicit gen1/width.08/old cluster ranges; production defaults now v2 must not silently retarget legacy expectations. New public v2 theories expose six scenarios and five named20-seed ranges (001–020…081–100),100 unique seeds/scenario. Seed bits0–5 cover the full64-way human boundary Cartesian product: planets3/7, belts2/5, clusters3/5, stations10/12, start50/75 and operational Vmax2/4. AI counts2/4 follow min/max cluster mode as in historical full-map matrix; this is not a claim of100seeds for every configuration or an exhaustive independent AI-count Cartesian product. Separate cluster oracle and full materialized continuation corpus reuse these cases. All-phase human proof is analytic radial separation plus rigid local circles, independently sampled at epoch/1/30/365d. Failure export includes exact scenario/seed/config/module-speed override/stage and optional materialized world under DSS_VALIDATION_RUN (absolute workspace artifacts), referenced by TRX. No generated output in repository.
+
+2026-11-08: also split the historical100-seed methods into five20-seed display ranges per existing boundary case, retaining the complete old Cartesian matrices and100seeds/config. This makes legacy regression processes obey the same300000ms watchdog. No legacy oracle or production rule is weakened. Shared failure export records the actual generation version and module-speed context for both versions.
+
+## Execution evidence
+2026-11-08: final v2 corpus90/90 PASS: six scenarios×100unique seeds,64human boundary combinations/scenario, independent all-pair/nearest checks at epoch/1/30/365day and analytic rigid-circle/radial-lane proof; full materialized repeat/Load after current Vmax change and invalid generation config passes. Sampled human min1.1793579412496d, nearest1.1793579412496–1.45528054304949d; analytic lane lower bound minimum1.07405626966427d. Historical v1 full matrices540/540 PASS (100seeds/old configuration),30 capped processes. Engine main including short corpus facts2158/2158 PASS. Aggregate36TRX contains2788 unique passed IDs, no duplicate counting of pilot/initial runs. Maximum legacy process47.517s; final v2 TRX duration42.456s; no timeout, cap300000ms. One initial orchestration command had a placeholder collision before test launch, corrected; no production failure or weakened oracle. Release Engine build, scoped format-verified and diff PASS. Final evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261108-corpus-validation/{CorpusReport.md,Summary.json,engine-main.trx,build.log,format-verified.log}; all per-case evidence indexed by D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/{20261108-v2-corpus-verified,20261108-legacy-corpus}/Summary.json. Initial/pilot evidence retained separately; final source/DLL SHA256 captured. v1 coverage retained, not silently upgraded; AI-count coverage limitation stated above. Self-review complete; rendered/native/human gates follow.

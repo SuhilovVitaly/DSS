@@ -7,11 +7,46 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class FullMapCorrectnessCorpusTests
 {
+    [Theory]
+    [MemberData(nameof(SystemCorrectnessCorpusTests.V2Ranges), MemberType = typeof(SystemCorrectnessCorpusTests))]
+    public void V2MaterializedWorldContinuationCorpus(string scenario, string range, int seedStart)
+    {
+        Assert.Equal($"{seedStart:000}-{seedStart + 19:000}", range);
+        for (ulong seed = (ulong)seedStart; seed < (ulong)seedStart + 20; seed++)
+        {
+            var config = SystemCorrectnessCorpusTests.V2BoundaryConfig(seed); string stage = "full-generation"; ScenarioFile? world = null;
+            try
+            {
+                using var engine = SystemCorrectnessCorpusTests.V2Create(scenario, seed, config);
+                world = engine.CaptureSaveState(); stage = "full-oracle";
+                using var repeated = SystemCorrectnessCorpusTests.V2Create(scenario, seed, config);
+                MapEnvironmentSaveTests.SameMap(world, repeated.CaptureSaveState());
+                var ai = world.GameState.AiMap!;
+                Assert.Equal(config.Ai!.MinBases, ai.Bases.Length); Assert.Equal(5, ai.Fields.Length); Assert.Equal(2, ai.PointsOfInterest.Length);
+                Assert.True(engine.CaptureAiPlacementValidation()!.IsValid);
+                foreach (long day in new[] { 0L, 1, 30, 365 }) CheckGeometry(world, day * 288000);
+                stage = "full-save-load";
+                var save = engine.CaptureSaveStateForTests(86400000, SimulationSpeed.Speed0, 288000);
+                using var loaded = new SimulationEngine(SystemCorrectnessCorpusTests.V2Registry(((seed - 1) ^ 32) + 1));
+                loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true, true), true, config with { GeneratorVersion = 999 });
+                MapEnvironmentSaveTests.SameMap(save, loaded.CaptureSaveState());
+                Assert.Equal(save.GameState.ClusterMap!.Geography, loaded.CaptureSaveState().GameState.ClusterMap!.Geography);
+                GeneratedWorldPersistenceTests.EqualWorld(engine.CaptureSnapshotForTests(86700000, SimulationSpeed.Speed0, 289000),
+                    loaded.CaptureSnapshotForTests(86700000, SimulationSpeed.Speed0, 289000));
+            }
+            catch (Exception error) { SystemCorrectnessCorpusTests.CorpusFailure(error, scenario, seed, config, stage, world); }
+        }
+    }
+
     private static readonly string[] Scenarios = ["Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly"];
-    public static IEnumerable<object[]> Cases() => Scenarios.SelectMany(s => new[] { new object[] { s, false }, [s, true] });
+    public static IEnumerable<object[]> Cases()
+    {
+        foreach (string scenario in Scenarios) foreach (bool max in new[] { false, true })
+            foreach (int start in new[] { 1, 21, 41, 61, 81 }) yield return [scenario, max, $"{start:000}-{start + 19:000}", start];
+    }
     private static SolarSystemGenerationConfig Config(bool max)
     {
-        var c = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
+        var c = SystemCorrectnessCorpusTests.LegacyConfig();
         return c with
         {
             MinPlanets = max ? 7 : 3,
@@ -35,10 +70,11 @@ public sealed class FullMapCorrectnessCorpusTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void HundredSeedFullMapMatrix(string scenario, bool maximum)
+    public void HundredSeedFullMapMatrix(string scenario, bool maximum, string range, int seedStart)
     {
+        Assert.Equal($"{seedStart:000}-{seedStart + 19:000}", range);
         var config = Config(maximum);
-        for (ulong seed = 1; seed <= 100; seed++)
+        for (ulong seed = (ulong)seedStart; seed < (ulong)seedStart + 20; seed++)
         {
             try
             {
@@ -66,12 +102,12 @@ public sealed class FullMapCorrectnessCorpusTests
                 GeneratedWorldPersistenceTests.EqualWorld(expected,
                     loaded.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000));
             }
-            catch (Exception e) { throw new Xunit.Sdk.XunitException($"seed={seed};scenario={scenario};maximum={maximum};config={JsonSerializer.Serialize(config)};stage=full-map: {e}"); }
+            catch (Exception e) { SystemCorrectnessCorpusTests.CorpusFailure(e, scenario, seed, config, "legacy-full-map"); }
         }
     }
 
     // Independent geometry oracle: direct trigonometry and projection, no generation/placement/motion helper.
-    private static (double X, double Y) Position(SpaceObjectData obj, long time)
+    internal static (double X, double Y) Position(SpaceObjectData obj, long time)
     {
         if (obj.Orbit is not { } o) return (obj.PositionX, obj.PositionY);
         double turns = ((time - o.EpochSimulationTimeMs) * 300d % o.OrbitalPeriodMs) / o.OrbitalPeriodMs;

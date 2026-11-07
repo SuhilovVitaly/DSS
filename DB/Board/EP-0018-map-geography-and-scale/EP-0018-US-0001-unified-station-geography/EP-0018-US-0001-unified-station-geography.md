@@ -4,7 +4,7 @@ story: EP-0018-US-0001-unified-station-geography
 title: "Все станции стартового кластера разделены игровыми днями"
 stage: approved
 approval_kind: delegated-planning
-implementation_status: implemented_pending_compatibility_gate
+implementation_status: implemented_pending_acceptance
 dependencies: []
 created: 2026-11-07T17:21:08Z
 source_request: "отлично. построй новый эпик на переделку карты и создай все сторис и тикеты без моего подтверждения. я хочу видеть уже готовый эпик со сторисами и тикетами"

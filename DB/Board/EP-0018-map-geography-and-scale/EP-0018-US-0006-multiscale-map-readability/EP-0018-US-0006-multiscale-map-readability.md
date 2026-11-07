@@ -4,7 +4,7 @@ story: EP-0018-US-0006-multiscale-map-readability
 title: "Район, кластер и система читаются при отдалении карты"
 stage: approved
 approval_kind: delegated-planning
-implementation_status: not_started
+implementation_status: implemented_pending_acceptance
 dependencies: [EP-0018-US-0004-materialized-world-compatibility, EP-0018-US-0005-local-map-scale]
 created: 2026-11-07T17:21:08Z
 source_request: "отлично. построй новый эпик на переделку карты и создай все сторис и тикеты без моего подтверждения. я хочу видеть уже готовый эпик со сторисами и тикетами"
