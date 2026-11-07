@@ -16,8 +16,11 @@ internal static class ScenarioGroupPlacement
             oldPlayer.DockedStationObjectId ?? old.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Station)
                 .OrderBy(o => double.Hypot(o.PositionX - oldPlayer.PositionX, o.PositionY - oldPlayer.PositionY))
                 .ThenBy(o => o.ObjectId, StringComparer.Ordinal).FirstOrDefault()?.ObjectId;
-        var oldAnchor = old.SpaceObjects.FirstOrDefault(o => o.ObjectId == anchorId) ?? oldPlayer;
-        anchorId ??= candidate.Map.Clusters.Single(c => c.Id == candidate.Map.StartClusterId).StationIds[0];
+        // With no source station, SolarSystemGenerator has already placed the actual
+        // player/local group. New station identities must not become a teleport anchor.
+        if (anchorId is null || !old.SpaceObjects.Any(o => o.ObjectId == anchorId && o.ObjectType == SpaceObjectType.Station))
+            return candidate.World;
+        var oldAnchor = old.SpaceObjects.Single(o => o.ObjectId == anchorId);
         if (!objects.TryGetValue(anchorId, out var anchor)) throw new ScenarioException("geography/v2: missing start anchor.");
         double vx = oldPlayer.IsDocked ? 1 : oldPlayer.PositionX - oldAnchor.PositionX;
         double vy = oldPlayer.IsDocked ? 1 : oldPlayer.PositionY - oldAnchor.PositionY;

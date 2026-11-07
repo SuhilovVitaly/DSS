@@ -122,3 +122,14 @@ declared-valid-before/relocation-before/focused TRX/logs; детали в owning
 V2 static legacy corridor reservation отменена как несовместимая с сохранением
 sourceoffset; annulus/spacing/clearance/manifest validation остаётся. C03уточнён.
 После этой публикации8/29тикетов,21остаётся. Следующий — US0003TK0002scenario starts.
+## Сценарии — US0003TK0002
+
+ResourcesTK0001 опубликован95ec544646290332abfd69ae662548c8922cbe8d, remoteSHA PASS.
+ScenarioTK0002 завершёнлокально:42/42focused, Releasebuild0warnings/errors,
+scopedformat3files/diffPASS. Включены24cases(6scenario×2/4км/с×50/75d), explicitpayload,
+реальныйApproach/Dock/departure/duplicatefuel. PlayerShipOnly сохраняет первоначальную
+solarpoint, найденныйсдвиг исправленпослеbeforeFAIL; seed NPC nullname expectation
+исправлено какtest-onlycontractclarification. Evidence20261107-scenario-starts.
+После публикации9/29тикетов,20остаётся. Перед voyage/savecontinuity нужны строгие
+file-save ingress и TradingMapv2 validation изUS4; порядокзависимостей следует
+уточнить до следующейреализации, не выдавать failingsaveload заPASS.

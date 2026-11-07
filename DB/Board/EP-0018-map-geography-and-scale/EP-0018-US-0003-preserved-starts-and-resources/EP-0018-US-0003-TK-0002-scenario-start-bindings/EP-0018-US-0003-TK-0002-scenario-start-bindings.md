@@ -5,7 +5,7 @@ ticket: EP-0018-US-0003-TK-0002-scenario-start-bindings
 title: "Стартовые сценарии сохраняют игрока и локальные привязки"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0003-TK-0001-station-resource-relocation]
@@ -90,3 +90,24 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Фактическое исполнение — 2026-11-07
+
+Добавлена матрица всех6scenario×Vmax2/4×start50/75 (24точныхтеории), проверка
+явныхnames/IDs/roles/inventory/modules/cargo/localvectors и dockingreferences.
+Воспроизведён PlayerShipOnly start-point shift (position-before.trx): при отсутствии
+исходной станции новаяidentity становиласьteleportanchor. BindV2Start теперь
+сохраняет уже выбранную SolarSystemGenerator точку и весьsource-localgroup.
+Станции не возвращаются кlegacycoords; Docked/free смысл и(1,1)нормализация сохранены.
+ПервыйbeforeFAIL был ошибочным ожиданиемnull для штатноseededNPCимени; исправлено
+на обязательное сохранениеexplicitName, не изменяяruntime-namecontract.
+
+42/42focusedScenarioGroupTranslationTests+OrbitalDockingDepartureTestsPASS, включая
+всеnamedtests. РеальныеApproach→sync→dialogueDock→Undock, duplicateundock не списывает
+fuelдважды, position/speed/direction непрерывны и далееобычныйlinearflight.
+Boundarydistance применяется сC01floatingtolerance1e-9day; units/calendar неизменны.
+ReleaseEnginebuild0warnings/errors, scopedformat3changedfiles/diffPASS.
+Self-reviewC03/AC02/04 findings нет; независимогоreview нет. Native NOT RUN.
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-scenario-starts/
+(before.trx/log, position-before.trx/log, focused-final.trx/log, build.log,
+format-engine.log, format-tests.log). Process-treecap300000ms. No temp scripts/slots.

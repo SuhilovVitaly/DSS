@@ -6,6 +6,88 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class ScenarioGroupTranslationTests
 {
+    public static IEnumerable<object[]> V2StartCases()
+    {
+        foreach (string scenario in new[] { "Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly" })
+            foreach (int speed in new[] { 2, 4 })
+                foreach (int days in new[] { 50, 75 }) yield return [scenario, speed, days];
+    }
+
+    [Theory]
+    [MemberData(nameof(V2StartCases))]
+    public void V2AllStartsKeepMeaningAndFiftyToSeventyFiveDays(string name, int speed, int days)
+    {
+        var registry = SeededWorldBootstrapTests.Registry();
+        registry = registry.WithModuleTypes([.. Enumerable.Range(0, registry.ModuleTypes.Count).Select(i =>
+        {
+            var definition = registry.ModuleTypes.GetDefinition(i);
+            return definition.MaxSpeedMps is > 0 ? definition with { MaxSpeedMps = speed * 1000 } : definition;
+        })]);
+        using var engine = new SimulationEngine(registry);
+        engine.ConfigureStationResourceFields(JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(
+            Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Data/World/station-resource-fields.json")))!);
+        var source = SeededWorldBootstrapTests.Scenario(name);
+        var config = GenerationInputSchemaTests.V2Config() with { StartMinDays = days, StartMaxDays = days };
+        engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42, CurrentSpeed = "Speed0" } }, generation: config);
+        var snapshot = engine.CaptureSnapshot(); var ship = snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId);
+        double actualDays = double.Hypot(ship.X, ship.Y) / (speed * 86400 / 300 * 10);
+        Assert.InRange(actualDays, days - 1e-9, days + 1e-9); // C01 geometric floating-point tolerance.
+        Assert.Equal(speed, snapshot.ClusterMap!.Geography!.ReferenceSpeedKmS);
+        var oldShip = source.GameState.SpaceObjects.Single(o => o.ObjectId == source.GameState.PlayerShipObjectId);
+        Assert.Equal(oldShip.IsDocked, ship.IsDocked);
+        Assert.Equal(oldShip.DockedStationObjectId, ship.DockedStationObjectId);
+        if (ship.IsDocked)
+        {
+            var parent = snapshot.Objects.Single(o => o.ObjectId == ship.DockedStationObjectId);
+            Assert.Equal(parent.X + 1, ship.X, 6); Assert.Equal(parent.Y + 1, ship.Y, 6);
+        }
+        else Assert.Null(ship.Orbit);
+    }
+
+    [Fact]
+    public void V2ExplicitPayloadAndReferencesArePreserved()
+    {
+        foreach (string name in new[] { "Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly" })
+        {
+            var source = SeededWorldBootstrapTests.Scenario(name);
+            using var engine = StationGeographyBootstrapTests.Create(name, GenerationInputSchemaTests.V2Config());
+            var objects = engine.CaptureSaveState().GameState.SpaceObjects.ToDictionary(o => o.ObjectId);
+            var oldPlayer = source.GameState.SpaceObjects.Single(o => o.ObjectId == source.GameState.PlayerShipObjectId);
+            string? anchorId = source.GameState.TradingMapGeneration?.StartStationObjectId ?? oldPlayer.DockedStationObjectId ??
+                source.GameState.SpaceObjects.Where(o => o.ObjectType == "Station")
+                    .OrderBy(o => double.Hypot(o.PositionX - oldPlayer.PositionX, o.PositionY - oldPlayer.PositionY))
+                    .ThenBy(o => o.ObjectId, StringComparer.Ordinal).FirstOrDefault()?.ObjectId;
+            var oldAnchor = source.GameState.SpaceObjects.FirstOrDefault(o => o.ObjectId == anchorId) ?? oldPlayer;
+            var newAnchor = objects[anchorId ?? oldPlayer.ObjectId];
+            foreach (var original in source.GameState.SpaceObjects)
+            {
+                var actual = objects[original.ObjectId];
+                if (original.Name is not null) Assert.Equal(original.Name, actual.Name);
+                Assert.Equal(original.ObjectType, actual.ObjectType);
+                if (original.ObjectType == "Station")
+                    foreach (var item in original.Inventory ?? []) Assert.Contains(actual.Inventory!, i => i.ItemTypeId == item.ItemTypeId && i.Quantity == item.Quantity);
+                else if (!original.IsDocked)
+                {
+                    Assert.Equal(original.PositionX - oldAnchor.PositionX, actual.PositionX - newAnchor.PositionX, 6);
+                    Assert.Equal(original.PositionY - oldAnchor.PositionY, actual.PositionY - newAnchor.PositionY, 6);
+                }
+                foreach (var module in original.Modules ?? [])
+                {
+                    var installed = actual.Modules!.Single(m => m.ModuleId == module.ModuleId);
+                    Assert.Equal(module.ModuleTypeId, installed.ModuleTypeId);
+                    foreach (var cargo in module.Cargo ?? []) Assert.Contains(installed.Cargo!, c => c.ItemTypeId == cargo.ItemTypeId && c.Quantity == cargo.Quantity);
+                }
+            }
+            if (anchorId is null)
+            {
+                var solar = SolarSystemGenerator.Generate(source, GenerationInputSchemaTests.V2Config(), SeededWorldBootstrapTests.Registry(), 42);
+                var intended = solar.GameState.SpaceObjects.Single(o => o.ObjectId == oldPlayer.ObjectId);
+                Assert.Equal(intended.PositionX, objects[oldPlayer.ObjectId].PositionX, 6);
+                Assert.Equal(intended.PositionY, objects[oldPlayer.ObjectId].PositionY, 6);
+            }
+        }
+    }
+
     [Theory]
     [InlineData("Default")]
     [InlineData("Default_500")]
