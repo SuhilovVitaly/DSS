@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0002-initiative-fire
 ticket: EP-0017-US-0002-TK-0004-session-fire-timeline
 title: "Хронология фазы в сессии, снимках и журнале"
-stage: approved
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0017-US-0002-TK-0001-fire-sequence-contract, EP-0017-US-0002-TK-0003-sequential-damage]
@@ -131,3 +131,11 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Сессия публикует Engine FireQueue до подтверждения и immutable FireSteps после фазы. Журнал строится в порядке каждого шага: shot→damage→status→systems→outcome, skip получает typed reason; уникальные Sequence и FireStepIndex. Killed берётся с конкретного lethal impact. Очередь/лента удерживаются после BeginTurn и очищаются на следующем Move. Данные next-planning не входят в Events шага. Public requests/receipts owner не менялись.
+
+Проверены фактические per-step damage/состояния/системы, соответствие полного Log и delta, old snapshots неизменны после новых ходов, command replay без мутаций обоих RNG, local connection query payload. Старый seed1 simultaneous summary заменён полным exact direct/API comparison нового Engine. Неизменённые rejection/identity/cache/auto-fire тесты сохранены. Self-review выполнено; independent review не заявляется; scope включает эту карточку.
+
+Engine build PASS0 warnings/errors; SessionTests/JournalEventsTests/ConnectionApiTests PASS38/38; scoped format и verify PASS; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0204/ (build/tests/format/format-verified logs, focused.trx). UI presentation/native ещё не обновлены и не принимаются этим тикетом.

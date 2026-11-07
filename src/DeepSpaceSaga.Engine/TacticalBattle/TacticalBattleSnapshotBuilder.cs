@@ -7,6 +7,13 @@ namespace DeepSpaceSaga.Engine.TacticalBattle;
 
 internal static class TacticalBattleSnapshotBuilder
 {
+    public static ImmutableArray<TacticalFireQueueEntry> FireQueue(TacticalBattle battle) => battle.CaptureFireOrder()
+        .Select((drone, index) => new TacticalFireQueueEntry(index, drone.Id, drone.Initiative)).ToImmutableArray();
+
+    public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
+        Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
+    { LethalImpact = shot.LethalImpact };
+
     public static ImmutableArray<TacticalUnitSnapshot> Units(TacticalBattle battle)
     {
         var units = ImmutableArray.CreateBuilder<TacticalUnitSnapshot>();
