@@ -10,12 +10,16 @@ public sealed class ClusterLocalResumeTests
     private static string Settings => Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json");
 
     [Theory]
-    [InlineData(true)]
-    [InlineData(false)]
-    public async Task InFlightAndDockedClusterLocalLoad(bool inFlight)
+    [InlineData(true, 1)]
+    [InlineData(false, 1)]
+    [InlineData(true, 2)]
+    [InlineData(false, 2)]
+    public async Task V1AndV2ResumeSameGeometryAndVoyage(bool inFlight, int version)
     {
-        string directory = Path.Combine(Path.GetTempPath(), "dss-cluster-resume-" + Guid.NewGuid().ToString("N"));
-        using var continuous = new ClusterVoyageFixture(42, true);
+        string directory = LocalWorldSaveRoundtripTests.RunDirectory("voyage");
+        var config = version == 2 ? GenerationInputSchemaTests.V2Config() : GenerationInputSchemaTests.Config() with
+        { Clusters = new ClusterGenerationConfig(3, 5, 10, 12, 0.5, 2, 3, 7, 15, 35) };
+        using var continuous = new ClusterVoyageFixture(42, true, 1000000, config);
         ClusterVoyageFixture? captured = null;
         try
         {
@@ -54,7 +58,7 @@ public sealed class ClusterLocalResumeTests
     [Fact]
     public async Task RetriedTradeAfterLocalLoadIsIdempotent()
     {
-        string directory = Path.Combine(Path.GetTempPath(), "dss-cluster-retry-" + Guid.NewGuid().ToString("N"));
+        string directory = LocalWorldSaveRoundtripTests.RunDirectory("retry");
         using var source = new ClusterVoyageFixture(1, false);
         try
         {

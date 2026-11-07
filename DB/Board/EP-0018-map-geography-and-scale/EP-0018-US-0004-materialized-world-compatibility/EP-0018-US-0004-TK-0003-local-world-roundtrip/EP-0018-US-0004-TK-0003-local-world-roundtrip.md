@@ -5,7 +5,7 @@ ticket: EP-0018-US-0004-TK-0003-local-world-roundtrip
 title: "Реальные сохранения продолжают географию обеих версий"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0004-TK-0002-legacy-trade-map-validation, EP-0018-US-0003-TK-0003-voyage-geography]
@@ -95,3 +95,5 @@ trading validation US0004TK0001/0002. Поэтому эти2тикета вып�
 завершения всейStory3 перед началом; точные частичные gates перечислены в карточках.
 Это устраняет логическую зависимость тестов от ещё не реализованногоloader без
 переноса FAIL вPASS или объединения тикетов. 9историй/29тикетов остаются прежними.
+## Execution evidence
+2026-11-07: six v2 worlds saved through LocalGameSessionConnection to real unique slots; production file factory restores, then doubled Vmax registry and invalid new-generation config cannot move loaded world or frozen reference. Continued positions/epochs match. Unknown/mixed version files and live session stay unchanged. v1/v2 in-flight/docked file resume plus actual archived Save18/19 regressions pass. LegacySolarWorldIsNotRegenerated exercises decoded DTO migration unit18/19/20, not a fabricated old wire envelope. Initial failures were fixture misuse of clock and missing retired envelopes; corrected controlled-clock tests use actual published times. Focused-verified33/33 PASS; Release build, scoped format-verified exit0 and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-local-roundtrip/{focused.trx,focused-final.trx,focused-verified.trx,build.log,format-verified.log}. Slot folders deleted in finally; confirmed no local-save-* directories. Self-review complete.
