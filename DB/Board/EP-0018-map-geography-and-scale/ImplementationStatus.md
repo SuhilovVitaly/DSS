@@ -110,3 +110,15 @@ v1-only finalvalidator; AI/environment/POI алгоритмы не потреб�
 Story2 код реализован, совместимостьфайлов/save-regeneration ещёUS4, поэтому
 implemented_pending_compatibility_gate. После публикации7/29тикетов,22остаётся.
 Следующийтикет — US0003TK0001 resources relocation/knowledge/exactly-once.
+## Ресурсы — US0003TK0001
+
+FullsystemTK0003 опубликован1f92b482ff63cc0420f468a6e2fa802f295b4be3, remoteSHA PASS.
+ResourcesTK0001 локально завершён:15/15focused и2088/2088Engine non-corpusPASS,
+build0warnings/errors, scopedformat5files/diffPASS. Evidence20261107-resources:
+focused-final.trx/log, engine-non-corpus.trx/log, build.log, format-engine.log,
+format-tests.log. Failurehistory сохранена в before/declared-before/
+declared-valid-before/relocation-before/focused TRX/logs; детали в owningticket.
+Исправлены owneroffset2044км и скрытаяcompositionутечка, сохранены capturedrules/RNG.
+V2 static legacy corridor reservation отменена как несовместимая с сохранением
+sourceoffset; annulus/spacing/clearance/manifest validation остаётся. C03уточнён.
+После этой публикации8/29тикетов,21остаётся. Следующий — US0003TK0002scenario starts.

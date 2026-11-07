@@ -288,7 +288,11 @@ public sealed partial class SimulationEngine : IDisposable
         }
 
         bool geographyV2 = !isSave && scenario.SaveFormatVersion == 0 && generation?.GeneratorVersion == 2;
-        if (geographyV2) SolarSystemGeneration.ValidateConfig(generation!);
+        if (geographyV2)
+        {
+            SolarSystemGeneration.ValidateConfig(generation!);
+            if (gs.TradingMap is not null) gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
+        }
         else gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
         if (!geographyV2 && gs.StationResourceFields is not null)
             gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
@@ -302,8 +306,11 @@ public sealed partial class SimulationEngine : IDisposable
             {
                 var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed);
                 if (geographyV2)
+                {
                     result = StationGeographyV2.CompleteBootstrap(scenario, result, generation, _registry, resolvedMasterSeed);
-                if (_stationResourceFieldConfig is { } resourceConfig)
+                    result = result with { World = result.World with { GameState = StationResourceFields.RelocateDeclared(scenario.GameState, result.World.GameState) } };
+                }
+                if ((geographyV2 ? result.World.GameState.StationResourceFields?.Rules ?? _stationResourceFieldConfig : _stationResourceFieldConfig) is { } resourceConfig)
                 {
                     result = result with { World = result.World with { GameState = StationResourceFields.ExtendForClusters(result.World.GameState, resolvedMasterSeed, resourceConfig, _registry) } };
                     result = StationClusterGenerator.BindResources(result);
@@ -318,7 +325,12 @@ public sealed partial class SimulationEngine : IDisposable
             if (generation.PoiTemplates is { } templates)
                 gs = PointOfInterestGenerator.Generate(gs with { ClusterMap = clusterMap }, templates, resolvedMasterSeed);
         }
-        if (geographyV2) gs = gs with { ClusterMap = clusterMap };
+        if (geographyV2)
+        {
+            gs = gs with { ClusterMap = clusterMap };
+            if (gs.StationResourceFields is not null)
+                gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
+        }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
         var neutralResourceImages = gs.SpaceObjects.Where(o => resourceAsteroids.ContainsKey(o.ObjectId))

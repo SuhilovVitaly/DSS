@@ -35,7 +35,7 @@ internal static class StationGeographyV2
         double tolerance = 1e-6 + actual * 1e-10;
         if (actual + tolerance < config.StartMinDays * units || actual - tolerance > config.StartMaxDays * units)
             throw new ScenarioException("geography/v2: actual player start outside configured solar distance.");
-        if (original.GameState.TradingMapGeneration is { } request)
+        if ((original.GameState.TradingMapGeneration ?? original.GameState.TradingMap?.Rules) is { } request)
         {
             var graph = TradingGraphGenerator.Generate(request, seed, registry);
             var geometry = TradingMapRandom.DrawIndex(seed, "TradingMap.Geometry", 4);

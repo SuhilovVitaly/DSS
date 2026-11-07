@@ -5,11 +5,11 @@ ticket: EP-0018-US-0003-TK-0001-station-resource-relocation
 title: "Ресурсные поля создаются у окончательных координат станции"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0002-TK-0003-full-system-integration]
-files_touched: 4
+files_touched: 5
 serves: [AC-01]
 created: 2026-11-07T17:21:08Z
 revision: 1
@@ -89,3 +89,55 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Scope и воспроизведение до исправления — 2026-11-07
+
+Добавлен пятый implementation path: src/DeepSpaceSaga.Engine/Scenario/StationGeographyV2.cs,
+CompleteBootstrap должен строить v2 edge geometry также из явно материализованного
+scenario TradingMap.Rules, сохраняя seed/template/risk/cargo/RNG. Иначе scenario с
+уже объявленными fields/пятью станциями оставляет старый trading descriptor.
+Source materialized map валидируется до перестановки; Load branch не меняется.
+
+До fix: V2ResourcesFollowFinalStationCoordinates показывает CompositionKnown=true
+для неизвестных ресурсов; relocation-before.trx показывает2044.244573км вместо
+2.5–4.5км от владельца. Предварительные fixture попытки с save-only history/budget
+исправлены на валидный NewGame scenario; production validation не ослаблялась.
+Frozen declared field rules/ID/manifest/mass/composition/knowledge/RNG сохраняются;
+append использует captured rules, новый resource draw только для новых владельцев.
+## Техническое уточнение v2 resource geometry — 2026-11-07
+
+После owner relocation focused.trx воспроизводит несовместимость с прежним static
+trading-edge corridor clearance: замена направления торговой хорды может пересечь
+сохранённый local vector ресурса. Нельзя одновременно гарантировать неизменность
+всех объявленных offset/RNG и пустые legacy corridor полосы при любой новой географии.
+Выбрано минимальное согласованное сC03 решение: v2 сохраняет annulus2.5–4.5км,
+station clearance, asteroid spacing, identities/manifest/RNG; static template-edge
+corridor reservation применяется толькоv1. V2 движущиеся направления не являются
+зарезервированными прямыми физическими дорогами. Другие проверки Clear/ValidateSaved
+не отключаются. Это техническое решение исполнения, не новая цитата пользователя;
+итоговая документация должна явно описать version dispatch данного legacy правила.
+## Фактическое исполнение — 2026-11-07
+
+RelocateDeclared переносит каждое source поле по delta своего владельца без draws,
+сохраняя ID/mass/composition/manifest/knowledge/RNG. Append использует capturedfield
+rules, генерирует только новых владельцев; повторный append не добавляет объектов
+илиstream. BindResources воv2 больше не раскрывает CompositionKnown. Source materialized
+tradingmap проходит прежнюю проверку до перестановки, затем edge distances строятся
+по финальнойv2геометрии. Final resource validation работает на InitialGeometry,
+сохраняя live world poses. Версионнаяstaticcorridor политика описана выше, все
+annulus/clearance/spacing/manifest/seed/counterchecks остаются обязательными.
+
+15/15focusedPASS (3namedresources + v1resources + v2bootstrap/graph/fullsystem).
+Engine non-corpus2088/2088PASS, build0warnings/errors, scopedformat5files/diffPASS.
+Proof: capturedruleouter4.5км сохраняется даже приcurrentconfig5км; исходные57ресурсов
+не меняют manifest/RNG/mass/composition, ихowner-relativeannulus2.5–4.5км сохраняется;
+unknown composition скрыта, repeatedappend не меняетcount/state, orbitaloffset
+постоянен0/1/30/365д. Self-review findings нет, независимогоreview нет. Native NOT RUN.
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-resources/
+(focused-final.trx/log, engine-non-corpus.trx/log, build.log, format-engine.log,
+format-tests.log). Failurehistory: before.trx — knowledgeFAIL и invalidfixturehistory;
+declared-before.trx — invalidfixturebudget; declared-valid-before.trx — knowledgeFAIL;
+relocation-before.trx —2044.244573км owneroffsetFAIL; focused.trx —staticcorridor
+incompatibility после переноса. Эти результаты не засчитаныPASS. cap300000ms.
+Временныеscripts/slots/worktrees не создавались.

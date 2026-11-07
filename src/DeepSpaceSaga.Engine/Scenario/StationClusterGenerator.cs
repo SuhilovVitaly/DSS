@@ -225,7 +225,7 @@ internal static class StationClusterGenerator
             GameState = result.World.GameState with
             {
                 SpaceObjects = objects.Values.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray(),
-                StationResourceFields = fields with { Asteroids = fields.Asteroids.Select(a => a with { CompositionKnown = true }).ToArray() },
+                StationResourceFields = result.Map.RulesVersion == 2 ? fields : fields with { Asteroids = fields.Asteroids.Select(a => a with { CompositionKnown = true }).ToArray() },
                 SolarSystem = result.World.GameState.SolarSystem! with { Orbits = objects.Values.Where(o => o.Orbit is not null).Select(o => new OrbitMapData(o.ObjectId, o.Orbit!)).ToImmutableArray() }
             }
         };

@@ -69,3 +69,13 @@ Analytic proof min между radial lanes + независимые провер
 - I-07 new session публикуется атомарно; failure сохраняет прежнюю session.
 - I-08 selected/player/nav target доступны при любом LOD; знание не расширяется.
 - I-09 test/native/product acceptance разделены; evidence не выдумывается.
+
+## Уточнение исполнения C-03 — 2026-11-07
+
+Объявленные поля сохраняют captured rules и knowledge; append не меняет ихRNG.
+V2 не резервирует static полосы legacy trading template edges: неизменность всех
+source owner-relative offsets иначе несовместима с произвольной сменой направления
+торговых хорд. Corridors остаютсяv1правилом; v2 всё равно проверяет annulus,
+stationclearance/asteroidspacing, ids/owner/rules/composition/mass/manifest/RNG.
+Это техническое решение исполнения, не дополнительная цитата пользователя.
+Воспроизведение и evidence — US0003TK0001; учесть в финальной текущей документации.
