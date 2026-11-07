@@ -7,6 +7,15 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class TradingMapSchemaTests
 {
     [Fact]
+    public void V2TradingIngressRemainsStrict()
+    {
+        using var engine = StationGeographyBootstrapTests.Create();
+        var root = System.Text.Json.Nodes.JsonNode.Parse(ScenarioLoader.Serialize(engine.CaptureSaveState()))!;
+        root["gameState"]!["tradingMap"]!["unknownPolicy"] = true;
+        Assert.Throws<ScenarioException>(() => ScenarioLoader.LoadFromJson(root.ToJsonString(), true));
+    }
+
+    [Fact]
     public void Legacy_scenario_without_map_fields_roundtrips()
     {
         var scenario = ScenarioLoader.LoadFromJson(BaseScenarioJson);

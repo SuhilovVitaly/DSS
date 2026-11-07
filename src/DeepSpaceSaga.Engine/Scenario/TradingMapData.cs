@@ -104,6 +104,9 @@ internal static class TradingMapDataValidation
         }
 
         var map = state.TradingMap!;
+        if ((state.SolarSystem?.GeneratorVersion == 2 || state.ClusterMap?.RulesVersion == 2) &&
+            (state.SolarSystem?.GeneratorVersion != 2 || state.ClusterMap?.RulesVersion != 2 || state.ClusterMap.Geography is null))
+            throw new ScenarioException("tradingMap requires coherent materialized v2 geography.");
         if (state.MasterSeed is null)
             throw new ScenarioException("tradingMap requires gameState.masterSeed.");
         if (map.SchemaVersion != 1)

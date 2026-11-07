@@ -5,7 +5,7 @@ ticket: EP-0018-US-0004-TK-0002-legacy-trade-map-validation
 title: "Загрузка v2 не восстанавливает старые торговые offsets"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0004-TK-0001-versioned-save-validation]
@@ -90,3 +90,6 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution evidence
+2026-11-07: coherent v2 overload validates materialized membership/orbits and actual epoch distances without template-hour cap/coverage; seed-selected template, quarter turn, RNG, cargo, risk, profile and edge metadata stay strict. v1 retains template-offset/cap/coverage rules. Initial Default load failed on legacy coordinates, now exact saved-state roundtrip succeeds at nonzero time. Focused65/65 and Engine non-corpus2133/2133 PASS; Release build, scoped format verify and diff check PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-trade-validation/{before.trx,focused.trx,engine-non-corpus.trx,build.log,format.log}. Full corpus deferred US8. Self-review completed, no independent/human claim.

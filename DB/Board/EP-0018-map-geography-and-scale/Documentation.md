@@ -83,7 +83,7 @@ Checkout: codex/ep-0016-tactical-battle-skins, исходно проверенн
 | [US-0001](EP-0018-US-0001-unified-station-geography/EP-0018-US-0001-unified-station-geography.md) | Все станции стартового кластера разделены игровыми днями | none | 4 |
 | [US-0002](EP-0018-US-0002-stable-orbital-clusters/EP-0018-US-0002-stable-orbital-clusters.md) | Кластеры остаются разнесёнными при орбитальном движении | US-0001 | 3 |
 | [US-0003](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-preserved-starts-and-resources.md) | Привычные старты, ресурсы и рейсы работают на новой карте | US-0001, US-0002 | 3 |
-| [US-0004](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-materialized-world-compatibility.md) | Новый и прежний мир продолжаются после сохранения | US-0001, US-0002, US-0003 | 4 |
+| [US-0004](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-materialized-world-compatibility.md) | Новый и прежний мир продолжаются после сохранения | US-0001, US-0002; partial US-0003 ticket gates | 4 |
 | [US-0005](EP-0018-US-0005-local-map-scale/EP-0018-US-0005-local-map-scale.md) | Максимальное приближение показывает локальную окрестность | US-0001 | 3 |
 | [US-0006](EP-0018-US-0006-multiscale-map-readability/EP-0018-US-0006-multiscale-map-readability.md) | Район, кластер и система читаются при отдалении карты | US-0004, US-0005 | 4 |
 | [US-0007](EP-0018-US-0007-map-navigation-and-estimates/EP-0018-US-0007-map-navigation-and-estimates.md) | Переход от обзора системы к станции и понятное время пути | US-0003, US-0004, US-0005, US-0006 | 2 |

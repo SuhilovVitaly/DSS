@@ -563,7 +563,7 @@ public sealed partial class SimulationEngine : IDisposable
                     // Startup clearance is not a constraint on their saved flight position.
                     .Where(o => (!isSave && scenario.SaveFormatVersion == 0 && normalizedState.SolarSystem is null) ||
                         (o.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) && o.PersistenceType != "Temporary"))
-                    .ToArray(), masterSeed, _registry);
+                    .ToArray(), masterSeed, _registry, normalizedState.SolarSystem, normalizedState.ClusterMap);
             return normalizedState;
         }
 
