@@ -10,6 +10,46 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SidesAndLogTests
 {
     [Fact]
+    public async Task MapCardsAndHeaderShareEveryIntermediateStepState()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var results = ResultsPhaseTests.ControlledResults(screen.Flow.State!);
+        foreach (var (time, expectedHull) in new[] { (0L, 100), (1275L, 95), (2250L, 80) })
+        {
+            var projected = results.Project(time);
+            var frame = screen.CaptureFrame(1280, 720)! with
+            {
+                Battle = projected,
+                Presentation = time < results.EndMs ? TacticalBattlePresentation.SalvoFlight : TacticalBattlePresentation.SalvoResults,
+                Movement = null,
+                FirePlan = null,
+                Salvo = results.Capture(time)
+            };
+            Assert.Equal(expectedHull, Assert.Single(TacticalBattleMapRenderer.VisibleUnits(frame)).Hull);
+            Assert.Equal(expectedHull, Assert.Single(TacticalBattleSidesTab.Cards(frame)).Unit.Hull);
+            Assert.Equal(projected.Units[0].Armor, Assert.Single(TacticalBattleSidesTab.Cards(frame)).Unit.Armor);
+            Assert.Contains("0", TacticalBattlePanelHeader.Capture(frame).Losses);
+        }
+    }
+
+    [Fact]
+    public async Task DisabledAndJammedCardsStopOfferingActionsDuringPlayback()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        var own = frame.Battle.Units.First(u => u.Side == frame.Battle.PlayerSide && u.Kind == TacticalUnitKind.Drone);
+        foreach (var state in new[] { TacticalUnitState.Air, TacticalUnitState.Disabled, TacticalUnitState.Destroyed })
+        {
+            var unit = own with { State = state, Jammed = true };
+            var playback = frame with { Battle = frame.Battle with { Units = [unit] }, Presentation = TacticalBattlePresentation.SalvoFlight };
+            Assert.False(Assert.Single(TacticalBattleSidesTab.Cards(playback)).Selectable);
+        }
+        Assert.True(TacticalBattleSidesTab.Describe(own, true).Selectable);
+    }
+
+    [Fact]
     public async Task PilotCardsShowOwnAndEnemyInitiativeAndPreserveZero()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

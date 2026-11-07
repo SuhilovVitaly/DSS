@@ -12,6 +12,33 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class PanelHeaderTests
 {
     [Fact]
+    public async Task VisibleLossAndOutcomeAppearAtWinningImpactNotAtResponseReceipt()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var results = ResultsPhaseTests.ControlledResults(screen.Flow.State!);
+        var destroyed = results.Battle.Units[0] with { Hull = 0, State = TacticalUnitState.Destroyed };
+        var outcome = new TacticalOutcomeSnapshot(TacticalBattleOutcomeCode.A, [new(TacticalOutcomeReasonCode.NoDrones, "B")],
+            1, [new("A", 0), new("B", 1)], new(1, 1, 0, 0, 0, 0, 100, 10, 0, "B", 0, []), 2);
+        var shot = results.Shots[0] with { Killed = true, LethalImpact = true };
+        var final = results.Battle with
+        {
+            Phase = TacticalBattlePhase.Over,
+            Outcome = outcome,
+            Units = [destroyed],
+            Shots = [shot],
+            FireSteps = [new(0, shot.ShooterId, shot.TargetId, TacticalFireSkipReason.None, shot, [destroyed], [], outcome)]
+        };
+        results = results with { Battle = final, Shots = [shot] };
+        var before = TacticalBattlePanelHeader.Capture(Frame(results.Project(1274), TacticalBattlePresentation.SalvoFlight));
+        var impact = TacticalBattlePanelHeader.Capture(Frame(results.Project(1275), TacticalBattlePresentation.SalvoResults));
+        Assert.Equal(LossLine(0, 0), before.Losses);
+        Assert.Empty(before.Outcome);
+        Assert.Equal(LossLine(0, 1), impact.Losses);
+        Assert.Equal(BattleFormat.Localize("Outcome.Victory"), impact.Outcome);
+    }
+
+    [Fact]
     public async Task RealSalvoLossesStayHiddenUntilArrivalAndOutcomeUsesPlayerPerspective()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
@@ -30,7 +57,8 @@ public sealed class PanelHeaderTests
         Assert.NotNull(loss);
         Assert.NotEmpty(loss.BeforeSalvoUnits);
         Assert.NotEmpty(loss.Shots);
-        var flight = TacticalBattlePanelHeader.Capture(Frame(loss, TacticalBattlePresentation.SalvoFlight));
+        var initial = new TacticalBattleResults(loss, loss.Shots, [], 0).Project(0);
+        var flight = TacticalBattlePanelHeader.Capture(Frame(initial, TacticalBattlePresentation.SalvoFlight));
         var arrived = TacticalBattlePanelHeader.Capture(Frame(loss, TacticalBattlePresentation.SalvoResults));
         Assert.Equal(LossLine(0, 0), flight.Losses);
         Assert.NotEqual(flight.Losses, arrived.Losses);
@@ -51,7 +79,8 @@ public sealed class PanelHeaderTests
         Assert.Equal(BattleFormat.Localize("Outcome.Defeat"), defeated.Outcome);
         Assert.NotEmpty(victor.Reason);
         Assert.True(victor.ShowNew);
-        var hidden = TacticalBattlePanelHeader.Capture(Frame(final, TacticalBattlePresentation.SalvoFlight));
+        var beforeImpact = new TacticalBattleResults(final, final.Shots, [], 0).Project(0);
+        var hidden = TacticalBattlePanelHeader.Capture(Frame(beforeImpact, TacticalBattlePresentation.SalvoFlight));
         Assert.Empty(hidden.Outcome);
         Assert.False(hidden.ShowNew);
         int winnerLosses = final.Losses.Single(l => l.Side == winning).Count;

@@ -23,18 +23,9 @@ internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKC
         bool salvo = frame.Presentation != TacticalBattlePresentation.Current;
         int turn = salvo && !battle.Shots.IsDefaultOrEmpty ? battle.Shots[0].Turn : battle.Turn;
         bool IsOwn(string side) => side == battle.PlayerSide;
-        int ownLosses, enemyLosses;
-        if (flight && !battle.BeforeSalvoUnits.IsDefaultOrEmpty)
-        {
-            var lost = battle.BeforeSalvoUnits.Where(u => u.Kind == TacticalUnitKind.Drone &&
-                u.State is TacticalUnitState.Disabled or TacticalUnitState.Destroyed);
-            ownLosses = lost.Count(u => IsOwn(u.Side)); enemyLosses = lost.Count(u => !IsOwn(u.Side));
-        }
-        else
-        {
-            ownLosses = battle.Losses.Where(l => IsOwn(l.Side)).Sum(l => l.Count);
-            enemyLosses = battle.Losses.Where(l => !IsOwn(l.Side)).Sum(l => l.Count);
-        }
+        var lost = battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone &&
+            u.State is TacticalUnitState.Disabled or TacticalUnitState.Destroyed);
+        int ownLosses = lost.Count(u => IsOwn(u.Side)), enemyLosses = lost.Count(u => !IsOwn(u.Side));
         string phase = salvo ? "Phase.Results" : "Phase." + battle.Phase;
         SKColor phaseColor = salvo ? new(242, 188, 91) : battle.Phase switch
         {
@@ -44,7 +35,7 @@ internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKC
         };
         string outcome = "", reason = "", outcomeRole = "panel.outcome";
         SKColor outcomeColor = new(173, 182, 197);
-        if (!flight && battle.Outcome is { } result)
+        if (battle.Outcome is { } result)
         {
             string outcomeKey;
             if (result.Kind is TacticalBattleOutcomeCode.A or TacticalBattleOutcomeCode.B)

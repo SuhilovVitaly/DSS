@@ -81,22 +81,7 @@ internal static class TacticalBattleMapRenderer
 
     private static SKColor GridColor(SKColor fallback) => SkinStyle.Color("field.grid", "stroke", fallback);
 
-    private static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame frame)
-    {
-        var battle = frame.Battle;
-        if (frame.Salvo is not { InFlight: true } salvo || battle.BeforeSalvoUnits.IsDefaultOrEmpty)
-            return battle.Units;
-
-        var units = battle.BeforeSalvoUnits;
-        foreach (var flight in salvo.Flights)
-        {
-            if (!flight.Shot.LethalImpact || flight.ElapsedMs < flight.LaunchMs + TacticalBattleResults.FlightMs) continue;
-            var unit = units.FirstOrDefault(u => u.Id == flight.Shot.TargetId);
-            if (unit is not { Kind: TacticalUnitKind.Drone, State: TacticalUnitState.Air }) continue;
-            units = units.Replace(unit, unit with { State = TacticalUnitState.Destroyed, Hull = 0 });
-        }
-        return units;
-    }
+    internal static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame frame) => frame.Battle.Units;
 
     private static void DrawSalvo(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, SKPaint paint)
     {
@@ -128,7 +113,7 @@ internal static class TacticalBattleMapRenderer
                     (float)TacticalGeometry.Bearing(from.X, from.Y, to.X, to.Y));
                 continue;
             }
-            double fraction = (flight.ElapsedMs - flight.LaunchMs - TacticalBattleResults.FlightMs) / (double)TacticalBattleResults.FlashMs;
+            double fraction = (flight.ElapsedMs - flight.LaunchMs - flight.DurationMs) / (double)TacticalBattleResults.FlashMs;
             byte alpha = (byte)(255 * (1 - fraction));
             if (shot.Hit)
             {
