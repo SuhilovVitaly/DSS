@@ -80,6 +80,12 @@ internal sealed partial class TacticalBattle
                 slot++;
             }
         }
+        foreach (var drone in battle.Drones)
+        {
+            var initiative = catalog.Pilots[drone.PilotId].Initiative;
+            drone.Initiative = initiative.IsRange
+                ? battle.InitiativeRandom.RandInt(initiative.Minimum, initiative.Maximum) : initiative.Minimum;
+        }
         return battle;
 
         int Skill(PilotSkill skill) => skill.IsRange ? random.RandInt(skill.Minimum, skill.Maximum) : skill.Minimum;

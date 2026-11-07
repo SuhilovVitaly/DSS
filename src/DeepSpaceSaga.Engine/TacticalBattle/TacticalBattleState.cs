@@ -47,6 +47,7 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     public int ShieldCount { get; } = shieldCount;
     public ImmutableArray<TacticalEngineState> Engines { get; } = engines;
     public int Accuracy { get; } = accuracy;
+    public int Initiative { get; internal set; } = 50;
     public double Speed { get; set; } = speed;
     public double PreviousTurn { get; set; }
     public TacticalDroneStatus Status { get; set; } = TacticalDroneStatus.Air;
@@ -74,6 +75,7 @@ internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, stri
     public ImmutableArray<TacticalCarrier> Carriers { get; } = carriers;
     public ImmutableArray<string> Tactics { get; } = tactics;
     public Mulberry32 Random { get; } = random;
+    public Mulberry32 InitiativeRandom { get; } = new(unchecked((uint)seed ^ 0x494E4954u));
     public int Turn { get; set; }
     public int RoleChanges { get; set; }
     public List<TacticalAiEvent> AiEvents { get; } = [];

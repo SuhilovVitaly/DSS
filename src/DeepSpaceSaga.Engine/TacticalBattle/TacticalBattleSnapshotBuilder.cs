@@ -23,7 +23,7 @@ internal static class TacticalBattleSnapshotBuilder
                 d.Role, d.Jammed, d.Engines.Select(e => new TacticalEngineSnapshot(e.Definition.Id, e.Definition.Name, e.Factor,
                     e.Definition.MassKg, e.Definition.SpeedBonus, e.Definition.SpeedChange, e.Definition.TurnDeg)).ToImmutableArray(),
                 new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver,
-                battle.Catalog.Ai.Roles[d.Role].Name));
+                battle.Catalog.Ai.Roles[d.Role].Name) { Initiative = d.Initiative });
         }
         foreach (var c in battle.Carriers)
             units.Add(new(c.Id, c.Side, TacticalUnitKind.Carrier, TacticalBattleConstants.CarrierFrame, Pose(c.Pose), 0,
@@ -95,7 +95,8 @@ internal static class TacticalBattleSnapshotBuilder
                 return new TacticalDroneSetupOption(start.Id, side.Id, frame.Id, frame.Name, start.Pilot, pilot.Name,
                     new(pilot.Accuracy.Minimum, pilot.Accuracy.Maximum, pilot.Accuracy.IsRange),
                     new(pilot.Maneuver.Minimum, pilot.Maneuver.Maximum, pilot.Maneuver.IsRange), layout.Hull ?? frame.Hull,
-                    layout.Weapon!, layout.Armor, layout.Shield, layout.Shield is null ? 0 : layout.ShieldCount ?? TacticalBattleConstants.DefaultShieldCount, frame.ShieldSlots);
+                    layout.Weapon!, layout.Armor, layout.Shield, layout.Shield is null ? 0 : layout.ShieldCount ?? TacticalBattleConstants.DefaultShieldCount, frame.ShieldSlots)
+                { Initiative = new(pilot.Initiative.Minimum, pilot.Initiative.Maximum, pilot.Initiative.IsRange) };
             })).ToImmutableArray();
             var goal = scenario.Goal;
             return new TacticalScenarioOption(entry.Id, scenario.Name, scenario.Description, playerSide,

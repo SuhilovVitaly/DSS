@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0001-pilot-initiative
 ticket: EP-0017-US-0001-TK-0004-materialize-initiative
 title: "Постоянная инициатива в состоянии боя и снимках"
-stage: approved
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0017-US-0001-TK-0001-pilot-content, EP-0017-US-0001-TK-0002-initiative-contract, EP-0017-US-0001-TK-0003-pilot-schema]
@@ -130,3 +130,11 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Инициатива материализуется после legacy assembly, в canonical Drones order; fixed=0 draws, range=1 draw (включая [n,n]) отдельного battle-owned InitiativeRandom. Units и Options несут конкретное значение/определение; carriers=null. Независимый uint Mulberry vector seed1: 55,53,59,50,45,53,43,42,44,41. Main Calls остаётся42, геометрия/роли сверены прежним assembly trace. Изоляция двух боёв и запросы/ходы без reroll проверены. Strict ContentSync сохраняет полную проверку V4 base плюс единственное инициативное расширение.
+
+Дополнительная фактическая dependency: опубликованный US-0003/TK-0005 (export-only), см. Tickets execution order correction. Scope включает эту карточку. Self-review выполнено, независимое review не заявляется.
+
+Engine build PASS 0 warnings/errors; AssemblyTests/ContentSyncTests PASS 11/11; format сначала нашёл whitespace новых тестов, scoped исправление и повтор --verify-no-changes PASS; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0104/ (build/tests/format/format-fix/format-verified logs и focused.trx). DSS_VALIDATION_ROOT и PATH для pwsh заданы явно; process-tree cap300000ms. Native/UI следует TK-0005; schema Save20 не меняется.

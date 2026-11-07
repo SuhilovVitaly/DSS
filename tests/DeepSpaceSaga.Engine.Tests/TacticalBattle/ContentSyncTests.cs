@@ -59,7 +59,11 @@ public sealed class ContentSyncTests
             using var doc = Open(name + ".json");
             var rows = Table("README.md", name);
             Assert.Equal(rows.Select(r => r["id"]), doc.RootElement.EnumerateObject().Select(p => p.Name));
-            foreach (var row in rows) Fields(row, doc.RootElement.GetProperty(row["id"]), ["id"], name == "layouts");
+            foreach (var row in rows)
+            {
+                if (name == "pilots") row.Add("initiative", Initiative(row["id"]));
+                Fields(row, doc.RootElement.GetProperty(row["id"]), ["id"], name == "layouts");
+            }
         }
         using (var doc = Open("scenarios.json"))
         {
@@ -101,6 +105,28 @@ public sealed class ContentSyncTests
             files.Add(file);
             return JsonDocument.Parse(File.ReadAllText(Path.Combine(Content, file)));
         }
+    }
+
+    private static string Initiative(string id) => id switch
+    {
+        "vera" => "55",
+        "yun" => "53",
+        "marta" => "59",
+        "oleg" => "50",
+        "thug1" or "thug2" or "thug3" or "thug4" or "thug5" or "thug6" => "[40,55]",
+        _ => throw new InvalidOperationException("Unapproved initiative pilot: " + id)
+    };
+
+    [Fact]
+    public void V4BaseContentAndExplicitInitiativeExtensionAreBothValidated()
+    {
+        using var pilots = JsonDocument.Parse(File.ReadAllText(Path.Combine(Content, "pilots.json")));
+        foreach (var pilot in pilots.RootElement.EnumerateObject())
+        {
+            Assert.Equal(new[] { "name", "accuracy", "maneuver", "initiative" }, pilot.Value.EnumerateObject().Select(p => p.Name));
+            Cell(Initiative(pilot.Name), pilot.Value.GetProperty("initiative"));
+        }
+        Assert.Equal(10, pilots.RootElement.EnumerateObject().Count());
     }
 
     [Fact]
