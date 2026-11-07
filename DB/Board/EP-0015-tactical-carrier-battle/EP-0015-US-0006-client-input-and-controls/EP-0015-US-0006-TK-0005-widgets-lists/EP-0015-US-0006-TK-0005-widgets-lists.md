@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 ticket: EP-0015-US-0006-TK-0005-widgets-lists
 title: widgets-lists
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0006-TK-0004-widgets-basic"]
-files_touched: 4
+files_touched: 5
 serves: [AC-04]
 created: 2026-11-05
 revision: 3
@@ -18,10 +18,10 @@ revision: 3
 На подготовке ≈ 15 списков с подписями до ~90 символов; `XenonComboBox` только рисует (`XenonComboBox.cs:6-10`).
 
 ## Decisions
-Решения пользователя D-USER-01…13 и правила боя `DB/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
+Решения пользователя D-USER-01…13 и правила боя `VData/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
 
 ## Assumptions
-Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `DB/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
+Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `VData/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
 
 ## Code context
 | File | Current state | Allowed change |
@@ -39,7 +39,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 2. Ключи этого тикета — в `Data/Locale/Russian.json` (рабочий язык, D-USER-11) и теми же ключами в `English.json` черновым переводом без вычитки (правило R-07).
 
 ## Out of scope
-Изменения вне описанного результата, баланс и правила боя сверх `DB/Planning/V4.0`.
+Изменения вне описанного результата, баланс и правила боя сверх `VData/Planning/V4.0`.
 
 ## Invariants
 Engine владеет исходами, RNG и командами; Contracts неизменяемы; общая математика — в Motion; Client отображает допущенные снимки и не вызывает Engine из Render. Числа боя — только из `Data/TacticalBattle`. Правила исполнения R-01…R-09 ([Documentation.md](../../Documentation.md#правила-исполнения)).
@@ -51,4 +51,18 @@ Owning project: tests/DeepSpaceSaga.Client.Tests (raster + ввод). Сборк
 Критерии AC-04 истории выполнены и проверены; diff просмотрен; фактические результаты записаны в карточку; отдельный коммит тикета создан; push — сразу, и только в одобренный внутренний remote (`*.amat.com` или внутренний IP); если `origin` указывает на внешний хост (github.com, gitlab.com, bitbucket.org и т. п.) — не пушить, остановиться и сообщить пользователю (D-USER-08, D-USER-09, R-06).
 
 ## Self-containment check
-Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `DB/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-05
+
+Add ShortcutButton.cs as fifth Client code file, completing the AC-04 key-hint/tooltip button omitted from original allowlist. Reuses GenericButtonTypeA and existing tooltip delay. DropDown<T> owns selection/open/viewport-fit popup/keyboard/wheel state and uses XenonComboBox only for rendering. Shared Unicode-aware ellipsis/wrap/viewport-clamped tooltip helper stays in DropDown.cs. ScrollTextPanel generalizes clipping/offset from CombatJournalPanel but preserves word boundaries, supports fractional normalized wheel and draggable scrollbar, and follows appended log only while already at bottom. TextInputBox gets optional character predicate; old callers unchanged. All labels supplied by owner/locales; empty-list placeholder gets English/Russian key. Popup/layout and wrap updates are explicit UI calls; Draw has no command/simulation side effects. 1280x720 fixture and uiScale variants validate fit; native screen/input gates remain open.
+
+## Execution evidence — 2026-11-05
+
+AC-04 remaining control pieces implemented: viewport-fit DropDown keyboard/mouse/scroll/ellipsis/full tooltip, chronological wrapped ScrollTextPanel with thumb and conditional append-follow, optional TextInputBox predicate and ShortcutButton key hint/delayed tooltip. Existing text-input tests unchanged and passing. Unicode text elements retained on truncation, default captions cached; draws do not invoke Engine. Layout changes cancel scrollbar drag and keep popup highlight visible. Owners must Layout before opening/reopen after SetItems and reset gestures on focus loss. Screen panel/minimum geometry remains US-0008.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-widgets-lists-03/: build 0 warnings/errors, verify-format/diff/self-review PASS; 108/108 Client cases PASS including existing TextInputBox tests. Four1280x720 raster PNGs at0.75/1/1.5/2 scales in renders/, complete long-label tooltip present. Visual review of scale2 caught chevron/text collision in run02; left insets corrected and run03 inspected. Earlier run02 image retained as defect evidence. Known missing Verdana arrow glyph appears as square in journal fixture; assigned dependent TK-0006 glyph coverage/substitution, not claimed fixed here. CPU raster is not native/human acceptance. Separate immediate origin publication authorized.
+
+## Corrective continuation — 2026-11-06
+
+Before setup integration reproduced list reflow defect: wheel advances first visible row to1; identical Layout call resets it to0 via EnsureVisible. D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-dropdown-reflow-repro/ exact regression expected1 actual0. Layout now no-ops for identical bounds/viewport/scale/row capacity, invalidates on SetItems, and still recomputes when geometry changes. Two already-allowlisted code files. D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-dropdown-reflow-fix/: build0 warnings/errors, verify-format/diff/self-review PASS, all106 Tactical Client cases PASS including regression. Separate corrective commit/push, no history rewrite.

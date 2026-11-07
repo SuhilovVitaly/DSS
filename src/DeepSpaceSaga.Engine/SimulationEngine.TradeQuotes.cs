@@ -271,7 +271,7 @@ public sealed partial class SimulationEngine
             fingerprint.ToString(),
             target.Ship.IsDocked,
             target.Ship.DockedStationObjectId,
-            CanExecuteModuleCommand(target.Module, _processedWorldTimeMs),
+            CanExecuteModuleCommand(target.Module),
             CargoQuantityOf(target.Module, target.ItemTypeIndex),
             FreeCargoKg(target),
             target.Module.FuelAmountKg,

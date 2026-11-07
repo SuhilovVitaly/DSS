@@ -11,7 +11,7 @@ internal sealed class SessionConnectionLoader : IAsyncDisposable
 
     internal static string LoadErrorKey(Exception error) =>
         error.Message.StartsWith("incompatible_save_version:", StringComparison.Ordinal)
-            ? "Combat.LoadIncompatible" : "Combat.LoadFailed";
+            ? "Session.LoadIncompatible" : "Session.LoadFailed";
 
     internal Task<IGameSessionConnection> CreateAsync(Func<IGameSessionConnection> factory) => Task.Run(async () =>
     {

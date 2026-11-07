@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 title: "Планирование стрельбы, результаты и прогноз"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0008-battle-map]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0008-battle-map]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -40,9 +40,15 @@ dependencies: [EP-0015-US-0008-battle-map]
 |---|---|---|
 | [EP-0015-US-0009-TK-0001-fire-planning](EP-0015-US-0009-TK-0001-fire-planning/EP-0015-US-0009-TK-0001-fire-planning.md) | client | AC-01 |
 | [EP-0015-US-0009-TK-0002-results-phase](EP-0015-US-0009-TK-0002-results-phase/EP-0015-US-0009-TK-0002-results-phase.md) | client | AC-02 |
+| [EP-0015-US-0009-TK-0005-journal-contract](EP-0015-US-0009-TK-0005-journal-contract/EP-0015-US-0009-TK-0005-journal-contract.md) | contracts | AC-03 |
+| [EP-0015-US-0009-TK-0006-journal-events](EP-0015-US-0009-TK-0006-journal-events/EP-0015-US-0009-TK-0006-journal-events.md) | engine | AC-03 |
 | [EP-0015-US-0009-TK-0003-sides-and-log-tabs](EP-0015-US-0009-TK-0003-sides-and-log-tabs/EP-0015-US-0009-TK-0003-sides-and-log-tabs.md) | client | AC-03 |
 | [EP-0015-US-0009-TK-0004-forecast-tab](EP-0015-US-0009-TK-0004-forecast-tab/EP-0015-US-0009-TK-0004-forecast-tab.md) | client | AC-03 |
 
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution review — 2026-11-06
+
+All six tickets completed technically, including the two authoritative journal prerequisites. Real local connection and CPU rasters verify target planning, result playback, side/log views and forecast. Goldens remain unchanged. Native/physical and human acceptance remain open.

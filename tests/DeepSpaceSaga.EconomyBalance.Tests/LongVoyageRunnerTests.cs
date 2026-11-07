@@ -12,22 +12,21 @@ public sealed class LongVoyageRunnerTests
     [Theory]
     [InlineData(1000)]
     [InlineData(2000)]
-    public void ConfiguredCargoRetainsProductionPointContinuation(int cargoMultiplier)
+    public void ConfiguredCargoCapacityRoundTripsInSave20(int cargoMultiplier)
     {
         var original = EngineContentLoader.LoadRegistryFromSettingsFile(BalanceRunTests.Settings, out _, out _);
-        var configured = ClusterBalanceRunner.ConfigureCargo(original, new("point-continuation", cargoMultiplier, 1000));
-        var scenario = ScenarioLoader.LoadFromFile(Path.Combine(BalanceRunTests.Root,
-            "src/DeepSpaceSaga.Client/Scenarios/CombatMukha/scenario.json"));
+        var configured = ClusterBalanceRunner.ConfigureCargo(original, new("cargo-roundtrip", cargoMultiplier, 1000));
+        var scenario = ScenarioLoader.LoadFromFile(BalanceRunTests.Scenario);
         using var engine = new SimulationEngine(configured);
         engine.LoadScenario(scenario);
         var snapshot = engine.CaptureSnapshot();
-        Assert.NotEmpty(snapshot.Objects.Where(o => o.ObjectType == SpaceObjectType.NpcShip));
-        Assert.Contains(snapshot.InstalledModules, m => m.LauncherCombat?.Profiles is { Length: > 0 });
+        long capacity = snapshot.InstalledModules.Sum(m => m.CargoCapacityKg ?? 0);
+        Assert.Equal(100_000L * cargoMultiplier / 1000, capacity);
         var save = engine.CaptureSaveState();
         Assert.Equal(SaveFormat.CurrentSaveFormatVersion, save.SaveFormatVersion);
         using var restored = new SimulationEngine(configured);
         restored.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(save), true), true);
-        Assert.Equal(snapshot.Encounter, restored.CaptureSnapshot().Encounter);
+        Assert.Equal(capacity, restored.CaptureSnapshot().InstalledModules.Sum(m => m.CargoCapacityKg ?? 0));
     }
 
     private static readonly Lazy<ImmutableArray<ClusterCaseEvidence>> Cases = new(() => new ClusterBalanceRunner().Run(

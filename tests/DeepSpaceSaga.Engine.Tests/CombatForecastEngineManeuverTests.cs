@@ -16,7 +16,7 @@ public sealed class CombatForecastEngineManeuverTests
     [InlineData(ShipEngineCommandTypes.DirectionSynchronization)]
     public void Zero_duration_updates_are_authoritative_and_forecasts_do_not_guess_their_completion_grid(string command)
     {
-        // Both an early endpoint and a direct advance across guidance boundaries
+        // Both an early endpoint and a direct advance across elapsed time
         // must use Engine's actual next-update semantics, not a captured 100 ms TTL.
         foreach (bool earlyUpdate in new[] { true, false })
         {
@@ -29,7 +29,6 @@ public sealed class CombatForecastEngineManeuverTests
             }));
             engine.ReceiveCommand(new("zero-phase", 1, TorpedoImpactTests.Player, "MOD-PLAYER-ENGINE-01", command,
                 command is ShipEngineCommandTypes.SpeedSynchronization or ShipEngineCommandTypes.DirectionSynchronization ? TorpedoImpactTests.Target : null));
-            engine.ReceiveCommand(TorpedoImpactTests.LaunchAt("phase-flight", 700, 0, "slow"));
             var source = TorpedoImpactTests.At(engine, 37).Objects.Single(o => o.ObjectId == TorpedoImpactTests.Player);
             Assert.True(source.EngineManeuver!.CompletesOnMotionUpdate);
             Assert.Equal(0, source.EngineManeuver.CycleIntervalMs);
@@ -47,7 +46,7 @@ public sealed class CombatForecastEngineManeuverTests
                 var current = actual.Objects.Single(o => o.ObjectId == source.ObjectId);
                 if (previous == 37)
                     Assert.Contains(actual.ShipEvents, e => e.ObjectId == source.ObjectId && e.ModuleId == "MOD-PLAYER-ENGINE-01" &&
-                        e.EventType == ShipEventTypes.CommandCompleted && e.GameTimeMs == (earlyUpdate ? 50 : 100));
+                        e.EventType == ShipEventTypes.CommandCompleted && e.GameTimeMs == time);
                 if (source.EngineManeuver is null)
                 {
                     var predicted = CurrentManeuverForecast.Sample(source, time - previous);
@@ -83,7 +82,7 @@ public sealed class CombatForecastEngineManeuverTests
             All(sourceRegistry.CommandDefinitions).Select(c => c.TypeId == command ? c with { TimeFactor = 1000 } : c),
             All(sourceRegistry.FactoryTypes), All(sourceRegistry.Recipes), All(sourceRegistry.Dialogues), All(sourceRegistry.Quests),
             stationMarketProfiles: All(sourceRegistry.StationMarketProfiles), shipClasses: All(sourceRegistry.ShipClasses),
-            stationMarketEvents: All(sourceRegistry.StationMarketEvents), combatRules: sourceRegistry.CombatRules);
+            stationMarketEvents: All(sourceRegistry.StationMarketEvents));
         scenario = scenario with
         {
             GameState = scenario.GameState with
@@ -95,7 +94,6 @@ public sealed class CombatForecastEngineManeuverTests
         using var engine = TorpedoImpactTests.Create(scenario, registry);
         engine.ReceiveCommand(new("maneuver", 1, TorpedoImpactTests.Player, "MOD-PLAYER-ENGINE-01", command,
             command is ShipEngineCommandTypes.SpeedSynchronization or ShipEngineCommandTypes.DirectionSynchronization ? TorpedoImpactTests.Target : null));
-        engine.ReceiveCommand(TorpedoImpactTests.LaunchAt("forecast-flight", 700, 0, "slow"));
         var initial = TorpedoImpactTests.At(engine, 37).Objects.Single(o => o.ObjectId == TorpedoImpactTests.Player);
         Assert.NotNull(initial.EngineManeuver);
         Assert.True(CurrentManeuverForecast.HasRequiredData(initial), JsonSerializer.Serialize(initial));
@@ -141,7 +139,7 @@ public sealed class CombatForecastEngineManeuverTests
             All(source.CommandDefinitions).Select(c => c.TypeId == command ? c with { TimeFactor = 1000 } : c),
             All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             stationMarketProfiles: All(source.StationMarketProfiles), shipClasses: All(source.ShipClasses),
-            stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules, fireModes: source.FireModes);
+            stationMarketEvents: All(source.StationMarketEvents));
         using var engine = TorpedoImpactTests.Create(TorpedoImpactTests.Scenario(o => o with
         { SpeedMps = 1000, MovementType = "Linear" }), registry);
         engine.ReceiveCommand(new("phase", 1, TorpedoImpactTests.Player, "MOD-PLAYER-ENGINE-01", command,

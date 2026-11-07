@@ -1,0 +1,225 @@
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.LocalClient;
+using DeepSpaceSaga.Engine.Scenario;
+
+namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
+
+public sealed class WorldGuardTests
+{
+    private static SimulationEngine Engine()
+    {
+        string root = Path.GetFullPath(Path.Combine(ReferenceFixtureTests.Root, "../../../.."));
+        var engine = SimulationEngine.CreateFromSettingsFile(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json"));
+        engine.SetSpeed(SimulationSpeed.Speed0);
+        return engine;
+    }
+
+    [Theory]
+    [InlineData(SimulationSpeed.Speed1)]
+    [InlineData(SimulationSpeed.Speed2)]
+    public void DirectStartRequiresPausedWorld(SimulationSpeed speed)
+    {
+        using var engine = Engine();
+        engine.SetSpeed(speed);
+        var response = engine.StartTacticalBattle(new("running", 1));
+        Assert.False(response.Accepted);
+        Assert.Equal(TacticalBattleRejectionCode.WorldNotPaused, response.Code);
+        Assert.Equal(speed, engine.CurrentSpeed);
+        Assert.Null(engine.GetTacticalBattleState());
+
+        engine.SetSpeed(SimulationSpeed.Speed0);
+        Assert.True(engine.StartTacticalBattle(new("paused", 1)).Accepted);
+        long pausedTime = engine.CaptureSnapshot(advanceClock: true).GameTimeMs;
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, engine.TrySetSpeed(speed));
+        Assert.Equal(pausedTime, engine.CaptureSnapshot(advanceClock: true).GameTimeMs);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ExitAndTacticalDefeatPreserveTheCompleteSavedWorld(bool defeat)
+    {
+        using var engine = Engine();
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        Assert.False(engine.CaptureSnapshot().IsTacticalBattleActive);
+        Assert.True(engine.StartTacticalBattle(new("start", 1)).Accepted);
+        Assert.True(engine.CaptureSnapshot().IsTacticalBattleActive);
+        if (defeat)
+        {
+            engine.TacticalBattleSessionForTests!.Battle.Carrier("A").Hull = 0;
+            engine.TacticalBattleSessionForTests.Battle.CheckVictory();
+            Assert.Equal(TacticalBattleOutcomeCode.B, engine.GetTacticalBattleState()!.Outcome!.Kind);
+        }
+        else
+        {
+            for (int i = 0; i < 100; i++)
+            {
+                var state = engine.GetTacticalBattleState()!;
+                if (state.Phase == TacticalBattlePhase.Over) break;
+                var response = state.Phase == TacticalBattlePhase.Move
+                    ? engine.MoveTacticalBattle(new($"move-{i}", state.BattleId, state.Revision))
+                    : engine.FireTacticalBattle(new($"fire-{i}", state.BattleId, state.Revision,
+                        [.. state.Targets.Select(t => new TacticalFireTarget(t.DroneId, t.DefaultTargetId))]));
+                Assert.True(response.Accepted);
+            }
+            Assert.Equal(TacticalBattlePhase.Over, engine.GetTacticalBattleState()!.Phase);
+        }
+        var world = engine.CaptureSnapshot();
+        Assert.False(Assert.Single(world.Objects, o => o.ObjectId == world.PlayerShipObjectId).IsDestroyed);
+        AssertDenied(() => engine.CaptureSaveState()); // over remains active until Exit
+        Assert.True(engine.ExitTacticalBattle(new("exit", "start")).Accepted);
+        Assert.False(engine.CaptureSnapshot().IsTacticalBattleActive);
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
+    [Fact]
+    public void WorldCommandsAreRefusedEvenIfBattleExitsBeforeTheirNextTick()
+    {
+        using var engine = Engine();
+        var before = engine.CaptureSaveState();
+        engine.StartTacticalBattle(new("start", 1));
+        var command = new PlayerCommand("world", 0, before.GameState.PlayerShipObjectId, "none", "unknown");
+        engine.ReceiveCommand(command);
+        engine.ExitTacticalBattle(new("exit", "start"));
+        var result = Assert.Single(engine.CaptureSnapshot().CommandResults);
+        Assert.Equal(CommandResultStatus.Rejected, result.Status);
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, result.ReasonCode);
+        engine.ReceiveCommand(command);
+        Assert.Equal(result, Assert.Single(engine.CaptureSnapshot().CommandResults));
+        var after = engine.CaptureSaveState();
+        Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(after with
+        { GameState = after.GameState with { CommandReceipts = before.GameState.CommandReceipts } }));
+    }
+
+    [Fact]
+    public void QueuedCommandsLoadTravelAndAccelerationCannotMutateBattleWorld()
+    {
+        using var engine = Engine();
+        var before = engine.CaptureSaveState();
+        engine.ReceiveCommand(new("queued", 0, before.GameState.PlayerShipObjectId, "none", "unknown"));
+        engine.ReceiveDialogueCommand(new("queued-dialogue", DialogueAction.Start, "instance", 0));
+        engine.StartTacticalBattle(new("start", 1));
+        AssertDenied(() => engine.CaptureSaveState());
+        AssertDenied(() => engine.LoadScenario(before, isSave: true));
+        engine.ReceiveDialogueCommand(new("dialogue", DialogueAction.Start, "instance", 0));
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, engine.TrySetSpeed(SimulationSpeed.Speed2));
+        Assert.Null(engine.TrySetSpeed(SimulationSpeed.Speed0));
+        var travel = engine.TravelStation(new("travel", StationDistrict.Market));
+        Assert.False(travel.Accepted);
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, travel.Error);
+        Assert.Equal(before.GameState.GameTimeMs, travel.Snapshot.GameTimeMs);
+        Assert.Equal(SimulationSpeed.Speed0, travel.Snapshot.CurrentSpeed);
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, Assert.Single(travel.Snapshot.CommandResults).ReasonCode);
+        Assert.Contains(travel.Snapshot.DialogueEvents, e => e.CommandId == "queued-dialogue" && e.EventCode == SimulationEngine.TacticalBattleActiveReason);
+        Assert.Contains(travel.Snapshot.DialogueEvents, e => e.CommandId == "dialogue" && e.EventCode == SimulationEngine.TacticalBattleActiveReason);
+        engine.ExitTacticalBattle(new("exit", "start"));
+        Assert.Null(engine.TrySetSpeed(SimulationSpeed.Speed1));
+        engine.SetSpeed(SimulationSpeed.Speed0);
+        engine.LoadScenario(before, isSave: true);
+        Assert.False(engine.CaptureSnapshot().IsTacticalBattleActive);
+    }
+
+    [Fact]
+    public async Task DialogueCommandDuringBattleIsProcessedAsARejectionWithoutThrowing()
+    {
+        using var engine = Engine();
+        var before = engine.CaptureSaveState();
+        string directory = Path.Combine(Path.GetTempPath(), "tactical-dialogue-" + Guid.NewGuid().ToString("N"));
+        await using var connection = new LocalGameSessionConnection(engine, directory);
+        var command = new DialogueCommand("battle-dialogue", DialogueAction.Start, "", 0, DialogueDefinitionId: "dialogue.unknown");
+        Assert.True(engine.StartTacticalBattle(new("start", 1)).Accepted);
+
+        await connection.SendDialogueCommandAsync(command);
+
+        var rejection = Assert.Single(engine.CaptureSnapshot().DialogueEvents, e => e.CommandId == command.CommandId);
+        Assert.Equal(SimulationEngine.TacticalBattleActiveReason, rejection.EventCode);
+        Assert.True(engine.ExitTacticalBattle(new("exit", "start")).Accepted);
+        // Processed during the battle: neither the next tick nor a retry applies it to the world.
+        var afterExit = engine.CaptureSnapshot();
+        Assert.Null(afterExit.ActiveDialogue);
+        Assert.Equal(rejection, Assert.Single(afterExit.DialogueEvents, e => e.CommandId == command.CommandId));
+        engine.ReceiveDialogueCommand(command);
+        Assert.Equal("dialogue_duplicate", engine.CaptureSnapshot().DialogueEvents.Last(e => e.CommandId == command.CommandId).EventCode);
+        Assert.False(Directory.Exists(directory));
+
+        // Only the dialogue command journal records the rejection; the world is unchanged.
+        var after = engine.CaptureSaveState();
+        Assert.Contains(command.CommandId, after.GameState.DialogueState!.ProcessedCommandIds);
+        Assert.Equal(ScenarioLoader.Serialize(before), ScenarioLoader.Serialize(after with
+        { GameState = after.GameState with { DialogueState = before.GameState.DialogueState } }));
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(before.GameState.DialogueState!.Progress),
+            System.Text.Json.JsonSerializer.Serialize(after.GameState.DialogueState.Progress));
+    }
+
+    [Fact]
+    public void ReceiveCommandDoesNotWaitForTheWorldLockAndStillRefusesWorldCommandsInBattle()
+    {
+        using var engine = Engine();
+        string ship = engine.CaptureSnapshot().PlayerShipObjectId!;
+        Assert.True(engine.StartTacticalBattle(new("start", 1)).Accepted);
+        object worldLock = typeof(SimulationEngine)
+            .GetField("_worldStateLock", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!
+            .GetValue(engine)!;
+        using var held = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var holder = new Thread(() => { lock (worldLock) { held.Set(); release.Wait(); } }) { IsBackground = true };
+        holder.Start();
+        Assert.True(held.Wait(TimeSpan.FromSeconds(30)));
+        bool completed;
+        try
+        {
+            var sender = new Thread(() => engine.ReceiveCommand(new("world-during-lock", 0, ship, "none", "unknown"))) { IsBackground = true };
+            sender.Start();
+            completed = sender.Join(TimeSpan.FromSeconds(5));
+        }
+        finally
+        {
+            release.Set();
+            holder.Join();
+        }
+        Assert.True(completed, "ReceiveCommand waited for _worldStateLock.");
+
+        var result = Assert.Single(engine.CaptureSnapshot().CommandResults);
+        Assert.Equal(("world-during-lock", CommandResultStatus.Rejected, SimulationEngine.TacticalBattleActiveReason),
+            (result.CommandId, result.Status, result.ReasonCode));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task SaveAndQuicksaveRefusalWritesNoDirectoryOrSlotBytes(bool existing)
+    {
+        string directory = Path.Combine(Path.GetTempPath(), "tactical-save-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var engine = Engine();
+            await using var connection = new LocalGameSessionConnection(engine, directory);
+            // No reader is started: the tick loop awaits transport selection.
+            if (existing)
+            {
+                await connection.SaveAsync("quicksave");
+            }
+            string path = Path.Combine(directory, "quicksave.json");
+            byte[]? original = existing ? await File.ReadAllBytesAsync(path) : null;
+            engine.StartTacticalBattle(new("start", 1));
+            foreach (string slot in new[] { "quicksave", "manual" })
+            {
+                var error = await Assert.ThrowsAsync<InvalidOperationException>(() => connection.SaveAsync(slot).AsTask());
+                Assert.Equal(SimulationEngine.TacticalBattleActiveReason, error.Message);
+            }
+            if (existing)
+            {
+                Assert.Equal(original, await File.ReadAllBytesAsync(path));
+                Assert.Single(Directory.GetFiles(directory));
+            }
+            else Assert.False(Directory.Exists(directory));
+            engine.ExitTacticalBattle(new("exit", "start"));
+            await connection.SaveAsync("manual");
+            Assert.True(File.Exists(Path.Combine(directory, "manual.json")));
+        }
+        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+    }
+
+    private static void AssertDenied(Action action) => Assert.Equal(SimulationEngine.TacticalBattleActiveReason,
+        Assert.Throws<InvalidOperationException>(action).Message);
+}

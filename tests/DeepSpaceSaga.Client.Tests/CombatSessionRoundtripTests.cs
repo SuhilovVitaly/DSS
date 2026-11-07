@@ -10,48 +10,28 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class CombatSessionRoundtripTests
 {
     [Fact]
-    public async Task Local_session_file_save_restores_combat_snapshots()
+    public async Task Local_session_file_save_restores_world_without_legacy_combat()
     {
         await using var fixture = await CombatSessionFixture.Create();
-        await fixture.Launch("session-launch");
+        var rejected = await fixture.Launch("retired-session-launch");
+        Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(rejected.CommandResults).ReasonCode);
         var before = await fixture.Advance(1000);
         var restored = await fixture.SaveAndRestore();
         Assert.Equal(before.MotionTimeMs, restored.MotionTimeMs);
         Assert.Equal(before.GameTimeMs, restored.GameTimeMs);
         Assert.Equal(SimulationSpeed.Speed0, restored.CurrentSpeed);
-        Assert.Equal(JsonSerializer.Serialize(before.Objects), JsonSerializer.Serialize(restored.Objects));
-        Assert.Equal(JsonSerializer.Serialize(before.InstalledModules), JsonSerializer.Serialize(restored.InstalledModules));
-        Assert.Empty(restored.CombatImpacts);
-        Assert.NotNull(Assert.Single(restored.Objects.Where(o => o.OwnProjectile is not null)).OwnProjectile);
-        await fixture.Restored!.SendCommandAsync(CombatSessionFixture.PointLaunch("session-launch"));
-        await fixture.Restored.SaveAsync("again");
-        var saved = ScenarioLoader.LoadFromFile(Path.Combine(fixture.DirectoryPath, "again.json"), true);
-        Assert.Single(saved.GameState.PointCombatState!.Projectiles);
-        Assert.Equal(1, saved.GameState.CombatState!.ProjectileSequence);
+        var player = Assert.Single(restored.Objects, o => o.ObjectId == CombatSessionFixture.Player);
+        var previous = Assert.Single(before.Objects, o => o.ObjectId == CombatSessionFixture.Player);
+        Assert.Equal((previous.X, previous.Y, previous.SpeedKmS, previous.Direction), (player.X, player.Y, player.SpeedKmS, player.Direction));
+        Assert.NotEmpty(restored.InstalledModules);
+        Assert.Equal(PlayerRelation.Neutral, Assert.Single(restored.Objects, o => o.ObjectId == CombatSessionFixture.Target).RelationToPlayer);
     }
 }
 
 /// <summary>Real content, local transport, file writer and loader, with a deterministic physical clock.</summary>
 internal sealed class CombatSessionFixture : IAsyncDisposable
 {
-    internal static ScenarioFile InRangePlayerAttackScenario(ScenarioFile scenario)
-    {
-        var player = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == Player);
-        return scenario with
-        {
-            GameState = scenario.GameState with
-            {
-                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Target ? o with
-                {
-                    PositionX = player.PositionX + (o.PositionX - player.PositionX) * 0.1,
-                    PositionY = player.PositionY + (o.PositionY - player.PositionY) * 0.1,
-                    Modules = o.Modules!.Select(m => m.ModuleTypeId is "module.torpedo.launcher.basic" or "module.engine.basic" ? m with { PowerState = "Off" } : m).ToArray()
-                } : o).ToArray()
-            }
-        };
-    }
-
-    internal const string Player = "SPC-0001", Target = "SPC-0002", Launcher = "MOD-PLAYER-TORPEDO-01";
+    internal const string Player = "SPC-0001", Target = "SPC-0002", EngineModule = "MOD-PLAYER-ENGINE-01";
     private static readonly string Root = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
     private static string Settings => Path.Combine(Root, "Settings.json");
     internal string DirectoryPath { get; } = Path.Combine(Path.GetTempPath(), "dss-combat-session-" + Guid.NewGuid().ToString("N"));
@@ -72,12 +52,11 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
                 MasterSeed = 42,
                 SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
                 {
-                    Ai = null,
                     PositionX = o.ObjectId == Player ? 0 : 600,
                     PositionY = 0,
-                    SpeedMps = 0,
+                    SpeedMps = o.ObjectId == Player ? 1000 : 0,
                     DirectionDegrees = 90,
-                    MovementType = "Stationary",
+                    MovementType = o.ObjectId == Player ? "Linear" : "Stationary",
                     Modules = o.Modules!.Select(m => m with { PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != Player ? "Off" : "On" }).ToArray()
                 }).ToArray()
             }
@@ -91,7 +70,7 @@ internal sealed class CombatSessionFixture : IAsyncDisposable
         await First(fixture.Connection);
         return fixture;
     }
-    internal static PlayerCommand PointLaunch(string id) => new(id, 1, Player, Launcher, CombatCommandTypes.Launch, TargetWorldX: 600, TargetWorldY: 0, ProfileId: "fast");
+    internal static PlayerCommand PointLaunch(string id) => new(id, 1, Player, EngineModule, "torpedo.launch", TargetWorldX: 600, TargetWorldY: 0);
     internal async Task<AuthoritativeSnapshot> Launch(string id)
     {
         await Connection.SendCommandAsync(PointLaunch(id));

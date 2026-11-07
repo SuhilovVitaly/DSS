@@ -1,15 +1,15 @@
 ---
 epic: EP-0015-tactical-carrier-battle
 title: "Тактический бой V4: носитель и крыло дронов вместо боя реального времени"
-stage: draft
+stage: in-progress
 created: 2026-11-05
-source_request: "Сделать в DB/Board эпик 15 по образу эпиков, переводящий боевую систему на созданную в DB/Planning/V4.0; бой начинается клавишей в тактической карте; данные V4.0 — JSON в контенте проекта"
+source_request: "Сделать в DB/Board эпик 15 по образу эпиков, переводящий боевую систему на созданную в VData/Planning/V4.0; бой начинается клавишей в тактической карте; данные V4.0 — JSON в контенте проекта"
 revision: 3
-baseline: "main @ fb39a0cf08298a9322c84fa982bc7db614f64464"
-design_source: "DB/Planning/V4.0 (README, CombatSystem.md, Spec/, Data/, Reference/)"
-validation_status: planning-only
+baseline: "turn-based-fight @ a9404103 (execution); main @ fb39a0cf (planning)"
+design_source: "VData/Planning/V4.0 (README, CombatSystem.md, Spec/, Data/, Reference/)"
+validation_status: in-progress
 story_count: 17
-ticket_count: 78
+ticket_count: 81
 ---
 
 # EP-0015 — Тактический бой V4
@@ -18,11 +18,29 @@ ticket_count: 78
 
 ## Статус
 
-Planning-only, draft, revision 3 (после второго глубокого ревью 2026-11-05). Эпик описывает перевод боевой системы игры на пошаговый бой «носитель и крыло дронов», созданный и сбалансированный в `DB/Planning/V4.0`. Реализация, сборка, тесты и публикация не выполнялись. Human approval историй отсутствует.
+Тактический бой V4 работает с карты по F8. Старый бой реального времени удалён, Save20 хранит мир и принимает архивные Save18/19 через миграцию. Реализация, регрессия, Release замеры, четыре нативных прогона и обновление документации опубликованы. Статус технических тикетов и коммиты — в [ExecutionStatus](ExecutionStatus.md).
+
+Эпик остаётся открыт: точный счётчик «Налёта» отличается на одну победу/поражение. Остальные четыре серии совпадают; результаты Windows и Ubuntu совпали по всем 1 000 сидам «Налёта». Физический ввод, независимый и продуктовый review не выполнены. Подробности — [FinalValidation](FinalValidation.md). Ниже сохранено историческое планирование; для источников и публикации действуют D-USER-14/15 и явное разрешение текущего GitHub origin.
+
+## Разрешение публикации и запуск исполнения — 2026-11-05
+
+Текущее прямое указание пользователя: «Разрешаю выполнять эпик и пушить в текущий GitHub origin, ограничение D-USER-09/R-06 отменяю».
+
+Это указание заменяет запрет внешнего remote в D-USER-09, G-04, R-06 и связанных Definition of Done всех карточек. Разрешён текущий `origin`: `https://github.com/SuhilovVitaly/DSS`. Каждый завершённый тикет по-прежнему получает отдельный коммит и немедленный push с проверкой удалённого SHA. Исторические формулировки ниже сохранены как контекст планирования и не являются действующим запретом GitHub.
+
+Первоначальный preflight выявил отсутствие материалов D-USER-07/G-02. Этот блокер снят уточнениями D-USER-14/15; старые зависимости на справочную реализацию относятся к планированию.
+
+## Уточнение источников — 2026-11-05
+
+- **D-USER-14.** Источник материалов V4 — `D:/DeepSpaceSaga/DSS/VData/Planning/V4.0`; пользователь сообщил, что справочная реализация не нужна. Её наличие, Python-экспорт, сравнение с `wing4.py` и запуск Python-тестов больше не являются prerequisites. Правила реализуются по Spec; независимые ожидаемые результаты — существующие Markdown Reference.
+- **D-USER-15.** На уточнение об отсутствии JSON пользователь ответил: «Да, создать JSON из Markdown». Восстановить JSON контента по таблицам Data/README, Frames/README, Modules/*/README и машиночитаемые ожидаемые результаты по Markdown Reference. Не генерировать ожидаемые исходы новым C# движком. Округлённые до шести знаков данные trace проверяются с точностью исходной записи, а не выдаются за исходные IEEE-hex. Отсутствующие в Markdown поля эталонов не выдумываются; их coverage фиксируется отдельно.
+- **A-14 (техническое решение).** `tools/tactical-battle/Export-Content.ps1` экспортирует JSON из Markdown и проверяет актуальность через `-Check`; замена отсутствующих `v4_update.py`/`v4_reference.py` не создаёт симулятор. Источники V4.0 (14 существующих Markdown) включаются в Git вместе с первым тикетом для воспроизводимости экспорта на новом checkout; прочие VData/Planning не затрагиваются.
+
+Эти текущие указания заменяют противоречащие им зависимости от Python и исходного JSON ниже и в карточках. Linux parity R-05 остаётся отдельным требованием проверки платформы; отсутствие Linux не блокирует независимую историю контента US-0001.
 
 ## Источник и границы полномочий
 
-Пользователь, 2026-11-05: «по образу и подобию эпиков сделай в DB/Board эпик номер 15 который переводит боевую систему в ту которую мы создали сейчас. количество юзерсторис неограничено. симулятор боя делать не нужно. тактический бой должен начинаться по нажатию кнопки … в тактической карте. … вся информация о модулях, дронах и прочем которая есть у нас в DB/Planning/V4.0 должна быть помещена в проект в соответственные места в виде джейсонов».
+Пользователь, 2026-11-05: «по образу и подобию эпиков сделай в DB/Board эпик номер 15 который переводит боевую систему в ту которую мы создали сейчас. количество юзерсторис неограничено. симулятор боя делать не нужно. тактический бой должен начинаться по нажатию кнопки … в тактической карте. … вся информация о модулях, дронах и прочем которая есть у нас в VData/Planning/V4.0 должна быть помещена в проект в соответственные места в виде джейсонов».
 
 - **Образец формата.** Эпики `DB/Board/EP-0012…EP-0014` из ветки `codex/hex-wing-simulator` репозитория (использован клон только для чтения вне репозитория; локальный `DB/Board` совпадает с ним). Навык `$epic-writer` (`D:/DeepSpaceSaga/.agents/skills/epic-writer`) в этой среде отсутствует; формат взят из существующих эпиков и `EpicExecutionPrompt.md`.
 - **«Симулятор боя делать не нужно».** Отдельный инструмент-симулятор не входит в эпик: справочная реализация уже есть (`tools/DeepSpaceSaga.CarrierWingSim`, режим V4). Эпик переносит бой в игру.
@@ -48,7 +66,7 @@ Planning-only, draft, revision 3 (после второго глубокого �
 
 ## Assumptions и gaps
 
-- **A-02.** Правила, ИИ, данные и эталоны — `DB/Planning/V4.0` на 2026-11-05 (цель «Начального боя» 80.9 / 57.2 на сидах 1…1000). Порт обязан совпасть с `Reference/` **бой в бой**, включая число вызовов генератора.
+- **A-02.** Правила, ИИ, данные и эталоны — `VData/Planning/V4.0` на 2026-11-05 (цель «Начального боя» 80.9 / 57.2 на сидах 1…1000). Порт обязан совпасть с `Reference/` **бой в бой**, включая число вызовов генератора.
 - **A-03.** Бой — непрозрачный модальный экран поверх тактической карты (ScreenStack), мир на паузе Speed0; Engine ведёт бой отдельной сессией с собственным потоком mulberry32 (не именованные SplitMix64-потоки мира: правила V4 требуют mulberry32). RNG живёт в Engine; прогнозу Client он не нужен.
 - **A-04.** Шанс попадания для прогноза Client и для Engine — одна функция в Motion; Engine добавляет только броски.
 - **A-05.** Журнал боя в Contracts — типизированные события; тексты формирует Client по локали (тексты V4 — шаблоны Spec/Display §6).
@@ -75,7 +93,7 @@ Planning-only, draft, revision 3 (после второго глубокого �
 | Экраны — стек с overlay (Push/Pop) | `src/DeepSpaceSaga.Client/UI/ScreenStack.cs:6,46,68` |
 | Дронов, носителей и ангаров в игре нет | поиск по `src`, `DB/Documentation` |
 | Локаль — плоские ключи RU/EN | `src/DeepSpaceSaga.Client/Data/Locale/{Russian,English}.json` |
-| Бой V4: спецификация, данные (рамы, модули по файлу), эталоны 90 боёв, ход боя, серия | `DB/Planning/V4.0/{README.md,CombatSystem.md,Spec,Data,Reference}` |
+| Бой V4: спецификация, данные (рамы, модули по файлу), эталоны 90 боёв, ход боя, серия | `VData/Planning/V4.0/{README.md,CombatSystem.md,Spec,Data,Reference}` |
 | Модальная пауза Speed0, `_modalDepth`; стек рисуется снизу вверх | `src/DeepSpaceSaga.Client/UI/SkiaWindow.cs:346-353,997-1040` |
 | Глобальна только F10; F5/F9 и клавиши карты разбирает `GameSessionScreen` | `SkiaWindow.cs:682-700`; `GameSessionScreen.cs:762-766` |
 | Локаль грузится один раз, смена — после перезапуска | `src/DeepSpaceSaga.Client/Localization.cs:5-13` |
@@ -90,9 +108,9 @@ Planning-only, draft, revision 3 (после второго глубокого �
 
 ## 1. Цель
 
-Заменить бой реального времени на пошаговый тактический бой V4 «носитель и крыло на плоскости». Игрок на тактической карте нажимает клавишу боя, готовит дронов и ведёт бой: **движение → планирование стрельбы → результаты стрельбы**. Правила, числа и ИИ совпадают с `DB/Planning/V4.0` бой в бой.
+Заменить бой реального времени на пошаговый тактический бой V4 «носитель и крыло на плоскости». Игрок на тактической карте нажимает клавишу боя, готовит дронов и ведёт бой: **движение → планирование стрельбы → результаты стрельбы**. Правила, числа и ИИ совпадают с `VData/Planning/V4.0` бой в бой.
 
-Целевой результат (эталон `DB/Planning/V4.0/Reference/series.md`, сиды 1…1000):
+Целевой результат (эталон `VData/Planning/V4.0/Reference/series.md`, сиды 1…1000):
 
 | Тактика игрока | Победа | ≤ 1 потери | Без потерь |
 |---|---|---|---|
@@ -114,12 +132,12 @@ Planning-only, draft, revision 3 (после второго глубокого �
 
 ## 3. Архитектура
 
-- **Content-data:** `src/DeepSpaceSaga.Client/Data/TacticalBattle/` — дерево `DB/Planning/V4.0/Data`: `rules.json`, `ai.json`, `pilots.json`, `layouts.json`, `scenarios.json`, `Frames/<id>.json`, `Modules/Weapons|Engines|Shields|Armor/<id>.json`. Ключ `Settings.json` `typeData.tacticalBattle`. Синхронизация с V4.0 — `v4_update.py --export-game` и тест.
+- **Content-data:** `src/DeepSpaceSaga.Client/Data/TacticalBattle/` — дерево `VData/Planning/V4.0/Data`: `rules.json`, `ai.json`, `pilots.json`, `layouts.json`, `scenarios.json`, `Frames/<id>.json`, `Modules/Weapons|Engines|Shields|Armor/<id>.json`. Ключ `Settings.json` `typeData.tacticalBattle`. Синхронизация с V4.0 — `v4_update.py --export-game` и тест.
 - **Motion:** `TacticalBattle/{PyMath, TacticalGeometry, TacticalLimits, TacticalHitChance}` (и `DeterministicMath`, если нужен) — общая детерминированная математика (Combat §1.1, R-01) для Engine и прогноза Client.
 - **Engine:** `TacticalBattle/` — `Mulberry32`, загрузчик и проверки, сборка боя, движение, залп, исход, ИИ, сессия фаз; `SimulationEngine.TacticalBattle.cs` — команды, отказы и блок команд мира.
 - **Contracts:** снимок боя, options, запросы, коды отказа; методы боя default-методами `IGameSessionConnection`; флаг боя в `AuthoritativeSnapshot`.
 - **Engine.LocalClient:** `LocalGameSessionConnection` выполняет вызовы боя последовательно с тиком Engine.
-- **Client:** `GameSessionHandle` (методы боя, InterfaceLog); ввод (клавиши, модификаторы, повтор, мышь, `tactical-battle-input.json`) и элементы интерфейса (`Slider`, `Toggle`, `TabStrip`, `DropDown`, `ScrollTextPanel`); непрозрачные модальные экраны подготовки и боя (`PushModalAsync` — пауза мира, замена внутри модального уровня); раскладка, фазы, снаряды, вкладки — по `DB/Planning/V4.0/Spec/Display.md` §2–§6 от неизменяемого кадра; политика клавиш во время боя; локаль.
+- **Client:** `GameSessionHandle` (методы боя, InterfaceLog); ввод (клавиши, модификаторы, повтор, мышь, `tactical-battle-input.json`) и элементы интерфейса (`Slider`, `Toggle`, `TabStrip`, `DropDown`, `ScrollTextPanel`); непрозрачные модальные экраны подготовки и боя (`PushModalAsync` — пауза мира, замена внутри модального уровня); раскладка, фазы, снаряды, вкладки — по `VData/Planning/V4.0/Spec/Display.md` §2–§6 от неизменяемого кадра; политика клавиш во время боя; локаль.
 
 ## Истории и порядок
 
@@ -142,13 +160,14 @@ Planning-only, draft, revision 3 (после второго глубокого �
 | [EP-0015-US-0015-localization](EP-0015-US-0015-localization/EP-0015-US-0015-localization.md) | Язык тактического боя: покрытие | 0014-legacy-foundation-removal | 1 |
 | [EP-0015-US-0016-balance-and-native-acceptance](EP-0015-US-0016-balance-and-native-acceptance/EP-0015-US-0016-balance-and-native-acceptance.md) | Приёмка баланса, производительности и нативная проверка | 0015-localization | 3 |
 | [EP-0015-US-0017-project-documentation](EP-0015-US-0017-project-documentation/EP-0015-US-0017-project-documentation.md) | Документация проекта | 0001-content-and-loader, 0002-deterministic-core, 0003-battle-rules, 0004-battle-ai, 0005-session-contracts, 0006-client-input-and-controls, 0007-launch-and-setup, 0008-battle-map, 0009-fire-and-results, 0010-battle-end, 0011-legacy-removal-prep, 0012-legacy-client-removal, 0013-legacy-engine-removal, 0014-legacy-foundation-removal, 0015-localization, 0016-balance-and-native-acceptance | 4 |
+| [EP-0015-US-0019-bugs](EP-0015-US-0019-bugs/EP-0015-US-0019-bugs.md) | Баги интерфейса пошагового боя | 0007-launch-and-setup, 0008-battle-map, 0009-fire-and-results | 18 |
 
 Порядок строго последовательный по зависимостям: US-0001 ∥ US-0002 → US-0003 → US-0004 (эталоны) → US-0005 (сессия и транспорт) → US-0006 (ввод и элементы) → US-0007 → US-0008 → US-0009 → US-0010 (новый бой готов) → US-0011 (инвентаризация, фикстуры, Save20, перенос небоевого) → US-0012 (Client) → US-0013 (LocalClient, Engine) → US-0014 (Motion, Contracts, контент, инструменты) → US-0015 (локаль) → US-0016 (баланс и нативная проверка) → **US-0017 (документация) — последняя**. Удаление старого боя идёт только после готового нового и **сверху вниз**: потребители удаляются раньше того, что они используют, поэтому каждый опубликованный коммит собирается.
 
 ## Правила исполнения
 
 - **R-01. C#-семантика порта.** Каждое выражение Spec считается в `double` (Python `/` — всегда деление с дробью): деление между целыми полями или литералами запрещено. `clamp`/`min`/`max` — Python-семантики (`PyMath`), не `Math.Clamp` (бросает при lo > hi) и не `Math.Min`/`Math.Max` (другое поведение на ±0.0). Остаток — `%` (fmod), не `Math.IEEERemainder`. `List.Sort`/`Array.Sort` запрещены (неустойчивы) — `OrderBy`/`ThenBy`. «Минимум» — первый минимальный в порядке списка. Уникализация — упорядоченная (`dict.fromkeys`), не `HashSet`. Сравнение имён файлов и id — `StringComparer.Ordinal`. Порядок обхода — списки и порядок ключей JSON, не `Dictionary`. mulberry32 — `unchecked` uint. Показ чисел — `MidpointRounding.ToEven`, не `ToString("F0")`. Входы игрока с NaN/±∞ — отказ.
-- **R-02. Эталоны.** Порт проверяется `DB/Planning/V4.0/Reference` (JSON, читаются из V4.0, без копий). Расхождение — дефект порта.
+- **R-02. Эталоны.** Порт проверяется `VData/Planning/V4.0/Reference` (JSON, читаются из V4.0, без копий). Расхождение — дефект порта.
 - **R-03. Размер тикета.** Новый код: один тикет — один слой и matching test project, ≤ 5 файлов кода (файлы локали R-07 не считаются). Удаление: один тикет — один компилируемый срез одного слоя вместе с его тестами; число файлов задаёт инвентаризация (US-0011 TK-0001), причина записывается в карточке. Копия данных (US-0001 TK-0001) — исключение. `files_touched` — число позиций Code context (каталог и маска — одна позиция).
 - **R-04. Проверки.** Процессы тестов с process-tree cap 300000 ms; длинные серии — категория `LongRunning`, по тактике на запуск. Результаты — в `<artifacts>/validation/ep-0015-tactical-carrier-battle/<unique-run>/` (на Windows `<artifacts>` = `D:/DeepSpaceSaga/artifacts`).
 - **R-05. Платформы.** Эталонные тесты (US-0002, US-0004, US-0016) проходят на VDI исполнения (Windows) и на Linux — WSL2 Ubuntu на том же VDI или Linux-хост (CI в репозитории нет). JSON-эталоны пишутся только на Linux/glibc. Если Linux-среды нет — US-0002 блокируется, исполнитель сообщает пользователю.
@@ -182,3 +201,18 @@ Planning-only, draft, revision 3 (после второго глубокого �
 - последствия боя для мира и сохранение посреди боя (D-USER-03);
 - изменение баланса (только через V4.0 и экспорт);
 - новые сценарии боя.
+
+## Current numerical platform measurement — 2026-11-05
+
+US-0002: Windows and Ubuntu/glibc runs pass all 1088 independent geometry vectors bit for bit, plus all 34 published shot chances at six-decimal source precision. Keep .NET Sin/Cos/Atan2 and CPython 3.12.3 vector_norm n=2 port; no trig mismatch or new expected battle outcomes were observed/introduced. Details and coverage limits: [PlatformValidation.md](PlatformValidation.md). G-03 is measured for available D-USER-15 vectors and reopens if later golden battles expose a numerical difference; original all-battle trig arguments are absent from MD.
+### Implementation clarification — display symbols (2026-11-05)
+
+US-0006 actual Windows Verdana lacks U+2192. New controls/BattleFormat retain the selected fonts and lazily verify symbols across regular/bold MenuStyle and Xenon faces. Unsupported signs display supported ASCII equivalents; source labels/log data are unchanged. Numeric rounding is explicit ToEven before invariant decimal formatting, with exact long seed formatting and normalized signed zero. This implements the allowed glyph substitutions in US-0006 AC-05; no user approval or new combat rule inferred. See TK-0006 evidence for actual platform measurements.
+
+### Execution dependency repair — Linux native runtime (2026-11-05)
+
+Added US-0006 TK-0007 for missing Linux Skia runtime exposed by actual raster/glyph checks in run42112081477. Three build/config files, matching managed2.88.8 package; no tests excluded. TK-0006 waits for this prerequisite. Current total79 tickets/17 stories; historical planning counts above unchanged. User authorization already covers necessary implementation/validation and GitHub publication.
+
+## Journal prerequisites — 2026-11-06
+
+Display §6 requires retained exact shot chance, rear flag, per-target damage and system metadata. Added US-0009 TK-0005 (Contracts) and TK-0006 (Engine) as prerequisites for the Client tabs to keep ownership and historical journal facts intact. Current total 81 tickets / 17 stories.

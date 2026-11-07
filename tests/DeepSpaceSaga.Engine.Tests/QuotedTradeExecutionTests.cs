@@ -90,7 +90,7 @@ public class QuotedTradeExecutionTests
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint,
             stationMarketProfiles: Enumerable.Range(0, source.StationMarketProfiles.Count)
                 .Select(source.StationMarketProfiles.GetDefinition).Append(profile),
-            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition), combatRules: source.CombatRules);
+            shipClasses: Enumerable.Range(0, source.ShipClasses.Count).Select(source.ShipClasses.GetDefinition));
     }
 
     internal static ScenarioFile MarketTemplate(IReadOnlyList<StationInventoryItemData>? stock = null)
@@ -105,11 +105,6 @@ public class QuotedTradeExecutionTests
             {
                 TradingEconomyContinuation = null, // A fresh scenario has no continuation manifest.
                 // Recreate a fresh scenario rather than importing a current combat continuation.
-                PointCombatState = null,
-                CombatState = null,
-                DefenseState = null,
-                HostileCombatState = null,
-                CombatReportsState = null,
 
                 MarketKnowledge = null, // New fixture profile gets its own initial observation.
                 TradingMap = null,

@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0016-balance-and-native-acceptance
 title: "Приёмка баланса, производительности и нативная проверка"
-stage: draft
+stage: in-progress
 dependencies: [EP-0015-US-0015-localization]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0015-localization]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -22,7 +22,7 @@ dependencies: [EP-0015-US-0015-localization]
 
 ## Completion evidence
 
-- **AC-01.** Серия цели в C# (goal.seeds, все тактики стороны игрока) совпадает с `DB/Planning/V4.0/Reference/series.json` по целым счётчикам точно. Тест длинный: категория `LongRunning` (вводится этим тикетом — `[Trait("Category", "LongRunning")]`, фильтр запуска записан), по тактике на запуск.
+- **AC-01.** Серия цели в C# (goal.seeds, все тактики стороны игрока) совпадает с `VData/Planning/V4.0/Reference/series.json` по целым счётчикам точно. Тест длинный: категория `LongRunning` (вводится этим тикетом — `[Trait("Category", "LongRunning")]`, фильтр запуска записан), по тактике на запуск.
 
 - **AC-02.** Производительность на VDI исполнения (Release): шаг хода (планирование + движение + залп) p95 ≤ 2 мс; `aimAt` на движении мыши ≤ 1 мс; кадр экрана боя ≤ 16 мс при 1920×1080 (замер по образцу `TacticalMapFrameProfile`/`GameSessionScreen.Profiling`); серия 1000 боёв ≤ 60 с. Фактические значения записаны.
 
@@ -45,3 +45,6 @@ dependencies: [EP-0015-US-0015-localization]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+## Итог выполнения
+
+AC-02 Release performance и AC-03 native managed-window пройдены, протокол в [FinalValidation](../FinalValidation.md). AC-01 остаётся открытым: четыре серии точно совпали; «Налёт» — 856/140 против 857/139, одинаковые результаты по всем сидам на Windows и Ubuntu. Полная продуктовая/физическая приёмка остаётся отдельной.

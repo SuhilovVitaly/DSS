@@ -1,0 +1,194 @@
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Engine.Scenario;
+
+namespace DeepSpaceSaga.Engine.Tests;
+
+public sealed class SaveMigration20Tests
+{
+    private static readonly string[] Obsolete = ["combatState", "defenseState", "hostileCombatState", "combatReportsState",
+        "combatReactionDelays", "pointCombatState"];
+
+    [Fact]
+    public void CurrentWriterEmitsOnlyWorldStateAndTheResultRoundTrips()
+    {
+        using var engine = Create();
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(SaveFixturesTests.ClientRoot, "Scenarios/Default/scenario.json")));
+        var save = engine.CaptureSaveState();
+        string json = ScenarioLoader.Serialize(save);
+        using var document = JsonDocument.Parse(json);
+        Assert.Equal(20, document.RootElement.GetProperty("saveFormatVersion").GetInt32());
+        var world = document.RootElement.GetProperty("gameState");
+        Assert.All(Obsolete, field => Assert.False(world.TryGetProperty(field, out _), field));
+        AssertWorld(save);
+        using var restored = Create();
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(json, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        Assert.Equal(json, ScenarioLoader.Serialize(restored.CaptureSaveState()));
+    }
+
+    [Theory]
+    [InlineData("Default-Save18-combat.json")]
+    [InlineData("Default-Save19-combat.json")]
+    public void MigrationDiscardsArchivedHostileActors(string name)
+    {
+        var archive = Fixture(name);
+        Assert.Contains(archive["gameState"]!["spaceObjects"]!.AsArray(),
+            o => (string?)o!["objectId"] == "SPC-MUKHA-01");
+        Assert.DoesNotContain(Load(archive).GameState.SpaceObjects, o => o.ObjectId == "SPC-MUKHA-01");
+    }
+
+    [Fact]
+    public void Save20RoundTripKeepsLiveHostileNpc()
+    {
+        string path = Path.Combine(SaveFixturesTests.ClientRoot, "Scenarios/PlayerShipOnly/scenario.json");
+        var scenario = ScenarioLoader.LoadFromFile(path);
+        var npc = Assert.Single(scenario.GameState.SpaceObjects, o => o.ObjectType == "NpcShip");
+        scenario = scenario with
+        {
+            GameState = scenario.GameState with
+            {
+                SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == npc.ObjectId
+                    ? o with { RelationToPlayer = "enemy" }
+                    : o).ToArray()
+            }
+        };
+
+        using var engine = Create();
+        engine.LoadScenario(scenario);
+        Assert.Contains(engine.CaptureSnapshot().Objects, o => o.ObjectId == npc.ObjectId);
+
+        string json = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        using var restored = Create();
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(json, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        var savedNpc = Assert.Single(restored.CaptureSaveState().GameState.SpaceObjects, o => o.ObjectId == npc.ObjectId);
+        Assert.Equal("enemy", savedNpc.RelationToPlayer);
+        Assert.Equal(npc.ObjectType, savedNpc.ObjectType);
+    }
+
+    [Theory]
+    [InlineData("Default-Save18-combat.json")]
+    [InlineData("Default-Save19-combat.json")]
+    public void MigrationRemovesCombatAndKeepsWorldClocksSeedAndCatalog(string name)
+    {
+        string json = File.ReadAllText(Path.Combine(SaveFixturesTests.Fixtures, name));
+        using var before = JsonDocument.Parse(json);
+        var source = before.RootElement.GetProperty("gameState");
+        var migrated = ScenarioLoader.LoadFromJson(json, allowNonZeroGameTime: true, isSave: true);
+        AssertWorld(migrated);
+        Assert.Equal(source.GetProperty("gameTimeMs").GetInt64(), migrated.GameState.GameTimeMs);
+        Assert.Equal(source.GetProperty("simulationTimeMs").GetInt64(), migrated.GameState.MotionTimeMs);
+        Assert.Equal(source.GetProperty("masterSeed").GetUInt64(), migrated.GameState.MasterSeed);
+        Assert.Equal(source.GetProperty("playerTokens").GetInt64(), migrated.GameState.PlayerTokens);
+        Assert.Equal(source.GetProperty("catalogCompatibility").GetProperty("fingerprint").GetString(),
+            migrated.GameState.CatalogCompatibility!.Fingerprint);
+        Assert.DoesNotContain(migrated.GameState.CommandReceipts ?? [], r => r.CommandId is "fixture-torpedo" or "fixture-defense");
+        Assert.Contains(migrated.GameState.SpaceObjects, o => o.ObjectType == SpaceObjectType.Station);
+    }
+
+    [Fact]
+    public void MigratedSave19WithStationDialogueAndIncidentLoadsWithoutReferencesToTheRemovedHostile()
+    {
+        const string hostile = "SPC-MUKHA-01", station = "SPC-0002";
+        var archive = Fixture("Default-Save19-combat.json");
+        long time = archive["gameState"]!["gameTimeMs"]!.GetValue<long>();
+        var dialogue = new DeepSpaceSaga.Engine.Dialogue.DialogueSaveState(
+            new DialogueState("dialogue-1", "dialogue.station-docking", station, "CHR-0003", "pirate_warning", 1, false, [],
+                "Dialogue.Docking.PirateWarning", "Dock Operator", null, null,
+                System.Collections.Immutable.ImmutableDictionary<string, string>.Empty),
+            DeepSpaceSaga.Engine.Dialogue.DialogueProgressState.Empty with
+            {
+                StationAccessStates = System.Collections.Immutable.ImmutableDictionary<string, StationAccessState>.Empty
+                    .Add(station, new(station, true)),
+                SecurityIncidents = [new("dialogue-1-0-0", station, "piracy", time, time + 60_000)]
+            },
+            [], 1, 0, null);
+        archive["gameState"]!["dialogueState"] = JsonSerializer.SerializeToNode(dialogue);
+        Assert.Contains(hostile, archive.ToJsonString(), StringComparison.Ordinal);
+
+        var migrated = Load(archive);
+        using var engine = Create();
+        engine.LoadScenario(migrated, isSave: true);
+
+        var snapshot = engine.CaptureSnapshot();
+        Assert.DoesNotContain(snapshot.Objects, o => o.ObjectId == hostile);
+        Assert.Equal(station, snapshot.ActiveDialogue!.StationObjectId);
+        Assert.Contains(snapshot.Objects, o => o.ObjectId == station);
+        var save = engine.CaptureSaveState();
+        string json = ScenarioLoader.Serialize(save);
+        Assert.DoesNotContain("MUKHA", json, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(station, Assert.Single(save.GameState.DialogueState!.Progress.SecurityIncidents).StationObjectId);
+        using var restored = Create();
+        restored.LoadScenario(ScenarioLoader.LoadFromJson(json, allowNonZeroGameTime: true, isSave: true), isSave: true);
+        Assert.Equal(json, ScenarioLoader.Serialize(restored.CaptureSaveState()));
+    }
+
+    [Fact]
+    public void ArchivedPendingCommandsDropCombatAndKeepOrdinaryCommands()
+    {
+        var archive = Fixture("Default-Save19-combat.json");
+        archive["gameState"]!["pendingCommands"] = JsonNode.Parse("""
+            [
+              {"CommandId":"retired","ClientSequence":71,"ObjectId":"SPC-0001","ModuleId":"removed",
+               "CommandType":"torpedo.launch","ProfileId":"fast","TargetWorldX":10,"TargetWorldY":20},
+              {"CommandId":"keep","ClientSequence":72,"ObjectId":"SPC-0001","ModuleId":"MOD-PLAYER-ENGINE-01",
+               "CommandType":"engine.orbit","TargetWorldX":30,"TargetWorldY":40,
+               "ModeId":null,"ProfileId":null,"ThreatProjectileId":null,"EvadeSide":null}
+            ]
+            """);
+        var pending = Assert.Single(Load(archive).GameState.PendingCommands!);
+        Assert.Equal(("keep", ShipEngineCommandTypes.Orbit, 30d, 40d),
+            (pending.CommandId, pending.CommandType, pending.TargetWorldX!.Value, pending.TargetWorldY!.Value));
+        archive["saveFormatVersion"] = 20;
+        foreach (string field in Obsolete) archive["gameState"]!.AsObject().Remove(field);
+        Assert.Throws<ScenarioException>(() => Load(archive));
+    }
+
+    [Fact]
+    public void OldSchemaViolationsAndDamagedLegacyCombatAreRejectedBeforeDiscard()
+    {
+        var save18 = Fixture("Default-Save18-combat.json");
+        save18["gameState"]!["debugTuning"] = new JsonArray();
+        Assert.Contains("requires Save19", Assert.Throws<ScenarioException>(() => Load(save18)).Message);
+
+        var corrupt = Fixture("Default-Save19-combat.json");
+        corrupt["gameState"]!["pointCombatState"]!["Projectiles"]![0]!["Flight"]!["SpeedKmS"] = -1;
+        Assert.Throws<ScenarioException>(() => Load(corrupt));
+        corrupt = Fixture("Default-Save19-combat.json");
+        corrupt["saveFormatVersion"] = 20;
+        Assert.Contains("obsolete real-time combat", Assert.Throws<ScenarioException>(() => Load(corrupt)).Message);
+
+        var unsupported = Fixture("Default-Save19.json");
+        unsupported["saveFormatVersion"] = 17;
+        Assert.Contains("incompatible_save_version", Assert.Throws<ScenarioException>(() => Load(unsupported)).Message);
+    }
+
+    [Fact]
+    public void MismatchedLegacyCatalogCannotReplaceAnExistingWorld()
+    {
+        using var engine = Create();
+        engine.LoadScenario(ScenarioLoader.LoadFromFile(Path.Combine(SaveFixturesTests.ClientRoot, "Scenarios/Default/scenario.json")));
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var invalid = Fixture("Default-Save19-combat.json");
+        invalid["gameState"]!["catalogCompatibility"]!["fingerprint"] = new string('A', 64);
+        var migrated = Load(invalid);
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(migrated, isSave: true));
+        Assert.Contains("catalog fingerprint", error.Message);
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
+    private static void AssertWorld(ScenarioFile save)
+    {
+        Assert.Equal(20, save.SaveFormatVersion);
+        Assert.DoesNotContain(save.GameState.SpaceObjects, o => o.ObjectType is "Missile" or "Countermeasure" or "Wreck");
+        var player = save.GameState.SpaceObjects.Single(o => o.ObjectId == save.GameState.PlayerShipObjectId);
+        Assert.Contains(player.Modules!, m => m.ModuleTypeId.Contains("scanner", StringComparison.Ordinal));
+        Assert.Contains(player.Modules!, m => m.ModuleTypeId.Contains("engine", StringComparison.Ordinal));
+        Assert.DoesNotContain(player.Modules!, m => m.ModuleTypeId.Contains("torpedo", StringComparison.Ordinal) ||
+            m.ModuleTypeId.Contains("countermeasure", StringComparison.Ordinal) || m.ModuleTypeId == "module.combat.laser");
+    }
+
+    private static JsonNode Fixture(string name) => JsonNode.Parse(File.ReadAllText(Path.Combine(SaveFixturesTests.Fixtures, name)))!;
+    private static ScenarioFile Load(JsonNode json) => ScenarioLoader.LoadFromJson(json.ToJsonString(), allowNonZeroGameTime: true, isSave: true);
+    private static SimulationEngine Create() => new(SaveFixturesTests.Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
+}

@@ -8,9 +8,6 @@ namespace DeepSpaceSaga.Engine.Rng;
 /// </summary>
 internal static class RngStreamNames
 {
-    public const string LaunchScatter = "launch_scatter";
-    public const string NpcDodge = "npc_dodge";
-    public const string CombatHitLocation = "combat.hit.location.v1";
     public static string StationCredits(string stationObjectId) => $"StationCredits:{stationObjectId}";
 
     public static string StationPriceCoefficient(string stationObjectId) => $"StationPriceCoefficient:{stationObjectId}";

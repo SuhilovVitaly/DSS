@@ -4,7 +4,7 @@ using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 namespace DeepSpaceSaga.Client.Tests;
 
-public sealed class TorpedoInspectionTests
+public sealed class ShipInspectionTests
 {
     [Theory]
     [InlineData(1f)]
@@ -13,7 +13,7 @@ public sealed class TorpedoInspectionTests
     public void Rendered_speed_value_has_clear_gap_after_label(float scale)
     {
         var panel = new ObjectInfoPanel();
-        var data = new ObjectInfoPanelData("torpedo", "Torpedo", 3, 0, SpaceObjectType.Missile);
+        var data = new ObjectInfoPanelData("ship", "Ship", 3, 0, SpaceObjectType.NpcShip);
         using var bitmap = new SKBitmap((int)(800 * scale), (int)(600 * scale));
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(SKColors.Black);

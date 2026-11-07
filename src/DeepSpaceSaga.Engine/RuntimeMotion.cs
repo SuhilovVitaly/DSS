@@ -9,9 +9,7 @@ internal static class RuntimeMotion
 
     internal static ObjectMotionSnapshot At(SpaceObjectRuntime obj, long gameTimeMs)
     {
-        if (obj.InitialMotion.Evasion is { } evasion)
-            return CurrentManeuverForecast.Sample(obj.InitialMotion, Math.Max(0, gameTimeMs - evasion.SampleMotionTimeMs));
-        if (obj.InitialMotion.SpeedHoldAccelerationKmS2 is not null || obj.InitialMotion.TurnHoldRateDegPerSec is not null || obj.InitialMotion.OwnProjectile is not null || obj.InitialMotion.ObservedProjectile is not null)
+        if (obj.InitialMotion.SpeedHoldAccelerationKmS2 is not null || obj.InitialMotion.TurnHoldRateDegPerSec is not null)
             return CurrentManeuverForecast.Sample(obj.InitialMotion, Math.Max(0, gameTimeMs - obj.StartGameTimeMs));
         if (obj.InitialMotion.Orbit is { } orbit)
             return OrbitalMotionMath.At(obj.InitialMotion, orbit, gameTimeMs);

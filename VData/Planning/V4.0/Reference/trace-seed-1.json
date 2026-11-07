@@ -1,0 +1,4796 @@
+{
+  "header": {
+    "formatVersion": 2,
+    "source": "independent-markdown",
+    "exporterPython": "3.12.3",
+    "exporterLibc": "glibc 2.39",
+    "exporterOs": "Linux-7.0.0-1017-azure-x86_64-with-glibc2.39",
+    "sourceSha256": {
+      "battles.md": "2607b606c1a8eb135cfa9d68d16e24f974c77b81b429f26b1372b1904f29a458",
+      "trace-seed-1.md": "1411c33a1972bf8a159aa05ce654f1cb5fa6c9845c19193f9164ba73688583ab",
+      "series.md": "a2101b441c9d50f33f6d95fde860dab1ecf706388cebf58179d92c46f257a7a7"
+    },
+    "geometryEncoding": "little-endian IEEE-754 binary64 hex",
+    "tracePrecision": "decimal-6",
+    "missingCoverage": [
+      "original simulator environment",
+      "unrounded trace IEEE bits",
+      "all battle trig arguments",
+      "per-weapon statistics",
+      "rearKills in battle summaries",
+      "roleChanges",
+      "stage calls for battles other than seed 1",
+      "exact series integer sums and timeout counts"
+    ]
+  },
+  "data": {
+    "seed": 1,
+    "tactic": "dogfight",
+    "decimalPlaces": 6,
+    "assembly": {
+      "calls": 42,
+      "units": [
+        {
+          "id": "Вера",
+          "side": "A",
+          "frame": "heavy",
+          "accuracy": 55,
+          "maneuver": 52,
+          "x": 136.334406,
+          "y": 225.689874,
+          "course": -15.029713,
+          "speed": 60.0,
+          "hull": 65,
+          "armor": 80,
+          "role": "fighter"
+        },
+        {
+          "id": "Юн",
+          "side": "A",
+          "frame": "heavy",
+          "accuracy": 53,
+          "maneuver": 55,
+          "x": 136.707835,
+          "y": 274.739453,
+          "course": 14.808439,
+          "speed": 60.0,
+          "hull": 65,
+          "armor": 80,
+          "role": "fighter"
+        },
+        {
+          "id": "Марта",
+          "side": "A",
+          "frame": "light",
+          "accuracy": 59,
+          "maneuver": 54,
+          "x": 135.470864,
+          "y": 218.410593,
+          "course": -14.56966,
+          "speed": 60.0,
+          "hull": 55,
+          "armor": 80,
+          "role": "fighter"
+        },
+        {
+          "id": "Олег",
+          "side": "A",
+          "frame": "light",
+          "accuracy": 50,
+          "maneuver": 51,
+          "x": 127.580966,
+          "y": 277.025513,
+          "course": -0.871417,
+          "speed": 60.0,
+          "hull": 55,
+          "armor": 80,
+          "role": "fighter"
+        },
+        {
+          "id": "Таг-1",
+          "side": "B",
+          "frame": "thug",
+          "accuracy": 50,
+          "maneuver": 40,
+          "x": 757.16918,
+          "y": 179.168421,
+          "course": 165.538438,
+          "speed": 55.0,
+          "hull": 50,
+          "armor": 50,
+          "role": "striker"
+        },
+        {
+          "id": "Таг-2",
+          "side": "B",
+          "frame": "thug",
+          "accuracy": 48,
+          "maneuver": 55,
+          "x": 747.931275,
+          "y": 128.795111,
+          "course": -159.447012,
+          "speed": 55.0,
+          "hull": 45,
+          "armor": 35,
+          "role": "interceptor"
+        },
+        {
+          "id": "Таг-3",
+          "side": "B",
+          "frame": "thug",
+          "accuracy": 55,
+          "maneuver": 44,
+          "x": 768.202628,
+          "y": 180.627537,
+          "course": 170.651373,
+          "speed": 55.0,
+          "hull": 40,
+          "armor": 20,
+          "role": "fighter"
+        },
+        {
+          "id": "Таг-4",
+          "side": "B",
+          "frame": "thug",
+          "accuracy": 49,
+          "maneuver": 51,
+          "x": 763.899264,
+          "y": 118.489932,
+          "course": -174.065592,
+          "speed": 55.0,
+          "hull": 40,
+          "armor": 20,
+          "role": "fighter"
+        },
+        {
+          "id": "Таг-5",
+          "side": "B",
+          "frame": "thug",
+          "accuracy": 46,
+          "maneuver": 55,
+          "x": 763.744,
+          "y": 211.168031,
+          "course": 170.839251,
+          "speed": 55.0,
+          "hull": 45,
+          "armor": 35,
+          "role": "fighter"
+        },
+        {
+          "id": "Таг-6",
+          "side": "B",
+          "frame": "thug",
+          "accuracy": 47,
+          "maneuver": 47,
+          "x": 767.759959,
+          "y": 92.916727,
+          "course": -178.009448,
+          "speed": 55.0,
+          "hull": 40,
+          "armor": 20,
+          "role": "fighter"
+        }
+      ]
+    },
+    "turns": [
+      {
+        "number": 1,
+        "planningCalls": 58,
+        "salvoCallsBefore": 58,
+        "salvoCallsAfter": 58,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 77.471264,
+            "turn": 5.484571
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 77.572254,
+            "turn": -24.258822
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 81.714286,
+            "turn": 4.262064
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 81.870504,
+            "turn": -6.796757
+          },
+          {
+            "id": "Таг-1",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": 8.215496
+          },
+          {
+            "id": "Таг-2",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 55.609756
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 72.766234,
+            "turn": 4.611026
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 72.766234,
+            "turn": -14.572129
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 71.682927,
+            "turn": 7.90096
+          },
+          {
+            "id": "Таг-6",
+            "role": "fighter",
+            "speed": 72.766234,
+            "turn": -14.484739
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 212.195674,
+            "y": 210.115231,
+            "course": -9.545142
+          },
+          {
+            "id": "Юн",
+            "x": 213.736463,
+            "y": 274.264436,
+            "course": -9.450383
+          },
+          {
+            "id": "Марта",
+            "x": 215.410018,
+            "y": 201.556217,
+            "course": -10.307596
+          },
+          {
+            "id": "Олег",
+            "x": 209.080065,
+            "y": 269.724111,
+            "course": -7.668174
+          },
+          {
+            "id": "Таг-1",
+            "x": 707.869806,
+            "y": 187.265251,
+            "course": 173.753934
+          },
+          {
+            "id": "Таг-2",
+            "x": 723.252569,
+            "y": 93.142456,
+            "course": -103.837256
+          },
+          {
+            "id": "Таг-3",
+            "x": 695.917667,
+            "y": 188.820859,
+            "course": 175.262399
+          },
+          {
+            "id": "Таг-4",
+            "x": 691.428049,
+            "y": 122.507664,
+            "course": 171.362279
+          },
+          {
+            "id": "Таг-5",
+            "x": 692.308751,
+            "y": 216.442299,
+            "course": 178.740211
+          },
+          {
+            "id": "Таг-6",
+            "x": 695.725977,
+            "y": 101.841045,
+            "course": 167.505813
+          }
+        ],
+        "shots": [],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "air",
+            "hull": 50,
+            "armor": 50,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 2,
+        "planningCalls": 74,
+        "salvoCallsBefore": 74,
+        "salvoCallsAfter": 74,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 93.678161,
+            "turn": -3.197263
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 93.930636,
+            "turn": 0.834104
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 103.428571,
+            "turn": -4.221226
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 103.741007,
+            "turn": -2.268894
+          },
+          {
+            "id": "Таг-1",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": 0.255914
+          },
+          {
+            "id": "Таг-2",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 55.609756
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 84.480519,
+            "turn": 2.81556
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 84.480519,
+            "turn": -1.746599
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 82.073171,
+            "turn": 2.285041
+          },
+          {
+            "id": "Таг-6",
+            "role": "fighter",
+            "speed": 84.480519,
+            "turn": 1.679013
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 303.967871,
+            "y": 191.371512,
+            "course": -12.742404
+          },
+          {
+            "id": "Юн",
+            "x": 306.528008,
+            "y": 259.685433,
+            "course": -8.616279
+          },
+          {
+            "id": "Марта",
+            "x": 316.18829,
+            "y": 178.389995,
+            "course": -14.528823
+          },
+          {
+            "id": "Олег",
+            "x": 311.513032,
+            "y": 253.342252,
+            "course": -9.937067
+          },
+          {
+            "id": "Таг-1",
+            "x": 658.151662,
+            "y": 192.566405,
+            "course": 174.009848
+          },
+          {
+            "id": "Таг-2",
+            "x": 738.734299,
+            "y": 52.639784,
+            "course": -48.227499
+          },
+          {
+            "id": "Таг-3",
+            "x": 611.559182,
+            "y": 193.209238,
+            "course": 178.077959
+          },
+          {
+            "id": "Таг-4",
+            "x": 608.165632,
+            "y": 136.783864,
+            "course": 169.61568
+          },
+          {
+            "id": "Таг-5",
+            "x": 610.241034,
+            "y": 216.201145,
+            "course": -178.974748
+          },
+          {
+            "id": "Таг-6",
+            "x": 612.92802,
+            "y": 118.60343,
+            "course": 169.184827
+          }
+        ],
+        "shots": [],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "air",
+            "hull": 50,
+            "armor": 50,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 3,
+        "planningCalls": 84,
+        "salvoCallsBefore": 84,
+        "salvoCallsAfter": 88,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 93.678161,
+            "turn": -6.092429
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 93.930636,
+            "turn": -4.149188
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 104.285714,
+            "turn": -3.291387
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 104.676259,
+            "turn": -0.01127
+          },
+          {
+            "id": "Таг-1",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 51.818182
+          },
+          {
+            "id": "Таг-2",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 55.609756
+          },
+          {
+            "id": "Таг-3",
+            "role": "striker",
+            "speed": 66.714286,
+            "turn": -4.537957
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 84.480519,
+            "turn": 7.244494
+          },
+          {
+            "id": "Таг-5",
+            "role": "striker",
+            "speed": 65.390244,
+            "turn": -4.890575
+          },
+          {
+            "id": "Таг-6",
+            "role": "interceptor",
+            "speed": 66.714286,
+            "turn": -42.935065
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 393.725352,
+            "y": 164.698617,
+            "course": -18.834833
+          },
+          {
+            "id": "Юн",
+            "x": 398.647843,
+            "y": 241.429306,
+            "course": -12.765467
+          },
+          {
+            "id": "Марта",
+            "x": 416.122069,
+            "y": 148.625143,
+            "course": -17.82021
+          },
+          {
+            "id": "Олег",
+            "x": 414.616705,
+            "y": 235.265974,
+            "course": -9.948337
+          },
+          {
+            "id": "Таг-1",
+            "x": 619.119982,
+            "y": 173.194127,
+            "course": -134.17197
+          },
+          {
+            "id": "Таг-2",
+            "x": 780.901987,
+            "y": 42.538476,
+            "course": 7.382257
+          },
+          {
+            "id": "Таг-3",
+            "x": 545.091114,
+            "y": 198.741962,
+            "course": 173.540002
+          },
+          {
+            "id": "Таг-4",
+            "x": 524.178527,
+            "y": 145.398662,
+            "course": 176.860175
+          },
+          {
+            "id": "Таг-5",
+            "x": 544.910479,
+            "y": 218.518337,
+            "course": 176.134677
+          },
+          {
+            "id": "Таг-6",
+            "x": 561.257953,
+            "y": 158.466028,
+            "course": 126.249762
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Марта",
+            "target": "Таг-4",
+            "distance": 108.104618,
+            "angle": 16.109912,
+            "chance": 0.561611,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Олег",
+            "target": "Таг-5",
+            "distance": 131.365715,
+            "angle": 2.623843,
+            "chance": 0.547041,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-4",
+            "target": "Марта",
+            "distance": 108.104618,
+            "angle": 1.429527,
+            "chance": 0.469466,
+            "hit": 1,
+            "damage": 41,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "air",
+            "hull": 50,
+            "armor": 50,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 4,
+        "planningCalls": 92,
+        "salvoCallsBefore": 92,
+        "salvoCallsAfter": 99,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 93.678161,
+            "turn": 0.0
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 93.930636,
+            "turn": 0.0
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 104.285714,
+            "turn": 3.317145
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 104.676259,
+            "turn": -12.509417
+          },
+          {
+            "id": "Таг-1",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 51.818182
+          },
+          {
+            "id": "Таг-2",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 55.609756
+          },
+          {
+            "id": "Таг-3",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": -0.259041
+          },
+          {
+            "id": "Таг-4",
+            "role": "striker",
+            "speed": 66.714286,
+            "turn": -11.033917
+          },
+          {
+            "id": "Таг-5",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": -0.274899
+          },
+          {
+            "id": "Таг-6",
+            "role": "interceptor",
+            "speed": 48.948052,
+            "turn": -56.25974
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 482.387344,
+            "y": 134.455451,
+            "course": -18.834833
+          },
+          {
+            "id": "Юн",
+            "x": 490.256768,
+            "y": 220.674325,
+            "course": -12.765467
+          },
+          {
+            "id": "Марта",
+            "x": 516.480744,
+            "y": 120.326752,
+            "course": -14.503065
+          },
+          {
+            "id": "Олег",
+            "x": 514.115095,
+            "y": 203.384269,
+            "course": -22.457754
+          },
+          {
+            "id": "Таг-1",
+            "x": 610.219837,
+            "y": 130.538006,
+            "course": -82.353788
+          },
+          {
+            "id": "Таг-2",
+            "x": 813.055113,
+            "y": 71.630174,
+            "course": 62.992013
+          },
+          {
+            "id": "Таг-3",
+            "x": 495.424716,
+            "y": 204.507798,
+            "course": 173.280961
+          },
+          {
+            "id": "Таг-4",
+            "x": 458.58021,
+            "y": 157.007946,
+            "course": 165.826258
+          },
+          {
+            "id": "Таг-5",
+            "x": 495.034593,
+            "y": 222.038484,
+            "course": 175.859778
+          },
+          {
+            "id": "Таг-6",
+            "x": 560.363645,
+            "y": 205.580975,
+            "course": 69.990021
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Юн",
+            "target": "Таг-5",
+            "distance": 4.968756,
+            "angle": 28.700504,
+            "chance": 0.647944,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Марта",
+            "target": "Таг-1",
+            "distance": 94.293623,
+            "angle": 20.719938,
+            "chance": 0.57712,
+            "hit": 1,
+            "damage": 58,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Олег",
+            "target": "Таг-6",
+            "distance": 46.30069,
+            "angle": 25.177136,
+            "chance": 0.661416,
+            "hit": 1,
+            "damage": 42,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-5",
+            "target": "Юн",
+            "distance": 4.968756,
+            "angle": 20.075259,
+            "chance": 0.365338,
+            "hit": 1,
+            "damage": 39,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "air",
+            "hull": 42,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "air",
+            "hull": 18,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 5,
+        "planningCalls": 115,
+        "salvoCallsBefore": 115,
+        "salvoCallsAfter": 120,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 93.678161,
+            "turn": 14.195402
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 76.358382,
+            "turn": 39.976879
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 104.285714,
+            "turn": 6.099818
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 104.676259,
+            "turn": -35.539568
+          },
+          {
+            "id": "Таг-1",
+            "role": "interceptor",
+            "speed": 46.457386,
+            "turn": -48.72478
+          },
+          {
+            "id": "Таг-2",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 55.609756
+          },
+          {
+            "id": "Таг-3",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": -0.012515
+          },
+          {
+            "id": "Таг-4",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": -0.763404
+          },
+          {
+            "id": "Таг-5",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": -0.013352
+          },
+          {
+            "id": "Таг-6",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": -59.220779
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 574.431803,
+            "y": 118.287296,
+            "course": -4.639431
+          },
+          {
+            "id": "Юн",
+            "x": 563.473189,
+            "y": 236.53114,
+            "course": 27.211412
+          },
+          {
+            "id": "Марта",
+            "x": 618.911005,
+            "y": 100.98961,
+            "course": -8.403248
+          },
+          {
+            "id": "Олег",
+            "x": 587.443257,
+            "y": 130.895999,
+            "course": -57.997323
+          },
+          {
+            "id": "Таг-1",
+            "x": 592.716618,
+            "y": 88.913274,
+            "course": -131.078568
+          },
+          {
+            "id": "Таг-2",
+            "x": 807.209299,
+            "y": 114.595006,
+            "course": 118.601769
+          },
+          {
+            "id": "Таг-3",
+            "x": 445.768924,
+            "y": 210.364615,
+            "course": 173.268446
+          },
+          {
+            "id": "Таг-4",
+            "x": 410.206296,
+            "y": 169.65428,
+            "course": 165.062854
+          },
+          {
+            "id": "Таг-5",
+            "x": 445.165602,
+            "y": 225.655629,
+            "course": 175.846427
+          },
+          {
+            "id": "Таг-6",
+            "x": 596.556161,
+            "y": 229.064051,
+            "course": 10.769242
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Юн",
+            "target": "Таг-6",
+            "distance": 33.915195,
+            "angle": -39.930397,
+            "chance": 0.765835,
+            "hit": 1,
+            "damage": 58,
+            "rear": 1,
+            "kill": 1
+          },
+          {
+            "shooter": "Олег",
+            "target": "Таг-1",
+            "distance": 42.312616,
+            "angle": -24.84337,
+            "chance": 0.636737,
+            "hit": 1,
+            "damage": 58,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 6,
+        "planningCalls": 128,
+        "salvoCallsBefore": 128,
+        "salvoCallsAfter": 132,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 93.678161,
+            "turn": 7.664417
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 58.786127,
+            "turn": 51.398844
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 104.285714,
+            "turn": 14.999095
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 82.805755,
+            "turn": -49.755396
+          },
+          {
+            "id": "Таг-2",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 55.552369
+          },
+          {
+            "id": "Таг-3",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 59.220779
+          },
+          {
+            "id": "Таг-4",
+            "role": "striker",
+            "speed": 50.0,
+            "turn": -0.046058
+          },
+          {
+            "id": "Таг-5",
+            "role": "interceptor",
+            "speed": 45.0,
+            "turn": 55.609756
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 668.044172,
+            "y": 118.533728,
+            "course": 3.024986
+          },
+          {
+            "id": "Юн",
+            "x": 592.520125,
+            "y": 285.521244,
+            "course": 78.610256
+          },
+          {
+            "id": "Марта",
+            "x": 722.902812,
+            "y": 102.752482,
+            "course": 6.595848
+          },
+          {
+            "id": "Олег",
+            "x": 588.713699,
+            "y": 50.519958,
+            "course": -107.752718
+          },
+          {
+            "id": "Таг-2",
+            "x": 768.461621,
+            "y": 134.064421,
+            "course": 174.154138
+          },
+          {
+            "id": "Таг-3",
+            "x": 408.512051,
+            "y": 188.609649,
+            "course": -127.510775
+          },
+          {
+            "id": "Таг-4",
+            "x": 361.902319,
+            "y": 182.566513,
+            "course": 165.016796
+          },
+          {
+            "id": "Таг-5",
+            "x": 407.844197,
+            "y": 203.581592,
+            "course": -128.543817
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Вера",
+            "target": "Таг-2",
+            "distance": 101.61135,
+            "angle": 5.766795,
+            "chance": 0.514226,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Марта",
+            "target": "Таг-2",
+            "distance": 55.281485,
+            "angle": 27.904354,
+            "chance": 0.556692,
+            "hit": 1,
+            "damage": 73,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-2",
+            "target": "Марта",
+            "distance": 55.281485,
+            "angle": 40.346064,
+            "chance": 0.381063,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 7,
+        "planningCalls": 142,
+        "salvoCallsBefore": 142,
+        "salvoCallsAfter": 144,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 76.206897,
+            "turn": 39.747126
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 57.109827
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 82.571429,
+            "turn": 49.4
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 60.935252,
+            "turn": -63.971223
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 62.766234,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 67.766234,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": 55.609756
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 734.153809,
+            "y": 153.488155,
+            "course": 42.772112
+          },
+          {
+            "id": "Юн",
+            "x": 572.731525,
+            "y": 329.340188,
+            "course": 135.720082
+          },
+          {
+            "id": "Марта",
+            "x": 786.548768,
+            "y": 151.538312,
+            "course": 55.995848
+          },
+          {
+            "id": "Олег",
+            "x": 539.66358,
+            "y": 19.553361,
+            "course": -171.723941
+          },
+          {
+            "id": "Таг-3",
+            "x": 370.293025,
+            "y": 138.821034,
+            "course": -127.510775
+          },
+          {
+            "id": "Таг-4",
+            "x": 296.440025,
+            "y": 200.086516,
+            "course": 165.016796
+          },
+          {
+            "id": "Таг-5",
+            "x": 404.979787,
+            "y": 160.315606,
+            "course": -72.934061
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Вера",
+            "target": "Логово",
+            "distance": 55.95502,
+            "angle": -46.346166,
+            "chance": 0.671623,
+            "hit": 1,
+            "damage": 51,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 45,
+            "armor": 35,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 8,
+        "planningCalls": 156,
+        "salvoCallsBefore": 156,
+        "salvoCallsAfter": 160,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 58.735632,
+            "turn": 51.103448
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 57.109827
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 60.857143,
+            "turn": 63.514286
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 82.805755,
+            "turn": -37.730178
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": 59.220779
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": -55.470779
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 61.682927,
+            "turn": 0.0
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 749.163729,
+            "y": 208.399491,
+            "course": 93.875561
+          },
+          {
+            "id": "Юн",
+            "x": 525.190376,
+            "y": 336.518463,
+            "course": -167.170091
+          },
+          {
+            "id": "Марта",
+            "x": 780.798582,
+            "y": 209.22644,
+            "course": 119.510133
+          },
+          {
+            "id": "Олег",
+            "x": 461.14136,
+            "y": 41.042421,
+            "course": 150.54588
+          },
+          {
+            "id": "Таг-3",
+            "x": 369.918199,
+            "y": 95.679261,
+            "course": -68.289995
+          },
+          {
+            "id": "Таг-4",
+            "x": 265.242311,
+            "y": 236.811757,
+            "course": 109.546017
+          },
+          {
+            "id": "Таг-5",
+            "x": 423.082004,
+            "y": 101.348724,
+            "course": -72.934061
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Олег",
+            "target": "Таг-5",
+            "distance": 71.311743,
+            "angle": -28.289824,
+            "chance": 0.545325,
+            "hit": 1,
+            "damage": 51,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-3",
+            "target": "Олег",
+            "distance": 106.33367,
+            "angle": 37.371083,
+            "chance": 0.483463,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-5",
+            "target": "Олег",
+            "distance": 71.311743,
+            "angle": 15.190117,
+            "chance": 0.430528,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 29,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 9,
+        "planningCalls": 172,
+        "salvoCallsBefore": 172,
+        "salvoCallsAfter": 172,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 56.781609
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 67.572254,
+            "turn": 0.0
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 70.571429
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 104.676259,
+            "turn": 7.551057
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": 59.220779
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": -59.220779
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": 55.609756
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 718.655369,
+            "y": 245.588505,
+            "course": 150.65717
+          },
+          {
+            "id": "Юн",
+            "x": 459.30516,
+            "y": 321.513536,
+            "course": -167.170091
+          },
+          {
+            "id": "Марта",
+            "x": 735.625674,
+            "y": 222.50675,
+            "course": -169.918438
+          },
+          {
+            "id": "Олег",
+            "x": 366.133129,
+            "y": 84.811075,
+            "course": 158.096937
+          },
+          {
+            "id": "Таг-3",
+            "x": 406.79145,
+            "y": 73.280234,
+            "course": -9.069216
+          },
+          {
+            "id": "Таг-4",
+            "x": 278.19206,
+            "y": 277.965822,
+            "course": 50.325237
+          },
+          {
+            "id": "Таг-5",
+            "x": 457.16762,
+            "y": 74.54721,
+            "course": -17.324305
+          }
+        ],
+        "shots": [],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 29,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 10,
+        "planningCalls": 182,
+        "salvoCallsBefore": 182,
+        "salvoCallsAfter": 182,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 56.781609
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 57.109827
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 71.714286,
+            "turn": 0.0
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 82.805755,
+            "turn": 49.755396
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 62.766234,
+            "turn": 42.149748
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 62.766234,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": 55.19666
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 670.830018,
+            "y": 240.438885,
+            "course": -152.561221
+          },
+          {
+            "id": "Юн",
+            "x": 427.461177,
+            "y": 285.490637,
+            "course": -110.060264
+          },
+          {
+            "id": "Марта",
+            "x": 665.018689,
+            "y": 209.953172,
+            "course": -169.918438
+          },
+          {
+            "id": "Олег",
+            "x": 286.779782,
+            "y": 71.967081,
+            "course": -152.147667
+          },
+          {
+            "id": "Таг-3",
+            "x": 465.466807,
+            "y": 91.52679,
+            "course": 33.080532
+          },
+          {
+            "id": "Таг-4",
+            "x": 318.263834,
+            "y": 326.27579,
+            "course": 50.325237
+          },
+          {
+            "id": "Таг-5",
+            "x": 498.618014,
+            "y": 87.35733,
+            "course": 37.872355
+          }
+        ],
+        "shots": [],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 55,
+            "armor": 39,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 29,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 11,
+        "planningCalls": 194,
+        "salvoCallsBefore": 194,
+        "salvoCallsAfter": 201,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 67.471264,
+            "turn": 0.0
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 67.572254,
+            "turn": 41.297475
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 93.428571,
+            "turn": 19.371796
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 60.935252,
+            "turn": 63.971223
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 80.532468,
+            "turn": 3.200978
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": -59.220779
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 61.682927,
+            "turn": 3.867685
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 610.949021,
+            "y": 209.348087,
+            "course": -152.561221
+          },
+          {
+            "id": "Юн",
+            "x": 434.09524,
+            "y": 219.61529,
+            "course": -68.762789
+          },
+          {
+            "id": "Марта",
+            "x": 578.89493,
+            "y": 174.826118,
+            "course": -150.546642
+          },
+          {
+            "id": "Олег",
+            "x": 264.894466,
+            "y": 18.246719,
+            "course": -88.176444
+          },
+          {
+            "id": "Таг-3",
+            "x": 531.361625,
+            "y": 137.806052,
+            "course": 36.28151
+          },
+          {
+            "id": "Таг-4",
+            "x": 360.247958,
+            "y": 336.209895,
+            "course": -8.895542
+          },
+          {
+            "id": "Таг-5",
+            "x": 545.660455,
+            "y": 127.237625,
+            "course": 41.74004
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Вера",
+            "target": "Таг-5",
+            "distance": 104.903408,
+            "angle": 24.071926,
+            "chance": 0.466343,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Юн",
+            "target": "Таг-3",
+            "distance": 127.096425,
+            "angle": 28.696122,
+            "chance": 0.622259,
+            "hit": 1,
+            "damage": 41,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Марта",
+            "target": "Таг-5",
+            "distance": 58.044768,
+            "angle": 25.617269,
+            "chance": 0.558865,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-3",
+            "target": "Марта",
+            "distance": 60.248655,
+            "angle": 1.630796,
+            "chance": 0.594285,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-5",
+            "target": "Марта",
+            "distance": 58.044768,
+            "angle": 13.330587,
+            "chance": 0.422296,
+            "hit": 1,
+            "damage": 56,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 19,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 29,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 12,
+        "planningCalls": 214,
+        "salvoCallsBefore": 214,
+        "salvoCallsAfter": 215,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 81.420619,
+            "turn": 14.51595
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 76.358382,
+            "turn": 39.976879
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 71.714286,
+            "turn": 42.694399
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 82.805755,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 84.480519,
+            "turn": 20.153586
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 62.766234,
+            "turn": -38.930161
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 70.502922,
+            "turn": 26.594691
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 545.671974,
+            "y": 161.02578,
+            "course": -138.045271
+          },
+          {
+            "id": "Юн",
+            "x": 488.18566,
+            "y": 167.785672,
+            "course": -28.785911
+          },
+          {
+            "id": "Марта",
+            "x": 539.797046,
+            "y": 116.560302,
+            "course": -107.852243
+          },
+          {
+            "id": "Олег",
+            "x": 267.529484,
+            "y": -64.5171,
+            "course": -88.176444
+          },
+          {
+            "id": "Таг-3",
+            "x": 586.653851,
+            "y": 201.1385,
+            "course": 56.435096
+          },
+          {
+            "id": "Таг-4",
+            "x": 411.810169,
+            "y": 302.433954,
+            "course": -47.825703
+          },
+          {
+            "id": "Таг-5",
+            "x": 582.332571,
+            "y": 186.758164,
+            "course": 68.334731
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Юн",
+            "target": "Таг-5",
+            "distance": 96.039556,
+            "angle": 40.179562,
+            "chance": 0.516144,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 19,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 29,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 13,
+        "planningCalls": 228,
+        "salvoCallsBefore": 228,
+        "salvoCallsAfter": 231,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 63.949354,
+            "turn": -47.714529
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 58.786127,
+            "turn": 51.398844
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 70.571429
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 60.935252,
+            "turn": 63.971223
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 66.714286,
+            "turn": 42.935065
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 80.532468,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 53.819995,
+            "turn": 48.99476
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 484.832349,
+            "y": 147.946074,
+            "course": 174.2402
+          },
+          {
+            "id": "Юн",
+            "x": 545.042982,
+            "y": 171.102246,
+            "course": 22.612933
+          },
+          {
+            "id": "Марта",
+            "x": 560.625637,
+            "y": 74.333202,
+            "course": -37.280814
+          },
+          {
+            "id": "Олег",
+            "x": 306.197422,
+            "y": -107.756375,
+            "course": -24.205221
+          },
+          {
+            "id": "Таг-3",
+            "x": 594.302231,
+            "y": 265.948412,
+            "course": 99.370161
+          },
+          {
+            "id": "Таг-4",
+            "x": 465.878718,
+            "y": 242.750871,
+            "course": -47.825703
+          },
+          {
+            "id": "Таг-5",
+            "x": 574.19114,
+            "y": 238.415192,
+            "course": 117.329491
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Юн",
+            "target": "Таг-5",
+            "distance": 73.352899,
+            "angle": 43.973271,
+            "chance": 0.531235,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-4",
+            "target": "Вера",
+            "distance": 96.680865,
+            "angle": -30.868623,
+            "chance": 0.340813,
+            "hit": 1,
+            "damage": 49,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 31,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 65,
+            "armor": 41,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 19,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 29,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 14,
+        "planningCalls": 247,
+        "salvoCallsBefore": 247,
+        "salvoCallsAfter": 250,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": -56.781609
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 57.109827
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 70.571429
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 71.079137
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 48.948052,
+            "turn": 56.25974
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 84.480519,
+            "turn": 29.61039
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": 55.609756
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 448.666566,
+            "y": 179.660723,
+            "course": 117.458591
+          },
+          {
+            "id": "Юн",
+            "x": 570.302976,
+            "y": 212.012162,
+            "course": 79.72276
+          },
+          {
+            "id": "Марта",
+            "x": 607.37644,
+            "y": 79.929687,
+            "course": 33.290614
+          },
+          {
+            "id": "Олег",
+            "x": 350.34166,
+            "y": -91.497626,
+            "course": 46.873915
+          },
+          {
+            "id": "Таг-3",
+            "x": 561.25392,
+            "y": 299.540483,
+            "course": 155.629901
+          },
+          {
+            "id": "Таг-4",
+            "x": 538.771433,
+            "y": 201.813247,
+            "course": -18.215313
+          },
+          {
+            "id": "Таг-5",
+            "x": 535.875548,
+            "y": 258.714595,
+            "course": 172.939247
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Юн",
+            "target": "Таг-3",
+            "distance": 87.994844,
+            "angle": 16.179756,
+            "chance": 0.699082,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-4",
+            "target": "Юн",
+            "distance": 33.139947,
+            "angle": 36.139176,
+            "chance": 0.38596,
+            "hit": 1,
+            "damage": 44,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 31,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 62,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 19,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "air",
+            "hull": 29,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 15,
+        "planningCalls": 255,
+        "salvoCallsBefore": 255,
+        "salvoCallsAfter": 260,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 67.471264,
+            "turn": 0.0
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 51.282252,
+            "turn": 53.836247
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 71.714286,
+            "turn": 0.0
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 71.870504,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 66.714286,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 73.376623,
+            "turn": -36.323305
+          },
+          {
+            "id": "Таг-5",
+            "role": "fighter",
+            "speed": 61.682927,
+            "turn": 0.0
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 417.555066,
+            "y": 239.530966,
+            "course": 117.458591
+          },
+          {
+            "id": "Юн",
+            "x": 550.655618,
+            "y": 257.478928,
+            "course": 133.559007
+          },
+          {
+            "id": "Марта",
+            "x": 667.322217,
+            "y": 119.292647,
+            "course": 33.290614
+          },
+          {
+            "id": "Олег",
+            "x": 399.472776,
+            "y": -39.042857,
+            "course": 46.873915
+          },
+          {
+            "id": "Таг-3",
+            "x": 500.483936,
+            "y": 327.06874,
+            "course": 155.629901
+          },
+          {
+            "id": "Таг-4",
+            "x": 593.352066,
+            "y": 154.505034,
+            "course": -54.538618
+          },
+          {
+            "id": "Таг-5",
+            "x": 474.660402,
+            "y": 266.296766,
+            "course": 172.939247
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Юн",
+            "target": "Таг-5",
+            "distance": 76.505079,
+            "angle": 39.822475,
+            "chance": 0.638801,
+            "hit": 1,
+            "damage": 54,
+            "rear": 1,
+            "kill": 1
+          },
+          {
+            "shooter": "Таг-4",
+            "target": "Марта",
+            "distance": 81.923716,
+            "angle": 29.082531,
+            "chance": 0.444833,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-5",
+            "target": "Вера",
+            "distance": 63.066849,
+            "angle": 32.173674,
+            "chance": 0.290522,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 65,
+            "armor": 31,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 62,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "air",
+            "hull": 19,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 16,
+        "planningCalls": 274,
+        "salvoCallsBefore": 274,
+        "salvoCallsAfter": 279,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 53.275862,
+            "turn": -51.679808
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 68.854507,
+            "turn": 7.475733
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 70.571429
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 93.741007,
+            "turn": 33.313324
+          },
+          {
+            "id": "Таг-3",
+            "role": "fighter",
+            "speed": 48.948052,
+            "turn": 56.25974
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 64.493506,
+            "turn": 44.600649
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 421.909676,
+            "y": 290.944279,
+            "course": 65.778782
+          },
+          {
+            "id": "Юн",
+            "x": 499.335284,
+            "y": 303.314114,
+            "course": 141.03474
+          },
+          {
+            "id": "Марта",
+            "x": 677.595199,
+            "y": 165.242881,
+            "course": 103.862043
+          },
+          {
+            "id": "Олег",
+            "x": 434.583202,
+            "y": 46.542836,
+            "course": 80.187239
+          },
+          {
+            "id": "Таг-3",
+            "x": 454.193991,
+            "y": 318.244959,
+            "course": -148.110359
+          },
+          {
+            "id": "Таг-4",
+            "x": 649.631893,
+            "y": 126.244492,
+            "course": -9.937969
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Вера",
+            "target": "Таг-3",
+            "distance": 42.280068,
+            "angle": -25.559821,
+            "chance": 0.64792,
+            "hit": 1,
+            "damage": 53,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Юн",
+            "target": "Таг-3",
+            "distance": 47.546467,
+            "angle": 20.663213,
+            "chance": 0.732069,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Таг-3",
+            "target": "Вера",
+            "distance": 42.280068,
+            "angle": 8.32932,
+            "chance": 0.524172,
+            "hit": 1,
+            "damage": 40,
+            "rear": 0,
+            "kill": 0
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 56,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 62,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 17,
+        "planningCalls": 289,
+        "salvoCallsBefore": 289,
+        "salvoCallsAfter": 289,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": -56.781609
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 51.282252,
+            "turn": 56.276363
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 70.571429
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 71.870504,
+            "turn": -56.863309
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 46.727273,
+            "turn": 57.925325
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 463.444671,
+            "y": 315.205915,
+            "course": 8.997173
+          },
+          {
+            "id": "Юн",
+            "x": 450.073893,
+            "y": 306.579604,
+            "course": -162.688897
+          },
+          {
+            "id": "Марта",
+            "x": 637.678631,
+            "y": 190.215381,
+            "course": 174.433471
+          },
+          {
+            "id": "Олег",
+            "x": 483.76817,
+            "y": 95.126587,
+            "course": 23.32393
+          },
+          {
+            "id": "Таг-4",
+            "x": 689.879941,
+            "y": 146.106048,
+            "course": 47.987356
+          }
+        ],
+        "shots": [],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 56,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 62,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 18,
+        "planningCalls": 295,
+        "salvoCallsBefore": 295,
+        "salvoCallsAfter": 295,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 67.471264,
+            "turn": -43.703983
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 57.109827
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 71.714286,
+            "turn": 0.0
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 93.741007,
+            "turn": 0.0
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 45.0,
+            "turn": 59.220779
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 526.05027,
+            "y": 294.479494,
+            "course": -34.70681
+          },
+          {
+            "id": "Юн",
+            "x": 421.141793,
+            "y": 268.178796,
+            "course": -105.579071
+          },
+          {
+            "id": "Марта",
+            "x": 566.302533,
+            "y": 197.171773,
+            "course": 174.433471
+          },
+          {
+            "id": "Олег",
+            "x": 569.848766,
+            "y": 132.241376,
+            "course": 23.32393
+          },
+          {
+            "id": "Таг-4",
+            "x": 693.639879,
+            "y": 189.085298,
+            "course": 107.208135
+          }
+        ],
+        "shots": [],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 56,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 62,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "air",
+            "hull": 40,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      },
+      {
+        "number": 19,
+        "planningCalls": 304,
+        "salvoCallsBefore": 304,
+        "salvoCallsAfter": 308,
+        "orders": [
+          {
+            "id": "Вера",
+            "role": "fighter",
+            "speed": 84.942529,
+            "turn": 5.377901
+          },
+          {
+            "id": "Юн",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": 57.109827
+          },
+          {
+            "id": "Марта",
+            "role": "fighter",
+            "speed": 50.0,
+            "turn": -70.571429
+          },
+          {
+            "id": "Олег",
+            "role": "fighter",
+            "speed": 104.676259,
+            "turn": 11.846523
+          },
+          {
+            "id": "Таг-4",
+            "role": "fighter",
+            "speed": 62.766234,
+            "turn": 0.0
+          }
+        ],
+        "positions": [
+          {
+            "id": "Вера",
+            "x": 598.570039,
+            "y": 250.307655,
+            "course": -29.328909
+          },
+          {
+            "id": "Юн",
+            "x": 437.676441,
+            "y": 223.031327,
+            "course": -48.469244
+          },
+          {
+            "id": "Марта",
+            "x": 535.832207,
+            "y": 233.067698,
+            "course": 103.862043
+          },
+          {
+            "id": "Олег",
+            "x": 659.67856,
+            "y": 185.637811,
+            "course": 35.170452
+          },
+          {
+            "id": "Таг-4",
+            "x": 675.070885,
+            "y": 249.041887,
+            "course": 107.208135
+          }
+        ],
+        "shots": [
+          {
+            "shooter": "Вера",
+            "target": "Таг-4",
+            "distance": 76.511317,
+            "angle": 28.38099,
+            "chance": 0.530072,
+            "hit": 0,
+            "damage": 0,
+            "rear": 0,
+            "kill": 0
+          },
+          {
+            "shooter": "Олег",
+            "target": "Таг-4",
+            "distance": 65.245693,
+            "angle": 41.184085,
+            "chance": 0.557681,
+            "hit": 1,
+            "damage": 60,
+            "rear": 1,
+            "kill": 1
+          }
+        ],
+        "states": [
+          {
+            "id": "Вера",
+            "status": "air",
+            "hull": 56,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Юн",
+            "status": "air",
+            "hull": 62,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Марта",
+            "status": "air",
+            "hull": 38,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Олег",
+            "status": "air",
+            "hull": 55,
+            "armor": 80,
+            "jammed": 0,
+            "engines": [
+              1.0,
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-1",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-2",
+            "status": "disabled",
+            "hull": 7,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-3",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-4",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 20,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-5",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Таг-6",
+            "status": "destroyed",
+            "hull": 0,
+            "armor": 0,
+            "jammed": 0,
+            "engines": [
+              1.0
+            ]
+          },
+          {
+            "id": "Скиталец",
+            "status": "alive",
+            "hull": 400,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          },
+          {
+            "id": "Логово",
+            "status": "alive",
+            "hull": 349,
+            "armor": 0,
+            "jammed": null,
+            "engines": null
+          }
+        ]
+      }
+    ]
+  }
+}

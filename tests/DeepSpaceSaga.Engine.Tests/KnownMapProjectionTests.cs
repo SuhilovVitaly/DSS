@@ -26,7 +26,6 @@ public sealed class KnownMapProjectionTests
             if (source.GameState.SpaceObjects.Any(s => s.ObjectId == o.ObjectId))
             {
                 Assert.Null(o.CaptainDisplayName);
-                Assert.Null(o.HullCombat);
             }
         });
     }

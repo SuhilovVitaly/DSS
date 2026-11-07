@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0006-client-input-and-controls
 title: "Ввод и элементы интерфейса для экранов боя"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0005-session-contracts]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0005-session-contracts]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -52,3 +52,11 @@ dependencies: [EP-0015-US-0005-session-contracts]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution dependency addition — 2026-11-05
+
+[EP-0015-US-0006-TK-0007-linux-native-runtime](EP-0015-US-0006-TK-0007-linux-native-runtime/EP-0015-US-0006-TK-0007-linux-native-runtime.md), client-build, AC-05; depends on TK-0005 and precedes completion of TK-0006. Required recovery from actual Ubuntu DllNotFoundException, no glyph/raster tests excluded.
+
+## Execution review — 2026-11-05
+
+All seven control/input implementation tickets complete, including required Linux native recovery. Number/glyph coverage PASS Windows/Linux, real handler routing verified headlessly, controls/raster verified across scales. AC-01/03 drag/pan consumers and AC-04 right-panel/minimum-window integration passed headless checks in US-0008; physical input/native/human acceptance is not replaced by these checks. See ExecutionStatus.md/PlatformValidation.md and cards for exact source SHA and evidence. Self-review only, not independent approval.

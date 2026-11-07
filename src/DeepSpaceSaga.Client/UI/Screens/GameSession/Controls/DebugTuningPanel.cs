@@ -12,16 +12,16 @@ internal sealed class DebugTuningPanel : IDisposable
     internal const float Width = 360;
     private const float FooterHeight = 38, SectionHeight = 28, RowHeight = 40;
     private float _headerHeight = 62;
-    internal static readonly string[] SectionKeys = ["Debug.Tetrarch", "Debug.Mukha", "Debug.TorpedoesTetrarch", "Debug.TorpedoesMukha", "Debug.Countermissiles"];
-    internal static readonly string[] ModuleIds = ["module.engine.tetrarch", "module.engine.strizh", "module.torpedo.launcher.basic", "module.torpedo.launcher.light", "module.countermeasure.launcher.basic"];
+    internal static readonly string[] SectionKeys = ["Debug.Tetrarch", "Debug.Mukha"];
+    internal static readonly string[] ModuleIds = ["module.engine.tetrarch", "module.engine.strizh"];
     private readonly Func<string, string> _text;
     private readonly SKFont _font = new(MenuStyle.TypefaceRegular, 12);
     private readonly SKTypeface _italicTypeface = SKTypeface.FromFamilyName("Verdana", SKFontStyle.Italic);
     private readonly SKFont _italicFont;
     private readonly SKPaint _paint = new() { IsAntialias = true, Typeface = MenuStyle.TypefaceRegular, TextSize = 12 };
-    private readonly SKTextBlob[] _sections = new SKTextBlob[5];
-    private readonly bool[] _collapsed = new bool[5];
-    private readonly SKRect[] _sectionBounds = new SKRect[5];
+    private readonly SKTextBlob[] _sections = new SKTextBlob[SectionKeys.Length];
+    private readonly bool[] _collapsed = new bool[SectionKeys.Length];
+    private readonly SKRect[] _sectionBounds = new SKRect[SectionKeys.Length];
     private readonly List<Row> _rows = [];
     private readonly SKTextBlob _title, _minus, _plus, _resetAll, _folder, _help, _confirmReset;
     private SKTextBlob[] _helpLines = [];
@@ -66,19 +66,18 @@ internal sealed class DebugTuningPanel : IDisposable
         _minus = Blob("−"); _plus = Blob("+"); _help = Blob("?");
         _resetAll = Blob(_text("Debug.ResetAll")); _folder = Blob(_text("Debug.OpenFolder"));
         _confirmReset = Blob(_text("Debug.ConfirmReset"));
-        ConfigureBindings(CombatInputSettings.Default);
+        ConfigureBindings(ManeuverInputSettings.Default);
         for (int i = 0; i < _sections.Length; i++) _sections[i] = Blob(_text(SectionKeys[i]));
     }
 
-    internal void ConfigureBindings(CombatInputSettings bindings)
+    internal void ConfigureBindings(ManeuverInputSettings maneuver)
     {
         ControlsHint = string.Format(CultureInfo.CurrentCulture, _text("Debug.HelpControls"),
-            string.Join("/", bindings.Accelerate.Select(KeyLabel)), string.Join("/", bindings.Brake.Select(KeyLabel)),
-            string.Join("/", bindings.TurnLeft.Select(KeyLabel)), string.Join("/", bindings.TurnRight.Select(KeyLabel)),
-            string.Join("/", bindings.FullSpeed.Select(KeyLabel).Distinct()), KeyLabel(bindings.TorpedoAim), KeyLabel(bindings.CountermissileAim),
-            KeyLabel(bindings.EvadeLeft), KeyLabel(bindings.EvadeRight), KeyLabel(bindings.DebugPanel));
+            string.Join("/", maneuver.Accelerate.Select(KeyLabel)), string.Join("/", maneuver.Brake.Select(KeyLabel)),
+            string.Join("/", maneuver.TurnLeft.Select(KeyLabel)), string.Join("/", maneuver.TurnRight.Select(KeyLabel)),
+            string.Join("/", maneuver.FullSpeed.Select(KeyLabel).Distinct()), KeyLabel(maneuver.DebugPanel));
         foreach (var line in _helpLines) line.Dispose();
-        _helpLines = Wrap(_text("Debug.HelpOrbit") + "\n" + _text("Debug.HelpTorpedoes") + "\n" + ControlsHint);
+        _helpLines = Wrap(ControlsHint);
     }
 
     internal static string KeyLabel(Key key) => key switch
@@ -103,13 +102,14 @@ internal sealed class DebugTuningPanel : IDisposable
                 for (int section = 0; section < ModuleIds.Length; section++)
                     foreach (var value in snapshot.Values)
                     {
-                        if (value.ModuleTypeId != ModuleIds[section]) continue;
+                        if (value.ModuleTypeId != ModuleIds[section] || value.ProfileId is not null ||
+                            value.Field is not ("maxSpeedKmS" or "accelerationMps2" or "turnRateDegPerSec")) continue;
                         double catalogDefault = value.Value;
                         foreach (var entry in snapshot.Defaults)
                             if (SameKey(value, entry)) { catalogDefault = entry.Value; break; }
                         var row = new Row(value, catalogDefault, section)
                         {
-                            Label = Blob(_text("Debug." + value.Field) + (value.ProfileId is null ? "" : " · " + _text("Debug." + value.ProfileId))),
+                            Label = Blob(_text("Debug." + value.Field)),
                             Number = Blob(Format(value.Value)),
                             DefaultNumber = Blob(Format(catalogDefault))
                         };
@@ -222,10 +222,6 @@ internal sealed class DebugTuningPanel : IDisposable
         "maxSpeedKmS" => (.1, 50, .5, .1),
         "accelerationMps2" => (10, 20000, 50, 10),
         "turnRateDegPerSec" => (1, 360, 2, 1),
-        "reloadMs" => (100, 600000, 500, 100),
-        "speedKmS" => (.1, 100, .5, .1),
-        "blastRadiusKm" when value.ModuleTypeId == ModuleIds[4] => (.05, 50, .25, .05),
-        "blastRadiusKm" => (.05, 50, .5, .1),
         _ => throw new InvalidOperationException("Unknown tuning field.")
     };
     internal SKRect RowBounds(int index)

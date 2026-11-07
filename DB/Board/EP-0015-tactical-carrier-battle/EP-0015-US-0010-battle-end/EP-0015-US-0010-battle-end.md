@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0010-battle-end
 title: "Конец боя, новый бой и возврат на карту"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0009-fire-and-results]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0009-fire-and-results]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -42,3 +42,7 @@ dependencies: [EP-0015-US-0009-fire-and-results]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution review — 2026-11-06
+
+Both tickets technically complete. Actual local window and Engine verify active restart/exit, typed terminal presentation, exact world save identity and camera/speed restoration. Full Client2479 PASS. Native/physical and human acceptance remain open.

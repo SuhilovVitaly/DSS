@@ -15,8 +15,6 @@ public sealed class TradingEconomySaveSchemaTests
         // Internal historical-economy scenarios carry no point weapon continuation.
         // Public old saves are still rejected before deserialization. Their money,
         // cargo, crew, navigation and market payloads remain the subject of these tests.
-        var weapons = (source.GameState.CombatState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? [])
-            .Concat(source.GameState.DefenseState?.Launchers.Select(l => (l.OwnerObjectId, l.ModuleId)) ?? []).ToHashSet();
         return source with
         {
             SaveFormatVersion = version,
@@ -26,14 +24,7 @@ public sealed class TradingEconomySaveSchemaTests
                 VoyageLedgers = null,
                 VoyageFuelSettlements = null,
                 EngineIdentityCounters = null,
-                MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge,
-                PointCombatState = null,
-                CombatState = version == 0 ? null : source.GameState.CombatState! with { Launchers = [], Projectiles = [] },
-                DefenseState = version == 0 ? null : source.GameState.DefenseState! with { Version = version == 16 ? 2 : 3, Launchers = [], Projectiles = [] },
-                HostileCombatState = null,
-                CombatReportsState = null,
-                SpaceObjects = version == 0 ? source.GameState.SpaceObjects : source.GameState.SpaceObjects.Select(o => o with
-                { Modules = o.Modules?.Where(m => !weapons.Contains((o.ObjectId, m.ModuleId))).ToArray() }).ToArray()
+                MarketKnowledge = version < 14 ? null : source.GameState.MarketKnowledge
             }
         };
     }
@@ -46,7 +37,7 @@ public sealed class TradingEconomySaveSchemaTests
         return GameDataRegistry.Create(All(source.ModuleCategories), All(source.ModuleTypes), All(source.ItemTypes),
             All(source.CommandDefinitions), All(source.FactoryTypes), All(source.Recipes), All(source.Dialogues), All(source.Quests),
             legacyCatalogFingerprint: source.LegacyCatalogFingerprint, stationMarketProfiles: All(source.StationMarketProfiles),
-            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents), combatRules: source.CombatRules);
+            shipClasses: All(source.ShipClasses), stationMarketEvents: All(source.StationMarketEvents));
     }
 
     private static ScenarioFile Legacy(ScenarioFile current, int version)
@@ -57,9 +48,7 @@ public sealed class TradingEconomySaveSchemaTests
             VoyageLedgers = null,
             VoyageFuelSettlements = null,
             EngineIdentityCounters = null,
-            MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge,
-            HostileCombatState = current.GameState.HostileCombatState is { } hostile ? hostile with { Version = 2 } : null,
-            PointCombatState = null
+            MarketKnowledge = version < 14 ? null : current.GameState.MarketKnowledge
         };
         if (version <= 8) state = state with
         {
@@ -92,7 +81,7 @@ public sealed class TradingEconomySaveSchemaTests
     {
         using var f = TradingVoyageFixture.Create();
         var save = f.Save();
-        Assert.Equal(19, SaveFormat.CurrentSaveFormatVersion);
+        Assert.Equal(20, SaveFormat.CurrentSaveFormatVersion);
         var manifest = save.GameState.TradingEconomyContinuation!;
         Assert.Equal(1, manifest.SchemaVersion);
         Assert.Equal(64, manifest.ConfigurationFingerprint.Length);

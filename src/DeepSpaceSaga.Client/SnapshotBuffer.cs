@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
 
@@ -19,7 +18,7 @@ public sealed record SnapshotPrediction(
 /// Also tracks the client-side authoritative simulation speed
 /// (updated immediately on speed changes, without waiting for the next snapshot).
 /// </summary>
-public sealed partial class SnapshotBuffer
+public sealed class SnapshotBuffer
 {
     private readonly object _sync = new();
     private readonly NpcMotionObservationHistory _npcObservations = new();
@@ -38,22 +37,10 @@ public sealed partial class SnapshotBuffer
     {
         var poses = scene.Objects.Where(o => o.RenderObjectType == SpaceObjectType.NpcShip && !o.IsDestroyed)
             .Select(o => new NpcMotionObservation(o.ObjectId, motionTimeMs, o.X, o.Y, o.SpeedKmS, o.Direction)).ToArray();
-        _npcObservations.ObserveScene(_presentationSession, motionTimeMs, poses);
+        _npcObservations.ObserveScene(null, motionTimeMs, poses);
     }
     private SessionEventHistory _events = new();
-    private CombatReportInbox _combatReports = new();
-
-    internal ImmutableArray<BattleReportSnapshot> DrainCombatReports()
-    {
-        lock (_sync) return _combatReports.Drain();
-    }
-    private readonly Dictionary<long, long> _combatImpactReceivedAt = new();
-
-    /// <summary>First local receipt of a session impact, retained across coalesced snapshots.</summary>
-    internal long? FindCombatImpactReceivedAtTimestamp(long eventId)
-    {
-        lock (_sync) return _combatImpactReceivedAt.TryGetValue(eventId, out long timestamp) ? timestamp : null;
-    }
+    public BufferedSnapshot? Presented => Latest;
 
     public CommandResult? FindCommandResult(string commandId)
     {
@@ -110,12 +97,6 @@ public sealed partial class SnapshotBuffer
 
         lock (_sync)
         {
-            if (_presentationSession is not null) { _events.Receive(snapshot); return; }
-            _combatReports.Receive(snapshot.CombatReports);
-            if (!snapshot.CombatImpacts.IsDefaultOrEmpty)
-                foreach (var impact in snapshot.CombatImpacts)
-                    _combatImpactReceivedAt.TryAdd(impact.EventId, now);
-
             // A command reply may arrive before an older snapshot already in transport.
             // Retain its events, but never rewind authoritative time or district state.
             if (_latest is not null && snapshot.SnapshotSequence < _latest.Snapshot.SnapshotSequence)
@@ -210,8 +191,6 @@ public sealed partial class SnapshotBuffer
 
             lock (_sync)
             {
-                if (_presentationSession is not null)
-                    return _presented is null ? null : new SnapshotPrediction(_presented, _sceneDelta, _presented.Snapshot.CurrentSpeed, 0);
                 if (_latest is null)
                     return null;
 

@@ -48,15 +48,6 @@ internal sealed class FutureTrajectoryProjector
             ProjectObservedNpc(state, points, npcTurnRateDegPerSec);
             return;
         }
-        if (state.HostileCombat is not null && CurrentManeuverForecast.HasRequiredData(state))
-        {
-            for (long t = 0; t <= FutureTrajectoryHorizonMs; t += FutureTrajectorySampleIntervalMs)
-            {
-                var sample = CurrentManeuverForecast.Sample(state, t);
-                points.Add(new(sample.X, sample.Y));
-            }
-            return;
-        }
         if (_predictor is LinearMotionPredictor && LinearMotionPredictor.IsLinear(state))
         {
             double angle = state.Direction * Math.PI / 180;
@@ -135,14 +126,6 @@ internal sealed class FutureTrajectoryProjector
             points.Add(new(state.X + distance * Math.Sin(h + half), state.Y - distance * Math.Cos(h + half)));
         }
     }
-
-    // A private forecast input, never a confirmed scene pose or an AI command.
-    // Reuse the same constant-speed circular integral in the combat solver.
-    internal static ObjectMotionSnapshot ObservedNpcForecastState(ObjectMotionSnapshot state, double rate) =>
-        new(state.ObjectId, state.X, state.Y, state.SpeedKmS, state.Direction,
-            RenderObjectType: state.RenderObjectType, MaxSpeedKmS: state.MaxSpeedKmS, IsDestroyed: state.IsDestroyed,
-            HostileCombat: rate == 0 ? null : new("", "", "", 1, rate > 0, HostileCombatPhase.Pursuit,
-                new(0, long.MaxValue, 0, state.X, state.Y, state.SpeedKmS, state.Direction, 0, rate)));
 
     private bool TryProjectTurn(ObjectMotionSnapshot state, List<FutureTrajectoryPoint> points)
     {

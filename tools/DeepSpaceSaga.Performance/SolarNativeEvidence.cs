@@ -53,7 +53,7 @@ internal static class SolarNativeEvidence
         var handle = new GameSessionHandle(connection);
         handle.Buffer.Update(snapshot);
         var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle, uiScale: scale,
-            mapSettings: TacticalMapSettings.Load(settings), combatSettings: CombatVisualSettings.Load(Path.Combine(client, CombatVisualSettings.RelativePath)));
+            mapSettings: TacticalMapSettings.Load(settings));
         int frame = 0;
         var stationIds = snapshot.ClusterMap?.Clusters.SelectMany(c => c.StationIds).ToArray() ?? [];
         var selected = new HashSet<string>(StringComparer.Ordinal);

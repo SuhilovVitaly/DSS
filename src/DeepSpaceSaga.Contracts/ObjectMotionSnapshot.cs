@@ -122,39 +122,16 @@ public sealed record ObjectMotionSnapshot(
     /// technical motion data. Null preserves legacy snapshots and does not grant scan permission.
     /// </summary>
     AsteroidSurveySnapshot? Survey = null,
-    /// <summary>
-    /// Authoritative, player-visible hull health and explicit class identity. Null for
-    /// legacy, ineligible or unidentified objects; never inferred from the image/name.
-    /// </summary>
-    HullCombatSnapshot? HullCombat = null,
-    /// <summary>Confirmed flight state for a torpedo using <see cref="SpaceObjectType.Missile"/>.</summary>
-    [property: JsonIgnore] TorpedoSnapshot? Torpedo = null,
-    [property: JsonIgnore] CountermeasureSnapshot? Countermeasure = null,
-    DefenseSnapshot? Defense = null,
     [property: JsonPropertyName("orbit")] OrbitalElements? Orbit = null,
     [property: JsonPropertyName("orbitSampleSimulationTimeMs")] long? OrbitSampleSimulationTimeMs = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
     [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
-    /// <summary>Confirmed hostile maneuver; no client-side AI decisions are required.</summary>
-    HostileCombatSnapshot? HostileCombat = null,
     /// <summary>Known ship's authoritative module health; hidden for unidentified objects.</summary>
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<ModuleHealthSnapshot>))]
     ImmutableArray<ModuleHealthSnapshot> ModuleHealth = default,
     /// <summary>Player-visible execution phase, projected only; never stored in saves.</summary>
     [property: JsonPropertyName("engineManeuver"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     EngineManeuverSnapshot? EngineManeuver = null,
-    /// <summary>Full captured point flight, published only to its owner.</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    OwnProjectileSnapshot? OwnProjectile = null,
-    /// <summary>Foreign point flight with no concealed endpoint, deadline or module data.</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    ObservedProjectileSnapshot? ObservedProjectile = null,
-    /// <summary>Aggregate hostile ship status; full enemy module health is masked by the Engine.</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    EnemyShipStatusSnapshot? EnemyStatus = null,
-    /// <summary>Accepted own evasion and known return course; omitted for foreign ships.</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
-    EvasionSnapshot? Evasion = null,
     /// <summary>Accepted own held turn, signed degrees per physical second; omitted for foreign ships.</summary>
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     double? TurnHoldRateDegPerSec = null,
@@ -178,10 +155,9 @@ public sealed record EngineManeuverSnapshot(string CommandType, double CycleRema
     // at MotionSampleTimeMs; add the update's elapsed inertia on completion.
     bool CompletesOnMotionUpdate = false, double? MotionSampleTimeMs = null);
 
-/// <summary>Confirmed module durability and temporary disable state for ship inspection.</summary>
+/// <summary>Confirmed module structure for ship inspection.</summary>
 public sealed record ModuleHealthSnapshot(string ModuleId, string DisplayName,
-    int ArmorCurrent, int ArmorMax, int StructureCurrent, int StructureMax,
-    double? DisabledUntilMotionTimeMs, bool IsDestroyed);
+    int StructureCurrent, int StructureMax, bool IsDestroyed);
 
 /// <summary>
 /// A revealed mineralogical fraction in integer thousandths, not cargo quantity or mining yield.

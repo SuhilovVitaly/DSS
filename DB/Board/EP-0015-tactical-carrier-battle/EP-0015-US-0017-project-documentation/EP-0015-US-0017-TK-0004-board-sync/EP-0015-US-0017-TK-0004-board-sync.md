@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0017-project-documentation
 ticket: EP-0015-US-0017-TK-0004-board-sync
 title: board-sync
-stage: draft
+stage: done
 layer: documentation
 depends_on: ["EP-0015-US-0017-TK-0003-documentation-legacy-rewrite"]
-files_touched: 12
+files_touched: 17
 serves: [AC-04]
 created: 2026-11-05
 revision: 3
@@ -18,10 +18,10 @@ revision: 3
 Board и evidence.
 
 ## Decisions
-Решения пользователя D-USER-01…13 и правила боя `DB/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
+Решения пользователя D-USER-01…13 и правила боя `VData/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
 
 ## Assumptions
-Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `DB/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
+Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `VData/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
 
 ## Code context
 | File | Current state | Allowed change |
@@ -37,7 +37,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 2. Graphify — локально, результат в ExecutionStatus.
 
 ## Out of scope
-Изменения вне описанного результата, баланс и правила боя сверх `DB/Planning/V4.0`.
+Изменения вне описанного результата, баланс и правила боя сверх `VData/Planning/V4.0`.
 
 ## Invariants
 Engine владеет исходами, RNG и командами; Contracts неизменяемы; общая математика — в Motion; Client отображает допущенные снимки и не вызывает Engine из Render. Числа боя — только из `Data/TacticalBattle`. Правила исполнения R-01…R-09 ([Documentation.md](../../Documentation.md#правила-исполнения)).
@@ -49,4 +49,29 @@ Engine владеет исходами, RNG и командами; Contracts н�
 Критерии AC-04 истории выполнены и проверены; diff просмотрен; фактические результаты записаны в карточку; отдельный коммит тикета создан; push — сразу, и только в одобренный внутренний remote (`*.amat.com` или внутренний IP); если `origin` указывает на внешний хост (github.com, gitlab.com, bitbucket.org и т. п.) — не пушить, остановиться и сообщить пользователю (D-USER-08, D-USER-09, R-06).
 
 ## Self-containment check
-Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `DB/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Synchronize current Board and historical owners, validate ticket/commit correspondence and rebuild Graphify with the final source tree. Exact Raid parity remains open; documentation completion does not close that acceptance criterion.
+
+- DB/Board/EP-0006-basic-torpedo-combat/Documentation.md
+- DB/Board/EP-0007-countermeasure-combat/Documentation.md
+- DB/Board/EP-0008-player-defense-and-hostile-combat/Documentation.md
+- DB/Board/EP-0009-battle/Documentation.md
+- DB/Board/EP-0010-combat-reports/Documentation.md
+- DB/Board/EP-0012-combat-rebuild/Documentation.md
+- DB/Board/EP-0013-debug-tuning-panel/Documentation.md
+- DB/Board/EP-0014-module-panels/Documentation.md
+- DB/Board/EP-0015-tactical-carrier-battle/Documentation.md
+- DB/Board/EP-0015-tactical-carrier-battle/ExecutionStatus.md
+- DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md
+- DB/Board/EP-0015-tactical-carrier-battle/DocumentationImpact.md
+- DB/Board/EP-0015-tactical-carrier-battle/AcceptanceCoverage.md
+- DB/Board/EP-0015-tactical-carrier-battle/Tickets.md
+- DB/Board/EP-0015-tactical-carrier-battle/EP-0015-US-0013-legacy-engine-removal/EP-0015-US-0013-legacy-engine-removal.md
+- DB/Board/EP-0015-tactical-carrier-battle/EP-0015-US-0016-balance-and-native-acceptance/EP-0015-US-0016-balance-and-native-acceptance.md
+- DB/Board/EP-0015-tactical-carrier-battle/EP-0015-US-0017-project-documentation/EP-0015-US-0017-project-documentation.md
+## Evidence
+
+Canonical Board and superseded links are synchronized. The measured graph verification and exact paths are recorded in ExecutionStatus; source hashes cover these final document contents. The independently recorded Raid mismatch remains an open acceptance item.

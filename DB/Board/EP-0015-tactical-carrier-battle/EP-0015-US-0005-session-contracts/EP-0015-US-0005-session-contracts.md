@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0005-session-contracts
 title: "Контракты, сессия, транспорт боя"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0004-battle-ai]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0004-battle-ai]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -54,3 +54,7 @@ dependencies: [EP-0015-US-0004-battle-ai]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution review — 2026-11-05
+
+All six implementation tickets complete. Contracts283, Engine378 and focused Client33 PASS; 180 independent real-connection battles match. World save/load and defeat boundary verified; UI F9 and queued load refusal also passed in US-0007 TK-0004. This is automated implementation evidence, not independent/native/human acceptance. See ExecutionStatus.md and individual cards for scopes, artifact paths and publication SHA.

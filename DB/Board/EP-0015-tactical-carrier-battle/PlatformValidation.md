@@ -1,0 +1,40 @@
+# EP-0015 — numerical platform validation
+
+Scope: shared Motion/RNG, full core/session parity and new-control glyph/raster checks. Sections preserve each measurement and its source SHA. Reference source overrides D-USER-14/15 apply.
+
+## Independent inputs
+
+- `VData/Planning/V4.0/Reference/geometry.json`: 1088 exact IEEE images exported on Linux / CPython 3.12.3 / glibc 2.39. Includes 14 normalization vectors, 28 sin/cos vectors, 16 signed-axis atan2 vectors and 1030 hypot vectors (normal, extreme and subnormal).
+- `trace-seed-1.json`: assembly and 19 turns, rounded to six decimal places. All 34 published shot chances are checked with absolute error at most 0.0000006; no missing IEEE bits or original per-term values are invented.
+- Geometry schema-1 file SHA256 during the original platform measurement: `c75405863fd6c93cfde1f30ef35fe114c485365a39f65a1ab40dce6fbeb1518c`.
+
+## Windows
+
+`D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-limits-01/`: build PASS, full Motion **1376/1376 PASS**. Exact bit assertions cover all 1088 geometry vectors, with zero mismatches. Motion also validates Spec arithmetic examples, damage factors, mass summation, chance terms, source-order guard and movement substeps. SDK/runtime inventory: `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-platform-01/windows-dotnet-info.log`.
+
+## Linux
+
+Geometry run [42088474253](https://github.com/SuhilovVitaly/DSS/actions/runs/42088474253), source `8a43baf53ac0ff3f88f518b769893ef7ec244283`: PASS, including all geometry images.
+
+Limits/chance run [42089031642](https://github.com/SuhilovVitaly/DSS/actions/runs/42089031642), source `fc29503a812f6793779d3564f22884a8cd0eecdb`: PASS, full Motion **1376/1376**, Engine TacticalBattle **96/96**, Client content **2/2**. Log: `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-platform-01/linux.log`. It executes the same Motion tests against tracked independent fixtures; the workflow checks fixtures before any export. Each command has a 300-second process cap and uses an absolute diagnostic directory under `/tmp/artifacts/validation/ep-0015-tactical-carrier-battle/<run-id>`.
+
+## Decision and limits
+
+No .NET/glibc discrepancy was observed in the available vectors on Windows. Keep Math.Sin/Cos/Atan2 and the CPython vector_norm port; neither a speculative trig port nor regenerated battle outcomes are justified by this measurement.
+
+This is not evidence for the absent original arguments of every trig call in 90 battles. Their absence is listed in fixture headers. Core and real-connection golden gates subsequently passed as recorded below; full UI/native input and performance remain open. New numerical mismatches reopen G-03; expected outcomes must never be rewritten from the new Engine to conceal a defect. Self-review is not independent review.
+
+Schema-2 correction (rearHits field name only, all numeric data unchanged) passed Linux run [42090979851](https://github.com/SuhilovVitaly/DSS/actions/runs/42090979851). Current schema-2 geometry file SHA256: `1379ce96e16a22bb0ad4670faefadfee5d4fe679ece890011e0817ddea0be64a`. This header-only change does not alter any geometry vector.
+
+## Full core golden parity — 2026-11-05
+
+US-0004 TK-0004: all 90 independent battle summaries and uninterrupted seed-one trace pass on Windows and Linux. Linux run [42098486879](https://github.com/SuhilovVitaly/DSS/actions/runs/42098486879) at 1f92fafffe9a6c121205d0c5a740edc5929b077a passed 245 TacticalBattle and 1376 Motion tests. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-golden-01/` (Windows TRX/logs and Linux log). Integer outcomes/statistics, states and RNG counts are exact; trace fractions match original six-decimal precision, without injected intermediate state/orders/RNG. This closes the available-source core battle gate; real player transport/UI/native gates remain separate. No speculative trig port or regeneration of expected battle outcomes was needed.
+## Session/transport continuation — 2026-11-05
+
+Linux GitHub Actions run42106901851 / job127523984603 / SHA ad9817828448e70e051c6363f8bac7f4f277c052 PASS: 1376 Motion, 378 TacticalBattle Engine, 7 TacticalBattle Client. All90 independent connection rows run twice (180 battles) and real save boundary cases are included. Complete job log: D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-local-session-01/linux.log. Windows corresponding Engine378 PASS at same ticket. This does not establish physical input, native rendering or human acceptance.
+
+## Real glyph/raster continuation — 2026-11-05
+
+US-0006 TK-0006/0007: Windows113 Client (97 Tactical +16 existing TextInputBox) and378 Engine PASS. Ubuntu run [42113068311](https://github.com/SuhilovVitaly/DSS/actions/runs/42113068311), job127545443551, source4080197095f45cb7cce7ec48ff846d08867c61a7 PASS:1376 Motion,378 Engine,97 Tactical Client. Actual DejaVu Sans faces support all required signs; Windows Verdana arrow glyph0 is replaced for display by -> while source prose remains intact. Real CPU Skia raster used on both platforms; this is not a native window/GPU/physical input claim.
+
+The preceding run42112081477 failed17 Client cases because the baseline lacked libSkiaSharp. Added matching official NativeAssets.Linux2.88.8, unchanged managed API version, host fontconfig/DejaVu prerequisites and ldd check. No tests skipped/assertions weakened. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261105-text-01/ (Windows glyph JSON/PNG, logs/TRX, failed Linux log); sibling20261105-linux-runtime-01/ (successful linux.log, linux-glyph-coverage.json, linux-glyphs.png, linux-skia-linux-dependencies.log, verified actions-42113068311.zip SHA256 e724b61425be90f8c32046449e9d18457d80414db3fc23440a1a8f770d9324fa). Both glyph images visually inspected. Final project dependency guidance belongs to US-0017.

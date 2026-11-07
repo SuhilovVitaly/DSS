@@ -1,0 +1,13 @@
+{
+  "id": "gun.spear.t1",
+  "name": "Копьё I",
+  "tier": 1,
+  "arcDeg": 45,
+  "range": 135,
+  "damageMin": 40,
+  "damageMax": 60,
+  "piercing": 0,
+  "hitBonus": 10,
+  "rearKillChance": 0.6,
+  "massKg": 65
+}

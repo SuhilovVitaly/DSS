@@ -1,0 +1,13 @@
+{
+  "id": "gun.heavy",
+  "name": "Тяжёлая курсовая пушка",
+  "tier": 2,
+  "arcDeg": 20,
+  "range": 170,
+  "damageMin": 55,
+  "damageMax": 80,
+  "piercing": 10,
+  "hitBonus": 6,
+  "rearKillChance": 0.9,
+  "massKg": 95
+}

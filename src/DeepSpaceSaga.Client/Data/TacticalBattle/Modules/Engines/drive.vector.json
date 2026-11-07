@@ -1,0 +1,8 @@
+{
+  "id": "drive.vector",
+  "name": "С вектором тяги",
+  "speedBonus": 18,
+  "speedChange": 9,
+  "turnDeg": 45,
+  "massKg": 110
+}

@@ -30,11 +30,11 @@ public sealed class PiratePresentationTests
     }
 
     [Theory]
-    [InlineData(SpaceObjectType.NpcShip, PlayerRelation.Enemy, true)]
+    [InlineData(SpaceObjectType.NpcShip, PlayerRelation.Enemy, false)]
     [InlineData(SpaceObjectType.NpcShip, PlayerRelation.Neutral, false)]
     [InlineData(SpaceObjectType.NpcShip, PlayerRelation.Friend, false)]
     [InlineData(SpaceObjectType.PlayerShip, PlayerRelation.Self, false)]
-    public void Selected_ship_image_is_mirrored_only_for_pirates(string type, string relation, bool mirrored)
+    public void Selected_ship_image_keeps_its_original_orientation(string type, string relation, bool mirrored)
     {
         var path = Path.Combine(Path.GetTempPath(), $"pirate-image-{Guid.NewGuid():N}.png");
         try

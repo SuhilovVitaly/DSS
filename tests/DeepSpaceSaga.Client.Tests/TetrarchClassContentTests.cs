@@ -7,14 +7,11 @@ public sealed class TetrarchClassContentTests
 {
     private const string ClassId = "ship.tetrarch";
     private const string ClassPath = "Data/Ships/ship-classes.json";
-    private const string LauncherId = "module.torpedo.launcher.basic";
     private static readonly string ClientRoot = Path.GetFullPath(Path.Combine(
         AppContext.BaseDirectory, "..", "..", "..", "..", "..", "src", "DeepSpaceSaga.Client"));
 
     private static ShipClassDefinition Tetrarch(GameDataRegistry registry) =>
         registry.ShipClasses.GetDefinition(registry.ShipClasses.GetIndex(ClassId));
-    private static ModuleTypeDefinition Launcher(GameDataRegistry registry) =>
-        registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex(LauncherId));
 
     [Theory]
     [InlineData(false)]
@@ -75,9 +72,6 @@ public sealed class TetrarchClassContentTests
         Assert.NotNull(secondEngine.PlayerShipObjectId);
         Assert.False(original.Registry.ShipClasses.Contains("ship.custom"));
         Assert.Equal(original.Registry.CatalogCompatibility, restarted.Registry.CatalogCompatibility);
-        Assert.Equal(200, Launcher(restarted.Registry).TorpedoDamage);
-        Assert.Equal(new[] { 6d, 10d, 16d }, Launcher(restarted.Registry).Profiles.Select(p => p.SpeedKmS));
-        Assert.Null(Launcher(restarted.Registry).TorpedoTurnRateDegPerSec);
         Assert.Equal(sourceJson, File.ReadAllText(Path.Combine(ClientRoot, ClassPath)));
 
         // Prove the engine factory rereads the declared file on each restart rather than

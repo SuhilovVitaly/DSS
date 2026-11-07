@@ -19,7 +19,7 @@ public sealed class PointCombatUS0019TK0005Tests
     {
         string root = deployed ? AppContext.BaseDirectory : Source;
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);
-        string[] added = [ShipEngineCommandTypes.TurnHold, ShipEngineCommandTypes.SpeedHold, ManeuverCommandTypes.Evade, CombatEncounterCommandTypes.AcknowledgeResults];
+        string[] added = [ShipEngineCommandTypes.TurnHold, ShipEngineCommandTypes.SpeedHold];
         string[] original = ["engine.accelerate", "engine.brake", "engine.maintainSpeed", "engine.turnLeftStep", "engine.turnRightStep",
             "engine.turnLeftUntilCancel", "engine.turnRightUntilCancel", "engine.maintainCourse", "engine.speedSynchronization",
             "engine.directionSynchronization", "engine.orbit", "navigation.approach", "trade.refuel"];
@@ -53,8 +53,7 @@ public sealed class PointCombatUS0019TK0005Tests
                     DirectionDegrees = 0,
                     SpeedMps = o.ObjectId == Player ? 1000 : 0,
                     MovementType = "Linear",
-                    Ai = null,
-                    Modules = o.Modules!.Select(m => m with { ModuleTypeId = m.ModuleTypeId == "module.engine.tetrarch" ? "module.engine.basic" : m.ModuleTypeId, AutoDefenseEnabled = false, PowerState = "On" }).ToArray()
+                    Modules = o.Modules!.Select(m => m with { ModuleTypeId = m.ModuleTypeId == "module.engine.tetrarch" ? "module.engine.basic" : m.ModuleTypeId, PowerState = "On" }).ToArray()
                 }).ToArray()
             }
         };
@@ -79,19 +78,11 @@ public sealed class PointCombatUS0019TK0005Tests
         var rightDone = At(engine, 1750);
         Assert.Equal(4, Ship(rightDone).Direction, 8);
         Assert.Contains(rightDone.CommandResults, r => r.CommandId == "catalog-step-right" && r.Status == CommandResultStatus.Executed);
-        Assert.Equal(CommandStartDisposition.Started,
-            engine.TryStartHostilePointLaunch("SPC-0002", "MOD-PIRATE-TORPEDO-01", 0, 0, "slow", 1750).Disposition);
-        string threat = Assert.Single(At(engine, 1750).Objects, o => o.ObservedProjectile is not null).ObjectId;
-        engine.ReceiveCommand(new("catalog-evade", 5, Player, EngineModule, ManeuverCommandTypes.Evade,
-            ThreatProjectileId: threat, EvadeSide: EvadeSide.Left));
-        var evading = At(engine, 1750);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(evading.CommandResults).Status);
-        Assert.NotNull(Ship(evading).Evasion); Assert.Equal(Ship(rightDone).SpeedKmS, Ship(evading).SpeedKmS);
-        Assert.Equal(Ship(rightDone).Direction, Ship(evading).Direction);
-        engine.ReceiveCommand(new("catalog-ack", 6, Player, "", CombatEncounterCommandTypes.AcknowledgeResults));
-        var ack = At(engine, 1750);
-        Assert.Equal(CommandResultStatus.Executed, Assert.Single(ack.CommandResults).Status);
-        Assert.Equal(CombatEncounterState.Active, ack.Encounter!.State);
-        Assert.Equal(evading.Encounter!.Stats, ack.Encounter.Stats);
+        engine.ReceiveCommand(new("retired-evade", 5, Player, EngineModule, "maneuver.evade"));
+        var rejected = At(engine, 1750);
+        Assert.Equal(CommandReasonCodes.UnknownCommandType, Assert.Single(rejected.CommandResults).ReasonCode);
+        var before = Ship(rightDone);
+        var after = Ship(rejected);
+        Assert.Equal((before.X, before.Y, before.Direction, before.SpeedKmS), (after.X, after.Y, after.Direction, after.SpeedKmS));
     }
 }

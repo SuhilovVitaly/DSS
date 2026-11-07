@@ -1,0 +1,13 @@
+{
+  "id": "gun.wide",
+  "name": "Широкая автопушка",
+  "tier": 2,
+  "arcDeg": 55,
+  "range": 130,
+  "damageMin": 40,
+  "damageMax": 55,
+  "piercing": 0,
+  "hitBonus": 2,
+  "rearKillChance": 0.6,
+  "massKg": 60
+}

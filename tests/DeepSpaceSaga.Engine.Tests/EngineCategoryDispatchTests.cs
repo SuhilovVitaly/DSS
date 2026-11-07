@@ -16,7 +16,6 @@ public sealed class EngineCategoryDispatchTests
         var basic = registry.ModuleTypes.GetDefinition(registry.ModuleTypes.GetIndex("module.engine.basic"));
         Assert.Equal("module.engine", basic.CategoryTypeId);
         Assert.Equal(6000, basic.MaxSpeedMps);
-        Assert.Equal(10m, basic.Maneuverability);
         Assert.Equal(200, basic.FuelEfficiencyKmPerKg);
     }
 
@@ -30,7 +29,6 @@ public sealed class EngineCategoryDispatchTests
         Assert.Equal(1000, strizh.LinearInertiaMps2);
         Assert.Equal(24, strizh.AngularInertiaDegPerSec);
         Assert.Equal(5000, strizh.MassKg);
-        Assert.Equal(40m, strizh.Maneuverability);
         Assert.Contains(ShipEngineCommandTypes.Accelerate, strizh.CommandTypeIds);
 
         var source = ScenarioLoader.LoadFromFile(Path.Combine(ClientRoot, "Scenarios", "PlayerShipOnly", "scenario.json"));

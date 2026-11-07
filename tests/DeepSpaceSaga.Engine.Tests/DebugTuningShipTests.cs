@@ -5,10 +5,10 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class DebugTuningShipTests
 {
-    internal static SimulationEngine Create(double speed = 4500, bool hostile = false, bool enemyWeapon = false)
+    internal static SimulationEngine Create(double speed = 4500)
     {
         var source = ScenarioLoader.LoadFromFile(Path.Combine(TorpedoImpactTests.ClientRoot,
-            "Scenarios", hostile ? "CombatMukhaSingle" : "PlayerShipOnly", "scenario.json"));
+            "Scenarios", "PlayerShipOnly", "scenario.json"));
         var engine = new SimulationEngine(PointCombatUS0018TK0002Tests.Registry(), clock: new SimulationClock(SimulationSpeed.Speed0, () => 0));
         engine.LoadScenario(source with
         {
@@ -21,8 +21,7 @@ public sealed class DebugTuningShipTests
                     SpeedMps = o.ObjectId == source.GameState.PlayerShipObjectId ? speed : o.SpeedMps,
                     Modules = o.Modules!.Select(m => m with
                     {
-                        PowerState = hostile && m.ModuleTypeId.Contains("engine", StringComparison.Ordinal) ||
-                        enemyWeapon && m.ModuleTypeId.Contains("torpedo", StringComparison.Ordinal) || o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off"
+                        PowerState = o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off"
                     }).ToArray()
                 }).ToArray()
             }
@@ -50,7 +49,7 @@ public sealed class DebugTuningShipTests
     }
 
     [Fact]
-    public void Held_turn_is_reanchored_at_current_pose_with_new_rate_without_rng_draws()
+    public void Held_turn_is_reanchored_at_current_pose_with_new_rate()
     {
         using var engine = Create(3000);
         var start = PointCombatUS0018TK0002Tests.At(engine);
@@ -59,54 +58,12 @@ public sealed class DebugTuningShipTests
             TurnDirection: TurnDirection.Right, Active: true));
         PointCombatUS0018TK0002Tests.At(engine);
         var before = Player(PointCombatUS0018TK0002Tests.At(engine, 1000));
-        var rng = engine.CaptureLaunchScatterState();
         Apply(engine, "turnRateDegPerSec", 40);
         var after = Player(PointCombatUS0018TK0002Tests.At(engine, 1000));
         Assert.Equal(before.X, after.X, 9); Assert.Equal(before.Y, after.Y, 9);
         Assert.Equal(before.Direction, after.Direction, 9); Assert.Equal(40, after.TurnHoldRateDegPerSec);
         var later = Player(PointCombatUS0018TK0002Tests.At(engine, 2000));
         Assert.Equal((after.Direction + 40) % 360, later.Direction, 6);
-        Assert.Equal(rng, engine.CaptureLaunchScatterState());
-    }
-
-    [Fact]
-    public void Npc_segment_uses_new_limits_at_command_epoch_and_next_decision()
-    {
-        using var engine = Create(3000, hostile: true);
-        PointCombatUS0018TK0002Tests.At(engine, 1000);
-        Apply(engine, "turnRateDegPerSec", 48, "module.engine.strizh");
-        PointCombatUS0018TK0002Tests.At(engine, 1000);
-        var actors = engine.CaptureSaveState().GameState.HostileCombatState!.Actors;
-        Assert.NotEmpty(actors);
-        Assert.All(actors, a => Assert.InRange(Math.Abs(a.State.Segment.TurnRateDegPerSec), 0, 48));
-        PointCombatUS0018TK0002Tests.At(engine, 1100);
-        Assert.All(engine.CaptureSaveState().GameState.HostileCombatState!.Actors,
-            a => Assert.InRange(Math.Abs(a.State.Segment.TurnRateDegPerSec), 0, 48));
-    }
-
-    [Fact]
-    public void Evasion_keeps_escape_end_and_replans_return_with_new_acceleration()
-    {
-        using var engine = Create(3000, enemyWeapon: true);
-        var initial = PointCombatUS0018TK0002Tests.At(engine);
-        var npc = engine.CaptureSaveState().GameState.SpaceObjects.First(o => o.ObjectType == SpaceObjectType.NpcShip);
-        string launcher = npc.Modules!.First(m => m.ModuleTypeId.Contains("torpedo", StringComparison.Ordinal)).ModuleId;
-        Assert.Equal(CommandStartDisposition.Started, engine.TryStartHostilePointLaunch(npc.ObjectId, launcher,
-            npc.PositionX + 600, npc.PositionY, "slow", 0).Disposition);
-        var threat = PointCombatUS0018TK0002Tests.At(engine).Objects.Single(o => o.ObservedProjectile is not null);
-        string module = initial.InstalledModules.Single(m => m.ModuleTypeId == "module.engine.tetrarch").ModuleId;
-        engine.ReceiveCommand(new("evade", 1, initial.PlayerShipObjectId!, module, ManeuverCommandTypes.Evade,
-            ThreatProjectileId: threat.ObjectId, EvadeSide: EvadeSide.Right));
-        var started = Player(PointCombatUS0018TK0002Tests.At(engine));
-        Assert.NotNull(started.Evasion);
-        var before = Player(PointCombatUS0018TK0002Tests.At(engine, 100));
-        Apply(engine, "accelerationMps2", 1200);
-        var after = Player(PointCombatUS0018TK0002Tests.At(engine, 100));
-        Assert.Equal(before.X, after.X, 9); Assert.Equal(before.Y, after.Y, 9);
-        Assert.Equal(started.Evasion.EndsAtMotionTimeMs, after.Evasion!.EndsAtMotionTimeMs);
-        Assert.Equal(1.2, after.Evasion.Steering!.AccelerationKmS2);
-        Assert.Equal(100, after.Evasion.SampleMotionTimeMs);
-        Assert.True(after.Evasion.Steering.ReturnsAtMotionTimeMs >= after.Evasion.EndsAtMotionTimeMs);
     }
 
     [Fact]

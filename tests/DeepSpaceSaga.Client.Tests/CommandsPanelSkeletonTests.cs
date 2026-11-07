@@ -19,7 +19,7 @@ public class CommandsPanelSkeletonTests
     private const string NavigationComputerModuleId = "MOD-PLAYER-NAV-COMPUTER-01";
 
     private static readonly ImmutableArray<string> PanelOrder = ImmutableArray.Create(
-        "Navigation", "Maneuver", "Engine", "Space Control", "Torpedo Launcher", "Countermeasure Launcher");
+        "Navigation", "Maneuver", "Engine", "Space Control");
 
     /// <summary>
     /// Display names and targets mirror Client/Data/command-definitions.json —
@@ -113,7 +113,7 @@ public class CommandsPanelSkeletonTests
     [Fact]
     public void Panels_are_declared_in_fixed_order_with_fixed_command_composition()
     {
-        Assert.Equal(6, CommandsPanel.Panels.Length);
+        Assert.Equal(4, CommandsPanel.Panels.Length);
         Assert.Equal(PanelOrder, CommandsPanel.Panels.Select(p => p.Name));
 
         Assert.Equal(
@@ -156,7 +156,7 @@ public class CommandsPanelSkeletonTests
     // ── Geometry ────────────────────────────────────────────────
 
     [Fact]
-    public void Panel_renders_top_left_with_caption_360x32_and_body_spans_all_five_panels()
+    public void Panel_renders_top_left_with_caption_360x32_and_body_spans_all_four_panels()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -170,7 +170,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Xenon_chrome_assets_are_loaded_without_changing_the_360x1034_footprint()
+    public void Xenon_chrome_assets_are_loaded_without_changing_the_360x834_footprint()
     {
         var screen = CreateScreen();
         Render(screen);
@@ -505,7 +505,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Empty_installed_modules_still_shows_all_five_panels_with_disabled_buttons()
+    public void Empty_installed_modules_still_shows_all_four_panels_with_disabled_buttons()
     {
         var screen = CreateScreen(ImmutableArray<InstalledModuleSnapshot>.Empty);
         Render(screen);
@@ -579,14 +579,13 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Existing_commands_keep_icons_and_torpedo_uses_text_fallback()
+    public void Existing_commands_keep_icons()
     {
         Assert.Equal(
             CommandsPanel.Panels.SelectMany(panel => panel.CommandTypeIds)
-                .Where(id => id is not (CombatCommandTypes.Launch or CombatCommandTypes.Detonate or DefenseCommandTypes.Launch))
                 .OrderBy(k => k, StringComparer.Ordinal),
             CommandsPanel.CommandIconFileNames.Keys.OrderBy(k => k, StringComparer.Ordinal));
-        Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey(CombatCommandTypes.Fire));
+        Assert.False(CommandsPanel.CommandIconFileNames.ContainsKey("torpedo.fire"));
     }
 
     [Fact]

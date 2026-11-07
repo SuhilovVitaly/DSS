@@ -1,9 +1,7 @@
 # Сохранение игры
 
-> **Контракт EP-0013.** Текущий контракт EP-0013: writer Save19, явная миграция Save18, сохранение не-каталожного tuning и provenance retimed flight. Сохраняется sampled pose; клавишные удержания и Shift latch не сохраняются. [Подробности](../../04-Engineering/DebugTuningPanel.md#файлы-и-продолжение).
+Экран сохраняет мир в именованный слот через сессию. F5 записывает быстрый слот, F9 загружает его на паузе. Правила слотов, миграции и ошибок — в [SaveFormat](../../04-Engineering/SaveFormat.md).
 
-Работает со слотами через session/factory и SaveSlotNaming. Формат данных, очередь команд и combat/economy continuation принадлежат Engine. Нельзя перезаписывать игровое сохранение из устаревшего callback после Defeat. Текущий формат — Save19.
+В [тактическом бою](TacticalBattle.md) запись и загрузка недоступны. После выхода можно снова использовать обычные слоты; результаты боя не меняют мир. Сохранение запоминает позу и скорость корабля без физического удержания клавиш.
 
-См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
-
-Источники: [SaveScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Save/SaveScreen.cs).
+Источник: [SaveScreen](../../../../src/DeepSpaceSaga.Client/UI/Screens/Save/SaveScreen.cs).

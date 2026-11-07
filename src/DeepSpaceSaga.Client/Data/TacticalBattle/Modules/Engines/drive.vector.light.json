@@ -1,0 +1,8 @@
+{
+  "id": "drive.vector.light",
+  "name": "Лёгкий векторный",
+  "speedBonus": 15,
+  "speedChange": 8,
+  "turnDeg": 40,
+  "massKg": 85
+}

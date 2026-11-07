@@ -1,0 +1,13 @@
+{
+  "id": "gun.sword.t1",
+  "name": "Меч I",
+  "tier": 1,
+  "arcDeg": 50,
+  "range": 125,
+  "damageMin": 50,
+  "damageMax": 75,
+  "piercing": 0,
+  "hitBonus": 0,
+  "rearKillChance": 0.7,
+  "massKg": 70
+}

@@ -1,56 +1,25 @@
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using System.Globalization;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
-internal enum MapFitMode { Target, Route, System, Combat }
+internal enum MapFitMode { Target, Route, System }
 [Flags]
 internal enum MapLayerFlags { Orbits = 1, Territories = 2, Fields = 4, PointsOfInterest = 8, All = 15 }
 
 public sealed partial class GameSessionScreen
 {
-    private bool HasActiveCombatPath => _buffer.Presented?.Snapshot.Encounter?.State == CombatEncounterState.Active;
-    private readonly List<FutureTrajectoryPoint> _combatOwnPathPoints = new(51);
-
-    private void DrawOwnCombatPath(SKCanvas canvas, ObjectRenderState player, int width, int height)
-    {
-        CombatTrajectoryProjector.BuildOwnViewportPath(player.Pose.ToSnapshot(), _combatOwnPathPoints, _camera, width, height);
-        using var path = new SKPath();
-        using var paint = new SKPaint
-        {
-            Style = SKPaintStyle.Stroke,
-            IsAntialias = true,
-            StrokeWidth = (float)CombatSettings.PointCombat.LineWidthPx,
-            Color = CombatSettings.PointCombat.OwnPath
-        };
-        CombatTrajectoryProjector.BuildPath(path, _combatOwnPathPoints, _camera, width, height);
-        canvas.DrawPath(path, paint);
-        DisplayedPlayerTrajectoryEnd = _combatOwnPathPoints[^1];
-        CaptureDrawnTrajectory(player.Pose.ObjectId, "combat-own-maneuver", _combatOwnPathPoints, isPlayer: true);
-    }
-
-    private void DrawOwnVelocity(SKCanvas canvas, int width, int height)
-    {
-        using var path = new SKPath();
-        using var paint = new SKPaint
-        {
-            Style = SKPaintStyle.Stroke,
-            IsAntialias = true,
-            StrokeWidth = (float)CombatSettings.PointCombat.LineWidthPx,
-            Color = CombatSettings.PointCombat.OwnVelocity
-        };
-        CombatTrajectoryProjector.BuildPath(path, _externalPlayerTrajectoryPoints, _camera, width, height);
-        canvas.DrawPath(path, paint);
-        var a = _camera.WorldToScreen(_externalPlayerTrajectoryPoints[0].X, _externalPlayerTrajectoryPoints[0].Y, width, height);
-        var b = _camera.WorldToScreen(_externalPlayerTrajectoryPoints[1].X, _externalPlayerTrajectoryPoints[1].Y, width, height);
-        double length = double.Hypot(b.X - a.X, b.Y - a.Y);
-        if (length <= 0 || b.X < 0 || b.Y < 0 || b.X > width || b.Y > height) return;
-        float dx = (float)((b.X - a.X) / length), dy = (float)((b.Y - a.Y) / length);
-        float size = (float)CombatSettings.PointCombat.ReticleRadiusPx;
-        canvas.DrawLine(b.X, b.Y, b.X - dx * size - dy * size / 2, b.Y - dy * size + dx * size / 2, paint);
-        canvas.DrawLine(b.X, b.Y, b.X - dx * size + dy * size / 2, b.Y - dy * size - dx * size / 2, paint);
-    }
-
+    private readonly TacticalBattleInputSettings _tacticalBattleInputs;
+    private readonly ShortcutButton _tacticalBattleEntry = new("");
+    private bool CanOpenTacticalBattle => _handle is { Failure: null };
+    private float TacticalBattleEntryHeight => CanOpenTacticalBattle ? 32 : 0;
+    internal SKRect TacticalBattleEntryBounds => _tacticalBattleEntry.Bounds;
+    internal string TacticalBattleHint => _tacticalBattleInputs.ShortcutAvailable
+        ? string.Format(CultureInfo.InvariantCulture, BattleFormat.Localize("OpenHint"), _tacticalBattleInputs.TacticalBattle)
+        : BattleFormat.Localize("BattleTitle");
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
     private SKRect _mapToolbarRect;
@@ -123,7 +92,7 @@ public sealed partial class GameSessionScreen
     }
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
-        id == _buffer.Presented?.Snapshot.PlayerShipObjectId || _combatImportantIds.Contains(id) ||
+        id == _buffer.Presented?.Snapshot.PlayerShipObjectId ||
         AiMapPresentation.Base(_buffer.Presented?.Snapshot, id) is not null;
 
     private void SetFollowPlayer()
@@ -214,7 +183,7 @@ public sealed partial class GameSessionScreen
         }
     }
 
-    internal SKRect AvailableMapRect(bool includeThreatPanel = true, bool includeEncounterHud = true)
+    internal SKRect AvailableMapRect()
     {
         _mapObstacles.Clear();
         void Add(SKRect r)
@@ -223,10 +192,6 @@ public sealed partial class GameSessionScreen
         }
         Add(_commandsPanel.CaptionRect); Add(_commandsPanel.BodyRect);
         Add(_objectInfoPanel.CaptionRect); Add(_objectInfoPanel.BodyRect);
-        Add(CombatReportsBounds);
-        Add(_combatJournalPanel.Bounds);
-        if (includeThreatPanel) Add(_threatPanel.Bounds);
-        if (includeEncounterHud) { Add(_combatSummaryPanel.Bounds); Add(CombatBannerRect); }
         if (_panelVisible) Add(_lastPanelRect);
         Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect); Add(_lastGameTimeRect);
         var hash = new HashCode(); hash.Add(_viewportW); hash.Add(_viewportH);
@@ -295,28 +260,7 @@ public sealed partial class GameSessionScreen
         if (ship is null) return false;
         MapWorldBounds bounds = new();
         bounds.Include(ship.X, ship.Y);
-        if (mode == MapFitMode.Combat)
-        {
-            CombatTrajectoryProjector.BuildOwnPath(ship, _combatOwnPathPoints);
-            foreach (var point in _combatOwnPathPoints) bounds.Include(point.X, point.Y);
-            double direction = ship.Direction * Math.PI / 180;
-            bounds.Include(ship.X + Math.Sin(direction) * ship.SpeedKmS * 10, ship.Y - Math.Cos(direction) * ship.SpeedKmS * 10);
-            foreach (var state in _renderStates)
-            {
-                var motion = state.Source;
-                if (motion.OwnProjectile is { } own)
-                {
-                    bounds.Include(state.Pose.X, state.Pose.Y);
-                    double radius = own.BlastRadiusKm * 10;
-                    bounds.Include(own.DetonationX - radius, own.DetonationY - radius);
-                    bounds.Include(own.DetonationX + radius, own.DetonationY + radius);
-                }
-                else if (motion.ObservedProjectile is not null ||
-                    motion is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy, IsDestroyed: false })
-                    bounds.Include(state.Pose.X, state.Pose.Y);
-            }
-        }
-        else if (mode == MapFitMode.System)
+        if (mode == MapFitMode.System)
         {
             if (_buffer.Presented?.Snapshot.SolarSystemMap is { } system)
             {
@@ -418,7 +362,8 @@ public sealed partial class GameSessionScreen
         float layerRowHeight = hasMapLayers ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62 - layerRowHeight;
-        if (_commandsPanel.BodyRect.Bottom > top - 27)
+        float battleRow = TacticalBattleEntryHeight;
+        if (_commandsPanel.BodyRect.Bottom > top - 27 - battleRow)
         {
             left = Math.Max(left, _commandsPanel.BodyRect.Right + 8);
             width = Math.Min(width, _uiViewportW - left - 8);
@@ -426,8 +371,18 @@ public sealed partial class GameSessionScreen
         int columns = width < 520 ? 4 : 8;
         float wrappedRowHeight = columns == 4 ? 27 : 0;
         top -= wrappedRowHeight;
-        _mapToolbarRect = new(left, top, left + width, top + 58 + layerRowHeight + wrappedRowHeight);
+        _mapToolbarRect = new(left, top - battleRow, left + width, top + 58 + layerRowHeight + wrappedRowHeight);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
+        float battleWidth = Math.Min(280, width - 8);
+        _tacticalBattleEntry.Bounds = battleRow > 0 && battleWidth > 0
+            ? SKRect.Create(left + (width - battleWidth) / 2, top - 29, battleWidth, 26) : SKRect.Empty;
+        _tacticalBattleEntry.Enabled = CanOpenTacticalBattle;
+        if (!_tacticalBattleEntry.Bounds.IsEmpty)
+        {
+            _tacticalBattleEntry.Label = TacticalBattleHint;
+            _tacticalBattleEntry.Tooltip = BattleFormat.Localize("OpenTooltip");
+            _tacticalBattleEntry.Draw(canvas);
+        }
         string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt", "Map.Cluster"];
         float buttonWidth = (width - 12) / columns;
         for (int i = 0; i < keys.Length; i++)

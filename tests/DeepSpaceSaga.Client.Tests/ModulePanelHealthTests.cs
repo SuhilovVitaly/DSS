@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
@@ -15,27 +16,27 @@ public sealed class ModulePanelHealthTests
         Assert.All(panel.CommandPanelRows, row => Assert.True(row.CaptionRect.Bottom <= 480, row.Name));
         var paint = (SKPaint)typeof(CommandsPanel).GetField("_detailsPaint",
             System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(panel)!;
-        string glyphs = string.Concat(new[] { "BarLeft", "BarFull", "BarEmpty", "BarRight", "Selected", "CriticalIcon" }
-            .Select(key => Localization.Combat("Panel." + key)));
-        foreach (char symbol in glyphs + "Точность Броня")
+        string glyphs = string.Concat(new[] { "BarLeft", "BarFull", "BarEmpty", "BarRight" }
+            .Select(key => Localization.Get("World.Panel." + key)));
+        foreach (char symbol in glyphs + Localization.Get("World.Panel.Structure"))
             Assert.True(paint.GetGlyphs(symbol.ToString()).All(g => g != 0), $"Missing U+{(int)symbol:X4} in {paint.Typeface.FamilyName}");
     }
 
     [Fact]
-    public async Task Render_uses_authoritative_limit_and_explains_health_and_criticality()
+    public async Task Render_explains_ordinary_module_structure()
     {
         await using var f = await PointCombatUiFixture.Create();
         var panel = f.Screen.CommandsPanel;
         var nav = Assert.Single(panel.CommandPanelRows, r => r.Name == "Navigation");
-        panel.OnMouseDown(nav.CaptionRect.MidX, nav.CaptionRect.MidY);
+        if (!nav.Opened) panel.OnMouseDown(nav.CaptionRect.MidX, nav.CaptionRect.MidY);
         f.Render();
         nav = Assert.Single(panel.CommandPanelRows, r => r.Name == "Navigation");
         Assert.True(nav.Opened);
-        Assert.Contains(nav.DetailLines, l => l.Contains(" / 3"));
+        Assert.Contains(nav.DetailLines, l => l.Contains(Localization.Get("World.Panel.Structure")));
         panel.OnMouseMove(nav.BodyRect.MidX, nav.BodyRect.Top + 20);
         f.Render();
         Assert.Contains("/", panel.CurrentHealthTooltip);
-        Assert.Contains(Localization.Combat("Panel.CriticalTooltip"), panel.CurrentHealthTooltip);
+        Assert.Contains(Localization.Get("World.Panel.Structure"), panel.CurrentHealthTooltip);
     }
 
     [Fact]
@@ -51,9 +52,10 @@ public sealed class ModulePanelHealthTests
         for (int i = 0; i < 100; i++) panel.Render(canvas, modules, 1080, PointCombatUiFixture.Player);
         long allocated = GC.GetAllocatedBytesForCurrentThread() - before;
         Assert.Equal(0, allocated);
-        panel.DestroyedModuleLimit = 7;
-        panel.Render(canvas, modules, 1080, PointCombatUiFixture.Player);
-        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains(" / 7"));
+        var changed = f.Presented.InstalledModules.Select(m => m with { DisplayName = "Updated " + m.DisplayName }).ToImmutableArray();
+        panel.OwnModuleDiagram!.Update(changed);
+        panel.Render(canvas, changed, 1080, PointCombatUiFixture.Player);
+        Assert.Contains(panel.CommandPanelRows.SelectMany(r => r.DetailLines), l => l.Contains("Updated ", StringComparison.Ordinal));
         panel.ReleasePresentationCache();
     }
 }

@@ -14,7 +14,6 @@ using DeepSpaceSaga.Engine;
 using DeepSpaceSaga.Engine.Content;
 using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
-using Silk.NET.Input;
 using Silk.NET.Windowing;
 using SkiaSharp;
 
@@ -50,7 +49,6 @@ internal static class ModulePanelNativeEvidence
                 CurrentSpeed = "Speed0",
                 SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
                 {
-                    Ai = null,
                     PositionX = o.ObjectId == source.GameState.PlayerShipObjectId ? 0 : 300,
                     PositionY = 0,
                     SpeedMps = o.ObjectId == source.GameState.PlayerShipObjectId ? 3000 : 0,
@@ -64,9 +62,7 @@ internal static class ModulePanelNativeEvidence
         var world = engine.CaptureSnapshot(advanceClock: false);
         var buffer = new SnapshotBuffer(() => 0); buffer.Update(world);
         var driver = new Driver(engine); var handle = new GameSessionHandle(driver, buffer);
-        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle, uiScale: scale, timestampProvider: () => 0,
-            combatSettings: CombatVisualSettings.Load(Path.Combine(client, CombatVisualSettings.RelativePath)),
-            combatInputs: CombatInputSettings.Load(Path.Combine(client, CombatInputSettings.RelativePath)));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), handle, uiScale: scale, timestampProvider: () => 0);
         Environment.SetEnvironmentVariable("DSS_MAP_FRAME_EXIT", "0");
         using var window = new SkiaWindow(screen, new Factory());
         typeof(SkiaWindow).GetField("_session", Private)!.SetValue(window, handle);
@@ -74,7 +70,7 @@ internal static class ModulePanelNativeEvidence
         var native = (IWindow)typeof(SkiaWindow).GetField("_window", Private)!.GetValue(window)!;
         var checks = new Dictionary<string, bool>(); var captures = new List<string>(); var rowsAtCapture = new List<object>();
         string? failure = null; bool completed = false; int frame = 0, stage = 0;
-        var watch = Stopwatch.StartNew(); (float X, float Y) aim = default;
+        var watch = Stopwatch.StartNew();
         window.NativeFrameRendered = (surface, _) =>
         {
             try
@@ -83,48 +79,21 @@ internal static class ModulePanelNativeEvidence
                 if (++frame == 1) { native.Size = new(width, height); return; }
                 if (frame < 5 || frame % 3 != 0) return;
                 var rows = screen.CommandsPanel.CommandPanelRows;
-                var torpedo = rows.First(r => r.Weapon?.ModuleId == "MOD-PLAYER-TORPEDO-01");
                 switch (stage++)
                 {
                     case 0:
                         checks["openGl"] = typeof(SkiaWindow).GetField("_grContext", Private)!.GetValue(window) is not null;
                         checks["dimensions"] = native.Size.X == width && native.Size.Y == height;
-                        checks["locale"] = Localization.Combat("Panel.Engine") == (args[5] == "ru" ? "Двигатель" : "Engine");
+                        checks["locale"] = Localization.Get("World.Panel.Engine") == (args[5] == "ru" ? "Двигатель" : "Engine");
                         if (screen.IsPanelVisible) Click(screen.LastCloseRect);
                         break;
                     case 1:
-                        checks["torpedoPriority"] = torpedo.Opened && (height / scale >= 600 || !rows.Any(r => r.Name == "Navigation" && r.Opened));
-                        checks["profileRows"] = torpedo.DetailLines.Count(l => l.Contains('\t')) == 3;
-                        checks["referenceSigma"] = torpedo.OperatorText!.Replace(',', '.').Contains("0.42");
-                        checks["rangeAndLimit"] = torpedo.RangeKm == 70 && world.DestroyedModuleLimit == 3;
                         checks["captionsFit"] = rows.All(r => r.CaptionRect.Bottom * scale <= native.Size.Y);
                         Capture(surface, "panels");
-                        Tap(Key.Q);
+                        var engineRow = rows.First(r => r.Name == "Engine");
+                        if (!engineRow.Opened) Click(engineRow.CaptionRect);
                         break;
                     case 2:
-                        var free = screen.AvailableMapRect();
-                        aim = (free.MidX, free.MidY); screen.OnMouseMove(aim.X, aim.Y);
-                        break;
-                    case 3:
-                        checks["aimPreview"] = screen.PointAim?.ProfileId == "medium" && screen.CurrentTorpedoAimPreview is not null;
-                        Capture(surface, "aim");
-                        screen.OnMouseDown(aim.X, aim.Y); screen.OnMouseUp(aim.X, aim.Y);
-                        world = engine.CaptureSnapshot(advanceClock: false); buffer.Update(world);
-                        break;
-                    case 4:
-                        checks["actualLaunch"] = driver.Commands == 1 && world.Objects.Any(o => o.OwnProjectile?.Kind == ProjectileKind.Torpedo);
-                        checks["reloadTimer"] = torpedo.ReloadTimerText == "40 " + Localization.Combat("Panel.Seconds");
-                        var button = torpedo.Buttons[0]; screen.OnMouseMove(button.Rect.MidX * scale, button.Rect.MidY * scale);
-                        break;
-                    case 5:
-                        checks["hoverKeepsStatus"] = torpedo.HoverText is not null && torpedo.StatusBarText?.Contains("40") == true;
-                        Capture(surface, "reload"); Tap(Key.Q); screen.OnMouseMove(aim.X, aim.Y);
-                        screen.OnMouseDown(aim.X, aim.Y); screen.OnMouseUp(aim.X, aim.Y);
-                        checks["blockedAim"] = driver.Commands == 1 && screen.PointAimFeedbackIsError;
-                        Tap(Key.Escape);
-                        var engineRow = rows.First(r => r.Name == "Engine"); if (!engineRow.Opened) Click(engineRow.CaptionRect);
-                        break;
-                    case 6:
                         var propulsion = rows.First(r => r.Name == "Engine");
                         checks["engineTimes"] = propulsion.Opened && propulsion.DetailLines.Any(l => l.Contains(": 13 ")) && propulsion.DetailLines.Any(l => l.Contains(": 18 "));
                         Capture(surface, "engine"); completed = true; native.Close(); break;
@@ -149,12 +118,11 @@ internal static class ModulePanelNativeEvidence
             captures,
             rowsAtCapture,
             renderer = typeof(SkiaWindow).GetField("_graphicsRenderer", Private)!.GetValue(window),
-            input = "Managed production screen callbacks; actual Engine admission and GPU capture.",
+            input = "Managed production screen callbacks and GPU capture of the engine panel.",
             notRun = new[] { "physical keyboard/mouse", "human visual acceptance", "independent review" }
         }, new JsonSerializerOptions { WriteIndented = true }));
         Console.WriteLine(output); return passed ? 0 : 1;
 
-        void Tap(Key key) { screen.OnKeyDown(key); screen.OnKeyUp(key); }
         void Click(SKRect rect) { screen.OnMouseDown(rect.MidX * scale, rect.MidY * scale); screen.OnMouseUp(rect.MidX * scale, rect.MidY * scale); }
         void Capture(SKSurface surface, string label)
         {
@@ -170,8 +138,7 @@ internal static class ModulePanelNativeEvidence
                     r.Opened,
                     caption = new { r.CaptionRect.Left, r.CaptionRect.Top, r.CaptionRect.Right, r.CaptionRect.Bottom },
                     body = new { r.BodyRect.Left, r.BodyRect.Top, r.BodyRect.Right, r.BodyRect.Bottom },
-                    r.DetailLines,
-                    r.ReloadTimerText
+                    r.DetailLines
                 })
             });
         }

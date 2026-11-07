@@ -186,7 +186,7 @@ public sealed class ObjectInfoPanel
                 lines.Add(("Information", EnvironmentFieldRenderer.Notice));
                 return lines;
             }
-            lines.Add(("Speed", $"{d.SpeedKmS:0.###} {Localization.Combat("KilometersPerSecond")}"));
+            lines.Add(("Speed", $"{d.SpeedKmS:0.###} {Localization.Get("World.KilometersPerSecond")}"));
             if (d.Owner is { } owner)
             {
                 lines.Add(("Owner", owner));
@@ -217,19 +217,6 @@ public sealed class ObjectInfoPanel
             }
             if (d.DistanceKm is { } distanceKm)
                 lines.Add(("Distance", TacticalMapSettings.FormatDistance(distanceKm * 1000)));
-            if (d.HostileCombat is { } hostile && d.RenderObjectType == SpaceObjectType.NpcShip && d.RelationToPlayer == PlayerRelation.Enemy)
-            {
-                lines.Add((GameSessionScreen.CombatText("Maneuver", "Манёвр"), hostile.Phase switch
-                {
-                    HostileCombatPhase.Pursuit => GameSessionScreen.CombatText("Phase.Pursuit", "Сближение"),
-                    HostileCombatPhase.OrbitEntry => GameSessionScreen.CombatText("Phase.OrbitEntry", "Выход на орбиту"),
-                    HostileCombatPhase.OrbitHold => GameSessionScreen.CombatText("Phase.OrbitHold", "Удержание орбиты"),
-                    HostileCombatPhase.FlankApproach => GameSessionScreen.CombatText("Phase.FlankApproach", "Заход с фланга"),
-                    HostileCombatPhase.Retreat => GameSessionScreen.CombatText("Phase.Retreat", "Отход"),
-                    _ => "—"
-                }));
-                lines.Add((GameSessionScreen.CombatText("DesiredRadius", "Радиус орбиты"), $"{hostile.DesiredRadiusKm:0.##} " + GameSessionScreen.CombatText("Kilometers", "км")));
-            }
             if (d.ClusterName is { } cluster)
             {
                 lines.Add(("Cluster", cluster));
@@ -347,7 +334,7 @@ public sealed class ObjectInfoPanel
 
         float titleX = _hideShowButtonRect.Right + Padding + 2f;
         float titleY = _captionRect.MidY + _titlePaint.TextSize / 3f;
-        canvas.DrawText(Localization.Combat("Panel.ObjectInfo"), titleX, titleY, _titlePaint);
+        canvas.DrawText(Localization.Get("World.Panel.ObjectInfo"), titleX, titleY, _titlePaint);
 
         float rowY = _captionRect.Bottom;
 
@@ -359,7 +346,7 @@ public sealed class ObjectInfoPanel
             for (int i = 0; i < RowNames.Length; i++)
             {
                 bool opened = IsRowOpen(i);
-                var sourceLines = BuildLines(rowData[i]).Select(p => (Label: Localization.CombatFieldLabel(p.Label), p.Value)).ToList();
+                var sourceLines = BuildLines(rowData[i]).Select(p => (Label: Localization.WorldFieldLabel(p.Label), p.Value)).ToList();
                 float valueOffset = ValueOffset(rowData[i], sourceLines);
                 var renderLines = BuildRenderLines(rowData[i], sourceLines, valueOffset);
                 float bodyHeight = Math.Max(_renderImageWidth * ImageHeight / ImageWidth + 2 * Padding, 2 * Padding + renderLines.Count * LineHeight);
@@ -383,7 +370,7 @@ public sealed class ObjectInfoPanel
                 _rowBodyRects[i] = bodyRect;
 
                 DrawBeveledCaption(canvas, captionRect, _rowCaptionBgPaint);
-                canvas.DrawText(Localization.CombatPanelCaption(RowNames[i]), captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
+                canvas.DrawText(Localization.WorldPanelCaption(RowNames[i]), captionRect.Left + Padding, captionRect.MidY + _rowTitlePaint.TextSize / 3f, _rowTitlePaint);
 
                 if (opened)
                     DrawRowBody(canvas, bodyRect, rowData[i], _rowScrollOffsets[i], _rowScrollLimits[i], renderLines, valueOffset);
@@ -459,11 +446,7 @@ public sealed class ObjectInfoPanel
         var image = data is { } d ? ResolveObjectImage(d) : null;
         if (image is not null)
         {
-            canvas.Save();
-            if (data is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy })
-                canvas.Scale(-1, 1, imageRect.MidX, imageRect.MidY);
             canvas.DrawBitmap(image, imageRect, _imagePaint);
-            canvas.Restore();
         }
         else
             canvas.DrawRect(imageRect, _imagePlaceholderPaint);
@@ -576,7 +559,6 @@ public readonly record struct ObjectInfoPanelData(
     string? CaptainDisplayName = null,
     string? RelationToPlayer = null,
     double? DistanceKm = null,
-    TorpedoInspectionData? Torpedo = null, CountermeasureSnapshot? Countermeasure = null,
     StationMarketKnowledgeSnapshot? MarketKnowledge = null,
     string? ClusterName = null, string? ClusterProfile = null, string? ClusterDirections = null,
     string? ResourceCluster = null, string? ResourceOwner = null,
@@ -584,8 +566,4 @@ public readonly record struct ObjectInfoPanelData(
     string? Owner = null, string? BaseType = null,
     double? DefenceRadiusKm = null, double? PatrolRadiusKm = null,
     string? FieldKind = null, double? FieldIntensity = null, string? PoiDescription = null,
-    HostileCombatSnapshot? HostileCombat = null,
     IReadOnlyList<ModuleHealthSnapshot>? Modules = null, long MotionTimeMs = 0);
-
-/// <summary>Presentation of confirmed flight and shared motion extrapolation.</summary>
-public sealed record TorpedoInspectionData(string Target, double TravelledKm, double? EtaSeconds, int HitChancePercent);

@@ -1,0 +1,8 @@
+{
+  "id": "drive.light",
+  "name": "Лёгкий маршевый",
+  "speedBonus": 20,
+  "speedChange": 9,
+  "turnDeg": 30,
+  "massKg": 70
+}

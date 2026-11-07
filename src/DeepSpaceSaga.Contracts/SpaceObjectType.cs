@@ -8,10 +8,6 @@ public static class SpaceObjectType
     public const string Asteroid = "Asteroid";
     public const string Station = "Station";
     public const string Container = "Container";
-    public const string Missile = "Missile";
-    public const string Countermeasure = "Countermeasure";
-    public const string Wreck = "Wreck";
-    public const string Explosion = "Explosion";
     public const string Planet = "Planet";
     public const string Sun = "Sun";
 

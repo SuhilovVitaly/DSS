@@ -1,0 +1,6 @@
+{
+  "schemaVersion": 1,
+  "tacticalBattle": "F8",
+  "repeatDelayMs": 400,
+  "repeatPeriodMs": 80
+}

@@ -20,7 +20,7 @@ public sealed partial class GameSessionScreen
 
     private void InitializeDebugTuning()
     {
-        _debugTuningPanel.ConfigureBindings(CombatInputs);
+        _debugTuningPanel.ConfigureBindings(ManeuverInputs);
         if (_handle is not null) _handle.Closing += DisposeDebugTuning;
     }
 
@@ -71,14 +71,14 @@ public sealed partial class GameSessionScreen
 
     private bool HandleDebugKey(Key key)
     {
-        if (key == CombatInputs.DebugPanel)
+        if (key == ManeuverInputs.DebugPanel)
         {
             _debugTuningPanel.Visible = !_debugTuningPanel.Visible;
             _isPanningMap = false;
             if (_debugTuningPanel.Visible) PrepareDebugTuning();
             return true;
         }
-        if (key == Key.Escape && PointAim is null && _debugTuningPanel.Visible)
+        if (key == Key.Escape && _debugTuningPanel.Visible)
         { _debugTuningPanel.Visible = false; _debugResetArmedAt = null; return true; }
         return false;
     }

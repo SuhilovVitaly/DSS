@@ -13,9 +13,7 @@ public sealed class ModuleHealthProjectionTests
             IsKnown = true,
             Modules = o.Modules!.Select((m, i) => i == 0 ? m with
             {
-                Armor = 0,
-                StructurePoints = 12,
-                DisabledUntilMotionTimeMs = 5000
+                StructurePoints = 12
             } : m).ToArray()
         });
         using var knownEngine = Create(scenario);
@@ -28,9 +26,7 @@ public sealed class ModuleHealthProjectionTests
             Assert.Equal(source.Modules!.Select(m => m.ModuleId), ship.ModuleHealth.Select(m => m.ModuleId));
         }
         var configured = known.Objects.Single(o => o.ObjectId == Player).ModuleHealth[0];
-        Assert.Equal(0, configured.ArmorCurrent);
         Assert.Equal(12, configured.StructureCurrent);
-        Assert.Equal(5000, configured.DisabledUntilMotionTimeMs);
         Assert.False(configured.IsDestroyed);
 
         Assert.Empty(known.Objects.Single(o => o.ObjectId == Target).ModuleHealth);

@@ -15,7 +15,26 @@ public sealed partial class SimulationEngine
     public void ReceiveDialogueCommand(DialogueCommand command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        lock (_worldStateLock) _pendingDialogueCommands.Enqueue(command);
+        lock (_worldStateLock)
+        {
+            if (_tacticalBattleSession is not null) RejectDialogueCommandDuringTacticalBattle(command);
+            else _pendingDialogueCommands.Enqueue(command);
+        }
+    }
+
+    // Mirrors the ordinary queue's duplicate handling, but answers at once so the command can
+    // never apply after the battle ends. Only the dialogue command journal and events change.
+    private void RejectDialogueCommandDuringTacticalBattle(DialogueCommand command)
+    {
+        if (string.IsNullOrWhiteSpace(command.CommandId)) return;
+        long time = _clock.Capture().MotionTimeMs;
+        if (_dialogue.ProcessedCommandIds.Contains(command.CommandId))
+        {
+            _dialogue.Emit(command.DialogueInstanceId, "dialogue_duplicate", time, command.CommandId);
+            return;
+        }
+        _dialogue.ProcessedCommandIds = _dialogue.ProcessedCommandIds.Add(command.CommandId);
+        _dialogue.Emit(command.DialogueInstanceId, TacticalBattleActiveReason, time, command.CommandId);
     }
 
     private void ValidateDialogueState(DialogueSaveState? save, IReadOnlyList<SpaceObjectRuntime> objects)
@@ -132,6 +151,7 @@ public sealed partial class SimulationEngine
 
     private string? ApplyDialogueCommand(DialogueCommand command, long time)
     {
+        if (_tacticalBattleSession is not null) return TacticalBattleActiveReason;
         if (command.Action == DialogueAction.Start)
         {
             if (command.DialogueDefinitionId is not { } id || !_registry.Dialogues.Contains(id)) return "unknown_dialogue";
@@ -206,13 +226,17 @@ public sealed partial class SimulationEngine
         _dialogue.Active = null;
         var speed = _dialogue.ResumeSpeed ?? SimulationSpeed.Speed0;
         _dialogue.ResumeSpeed = null;
-        if (_encounterState == CombatEncounterState.Active && !speed.IsAllowedInCombat()) speed = SimulationSpeed.Speed1;
         _clock.Reset(_processedWorldTimeMs, speed, time, _clock.Capture().MotionQuarterRemainder);
     }
 
     private void UpdateStationSecurity(long time)
     {
-        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time,
-            (objectId, deathTime) => DestroyShip(objectId, "station-security", deathTime));
+        int index = _objects.FindIndex(o => o.InitialMotion.ObjectId == PlayerShipObjectId && !o.IsDestroyed);
+        _dialogue.Progress = StationSecuritySystem.Update(_objects, PlayerShipObjectId, _dialogue.Progress, time);
+        if (index < 0 || _objects[index] is not { IsDestroyed: true } ship) return;
+        _objects[index] = ship with { InitialMotion = ClearSteeringControls(ship.InitialMotion) };
+        if (SelectedObjectId == ship.InitialMotion.ObjectId) SelectedObjectId = null;
+        if (ActiveObjectId == ship.InitialMotion.ObjectId) ActiveObjectId = null;
+        StopAtStationSecurityDeadline(ship.StartGameTimeMs);
     }
 }

@@ -29,35 +29,12 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
     internal AuthoritativeSnapshot Latest => Handle.Buffer.Latest!.Snapshot;
     internal AuthoritativeSnapshot Presented => Handle.Buffer.Presented!.Snapshot;
 
-    private PointCombatUiFixture(int width, int height, float scale, CombatInputSettings? inputs, int hostileShots, int? accuracySkill,
+    private PointCombatUiFixture(int width, int height, float scale, int? accuracySkill,
         Func<SpaceObjectData, SpaceObjectData>? configure)
     {
         (_width, _height, Scale) = (width, height, scale);
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(Root, "Settings.json"), out _, out _);
         var source = ScenarioLoader.LoadFromFile(Path.Combine(Root, "Scenarios/PlayerShipOnly/scenario.json"));
-        if (hostileShots is < 0 or > 16) throw new ArgumentOutOfRangeException(nameof(hostileShots));
-        var template = source.GameState.SpaceObjects.Single(o => o.ObjectId == Enemy);
-        var extraEnemies = Enumerable.Range(0, hostileShots).Select(i =>
-        {
-            string suffix = "-budget-" + i;
-            return template with
-            {
-                ObjectId = Enemy + suffix,
-                Ai = null,
-                PositionX = 300 + i * 10,
-                PositionY = 0,
-                SpeedMps = 0,
-                MovementType = "Stationary",
-                DirectionDegrees = 270,
-                Modules = template.Modules!.Select(m => m with
-                {
-                    ModuleId = m.ModuleId + suffix,
-                    OperatorCrewId = m.OperatorCrewId is null ? null : m.OperatorCrewId + suffix,
-                    PowerState = m.ModuleTypeId == "module.torpedo.launcher.basic" ? "On" : "Off"
-                }).ToArray(),
-                Crew = template.Crew!.Select(c => c with { CrewId = c.CrewId + suffix }).ToArray()
-            };
-        }).ToArray();
         Engine = new(registry, clock: new SimulationClock(SimulationSpeed.Speed0, () => Interlocked.Read(ref _realMs)));
         Engine.LoadScenario(source with
         {
@@ -72,31 +49,23 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
                     SpeedMps = 0,
                     DirectionDegrees = o.ObjectId == Player ? 90 : 270,
                     MovementType = "Stationary",
-                    Ai = null,
                     Crew = o.ObjectId == Player && accuracySkill is { } skill
                         ? o.Crew!.Select(c => c with { AccuracySkill = skill }).ToArray() : o.Crew,
                     Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == Player ? "On" : "Off" }).ToArray()
-                }).Concat(extraEnemies).Select(o => configure?.Invoke(o) ?? o).ToArray()
+                }).Select(o => configure?.Invoke(o) ?? o).ToArray()
             }
         });
-        for (int i = 0; i < hostileShots; i++)
-        {
-            string suffix = "-budget-" + i;
-            Assert.Equal(CommandStartDisposition.Started, Engine.TryStartHostilePointLaunch(Enemy + suffix,
-                "MOD-PIRATE-TORPEDO-01" + suffix, -100, 0, "slow", 0).Disposition);
-        }
-        Engine.SetPresentationTimestampForTests(() => 0);
         Connection = new(Engine);
         Handle = new(Connection, new SnapshotBuffer(() => UiMs * Stopwatch.Frequency / 1000));
         Screen = new(Handle.Buffer, new LinearMotionPredictor(), Handle,
-            uiScale: scale, timestampProvider: () => UiMs * Stopwatch.Frequency / 1000, combatInputs: inputs);
+            uiScale: scale, timestampProvider: () => UiMs * Stopwatch.Frequency / 1000);
         _bitmap = new(width, height); _canvas = new(_bitmap);
     }
     internal static async Task<PointCombatUiFixture> Create(int width = 1920, int height = 1080, float scale = 1,
-        CombatInputSettings? inputs = null, int hostileShots = 0, int? accuracySkill = null,
+        int? accuracySkill = null,
         Func<SpaceObjectData, SpaceObjectData>? configure = null)
     {
-        var f = new PointCombatUiFixture(width, height, scale, inputs, hostileShots, accuracySkill, configure);
+        var f = new PointCombatUiFixture(width, height, scale, accuracySkill, configure);
         await f.Wait(() => f.Handle.Buffer.Presented?.Snapshot.InstalledModules.Length > 0 && f.Screen.RenderStates.Any(o => o.IsPlayerShip));
         f.Screen.OnActivated(); f.Render();
         if (f.Screen.IsPanelVisible)
@@ -110,7 +79,7 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
     internal string DebugMap(double x, double y = 0)
     {
         var pixel = Pixel(x, y);
-        return $"point={pixel}; free={Screen.AvailableMapRect()}; aim={Screen.PointAim}; feedback={Screen.PointAimFeedback}; info={Screen.IsPanelVisible}; camera={Screen.CameraFocusX}/{Screen.CameraFocusY}/{Screen.CameraPixelsPerWorldUnit}";
+        return $"point={pixel}; free={Screen.AvailableMapRect()}; info={Screen.IsPanelVisible}; camera={Screen.CameraFocusX}/{Screen.CameraFocusY}/{Screen.CameraPixelsPerWorldUnit}";
     }
     internal (float X, float Y) Pixel(double x, double y = 0) =>
         ((float)(_width / 2d + (x - Screen.CameraFocusX) * Screen.CameraPixelsPerWorldUnit),
@@ -129,16 +98,6 @@ internal sealed class PointCombatUiFixture : IAsyncDisposable, IGameSessionFacto
         Screen.OnMouseUp(startX + free.MidX - point.X, startY + free.MidY - point.Y);
         Render(); point = Pixel(x, y);
         Assert.True(Screen.AvailableMapRect().Contains(point.X, point.Y), DebugMap(x, y));
-    }
-    internal void Aim(bool counter = false, int profile = 2)
-    { Screen.OnKeyDown(counter ? Key.E : Key.Q); Screen.OnKeyDown(profile switch { 1 => Key.Number1, 2 => Key.Number2, _ => Key.Number3 }); Render(); }
-    internal async Task<CommandResult> Launch(bool counter = false, double x = 300, double y = 0, int profile = 2)
-    {
-        Expose(x, y); Aim(counter, profile); Click(x, y);
-        Assert.True(Screen.LastPointCommandId is not null, DebugMap(x, y));
-        string id = Screen.LastPointCommandId!;
-        await Wait(() => Handle.Buffer.FindCommandResult(id) is not null);
-        return Handle.Buffer.FindCommandResult(id)!;
     }
     internal async Task<AuthoritativeSnapshot> AdvanceTo(long motion)
     {

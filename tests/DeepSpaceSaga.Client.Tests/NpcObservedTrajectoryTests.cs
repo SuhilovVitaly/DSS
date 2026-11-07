@@ -11,13 +11,10 @@ public sealed class NpcObservedTrajectoryTests
 {
     private static readonly ObjectMotionSnapshot Npc = new("npc", 100, 50, 1, 90,
         RenderObjectType: SpaceObjectType.NpcShip);
-    private static readonly Guid Session = Guid.Parse("2d66be90-768c-4226-b327-7e7a809f609d");
     private static long Ticks(long ms) => ms * Stopwatch.Frequency / 1000;
     private static AuthoritativeSnapshot State(long time, double direction, ObjectMotionSnapshot? npc = null) =>
         new((ulong)time + 1, time * 300, SimulationSpeed.Speed1,
             [(npc ?? Npc) with { Direction = direction }], SimulationTimeMs: time);
-    private static CombatPresentationUpdate Update(long sequence, AuthoritativeSnapshot state, bool full = false) =>
-        new(Session, sequence, state.MotionTimeMs, [new(state.MotionTimeMs, state)], full ? state : null, false, 0);
 
     private static SnapshotBuffer LegacyTrend()
     {
@@ -47,8 +44,6 @@ public sealed class NpcObservedTrajectoryTests
             TurnStepRemainingMs = 1000,
             NavigationTargetX = 999,
             NavigationTargetY = -999,
-            HostileCombat = new("player", "engine", "weapon", 50, true, HostileCombatPhase.Pursuit,
-                new(2000, 100, 0, Npc.X, Npc.Y, 1, 90, 2, 20))
         };
         Assert.Equal(projector.Project(Npc, 10), projector.Project(hidden, 10));
         Assert.Equal(projector.Project(Npc), projector.Project(hidden));
@@ -60,83 +55,12 @@ public sealed class NpcObservedTrajectoryTests
     }
 
     [Fact]
-    public void NpcWithoutHostileCombatUsesSameObservationRule()
+    public void NpcArcUsesConfirmedObservations()
     {
         var buffer = LegacyTrend();
         Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
         var points = new FutureTrajectoryProjector(new RejectingPredictor()).Project(Npc, buffer.GetNpcObservedTurnRate("npc"));
         Assert.True(points[4].Y > Npc.Y);
-    }
-
-    [Theory]
-    [InlineData(0)]
-    [InlineData(10)]
-    [InlineData(-10)]
-    public void Combat_forecast_target_matches_the_visible_observed_model(double rate)
-    {
-        var hidden = Npc with
-        {
-            ActiveEngineCommandType = ShipEngineCommandTypes.Accelerate,
-            HostileCombat = new("player", "engine", "weapon", 50, true, HostileCombatPhase.Pursuit,
-                new(0, 100, 0, Npc.X, Npc.Y, 1, 90, 2, 20)),
-            MaxSpeedKmS = 8
-        };
-        var points = new FutureTrajectoryProjector(new RejectingPredictor()).Project(hidden, rate);
-        var input = FutureTrajectoryProjector.ObservedNpcForecastState(hidden, rate);
-        for (int i = 0; i < points.Count; i++)
-        {
-            var sample = CurrentManeuverForecast.Sample(input, i * FutureTrajectoryProjector.FutureTrajectorySampleIntervalMs);
-            Assert.Equal(points[i].X, sample.X, 6);
-            Assert.Equal(points[i].Y, sample.Y, 6);
-            Assert.Equal(hidden.SpeedKmS, sample.SpeedKmS);
-        }
-        Assert.Equal(20, hidden.HostileCombat!.Segment.TurnRateDegPerSec);
-    }
-
-    [Fact]
-    public void PresentedFramesOnlyAffectTrend()
-    {
-        long now = 0;
-        var buffer = new SnapshotBuffer(() => now);
-        buffer.UpdatePresentation(Update(1, State(0, 70), true));
-        now = Ticks(4150);
-        buffer.UpdatePresentation(Update(2, State(1000, 80)));
-        buffer.UpdatePresentation(Update(3, State(2000, 90), true));
-        buffer.Update(State(3000, 100)); // legacy full ingress must be ignored in presentation mode
-        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
-        Assert.False(buffer.HasStableNpcMotion("npc"));
-        buffer.PreparePresentation();
-        Assert.Equal(1000, buffer.Presented!.Snapshot.MotionTimeMs);
-        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
-        now = Ticks(8150);
-        buffer.PreparePresentation();
-        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
-        Assert.True(buffer.HasStableNpcMotion("npc"));
-    }
-
-    [Fact]
-    public void CatchUpConsumesEveryPresentedFrame()
-    {
-        long now = 0;
-        var buffer = new SnapshotBuffer(() => now);
-        buffer.UpdatePresentation(Update(1, State(0, 70), true));
-        buffer.UpdatePresentation(Update(2, State(2000, 90)) with
-        { Frames = [new(1000, State(1000, 80)), new(2000, State(2000, 90))] });
-        now = Ticks(2150);
-        buffer.PreparePresentation();
-        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
-    }
-
-    [Fact]
-    public void LegacyAndPresentationObserveEquivalentMovement()
-    {
-        long now = 0;
-        var buffer = new SnapshotBuffer(() => now);
-        buffer.UpdatePresentation(Update(1, State(0, 70), true));
-        for (int i = 1; i <= 20; i++)
-            buffer.UpdatePresentation(Update(i + 1, State(i * 100, 70 + i)));
-        now = Ticks(2150); buffer.PreparePresentation();
-        Assert.Equal(LegacyTrend().GetNpcObservedTurnRate("npc"), buffer.GetNpcObservedTurnRate("npc"), 9);
     }
 
     [Theory]
@@ -225,24 +149,6 @@ public sealed class NpcObservedTrajectoryTests
         Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
     }
 
-    [Fact]
-    public void FuturePacketAndDuplicateCannotRevealAi()
-    {
-        long now = 0;
-        var buffer = new SnapshotBuffer(() => now);
-        buffer.UpdatePresentation(Update(1, State(0, 70), true));
-        var future = Update(3, State(2000, 90));
-        buffer.UpdatePresentation(future); buffer.UpdatePresentation(future);
-        now = Ticks(10000); buffer.PreparePresentation();
-        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
-        buffer.UpdatePresentation(Update(2, State(1000, 80)));
-        Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
-        now += Ticks(200); buffer.PreparePresentation();
-        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
-        buffer.UpdatePresentation(future);
-        Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
-    }
-
     [Theory]
     [InlineData("removed")]
     [InlineData("unknown")]
@@ -250,7 +156,6 @@ public sealed class NpcObservedTrajectoryTests
     [InlineData("rollback")]
     [InlineData("duplicate-pose-change")]
     [InlineData("gap")]
-    [InlineData("load")]
     public void LoadRemovalUnknownAndDestroyedResetObservation(string kind)
     {
         var buffer = LegacyTrend();
@@ -265,9 +170,7 @@ public sealed class NpcObservedTrajectoryTests
             "gap" => State(3001, 100),
             _ => next
         };
-        if (kind == "load")
-            buffer.UpdatePresentation(Update(1, next, true) with { SessionId = Guid.NewGuid() });
-        else buffer.Update(next);
+        buffer.Update(next);
         Assert.Equal(0, buffer.GetNpcObservedTurnRate("npc"));
         if (kind is "removed" or "unknown" or "destroyed")
         {
@@ -308,27 +211,6 @@ public sealed class NpcObservedTrajectoryTests
         screen.Render(canvas, 1280, 720); // viewport/camera changes do not reset history
         Assert.Equal(10, buffer.GetNpcObservedTurnRate("npc"));
         screen.OnDeactivated();
-    }
-
-    [Fact]
-    public void EquivalentPresentedFramesIgnoreRenderFrequency()
-    {
-        long now = 0;
-        var frequent = new SnapshotBuffer(() => now);
-        var sparse = new SnapshotBuffer(() => now);
-        frequent.UpdatePresentation(Update(1, State(0, 70), true));
-        sparse.UpdatePresentation(Update(1, State(0, 70), true));
-        for (int i = 1; i <= 20; i++)
-        {
-            now = Ticks(i * 400);
-            var update = Update(i + 1, State(i * 100, 70 + i));
-            frequent.UpdatePresentation(update); sparse.UpdatePresentation(update);
-            frequent.PreparePresentation();
-        }
-        now += Ticks(1000);
-        frequent.PreparePresentation(); sparse.PreparePresentation();
-        Assert.Equal(10, frequent.GetNpcObservedTurnRate("npc"), 8);
-        Assert.Equal(frequent.GetNpcObservedTurnRate("npc"), sparse.GetNpcObservedTurnRate("npc"), 8);
     }
 
     private sealed class RejectingPredictor : IMotionPredictor

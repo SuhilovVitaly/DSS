@@ -28,15 +28,17 @@ public sealed class TextInputBox
     };
 
     private readonly int _maxLength;
+    private readonly Func<char, bool>? _characterFilter;
     private readonly StringBuilder _text = new();
     private readonly Stopwatch _caretClock = Stopwatch.StartNew();
 
-    public TextInputBox(int maxLength = DefaultMaxLength)
+    public TextInputBox(int maxLength = DefaultMaxLength, Func<char, bool>? characterFilter = null)
     {
         if (maxLength <= 0)
             throw new ArgumentOutOfRangeException(nameof(maxLength), "Max length must be positive.");
 
         _maxLength = maxLength;
+        _characterFilter = characterFilter;
     }
 
     /// <summary>Current text content.</summary>
@@ -53,7 +55,7 @@ public sealed class TextInputBox
     /// </summary>
     public bool TryAppendChar(char c)
     {
-        if (char.IsControl(c))
+        if (char.IsControl(c) || _characterFilter is not null && !_characterFilter(c))
             return false;
 
         if (_text.Length >= _maxLength)

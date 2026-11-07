@@ -1,14 +1,6 @@
 # Deep Space Saga: документация
 
-> **Контракт EP-0013.** Действующие контракты EP-0013: [панель и файлы отладки](04-Engineering/DebugTuningPanel.md), [независимые ручные оси и schema2](04-Engineering/ManualManeuver.md). Реализация и приёмка учитываются раздельно в [Board](../Board/EP-0013-debug-tuning-panel/ExecutionStatus.md).
-
-Документация описывает игровые контракты и текущий код. Незавершённые
-функции явно отделены от реализованных. Дата ревизии: 22 октября 2026.
-Writer Save19 и миграция Save18 проверены по ScenarioData/ScenarioLoader;
-Панели point combat описаны в [PointAimCombat](04-Engineering/PointAimCombat.md#панели-модулей),
-а публикация и отдельные acceptance gates — в [Board EP-0014](../Board/EP-0014-module-panels/ExecutionStatus.md).
-Состояние рабочего дерева может изменяться параллельно,
-поэтому publication/приёмку нужно смотреть в Board, а не выводить из этой страницы.
+Здесь описаны текущие игровые контракты. Статус разработки, результаты тестов и приёмка находятся в [Board](../Board). [Тактический бой V4](04-Engineering/TacticalBattle.md) запускается с карты; [Save20](04-Engineering/SaveFormat.md) хранит мир и читает поддерживаемые архивные сохранения.
 
 ## Начать здесь
 
@@ -39,11 +31,12 @@ Writer Save19 и миграция Save18 проверены по ScenarioData/Sc
 ### 02-FirstRelease/Screens
 
 - [Пассажирские контракты](02-FirstRelease/Screens/Contracts.md).
-- [Поражение](02-FirstRelease/Screens/Defeat.md).
 - [Диалог](02-FirstRelease/Screens/Dialog.md).
 - [Финансы](02-FirstRelease/Screens/Finance.md).
 - [Меню игровой сессии](02-FirstRelease/Screens/GameMenu.md).
-- [Тактический экран](02-FirstRelease/Screens/GameSession.md).
+- [Карта игровой сессии](02-FirstRelease/Screens/GameSession.md).
+- [Подготовка боя](02-FirstRelease/Screens/TacticalBattleSetup.md).
+- [Экран тактического боя](02-FirstRelease/Screens/TacticalBattle.md).
 - [Найм экипажа](02-FirstRelease/Screens/Hire.md).
 - [Загрузка игры](02-FirstRelease/Screens/Load.md).
 - [Главное меню](02-FirstRelease/Screens/MainMenu.md).
@@ -68,11 +61,12 @@ Writer Save19 и миграция Save18 проверены по ScenarioData/Sc
 
 - [Базы ИИ, поля и точки интереса](04-Engineering/AiMapEnvironment.md).
 - [Approach: маршрут сближения](04-Engineering/ApproachRoutes.md).
-- [Боевые доклады и журнал](04-Engineering/CombatReports.md).
-- [Отладочные параметры: текущий backend](04-Engineering/DebugTuning.md).
+- [Отладка двигателей](04-Engineering/DebugTuning.md) и [панель F12](04-Engineering/DebugTuningPanel.md).
+- [Ручное управление кораблём](04-Engineering/ManualManeuver.md).
 - [Каталог товаров и совместимость](04-Engineering/ItemCatalogSchema.md).
+- [Принципы моддинга и архивный прототип C#-мода](04-Engineering/Modding.md).
 - [Прогноз движения NPC по наблюдениям](04-Engineering/NpcObservedTrajectories.md).
-- [Точечный бой](04-Engineering/PointAimCombat.md).
+- [Тактический бой V4](04-Engineering/TacticalBattle.md).
 - [Сохранения и восстановление](04-Engineering/SaveFormat.md).
 - [Экономика и процедурный мир](04-Engineering/TradingAndSolarSystem.md).
 
@@ -80,9 +74,9 @@ Writer Save19 и миграция Save18 проверены по ScenarioData/Sc
 
 - [Инструмент подготовки портретов](06-Tooling/DeepSpaceSaga.PortraitAssets.md).
 - [Ассеты и данные тактического UI](06-Tooling/GameSessionScreenUI.md).
+- [Источники и проверки V4](06-Tooling/CarrierWingSim.md).
 - [Навигационный граф](06-Tooling/Graphify.md).
 
 Здесь хранятся только `.md`. Результаты тестов, дампы, скрипты,
 архивы и старые журналы запусков не являются документацией игры. Исторические
 версии документов доступны через Git; планы и execution evidence находятся в Board.
-Эта ревизия не утверждает, что выполнены новые gameplay, native или balance проверки.

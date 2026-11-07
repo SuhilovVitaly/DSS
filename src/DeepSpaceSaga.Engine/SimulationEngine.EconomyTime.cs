@@ -8,11 +8,12 @@ public sealed partial class SimulationEngine
     private const long MealIntervalMs = 12 * GameCalendar.HourMs;
     private long _processedWorldTimeMs;
     private long _processedSimulationTimeMs;
+    private long _appliedMotionTimeMs;
 
-    private void AdvanceWorldTo(long gameTimeMs, long simulationTimeMs, bool processPlayerAtEndpoint = true)
+    private void AdvanceWorldTo(long gameTimeMs, long simulationTimeMs)
     {
-        if (CommitDefeatBoundary()) return;
-        PrepareDefeatTimeMapping(new(gameTimeMs, SimulationSpeed.Speed0, simulationTimeMs));
+        if (ApplyStationSecurityStop()) return;
+        PrepareStationSecurityClock(gameTimeMs, simulationTimeMs);
         long fromCalendar = _processedWorldTimeMs;
         long fromSimulation = _processedSimulationTimeMs;
         // Both timestamps come from the same clock. Map each calendar boundary onto
@@ -57,8 +58,8 @@ public sealed partial class SimulationEngine
 
             // Keep equal-time effects ordered: start above, motion, completion, market hour,
             // pending unload, meal, fee, deadline, then commit the calendar cursor.
-            AdvanceMotionTo(MotionAt(next), SurveyCalendarAt, processPlayerAtEndpoint ? simulationTimeMs : null);
-            if (CommitDefeatBoundary()) return;
+            AdvanceMotionTo(MotionAt(next), SurveyCalendarAt);
+            if (ApplyStationSecurityStop()) return;
             CompleteResourceSurveys(next);
             CompleteProduction(next);
             if (next != long.MaxValue && next % GameCalendar.HourMs == 0) ApplyMarketEventAndHour(next);
@@ -70,8 +71,8 @@ public sealed partial class SimulationEngine
             CommitChangedMarketRevisions(next);
             _processedWorldTimeMs = next;
         }
-        AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt, processPlayerAtEndpoint ? simulationTimeMs : null);
-        if (CommitDefeatBoundary()) return;
+        AdvanceMotionTo(simulationTimeMs, SurveyCalendarAt);
+        if (ApplyStationSecurityStop()) return;
         SynchronizeOrbitalBindings(_objects, simulationTimeMs);
         _processedSimulationTimeMs = simulationTimeMs;
         UpdateVoyageForMotion(simulationTimeMs);

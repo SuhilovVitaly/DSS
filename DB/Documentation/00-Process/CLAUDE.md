@@ -1,7 +1,5 @@
 # Архитектура и работа с DSS
 
-> **Контракт EP-0013.** Архитектурное уточнение EP-0013: [overlay](../04-Engineering/DebugTuningPanel.md) принадлежит Engine, общая schema — Contracts, аналитика независимых осей — Motion, ввод/фоновый writer/панель — Client. [ManualManeuver](../04-Engineering/ManualManeuver.md) описывает совместные controls и owner-only projection. Render не изменяет мир и не выполняет запись файла синхронно.
-
 Рабочий репозиторий: `D:/DeepSpaceSaga/DSS`. Правила операций — в [AGENTS.md](AGENTS.md),
 правила документации — в [DocumentationSystem.md](DocumentationSystem.md).
 Требования движка — в [EngineRequirements](../01-Requirements/EngineRequirements.md).
@@ -24,12 +22,7 @@ Contracts не зависит от игровых проектов; графич
 SnapshotBuffer хранит историю представления, подготовленные кадры питают UI.
 Клиентское предсказание не меняет авторитетный мир и не раскрывает скрытые планы NPC.
 
-Модульный UI использует очищенные live combat DTO и собственный nullable
-DestroyedModuleLimit. Legacy wire compatibility изолирована в save DTO Engine.
-CommandsPanel кеширует подготовленную геометрию/ресурсы; panel profile memory
-принадлежит owner/module в текущей сессии. Правила real-time и blocked aim —
-в [PointAimCombat](../04-Engineering/PointAimCombat.md#панели-модулей).
-Локальный producer ждёт выбора snapshot/combat reader, сохраняя report bootstrap.
+Карта и временный тактический бой имеют отдельные DTO и камеры. Engine владеет состоянием и результатом боя; Client получает снимок через сессию. Снимки мира не несут данные боевой песочницы. Исторический бой читается только на границе миграции Save18/19; текущий writer сохраняет мир в Save20. Ручные оси и отладка двигателей используют команды и проекции мира.
 
 ## Запуск и content
 
@@ -51,7 +44,7 @@ New Game, выбранный сценарий и Load используют фа�
 Не включай чужие изменения в коммиты. Для изоляции используй управляемые
 worktree Codex, сохраняя нужную работу перед архивированием.
 
-Текущие технические контракты: [бой](../04-Engineering/PointAimCombat.md),
+Текущие технические контракты: [тактический бой](../04-Engineering/TacticalBattle.md),
 [сохранения](../04-Engineering/SaveFormat.md), [экономика и мир](../04-Engineering/TradingAndSolarSystem.md),
 [отладочные параметры](../04-Engineering/DebugTuning.md).
 

@@ -1,24 +1,9 @@
-# Отладочные параметры: текущий backend
+# Отладка двигателей: контракт
 
-EP-0013 находится в исполнении. Описанные DTO/Engine/persistence контракты
-существуют в текущем коде; это не утверждение о готовности панели или приёмке эпика.
+`debug.tuning.apply` применяет атомарный `DebugTuningPatch` в фазе команд Engine. Каждое значение задаёт тип двигателя, поле и конечное число. Доступны максимальная скорость, ускорение и скорость поворота двигателей «Тетрарх» и «Стриж». Разрешённые поля, границы и порядок — в [DebugTuningState](../../../src/DeepSpaceSaga.Engine/DebugTuningState.cs) и [формате файла](../../../src/DeepSpaceSaga.Contracts/DebugTuningFileFormat.cs). Исходные значения берутся из текущего каталога модулей.
 
-`DebugTuningPatch` содержит массив ModuleTypeId / Field / Value и optional
-ProfileId. `debug.tuning.apply` — авторитетная атомарная команда. Snapshot
-передаёт Revision, текущие Values, неизменяемые исходные Defaults и StartupError.
-Ключи полей/профилей чувствительны к регистру. Неизвестный параметр,
-недопустимое значение и неработающая сессия имеют отдельные reason codes.
-Реализация retiming разделена на ship, projectile и reload обработчики.
+Снимок передаёт ревизию, подтверждённые значения, исходные defaults и ошибку запуска. Неверное изменение не применяется частично. Overlay меняет параметры сессии, не базовый каталог; активное движение переякоривается на принятой позе.
 
-Overlay принадлежит сессии; исходные catalog defaults не перезаписываются.
-Save19 сохраняет optional tuning и flight provenance. Стартовый файл
-`DebugTuning/debug-tuning.json` ищется рядом с executable. Program передаёт
-его фабрикам New Game, выбранного сценария и Load. Чтение bootstrap-only,
-без live watcher. Неверный файл отклоняется с предупреждением/StartupError.
-Общий `DebugTuningFileFormat` требует schemaVersion 1 и проверяет ключи по defaults.
+Файл `DebugTuning/debug-tuning.json` рядом с executable читается только при запуске/загрузке. Writer использует schemaVersion 2. Старый schemaVersion 1 принимается, если содержит только двигатели и пустую или отсутствующую секцию пусковых установок. Содержательная старая секция отвергается целиком, причина публикуется в UI и Interface.log. Save20 хранит подтверждённые значения двигателей; миграцию старых слотов определяет [SaveFormat](SaveFormat.md).
 
-Окончательная схема пользовательской панели, экспорта и human/native-приёмка —
-в [EP-0013](../../Board/EP-0013-debug-tuning-panel/Documentation.md).
-Они не объявляются выполненными только на основании backend-кода.
-
-Источники: [DebugTuning.cs](../../../src/DeepSpaceSaga.Contracts/DebugTuning.cs), [DebugTuningFileFormat.cs](../../../src/DeepSpaceSaga.Contracts/DebugTuningFileFormat.cs), [DebugTuningState.cs](../../../src/DeepSpaceSaga.Engine/DebugTuningState.cs), [SimulationEngine.DebugTuningStartup.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.DebugTuningStartup.cs), [SimulationEngine.DebugTuningPersistence.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.DebugTuningPersistence.cs), [Program.cs](../../../src/DeepSpaceSaga.Client/Program.cs).
+См. [панель F12](DebugTuningPanel.md) и [контракты](../../../src/DeepSpaceSaga.Contracts/DebugTuning.cs).

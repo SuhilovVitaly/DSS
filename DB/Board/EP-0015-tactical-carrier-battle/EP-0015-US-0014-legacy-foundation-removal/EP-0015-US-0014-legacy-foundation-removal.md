@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0014-legacy-foundation-removal
 title: "Удаление старого боя в Motion, Contracts, контенте и инструментах"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0013-legacy-engine-removal]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0013-legacy-engine-removal]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 

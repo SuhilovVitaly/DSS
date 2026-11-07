@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0011-legacy-removal-prep
 ticket: EP-0015-US-0011-TK-0002-save-fixtures
 title: save-fixtures
-stage: draft
+stage: done
 layer: engine
 depends_on: ["EP-0015-US-0011-TK-0001-removal-inventory"]
-files_touched: 5
+files_touched: 6
 serves: [AC-02]
 created: 2026-11-05
 revision: 3
@@ -18,15 +18,15 @@ revision: 3
 После удаления writer'а Save19 фикстуру уже не получить; в tests её нет.
 
 ## Decisions
-Решения пользователя D-USER-01…13 и правила боя `DB/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
+Решения пользователя D-USER-01…13 и правила боя `VData/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
 
 ## Assumptions
-Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `DB/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
+Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `VData/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
 
 ## Code context
 | File | Current state | Allowed change |
 |---|---|---|
-| `tests/DeepSpaceSaga.Engine.Tests/Fixtures/Saves/{Default-Save18,Default-Save19,Default-Save19-combat}.json` | new | Реальные сохранения |
+| `tests/DeepSpaceSaga.Engine.Tests/Fixtures/Saves/{Default-Save18,Default-Save18-combat,Default-Save19,Default-Save19-combat}.json` | new | Реальные сохранения |
 | `tests/DeepSpaceSaga.Engine.Tests/Fixtures/Saves/README.md` | new | Как получены, baseline SHA |
 | `tests/DeepSpaceSaga.Engine.Tests/SaveFixturesTests.cs` | new | Фикстуры загружаются текущим кодом |
 
@@ -38,7 +38,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 2. Save18 — из истории формата или миграционного теста.
 
 ## Out of scope
-Изменения вне описанного результата, баланс и правила боя сверх `DB/Planning/V4.0`.
+Изменения вне описанного результата, баланс и правила боя сверх `VData/Planning/V4.0`.
 
 ## Invariants
 Engine владеет исходами, RNG и командами; Contracts неизменяемы; общая математика — в Motion; Client отображает допущенные снимки и не вызывает Engine из Render. Числа боя — только из `Data/TacticalBattle`. Правила исполнения R-01…R-09 ([Documentation.md](../../Documentation.md#правила-исполнения)).
@@ -50,4 +50,14 @@ Owning project: tests/DeepSpaceSaga.Engine.Tests. Сборка, scoped format, `
 Критерии AC-02 истории выполнены и проверены; diff просмотрен; фактические результаты записаны в карточку; отдельный коммит тикета создан; push — сразу, и только в одобренный внутренний remote (`*.amat.com` или внутренний IP); если `origin` указывает на внешний хост (github.com, gitlab.com, bitbucket.org и т. п.) — не пушить, остановиться и сообщить пользователю (D-USER-08, D-USER-09, R-06).
 
 ## Self-containment check
-Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `DB/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Record four fixtures (idle and active for both versions), with current authoritative writer and a deterministic Default scenario overlay for active legacy combat. Save18 is an explicitly documented compatible projection as allowed by step 2, with Save19-only provenance/tuning removed per existing migration tests. Temporary record output starts under the validation root; copy only the four verified JSON files to the fixture allowlist.
+
+## Execution evidence — 2026-11-06
+
+Captured four immutable Default-world fixtures before changing legacy writer. Save19 files are real authoritative writer captures; Save18 files are documented compatibility projections following the existing migration test. Idle and active variants verified; active has three live projectiles including a countermissile, one hostile actor and report sequence 4. All files load through production catalogue and continue deterministically. SHA-256 and reproduction procedure are in the fixture README.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-save-fixtures-capture-02/: capture command and test PASS. D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-save-fixtures-verify-01/: build/format/diff/self-review PASS; 413 Engine tests including all four fixtures, existing Save18 migration/catalog tests and tactical goldens.

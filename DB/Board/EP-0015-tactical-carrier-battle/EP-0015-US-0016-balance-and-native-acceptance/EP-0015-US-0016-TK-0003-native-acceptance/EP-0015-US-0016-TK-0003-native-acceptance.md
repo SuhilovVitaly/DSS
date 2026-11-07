@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0016-balance-and-native-acceptance
 ticket: EP-0015-US-0016-TK-0003-native-acceptance
 title: native-acceptance
-stage: draft
+stage: done
 layer: client-tools
 depends_on: ["EP-0015-US-0016-TK-0002-performance"]
-files_touched: 2
+files_touched: 3
 serves: [AC-03]
 created: 2026-11-05
 revision: 3
@@ -18,10 +18,10 @@ revision: 3
 Проверка в реальном окне.
 
 ## Decisions
-Решения пользователя D-USER-01…13 и правила боя `DB/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
+Решения пользователя D-USER-01…13 и правила боя `VData/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
 
 ## Assumptions
-Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `DB/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
+Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `VData/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
 
 ## Code context
 | File | Current state | Allowed change |
@@ -36,7 +36,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 1. Каждый пункт: PASS / FAIL / NOT RUN с причиной.
 
 ## Out of scope
-Изменения вне описанного результата, баланс и правила боя сверх `DB/Planning/V4.0`.
+Изменения вне описанного результата, баланс и правила боя сверх `VData/Planning/V4.0`.
 
 ## Invariants
 Engine владеет исходами, RNG и командами; Contracts неизменяемы; общая математика — в Motion; Client отображает допущенные снимки и не вызывает Engine из Render. Числа боя — только из `Data/TacticalBattle`. Правила исполнения R-01…R-09 ([Documentation.md](../../Documentation.md#правила-исполнения)).
@@ -48,4 +48,16 @@ Engine владеет исходами, RNG и командами; Contracts н�
 Критерии AC-03 истории выполнены и проверены; diff просмотрен; фактические результаты записаны в карточку; отдельный коммит тикета создан; push — сразу, и только в одобренный внутренний remote (`*.amat.com` или внутренний IP); если `origin` указывает на внешний хост (github.com, gitlab.com, bitbucket.org и т. п.) — не пушить, остановиться и сообщить пользователю (D-USER-08, D-USER-09, R-06).
 
 ## Self-containment check
-Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `DB/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Run the Russian F8 battle through a real SkiaWindow/OpenGL framebuffer at both sizes and UI scales. Exercise keyboard routing and live mouse callbacks, capture GPU images and draw-plus-flush timings, and verify F5/F9 with isolated saves. Keep physical/human gates separate. The known Raid parity gap is independent.
+
+- tools/DeepSpaceSaga.Performance/TacticalBattleNativeEvidence.cs
+- tools/DeepSpaceSaga.Performance/Program.cs
+- DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md
+
+## Execution evidence — 2026-11-06
+
+Actual SkiaWindow/OpenGL native matrix on Intel Arc 140V, Russian: 1280x720 and 1920x1080 at 1 and 1.5. Four runs each passed 31 managed interaction assertions from F8 through battle completion, full world/camera preservation, and real F5/F9. Native 1920x1080 draw+flush max 4.8424 ms; Windows Release build and scoped format/diff clean. GPU captures and reports at `D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-tactical-native-02/`. Managed input into live screen/router only; physical input and human/product review NOT RUN.

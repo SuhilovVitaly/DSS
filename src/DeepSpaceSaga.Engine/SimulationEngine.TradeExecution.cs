@@ -228,9 +228,9 @@ public sealed partial class SimulationEngine
             return false;
         }
 
-        if (!CanExecuteModuleCommand(module, _processedWorldTimeMs))
+        if (!CanExecuteModuleCommand(module))
         {
-            reasonCode = ModuleCombatUnavailableReason(module, _processedWorldTimeMs) ?? CommandReasonCodes.ModuleUnavailable;
+            reasonCode = DestroyedModuleReason(module) ?? CommandReasonCodes.ModuleUnavailable;
             return false;
         }
 

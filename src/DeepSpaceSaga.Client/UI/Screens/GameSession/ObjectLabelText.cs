@@ -11,7 +11,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 internal static class ObjectLabelText
 {
     /// <summary>Label for objects the player has not discovered yet.</summary>
-    public static string UnknownLabel => Localization.Combat("UnknownObject");
+    public static string UnknownLabel => Localization.Get("World.UnknownObject");
 
     /// <summary>
     /// Build the label text for one object.

@@ -23,10 +23,9 @@ public sealed class DebugTuningLocalizationTests
             string source = File.ReadAllText(Path.Combine(ClientRoot, "UI/Screens/GameSession", file));
             foreach (Match match in Regex.Matches(source, "\"(Debug\\.[A-Za-z_][A-Za-z0-9_]*)\"")) required.Add(match.Groups[1].Value);
         }
-        foreach (var value in catalog.Defaults)
+        foreach (var value in catalog.Defaults.Where(v => DebugTuningPanel.ModuleIds.Contains(v.ModuleTypeId) && v.ProfileId is null))
         {
             required.Add("Debug." + value.Field);
-            if (value.ProfileId is not null) required.Add("Debug." + value.ProfileId);
         }
         foreach (string reason in new[] { DebugTuningReasonCodes.UnknownParameter, DebugTuningReasonCodes.ValueOutOfRange, DebugTuningReasonCodes.SessionNotRunning }) required.Add("Debug." + reason);
         var strings = JsonSerializer.Deserialize<Dictionary<string, string>>(File.ReadAllText(Path.Combine(ClientRoot, "Data/Locale", language + ".json")))!;
@@ -43,7 +42,8 @@ public sealed class DebugTuningLocalizationTests
         long before = GC.GetAllocatedBytesForCurrentThread();
         for (int i = 0; i < 100; i++) { panel.Prepare(800, 1100, snapshot); panel.SetFeedback(null, null, false, false, status, 1); panel.Render(canvas); }
         Assert.Equal(0, GC.GetAllocatedBytesForCurrentThread() - before);
-        const string directory = "D:/DeepSpaceSaga/artifacts/validation/ep0013/panel-locales-20261022";
+        if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is not { Length: > 0 } root) return;
+        string directory = Path.Combine(root, "debug-panel-locales");
         Directory.CreateDirectory(directory);
         Save("top");
         panel.ToggleHelp(panel.Bounds.Right - 20, panel.Bounds.Top + 15);

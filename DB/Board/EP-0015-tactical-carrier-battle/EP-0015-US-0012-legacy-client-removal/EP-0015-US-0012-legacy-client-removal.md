@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0012-legacy-client-removal
 title: "Удаление старого боя в Client"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0011-legacy-removal-prep]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0011-legacy-removal-prep]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -52,3 +52,5 @@ dependencies: [EP-0015-US-0011-legacy-removal-prep]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+All six Client tickets implemented. Latest full Client suite 2016/2016 PASS; full cross-project post-removal regression and native/human acceptance remain open.

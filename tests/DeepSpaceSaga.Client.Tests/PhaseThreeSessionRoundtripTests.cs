@@ -33,7 +33,7 @@ public class PhaseThreeSessionRoundtripTests
         await f.Route(quick ? ScreenEvent.QuickLoad : ScreenEvent.LoadSlotRequested, quick ? null : slot);
         Assert.Same(f.Handle, Get<GameSessionHandle>(f.Window, "_session"));
         var error = Assert.IsType<LoadScreen>(f.Screens.Current);
-        Assert.Equal(Localization.Get("Combat.LoadIncompatible"), error.ErrorMessage);
+        Assert.Equal(Localization.Get("Session.LoadIncompatible"), error.ErrorMessage);
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
         error.Render(canvas, 1280, 720);
         Assert.Equal(original, await File.ReadAllBytesAsync(path));
@@ -55,69 +55,11 @@ public class PhaseThreeSessionRoundtripTests
             JsonSerializer.Serialize(new { saveFormatVersion = SaveFormat.CurrentSaveFormatVersion, gameState = new { } }));
         await f.Route(ScreenEvent.OpenLoadWindow);
         await f.Route(ScreenEvent.LoadSlotRequested, "broken");
-        Assert.Equal(Localization.Get("Combat.LoadFailed"), Assert.IsType<LoadScreen>(f.Screens.Current).ErrorMessage);
+        Assert.Equal(Localization.Get("Session.LoadFailed"), Assert.IsType<LoadScreen>(f.Screens.Current).ErrorMessage);
         Assert.Same(f.Handle, Get<GameSessionHandle>(f.Window, "_session"));
         await f.Handle.SaveAsync("valid");
         await f.Route(ScreenEvent.LoadSlotRequested, "valid");
         Assert.IsType<GameSessionScreen>(f.Screens.Current);
-    }
-
-    [Fact]
-    public async Task Real_file_roundtrip_restores_both_panels_and_resets_session_selection()
-    {
-        await using var f = await Fixture.Create();
-        foreach (string module in Fixture.Defenses)
-            await f.Connection.SendCommandAsync(new(module, 0, Fixture.Player, module, DefenseCommandTypes.Launch,
-                TargetWorldX: 200, TargetWorldY: 0, ProfileId: "wide"));
-        await f.Advance(500);
-        var before = await Wait(f.Handle, s => s.MotionTimeMs == 500 && s.Objects.Count(o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile) == 2);
-        string selected = before.Objects.First(o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile).ObjectId;
-        f.Engine.SetObjectInteractionState(Fixture.Player, selected); await f.Handle.SaveAsync("both");
-        var saved = ScenarioLoader.LoadFromFile(Path.Combine(f.DirectoryPath, "both.json"), true, isSave: true);
-        await f.Route(ScreenEvent.OpenLoadWindow); await f.Route(ScreenEvent.LoadSlotRequested, "both");
-        var fresh = Get<GameSessionHandle>(f.Window, "_session");
-        var after = await Wait(fresh, s => s.Objects.Count(o => o.OwnProjectile?.Kind == ProjectileKind.Countermissile) == 2);
-        var screen = Assert.IsType<GameSessionScreen>(f.Screens.Current); Render(screen);
-        Assert.Null(screen.SelectedObjectId); Assert.Null(after.SelectedObjectId);
-        Assert.Equal(2, screen.CommandsPanel.CommandPanelRows.Count(r => r.Weapon is { } w && Fixture.Defenses.Contains(w.ModuleId)));
-        Assert.Equal(JsonSerializer.Serialize(before.Objects.Where(o => o.OwnProjectile is not null).Select(o => o.OwnProjectile)),
-            JsonSerializer.Serialize(after.Objects.Where(o => o.OwnProjectile is not null).Select(o => o.OwnProjectile)));
-        Assert.Equal(2, saved.GameState.PointCombatState!.Projectiles.Count);
-        Assert.All(after.InstalledModules.Where(m => m.Defense is not null), m => Assert.Equal(DefenseState.Reloading, m.Defense!.State));
-        Assert.Empty(screen.CombatEffects.PointEffects); Assert.Null(screen.PointAim);
-        Assert.Empty(Get<IDictionary>(screen, "_pointSubmissions"));
-    }
-
-    [Fact]
-    public async Task Real_file_load_restores_confirmed_ai_info()
-    {
-        await using var f = await Fixture.Create(ai: true); await f.Advance(155);
-        var before = await Wait(f.Handle, s => s.MotionTimeMs == 155);
-        var pose = before.Objects.Single(o => o.ObjectId == "SPC-0002");
-        Assert.NotNull(pose.HostileCombat);
-        await f.Handle.SaveAsync("ai"); await f.Route(ScreenEvent.OpenLoadWindow);
-        await f.Route(ScreenEvent.LoadSlotRequested, "ai");
-        var after = await Wait(Get<GameSessionHandle>(f.Window, "_session"), s => s.MotionTimeMs == 155);
-        Assert.Equal(pose, after.Objects.Single(o => o.ObjectId == "SPC-0002"));
-    }
-
-    [Fact]
-    public async Task Load_has_no_old_effect_or_pending_replay()
-    {
-        await using var f = await Fixture.Create();
-        await f.Connection.SendCommandAsync(new("history", 0, Fixture.Player, Fixture.Defenses[0], DefenseCommandTypes.Launch,
-            TargetWorldX: 150, TargetWorldY: 0, ProfileId: "wide"));
-        await f.Advance(1000); var before = await Wait(f.Handle, s => s.MotionTimeMs == 1000);
-        Assert.Contains(before.CombatJournal, e => e.Type == CombatEventType.CountermissileDetonated);
-        Render(f.Game); await f.Handle.SaveAsync("history");
-        await f.Route(ScreenEvent.OpenLoadWindow); await f.Route(ScreenEvent.LoadSlotRequested, "history");
-        var fresh = Get<GameSessionHandle>(f.Window, "_session"); await Wait(fresh, s => s.MotionTimeMs == 1000);
-        var screen = Assert.IsType<GameSessionScreen>(f.Screens.Current); Assert.NotSame(f.Game, screen);
-        for (int i = 0; i < 3; i++)
-        {
-            Render(screen); Assert.Empty(screen.CombatEffects.PointEffects);
-            Assert.Empty(Get<IDictionary>(screen, "_pointSubmissions")); Assert.Null(screen.PointAim);
-        }
     }
 
     private static void Render(GameSessionScreen screen)
@@ -133,7 +75,6 @@ public class PhaseThreeSessionRoundtripTests
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         while (true)
         {
-            handle.Buffer.PreparePresentation();
             if (handle.Buffer.Presented is { } latest && predicate?.Invoke(latest.Snapshot) != false) return latest.Snapshot;
             Assert.Null(handle.Failure);
             await Task.Delay(10, timeout.Token);
@@ -166,14 +107,13 @@ public class PhaseThreeSessionRoundtripTests
                     MasterSeed = 42,
                     SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o with
                     {
-                        Ai = ai ? o.Ai : null,
                         PositionX = 0,
                         PositionY = o.ObjectId == Player ? 0 : -200,
                         DirectionDegrees = o.ObjectId == Player ? 0 : 180,
                         SpeedMps = 0,
                         MovementType = "Stationary",
                         Modules = o.Modules!.Select(m => m with
-                        { AutoDefenseEnabled = false, PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != Player ? "Off" : "On" }).ToArray()
+                        { PowerState = m.ModuleTypeId.StartsWith("module.engine.") || o.ObjectId != Player ? "Off" : "On" }).ToArray()
                     }).ToArray()
                 }
             };

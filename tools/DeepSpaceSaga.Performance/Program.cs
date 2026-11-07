@@ -10,6 +10,18 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Length == 3 && args[2] == "--tactical-performance")
+{
+    Environment.ExitCode = await TacticalBattlePerformance.Run(Path.GetFullPath(args[0]), Path.GetFullPath(args[1]));
+    return;
+}
+
+if (args.Length >= 3 && args[2] == "--tactical-window")
+{
+    Environment.ExitCode = TacticalBattleNativeEvidence.Run(args);
+    return;
+}
+
 if (args.Contains("--module-panels-window"))
 {
     Environment.ExitCode = ModulePanelNativeEvidence.Run(args);
@@ -19,18 +31,6 @@ if (args.Contains("--module-panels-window"))
 if (args.Contains("--debug-window"))
 {
     Environment.ExitCode = DebugTuningNativeEvidence.Run(args);
-    return;
-}
-
-if (args.Contains("--reports-window"))
-{
-    Environment.ExitCode = CombatReportsNativeEvidence.Run(args);
-    return;
-}
-
-if (args.Contains("--combat-window"))
-{
-    Environment.ExitCode = PointCombatNativeEvidence.Run(args);
     return;
 }
 

@@ -12,38 +12,34 @@ public sealed partial class GameSessionScreen
         if (panel != "Engine" || PanelEngine is not { EngineMotion: { } limits } module) return [];
         double speed = FindPlayerShip(_renderStates)?.Pose.SpeedKmS ?? 0;
         int filled = limits.MaxSpeedKmS > 0 ? (int)Math.Round(Math.Clamp(speed / limits.MaxSpeedKmS, 0, 1) * 10) : 0;
-        string bar = Localization.Combat("Panel.BarLeft") + string.Concat(Enumerable.Repeat(Localization.Combat("Panel.BarFull"), filled)) +
-            string.Concat(Enumerable.Repeat(Localization.Combat("Panel.BarEmpty"), 10 - filled)) + Localization.Combat("Panel.BarRight");
+        string bar = Localization.Get("World.Panel.BarLeft") + string.Concat(Enumerable.Repeat(Localization.Get("World.Panel.BarFull"), filled)) +
+            string.Concat(Enumerable.Repeat(Localization.Get("World.Panel.BarEmpty"), 10 - filled)) + Localization.Get("World.Panel.BarRight");
         double? accelerationTime = limits.AccelerationKmS2 > 0 ? Math.Max(0, limits.MaxSpeedKmS - speed) / limits.AccelerationKmS2 : null;
         double? turnTime = limits.TurnRateDegPerSec > 0 ? 90 / limits.TurnRateDegPerSec : null;
         List<string> lines =
         [
-            $"{Localization.Combat("Panel.Speed")} {speed:0.0} / {limits.MaxSpeedKmS:0.0} {Localization.Combat("Panel.KilometersPerSecond")} {bar}",
-            $"{Localization.Combat("Panel.Acceleration")} {limits.AccelerationKmS2:0.##} {Localization.Combat("Panel.AccelerationUnit")} · {Localization.Combat("Panel.TurnRate")} {limits.TurnRateDegPerSec:0.##} {Localization.Combat("Panel.TurnRateUnit")}",
-            $"{Localization.Combat("Panel.AccelerationTime")}: {EngineDuration(accelerationTime)} · {Localization.Combat("Panel.TurnTime")}: {EngineDuration(turnTime)}"
+            $"{Localization.Get("World.Panel.Speed")} {speed:0.0} / {limits.MaxSpeedKmS:0.0} {Localization.Get("World.Panel.KilometersPerSecond")} {bar}",
+            $"{Localization.Get("World.Panel.Acceleration")} {limits.AccelerationKmS2:0.##} {Localization.Get("World.Panel.AccelerationUnit")} · {Localization.Get("World.Panel.TurnRate")} {limits.TurnRateDegPerSec:0.##} {Localization.Get("World.Panel.TurnRateUnit")}",
+            $"{Localization.Get("World.Panel.AccelerationTime")}: {EngineDuration(accelerationTime)} · {Localization.Get("World.Panel.TurnTime")}: {EngineDuration(turnTime)}"
         ];
-        if (module.IsDestroyed) lines.Add(Localization.Combat("Panel.Destroyed"));
-        else if (module.DisabledUntilMotionTimeMs is { } disabled && disabled > _panelMotionTime)
-            lines.Add(Localization.Combat("Panel.Disabled") + " " + EngineDuration((disabled - _panelMotionTime) / 1000));
-        else if (module.PowerState != "On" || module.OperationalState != "Ready") lines.Add(Localization.Combat("Panel.Unavailable"));
+        if (module.IsDestroyed) lines.Add(Localization.Get("World.Panel.Destroyed"));
+        else if (module.PowerState != "On" || module.OperationalState != "Ready") lines.Add(Localization.Get("World.Panel.Unavailable"));
         return lines;
     }
 
     private string EngineDuration(double? physicalSeconds) => physicalSeconds is { } seconds && double.IsFinite(seconds)
-        ? PanelTime.Format(PanelTime.RealSeconds(seconds, PanelDisplaySpeed)) + " " + Localization.Combat("Panel.Seconds")
-        : Localization.Combat("Panel.UnknownValue");
+        ? PanelTime.Format(PanelTime.RealSeconds(seconds, PanelDisplaySpeed)) + " " + Localization.Get("World.Panel.Seconds")
+        : Localization.Get("World.Panel.UnknownValue");
 
     private string? GetEnginePanelTimeTooltip(string panel)
     {
-        if (panel != "Engine" || PanelEngine is not { EngineMotion: { } limits } module) return null;
+        if (panel != "Engine" || PanelEngine is not { EngineMotion: { } limits }) return null;
         double speed = FindPlayerShip(_renderStates)?.Pose.SpeedKmS ?? 0;
         List<string> lines = [];
         if (limits.AccelerationKmS2 > 0)
-            lines.Add(Localization.Combat("Panel.AccelerationTime") + ": " + PanelTime.Tooltip(Math.Max(0, limits.MaxSpeedKmS - speed) / limits.AccelerationKmS2, PanelDisplaySpeed));
+            lines.Add(Localization.Get("World.Panel.AccelerationTime") + ": " + PanelTime.Tooltip(Math.Max(0, limits.MaxSpeedKmS - speed) / limits.AccelerationKmS2, PanelDisplaySpeed));
         if (limits.TurnRateDegPerSec > 0)
-            lines.Add(Localization.Combat("Panel.TurnTime") + ": " + PanelTime.Tooltip(90 / limits.TurnRateDegPerSec, PanelDisplaySpeed));
-        if (module.DisabledUntilMotionTimeMs is { } disabled && disabled > _panelMotionTime)
-            lines.Add(Localization.Combat("Panel.Disabled") + ": " + PanelTime.Tooltip((disabled - _panelMotionTime) / 1000, PanelDisplaySpeed));
+            lines.Add(Localization.Get("World.Panel.TurnTime") + ": " + PanelTime.Tooltip(90 / limits.TurnRateDegPerSec, PanelDisplaySpeed));
         return string.Join('\n', lines);
     }
 }

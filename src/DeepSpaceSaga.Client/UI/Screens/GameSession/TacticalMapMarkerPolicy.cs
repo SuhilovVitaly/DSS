@@ -27,7 +27,6 @@ internal static class TacticalMapMarkerPolicy
     {
         return renderObjectType switch
         {
-            SpaceObjectType.Missile or SpaceObjectType.Wreck => 5f,
             SpaceObjectType.Sun => SunMarkerSizePx,
             SpaceObjectType.Planet => PlanetMarkerSizePx,
             _ => RegularMarkerSizePx

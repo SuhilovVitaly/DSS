@@ -1,0 +1,92 @@
+{
+  "tactics": {
+    "raid": {
+      "name": "Налёт",
+      "striker": 3,
+      "interceptor": 0,
+      "fighter": 1
+    },
+    "defence": {
+      "name": "Защита",
+      "striker": 0,
+      "interceptor": 2,
+      "fighter": 2
+    },
+    "dogfight": {
+      "name": "Схватка",
+      "striker": 0,
+      "interceptor": 0,
+      "fighter": 4
+    },
+    "balanced": {
+      "name": "Сбалансированная",
+      "striker": 1,
+      "interceptor": 1,
+      "fighter": 2
+    },
+    "commander": {
+      "name": "Командир",
+      "adaptive": true
+    }
+  },
+  "roles": {
+    "striker": {
+      "name": "ударник"
+    },
+    "interceptor": {
+      "name": "перехватчик"
+    },
+    "fighter": {
+      "name": "истребитель"
+    }
+  },
+  "pursuit": {
+    "tailOffset": 35,
+    "aimErrorScale": 14,
+    "speedFactor": 1.15,
+    "slowForTurn": true,
+    "aimAccuracyRef": 50,
+    "slowForTurnSteps": 4
+  },
+  "striker": {
+    "attackSpeed": 50,
+    "breakDistance": 40,
+    "extendDistance": 140,
+    "takesTail": true
+  },
+  "interceptor": {
+    "patrolRadius": 120,
+    "patrolOrbitRadius": 70,
+    "patrolOrbitStepDeg": 70,
+    "patrolSpeed": 65,
+    "screenDistance": 90,
+    "screenHold": 40,
+    "engageFactor": 1,
+    "orbitTurnFraction": 0.8,
+    "flankOffset": 0
+  },
+  "commander": {
+    "threatRadius": 250,
+    "threatTurns": 5,
+    "threatHeadingDeg": 60,
+    "maxInterceptors": 4,
+    "extraInterceptors": 1,
+    "minRoleTurns": 3,
+    "strikeWhenEnemyCarrierBelow": 0.5,
+    "startTactic": "balanced"
+  },
+  "leash": {
+    "radius": 420
+  },
+  "tail": {
+    "chance": 0.85,
+    "rangeFactor": 0.8,
+    "coneFactor": 0.8,
+    "speedSteps": 2,
+    "turnSteps": 6
+  },
+  "fighter": {
+    "breakAfterTurns": 3,
+    "extendTurns": 1
+  }
+}

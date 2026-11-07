@@ -122,8 +122,8 @@ public class ObjectInfoPanelTests
     public void Ship_info_omits_modules_even_when_snapshot_contains_health(string type)
     {
         var data = new ObjectInfoPanelData("ship", "Ship", 2, 90, type,
-            Modules: [new("engine", "Engine", 12, 20, 30, 40, 4500, false),
-                      new("weapon", "Weapon", 0, 10, 0, 25, null, true)], MotionTimeMs: 1000);
+            Modules: [new("engine", "Engine", 30, 40, false),
+                      new("scanner", "Scanner", 0, 25, true)], MotionTimeMs: 1000);
         Assert.Equal(new[] { ("Name", "Ship"), ("Speed", "2 km/s"), ("Direction", "90°") }, ObjectInfoPanel.BuildLines(data));
     }
 
@@ -134,7 +134,7 @@ public class ObjectInfoPanelTests
     {
         var panel = new ObjectInfoPanel();
         var data = new ObjectInfoPanelData("ship", "Player Ship", 2, 0, SpaceObjectType.PlayerShip,
-            Modules: [new("room", "Launcher Living quarters MK I (4 cabins)", 60, 60, 150, 150, null, false)]);
+            Modules: [new("room", "Living quarters MK I (4 cabins)", 150, 150, false)]);
         using var bitmap = new SKBitmap(viewportWidth, 900);
         using var canvas = new SKCanvas(bitmap);
         panel.Render(canvas, viewportWidth, 8, data, null, 900);
@@ -573,13 +573,13 @@ public class ObjectInfoPanelTests
     {
         var (buffer, screen) = CreateScreen();
         UpdateBufferWithShip(buffer, PlayerShipId);
-        RenderScreen(screen);
+        RenderScreen(screen, height: 510);
 
         // 150px image + 6px padding above and below.
         Assert.Equal(162f, ObjectInfoPanel.RowBodyHeight);
         Assert.Equal(162f, screen.ObjectInfoPanel.RowBodyRects[0].Height);
         Assert.All(screen.ObjectInfoPanel.RowBodyRects, r => Assert.InRange(r.Height, 1f, 162f));
-        Assert.True(screen.ObjectInfoPanel.Bounds.Bottom <= screen.CombatReportsBounds.Top);
+        Assert.True(screen.ObjectInfoPanel.Bounds.Bottom <= ScreenHeight);
         var clipped = screen.ObjectInfoPanel.RowBodyRects[1];
         Assert.True(screen.ObjectInfoPanel.Scroll(clipped.MidX, clipped.MidY, -1));
         Assert.True(screen.ObjectInfoPanel.ScrollOffset(1) > 0);

@@ -10,10 +10,10 @@ public sealed class DebugTuningStateTests
     {
         var catalog = PointCombatUS0018TK0002Tests.Registry();
         var original = new DebugTuningState(catalog);
-        Assert.Equal(25, original.Snapshot.Defaults.Length);
+        Assert.Equal(6, original.Snapshot.Defaults.Length);
         Assert.Equal(0, original.Snapshot.Revision);
         Assert.True(original.TryApply(new([new("module.engine.tetrarch", "maxSpeedKmS", 2),
-            new("module.torpedo.launcher.basic", "speedKmS", 20, "medium")]), out var updated, out var reason));
+            new("module.engine.strizh", "turnRateDegPerSec", 40)]), out var updated, out var reason));
         Assert.Null(reason);
         Assert.Equal(1, updated.Snapshot.Revision);
         Assert.Equal(5000, Engine(catalog).MaxSpeedMps);
@@ -22,14 +22,10 @@ public sealed class DebugTuningStateTests
         Assert.True(original.Snapshot.Defaults == updated.Snapshot.Defaults);
         for (int i = 0; i < catalog.ModuleTypes.Count; i++)
             Assert.Equal(catalog.ModuleTypes.GetDefinition(i).TypeId, updated.Registry.ModuleTypes.GetDefinition(i).TypeId);
-        Assert.Same(catalog.CombatRules, updated.Registry.CombatRules);
         Assert.Same(catalog.ItemTypes, updated.Registry.ItemTypes);
         Assert.Same(catalog.StationMarketEvents, updated.Registry.StationMarketEvents);
         Assert.Equal(catalog.CatalogCompatibility, updated.Registry.CatalogCompatibility);
-        Assert.Equal(20, updated.Registry.ModuleTypes.GetDefinition(updated.Registry.ModuleTypes.GetIndex("module.torpedo.launcher.basic"))
-            .Profiles.Single(p => p.ProfileId == "medium").SpeedKmS);
-        Assert.Equal(10, catalog.ModuleTypes.GetDefinition(catalog.ModuleTypes.GetIndex("module.torpedo.launcher.basic"))
-            .Profiles.Single(p => p.ProfileId == "medium").SpeedKmS);
+        Assert.Equal(40, updated.Registry.ModuleTypes.GetDefinition(updated.Registry.ModuleTypes.GetIndex("module.engine.strizh")).AngularInertiaDegPerSec);
     }
 
     [Theory]
@@ -82,9 +78,6 @@ public sealed class DebugTuningStateTests
     [InlineData("module.engine.tetrarch", "maxSpeedKmS", null, .1, 50)]
     [InlineData("module.engine.strizh", "accelerationMps2", null, 10, 20000)]
     [InlineData("module.engine.strizh", "turnRateDegPerSec", null, 1, 360)]
-    [InlineData("module.torpedo.launcher.basic", "reloadMs", null, 100, 600000)]
-    [InlineData("module.countermeasure.launcher.basic", "speedKmS", "wide", .1, 100)]
-    [InlineData("module.torpedo.launcher.light", "blastRadiusKm", "fast", .05, 50)]
     public void Inclusive_bounds_are_accepted_and_values_beyond_each_bound_are_atomic_rejections(
         string type, string field, string? profile, double min, double max)
     {

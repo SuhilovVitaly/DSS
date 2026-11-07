@@ -30,9 +30,9 @@ public static class SaveFormat
     /// Version 16 requires phase-three combat continuation; earlier files are rejected by the save entrypoint.
     /// Version 17 requires module-combat continuation (defense 3, combat 2, hostile 2); older saves are rejected.
     /// Version 18 adds point flights, scatter/dodge RNG, evasion and encounter continuation; Save17 is rejected.
-    /// Version19 adds optional debug tuning and retimed flight provenance; Save18 migrates explicitly.
+    /// Version20 keeps only world state; versions 18 and 19 are validated and migrated on load.
     /// </summary>
-    public const int CurrentSaveFormatVersion = 19;
+    public const int CurrentSaveFormatVersion = 20;
 }
 
 /// <summary>Root of the scenario JSON file. Also used as the save-file format.</summary>
@@ -91,8 +91,6 @@ public sealed record GameStateData(
     [property: JsonPropertyName("tradingMap")] TradingMapStateData? TradingMap = null,
     [property: JsonPropertyName("stationResourceFields")] StationResourceFieldsState? StationResourceFields = null,
     [property: JsonPropertyName("voyageState")] VoyageStateData? VoyageState = null,
-    [property: JsonPropertyName("combatState")] CombatStateData? CombatState = null,
-    [property: JsonPropertyName("defenseState")] CountermeasureStateData? DefenseState = null,
     [property: JsonPropertyName("solarSystem")] DeepSpaceSaga.Contracts.SolarSystemMapSnapshot? SolarSystem = null,
     [property: JsonPropertyName("marketEventCatalogFingerprint")] string? MarketEventCatalogFingerprint = null,
     [property: JsonPropertyName("lastVoyageFuelSettlement")] DeepSpaceSaga.Contracts.VoyageFuelSettlementSnapshot? LastVoyageFuelSettlement = null,
@@ -103,12 +101,8 @@ public sealed record GameStateData(
     [property: JsonPropertyName("engineIdentityCounters")] EngineIdentityCountersData? EngineIdentityCounters = null,
     [property: JsonPropertyName("clusterMap")] DeepSpaceSaga.Contracts.StationClusterMapSnapshot? ClusterMap = null,
     [property: JsonPropertyName("aiMap")] DeepSpaceSaga.Contracts.AiMapEnvironmentSnapshot? AiMap = null,
-    [property: JsonPropertyName("hostileCombatState")] HostileCombatSaveData? HostileCombatState = null,
     /// <summary>Fractional physical milliseconds, in quarters. Absent in older saves (zero).</summary>
     [property: JsonPropertyName("motionQuarterRemainder")] int MotionQuarterRemainder = 0,
-    [property: JsonPropertyName("combatReportsState")] CombatReportsSaveData? CombatReportsState = null,
-    [property: JsonPropertyName("combatReactionDelays")] IReadOnlyList<CombatReactionSaveData>? CombatReactionDelays = null,
-    [property: JsonPropertyName("pointCombatState")] PointCombatStateData? PointCombatState = null,
     [property: JsonPropertyName("debugTuning"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     IReadOnlyList<DeepSpaceSaga.Contracts.DebugTuningValue>? DebugTuning = null)
 {
@@ -323,21 +317,9 @@ public sealed record SpaceObjectData(
     [property: JsonPropertyName("relationToPlayer")] string? RelationToPlayer = null,
     /// <summary>Explicit ship class identity; never inferred from image, name or hull geometry.</summary>
     [property: JsonPropertyName("shipClassId")] string? ShipClassId = null,
-    /// <summary>Current hull HP. Null on a classified new ship means the configured maximum.</summary>
-    [property: JsonPropertyName("hullHitPoints")] int? HullHitPoints = null,
-    [property: JsonPropertyName("hullHitPointsMax")] int? HullHitPointsMax = null,
     [property: JsonPropertyName("orbit")] DeepSpaceSaga.Contracts.OrbitalElements? Orbit = null,
     [property: JsonPropertyName("worldOffsetX")] double WorldOffsetX = 0,
-    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0,
-    [property: JsonPropertyName("ai")] AttackAiData? Ai = null);
-
-/// <summary>Configured NPC attack geometry; absent means the EP-0008 orbit defaults.</summary>
-public sealed record AttackAiData(
-    [property: JsonRequired, JsonPropertyName("standoffKm")] double StandoffKm,
-    [property: JsonRequired, JsonPropertyName("bandKm")] double BandKm,
-    [property: JsonRequired, JsonPropertyName("flankOffsetDeg")] double FlankOffsetDeg,
-    [property: JsonPropertyName("fireThreshold")] double FireThreshold = 0.3,
-    [property: JsonPropertyName("assumedTargetDodge")] double AssumedTargetDodge = 0.25);
+    [property: JsonPropertyName("worldOffsetY")] double WorldOffsetY = 0);
 
 /// <summary>Well-known <see cref="StationCrewMemberData.Role"/> values used by engine logic (not just content).</summary>
 public static class StationCrewRoles
@@ -477,11 +459,7 @@ public sealed record ShipModuleData(
     [property: JsonPropertyName("fuelAmountKg")] long? FuelAmountKg = null,
     [property: JsonPropertyName("lastTurnGameTimeMs")] long? LastTurnGameTimeMs = null,
     [property: JsonPropertyName("operatorCrewId")] string? OperatorCrewId = null,
-    [property: JsonPropertyName("autoDefenseEnabled")] bool AutoDefenseEnabled = true,
     [property: JsonPropertyName("fuelCostBasisCredits")] long? FuelCostBasisCredits = null,
-    [property: JsonPropertyName("armorClass")] string ArmorClass = "none",
-    [property: JsonPropertyName("armor")] int? Armor = null,
-    [property: JsonPropertyName("disabledUntilMotionTimeMs")] double? DisabledUntilMotionTimeMs = null,
     [property: JsonPropertyName("destroyed")] bool Destroyed = false);
 
 /// <summary>A single structural cell coordinate on a ship's hull grid (requirements §57).</summary>

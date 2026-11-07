@@ -11,18 +11,15 @@ public sealed class DebugTuningCommandTests
     public void Paused_command_is_atomic_idempotent_and_publishes_the_confirmed_registry()
     {
         using var engine = PointCombatUS0018TK0002Tests.Create();
-        var before = engine.CaptureLaunchScatterState();
-        var command = Apply("tune", new DebugTuningValue("module.torpedo.launcher.basic", "speedKmS", 20, "medium"));
+        var command = Apply("tune", new DebugTuningValue("module.engine.tetrarch", "maxSpeedKmS", 9));
         engine.ReceiveCommand(command);
         var state = PointCombatUS0018TK0002Tests.At(engine);
         Assert.Equal(CommandResultStatus.Executed, Assert.Single(state.CommandResults).Status);
         Assert.Equal(SimulationSpeed.Speed0, state.CurrentSpeed);
         Assert.Equal(1, state.DebugTuning!.Revision);
-        Assert.Equal(20, state.InstalledModules.Single(m => m.ModuleId == PointCombatUS0018TK0002Tests.Launcher)
-            .LauncherCombat!.Profiles!.Value.Single(p => p.ProfileId == "medium").SpeedKmS);
+        Assert.Equal(9, state.DebugTuning.Values.Single(v => v.ModuleTypeId == "module.engine.tetrarch" && v.Field == "maxSpeedKmS").Value);
         engine.ReceiveCommand(command);
         Assert.Equal(1, PointCombatUS0018TK0002Tests.At(engine).DebugTuning!.Revision);
-        Assert.Equal(before, engine.CaptureLaunchScatterState());
         Assert.Equal(0, state.MotionTimeMs);
     }
 
@@ -40,7 +37,7 @@ public sealed class DebugTuningCommandTests
     }
 
     [Fact]
-    public void Session_must_be_loaded_and_compact_updates_send_only_changed_revisions()
+    public void Session_must_be_loaded_and_normal_snapshots_carry_confirmed_revisions()
     {
         using (var empty = new SimulationEngine())
         {
@@ -49,14 +46,10 @@ public sealed class DebugTuningCommandTests
                 Assert.Single(empty.CaptureSnapshotForTests().CommandResults).ReasonCode);
         }
         using var engine = PointCombatUS0018TK0002Tests.Create();
-        engine.EnablePresentationLease();
-        Assert.NotNull(engine.CapturePresentationUpdate(advanceClock: false).FullSnapshot!.DebugTuning);
-        var unchanged = engine.CapturePresentationUpdate(advanceClock: false);
-        Assert.All(unchanged.Frames, frame => Assert.Null(frame.State.DebugTuning));
+        Assert.Equal(0, engine.CaptureSnapshotForTests().DebugTuning!.Revision);
         engine.ReceiveCommand(Apply("changed", new DebugTuningValue("module.engine.tetrarch", "maxSpeedKmS", 2)));
-        var changed = engine.CapturePresentationUpdate(advanceClock: false);
-        Assert.Equal(1, Assert.Single(changed.Frames, frame => frame.State.DebugTuning is not null).State.DebugTuning!.Revision);
-        Assert.All(engine.CapturePresentationUpdate(advanceClock: false).Frames, frame => Assert.Null(frame.State.DebugTuning));
+        Assert.Equal(1, engine.CaptureSnapshotForTests().DebugTuning!.Revision);
+        Assert.Equal(1, engine.CaptureSnapshotForTests().DebugTuning!.Revision);
     }
 
     [Fact]

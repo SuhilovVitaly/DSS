@@ -53,30 +53,10 @@ public sealed record InstalledModuleSnapshot(
     int? CabinesCount = null,
     /// <summary>Total cargo capacity of this container; fuel tanks have their own capacity.</summary>
     long? CargoCapacityKg = null,
-    /// <summary>
-    /// Authoritative launcher parameters and active projectile identity. Null for legacy
-    /// and non-launcher modules; absence never grants the ability to fire. Its Operator
-    /// is the authoritative assignment, distinct from an assigned zero-skill operator.
-    /// </summary>
-    LauncherCombatSnapshot? LauncherCombat = null,
-    DefenseSnapshot? Defense = null,
-    /// <summary>Current authoritative operator for either weapon family; null means unassigned.</summary>
-    WeaponOperatorSnapshot? Operator = null,
-    /// <summary>Eligibility for this exact module and target; never an aggregate over all defense modules.</summary>
-    DefenseLaunchPreview? DefensePreview = null,
-    /// <summary>Authoritative combat armor remaining. Populated by the module-health runtime.</summary>
-    int ArmorCurrent = 0,
-    int ArmorMax = 0,
-    /// <summary>Authoritative combat structure, separate from the older operational StructurePoints.</summary>
+    /// <summary>Authoritative current and maximum structure of the module.</summary>
     int StructureCurrent = 0,
     int StructureMax = 0,
-    /// <summary>Absolute physical time when a non-destroyed module becomes available again.</summary>
-    double? DisabledUntilMotionTimeMs = null,
     bool IsDestroyed = false,
-    string? CombatRole = null,
-    /// <summary>Own module criticality under the authoritative configured destruction rules.</summary>
-    [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
-    bool IsCritical = false,
     [property: JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
     EngineMotionLimitsSnapshot? EngineMotion = null);
 

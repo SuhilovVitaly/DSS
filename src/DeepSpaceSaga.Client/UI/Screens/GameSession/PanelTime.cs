@@ -14,5 +14,5 @@ internal static class PanelTime
         realSeconds.ToString(realSeconds < 10 ? "0.0" : "0");
 
     internal static string Tooltip(double physicalSeconds, SimulationSpeed speed) =>
-        string.Format(Localization.Combat("Panel.TimeTooltip"), (int)speed, physicalSeconds.ToString("0.##"));
+        string.Format(Localization.Get("World.Panel.TimeTooltip"), (int)speed, physicalSeconds.ToString("0.##"));
 }

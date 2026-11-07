@@ -3,7 +3,7 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0017-project-documentation
 ticket: EP-0015-US-0017-TK-0001-impact-inventory
 title: impact-inventory
-stage: draft
+stage: done
 layer: documentation
 depends_on: ["EP-0015-US-0001-TK-0004-content-sync", "EP-0015-US-0002-TK-0006-platform-determinism", "EP-0015-US-0003-TK-0004-turn-and-outcome", "EP-0015-US-0004-TK-0004-golden-battles", "EP-0015-US-0005-TK-0006-session-tests", "EP-0015-US-0006-TK-0006-text-and-numbers", "EP-0015-US-0007-TK-0004-battle-keys-guard", "EP-0015-US-0008-TK-0005-movement-animation", "EP-0015-US-0009-TK-0004-forecast-tab", "EP-0015-US-0010-TK-0002-sandbox-flow", "EP-0015-US-0011-TK-0004-save-format-20", "EP-0015-US-0012-TK-0006-client-assets-locale-removal", "EP-0015-US-0013-TK-0010-legacy-save-dto-removal", "EP-0015-US-0014-TK-0005-tools-cleanup", "EP-0015-US-0015-TK-0001-locale-coverage", "EP-0015-US-0016-TK-0003-native-acceptance"]
 files_touched: 1
@@ -18,10 +18,10 @@ revision: 3
 Инвентаризация.
 
 ## Decisions
-Решения пользователя D-USER-01…13 и правила боя `DB/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
+Решения пользователя D-USER-01…13 и правила боя `VData/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
 
 ## Assumptions
-Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `DB/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
+Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `VData/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
 
 ## Code context
 | File | Current state | Allowed change |
@@ -35,7 +35,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 1. По итоговому diff, API, командам, конфигурации, версиям схем; поиск упоминаний старого боя по `DB/Documentation`.
 
 ## Out of scope
-Изменения вне описанного результата, баланс и правила боя сверх `DB/Planning/V4.0`.
+Изменения вне описанного результата, баланс и правила боя сверх `VData/Planning/V4.0`.
 
 ## Invariants
 Engine владеет исходами, RNG и командами; Contracts неизменяемы; общая математика — в Motion; Client отображает допущенные снимки и не вызывает Engine из Render. Числа боя — только из `Data/TacticalBattle`. Правила исполнения R-01…R-09 ([Documentation.md](../../Documentation.md#правила-исполнения)).
@@ -47,4 +47,14 @@ Engine владеет исходами, RNG и командами; Contracts н�
 Критерии AC-01 истории выполнены и проверены; diff просмотрен; фактические результаты записаны в карточку; отдельный коммит тикета создан; push — сразу, и только в одобренный внутренний remote (`*.amat.com` или внутренний IP); если `origin` указывает на внешний хост (github.com, gitlab.com, bitbucket.org и т. п.) — не пушить, остановиться и сообщить пользователю (D-USER-08, D-USER-09, R-06).
 
 ## Self-containment check
-Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `DB/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope confirmed before edits — 2026-11-06
+
+Audit current Board, canonical product documents and live tool/fixture guides against the functional diff. Legacy VData Board/Documentation copies are not owners and remain untouched.
+
+- DB/Board/EP-0015-tactical-carrier-battle/DocumentationImpact.md
+
+## Execution evidence — 2026-11-06
+
+Reviewed the actual functional diff at 44d2bcd2 against a9404103, current owning files and stale contract references. DocumentationImpact records canonical/live owners, obsolete documents to remove, adjacent tool/fixture guides, Board history and graph rebuild. Noncanonical VData copies remain untouched. Content review and diff check passed.

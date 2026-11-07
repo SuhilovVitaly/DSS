@@ -53,7 +53,6 @@ internal static class DebugTuningNativeEvidence
                     SpaceObjects = source.GameState.SpaceObjects.Select(o => o with
                     {
                         SpeedMps = o.ObjectId == source.GameState.PlayerShipObjectId ? 3000 : o.SpeedMps,
-                        Ai = null,
                         Modules = o.Modules!.Select(m => m with { PowerState = o.ObjectId == source.GameState.PlayerShipObjectId ? "On" : "Off" }).ToArray()
                     }).ToArray()
                 }
@@ -63,7 +62,7 @@ internal static class DebugTuningNativeEvidence
             var writer = new DebugTuningFileWriter(Path.Combine(directory, "DebugTuning"));
             DebugTuningFileWriter.WriteDefaults(writer.DirectoryPath, world.DebugTuning!);
             string reference = File.ReadAllText(Path.Combine(writer.DirectoryPath, "debug-tuning.defaults.json"));
-            var handle = new GameSessionHandle(new Driver(engine), buffer, new CombatMetricsWriter(Path.Combine(directory, "metrics")), writer);
+            var handle = new GameSessionHandle(new Driver(engine), buffer, writer);
             var screen = new GameSessionScreen(buffer, new DeepSpaceSaga.Motion.LinearMotionPredictor(), handle, uiScale: scale);
             Environment.SetEnvironmentVariable("DSS_MAP_FRAME_EXIT", "0");
             using var window = new SkiaWindow(screen, new Factory());
@@ -90,7 +89,7 @@ internal static class DebugTuningNativeEvidence
                             checks["f12Opens"] = screen.DebugPanel.Visible;
                             checks["physicalPanelWidth"] = Math.Abs(screen.DebugPanel.Bounds.Width * scale - 360 * scale) < .01;
                             checks["actualUiScale"] = Math.Abs(screen.UiScale - scale) < .001;
-                            checks["localeTitle"] = Localization.Get("Debug.Title") == (args[4] == "ru" ? "Отладка боя" : "Combat tuning");
+                            checks["localeTitle"] = Localization.Get("Debug.Title") == (args[4] == "ru" ? "Отладка двигателей" : "Engine tuning");
                             var row = screen.DebugPanel.RowBounds(0);
                             screen.OnMouseDown((row.Right - 45) * scale, row.MidY * scale); Publish(); stage++; break;
                         case 2:

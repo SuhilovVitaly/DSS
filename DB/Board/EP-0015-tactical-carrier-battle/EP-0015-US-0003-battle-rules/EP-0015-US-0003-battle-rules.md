@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0003-battle-rules
 title: "Правила боя: сборка, движение, залп, урон, исход"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0002-deterministic-core, EP-0015-US-0001-content-and-loader]
 ---
 
@@ -10,11 +10,11 @@ dependencies: [EP-0015-US-0002-deterministic-core, EP-0015-US-0001-content-and-l
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
-Как игрок, я веду бой по правилам V4: рамы с модулями, лимиты от массы, одновременный залп с шансом в стиле Battle Brothers, броня-пул, корма, выведение из строя, повреждения систем и исход — ровно как в `DB/Planning/V4.0/Spec/Combat.md`.
+Как игрок, я веду бой по правилам V4: рамы с модулями, лимиты от массы, одновременный залп с шансом в стиле Battle Brothers, броня-пул, корма, выведение из строя, повреждения систем и исход — ровно как в `VData/Planning/V4.0/Spec/Combat.md`.
 
 ## Зависимости
 
@@ -48,3 +48,7 @@ dependencies: [EP-0015-US-0002-deterministic-core, EP-0015-US-0001-content-and-l
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution result
+
+Four rules tickets complete. Targeted source slices and 6443 fresh regression cases PASS; detailed evidence is in ticket execution sections. AI/full-battle parity and real session/UI integration remain the dependent US-0004/0005 work; no playable-screen acceptance is claimed.

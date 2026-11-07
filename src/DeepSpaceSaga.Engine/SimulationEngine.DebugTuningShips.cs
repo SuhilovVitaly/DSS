@@ -6,13 +6,9 @@ namespace DeepSpaceSaga.Engine;
 
 public sealed partial class SimulationEngine
 {
-    private sealed record DebugShipRetiming(List<SpaceObjectRuntime> Objects,
-        Dictionary<string, EvasionState> Evasions, Dictionary<string, HostileCombatSnapshot> Hostiles);
-
-    private bool TryStageDebugShips(GameDataRegistry candidate, long time, out DebugShipRetiming staged)
+    private bool TryStageDebugShips(GameDataRegistry candidate, long time, out List<SpaceObjectRuntime> staged)
     {
-        staged = new([.. _objects], new(_evasions, StringComparer.Ordinal), new(_hostileCombat, StringComparer.Ordinal));
-        var changed = new List<(int Index, ModuleTypeDefinition Type)>();
+        staged = [.. _objects];
         for (int i = 0; i < _objects.Count; i++)
         {
             var owner = _objects[i];
@@ -36,8 +32,7 @@ public sealed partial class SimulationEngine
                 TurnHoldRateDegPerSec = pose.TurnHoldRateDegPerSec is { } turn
                     ? Math.CopySign(type.AngularInertiaDegPerSec!.Value, turn) : null,
                 SpeedHoldAccelerationKmS2 = pose.SpeedHoldAccelerationKmS2 is { } heldAcceleration
-                    ? Math.CopySign(type.LinearInertiaMps2!.Value / 1000.0, heldAcceleration) : null,
-                HostileCombat = null
+                    ? Math.CopySign(type.LinearInertiaMps2!.Value / 1000.0, heldAcceleration) : null
             };
             var modules = owner.Modules;
             for (int m = 0; m < modules.Length; m++)
@@ -60,46 +55,7 @@ public sealed partial class SimulationEngine
                 }
                 modules = modules.SetItem(m, module with { ActiveCycle = next });
             }
-            if (staged.Evasions.TryGetValue(owner.InitialMotion.ObjectId, out var evasion) && evasion.Motion.Steering is { } steering)
-            {
-                double turnRate = type.AngularInertiaDegPerSec!.Value, acceleration = type.LinearInertiaMps2!.Value / 1000.0;
-                var basis = evasion.Motion.BaseMotion with { SpeedKmS = Math.Min(evasion.Motion.BaseMotion.SpeedKmS, maxSpeed), MaxSpeedKmS = maxSpeed };
-                EvasionSnapshot schedule;
-                if (time <= evasion.Motion.EndsAtMotionTimeMs)
-                    schedule = EvasionMotionMath.Plan(motion, basis, time, evasion.Motion.EndsAtMotionTimeMs,
-                        evasion.Motion.ThreatProjectileId, evasion.Motion.Side, steering.Direction, maxSpeed, turnRate, acceleration);
-                else
-                {
-                    double angle = Math.Abs((basis.Direction - motion.Direction + 540) % 360 - 180);
-                    double end = time + Math.Max(angle / turnRate, Math.Abs(basis.SpeedKmS - motion.SpeedKmS) / acceleration) * 1000;
-                    schedule = evasion.Motion with
-                    {
-                        SampleMotionTimeMs = time,
-                        BaseMotion = basis,
-                        Steering = steering with { MaxSpeedKmS = maxSpeed, TurnRateDegPerSec = turnRate, AccelerationKmS2 = acceleration, ReturnsAtMotionTimeMs = end }
-                    };
-                }
-                if (!double.IsFinite(EvasionMotionMath.CompletionTime(schedule)) || EvasionMotionMath.CompletionTime(schedule) >= long.MaxValue)
-                    return false;
-                staged.Evasions[owner.InitialMotion.ObjectId] = evasion with { Motion = schedule };
-                motion = motion with { Evasion = schedule };
-            }
-            staged.Objects[i] = owner with { InitialMotion = motion, StartGameTimeMs = time, Modules = modules };
-            changed.Add((i, type));
-        }
-        foreach (var (index, type) in changed)
-        {
-            var owner = staged.Objects[index];
-            if (owner.InitialMotion.Evasion is not null || owner.IsDocked ||
-                _objects[index].InitialMotion.HostileCombat is not { } previous) continue;
-            var target = staged.Objects.FirstOrDefault(o => o.InitialMotion.ObjectId == previous.TargetObjectId);
-            if (target is null) continue;
-            var next = HostileOrbitMath.PlanAttack(owner.InitialMotion, RuntimeMotion.At(target, time), time,
-                previous.EngineModuleId, previous.WeaponModuleId, previous.DesiredRadiusKm,
-                type.MaxSpeedMps!.Value / 1000.0, type.LinearInertiaMps2!.Value / 1000.0,
-                type.AngularInertiaDegPerSec!.Value, owner.AttackAi?.BandKm, owner.AttackAi?.FlankOffsetDeg ?? 0, previous);
-            staged.Hostiles[owner.InitialMotion.ObjectId] = next;
-            staged.Objects[index] = owner with { InitialMotion = owner.InitialMotion with { HostileCombat = next } };
+            staged[i] = owner with { InitialMotion = motion, StartGameTimeMs = time, Modules = modules };
         }
         return true;
     }

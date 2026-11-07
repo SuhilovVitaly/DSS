@@ -1,0 +1,13 @@
+{
+  "id": "gun.sawn.t1",
+  "name": "Обрез I",
+  "tier": 1,
+  "arcDeg": 55,
+  "range": 110,
+  "damageMin": 40,
+  "damageMax": 50,
+  "piercing": 0,
+  "hitBonus": 12,
+  "rearKillChance": 0,
+  "massKg": 40
+}

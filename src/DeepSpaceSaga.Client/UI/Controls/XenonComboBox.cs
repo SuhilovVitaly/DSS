@@ -90,7 +90,7 @@ public static class XenonComboBox
 
         var fieldImage = highlighted ? Hover : Normal;
         if (fieldImage is not null)
-            canvas.DrawBitmap(fieldImage, fieldRect);
+            DrawField(canvas, fieldImage, fieldRect);
         else
         {
             canvas.DrawRect(fieldRect, FallbackFill);
@@ -105,6 +105,21 @@ public static class XenonComboBox
         var textPaint = highlighted ? ActiveValueText : ValueText;
         canvas.DrawText(value, valueCenterX,
             MenuStyle.VerticalCenterBaseline(fieldRect, textPaint), textPaint);
+    }
+
+    private static void DrawField(SKCanvas canvas, SKBitmap image, SKRect bounds)
+    {
+        const float leading = 44f, trailing = 12f;
+        float edgeScale = Math.Min(bounds.Height / image.Height, bounds.Width / (leading + trailing + 1));
+        float left = bounds.Left + leading * edgeScale;
+        float right = bounds.Right - trailing * edgeScale;
+        float sourceRight = image.Width - trailing;
+        canvas.DrawBitmap(image, new SKRect(0, 0, leading, image.Height),
+            new SKRect(bounds.Left, bounds.Top, left, bounds.Bottom));
+        canvas.DrawBitmap(image, new SKRect(leading, 0, sourceRight, image.Height),
+            new SKRect(left, bounds.Top, right, bounds.Bottom));
+        canvas.DrawBitmap(image, new SKRect(sourceRight, 0, image.Width, image.Height),
+            new SKRect(right, bounds.Top, bounds.Right, bounds.Bottom));
     }
 
     public static void DrawListBackground(SKCanvas canvas, SKRect bounds)

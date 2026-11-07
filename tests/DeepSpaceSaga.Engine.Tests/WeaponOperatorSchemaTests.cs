@@ -17,8 +17,8 @@ public class WeaponOperatorSchemaTests
             {
                 SpaceObjects = scenario.GameState.SpaceObjects.Select(o => o.ObjectId == Player ? o with
                 {
-                    Modules = o.Modules!.Select(m => m.ModuleId == "MOD-PLAYER-COUNTERMEASURE-02"
-                        ? m with { OperatorCrewId = "CHR-PLAYER-DEFENSE" } : m).ToArray()
+                    Modules = o.Modules!.Select(m => m.ModuleTypeId is "module.container.basic" or "module.scanner.mk1"
+                        ? m with { OperatorCrewId = "CHR-0001" } : m).ToArray()
                 } : o).ToArray()
             }
         };
@@ -31,8 +31,7 @@ public class WeaponOperatorSchemaTests
         Crew = [new ShipCrewMemberData("operator-" + o.ObjectId, "Operator", accuracy, maneuverability)],
         Modules = o.Modules?.Select(m => m with
         {
-            OperatorCrewId = m.ModuleId == Launcher ? "operator-" + o.ObjectId : null,
-            AutoDefenseEnabled = false
+            OperatorCrewId = m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal) ? "operator-" + o.ObjectId : null,
         }).ToArray()
     });
 
@@ -99,17 +98,17 @@ public class WeaponOperatorSchemaTests
         var scenario = TorpedoImpactTests.Scenario(o => o with
         {
             Crew = [new ShipCrewMemberData("legacy", "Legacy")],
-            Modules = o.Modules?.Select(m => m with { OperatorCrewId = null, AutoDefenseEnabled = true }).ToArray()
+            Modules = o.Modules?.Select(m => m with { OperatorCrewId = null }).ToArray()
         });
         using var engine = Create(scenario);
         var player = engine.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Player);
         Assert.Equal(0, Assert.Single(player.Crew!).AccuracySkill);
         Assert.Equal(0, Assert.Single(player.Crew!).ManeuverabilitySkill);
-        Assert.All(player.Modules!, m => { Assert.Null(m.OperatorCrewId); Assert.True(m.AutoDefenseEnabled); });
+        Assert.All(player.Modules!, m => Assert.Null(m.OperatorCrewId));
     }
 
     [Fact]
-    public void Crew_skills_and_assignment_roundtrip()
+    public void Crew_skills_and_world_assignment_roundtrip()
     {
         using var engine = Create(Assigned(0, 30));
         var saved = engine.CaptureSaveState();
@@ -117,8 +116,7 @@ public class WeaponOperatorSchemaTests
         var player = restored.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Player);
         Assert.Equal(0, Assert.Single(player.Crew!).AccuracySkill);
         Assert.Equal(30, Assert.Single(player.Crew!).ManeuverabilitySkill);
-        Assert.Equal("operator-" + Player, player.Modules!.Single(m => m.ModuleId == Launcher).OperatorCrewId);
-        Assert.All(player.Modules!, m => Assert.False(m.AutoDefenseEnabled));
+        Assert.Equal("operator-" + Player, Assert.Single(player.Modules!, m => m.ModuleTypeId.StartsWith("module.engine.", StringComparison.Ordinal)).OperatorCrewId);
     }
 
     [Fact]

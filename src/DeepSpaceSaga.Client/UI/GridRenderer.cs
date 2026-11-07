@@ -15,8 +15,13 @@ public sealed class GridRenderer
         TacticalMapSettings? settings = null, int viewportExtent = 1920)
     {
         var s = settings ?? new TacticalMapSettings();
+        return GetEligibleLevels(pixelsPerWorldUnit, s, viewportExtent, s.GridBaseCellPixels / s.MaximumPpu);
+    }
+
+    private static IReadOnlyList<double> GetEligibleLevels(double pixelsPerWorldUnit, TacticalMapSettings s,
+        int viewportExtent, double baseStep)
+    {
         if (!double.IsFinite(pixelsPerWorldUnit) || pixelsPerWorldUnit <= 0) return Array.Empty<double>();
-        double baseStep = s.GridBaseCellPixels / s.MaximumPpu;
         // Jump straight to the first visible ancestor, even at astronomical zoom levels.
         double exponent = Math.Max(0, Math.Ceiling(
             (Math.Log(s.GridMinimumPixels) - Math.Log(baseStep) - Math.Log(pixelsPerWorldUnit)) / Math.Log(Subdivision)));
@@ -37,7 +42,10 @@ public sealed class GridRenderer
     public static double LevelOpacity(double step, double ppu, TacticalMapSettings settings) =>
         SmoothStep((step * ppu - settings.GridMinimumPixels) / settings.GridFadePixels);
 
-    public static SKColor LevelColor(double step, double ppu, TacticalMapSettings settings)
+    public static SKColor LevelColor(double step, double ppu, TacticalMapSettings settings) =>
+        LevelColor(step, ppu, settings, SKColors.Black);
+
+    private static SKColor LevelColor(double step, double ppu, TacticalMapSettings settings, SKColor background)
     {
         double pixels = step * ppu;
         double fullVisibility = settings.GridMinimumPixels + settings.GridFadePixels;
@@ -45,10 +53,11 @@ public sealed class GridRenderer
         double weight = SmoothStep(Math.Log(Math.Max(pixels, fullVisibility) / fullVisibility) /
             Math.Log(majorPixels / fullVisibility));
         double opacity = LevelOpacity(step, ppu, settings);
-        // Premix against the black map background. Shared parent boundaries must not
+        // Premix against the map background. Shared parent boundaries must not
         // brighten by accumulating several translucent copies of the same line.
-        byte Channel(double fine, double major) => (byte)Math.Round((fine + (major - fine) * weight) * opacity);
-        return new SKColor(Channel(18, 35), Channel(23, 44), Channel(28, 52));
+        byte Channel(byte baseChannel, double fine, double major) =>
+            (byte)Math.Min(255, baseChannel + Math.Round((fine + (major - fine) * weight) * opacity));
+        return new SKColor(Channel(background.Red, 18, 35), Channel(background.Green, 23, 44), Channel(background.Blue, 28, 52));
     }
 
     private static double SmoothStep(double value)
@@ -60,15 +69,23 @@ public sealed class GridRenderer
     public void Draw(SKCanvas canvas, CameraState camera, int viewportWidth, int viewportHeight)
     {
         canvas.Clear(SKColors.Black);
+        DrawLines(canvas, camera.FocusX, camera.FocusY, camera.PixelsPerWorldUnit, viewportWidth, viewportHeight,
+            _settings, _paint, SKColors.Black, _settings.GridBaseCellPixels / _settings.MaximumPpu);
+    }
+
+    internal static void DrawLines(SKCanvas canvas, double focusX, double focusY, double ppu,
+        int viewportWidth, int viewportHeight, TacticalMapSettings settings, SKPaint paint, SKColor background, double baseStep)
+    {
         if (viewportWidth <= 0 || viewportHeight <= 0) return;
-        var (left, top) = camera.ScreenToWorld(0, 0, viewportWidth, viewportHeight);
-        var (right, bottom) = camera.ScreenToWorld(viewportWidth, viewportHeight, viewportWidth, viewportHeight);
-        var levels = GetEligibleLevels(camera.PixelsPerWorldUnit, _settings, Math.Max(viewportWidth, viewportHeight));
+        double halfWidth = viewportWidth * 0.5, halfHeight = viewportHeight * 0.5;
+        double left = focusX - halfWidth / ppu, top = focusY - halfHeight / ppu;
+        double right = focusX + halfWidth / ppu, bottom = focusY + halfHeight / ppu;
+        var levels = GetEligibleLevels(ppu, settings, Math.Max(viewportWidth, viewportHeight), baseStep);
         for (int level = 0; level < levels.Count; level++)
         {
             double step = levels[level];
-            if (LevelOpacity(step, camera.PixelsPerWorldUnit, _settings) <= 0) continue;
-            _paint.Color = LevelColor(step, camera.PixelsPerWorldUnit, _settings);
+            if (LevelOpacity(step, ppu, settings) <= 0) continue;
+            paint.Color = LevelColor(step, ppu, settings, background);
             double firstX = Math.Floor(left / step), firstY = Math.Floor(top / step);
             int nx = Math.Min(4096, (int)Math.Ceiling((right - left) / step) + 2);
             int ny = Math.Min(4096, (int)Math.Ceiling((bottom - top) / step) + 2);
@@ -77,15 +94,15 @@ public sealed class GridRenderer
             {
                 double index = firstX + i;
                 if (hasParent && index % Subdivision == 0) continue;
-                var (x, _) = camera.WorldToScreen(index * step, 0, viewportWidth, viewportHeight);
-                if (x >= 0 && x <= viewportWidth) canvas.DrawLine(x, 0, x, viewportHeight, _paint);
+                float x = (float)(halfWidth + (index * step - focusX) * ppu);
+                if (x >= 0 && x <= viewportWidth) canvas.DrawLine(x, 0, x, viewportHeight, paint);
             }
             for (int i = 0; i < ny; i++)
             {
                 double index = firstY + i;
                 if (hasParent && index % Subdivision == 0) continue;
-                var (_, y) = camera.WorldToScreen(0, index * step, viewportWidth, viewportHeight);
-                if (y >= 0 && y <= viewportHeight) canvas.DrawLine(0, y, viewportWidth, y, _paint);
+                float y = (float)(halfHeight + (index * step - focusY) * ppu);
+                if (y >= 0 && y <= viewportHeight) canvas.DrawLine(0, y, viewportWidth, y, paint);
             }
         }
     }

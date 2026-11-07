@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class DebugTuningFileWriterTests : IDisposable
 {
-    private readonly string _directory = Path.Combine("D:/DeepSpaceSaga/artifacts/validation/ep0013/writer-fixtures", Guid.NewGuid().ToString("N"));
+    private readonly string _directory = Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath(), "debug-writer-fixtures", Guid.NewGuid().ToString("N"));
     private static string ClientRoot => Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "../../../../../src/DeepSpaceSaga.Client"));
     private static SimulationEngine Engine() => SimulationEngine.CreateFromScenarioFile(Path.Combine(ClientRoot, "Settings.json"),
         Path.Combine(ClientRoot, "Scenarios/PlayerShipOnly/scenario.json"));
@@ -24,7 +24,7 @@ public sealed class DebugTuningFileWriterTests : IDisposable
     public DebugTuningFileWriterTests() => Directory.CreateDirectory(_directory);
 
     [Fact]
-    public async Task Confirmed_revision_writes_all_twenty_five_values_utf8_schema_and_timestamp()
+    public async Task Confirmed_revision_writes_all_six_world_values_utf8_schema_and_timestamp()
     {
         var catalog = Catalog();
         await using var writer = new DebugTuningFileWriter(_directory);
@@ -38,10 +38,11 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         string json = File.ReadAllText(writer.CurrentPath);
         Assert.Contains("\n  \"schemaVersion\"", json);
         using var document = JsonDocument.Parse(json);
-        Assert.Equal(1, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.Equal(2, document.RootElement.GetProperty("schemaVersion").GetInt32());
+        Assert.False(document.RootElement.TryGetProperty("launchers", out _));
         Assert.True(document.RootElement.GetProperty("writtenAtUtc").TryGetDateTime(out _));
         Assert.True(DebugTuningFileFormat.TryParse(json, catalog.Defaults, out var patch, out var reason), reason);
-        Assert.Equal(25, patch.Values.Length);
+        Assert.Equal(6, patch.Values.Length);
         Assert.Equal(Change(catalog, 1).Values.ToArray(), patch.Values.ToArray());
         Assert.Equal(1, writer.Status.Revision); Assert.Null(writer.Status.Error);
         Assert.Empty(Directory.GetFiles(_directory, "*.tmp-*"));
@@ -115,7 +116,7 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         var engine = Engine();
         var writer = new DebugTuningFileWriter(_directory);
         await using var session = new GameSessionHandle(new LocalGameSessionConnection(engine), new SnapshotBuffer(),
-            new CombatMetricsWriter(Path.Combine(_directory, "metrics")), writer);
+            writer);
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         while (session.Buffer.Latest?.Snapshot.DebugTuning is null) await Task.Delay(10, timeout.Token);
         await session.Connection.SendCommandAsync(new("confirmed", 1, "", "", DebugTuningCommandTypes.Apply,
@@ -125,7 +126,7 @@ public sealed class DebugTuningFileWriterTests : IDisposable
         Assert.Equal(1, writer.Status.Revision);
         var catalog = session.Buffer.Latest.Snapshot.DebugTuning!;
         Assert.True(DebugTuningFileFormat.TryParse(File.ReadAllText(writer.CurrentPath), catalog.Defaults, out var patch, out _));
-        Assert.Equal(25, patch.Values.Length);
+        Assert.Equal(6, patch.Values.Length);
         Assert.Equal(5.5, patch.Values[0].Value);
         await Task.WhenAll(session.DisposeAsync().AsTask(), session.DisposeAsync().AsTask());
         Assert.Equal(1, writer.Status.Revision);

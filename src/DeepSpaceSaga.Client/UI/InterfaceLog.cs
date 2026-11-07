@@ -4,11 +4,20 @@ namespace DeepSpaceSaga.Client.UI;
 
 /// <summary>
 /// Thread-safe helper that appends timestamped UI events to Interface.log
-/// in the application working directory. Every call flushes to disk.
+/// in the application working directory, or the configured validation root. Every call flushes to disk.
 /// </summary>
 public static class InterfaceLog
 {
-    public const string FileName = "Interface.log";
+    public static string FileName
+    {
+        get
+        {
+            string? root = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT");
+            if (string.IsNullOrWhiteSpace(root)) return "Interface.log";
+            if (!Path.IsPathFullyQualified(root)) throw new InvalidOperationException("DSS_VALIDATION_ROOT must be absolute.");
+            return Path.Combine(root, "Interface.log");
+        }
+    }
 
     private static readonly object Sync = new();
 

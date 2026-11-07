@@ -8,9 +8,9 @@ public sealed class PointCombatUS0002TK0003Tests
     // Independent original basic definition: adding Tetrarch must not rebalance other ships.
     private const string Basic = """
         {"typeId":"module.engine.basic","displayName":"Engine","type":"module.engine","massKg":5000,
-         "structurePointsMax":150,"combatRole":"engine","powerConsumptionW":0,"maxSpeedMps":6000,
+         "structurePointsMax":150,"powerConsumptionW":0,"maxSpeedMps":6000,
          "turnStepDegrees":1,"linearInertiaMps2":400,"angularInertiaDegPerSec":4,"baseCycleTimeMs":1000,
-         "fuelCapacityKg":1000,"fuelEfficiencyKmPerKg":200,"baseSuccessChancePercent":100,"maneuverability":10}
+         "fuelCapacityKg":1000,"fuelEfficiencyKmPerKg":200,"baseSuccessChancePercent":100}
         """;
 
     [Theory]
@@ -28,15 +28,13 @@ public sealed class PointCombatUS0002TK0003Tests
         Assert.True(JsonNode.DeepEquals(JsonNode.Parse(Basic), rawBasic));
         var categories = EngineContentLoader.LoadModuleCategories(Path.Combine(root, "Data/module-types.json"));
         var modules = EngineContentLoader.LoadModuleImplementations(Path.Combine(root, relative), categories);
-        foreach (var module in modules) GameDataRegistry.ValidateWeaponRatings(module);
         var tetrarch = Assert.Single(modules, m => m.TypeId == "module.engine.tetrarch");
-        Assert.Equal("module.engine", tetrarch.CategoryTypeId); Assert.Equal("engine", tetrarch.CombatRole);
+        Assert.Equal("module.engine", tetrarch.CategoryTypeId);
         Assert.Equal((5000, 600, 20), (tetrarch.MaxSpeedMps, tetrarch.LinearInertiaMps2, tetrarch.AngularInertiaDegPerSec));
         Assert.Equal(5000, tetrarch.MassKg); Assert.Equal(150, tetrarch.StructurePointsMax); Assert.Equal(1, tetrarch.SlotSize);
         var strizh = Assert.Single(modules, m => m.TypeId == "module.engine.strizh");
         Assert.Equal(5000, strizh.MassKg);
         Assert.Equal((8000, 1000, 24), (strizh.MaxSpeedMps, strizh.LinearInertiaMps2, strizh.AngularInertiaDegPerSec));
-        Assert.Equal("engine", strizh.CombatRole);
         var basic = Assert.Single(modules, m => m.TypeId == "module.engine.basic");
         Assert.Equal((6000, 400, 4), (basic.MaxSpeedMps, basic.LinearInertiaMps2, basic.AngularInertiaDegPerSec));
         var active = EngineContentLoader.LoadRegistryFromSettingsFile(Path.Combine(root, "Settings.json"), out _, out _);

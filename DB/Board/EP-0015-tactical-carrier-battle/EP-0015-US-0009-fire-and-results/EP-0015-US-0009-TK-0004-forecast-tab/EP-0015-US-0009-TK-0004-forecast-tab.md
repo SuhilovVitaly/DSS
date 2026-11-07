@@ -3,10 +3,10 @@ epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0009-fire-and-results
 ticket: EP-0015-US-0009-TK-0004-forecast-tab
 title: forecast-tab
-stage: draft
+stage: done
 layer: client
 depends_on: ["EP-0015-US-0009-TK-0003-sides-and-log-tabs"]
-files_touched: 2
+files_touched: 3
 serves: [AC-03]
 created: 2026-11-05
 revision: 3
@@ -18,16 +18,17 @@ revision: 3
 Вкладка прогноза.
 
 ## Decisions
-Решения пользователя D-USER-01…13 и правила боя `DB/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
+Решения пользователя D-USER-01…13 и правила боя `VData/Planning/V4.0` — см. [Documentation.md](../../Documentation.md). Этот тикет их не меняет.
 
 ## Assumptions
-Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `DB/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
+Baseline `main @ fb39a0cf`; формат сохранения — текущий на момент тикета (`SaveFormat.md`: Save19 до US-0011 TK-0004, Save20 после); `VData/Planning/V4.0` и `tools/DeepSpaceSaga.CarrierWingSim` в checkout (D-USER-07). Точные сигнатуры уточняются по исходникам перед реализацией.
 
 ## Code context
 | File | Current state | Allowed change |
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleForecastTab.cs` | new | Прогноз фаз, легенда |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/ForecastTabTests.cs` | new | Прогноз движения = TacticalHitChance; носитель в целях; сортировка; incoming из снимка; средний урон |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | panel tabs | Wire Forecast tab and scroll routing |
 
 ## Public API after the change
 —
@@ -37,7 +38,7 @@ Baseline `main @ fb39a0cf`; формат сохранения — текущий
 2. Ключи этого тикета — в `Data/Locale/Russian.json` (рабочий язык, D-USER-11) и теми же ключами в `English.json` черновым переводом без вычитки (правило R-07).
 
 ## Out of scope
-Изменения вне описанного результата, баланс и правила боя сверх `DB/Planning/V4.0`.
+Изменения вне описанного результата, баланс и правила боя сверх `VData/Planning/V4.0`.
 
 ## Invariants
 Engine владеет исходами, RNG и командами; Contracts неизменяемы; общая математика — в Motion; Client отображает допущенные снимки и не вызывает Engine из Render. Числа боя — только из `Data/TacticalBattle`. Правила исполнения R-01…R-09 ([Documentation.md](../../Documentation.md#правила-исполнения)).
@@ -49,4 +50,14 @@ Owning project: tests/DeepSpaceSaga.Client.Tests. Сборка, scoped format, `
 Критерии AC-03 истории выполнены и проверены; diff просмотрен; фактические результаты записаны в карточку; отдельный коммит тикета создан; push — сразу, и только в одобренный внутренний remote (`*.amat.com` или внутренний IP); если `origin` указывает на внешний хост (github.com, gitlab.com, bitbucket.org и т. п.) — не пушить, остановиться и сообщить пользователю (D-USER-08, D-USER-09, R-06).
 
 ## Self-containment check
-Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `DB/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+Родительская история задаёт критерии, эпик — решения и источники; правила и числа — `VData/Planning/V4.0/Spec` и `Data`. Перед расширением файлов — обновить Code context.
+
+## Scope correction before implementation — 2026-11-06
+
+Movement forecast uses captured local orders, straight enemy movement, stable ordering and shared Motion chance calculations. Fire forecast uses exact Engine incoming/selected candidates and displays expected raw rolled damage (hit probability × average damage). Salvo Forecast hides each outcome until its projectile arrives and aggregates only after the last arrival. Eight legend lines describe the map primitives specified by Display.
+
+## Execution evidence — 2026-11-06
+
+AC-03 complete. Movement estimate uses local order endpoints, straight enemy projections and shared TacticalHitChance, with carriers as possible targets and stable chance sorting. Fire displays actual selected and Engine incoming rows, raw damage range and expected damage totals. Results show shot outcomes only after their arrival and target deltas after all arrive. Scrollable legend describes eight map conventions. Tested a carrier/incoming geometry fixture and actual Fire/Results flow; visually inspected the forecast CPU raster.
+
+D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/20261106-forecast-tab-01/: build/format/diff/self-review PASS; 178 Client +380 Engine +19 Motion source guard PASS. Native/physical/human acceptance remains open.

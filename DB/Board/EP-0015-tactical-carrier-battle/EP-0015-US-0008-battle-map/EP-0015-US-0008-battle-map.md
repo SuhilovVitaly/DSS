@@ -2,7 +2,7 @@
 epic: EP-0015-tactical-carrier-battle
 story: EP-0015-US-0008-battle-map
 title: "Поле боя и приказы движения"
-stage: draft
+stage: done
 dependencies: [EP-0015-US-0007-launch-and-setup]
 ---
 
@@ -10,7 +10,7 @@ dependencies: [EP-0015-US-0007-launch-and-setup]
 
 ## Связь с техническим заданием
 
-Источник правил, данных и эталонов — `DB/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
+Источник правил, данных и эталонов — `VData/Planning/V4.0` (Spec, Data, Reference). Решения и gaps — [Documentation.md](../Documentation.md). Требования ниже — целевой результат, не утверждение о реализации.
 
 ## User story
 
@@ -51,3 +51,7 @@ dependencies: [EP-0015-US-0007-launch-and-setup]
 ## Historical planning review
 
 Draft; human approval отсутствует. Решения и сообщения согласования записываются в review log эпика.
+
+## Execution review — 2026-11-06
+
+All five tickets complete technically. Automated evidence covers camera/pan/resize, panel and map rasters, movement input and exact paths through the real local connection, and timing/queued-input guards. Native and physical acceptance plus human review remain open. See individual cards, ExecutionStatus.md and AcceptanceCoverage.md.

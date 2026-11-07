@@ -4,12 +4,13 @@ using System.Text.Json.Nodes;
 using DeepSpaceSaga.Client;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Screens.Finance;
 using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.Load;
+using DeepSpaceSaga.Client.UI.Screens.ShipDestroyed;
 using DeepSpaceSaga.Client.UI.Screens.MainMenu;
-using DeepSpaceSaga.Client.UI.Screens.Defeat;
 using DeepSpaceSaga.Client.UI.Screens.Save;
 using DeepSpaceSaga.Client.UI.Screens.ScenarioSelect;
 using DeepSpaceSaga.Client.UI.Screens.Settings;
@@ -33,8 +34,7 @@ public sealed class SkiaWindow : IDisposable
 {
     private readonly IWindow _window;
     private readonly IGameSessionFactory _sessionFactory;
-    private readonly CombatVisualSettings _combatSettings;
-    private readonly CombatInputSettings _combatInputs;
+    private readonly ManeuverInputSettings _maneuverInputs;
     private readonly ScreenStack _screens = new();
     private readonly WindowThreadContext _uiContext = new();
     private readonly SessionConnectionLoader _connectionLoader = new();
@@ -52,21 +52,23 @@ public sealed class SkiaWindow : IDisposable
 
     private GameSessionHandle? _session;
     private Task _lastSessionDisposal = Task.CompletedTask;
-    private GameSessionHandle? _defeatSession;
-    private Task? _defeatTransitionTask;
     private string? _pendingUndockCommandId;
     private GameSessionScreen? _gameSessionScreen;
     private static readonly double[] AllowedUiScales = { 0.8, 1.0, 1.2, 1.5 };
-    private static readonly string[] AllowedLanguages = { "English", "Russian" };
     private readonly SemaphoreSlim _transitionLock = new(1, 1);
     private readonly StationTradeNavigation _stationNavigation;
     private Task? _stationCleanupTask;
+    private GameSessionHandle? _shipDestroyedSession;
+    private Task? _shipDestroyedTransitionTask;
     private int _modalDepth;
     private SimulationSpeed _savedSpeed = SimulationSpeed.Speed1;
     private bool _quickSaveLoadInFlight;
     private readonly KeyboardEdgeTracker _keyboardEdges;
-    private readonly Key[] _keyboardPressedKeys = new Key[64]; // Includes remapped combat bindings.
+    private readonly TacticalBattleInputSettings _tacticalInputs;
+    private readonly Key[] _keyboardPressedKeys = new Key[64];
     private readonly Key[] _keyboardReleasedKeys = new Key[64];
+    private readonly Key[] _keyboardRepeatedKeys = new Key[4];
+    private IScreen? _repeatScreen;
     private readonly Action<Key> _handleKeyboardEdge;
     private bool _disposed;
     private bool _closing;
@@ -88,6 +90,7 @@ public sealed class SkiaWindow : IDisposable
     // Optional native evidence hook: the surface still contains this screen's
     // rendered pixels, before polling transitions or swapping the framebuffer.
     internal Action<SKSurface, IScreen?>? NativeFrameRendered { get; set; }
+    internal Action<IScreen?, double>? NativeFrameMeasured { get; set; }
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
         : this(initialScreen, sessionFactory, startupStopwatch, createNativeWindow: true) { }
@@ -96,9 +99,10 @@ public sealed class SkiaWindow : IDisposable
         System.Diagnostics.Stopwatch? startupStopwatch, bool createNativeWindow)
     {
         _sessionFactory = sessionFactory;
-        _combatSettings = CombatVisualSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatVisualSettings.RelativePath));
-        _combatInputs = CombatInputSettings.Load(Path.Combine(AppContext.BaseDirectory, CombatInputSettings.RelativePath), InterfaceLog.Write);
-        _keyboardEdges = new(_combatInputs);
+        _maneuverInputs = ManeuverInputSettings.Load(Path.Combine(AppContext.BaseDirectory, ManeuverInputSettings.RelativePath));
+        _tacticalInputs = TacticalBattleInputSettings.Load(Path.Combine(AppContext.BaseDirectory, TacticalBattleInputSettings.RelativePath),
+            _maneuverInputs, InterfaceLog.Write);
+        _keyboardEdges = new(_tacticalInputs, _maneuverInputs);
         _stationNavigation = new(() => _session);
         _handleKeyboardEdge = HandleKeyboardEdge;
         _startupStopwatch = startupStopwatch;
@@ -295,7 +299,6 @@ public sealed class SkiaWindow : IDisposable
 
     private void OnRender(double deltaTime)
     {
-        _session?.Buffer.PreparePresentation();
         if (_grContext is null || _gl is null || _closing)
             return;
 
@@ -343,7 +346,7 @@ public sealed class SkiaWindow : IDisposable
         // instead of compounding darker with each nested level.
         int index = 0;
         GameSessionScreen? profiledScreen = null;
-        foreach (var screen in _screens.AllBottomToTop())
+        foreach (var screen in _screens.VisibleBottomToTop())
         {
             // A transition can be waiting for an authoritative speed acknowledgement.
             // Do not paint an obsolete market while its serialized removal is pending.
@@ -353,7 +356,6 @@ public sealed class SkiaWindow : IDisposable
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
-            if (screen is GameSessionScreen reportScreen) reportScreen.PrepareCombatReports();
             screen.Render(canvas, windowSize.X, windowSize.Y);
             if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
             index++;
@@ -369,6 +371,7 @@ public sealed class SkiaWindow : IDisposable
         long flushStart = Stopwatch.GetTimestamp();
         canvas.Flush();
         long flushEnd = Stopwatch.GetTimestamp();
+        NativeFrameMeasured?.Invoke(_screens.Current, Stopwatch.GetElapsedTime(callbackStart, flushEnd).TotalMilliseconds);
         NativeFrameRendered?.Invoke(_surface, _screens.Current);
 
         if (isFirstFrame)
@@ -428,12 +431,13 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private void PollGameSessionAutoTransition()
     {
-        if (_session?.IsDefeated == true)
+        if (_session?.IsPlayerShipDestroyed == true)
         {
-            if (!ReferenceEquals(_defeatSession, _session) && (_defeatTransitionTask?.IsCompleted ?? true))
-                _defeatTransitionTask = HandleScreenEvent(ScreenEvent.None);
+            if (!ReferenceEquals(_shipDestroyedSession, _session) && (_shipDestroyedTransitionTask?.IsCompleted ?? true))
+                _shipDestroyedTransitionTask = HandleScreenEvent(ScreenEvent.None);
             return;
         }
+        if (_screens.Current is TacticalBattleModalScreen) return;
         RequestStationCleanup();
         if (_screens.Current is StationScreen && _pendingUndockCommandId is { } pendingId &&
             _session?.Buffer.Latest?.Snapshot is { } stationSnapshot)
@@ -530,7 +534,12 @@ public sealed class SkiaWindow : IDisposable
         if (isFocused)
         {
             _focusRegainedAtMs = Environment.TickCount64;
-            _keyboardEdges.ResyncToCurrentState(_keyboard);
+            _keyboardEdges.ResyncToCurrentState(_keyboard, _screens.Current is TacticalBattleModalScreen);
+        }
+        else
+        {
+            _keyboardEdges.ResetRepeats();
+            _screens.Current.OnInputReset();
         }
         // Polling stops while unfocused and resync intentionally discards missed key releases.
         // Release server-side held controls now, before that release edge can be lost.
@@ -577,8 +586,7 @@ public sealed class SkiaWindow : IDisposable
         // inside the locked HandleScreenEvent switch. See LoadScreen's doc comment.
         var currentScreen = _screens.Current;
         if (currentScreen is GameSessionScreen game && _keyboard is not null)
-            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
-                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight));
         var screenEvent = currentScreen.OnMouseDown(mouse.Position.X, mouse.Position.Y, button);
         string? payload = screenEvent == ScreenEvent.LoadSlotRequested && currentScreen is LoadScreen loadScreen
             ? loadScreen.LastRequestedSlotId
@@ -593,8 +601,9 @@ public sealed class SkiaWindow : IDisposable
     {
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
-        if (button == MouseButton.Left && !_closing)
-            _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y);
+
+        if (!_closing && button is MouseButton.Left or MouseButton.Right or MouseButton.Middle)
+            _screens.Current.OnMouseUp(mouse.Position.X, mouse.Position.Y, button);
     }
 
     private void OnMouseMove(IMouse mouse, System.Numerics.Vector2 position)
@@ -624,7 +633,7 @@ public sealed class SkiaWindow : IDisposable
         var screenEvent = _screens.Current.OnMouseWheel(
             mouse.Position.X,
             mouse.Position.Y,
-            scroll.Y);
+            _screens.Current.UsesBrowserWheelDelta ? MouseWheelInput.NormalizeSilk(scroll.Y) : scroll.Y);
 
         _ = HandleScreenEvent(screenEvent);
     }
@@ -648,8 +657,13 @@ public sealed class SkiaWindow : IDisposable
         RequestStationCleanup();
         if (StationOverlayIsInvalid() || _stationCleanupTask is { IsCompleted: false }) return;
 
+        if (!ReferenceEquals(_repeatScreen, _screens.Current))
+        {
+            _keyboardEdges.ResetRepeats();
+            _repeatScreen = _screens.Current;
+        }
         var (pressedCount, releasedCount) = _keyboardEdges.PollBoth(
-            _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys);
+            _keyboard, _keyboardPressedKeys, _keyboardReleasedKeys, _screens.Current is TacticalBattleModalScreen);
 
         if (pressedCount > 0 || releasedCount > 0)
         {
@@ -663,21 +677,22 @@ public sealed class SkiaWindow : IDisposable
 
         if (_screens.Current is GameSessionScreen game)
         {
-            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight),
-                _keyboard.IsKeyPressed(Key.AltLeft), _keyboard.IsKeyPressed(Key.AltRight));
-            bool aimPressed = Array.IndexOf(_keyboardPressedKeys, _combatInputs.TorpedoAim, 0, pressedCount) >= 0 ||
-                Array.IndexOf(_keyboardPressedKeys, _combatInputs.CountermissileAim, 0, pressedCount) >= 0;
-            if (aimPressed && _mouse is not null && !_keyboard.IsKeyPressed(Key.ControlLeft) && !_keyboard.IsKeyPressed(Key.ControlRight))
-                game.OnMouseMove(_mouse.Position.X, _mouse.Position.Y);
+            game.SynchronizeModifiers(_keyboard.IsKeyPressed(Key.ControlLeft), _keyboard.IsKeyPressed(Key.ControlRight));
         }
         for (int i = 0; i < pressedCount; i++)
             _handleKeyboardEdge(_keyboardPressedKeys[i]);
 
         for (int i = 0; i < releasedCount; i++)
             _screens.Current.OnKeyUp(_keyboardReleasedKeys[i]);
+        if (_screens.Current.WantsArrowRepeat && ReferenceEquals(_repeatScreen, _screens.Current))
+        {
+            int count = _keyboardEdges.PollRepeats(Environment.TickCount64, _keyboardRepeatedKeys);
+            for (int i = 0; i < count; i++) HandleKeyboardEvent(_keyboardRepeatedKeys[i], repeat: true);
+        }
     }
 
-    private void HandleKeyboardEdge(Key key)
+    private void HandleKeyboardEdge(Key key) => HandleKeyboardEvent(key, repeat: false);
+    private void HandleKeyboardEvent(Key key, bool repeat)
     {
         if (key == Key.F10)
         {
@@ -685,18 +700,18 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
-        if (key == Key.Escape || key == Key.F5 || key == Key.F9 || key == Key.F || key == Key.S)
+        if (_screens.Current is not TacticalBattleModalScreen && key is Key.Escape or Key.F5 or Key.F9 or Key.F or Key.S)
         {
             if (_pendingKeyboardTransition is null || _pendingKeyboardTransition.IsCompleted)
             {
-                var screenEvent = _screens.Current.OnKeyDown(key);
+                var screenEvent = _screens.Current.OnKeyDown(key, _keyboardEdges.Modifiers, repeat);
                 _pendingKeyboardTransition = HandleScreenEvent(screenEvent);
             }
 
             return;
         }
 
-        var action = _screens.Current.OnKeyDown(key);
+        var action = _screens.Current.OnKeyDown(key, _keyboardEdges.Modifiers, repeat);
         if (action != ScreenEvent.None) _pendingKeyboardTransition = HandleScreenEvent(action);
     }
 
@@ -716,10 +731,11 @@ public sealed class SkiaWindow : IDisposable
 
         try
         {
-            Directory.CreateDirectory(ScreenshotsDirectory);
+            string directory = Path.Combine(Path.GetDirectoryName(InterfaceLog.FileName) ?? "", ScreenshotsDirectory);
+            Directory.CreateDirectory(directory);
 
             string fileName = $"screenshot_{DateTime.UtcNow:yyyy-MM-dd'T'HH-mm-ss-fff'Z'}.png";
-            string path = Path.Combine(ScreenshotsDirectory, fileName);
+            string path = Path.Combine(directory, fileName);
 
             using var image = _surface.Snapshot();
             using var data = image.Encode(SKEncodedImageFormat.Png, 100);
@@ -758,12 +774,64 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             if (_closing) return;
-            if (EnsureDefeatScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or
-                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.Exit)) return;
+            if (EnsureShipDestroyedScreen() && evt is not (ScreenEvent.None or ScreenEvent.MainMenu or ScreenEvent.Exit or
+                ScreenEvent.OpenLoadWindow or ScreenEvent.CloseLoadWindow or ScreenEvent.LoadSlotRequested or ScreenEvent.QuickLoad)) return;
+            if (_screens.Current is TacticalBattleModalScreen activeBattle && evt is not
+                (ScreenEvent.None or ScreenEvent.StartTacticalBattle or ScreenEvent.MoveTacticalBattle or ScreenEvent.FireTacticalBattle or
+                ScreenEvent.NewTacticalBattle or ScreenEvent.CloseTacticalBattle))
+            {
+                activeBattle.NotifyWorldActionBlocked();
+                return;
+            }
             await _stationNavigation.RemoveInvalidOverlaysAsync(_screens,
                 () => _session?.Buffer.Latest?.Snapshot, PopModalAsync);
             switch (evt)
             {
+                case ScreenEvent.OpenTacticalBattle:
+                    if (_session is { } battleSession && _screens.Count == 1 && _screens.Current is GameSessionScreen)
+                    {
+                        Localization.ApplyLanguage(Localization.ReadLanguageSetting());
+                        var flow = new TacticalBattleFlow(battleSession);
+                        var setup = CreateTacticalSetupView(flow);
+                        await PushModalAsync(setup, () => ReferenceEquals(_session, battleSession));
+                        if (ReferenceEquals(_screens.Current, setup))
+                        {
+                            flow.BeginLoadOptions();
+                            _ = LogTacticalUnavailableAsync(flow);
+                        }
+                    }
+                    break;
+                case ScreenEvent.StartTacticalBattle:
+                    if (_screens.Current is TacticalBattleModalScreen { CanStart: true } preparation)
+                    {
+                        var started = await preparation.Flow.StartAsync(preparation.BuildStartRequest());
+                        if ((started?.Accepted == true || preparation.Flow.State is not null) && ReferenceEquals(_screens.Current, preparation))
+                            _screens.Replace(CreateTacticalBattleView(preparation.Flow));
+                    }
+                    break;
+                case ScreenEvent.MoveTacticalBattle:
+                case ScreenEvent.FireTacticalBattle:
+                    if (_screens.Current is TacticalBattleModalScreen { IsSetup: false } battle && !battle.Flow.Pending)
+                    {
+                        if (battle is TacticalBattleScreen view && !view.CanSubmitTurn(evt)) break;
+                        var before = battle.Flow.State;
+                        var response = evt == ScreenEvent.MoveTacticalBattle
+                            ? await battle.Flow.MoveAsync(battle.BuildMoveRequest())
+                            : await battle.Flow.FireAsync(battle.BuildFireRequest());
+                        if (response is not null && ReferenceEquals(_screens.Current, battle)) battle.OnBattleUpdated(before, response);
+                    }
+                    break;
+                case ScreenEvent.NewTacticalBattle:
+                case ScreenEvent.CloseTacticalBattle:
+                    if (_screens.Current is TacticalBattleModalScreen modal && !modal.Flow.Pending)
+                    {
+                        if (modal is TacticalBattleScreen { TurnBusy: true }) break;
+                        if (evt == ScreenEvent.NewTacticalBattle && modal is not TacticalBattleScreen { CanStartNewBattle: true }) break;
+                        if (!await modal.Flow.ExitAsync()) break;
+                        if (evt == ScreenEvent.NewTacticalBattle) _screens.Replace(CreateTacticalSetupView(modal.Flow));
+                        else await PopModalAsync();
+                    }
+                    break;
                 case ScreenEvent.NewGame:
                     OpenScenarioSelect();
                     break;
@@ -948,11 +1016,10 @@ public sealed class SkiaWindow : IDisposable
         try
         {
             var predictor = new LinearMotionPredictor();
-            var combatAudio = CombatAlertAudio.CreateSession();
             var gameScreen = new GameSessionScreen(session.Buffer, predictor, session,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
-                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate, playInitialCombatStart: true);
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")),
+                tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
 
             _session = session;
             _gameSessionScreen = gameScreen;
@@ -1015,9 +1082,35 @@ public sealed class SkiaWindow : IDisposable
             return;
         }
 
-        if (EnsureDefeatScreen() && screen is not LoadScreen) return;
+        if (EnsureShipDestroyedScreen() && screen is not LoadScreen) return;
         _screens.Push(screen);
         _modalDepth++;
+    }
+
+    /// <summary>Replaces the whole stack with the terminal screen once per destroyed session.</summary>
+    private bool EnsureShipDestroyedScreen()
+    {
+        if (_session?.IsPlayerShipDestroyed != true) return false;
+        if (ReferenceEquals(_shipDestroyedSession, _session)) return true;
+        _shipDestroyedSession = _session;
+        _modalDepth = 0;
+        _savedSpeed = SimulationSpeed.Speed0;
+        _pendingUndockCommandId = null;
+        _screens.ReplaceAll(new ShipDestroyedScreen((float)GetUiScale()));
+        return true;
+    }
+
+    private TacticalBattleModalScreen CreateTacticalSetupView(TacticalBattleFlow flow) =>
+        new TacticalBattleSetupScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+    private TacticalBattleModalScreen CreateTacticalBattleView(TacticalBattleFlow flow) =>
+        new TacticalBattleScreen(flow, _gameSessionScreen?.UiScale ?? 1) { LaunchKey = _tacticalInputs.TacticalBattle, WorldDebugKey = _maneuverInputs.DebugPanel };
+    private static async Task LogTacticalUnavailableAsync(TacticalBattleFlow flow)
+    {
+        await flow.OptionsTask!;
+        if (flow.Options?.Availability.Available != false) return;
+        try { InterfaceLog.Write("TACTICAL unavailable: " + flow.Error); }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     /// <summary>
@@ -1026,7 +1119,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task PopModalAsync()
     {
-        if (_screens.Current is DefeatScreen) return;
+        if (_screens.Current is ShipDestroyedScreen) return;
         _screens.Pop();
         _modalDepth--;
 
@@ -1172,7 +1265,7 @@ public sealed class SkiaWindow : IDisposable
         if (_screens.Current is SettingsScreen)
             return;
 
-        var monitors = Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
+        var monitors = _window is null ? [] : Silk.NET.Windowing.Monitor.GetMonitors(_window).ToArray();
         InterfaceLog.Write(
             $"DIAG Monitors found: {monitors.Length} — " +
             string.Join(" | ", monitors.Select(m =>
@@ -1188,7 +1281,7 @@ public sealed class SkiaWindow : IDisposable
             selectedMonitorIndex = 0;
 
         double uiScale = GetUiScale();
-        string language = GetLanguage();
+        string language = Localization.ReadLanguageSetting();
 
         await PushModalAsync(new SettingsScreen(
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
@@ -1213,7 +1306,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task OpenSaveWindowAsync()
     {
-        if (_session?.IsDefeated == true) return;
+        if (_session?.IsPlayerShipDestroyed == true) return;
         // Guard: don't push overlay on top of another overlay
         if (_screens.Current is SaveScreen)
             return;
@@ -1254,7 +1347,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task SaveToSlotAsync(string slotId)
     {
-        if (_session is null || _session.IsDefeated)
+        if (_session is null || _session.IsPlayerShipDestroyed)
             return;
 
         try
@@ -1413,38 +1506,7 @@ public sealed class SkiaWindow : IDisposable
         _gameSessionScreen?.SetUiScale((float)scale);
     }
 
-    /// <summary>
-    /// Falls back to "English" whenever the persisted value is missing, malformed,
-    /// or outside the allowed set — an invalid language must never break startup.
-    /// </summary>
-    private static string ValidateLanguage(string? language) =>
-        language is not null && Array.Exists(AllowedLanguages, v => v == language) ? language : "English";
-
-    private static string GetLanguage()
-    {
-        try
-        {
-            if (!File.Exists(SettingsFilePath))
-                return "English";
-
-            using var doc = JsonDocument.Parse(File.ReadAllText(SettingsFilePath));
-            if (doc.RootElement.TryGetProperty("gameSettings", out var gs) &&
-                gs.TryGetProperty("language", out var language))
-                return ValidateLanguage(language.GetString());
-
-            return "English";
-        }
-        catch
-        {
-            return "English";
-        }
-    }
-
-    /// <summary>
-    /// Persists the chosen language immediately (per requirements), but there is no
-    /// runtime localization system yet — same "applies after restart" caveat as
-    /// <see cref="SaveSelectedMonitorIndex"/> until one is wired up.
-    /// </summary>
+    /// <summary>Persists the chosen language and applies it to subsequent UI lookups.</summary>
     private static void SaveLanguage(string language)
     {
         try
@@ -1462,6 +1524,7 @@ public sealed class SkiaWindow : IDisposable
             gameSettings["language"] = language;
 
             File.WriteAllText(SettingsFilePath, root.ToJsonString(new JsonSerializerOptions { WriteIndented = true }));
+            Localization.ApplyLanguage(language);
             InterfaceLog.Write($"Settings: language saved = {language}");
         }
         catch (Exception ex)
@@ -1486,7 +1549,7 @@ public sealed class SkiaWindow : IDisposable
     /// </summary>
     private async Task QuickSaveAsync()
     {
-        if (_session is null || _session.IsDefeated || _quickSaveLoadInFlight)
+        if (_session is null || _session.IsPlayerShipDestroyed || _quickSaveLoadInFlight)
             return;
 
         _quickSaveLoadInFlight = true;
@@ -1600,11 +1663,10 @@ public sealed class SkiaWindow : IDisposable
             if (!_connectionLoader.TryAdopt(connection)) return false;
             newSession = new GameSessionHandle(connection, deferDebugTuningWrites: true);
             var predictor = new LinearMotionPredictor();
-            var combatAudio = CombatAlertAudio.CreateSession();
             newScreen = new GameSessionScreen(newSession.Buffer, predictor, newSession,
                 showTrajectoryPrediction: GetShowTrajectoryPrediction(),
-                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")), combatSettings: _combatSettings, combatInputs: _combatInputs,
-                alertAudio: combatAudio.Play, activateAudio: combatAudio.Activate, deactivateAudio: combatAudio.Deactivate);
+                uiScale: (float)GetUiScale(), mapSettings: TacticalMapSettings.Load(Path.Combine(AppContext.BaseDirectory, "Settings.json")),
+                tacticalBattleInputs: _tacticalInputs, maneuverInputs: _maneuverInputs);
             await newSession.SetSpeedAsync(SimulationSpeed.Speed0);
         }
         catch (Exception ex)
@@ -1623,7 +1685,6 @@ public sealed class SkiaWindow : IDisposable
         var oldSession = _session;
         if (_closing) { await newSession.DisposeAsync().ConfigureAwait(false); return false; }
         _session = newSession;
-        _defeatSession = null;
         _gameSessionScreen = newScreen;
         _modalDepth = 0;
         _savedSpeed = SimulationSpeed.Speed0;
@@ -1639,28 +1700,11 @@ public sealed class SkiaWindow : IDisposable
         return true;
     }
 
-    private bool EnsureDefeatScreen()
-    {
-        if (_session?.IsDefeated != true) return false;
-        if (ReferenceEquals(_defeatSession, _session)) return true;
-        _defeatSession = _session;
-        _modalDepth = 0;
-        _savedSpeed = SimulationSpeed.Speed0;
-        _pendingUndockCommandId = null;
-        // The root may already be inactive under an overlay; ReplaceAll deactivates only Current.
-        _gameSessionScreen?.DisposeCombatReports();
-        _gameSessionScreen?.DisposeDebugTuning();
-        _gameSessionScreen = null;
-        _screens.ReplaceAll(new DefeatScreen((float)GetUiScale(), _session.Buffer.Presented?.Snapshot.Encounter));
-        return true;
-    }
-
     private async Task ReturnToMainMenuAsync()
     {
         // End the game session explicitly — no resume needed
         var oldSession = _session;
         _session = null;
-        _defeatSession = null;
         _gameSessionScreen = null;
 
         _modalDepth = 0;

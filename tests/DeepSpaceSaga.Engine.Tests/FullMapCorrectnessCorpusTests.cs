@@ -62,7 +62,9 @@ public sealed class FullMapCorrectnessCorpusTests
                 var saved = engine.CaptureSaveStateForTests(300000, SimulationSpeed.Speed0, 1000);
                 using var loaded = new SimulationEngine(SeededWorldBootstrapTests.Registry()); loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true), true);
                 MapEnvironmentSaveTests.SameMap(saved, loaded.CaptureSaveState());
-                GeneratedWorldPersistenceTests.EqualWorld(engine.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000), loaded.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000));
+                var expected = engine.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000);
+                GeneratedWorldPersistenceTests.EqualWorld(expected,
+                    loaded.CaptureSnapshotForTests(600000, SimulationSpeed.Speed0, 2000));
             }
             catch (Exception e) { throw new Xunit.Sdk.XunitException($"seed={seed};scenario={scenario};maximum={maximum};config={JsonSerializer.Serialize(config)};stage=full-map: {e}"); }
         }
@@ -117,12 +119,6 @@ public sealed class FullMapCorrectnessCorpusTests
                     var a = full.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed0, motion);
                     var b = control.CaptureSnapshotForTests(motion * 300, SimulationSpeed.Speed0, motion);
                     Assert.Equal(JsonSerializer.Serialize(b), JsonSerializer.Serialize(a with { AiMap = b.AiMap }));
-                    if (a.EffectiveOutcome.State == SessionOutcomeState.Defeated)
-                    {
-                        Assert.Equal(CommandReasonCodes.SessionDefeated, Assert.Throws<InvalidOperationException>(() => full.CaptureSaveState()).Message);
-                        Assert.Equal(CommandReasonCodes.SessionDefeated, Assert.Throws<InvalidOperationException>(() => control.CaptureSaveState()).Message);
-                        continue;
-                    }
                     var x = full.CaptureSaveStateForTests(motion * 300, SimulationSpeed.Speed0, motion).GameState;
                     var y = control.CaptureSaveStateForTests(motion * 300, SimulationSpeed.Speed0, motion).GameState;
                     Assert.Equal(JsonSerializer.Serialize(y), JsonSerializer.Serialize(x with { AiMap = y.AiMap }));
