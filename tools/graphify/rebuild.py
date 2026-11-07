@@ -1,4 +1,4 @@
-"""Fresh offline Graphify AST/Markdown + fresh host-agent document/EP-0015 semantic rebuild.
+"""Fresh offline Graphify AST/Markdown with reviewed project semantics.
 Never executes the game or external APIs. Run with graphify 0.9.66.
 --prepare-ast warms the structural cache; --force permits intentional shrink.
 """
@@ -25,7 +25,10 @@ MODULE_EP='DB/Board/EP-0009-battle'
 TUNING_EP='DB/Board/EP-0013-debug-tuning-panel'
 PANELS_EP='DB/Board/EP-0014-module-panels'
 TACTICAL_EP='DB/Board/EP-0015-tactical-carrier-battle'
-EXCLUDED={**{TACTICAL_EP+'/'+name+'.md':'execution/evidence ledger written with graph' for name in ('ExecutionStatus','FinalValidation','AcceptanceCoverage','Tickets')},PANELS_EP+'/ExecutionStatus.md':'publication ledger updated after graph',
+SKINS_EP='DB/Board/EP-0016-tactical-battle-skins'
+EXCLUDED={SKINS_EP+'/ExecutionStatus.md':'publication and graph evidence ledger',
+ SKINS_EP+'/EP-0016-US-0004-project-documentation/EP-0016-US-0004-TK-0001-update-contracts-and-graph/EP-0016-US-0004-TK-0001-update-contracts-and-graph.md':'graph publication receipt',
+ **{TACTICAL_EP+'/'+name+'.md':'execution/evidence ledger written with graph' for name in ('ExecutionStatus','FinalValidation','AcceptanceCoverage','Tickets')},PANELS_EP+'/ExecutionStatus.md':'publication ledger updated after graph',
  PANELS_EP+'/PublicationStatus.md':'publication ledger updated after graph',
  PANELS_EP+'/DocumentationImpact.md':'impact audit updated after graph',
  PANELS_EP+'/FinalValidation.md':'validation audit updated after graph',
@@ -53,7 +56,7 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')))
+ docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
  docs=[p for p in docs if not {'bin','obj'} & set(p.parts)]
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and ('evidence' not in p.relative_to(R).parts or p.relative_to(R).as_posix() in {POINT_EP+'/evidence/balance.md',POINT_EP+'/evidence/native.md'})]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)
@@ -166,13 +169,13 @@ def main():
  for k,members in c.items():
   counts=Counter(str(G.nodes[n].get('source_file','')).replace('\\','/').split('/')[1] for n in members if '/' in str(G.nodes[n].get('source_file','')))
   family=counts.most_common(1)[0][0] if counts else ''
-  readable={'DeepSpaceSaga.Engine':'Engine simulation','DeepSpaceSaga.Client':'Client interface','DeepSpaceSaga.Contracts':'Snapshot contracts','DeepSpaceSaga.Engine.LocalClient':'Local session transport','DeepSpaceSaga.Client.Tests':'Client verification','DeepSpaceSaga.Engine.Tests':'Engine verification','EP-0015-tactical-carrier-battle':'Tactical carrier battle','EP-0010-combat-reports':'Historical combat report planning','EP-0012-combat-rebuild':'Point combat contract','EP-0009-battle':'Historical module combat','04-Engineering':'Engineering documentation','02-FirstRelease':'Release requirements','01-Requirements':'Gameplay requirements'}
+  readable={'DeepSpaceSaga.Engine':'Engine simulation','DeepSpaceSaga.Client':'Client interface','DeepSpaceSaga.Contracts':'Snapshot contracts','DeepSpaceSaga.Engine.LocalClient':'Local session transport','DeepSpaceSaga.Client.Tests':'Client verification','DeepSpaceSaga.Engine.Tests':'Engine verification','EP-0015-tactical-carrier-battle':'Tactical carrier battle','EP-0016-tactical-battle-skins':'Tactical battle skins','EP-0010-combat-reports':'Historical combat report planning','EP-0012-combat-rebuild':'Point combat contract','EP-0009-battle':'Historical module combat','04-Engineering':'Engineering documentation','02-FirstRelease':'Release requirements','01-Requirements':'Gameplay requirements'}
   labels[k]=readable.get(family,family.replace('DeepSpaceSaga.','').replace('-',' ') or 'Shared references')+f' {k}'
  head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
  if not to_json(G,c,str(O/'graph.json'),force=args.force,built_at_commit=head,community_labels=labels):raise SystemExit('Fresh graph shrank: inspect scope and use --force only if intentional.')
  if not to_html(G,c,str(O/'graph.html'),community_labels=labels,node_limit=5000):raise SystemExit('HTML export failed')
  html=(O/'graph.html').read_text(encoding='utf-8')
- note='<aside id="dss-graph-scope" style="position:fixed;bottom:8px;right:8px;max-width:440px;z-index:9999;background:#17212b;color:#e7edf3;padding:10px;border:1px solid #668095;font:12px sans-serif">DSS navigation only. Fresh AST and Markdown structure; fresh host-agent document/EP-0015 semantics. Aggregated community view; full data in graph.json. Does not prove gameplay, FPS, or human acceptance.</aside>'
+ note='<aside id="dss-graph-scope" style="position:fixed;bottom:8px;right:8px;max-width:440px;z-index:9999;background:#17212b;color:#e7edf3;padding:10px;border:1px solid #668095;font:12px sans-serif">DSS navigation only. Fresh AST and Markdown structure; fresh reviewed project semantics. Aggregated community view; full data in graph.json. Does not prove gameplay, FPS, or human acceptance.</aside>'
  html=re.sub(r'(<body[^>]*>)',lambda m:m[1]+note,html,count=1)
  (O/'graph.html').write_text(html,encoding='utf-8')
  hashes={p.relative_to(R).as_posix():sha(p) for p in code+docs};d=dict(total_files=len(hashes),total_words=sum(len(txt(p).split()) for p in hashes),files=dict(code=[p.relative_to(R).as_posix() for p in code],document=[p.relative_to(R).as_posix() for p in docs]))
@@ -188,7 +191,7 @@ def main():
  # unstamped for semantic updates, rather than pretending full semantic coverage.
  dump('manifest.json',{})
  save_manifest({'code':[str(p) for p in code]},manifest_path=str(O/'manifest.json'),kind='ast',root=R,scan_corpus=[str(p) for p in code],clear_semantic=[str(p) for p in code])
- dump('semantic-coverage.json',dict(mode='Fresh AST + Markdown structure + fresh host-agent document/EP-0015 semantics',code_files=len(code),markdown_files=len(docs),doc_heading_occurrences=headings,resolved_markdown_links=links,curated_mechanisms=len(mechanisms)+len(fragment["nodes"]),curated_source_files=sorted(set(semantic_files)|set(fragment["input_sha256"])),host_semantic_chunks=fragment["chunks"],host_semantic_inputs=len(fragment["input_sha256"]),limitations=['Host semantic coverage is selective; exact current inputs are listed in curated_source_files','No image vision extraction','INFERRED architecture mappings are not runtime traces','Undirected graph collapses some relations; extraction.json retains them','Generated status and graph docs excluded to avoid circular hashes','Historical semantic fragments intentionally replaced'],token_usage=dict(input=None,output=None,status='unmeasured host-agent extraction')))
+ dump('semantic-coverage.json',dict(mode='Fresh AST + Markdown structure + fresh reviewed project semantics',code_files=len(code),markdown_files=len(docs),doc_heading_occurrences=headings,resolved_markdown_links=links,curated_mechanisms=len(mechanisms)+len(fragment["nodes"]),curated_source_files=sorted(set(semantic_files)|set(fragment["input_sha256"])),host_semantic_chunks=fragment["chunks"],host_semantic_inputs=len(fragment["input_sha256"]),limitations=['Host semantic coverage is selective; exact current inputs are listed in curated_source_files','No image vision extraction','INFERRED architecture mappings are not runtime traces','Undirected graph collapses some relations; extraction.json retains them','Generated status and graph docs excluded to avoid circular hashes','Historical semantic fragments intentionally replaced'],token_usage=dict(input=None,output=None,status='unmeasured host-agent extraction')))
  counts=dict(nodes=G.number_of_nodes(),edges=G.number_of_edges(),communities=len(c),extraction_nodes=len(ns),extraction_edges=len(es),code_files=len(code),markdown_files=len(docs),pruned_unresolved_edges=len(pruned),canonical_selfloops_pruned=len(canonical_selfloops),unlocated_reference_nodes=len(unlocated));dump('counts.json',counts);dump('cost.json',dict(run=stamp,input_tokens=None,output_tokens=None,status='unmeasured',backend='Host-agent semantics; offline AST/Markdown'));(O/'.graphify_root').write_text(str(R),encoding='utf-8');(O/'.graphify_python').write_text(sys.executable,encoding='utf-8')
  v=dict(head=head,working_tree=True,input_hashes_verified=len(hashes),semantic_input_hashes_verified=len(fragment['input_sha256']),missing_source_files=0,out_of_range_locations=0,dangling_edges=0,self_loops=0,**counts);v['artifact_sha256']={p.name:sha(p) for p in sorted(O.iterdir()) if p.is_file() and p.name!='verification.json'};dump('verification.json',v);print(json.dumps(counts),flush=True)
 if __name__=='__main__':main()

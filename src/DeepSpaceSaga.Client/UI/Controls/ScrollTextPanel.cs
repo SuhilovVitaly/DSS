@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
@@ -8,6 +9,9 @@ public sealed class ScrollTextPanel
 {
     private float _scale = 1;
     private float _grab;
+    private float _lineHeight = 18;
+    private (IntPtr Typeface, float Size) _metrics;
+    internal string? StyleRole { get; init; }
     public string Text { get; private set; } = "";
     public ImmutableArray<string> Lines { get; private set; } = [];
     public SKRect Bounds { get; private set; }
@@ -15,7 +19,7 @@ public sealed class ScrollTextPanel
     public bool AutoScroll { get; set; } = true;
     public bool HasFocus { get; set; }
     public bool IsDragging { get; private set; }
-    public float LineHeight => 18 * _scale;
+    public float LineHeight => _lineHeight;
     public float MaximumScroll => Math.Max(0, Lines.Length * LineHeight - Math.Max(0, Bounds.Height - 16 * _scale));
     public SKRect ScrollTrack => new(Bounds.Right - 12 * _scale, Bounds.Top + 4 * _scale, Bounds.Right - 4 * _scale, Bounds.Bottom - 4 * _scale);
     public SKRect ScrollThumb
@@ -47,7 +51,19 @@ public sealed class ScrollTextPanel
     }
     private void Reflow(bool follow)
     {
-        using var paint = ControlText.Paint(_scale);
+        using var paint = TextPaint();
+        Reflow(paint, follow);
+    }
+
+    private SKPaint TextPaint() => ControlText.Paint(_scale, StyleRole is null ? (SkinStyle.Role?)null : new SkinStyle.Role(StyleRole + ".text"), Text);
+
+    private void Reflow(SKPaint paint, bool follow)
+    {
+        _metrics = (paint.Typeface?.Handle ?? IntPtr.Zero, paint.TextSize);
+        _lineHeight = StyleRole is not null &&
+            (SkinStyle.Has(StyleRole + ".text", "fontSize") || SkinStyle.Has(StyleRole + ".text", "font"))
+            ? Math.Max(18 * _scale, paint.FontSpacing)
+            : 18 * _scale;
         Lines = Text.Length == 0 ? [] : ControlText.Wrap(Text, Math.Max(0, Bounds.Width - 28 * _scale), paint);
         ScrollOffset = follow ? MaximumScroll : Math.Clamp(ScrollOffset, 0, MaximumScroll);
     }
@@ -99,8 +115,17 @@ public sealed class ScrollTextPanel
     public void Draw(SKCanvas canvas)
     {
         if (Bounds.IsEmpty) return;
-        ControlVisuals.Frame(canvas, Bounds, HasFocus, true, _scale);
-        using var paint = ControlText.Paint(_scale);
+        SkinStyle.Role? frameRole = StyleRole is null ? null : new(HasFocus ? StyleRole + ".focused" : StyleRole);
+        ControlVisuals.Frame(canvas, Bounds, HasFocus, true, _scale, frameRole);
+        using var paint = TextPaint();
+        if (_metrics != (paint.Typeface?.Handle ?? IntPtr.Zero, paint.TextSize))
+        {
+            float position = MaximumScroll > 0 ? ScrollOffset / MaximumScroll : 0;
+            bool follow = AutoScroll && AtBottom;
+            Reflow(paint, follow);
+            if (!follow)
+                ScrollOffset = position * MaximumScroll;
+        }
         var textRect = new SKRect(Bounds.Left + 8 * _scale, Bounds.Top + 8 * _scale, Bounds.Right - 20 * _scale, Bounds.Bottom - 8 * _scale);
         canvas.Save(); canvas.ClipRect(textRect);
         int first = Math.Max(0, (int)(ScrollOffset / LineHeight));
@@ -109,7 +134,9 @@ public sealed class ScrollTextPanel
             canvas.DrawText(Lines[i], textRect.Left, textRect.Top - paint.FontMetrics.Ascent + i * LineHeight - ScrollOffset, paint);
         canvas.Restore();
         if (MaximumScroll <= 0) return;
-        paint.Color = MenuStyle.ColorButtonBorder; canvas.DrawRect(ScrollTrack, paint);
-        paint.Color = XenonStyle.Cyan; canvas.DrawRect(ScrollThumb, paint);
+        SkinStyle.Box(canvas, StyleRole is null ? "control.frame.scroll.track" : StyleRole + ".scroll.track",
+            ScrollTrack, MenuStyle.ColorButtonBorder, null, _scale);
+        SkinStyle.Box(canvas, StyleRole is null ? "control.frame.scroll.thumb" : StyleRole + ".scroll.thumb",
+            ScrollThumb, XenonStyle.Cyan, null, _scale);
     }
 }

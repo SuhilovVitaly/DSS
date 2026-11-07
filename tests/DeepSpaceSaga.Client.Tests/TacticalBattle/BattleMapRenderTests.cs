@@ -402,8 +402,57 @@ public sealed class BattleMapRenderTests
         }
     }
 
-    private static SKBitmap Raster(TacticalBattleFrame frame)
+    [Fact]
+    public async Task Reference_skin_changes_field_units_and_paths_on_the_same_snapshot()
     {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var state = screen.Flow.State!;
+        var own = state.Units.First(unit => unit.Side == state.PlayerSide && unit.Kind == TacticalUnitKind.Drone) with
+        {
+            Pose = new(-100, 20, 0),
+            Speed = 0
+        };
+        var enemy = state.Units.First(unit => unit.Side != state.PlayerSide && unit.Kind == TacticalUnitKind.Drone) with
+        {
+            Pose = new(90, -60, 0),
+            Speed = 100
+        };
+        var snapshot = state with
+        {
+            Units = [own, enemy],
+            Paths = [new(state.Turn, own.Id, [new(-175, 20, 0), own.Pose])]
+        };
+        var frame = new TacticalBattleFrame(snapshot, new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemySectors: true);
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var skin = catalog.GetOrClassic("contrast");
+        Assert.Equal("contrast", skin.Id);
+        using var classic = Raster(frame);
+        using var contrast = Raster(frame, skin);
+
+        Assert.Equal(TacticalBattleMapRenderer.Own, classic.GetPixel(340, 380));
+        Assert.Equal(new SKColor(117, 244, 209), contrast.GetPixel(340, 380));
+        Assert.NotEqual(classic.GetPixel(25, 25), contrast.GetPixel(25, 25));
+        Assert.NotEqual(classic.GetPixel(300, 380), contrast.GetPixel(300, 380));
+        Assert.NotEqual(classic.GetPixel(630, 300), contrast.GetPixel(630, 300));
+        Assert.Same(state, screen.Flow.State);
+        Save(contrast, "contrast-field.png");
+    }
+
+    [Fact]
+    public void Torpedo_visual_roles_resolve_without_reclassifying_current_shots()
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var skin = catalog.GetOrClassic("contrast");
+        Assert.Equal("triangle", skin.Shape("torpedo.projectile.hit"));
+        Assert.Equal("diamond", skin.Shape("shot.projectile.hit"));
+        Assert.Equal(new[] { 7f, 3f }, skin.Dash("torpedo.trail").ToArray());
+        Assert.Equal(new[] { 3f, 2f }, skin.Dash("shot.trail").ToArray());
+    }
+
+    internal static SKBitmap Raster(TacticalBattleFrame frame, TacticalBattleSkin? skin = null)
+    {
+        using var scope = TacticalBattleSkinRenderScope.Enter(skin ?? TacticalBattleSkin.Classic);
         var bitmap = new SKBitmap(frame.View.PixelWidth, frame.View.PixelHeight);
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(TacticalBattleMapRenderer.Background);

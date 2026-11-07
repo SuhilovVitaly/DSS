@@ -3,7 +3,7 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0001-skin-pack-folder
 ticket: EP-0016-US-0001-TK-0002-discover-and-load-packs
 title: Обнаружение и проверка пакетов
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0001-TK-0001-skin-manifest]
@@ -81,3 +81,11 @@ git diff --check
 ## Self-containment check
 
 Модель задаётся предыдущим тикетом, точка подключения окна описана US-0003. Каждый путь и порядок обработки заданы в US-0001.
+
+## Исполнение
+
+Каталог сканирует один уровень, разрешает роли и декодирует PNG/TTF/OTF до публикации пакета. Classic доступен первым, конфликтующие ID отклоняются, готовые ресурсы принадлежат каталогу. При ошибке отдельного пакета сохраняются остальные. Проверены локальные файлы, границы и ссылки, диагностика, частичный override и отказ на неправильном Unicode. Зарезервированные имена устройств Windows запрещены на обеих платформах.
+
+Сборка и `dotnet test --no-restore --filter "FullyQualifiedName~SkinCatalogTests|FullyQualifiedName~SkinManifestTests"` — 37/37 PASS. Scoped whitespace Client и Client.Tests, самопроверка и staged diff check прошли. MSB9008 относится к устаревшему restore graph ModApi. TRX: `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us1-tk2/focused.trx`.
+
+Проверено US1-AC1 и US1-AC3. Поставка contrast и подключение сканирования к запуску приложения проверяются отдельно.

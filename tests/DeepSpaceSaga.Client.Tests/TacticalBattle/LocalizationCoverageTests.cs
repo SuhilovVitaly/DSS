@@ -140,6 +140,18 @@ public sealed class LocalizationCoverageTests
         }
     }
 
+    [Theory]
+    [InlineData("English", "TACTICAL BATTLE SKIN", "Classic")]
+    [InlineData("Russian", "СКИН ПОШАГОВОГО БОЯ", "Штатный")]
+    public void Battle_skin_settings_labels_are_resolved_in_both_packaged_locales(string locale, string label, string classic)
+    {
+        var dictionary = Assert.IsType<Dictionary<string, string>>(Localization.LoadLocaleFile(locale));
+        Assert.Equal(label, dictionary["Settings.TacticalBattleSkin"]);
+        Assert.Equal(classic, dictionary["Settings.TacticalBattleSkin.Classic"]);
+        Assert.False(string.IsNullOrWhiteSpace(dictionary["Settings.TacticalBattleSkin.SaveFailed"]));
+        Assert.DoesNotContain("Settings.", dictionary["Settings.TacticalBattleSkin.SaveFailed"]);
+    }
+
     [Fact]
     public void RequiredScreenKeysResolveWithMatchingFormatsInBothPackagedLanguages()
     {

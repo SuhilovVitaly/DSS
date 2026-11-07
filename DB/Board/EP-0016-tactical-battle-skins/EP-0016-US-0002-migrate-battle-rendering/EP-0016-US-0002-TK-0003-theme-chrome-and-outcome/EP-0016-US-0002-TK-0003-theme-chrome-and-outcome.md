@@ -3,7 +3,7 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0002-migrate-battle-rendering
 ticket: EP-0016-US-0002-TK-0003-theme-chrome-and-outcome
 title: Оформление панелей, окон и результата боя
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0002-TK-0002-theme-field-and-salvo]
@@ -83,3 +83,9 @@ git diff --check
 ## Self-containment check
 
 Scope уже включён обычным экраном. Все точки оформления принадлежат указанным файлам.
+
+## Исполнение
+
+Подключены роли заголовка, фаз, статуса, исходов, подтверждения выхода, кнопок и независимых флажков. Classic использует прежние ресурсы, а размещение управляющих областей не зависит от длины строк в новом шрифте.
+
+Сборка и все тактические тесты Client: 230/230 PASS. Проверены реальный отказ Engine, допуск потерь, независимые цвета флажков с прежними bounds, итог и открытие/отмена подтверждения. Подготовка идентична до и после боевого Render. 23/23 исходных PNG совпали. Scoped whitespace, staged diff check и самопроверка прошли. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us2-tk3/focused.trx`, `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us2-tk3/classic-parity.json`. Покрыты US2-AC1/2/4 в части chrome.

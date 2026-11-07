@@ -8,7 +8,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed class TacticalBattleLogTab
 {
-    private readonly ScrollTextPanel _panel = new() { AutoScroll = true };
+    private readonly ScrollTextPanel _panel = new() { AutoScroll = true, StyleRole = "tabs.log" };
     private ImmutableArray<TacticalBattleLogEvent> _last;
     private int? _lastHiddenTurn;
     internal ScrollTextPanel Panel => _panel;

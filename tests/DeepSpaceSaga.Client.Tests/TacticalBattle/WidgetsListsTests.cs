@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Client.UI.Controls;
 using Silk.NET.Input;
 using SkiaSharp;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
@@ -8,6 +9,92 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class WidgetsListsTests
 {
     private static readonly SKRect Viewport = new(0, 0, 1280, 720);
+
+    [Fact]
+    public void Skin_scope_is_restored_after_nested_render_and_exception()
+    {
+        using (TacticalBattleSkinRenderScope.Enter(TacticalBattleSkin.Classic))
+        using (TacticalBattleSkinRenderScope.EnterRole("orders.fire"))
+        {
+            var nested = WidgetSkin();
+            Assert.Throws<InvalidOperationException>((Action)(() =>
+            {
+                using var scope = TacticalBattleSkinRenderScope.Enter(nested);
+                Assert.Same(nested, TacticalBattleSkinRenderScope.Current);
+                Assert.Null(TacticalBattleSkinRenderScope.CurrentRole);
+                using var role = TacticalBattleSkinRenderScope.EnterRole("tabs.sides");
+                Assert.Equal("tabs.sides", TacticalBattleSkinRenderScope.CurrentRole);
+                throw new InvalidOperationException("draw failed");
+            }));
+            Assert.Same(TacticalBattleSkin.Classic, TacticalBattleSkinRenderScope.Current);
+            Assert.Equal("orders.fire", TacticalBattleSkinRenderScope.CurrentRole);
+        }
+        Assert.Null(TacticalBattleSkinRenderScope.Current);
+        Assert.Null(TacticalBattleSkinRenderScope.CurrentRole);
+    }
+
+    [Fact]
+    public void Styled_tabs_popup_and_tooltip_use_overrides_without_changing_unscoped_controls()
+    {
+        var tabs = new TabStrip([new("a", "First"), new("b", "Second")]) { Bounds = new(20, 20, 250, 50) };
+        var list = new DropDown<int>([1, 2, 3], i => "Длинная подпись " + i) { HasFocus = true };
+        list.Layout(new(20, 70, 250, 102), Viewport);
+        list.OnKeyDown(Key.Enter);
+        var popup = list.PopupBounds;
+        list.OnMouseMove(list.Bounds.MidX, list.Bounds.MidY, 0);
+
+        using var before = Draw();
+        using var classic = Draw(TacticalBattleSkin.Classic);
+        using var themed = Draw(WidgetSkin());
+        using var after = Draw();
+        Assert.Equal(before.Pixels, classic.Pixels);
+        Assert.Equal(before.Pixels, after.Pixels);
+        Assert.Equal(new SKColor(123, 45, 99), themed.GetPixel(28, 30));
+        Assert.Equal(new SKColor(52, 64, 102), themed.GetPixel(28, 112));
+        Assert.Equal(new SKColor(68, 85, 119), themed.GetPixel(530, 127));
+        Assert.Equal(popup, list.PopupBounds);
+        Assert.Equal(1, list.SelectedItem);
+
+        SKBitmap Draw(TacticalBattleSkin? skin = null)
+        {
+            using IDisposable? scope = skin is null ? null : TacticalBattleSkinRenderScope.Enter(skin);
+            var bitmap = new SKBitmap(640, 240);
+            using var canvas = new SKCanvas(bitmap);
+            canvas.Clear(SKColors.Black);
+            tabs.Draw(canvas);
+            list.Draw(canvas);
+            list.DrawPopup(canvas);
+            list.DrawTooltip(canvas, SKRect.Create(640, 240), 1000);
+            return bitmap;
+        }
+    }
+
+    [Fact]
+    public void Specific_frame_uses_shared_style_for_unset_properties()
+    {
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"fallback","displayName":"Fallback","roles":{
+              "control.frame":{"fill":"#7788DD"},
+              "orders.move.card.selected":{"stroke":"#009977"}
+            }}
+            """);
+        using var scope = TacticalBattleSkinRenderScope.Enter(skin);
+        using var bitmap = new SKBitmap(200, 100);
+        using var canvas = new SKCanvas(bitmap);
+        ControlVisuals.Frame(canvas, new(10, 10, 100, 40), true, true, 1, "orders.move.card.selected");
+        Assert.Equal(new SKColor(119, 136, 221), bitmap.GetPixel(30, 30));
+    }
+
+    private static TacticalBattleSkin WidgetSkin() => TacticalBattleSkin.Parse("""
+        {
+          "schemaVersion":1,"id":"widgets","displayName":"Widgets",
+          "roles":{
+            "control.tab.selected":{"fill":"#7B2D63"},
+            "control.dropdown.option.active":{"fill":"#344066","fontSize":16},
+            "control.tooltip":{"fill":"#445577"}
+          }
+        }
+        """);
 
     [Theory]
     [InlineData(false)]

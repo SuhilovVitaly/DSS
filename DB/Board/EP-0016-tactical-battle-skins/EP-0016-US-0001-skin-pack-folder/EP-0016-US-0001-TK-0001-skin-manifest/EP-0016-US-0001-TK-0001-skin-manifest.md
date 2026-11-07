@@ -3,7 +3,7 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0001-skin-pack-folder
 ticket: EP-0016-US-0001-TK-0001-skin-manifest
 title: Контракт пакета оформления
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: []
@@ -79,3 +79,13 @@ git diff --check
 ## Self-containment check
 
 Схема, значения по умолчанию и все ошибки определены в US-0001. Изменения локализованы в модели и её тестах.
+
+## Исполнение
+
+Разбор v1 проверяет структуру JSON, дубли, диапазоны, имена и лексическую форму путей. Неизменяемые роли наследуют каждое свойство независимо. Classic передаёт штатные значения рендера. Это закрывает часть US1-AC1 по синтаксису и наследованию. Проверка ресурсов и установка относятся к следующим тикетам.
+
+- Сборка Client и Client.Tests выполнена при `dotnet test --no-restore -m:1 -nr:false -p:UseSharedCompilation=false --filter FullyQualifiedName~SkinManifestTests`. 34/34 PASS.
+- Scoped `dotnet format whitespace --no-restore --verify-no-changes` для обоих файлов и `git diff --cached --check` прошли. Тестовый build сообщил MSB9008 из ранее восстановленного ModApi, которого уже нет в csproj. Проверки .NET проведены с доступом к IPC после отказа именованного канала в песочнице.
+- Самопроверка по схеме и границе Client выполнена. Парсер отклоняет сегменты ресурса с завершающей точкой для одинакового поведения путей на Windows и Linux.
+
+TRX: `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us1-tk1/focused.trx`.

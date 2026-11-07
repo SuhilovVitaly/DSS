@@ -335,6 +335,9 @@
 
   "Settings.Title": "SETTINGS",
   "Settings.Language": "LANGUAGE",
+  "Settings.TacticalBattleSkin": "TACTICAL BATTLE SKIN",
+  "Settings.TacticalBattleSkin.Classic": "Classic",
+  "Settings.TacticalBattleSkin.SaveFailed": "Could not save the skin selection.",
   "Settings.InterfaceScale": "INTERFACE SCALE",
   "Settings.Monitor": "MONITOR",
   "Settings.RestartNote": "Changes apply after game restart",

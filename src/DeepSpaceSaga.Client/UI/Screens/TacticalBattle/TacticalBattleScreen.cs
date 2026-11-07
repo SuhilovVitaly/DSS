@@ -15,6 +15,7 @@ public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, Tactical
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
     private readonly TacticalBattleCamera _camera = new();
+    private readonly TacticalBattleSkin _skin;
     private readonly ShortcutButton _fit = new("", "0");
     private readonly ShortcutButton _exitBattle = new("", "Esc");
     private readonly ShortcutButton _phaseAction = new("", "Enter");
@@ -44,6 +45,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal (SKRect Forecast, SKRect Sectors, SKRect AllFire) OverlayControls =>
         (_enemyForecast.Bounds, _enemySectors.Bounds, _allFireSectors.Bounds);
     internal TacticalBattleView View => _camera.View;
+    internal string SkinId => _skin.Id;
     internal TacticalMovementFrame Movement => _orders.Capture();
     internal TacticalBattleMovePanel MovePanel => _movePanel;
     internal TacticalBattleFirePanel FirePanel => _firePanel;
@@ -54,8 +56,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal TacticalBattleLogTab LogTab => _logTab;
     internal TacticalBattleForecastTab ForecastTab => _forecastTab;
 
-    public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : base(flow, isSetup: false, uiScale)
+    public TacticalBattleScreen(TacticalBattleFlow flow, float uiScale) : this(flow, uiScale, TacticalBattleSkin.Classic) { }
+
+    internal TacticalBattleScreen(TacticalBattleFlow flow, float uiScale, TacticalBattleSkin skin) : base(flow, isSetup: false, uiScale)
     {
+        _skin = skin;
         _movePanel = new(_orders);
         _firePanel = new(_fireOrders);
         _tabs.Changed += _ =>
@@ -111,6 +116,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override void Render(SKCanvas canvas, int width, int height)
     {
+        using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame)
         {
             base.Render(canvas, width, height);
@@ -143,10 +149,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         var panel = frame.Panel;
         float s = frame.UiScale;
-        using var background = new SKPaint { Color = new SKColor(10, 24, 36) };
-        canvas.DrawRect(panel, background);
-        background.Color = new SKColor(30, 71, 92);
-        canvas.DrawRect(panel.Left, panel.Top, s, panel.Height, background);
+        TacticalBattleSkinRenderScope.Box(canvas, "panel.background", panel, new(10, 24, 36), null, s, antialias: false);
+        using var divider = new SKPaint { Color = TacticalBattleSkinRenderScope.Color("panel.divider", "stroke", new(30, 71, 92)) };
+        canvas.DrawRect(panel.Left, panel.Top, (float)PyMath.Min(panel.Width,
+            TacticalBattleSkinRenderScope.Number("panel.divider", "strokeWidth", 1) * s), panel.Height, divider);
         var content = new SKRect(panel.Left + 12 * s, panel.Top, panel.Right - 12 * s, panel.Bottom);
         var battle = frame.Battle;
         var header = TacticalBattlePanelHeader.Capture(frame);
@@ -170,9 +176,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _allFireSectors.Label = L("AllFireSectors");
         if (showVisibility)
             ControlVisuals.Label(canvas, L("VisibilitySettings"), SKRect.Create(content.Left, y + 76 * s, content.Width, 20 * s), true, s);
-        _allFireSectors.Draw(canvas, s);
-        _enemyForecast.Draw(canvas, s);
-        _enemySectors.Draw(canvas, s);
+        using (TacticalBattleSkinRenderScope.EnterRole("control.toggle.all-fire-sectors"))
+            _allFireSectors.Draw(canvas, s);
+        using (TacticalBattleSkinRenderScope.EnterRole("control.toggle.enemy-forecast"))
+            _enemyForecast.Draw(canvas, s);
+        using (TacticalBattleSkinRenderScope.EnterRole("control.toggle.enemy-rear-sectors"))
+            _enemySectors.Draw(canvas, s);
         _exitBattle.Label = L("ToMap"); _exitBattle.Enabled = !frame.Pending;
         _phaseAction.Label = L(frame.Salvo is { } playback
             ? playback.InFlight ? "SalvoSkip" : battle.Phase == TacticalBattlePhase.Over ? "SalvoToOutcome" : "SalvoToMove"

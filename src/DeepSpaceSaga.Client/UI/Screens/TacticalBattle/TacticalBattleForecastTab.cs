@@ -20,7 +20,7 @@ internal sealed class TacticalBattleForecastTab
     internal sealed record MovementEstimate(string Drone, ImmutableArray<Estimate> Outgoing, ImmutableArray<Estimate> Incoming);
     internal sealed record FireEstimate(ImmutableArray<Estimate> Outgoing, ImmutableArray<Estimate> Incoming);
 
-    private readonly ScrollTextPanel _panel = new() { AutoScroll = false };
+    private readonly ScrollTextPanel _panel = new() { AutoScroll = false, StyleRole = "tabs.forecast" };
     private TacticalBattleSnapshot? _battle;
     private TacticalMovementFrame? _movement;
     private TacticalFirePlan? _firePlan;

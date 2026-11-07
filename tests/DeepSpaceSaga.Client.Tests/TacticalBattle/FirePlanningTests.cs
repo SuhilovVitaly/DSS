@@ -10,6 +10,54 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class FirePlanningTests
 {
     [Fact]
+    public async Task Fire_panel_skin_changes_selection_and_popup_pixels_without_changing_target()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var classic = await ReachFire(fixture);
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"fire","displayName":"Fire","roles":{
+              "orders.fire.card.selected":{"fill":"#634766"},
+              "orders.fire.dropdown.option.active":{"fill":"#734488"}
+            }}
+            """);
+        var themed = new TacticalBattleScreen(classic.Flow, classic.UiScale, skin);
+        using var classicPixels = new SKBitmap(1280, 720);
+        using var themedPixels = new SKBitmap(1280, 720);
+        using var classicCanvas = new SKCanvas(classicPixels);
+        using var themedCanvas = new SKCanvas(themedPixels);
+        Prepare(classic, classicCanvas);
+        Prepare(themed, themedCanvas);
+
+        Assert.Equal(classic.FirePanel.Targets.PopupBounds, themed.FirePanel.Targets.PopupBounds);
+        Assert.Contains(new SKColor(115, 68, 136), themedPixels.Pixels);
+        Assert.DoesNotContain(new SKColor(115, 68, 136), classicPixels.Pixels);
+        foreach (var screen in new[] { classic, themed })
+        {
+            screen.OnKeyDown(Key.Home);
+            screen.OnKeyDown(Key.Enter);
+            Assert.False(screen.FirePanel.Targets.IsOpen);
+            var selected = screen.CaptureFrame(1280, 720)!.FirePlan!.SelectedDroneId;
+            Assert.Null(screen.BuildFireRequest().Targets.Single(t => t.DroneId == selected).TargetId);
+        }
+        Assert.Equal(classic.BuildFireRequest().Targets.ToArray(), themed.BuildFireRequest().Targets.ToArray());
+
+        static void Prepare(TacticalBattleScreen screen, SKCanvas canvas)
+        {
+            var plan = screen.CaptureFrame(1280, 720)!.FirePlan!;
+            for (int i = 0; i < plan.Rows.Length && plan.Selected!.Group.List.IsEmpty; i++)
+            {
+                screen.OnKeyDown(Key.Tab);
+                plan = screen.CaptureFrame(1280, 720)!.FirePlan!;
+            }
+            screen.Render(canvas, 1280, 720);
+            var bounds = screen.FirePanel.Targets.Bounds;
+            screen.OnMouseDown(bounds.MidX, bounds.MidY, MouseButton.Left);
+            Assert.True(screen.FirePanel.Targets.IsOpen);
+            screen.Render(canvas, 1280, 720);
+        }
+    }
+
+    [Fact]
     public async Task RealDefaultsMapToggleAndDropdownLeadToExactEngineTarget()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

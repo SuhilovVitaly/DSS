@@ -9,7 +9,8 @@ public enum SettingsButton
     MonitorCombo,
     UiScaleCombo,
     LanguageCombo,
-    Exit
+    Exit,
+    SkinCombo
 }
 
 /// <summary>
@@ -29,6 +30,8 @@ public sealed class SettingsLayout
 
     /// <summary>Same local Y as MainMenu's EXIT button.</summary>
     public const float ExitY = 396f;
+    internal const float SkinRowY = 388f;
+    internal const float SkinExitY = 455f;
 
     /// <summary>Right edge, from the panel's left edge, that every row's combo box aligns to.</summary>
     public const float RowRightX = (PanelWidth + XenonComboBox.NativeWidth) / 2f;
@@ -59,7 +62,16 @@ public sealed class SettingsLayout
         return new SKRect(left, top, left + PanelWidth, top + PanelHeight);
     }
 
-    public static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight)
+    internal static SKRect SkinField(int width, int height)
+    {
+        float fieldWidth = Math.Clamp(width - 16f, 0, XenonComboBox.NativeWidth);
+        return SKRect.Create((width - fieldWidth) / 2f, PanelTop(height) + SkinRowY, fieldWidth, XenonComboBox.FieldHeight);
+    }
+
+    public static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight) =>
+        HitTest(screenX, screenY, screenWidth, screenHeight, hasSkinPicker: false);
+
+    internal static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight, bool hasSkinPicker)
     {
         float panelLeft = PanelLeft(screenWidth);
         float panelTop = PanelTop(screenHeight);
@@ -70,7 +82,8 @@ public sealed class SettingsLayout
         if (IsInMonitorCombo(lx, ly)) return SettingsButton.MonitorCombo;
         if (IsInUiScaleCombo(lx, ly)) return SettingsButton.UiScaleCombo;
         if (IsInLanguageCombo(lx, ly)) return SettingsButton.LanguageCombo;
-        if (IsInButton(lx, ly, ExitY)) return SettingsButton.Exit;
+        if (hasSkinPicker && SkinField(screenWidth, screenHeight).Contains(screenX, screenY)) return SettingsButton.SkinCombo;
+        if (IsInButton(lx, ly, hasSkinPicker ? SkinExitY : ExitY)) return SettingsButton.Exit;
         return SettingsButton.None;
     }
 

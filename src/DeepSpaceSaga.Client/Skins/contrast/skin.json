@@ -1,0 +1,341 @@
+{
+  "schemaVersion": 1,
+  "id": "contrast",
+  "displayName": "Contrast",
+  "roles": {
+    "field.background": {
+      "fill": "#111021",
+      "image": "assets/field.png"
+    },
+    "field.grid": {
+      "stroke": "#9079BB55",
+      "strokeWidth": 1.3,
+      "dash": [
+        3,
+        5
+      ]
+    },
+    "field.ruler": {
+      "stroke": "#EEC980",
+      "text": "#FFF1C7"
+    },
+    "field.unit.carrier.own": {
+      "fill": "#56F1CE",
+      "stroke": "#163E47",
+      "size": 24,
+      "shape": "hexagon"
+    },
+    "field.unit.carrier.enemy": {
+      "fill": "#FF936B",
+      "stroke": "#643E56",
+      "size": 24,
+      "shape": "hexagon"
+    },
+    "field.unit.drone.own": {
+      "fill": "#75F4D1",
+      "stroke": "#11332E",
+      "shape": "diamond",
+      "size": 15
+    },
+    "field.unit.drone.enemy": {
+      "fill": "#FFA17C",
+      "stroke": "#432B4D",
+      "shape": "triangle",
+      "size": 15
+    },
+    "field.unit.drone.wreck": {
+      "stroke": "#ABA5C5",
+      "size": 11,
+      "strokeWidth": 1.5
+    },
+    "field.unit.drone.jammed": {
+      "stroke": "#EC85FF",
+      "strokeWidth": 2.5
+    },
+    "field.label": {
+      "text": "#F6EDF9",
+      "stroke": "#716693",
+      "fontSize": 11
+    },
+    "field.label.disabled-cross": {
+      "stroke": "#FFB44D",
+      "size": 9,
+      "strokeWidth": 2
+    },
+    "field.bar.armor": {
+      "fill": "#B79FFA",
+      "stroke": "#463668"
+    },
+    "field.bar.hull": {
+      "fill": "#7EE5CC",
+      "stroke": "#463668"
+    },
+    "field.offscreen.arrow": {
+      "fill": "#F4CA77",
+      "stroke": "#F4CA77",
+      "size": 10
+    },
+    "field.offscreen.label": {
+      "text": "#FFF1C7"
+    },
+    "field.offscreen.background": {
+      "fill": "#261F3DF0",
+      "stroke": "#8B6CA9"
+    },
+    "field.move.trail": {
+      "stroke": "#DBB1D2AE",
+      "strokeWidth": 2.5,
+      "dash": [
+        5,
+        2
+      ]
+    },
+    "field.move.forecast": {
+      "stroke": "#EEACF4D0",
+      "strokeWidth": 1.5,
+      "dash": [
+        3,
+        6
+      ]
+    },
+    "field.move.forecast.endpoint": {
+      "fill": "#FDBEFF",
+      "shape": "diamond",
+      "size": 8
+    },
+    "field.move.area": {
+      "fill": "#6FBCA124",
+      "stroke": "#78D7BA99",
+      "dash": [
+        2,
+        4
+      ]
+    },
+    "field.move.path": {
+      "stroke": "#69F0C8",
+      "strokeWidth": 2.5
+    },
+    "field.move.handle": {
+      "fill": "#A5FFEF",
+      "shape": "square",
+      "size": 10
+    },
+    "field.move.ghost": {
+      "fill": "#8BDFC980",
+      "stroke": "#BDFFF5"
+    },
+    "field.fire.sector": {
+      "fill": "#77FFE920",
+      "stroke": "#6BDFC2B0",
+      "strokeWidth": 1.5
+    },
+    "field.fire.sector.rear": {
+      "fill": "#B970FF35",
+      "stroke": "#B970FFA0",
+      "strokeWidth": 2,
+      "dash": [
+        4,
+        4
+      ]
+    },
+    "field.fire.target": {
+      "stroke": "#F8CE7A",
+      "strokeWidth": 2
+    },
+    "field.fire.target.badge": {
+      "fill": "#514074",
+      "stroke": "#F0C38C",
+      "text": "#FFF2BD"
+    },
+    "field.fire.line.candidate": {
+      "stroke": "#CAB0FF",
+      "strokeWidth": 1.5,
+      "dash": [
+        3,
+        3
+      ]
+    },
+    "field.fire.line.assigned": {
+      "stroke": "#FFE080",
+      "strokeWidth": 2.5
+    },
+    "field.fire.label.chance": {
+      "text": "#FFE9AA",
+      "fontSize": 12
+    },
+    "shot.projectile": {
+      "fill": "#FFD58A",
+      "shape": "diamond",
+      "size": 8
+    },
+    "shot.trail": {
+      "stroke": "#FFB677AF",
+      "strokeWidth": 2.5,
+      "dash": [
+        3,
+        2
+      ],
+      "metrics": {
+        "tail-length": 40
+      }
+    },
+    "shot.flash": {
+      "stroke": "#FFD390",
+      "strokeWidth": 3,
+      "metrics": {
+        "flash-scale": 1.25
+      }
+    },
+    "shot.flash.kill": {
+      "stroke": "#FB85DC"
+    },
+    "shot.caption": {
+      "text": "#FFF1B2",
+      "fontSize": 13
+    },
+    "shot.damage": {
+      "text": "#F5A2E8"
+    },
+    "torpedo.projectile": {
+      "fill": "#ACF6FF",
+      "shape": "triangle",
+      "size": 12
+    },
+    "torpedo.trail": {
+      "stroke": "#8FBCFF",
+      "strokeWidth": 2.5,
+      "dash": [
+        7,
+        3
+      ]
+    },
+    "panel.background": {
+      "fill": "#201833"
+    },
+    "panel.divider": {
+      "stroke": "#9E7BD0",
+      "strokeWidth": 2
+    },
+    "panel.summary": {
+      "text": "#F2E5FC"
+    },
+    "panel.phase": {
+      "text": "#CDB5FF"
+    },
+    "panel.outcome": {
+      "fill": "#3A2957",
+      "text": "#FFE29E",
+      "stroke": "#C392F6"
+    },
+    "panel.status": {
+      "text": "#F5A2E8"
+    },
+    "modal.background": {
+      "fill": "#201833"
+    },
+    "modal.error": {
+      "text": "#FDA5D2"
+    },
+    "modal.exit": {
+      "fill": "#3D2D5B",
+      "stroke": "#D7ADEB",
+      "text": "#FFF2BC",
+      "radius": 6
+    },
+    "modal.exit.dim": {
+      "fill": "#130C23CC"
+    },
+    "control.frame": {
+      "fill": "#2B2245",
+      "stroke": "#8D6FB0"
+    },
+    "control.label": {
+      "text": "#F4E9FF"
+    },
+    "control.tab": {
+      "fill": "#302448",
+      "stroke": "#8D6FB0",
+      "text": "#E8D4FF"
+    },
+    "control.tab.selected": {
+      "fill": "#5D3977",
+      "stroke": "#EDB7F0",
+      "text": "#FFF7D4"
+    },
+    "control.dropdown": {
+      "fill": "#332450",
+      "stroke": "#A27CC3",
+      "text": "#F6E3FF"
+    },
+    "control.dropdown.option.active": {
+      "fill": "#624580",
+      "text": "#FFF0B8"
+    },
+    "control.tooltip": {
+      "fill": "#3C2E52",
+      "stroke": "#DAABFA",
+      "text": "#FFF4C7"
+    },
+    "control.button": {
+      "fill": "#4D386D",
+      "stroke": "#BC95EC",
+      "text": "#F7E8FF"
+    },
+    "control.button.hover": {
+      "fill": "#764C8E",
+      "text": "#FFF4CB"
+    },
+    "control.toggle": {
+      "fill": "#322749",
+      "stroke": "#A187BD",
+      "text": "#F6E9FD"
+    },
+    "control.toggle.all-fire-sectors": {
+      "stroke": "#6EF3CC"
+    },
+    "control.toggle.enemy-rear-sectors": {
+      "stroke": "#EF8FFC"
+    },
+    "control.toggle.enemy-forecast": {
+      "stroke": "#FFCB7D"
+    },
+    "control.slider.track": {
+      "stroke": "#9071BB"
+    },
+    "control.slider.thumb": {
+      "fill": "#F2B9FF"
+    },
+    "control.progress.track": {
+      "fill": "#35274C",
+      "stroke": "#9D7DBB"
+    },
+    "control.progress": {
+      "fill": "#98EBD4"
+    },
+    "orders.move": {
+      "fill": "#2D2446",
+      "stroke": "#775DA4",
+      "text": "#EAE0FB"
+    },
+    "orders.fire": {
+      "fill": "#372445",
+      "stroke": "#A775AC",
+      "text": "#F9E2FA"
+    },
+    "tabs.sides": {
+      "fill": "#2C2340",
+      "stroke": "#AB81C8",
+      "text": "#F7E7FF"
+    },
+    "tabs.log": {
+      "fill": "#30223E",
+      "stroke": "#A07AB1",
+      "text": "#F5DDFF"
+    },
+    "tabs.forecast": {
+      "fill": "#2E2949",
+      "stroke": "#9E91C7",
+      "text": "#E6DAFF"
+    }
+  }
+}

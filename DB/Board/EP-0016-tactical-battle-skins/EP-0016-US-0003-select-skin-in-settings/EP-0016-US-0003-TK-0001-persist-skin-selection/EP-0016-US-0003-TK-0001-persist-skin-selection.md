@@ -3,7 +3,7 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0003-select-skin-in-settings
 ticket: EP-0016-US-0003-TK-0001-persist-skin-selection
 title: Хранение выбранного скина
-stage: approved
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0001-TK-0002-discover-and-load-packs, EP-0016-US-0002-TK-0005-theme-information-tabs]
@@ -79,3 +79,9 @@ git diff --check
 ## Self-containment check
 
 Путь передаёт caller, формат и стратегия отказа заданы. Каталог и runtime интеграция принадлежат другим тикетам.
+
+## Исполнение
+
+Предпочтение сохраняется в `gameSettings.tacticalBattleSkinId` заменой соседнего временного файла после записи и flush. Повтор того же значения не переписывает файл. Некорректный документ сохраняется при отказе, неизвестный ID разрешает каталог. Прочие поля, включая язык, сохранены.
+
+Сборка, scoped whitespace, staged diff check и самопроверка прошли. Проверки SkinPreferenceTests, SkinCatalogTests и SkinManifestTests — 40/40 PASS. Тест блокировки замены на Windows подтвердил неизменность Settings.json и уборку временного файла. Покрыты US3-AC2/3 на границе файла. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us3-tk1/focused.trx`.

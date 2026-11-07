@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
@@ -61,35 +62,43 @@ public sealed class TabStrip
         for (int i = 0; i < Items.Length; i++)
         {
             var rect = SKRect.Create(Bounds.Left + i * width, Bounds.Top, width, Bounds.Height);
-            ControlVisuals.Frame(canvas, rect, i == SelectedIndex, Enabled, uiScale);
-            ControlVisuals.Label(canvas, Items[i].Label, rect, Enabled, uiScale, center: true);
+            bool selected = i == SelectedIndex;
+            string state = !Enabled ? "disabled" : selected ? HasFocus ? "selected.focused" : "selected" : "normal";
+            var role = SkinStyle.Control("control.tab", state);
+            ControlVisuals.Frame(canvas, rect, selected, Enabled, uiScale, role);
+            ControlVisuals.Label(canvas, Items[i].Label, rect, Enabled, uiScale, center: true, role: role);
         }
     }
 }
 
 internal static class ControlVisuals
 {
-    internal static void Frame(SKCanvas canvas, SKRect rect, bool active, bool enabled, float scale)
+    internal static void Frame(SKCanvas canvas, SKRect rect, bool active, bool enabled, float scale, SkinStyle.Role? role = null)
     {
-        using var paint = new SKPaint { IsAntialias = true, Color = active && enabled ? MenuStyle.ColorButtonHover : MenuStyle.ColorButtonBg };
-        canvas.DrawRect(rect, paint);
-        paint.Color = !enabled ? XenonStyle.DisabledText : active ? XenonStyle.Cyan : MenuStyle.ColorButtonBorder;
-        paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = scale;
-        canvas.DrawRect(rect, paint);
+        var fill = active && enabled ? MenuStyle.ColorButtonHover : MenuStyle.ColorButtonBg;
+        var border = !enabled ? XenonStyle.DisabledText : active ? XenonStyle.Cyan : MenuStyle.ColorButtonBorder;
+        SkinStyle.Box(canvas, WithFallback(role, "control.frame"), rect, fill, border, scale);
     }
-    internal static void Label(SKCanvas canvas, string text, SKRect rect, bool enabled, float scale, bool center = false)
+
+    internal static void Label(SKCanvas canvas, string text, SKRect rect, bool enabled, float scale,
+        bool center = false, SkinStyle.Role? role = null)
     {
         if (rect.IsEmpty) return;
-        using var paint = new SKPaint
-        {
-            IsAntialias = true,
-            Color = enabled ? MenuStyle.ColorText : XenonStyle.DisabledText,
-            Typeface = MenuStyle.TypefaceRegular,
-            TextSize = 14 * scale,
-            TextAlign = center ? SKTextAlign.Center : SKTextAlign.Left
-        };
-        canvas.Save(); canvas.ClipRect(rect);
-        canvas.DrawText(ControlText.SafeSymbols(text), center ? rect.MidX : rect.Left, MenuStyle.VerticalCenterBaseline(rect, paint), paint);
+        text = ControlText.SafeSymbols(text);
+        using var paint = ControlText.Paint(scale, WithFallback(role, "control.label"), text, enabled);
+        DrawLabel(canvas, text, rect, paint, center);
+    }
+
+    private static SkinStyle.Role WithFallback(SkinStyle.Role? role, string fallback) =>
+        role is { } specific ? specific with { Shared = specific.Shared ?? fallback } : SkinStyle.Control(fallback);
+
+    internal static void DrawLabel(SKCanvas canvas, string text, SKRect rect, SKPaint paint, bool center = false)
+    {
+        if (rect.IsEmpty) return;
+        paint.TextAlign = center ? SKTextAlign.Center : SKTextAlign.Left;
+        canvas.Save();
+        canvas.ClipRect(rect);
+        canvas.DrawText(text, center ? rect.MidX : rect.Left, MenuStyle.VerticalCenterBaseline(rect, paint), paint);
         canvas.Restore();
     }
 }

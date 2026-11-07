@@ -3,7 +3,7 @@ epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0003-select-skin-in-settings
 ticket: EP-0016-US-0003-TK-0002-localize-skin-selector
 title: Локализация переключателя
-stage: approved
+stage: done
 layer: content-data
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0016-US-0003-TK-0001-persist-skin-selection]
@@ -77,3 +77,9 @@ git diff --check
 ## Self-containment check
 
 Файлы, ключи и потребитель перечислены. UI подключается в TK-0003.
+
+## Исполнение
+
+В поставляемых словарях EN/RU есть подпись настройки, штатное имя и ошибка записи. Внешнее имя остаётся в манифесте. Проверка читает словари через runtime loader, а не через отфильтрованный список ключей боя.
+
+Сборка, LocalizationCoverageTests 7/7 PASS, scoped whitespace и staged diff check PASS. Самопроверка ключей обоих языков выполнена. `D:/DeepSpaceSaga/artifacts/validation/ep-0016/20261106-execution-43bf71/us3-tk2/focused.trx`.

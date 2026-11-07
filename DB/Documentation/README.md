@@ -67,6 +67,7 @@
 - [Принципы моддинга и архивный прототип C#-мода](04-Engineering/Modding.md).
 - [Прогноз движения NPC по наблюдениям](04-Engineering/NpcObservedTrajectories.md).
 - [Тактический бой V4](04-Engineering/TacticalBattle.md).
+- [Создание и установка скинов боя](04-Engineering/TacticalBattleSkins.md).
 - [Сохранения и восстановление](04-Engineering/SaveFormat.md).
 - [Экономика и процедурный мир](04-Engineering/TradingAndSolarSystem.md).
 

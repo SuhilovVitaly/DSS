@@ -1,4 +1,5 @@
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
@@ -39,6 +40,18 @@ public static class ProgressBar
 
     public static void Draw(SKCanvas canvas, SKRect rect, double fraction, SKColor? fillColor = null)
     {
+        var track = SkinStyle.Control("control.progress", "track");
+        var fill = SkinStyle.Control("control.progress");
+        if (SkinStyle.HasBoxStyle(track) || SkinStyle.HasBoxStyle(fill))
+        {
+            SkinStyle.Box(canvas, track, rect, _trackFill.Color, _trackBorder.Color, 1, antialias: false);
+            float width = ComputeFillWidth(rect.Width, fraction);
+            if (width > 0)
+                SkinStyle.Box(canvas, fill, SKRect.Create(rect.Left, rect.Top, width, rect.Height),
+                    fillColor ?? _defaultFillColor, null, 1, antialias: false);
+            return;
+        }
+
         canvas.DrawRect(rect, _trackFill);
 
         var fillWidth = ComputeFillWidth(rect.Width, fraction);

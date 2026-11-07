@@ -2,7 +2,7 @@
 epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0003-select-skin-in-settings
 title: Выбор скина в настройках игры
-stage: approved
+stage: done
 dependencies: [EP-0016-US-0001-skin-pack-folder, EP-0016-US-0002-migrate-battle-rendering]
 created: 2026-11-06T07:54:54Z
 source_request: "Переключение доступных пакетов в настройках игры и реальное применение выбора к окну боя."
@@ -66,6 +66,7 @@ revision: 3
 | [EP-0016-US-0003-TK-0002-localize-skin-selector](EP-0016-US-0003-TK-0002-localize-skin-selector/EP-0016-US-0003-TK-0002-localize-skin-selector.md) | Локализация переключателя | content-data | `EP-0016-US-0003-TK-0001-persist-skin-selection` | US3-AC1, US3-AC3 |
 | [EP-0016-US-0003-TK-0003-add-skin-selector](EP-0016-US-0003-TK-0003-add-skin-selector/EP-0016-US-0003-TK-0003-add-skin-selector.md) | Переключатель скина в настройках | client | `EP-0016-US-0003-TK-0002-localize-skin-selector` | US3-AC1, US3-AC3 |
 | [EP-0016-US-0003-TK-0004-wire-settings-to-battle](EP-0016-US-0003-TK-0004-wire-settings-to-battle/EP-0016-US-0003-TK-0004-wire-settings-to-battle.md) | Связь настроек с реальным экраном боя | client | `EP-0016-US-0003-TK-0003-add-skin-selector`, `EP-0016-US-0002-TK-0005-theme-information-tabs` | US3-AC1, US3-AC2, US3-AC3, US3-AC4 |
+| [EP-0016-US-0003-TK-0005-correct-shared-style-fallbacks](EP-0016-US-0003-TK-0005-correct-shared-style-fallbacks/EP-0016-US-0003-TK-0005-correct-shared-style-fallbacks.md) | Исправление наследования и шрифтов | client | `EP-0016-US-0003-TK-0004-wire-settings-to-battle` | US2-AC1/2/4, US3-AC4 |
 
 ## Хранение и применение
 

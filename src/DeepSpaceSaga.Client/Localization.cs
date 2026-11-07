@@ -73,11 +73,11 @@ public static class Localization
         return LoadLocaleFile("English") ?? new Dictionary<string, string>();
     }
 
-    internal static string ReadLanguageSetting()
+    internal static string ReadLanguageSetting(string? settingsPath = null)
     {
         try
         {
-            var path = Path.Combine(AppContext.BaseDirectory, "Settings.json");
+            var path = settingsPath ?? Path.Combine(AppContext.BaseDirectory, "Settings.json");
             if (!File.Exists(path))
                 return "English";
 

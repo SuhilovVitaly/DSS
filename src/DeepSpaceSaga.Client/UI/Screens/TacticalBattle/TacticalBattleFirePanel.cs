@@ -4,6 +4,7 @@ using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion.TacticalBattle;
 using Silk.NET.Input;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -34,17 +35,23 @@ internal sealed class TacticalBattleFirePanel
         _enabled = enabled;
         _cards.Clear();
         if (bounds.IsEmpty || plan.Selected is not { } selected) return;
-        using var text = ControlText.Paint(scale);
+        using var layout = new SKPaint { Typeface = MenuStyle.TypefaceRegular, TextSize = 14 * scale };
         float width = (float)PyMath.Max(1, bounds.Width - 6 * scale);
-        var summary = ControlText.Wrap(Format("FireSummary", string.Join(" · ", plan.Rows.Select(r =>
-            r.Drone.Id + " " + BattleFormat.Text("→") + " " + (r.TargetId ?? L("FireNoTarget"))))), width, text);
-        float fullHeight = (145 + 28 * plan.Rows.Length + 18 * summary.Length) * scale;
+        string summaryText = Format("FireSummary", string.Join(" · ", plan.Rows.Select(r =>
+            r.Drone.Id + " " + BattleFormat.Text("→") + " " + (r.TargetId ?? L("FireNoTarget")))));
+        int summaryRows = ControlText.Wrap(summaryText, width, layout).Length;
+        using var text = ControlText.Paint(scale, "orders.fire.text", summaryText);
+        text.TextSize = (float)PyMath.Min(text.TextSize, 17 * scale);
+        var summary = ControlText.Wrap(summaryText, width, text);
+        float fullHeight = (145 + 28 * plan.Rows.Length + 18 * summaryRows) * scale;
         _maximumScroll = (float)PyMath.Max(0, fullHeight - bounds.Height);
         _scroll = (float)PyMath.Clamp(_scroll, 0, _maximumScroll);
         float top = bounds.Top - _scroll, x = bounds.Left;
         canvas.Save();
         canvas.ClipRect(bounds);
-        Label(Format("FireSelected", selected.Drone.Id), top, 24);
+        if (SkinStyle.HasBoxStyle("orders.fire"))
+            SkinStyle.Box(canvas, "orders.fire", bounds, SKColors.Transparent, null, scale);
+        Label(Format("FireSelected", selected.Drone.Id), top, 24, "orders.fire.title");
         if (!ReferenceEquals(_group, selected.Group))
         {
             _group = selected.Group;
@@ -60,44 +67,59 @@ internal sealed class TacticalBattleFirePanel
             _targets.Layout(targetBounds, viewport, scale);
             _targets.Enabled = enabled && bounds.Contains(targetBounds);
             if (!_targets.Enabled) _targets.ResetInput();
+            using var role = SkinStyle.EnterRole("orders.fire.dropdown");
             _targets.Draw(canvas);
         }
         else
         {
             _targets.Enabled = false;
             float y = top + 26 * scale;
-            foreach (var line in ControlText.Wrap(UnavailableText(selected), width, text).Take(2))
+            string caption = UnavailableText(selected);
+            using var paint = ControlText.Paint(scale, "orders.fire.unavailable", caption);
+            paint.TextSize = (float)PyMath.Min(paint.TextSize, 17 * scale);
+            foreach (var line in ControlText.Wrap(caption, width, paint).Take(2))
             {
-                Label(line, y, 18);
+                ControlVisuals.DrawLabel(canvas, line, SKRect.Create(x, y, width, 18 * scale), paint);
                 y += 18 * scale;
             }
         }
         _none.Bounds = SKRect.Create(x, top + 70 * scale, width, 29 * scale);
         _none.Label = L("FireNoneAll");
         _none.Enabled = enabled && plan.Rows.Any(r => r.TargetId is not null);
-        _none.Draw(canvas, scale);
+        using (SkinStyle.EnterRole("orders.fire.button.none"))
+            _none.Draw(canvas, scale);
         for (int i = 0; i < plan.Rows.Length; i++)
         {
             var row = plan.Rows[i];
             var rect = SKRect.Create(x, top + (108 + 28 * i) * scale, width, 25 * scale);
             _cards.Add((row.Drone.Id, rect));
-            ControlVisuals.Frame(canvas, rect, row.Drone.Id == plan.SelectedDroneId, enabled, scale);
+            bool selectedCard = row.Drone.Id == plan.SelectedDroneId;
+            string role = selectedCard ? "orders.fire.card.selected" : "orders.fire.card.normal";
+            if (row.TargetId is null) role += ".no-target";
+            ControlVisuals.Frame(canvas, rect, selectedCard, enabled, scale, role);
             ControlVisuals.Label(canvas, BattleFormat.Text(row.Drone.Id + " → " + (row.TargetId ?? L("FireNoTarget"))),
-                new(rect.Left + 8 * scale, rect.Top, rect.Right, rect.Bottom), true, scale);
+                new(rect.Left + 8 * scale, rect.Top, rect.Right, rect.Bottom), true, scale, role: role);
         }
         float summaryY = top + (115 + 28 * plan.Rows.Length) * scale;
-        foreach (var line in summary) { Label(line, summaryY, 18); summaryY += 18 * scale; }
+        foreach (var line in summary.Take(summaryRows))
+        {
+            ControlVisuals.DrawLabel(canvas, line, SKRect.Create(x, summaryY, width, 18 * scale), text);
+            summaryY += 18 * scale;
+        }
         if (_maximumScroll > 0)
         {
             float thumb = (float)(bounds.Height * (bounds.Height / (double)fullHeight));
             float y = bounds.Top + (bounds.Height - thumb) * (float)(_scroll / (double)_maximumScroll);
-            using var paint = new SKPaint { Color = new SKColor(75, 127, 149) };
-            canvas.DrawRect(bounds.Right - 3 * scale, y, 2 * scale, thumb, paint);
+            if (SkinStyle.HasBoxStyle("orders.fire.scroll.track"))
+                SkinStyle.Box(canvas, "orders.fire.scroll.track",
+                    SKRect.Create(bounds.Right - 3 * scale, bounds.Top, 2 * scale, bounds.Height), SKColors.Transparent, null, scale, antialias: false);
+            SkinStyle.Box(canvas, "orders.fire.scroll.thumb",
+                SKRect.Create(bounds.Right - 3 * scale, y, 2 * scale, thumb), new(75, 127, 149), null, scale, antialias: false);
         }
         canvas.Restore();
 
-        void Label(string caption, float y, float height) =>
-            ControlVisuals.Label(canvas, caption, SKRect.Create(x, y, width, height * scale), true, scale);
+        void Label(string caption, float y, float height, string role) =>
+            ControlVisuals.Label(canvas, caption, SKRect.Create(x, y, width, height * scale), true, scale, role: role);
     }
 
     internal bool OnMouseDown(float x, float y, MouseButton button)
@@ -127,8 +149,10 @@ internal sealed class TacticalBattleFirePanel
 
     internal void DrawOverlay(SKCanvas canvas, SKRect viewport)
     {
-        _targets.DrawPopup(canvas);
-        _targets.DrawTooltip(canvas, viewport);
+        using (SkinStyle.EnterRole("orders.fire.dropdown"))
+            _targets.DrawPopup(canvas);
+        using (SkinStyle.EnterRole("orders.fire.tooltip"))
+            _targets.DrawTooltip(canvas, viewport);
     }
 
     internal void ResetInput() { _targets.ResetInput(); _none.ResetInput(); }

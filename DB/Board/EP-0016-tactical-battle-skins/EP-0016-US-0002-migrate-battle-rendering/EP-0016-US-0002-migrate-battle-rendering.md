@@ -2,7 +2,7 @@
 epic: EP-0016-tactical-battle-skins
 story: EP-0016-US-0002-migrate-battle-rendering
 title: Перевод существующей отрисовки боя на скины
-stage: approved
+stage: done
 dependencies: [EP-0016-US-0001-skin-pack-folder]
 created: 2026-11-06T07:54:54Z
 source_request: "Отдельно перенести существующую отрисовку пошагового боя на активный скин, включая поле, боевые состояния, анимацию и весь UI окна."

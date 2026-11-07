@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -29,6 +30,11 @@ public sealed class SettingsScreen : IScreen
     private int _selectedLanguageIndex;
     private bool _isLanguageComboOpen;
     private int _hoveredLanguageOption = -1;
+
+    private readonly DropDown<(string Id, string DisplayName)>? _skinPicker;
+    private int _selectedSkinIndex;
+    internal string? SelectedSkinId => _skinPicker is { HasSelection: true } ? _skinPicker.SelectedItem.Id : null;
+    internal bool SkinSaveFailed { get; private set; }
 
     private SettingsButton _hoveredButton = SettingsButton.None;
     private SettingsButton _pressedButton = SettingsButton.None;
@@ -77,8 +83,36 @@ public sealed class SettingsScreen : IScreen
         _onLanguageSelected = onLanguageSelected;
     }
 
+    internal SettingsScreen(
+        IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected,
+        double selectedUiScale, Action<double> onUiScaleSelected, string selectedLanguage, Action<string> onLanguageSelected,
+        IReadOnlyList<(string Id, string DisplayName)> skins, string effectiveSkinId, Func<string, bool> trySelectSkin)
+        : this(monitorNames, selectedMonitorIndex, onMonitorSelected, selectedUiScale, onUiScaleSelected, selectedLanguage, onLanguageSelected)
+    {
+        _skinPicker = new(skins, skin => skin.Id == TacticalBattleSkin.ClassicId
+            ? Localization.Get("Settings.TacticalBattleSkin.Classic") : skin.DisplayName);
+        for (int i = 0; i < _skinPicker.Items.Length; i++)
+        {
+            if (_skinPicker.Items[i].Id != effectiveSkinId)
+                continue;
+            _selectedSkinIndex = i;
+            break;
+        }
+        if (_skinPicker.HasSelection)
+            _skinPicker.SelectIndex(_selectedSkinIndex);
+        _skinPicker.Changed += skin =>
+        {
+            SkinSaveFailed = !trySelectSkin(skin.Id);
+            if (SkinSaveFailed)
+                _skinPicker.SelectIndex(_selectedSkinIndex);
+            else
+                _selectedSkinIndex = _skinPicker.SelectedIndex;
+        };
+    }
+
     public void OnActivated()
     {
+        _skinPicker?.ResetInput();
         _hoveredButton = SettingsButton.None;
         _pressedButton = SettingsButton.None;
         _isMonitorComboOpen = false;
@@ -89,10 +123,15 @@ public sealed class SettingsScreen : IScreen
         _hoveredLanguageOption = -1;
     }
 
-    public void OnDeactivated() { }
+    public void OnDeactivated() => _skinPicker?.ResetInput();
 
     public ScreenEvent OnKeyDown(Key key)
     {
+        if (_skinPicker is { IsOpen: true } picker)
+        {
+            picker.OnKeyDown(key);
+            return ScreenEvent.None;
+        }
         if (key != Key.Escape)
             return ScreenEvent.None;
 
@@ -119,6 +158,11 @@ public sealed class SettingsScreen : IScreen
 
     public ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
+        if (_skinPicker is { IsOpen: true } picker)
+        {
+            picker.OnMouseDown(x, y, button);
+            return ScreenEvent.None;
+        }
         if (button != MouseButton.Left)
             return ScreenEvent.None;
 
@@ -166,7 +210,12 @@ public sealed class SettingsScreen : IScreen
             return ScreenEvent.None;
         }
 
-        var hit = SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight);
+        var hit = HitTest(x, y);
+        if (hit == SettingsButton.SkinCombo)
+        {
+            _skinPicker?.OnMouseDown(x, y, button);
+            return ScreenEvent.None;
+        }
 
         if (hit == SettingsButton.MonitorCombo)
         {
@@ -199,6 +248,11 @@ public sealed class SettingsScreen : IScreen
 
     public bool OnMouseMove(float x, float y)
     {
+        if (_skinPicker is { IsOpen: true } picker)
+        {
+            picker.OnMouseMove(x, y);
+            return true;
+        }
         if (_isMonitorComboOpen)
         {
             _hoveredMonitorOption = SettingsLayout.HitTestMonitorOption(x, y, _screenWidth, _screenHeight, _monitorNames.Count);
@@ -219,12 +273,19 @@ public sealed class SettingsScreen : IScreen
             return true;
         }
 
-        var hit = SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight);
+        var hit = HitTest(x, y);
         _hoveredButton = hit;
         return hit != SettingsButton.None;
     }
 
-    public ScreenEvent OnMouseWheel(float x, float y, float delta) => ScreenEvent.None;
+    public ScreenEvent OnMouseWheel(float x, float y, float delta)
+    {
+        _skinPicker?.OnMouseWheel(x, y, delta);
+        return ScreenEvent.None;
+    }
+
+    private SettingsButton HitTest(float x, float y) =>
+        SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight, _skinPicker is not null);
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -244,7 +305,10 @@ public sealed class SettingsScreen : IScreen
         DrawMonitorRow(canvas, pl, pt, cx);
         DrawLanguageRow(canvas, pl, pt);
         DrawUiScaleRow(canvas, pl, pt);
-        DrawButton(canvas, pl, pt, SettingsLayout.ExitY, Localization.Get("Settings.Exit"), SettingsButton.Exit);
+        if (_skinPicker is not null)
+            DrawSkinRow(canvas, width, height);
+        DrawButton(canvas, pl, pt, _skinPicker is null ? SettingsLayout.ExitY : SettingsLayout.SkinExitY,
+            Localization.Get("Settings.Exit"), SettingsButton.Exit);
 
         // An open dropdown's option list is drawn last, as a final overlay pass, so it is
         // never covered by a row positioned below it (at most one combo is ever open at a
@@ -255,6 +319,22 @@ public sealed class SettingsScreen : IScreen
             DrawUiScaleOptions(canvas, pl, pt);
         else if (_isLanguageComboOpen)
             DrawLanguageOptions(canvas, pl, pt);
+        else
+            _skinPicker?.DrawPopup(canvas);
+    }
+
+    private void DrawSkinRow(SKCanvas canvas, int width, int height)
+    {
+        var picker = _skinPicker!;
+        var bounds = SettingsLayout.SkinField(width, height);
+        picker.Layout(bounds, SKRect.Create(width, height));
+        using var caption = new SKPaint { Typeface = XenonStyle.TypefaceRegular, TextSize = 15 };
+        var name = ControlText.Ellipsize(picker.SelectedLabel, Math.Max(0, bounds.Width - 56), caption);
+        XenonComboBox.DrawClosed(canvas, bounds, Localization.Get("Settings.TacticalBattleSkin"), name,
+            picker.IsOpen || _hoveredButton == SettingsButton.SkinCombo);
+        if (SkinSaveFailed)
+            ControlVisuals.Label(canvas, Localization.Get("Settings.TacticalBattleSkin.SaveFailed"),
+                new(bounds.Left, bounds.Bottom + 3, bounds.Right, bounds.Bottom + 25), true, 1, center: true);
     }
 
     private void DrawLanguageRow(SKCanvas canvas, float panelLeft, float panelTop)

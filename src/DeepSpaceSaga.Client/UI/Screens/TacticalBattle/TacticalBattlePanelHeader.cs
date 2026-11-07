@@ -1,7 +1,9 @@
 using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
+using DeepSpaceSaga.Motion.TacticalBattle;
 using SkiaSharp;
+using SkinStyle = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -10,6 +12,10 @@ public enum TacticalBattlePresentation { Current, SalvoFlight, SalvoResults }
 internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKColor PhaseColor, string Losses,
     string Seed, string Outcome, string Reason, SKColor OutcomeColor, string Status, bool ShowNew)
 {
+    internal string PhaseRole { get; init; } = "panel.phase";
+    internal string OutcomeRole { get; init; } = "panel.outcome";
+    internal string StatusRole { get; init; } = "panel.status";
+
     internal static TacticalBattlePanelHeader Capture(TacticalBattleFrame frame)
     {
         var battle = frame.Battle;
@@ -36,7 +42,7 @@ internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKC
             TacticalBattlePhase.Fire => new(240, 154, 83),
             _ => new(173, 182, 197)
         };
-        string outcome = "", reason = "";
+        string outcome = "", reason = "", outcomeRole = "panel.outcome";
         SKColor outcomeColor = new(173, 182, 197);
         if (!flight && battle.Outcome is { } result)
         {
@@ -49,6 +55,7 @@ internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKC
             }
             else outcomeKey = "Outcome." + result.Kind;
             outcome = L(outcomeKey);
+            outcomeRole += "." + outcomeKey["Outcome.".Length..].ToLowerInvariant();
             reason = string.Join(" · ", result.Reasons.Select(r => Format("OutcomeReason." + r.Kind,
                 r.Cap is { } cap ? BattleFormat.Number(cap) : r.CarrierId ?? "")));
         }
@@ -56,41 +63,61 @@ internal sealed record TacticalBattlePanelHeader(string Title, string Phase, SKC
             L(phase), phaseColor, Format("LossLine", BattleFormat.Number(ownLosses), BattleFormat.Number(enemyLosses)),
             L("Seed") + " " + BattleFormat.Seed(battle.Seed), outcome, reason, outcomeColor,
             frame.Status.Length > 0 ? frame.Status.Trim() : frame.Pending ? L("Waiting") : "",
-            !flight && battle.Phase == TacticalBattlePhase.Over);
+            !flight && battle.Phase == TacticalBattlePhase.Over)
+        {
+            PhaseRole = "panel.phase." + phase["Phase.".Length..].ToLowerInvariant(),
+            OutcomeRole = outcomeRole,
+            StatusRole = frame.Pending ? "panel.status.pending" : "panel.status.error",
+        };
     }
 
     internal float Draw(SKCanvas canvas, SKRect content, float scale)
     {
-        using var paint = ControlText.Paint(scale);
-        using var marker = new SKPaint { Color = PhaseColor, IsAntialias = true };
+        using var layout = new SKPaint { Typeface = MenuStyle.TypefaceRegular, TextSize = 14 * scale };
+        using var marker = new SKPaint { IsAntialias = true };
         float y = content.Top + 12 * scale;
-        DrawLines(Title, 2);
-        canvas.DrawCircle(content.Left + 5 * scale, y + 9 * scale, 4 * scale, marker);
-        ControlVisuals.Label(canvas, Phase, new(content.Left + 17 * scale, y, content.Right, y + 19 * scale), true, scale);
+        DrawLines(Title, 2, "panel.summary.title");
+        DrawMarker(new SKPoint(content.Left + 5 * scale, y + 9 * scale), PhaseRole + ".marker", PhaseColor);
+        ControlVisuals.Label(canvas, Phase, new(content.Left + 17 * scale, y, content.Right, y + 19 * scale), true, scale,
+            role: PhaseRole);
         y += 23 * scale;
-        DrawLines(Losses + " · " + Seed, 2);
+        DrawLines(Losses + " · " + Seed, 2, "panel.summary.losses");
         if (Outcome.Length > 0)
         {
             y += 3 * scale;
             var banner = SKRect.Create(content.Left, y, content.Width, 29 * scale);
-            marker.Color = OutcomeColor.WithAlpha(48);
-            canvas.DrawRect(banner, marker);
-            marker.Color = OutcomeColor;
-            canvas.DrawRect(content.Left, y, 3 * scale, banner.Height, marker);
-            ControlVisuals.Label(canvas, Outcome, new(content.Left + 10 * scale, y, content.Right, banner.Bottom), true, scale);
+            SkinStyle.Box(canvas, OutcomeRole, banner, OutcomeColor.WithAlpha(48), null, scale);
+            string accent = OutcomeRole + ".accent";
+            marker.Color = SkinStyle.Color(accent, "fill", OutcomeColor);
+            canvas.DrawRect(content.Left, y, (float)PyMath.Clamp(SkinStyle.Number(accent, "size", 3), 1, 8) * scale, banner.Height, marker);
+            ControlVisuals.Label(canvas, Outcome, new(content.Left + 10 * scale, y, content.Right, banner.Bottom), true, scale,
+                role: OutcomeRole);
             y = banner.Bottom + 3 * scale;
-            DrawLines(Reason, 2);
+            DrawLines(Reason, 2, OutcomeRole + ".reason");
         }
-        if (Status.Length > 0) { y += 3 * scale; DrawLines(Status, 3); }
+        if (Status.Length > 0) { y += 3 * scale; DrawLines(Status, 3, StatusRole); }
         return y + 9 * scale;
 
-        void DrawLines(string text, int maximumLines)
+        void DrawMarker(SKPoint center, string role, SKColor fallback)
+        {
+            float size = (float)PyMath.Clamp(SkinStyle.Number(role, "size", 8), 2, 15) * scale;
+            var bounds = SKRect.Create(center.X - size * 0.5f, center.Y - size * 0.5f, size, size);
+            if (SkinStyle.Image(canvas, role, bounds)) return;
+            marker.Color = SkinStyle.Color(role, "fill", fallback);
+            canvas.DrawCircle(center, size * 0.5f, marker);
+        }
+
+        void DrawLines(string text, int maximumLines, string role)
         {
             if (text.Length == 0) return;
-            var lines = ControlText.Wrap(text, content.Width, paint);
-            foreach (var line in lines.Take(maximumLines))
+            int rows = int.Min(maximumLines, ControlText.Wrap(text, content.Width, layout).Length);
+            using var styled = ControlText.Paint(scale, role, text);
+            styled.TextSize = (float)PyMath.Min(styled.TextSize, 17 * scale);
+            var lines = ControlText.Wrap(text, content.Width, styled);
+            for (int i = 0; i < rows; i++)
             {
-                ControlVisuals.Label(canvas, line, new(content.Left, y, content.Right, y + 19 * scale), true, scale);
+                if (i < lines.Length)
+                    ControlVisuals.DrawLabel(canvas, lines[i], new(content.Left, y, content.Right, y + 19 * scale), styled);
                 y += 19 * scale;
             }
         }
