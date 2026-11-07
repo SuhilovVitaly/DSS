@@ -1,6 +1,6 @@
 # Ассеты и данные карты и боя
 
-Настройки карты находятся в Settings.gameSettings.tacticalMap, назначения клавиш — в [Data/UI](../../../src/DeepSpaceSaga.Client/Data/UI/). Данные тактического боя поставляются отдельным [каталогом](../../../src/DeepSpaceSaga.Client/Data/TacticalBattle/) с русскими именами, а подписи UI — в [Data/Locale](../../../src/DeepSpaceSaga.Client/Data/Locale/).
+Настройки карты находятся в Settings.gameSettings.tacticalMap, назначения клавиш — в [Data/UI](../../../src/DeepSpaceSaga.Client/Data/UI/). Данные тактического боя поставляются отдельным [каталогом](../../../src/DeepSpaceSaga.Client/Data/TacticalBattle/) с русскими именами и обязательным initiative у каждого пилота, а подписи UI — в [Data/Locale](../../../src/DeepSpaceSaga.Client/Data/Locale/).
 
 Панели и карты работают по принятым снимкам и локальному UI. Рендер и обработка мыши используют общий viewport. Кнопочные PNG экспортируются [Export-TacticalButtonAssets.ps1](../../../tools/Export-TacticalButtonAssets.ps1); правила размеров и состояний — в [стиле кнопок](../03-Design/TacticalButtons/STYLE.md). Шрифты боя должны поддерживать кириллицу и символы из BattleFormat; запасные глифы проверяются отдельно от наличия ключа локали.
 

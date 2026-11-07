@@ -120,13 +120,13 @@ Rows distinguish real entities, descriptors, configured decoration samples, laye
 
 Current measurements: scripted native8/8 PASS, FPS target0/8 PASS (p9950.5839–54.4007ms vs12.5ms), with VSync reported100Hz on Intel Arc140V. Fresh baseline/empty-window controls also fail; exact driver/OS cause unproven. Do not claim GPU execution, physical scanout or human playthrough. Compact results and source/raw hashes are retained in [EP-0004 evidence](../../DB/Board/EP-0004-ai-territories-and-map-environment/ImplementationStatus.md); temporary native JSON/PNG were removed after review. [Current map contract](../../DB/Documentation/04-Engineering/AiMapEnvironment.md).
 
-## Tactical battle V4
+## Tactical battle initiative
 
 Build Release, create an absolute evidence directory and run the requested mode
 from the DSS repository root. The example uses a new diagnostic run.
 
 ```powershell
-$run = 'D:/DeepSpaceSaga/artifacts/validation/ep-0015-tactical-carrier-battle/<unique-run>'
+$run = 'D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/<unique-run>'
 New-Item -ItemType Directory -Force $run
 $env:DSS_VALIDATION_ROOT = $run
 dotnet build tools/DeepSpaceSaga.Performance -c Release --no-restore
@@ -146,4 +146,7 @@ historical evidence in the [Board](../../DB/Board).
 For a skin verification case, point `DSS_TACTICAL_NATIVE_SETTINGS` at an isolated `Settings.json` with its own sibling `Skins` directory and set `DSS_TACTICAL_NATIVE_EXPECT_SKIN` to the effective ID. Set `DSS_TACTICAL_NATIVE_PICK_LAST=1` to choose the last catalog entry through the live Settings overlay before F8. The native report records the outcome and the effective-skin checks for both active battle entries. Use the same seed, viewport and scale when comparing runs. [Skin authoring contract](../../DB/Documentation/04-Engineering/TacticalBattleSkins.md)
 
 Current rules and evidence: [TacticalBattle](../../DB/Documentation/04-Engineering/TacticalBattle.md),
-[FinalValidation](../../DB/Board/EP-0015-tactical-carrier-battle/FinalValidation.md).
+[ExecutionStatus EP-0017](../../DB/Board/EP-0017-pilot-initiative/ExecutionStatus.md).
+Select another monitor through `gameSettings.selectedMonitorIndex` in the isolated
+settings profile (zero based); leave the regular user settings untouched. Native
+scripted input does not establish physical-input, human/product or balance acceptance.

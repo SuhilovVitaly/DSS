@@ -2,7 +2,7 @@
 epic: EP-0017-pilot-initiative
 story: EP-0017-US-0002-initiative-fire
 title: "Последовательная стрельба по инициативе"
-stage: approved
+stage: done
 approval: "утверждаю"
 approval_recorded_utc: 2026-11-07T13:29:05Z
 dependencies: [EP-0017-US-0001-pilot-initiative]
@@ -78,3 +78,7 @@ Engine владеет исходами и RNG; Client показывает по�
 ## Execution progress — 2026-11-07
 
 Пять тикетов реализованы и automated-проверены. Все AC покрыты hand cases, frozen targets/skips, exact RNG ownership, chronological immutable session payload, receipt rejection/replay, direct/API/connection parity,421 tactical regression cases и5000 paired seeded battles. Исторические V4 outcomes не изменены; новый баланс не принят. Native/product UI gates остаются в US-0003/финальной приёмке.
+
+## Execution — 2026-11-07
+
+Техническая реализация и проверки завершены; опубликованные тикеты и evidence: [ExecutionStatus](../ExecutionStatus.md). Self-review не является независимым review. Human/product/balance/physical-input acceptance отдельно остаётся открытой.

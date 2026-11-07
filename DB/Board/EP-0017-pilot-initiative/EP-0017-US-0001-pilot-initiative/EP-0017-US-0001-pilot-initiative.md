@@ -2,7 +2,7 @@
 epic: EP-0017-pilot-initiative
 story: EP-0017-US-0001-pilot-initiative
 title: "Инициатива каждого пилота"
-stage: approved
+stage: done
 approval: "утверждаю"
 approval_recorded_utc: 2026-11-07T13:27:24Z
 dependencies: []
@@ -76,3 +76,7 @@ Engine владеет исходами и RNG; Client показывает по�
 ## Execution progress — 2026-11-07
 
 Все пять production-тикетов реализованы и automated-проверены. Данные, schema и materialization сохраняют независимость main RNG, lifetime, base content и транспортную совместимость; карточки покрывают обе стороны/0/null/inactive/RU/EN/скины. Native/product остаются открыты, native UI консолидирован после US-0003. US-0002 может использовать реализованную инициативу. Последовательная стрельба ещё не реализована.
+
+## Execution — 2026-11-07
+
+Техническая реализация и проверки завершены; опубликованные тикеты и evidence: [ExecutionStatus](../ExecutionStatus.md). Self-review не является независимым review. Human/product/balance/physical-input acceptance отдельно остаётся открытой.

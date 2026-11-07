@@ -1,13 +1,13 @@
 ---
 epic: EP-0017-pilot-initiative
-stage: approved
+stage: implemented
 created: 2026-11-07T13:42:39Z
 approval_kind: workflow
 ---
 
 # EP-0017 — карта тикетов
 
-Пользователь утвердил эпик и поручил создать тикеты всех трёх историй без отдельных подтверждений (D-08). Созданы **15 тикетов, по пять на историю**. Все имеют stage: approved как planning artifacts; это не утверждение выполнения или product acceptance. Точные сообщения и время записи: [Documentation.md](Documentation.md#решения-пользователя). Уточнённый API, правила и assumptions: [ImplementationContract.md](ImplementationContract.md).
+Текущий состав: **4 истории / 16 тикетов**, все технически выполнены. 15 функциональных тикетов исходного планирования дополнены одной обязательной историей/тикетом документации. Публикация и evidence: [ExecutionStatus](ExecutionStatus.md). Human/product/balance/physical-input acceptance остаётся открытой. Точные сообщения и время записи: [Documentation.md](Documentation.md#решения-пользователя). Уточнённый API, правила и assumptions: [ImplementationContract.md](ImplementationContract.md).
 
 ## Истории
 
@@ -17,9 +17,11 @@ approval_kind: workflow
 | US-0002 | [EP-0017-US-0002-initiative-fire](D:/DeepSpaceSaga/DSS/DB/Board/EP-0017-pilot-initiative/EP-0017-US-0002-initiative-fire/EP-0017-US-0002-initiative-fire.md) | 5 | US-0001 |
 | US-0003 | [EP-0017-US-0003-fire-order-presentation](D:/DeepSpaceSaga/DSS/DB/Board/EP-0017-pilot-initiative/EP-0017-US-0003-fire-order-presentation/EP-0017-US-0003-fire-order-presentation.md) | 5 | US-0001, US-0002 |
 
+| US-0004 | [project-documentation](EP-0017-US-0004-project-documentation/EP-0017-US-0004-project-documentation.md) | 1 | US-0001, US-0002, US-0003 |
+
 ## Полная карта
 
-Все ссылки на тикеты ниже — абсолютные пути канонического Board. Порядок таблицы топологический; номера TK последовательны внутри каждой истории.
+Все ссылки на тикеты ниже — абсолютные пути канонического Board. Таблица сгруппирована по историям; фактический dependency order указан ниже.
 
 | Порядок | ID / полный путь | Title | Layer | Files | Dependencies | Served criteria |
 |---|---|---|---|---|---|---|
@@ -37,13 +39,13 @@ approval_kind: workflow
 | 12 | [EP-0017-US-0003-TK-0002-sequential-playback](D:/DeepSpaceSaga/DSS/DB/Board/EP-0017-pilot-initiative/EP-0017-US-0003-fire-order-presentation/EP-0017-US-0003-TK-0002-sequential-playback/EP-0017-US-0003-TK-0002-sequential-playback.md) | Последовательное воспроизведение ленты стрельбы | client | 5 | EP-0017-US-0003-TK-0001-queue-and-forecast | AC-02, AC-03, AC-04, AC-05 |
 | 13 | [EP-0017-US-0003-TK-0003-consistent-battle-surfaces](D:/DeepSpaceSaga/DSS/DB/Board/EP-0017-pilot-initiative/EP-0017-US-0003-fire-order-presentation/EP-0017-US-0003-TK-0003-consistent-battle-surfaces/EP-0017-US-0003-TK-0003-consistent-battle-surfaces.md) | Согласованные карта, карточки и заголовок на каждом шаге | client | 5 | EP-0017-US-0003-TK-0002-sequential-playback | AC-02, AC-03, AC-04, AC-05 |
 | 14 | [EP-0017-US-0003-TK-0004-chronological-journal](D:/DeepSpaceSaga/DSS/DB/Board/EP-0017-pilot-initiative/EP-0017-US-0003-fire-order-presentation/EP-0017-US-0003-TK-0004-chronological-journal/EP-0017-US-0003-TK-0004-chronological-journal.md) | Причины пропусков, пошаговый журнал и lifecycle интерфейса | client | 5 | EP-0017-US-0003-TK-0003-consistent-battle-surfaces | AC-02, AC-03, AC-04, AC-05 |
-| 15 | [EP-0017-US-0003-TK-0005-export-and-documentation](D:/DeepSpaceSaga/DSS/DB/Board/EP-0017-pilot-initiative/EP-0017-US-0003-fire-order-presentation/EP-0017-US-0003-TK-0005-export-and-documentation/EP-0017-US-0003-TK-0005-export-and-documentation.md) | Экспорт контента с инициативой и актуальный контракт механики | tooling | 5 | EP-0017-US-0003-TK-0004-chronological-journal, EP-0017-US-0001-TK-0004-materialize-initiative | AC-01, AC-05 |
+| 15 | [EP-0017-US-0003-TK-0005-export-and-documentation](D:/DeepSpaceSaga/DSS/DB/Board/EP-0017-pilot-initiative/EP-0017-US-0003-fire-order-presentation/EP-0017-US-0003-TK-0005-export-and-documentation/EP-0017-US-0003-TK-0005-export-and-documentation.md) | Экспорт контента с инициативой и актуальный контракт механики | tooling | 5 | EP-0017-US-0001-TK-0001-pilot-content | AC-01, AC-05 |
+
+| 16 | [EP-0017-US-0004-TK-0001](EP-0017-US-0004-project-documentation/EP-0017-US-0004-TK-0001-current-contracts-and-evidence/EP-0017-US-0004-TK-0001-current-contracts-and-evidence.md) | Контракты всего проекта, Board, evidence, Graphify | tooling | inventory | все функциональные истории | US4 AC-01…04 |
 
 ## Dependency order
 
-US-0001/TK-0001 → US-0001/TK-0002 → US-0001/TK-0003 → US-0001/TK-0004 → US-0001/TK-0005 → US-0002/TK-0001 → US-0002/TK-0002 → US-0002/TK-0003 → US-0002/TK-0004 → US-0002/TK-0005 → US-0003/TK-0001 → US-0003/TK-0002 → US-0003/TK-0003 → US-0003/TK-0004 → US-0003/TK-0005.
-
-US-0001/TK-0001 (данные) и TK-0002 (Contracts) независимы и могут быть выполнены до loader/materialization; остальные шаги выполняются по явным depends_on карточек. Из-за совместного владения файлами между поздними тикетами порядок зависимостей сохраняется даже при потенциальной независимости критериев. Не запускать несовместимые записи в общие файлы одновременно.
+US1/TK1 → US1/TK2 → US1/TK3 → US3/TK5 (export) → US1/TK4 → US1/TK5 → US2/TK1…TK5 → US3/TK1…TK4 → US4/TK1. Export перенесён до materialization для ContentSync; нормативные документы перенесены в последнюю US4. Это устраняет устаревшую UI-зависимость export.
 
 ## Покрытие критериев историй
 
@@ -69,7 +71,7 @@ Epic AC-01 покрыт US-0001; AC-02…AC-05 — US-0002; AC-06 — US-0003/TK
 
 ## Ограничения и владение
 
-- Каждый тикет: один production layer, максимум пять изменяемых файлов **включая тесты и сопутствующие документы**. Дополнительные файлы чтения не разрешают скрытую запись.
+- Исходный лимит пяти файлов расширен в Grounded execution scope затронутых карточек по полномочию EpicExecutionPrompt. Production ownership сохранён; итоговая документация определяется инвентаризацией.
 - US-0002/TK-0005 — test-only merge unit слоя engine с matching Engine.Tests. Он не меняет production-код.
 - US-0003/TK-0005 — tooling production layer; три Markdown контракта — сопровождающая документация и включены в лимит5. Matching harness — новый самодостаточный PowerShell test без Pester.
 - Прежние constructor signatures Contracts сохраняются через additive init properties. LocalClient/Motion/Save20 не требуют production edits.
@@ -105,3 +107,5 @@ Native/product сценарии после реализации: очередь 
 Текущее поручение разрешает реализацию, Board, commit и немедленный push по EpicExecutionPrompt. Исторические planning-only ограничения не блокируют исполнение. Добавлена обязательная последняя [US-0004](EP-0017-US-0004-project-documentation/EP-0017-US-0004-project-documentation.md): 4 истории, 16 тикетов. Порядок: US-0001 → US-0002 → US-0003 → US-0004. US-0004/TK-0001 покрывает инвентаризацию всего проекта, текущие документы, Board/evidence и Graphify.
 
 Execution order correction: US-0003/TK-0005 (export only) follows US-0001/TK-0003 and precedes US-0001/TK-0004 because ContentSyncTests requires export parity. Its former normative edits are owned by final US-0004/TK-0001.
+
+US4 AC-01…04 покрыты единственным TK1: DocumentationImpact, актуальные документы, ExecutionStatus и проверенный свежий Graphify. Собственный SHA устанавливается после commit/push через publication receipt.

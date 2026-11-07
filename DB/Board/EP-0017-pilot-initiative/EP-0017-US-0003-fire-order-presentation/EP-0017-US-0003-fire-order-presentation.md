@@ -2,7 +2,7 @@
 epic: EP-0017-pilot-initiative
 story: EP-0017-US-0003-fire-order-presentation
 title: "Очередь стрельбы и понятные результаты"
-stage: approved
+stage: done
 approval: "утверждаю и дальше все юзерстори без утверждения - я посмотрю их потом все вместе."
 approval_recorded_utc: 2026-11-07T13:31:13Z
 dependencies: [EP-0017-US-0001-pilot-initiative, EP-0017-US-0002-initiative-fire]
@@ -78,3 +78,7 @@ Engine владеет исходами и RNG; Client показывает по�
   US-0003 утверждена. Указание о дальнейших историях и общей проверке сохранено в D-07 эпика; оно не является приёмкой реализации или утверждением всего состава эпика.
 
 - 2026-11-07T13:42:39Z — ticket map и пять тикетов утверждены workflow без отдельных вопросов. Пользовательское approval истории сохранено; детализация не меняет согласованные D-решения.
+
+## Execution — 2026-11-07
+
+Техническая реализация и проверки завершены; опубликованные тикеты и evidence: [ExecutionStatus](../ExecutionStatus.md). Self-review не является независимым review. Human/product/balance/physical-input acceptance отдельно остаётся открытой.

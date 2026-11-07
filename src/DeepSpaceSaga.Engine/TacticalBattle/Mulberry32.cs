@@ -2,7 +2,7 @@ using DeepSpaceSaga.Motion.TacticalBattle;
 
 namespace DeepSpaceSaga.Engine.TacticalBattle;
 
-/// <summary>The sole battle-owned stream, V4 Spec/Generation §1.</summary>
+/// <summary>Battle-owned Mulberry32 generator; combat and initiative use separate instances. V4 Spec/Generation §1 defines the primitive.</summary>
 internal sealed class Mulberry32(uint seed)
 {
     private uint _state = seed;

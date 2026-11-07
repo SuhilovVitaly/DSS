@@ -1,6 +1,6 @@
 # Deep Space Saga: документация
 
-Здесь описаны текущие игровые контракты. Статус разработки, результаты тестов и приёмка находятся в [Board](../Board). [Тактический бой V4](04-Engineering/TacticalBattle.md) запускается с карты; [Save20](04-Engineering/SaveFormat.md) хранит мир и читает поддерживаемые архивные сохранения.
+Здесь описаны текущие игровые контракты. Статус разработки, результаты тестов и приёмка находятся в [Board](../Board). [Тактический бой с инициативой](04-Engineering/TacticalBattle.md) запускается с карты; [Save20](04-Engineering/SaveFormat.md) хранит мир и читает поддерживаемые архивные сохранения.
 
 ## Начать здесь
 
@@ -66,7 +66,7 @@
 - [Каталог товаров и совместимость](04-Engineering/ItemCatalogSchema.md).
 - [Принципы моддинга и архивный прототип C#-мода](04-Engineering/Modding.md).
 - [Прогноз движения NPC по наблюдениям](04-Engineering/NpcObservedTrajectories.md).
-- [Тактический бой V4](04-Engineering/TacticalBattle.md).
+- [Тактический бой с инициативой](04-Engineering/TacticalBattle.md).
 - [Создание и установка скинов боя](04-Engineering/TacticalBattleSkins.md).
 - [Сохранения и восстановление](04-Engineering/SaveFormat.md).
 - [Экономика и процедурный мир](04-Engineering/TradingAndSolarSystem.md).
@@ -75,7 +75,7 @@
 
 - [Инструмент подготовки портретов](06-Tooling/DeepSpaceSaga.PortraitAssets.md).
 - [Ассеты и данные тактического UI](06-Tooling/GameSessionScreenUI.md).
-- [Источники и проверки V4](06-Tooling/CarrierWingSim.md).
+- [Контент V4 и проверки инициативной стрельбы](06-Tooling/CarrierWingSim.md).
 - [Навигационный граф](06-Tooling/Graphify.md).
 
 Здесь хранятся только `.md`. Результаты тестов, дампы, скрипты,

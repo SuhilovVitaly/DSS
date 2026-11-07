@@ -2,7 +2,7 @@
 epic: EP-0017-pilot-initiative
 story: EP-0017-US-0004-project-documentation
 title: Актуальная документация инициативной стрельбы
-stage: approved
+stage: done
 approval_kind: execution-mandate
 dependencies: [EP-0017-US-0001-pilot-initiative, EP-0017-US-0002-initiative-fire, EP-0017-US-0003-fire-order-presentation]
 ---
@@ -23,3 +23,7 @@ dependencies: [EP-0017-US-0001-pilot-initiative, EP-0017-US-0002-initiative-fire
 ## Tickets
 
 - [TK-0001](EP-0017-US-0004-TK-0001-current-contracts-and-evidence/EP-0017-US-0004-TK-0001-current-contracts-and-evidence.md): AC-01…04.
+
+## Execution — 2026-11-07
+
+Техническая реализация и проверки завершены; опубликованные тикеты и evidence: [ExecutionStatus](../ExecutionStatus.md). Self-review не является независимым review. Human/product/balance/physical-input acceptance отдельно остаётся открытой.

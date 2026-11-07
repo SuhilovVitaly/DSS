@@ -5,6 +5,7 @@ using DeepSpaceSaga.Motion.TacticalBattle;
 namespace DeepSpaceSaga.Engine.TacticalBattle;
 
 internal sealed record TacticalCandidate(TacticalUnit Target, double Distance, double Angle, TacticalHitTerms Terms);
+/// <summary>SoloHullLoss is the actual hull loss credited at this sequential shot; LethalImpact belongs to this shot only.</summary>
 internal sealed record TacticalShot(TacticalDrone Shooter, TacticalUnit Target, double Distance, double Angle,
     double Chance, bool Hit, int Damage, bool Rear, bool Kill, int SoloHullLoss, bool LethalImpact = false);
 internal sealed record TacticalDamage(string TargetId, int Hull, int Armor, bool RearKill);
