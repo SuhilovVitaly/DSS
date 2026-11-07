@@ -99,3 +99,8 @@ Native/product сценарии после реализации: очередь 
 
 Утверждение тикетов: workflow epic-writer, 2026-11-07T13:42:39Z. Дополнительное человеческое approval не приписывается.
 
+
+## Execution scope — 2026-11-07
+
+Текущее поручение разрешает реализацию, Board, commit и немедленный push по EpicExecutionPrompt. Исторические planning-only ограничения не блокируют исполнение. Добавлена обязательная последняя [US-0004](EP-0017-US-0004-project-documentation/EP-0017-US-0004-project-documentation.md): 4 истории, 16 тикетов. Порядок: US-0001 → US-0002 → US-0003 → US-0004. US-0004/TK-0001 покрывает инвентаризацию всего проекта, текущие документы, Board/evidence и Graphify.
+
