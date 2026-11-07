@@ -455,7 +455,18 @@ public class LocalSessionIntegrationTests
                 if (expectedMap is null)
                     expectedMap = map;
                 else
-                    Assert.Equal(JsonSerializer.Serialize(expectedMap), JsonSerializer.Serialize(map));
+                {
+                    // Actual player offsets adjust the home radius. Seeded topology/policies remain identical.
+                    Assert.Equal(JsonSerializer.Serialize(expectedMap with { Edges = [] }), JsonSerializer.Serialize(map with { Edges = [] }));
+                    Assert.Equal(expectedMap.Edges.Select(e => (e.FromStationObjectId, e.ToStationObjectId, e.RiskProfileId, e.FuelMultiplierPermille)),
+                        map.Edges.Select(e => (e.FromStationObjectId, e.ToStationObjectId, e.RiskProfileId, e.FuelMultiplierPermille)));
+                }
+                foreach (var edge in map.Edges)
+                {
+                    var a = saved.GameState.SpaceObjects.Single(o => o.ObjectId == edge.FromStationObjectId);
+                    var b = saved.GameState.SpaceObjects.Single(o => o.ObjectId == edge.ToStationObjectId);
+                    Assert.Equal(double.Hypot(a.PositionX - b.PositionX, a.PositionY - b.PositionY) / 10, edge.DistanceKm, 6);
+                }
             }
         }
         finally

@@ -10,10 +10,11 @@ public sealed class LocalClusterContentTests
     public void ClusterContentUsesExistingProfiles()
     {
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(DefaultSystemContentTests.Settings)!;
-        Assert.Equal(0.5, config.Clusters!.NeighbourMinDays);
-        Assert.Equal(2, config.Clusters.NeighbourMaxDays);
-        Assert.Equal(3, config.Clusters.DiameterMinDays);
-        Assert.Equal(7, config.Clusters.DiameterMaxDays);
+        Assert.Equal(1, config.Clusters!.NeighbourMinDays);
+        Assert.Equal(3, config.Clusters.NeighbourMaxDays);
+        Assert.Equal(10, config.Clusters.DiameterMinDays);
+        Assert.Equal(16, config.Clusters.DiameterMaxDays);
+        Assert.Equal(1, config.Clusters.MinimumStationDays);
         foreach (var name in config.EnabledScenarios)
         {
             using var engine = SimulationEngine.CreateFromScenarioFile(DefaultSystemContentTests.Settings,

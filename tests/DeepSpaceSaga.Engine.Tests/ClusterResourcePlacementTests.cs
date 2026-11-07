@@ -38,8 +38,11 @@ public sealed class ClusterResourcePlacementTests
         {
             GameState = original.GameState with
             {
-                MasterSeed = 42, SpaceObjects = materialized.SpaceObjects.Select(o => o with { MarketBudgetCredits = null }).ToArray(), TradingMapGeneration = null,
-                TradingMap = materialized.TradingMap, StationResourceFields = materialized.StationResourceFields
+                MasterSeed = 42,
+                SpaceObjects = materialized.SpaceObjects.Select(o => o with { MarketBudgetCredits = null }).ToArray(),
+                TradingMapGeneration = null,
+                TradingMap = materialized.TradingMap,
+                StationResourceFields = materialized.StationResourceFields
             }
         };
         using var engine = new SimulationEngine(registry);
@@ -83,7 +86,9 @@ public sealed class ClusterResourcePlacementTests
     internal static SimulationEngine Create(ulong seed = 42)
     {
         var engine = new SimulationEngine(SeededWorldBootstrapTests.Registry());
-        var config = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
+        // This fixture retains the legacy resource-disclosure contract independently of shipped defaults.
+        var config = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))! with
+        { GeneratorVersion = 1, Clusters = new ClusterGenerationConfig(3, 5, 10, 12, 0.5, 2, 3, 7, 15, 35) };
         var rules = JsonSerializer.Deserialize<DeepSpaceSaga.Engine.Scenario.StationResourceFieldConfig>(File.ReadAllText(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Data/World/station-resource-fields.json")))!;
         engine.ConfigureStationResourceFields(rules);
         var source = SeededWorldBootstrapTests.Scenario();
@@ -135,7 +140,8 @@ public sealed class ClusterResourcePlacementTests
     {
         using var fields = Create();
         var source = SeededWorldBootstrapTests.Scenario();
-        var config = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
+        var config = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))! with
+        { GeneratorVersion = 1, Clusters = new ClusterGenerationConfig(3, 5, 10, 12, 0.5, 2, 3, 7, 15, 35) };
         using var control = new SimulationEngine(SeededWorldBootstrapTests.Registry());
         control.LoadScenario(source with { GameState = source.GameState with { MasterSeed = 42 } }, generation: config);
         fields.CaptureSnapshotForTests(86400000, SimulationSpeed.Speed0, 288000);

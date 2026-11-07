@@ -42,8 +42,9 @@ public sealed class KnownMapProjectionTests
         Assert.NotNull(quote.DisabledReason);
         Assert.All(snapshot.Objects.Where(o => o.Survey is not null), o =>
         {
-            Assert.True(o.Survey!.CompositionKnown);
-            Assert.Equal(1000, o.Survey.Resources.Sum(r => r.Permille));
+            Assert.False(o.Survey!.CompositionKnown);
+            Assert.Empty(o.Survey.Resources);
+            Assert.Null(o.Survey.CompositionType);
         });
         Assert.Equal(before.GameState.StationResourceFields, engine.CaptureSaveState().GameState.StationResourceFields);
     }

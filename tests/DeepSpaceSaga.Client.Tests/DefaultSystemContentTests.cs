@@ -9,6 +9,21 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class DefaultSystemContentTests
 {
+    [Fact]
+    public void LegacyDefaultStationsRespectDayMinimum()
+    {
+        using var engine = SimulationEngine.CreateFromSettingsFile(Settings);
+        var snapshot = engine.CaptureSnapshot();
+        AllScenarioSystemContentTests.AssertGeography(snapshot);
+        var source = ScenarioLoader.LoadFromFile(Path.Combine(AppContext.BaseDirectory, "Scenarios", "Default", "scenario.json"));
+        var rules = source.GameState.TradingMapGeneration ?? source.GameState.TradingMap!.Rules;
+        foreach (var station in rules.Stations)
+        {
+            Assert.Contains(snapshot.ClusterMap!.Stations, s => s.ObjectId == station.ObjectId && s.MarketProfileId == station.MarketProfileId);
+        }
+        Assert.Equal(6, snapshot.Objects.Single(o => o.ObjectId == snapshot.PlayerShipObjectId).MaxSpeedKmS);
+    }
+
     internal static string Settings => Path.Combine(AppContext.BaseDirectory, "Settings.json");
 
     [Fact]

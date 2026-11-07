@@ -9,6 +9,39 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class AllScenarioSystemContentTests
 {
     [Fact]
+    public void AllEnabledStartsPublishV2Geography()
+    {
+        var config = EngineContentLoader.LoadSolarSystemGenerationConfig(DefaultSystemContentTests.Settings)!;
+        Assert.Equal(6, config.EnabledScenarios.Count);
+        foreach (string name in config.EnabledScenarios)
+        {
+            using var engine = SimulationEngine.CreateFromScenarioFile(DefaultSystemContentTests.Settings,
+                Path.Combine(AppContext.BaseDirectory, "Scenarios", name, "scenario.json"));
+            AssertGeography(engine.CaptureSnapshot());
+        }
+    }
+
+    internal static void AssertGeography(AuthoritativeSnapshot snapshot)
+    {
+        Assert.Equal(2, snapshot.SolarSystemMap!.GeneratorVersion);
+        var map = snapshot.ClusterMap!;
+        Assert.Equal(2, map.RulesVersion);
+        Assert.Equal(1, map.Geography!.MinimumStationDays);
+        Assert.InRange(map.Clusters.Length, 3, 5);
+        double units = map.Geography.ReferenceSpeedKmS * 86400 / 300 * 10;
+        var objects = snapshot.Objects.ToDictionary(o => o.ObjectId);
+        foreach (var a in map.Stations)
+        {
+            var others = map.Stations.Where(b => b.ObjectId != a.ObjectId).Select(b =>
+                (Station: b, Days: double.Hypot(objects[a.ObjectId].X - objects[b.ObjectId].X,
+                    objects[a.ObjectId].Y - objects[b.ObjectId].Y) / units)).ToArray();
+            Assert.All(others, b => Assert.True(b.Days >= 1 - 1e-9));
+            double nearest = others.Where(b => b.Station.ClusterId == a.ClusterId).Min(b => b.Days);
+            Assert.InRange(nearest, 1 - 1e-9, 3 + 1e-9);
+        }
+    }
+
+    [Fact]
     public async Task EveryListedScenarioStarts()
     {
         var scenarios = ScenarioRepository.ListScenarios(Path.Combine(AppContext.BaseDirectory, "Scenarios"));

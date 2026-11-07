@@ -9,14 +9,14 @@ namespace DeepSpaceSaga.Client.Tests;
 public sealed class ClusterResourceMapTests
 {
     [Fact]
-    public void KnownResourcesSelectableWithoutScan()
+    public void ResourceLocationSelectableWithoutDisclosingComposition()
     {
         using var engine = SimulationEngine.CreateFromSettingsFile(DefaultSystemContentTests.Settings);
         var first = engine.CaptureSnapshot();
         var binding = first.ClusterMap!.ResourceBindings[0];
         var snapshot = first with { SelectedObjectId = binding.FieldId };
         var obj = snapshot.Objects.Single(o => o.ObjectId == binding.FieldId);
-        Assert.True(obj.Survey!.CompositionKnown); Assert.False(obj.Survey.CanStructuralScan);
+        Assert.False(obj.Survey!.CompositionKnown); Assert.Empty(obj.Survey.Resources);
         var buffer = new SnapshotBuffer(); buffer.Update(snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
         using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
@@ -25,7 +25,7 @@ public sealed class ClusterResourceMapTests
         var data = screen.SelectedOrActiveObjectInfo!.Value;
         Assert.NotNull(data.ResourceCluster);
         Assert.Equal(binding.AnchorStationId, data.ResourceOwner);
-        Assert.Contains(ObjectInfoPanel.BuildLines(data), l => l.Label == "Composition" && l.Value != "Unknown");
+        Assert.Contains(ObjectInfoPanel.BuildLines(data), l => l.Label == "Composition" && l.Value == "Unknown");
     }
 
     [Fact]

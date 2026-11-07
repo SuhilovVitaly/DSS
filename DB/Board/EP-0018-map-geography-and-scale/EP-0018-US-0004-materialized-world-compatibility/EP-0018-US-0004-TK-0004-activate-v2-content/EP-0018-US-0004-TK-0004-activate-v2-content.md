@@ -5,11 +5,11 @@ ticket: EP-0018-US-0004-TK-0004-activate-v2-content
 title: "Включение новой карты для всех обычных стартов"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0004-TK-0003-local-world-roundtrip]
-files_touched: 3
+files_touched: 10
 serves: [AC-04]
 created: 2026-11-07T17:21:08Z
 revision: 1
@@ -85,3 +85,9 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Scope refinement before regression repairs
+2026-11-07: production activation exposes obsolete v1 assumptions in tests. Extend allowlist to tests/DeepSpaceSaga.Engine.Tests/{KnownMapProjectionTests.cs,ClusterResourcePlacementTests.cs} and tests/DeepSpaceSaga.Client.Tests/{PoiMapSelectionTests.cs,ClusterResourceMapTests.cs,LocalClusterContentTests.cs,StationMarketDemoContentTests.cs,LocalSessionIntegrationTests.cs}. Preserve dedicated legacy resource fixture as explicit gen1; production v2 knowledge tests require hidden composition, content tests exact new values. Same seed preserves topology/RNG, while actual docked/free local offset changes corrected start radius and thus materialized distances; compare topology plus each edge actual geometry, not cross-scenario distance equality. Dock/trade-only market fixture starts near its chosen production station, retaining full generated world; multi-day flight is already covered by US3TK3, no remote docking bypass. No production rule weakening.
+
+## Execution evidence
+2026-11-07: shipped gen2/width.20/min1/nearest1–3/diameter10–16/centers30–50 activated after file compatibility gates. Counts, six enabled scenarios, actual engine6km/s, calendar and economic payload unchanged. Before two named production tests fail on version1; final focused20/20, full Client2072/2072 and Engine non-corpus2148/2148 PASS. Legacy expectations updated as declared above; initial broad failures retained, no weakened game rule. Build and scoped format verification exit0; diff check PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-content-activation/{before.trx,focused-final.trx,client-verified.trx,engine-final.trx,build.log,format-verified.log,format-last.log}; earlier failed broad reports also retained. No local-save-* temporary folders remain. Self-review complete; corpus/native/human gates remain US8.

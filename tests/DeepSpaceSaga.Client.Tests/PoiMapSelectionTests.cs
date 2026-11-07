@@ -52,7 +52,8 @@ public sealed class PoiMapSelectionTests
         foreach (var binding in snapshot.ClusterMap.ResourceBindings)
         {
             var resource = Assert.Single(snapshot.Objects, o => o.ObjectId == binding.FieldId);
-            Assert.True(resource.Survey!.CompositionKnown);
+            Assert.False(resource.Survey!.CompositionKnown);
+            Assert.Empty(resource.Survey.Resources);
             Assert.Equal(binding, ClusterMapPresentation.Resource(snapshot, resource.ObjectId));
             Assert.DoesNotContain(snapshot.AiMap.PointsOfInterest, p => p.ObjectId == resource.ObjectId);
         }
