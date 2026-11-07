@@ -5,7 +5,7 @@ ticket: EP-0018-US-0009-TK-0002-board-handoff
 title: "Реестр исполнения и передача эпика без ложной приёмки"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: tooling
 test_project: tools/DeepSpaceSaga.Performance.Tests/DeepSpaceSaga.Performance.Tests.csproj
 depends_on: [EP-0018-US-0009-TK-0001-current-map-contracts]
@@ -43,6 +43,8 @@ No API change; Board execution records.
 Никаких новых public Engine вызовов из Client/render loop. Зависимости создают только явно перечисленные predecessor tickets.
 
 ## Implementation steps
+Final reconciliation scope (2026-11-08): canonical EP-0018 cards may have stale planning annotations updated to their observed implementation state, without inventing approvals. Rewrite the current ledger rather than retain contradictory early "next ticket" summaries. Preserve original planning/review statements explicitly as history. Inventory includes all tracked Markdown categories and meaningful source comments; VData/Board copies remain untouched. Final self-referential publication SHA is recorded by a subsequent publication receipt, never guessed inside its own commit.
+
 1. Собрать ledger всех29 тикетов и критериев с реальными evidence; обновление отдельных ticket stage — обязанность соответствующих owning тикетов, не скрытое расширение этого allowlist.
 2. Фиксировать NOT RUN/OPEN/FAIL отдельно; эпик не считать принятым только по наличию кода или завершённому planning.
 3. Записать deviations от assumptions, actual supported versions и оставшийся backlog; точные publication SHAs только если publication отдельно разрешена.
@@ -93,3 +95,16 @@ offline граф через tools/graphify/rebuild.py; output/semantic/cache т�
 Граф строится после финального кода/текстов; fresh hashes/coverage/limitations
 проверяются, исторический src/graphify-out не заменяется. Пять файлов исходного
 planning не ограничивают обязательный inventory/документацию всего проекта.
+
+
+## Execution — 2026-11-08
+
+Reconciled current Epic/contract/ticket index and all completed-card planning test annotations;
+rewrote the ledger with27actual published SHAs +3service commits, evidence/criteria/gates,
+and explicit remaining navigation/graph. Created DocumentationImpact.md: all59current
+Documentation files,10outside-doc Markdown,canonical Board and850noncanonical VData copies
+classified; meaningful comments and exact pending TK9.3 updates included.
+74named completed-card test references resolve to actual methods. No human approval,
+full Motion PASS, baseline improvement or absent own-commit SHA fabricated.
+Links/DAG/count/hash/content audit:20261108-documentation/handoff-audit.json under
+workspace validation root. Final publication SHA receipt is deferred until real commit/push.

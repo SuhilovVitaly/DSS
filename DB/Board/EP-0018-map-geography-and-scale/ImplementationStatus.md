@@ -1,173 +1,142 @@
 # Исполнение EP-0018
 
-Статус на2026-11-08: IN PROGRESS. Опубликовано27/29тикетов; stories1–7 функционально реализованы; открыты US8 evidence и US9 документация. Следующий: US0009TK0002; затем navigation/graph TK3.
+На 2026-11-08 опубликованы 27/29 тикетов; реестр/impact TK9.2 входит в текущий коммит,
+последний TK9.3 (navigation/offline graph) остаётся следующим. Реализация историй1–8
+и текущие контракты готовы. Продуктовая приёмка остаётся OPEN.
 
-## Git и полномочия
+## Результат и границы
 
-Базаc43e8af5cfbc76844e6a9109921fbae41153d370; рабочая ветка и подтверждённый upstream
+Новые миры используют v2: все человеческие станции, включая исходные Default,
+размещаются по общему frozen масштабу; min1d, nearest1–3d, rigid clusters и radial lanes.
+Operational Vmax захватывается при генерации (поставленный engine.basic6км/с).
+Ресурсы, роли/ID/payload, источники RNG, старты50–75d и Docked offset сохранены.
+Save20 принимает согласованные v1/v2; Load не генерирует мир и не меняет масштаб
+по текущему двигателю. Local/Region/Cluster/System, scoped orbits/labels и явный
+Station local работают по одному представленному миру. Линейка frozen, ETA текущий.
+
+## Git и публикация
+
+База c43e8af5cfbc76844e6a9109921fbae41153d370. Remote
+https://github.com/SuhilovVitaly/DSS; ветка/upstream
 codex/ep-0016-tactical-battle-skins / origin/codex/ep-0016-tactical-battle-skins.
-Remote https://github.com/SuhilovVitaly/DSS. Изначально только untracked EP-0018.
-Пользователь дополнительно прямо разрешил публикацию всего EP-0018 в эту ветку.
-Два первоначальных auto-review push rejection устранены этим прямым подтверждением;
-обходов не было. Чужие файлы не менялись, managed worktrees не создавались.
+Пользователь прямо разрешил публикацию всего EP-0018; повторных разрешений не нужно.
+Начальные auto-review push rejection устранены этим подтверждением. Ни force push,
+ни переписывания истории не было. Исходно только untracked EP18; чужая работа сохранена.
+Managed worktrees не создавались. Каждый опубликованный тикет немедленно push,
+HEAD сравнивался с git ls-remote. Собственный SHA последнего документационного
+коммита фиксируется последующим publication receipt, не выдумывается заранее.
 
-| Тикет/подготовка | SHA | Push / проверка |
+Evidence prefix: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/.
+В колонке run опущен этот общий prefix; YYYYMMDD — часть реального имени каталога.
+
+| Тикет | SHA | Push/проверка | Основной run |
+|---|---|---|---|
+| [EP-0018-US-0001-TK-0001-geography-descriptor](EP-0018-US-0001-unified-station-geography/EP-0018-US-0001-TK-0001-geography-descriptor/EP-0018-US-0001-TK-0001-geography-descriptor.md) | 7d42085a273bc86cff19b9aa083ff8060fe159f8 | PASS: remote SHA проверен | 20261107-descriptor |
+| [EP-0018-US-0001-TK-0002-v2-generation-input](EP-0018-US-0001-unified-station-geography/EP-0018-US-0001-TK-0002-v2-generation-input/EP-0018-US-0001-TK-0002-v2-generation-input.md) | dded58417c116e8c13ba88c630fde87e19fe48ae | PASS: remote SHA проверен | 20261107-generation-input |
+| [EP-0018-US-0001-TK-0003-all-station-placement](EP-0018-US-0001-unified-station-geography/EP-0018-US-0001-TK-0003-all-station-placement/EP-0018-US-0001-TK-0003-all-station-placement.md) | 042ae85c0c988cb61ec566028e0de6d2845c629c | PASS: remote SHA проверен | 20261107-local-placement |
+| [EP-0018-US-0001-TK-0004-atomic-world-bootstrap](EP-0018-US-0001-unified-station-geography/EP-0018-US-0001-TK-0004-atomic-world-bootstrap/EP-0018-US-0001-TK-0004-atomic-world-bootstrap.md) | e930ec2d2380eeb0756d26bc3953b2fd83dd3b28 | PASS: remote SHA проверен | 20261107-bootstrap |
+| [EP-0018-US-0002-TK-0001-radial-lane-placement](EP-0018-US-0002-stable-orbital-clusters/EP-0018-US-0002-TK-0001-radial-lane-placement/EP-0018-US-0002-TK-0001-radial-lane-placement.md) | 9efe2cb75f190be1531e34feb312d713b08aec25 | PASS: remote SHA проверен | 20261107-radial-lanes |
+| [EP-0018-US-0002-TK-0002-cluster-link-graph](EP-0018-US-0002-stable-orbital-clusters/EP-0018-US-0002-TK-0002-cluster-link-graph/EP-0018-US-0002-TK-0002-cluster-link-graph.md) | 018c1115891043458083e27c92a6fa3e755fc2be | PASS: remote SHA проверен | 20261107-cluster-graph |
+| [EP-0018-US-0002-TK-0003-full-system-integration](EP-0018-US-0002-stable-orbital-clusters/EP-0018-US-0002-TK-0003-full-system-integration/EP-0018-US-0002-TK-0003-full-system-integration.md) | 1f92b482ff63cc0420f468a6e2fa802f295b4be3 | PASS: remote SHA проверен | 20261107-full-system |
+| [EP-0018-US-0003-TK-0001-station-resource-relocation](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-TK-0001-station-resource-relocation/EP-0018-US-0003-TK-0001-station-resource-relocation.md) | 95ec544646290332abfd69ae662548c8922cbe8d | PASS: remote SHA проверен | 20261107-resources |
+| [EP-0018-US-0003-TK-0002-scenario-start-bindings](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-TK-0002-scenario-start-bindings/EP-0018-US-0003-TK-0002-scenario-start-bindings.md) | 2544f8ea14666cc49a1e3f221e8d948df306fcf7 | PASS: remote SHA проверен | 20261107-scenario-starts |
+| [EP-0018-US-0003-TK-0003-voyage-geography](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-TK-0003-voyage-geography/EP-0018-US-0003-TK-0003-voyage-geography.md) | ae34d85cf98b708c1049baf5efc1302815aa6042 | PASS: remote SHA проверен | 20261107-voyages |
+| [EP-0018-US-0004-TK-0001-versioned-save-validation](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0001-versioned-save-validation/EP-0018-US-0004-TK-0001-versioned-save-validation.md) | 8d5b3febfc463889f9e8b693205faa3ff79bd671 | PASS: remote SHA проверен | 20261107-save-versions |
+| [EP-0018-US-0004-TK-0002-legacy-trade-map-validation](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0002-legacy-trade-map-validation/EP-0018-US-0004-TK-0002-legacy-trade-map-validation.md) | 9193557a548ebdf7ccabe942eb688f2d288d59c2 | PASS: remote SHA проверен | 20261107-trade-validation |
+| [EP-0018-US-0004-TK-0003-local-world-roundtrip](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0003-local-world-roundtrip/EP-0018-US-0004-TK-0003-local-world-roundtrip.md) | 78156d4f59e2e033ce681da7d1f2e75b25609a53 | PASS: remote SHA проверен | 20261107-local-roundtrip |
+| [EP-0018-US-0004-TK-0004-activate-v2-content](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0004-activate-v2-content/EP-0018-US-0004-TK-0004-activate-v2-content.md) | 2380c4b45ca1b632773723612f2453305aefa0a0 | PASS: remote SHA проверен | 20261107-content-activation |
+| [EP-0018-US-0005-TK-0001-local-view-policy](EP-0018-US-0005-local-map-scale/EP-0018-US-0005-TK-0001-local-view-policy/EP-0018-US-0005-TK-0001-local-view-policy.md) | 4e1521ed1b37e2fdf65849955da16fde019c5812 | PASS: remote SHA проверен | 20261107-local-policy |
+| [EP-0018-US-0005-TK-0002-initial-camera-and-zoom](EP-0018-US-0005-local-map-scale/EP-0018-US-0005-TK-0002-initial-camera-and-zoom/EP-0018-US-0005-TK-0002-initial-camera-and-zoom.md) | 81183d40d45c066e4a4f686520a506c0423bc012 | PASS: remote SHA проверен | 20261107-camera |
+| [EP-0018-US-0005-TK-0003-local-scale-content](EP-0018-US-0005-local-map-scale/EP-0018-US-0005-TK-0003-local-scale-content/EP-0018-US-0005-TK-0003-local-scale-content.md) | c71528defe18cd7117ab636ac567fba85531ea70 | PASS: remote SHA проверен | 20261107-local-scale-content |
+| [EP-0018-US-0006-TK-0001-semantic-map-detail](EP-0018-US-0006-multiscale-map-readability/EP-0018-US-0006-TK-0001-semantic-map-detail/EP-0018-US-0006-TK-0001-semantic-map-detail.md) | f2f1f02ebf8552aa8928925bd90611832da95c21 | PASS: remote SHA проверен | 20261107-map-detail |
+| [EP-0018-US-0006-TK-0002-orbital-layer-policy](EP-0018-US-0006-multiscale-map-readability/EP-0018-US-0006-TK-0002-orbital-layer-policy/EP-0018-US-0006-TK-0002-orbital-layer-policy.md) | 9d6e9a66f4b6d287c512b81c490fa289db4d4298 | PASS: remote SHA проверен | 20261107-orbit-detail |
+| [EP-0018-US-0006-TK-0003-map-label-priorities](EP-0018-US-0006-multiscale-map-readability/EP-0018-US-0006-TK-0003-map-label-priorities/EP-0018-US-0006-TK-0003-map-label-priorities.md) | f2a4afae4026d238f16a86b28bda0e3b251ecf25 | PASS: remote SHA проверен | 20261107-map-labels |
+| [EP-0018-US-0006-TK-0004-smooth-detail-transitions](EP-0018-US-0006-multiscale-map-readability/EP-0018-US-0006-TK-0004-smooth-detail-transitions/EP-0018-US-0006-TK-0004-smooth-detail-transitions.md) | a47d95d6151eab3bff1b925bd983cd84962197d4 | PASS: remote SHA проверен | 20261107-detail-lifecycle |
+| [EP-0018-US-0007-TK-0001-cluster-focus-navigation](EP-0018-US-0007-map-navigation-and-estimates/EP-0018-US-0007-TK-0001-cluster-focus-navigation/EP-0018-US-0007-TK-0001-cluster-focus-navigation.md) | ad6458245c586f294fbaacc45e470ee72a74cee5 | PASS: remote SHA проверен | 20261107-map-navigation |
+| [EP-0018-US-0007-TK-0002-current-travel-estimates](EP-0018-US-0007-map-navigation-and-estimates/EP-0018-US-0007-TK-0002-current-travel-estimates/EP-0018-US-0007-TK-0002-current-travel-estimates.md) | 5324df5570c0a117bf53f1a4a8ab3ec685ba0df5 | PASS: remote SHA проверен | 20261107-current-estimates |
+| [EP-0018-US-0008-TK-0001-seed-geography-corpus](EP-0018-US-0008-system-map-acceptance/EP-0018-US-0008-TK-0001-seed-geography-corpus/EP-0018-US-0008-TK-0001-seed-geography-corpus.md) | 03f78e81ad55dc78cf20ee34a4054e9b93e89bf8 | PASS: remote SHA проверен | 20261108-corpus-validation |
+| [EP-0018-US-0008-TK-0002-rendered-map-evidence](EP-0018-US-0008-system-map-acceptance/EP-0018-US-0008-TK-0002-rendered-map-evidence/EP-0018-US-0008-TK-0002-rendered-map-evidence.md) | 51d6f99ea9ef73669c9c6c14f981081a0e413f68 | PASS: remote SHA проверен | 20261108-raster-verified |
+| [EP-0018-US-0008-TK-0003-native-map-evidence](EP-0018-US-0008-system-map-acceptance/EP-0018-US-0008-TK-0003-native-map-evidence/EP-0018-US-0008-TK-0003-native-map-evidence.md) | 6dd13cb3d619de8e8a7bc588bd238f3bac58537b | PASS: remote SHA проверен | 20261108-native-tool |
+| [EP-0018-US-0009-TK-0001-current-map-contracts](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0001-current-map-contracts/EP-0018-US-0009-TK-0001-current-map-contracts.md) | f38fefad5f37ac8c67c9b191d441c7b9fc23ba61 | PASS: remote SHA проверен | 20261108-documentation/contracts-audit.json |
+| [EP-0018-US-0009-TK-0002-board-handoff](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0002-board-handoff/EP-0018-US-0009-TK-0002-board-handoff.md) | текущий коммит; SHA в финальном receipt | выполняется | 20261108-documentation/handoff-audit.json |
+| [EP-0018-US-0009-TK-0003-documentation-navigation](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md) | ещё не опубликован | следующий | 20261108-graph |
+
+Подготовительные/service commits (также опубликованы):
+
+- 2bb0ec17c67a05093d99e55af063086904bd8aee: EP-0018: preserve approved Board and record autonomous execution gates.
+- 0a8695f2d021a3cf90ef186b60b07bca12855fdd: EP-0018: extend final documentation scope to execution prompt requirements.
+- b375fbb88a30c9f5ac2af9ad4b5c9fa60b9a190d: EP-0018: order save ingress before active voyage continuation checks.
+
+## Проверки и точное покрытие
+
+Все новые commands/log/TRX/PNG/JSON находятся под указанным workspace prefix,
+команды build/test выполнялись из D:/DeepSpaceSaga/DSS. Test/native child tree cap300000ms,
+native internal cap40s; timeout никогда не PASS. Точные ранние команды/исходные FAIL
+и исправления сохранены в owning карточках и Git, а не противоречащих текущих сводках.
+
+| Область | Наблюдаемый результат | Retained evidence |
 |---|---|---|
-| Board/gates |2bb0ec17c67a05093d99e55af063086904bd8aee|PASS, ancestor опубликованного head|
-| US-0001-TK-0001|7d42085a273bc86cff19b9aa083ff8060fe159f8|PASS, remote head SHA проверен|
-| Полный scope финальной документации|0a8695f2d021a3cf90ef186b60b07bca12855fdd|PASS, remote head SHA проверен|
-| US-0001-TK-0002|dded58417c116e8c13ba88c630fde87e19fe48ae|PASS, remote head SHA проверен|
-| US-0001-TK-0003|042ae85c0c988cb61ec566028e0de6d2845c629c|PASS, remote head SHA проверен|
+| DTO/Contracts |189/189; additive optional Geography roundtrip |20261107-descriptor/|
+| Engine main |2158/2158; исключён отдельный LongRunning tactical combat |20261108-corpus-validation/engine-main.trx|
+| V2 corpus |90 theory cases:6scenarios×5ranges×3stages;100unique seeds/scenario;64boundary combinations |20261108-v2-corpus-verified/Summary.json|
+| Historical v1 corpus |540 theory cases; исходные полные Cartesian matrices,100seeds/config, sharded5×20 |20261108-legacy-corpus/Summary.json|
+| Corpus audit |36finalTRX,2788unique passed IDs,0duplicates; independent trig/geometry, epoch/1/30/365d, repeat+Save/Load |20261108-corpus-validation/CorpusReport.md, Summary.json|
+| File continuity |33real-file focused cases, six scenarios, changed current Vmax + invalid generation config ignored onLoad; active v1/v2 voyages, Save18/19 migrations |20261107-local-roundtrip/|
+| Client full |2117/2117 after UI2 support,0skips |20261108-raster-tool/client-full.trx|
+| Raster |6scenarios×3seeds×4windows×3UI×4views=864PNG,18world snapshots;5warmup/30samples each; all6reports validated |20261108-raster-verified/RasterReport.md, MatrixSummary.json|
+| Native |12Default cases,4windows×3UI; seed1/42/100 mapped by UI (not36seed Cartesian cases);108PNG/108phase snapshots; actual Dock/F5/F9/follow |20261108-native-tool/NativeReport.md, NativeMatrixSummary.json|
+| Native timing |120warmup/600swap samples percase; p50≈10ms; all12p95≤12.5ms; old p99 guard FAIL3 |same native reports and per-case native-frames.json|
+| Report guards |9/9tool tests;4actual tampered copies rejected; owning Release builds/scoped format/diff PASS |20261108-native-tool/verified.trx, negative-validation.log|
+| Motion full |1266/1267:FAIL1, not PASS |20261108-final-regression/motion-full.trx|
+| Motion baseline audit |same3actual guard findings in unchanged c43e8af5 source: TacticalBattleResults.cs15/53, TacticalBattleSalvo.cs95 |20261108-final-regression/MotionBaselineAudit.json|
+| Current docs |12owners updated,84links/13changedMarkdown,29tickets/38DAG nodes,0errors |20261108-documentation/contracts-audit.json|
+| Named tests |74completed-card named references resolve to actual methods; not a claim that every reference is a separate runtime test |20261108-documentation/NamedTestsAudit.json|
 
-Полные IDs/порядок29тикетов — Tickets.md. Следующий — US-0001-TK-0004-bootstrap;
-затем US0002→0003→0004→0005→0006→0007→0008→0009. Content activation толькоUS0004TK0004.
-US0009 последняя: полный inventory документации во всём репозитории, текущие
-контракты/README/Board/navigation и offline graph после итогового diff.
+Independent corpus reports sampled human pair minimum1.1793579412496d;
+nearest range1.1793579412496–1.45528054304949d; analytic inter-lane lower bound
+1.07405626966427d. AI2/4 boundaries coupled to cluster3/5: no independent exhaustive
+AI Cartesian claim. Main+census counts are not double-counted with pilot runs.
 
-## Реализованный результат
+## Критерии эпика
 
-TK1: additive Geography DTO, camelCase, missing/nulllegacy и v2 snapshot roundtrip.
-TK2: versioned config/gen1/2 solar ingress, minimumStationDays и consistency,
-named geography/v2 stage; v1golden неизменён.
-TK3: detached единое circular размещение всех stationIDs, включая Default legacy,
-pair/nearest/diameter/roles/payload проверки и finite deterministic failure.
-Player/resources/связи нескольких кластеров/savevalidation/client ещё впереди.
-Default фактически использует6000м/с:17280wu/day; descriptor захватывает реальный
-operational Vmax, примерные4000м/с не подменяют catalog. Shipped config остаётсяv1.
+| AC | Фактический статус и evidence |
+|---|---|
+| E18-AC-01 |Automated PASS: all-human min/own-nearest,6scenarios/100seeds + analytic proof |
+| E18-AC-02 |Automated PASS: rigid circular parameters/radial lane proof + multi-epoch oracle |
+| E18-AC-03 |Automated/native scripted PASS: payload/IDs/resources/start anchors/Dock; human separately OPEN |
+| E18-AC-04 |Automated/native PASS: strict v1/v2 ingress, real materialized Load; malformed input atomic rejection |
+| E18-AC-05 |Automated PASS: graph supply/demand/reachability, actual local/intercluster voyages/settlement, bounded AI; balance not assessed |
+| E18-AC-06 |Automated/raster/native scripted PASS: Local extent, resize,4windows/UI2; physical acceptance OPEN |
+| E18-AC-07 |Implementation/evidence present; product readability OPEN,24raster cluster-fit cases retain non-Cluster detail at small free viewport |
+| E18-AC-08 |Repro artifacts/seed/hash/camera and native timings measured; baseline/human/physical OPEN; old p99 FAIL3 |
+| E18-AC-09 |Current contracts/Board synchronized; final navigation/graph/publication receipt next TK9.3 |
 
-## Проверки и evidence
+## Решения исполнения
 
-Все outputs под D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/.
-Все команды из D:/DeepSpaceSaga/DSS, test watchdog300000ms с Kill(true).
+- Actual shipped speed6км/с сохранена; corpus2/4 использует registry overlays. Fallback4 толькодлямирабезdescriptor.
+- V2 не резервирует legacy template corridor strips; сохраняет owner offsets/RNG, annulus/clearance/spacing. V1 прежний.
+- Межкластерный граф использует общий outbound/connectivity contract; не требует двух локальных покупателей каждой станции.
+- Save ingress выполнен до проверки active voyage continuation: исправленный DAG38nodes/29tickets.
+- UI2 реально принят renderer; меню Settings остаётся0.8/1/1.2/1.5, этот предел явно описан.
+- Unexposed solar/cluster retry counters не придуманы: config limits + actual AI diagnostics, unavailable отдельно.
+- Native driver использует production fit/focus APIs и managed screen events; snapshots — authoritative observations,
+  camera — completed render. Это не hardware input или точный OCR/pixel-time oracle.
 
-| Тикет/run | Наблюдаемый результат | Сохранённое evidence |
-|---|---|---|
-| TK1 /20261107-descriptor|focused5/5; Contracts189/189; Release build0warnings/errors; scoped format2files; diff PASS|focused-final.trx/log, contracts-full.trx/log, build.log, format-contracts-unsandboxed.log, format-tests.log|
-| TK2 /20261107-generation-input|schema/bootstrap12/12; Engine безLongRunning/Corpus2070/2070; Release build0warnings/errors; scoped format3files; diff PASS|focused-final.trx/log, engine-non-corpus.trx/log, build-unsandboxed.log, format-engine.log, format-tests-final.log|
-| TK3 /20261107-local-placement|placement+v1cluster/schema/seed24/24; Release build0warnings/errors; scoped format3files; diff PASS|focused-final.trx/log, build.log, format-engine.log, format-tests.log|
+## Открытые gates
 
-Точные команды focused/build/format и ACcoverage — соответствующие карточки.
-RegressionTK2: dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
--c Release --no-build --no-restore --filter "Category!=LongRunning&FullyQualifiedName!~Corpus"
---results-directory D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-generation-input
---logger "trx;LogFileName=engine-non-corpus.trx".
-Это не полный corpus: начальный broad run намеренно остановлен для шардирования
-untagged100seed tests, не засчитанPASS. Полный corpus остаётсяUS0008.
+Human/product readability, physical keyboard/mouse, independent review — NOT RUN.
+Matched pre-change native baseline — OPEN.24cluster-fit raster detail gaps остаются
+перечислены с PNG в MatrixSummary.json; Fit по свободной области и short-side LOD
+могут выбрать System вместо Cluster. P95 target выполнен на указанной100Hz машине,
+но3old-p99 verdict FAIL и физический scanout/GPU execution не измерены.
+Motion source guard — доказанный pre-existing FAIL, не скрыт фильтром/ослаблением.
+Самопроверка не независимое review; продуктовая приёмка не APPROVED.
 
-Предварительные неуспехи сохранены как history: descriptor/focused.trx/log/err —
-sandbox testhost connection abort90s; format-contracts.log — sandboxMSBuild error;
-focused-unsandboxed.trx/log/err —2FAIL нового ожидания массива, исправленного на
-существующий IsDefault. Final5/5 и189/189 после исправленияPASS. generation-input/build.log
-— sandbox buildFAIL без compilererrors; build-unsandboxed.logPASS. No hidden PASS.
+## Уборка и завершение
 
-Self-review каждого diff по owningC/AC: findings нет; независимого review не было.
-Board local-link path audit42Markdown:0missing, git diff --checkPASS.
-Native, physical input, human/product, FPS NOT RUN. Эпик не завершён.
-Task-owned stalled testhost32764 уже завершён; широкий процесс48092 остановлен
-с деревом. Временные scripts/cache/slots/worktrees не создавались. Retained evidence
-перечислено выше; пустые stderr/лишние предварительные outputs убираются при cleanup.
-## US0001 bootstrap и story review
-
-TK4 завершён локально; commit/push следует сейчас, собственный SHA проверяется Git.
-Реальный v2 Engine27/27focused, Engine non-corpus2076/2076PASS; build/format/diffPASS.
-Evidence run20261107-bootstrap: focused-final.trx/log содержит Default42snapshot,
-66pair distances/12nearest; engine-non-corpus.trx/log; build.log; format-engine.log;
-format-tests-final.log. Широкие2076прошли до добавления только xUnit evidence output;
-после него повторены27focused и scoped test format, productionкод не менялся.
-
-Story1 код реализован, но общая приёмка Save/Load ещё US4: история остаётся
-implemented_pending_compatibility_gate. Следующийтикет — US0002TK0001radial lanes,
-после публикации TK4. Остаток25тикетов, corpus/native/FPS/human NOT RUN.
-## Radial lanes — US0002TK0001
-
-US0001TK0004 опубликован: e930ec2d2380eeb0756d26bc3953b2fd83dd3b28, exactremoteSHA PASS.
-US0002TK0001 локально завершён:22/22focused, build0warnings/errors, scopedformat/diff
-PASS. Evidence20261107-radial-lanes/focused-verified.trx/log и build/format logs.
-Геометрия проверена до runtime публикации; первоначальные2FAIL выявили зависимость
-от межкластерного graphTK0002 (не скрыты/не засчитаныPASS). Live narrowbelt atomic
-rejection остаётся проверенным. Следующий тикетTK0002 обязан включить Engine
-integration3–5кластеров и strong directed connectivity/cargo, до storyclosure.
-Минимум при любых фазах доказан аналитически через радиусы, samples0/1/30/365 —
-дополнительная проверка. После публикации этого тикета останется24тикета.
-## Trading graph — US0002TK0002
-
-RadialTK0001 опубликован9efe2cb75f190be1531e34feb312d713b08aec25, exactremoteSHA PASS.
-GraphTK0002 локально завершён:25/25focused, build0warnings/errors, scopedformat/diff
-PASS. Live3/5cluster Engine integration и strong directed reachability подтвердили
-закрытие предыдущей runtime graph зависимости. Every multi-cluster station>=2outbound.
-Evidence20261107-cluster-graph/focused-final.trx/log, build/format logs.
-Следующийтикет — US0002TK0003AI/environment/POI integration. После этой публикации
-будет6/29тикетов и23остаётся; story1 compatibility и story2 итоговые gates ещё открыты.
-## Полная система — US0002TK0003
-
-GraphTK0002 опубликован018c1115891043458083e27c92a6fa3e755fc2be, exactremoteSHA PASS.
-FullsystemTK0003 завершён локально:36/36focused и2085/2085Engine non-corpusPASS,
-Releasebuild0warnings/errors и scopedformat/diffPASS. Evidence20261107-full-system:
-before.trx/log/err(2FAIL), focused-final.trx/log, engine-non-corpus.trx/log,
-build.log, format-engine.log, format-tests.log. Исправлен строго, безbypass,
-v1-only finalvalidator; AI/environment/POI алгоритмы не потребовали изменений.
-Story2 код реализован, совместимостьфайлов/save-regeneration ещёUS4, поэтому
-implemented_pending_compatibility_gate. После публикации7/29тикетов,22остаётся.
-Следующийтикет — US0003TK0001 resources relocation/knowledge/exactly-once.
-## Ресурсы — US0003TK0001
-
-FullsystemTK0003 опубликован1f92b482ff63cc0420f468a6e2fa802f295b4be3, remoteSHA PASS.
-ResourcesTK0001 локально завершён:15/15focused и2088/2088Engine non-corpusPASS,
-build0warnings/errors, scopedformat5files/diffPASS. Evidence20261107-resources:
-focused-final.trx/log, engine-non-corpus.trx/log, build.log, format-engine.log,
-format-tests.log. Failurehistory сохранена в before/declared-before/
-declared-valid-before/relocation-before/focused TRX/logs; детали в owningticket.
-Исправлены owneroffset2044км и скрытаяcompositionутечка, сохранены capturedrules/RNG.
-V2 static legacy corridor reservation отменена как несовместимая с сохранением
-sourceoffset; annulus/spacing/clearance/manifest validation остаётся. C03уточнён.
-После этой публикации8/29тикетов,21остаётся. Следующий — US0003TK0002scenario starts.
-## Сценарии — US0003TK0002
-
-ResourcesTK0001 опубликован95ec544646290332abfd69ae662548c8922cbe8d, remoteSHA PASS.
-ScenarioTK0002 завершёнлокально:42/42focused, Releasebuild0warnings/errors,
-scopedformat3files/diffPASS. Включены24cases(6scenario×2/4км/с×50/75d), explicitpayload,
-реальныйApproach/Dock/departure/duplicatefuel. PlayerShipOnly сохраняет первоначальную
-solarpoint, найденныйсдвиг исправленпослеbeforeFAIL; seed NPC nullname expectation
-исправлено какtest-onlycontractclarification. Evidence20261107-scenario-starts.
-После публикации9/29тикетов,20остаётся. Перед voyage/savecontinuity нужны строгие
-file-save ingress и TradingMapv2 validation изUS4; порядокзависимостей следует
-уточнить до следующейреализации, не выдавать failingsaveload заPASS.
-ScenarioTK0002 опубликован2544f8ea14666cc49a1e3f221e8d948df306fcf7; remoteSHA PASS. Dependencyorder исправлен вTickets.md и карточках;20тикетов остаётся. Текущий следующий — US0004TK0001 strictsaveingress.
-
-US0004TK0001: 37/37 focused, build/format/diff PASS; save-versions evidence as in ticket. v1/v2 materialized no-regeneration and atomic negative checks. Self-review complete; independent/human not performed.
-
-US0004TK0001 published8d5b3febfc463889f9e8b693205faa3ff79bd671 verified. US0004TK0002: focused65, non-corpus2133 PASS, build/format/diff PASS; evidence trade-validation. Next voyage gate.
-
-US0004TK0002 published9193557a548ebdf7ccabe942eb688f2d288d59c2 verified. US0003TK0003 actual voyages focused36/36 PASS; evidence voyages, build/format/diff PASS. No remote market execution introduced.
-
-US0003TK0003 publishedae34d85cf98b708c1049baf5efc1302815aa6042 verified. US0004TK0003 focused-verified33/33 PASS; build/format/diff PASS; local-roundtrip evidence. Temporary slot cleanup verified.
-
-US0004TK0003 published78156d4f59e2e033ce681da7d1f2e75b25609a53 verified. US0004TK0004 production v2 active; focused20, Client2072, Engine non-corpus2148 PASS; build/format/diff PASS. Final acceptance remains US8. UI scale work next.
-
-US0004TK0004 published2380c4b45ca1b632773723612f2453305aefa0a0 verified. US0005TK0001 local scale pure policy focused17 PASS; build/format/diff PASS; evidence local-policy.
-
-US0005TK0001 published4e1521ed1b37e2fdf65849955da16fde019c5812 verified. US0005TK0002 camera focused52/fullClient2093 PASS, build/format/diff PASS; evidence camera. Native remains US8.
-
-US0005TK0002 published81183d40d45c066e4a4f686520a506c0423bc012 verified. US0005TK0003 focused20 PASS, build/format/diff PASS, local-scale-content evidence; temporary settings removed. US5 implemented pending native/human acceptance.
-
-US0005TK0003 publishedc71528defe18cd7117ab636ac567fba85531ea70 verified. US0006TK0001 semantic map detail focused30 PASS; build/format/diff PASS, map-detail evidence.
-
-US0006TK0001 publishedf2f1f02ebf8552aa8928925bd90611832da95c21 verified. US0006TK0002 orbital focused7 PASS; build/format/diff PASS, orbit-detail evidence.
-
-US0006TK0002 published9d6e9a66f4b6d287c512b81c490fa289db4d4298 verified. US0006TK0003 fullClient2106 PASS, focused84/compatibility27 PASS; build/format/diff PASS, map-labels evidence. Original failures and build-lock retained as evidence.
-
-US0006TK0003 publishedf2a4afae4026d238f16a86b28bda0e3b251ecf25 verified. US0006TK0004 focused77/fullClient2109 PASS; build/format/diff PASS, detail-lifecycle evidence. US6 implemented pending rendered/native/human acceptance.
-
-US0006TK0004 publisheda47d95d6151eab3bff1b925bd983cd84962197d4 verified. US0007TK0001 focused46 PASS, build/format/diff PASS; map-navigation evidence, frame-context isolation and explicit station-local action.
-
-US0007TK0001 publishedad6458245c586f294fbaacc45e470ee72a74cee5 verified. US0007TK0002 focused20/fullClient2115 PASS; build/format/diff PASS, current-estimates evidence. Functional stories1–7 implemented; corpus/rendered/native/documentation gates remain.
-
-US0007TK0002 published5324df5570c0a117bf53f1a4a8ab3ec685ba0df5 verified. US0008TK0001 aggregate2788 unique Engine cases PASS:2158main+540legacy+90v2; all100seed/scenario and64human boundary combinations checked, no timeout. Source hashes, per-run TRX and metrics indexed in20261108-corpus-validation/Summary.json. Build/format/diff PASS. Stories1–7 statuses reconciled to implemented_pending_acceptance, file-save gates technically closed.
-
-
-US8TK2: raster tooling/evidence complete, six scenarios/18worlds/864PNG; report tests6/6, UI17/17, Client2117/2117. Evidence20261108-raster-verified/RasterReport.md and MatrixSummary.json.24 cluster-fit high-UI/small-window semantic detail gaps remain OPEN; native/human/baseline separate.
-
-
-US8TK3:12native scripted routes complete,108PNG, actual Save/Load and cleanup; native p95 all12≤12.5ms, p99 legacy verdict failed3. NativeReport.md/NativeMatrixSummary.json in20261108-native-tool. Tool tests9/9. Motion1266/1267:unchanged baseline guard3findings audited at c43e8af5. Physical/human/baseline/24raster detail gaps OPEN. Functional/evidence stories1–8 implemented, final documentation story remains.
-
-US9TK1:12 curated owners synchronized;13 changed Markdown/84links/29tickets/38DAG nodes,0errors. Current contracts contain no run history. Next final Board inventory/handoff.
+Native owned slots удалены, interrupted slots проверены по marker после остановки
+owned processes. Отчёты/PNG/TRX referenced above retained; pilot/failed runs исключены
+из итоговых чисел и оставлены как failure evidence в owning reports. Нет DSS/artifacts,
+ручных worktrees, root temp snapshots или source junctions. Последний TK9.3 проверит
+финальные links/hash/graph/cleanup и запишет publication receipt. Текущий ledger
+заменяет ранние противоречащие сводки; их история сохранена в Git и owning cards.

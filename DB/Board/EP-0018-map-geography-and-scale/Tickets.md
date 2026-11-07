@@ -1,6 +1,9 @@
 # Тикеты EP-0018 — переделка географии и масштаба карты
 
-9 историй / 29 тикетов. Planning approved по делегированному поручению; implementation not_started. Один layer и максимум5 файлов, включая тесты, на тикет. Полный контракт: [ImplementationContract.md](ImplementationContract.md); grounding/решения: [Documentation.md](Documentation.md).
+9 историй / 29 тикетов.27 опубликованы; TK9.2 текущий, TK9.3 следующий.
+Статусы/SHA/evidence и остаточные gates — [ImplementationStatus](ImplementationStatus.md).
+Первоначальные allowlists расширялись owning карточками до реализации по полномочиям
+EpicExecutionPrompt; максимум5 файлов planning не сокращает фактический scope. Полный контракт: [ImplementationContract.md](ImplementationContract.md); grounding/решения: [Documentation.md](Documentation.md).
 
 ## Порядок исполнения
 US-0001 -> US-0002 -> US-0003 TK-0001/0002 -> US-0004 TK-0001/0002 -> US-0003 TK-0003 -> US-0004 TK-0003/0004 -> US-0005 -> US-0006 -> US-0007 -> US-0008 -> US-0009.

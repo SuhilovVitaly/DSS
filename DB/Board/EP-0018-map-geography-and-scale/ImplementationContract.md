@@ -45,7 +45,7 @@ Save20 остаётся writer baseline; добавление optional descripto
 New Game открывает локальный вид около игрока; обзор системы доступен явной командой. Не сбрасывать пользовательскую камеру при очередном snapshot. Resize/DPI/zoom transition пересчитывают границы безопасно; selected/nav target и pan/focus сохраняют ожидаемое поведение. TacticalBattle camera не меняется.
 
 ## C-06 — уровни детализации
-Планируемый Client internal enum MapDetailLevel { Local, Region, Cluster, System } и MapDetailPolicy, pure function snapshot+camera+viewport+previousLevel.
+Реализованный Client internal enum MapDetailLevel { Local, Region, Cluster, System } и MapDetailPolicy, pure function snapshot+camera+viewport+previousLevel.
 Пороги по short-side span при reference speed: Local <=4ч, Region до4д, Cluster до30д, System выше; hysteresis 10% на выход/вход, тестировать граничные переходы. Допустима перекалибровка только записанным изменением assumptions с native evidence.
 Local: отдельные local objects/ресурсы, ближайшая станция, selected и nav target. Никакого отсева реальных близких станций только ради выполнения E18-AC-06.
 Region: станции и компактные resource fields; Cluster: все station members, selected connections и имя кластера; System: доменные cluster markers, планеты, Солнце, пояса. Экранные spatial cells — лишь средство снижения плотности; они не меняют membership.
@@ -79,3 +79,17 @@ source owner-relative offsets иначе несовместима с произ�
 stationclearance/asteroidspacing, ids/owner/rules/composition/mass/manifest/RNG.
 Это техническое решение исполнения, не дополнительная цитата пользователя.
 Воспроизведение и evidence — US0003TK0001; учесть в финальной текущей документации.
+
+## Фактические уточнения исполнения — 2026-11-08
+
+Основной диапазон v2 поставлен; current curated owner —
+[TradingAndSolarSystem](../../Documentation/04-Engineering/TradingAndSolarSystem.md).
+Shipped operational Vmax6км/с сохранена, corpus2/4 — registry overlays, client fallback4
+не изменяет каталог. Local camera использует max(configuredMaximum,requiredShortSide,requiredDiagonal).
+UI2 принят renderer, Settings menu не расширен. Corpus AI2/4 coupled to cluster3/5;
+64boundary combinations проверены, независимый AI Cartesian product не заявлен.
+Native12cases:4windows×3UI, seed1/42/100 mapped byUI; полная raster matrix включает все6scenarios/3seeds.
+Actual p95 target выполнен; old p99 guard FAIL3, baseline/human/physical OPEN.
+Fit по малому free viewport может выбрать System вместо Cluster:24raster cases
+остаются открытой usability приёмкой, не ослаблением world geometry.
+Источник фактических outcomes и deviations — [ImplementationStatus](ImplementationStatus.md).

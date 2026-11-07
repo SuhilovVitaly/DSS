@@ -59,7 +59,7 @@ Production-файлы вне Code context, изменения чужого сл�
 - StationGeographyV2Tests.LegacyAndGeneratedStationsShareMinimumDays
 - StationGeographyV2Tests.EveryMemberHasOneToThreeDayNeighbour
 - StationGeographyV2Tests.SeedAndFailureAreDeterministic
-Имена новых тестов выше — обязательные будущие проверки, сейчас они не существуют и не выполнялись.
+Перечисленные проверки реализованы; фактический запуск и evidence указаны в разделе Execution. Исходные planning-команды ниже не являются отдельным результатом запуска.
 
 Matching test project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj.
 Будущая focused-команда (запуск из корня репозитория; сначала создать каталог):

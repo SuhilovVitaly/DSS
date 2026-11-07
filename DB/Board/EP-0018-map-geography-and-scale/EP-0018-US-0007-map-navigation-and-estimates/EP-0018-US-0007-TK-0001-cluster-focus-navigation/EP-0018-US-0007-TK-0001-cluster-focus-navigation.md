@@ -60,7 +60,7 @@ Production-файлы вне Code context, изменения чужого сл�
 - SystemMapNavigationTests.SystemClusterStationPlayerNavigationPreservesTarget
 - SystemMapNavigationTests.ClusterFitUsesPresentedMembersAndWholeSystemBounds
 - PoiMapSelectionTests.DetailTransitionsPreservePoiAndResourceSelection
-Имена новых тестов выше — обязательные будущие проверки, сейчас они не существуют и не выполнялись.
+Перечисленные проверки реализованы; фактический запуск и evidence указаны в разделе Execution. Исходные planning-команды ниже не являются отдельным результатом запуска.
 
 Matching test project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj.
 Будущая focused-команда (запуск из корня репозитория; сначала создать каталог):
