@@ -5,7 +5,7 @@ ticket: EP-0018-US-0004-TK-0001-versioned-save-validation
 title: "Строгая версия географии без миграции координат старых миров"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0003-TK-0002-scenario-start-bindings]
@@ -98,3 +98,5 @@ trading validation US0004TK0001/0002. Поэтому эти2тикета вып�
 завершения всейStory3 перед началом; точные частичные gates перечислены в карточках.
 Это устраняет логическую зависимость тестов от ещё не реализованногоloader без
 переноса FAIL вPASS или объединения тикетов. 9историй/29тикетов остаются прежними.
+## Execution evidence
+2026-11-07: strict serialized ingress and runtime completeness guard; coherent versions without changing v1 geometry. Before: missing-cluster accepted (1 FAIL/10 PASS). After: focused 37/37 PASS, Release build and format verify exit0; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-save-versions/{before.trx,focused.trx,build.log,format.log}. Roundtrip uses saved geometry despite invalid generation config. Full Default legacy trading map gate remains TK0002; physical input/manual acceptance not run.

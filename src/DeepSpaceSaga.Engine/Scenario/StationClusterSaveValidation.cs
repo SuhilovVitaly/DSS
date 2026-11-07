@@ -10,7 +10,12 @@ internal static class StationClusterSaveValidation
 {
     internal static void Validate(GameStateData state, GameDataRegistry registry)
     {
-        if (state.ClusterMap is not { } map) return;
+        if (state.ClusterMap is not { } map)
+        {
+            if (state.SolarSystem?.GeneratorVersion == 2)
+                throw new ScenarioException("clusterMap: version 2 requires materialized geography. Running world was not replaced.");
+            return;
+        }
         AiBaseGenerator.ValidateWorld(state);
         var aiIds = (state.AiMap?.Bases ?? []).Select(b => b.ObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
         void Require([DoesNotReturnIf(false)] bool valid, string detail) { if (!valid) throw new ScenarioException($"clusterMap: {detail}. Running world was not replaced."); }

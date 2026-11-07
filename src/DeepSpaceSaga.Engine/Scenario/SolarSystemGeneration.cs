@@ -113,6 +113,9 @@ public static class SolarSystemGeneration
                 throw new ScenarioException($"{obj.ObjectId}: invalid worldOffset.");
             if (obj.Orbit is { } orbit) ValidateOrbit(orbit, $"{obj.ObjectId}.orbit");
         }
+        if (state.ClusterMap is { } clusters && (state.SolarSystem is null ||
+            clusters.RulesVersion is not (1 or 2) || clusters.RulesVersion != state.SolarSystem.GeneratorVersion))
+            throw new ScenarioException("solarSystem: incoherent solar/cluster versions.");
         if (state.SolarSystem is not { } map) return;
         if (map.GeneratorVersion is not (1 or 2) || !double.IsFinite(map.SystemRadius) || map.SystemRadius <= 0 ||
             map.Belts.IsDefault || map.Planets.IsDefault || map.Orbits.IsDefault ||

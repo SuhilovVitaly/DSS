@@ -7,6 +7,73 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class ClusterSaveStateTests
 {
+    [Fact]
+    public void V1WorldKeepsHistoricalGeometry()
+    {
+        using var original = LocalClusterGenerationTests.Create("MarketProfiles");
+        AssertMaterializedRoundtrip(original, 1);
+    }
+
+    [Fact]
+    public void V2MaterializedRulesAreValidated()
+    {
+        using var original = StationGeographyBootstrapTests.Create("MarketProfiles");
+        AssertMaterializedRoundtrip(original, 2);
+    }
+
+    private static void AssertMaterializedRoundtrip(SimulationEngine original, int version)
+    {
+        var saved = original.CaptureSaveStateForTests(3 * 86400000L, SimulationSpeed.Speed0, 3 * 288000L);
+        string json = ScenarioLoader.Serialize(saved);
+        using var loaded = new SimulationEngine(SeededWorldBootstrapTests.Registry());
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(json, true), true,
+            generation: GenerationInputSchemaTests.V2Config() with { GeneratorVersion = 999 });
+        var actual = loaded.CaptureSaveStateForTests(3 * 86400000L, SimulationSpeed.Speed0, 3 * 288000L);
+        Assert.Equal(version, actual.GameState.ClusterMap!.RulesVersion);
+        Assert.Equal(JsonSerializer.Serialize(saved.GameState.ClusterMap), JsonSerializer.Serialize(actual.GameState.ClusterMap));
+        Assert.Equal(JsonSerializer.Serialize(saved.GameState.SolarSystem), JsonSerializer.Serialize(actual.GameState.SolarSystem));
+        foreach (var station in saved.GameState.SpaceObjects.Where(o => o.ObjectType == "Station"))
+        {
+            var restored = actual.GameState.SpaceObjects.Single(o => o.ObjectId == station.ObjectId);
+            Assert.Equal(station.Orbit, restored.Orbit);
+            Assert.Equal(station.PositionX, restored.PositionX, 6);
+            Assert.Equal(station.PositionY, restored.PositionY, 6);
+        }
+    }
+
+    [Theory]
+    [InlineData("missing-cluster")]
+    [InlineData("missing-solar")]
+    [InlineData("unknown-solar")]
+    [InlineData("unknown-cluster")]
+    [InlineData("mixed-solar")]
+    [InlineData("mixed-cluster")]
+    [InlineData("missing-geography")]
+    [InlineData("reference")]
+    [InlineData("minimum")]
+    public void UnknownOrMixedVersionDoesNotReplaceSession(string corruption)
+    {
+        using var engine = StationGeographyBootstrapTests.Create("MarketProfiles");
+        var saved = engine.CaptureSaveState();
+        var state = saved.GameState;
+        var altered = corruption switch
+        {
+            "missing-cluster" => state with { ClusterMap = null },
+            "missing-solar" => state with { SolarSystem = null },
+            "unknown-solar" => state with { SolarSystem = state.SolarSystem! with { GeneratorVersion = 99 } },
+            "unknown-cluster" => state with { ClusterMap = state.ClusterMap! with { RulesVersion = 99 } },
+            "mixed-solar" => state with { SolarSystem = state.SolarSystem! with { GeneratorVersion = 1 } },
+            "mixed-cluster" => state with { ClusterMap = state.ClusterMap! with { RulesVersion = 1 } },
+            "missing-geography" => state with { ClusterMap = state.ClusterMap! with { Geography = null } },
+            "reference" => state with { ClusterMap = state.ClusterMap! with { Geography = state.ClusterMap.Geography! with { ReferenceSpeedKmS = 0 } } },
+            _ => state with { ClusterMap = state.ClusterMap! with { Geography = state.ClusterMap.Geography! with { MinimumStationDays = 0 } } }
+        };
+        var before = ScenarioLoader.Serialize(saved);
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(
+            ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved with { GameState = altered }), true), true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
     internal static void SameFacts(ClusterVoyageFixture a, ClusterVoyageFixture b)
     {
         var left = SimulationEngine.NormalizeTradingContinuationForTests(a.Save().GameState);
