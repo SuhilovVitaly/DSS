@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0003-fire-order-presentation
 ticket: EP-0017-US-0003-TK-0004-chronological-journal
 title: "Причины пропусков, пошаговый журнал и lifecycle интерфейса"
-stage: approved
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0017-US-0003-TK-0003-consistent-battle-surfaces]
@@ -130,3 +130,13 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution scope extension — 2026-11-07
+
+Добавлен шестой implementation file TacticalBattleScreen.cs: owner Flow законно принимает live snapshot из AlreadyActive/WrongBattle refusal; новый duplicate guardTK-0002 не должен оставлять старую animation при переходе на другой BattleId. Lifecycle test этого тикета закрепляет сброс и принятие live state без запуска новой ленты от rejected response. Transport/Engine receipt owner не меняется.
+
+## Execution — 2026-11-07
+
+LogTab читает admitted projected Log prefix без blanket-hide всей фазы; cache учитывает массив префикса и BattleId. Formatter локализует все7 typed skip reasons, legacy null/unknown безопасны. Duplicate/stale callbacks не перезапускают playback. Recovery по настоящему WrongBattle response принимает новый live BattleId без старых очереди/ленты; Flow/Engine receipt ownership не изменён. Self-review выполнено; независимое review не заявляется. Scope расширен до6 implementation files перед правкой; Board/evidence сопровождают тикет.
+
+Client build PASS; focused SidesAndLog/SessionHandle/Localization PASS25/25; full Client regression PASS2070/2070 (0 skipped,107s); scoped format/verify и diff check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0304/ (focused.trx, client-regression.trx и logs). Consolidated native gate: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-native/native-summary.md —12/12 matrix plus configured monitor2 rerun PASS. Physical-input/human/product/balance acceptance remains open.

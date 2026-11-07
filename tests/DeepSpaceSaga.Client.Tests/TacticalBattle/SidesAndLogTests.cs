@@ -10,6 +10,28 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SidesAndLogTests
 {
     [Fact]
+    public async Task JournalShowsOnlyArrivedStepEventsAndTypedSkipReasons()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var results = ResultsPhaseTests.ControlledResults(screen.Flow.State!);
+        foreach (long time in new long[] { 1274, 1275, 2250 })
+        {
+            var frame = screen.CaptureFrame(1280, 720)! with
+            { Battle = results.Project(time), Presentation = TacticalBattlePresentation.SalvoFlight, Salvo = results.Capture(time) };
+            Assert.Equal(time < 1275 ? 0 : time < 2250 ? 1 : 2, TacticalBattleLogTab.Visible(frame).Count());
+            Assert.Equal(frame.Battle.Log.AsEnumerable(), TacticalBattleLogTab.Visible(frame));
+        }
+        foreach (var reason in Enum.GetValues<TacticalFireSkipReason>().Where(r => r != TacticalFireSkipReason.None))
+        {
+            var entry = new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.FireSkipped, "actor")
+            { SkipReason = reason, FireStepIndex = 0 };
+            Assert.Contains("actor", BattleLogFormatter.Format(entry));
+            Assert.Contains(BattleFormat.Localize("Skip." + reason), BattleLogFormatter.Format(entry));
+        }
+    }
+
+    [Fact]
     public async Task MapCardsAndHeaderShareEveryIntermediateStepState()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

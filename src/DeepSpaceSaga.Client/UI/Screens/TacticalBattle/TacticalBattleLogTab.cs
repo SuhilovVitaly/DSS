@@ -10,28 +10,18 @@ internal sealed class TacticalBattleLogTab
 {
     private readonly ScrollTextPanel _panel = new() { AutoScroll = true, StyleRole = "tabs.log" };
     private ImmutableArray<TacticalBattleLogEvent> _last;
-    private int? _lastHiddenTurn;
+    private string? _battleId;
     internal ScrollTextPanel Panel => _panel;
 
-    internal static IEnumerable<TacticalBattleLogEvent> Visible(TacticalBattleFrame frame)
-    {
-        int? hidden = HiddenTurn(frame);
-        return hidden is { } turn
-            ? frame.Battle.Log.TakeWhile(e => e.Turn < turn || e.Turn == turn && e.Phase != TacticalBattlePhase.Fire)
-            : frame.Battle.Log;
-    }
-    private static int? HiddenTurn(TacticalBattleFrame frame) =>
-        frame.Presentation == TacticalBattlePresentation.SalvoFlight && !frame.Battle.Shots.IsDefaultOrEmpty
-            ? frame.Battle.Shots[0].Turn : null;
+    internal static IEnumerable<TacticalBattleLogEvent> Visible(TacticalBattleFrame frame) => frame.Battle.Log;
 
     internal void Draw(SKCanvas canvas, TacticalBattleFrame frame, SKRect bounds)
     {
         _panel.Layout(bounds, frame.UiScale);
-        int? hidden = HiddenTurn(frame);
-        if (_last != frame.Battle.Log || _lastHiddenTurn != hidden)
+        if (_last != frame.Battle.Log || _battleId != frame.Battle.BattleId)
         {
             _last = frame.Battle.Log;
-            _lastHiddenTurn = hidden;
+            _battleId = frame.Battle.BattleId;
             _panel.SetText(string.Join("\n", Visible(frame).Select(BattleLogFormatter.Format)));
         }
         _panel.Draw(canvas);

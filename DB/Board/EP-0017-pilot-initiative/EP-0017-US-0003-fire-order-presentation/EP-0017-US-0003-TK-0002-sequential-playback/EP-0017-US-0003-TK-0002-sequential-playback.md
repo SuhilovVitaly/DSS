@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0003-fire-order-presentation
 ticket: EP-0017-US-0003-TK-0002-sequential-playback
 title: "Последовательное воспроизведение ленты стрельбы"
-stage: implemented
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0017-US-0003-TK-0001-queue-and-forecast]
@@ -143,3 +143,7 @@ Playback строит общую cached presentation-проекцию по immut
 Дополнительный ForecastTab использует DurationMs/Arrived и admitted cumulative damage; scope расширен до6 файлов до правки. Тестовые DTO обновлены до FireSteps. Проверены impact−1/impact/impact+1, hull100→95→80/armor10→0, exact Log prefix,0/12 shots,4500ms cap, replay, immediate outcome и Classic/contrast equality. UI surfaces старого before-salvo fallback/journal ещё обновляютсяTK-0003/0004; не выдаются за завершённую US.
 
 Client build PASS; ResultsPhaseTests/SkinBattleIntegrationTests/BattleMapRenderTests PASS25/25; scoped format/verify и git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0302/ (build/tests/format/format-verified logs, focused.trx и result rasters). Self-review выполнено; independent review не заявляется. Native NOT RUN здесь, консолидирован послеTK-0004; stage implemented до native gate.
+
+## Consolidated native gate — 2026-11-07
+
+Final Client regression PASS2070/2070. Real OpenGL matrix Classic/contrast ×3 viewports ×2 scales PASS12/12; additional diagnostic monitor2 case PASS. Scripted keyboard/mouse routing, replay, new battle, exit and file Save/Load passed. Exact report/capture evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-native/native-summary.md. Physical human input, independent human/product review and long-term balance remain open and are not replaced by these checks.

@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0003-fire-order-presentation
 ticket: EP-0017-US-0003-TK-0003-consistent-battle-surfaces
 title: "Согласованные карта, карточки и заголовок на каждом шаге"
-stage: implemented
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0017-US-0003-TK-0002-sequential-playback]
@@ -135,3 +135,7 @@ Restore выполняется отдельно при необходимост�
 MapRenderer и Cards читают только общую projected Units; старое восстановление BeforeSalvo плюс fake lethal marker удалено. Карта использует индивидуальный DurationMs для flash. Header считает потери из тех же projected units и отображает outcome только если он допущен projector, без blanket-hide по SalvoFlight. Карточки во время playback/pending не предлагают selection actions.
 
 На общих временных точках проверены before/first/second impact, одинаковые hull/armor на карте и в карточках, потеря/outcome на winning impact, запрет actions для active/jammed/disabled/destroyed во время playback. Реальный seed1 outcome/player perspective тест обновлён для explicit projection вместо manually supplied future authoritative state. Client build PASS; SidesAndLog/PanelHeader/BattleMapRender/ResultsPhase tests PASS33/33; scoped format/verify и diff check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0303/ (logs, focused.trx и rasters). Self-review выполнено; independent review не заявляется. Scope включает эту карточку. Native консолидирован послеTK-0004, NOT RUN здесь; stage implemented до gate.
+
+## Consolidated native gate — 2026-11-07
+
+Final Client regression PASS2070/2070. Real OpenGL matrix Classic/contrast ×3 viewports ×2 scales PASS12/12; additional diagnostic monitor2 case PASS. Scripted keyboard/mouse routing, replay, new battle, exit and file Save/Load passed. Exact report/capture evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-native/native-summary.md. Physical human input, independent human/product review and long-term balance remain open and are not replaced by these checks.

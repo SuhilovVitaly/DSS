@@ -301,9 +301,14 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override void OnBattleUpdated(TacticalBattleSnapshot? before, TacticalBattleResponse response)
     {
         if (Flow.State is not { } state) return;
-        if (!response.Accepted || response.State is null) return;
+        if (response.State is null) return;
         var current = Volatile.Read(ref _presentation);
         if (current?.Accepted.BattleId == state.BattleId && current.Accepted.Revision >= state.Revision) return;
+        if (!response.Accepted)
+        {
+            Volatile.Write(ref _presentation, new(state, null));
+            return;
+        }
         long now = ClockMilliseconds();
         var animation = TacticalBattleMovementAnimation.Create(before, response, now);
         var results = TacticalBattleResults.Create(before, response, now + (animation?.PlaybackDurationMs ?? 0));

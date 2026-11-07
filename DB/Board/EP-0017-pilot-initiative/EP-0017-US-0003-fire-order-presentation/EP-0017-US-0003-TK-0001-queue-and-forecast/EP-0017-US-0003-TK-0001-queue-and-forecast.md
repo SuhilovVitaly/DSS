@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0003-fire-order-presentation
 ticket: EP-0017-US-0003-TK-0001-queue-and-forecast
 title: "Общая очередь и условный прогноз в планировании стрельбы"
-stage: implemented
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0017-US-0002-TK-0005-initiative-regression, EP-0017-US-0001-TK-0005-pilot-cards]
@@ -134,3 +134,7 @@ Restore выполняется отдельно при необходимост�
 Fire panel показывает всю Engine FireQueue с1-based номером, ID и инициативой; queue order не сортируется клиентом. Прогноз объединяет обе стороны в ту же очередь и показывает предупреждение FireConditional; суммы остаются условными. FireSteps не читается для прогноза. Legacy пустая очередь отображает —. Использованы существующие scroll и orders.fire/tabs.forecast roles. Self-review и просмотр CPU растра подтвердили читаемость/scroll без перекрытия контролов. Independent review не заявляется; scope включает эту карточку.
 
 Client build PASS; FirePlanningTests/ForecastTabTests PASS8/8; scoped format/verify и git diff --check PASS. Named selection/skin test уточнён до фактически проверенного QueueDoesNotChangeWithSelectionWindowOrSkin; pending owner/input не изменён, existing integration coverage сохраняется. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0301/ (build/tests/format/format-verified logs, focused.trx, battle-fire-planning.png, battle-forecast.png). Native Classic/contrast и viewport matrix консолидированы после остальных UI тикетов; NOT RUN здесь, stage implemented до этого gate.
+
+## Consolidated native gate — 2026-11-07
+
+Final Client regression PASS2070/2070. Real OpenGL matrix Classic/contrast ×3 viewports ×2 scales PASS12/12; additional diagnostic monitor2 case PASS. Scripted keyboard/mouse routing, replay, new battle, exit and file Save/Load passed. Exact report/capture evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-native/native-summary.md. Physical human input, independent human/product review and long-term balance remain open and are not replaced by these checks.

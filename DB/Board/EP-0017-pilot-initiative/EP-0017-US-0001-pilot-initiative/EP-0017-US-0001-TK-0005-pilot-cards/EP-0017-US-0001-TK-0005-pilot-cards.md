@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0001-pilot-initiative
 ticket: EP-0017-US-0001-TK-0005-pilot-cards
 title: "Инициатива на карточках своих и вражеских пилотов"
-stage: implemented
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0017-US-0001-TK-0004-materialize-initiative]
@@ -132,3 +132,7 @@ Restore выполняется отдельно при необходимост�
 Client build PASS0 warnings/errors; SidesAndLogTests PASS6/6; scoped format --verify-no-changes --no-restore PASS; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0105/ (build/tests/format logs, focused.trx и CPU rasters). CPU raster не является native доказательством.
 
 Native Classic/contrast NOT RUN на этом шаге: проверка консолидируется после финальной UI хронологии US-0003, чтобы проверить итоговый экран; Windows helper доступен (list_apps успешно). Product/human acceptance открыта. Stage implemented означает production+automated готовность, не полную приёмку. Dependency для US-0002 готова технически.
+
+## Consolidated native gate — 2026-11-07
+
+Final Client regression PASS2070/2070. Real OpenGL matrix Classic/contrast ×3 viewports ×2 scales PASS12/12; additional diagnostic monitor2 case PASS. Scripted keyboard/mouse routing, replay, new battle, exit and file Save/Load passed. Exact report/capture evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-native/native-summary.md. Physical human input, independent human/product review and long-term balance remain open and are not replaced by these checks.
