@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-08: IN PROGRESS. Опубликовано25/29тикетов; stories1–7 функционально реализованы; открыты US8 evidence и US9 документация. Следующий: US0008TK0003; далее US9.
+Статус на2026-11-08: IN PROGRESS. Опубликовано26/29тикетов; stories1–7 функционально реализованы; открыты US8 evidence и US9 документация. Следующий: US0009TK0001; далее документация TK2/TK3.
 
 ## Git и полномочия
 
@@ -166,3 +166,6 @@ US0007TK0002 published5324df5570c0a117bf53f1a4a8ab3ec685ba0df5 verified. US0008T
 
 
 US8TK2: raster tooling/evidence complete, six scenarios/18worlds/864PNG; report tests6/6, UI17/17, Client2117/2117. Evidence20261108-raster-verified/RasterReport.md and MatrixSummary.json.24 cluster-fit high-UI/small-window semantic detail gaps remain OPEN; native/human/baseline separate.
+
+
+US8TK3:12native scripted routes complete,108PNG, actual Save/Load and cleanup; native p95 all12≤12.5ms, p99 legacy verdict failed3. NativeReport.md/NativeMatrixSummary.json in20261108-native-tool. Tool tests9/9. Motion1266/1267:unchanged baseline guard3findings audited at c43e8af5. Physical/human/baseline/24raster detail gaps OPEN. Functional/evidence stories1–8 implemented, final documentation story remains.

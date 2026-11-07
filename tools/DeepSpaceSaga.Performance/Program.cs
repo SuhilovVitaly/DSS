@@ -34,6 +34,20 @@ if (args.Contains("--debug-window"))
     return;
 }
 
+if (args.Length == 3 && args[2] == "--validate-map-v2-native-report")
+{
+    bool valid = V2NativeMapAcceptance.ValidateReport(args[1], out string error);
+    if (!valid) Console.Error.WriteLine(error);
+    Environment.ExitCode = valid ? 0 : 1;
+    return;
+}
+
+if (args.Contains("--map-v2-native-acceptance"))
+{
+    Environment.ExitCode = SolarNativeEvidence.RunV2(args);
+    return;
+}
+
 if (args.Contains("--solar-window"))
 {
     Environment.ExitCode = SolarNativeEvidence.Run(args);

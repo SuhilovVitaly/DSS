@@ -5,7 +5,7 @@ ticket: EP-0018-US-0008-TK-0003-native-map-evidence
 title: "Нативный маршрут по карте и отдельная продуктовая приёмка"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: tooling
 test_project: tools/DeepSpaceSaga.Performance.Tests/DeepSpaceSaga.Performance.Tests.csproj
 depends_on: [EP-0018-US-0008-TK-0002-rendered-map-evidence]
@@ -41,6 +41,8 @@ Tooling flag --map-v2-native-acceptance; humanAcceptance явно separate/notRu
 Никаких новых public Engine вызовов из Client/render loop. Зависимости создают только явно перечисленные predecessor tickets.
 
 ## Implementation steps
+Execution scope clarification (2026-11-08): add `tools/DeepSpaceSaga.Performance/V2NativeMapAcceptance.cs` (four implementation/test files total). Reuse the existing native surface hook and tooling reflection pattern to attach the actual session, dispatch production screen events and resize the real window; no production Engine/render-loop API changes. Scripted screen inputs and F5/F9 are journalled separately from physical input. Save slots live in a uniquely owned artifact directory, loaded through the production factory path, then deleted without touching foreign slots. The legacy --solar-window remains its historical v1 configuration.
+
 1. В existing native host реализовать путьC-07 Default start->zoom->cluster->station local focus->Approach/Dock->Save/Load->return; журналировать фактические inputs/outcomes.
 2. Снять реальную camera/selected/nav target/scale и screenshots на размерах C-07; добавить pause/fastspeed/resize/LOD threshold input cases.
 3. Собрать presented frame timing с warmup и sample count; определить80FPS status отдельно от interaction success; physical-input и human readability остаются отдельными полями.
@@ -88,3 +90,17 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution — 2026-11-08
+
+Implemented --map-v2-native-acceptance and --validate-map-v2-native-report. Native OpenGL/Skia surface, actual managed screen inputs, real window resize, production session/QuickSave/QuickLoad paths, SHA-bound phase screenshots and authoritative observations. No production Engine API or docking rule change. Legacy --solar-window explicitly retains v1 settings. Unknown options/path escapes rejected. Internal40s and external300000ms caps reject timeout; cleanup checks unique owned directory marker and parent before deletion.
+
+Retained evidence under D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/:
+- 20261108-native-tool/NativeReport.md and NativeMatrixSummary.json:12 selected completed Default routes,4window sizes including32:9 × UI1/1.5/2; seed1/42/100 mapped by scale (not36-case seed Cartesian product).108PNG/108phase snapshots. Ten cases in20261108-native-verified-matrix plus two corrected overlap-cycle cases in20261108-native-overlap-verified.
+- All12 independently validated by final report validator: required phases/hashes/geometry identity/camera/600actual swap intervals after120warmup/owned cleanup.9/9focused tests in verified.trx; Release build/scoped format PASS. Four real tampered report copies rejected; negative-validation.log retained and disposable copies removed.
+- Actual route: start→system→cluster→station selection/local→pan/wheelRegion/resize→Approach→acknowledged Speed4→speed/direction sync→Dock dialogue→observed Dock→F5/F9 factory restore→paused follow return. Overlapping marker selection uses production repeat-click cycle; no direct selected-ID injection.
+- Native median≈10ms, all12 p95≤12.5ms; original stricter p99 verdict fails3cases. Intel Arc140V/100Hz VSync/.NET8.0.26/Windows26200. Exact p50/p95/p99, source DLL hash, machine and settings in retained JSON. No physical scanout/GPU-execution claim.
+
+Physical input/human readability/independent review NOT RUN; baseline OPEN; productAccepted=false. Raster24cluster-fit detail gaps remain OPEN. Native tools use production fit/focus APIs and managed events; scripted success does not prove every hardware UI gesture. Initial driver failures/interrupted matrices retained as excluded history; causes: missing docking dialogue, premature async observations, raw/logical coordinates, overlapping marker hit priority. No failed/timeout case counted as passed.
+
+Fresh full Motion1266/1267 (FAIL1) recorded in20261108-final-regression/motion-full.trx. Actual guard current-vs-base audit proves identical3findings in unchanged TacticalBattleResults.cs:15/53 and TacticalBattleSalvo.cs:95; see MotionBaselineAudit.json. Unrelated baseline source guard remains OPEN, not silently repaired or excluded. Client2117/2117 already passed in TK2. Self-review only. All task-owned native processes ended and slots removed.
