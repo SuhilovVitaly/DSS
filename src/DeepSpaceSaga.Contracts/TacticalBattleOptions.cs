@@ -7,7 +7,10 @@ public sealed record TacticalBattleAvailability(bool Available, TacticalContentI
 public readonly record struct TacticalSkillRange(int Minimum, int Maximum, bool IsRandom);
 public sealed record TacticalBattleGoal(string PlayerSide, double WinMaxOneLoss, double WinNoLoss, double Tolerance, ImmutableArray<long> Seeds);
 public sealed record TacticalDroneSetupOption(string Id, string Side, string FrameId, string FrameName, string PilotId, string PilotName,
-    TacticalSkillRange Accuracy, TacticalSkillRange Maneuver, int Hull, string WeaponId, string ArmorId, string? ShieldId, int ShieldCount, int ShieldSlots);
+    TacticalSkillRange Accuracy, TacticalSkillRange Maneuver, int Hull, string WeaponId, string ArmorId, string? ShieldId, int ShieldCount, int ShieldSlots)
+{
+    public TacticalSkillRange? Initiative { get; init; }
+}
 public sealed record TacticalScenarioOption(string Id, string Name, string Description, string PlayerSide, string OwnTacticId,
     string EnemyTacticId, TacticalBattleGoal? Goal, ImmutableArray<TacticalDroneSetupOption> Drones);
 public sealed record TacticalWeaponOption(string Id, string Name, int Tier, double ArcDegrees, double Range, int DamageMin,

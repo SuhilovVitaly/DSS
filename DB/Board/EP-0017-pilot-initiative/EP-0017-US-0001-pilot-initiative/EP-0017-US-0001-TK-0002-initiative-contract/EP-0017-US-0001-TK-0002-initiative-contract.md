@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0001-pilot-initiative
 ticket: EP-0017-US-0001-TK-0002-initiative-contract
 title: "Неизменяемый контракт инициативы пилота"
-stage: approved
+stage: done
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj
 depends_on: []
@@ -125,3 +125,9 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Additive nullable init Initiative в Unit/SetupOption; positional constructors и запросы сохранены. Тесты различают 0/null/fixed/range и старый payload. Self-review: Contracts не генерирует и не валидирует content, carrier default null; независимое review не заявляется. Сопутствующая запись этой карточки включена в scope.
+
+Build Contracts --no-restore -m:1 -nr:false PASS; весь Contracts.Tests PASS 177/177 (0 skipped); scoped dotnet format --verify-no-changes --no-restore PASS; git diff --check PASS. Команды с process-tree cap 300000ms, stdout/stderr и contracts.trx: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0102/. Native не применяется к DTO; product acceptance эпика остаётся открытой.

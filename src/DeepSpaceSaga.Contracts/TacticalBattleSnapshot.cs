@@ -25,7 +25,10 @@ public sealed record TacticalBuildSnapshot(string FrameName, string PilotId, str
 public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKind Kind, string FrameId,
     TacticalPoseSnapshot Pose, double Speed, int Hull, int MaxHull, int Armor, int MaxArmor, TacticalUnitState State,
     string? RoleId, bool Jammed, ImmutableArray<TacticalEngineSnapshot> Engines, TacticalMovementLimits? Limits,
-    double PreviousTurn, TacticalBuildSnapshot? Build, int Accuracy, int Maneuver, string? RoleName = null);
+    double PreviousTurn, TacticalBuildSnapshot? Build, int Accuracy, int Maneuver, string? RoleName = null)
+{
+    public int? Initiative { get; init; }
+}
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);
 public sealed record TacticalTargetCandidateSnapshot(string TargetId, double Distance, double Angle, bool Rear, double RearKillChance, double Chance);

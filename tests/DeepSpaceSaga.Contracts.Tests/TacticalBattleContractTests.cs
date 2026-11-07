@@ -7,6 +7,31 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void InitiativeRoundTripDistinguishesZeroNullAndRange()
+    {
+        var unit = Frame().Units[0];
+        Assert.Equal(0, RoundTrip(unit with { Initiative = 0 }).Initiative);
+        Assert.Equal(100, RoundTrip(unit with { Initiative = 100 }).Initiative);
+        Assert.Null(RoundTrip(unit).Initiative);
+        var option = new TacticalDroneSetupOption("d", "A", "light", "Light", "p", "Pilot",
+            new(55, 55, false), new(50, 50, false), 65, "gun", "armor", null, 0, 1);
+        foreach (var skill in new TacticalSkillRange[] { new(0, 0, false), new(40, 55, true), new(50, 50, true) })
+            Assert.Equal(skill, RoundTrip(option with { Initiative = skill }).Initiative);
+        Assert.Null(RoundTrip(option).Initiative);
+    }
+
+    [Fact]
+    public void OldBattlePayloadWithoutInitiativeRemainsReadable()
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!;
+        foreach (var unit in node["Units"]!.AsArray()) unit!.AsObject().Remove("Initiative");
+        var restored = JsonSerializer.Deserialize<TacticalBattleSnapshot>(node.ToJsonString())!;
+        Assert.All(restored.Units, unit => Assert.Null(unit.Initiative));
+        Assert.Equal("battle", restored.BattleId);
+        Assert.Equal(TacticalBattlePhase.Over, restored.Phase);
+    }
+
+    [Fact]
     public void JournalPreservesTypedFactsAndOldEventPayloadsRemainReadable()
     {
         const string oldEvent = """{"Sequence":7,"Turn":2,"Phase":1,"Kind":10,"TargetId":"d","EngineIndex":1}""";
