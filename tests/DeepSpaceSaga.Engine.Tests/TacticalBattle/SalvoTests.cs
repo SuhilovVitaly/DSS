@@ -8,64 +8,21 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class SalvoTests
 {
     [Fact]
-    public void EveryIndependentTraceSalvoMatchesShotsStatesAndRngCalls()
+    public void RepeatedSequentialSalvosPreserveExactStepsStateAndDraws()
     {
-        using var trace = ReferenceFixtureTests.Open("trace-seed-1");
-        var turns = trace.RootElement.GetProperty("data").GetProperty("turns");
-        for (int turnIndex = 0; turnIndex < turns.GetArrayLength(); turnIndex++)
+        var one = Battle.Create(AssemblyTests.Catalog(), "initial", 1);
+        var two = Battle.Create(AssemblyTests.Catalog(), "initial", 1);
+        for (int turn = 0; turn < 20 && one.Result is null; turn++)
         {
-            var battle = Battle.Create(AssemblyTests.Catalog(), "initial", 1);
-            var turn = turns[turnIndex];
-            if (turnIndex > 0)
-                foreach (var state in turns[turnIndex - 1].GetProperty("states").EnumerateArray())
-                {
-                    var unit = battle.Drones.Cast<TacticalUnit>().Concat(battle.Carriers).First(u => u.Id == state.GetProperty("id").GetString());
-                    unit.Hull = state.GetProperty("hull").GetInt32();
-                    unit.Armor = state.GetProperty("armor").GetInt32();
-                    if (unit is not TacticalDrone drone) continue;
-                    drone.Status = state.GetProperty("status").GetString() switch { "air" => TacticalDroneStatus.Air, "disabled" => TacticalDroneStatus.Disabled, _ => TacticalDroneStatus.Destroyed };
-                    drone.Jammed = state.GetProperty("jammed").GetInt32() != 0;
-                    for (int i = 0; i < drone.Engines.Length; i++) drone.Engines[i].Factor = state.GetProperty("engines")[i].GetDouble();
-                }
-            foreach (var position in turn.GetProperty("positions").EnumerateArray())
-                battle.Drones.First(d => d.Id == position.GetProperty("id").GetString()).Pose = new(
-                    position.GetProperty("x").GetDouble(), position.GetProperty("y").GetDouble(), position.GetProperty("course").GetDouble());
-            long before = turn.GetProperty("salvoCallsBefore").GetInt32();
-            while (battle.Random.Calls < before) battle.Random.Random(); // published stage precondition; no simulated AI expectations
-            var expectedShots = turn.GetProperty("shots").EnumerateArray().ToArray();
-            var actual = TacticalBattleSalvo.Fire(battle, (d, _) =>
-            {
-                foreach (var shot in expectedShots)
-                    if (shot.GetProperty("shooter").GetString() == d.Id) return shot.GetProperty("target").GetString();
-                return null;
-            });
-            Assert.Equal(expectedShots.Length, actual.Shots.Length);
-            for (int i = 0; i < expectedShots.Length; i++)
-            {
-                var expected = expectedShots[i];
-                var shot = actual.Shots[i];
-                Assert.Equal(expected.GetProperty("shooter").GetString(), shot.Shooter.Id);
-                Assert.Equal(expected.GetProperty("target").GetString(), shot.Target.Id);
-                Assert.Equal(expected.GetProperty("hit").GetInt32() != 0, shot.Hit);
-                Assert.Equal(expected.GetProperty("damage").GetInt32(), shot.Damage);
-                Assert.Equal(expected.GetProperty("rear").GetInt32() != 0, shot.Rear);
-                Assert.Equal(expected.GetProperty("kill").GetInt32() != 0, shot.Kill);
-                Assert.InRange(Math.Abs(expected.GetProperty("distance").GetDouble() - shot.Distance), 0, 0.000002);
-                double angleBudget = 0.000001 + 0.000002 / shot.Distance * 57.3;
-                Assert.InRange(Math.Abs(expected.GetProperty("angle").GetDouble() - shot.Angle), 0, angleBudget);
-                Assert.InRange(Math.Abs(expected.GetProperty("chance").GetDouble() - shot.Chance), 0, 0.0000006);
-            }
-            Assert.Equal(turn.GetProperty("salvoCallsAfter").GetInt32(), battle.Random.Calls);
-            foreach (var state in turn.GetProperty("states").EnumerateArray())
-            {
-                var unit = battle.Drones.Cast<TacticalUnit>().Concat(battle.Carriers).First(u => u.Id == state.GetProperty("id").GetString());
-                Assert.Equal(state.GetProperty("hull").GetInt32(), unit.Hull);
-                Assert.Equal(state.GetProperty("armor").GetInt32(), unit.Armor);
-                if (unit is not TacticalDrone drone) continue;
-                Assert.Equal(state.GetProperty("status").GetString(), drone.Status.ToString().ToLowerInvariant());
-                Assert.Equal(state.GetProperty("jammed").GetInt32() != 0, drone.Jammed);
-                Assert.Equal(state.GetProperty("engines").EnumerateArray().Select(e => e.GetDouble()), drone.Engines.Select(e => e.Factor));
-            }
+            one.Step(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
+            two.Step(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
+            Assert.Equal(one.Random.State, two.Random.State);
+            Assert.Equal(one.Random.Calls, two.Random.Calls);
+            Assert.Equal(System.Text.Json.JsonSerializer.Serialize(TacticalBattleSnapshotBuilder.Units(one)),
+                System.Text.Json.JsonSerializer.Serialize(TacticalBattleSnapshotBuilder.Units(two)));
+            Assert.Equal(one.LastSalvo!.Steps.Select(s => (s.Index, s.ShooterId, s.TargetId, s.SkipReason)),
+                two.LastSalvo!.Steps.Select(s => (s.Index, s.ShooterId, s.TargetId, s.SkipReason)));
+            Assert.Equal(one.LastSalvo.Shots.Length, one.LastSalvo.Steps.Count(s => s.Shot is not null));
         }
     }
 
@@ -78,39 +35,38 @@ public sealed class SalvoTests
     public void ArmorPoolSplitUsesPiercingBeforeAbsorption(int damage, int piercing, int armor, int hull, int absorbed) => Assert.Equal((hull, absorbed), TacticalBattleSalvo.Split(damage, piercing, armor));
 
     [Fact]
-    public void SimultaneousMutualDestructionStillFiresBothAndFirstLossUsesObjectOrder()
+    public void EarlyDestructionPreventsMutualKillAndFirstLossUsesChronology()
     {
         var (battle, a, b) = Arena(damage: 40, hull: 40);
         long calls = battle.Random.Calls;
         var salvo = TacticalBattleSalvo.Fire(battle);
-        Assert.Equal(new[] { a.Id, b.Id }, salvo.Shots.Select(s => s.Shooter.Id));
-        Assert.Equal(new[] { b.Id, a.Id }, salvo.Damage.Select(d => d.TargetId));
-        Assert.Equal(TacticalDroneStatus.Destroyed, a.Status);
+        Assert.Equal(a.Id, Assert.Single(salvo.Shots).Shooter.Id);
+        Assert.Equal(b.Id, Assert.Single(salvo.Damage).TargetId);
+        Assert.Equal(TacticalDroneStatus.Air, a.Status);
         Assert.Equal(TacticalDroneStatus.Destroyed, b.Status);
-        Assert.Equal(0, a.Speed);
         Assert.Equal(0, b.Speed);
-        Assert.Equal(4, battle.Random.Calls - calls);
-        Assert.Equal("A", battle.Statistics.FirstLoss);
-        Assert.Equal(80, battle.Statistics.Hull);
-        Assert.Equal(2, battle.Statistics.Shots);
-        Assert.Equal(2, battle.Statistics.Hits);
-        Assert.Equal(80, Assert.Single(battle.Statistics.Weapons).Hull);
+        Assert.Equal(2, battle.Random.Calls - calls);
+        Assert.Equal("B", battle.Statistics.FirstLoss);
+        Assert.Equal(40, battle.Statistics.Hull);
+        Assert.Equal(1, battle.Statistics.Shots);
+        Assert.Equal(1, battle.Statistics.Hits);
+        Assert.Equal(40, Assert.Single(battle.Statistics.Weapons).Hull);
     }
 
     [Fact]
-    public void MultipleHitsShareArmorButSoloLossUsesPreSalvoArmor()
+    public void MultipleHitsUseCurrentArmorAndCreditActualLoss()
     {
         var (battle, a, b) = Arena(damage: 40, hull: 100, systems: "weaponJammed");
         var second = ActivateSecondA(battle);
         b.Armor = 50;
         var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d.Side == "A" ? b.Id : null);
         Assert.Equal(new[] { a.Id, second.Id }, salvo.Shots.Select(s => s.Shooter.Id));
-        Assert.All(salvo.Shots, s => Assert.Equal(0, s.SoloHullLoss));
+        Assert.Equal(new[] { 0, 30 }, salvo.Shots.Select(s => s.SoloHullLoss));
         Assert.Equal(70, b.Hull);
         Assert.Equal(0, b.Armor);
-        Assert.Equal((30, 50), (salvo.Damage[0].Hull, salvo.Damage[0].Armor));
+        Assert.Equal(new[] { (0, 40), (30, 10) }, salvo.Damage.Select(d => (d.Hull, d.Armor)));
         Assert.Equal(0, battle.Statistics.Systems);
-        Assert.Equal(0, Assert.Single(battle.Statistics.Weapons).Hull);
+        Assert.Equal(30, Assert.Single(battle.Statistics.Weapons).Hull);
     }
 
     [Fact]
@@ -283,7 +239,7 @@ public sealed class SalvoTests
         Assert.Equal(100, b.Hull);
     }
 
-    private static TacticalDrone ActivateSecondA(Battle battle)
+    internal static TacticalDrone ActivateSecondA(Battle battle)
     {
         var second = battle.Drones[1];
         second.Status = TacticalDroneStatus.Air;
@@ -291,7 +247,7 @@ public sealed class SalvoTests
         return second;
     }
 
-    private static (Battle Battle, TacticalDrone A, TacticalDrone B) Arena(int damage = 40, int hull = 100, double chance = 100,
+    internal static (Battle Battle, TacticalDrone A, TacticalDrone B) Arena(int damage = 40, int hull = 100, double chance = 100,
         double killChance = 0, string? systems = null)
     {
         var c = AssemblyTests.Catalog();
@@ -306,6 +262,8 @@ public sealed class SalvoTests
                     Table = systems is null ? c.Rules.Systems.Table : [new(systems, 1)]
                 }
             },
+            Pilots = new(c.Pilots.Entries.Select(e => (e.Id, e.Value with
+            { Initiative = PilotSkill.Fixed(e.Id == "vera" ? 80 : e.Id == "yun" ? 70 : e.Id == "thug1" ? 60 : 50) }))),
             Weapons = new(c.Weapons.Entries.Select(e => (e.Id, e.Value with { DamageMin = damage, DamageMax = damage, RearKillChance = killChance })))
         };
         var loadouts = c.Scenarios["initial"].Sides.SelectMany(s => s.Drones).ToDictionary(d => d.Id,

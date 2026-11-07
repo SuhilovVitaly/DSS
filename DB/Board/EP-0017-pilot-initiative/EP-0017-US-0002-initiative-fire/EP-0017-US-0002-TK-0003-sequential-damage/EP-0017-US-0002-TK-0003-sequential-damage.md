@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0002-initiative-fire
 ticket: EP-0017-US-0002-TK-0003-sequential-damage
 title: "Последовательный урон и немедленная остановка очереди"
-stage: approved
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0017-US-0002-TK-0002-seeded-fire-order]
@@ -134,3 +134,11 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Runtime-воспроизведение before-runtime.trx: гарантированное раннее уничтожение всё равно давало2 shots. Production Fire теперь сначала фиксирует/валидирует все цели, затем исполняет frozen rank с немедленными armor/hull/status/systems/statistics, typed skips без draws и CheckVictory после каждого полного шага. Complete не перезаписывается Planning. Internal immutable Steps содержат полный after-state и outcome на выигравшем шаге. FirstLoss хронологичен, weapon hull credit равен фактическому урону шага. Старый simultaneous trace-test заменён determinism/step coverage, primitive/formula assertions сохранены; независимые controlled cases проверяют новый смысл. Historical V4 файлы не изменены.
+
+Проверены kill/disable/jam, frozen target и другая доступная цель (explicit/default AI), два попадания15 по armor10 (hull95→80), carrier/last-drone victory, miss/withheld/no-target/invalid exact draw ownership. Initial no-retarget fixture ошибочно давал second shooter другую ближайшую цель; исправлена геометрия, требования не ослаблены. Self-review выполнено; independent review не заявляется. Scope включает эту карточку; OutcomeTests не требовал изменения, его8 cases сохранены.
+
+Focused SalvoTests/OutcomeTests/InitiativeFireTests PASS35/35; Engine build PASS; scoped format и --verify-no-changes PASS; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0203/ (before-runtime.trx, after-fixed.trx, stdout/stderr, build/format logs). Session journal и старые full-battle parity ожидания обновляются следующими утверждёнными тикетами; UI/native итог пока не заявляется.

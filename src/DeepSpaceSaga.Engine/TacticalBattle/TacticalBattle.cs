@@ -34,7 +34,7 @@ internal sealed partial class TacticalBattle
     {
         Require(TacticalTurnPhase.Firing);
         LastSalvo = TacticalBattleSalvo.Fire(this, targetsFor);
-        Phase = TacticalTurnPhase.Planning;
+        if (Result is null) Phase = TacticalTurnPhase.Planning;
         CheckVictory();
     }
 
