@@ -1193,7 +1193,7 @@ public sealed partial class GameSessionScreen : IScreen
             RenderStageCompleted?.Invoke("fields");
             if (MapLayers.HasFlag(MapLayerFlags.Territories)) AiMapPresentation.DrawTerritories(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
             RenderStageCompleted?.Invoke("territories");
-            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
+            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId, MapDetail);
         }
         float cx = width / 2f;
         float cy = height / 2f;

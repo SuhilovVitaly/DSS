@@ -5,7 +5,7 @@ ticket: EP-0018-US-0006-TK-0001-semantic-map-detail
 title: "Доменные уровни детализации и агрегация объектов"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0004-TK-0004-activate-v2-content, EP-0018-US-0005-TK-0003-local-scale-content]
@@ -90,3 +90,6 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution evidence
+2026-11-07: Local/Region/Cluster/System resolved from short-side physical span at frozen/fallback reference, thresholds4h/4d/30d with10% hysteresis. System markers derive from exact domain memberships/current pose bounds; Region/Cluster aggregate fields by owner, not markets or screen cells. Selected/player/nav targets stay individual. Legacy cells remain a spatial optimization for unmapped contacts; human station membership is never reassigned. Cluster outlines/directions only on Cluster detail. Focused-final30/30 PASS including three named regressions; Release build, format-verified/format-last and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-map-detail/{focused-final.trx,build.log,format-verified.log,format-last.log}. Tests confirm original snapshot identity and no survey-content transfer to aggregates. Self-review complete; raster/native readability remains US8.

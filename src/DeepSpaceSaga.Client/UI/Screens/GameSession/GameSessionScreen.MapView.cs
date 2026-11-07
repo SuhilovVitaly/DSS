@@ -23,6 +23,7 @@ public sealed partial class GameSessionScreen
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
     private bool _mapCameraInitialized;
+    internal MapDetailLevel MapDetail { get; private set; } = MapDetailLevel.Local;
     private double MapReferenceSpeed => MapScalePolicy.ReferenceSpeed(_mapSettings,
         _buffer.Presented?.Snapshot.ClusterMap?.Geography?.ReferenceSpeedKmS ?? _mapSettings.ReferenceSpeedKmS);
     internal double LocalMaximumPpu => MapScalePolicy.MaximumPpu(_mapSettings, _viewportW, _viewportH, MapReferenceSpeed);
@@ -54,8 +55,9 @@ public sealed partial class GameSessionScreen
     internal IReadOnlyList<SKRect> MapViewButtonRects => _mapViewButtons;
     internal SKRect MapToolbarRect => _mapToolbarRect;
     internal int MapClusterCount => _mapClusters.Count;
+    internal IReadOnlySet<string> AggregatedMapObjectIds => _clusteredObjectIds;
     internal bool IsZoomAnimating => _zoomTransition.Active;
-    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds);
+    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds, string? Name = null, string? ClusterId = null);
     private string[] _selectionCycle = [];
     private int _selectionCycleIndex;
     private float _selectionCycleX, _selectionCycleY;
@@ -129,11 +131,37 @@ public sealed partial class GameSessionScreen
             _clusterCellPool.Push(cell);
         }
         _mapClusters.Clear(); _clusteredObjectIds.Clear(); _clusterCells.Clear();
+        MapDetail = MapDetailPolicy.Resolve(_viewportW, _viewportH, _camera.PixelsPerWorldUnit, MapReferenceSpeed, MapDetail);
+        var map = _buffer.Presented?.Snapshot.ClusterMap;
+        if (map is not null && !map.Clusters.IsDefaultOrEmpty)
+        {
+            var poses = _renderStates.Select(s => s.Predicted);
+            if (MapDetail == MapDetailLevel.System)
+            {
+                foreach (var marker in ClusterMapPresentation.DomainMarkers(map, poses))
+                {
+                    foreach (string id in marker.MemberIds) if (!IsImportantMapObject(id)) _clusteredObjectIds.Add(id);
+                    _mapClusters.Add(new(marker.X, marker.Y, marker.MemberIds.Length, marker.Bounds, marker.Name, marker.Id));
+                }
+                foreach (var state in _renderStates)
+                    if (state.Pose.RenderObjectType == SpaceObjectType.Asteroid && !IsImportantMapObject(state.Pose.ObjectId))
+                        _clusteredObjectIds.Add(state.Pose.ObjectId);
+            }
+            else if (MapDetail is MapDetailLevel.Region or MapDetailLevel.Cluster)
+            {
+                foreach (var marker in ClusterMapPresentation.ResourceMarkers(map, poses))
+                {
+                    foreach (string id in marker.MemberIds) if (!IsImportantMapObject(id)) _clusteredObjectIds.Add(id);
+                    _mapClusters.Add(new(marker.X, marker.Y, marker.MemberIds.Length, marker.Bounds));
+                }
+            }
+        }
         if (_camera.PixelsPerWorldUnit > _mapSettings.ClusterPpu) return;
         double cellSize = _mapSettings.ClusterCellPixels / _camera.PixelsPerWorldUnit;
         foreach (var state in _renderStates)
         {
             var p = state.Pose;
+            if (_clusteredObjectIds.Contains(p.ObjectId) || map?.Stations.Any(s => s.ObjectId == p.ObjectId) == true) continue;
             if (IsImportantMapObject(p.ObjectId) || p.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) continue;
             if (p is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy }) continue;
             var (sx, sy) = _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH);
@@ -164,7 +192,7 @@ public sealed partial class GameSessionScreen
             var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
             _mapMarkerPaint.Color = TacticalMapPalette.LabelBackground;
             canvas.DrawCircle(x, y, 15, _mapMarkerPaint);
-            string count = cluster.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string count = cluster.Name is null ? cluster.Count.ToString(CultureInfo.InvariantCulture) : $"{cluster.Name} · {cluster.Count}";
             canvas.DrawText(count, x - _panelTextPaint.MeasureText(count) / 2, y + 4, _panelTextPaint);
         }
     }
