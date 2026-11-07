@@ -166,9 +166,9 @@ internal static class TacticalBattleMapRenderer
         float dx = target.X - source.X, dy = target.Y - source.Y;
         float distance = (float)TacticalGeometry.Hypot(dx, dy);
         if (distance <= radius) return;
-        float ux = dx / distance, uy = dy / distance;
+        float ux = (float)(dx / (double)distance), uy = (float)(dy / (double)distance);
         var tip = new SKPoint(target.X - ux * radius, target.Y - uy * radius);
-        float length = Math.Min(8 * scale, distance - radius);
+        float length = (float)PyMath.Min(8 * scale, distance - radius);
         var basePoint = new SKPoint(tip.X - ux * length, tip.Y - uy * length);
         canvas.DrawLine(source, tip, paint);
         canvas.DrawLine(tip, new SKPoint(basePoint.X - uy * length * 0.55f, basePoint.Y + ux * length * 0.55f), paint);
@@ -364,7 +364,7 @@ internal static class TacticalBattleMapRenderer
             bool disabledDrone = !carrier && disabled;
             int targets = TargetCount(frame, unit);
             string badge = targets > 0 ? BattleFormat.Number(targets) : "";
-            float badgeSize = disabledDrone ? 10 * s : targets > 0 ? Math.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
+            float badgeSize = disabledDrone ? 10 * s : targets > 0 ? (float)PyMath.Max(16 * s, text.MeasureText(badge) + 4 * s) : 0;
             float badgeSpace = badgeSize > 0 ? badgeSize + 4 * s : 0;
             float w = (float)PyMath.Max(30 * s, text.MeasureText(value)) + 4 * s + badgeSpace;
             float h = (carrier || wreck ? 15 : 25) * s;
@@ -449,20 +449,21 @@ internal static class TacticalBattleMapRenderer
             string name = ControlText.Ellipsize(BattleFormat.Text(unit.Id), edge.Width - iconWidth, text);
             float width = iconWidth + text.MeasureText(name);
             float dx = target.X - edge.MidX, dy = target.Y - edge.MidY;
-            float horizontal = edge.Width * 0.5f / Math.Abs(dx);
-            float vertical = edge.Height * 0.5f / Math.Abs(dy);
+            double horizontal = edge.Width * 0.5 / Math.Abs(dx);
+            double vertical = edge.Height * 0.5 / Math.Abs(dy);
             bool side = horizontal <= vertical;
-            float reach = Math.Min(horizontal, vertical);
+            float reach = (float)PyMath.Min(horizontal, vertical);
             float left = edge.MidX + dx * reach - width * 0.5f;
             float top = edge.MidY + dy * reach - height * 0.5f;
             float step = (side ? height : width) + 3 * scale;
             for (int i = 0; i < 2 * units.Length + 1; i++)
             {
                 // Search either side of the ray's intersection with this edge.
-                float shift = ((i + 1) / 2) * (i % 2 == 0 ? -step : step);
+                int slot = (int)((i + 1) / 2.0);
+                float shift = slot * (i % 2 == 0 ? -step : step);
                 var rect = SKRect.Create(
-                    Math.Clamp(left + (side ? 0 : shift), edge.Left, Math.Max(edge.Left, edge.Right - width)),
-                    Math.Clamp(top + (side ? shift : 0), edge.Top, edge.Bottom - height), width, height);
+                    (float)PyMath.Clamp(left + (side ? 0 : shift), edge.Left, PyMath.Max(edge.Left, edge.Right - width)),
+                    (float)PyMath.Clamp(top + (side ? shift : 0), edge.Top, edge.Bottom - height), width, height);
                 if (occupied.Any(o => o.IntersectsWith(rect))) continue;
                 occupied.Add(rect);
                 DrawMarker(rect);
@@ -475,8 +476,8 @@ internal static class TacticalBattleMapRenderer
                 canvas.DrawRect(rect, paint);
                 var center = new SKPoint(rect.Left + 10 * scale, rect.MidY);
                 float length = (float)TacticalGeometry.Hypot(target.X - center.X, target.Y - center.Y);
-                var delta = new SKPoint((target.X - center.X) / length * 6 * scale,
-                    (target.Y - center.Y) / length * 6 * scale);
+                var delta = new SKPoint((float)((target.X - center.X) / (double)length * 6 * scale),
+                    (float)((target.Y - center.Y) / (double)length * 6 * scale));
                 paint.Color = unit.State == TacticalUnitState.Disabled ? new(151, 158, 167)
                     : unit.Side == frame.Battle.PlayerSide ? Own : Enemy;
                 paint.StrokeWidth = 1.6f * scale;
