@@ -10,6 +10,60 @@ public sealed class GenerationInputSchemaTests
     internal static SolarSystemGenerationConfig Config() => new(1, 1, 32, 3, 7, 2, 5,
         50, 75, 0.01, 0.05, 1000, 12, 128, ["Default"]);
 
+    internal static SolarSystemGenerationConfig V2Config() => Config() with
+    {
+        GeneratorVersion = 2, BeltWidthFraction = 0.20,
+        Clusters = new(3, 5, 10, 12, 1, 3, 10, 16, 30, 50)
+    };
+
+    [Fact]
+    public void V2RangesAndVersionsAreValidatedAtomically()
+    {
+        var config = V2Config();
+        Assert.Same(config, SolarSystemGeneration.ValidateConfig(config));
+        using var engine = new SimulationEngine(SeededWorldBootstrapTests.Registry());
+        var source = SeededWorldBootstrapTests.Scenario();
+        engine.LoadScenario(source);
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        foreach (var invalid in new[]
+        {
+            config with { GeneratorVersion = 3 }, config with { Clusters = null },
+            config with { Clusters = config.Clusters! with { MinimumStationDays = 0.99 } },
+            config with { Clusters = config.Clusters! with { MinimumStationDays = double.NaN } },
+            config with { Clusters = config.Clusters! with { MinimumStationDays = double.PositiveInfinity } },
+            config with { Clusters = config.Clusters! with { NeighbourMinDays = 0.5 } },
+            config with { Clusters = config.Clusters! with { NeighbourMaxDays = 0.5 } },
+            config with { Clusters = config.Clusters! with { NeighbourMaxDays = double.NaN } }
+        })
+        {
+            Assert.Throws<ContentException>(() => engine.LoadScenario(source, generation: invalid));
+            Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+        }
+        var old = config with { GeneratorVersion = 1, Clusters = config.Clusters! with { NeighbourMinDays = 0.5 } };
+        Assert.Same(old, SolarSystemGeneration.ValidateConfig(old));
+        var candidate = SolarSystemGenerator.Generate(source, config, SeededWorldBootstrapTests.Registry(), 42);
+        Assert.Equal(2, candidate.GameState.SolarSystem!.GeneratorVersion);
+        Assert.Equal(42UL, candidate.GameState.SolarSystem.Seed);
+        Assert.Null(candidate.GameState.ClusterMap); // A solar candidate is not a completed v2 bootstrap.
+        Assert.Equal(1, JsonSerializer.Deserialize<ClusterGenerationConfig>(
+            """{"minClusters":3,"maxClusters":5,"minStations":10,"maxStations":12,"neighbourMinDays":1,"neighbourMaxDays":3,"diameterMinDays":10,"diameterMaxDays":16,"interclusterMinDays":30,"interclusterMaxDays":50}""")!.MinimumStationDays);
+    }
+
+    [Fact]
+    public void LegacyGeneratorGoldenVectorIsUnchanged()
+    {
+        var legacy = new SolarSystemGenerator.GeneratorRng(1, "start", 0);
+        Assert.Equal(6092774483564337224UL, legacy.Next());
+        Assert.Equal(1709763660766830426UL, legacy.Next());
+        Assert.Equal(10821393825090694023UL, legacy.Next());
+        var a = SolarSystemGenerator.GeographyRng(1, "placement", 0);
+        var b = SolarSystemGenerator.GeographyRng(1, "placement", 0);
+        var other = new SolarSystemGenerator.GeneratorRng(1, "placement", 0);
+        Assert.NotEqual(other.Next(), a.Next());
+        b.Next();
+        Assert.Equal(a.Next(), b.Next());
+    }
+
     [Fact]
     public void InvalidConfigDoesNotPublish()
     {
@@ -124,7 +178,7 @@ public sealed class GenerationInputSchemaTests
             orbit with { EpochSimulationTimeMs = -1 }, orbit with { OrbitDirection = "unknown" } })
             Assert.Throws<ScenarioException>(() => SolarSystemGeneration.ValidateOrbit(invalid, "planet"));
         foreach (var invalid in new[] {
-            map with { GeneratorVersion = 2 }, map with { Seed = 0 },
+            map with { GeneratorVersion = 3 }, map with { Seed = 0 },
             map with { Planets = [new PlanetMapData("planet", "Unknown", 1)] },
             map with { Planets = [new PlanetMapData("missing", "Rocky", 1)] },
             map with { Orbits = [] }, map with { Orbits = [map.Orbits[0], map.Orbits[0]] },

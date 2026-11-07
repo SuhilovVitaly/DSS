@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-2026-11-07. Статус: PUBLICATION BLOCKED. Полностью завершено и опубликовано 0/29
+2026-11-07. Статус: IN PROGRESS. Завершено и опубликовано 1/29
 тикетов, 0/9 историй. Первый тикет локально реализован и проверен.
 
 Основание: прямое поручение пользователя выполнить весь эпик по EpicExecutionPrompt.md.
@@ -15,7 +15,7 @@ Remote: https://github.com/SuhilovVitaly/DSS. До изменений remote SHA
 | Область | Коммит | Push |
 |---|---|---|
 | Подготовительный Board и gates | 2bb0ec17c67a05093d99e55af063086904bd8aee | BLOCKED: auto-review rejected |
-| EP-0018-US-0001-TK-0001-geography-descriptor | SHA проверяется после commit через Git | BLOCKED: тот же destination/payload gate |
+| EP-0018-US-0001-TK-0001-geography-descriptor | 7d42085a273bc86cff19b9aa083ff8060fe159f8 | PASS, remote SHA verified |
 
 Автоматическая проверка дважды отклонила действие
 `git push origin HEAD:refs/heads/codex/ep-0016-tactical-battle-skins`:
@@ -69,3 +69,19 @@ corpus и завершающая документация ещё не реали
 Документационная история US-0009 должна остаться последней: полный inventory всего
 репозитория, текущие контракты, соседние README/комментарии, Board, navigation и граф
 после итогового diff; исходные allowlists расширяются с обоснованием до этих gates.
+## Продолжение после прямого разрешения публикации
+
+Пользователь прямо ответил «Да, разрешаю публикацию всего EP-0018 в указанную ветку»
+на вопрос с точным repo/payload/веткой. Оба предыдущих push rejection — история;
+текущего блокера публикации нет. 2bb0ec17 и7d42085a опубликованы, remote head
+7d42085a273bc86cff19b9aa083ff8060fe159f8 подтверждён. Scope финальной документации
+расширен отдельным0a8695f2d021a3cf90ef186b60b07bca12855fdd, push/remote SHA PASS.
+
+TK-0002 локально завершён: focused12/12, Engine non-corpus2070/2070, build/format/diff
+PASS. Полный корпус не запущен завершённо: broad attempt прерван для шардирования,
+не подменяет будущий exact-ID corpus. Evidence — 20261107-generation-input.
+Команда регрессии: dotnet test tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
+-c Release --no-build --no-restore --filter "Category!=LongRunning&FullyQualifiedName!~Corpus"
+--results-directory D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-generation-input
+--logger "trx;LogFileName=engine-non-corpus.trx". Точные build/format — карточка TK0002.
+Следом TK0003: единое размещение станций. Остальные27тикетов не завершены.

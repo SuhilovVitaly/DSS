@@ -5,7 +5,7 @@ ticket: EP-0018-US-0001-TK-0001-geography-descriptor
 title: "Сериализуемые правила географии нового кластера"
 stage: approved
 approval_kind: workflow
-implementation_status: locally_verified_publication_blocked
+implementation_status: completed
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj
 depends_on: []
@@ -110,3 +110,4 @@ contracts-full.trx. Test process-tree watchdog 300000ms; оставшийся ho
 upstream отклонён дважды даже после проверки Git config и явных полномочий
 EpicExecutionPrompt.md. Требуется прямое подтверждение пользователем конкретных
 payload и destination. Следующий тикет не начинается до успешного push.
+Публикация разблокирована прямым ответом пользователя о всём EP-0018 и указанной ветке. Коммит 7d42085a273bc86cff19b9aa083ff8060fe159f8 опубликован, remote SHA проверен; описанный выше BLOCKED — история отказа, не текущий gate.

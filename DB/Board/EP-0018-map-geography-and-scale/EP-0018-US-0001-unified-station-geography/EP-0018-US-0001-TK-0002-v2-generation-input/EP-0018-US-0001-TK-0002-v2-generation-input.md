@@ -5,7 +5,7 @@ ticket: EP-0018-US-0001-TK-0002-v2-generation-input
 title: "Версионированные входы генерации и проверки диапазонов"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0001-TK-0001-geography-descriptor]
@@ -86,3 +86,25 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Фактическое исполнение — 2026-11-07
+
+Добавлены gen1/2 ingress, optional minimumStationDays=1 и v2 consistency validation;
+NaN/Infinity/нижняя граница/neighbor ordering отклоняются до замены мира. v1 minimum
+не получает новых ограничений. Solar candidate носит config.GeneratorVersion,
+география имеет отдельный named stage geography/v2; golden v1 сохранён.
+Полная solar/cluster/save coherence будет в US-0004; shipped config пока v1.
+
+Tests GenerationInputSchemaTests + SeededWorldBootstrapTests: 12/12 PASS, включая
+оба named tests, прямую проверку gen2 solar candidate и legacy golden vector.
+Engine regression Category!=LongRunning&FullyQualifiedName!~Corpus: 2070/2070 PASS;
+это не полный corpus. Первый широкий прогон остановлен для шардирования untagged
+100-seed Corpus и не считается PASS. Эти corpus будут выполнены отдельно точными
+ID в итоговом gate. Release Engine build PASS0warnings/errors, scoped format
+двух production + одного test file PASS, git diff --check PASS. Изменены3 owning
+файла, self-review по AC03/04/C02 findings отсутствуют, независимого review нет.
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-generation-input/
+(focused-final.trx/log, engine-non-corpus.trx/log, build-unsandboxed.log,
+format-engine.log, format-tests-final.log). Все test процессы cap300000ms.
+Sandbox build.log — исходный неуспешный запуск; outside sandbox build — PASS.
+Native/human/FPS NOT RUN. Сохранение v2 не объявляется проверенным этим тикетом.

@@ -7,6 +7,9 @@ namespace DeepSpaceSaga.Engine.Scenario;
 
 internal static class SolarSystemGenerator
 {
+    internal static GeneratorRng GeographyRng(ulong seed, string stage, int attempt) =>
+        new(seed, $"geography/v2/{stage}", attempt);
+
     internal static double? OperationalMaxSpeedKmS(SpaceObjectData ship, GameDataRegistry registry) =>
         (ship.Modules ?? []).OrderBy(m => m.ModuleId, StringComparer.Ordinal)
             .Where(m => string.Equals(m.PowerState, "On", StringComparison.OrdinalIgnoreCase) &&
@@ -112,7 +115,7 @@ internal static class SolarSystemGenerator
         foreach (var id in objects.Select(o => o.ObjectId).Concat(belts.Select(b => b.Id)))
             if (!ids.Add(id)) throw new ScenarioException($"solar-system/v1 seed={seed} version=1 stage=ids attempt={attempt + 1}: collision {id}.");
         double extent = Math.Max(max, corridors.Max(p => p.Outer));
-        var map = new SolarSystemMapSnapshot(1, seed, extent * 1.1,
+        var map = new SolarSystemMapSnapshot(c.GeneratorVersion, seed, extent * 1.1,
             belts.OrderBy(b => b.InnerRadius).Select(b => b with { DecorationSamples = c.DecorationSamplesPerBelt }).ToImmutableArray(), planets.ToImmutableArray(), orbits.ToImmutableArray());
         var result = source with
         {
