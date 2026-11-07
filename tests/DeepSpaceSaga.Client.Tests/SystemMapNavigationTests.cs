@@ -11,6 +11,84 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class SystemMapNavigationTests
 {
+    private static AuthoritativeSnapshot NavigationWorld()
+    {
+        var source = LocalClusterMapTests.Snapshot(12);
+        var target = source.Objects.Single(o => o.ObjectId == "s2");
+        return source with
+        {
+            SelectedObjectId = "s1",
+            Objects = source.Objects.SetItem(0, source.Objects[0] with
+            { X = 0, NavigationTargetObjectId = target.ObjectId, NavigationTargetX = target.X, NavigationTargetY = target.Y, MaxSpeedKmS = 4 }),
+            SolarSystemMap = new(2, 42, 1000000, [new("belt", 650000, 750000, 42)], [], []),
+            ClusterMap = source.ClusterMap! with { RulesVersion = 2, Geography = new(4, 1, 1, 3) }
+        };
+    }
+
+    [Fact]
+    public async Task SystemClusterStationPlayerNavigationPreservesTarget()
+    {
+        var connection = new PoiMapSelectionTests.RecordingConnection();
+        await using var handle = new GameSessionHandle(connection);
+        var snapshot = NavigationWorld(); handle.Buffer.Update(snapshot);
+        string before = JsonSerializer.Serialize(snapshot);
+        var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
+        using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
+        void Frame() => screen.Render(canvas, 1920, 1080);
+        void Button(int index) { var b = screen.MapViewButtonRects[index]; screen.OnMouseDown(b.MidX, b.MidY); screen.OnMouseUp(b.MidX, b.MidY); Frame(); }
+        Frame(); Button(3);
+        Assert.Equal(MapDetailLevel.System, screen.MapDetail);
+        var label = Assert.Single(screen.MapSummaryLabels);
+        screen.OnMouseDown(label.Left + 3, label.Top + 3); screen.OnMouseUp(label.Left + 3, label.Top + 3); Frame();
+        Assert.True(screen.CameraPixelsPerWorldUnit > .001);
+        Assert.Equal("s1", screen.SelectedObjectId);
+        Assert.False(screen.MapViewButtonRects[11].IsEmpty);
+        Button(11);
+        Assert.Equal(MapDetailLevel.Local, screen.MapDetail);
+        Assert.Equal(screen.LocalMaximumPpu, screen.CameraPixelsPerWorldUnit);
+        Assert.False(screen.IsFocusAttachedToPlayer);
+        var station = screen.RenderStates.Single(s => s.Pose.ObjectId == "s1").Pose;
+        var free = screen.AvailableMapRect();
+        Assert.InRange(960 + (station.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit, free.Left, free.Right);
+        Button(0);
+        Assert.True(screen.IsFocusAttachedToPlayer); Assert.Equal(0, screen.CameraFocusX);
+        Assert.Equal("s2", screen.RenderStates.Single(s => s.IsPlayerShip).Pose.NavigationTargetObjectId);
+        Assert.Equal(0, connection.Actions);
+        Assert.Equal(before, JsonSerializer.Serialize(snapshot));
+    }
+
+    [Fact]
+    public void ClusterFitUsesPresentedMembersAndWholeSystemBounds()
+    {
+        var snapshot = NavigationWorld();
+        var buffer = new SnapshotBuffer(); buffer.Update(snapshot);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        // A transport update before the next render must not change the camera's current frame context.
+        buffer.Update(snapshot with
+        {
+            SnapshotSequence = 2,
+            SolarSystemMap = snapshot.SolarSystemMap! with { SystemRadius = 1e12 },
+            ClusterMap = snapshot.ClusterMap! with { Clusters = [] }
+        });
+        Assert.True(screen.FitCluster("c"));
+        var free = screen.AvailableMapRect();
+        foreach (var station in screen.RenderStates.Where(s => s.Pose.RenderObjectType == SpaceObjectType.Station))
+        {
+            double x = 960 + (station.Pose.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit;
+            Assert.InRange(x, free.Left, free.Right);
+        }
+        Assert.True(screen.FitMapView(MapFitMode.System));
+        foreach (double sign in new[] { -1d, 1d })
+        {
+            double x = 960 + (sign * snapshot.SolarSystemMap!.SystemRadius - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit;
+            double y = 540 + (sign * snapshot.SolarSystemMap.SystemRadius - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit;
+            Assert.InRange(x, free.Left - .01, free.Right + .01); Assert.InRange(y, free.Top - .01, free.Bottom + .01);
+        }
+        Assert.False(screen.FocusStation("unknown"));
+    }
+
     [Fact]
     public void OrbitToggleKeepsWorldAndSelection()
     {

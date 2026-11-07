@@ -227,6 +227,7 @@
   "Map.Orbits": "Orbits",
   "Map.Belt": "Next belt",
   "Map.Cluster": "Cluster",
+  "Map.StationLocal": "Station local",
   "Map.Follow": "Follow ship",
   "Map.ReferenceTime": "{0:0.##} h at reference {1:0.###} km/s",
   "Map.Route": "Full route",

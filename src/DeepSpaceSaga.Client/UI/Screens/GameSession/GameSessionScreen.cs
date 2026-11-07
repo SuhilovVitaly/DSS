@@ -1110,6 +1110,9 @@ public sealed partial class GameSessionScreen : IScreen
         RenderStageCompleted?.Invoke("begin");
         _viewportW = width;
         _viewportH = height;
+        var prediction = _buffer.LatestPrediction;
+        var buffered = prediction?.BufferedSnapshot;
+        _mapPresentationSnapshot = buffered?.Snapshot;
 
         // Frame timing for label smoothing.
         long now = _timestampProvider();
@@ -1144,8 +1147,6 @@ public sealed partial class GameSessionScreen : IScreen
         }
         _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height, LocalMaximumPpu);
 
-        var prediction = _buffer.LatestPrediction;
-        var buffered = prediction?.BufferedSnapshot;
         bool mapWorldChanged = UpdateMapWorld(buffered?.Snapshot);
         UpdateObjectRenderStates(prediction, deltaSeconds);
         if (!_mapCameraInitialized && FindPlayerShip(_renderStates) is not null)

@@ -109,6 +109,14 @@ internal static class ClusterMapPresentation
         return bounds;
     }
 
+    internal static MapWorldBounds StationBounds(string stationId, IEnumerable<ObjectMotionSnapshot> objects)
+    {
+        MapWorldBounds bounds = new();
+        var station = objects.FirstOrDefault(o => o.ObjectId == stationId && o.RenderObjectType == SpaceObjectType.Station);
+        if (station is not null) bounds.Include(station.X, station.Y);
+        return bounds;
+    }
+
     internal static ClusterResourceBinding? Resource(AuthoritativeSnapshot? snapshot, string objectId)
     {
         var bindings = snapshot?.ClusterMap?.ResourceBindings ?? default;

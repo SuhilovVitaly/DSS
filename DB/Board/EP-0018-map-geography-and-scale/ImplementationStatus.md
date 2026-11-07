@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-07: IN PROGRESS. Опубликовано21/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0007TK0001; далее US5…US9.
+Статус на2026-11-07: IN PROGRESS. Опубликовано22/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0007TK0002; далее US5…US9.
 
 ## Git и полномочия
 
@@ -157,3 +157,5 @@ US0006TK0001 publishedf2f1f02ebf8552aa8928925bd90611832da95c21 verified. US0006T
 US0006TK0002 published9d6e9a66f4b6d287c512b81c490fa289db4d4298 verified. US0006TK0003 fullClient2106 PASS, focused84/compatibility27 PASS; build/format/diff PASS, map-labels evidence. Original failures and build-lock retained as evidence.
 
 US0006TK0003 publishedf2a4afae4026d238f16a86b28bda0e3b251ecf25 verified. US0006TK0004 focused77/fullClient2109 PASS; build/format/diff PASS, detail-lifecycle evidence. US6 implemented pending rendered/native/human acceptance.
+
+US0006TK0004 publisheda47d95d6151eab3bff1b925bd983cd84962197d4 verified. US0007TK0001 focused46 PASS, build/format/diff PASS; map-navigation evidence, frame-context isolation and explicit station-local action.

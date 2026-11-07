@@ -227,6 +227,7 @@
   "Map.Orbits": "Орбиты",
   "Map.Belt": "Пояс",
   "Map.Cluster": "Кластер",
+  "Map.StationLocal": "Станция: локально",
   "Map.Follow": "За кораблём",
   "Map.ReferenceTime": "{0:0.##} ч при опорной скорости {1:0.###} км/с",
   "Map.Route": "Весь маршрут",

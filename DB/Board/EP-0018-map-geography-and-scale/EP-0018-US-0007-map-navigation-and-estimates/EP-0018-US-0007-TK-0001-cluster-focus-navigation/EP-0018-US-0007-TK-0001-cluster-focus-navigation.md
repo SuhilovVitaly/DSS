@@ -5,11 +5,11 @@ ticket: EP-0018-US-0007-TK-0001-cluster-focus-navigation
 title: "Навигация по доменным кластерам и локальное приближение цели"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0006-TK-0004-smooth-detail-transitions]
-files_touched: 4
+files_touched: 7
 serves: [AC-01, AC-04]
 created: 2026-11-07T17:21:08Z
 revision: 1
@@ -89,3 +89,11 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Scope refinement before implementation
+2026-11-07: station-local camera focus needs an explicit discoverable action while ordinary click remains selection. Add toolbar action Station local (index11), enabled for a selected known station; existing Follow returns attached player view. Extend allowlist with src/DeepSpaceSaga.Client/Data/Locale/{English.json,Russian.json} for the action label. No gameplay navigation command or nav-target replacement; camera uses current presented station bounds and effective Local maximum. Existing layer indexes8–10 remain unchanged.
+
+Also add GameSessionScreen.cs: retain the exact snapshot used by the rendered map frame. Buffer.Presented currently aliases latest received data, so camera actions between frames could combine future membership/radius/reference with previous poses. Cache frame snapshot once at render start and use it for map metadata/actions; tests publish a newer snapshot without rendering to prove no mixed-frame fit.
+
+## Execution evidence
+2026-11-07: explicit localized Station local toolbar action, known presented station position centered in usable map area at effective Local max; no selection/nav-target/gameplay mutation. Domain marker/name focuses actual members; Follow returns attached player view. Cached exact rendered-frame snapshot prevents future transport membership/radius/reference from mixing with current poses. Stable toolbar detail row avoids buttons jumping on selection. Initial legacy orbit-toggle regression reproduced and fixed by stable row, old test unchanged. Focused-final46/46 PASS covers System->domain cluster click->station local button->player, no recorded gameplay commands, whole system/belt extents, future-packet isolation, POI/resource selection and60-station network. Release build, scoped format-verified and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-map-navigation/{focused.trx,focused-final.trx,build.log,format-verified.log}. Self-review complete; final US7 regression follows TK0002.
