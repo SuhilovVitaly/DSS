@@ -3,10 +3,10 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0003-fire-order-presentation
 ticket: EP-0017-US-0003-TK-0005-export-and-documentation
 title: "Экспорт контента с инициативой и актуальный контракт механики"
-stage: approved
+stage: done
 layer: tooling
 test_project: tools/tactical-battle/tests/Export-Content.Tests.ps1
-depends_on: [EP-0017-US-0003-TK-0004-chronological-journal, EP-0017-US-0001-TK-0004-materialize-initiative]
+depends_on: [EP-0017-US-0001-TK-0001-pilot-content]
 files_touched: 5
 serves: [AC-01, AC-05]
 created: 2026-11-07T13:42:39Z
@@ -129,3 +129,13 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution scope correction — 2026-11-07
+
+Экспорт initiative не зависит от UI/материализации; ContentSyncTests требует его до US-0001/TK-0004. Тикет исполняется сейчас после US-0001/TK-0003, с единственной реальной зависимостью US-0001/TK-0001. Нормативные EngineRequirements/TacticalBattle/CarrierWingSim перенесены в последнюю US-0004/TK-0001, чтобы не описывать ещё не реализованную стрельбу. Code context реализации этого тикета: Export-Content.ps1, новый tests/Export-Content.Tests.ps1 и pilots.json только нормализация сериализации для strict Check. Board-карточка и индексы — сопутствующее evidence. Остальные runtime поля и historical V4 не меняются. Два tooling файла и один data companion, без изменений Engine.
+
+## Execution — 2026-11-07
+
+Exporter читает initiative до записи, требует точные ordinal IDs/единственные поля/целые0..100 и упорядоченный range; копирует только extension, base поля остаются V4. Optional PilotInitiativeFile поддерживает изолированные fixtures. pilots.json изменён только пробелами диапазонов для прежнего strict Check. Self-review выполнено; независимое review не заявляется. Нормативные тексты переданы US-0004 согласно scope correction выше.
+
+Самодостаточный harness PASS (export/base-fields, corrupt-output Check без записи, invalid sources/IDs до любых записей); Export-Content -Check PASS 29 JSON; существующий ExportCheckRejectsCorruptionWithoutOverwritingFixture PASS 1/1; Client ContentDataTests PASS 4/4. git diff --check PASS. Полная ContentSync base+extension проверяется после изменения теста в US-0001/TK-0004, старое ожидание отсутствия initiative не удалено скрыто. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0305/ (tool-tests/export-check/export-regression/content-regression logs, export.trx, content.trx). Fixtures удалены harness finally. Native не применяется к CLI.

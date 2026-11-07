@@ -1,7 +1,7 @@
 #!/usr/bin/env pwsh
 # V4 Data Markdown tables are the independent source; this tool contains no combat rules.
 [CmdletBinding()]
-param([switch]$Check, [string]$OutputDirectory)
+param([switch]$Check, [string]$OutputDirectory, [string]$PilotInitiativeFile)
 
 $ErrorActionPreference = 'Stop'
 $repo = [IO.Path]::GetFullPath((Join-Path $PSScriptRoot '../..'))
@@ -122,6 +122,39 @@ foreach ($row in Read-Table 'README.md' 'scenarios') {
     if ($row['что'] -eq 'носитель') { $side.carrier = $unit } else { $side.drones += $unit }
 }
 $documents['scenarios.json'] = $scenarios
+
+# EP-0017 extends only pilot initiative; V4 remains the source of all base fields.
+# Read and validate every source entry before creating any output directory/file.
+if (-not $PilotInitiativeFile) { $PilotInitiativeFile = Join-Path $repo 'src/DeepSpaceSaga.Client/Data/TacticalBattle/pilots.json' }
+$pilotSource = [Text.Json.JsonDocument]::Parse([IO.File]::ReadAllText($PilotInitiativeFile))
+try {
+    if ($pilotSource.RootElement.ValueKind -ne [Text.Json.JsonValueKind]::Object) { throw 'Expected pilot object.' }
+    $ids = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+    $allowedIds = [Collections.Generic.HashSet[string]]::new([string[]]@($documents['pilots.json'].Keys), [StringComparer]::Ordinal)
+    foreach ($pilot in $pilotSource.RootElement.EnumerateObject()) {
+        if (-not $ids.Add($pilot.Name) -or -not $allowedIds.Contains($pilot.Name)) { throw "Invalid pilot ID: $($pilot.Name)" }
+        if ($pilot.Value.ValueKind -ne [Text.Json.JsonValueKind]::Object) { throw "Invalid pilot: $($pilot.Name)" }
+        $fields = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
+        foreach ($field in $pilot.Value.EnumerateObject()) {
+            if (-not $fields.Add($field.Name)) { throw "Duplicate pilot field: $($pilot.Name).$($field.Name)" }
+        }
+        $initiative = $pilot.Value.GetProperty('initiative')
+        $values = if ($initiative.ValueKind -eq [Text.Json.JsonValueKind]::Array) {
+            if ($initiative.GetArrayLength() -ne 2) { throw 'Initiative range needs two endpoints.' }
+            @($initiative.EnumerateArray())
+        } else { @($initiative) }
+        $numbers = @($values | ForEach-Object {
+            $number = 0
+            if ($_.ValueKind -ne [Text.Json.JsonValueKind]::Number -or -not $_.TryGetInt32([ref]$number) -or $number -lt 0 -or $number -gt 100) {
+                throw "Invalid initiative for $($pilot.Name)"
+            }
+            $number
+        })
+        if ($numbers.Count -eq 2 -and $numbers[0] -gt $numbers[1]) { throw 'Reversed initiative range.' }
+        $documents['pilots.json'][$pilot.Name]['initiative'] = if ($numbers.Count -eq 2) { $numbers } else { $numbers[0] }
+    }
+    if ($ids.Count -ne $documents['pilots.json'].Count) { throw 'Missing pilot IDs.' }
+} finally { $pilotSource.Dispose() }
 
 foreach ($path in $documents.Keys) {
     $target = Join-Path $destination $path

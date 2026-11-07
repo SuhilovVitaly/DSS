@@ -103,3 +103,5 @@ Native/product сценарии после реализации: очередь 
 ## Execution scope — 2026-11-07
 
 Текущее поручение разрешает реализацию, Board, commit и немедленный push по EpicExecutionPrompt. Исторические planning-only ограничения не блокируют исполнение. Добавлена обязательная последняя [US-0004](EP-0017-US-0004-project-documentation/EP-0017-US-0004-project-documentation.md): 4 истории, 16 тикетов. Порядок: US-0001 → US-0002 → US-0003 → US-0004. US-0004/TK-0001 покрывает инвентаризацию всего проекта, текущие документы, Board/evidence и Graphify.
+
+Execution order correction: US-0003/TK-0005 (export only) follows US-0001/TK-0003 and precedes US-0001/TK-0004 because ContentSyncTests requires export parity. Its former normative edits are owned by final US-0004/TK-0001.
