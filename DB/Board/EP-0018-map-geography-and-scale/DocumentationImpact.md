@@ -89,7 +89,7 @@ VData — неканонические копии, не источник зад�
 | Документ/группа | Изменение | Проверка |
 |---|---|---|
 | EP18 Documentation.md/ImplementationContract.md/Tickets.md + all canonical cards |Current statuses, explicit planning history, actual deviations, named tests and DAG |29tickets/38nodes;74named method references resolve; no acceptance invented |
-| EP18 ImplementationStatus.md |Single current ledger: all ticket SHA/evidence/criteria/gates |28published SHA ancestors verified; final ticket SHA deferred until actual commit/push |
+| EP18 ImplementationStatus.md |Single current ledger: all ticket SHA/evidence/criteria/gates |29published ticket SHA ancestors verified; last-ticket remote SHA matched |
 | EP18 DocumentationImpact.md |This whole-repository inventory |Current owning docs and outside-doc guides included |
 | EP0002/EP0003/EP0004 Documentation.md |Dated supersession/integration links to EP18; historical results preserved |Updated TK9.3;427changed-file links/anchors checked |
 | Other canonical Board records |Unrelated or historical acceptance; not current geography spec |Unchanged |

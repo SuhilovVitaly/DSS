@@ -122,3 +122,6 @@ processes complete, noDSS/artifacts/root temp clones/worktrees. Current source h
 verified after cleanup. C# change is comment only; no gameplay tests rerun for prose.
 Actual previous regression/native failures remain explicit in ImplementationStatus.
 Final own SHA/push check is recorded only after commit by publication receipt.
+
+
+Publication receipt: owning commit686682380ebf4fdc357bd8bd239ca98f25b000f8 pushed to origin/codex/ep-0016-tactical-battle-skins; git ls-remote SHA matched. Graph current-source hash audit remains PASS. No human approval implied.

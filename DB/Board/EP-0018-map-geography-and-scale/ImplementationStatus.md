@@ -1,8 +1,9 @@
 # Исполнение EP-0018
 
-На 2026-11-08 опубликованы 27/29 тикетов; реестр/impact TK9.2 входит в текущий коммит,
-последний TK9.3 (navigation/offline graph) остаётся следующим. Реализация историй1–8
-и текущие контракты готовы. Продуктовая приёмка остаётся OPEN.
+На 2026-11-08 технически реализованы и опубликованы29/29тикетов всех9историй.
+Последний тикет: EP-0018-US-0009-TK-0003, SHA686682380ebf4fdc357bd8bd239ca98f25b000f8.
+Удалённый SHA подтверждён; текущий служебный receipt фиксирует публикацию.
+Продуктовая приёмка остаётся OPEN по перечисленным ниже gates.
 
 ## Результат и границы
 
@@ -59,7 +60,7 @@ Evidence prefix: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and
 | [EP-0018-US-0008-TK-0003-native-map-evidence](EP-0018-US-0008-system-map-acceptance/EP-0018-US-0008-TK-0003-native-map-evidence/EP-0018-US-0008-TK-0003-native-map-evidence.md) | 6dd13cb3d619de8e8a7bc588bd238f3bac58537b | PASS: remote SHA проверен | 20261108-native-tool |
 | [EP-0018-US-0009-TK-0001-current-map-contracts](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0001-current-map-contracts/EP-0018-US-0009-TK-0001-current-map-contracts.md) | f38fefad5f37ac8c67c9b191d441c7b9fc23ba61 | PASS: remote SHA проверен | 20261108-documentation/contracts-audit.json |
 | [EP-0018-US-0009-TK-0002-board-handoff](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0002-board-handoff/EP-0018-US-0009-TK-0002-board-handoff.md) | 9f3081f3bd64230fe90a582dd98c9b83472070da | PASS: remote SHA проверен | 20261108-documentation/handoff-audit.json |
-| [EP-0018-US-0009-TK-0003-documentation-navigation](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md) | текущий коммит; SHA после commit/push | подготовлен к публикации | 20261108-graph |
+| [EP-0018-US-0009-TK-0003-documentation-navigation](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md) | 686682380ebf4fdc357bd8bd239ca98f25b000f8 | PASS: remote SHA проверен | 20261108-graph |
 
 Подготовительные/service commits (также опубликованы):
 
@@ -137,8 +138,8 @@ Motion source guard — доказанный pre-existing FAIL, не скрыт 
 Native owned slots удалены, interrupted slots проверены по marker после остановки
 owned processes. Отчёты/PNG/TRX referenced above retained; pilot/failed runs исключены
 из итоговых чисел и оставлены как failure evidence в owning reports. Нет DSS/artifacts,
-ручных worktrees, root temp snapshots или source junctions. Последний TK9.3 проверит
-финальные links/hash/graph/cleanup и запишет publication receipt. Текущий ledger
+ручных worktrees, root temp snapshots или source junctions. TK9.3 проверил
+финальные links/hash/graph/cleanup и записал publication receipt. Текущий ledger
 заменяет ранние противоречащие сводки; их история сохранена в Git и owning cards.
 
 ## TK9.3: final navigation / graph gate
@@ -164,3 +165,15 @@ Graph AST/semantic caches removed. Required reports/TRX/PNG/JSON and reproducibl
 validation scripts retained under workspace artifacts only. Final receipt follows
 actual last-ticket commit/push; included source hashes remain valid across that
 publication because status/impact/index/final-ticket receipts are explicitly excluded.
+
+## Publication receipt — 2026-11-08
+
+All29ticket SHAs in the table are real committed ancestors of the target branch;
+each ticket was pushed before its successor. Last ticket686682380ebf4fdc357bd8bd239ca98f25b000f8
+was compared against git ls-remote origin refs/heads/codex/ep-0016-tactical-battle-skins
+and matched. DocumentationImpact/current index now reflects completed technical
+execution, not human approval. This receipt is a separate Board-only service commit;
+its own final HEAD and remote comparison are written after push to workspace
+20261108-documentation/PublicationReceipt.json, avoiding self-referential invented SHAs.
+Graph included source hashes remain current: this status/index/impact/final-ticket
+receipt scope is explicitly excluded by the maintained rebuild contract.
