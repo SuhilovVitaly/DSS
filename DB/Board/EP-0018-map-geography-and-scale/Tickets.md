@@ -3,7 +3,7 @@
 9 историй / 29 тикетов. Planning approved по делегированному поручению; implementation not_started. Один layer и максимум5 файлов, включая тесты, на тикет. Полный контракт: [ImplementationContract.md](ImplementationContract.md); grounding/решения: [Documentation.md](Documentation.md).
 
 ## Порядок исполнения
-US-0001 -> US-0002 -> US-0003 -> US-0004 -> US-0005 -> US-0006 -> US-0007 -> US-0008 -> US-0009.
+US-0001 -> US-0002 -> US-0003 TK-0001/0002 -> US-0004 TK-0001/0002 -> US-0003 TK-0003 -> US-0004 TK-0003/0004 -> US-0005 -> US-0006 -> US-0007 -> US-0008 -> US-0009.
 US-0005 можно готовить после US-0001 TK-0001, но итоговая карта/навигация ждут US-0004. Пересекающиеся allowlists исполняются последовательно по ticket dependencies. Никакой production activation до US-0004 TK-0004. Documentation последняя.
 
 ## Общие gates
@@ -44,7 +44,7 @@ US-0005 можно готовить после US-0001 TK-0001, но итого�
 |---|---|---|---|---|
 | [EP-0018-US-0003-TK-0001-station-resource-relocation](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-TK-0001-station-resource-relocation/EP-0018-US-0003-TK-0001-station-resource-relocation.md) | Ресурсные поля создаются у окончательных координат станции | engine | EP-0018-US-0002-TK-0003-full-system-integration | AC-01 |
 | [EP-0018-US-0003-TK-0002-scenario-start-bindings](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-TK-0002-scenario-start-bindings/EP-0018-US-0003-TK-0002-scenario-start-bindings.md) | Стартовые сценарии сохраняют игрока и локальные привязки | engine | EP-0018-US-0003-TK-0001-station-resource-relocation | AC-02, AC-04 |
-| [EP-0018-US-0003-TK-0003-voyage-geography](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-TK-0003-voyage-geography/EP-0018-US-0003-TK-0003-voyage-geography.md) | Торговые рейсы используют новые расстояния и текущий двигатель | engine | EP-0018-US-0003-TK-0002-scenario-start-bindings | AC-03, AC-04 |
+| [EP-0018-US-0003-TK-0003-voyage-geography](EP-0018-US-0003-preserved-starts-and-resources/EP-0018-US-0003-TK-0003-voyage-geography/EP-0018-US-0003-TK-0003-voyage-geography.md) | Торговые рейсы используют новые расстояния и текущий двигатель | engine | EP-0018-US-0003-TK-0002-scenario-start-bindings, EP-0018-US-0004-TK-0002-legacy-trade-map-validation | AC-03, AC-04 |
 
 ## US-0004 — Новый и прежний мир продолжаются после сохранения
 
@@ -52,9 +52,9 @@ US-0005 можно готовить после US-0001 TK-0001, но итого�
 
 | Тикет | Название | Layer | Dependencies | AC |
 |---|---|---|---|---|
-| [EP-0018-US-0004-TK-0001-versioned-save-validation](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0001-versioned-save-validation/EP-0018-US-0004-TK-0001-versioned-save-validation.md) | Строгая версия географии без миграции координат старых миров | engine | EP-0018-US-0003-TK-0003-voyage-geography | AC-01, AC-02, AC-03 |
+| [EP-0018-US-0004-TK-0001-versioned-save-validation](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0001-versioned-save-validation/EP-0018-US-0004-TK-0001-versioned-save-validation.md) | Строгая версия географии без миграции координат старых миров | engine | EP-0018-US-0003-TK-0002-scenario-start-bindings | AC-01, AC-02, AC-03 |
 | [EP-0018-US-0004-TK-0002-legacy-trade-map-validation](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0002-legacy-trade-map-validation/EP-0018-US-0004-TK-0002-legacy-trade-map-validation.md) | Загрузка v2 не восстанавливает старые торговые offsets | engine | EP-0018-US-0004-TK-0001-versioned-save-validation | AC-01, AC-02, AC-03 |
-| [EP-0018-US-0004-TK-0003-local-world-roundtrip](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0003-local-world-roundtrip/EP-0018-US-0004-TK-0003-local-world-roundtrip.md) | Реальные сохранения продолжают географию обеих версий | engine | EP-0018-US-0004-TK-0002-legacy-trade-map-validation | AC-01, AC-02, AC-03 |
+| [EP-0018-US-0004-TK-0003-local-world-roundtrip](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0003-local-world-roundtrip/EP-0018-US-0004-TK-0003-local-world-roundtrip.md) | Реальные сохранения продолжают географию обеих версий | engine | EP-0018-US-0004-TK-0002-legacy-trade-map-validation, EP-0018-US-0003-TK-0003-voyage-geography | AC-01, AC-02, AC-03 |
 | [EP-0018-US-0004-TK-0004-activate-v2-content](EP-0018-US-0004-materialized-world-compatibility/EP-0018-US-0004-TK-0004-activate-v2-content/EP-0018-US-0004-TK-0004-activate-v2-content.md) | Включение новой карты для всех обычных стартов | content-data | EP-0018-US-0004-TK-0003-local-world-roundtrip | AC-04 |
 
 ## US-0005 — Максимальное приближение показывает локальную окрестность
@@ -110,3 +110,12 @@ US-0005 можно готовить после US-0001 TK-0001, но итого�
 ## Остаток
 
 Блокирующих planning вопросов нет. A-01–A-09 — явные технические assumptions, не выполненный баланс. Все functional/native/human/FPS gates до реализации NOT RUN. Отдельный запрос нужен для execution, а не для завершения данного planning.
+
+## Исправление реального dependency order — 2026-11-07
+
+Сохранение активногоv2рейса изUS0003TK0003 требует strictfileingress и materialized
+trading validation US0004TK0001/0002. Поэтому эти2тикета выполняются послеUS0003TK0002,
+затем voyageTK0003, затем local-file-roundtrip/activation. Story4 больше не требует
+завершения всейStory3 перед началом; точные частичные gates перечислены в карточках.
+Это устраняет логическую зависимость тестов от ещё не реализованногоloader без
+переноса FAIL вPASS или объединения тикетов. 9историй/29тикетов остаются прежними.

@@ -8,7 +8,7 @@ approval_kind: workflow
 implementation_status: not_started
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
-depends_on: [EP-0018-US-0003-TK-0002-scenario-start-bindings]
+depends_on: [EP-0018-US-0003-TK-0002-scenario-start-bindings, EP-0018-US-0004-TK-0002-legacy-trade-map-validation]
 files_touched: 3
 serves: [AC-03, AC-04]
 created: 2026-11-07T17:21:08Z
@@ -88,3 +88,12 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Исправление реального dependency order — 2026-11-07
+
+Сохранение активногоv2рейса изUS0003TK0003 требует strictfileingress и materialized
+trading validation US0004TK0001/0002. Поэтому эти2тикета выполняются послеUS0003TK0002,
+затем voyageTK0003, затем local-file-roundtrip/activation. Story4 больше не требует
+завершения всейStory3 перед началом; точные частичные gates перечислены в карточках.
+Это устраняет логическую зависимость тестов от ещё не реализованногоloader без
+переноса FAIL вPASS или объединения тикетов. 9историй/29тикетов остаются прежними.

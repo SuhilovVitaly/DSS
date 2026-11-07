@@ -1,7 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-07: IN PROGRESS. Три тикета опубликованы; четвёртый локально завершён,
-его SHA проверяется после commit/push. Истории0/9: US-0001 ещё требует bootstrap.
+Статус на2026-11-07: IN PROGRESS. Опубликовано9/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0004TK0001, затем US0004TK0002, US0003TK0003, US0004TK0003/0004; далее US5…US9.
 
 ## Git и полномочия
 
@@ -133,3 +132,4 @@ solarpoint, найденныйсдвиг исправленпослеbeforeFAIL;
 После публикации9/29тикетов,20остаётся. Перед voyage/savecontinuity нужны строгие
 file-save ingress и TradingMapv2 validation изUS4; порядокзависимостей следует
 уточнить до следующейреализации, не выдавать failingsaveload заPASS.
+ScenarioTK0002 опубликован2544f8ea14666cc49a1e3f221e8d948df306fcf7; remoteSHA PASS. Dependencyorder исправлен вTickets.md и карточках;20тикетов остаётся. Текущий следующий — US0004TK0001 strictsaveingress.

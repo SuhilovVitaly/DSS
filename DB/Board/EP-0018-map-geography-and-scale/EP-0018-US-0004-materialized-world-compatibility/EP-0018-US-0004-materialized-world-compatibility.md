@@ -5,7 +5,7 @@ title: "Новый и прежний мир продолжаются после 
 stage: approved
 approval_kind: delegated-planning
 implementation_status: not_started
-dependencies: [EP-0018-US-0001-unified-station-geography, EP-0018-US-0002-stable-orbital-clusters, EP-0018-US-0003-preserved-starts-and-resources]
+dependencies: [EP-0018-US-0001-unified-station-geography, EP-0018-US-0002-stable-orbital-clusters]
 created: 2026-11-07T17:21:08Z
 source_request: "отлично. построй новый эпик на переделку карты и создай все сторис и тикеты без моего подтверждения. я хочу видеть уже готовый эпик со сторисами и тикетами"
 current_review: complete
@@ -37,7 +37,7 @@ SolarSystemGeneration.ValidateWorld допускает только version1; St
 ## Dependencies
 - EP-0018-US-0001-unified-station-geography
 - EP-0018-US-0002-stable-orbital-clusters
-- EP-0018-US-0003-preserved-starts-and-resources
+Частичные ticket-gates US-0003: TK-0002 перед save ingress; TK-0003 перед local-world roundtrip.
 Точные ticket dependencies в таблице ниже; итоговая публикация новой конфигурации запрещена до compatibility gate US-0004.
 
 ## Invariants
@@ -52,9 +52,9 @@ Engine владеет географией и RNG; Client только прое�
 
 | ID | Title | Layer | Dependencies | Served criteria |
 |---|---|---|---|---|
-| [EP-0018-US-0004-TK-0001-versioned-save-validation](EP-0018-US-0004-TK-0001-versioned-save-validation/EP-0018-US-0004-TK-0001-versioned-save-validation.md) | Строгая версия географии без миграции координат старых миров | engine | EP-0018-US-0003-TK-0003-voyage-geography | AC-01, AC-02, AC-03 |
+| [EP-0018-US-0004-TK-0001-versioned-save-validation](EP-0018-US-0004-TK-0001-versioned-save-validation/EP-0018-US-0004-TK-0001-versioned-save-validation.md) | Строгая версия географии без миграции координат старых миров | engine | EP-0018-US-0003-TK-0002-scenario-start-bindings | AC-01, AC-02, AC-03 |
 | [EP-0018-US-0004-TK-0002-legacy-trade-map-validation](EP-0018-US-0004-TK-0002-legacy-trade-map-validation/EP-0018-US-0004-TK-0002-legacy-trade-map-validation.md) | Загрузка v2 не восстанавливает старые торговые offsets | engine | EP-0018-US-0004-TK-0001-versioned-save-validation | AC-01, AC-02, AC-03 |
-| [EP-0018-US-0004-TK-0003-local-world-roundtrip](EP-0018-US-0004-TK-0003-local-world-roundtrip/EP-0018-US-0004-TK-0003-local-world-roundtrip.md) | Реальные сохранения продолжают географию обеих версий | engine | EP-0018-US-0004-TK-0002-legacy-trade-map-validation | AC-01, AC-02, AC-03 |
+| [EP-0018-US-0004-TK-0003-local-world-roundtrip](EP-0018-US-0004-TK-0003-local-world-roundtrip/EP-0018-US-0004-TK-0003-local-world-roundtrip.md) | Реальные сохранения продолжают географию обеих версий | engine | EP-0018-US-0004-TK-0002-legacy-trade-map-validation, EP-0018-US-0003-TK-0003-voyage-geography | AC-01, AC-02, AC-03 |
 | [EP-0018-US-0004-TK-0004-activate-v2-content](EP-0018-US-0004-TK-0004-activate-v2-content/EP-0018-US-0004-TK-0004-activate-v2-content.md) | Включение новой карты для всех обычных стартов | content-data | EP-0018-US-0004-TK-0003-local-world-roundtrip | AC-04 |
 
 ## Decisions / Review log
@@ -62,3 +62,12 @@ Engine владеет географией и RNG; Client только прое�
 
 ## Gaps and backlog
 Блокирующих вопросов планирования нет. Численные assumptions проверяются по критериям истории; изменение пользовательского контракта требует явного пересмотра Board.
+
+## Исправление реального dependency order — 2026-11-07
+
+Сохранение активногоv2рейса изUS0003TK0003 требует strictfileingress и materialized
+trading validation US0004TK0001/0002. Поэтому эти2тикета выполняются послеUS0003TK0002,
+затем voyageTK0003, затем local-file-roundtrip/activation. Story4 больше не требует
+завершения всейStory3 перед началом; точные частичные gates перечислены в карточках.
+Это устраняет логическую зависимость тестов от ещё не реализованногоloader без
+переноса FAIL вPASS или объединения тикетов. 9историй/29тикетов остаются прежними.
