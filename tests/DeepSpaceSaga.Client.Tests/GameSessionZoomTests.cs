@@ -5,12 +5,74 @@ using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 using Xunit;
+using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client.Tests;
 
 [Collection("InterfaceLog")]
 public class GameSessionZoomTests
 {
+    private static AuthoritativeSnapshot LocalSnapshot(ulong sequence = 1) => new(sequence, 0, SimulationSpeed.Speed0,
+        [new("PLAYER", 10000, 20000, 0, 0, ObjectType: SpaceObjectType.PlayerShip, RenderObjectType: SpaceObjectType.PlayerShip, MaxSpeedKmS: 20),
+            new("SUN", 0, 0, 0, 0, ObjectType: SpaceObjectType.Sun, RenderObjectType: SpaceObjectType.Sun)], "PLAYER",
+        ClusterMap: new(2, "home", [], [], [], [], new(2, 1, 1, 3)));
+
+    [Fact]
+    public void NewGameStartsLocalAndFitSystemRemainsExplicit()
+    {
+        var buffer = new SnapshotBuffer(); buffer.Update(LocalSnapshot());
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var bitmap = new SKBitmap(4096, 1152); using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 4096, 1152);
+        Assert.Equal(screen.LocalMaximumPpu, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(10000, screen.CameraFocusX); Assert.Equal(20000, screen.CameraFocusY);
+        screen.OnMouseWheel(2048, 576, -2);
+        double manual = screen.CameraPixelsPerWorldUnit;
+        buffer.Update(LocalSnapshot(2)); screen.Render(canvas, 4096, 1152);
+        Assert.Equal(manual, screen.CameraPixelsPerWorldUnit);
+        Assert.True(screen.FitMapView(MapFitMode.System));
+        double fit = screen.CameraPixelsPerWorldUnit;
+        Assert.True(fit < manual); Assert.False(screen.IsFocusAttachedToPlayer);
+        buffer.Update(LocalSnapshot(3)); screen.Render(canvas, 4096, 1152);
+        Assert.Equal(fit, screen.CameraPixelsPerWorldUnit);
+    }
+
+    [Fact]
+    public void ResizePreservesFocusAndLocalLimit()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock); buffer.Update(LocalSnapshot());
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock,
+            mapSettings: new() { ZoomAnimationMs = 120 });
+        using var bitmap = new SKBitmap(4096, 1152); using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        screen.Render(canvas, 4096, 1152);
+        Assert.Equal(screen.LocalMaximumPpu, screen.CameraPixelsPerWorldUnit);
+        Assert.True(screen.LocalMaximumPpu > 1);
+        screen.OnMouseWheel(2048, 576, -2);
+        Assert.True(screen.IsZoomAnimating);
+        clock += System.Diagnostics.Stopwatch.Frequency;
+        screen.Render(canvas, 4096, 1152);
+        Assert.False(screen.IsZoomAnimating);
+        Assert.True(screen.CameraPixelsPerWorldUnit < screen.LocalMaximumPpu);
+        screen.OnMouseWheel(2048, 576, 32);
+        clock += System.Diagnostics.Stopwatch.Frequency;
+        screen.Render(canvas, 4096, 1152);
+        Assert.Equal(screen.LocalMaximumPpu, screen.CameraPixelsPerWorldUnit, 10);
+    }
+
+    [Fact]
+    public void RulerUsesExplicitReferenceTime()
+    {
+        var buffer = new SnapshotBuffer(); buffer.Update(LocalSnapshot());
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        Render(screen);
+        using (Localization.UseLocaleForTests("English"))
+            Assert.Equal("1 h at reference 2 km/s", screen.RulerReferenceText(24000));
+        using (Localization.UseLocaleForTests("Russian"))
+            Assert.Equal("1 ч при опорной скорости 2 км/с", screen.RulerReferenceText(24000));
+    }
+
     private const int ScreenWidth = 1920;
     private const int ScreenHeight = 1080;
 

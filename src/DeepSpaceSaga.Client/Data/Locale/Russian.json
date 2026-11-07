@@ -228,6 +228,7 @@
   "Map.Belt": "Пояс",
   "Map.Cluster": "Кластер",
   "Map.Follow": "За кораблём",
+  "Map.ReferenceTime": "{0:0.##} ч при опорной скорости {1:0.###} км/с",
   "Map.Route": "Весь маршрут",
   "Map.Selected": "Выбрано",
   "Map.ShipTarget": "Корабль и цель",

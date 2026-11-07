@@ -5,11 +5,11 @@ ticket: EP-0018-US-0005-TK-0002-initial-camera-and-zoom
 title: "Локальный старт камеры и согласованные границы zoom/resize"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0005-TK-0001-local-view-policy]
-files_touched: 5
+files_touched: 9
 serves: [AC-01, AC-02, AC-03]
 created: 2026-11-07T17:21:08Z
 revision: 1
@@ -92,3 +92,11 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Scope refinement before implementation
+2026-11-07: CameraZoomTransition.cs and Screens/GameSession/MapViewGeometry.cs also clamp against static MaximumPpu, and Fit uses CameraState.SetZoom with default hard cap10. Add these two production helpers to allowlist; pass optional effective maximum explicitly, preserving other callers and tactical battle defaults. All world-map zoom/Fit paths must share the viewport/reference policy. Ruler uses an extra compact reference-time row, with toolbar height updated; raw device pixels enter policy, UI scaling only affects chrome.
+
+Ruler reference-time text also requires Data/Locale/{English.json,Russian.json}; add both locale dictionaries before editing. This keeps the explicit reference context visible in either supported UI language.
+
+## Execution evidence
+2026-11-07: first player snapshot initializes one-time Local, later snapshots retain user zoom/Fit. Wheel/presets/animation/Fit/resize share effective maximum from frozen geography or explicit legacy fallback; at-maximum resize follows new bound, manual focus/scale remain controlled. Camera SetZoom accepts optional effective bounds without changing tactical callers. Ruler includes localized reference-time row, never current-engine ETA. Focused52/52 PASS; final full Client2093/2093 PASS includes canonical named tests after renaming; Release build, scoped format-verified exit0, diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-camera/{focused.trx,client-full.trx,build.log,format-verified.log}. Pure/raster tests do not claim native physical-input acceptance. Self-review complete.

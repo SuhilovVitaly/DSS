@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-07: IN PROGRESS. Опубликовано15/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0005TK0002; далее US5…US9.
+Статус на2026-11-07: IN PROGRESS. Опубликовано16/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0005TK0003; далее US5…US9.
 
 ## Git и полномочия
 
@@ -145,3 +145,5 @@ US0003TK0003 publishedae34d85cf98b708c1049baf5efc1302815aa6042 verified. US0004T
 US0004TK0003 published78156d4f59e2e033ce681da7d1f2e75b25609a53 verified. US0004TK0004 production v2 active; focused20, Client2072, Engine non-corpus2148 PASS; build/format/diff PASS. Final acceptance remains US8. UI scale work next.
 
 US0004TK0004 published2380c4b45ca1b632773723612f2453305aefa0a0 verified. US0005TK0001 local scale pure policy focused17 PASS; build/format/diff PASS; evidence local-policy.
+
+US0005TK0001 published4e1521ed1b37e2fdf65849955da16fde019c5812 verified. US0005TK0002 camera focused52/fullClient2093 PASS, build/format/diff PASS; evidence camera. Native remains US8.

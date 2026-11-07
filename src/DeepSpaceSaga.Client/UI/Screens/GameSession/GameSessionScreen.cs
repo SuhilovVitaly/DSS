@@ -1131,15 +1131,29 @@ public sealed partial class GameSessionScreen : IScreen
             uiTimeMs = 0;
 
         bool viewportResized = width != _lastViewportW || height != _lastViewportH;
+        double previousMaximum = MapScalePolicy.MaximumPpu(_mapSettings, _lastViewportW, _lastViewportH, MapReferenceSpeed);
         _lastViewportW = width;
         _lastViewportH = height;
 
-        if (viewportResized) _zoomTransition.Cancel();
-        _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height);
+        if (viewportResized)
+        {
+            _zoomTransition.Cancel();
+            double zoom = Math.Abs(_camera.PixelsPerWorldUnit / previousMaximum - 1) < 1e-10
+                ? LocalMaximumPpu : _camera.PixelsPerWorldUnit;
+            _camera.SetZoom(zoom, _mapSettings.MinimumPpu, LocalMaximumPpu);
+        }
+        _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height, LocalMaximumPpu);
 
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
         UpdateObjectRenderStates(prediction, deltaSeconds);
+        if (!_mapCameraInitialized && FindPlayerShip(_renderStates) is not null)
+        {
+            _mapCameraInitialized = true;
+            _zoomTransition.Cancel();
+            _isFocusAttachedToPlayer = true;
+            _camera.SetZoom(LocalMaximumPpu, _mapSettings.MinimumPpu, LocalMaximumPpu);
+        }
         _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
         _fieldGeometry = buffered is null ? [] : EnvironmentFieldRenderer.Resolve(buffered.Snapshot,
             _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
@@ -2098,7 +2112,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void ApplyScale(double targetPpu)
     {
-        _zoomTransition.Start(_camera, targetPpu, _viewportW / 2f, _viewportH / 2f, _mapSettings, _viewportW, _viewportH);
+        _zoomTransition.Start(_camera, targetPpu, _viewportW / 2f, _viewportH / 2f, _mapSettings, _viewportW, _viewportH, LocalMaximumPpu);
         InterfaceLog.Write($"Scale → PPU={targetPpu:F4}");
     }
 

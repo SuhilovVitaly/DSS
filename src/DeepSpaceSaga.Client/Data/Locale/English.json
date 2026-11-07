@@ -228,6 +228,7 @@
   "Map.Belt": "Next belt",
   "Map.Cluster": "Cluster",
   "Map.Follow": "Follow ship",
+  "Map.ReferenceTime": "{0:0.##} h at reference {1:0.###} km/s",
   "Map.Route": "Full route",
   "Map.Selected": "Selected",
   "Map.ShipTarget": "Ship + target",

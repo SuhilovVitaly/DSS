@@ -22,6 +22,12 @@ public sealed partial class GameSessionScreen
         : BattleFormat.Localize("BattleTitle");
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
+    private bool _mapCameraInitialized;
+    private double MapReferenceSpeed => MapScalePolicy.ReferenceSpeed(_mapSettings,
+        _buffer.Presented?.Snapshot.ClusterMap?.Geography?.ReferenceSpeedKmS ?? _mapSettings.ReferenceSpeedKmS);
+    internal double LocalMaximumPpu => MapScalePolicy.MaximumPpu(_mapSettings, _viewportW, _viewportH, MapReferenceSpeed);
+    internal string RulerReferenceText(double meters) => string.Format(CultureInfo.InvariantCulture,
+        Localization.Get("Map.ReferenceTime"), meters / 1000 / MapReferenceSpeed * 300 / 3600, MapReferenceSpeed);
     private SKRect _mapToolbarRect;
     private readonly SKRect[] _mapViewButtons = new SKRect[11];
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
@@ -107,10 +113,10 @@ public sealed partial class GameSessionScreen
         if (_viewportW <= 0 || _viewportH <= 0 || !double.IsFinite(steps)) return;
         double previous = _zoomTransition.TargetPpu(_camera);
         double target = Math.Clamp(previous * Math.Pow(_mapSettings.WheelFactor, Math.Clamp(steps, -32, 32)),
-            _mapSettings.MinimumPpu, _mapSettings.MaximumPpu);
+            _mapSettings.MinimumPpu, LocalMaximumPpu);
         if (target == previous) return;
         _zoomTransition.Start(_camera, target, _isFocusAttachedToPlayer ? _viewportW / 2f : x,
-            _isFocusAttachedToPlayer ? _viewportH / 2f : y, _mapSettings, _viewportW, _viewportH);
+            _isFocusAttachedToPlayer ? _viewportH / 2f : y, _mapSettings, _viewportW, _viewportH, LocalMaximumPpu);
         InterfaceLog.Write($"Scale → PPU={target:G6}");
     }
 
@@ -211,7 +217,7 @@ public sealed partial class GameSessionScreen
     {
         if (!bounds.HasValue) return;
         _zoomTransition.Cancel(); _isFocusAttachedToPlayer = false; _isPanningMap = false;
-        MapViewGeometry.Fit(_camera, bounds, AvailableMapRect(), _viewportW, _viewportH, _mapSettings);
+        MapViewGeometry.Fit(_camera, bounds, AvailableMapRect(), _viewportW, _viewportH, _mapSettings, LocalMaximumPpu);
         UpdateMapClusters(); RecomputeActiveObjectId();
     }
 
@@ -361,7 +367,7 @@ public sealed partial class GameSessionScreen
         bool hasMapLayers = _buffer.Presented?.Snapshot.AiMap is not null;
         float layerRowHeight = hasMapLayers ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
-        float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62 - layerRowHeight;
+        float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 78 - layerRowHeight;
         float battleRow = TacticalBattleEntryHeight;
         if (_commandsPanel.BodyRect.Bottom > top - 27 - battleRow)
         {
@@ -371,7 +377,7 @@ public sealed partial class GameSessionScreen
         int columns = width < 520 ? 4 : 8;
         float wrappedRowHeight = columns == 4 ? 27 : 0;
         top -= wrappedRowHeight;
-        _mapToolbarRect = new(left, top - battleRow, left + width, top + 58 + layerRowHeight + wrappedRowHeight);
+        _mapToolbarRect = new(left, top - battleRow, left + width, top + 74 + layerRowHeight + wrappedRowHeight);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
         float battleWidth = Math.Min(280, width - 8);
         _tacticalBattleEntry.Bounds = battleRow > 0 && battleWidth > 0
@@ -422,6 +428,7 @@ public sealed partial class GameSessionScreen
         canvas.DrawLine(rx, ry - 3, rx, ry + 3, _mapMarkerPaint);
         canvas.DrawLine(rx + rulerWidth, ry - 3, rx + rulerWidth, ry + 3, _mapMarkerPaint);
         canvas.DrawText(TacticalMapSettings.FormatDistance(nice), rx + rulerWidth / 2, ry - 5, _scaleBtnTextPaint);
+        canvas.DrawText(RulerReferenceText(nice), left + 8, top + 66 + layerRowHeight + wrappedRowHeight, _panelTextPaint);
         int hovered = HitTestScalePanel(_uiMouseX, _uiMouseY);
         if (hovered >= 0)
         {
