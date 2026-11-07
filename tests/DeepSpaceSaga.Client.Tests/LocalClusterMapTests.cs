@@ -9,6 +9,27 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class LocalClusterMapTests
 {
+    [Fact]
+    public void V2StationSelectionDoesNotEnableRemoteTrade()
+    {
+        var source = Snapshot();
+        var snapshot = source with
+        {
+            SelectedObjectId = "s1",
+            ClusterMap = source.ClusterMap! with { RulesVersion = 2, Geography = new(4, 1, 1, 3) },
+            StationMarketKnowledge = [new("s1", "market.scientific-military", false, 0, 1, true)]
+        };
+        var buffer = new SnapshotBuffer(); buffer.Update(snapshot);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        Assert.True(screen.FocusStation("s1")); screen.Render(canvas, 1920, 1080);
+        Assert.Equal("s1", screen.SelectedObjectId);
+        Assert.Null(snapshot.DockedStationTrade);
+        Assert.False(screen.SelectedOrActiveObjectInfo!.Value.MarketKnowledge!.IsAvailable);
+        Assert.Contains(ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo.Value), l => l.Label == "Market" && l.Value == "Unavailable / STALE");
+    }
+
     internal static AuthoritativeSnapshot Snapshot(int count = 10)
     {
         var stations = Enumerable.Range(1, count).Select(i => new ObjectMotionSnapshot($"s{i}", 700000 + i * 7000, 0, 0, 0, RenderObjectType: "Station", ObjectType: "Station")).ToImmutableArray();

@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Contracts;
+using System.Globalization;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
@@ -47,6 +48,19 @@ internal static class ClusterMapPresentation
         if (!double.IsFinite(distanceWorld) || distanceWorld < 0 || !double.IsFinite(maxSpeedKmS) || maxSpeedKmS <= 0) return null;
         double days = distanceWorld / 10 / maxSpeedKmS * 300 / 86400;
         return double.IsFinite(days) ? days : null;
+    }
+
+    internal static string FormatStraightFlightDays(double? days)
+    {
+        if (days is not { } value || !double.IsFinite(value) || value < 0) return "Unavailable";
+        if (value < 1)
+        {
+            double hours = value * 24;
+            if (Math.Round(hours, 3) >= 24) return "< 1 calendar day";
+            if (hours is > 0 and < .001) return "< 0.001 calendar hours";
+            return string.Format(CultureInfo.InvariantCulture, "{0:0.###} calendar {1}", hours, hours == 1 ? "hour" : "hours");
+        }
+        return string.Format(CultureInfo.InvariantCulture, "{0:0.###} calendar {1}", value, value == 1 ? "day" : "days");
     }
 
     internal static void DrawDirections(SKCanvas canvas, StationClusterMapSnapshot map, string? selectedId,

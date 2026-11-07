@@ -221,7 +221,7 @@ public sealed class ObjectInfoPanel
             {
                 lines.Add(("Cluster", cluster));
                 lines.Add(("Profile", d.ClusterProfile ?? "—"));
-                lines.Add(("Straight flight estimate", d.StraightFlightDays is { } days ? $"{days:0.###} calendar days" : "Unavailable"));
+                lines.Add(("Straight flight estimate", ClusterMapPresentation.FormatStraightFlightDays(d.StraightFlightDays)));
                 lines.Add(("Estimate epoch", $"T+{d.EstimateMotionTimeMs} simulation ms"));
                 lines.Add(("Potential cargo", d.ClusterDirections ?? "—"));
             }

@@ -5,11 +5,11 @@ ticket: EP-0018-US-0007-TK-0002-current-travel-estimates
 title: "Расстояния и оценки пути отделены от генерационного масштаба"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0007-TK-0001-cluster-focus-navigation, EP-0018-US-0003-TK-0003-voyage-geography]
-files_touched: 4
+files_touched: 5
 serves: [AC-02, AC-03, AC-04]
 created: 2026-11-07T17:21:08Z
 revision: 1
@@ -89,3 +89,9 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Scope refinement before implementation
+2026-11-07: the actual displayed estimate is built in Controls/ObjectInfoPanel.cs, outside the initial list. Add it to allowlist so hours/day formatting is user-visible and retains the existing Straight flight estimate caption (no full Dock promise). Current Vmax/current presented pose calculation already exists; test its update independently of frozen-reference ruler. Formatter explicitly handles near-day rounding and unavailable values.
+
+## Execution evidence
+2026-11-07: existing current-pose/current operational Vmax estimator retained and independently tested against doubled engine speed, moving epoch and missing engine. User-visible ObjectInfoPanel now formats calendar hours below1d and days above; near-day rounding is explicit<1d, invalid/unavailable remains unavailable. Frozen-reference ruler stays unchanged after Vmax update; local focus/selection does not reveal remote quote/trade. Initial new test used wrong market property name and failed compile; corrected to actual IsAvailable contract. Focused-final20/20 and full Client2115/2115 PASS; Release build, scoped format-verified and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-current-estimates/{focused.log,focused-final.trx,client-full.trx,build.log,format-verified.log}. No new Engine query or cached ETA; no full Dock promise. Self-review complete.
