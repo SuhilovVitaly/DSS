@@ -30,7 +30,10 @@ internal readonly record struct PilotSkill(int Minimum, int Maximum, bool IsRang
     public static PilotSkill Fixed(int value) => new(value, value, false);
     public static PilotSkill Range(int minimum, int maximum) => new(minimum, maximum, true);
 }
-internal sealed record BattlePilot(string Name, PilotSkill Accuracy, PilotSkill Maneuver);
+internal sealed record BattlePilot(string Name, PilotSkill Accuracy, PilotSkill Maneuver)
+{
+    public PilotSkill Initiative { get; init; } = PilotSkill.Fixed(50);
+}
 internal sealed record BattleLayout(string Name, string Class, string Armor, string? Weapon,
     string? Shield, ImmutableArray<string> Engines, int? Hull = null, int? ShieldCount = null);
 internal sealed record BattleGoal(string PlayerSide, double WinMaxOneLoss, double WinNoLoss,

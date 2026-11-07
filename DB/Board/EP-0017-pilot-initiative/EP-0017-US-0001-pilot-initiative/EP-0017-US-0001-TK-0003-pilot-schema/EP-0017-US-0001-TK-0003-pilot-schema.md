@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0001-pilot-initiative
 ticket: EP-0017-US-0001-TK-0003-pilot-schema
 title: "Валидация initiative в определении пилота"
-stage: approved
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0017-US-0001-TK-0001-pilot-content]
@@ -128,3 +128,9 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+BattlePilot получил отдельный Initiative с программным default50; JSON loader требует explicit integer/range0..100 и сохраняет точную typed диагностику. Проверены fixed0/100, inclusive/degenerate ranges и 11 типов дефектных полей; при отказе обычный мир доступен. Self-review: accuracy/maneuver не ограничены новой шкалой, каталог публикуется после полной валидации. Независимое review не заявляется; scope дополнен этой карточкой.
+
+Engine build --no-restore -m:1 -nr:false PASS; ContentLoaderTests/DefinitionsTests PASS 86/86 (0 skipped); scoped format --verify-no-changes --no-restore PASS; git diff --check PASS. DSS_VALIDATION_ROOT установлен на run. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0103/ (build/tests/format stdout/stderr, focused.trx). Native не применяется к schema; runtime materialization и UI — следующие тикеты.

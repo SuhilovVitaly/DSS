@@ -6,6 +6,18 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class DefinitionsTests
 {
     [Fact]
+    public void PilotInitiativeIsIndependentFromAccuracyAndManeuver()
+    {
+        var pilot = new BattlePilot("Pilot", PilotSkill.Fixed(70), PilotSkill.Fixed(65));
+        Assert.Equal(PilotSkill.Fixed(50), pilot.Initiative);
+        var changed = pilot with { Initiative = PilotSkill.Range(50, 50) };
+        Assert.Equal(pilot.Accuracy, changed.Accuracy);
+        Assert.Equal(pilot.Maneuver, changed.Maneuver);
+        Assert.True(changed.Initiative.IsRange);
+        Assert.NotEqual(pilot.Initiative, changed.Initiative);
+    }
+
+    [Fact]
     public void CatalogCopiesInputAndKeepsJsonOrderWithOrdinalIdentity()
     {
         (string Id, string Value)[] input = [("second", "two"), ("First", "one"), ("first", "lowercase")];

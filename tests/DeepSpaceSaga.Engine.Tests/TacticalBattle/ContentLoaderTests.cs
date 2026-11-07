@@ -9,6 +9,45 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 
 public sealed class ContentLoaderTests
 {
+    [Theory]
+    [InlineData("0", 0, 0, false)]
+    [InlineData("100", 100, 100, false)]
+    [InlineData("[0,100]", 0, 100, true)]
+    [InlineData("[50,50]", 50, 50, true)]
+    public void InitiativeSchemaAcceptsFixedAndInclusiveRange(string json, int min, int max, bool range)
+    {
+        using var fixture = new Fixture();
+        fixture.Change("pilots.json", "/vera/initiative", json);
+        var catalog = TacticalBattleContentLoader.Load(fixture.Battle);
+        Assert.Equal(new PilotSkill(min, max, range), catalog.Pilots["vera"].Initiative);
+        Assert.Equal(PilotSkill.Fixed(55), catalog.Pilots["vera"].Accuracy);
+        Assert.Equal(PilotSkill.Fixed(52), catalog.Pilots["vera"].Maneuver);
+    }
+
+    [Theory]
+    [InlineData("<missing>")]
+    [InlineData("null")]
+    [InlineData("1.5")]
+    [InlineData("\"50\"")]
+    [InlineData("true")]
+    [InlineData("[55,40]")]
+    [InlineData("[-1,50]")]
+    [InlineData("101")]
+    [InlineData("[0,101]")]
+    [InlineData("[40,50,55]")]
+    [InlineData("[40.0,55]")]
+    public void InitiativeSchemaRejectsMissingMalformedAndOutOfBounds(string json)
+    {
+        using var fixture = new Fixture();
+        fixture.Change("pilots.json", "/vera/initiative", json);
+        var exception = Assert.Throws<TacticalBattleContentException>(() => TacticalBattleContentLoader.Load(fixture.Battle));
+        Assert.Equal("pilots.json", exception.Issue.File);
+        Assert.Equal("$.vera.initiative", exception.Issue.Field);
+        using var engine = EngineContentLoader.CreateEngineFromSettingsFile(fixture.Settings);
+        Assert.False(engine.GetTacticalBattleOptions().Availability.Available);
+        Assert.NotEmpty(engine.CaptureSnapshot().Objects);
+    }
+
     [Fact]
     public void ProductionCatalogPreservesOrderTypesAndCapturedDefinitions()
     {
