@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0002-initiative-fire
 ticket: EP-0017-US-0002-TK-0002-seeded-fire-order
 title: "Однократная seeded-жеребьёвка равной инициативы"
-stage: approved
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0017-US-0002-TK-0001-fire-sequence-contract, EP-0017-US-0001-TK-0004-materialize-initiative]
@@ -130,3 +130,9 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+InitializeFireOrder фиксирует один seeded Fisher–Yates rank всех дронов после materialization; repeated init/capture не расходует RNG, Capture до init отвергается. Capture фильтрует неактивных без изменения Drones order. Independent seed1 permutation для10 равных:9,2,4,5,0,6,8,1,7,3. Проверены80A/60B/40A, обе стороны на первом месте фиксированного seed corpus, survivors и9 tie draws. Assembly expectations учитывают реальные6 range+1 tie draws.
+
+Engine build PASS; AssemblyTests/FireOrderTests PASS12/12; scoped format и --verify-no-changes PASS; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0202/ (build/tests/format/format-verified logs, focused.trx). Self-review выполнено, независимое review не заявляется. Scope дополнен этой карточкой. Native не применяется к internal ordering; playerSide session parity проверяется следующими тикетами.

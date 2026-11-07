@@ -16,10 +16,10 @@ public sealed class AssemblyTests
         // Hand-derived Mulberry32 vector for uint(1) XOR 0x494E4954, six inclusive [40,55] draws.
         Assert.Equal(new[] { 55, 53, 59, 50, 45, 53, 43, 42, 44, 41 }, one.Drones.Select(d => d.Initiative));
         Assert.Equal(one.Drones.Select(d => d.Initiative), two.Drones.Select(d => d.Initiative));
-        Assert.Equal(6, one.InitiativeRandom.Calls);
+        Assert.Equal(7, one.InitiativeRandom.Calls); // six range draws + one tie at initiative 53
         Assert.Equal(42, one.Random.Calls);
         one.InitiativeRandom.Random();
-        Assert.Equal(6, two.InitiativeRandom.Calls);
+        Assert.Equal(7, two.InitiativeRandom.Calls);
         Assert.Equal(42, one.Random.Calls);
     }
 
@@ -33,14 +33,14 @@ public sealed class AssemblyTests
             (e.Id, e.Value with { Initiative = PilotSkill.Fixed(50) })))
         };
         var fixedBattle = Battle.Create(catalog, null, 1);
-        Assert.Equal(0, fixedBattle.InitiativeRandom.Calls);
+        Assert.Equal(9, fixedBattle.InitiativeRandom.Calls); // one group of ten
         catalog = catalog with
         {
             Pilots = new(catalog.Pilots.Entries.Select(e =>
             (e.Id, e.Id == "vera" ? e.Value with { Initiative = PilotSkill.Range(50, 50) } : e.Value)))
         };
         var rangeBattle = Battle.Create(catalog, null, 1);
-        Assert.Equal(1, rangeBattle.InitiativeRandom.Calls);
+        Assert.Equal(10, rangeBattle.InitiativeRandom.Calls); // one range draw + nine shuffle draws
         Assert.Equal(fixedBattle.Random.State, rangeBattle.Random.State);
         Assert.Equal(42, rangeBattle.Random.Calls);
         Assert.All(rangeBattle.Drones, d => Assert.Equal(50, d.Initiative));

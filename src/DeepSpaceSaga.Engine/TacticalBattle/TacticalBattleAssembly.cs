@@ -86,6 +86,7 @@ internal sealed partial class TacticalBattle
             drone.Initiative = initiative.IsRange
                 ? battle.InitiativeRandom.RandInt(initiative.Minimum, initiative.Maximum) : initiative.Minimum;
         }
+        battle.InitializeFireOrder();
         return battle;
 
         int Skill(PilotSkill skill) => skill.IsRange ? random.RandInt(skill.Minimum, skill.Maximum) : skill.Minimum;
