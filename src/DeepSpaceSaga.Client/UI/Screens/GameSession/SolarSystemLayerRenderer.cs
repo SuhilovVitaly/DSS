@@ -5,7 +5,33 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 internal sealed class SolarSystemLayerRenderer
 {
-    internal void Draw(SKCanvas canvas, SolarSystemMapSnapshot map, CameraState camera, SKRect viewport, bool showOrbits = true)
+    internal static IReadOnlyList<OrbitMapData> VisibleOrbits(SolarSystemMapSnapshot map, bool showOrbits, MapDetailLevel detail,
+        IReadOnlyList<ObjectMotionSnapshot>? objects = null, string? selectedId = null, string? navigationTargetId = null, string? playerId = null)
+    {
+        if (!showOrbits) return [];
+        var allowed = new HashSet<string>(StringComparer.Ordinal);
+        if (detail is MapDetailLevel.Cluster or MapDetailLevel.System)
+            foreach (var planet in map.Planets) allowed.Add(planet.ObjectId);
+        if (objects is not null)
+        {
+            foreach (string? id in new[] { selectedId, navigationTargetId, playerId })
+            {
+                if (id is null) continue;
+                var obj = objects.FirstOrDefault(o => o.ObjectId == id);
+                if (obj is null) continue;
+                if (id != playerId && obj.RenderObjectType is SpaceObjectType.Station or SpaceObjectType.Asteroid)
+                    allowed.Add(id);
+                if (obj.IsDocked && obj.DockedStationObjectId is { } parent &&
+                    objects.Any(o => o.ObjectId == parent && o.RenderObjectType == SpaceObjectType.Station)) allowed.Add(parent);
+            }
+        }
+        var curves = new HashSet<(double Major, double Minor)>();
+        return map.Orbits.Where(o => allowed.Contains(o.ObjectId) && curves.Add((o.Elements.SemiMajorAxis, o.Elements.SemiMinorAxis))).ToArray();
+    }
+
+    internal void Draw(SKCanvas canvas, SolarSystemMapSnapshot map, CameraState camera, SKRect viewport, bool showOrbits = true,
+        MapDetailLevel detail = MapDetailLevel.System, IReadOnlyList<ObjectMotionSnapshot>? objects = null,
+        string? selectedId = null, string? navigationTargetId = null, string? playerId = null)
     {
         PrepareMap(map);
         var (cx, cy) = camera.WorldToScreen(0, 0, (int)viewport.Width, (int)viewport.Height);
@@ -21,7 +47,7 @@ internal sealed class SolarSystemLayerRenderer
             DrawDecoration(canvas, belt, camera, viewport);
         }
         paint.Color = new SKColor(127, 169, 199, 51);
-        foreach (var orbit in showOrbits ? map.Orbits : [])
+        foreach (var orbit in VisibleOrbits(map, showOrbits, detail, objects, selectedId, navigationTargetId, playerId))
         {
             float a = (float)(orbit.Elements.SemiMajorAxis * camera.PixelsPerWorldUnit);
             float b = (float)(orbit.Elements.SemiMinorAxis * camera.PixelsPerWorldUnit);

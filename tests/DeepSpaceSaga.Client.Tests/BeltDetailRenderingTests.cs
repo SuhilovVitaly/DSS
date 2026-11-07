@@ -8,6 +8,26 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class BeltDetailRenderingTests
 {
+    [Fact]
+    public void V2DecorationRemainsIndependentOfWorldObjects()
+    {
+        using var engine = DeepSpaceSaga.Engine.SimulationEngine.CreateFromSettingsFile(DefaultSystemContentTests.Settings);
+        var snapshot = engine.CaptureSnapshot();
+        var map = snapshot.SolarSystemMap!;
+        Assert.Equal(2, map.GeneratorVersion);
+        var layer = new SolarSystemLayerRenderer();
+        var belt = map.Belts[0];
+        var points = layer.Decoration(belt, 1);
+        Assert.Equal(belt.DecorationSamples, points.Length);
+        var reduced = map with { Orbits = [] };
+        using var bitmap = new SKBitmap(512, 256); using var canvas = new SKCanvas(bitmap);
+        layer.Draw(canvas, reduced, new(0, 0, .0001), SKRect.Create(512, 256));
+        Assert.Same(points, layer.Decoration(belt, 1));
+        Assert.NotEmpty(snapshot.Objects.Where(o => o.RenderObjectType == SpaceObjectType.Asteroid));
+        Assert.NotEmpty(map.Orbits);
+        Assert.Empty(reduced.Orbits);
+    }
+
     [Theory]
     [InlineData(100256d)]
     [InlineData(50000d)]

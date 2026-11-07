@@ -1183,7 +1183,8 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
         {
-            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits);
+            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits, MapDetail,
+                _renderStates.Select(s => s.Predicted).ToArray(), _selectedObjectId, _navigationTargetId, buffered.Snapshot.PlayerShipObjectId);
         }
 
         // 2. Camera focus indicator

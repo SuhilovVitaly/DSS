@@ -5,7 +5,7 @@ ticket: EP-0018-US-0006-TK-0002-orbital-layer-policy
 title: "Орбиты читаемы и следуют выбору объекта"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0006-TK-0001-semantic-map-detail]
@@ -89,3 +89,6 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution evidence
+2026-11-07: overview planet curves only on Cluster/System; selected/nav station or asteroid and docked target/player parent add explicit curves when ShowOrbits. Geometrically identical axis pairs deduplicated independent of phase/period, without deleting objects. Existing bounded ellipse clipping and belt decoration/cache retained. Focused7/7 PASS includes actual pixel checks for selected100wu ring and absence of1000 asteroid overview band; v2 decoration cache independent of object/orbit list. Release build, scoped format-verified exit0 and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-orbit-detail/{focused.trx,build.log,format-verified.log}. Self-review complete; native quality gate remains US8.
