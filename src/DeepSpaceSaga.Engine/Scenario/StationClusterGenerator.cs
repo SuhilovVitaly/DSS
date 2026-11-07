@@ -27,10 +27,16 @@ internal static class StationClusterGenerator
         string reason = "placement exhausted";
         for (int attempt = 0; attempt < 128; attempt++)
         {
+            if (source.GameState.SolarSystem?.GeneratorVersion == 2)
+            {
+                try { return StationGeographyV2.Place(source, config, registry, seed, attempt); }
+                catch (ScenarioException ex) { reason = ex.Message; }
+                continue;
+            }
             try { return Expand(Place(source, config, registry, seed, attempt), config, registry, seed); }
             catch (ScenarioException ex) { reason = ex.Message; }
         }
-        throw new ScenarioException($"clusters/v1 seed={seed} stage=local attempts=128: {reason}");
+        throw new ScenarioException($"clusters/v{source.GameState.SolarSystem?.GeneratorVersion ?? 1} seed={seed} stage=local attempts=128: {reason}");
     }
 
     private static ClusterGenerationResult Expand(ClusterGenerationResult first, ClusterGenerationConfig config, GameDataRegistry registry, ulong seed)

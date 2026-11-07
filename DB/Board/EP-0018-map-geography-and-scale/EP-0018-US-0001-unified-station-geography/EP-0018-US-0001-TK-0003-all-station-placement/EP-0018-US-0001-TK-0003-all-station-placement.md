@@ -5,7 +5,7 @@ ticket: EP-0018-US-0001-TK-0003-all-station-placement
 title: "Единое размещение исходных и новых станций"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0001-TK-0002-v2-generation-input]
@@ -88,3 +88,26 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Фактическое исполнение — 2026-11-07
+
+Создан StationGeographyV2.Place: detached role/identity materialization из station
+payload и validated trading request без template offsets; все IDs сортируются
+ordinal и получают circular rigid orbit. Все старые и новые пары/nearest/diameter
+проверяются одинаково до возврата candidate. Geography хранит operational Vmax.
+Невозможная формация и identity collision дают deterministic failure <=128attempts.
+v1 Place/Expand сохраняются; player/resources/full bootstrap — следующий тикет.
+
+Фактический shipped Default engine.basic имеет6000м/с (не прежние примерные4000):
+reference6км/с и17280wu/day. Значение берётся из registry, мир не ребалансируется.
+Assumption C-01 выполнен, baseline UI fallback4км/с не становится правилом генерации.
+
+Tests StationGeographyV2Tests + LocalClusterGenerationTests + GenerationInputSchemaTests
++ SeededWorldBootstrapTests:24/24PASS, включая все3named tests. Независимый hypot
+проверяет каждую пару и nearest,10/12станций,5сценариев, роли/explicit inventory,
+seed repeat и bounded failure/collision; это не итоговый100-seed corpus.
+Release Engine build0warnings/errors PASS, scoped format3files PASS, diff-check PASS.
+Self-review C01/02/AC01–04 без findings; независимого review нет. Native NOT RUN.
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-local-placement/
+(focused-final.trx/log, build.log, format-engine.log, format-tests.log).
+Test watchdog300000ms. Никаких временных scripts/slots/worktrees не создавалось.
