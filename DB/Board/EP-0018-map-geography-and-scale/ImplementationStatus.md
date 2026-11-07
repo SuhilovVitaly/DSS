@@ -79,3 +79,14 @@ format-tests-final.log. Широкие2076прошли до добавления
 Story1 код реализован, но общая приёмка Save/Load ещё US4: история остаётся
 implemented_pending_compatibility_gate. Следующийтикет — US0002TK0001radial lanes,
 после публикации TK4. Остаток25тикетов, corpus/native/FPS/human NOT RUN.
+## Radial lanes — US0002TK0001
+
+US0001TK0004 опубликован: e930ec2d2380eeb0756d26bc3953b2fd83dd3b28, exactremoteSHA PASS.
+US0002TK0001 локально завершён:22/22focused, build0warnings/errors, scopedformat/diff
+PASS. Evidence20261107-radial-lanes/focused-verified.trx/log и build/format logs.
+Геометрия проверена до runtime публикации; первоначальные2FAIL выявили зависимость
+от межкластерного graphTK0002 (не скрыты/не засчитаныPASS). Live narrowbelt atomic
+rejection остаётся проверенным. Следующий тикетTK0002 обязан включить Engine
+integration3–5кластеров и strong directed connectivity/cargo, до storyclosure.
+Минимум при любых фазах доказан аналитически через радиусы, samples0/1/30/365 —
+дополнительная проверка. После публикации этого тикета останется24тикета.

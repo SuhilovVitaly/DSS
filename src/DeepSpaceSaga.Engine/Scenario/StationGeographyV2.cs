@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Engine.Rng;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
@@ -15,7 +16,20 @@ internal static class StationGeographyV2
         var state = world.GameState;
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
         double units = candidate.Map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
-        ValidateDistances(candidate.Map.Stations.Select(s => objects[s.ObjectId]).ToArray(), config.Clusters!, units);
+        foreach (var cluster in candidate.Map.Clusters)
+            ValidateDistances(cluster.StationIds.Select(id => objects[id]).ToArray(), config.Clusters!, units);
+        double resourcePadding = Math.Max(200, (state.StationResourceFields?.Rules.OuterRadiusKm ?? 0) * 10);
+        var radii = candidate.Map.Clusters.Select(c =>
+        {
+            double r = objects[c.StationIds[0]].Orbit!.SemiMajorAxis;
+            var belt = state.SolarSystem!.Belts.Single(b => b.Id == c.BeltId);
+            if (r - resourcePadding < belt.InnerRadius || r + resourcePadding > belt.OuterRadius)
+                throw new ScenarioException("geography/v2: corrected start exceeds the human belt resource envelope.");
+            return r;
+        }).Order().ToArray();
+        for (int i = 1; i < radii.Length; i++)
+            if (radii[i] - radii[i - 1] < config.Clusters!.MinimumStationDays * units + 2 * resourcePadding)
+                throw new ScenarioException("geography/v2: corrected start violates reserved radial lanes.");
         player = objects[state.PlayerShipObjectId];
         double actual = double.Hypot(player.PositionX, player.PositionY);
         double tolerance = 1e-6 + actual * 1e-10;
@@ -49,6 +63,97 @@ internal static class StationGeographyV2
         world = world with { GameState = state };
         SolarSystemGeneration.ValidateWorld(state);
         return candidate with { World = world };
+    }
+
+    internal static ClusterGenerationResult Expand(ClusterGenerationResult first, ClusterGenerationConfig config,
+        GameDataRegistry registry, ulong seed, int attempt)
+    {
+        int count = SolarSystemGenerator.GeographyRng(seed, "cluster-count", 0).NextInt(config.MinClusters, config.MaxClusters + 1);
+        if (count == 1) return first;
+        var state = first.World.GameState;
+        var system = state.SolarSystem!;
+        var belt = system.Belts.Single(b => b.Id == first.Map.Clusters[0].BeltId);
+        var player = state.SpaceObjects.Single(o => o.ObjectId == state.PlayerShipObjectId);
+        var home = first.Map.Clusters[0].StationIds.Select(id => state.SpaceObjects.Single(o => o.ObjectId == id)).ToArray();
+        double units = first.Map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
+        double radius = home[0].Orbit!.SemiMajorAxis;
+        double padding = Math.Max(200, (state.StationResourceFields?.Rules.OuterRadiusKm ?? 0) * 10);
+        double laneSpacing = config.MinimumStationDays * units * 1.25 + 2 * padding;
+        var lanes = Enumerable.Range(1, count - 1).Select(i => radius + (i % 2 == 1 ? 1 : -1) * ((i + 1) / 2) * laneSpacing).ToArray();
+        if (new[] { radius }.Concat(lanes).Any(r => r - padding < belt.InnerRadius || r + padding > belt.OuterRadius))
+            throw new ScenarioException("geography/v2: human belt cannot fit separated radial lanes and resource envelopes.");
+        double centerX = home.Average(o => o.PositionX), centerY = home.Average(o => o.PositionY);
+        double centerRadius = double.Hypot(centerX, centerY);
+        double phase = Math.Atan2(centerX, -centerY);
+        double spacing = (config.InterclusterMinDays + config.InterclusterMaxDays) / 2 * units;
+        double phaseStep = 2 * Math.Asin(spacing / (2 * centerRadius));
+        if (!double.IsFinite(phaseStep)) throw new ScenarioException("geography/v2: cluster centers cannot fit the human belt.");
+        var clusters = first.Map.Clusters.ToBuilder();
+        var members = first.Map.Stations.ToBuilder();
+        var links = first.Map.Links.ToBuilder();
+        var objects = state.SpaceObjects.ToList();
+        var ids = objects.Select(o => o.ObjectId).ToHashSet(StringComparer.OrdinalIgnoreCase);
+        for (int index = 1; index < count; index++)
+        {
+            string id = $"CLUSTER-{index + 1}";
+            double r = lanes[index - 1], angle = phase + index * phaseStep;
+            var isolated = first.World with
+            {
+                GameState = state with
+                {
+                    TradingMap = null, TradingMapGeneration = null, ClusterMap = null, StationResourceFields = null,
+                    SpaceObjects = [.. state.SpaceObjects.Where(o => o.ObjectType != SpaceObjectType.Station).Select(o => o.ObjectId == player.ObjectId
+                        ? o with { PositionX = r * Math.Sin(angle), PositionY = -r * Math.Cos(angle), IsDocked = false, DockedStationObjectId = null } : o)]
+                }
+            };
+            ulong groupSeed = RngStreamSeedDerivation.DeriveStreamSeed(seed, $"station-clusters/v2/{id}");
+            var group = Place(isolated, config with { MinClusters = 1, MaxClusters = 1 }, registry, groupSeed, attempt);
+            var stations = group.World.GameState.SpaceObjects.Where(o => group.Map.Clusters[0].StationIds.Contains(o.ObjectId)).ToArray();
+            double centerPhase = Math.Atan2(stations.Average(s => s.PositionX), -stations.Average(s => s.PositionY));
+            stations = stations.Select(s =>
+            {
+                double p = ((s.Orbit!.InitialPhase + s.Orbit.PhaseOffsetDegrees) * Math.PI / 180 + angle - centerPhase);
+                double degrees = (p * 180 / Math.PI % 360 + 360) % 360;
+                return s with
+                {
+                    ObjectId = s.ObjectId.Replace("CLUSTER-1", id, StringComparison.Ordinal), Name = $"District {index + 1} {s.Name}",
+                    PositionX = r * Math.Sin(p), PositionY = -r * Math.Cos(p),
+                    Orbit = s.Orbit with { InitialPhase = (int)degrees, PhaseOffsetDegrees = degrees - (int)degrees }
+                };
+            }).ToArray();
+            foreach (var station in stations)
+                if (!ids.Add(station.ObjectId)) throw new ScenarioException($"geography/v2: generated ID collision {station.ObjectId}.");
+            string specialization = stations.GroupBy(s => s.MarketProfileId).OrderByDescending(g => g.Count()).ThenBy(g => g.Key, StringComparer.Ordinal).First().Key!;
+            clusters.Add(new(id, $"District {index + 1}", belt.Id, [.. stations.Select(s => s.ObjectId)], specialization));
+            members.AddRange(stations.Select(s => new ClusterStationData(s.ObjectId, id, s.MarketProfileId!)));
+            links.AddRange(group.Map.Links.Select(l => l with
+            {
+                Id = l.Id.Replace("CLUSTER-1", id, StringComparison.Ordinal),
+                FromStationId = l.FromStationId.Replace("CLUSTER-1", id, StringComparison.Ordinal), ToStationId = l.ToStationId.Replace("CLUSTER-1", id, StringComparison.Ordinal)
+            }));
+            objects.AddRange(stations);
+        }
+        var centers = clusters.Select(c =>
+        {
+            var stations = objects.Where(o => c.StationIds.Contains(o.ObjectId)).ToArray();
+            return (X: stations.Average(o => o.PositionX), Y: stations.Average(o => o.PositionY));
+        }).ToArray();
+        for (int i = 0; i < centers.Length; i++)
+        {
+            double nearest = centers.Where((_, j) => j != i).Min(c => double.Hypot(c.X - centers[i].X, c.Y - centers[i].Y)) / units;
+            if (nearest < config.InterclusterMinDays || nearest > config.InterclusterMaxDays)
+                throw new ScenarioException("geography/v2: initial cluster-center neighbour outside configured days.");
+        }
+        var world = first.World with
+        {
+            GameState = state with
+            {
+                SpaceObjects = [.. objects.OrderBy(o => o.ObjectId, StringComparer.Ordinal)],
+                SolarSystem = system with { Orbits = [.. objects.Where(o => o.Orbit is not null).OrderBy(o => o.ObjectId, StringComparer.Ordinal).Select(o => new OrbitMapData(o.ObjectId, o.Orbit!))] }
+            }
+        };
+        SolarSystemGeneration.ValidateWorld(world.GameState);
+        return new(world, first.Map with { Clusters = clusters.ToImmutable(), Stations = members.ToImmutable(), Links = links.ToImmutable() });
     }
 
     internal static ClusterGenerationResult Place(ScenarioFile source, ClusterGenerationConfig config,

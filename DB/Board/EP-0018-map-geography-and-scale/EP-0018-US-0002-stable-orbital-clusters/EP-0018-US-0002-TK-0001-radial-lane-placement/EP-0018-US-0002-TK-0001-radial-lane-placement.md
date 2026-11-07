@@ -5,7 +5,7 @@ ticket: EP-0018-US-0002-TK-0001-radial-lane-placement
 title: "Радиальные полосы и формации с доказуемым минимальным расстоянием"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0001-TK-0004-atomic-world-bootstrap]
@@ -87,3 +87,27 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Уточнение dependency gate — 2026-11-07
+Реальный Engine отверг multi-cluster candidate как disconnected до TK0002: существующий runtime routing требует межкластерные links. Поэтому этот геометрический тикет проверяет настоящий production SolarSystemGenerator→StationClusterGenerator→CompleteBootstrap до публикации, без mock/snapshot-подмены. Невозможный narrowbelt проверяется через live Engine atomic rejection. Полный runtime путь3–5кластеров и strong connectivity обязателен TK0002, затем story integration. Первый failed run сохраняется, не засчитываетсяPASS. Shippedv2 activation по-прежнему закрыта доUS4.
+
+## Фактическое исполнение — 2026-11-07
+
+Расширение v2 резервирует отдельный радиус на кластер, min gap>=minimumStationDays
+с запасом для ресурсов; source home сохраняется, дополнительные группы используют
+отдельные derived seeds. Count3–5, station10–12; initial center nearest30–50d.
+Одинаковый radius/period/epoch/direction сохраняет расстояния внутри формации;
+reverse triangle inequality |p-q|>=||p|-|q|| доказывает intercluster minimum при
+любых фазах. После start correction заново проверяются lanes и belt envelopes.
+При узком поясе конечная ошибка <=128attempts без тесного fallback.
+
+Final22/22focused (MultiClusterPlacementTests + Bootstrap/V2/LocalCluster) PASS;
+все3namedtests, boundary3/5×10/12, independent nearest/centers/radii, repeat seed,
+epoch0/1/30/365 и live atomic narrow rejection. Geometry candidate идёт через
+настоящий production pipeline; runtime graph integration остаётсяTK0002 как
+объяснено в dependency gate выше. Первые2FAIL сохраняются и не выдаются заPASS.
+Release Engine build0warnings/errors, scoped format3files, git diffcheck PASS.
+Self-review поC01/02/AC01–03 findings нет, независимого review нет. Native NOT RUN.
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-radial-lanes/
+(focused-verified.trx/log, build.log, format-engine.log, format-tests.log; исходный
+focused.trx/log/err содержит2integrationFAIL). Process-tree cap300000ms.

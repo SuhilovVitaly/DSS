@@ -7,6 +7,81 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class MultiClusterPlacementTests
 {
+    [Fact]
+    public void V2SweptLanesProveAllPhaseMinimum()
+    {
+        var candidate = V2Candidate(GenerationInputSchemaTests.V2Config() with
+        { Clusters = GenerationInputSchemaTests.V2Config().Clusters! with { MinClusters = 5, MaxClusters = 5, MinStations = 12, MaxStations = 12 } });
+        var state = candidate.World.GameState; var map = candidate.Map;
+        double units = map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
+        var radii = map.Clusters.Select(c => state.SpaceObjects.Single(o => o.ObjectId == c.StationIds[0]).Orbit!.SemiMajorAxis).Order().ToArray();
+        for (int i = 1; i < radii.Length; i++) Assert.True(radii[i] - radii[i - 1] >= units);
+        // Reverse triangle inequality: |p-q| >= ||p|-|q|| >= one day for all relative phases.
+        foreach (int days in new[] { 0, 1, 30, 365 })
+        {
+            var stations = state.SpaceObjects.Where(o => map.Stations.Any(s => s.ObjectId == o.ObjectId))
+                .Select(o => OrbitalMotionMath.At(new(o.ObjectId, o.PositionX, o.PositionY, 0, 0), o.Orbit!, days * 86400000L / 300)).ToArray();
+            for (int i = 0; i < stations.Length; i++)
+                for (int j = i + 1; j < stations.Length; j++) Assert.True(Distance(stations[i], stations[j]) / units >= 1 - 1e-9);
+        }
+    }
+
+    [Fact]
+    public void V2BoundaryClusterCountsKeepLocalNeighbours()
+    {
+        foreach (int count in new[] { 3, 5 })
+            foreach (int stationCount in new[] { 10, 12 })
+            {
+                var config = GenerationInputSchemaTests.V2Config() with
+                { Clusters = GenerationInputSchemaTests.V2Config().Clusters! with { MinClusters = count, MaxClusters = count, MinStations = stationCount, MaxStations = stationCount } };
+                var candidate = V2Candidate(config);
+                var state = candidate.World.GameState; var map = candidate.Map;
+                double units = map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
+                Assert.Equal(count, map.Clusters.Length);
+                Assert.Equal(JsonSerializer.Serialize(candidate), JsonSerializer.Serialize(V2Candidate(config)));
+                var centers = map.Clusters.Select(c =>
+                {
+                    var rows = state.SpaceObjects.Where(o => c.StationIds.Contains(o.ObjectId)).ToArray();
+                    return (X: rows.Average(o => o.PositionX), Y: rows.Average(o => o.PositionY));
+                }).ToArray();
+                for (int i = 0; i < centers.Length; i++) Assert.InRange(centers.Where((_, j) => i != j)
+                    .Min(c => double.Hypot(c.X - centers[i].X, c.Y - centers[i].Y)) / units, 30, 50);
+                foreach (var cluster in map.Clusters)
+                {
+                    var stations = state.SpaceObjects.Where(o => cluster.StationIds.Contains(o.ObjectId)).ToArray();
+                    Assert.Equal(stationCount, stations.Length);
+                    Assert.Single(stations.Select(o => o.Orbit!.SemiMajorAxis).Distinct());
+                    Assert.Single(stations.Select(o => o.Orbit!.OrbitalPeriodMs).Distinct());
+                    foreach (var a in stations) Assert.InRange(stations.Where(b => b.ObjectId != a.ObjectId)
+                        .Min(b => double.Hypot(a.PositionX - b.PositionX, a.PositionY - b.PositionY)) / units, 1, 3);
+                    var belt = state.SolarSystem!.Belts.Single(b => b.Id == cluster.BeltId);
+                    Assert.All(stations, s => Assert.InRange(s.Orbit!.SemiMajorAxis, belt.InnerRadius + 45, belt.OuterRadius - 45));
+                }
+            }
+    }
+
+    private static ClusterGenerationResult V2Candidate(SolarSystemGenerationConfig config)
+    {
+        var source = SeededWorldBootstrapTests.Scenario();
+        var registry = SeededWorldBootstrapTests.Registry();
+        var solar = SolarSystemGenerator.Generate(source, config, registry, 42);
+        var candidate = StationClusterGenerator.Generate(solar, config.Clusters!, registry, 42);
+        return StationGeographyV2.CompleteBootstrap(source, candidate, config, registry, 42);
+    }
+
+    [Fact]
+    public void V2NarrowBeltFailsWithinAttemptBudget()
+    {
+        using var engine = StationGeographyBootstrapTests.Create();
+        string before = ScenarioLoader.Serialize(engine.CaptureSaveState());
+        var source = SeededWorldBootstrapTests.Scenario("PlayerShipOnly");
+        var config = GenerationInputSchemaTests.V2Config() with { BeltWidthFraction = 0.0001 };
+        var error = Assert.Throws<ScenarioException>(() => engine.LoadScenario(source, generation: config));
+        Assert.Contains("attempts=128", error.Message);
+        Assert.Contains("radial lanes", error.Message);
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
     internal static SimulationEngine Create(int clusters = 3, int stations = 10, ulong seed = 42)
     {
         var engine = new SimulationEngine(SeededWorldBootstrapTests.Registry());

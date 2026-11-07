@@ -29,7 +29,7 @@ internal static class StationClusterGenerator
         {
             if (source.GameState.SolarSystem?.GeneratorVersion == 2)
             {
-                try { return StationGeographyV2.Place(source, config, registry, seed, attempt); }
+                try { return StationGeographyV2.Expand(StationGeographyV2.Place(source, config, registry, seed, attempt), config, registry, seed, attempt); }
                 catch (ScenarioException ex) { reason = ex.Message; }
                 continue;
             }
