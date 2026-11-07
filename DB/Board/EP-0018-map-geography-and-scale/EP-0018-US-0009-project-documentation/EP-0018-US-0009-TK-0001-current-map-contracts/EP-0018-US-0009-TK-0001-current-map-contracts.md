@@ -75,3 +75,20 @@ Production-файлы вне Code context, изменения чужого сл�
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Scope исполнения — 2026-11-07
+
+Прямое поручение исполнить эпик по разделу6 EpicExecutionPrompt.md расширяет
+первоначальные allowlists документационных тикетов. История выполняется последней.
+В TK-0001 входят все релевантные текущие Markdown-контракты, включая screen/mechanics
+карты, settings, architecture/config/scenario/save guides, найденные итоговым diff.
+TK-0002 ведёт DocumentationImpact.md: полный inventory по всему репозиторию
+(document → change → required update → observed check), включая README, документы
+возле src/tests/tools/content/assets и значимые комментарии. TK-0003 актуализирует
+найденные вне Documentation руководства/README и navigation, затем обновляет
+offline граф через tools/graphify/rebuild.py; output/semantic/cache только в
+абсолютном workspace artifacts/validation/ep-0018-map-geography-and-scale/<run>/.
+Новые scope paths определяются inventory перед изменением и записываются в карточке.
+Граф строится после финального кода/текстов; fresh hashes/coverage/limitations
+проверяются, исторический src/graphify-out не заменяется. Пять файлов исходного
+planning не ограничивают обязательный inventory/документацию всего проекта.
