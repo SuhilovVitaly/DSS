@@ -111,11 +111,20 @@ internal sealed class TacticalBattleForecastTab
         {
             var estimate = PredictFire(frame.Battle, plan);
             text.AppendLine(L("Forecast.FireNotice"));
-            ListShots(text, L("Forecast.Outgoing"), estimate.Outgoing, FormatFire);
-            text.AppendLine(F("Forecast.Total", BattleFormat.Number(estimate.Outgoing.Sum(s => s.ExpectedDamage), 1)));
-            text.AppendLine();
-            ListShots(text, L("Forecast.Incoming"), estimate.Incoming, FormatFire);
-            text.AppendLine(F("Forecast.Total", BattleFormat.Number(estimate.Incoming.Sum(s => s.ExpectedDamage), 1)));
+            text.AppendLine(L("FireConditional")).AppendLine().AppendLine(L("FireQueue"));
+            var planned = estimate.Outgoing.Concat(estimate.Incoming).ToArray();
+            if (frame.Battle.FireQueue.IsDefaultOrEmpty) text.AppendLine(L("FireNoTarget"));
+            foreach (var entry in frame.Battle.FireQueue)
+            {
+                var shot = planned.FirstOrDefault(s => s.Shooter == entry.ShooterId);
+                text.Append(BattleFormat.Number(entry.Index + 1)).Append(". ")
+                    .Append(shot is null ? entry.ShooterId + " → " + L("FireNoTarget") : FormatFire(shot))
+                    .Append(" · ").AppendLine(F("Initiative", BattleFormat.Number(entry.Initiative)));
+            }
+            text.AppendLine().Append(L("Forecast.Outgoing")).Append(" · ")
+                .AppendLine(F("Forecast.Total", BattleFormat.Number(estimate.Outgoing.Sum(s => s.ExpectedDamage), 1)));
+            text.Append(L("Forecast.Incoming")).Append(" · ")
+                .AppendLine(F("Forecast.Total", BattleFormat.Number(estimate.Incoming.Sum(s => s.ExpectedDamage), 1)));
         }
         else if (frame.Salvo is { } salvo)
         {

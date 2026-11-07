@@ -10,6 +10,45 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class FirePlanningTests
 {
     [Fact]
+    public async Task FirePlanningDisplaysEngineQueueAcrossBothSides()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var battle = screen.Flow.State! with
+        {
+            FireQueue = [new(0, "A80", 80), new(1, "B60", 60), new(2, "A40", 40), new(3, "B0", 0)]
+        };
+        string text = TacticalBattleFirePanel.QueueText(battle);
+        Assert.Contains("1. A80", text);
+        Assert.Contains("2. B60", text);
+        Assert.Contains("3. A40", text);
+        Assert.Contains("4. B0", text);
+        Assert.True(text.IndexOf("B60", StringComparison.Ordinal) < text.IndexOf("A40", StringComparison.Ordinal));
+        Assert.Contains(string.Format(System.Globalization.CultureInfo.InvariantCulture, BattleFormat.Localize("Initiative"), 0), text);
+        // The client must preserve the supplied tie order, even if alphabetical order differs.
+        Assert.StartsWith(BattleFormat.Localize("FireQueue") + "\n1. Z", TacticalBattleFirePanel.QueueText(battle with { FireQueue = [new(0, "Z", 50), new(1, "A", 50)] })
+, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public async Task QueueDoesNotChangeWithSelectionWindowOrSkin()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        string expected = TacticalBattleFirePanel.QueueText(screen.Flow.State!);
+        using var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        foreach (string skin in new[] { "classic", "contrast" })
+        {
+            var themed = new TacticalBattleScreen(screen.Flow, 1.5f, skins.GetOrClassic(skin));
+            using var bitmap = new SKBitmap(1024, 768);
+            using var canvas = new SKCanvas(bitmap);
+            themed.Render(canvas, 1024, 768);
+            themed.OnKeyDown(Key.Tab);
+            Assert.Equal(expected, TacticalBattleFirePanel.QueueText(themed.CaptureFrame(1024, 768)!.Battle));
+        }
+    }
+
+    [Fact]
     public async Task Fire_panel_skin_changes_selection_and_popup_pixels_without_changing_target()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
