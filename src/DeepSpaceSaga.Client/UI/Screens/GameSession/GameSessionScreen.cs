@@ -52,7 +52,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// from it.
     /// </summary>
     private float _uiScale = 1.0f;
-    private static readonly float[] AllowedUiScales = { 0.8f, 1.0f, 1.2f, 1.5f };
+    private static readonly float[] AllowedUiScales = { 0.8f, 1.0f, 1.2f, 1.5f, 2.0f };
 
     // Object paints
     private readonly SKPaint _trailPaint;

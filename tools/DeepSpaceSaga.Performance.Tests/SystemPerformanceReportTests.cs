@@ -13,7 +13,8 @@ public sealed class SystemPerformanceReportTests
     [Fact]
     public void ReportHasReproductionAndBackend()
     {
-        string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
+        string directory = V2MapAcceptanceReportTests.NewDirectory();
+        string path = Path.Combine(directory, "report.json");
         try
         {
             string originalDirectory = Directory.GetCurrentDirectory();
@@ -34,23 +35,42 @@ public sealed class SystemPerformanceReportTests
                 Assert.True(row.GetProperty("p99Ms").GetDouble() > 0);
             });
         }
-        finally { File.Delete(path); }
+        finally { Directory.Delete(directory, true); }
     }
     [Fact]
     public void InvalidConfigReturnsFailure()
     {
-        string path = Path.Combine(Path.GetTempPath(), Guid.NewGuid() + ".json");
+        string directory = V2MapAcceptanceReportTests.NewDirectory();
+        string path = Path.Combine(directory, "report.json");
         try
         {
             var start = new ProcessStartInfo("dotnet") { RedirectStandardError = true, UseShellExecute = false, CreateNoWindow = true };
             foreach (string argument in new[] { typeof(SolarMapEvidence).Assembly.Location, Root, path, "--solar-map", "--config", "invalid" })
                 start.ArgumentList.Add(argument);
             using var process = Process.Start(start)!;
-            Assert.True(process.WaitForExit(30000));
+            if (!process.WaitForExit(30000)) { process.Kill(true); Assert.Fail("Tool timed out."); }
             Assert.Equal(1, process.ExitCode);
             using var json = JsonDocument.Parse(File.ReadAllText(path));
             Assert.Equal("failed", json.RootElement.GetProperty("status").GetString());
         }
-        finally { File.Delete(path); }
+        finally { Directory.Delete(directory, true); }
+    }
+
+    [Fact]
+    public void V2ReportKeepsNativeAndRasterMetricsSeparate()
+    {
+        string directory = V2MapAcceptanceReportTests.NewDirectory();
+        try
+        {
+            string path = Path.Combine(directory, "report.json");
+            Assert.Equal(0, V2MapAcceptance.Run(V2MapAcceptanceReportTests.Arguments(path)));
+            var json = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(path))!;
+            Assert.Equal("not-measured", json["presentation"]!["status"]!.GetValue<string>());
+            Assert.Equal("CPU/Skia raster", json["backend"]!.GetValue<string>());
+            json["presentation"]!["status"] = "passed";
+            File.WriteAllText(path, json.ToJsonString());
+            Assert.False(V2MapAcceptance.Validate(path, out _));
+        }
+        finally { Directory.Delete(directory, true); }
     }
 }

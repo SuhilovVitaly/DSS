@@ -40,6 +40,20 @@ if (args.Contains("--solar-window"))
     return;
 }
 
+if (args.Length == 3 && args[2] == "--validate-map-v2-report")
+{
+    bool valid = V2MapAcceptance.Validate(args[1], out string error);
+    if (!valid) Console.Error.WriteLine(error);
+    Environment.ExitCode = valid ? 0 : 1;
+    return;
+}
+
+if (args.Contains("--map-v2-acceptance"))
+{
+    Environment.ExitCode = V2MapAcceptance.Run(args);
+    return;
+}
+
 if (args.Contains("--solar-map"))
 {
     Environment.ExitCode = SolarMapEvidence.Run(args);

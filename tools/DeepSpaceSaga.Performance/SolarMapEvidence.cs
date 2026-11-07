@@ -40,6 +40,21 @@ public static class SolarMapEvidence
             string settings = Path.Combine(client, "Settings.json");
             var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settings, out _, out _);
             var config = EngineContentLoader.LoadSolarSystemGenerationConfig(settings)!;
+            // This command is the historical v1 measurement contract. V2 has its own report.
+            config = config with
+            {
+                GeneratorVersion = 1,
+                BeltWidthFraction = .08,
+                Clusters = config.Clusters is null ? null : config.Clusters with
+                {
+                    NeighbourMinDays = .5,
+                    NeighbourMaxDays = 2,
+                    DiameterMinDays = 3,
+                    DiameterMaxDays = 7,
+                    InterclusterMinDays = 15,
+                    InterclusterMaxDays = 35
+                }
+            };
             bool clusters = args.Contains("--clusters");
             bool aiPlacement = args.Contains("--ai-placement");
             bool allMapLayers = args.Contains("--all-map-layers");
