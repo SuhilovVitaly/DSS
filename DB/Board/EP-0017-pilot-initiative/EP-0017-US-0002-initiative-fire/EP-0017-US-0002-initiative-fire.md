@@ -74,3 +74,7 @@ Engine владеет исходами и RNG; Client показывает по�
 - 2026-11-07T13:29:05Z — время записи ответа пользователя на индивидуальный review: «утверждаю». Утверждены US-0002 и явно показанные правила пропуска при выбытии цели, пропуска при заклинивании и немедленной остановки при победе. Критерии уточнены согласно представленным правилам; реализация ещё не принята.
 
 - 2026-11-07T13:42:39Z — ticket map и пять тикетов утверждены workflow без отдельных вопросов. Пользовательское approval истории сохранено; детализация не меняет согласованные D-решения.
+
+## Execution progress — 2026-11-07
+
+Пять тикетов реализованы и automated-проверены. Все AC покрыты hand cases, frozen targets/skips, exact RNG ownership, chronological immutable session payload, receipt rejection/replay, direct/API/connection parity,421 tactical regression cases и5000 paired seeded battles. Исторические V4 outcomes не изменены; новый баланс не принят. Native/product UI gates остаются в US-0003/финальной приёмке.

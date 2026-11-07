@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0002-initiative-fire
 ticket: EP-0017-US-0002-TK-0005-initiative-regression
 title: "Независимые сценарии новой механики и замена старой parity-приёмки"
-stage: approved
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0017-US-0002-TK-0004-session-fire-timeline]
@@ -132,3 +132,11 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Historical V4 battle rows используются только как набор seed/tactic inputs; старые simultaneous totals/trace не перезаписывались. Новые ручные kill/disable/jam/armor/no-retarget/miss cases имеют заранее заданные Hull/Shot ожидания и отдельный минимальный oracle без Salvo/CheckVictory/Engine math. Seeded tie oracle закреплён в FireOrderTests. Полные бои сравниваются точно direct/explicit/API/connection по результату, статистике, units, RNG; очередь/индексы/останавливающие шаги и накопленные фактические shot/hit/hull/armor проверяются по ходу. Это determinism/parity, не независимый oracle общего AI.
+
+Реальная запись/загрузка Save20 и запрет Save на Move/Fire/Over проверены LocalSessionBattleTests; fixtures перенесены из OS temp в DSS_VALIDATION_ROOT с проверкой cleanup boundaries. Все5 series запускаются отдельно по exact IDs и cap300000ms. На каждой1000 seed проверено exact direct/explicit совпадение итоговых полных состояний и statistics/RNG; signatures SHA256 сохранены.
+
+Focused Golden/LocalSession PASS185/185; TacticalBattle regression Category!=LongRunning PASS421/421; Dogfight/Raid/Defence/Balanced/Commander PASS по1000 seeds каждая, процессы8–10s. Наблюдаемые W/L:976/24,853/147,949/51,958/42,976/23 (Commander1 timeout). Баланс/product не принят по этим числам. Engine build, scoped format/verify и git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0205/ — focused.trx, tactical-regression.trx, пять series TRX/signatures, series-summary.md, logs. Self-review выполнено; независимое review не заявляется. Scope дополнен этой карточкой и прогрессом истории. Native UI принадлежит US-0003.

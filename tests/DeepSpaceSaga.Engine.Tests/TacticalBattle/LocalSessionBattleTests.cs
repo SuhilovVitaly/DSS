@@ -18,15 +18,15 @@ public sealed class LocalSessionBattleTests
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public async Task EveryIndependentBattleThroughConnectionMatchesInBothOrderModes(int seed, string tactic, int index)
+    public async Task NewRuleBattlesRepeatAcrossDirectAndConnectionPaths(int seed, string tactic, int index)
     {
-        var expected = Rows[index];
-        var implicitFinal = await Run(seed, tactic, expected, explicitOrders: false);
-        var explicitFinal = await Run(seed, tactic, expected, explicitOrders: true);
+        Assert.Equal(seed, Rows[index].GetProperty("seed").GetInt32()); // corpus identity only
+        var implicitFinal = await Run(seed, tactic, explicitOrders: false);
+        var explicitFinal = await Run(seed, tactic, explicitOrders: true);
         Assert.Equal(JsonSerializer.Serialize(implicitFinal), JsonSerializer.Serialize(explicitFinal));
     }
 
-    private static async Task<TacticalBattleSnapshot> Run(int seed, string tactic, JsonElement expected, bool explicitOrders)
+    private static async Task<TacticalBattleSnapshot> Run(int seed, string tactic, bool explicitOrders)
     {
         var engine = new SimulationEngine(GameDataRegistry.Create([], [], [], [], tacticalBattle: Availability.Available(Catalog.Value)));
         engine.SetSpeed(SimulationSpeed.Speed0);
@@ -37,8 +37,8 @@ public sealed class LocalSessionBattleTests
         int command = 0;
         while (frame.Phase != TacticalBattlePhase.Over)
         {
-            Assert.True(command <= expected.GetProperty("turns").GetInt32() * 2,
-                $"seed={seed}, tactic={tactic}, explicit={explicitOrders}: exceeded independent turn count");
+            Assert.True(command <= Catalog.Value.Rules.SeriesTurnCap * 2,
+                $"seed={seed}, tactic={tactic}, explicit={explicitOrders}: exceeded new-rule safety turn cap");
             long calls = engine.TacticalBattleSessionForTests!.Battle.Random.Calls;
             string before = JsonSerializer.Serialize(frame);
             Assert.Equal(before, JsonSerializer.Serialize(await connection.GetTacticalBattleStateAsync()));
@@ -47,28 +47,13 @@ public sealed class LocalSessionBattleTests
             Assert.True(response.Accepted, $"seed={seed}, tactic={tactic}, explicit={explicitOrders}: {response.Code}");
             frame = response.State!;
         }
-        var outcome = frame.Outcome!;
-        Assert.Equal(expected.GetProperty("outcome").GetString(), outcome.Kind.ToString().ToUpperInvariant());
-        Assert.Equal(expected.GetProperty("turns").GetInt32(), outcome.Turns);
-        for (int i = 0; i < 2; i++)
-        {
-            string side = i == 0 ? "A" : "B";
-            Assert.Equal(expected.GetProperty("losses")[i].GetInt32(), outcome.Losses[i].Count);
-            Assert.Equal(side, outcome.Losses[i].Side);
-            Assert.Equal(expected.GetProperty("carrierHull")[i].GetInt32(),
-                frame.Units.First(u => u.Side == side && u.Kind == TacticalUnitKind.Carrier).Hull);
-        }
-        Assert.Equal(expected.GetProperty("shots").GetInt64(), outcome.Statistics.Shots);
-        Assert.Equal(expected.GetProperty("hits").GetInt64(), outcome.Statistics.Hits);
-        Assert.Equal(expected.GetProperty("rearHits").GetInt64(), outcome.Statistics.RearHits);
-        Assert.Equal(expected.GetProperty("systems").GetInt64(), outcome.Statistics.Systems);
-        Assert.Equal(expected.GetProperty("disabled").GetInt64(), outcome.Statistics.Disabled);
-        Assert.Equal(expected.GetProperty("totalCalls").GetInt64(), outcome.RandomCalls);
-        Assert.Equal(expected.GetProperty("turnCalls").GetInt64(), outcome.RandomCalls - expected.GetProperty("assemblyCalls").GetInt64());
-        var reason = Assert.Single(outcome.Reasons);
-        Assert.Equal(expected.GetProperty("reason").GetProperty("kind").GetString(), reason.Kind.ToString());
-        string defeatedSide = expected.GetProperty("reason").GetProperty("side").GetString()!;
-        Assert.Equal(frame.Units.First(u => u.Side == defeatedSide && u.Kind == TacticalUnitKind.Carrier).Id, reason.CarrierId);
+        var direct = GoldenBattleTests.Run(Catalog.Value, seed, tactic, false);
+        Assert.Equal(JsonSerializer.Serialize(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSnapshotBuilder.Outcome(direct.Result)),
+            JsonSerializer.Serialize(frame.Outcome));
+        Assert.Equal(JsonSerializer.Serialize(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSnapshotBuilder.Units(direct)),
+            JsonSerializer.Serialize(frame.Units));
+        Assert.Equal(frame.FireQueue.Length, frame.FireSteps.Length);
+        Assert.Equal(frame.Log.Select(e => e.Sequence).Distinct().Count(), frame.Log.Length);
         Assert.True((await connection.ExitTacticalBattleAsync(new("exit", frame.BattleId))).Accepted);
         Assert.Null(await connection.GetTacticalBattleStateAsync());
         return frame;
@@ -86,7 +71,7 @@ public sealed class LocalSessionBattleTests
     [InlineData(TacticalBattlePhase.Over)]
     public async Task RealWorldConnectionRejectsSaveAtEveryActivePhaseAndRestoresItOnExit(TacticalBattlePhase phase)
     {
-        string directory = Path.Combine(Path.GetTempPath(), "session-battle-save-" + Guid.NewGuid().ToString("N"));
+        string directory = ValidationDirectory("session-battle-save");
         try
         {
             var engine = RealEngine();
@@ -111,14 +96,19 @@ public sealed class LocalSessionBattleTests
             Assert.Equal(originalWorld, ScenarioLoader.Serialize(engine.CaptureSaveState()));
             await connection.SaveAsync("after");
             Assert.Equal(originalSlot, await File.ReadAllBytesAsync(Path.Combine(directory, "after.json")));
+            string root = Path.GetFullPath(Path.Combine(ReferenceFixtureTests.Root, "../../../.."));
+            using var loaded = EngineContentLoader.CreateEngineFromSaveFile(Path.Combine(root, "src/DeepSpaceSaga.Client/Settings.json"),
+                Path.Combine(directory, "after.json"));
+            Assert.Equal(originalWorld, ScenarioLoader.Serialize(loaded.CaptureSaveState()));
+            Assert.False(loaded.IsTacticalBattleActive);
         }
-        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+        finally { DeleteValidationDirectory(directory); }
     }
 
     [Fact]
     public async Task SaveQueuedBeforeBattleChecksActiveStateWhenItAcquiresCaptureGate()
     {
-        string directory = Path.Combine(Path.GetTempPath(), "queued-battle-save-" + Guid.NewGuid().ToString("N"));
+        string directory = ValidationDirectory("queued-battle-save");
         try
         {
             await using var connection = new LocalGameSessionConnection(RealEngine(), directory);
@@ -136,7 +126,21 @@ public sealed class LocalSessionBattleTests
                 (await Assert.ThrowsAsync<InvalidOperationException>(() => pending)).Message);
             Assert.False(Directory.Exists(directory));
         }
-        finally { if (Directory.Exists(directory)) Directory.Delete(directory, true); }
+        finally { DeleteValidationDirectory(directory); }
+    }
+
+    private static string ValidationRoot => Path.GetFullPath(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")
+        ?? "D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/local-session");
+    private static string ValidationDirectory(string name)
+    {
+        Directory.CreateDirectory(ValidationRoot);
+        return Path.Combine(ValidationRoot, name + "-" + Guid.NewGuid().ToString("N"));
+    }
+    private static void DeleteValidationDirectory(string directory)
+    {
+        if (!Path.GetFullPath(directory).StartsWith(ValidationRoot + Path.DirectorySeparatorChar, StringComparison.Ordinal))
+            throw new InvalidOperationException("Cleanup escaped validation root.");
+        if (Directory.Exists(directory)) Directory.Delete(directory, true);
     }
 
     private static SimulationEngine RealEngine()
