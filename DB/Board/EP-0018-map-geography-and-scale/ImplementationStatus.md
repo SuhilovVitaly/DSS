@@ -90,3 +90,12 @@ rejection остаётся проверенным. Следующий тикет
 integration3–5кластеров и strong directed connectivity/cargo, до storyclosure.
 Минимум при любых фазах доказан аналитически через радиусы, samples0/1/30/365 —
 дополнительная проверка. После публикации этого тикета останется24тикета.
+## Trading graph — US0002TK0002
+
+RadialTK0001 опубликован9efe2cb75f190be1531e34feb312d713b08aec25, exactremoteSHA PASS.
+GraphTK0002 локально завершён:25/25focused, build0warnings/errors, scopedformat/diff
+PASS. Live3/5cluster Engine integration и strong directed reachability подтвердили
+закрытие предыдущей runtime graph зависимости. Every multi-cluster station>=2outbound.
+Evidence20261107-cluster-graph/focused-final.trx/log, build/format logs.
+Следующийтикет — US0002TK0003AI/environment/POI integration. После этой публикации
+будет6/29тикетов и23остаётся; story1 compatibility и story2 итоговые gates ещё открыты.

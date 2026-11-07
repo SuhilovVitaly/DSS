@@ -5,7 +5,7 @@ ticket: EP-0018-US-0002-TK-0002-cluster-link-graph
 title: "Торговые направления на новой географии без коротких исключений"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0002-TK-0001-radial-lane-placement]
@@ -87,3 +87,29 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Фактическое исполнение — 2026-11-07
+
+V2 BuildGraph использует одинаковую distance eligibility1–3d для всех локальных
+stationIDs, без preserved исключения. Между соседними по ordinal cluster-index
+районами строятся только supply/demand-compatible направления (пустые только от
+transit); graph проверяется на strong forward/reverse reachability и>=2cycles.
+В multi-cluster мире каждый участник имеет>=2outbound directions и producer consumer.
+После final start correction граф заново строится по финальной геометрии.
+
+Техническое уточнение: два исходящих направления проверяются по всей торговой сети,
+не обязательно двум локальным покупателям. В изолированной1cluster fixture допускается
+1outbound с strong reachability: фиксированный sourceID порядок и min1d могут давать
+scientific producer только одного локального consumer. Shipped3–5clusters имеют>=2,
+это не ослабление min или cargo eligibility. При несовместимых ролях placement
+повторяется в прежнем bounded128budget, без добавления фиктивного cargo/shortcut.
+
+25/25focusedPASS: все3namedtests + radial/bootstrap/v2/v1cluster regressions.
+Live Engine3/5clusters seeds1/2/42, deterministic repeat, directed BFS от каждой
+станции, current voyage map, independent profile intersection и no old-ID exemption.
+Это закрывает runtime dependency, выявленную предыдущим radial тикетом.
+Release Engine build0warnings/errors, scopedformat3files, diffcheckPASS.
+Self-review C01/04/AC01/03 без findings; независимого review нет; Native NOT RUN.
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-cluster-graph/
+(focused-final.trx/log, build.log, format-engine.log, format-tests.log).
+cap300000ms; временныеscripts/slots/worktrees отсутствуют.

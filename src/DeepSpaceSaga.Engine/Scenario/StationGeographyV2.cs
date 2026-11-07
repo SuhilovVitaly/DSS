@@ -62,7 +62,54 @@ internal static class StationGeographyV2
         }
         world = world with { GameState = state };
         SolarSystemGeneration.ValidateWorld(state);
-        return candidate with { World = world };
+        return BuildGraph(candidate with { World = world }, config.Clusters!, registry);
+    }
+
+    internal static ClusterGenerationResult BuildGraph(ClusterGenerationResult candidate, ClusterGenerationConfig config, GameDataRegistry registry)
+    {
+        var map = candidate.Map;
+        var memberById = map.Stations.ToDictionary(s => s.ObjectId, StringComparer.Ordinal);
+        var indices = map.Clusters.Select((c, i) => (c.Id, i)).ToDictionary(c => c.Id, c => c.i, StringComparer.Ordinal);
+        double units = map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
+        var stations = candidate.World.GameState.SpaceObjects.Where(o => memberById.ContainsKey(o.ObjectId)).ToArray();
+        var links = StationClusterGenerator.BuildLinks(stations, registry, (a, b) =>
+        {
+            string ca = memberById[a.ObjectId].ClusterId, cb = memberById[b.ObjectId].ClusterId;
+            if (ca != cb) return Math.Abs(indices[ca] - indices[cb]) == 1;
+            double distance = double.Hypot(a.PositionX - b.PositionX, a.PositionY - b.PositionY);
+            double tolerance = 1e-6 + distance * 1e-10;
+            return distance + tolerance >= config.NeighbourMinDays * units && distance - tolerance <= config.NeighbourMaxDays * units;
+        });
+        var result = candidate with { Map = map with { Links = links } };
+        ValidateGraph(result.Map, registry);
+        return result;
+    }
+
+    internal static void ValidateGraph(StationClusterMapSnapshot map, GameDataRegistry registry)
+    {
+        foreach (var station in map.Stations)
+        {
+            var outbound = map.Links.Where(l => l.FromStationId == station.ObjectId).ToArray();
+            var profile = registry.StationMarketProfiles.GetDefinition(registry.StationMarketProfiles.GetIndex(station.MarketProfileId));
+            int minimumDirections = map.Clusters.Length > 1 ? 2 : 1;
+            if (outbound.Length < minimumDirections || !profile.SupplyItemTypeIds.IsEmpty && outbound.All(l => l.ItemTypeIds.IsEmpty))
+                throw new ScenarioException($"geography/v2: station {station.ObjectId} has no eligible outbound consumer/return direction.");
+        }
+        foreach (bool reverse in new[] { false, true })
+        {
+            var seen = new HashSet<string>(StringComparer.Ordinal) { map.Stations[0].ObjectId };
+            var queue = new Queue<string>(); queue.Enqueue(map.Stations[0].ObjectId);
+            while (queue.TryDequeue(out string? id))
+                foreach (var link in map.Links.Where(l => (reverse ? l.ToStationId : l.FromStationId) == id))
+                {
+                    string next = reverse ? link.FromStationId : link.ToStationId;
+                    if (seen.Add(next)) queue.Enqueue(next);
+                }
+            if (seen.Count != map.Stations.Length) throw new ScenarioException("geography/v2: trading graph has no outbound/return path.");
+        }
+        int pairs = map.Links.Select(l => string.CompareOrdinal(l.FromStationId, l.ToStationId) < 0
+            ? (l.FromStationId, l.ToStationId) : (l.ToStationId, l.FromStationId)).Distinct().Count();
+        if (pairs - map.Stations.Length + 1 < 2) throw new ScenarioException("geography/v2: fewer than two independent trading cycles.");
     }
 
     internal static ClusterGenerationResult Expand(ClusterGenerationResult first, ClusterGenerationConfig config,
