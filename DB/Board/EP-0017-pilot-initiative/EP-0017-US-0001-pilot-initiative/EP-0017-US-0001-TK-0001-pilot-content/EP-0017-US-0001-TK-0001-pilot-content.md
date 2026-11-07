@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0001-pilot-initiative
 ticket: EP-0017-US-0001-TK-0001-pilot-content
 title: "Инициатива пилотов и тексты нового правила в поставляемых данных"
-stage: approved
+stage: done
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
@@ -127,3 +127,11 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Реализованы D-09 значения всех десяти пилотов и 11 пар ключей RU/EN; два новых теста проверяют независимые значения и placeholders. Дополнительный scope: эта карточка и исправление завершающих пустых строк Documentation.md/Tickets.md после подготовительной записи. Legacy поля и порядок пилотов, старые строки локалей и SetupSkills не изменены (content-review.txt). Review выполнено самим исполнителем, независимое review не заявляется.
+
+Проверки: Client build --no-restore -m:1 -nr:false PASS, 0 warnings/errors; ContentDataTests PASS 4/4; dotnet format Client.Tests --verify-no-changes --no-restore --include ContentDataTests.cs PASS; git diff --check PASS. Исполняемый .NET: C:/Program Files/dotnet/dotnet.exe. Обычная sandbox сборка отказала без диагностики; elevated повтор PASS. Команды, stdout/stderr и focused.trx: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0101-elevated/.
+
+Native/product NOT RUN: content-only тикет ещё не включает Engine loader/runtime/UI; эти границы принадлежат следующим тикетам. До TK-0003 новый pilots.json ожидаемо ещё не поддерживается старым loader; это dependency промежуточного состояния, не завершённая US-0001.
