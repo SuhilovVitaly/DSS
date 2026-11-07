@@ -5,7 +5,7 @@ ticket: EP-0018-US-0005-TK-0001-local-view-policy
 title: "Чистая политика локального охвата и максимального приближения"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0001-TK-0001-geography-descriptor]
@@ -87,3 +87,6 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution evidence
+2026-11-07: pure MaximumPpu=max(baseline,short-side/4h,diagonal/.95d), device pixels only, explicit configurable reference4/maxLocalHours4. Reference normalization rejects nonfinite/nonpositive/numerically unrepresentable spans, including subnormal/overflow; invalid viewport returns baseline. Viewports4:3 through32:9 and int.MaxValue, speeds2/4 cover finite extent and diagonal strict<1d. Focused-final17/17 PASS; Release Client build, scoped client/test format checks and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-local-policy/{focused-final.trx,build.log,format-client.log,format-tests.log}. Camera integration follows TK0002; no Engine call/world mutation. Self-review complete.

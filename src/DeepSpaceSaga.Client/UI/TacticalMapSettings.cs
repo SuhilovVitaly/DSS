@@ -10,6 +10,8 @@ public sealed record TacticalMapSettings
     public const double AstronomicalUnitKm = 149_597_870.7;
     public double[] MetersPerPixel { get; init; } = [100, 1000, 100_000, 1_000_000, 10_000_000];
     public double MinimumPpu { get; init; } = 1e-12;
+    public double ReferenceSpeedKmS { get; init; } = 4;
+    public double MaxLocalHours { get; init; } = 4;
     public double WheelFactor { get; init; } = 1.25;
     public double WheelUnitsPerStep { get; init; } = 1;
     // Zero is useful for reduced motion and deterministic callers; shipped Settings.json uses 120 ms.
@@ -33,6 +35,7 @@ public sealed record TacticalMapSettings
         if (MetersPerPixel is not { Length: 5 } || MetersPerPixel.Any(m => !InRange(m, 10, 1e12)) ||
             MetersPerPixel.Zip(MetersPerPixel.Skip(1)).Any(p => p.First >= p.Second) ||
             !InRange(MinimumPpu, 1e-15, MetersPerWorldUnit / MetersPerPixel[^1]) ||
+            !InRange(ReferenceSpeedKmS, .001, 1e6) || !InRange(MaxLocalHours, .01, 4) ||
             !InRange(WheelFactor, 1.01, 4) || !InRange(WheelUnitsPerStep, .01, 120) ||
             !InRange(ZoomAnimationMs, 0, 500) || !InRange(LabelDetailPpu, MinimumPpu, MaximumPpu) ||
             !InRange(CompactMarkerPpu, MinimumPpu, LabelDetailPpu) || !InRange(ClusterPpu, MinimumPpu, CompactMarkerPpu) ||
