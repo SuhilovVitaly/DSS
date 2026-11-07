@@ -137,7 +137,7 @@ internal sealed class TacticalBattleForecastTab
                 text.AppendLine(F("Forecast.ShotResult", shot.ShooterId, shot.TargetId, BattleFormat.Probability(shot.Chance), result));
             }
             text.AppendLine().AppendLine(L("Forecast.TargetResults"));
-            if (salvo.InFlight) text.AppendLine(BattleFormat.Text("…"));
+            if (salvo.InFlight && salvo.Damage.IsEmpty) text.AppendLine(BattleFormat.Text("…"));
             else if (salvo.Damage.IsEmpty) text.AppendLine(L("Forecast.None"));
             else foreach (var damage in salvo.Damage)
             {
@@ -152,7 +152,7 @@ internal sealed class TacticalBattleForecastTab
         return text.ToString().TrimEnd();
     }
 
-    private static bool HasArrived(TacticalShotFlight shot) => shot.ElapsedMs >= shot.LaunchMs + TacticalBattleResults.FlightMs;
+    private static bool HasArrived(TacticalShotFlight shot) => shot.Arrived;
 
     private static void ListShots(StringBuilder text, string title, ImmutableArray<Estimate> rows, Func<Estimate, string> describe)
     {

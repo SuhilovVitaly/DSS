@@ -60,7 +60,8 @@ public sealed class BattleMapRenderTests
         var battle = screen.Flow.State!;
         var enemy = battle.Units.First(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Drone) with
         {
-            Pose = new(-100, 0, 0), Speed = 150
+            Pose = new(-100, 0, 0),
+            Speed = 150
         };
         var frame = new TacticalBattleFrame(battle with { Units = [enemy], Paths = [], Rules = battle.Rules with { RearArc = 45 } },
             new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemySectors: true);
@@ -133,7 +134,9 @@ public sealed class BattleMapRenderTests
         var carrier = battle.Units.First(u => u.Side == battle.PlayerSide && u.Kind == TacticalUnitKind.Carrier);
         var frame = new TacticalBattleFrame(battle with
         {
-            Phase = TacticalBattlePhase.Fire, Paths = [], Incoming = [],
+            Phase = TacticalBattlePhase.Fire,
+            Paths = [],
+            Incoming = [],
             Units = [enemy, carrier with { Pose = new(0, 0, 0) }, own with { Pose = new(-70, 0, 0) },
                 own with { Id = "disabled", State = TacticalUnitState.Disabled, Pose = new(-55, 0, 0) },
                 own with { Id = "out of range", Pose = new(1, 0, 0) },
@@ -159,19 +162,28 @@ public sealed class BattleMapRenderTests
         var battle = (await Start(fixture)).Flow.State!;
         var enemy = battle.Units.First(u => u.Side != battle.PlayerSide && u.Kind == TacticalUnitKind.Drone) with
         {
-            Id = "Tag-7", Pose = new(50, 0, 180)
+            Id = "Tag-7",
+            Pose = new(50, 0, 180)
         };
         var destroyed = enemy with { State = TacticalUnitState.Destroyed, Hull = 0 };
         var shot = new TacticalShotSnapshot(battle.Turn, "shooter", enemy.Id, new(-200, 0, 0), enemy.Pose,
-            1, true, 40, false, false, true) { LethalImpact = true };
+            1, true, 40, false, false, true)
+        { LethalImpact = true };
         var frame = new TacticalBattleFrame(battle with { Units = [destroyed], BeforeSalvoUnits = [enemy], Paths = [] },
             new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", TacticalBattlePresentation.SalvoFlight, EnemyForecast: false);
-        var results = new TacticalBattleResults(frame.Battle, [shot, shot with { Hit = false, LethalImpact = false }], [], 0);
+        var miss = shot with { Hit = false, Killed = false, LethalImpact = false };
+        var state = frame.Battle with
+        {
+            Shots = [shot, miss],
+            FireSteps = [new(0, shot.ShooterId, enemy.Id, TacticalFireSkipReason.None, shot, [destroyed], [], null),
+                new(1, miss.ShooterId, enemy.Id, TacticalFireSkipReason.None, miss, [destroyed], [], null)]
+        };
+        var results = new TacticalBattleResults(state, state.Shots, [], 0);
         long arrivalMs = (long)(TacticalBattleResults.InitialDelayMs + TacticalBattleResults.FlightMs);
-        using var flying = Raster(frame with { Salvo = results.Capture(arrivalMs - 1) });
+        using var flying = Raster(frame with { Battle = results.Project(arrivalMs - 1), Salvo = results.Capture(arrivalMs - 1) });
         var arrival = results.Capture(arrivalMs);
         Assert.True(arrival.InFlight);
-        using var impact = Raster(frame with { Salvo = arrival });
+        using var impact = Raster(frame with { Battle = results.Project(arrivalMs), Salvo = arrival });
         using var movement = Raster(frame with { Presentation = TacticalBattlePresentation.Current });
         Assert.Equal(TacticalBattleMapRenderer.Enemy, flying.GetPixel(490, 360));
         foreach (var marker in new[] { impact.GetPixel(490, 360), movement.GetPixel(490, 360) })
@@ -203,7 +215,9 @@ public sealed class BattleMapRenderTests
         var drone = own with { Pose = new(200, 0, 180), Build = own.Build! with { Range = 500, ArcDegrees = 45 } };
         var state = battle with
         {
-            Phase = TacticalBattlePhase.Fire, Units = [drone], BeforeSalvoUnits = [drone],
+            Phase = TacticalBattlePhase.Fire,
+            Units = [drone],
+            BeforeSalvoUnits = [drone],
             Paths = [new(battle.Turn, drone.Id, [new(-220, 0, 180), drone.Pose])]
         };
         var plan = new TacticalFirePlan([new(drone, new(drone.Id, [], null), null)], drone.Id);
@@ -214,13 +228,17 @@ public sealed class BattleMapRenderTests
         var afterFire = state with { Phase = TacticalBattlePhase.Move };
         AssertTrailVisible(frame with
         {
-            Battle = afterFire, Presentation = TacticalBattlePresentation.SalvoFlight,
-            FirePlan = null, Salvo = new(true, false, [], [])
+            Battle = afterFire,
+            Presentation = TacticalBattlePresentation.SalvoFlight,
+            FirePlan = null,
+            Salvo = new(true, false, [], [])
         });
         AssertTrailVisible(frame with
         {
-            Battle = afterFire, Presentation = TacticalBattlePresentation.SalvoResults,
-            FirePlan = null, Salvo = new(false, false, [], [])
+            Battle = afterFire,
+            Presentation = TacticalBattlePresentation.SalvoResults,
+            FirePlan = null,
+            Salvo = new(false, false, [], [])
         });
 
         static void AssertTrailVisible(TacticalBattleFrame frame)
@@ -239,7 +257,9 @@ public sealed class BattleMapRenderTests
         var battle = (await Start(fixture)).Flow.State!;
         var wreck = battle.Units.First(u => u.Kind == TacticalUnitKind.Drone) with
         {
-            Pose = new(0, 0, 0), State = TacticalUnitState.Destroyed, Hull = 0
+            Pose = new(0, 0, 0),
+            State = TacticalUnitState.Destroyed,
+            Hull = 0
         };
         var salvo = new TacticalSalvoFrame(false, false, [], [new(wreck, 20, 40, true)]);
         var frame = new TacticalBattleFrame(battle with { Units = [wreck], Paths = [] },
@@ -294,7 +314,9 @@ public sealed class BattleMapRenderTests
         var battle = (await Start(fixture)).Flow.State!;
         var drone = battle.Units.First(u => u.Kind == TacticalUnitKind.Drone) with
         {
-            Id = "Drone", Pose = new(0, 0, 0), State = TacticalUnitState.Disabled
+            Id = "Drone",
+            Pose = new(0, 0, 0),
+            State = TacticalUnitState.Disabled
         };
         var frame = new TacticalBattleFrame(battle with { Units = [drone], Paths = [] },
             new(880, 720, 0, 0, 1), SKRect.Empty, 1, false, "", EnemyForecast: false);

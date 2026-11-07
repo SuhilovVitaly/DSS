@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0003-fire-order-presentation
 ticket: EP-0017-US-0003-TK-0002-sequential-playback
 title: "Последовательное воспроизведение ленты стрельбы"
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0017-US-0003-TK-0001-queue-and-forecast]
@@ -131,3 +131,15 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution scope extension — 2026-11-07
+
+Добавлен src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleForecastTab.cs (шестой implementation file): его HasArrived использует глобальный FlightMs и нарушает короткие последовательные слоты; результатный прогноз должен читать достигнутый префикс и промежуточный Damage. Исправление необходимо для общего отображаемого времени; остальные границы client сохраняются. Native всех UI тикетов проводится на итоговом экране послеTK-0004.
+
+## Execution — 2026-11-07
+
+Playback строит общую cached presentation-проекцию по immutable FireSteps; Flow.State остаётся authoritative. Units/Log/Losses/Outcome до первого impact исходные, далее admitted prefix; next planning скрыт до конца. Каждый projectile имеет DurationMs=min975,(4500−300)/N; следующий launch совпадает с предыдущим impact, Flash может перекрываться. Leading/intermediate skips мгновенны на границе. N0 возвращает мгновенный authoritative результат без деления и полётов, сохраняя прежний auto-zero transition. Skip/replay/big clock jumps не отправляют Fire. OnBattleUpdated игнорирует rejected/duplicate/stale revision, не сбрасывая текущую ленту.
+
+Дополнительный ForecastTab использует DurationMs/Arrived и admitted cumulative damage; scope расширен до6 файлов до правки. Тестовые DTO обновлены до FireSteps. Проверены impact−1/impact/impact+1, hull100→95→80/armor10→0, exact Log prefix,0/12 shots,4500ms cap, replay, immediate outcome и Classic/contrast equality. UI surfaces старого before-salvo fallback/journal ещё обновляютсяTK-0003/0004; не выдаются за завершённую US.
+
+Client build PASS; ResultsPhaseTests/SkinBattleIntegrationTests/BattleMapRenderTests PASS25/25; scoped format/verify и git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0302/ (build/tests/format/format-verified logs, focused.trx и result rasters). Self-review выполнено; independent review не заявляется. Native NOT RUN здесь, консолидирован послеTK-0004; stage implemented до native gate.

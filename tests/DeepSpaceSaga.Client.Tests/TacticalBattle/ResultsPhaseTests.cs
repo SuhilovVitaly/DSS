@@ -11,6 +11,94 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class ResultsPhaseTests
 {
     [Fact]
+    public async Task SequentialPlaybackAppliesDamageAtEachImpactBeforeNextLaunch()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var results = ControlledResults(screen.Flow.State!);
+        Assert.Equal(100, results.Project(1274).Units[0].Hull);
+        Assert.Equal(95, results.Project(1275).Units[0].Hull);
+        Assert.Equal(95, results.Project(1276).Units[0].Hull);
+        Assert.Equal(80, results.Project(2250).Units[0].Hull);
+        Assert.Equal(10, results.Project(1274).Units[0].Armor);
+        Assert.Equal(0, results.Project(1275).Units[0].Armor);
+        Assert.Empty(results.Project(1274).Log);
+        Assert.Single(results.Project(1275).Log);
+        Assert.Equal(2, results.Project(2250).Log.Length);
+        Assert.Single(results.Capture(1274).Flights.Where(f => f.Flying));
+        var impact = results.Capture(1275);
+        Assert.True(impact.Flights[0].Arrived);
+        Assert.True(impact.Flights[1].Flying);
+        Assert.Equal(0, impact.Flights[1].Progress);
+        Assert.Equal(5, Assert.Single(impact.Damage).Hull);
+        Assert.Equal(1, impact.Hits);
+        Assert.Equal(0, fixture.Proxy.Fires);
+    }
+
+    [Fact]
+    public async Task SkipReplayAndLargeClockJumpPreserveExactStepStatesAndNoExtraRequest()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var authoritative = screen.Flow.State!;
+        var results = ControlledResults(authoritative);
+        var final = results.Project(10000);
+        Assert.Same(results.Battle, final);
+        Assert.Same(final, (results with { Skipped = true }).Project(0));
+        var replay = results with { StartedMs = 10000, Skipped = false };
+        Assert.Equal(100, replay.Project(10000).Units[0].Hull);
+        Assert.Empty(replay.Project(10000).Log);
+        Assert.Equal(95, replay.Project(11275).Units[0].Hull);
+        Assert.Same(final, replay.Project(20000));
+        Assert.Equal(0, fixture.Proxy.Fires);
+        Assert.Same(authoritative, screen.Flow.State);
+    }
+
+    [Fact]
+    public async Task ZeroShotAutoFireAndImmediateVictoryHaveCoherentPresentation()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var results = ControlledResults(screen.Flow.State!);
+        var zero = results with { Shots = [] };
+        Assert.Equal(0, zero.EndMs);
+        Assert.False(zero.Capture(0).InFlight);
+        Assert.Empty(zero.Capture(0).Flights);
+        var outcome = new TacticalOutcomeSnapshot(TacticalBattleOutcomeCode.A, [new(TacticalOutcomeReasonCode.NoDrones, "carrier-b")],
+            1, [], new(1, 1, 0, 0, 0, 0, 40, 0, 0, "B", 0, []), 2);
+        var final = results.Battle with { Phase = TacticalBattlePhase.Over, Outcome = outcome };
+        var step = final.FireSteps[0] with { Outcome = outcome };
+        var won = results with { Battle = final with { FireSteps = [step] }, Shots = [results.Shots[0]] };
+        Assert.Null(won.Project(1274).Outcome);
+        Assert.Same(outcome, won.Project(1275).Outcome);
+    }
+
+    internal static TacticalBattleResults ControlledResults(TacticalBattleSnapshot source)
+    {
+        var target = source.Units.First(u => u.Kind == TacticalUnitKind.Drone && u.Side != source.PlayerSide)
+            with
+        { Hull = 100, MaxHull = 100, Armor = 10, MaxArmor = 10, State = TacticalUnitState.Air };
+        var first = target with { Hull = 95, Armor = 0 };
+        var last = target with { Hull = 80, Armor = 0 };
+        var shot = new TacticalShotSnapshot(1, "first", target.Id, new(0, 0, 0), target.Pose, 1, true, 15, false, false, false);
+        var event1 = new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.DamageApplied,
+            TargetId: target.Id, Damage: new(5, 10, 1, 95))
+        { FireStepIndex = 0 };
+        var event2 = event1 with { Sequence = 2, Damage = new(15, 0, 1, 80), FireStepIndex = 1 };
+        var battle = source with
+        {
+            Units = [last],
+            BeforeSalvoUnits = [target],
+            Log = [event1, event2],
+            Shots = [shot, shot with { ShooterId = "second" }],
+            FireQueue = [new(0, "first", 80), new(1, "second", 60)],
+            FireSteps = [new(0, "first", target.Id, TacticalFireSkipReason.None, shot, [first], [event1], null),
+                new(1, "second", target.Id, TacticalFireSkipReason.None, shot with { ShooterId = "second" }, [last], [event2], null)]
+        };
+        return new(battle, battle.Shots, [], 0);
+    }
+
+    [Fact]
     public async Task ActualSalvoWaitsForArrivalAndSkipReplayContinueNeverSendAnotherShot()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
@@ -103,7 +191,13 @@ public sealed class ResultsPhaseTests
         var after = screen.Flow.State!;
         Assert.NotEmpty(after.Shots);
         // Repeat a genuine captured shot to drive the cap independently of roster size.
-        var captured = after with { FireSkipped = true, Shots = Enumerable.Repeat(after.Shots[0], 12).ToImmutableArray() };
+        var captured = after with
+        {
+            FireSkipped = true,
+            Shots = Enumerable.Repeat(after.Shots[0], 12).ToImmutableArray(),
+            FireSteps = Enumerable.Range(0, 12).Select(i => new TacticalFireStepSnapshot(i, after.Shots[0].ShooterId,
+                after.Shots[0].TargetId, TacticalFireSkipReason.None, after.Shots[0], after.Units, [], null)).ToImmutableArray()
+        };
         var response = new TacticalBattleResponse("fixture", true, TacticalBattleRejectionCode.None, captured.Phase, captured, []);
         var results = TacticalBattleResults.Create(before with { Phase = TacticalBattlePhase.Move }, response, 900)!;
         Assert.Equal(TacticalBattleResults.CapMs, results.EndMs, 8);
@@ -147,7 +241,9 @@ public sealed class ResultsPhaseTests
         Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Enter));
         Assert.Equal(TacticalBattlePresentation.SalvoResults, screen.CaptureFrame(1280, 720)!.Presentation);
         Assert.Equal(1, fixture.Proxy.Fires);
-        Assert.Same(frame.Battle, screen.Flow.State);
+        Assert.NotSame(frame.Battle, screen.Flow.State);
+        Assert.Equal(frame.Battle.BattleId, screen.Flow.State!.BattleId);
+        Assert.Equal(frame.Battle.Revision, screen.Flow.State.Revision);
     }
 
     private static async Task<TacticalBattleScreen> Start(BattleNavigationTests.Fixture fixture)

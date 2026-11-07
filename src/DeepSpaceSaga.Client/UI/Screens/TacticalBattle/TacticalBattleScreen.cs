@@ -97,6 +97,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         bool moving = presentation.Animation?.IsActive(now) == true;
         var state = moving ? presentation.Animation!.Interpolate(now) : presentation.Accepted;
         var salvo = moving ? null : presentation.Results?.Capture(now);
+        if (!moving && presentation.Results is { } results) state = results.Project(now);
         bool planning = !moving && salvo is null;
         int panelWidth = (int)PyMath.Min(400 * UiScale, width * 0.60);
         int mapWidth = (int)PyMath.Max(1, width - panelWidth);
@@ -300,6 +301,9 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override void OnBattleUpdated(TacticalBattleSnapshot? before, TacticalBattleResponse response)
     {
         if (Flow.State is not { } state) return;
+        if (!response.Accepted || response.State is null) return;
+        var current = Volatile.Read(ref _presentation);
+        if (current?.Accepted.BattleId == state.BattleId && current.Accepted.Revision >= state.Revision) return;
         long now = ClockMilliseconds();
         var animation = TacticalBattleMovementAnimation.Create(before, response, now);
         var results = TacticalBattleResults.Create(before, response, now + (animation?.PlaybackDurationMs ?? 0));
