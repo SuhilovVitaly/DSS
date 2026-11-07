@@ -6,6 +6,51 @@ namespace DeepSpaceSaga.Engine.Scenario;
 /// <summary>Detached version-two station candidates. Never publishes a world or consumes live RNG.</summary>
 internal static class StationGeographyV2
 {
+    internal static ClusterGenerationResult CompleteBootstrap(ScenarioFile original, ClusterGenerationResult candidate,
+        SolarSystemGenerationConfig config, GameDataRegistry registry, ulong seed)
+    {
+        var player = candidate.World.GameState.SpaceObjects.Single(o => o.ObjectId == original.GameState.PlayerShipObjectId);
+        double targetRadius = double.Hypot(player.PositionX, player.PositionY);
+        var world = ScenarioGroupPlacement.BindV2Start(original, candidate, targetRadius);
+        var state = world.GameState;
+        var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
+        double units = candidate.Map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
+        ValidateDistances(candidate.Map.Stations.Select(s => objects[s.ObjectId]).ToArray(), config.Clusters!, units);
+        player = objects[state.PlayerShipObjectId];
+        double actual = double.Hypot(player.PositionX, player.PositionY);
+        double tolerance = 1e-6 + actual * 1e-10;
+        if (actual + tolerance < config.StartMinDays * units || actual - tolerance > config.StartMaxDays * units)
+            throw new ScenarioException("geography/v2: actual player start outside configured solar distance.");
+        if (original.GameState.TradingMapGeneration is { } request)
+        {
+            var graph = TradingGraphGenerator.Generate(request, seed, registry);
+            var geometry = TradingMapRandom.DrawIndex(seed, "TradingMap.Geometry", 4);
+            var risks = graph.Rules.RiskProfiles.ToDictionary(r => r.RiskProfileId, StringComparer.Ordinal);
+            var edges = graph.Template.Links.Select(link =>
+            {
+                var a = objects[link.FromStationObjectId]; var b = objects[link.ToStationObjectId];
+                double distance = double.Hypot(a.PositionX - b.PositionX, a.PositionY - b.PositionY) / 10;
+                double milliseconds = distance / (graph.Rules.ReferenceSpeedMps / 1000) * 1000 * 300;
+                if (!double.IsFinite(milliseconds) || milliseconds <= 0 || milliseconds >= long.MaxValue)
+                    throw new ScenarioException("geography/v2: trading estimate exceeds supported range.");
+                long estimate = checked((long)Math.Ceiling(milliseconds));
+                var risk = risks[link.RiskProfileId];
+                return new TradingMapEdgeData(a.ObjectId, b.ObjectId, distance, estimate,
+                    estimate <= graph.Rules.ShortMaxGameTimeMs ? "Short" : estimate <= graph.Rules.MediumMaxGameTimeMs ? "Medium" : "Long",
+                    risk.FuelMultiplierPermille, risk.RiskProfileId);
+            }).OrderBy(e => e.FromStationObjectId, StringComparer.Ordinal).ThenBy(e => e.ToStationObjectId, StringComparer.Ordinal).ToArray();
+            state = state with
+            {
+                TradingMapGeneration = null,
+                TradingMap = new(1, graph.Template.TemplateId, geometry.Value, graph.Rules, edges, graph.CargoFlows,
+                    [.. new[] { graph.TopologyStream, geometry.State }.OrderBy(s => s.Name, StringComparer.Ordinal)])
+            };
+        }
+        world = world with { GameState = state };
+        SolarSystemGeneration.ValidateWorld(state);
+        return candidate with { World = world };
+    }
+
     internal static ClusterGenerationResult Place(ScenarioFile source, ClusterGenerationConfig config,
         GameDataRegistry registry, ulong seed, int attempt)
     {

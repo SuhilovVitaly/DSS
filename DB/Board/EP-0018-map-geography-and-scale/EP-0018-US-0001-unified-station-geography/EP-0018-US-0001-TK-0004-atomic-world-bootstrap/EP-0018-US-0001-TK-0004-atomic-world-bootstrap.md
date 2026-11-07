@@ -5,7 +5,7 @@ ticket: EP-0018-US-0001-TK-0004-atomic-world-bootstrap
 title: "Атомарный запуск нового мира без старой компактной геометрии"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0001-TK-0003-all-station-placement]
@@ -89,3 +89,26 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Фактическое исполнение — 2026-11-07
+
+V2 выбирается до legacy geometry/resources. Station identities/roles/topology
+из request материализуются без template offsets; frozen Geography и финальная
+формация предшествуют resource generation/BindResources. CompleteBootstrap сохраняет
+canonical trading rules/template/risk/cargo/RNG, но строит edges по новым координатам.
+BindV2Start сохраняет local source vectors и docking parent+(1,1); малое изменение
+радиуса домашней формации решает квадратное уравнение фактической player distance,
+сохраняя50–75d даже у границ. Проверки делаются на detached world до runtime publish.
+Legacy pipeline остаётся прежним. Shipped activation и строгий v2Load — US0004.
+
+27/27focused placement/bootstrap/schema/v1cluster/seed PASS; все3namedtests PASS.
+Engine regression безLongRunning/Corpus2076/2076PASS (не full corpus).
+Release Engine build0warnings/errors, scoped formatter4files и diffcheck PASS.
+Self-review тикета/US1/эпика без findings; независимого review нет.
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-bootstrap/
+(focused-final.trx/log, engine-non-corpus.trx/log, build.log, format-engine.log,
+format-tests-final.log). В passed test output retained66pair distances и12nearest
+для Defaultseed42, плюс полный AuthoritativeSnapshot. Test watchdog300000ms.
+Native/product/FPS NOT RUN. Save/Load v2 ещё не проверен: явный compatibility gate
+US0004 должен завершиться до shipped activation, промежуточный код не выдаётся за
+полный production rollout всего эпика. Temporary scripts/slots/worktrees не созданы.

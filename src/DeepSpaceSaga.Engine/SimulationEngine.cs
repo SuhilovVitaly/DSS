@@ -287,10 +287,12 @@ public sealed partial class SimulationEngine : IDisposable
             resolvedMasterSeedWasMissingOnLoad = true;
         }
 
-        gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
-        if (gs.StationResourceFields is not null)
+        bool geographyV2 = !isSave && scenario.SaveFormatVersion == 0 && generation?.GeneratorVersion == 2;
+        if (geographyV2) SolarSystemGeneration.ValidateConfig(generation!);
+        else gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
+        if (!geographyV2 && gs.StationResourceFields is not null)
             gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
-        else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
+        else if (!geographyV2 && !isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
             gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
         StationClusterMapSnapshot? clusterMap = gs.ClusterMap;
         if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
@@ -299,6 +301,8 @@ public sealed partial class SimulationEngine : IDisposable
             if (generation.Clusters is { } clusters)
             {
                 var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed);
+                if (geographyV2)
+                    result = StationGeographyV2.CompleteBootstrap(scenario, result, generation, _registry, resolvedMasterSeed);
                 if (_stationResourceFieldConfig is { } resourceConfig)
                 {
                     result = result with { World = result.World with { GameState = StationResourceFields.ExtendForClusters(result.World.GameState, resolvedMasterSeed, resourceConfig, _registry) } };

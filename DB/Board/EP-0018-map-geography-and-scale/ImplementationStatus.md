@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-07: IN PROGRESS. Два тикета опубликованы; третий локально завершён,
+Статус на2026-11-07: IN PROGRESS. Три тикета опубликованы; четвёртый локально завершён,
 его SHA проверяется после commit/push. Истории0/9: US-0001 ещё требует bootstrap.
 
 ## Git и полномочия
@@ -18,7 +18,7 @@ Remote https://github.com/SuhilovVitaly/DSS. Изначально только u
 | US-0001-TK-0001|7d42085a273bc86cff19b9aa083ff8060fe159f8|PASS, remote head SHA проверен|
 | Полный scope финальной документации|0a8695f2d021a3cf90ef186b60b07bca12855fdd|PASS, remote head SHA проверен|
 | US-0001-TK-0002|dded58417c116e8c13ba88c630fde87e19fe48ae|PASS, remote head SHA проверен|
-| US-0001-TK-0003|определяется после commit через Git|локальная проверкаPASS, push следует сразу|
+| US-0001-TK-0003|042ae85c0c988cb61ec566028e0de6d2845c629c|PASS, remote head SHA проверен|
 
 Полные IDs/порядок29тикетов — Tickets.md. Следующий — US-0001-TK-0004-bootstrap;
 затем US0002→0003→0004→0005→0006→0007→0008→0009. Content activation толькоUS0004TK0004.
@@ -67,3 +67,15 @@ Native, physical input, human/product, FPS NOT RUN. Эпик не завершё
 Task-owned stalled testhost32764 уже завершён; широкий процесс48092 остановлен
 с деревом. Временные scripts/cache/slots/worktrees не создавались. Retained evidence
 перечислено выше; пустые stderr/лишние предварительные outputs убираются при cleanup.
+## US0001 bootstrap и story review
+
+TK4 завершён локально; commit/push следует сейчас, собственный SHA проверяется Git.
+Реальный v2 Engine27/27focused, Engine non-corpus2076/2076PASS; build/format/diffPASS.
+Evidence run20261107-bootstrap: focused-final.trx/log содержит Default42snapshot,
+66pair distances/12nearest; engine-non-corpus.trx/log; build.log; format-engine.log;
+format-tests-final.log. Широкие2076прошли до добавления только xUnit evidence output;
+после него повторены27focused и scoped test format, productionкод не менялся.
+
+Story1 код реализован, но общая приёмка Save/Load ещё US4: история остаётся
+implemented_pending_compatibility_gate. Следующийтикет — US0002TK0001radial lanes,
+после публикации TK4. Остаток25тикетов, corpus/native/FPS/human NOT RUN.
