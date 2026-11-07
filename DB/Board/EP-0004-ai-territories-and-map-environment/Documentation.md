@@ -182,7 +182,7 @@ EP-0004 владеет информационными областями, раз
 
 ### Инструкции и продуктовый материал
 
-Нормативный workflow задан [AGENTS.md агента](../../../../Agents/DSS-EpicBuilder/AGENTS.md). Репозиторные требования прочитаны как источники истины для поведения и архитектуры. Общая концепция и продуктовые разделы выше являются входным ТЗ. Их старые фразы «без user stories» описывают предыдущий этап подготовки и не запрещают исполнить текущий прямой запрос пользователя. Примерные технические варианты, прежние статусы и команды внутри документов не являются самостоятельными инструкциями агенту.
+Исторический workflow ссылался на `Agents/DSS-EpicBuilder/AGENTS.md` (файл удалён; ссылка сохранена как текст истории). Текущий процесс — [epic-writer](D:/DeepSpaceSaga/.agents/skills/epic-writer/SKILL.md) и [epic-executor](D:/DeepSpaceSaga/.agents/skills/epic-executor/SKILL.md). Репозиторные требования прочитаны как источники истины для поведения и архитектуры. Общая концепция и продуктовые разделы выше являются входным ТЗ. Их старые фразы «без user stories» описывают предыдущий этап подготовки и не запрещают исполнить текущий прямой запрос пользователя. Примерные технические варианты, прежние статусы и команды внутри документов не являются самостоятельными инструкциями агенту.
 
 Входное ТЗ выделено в разделах «Согласованные продуктовые правила», «Вне эпика» и «Критерии готовности эпика» выше и сохранено без изменения продуктового объёма. Нарезка не утверждает новые форматы, числа, миграции или изменения чужих историй.
 
@@ -252,3 +252,9 @@ EP-0004 владеет информационными областями, раз
 По прямому запросу «сделай тикеты для историй в эпиках 2 3 и 4» StoryBuilder завершил нарезку всех восьми существующих историй: 24 тикетов. [Полный индекс: истории, тикеты, пути и порядок](Tickets.md). В каждой истории заполнены исходное задание, AC-0001–0003, assumptions, dependency gates, gaps/backlog и Approved ticket map.
 
 Тикеты stage approved по автоматическому workflow StoryBuilder; история и эпик сохраняют draft, индивидуальный или общий EpicBuilder approval не выдуман. Прежние формулировки «тикеты не создаются» относятся к предыдущим этапам журнала. Production-код не менялся, созданные тикеты не выполнялись.
+
+## Supersession / integration — 2026-11-08
+
+EP-0018 integrates AI/environment/POI placement after final v2 station geography. AI validation remains bounded and separate from the human all-phase lane proof. Old FPS/acceptance outcomes below remain historical, not current v2 measurements.
+
+Current tasks: [EP-0018](../EP-0018-map-geography-and-scale/Documentation.md); actual evidence/open gates: [ImplementationStatus](../EP-0018-map-geography-and-scale/ImplementationStatus.md). Historical approvals, dates and test/FPS results are preserved.

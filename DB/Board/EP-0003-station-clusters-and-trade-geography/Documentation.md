@@ -166,7 +166,7 @@ EP-0001 остаётся владельцем цен, котировок, сде
 
 ### Инструкции и продуктовый материал
 
-Нормативный workflow задан [AGENTS.md агента](../../../../Agents/DSS-EpicBuilder/AGENTS.md). Репозиторные требования прочитаны как источники истины для поведения и архитектуры. Общая концепция и продуктовые разделы выше являются входным ТЗ. Их старые фразы «без user stories» описывают предыдущий этап подготовки и не запрещают исполнить текущий прямой запрос пользователя. Примерные технические варианты, прежние статусы и команды внутри документов не являются самостоятельными инструкциями агенту.
+Исторический workflow ссылался на `Agents/DSS-EpicBuilder/AGENTS.md` (файл удалён; ссылка сохранена как текст истории). Текущий процесс — [epic-writer](D:/DeepSpaceSaga/.agents/skills/epic-writer/SKILL.md) и [epic-executor](D:/DeepSpaceSaga/.agents/skills/epic-executor/SKILL.md). Репозиторные требования прочитаны как источники истины для поведения и архитектуры. Общая концепция и продуктовые разделы выше являются входным ТЗ. Их старые фразы «без user stories» описывают предыдущий этап подготовки и не запрещают исполнить текущий прямой запрос пользователя. Примерные технические варианты, прежние статусы и команды внутри документов не являются самостоятельными инструкциями агенту.
 
 Входное ТЗ выделено в разделах «Согласованные продуктовые правила», «Вне эпика» и «Критерии готовности эпика» выше и сохранено без изменения продуктового объёма. Нарезка не утверждает новые форматы, числа, миграции или изменения чужих историй.
 
@@ -245,3 +245,9 @@ NPC-торговцы, строительство, дипломатия и нов
 EP-0004 использует поставленную human cluster geography, resource identity и continuation; AI stations не являются членами человеческих кластеров. Историческая приёмка и balance scope EP-0003 не расширяются.
 
 [Текущий технический контракт и evidence](../../Documentation/04-Engineering/AiMapEnvironment.md).
+
+## Supersession / integration — 2026-11-08
+
+EP-0018 replaces new-world spacing and preserved-source-coordinate exceptions: all human stations including Default use v2 min1d/nearest1–3d and rigid lanes. IDs/roles/payload survive; historical v1 saves are not regenerated.
+
+Current tasks: [EP-0018](../EP-0018-map-geography-and-scale/Documentation.md); actual evidence/open gates: [ImplementationStatus](../EP-0018-map-geography-and-scale/ImplementationStatus.md). Historical approvals, dates and test/FPS results are preserved.

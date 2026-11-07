@@ -66,9 +66,9 @@ VData — неканонические копии, не источник зад�
 | `06-Tooling/CarrierWingSim.md` | No owning contract change: different feature/process or existing invariant preserved | reviewed; unchanged; no new runtime/acceptance promise |
 | `06-Tooling/DeepSpaceSaga.PortraitAssets.md` | No owning contract change: different feature/process or existing invariant preserved | reviewed; unchanged; no new runtime/acceptance promise |
 | `06-Tooling/GameSessionScreenUI.md` | map settings/localization/source ownership | updated TK9.1; source/contracts review; contracts-audit.json links PASS |
-| `06-Tooling/Graphify.md` | offline graph scope and current Board | pending TK9.3; final links/graph audit |
-| `06-Tooling/GraphifyRebuild.md` | reproducible EP18 scope/output/semantic/hash workflow | pending TK9.3; final links/graph audit |
-| `README.md` | navigation to current geography/scale/tool guide | pending TK9.3; final links/graph audit |
+| `06-Tooling/Graphify.md` | offline graph scope and current Board | updated TK9.3; navigation-audit/quality-audit PASS |
+| `06-Tooling/GraphifyRebuild.md` | reproducible EP18 scope/output/semantic/hash workflow | updated TK9.3; navigation-audit/quality-audit PASS |
+| `README.md` | navigation to current geography/scale/tool guide | updated TK9.3; navigation-audit/quality-audit PASS |
 
 ## Другие tracked Markdown и meaningful comments
 
@@ -78,10 +78,10 @@ VData — неканонические копии, не источник зад�
 | src/DeepSpaceSaga.Client/Images/Persons/W4/Portraits/character-generator/SKILL.md; references/assembly-contract.md |Portrait asset geometry unrelated |Unchanged |
 | src/DeepSpaceSaga.Client/Skins/README.md |Tactical battle skins unaffected by world map |Unchanged |
 | tests/DeepSpaceSaga.Engine.Tests/Fixtures/Saves/README.md |Historical Save18/19 fixture provenance unchanged |Reviewed; v1/v2 live-file tests use own slots, no fixture rewrite |
-| tools/DeepSpaceSaga.Performance/README.md |New strict v2 flags, evidence schema/matrix/native/cleanup |Pending TK9.3 exact commands and versioned legacy modes |
+| tools/DeepSpaceSaga.Performance/README.md |New strict v2 flags, evidence schema/matrix/native/cleanup |Updated TK9.3; exact strict flags/caps/paths and v1 legacy modes checked |
 | tools/DeepSpaceSaga.Performance/EP0013.md |Historical debug tuning native workflow |Unchanged; no historical outcome overwritten |
 | tools/HexWingSimulator/README.md; tools/tactical-battle/README.md |Separate simulator/combat tools |Unchanged |
-| GameSessionUiScaleTests.cs summary comment |Now accepts UI2; old100/120/150 list incomplete |Pending TK9.3 documentation-only comment update |
+| GameSessionUiScaleTests.cs summary comment |Now accepts UI2; old100/120/150 list incomplete |Updated TK9.3; documentation-only comment, no IL behaviour change |
 | Other touched production/test comments |Frozen scale/version/lane/resource ownership descriptions match final implementation |Reviewed; no contradictory current comment found |
 
 ## Board/history/navigation
@@ -89,9 +89,9 @@ VData — неканонические копии, не источник зад�
 | Документ/группа | Изменение | Проверка |
 |---|---|---|
 | EP18 Documentation.md/ImplementationContract.md/Tickets.md + all canonical cards |Current statuses, explicit planning history, actual deviations, named tests and DAG |29tickets/38nodes;74named method references resolve; no acceptance invented |
-| EP18 ImplementationStatus.md |Single current ledger: all ticket SHA/evidence/criteria/gates |27published SHA ancestors verified; own/final doc SHA deferred to actual receipt |
+| EP18 ImplementationStatus.md |Single current ledger: all ticket SHA/evidence/criteria/gates |28published SHA ancestors verified; final ticket SHA deferred until actual commit/push |
 | EP18 DocumentationImpact.md |This whole-repository inventory |Current owning docs and outside-doc guides included |
-| EP0002/EP0003/EP0004 Documentation.md |Dated supersession/integration links to EP18; historical results preserved |Pending TK9.3 |
+| EP0002/EP0003/EP0004 Documentation.md |Dated supersession/integration links to EP18; historical results preserved |Updated TK9.3;427changed-file links/anchors checked |
 | Other canonical Board records |Unrelated or historical acceptance; not current geography spec |Unchanged |
 | VData/Board and VData/Documentation850tracked copies |Not canonical; supplied process forbids treating copies as tasks |Unchanged, not used as authority |
 
@@ -110,3 +110,28 @@ fresh semantic source hashes, finite source locations and explicit coverage limi
 Historical src/graphify-out is not overwritten; graph/cache/semantic outputs only in
 D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261108-graph/.
 Final graph/links/cleanup/publication checks belong to TK9.3 and its actual receipt.
+
+## Final verification — 2026-11-08
+
+Navigation/tool guide/examples, EP2/3/4 dated supersession, Graphify guides/maintained
+rebuild scope and UI-scale summary comment updated. Settings description precisely
+separates renderer tooling/constructor UI2 from ordinary SkiaWindow/menu persisted
+values. Old deleted Agents workflow links in the three touched historical epics are
+plain historical paths with live skill links; original approvals/outcomes preserved.
+
+Graph:744code/664Markdown structural inputs,15fresh semantic documents/24nodes/27edges,
+1408source SHA256 verified,20422nodes/55930edges/690communities. HTML aggregated.
+Source/endpoint/location checks and query smoke PASS. Explicit limitations:
+one unchanged C# test partially parsed atL25 (10symbols),1101unresolved endpoint
+edges pruned,2776reference-only unlocated symbols,746canonical self-loops removed,
+1930undirected same-endpoint edges combined in extraction diagnostics. Original
+relationships retained in extraction.json; graph is navigation, not runtime approval.
+Token usage unmeasured; no external API/image extraction. Stable export-only hash
+receipt avoids cycles with live logs/later publication audits. Quality checks and
+reproduction script retained under workspace20261108-graph; caches removed.
+
+All62affected Markdown/427links,29tickets/38dependency nodes audited with0errors.
+Original frontmatter files_touched values are planning estimates; actual expanded
+scopes and per-ticket diffs/commits are the implementation evidence. Current curated
+Documentation remains59Markdown files only. Final publication SHA recorded after
+commit, never fabricated inside its own content.

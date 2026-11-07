@@ -8,7 +8,7 @@ using Xunit;
 namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
-/// UI scale (100% / 120% / 150%) must only resize the GameSession overlay panels —
+/// UI scale (80% / 100% / 120% / 150% / 200%) must only resize the GameSession overlay panels —
 /// never the tactical map, camera, or map hit-testing. See DB/Documentation/00-Process/CLAUDE.md and the "UI
 /// scale only in the main game session window" requirements.
 /// </summary>

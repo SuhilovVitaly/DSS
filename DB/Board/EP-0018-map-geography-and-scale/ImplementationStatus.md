@@ -58,8 +58,8 @@ Evidence prefix: D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and
 | [EP-0018-US-0008-TK-0002-rendered-map-evidence](EP-0018-US-0008-system-map-acceptance/EP-0018-US-0008-TK-0002-rendered-map-evidence/EP-0018-US-0008-TK-0002-rendered-map-evidence.md) | 51d6f99ea9ef73669c9c6c14f981081a0e413f68 | PASS: remote SHA проверен | 20261108-raster-verified |
 | [EP-0018-US-0008-TK-0003-native-map-evidence](EP-0018-US-0008-system-map-acceptance/EP-0018-US-0008-TK-0003-native-map-evidence/EP-0018-US-0008-TK-0003-native-map-evidence.md) | 6dd13cb3d619de8e8a7bc588bd238f3bac58537b | PASS: remote SHA проверен | 20261108-native-tool |
 | [EP-0018-US-0009-TK-0001-current-map-contracts](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0001-current-map-contracts/EP-0018-US-0009-TK-0001-current-map-contracts.md) | f38fefad5f37ac8c67c9b191d441c7b9fc23ba61 | PASS: remote SHA проверен | 20261108-documentation/contracts-audit.json |
-| [EP-0018-US-0009-TK-0002-board-handoff](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0002-board-handoff/EP-0018-US-0009-TK-0002-board-handoff.md) | текущий коммит; SHA в финальном receipt | выполняется | 20261108-documentation/handoff-audit.json |
-| [EP-0018-US-0009-TK-0003-documentation-navigation](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md) | ещё не опубликован | следующий | 20261108-graph |
+| [EP-0018-US-0009-TK-0002-board-handoff](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0002-board-handoff/EP-0018-US-0009-TK-0002-board-handoff.md) | 9f3081f3bd64230fe90a582dd98c9b83472070da | PASS: remote SHA проверен | 20261108-documentation/handoff-audit.json |
+| [EP-0018-US-0009-TK-0003-documentation-navigation](EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md) | текущий коммит; SHA после commit/push | подготовлен к публикации | 20261108-graph |
 
 Подготовительные/service commits (также опубликованы):
 
@@ -109,7 +109,7 @@ AI Cartesian claim. Main+census counts are not double-counted with pilot runs.
 | E18-AC-06 |Automated/raster/native scripted PASS: Local extent, resize,4windows/UI2; physical acceptance OPEN |
 | E18-AC-07 |Implementation/evidence present; product readability OPEN,24raster cluster-fit cases retain non-Cluster detail at small free viewport |
 | E18-AC-08 |Repro artifacts/seed/hash/camera and native timings measured; baseline/human/physical OPEN; old p99 FAIL3 |
-| E18-AC-09 |Current contracts/Board synchronized; final navigation/graph/publication receipt next TK9.3 |
+| E18-AC-09 |Current contracts/Board/navigation synchronized; graph verified; final publication receipt after commit |
 
 ## Решения исполнения
 
@@ -117,7 +117,7 @@ AI Cartesian claim. Main+census counts are not double-counted with pilot runs.
 - V2 не резервирует legacy template corridor strips; сохраняет owner offsets/RNG, annulus/clearance/spacing. V1 прежний.
 - Межкластерный граф использует общий outbound/connectivity contract; не требует двух локальных покупателей каждой станции.
 - Save ingress выполнен до проверки active voyage continuation: исправленный DAG38nodes/29tickets.
-- UI2 реально принят renderer; меню Settings остаётся0.8/1/1.2/1.5, этот предел явно описан.
+- UI2 принят renderer tooling/constructor; обычный SkiaWindow и меню остаются0.8/1/1.2/1.5, предел явно описан.
 - Unexposed solar/cluster retry counters не придуманы: config limits + actual AI diagnostics, unavailable отдельно.
 - Native driver использует production fit/focus APIs и managed screen events; snapshots — authoritative observations,
   camera — completed render. Это не hardware input или точный OCR/pixel-time oracle.
@@ -140,3 +140,27 @@ owned processes. Отчёты/PNG/TRX referenced above retained; pilot/failed ru
 ручных worktrees, root temp snapshots или source junctions. Последний TK9.3 проверит
 финальные links/hash/graph/cleanup и запишет publication receipt. Текущий ledger
 заменяет ранние противоречащие сводки; их история сохранена в Git и owning cards.
+
+## TK9.3: final navigation / graph gate
+
+Current guides/examples and EP2/3/4 integration links updated without rewriting
+historical approval/results. Graph rebuilt after final included source/text;
+744code+664Markdown=1408source hashes,15fresh agent semantic inputs,20422nodes,
+55930edges,690communities. Retained20261108-graph/graph.html, graph.json,
+GRAPH_REPORT.md, source-manifest.json, semantic-coverage.json, verification.json,
+quality-audit.json and verify_graph.py. Source hashes and18stable export hashes PASS;
+query smoke/required v2 source presence PASS; final derived dangling/selfloops0.
+
+Graph limitations are explicit: partial parse of unchanged ModulePanelLocalizationTests.csL25,
+1101unresolved AST edges pruned,2776reference-only unlocated symbols,
+746canonical loops removed;1930same-endpoint undirected edges combined. Full original
+relationships in extraction.json. This is not full semantic/runtime/acceptance proof.
+Native/human/baseline/Motion/readability gates above unchanged.
+
+Final navigation audit:62changedMarkdown/427links,29tickets/38DAG nodes,0errors
+(20261108-documentation/navigation-audit.json). Cleanup audit:owned native slots0,
+report-test temp dirs0,noDSS/artifacts,noRootgraphify-out,no manual worktrees;
+Graph AST/semantic caches removed. Required reports/TRX/PNG/JSON and reproducible
+validation scripts retained under workspace artifacts only. Final receipt follows
+actual last-ticket commit/push; included source hashes remain valid across that
+publication because status/impact/index/final-ticket receipts are explicitly excluded.

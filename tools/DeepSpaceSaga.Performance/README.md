@@ -1,5 +1,73 @@
 # GPU/window probe
 
+## World-map v2 acceptance
+
+Run from `D:/DeepSpaceSaga/DSS`. Create a unique absolute directory under
+`D:/DeepSpaceSaga/artifacts/validation/<task>/<unique-run>/` for every run.
+V2 refuses to overwrite an existing evidence directory. Run native cases sequentially,
+with no concurrent builds/tests/GPU probes.
+
+```powershell
+$run = 'D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/<unique-run>'
+New-Item -ItemType Directory -Path $run -Force | Out-Null
+dotnet build tools/DeepSpaceSaga.Performance -c Release --no-restore *> "$run/build.log"
+if ($LASTEXITCODE) { throw 'Build failed' }
+$dll = 'D:/DeepSpaceSaga/DSS/tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll'
+function Invoke-MapEvidence([string]$name, [string[]]$evidenceArguments) {
+    $process = Start-Process dotnet -ArgumentList $evidenceArguments -WindowStyle Hidden -PassThru `
+        -RedirectStandardOutput "$run/$name.log" -RedirectStandardError "$run/$name.err"
+    if (!$process.WaitForExit(300000)) { $process.Kill($true); throw "$name TIMEOUT" }
+    if ($process.ExitCode) { throw "$name failed; inspect retained report/log" }
+}
+# Shard by scenario to keep each process below the five-minute tree cap.
+foreach ($scenario in @('Default','Default_500','Docked','Undocked','MarketProfiles','PlayerShipOnly')) {
+    Invoke-MapEvidence $scenario @($dll, 'D:/DeepSpaceSaga/DSS', "$run/$scenario.json", `
+        '--map-v2-acceptance', '--scenarios', $scenario)
+    dotnet $dll 'D:/DeepSpaceSaga/DSS' "$run/$scenario.json" --validate-map-v2-report
+    if ($LASTEXITCODE) { throw 'Raster evidence invalid' }
+}
+Invoke-MapEvidence 'native' @($dll, 'D:/DeepSpaceSaga/DSS', "$run/native.json", `
+    '--map-v2-native-acceptance', '--seed', '42', '--viewport', '1920x1080', '--ui-scale', '1.5')
+dotnet $dll 'D:/DeepSpaceSaga/DSS' "$run/native.json" --validate-map-v2-native-report
+if ($LASTEXITCODE) { throw 'Native evidence invalid' }
+```
+
+Strict raster options/defaults: `--seeds 1,42,100`, `--scenarios` comma-separated enabled
+names, `--viewports 1280x720,1920x1080,3440x1440,5120x1440`, `--ui-scales 1,1.5,2`,
+`--warmup 5`, `--frames 30`. Four views: player start, selected-station local,
+cluster fit, system. Six default scenario shards produce864PNG/18world snapshots.
+Smaller explicit matrices are subsets. Unknown flags, duplicate/invalid values,
+invalid tacticalMap settings and outputs outside workspace validation fail.
+
+Schema2 records seed/version/frozen Vmax, generation config, machine/runtime,
+HEAD/tool DLL SHA256/Settings hash, geometry, camera/detail, PNG/snapshot hashes,
+CPU timing and allocation. Unexposed solar/cluster retry counters are explicitly
+unavailable; actual AI diagnostics/configured limits are separate. Validation recomputes
+human min/nearest, camera spans, coverage and hashes/dimensions. Raster completion
+does not imply native FPS. Overlay state and actual detail are recorded: cluster fit
+can retain System detail when the free viewport is small.
+
+Native options: `--seed`, `--viewport`, `--ui-scale`. The Default route uses production
+screen handlers/fit-focus APIs and session events, real window resize, Approach,
+acknowledged fast speed, synchronization, docking dialogue, observed Dock,
+QuickSave/QuickLoad and paused follow return. Overlaps use repeat-click selection.
+Native surfaces/camera states and latest authoritative phase observations are
+archived. This is managed scripted input, not hardware input. Internal40s and
+external300000ms caps reject timeout. Slots use a unique owned directory/marker
+under the evidence directory; cleanup never deletes ordinary user slots.
+
+The native frame report records120warmup/600swap-completion intervals, GPU/refresh,
+p50/p95/p99, CPU submit and swap wait. Schema2's p95 target is12.5ms (80FPS);
+the older host also records its stricter p99 verdict. Keep both verdicts and display
+limits visible. Neither measures physical scanout or GPU execution alone. Human,
+physical and matched-baseline acceptance remain separate. Retain referenced reports/PNG;
+remove disposable slots/cache/scripts after owned processes stop. Actual outcomes and
+open gates belong to [EP-0018](../../DB/Board/EP-0018-map-geography-and-scale/ImplementationStatus.md).
+
+Legacy `--solar-map`/`--solar-window` below explicitly pin v1/.08 belt width and
+original cluster ranges. They do not measure shipped v2. Historical measurements
+retain their meaning and are not a matched current v2 baseline.
+
 ## Module panel native validation
 
 `DeepSpaceSaga.Performance <DSS root> <absolute report.json> --module-panels-window <scale> <WxH> <ru|en>`
@@ -33,7 +101,7 @@ dotnet build tools/DeepSpaceSaga.Performance -c Release
 $snapshot = (Get-ChildItem src/DeepSpaceSaga.Client/bin/Debug/net8.0/TacticalMapSnapshots/*.json |
     Sort-Object LastWriteTime | Select-Object -Last 1).FullName
 dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll `
-    --window-probe D:/DeepSpaceSaga/Downloads/map-profile.json `
+    --window-probe D:/DeepSpaceSaga/artifacts/validation/window-probe/<unique-run>/map-profile.json `
     --snapshot $snapshot --assets D:/DeepSpaceSaga/DSS/src/DeepSpaceSaga.Client/bin/Debug/net8.0 `
     --visible --topmost --seconds 60
 ```
@@ -78,7 +146,7 @@ for the captured failure and validation results.
 
 Run the production generation/resource pipeline for all requested seeds and scenarios:
 
-    dotnet run -c Release --project tools/DeepSpaceSaga.Performance -- D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/solar-max.json --solar-map --seeds 1:100 --scenarios all --config max
+    dotnet run -c Release --project tools/DeepSpaceSaga.Performance -- D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/artifacts/validation/solar-v1/<unique-run>/solar-max.json --solar-map --seeds 1:100 --scenarios all --config max
 
 --config min|max selects 3/7 planets, 2/5 belts and 50/75 starting days. --scenarios accepts all or a comma-separated list of scenario folder names. Invalid input returns exit code 1 with a failed report.
 
@@ -86,7 +154,7 @@ Every world records generation time/allocations, snapshot time/allocations and s
 
 Native solar-system window evidence (actual production SkiaWindow, live local session):
 
-    dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/window-max.json --solar-window max system 1.5 1920x1080
+    dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/artifacts/validation/solar-v1/<unique-run>/window-max.json --solar-window max system 1.5 1920x1080
 
 Select min|max, system|belt|selected, UI scale 1|1.2|1.5, and window dimensions.
 The runner uses client assets/settings, selects the start station, exercises actual
@@ -109,16 +177,16 @@ temporary PNG/JSON after inspection.
 Use absolute repository/output/reference paths: the runner enters the Client asset directory. All layers require `--clusters`; without `--all-map-layers`, environment/POI are disabled for a clean baseline. `--ai-placement` enables detailed bounded placement diagnostics. `--boundary-only` makes the baseline select one min/max cluster boundary, matching the full-map run.
 
 ```powershell
-dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS-EP-0004 D:/DeepSpaceSaga/baseline.json --solar-map --clusters --boundary-only --seeds 1:100 --scenarios all --config max
-dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS-EP-0004 D:/DeepSpaceSaga/full.json --solar-map --clusters --all-map-layers --seeds 1:100 --scenarios all --config max
-dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS-EP-0004 D:/DeepSpaceSaga/native.json --solar-window max base 1.5 1280x720 --clusters --all-map-layers
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/artifacts/validation/solar-v1/<unique-run>/baseline.json --solar-map --clusters --boundary-only --seeds 1:100 --scenarios all --config max
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/artifacts/validation/solar-v1/<unique-run>/full.json --solar-map --clusters --all-map-layers --seeds 1:100 --scenarios all --config max
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/artifacts/validation/solar-v1/<unique-run>/native.json --solar-window max base 1.5 1280x720 --clusters --all-map-layers
 ```
 
 Full-map min forces3x10 human stations/2 AI, max5x12/4 AI; native default scenario is Default_500 seed1. Native views: system, belt, selected, cluster, base, field, poi; descriptor views require all-map-layers. During warmup the runner fits System/cluster, selects real AI/field/POI through mouse handlers, toggles layers, closes diagnostics, scrolls the selected-base info and observes run/pause/resume. Exit0 means interaction/report completion, **not**80FPS. For native acceptance inspect fullMapInteraction, targetVerdict and PNG. Final tested matrix: min/system/1/1280x720; max/system/1/1920x1080, belt/1.2/1920x1080, cluster/1.5/1920x1080, base/1.5/1280x720, field/1.5/1920x1080, poi/1.2/1280x720, poi/1.5/1920x1080.
 
 Rows distinguish real entities, descriptors, configured decoration samples, layer flags, calendar and motion epochs. Decorations can be culled by LOD, so configured samples are not the exact drawn count. Full-map raster samples System/belt/cluster, first requested seed in each scenario,120 warmup+600 measured frames. Native reports carry live counts and actual OpenGL context separately. Optional `--client-frame-report D:/absolute/native.json` on --solar-map validates and hashes an existing native case; it is an independent case, not a substitute for matching all raster configurations. `--economy-report` is a separate optional acceptance input; this epic does not establish profitability.
 
-Current measurements: scripted native8/8 PASS, FPS target0/8 PASS (p9950.5839–54.4007ms vs12.5ms), with VSync reported100Hz on Intel Arc140V. Fresh baseline/empty-window controls also fail; exact driver/OS cause unproven. Do not claim GPU execution, physical scanout or human playthrough. Compact results and source/raw hashes are retained in [EP-0004 evidence](../../DB/Board/EP-0004-ai-territories-and-map-environment/ImplementationStatus.md); temporary native JSON/PNG were removed after review. [Current map contract](../../DB/Documentation/04-Engineering/AiMapEnvironment.md).
+Historical EP-0004 measurements: scripted native8/8 PASS, FPS target0/8 PASS (p9950.5839–54.4007ms vs12.5ms), with VSync reported100Hz on Intel Arc140V. Fresh baseline/empty-window controls also fail; exact driver/OS cause unproven. Do not claim GPU execution, physical scanout or human playthrough. Compact results and source/raw hashes are retained in [EP-0004 evidence](../../DB/Board/EP-0004-ai-territories-and-map-environment/ImplementationStatus.md); temporary native JSON/PNG were removed after review. [Current map contract](../../DB/Documentation/04-Engineering/AiMapEnvironment.md).
 
 ## Tactical battle initiative
 

@@ -5,7 +5,7 @@ ticket: EP-0018-US-0009-TK-0003-documentation-navigation
 title: "Навигация и связь прежних эпиков с новой картой"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: tooling
 test_project: tools/DeepSpaceSaga.Performance.Tests/DeepSpaceSaga.Performance.Tests.csproj
 depends_on: [EP-0018-US-0009-TK-0002-board-handoff]
@@ -43,6 +43,10 @@ No API change; documentation-only.
 Никаких новых public Engine вызовов из Client/render loop. Зависимости создают только явно перечисленные predecessor tickets.
 
 ## Implementation steps
+Final accuracy clarification: `DB/Documentation/02-FirstRelease/Screens/Settings.md` must distinguish renderer constructor/tool UI2 from ordinary SkiaWindow persisted-setting validation, which still accepts only the menu's original set. This is a documentation correction, not a host behaviour change; refresh the affected semantic source and graph hash after it.
+
+Final scope (2026-11-08): initial five files plus `DB/Documentation/06-Tooling/Graphify.md`, `DB/Documentation/06-Tooling/GraphifyRebuild.md`, `tools/graphify/rebuild.py`, and the documentation-only UI-scale summary comment in `tests/DeepSpaceSaga.Client.Tests/GameSessionUiScaleTests.cs`. Rebuild includes canonical EP18 and map-history EP2/3/4, selective fresh agent semantics with exact SHA/L# and full offline AST; publication ledgers/this final ticket are excluded to avoid circular hashes. Existing historical graph outputs remain untouched. Current guide examples must use canonical checkout and workspace artifact paths, never old sibling checkout/root output examples. Board/impact/ledger and actual post-commit receipt are updated after evidence, without inventing own SHA.
+
 1. Добавить навигацию только после фактической поставки; старые acceptance даты/FAIL результаты оставить историей.
 2. Описать новые tooling flags с реальными параметрами и воспроизводимыми examples, process-tree cap300000ms и абсолютными paths.
 3. Проверить ссылки на текущие контракты и ledger; самостоятельные старые EpicReview paths не объявлять новыми authoritative tasks.
@@ -93,3 +97,28 @@ offline граф через tools/graphify/rebuild.py; output/semantic/cache т�
 Граф строится после финального кода/текстов; fresh hashes/coverage/limitations
 проверяются, исторический src/graphify-out не заменяется. Пять файлов исходного
 planning не ограничивают обязательный inventory/документацию всего проекта.
+
+## Execution — 2026-11-08
+
+Updated current navigation, strict v2 raster/native commands, exact caps/absolute
+artifact paths, explicit v1 legacy tool modes, current Graphify scope and meaningful
+UI-scale comment. EP2/3/4 carry dated supersession/integration links; historical
+results/approvals unchanged. Deleted historical Agents links are text, current
+installed skill links valid. Settings host/menu versus renderer-only UI2 clarified.
+
+Offline graph744code/664Markdown,15fresh semantic sources (one delegated Graphify
+extraction agent per skill; not independent code review),24semantic nodes/27edges.
+20422derived nodes/55930edges/690communities;1408source and18stable export hashes
+verified. All required v2 files and query path present. Counts, source manifest,
+semantics, raw extraction, diagnostics, report and community HTML retained at
+D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261108-graph/.
+quality-audit.json/verify_graph.py prove current hashes/endpoint integrity. Token
+usage unmeasured, no external API or vision extraction. Parser warning and graph
+pruning/collapse limitations recorded, not silently called complete coverage.
+
+Changed Markdown62/links427,29tickets/38dependency nodes,0errors; navigation-audit.json
+in20261108-documentation. Graph caches/temporary authoring script removed; slots0,
+processes complete, noDSS/artifacts/root temp clones/worktrees. Current source hashes
+verified after cleanup. C# change is comment only; no gameplay tests rerun for prose.
+Actual previous regression/native failures remain explicit in ImplementationStatus.
+Final own SHA/push check is recorded only after commit by publication receipt.

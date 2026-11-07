@@ -1,6 +1,6 @@
 # Тикеты EP-0018 — переделка географии и масштаба карты
 
-9 историй / 29 тикетов.27 опубликованы; TK9.2 текущий, TK9.3 следующий.
+9 историй / 29 тикетов.28 опубликованы; TK9.3 текущий.
 Статусы/SHA/evidence и остаточные gates — [ImplementationStatus](ImplementationStatus.md).
 Первоначальные allowlists расширялись owning карточками до реализации по полномочиям
 EpicExecutionPrompt; максимум5 файлов planning не сокращает фактический scope. Полный контракт: [ImplementationContract.md](ImplementationContract.md); grounding/решения: [Documentation.md](Documentation.md).

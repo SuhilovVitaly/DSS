@@ -23,6 +23,8 @@
 - [Добыча и обследование](02-FirstRelease/Mechanics/IceMining.md).
 - [Валюта и финансы](02-FirstRelease/Mechanics/Money.md).
 - [Солнечная система и кластеры](02-FirstRelease/Mechanics/SolarSystemMapConcept.md).
+  Frozen v2 география и совместимость — [технический контракт](04-Engineering/TradingAndSolarSystem.md);
+  Local/Region/Cluster/System и фокус станции — [дизайн карты](03-Design/TacticalMapSpecification.md).
 - [Склад и рынок станции](02-FirstRelease/Mechanics/StationInventory.md).
 - [Тактическая карта и маневрирование](02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md).
 - [Корабль Tetrarch](02-FirstRelease/Mechanics/TetrarchClass.md).
