@@ -5,7 +5,7 @@ ticket: EP-0018-US-0003-TK-0003-voyage-geography
 title: "Торговые рейсы используют новые расстояния и текущий двигатель"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests/DeepSpaceSaga.Engine.Tests.csproj
 depends_on: [EP-0018-US-0003-TK-0002-scenario-start-bindings, EP-0018-US-0004-TK-0002-legacy-trade-map-validation]
@@ -97,3 +97,5 @@ trading validation US0004TK0001/0002. Поэтому эти2тикета вып�
 завершения всейStory3 перед началом; точные частичные gates перечислены в карточках.
 Это устраняет логическую зависимость тестов от ещё не реализованногоloader без
 переноса FAIL вPASS или объединения тикетов. 9историй/29тикетов остаются прежними.
+## Execution evidence
+2026-11-07: v2 voyage projection uses only canonical cluster links, excluding legacy-only far local edges; v1 union unchanged. Actual local/intercluster buy-flight-sell-return passes; current engine2x halves ETA without changing stored geography, active mid-flight JSON resume produces identical finance/fuel state and duplicate terminal settlement has no effect. Before: two tests detect two legacy-only edges; after focused36/36 PASS, Release build/format/diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-voyages/{before.trx,focused.trx,build.log,format.log}. Physical/human not run; self-review complete.

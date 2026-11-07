@@ -22,7 +22,7 @@ public sealed partial class SimulationEngine
         var members = clusters.Stations.ToDictionary(s => s.ObjectId, StringComparer.Ordinal);
         static (string A, string B) Pair(string a, string b) => string.CompareOrdinal(a, b) < 0 ? (a, b) : (b, a);
         var pairs = clusters.Links.Select(l => Pair(l.FromStationId, l.ToStationId))
-            .Concat(legacy.Edges.Where(e => members.ContainsKey(e.FromStationObjectId) && members.ContainsKey(e.ToStationObjectId))
+            .Concat(legacy.Edges.Where(e => clusters.RulesVersion == 1 && members.ContainsKey(e.FromStationObjectId) && members.ContainsKey(e.ToStationObjectId))
                 .Select(e => Pair(e.FromStationObjectId, e.ToStationObjectId)))
             .Distinct().OrderBy(p => p.A, StringComparer.Ordinal).ThenBy(p => p.B, StringComparer.Ordinal);
         var ship = objects.First(o => o.ObjectType == SpaceObjectType.PlayerShip);

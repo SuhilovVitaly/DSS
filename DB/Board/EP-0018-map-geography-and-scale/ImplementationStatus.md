@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-07: IN PROGRESS. Опубликовано11/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0003TK0003, US0004TK0003/0004; далее US5…US9.
+Статус на2026-11-07: IN PROGRESS. Опубликовано12/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0004TK0003/0004; далее US5…US9.
 
 ## Git и полномочия
 
@@ -137,3 +137,5 @@ ScenarioTK0002 опубликован2544f8ea14666cc49a1e3f221e8d948df306fcf7; r
 US0004TK0001: 37/37 focused, build/format/diff PASS; save-versions evidence as in ticket. v1/v2 materialized no-regeneration and atomic negative checks. Self-review complete; independent/human not performed.
 
 US0004TK0001 published8d5b3febfc463889f9e8b693205faa3ff79bd671 verified. US0004TK0002: focused65, non-corpus2133 PASS, build/format/diff PASS; evidence trade-validation. Next voyage gate.
+
+US0004TK0002 published9193557a548ebdf7ccabe942eb688f2d288d59c2 verified. US0003TK0003 actual voyages focused36/36 PASS; evidence voyages, build/format/diff PASS. No remote market execution introduced.

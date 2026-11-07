@@ -20,10 +20,10 @@ internal sealed class ClusterVoyageFixture : IDisposable
     internal List<(double StraightDays, double ActualDays)> Flights { get; } = [];
     internal List<TradeExecutionReceipt> Receipts { get; } = [];
 
-    internal ClusterVoyageFixture(ulong seed, bool intercluster, long? initialCredits = null)
+    internal ClusterVoyageFixture(ulong seed, bool intercluster, long? initialCredits = null, SolarSystemGenerationConfig? generation = null)
     {
         Engine = new SimulationEngine(SeededWorldBootstrapTests.Registry());
-        var config = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
+        var config = generation ?? EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
         var source = SeededWorldBootstrapTests.Scenario("Docked");
         Engine.LoadScenario(source with { GameState = source.GameState with { MasterSeed = seed, CurrentSpeed = "Speed0", PlayerTokens = initialCredits ?? source.GameState.PlayerTokens } }, generation: config);
         Capture();
@@ -132,6 +132,55 @@ internal sealed class ClusterVoyageFixture : IDisposable
 
 public sealed class ClusterVoyageIntegrationTests
 {
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void V2LocalAndInterclusterReturnUseCurrentGeometry(bool intercluster)
+    {
+        using var voyage = new ClusterVoyageFixture(42, intercluster, 1000000, GenerationInputSchemaTests.V2Config());
+        voyage.Trade(TradeCommandTypes.Buy, voyage.OutboundItem);
+        voyage.FlyTo(voyage.Destination);
+        voyage.Trade(TradeCommandTypes.Sell, voyage.OutboundItem);
+        voyage.Trade(TradeCommandTypes.Buy, voyage.ReturnItem);
+        voyage.FlyTo(voyage.Origin);
+        voyage.Trade(TradeCommandTypes.Sell, voyage.ReturnItem);
+        Assert.Equal(voyage.Origin, voyage.Player.DockedStationObjectId);
+        Assert.Equal(2, voyage.Snapshot.VoyageFinances.Length);
+        Assert.All(voyage.Snapshot.VoyageFinances, f => Assert.NotNull(f.CompletedGameTimeMs));
+        Assert.All(voyage.Flights, f => Assert.True(f.StraightDays >= 1));
+        var map = voyage.Engine.CaptureClusterVoyageMapForTools()!;
+        var clusters = voyage.Snapshot.ClusterMap!;
+        Assert.All(map.Edges, e => Assert.Contains(clusters.Links, l =>
+            (l.FromStationId == e.FromStationObjectId && l.ToStationId == e.ToStationObjectId) ||
+            (l.ToStationId == e.FromStationObjectId && l.FromStationId == e.ToStationObjectId)));
+    }
+
+    [Fact]
+    public void V2EngineUpgradeChangesEtaNotWorld()
+    {
+        using var original = new ClusterVoyageFixture(42, true, generation: GenerationInputSchemaTests.V2Config());
+        var registry = SeededWorldBootstrapTests.Registry();
+        registry = registry.WithModuleTypes([.. Enumerable.Range(0, registry.ModuleTypes.Count).Select(i =>
+        {
+            var m = registry.ModuleTypes.GetDefinition(i);
+            return m.MaxSpeedMps is > 0 ? m with { MaxSpeedMps = m.MaxSpeedMps * 2 } : m;
+        })]);
+        using var upgraded = new SimulationEngine(registry);
+        upgraded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(original.Save()), true), true);
+        var before = original.Engine.CaptureClusterVoyageMapForTools()!;
+        var after = upgraded.CaptureClusterVoyageMapForTools()!;
+        Assert.Equal(System.Text.Json.JsonSerializer.Serialize(original.Save().GameState.ClusterMap),
+            System.Text.Json.JsonSerializer.Serialize(upgraded.CaptureSaveState().GameState.ClusterMap));
+        Assert.Equal(before.Edges.Count, after.Edges.Count);
+        foreach (var edge in before.Edges)
+        {
+            var changed = after.Edges.Single(e => e.FromStationObjectId == edge.FromStationObjectId && e.ToStationObjectId == edge.ToStationObjectId);
+            Assert.Equal(edge.DistanceKm, changed.DistanceKm, 6);
+            Assert.InRange(changed.TravelEstimateGameTimeMs, edge.TravelEstimateGameTimeMs / 2, edge.TravelEstimateGameTimeMs / 2 + 1);
+            Assert.Equal(edge.FuelMultiplierPermille, changed.FuelMultiplierPermille);
+        }
+    }
+
     private static void RoundTrip(ulong seed, bool intercluster)
     {
         using var voyage = new ClusterVoyageFixture(seed, intercluster);
