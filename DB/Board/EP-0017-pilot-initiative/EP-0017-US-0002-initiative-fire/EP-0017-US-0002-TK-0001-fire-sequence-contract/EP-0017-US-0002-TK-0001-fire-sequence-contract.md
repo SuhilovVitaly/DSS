@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0002-initiative-fire
 ticket: EP-0017-US-0002-TK-0001-fire-sequence-contract
 title: "Контракт очереди, шагов стрельбы и причин пропуска"
-stage: approved
+stage: done
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests/DeepSpaceSaga.Contracts.Tests.csproj
 depends_on: [EP-0017-US-0001-TK-0005-pilot-cards]
@@ -126,3 +126,9 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Добавлены immutable FireQueue/FireSteps и typed skip reasons, nullable event metadata, FireSkipped=14 без изменения0..13. Старые positional constructors сохранены; отсутствующие коллекции=[]; Killed/LethalImpact имеют per-shot смысл. Self-review: Contracts не вычисляет повреждения/RNG, состояния шагов передаются независимо. Scope включает эту карточку. Независимое review не заявляется.
+
+Contracts build PASS; весь Contracts.Tests PASS186/186; scoped format исправлен и --verify-no-changes PASS; git diff --check PASS. Проверены два промежуточных попадания, Unicode, zero initiative, все7 причин skip, old payload и enum IDs. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0201/ (build/tests/format/format-fix/format-verified logs и contracts.trx). Native не применяется к DTO.
