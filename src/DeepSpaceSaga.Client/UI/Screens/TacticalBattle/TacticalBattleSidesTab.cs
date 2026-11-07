@@ -132,6 +132,8 @@ internal sealed class TacticalBattleSidesTab
             _ when unit.Kind == TacticalUnitKind.Carrier => L("Sides.Carrier"),
             _ => BuildDetails(unit)
         };
+        if (unit.Kind == TacticalUnitKind.Drone)
+            details += " · " + F("Initiative", unit.Initiative is { } initiative ? N(initiative) : "—");
         return new(unit, own, health, details, own && unit.Kind == TacticalUnitKind.Drone && unit.State == TacticalUnitState.Air);
     }
 

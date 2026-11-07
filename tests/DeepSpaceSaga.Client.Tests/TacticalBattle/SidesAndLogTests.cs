@@ -10,6 +10,63 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SidesAndLogTests
 {
     [Fact]
+    public async Task PilotCardsShowOwnAndEnemyInitiativeAndPreserveZero()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var units = screen.Flow.State!.Units;
+        foreach (var unit in units.Where(u => u.Kind == TacticalUnitKind.Drone))
+        {
+            foreach (var state in new[] { TacticalUnitState.Air, TacticalUnitState.Disabled, TacticalUnitState.Destroyed })
+            {
+                var changed = unit with { Initiative = unit.Side == "A" ? 55 : 0, State = state };
+                var card = TacticalBattleSidesTab.Describe(changed, unit.Side == "A");
+                string label = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    BattleFormat.Localize("Initiative"), changed.Initiative);
+                Assert.Contains(label, card.Details);
+            }
+            Assert.Contains(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                BattleFormat.Localize("Initiative"), "—"), TacticalBattleSidesTab.Describe(unit with { Initiative = null }, true).Details);
+        }
+        foreach (var carrier in units.Where(u => u.Kind == TacticalUnitKind.Carrier))
+            Assert.DoesNotContain(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                BattleFormat.Localize("Initiative"), "—"), TacticalBattleSidesTab.Describe(carrier, true).Details);
+    }
+
+    [Fact]
+    public async Task PilotCardInitiativeSurvivesLocaleSkinAndSelectionChanges()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        using var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        string restore = Localization.ReadLanguageSetting();
+        try
+        {
+            foreach (string language in new[] { "Russian", "English" })
+            {
+                Localization.ApplyLanguage(language);
+                foreach (string id in new[] { "classic", "contrast" })
+                {
+                    var themed = new TacticalBattleScreen(screen.Flow, 1.5f, skins.GetOrClassic(id));
+                    themed.PanelTabs.Select("sides", notify: true);
+                    using var bitmap = new SKBitmap(1024, 768);
+                    using var canvas = new SKCanvas(bitmap);
+                    themed.Render(canvas, 1024, 768);
+                    foreach (var card in TacticalBattleSidesTab.Cards(themed.CaptureFrame(1024, 768)!))
+                    {
+                        if (card.Unit.Kind != TacticalUnitKind.Drone) continue;
+                        Assert.NotNull(card.Unit.Initiative);
+                        Assert.Contains((language == "Russian" ? "иниц " : "init ") + card.Unit.Initiative, card.Details);
+                    }
+                    themed.OnKeyDown(Key.Tab);
+                    Assert.Equal(screen.Flow.State!.Units.Select(u => u.Initiative), themed.CaptureFrame(1024, 768)!.Battle.Units.Select(u => u.Initiative));
+                }
+            }
+        }
+        finally { Localization.ApplyLanguage(restore); }
+    }
+
+    [Fact]
     public async Task Reference_skin_changes_sides_log_and_forecast_without_changing_visible_facts()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

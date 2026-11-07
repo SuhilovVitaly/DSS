@@ -3,7 +3,7 @@ epic: EP-0017-pilot-initiative
 story: EP-0017-US-0001-pilot-initiative
 ticket: EP-0017-US-0001-TK-0005-pilot-cards
 title: "Инициатива на карточках своих и вражеских пилотов"
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0017-US-0001-TK-0004-materialize-initiative]
@@ -124,3 +124,11 @@ Restore выполняется отдельно при необходимост�
 
 Даны owning layer, полный allowlist, актуальные source anchors, зависимости, проектируемый API, правила, границы и точные future команды. Implementer сначала читает этот тикет и уже выполненные prerequisites; не должен угадывать политику целей, RNG, баланс инициативы или искать task source вне Board. Блокирующих продуктовых вопросов нет; новые несвязанные находки записываются в backlog, а не расширяют работу.
 
+
+## Execution — 2026-11-07
+
+Карточки обеих сторон показывают Initiative из DTO для active/disabled/destroyed, включая0; legacy null=—; carriers не получают навык. Используются существующие перенос, scroll и роли скинов. На реальном local-session/render пути проверены RU/EN, Classic/contrast и выбор дрона; числа не меняются. Self-review выполнено; независимое review не заявляется. Scope дополнен этой карточкой и обновлением родительской истории.
+
+Client build PASS0 warnings/errors; SidesAndLogTests PASS6/6; scoped format --verify-no-changes --no-restore PASS; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0017-pilot-initiative/20261107-tk0105/ (build/tests/format logs, focused.trx и CPU rasters). CPU raster не является native доказательством.
+
+Native Classic/contrast NOT RUN на этом шаге: проверка консолидируется после финальной UI хронологии US-0003, чтобы проверить итоговый экран; Windows helper доступен (list_apps успешно). Product/human acceptance открыта. Stage implemented означает production+automated готовность, не полную приёмку. Dependency для US-0002 готова технически.
