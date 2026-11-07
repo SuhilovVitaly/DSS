@@ -1,5 +1,12 @@
 # Ассеты и данные карты и боя
 
+World map использует camera-based Local/Region/Cluster/System и отдельные
+ReferenceSpeedKmS/MaxLocalHours в tacticalMap. Frozen скорость берётся из geography
+descriptor; fallback применяется к миру без него. Локализация линейки явно
+отличает опорное время от текущей оценки полёта. [Дизайн карты](../03-Design/TacticalMapSpecification.md).
+UI 2.0 поддержан renderer для матрицы проверки; menu options остаются отдельным
+контрактом [Settings](../02-FirstRelease/Screens/Settings.md).
+
 Настройки карты находятся в Settings.gameSettings.tacticalMap, назначения клавиш — в [Data/UI](../../../src/DeepSpaceSaga.Client/Data/UI/). Данные тактического боя поставляются отдельным [каталогом](../../../src/DeepSpaceSaga.Client/Data/TacticalBattle/) с русскими именами и обязательным initiative у каждого пилота, а подписи UI — в [Data/Locale](../../../src/DeepSpaceSaga.Client/Data/Locale/).
 
 Панели и карты работают по принятым снимкам и локальному UI. Рендер и обработка мыши используют общий viewport. Кнопочные PNG экспортируются [Export-TacticalButtonAssets.ps1](../../../tools/Export-TacticalButtonAssets.ps1); правила размеров и состояний — в [стиле кнопок](../03-Design/TacticalButtons/STYLE.md). Шрифты боя должны поддерживать кириллицу и символы из BattleFormat; запасные глифы проверяются отдельно от наличия ключа локали.

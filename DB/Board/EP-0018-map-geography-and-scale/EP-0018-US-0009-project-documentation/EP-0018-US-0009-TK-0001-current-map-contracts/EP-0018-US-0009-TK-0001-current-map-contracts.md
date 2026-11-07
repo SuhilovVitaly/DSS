@@ -5,7 +5,7 @@ ticket: EP-0018-US-0009-TK-0001-current-map-contracts
 title: "Действующие правила географии, карты и сохранений"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: tooling
 test_project: tools/DeepSpaceSaga.Performance.Tests/DeepSpaceSaga.Performance.Tests.csproj
 depends_on: [EP-0018-US-0008-TK-0003-native-map-evidence]
@@ -43,6 +43,8 @@ No API change; documentation-only, layer tooling по Board convention.
 Никаких новых public Engine вызовов из Client/render loop. Зависимости создают только явно перечисленные predecessor tickets.
 
 ## Implementation steps
+Final impact scope (2026-11-08): besides the five initial owners, update `DB/Documentation/01-Requirements/FirstReleaseRequirements.md`, `02-FirstRelease/Screens/GameSession.md`, `02-FirstRelease/Screens/Settings.md`, `02-FirstRelease/Mechanics/TacticalMapAndManeuvering.md`, `04-Engineering/AiMapEnvironment.md`, `04-Engineering/DebugTuningPanel.md`, `06-Tooling/GameSessionScreenUI.md` (all under DB/Documentation). These summaries need current scale/navigation/ownership boundaries. VData copies remain noncanonical historical material. Validation history stays in Board/artifacts.
+
 1. После US-0008 сверить итоговую реализацию с этим Board; новые обещания не добавлять без evidence.
 2. Обновить5 owning Markdown: rules/units/versions/local zoom/LOD/navigation/ETA boundaries.
 3. Указать реальные sources и наблюдаемые ограничения, отделить native/human/FPS остаток. Не хранить логи/screenshots/JSON в Documentation.
@@ -92,3 +94,8 @@ offline граф через tools/graphify/rebuild.py; output/semantic/cache т�
 Граф строится после финального кода/текстов; fresh hashes/coverage/limitations
 проверяются, исторический src/graphify-out не заменяется. Пять файлов исходного
 planning не ограничивают обязательный inventory/документацию всего проекта.
+
+
+## Execution — 2026-11-08
+
+Updated12 current curated Markdown owners: frozen v2 geography/formula, v1/v2 Save20 ingress, bounded materialization/resources/AI boundaries, camera scale/detail/navigation/ruler vs current ETA, UI2 renderer vs unchanged Settings menu. No run history or generated outputs added to Documentation. Contract/source self-review completed; no new gameplay promises or human approval claimed. Link/anchor and Markdown-only audit:13 changed files/84links,29tickets/38dependency nodes,0errors; retained D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261108-documentation/contracts-audit.json and audit.py. git diff --check PASS. Markdown-only change; prior automated/native outcomes are referenced, not rerun for prose.
