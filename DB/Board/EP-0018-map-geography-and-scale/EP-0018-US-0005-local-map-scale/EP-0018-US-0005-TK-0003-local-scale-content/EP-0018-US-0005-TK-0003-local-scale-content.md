@@ -5,7 +5,7 @@ ticket: EP-0018-US-0005-TK-0003-local-scale-content
 title: "Настройки локального масштаба и понятная линейка расстояний"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0005-TK-0002-initial-camera-and-zoom]
@@ -83,3 +83,6 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution evidence
+2026-11-07: shipped tacticalMap explicitly declares referenceSpeedKmS4/maxLocalHours4, retaining100m/px baseline and all other values. Actual TacticalMapSettings.Load accepts old JSON with both fields removed and uses documented defaults; ruler labels reference-time distinctly. Focused20/20 PASS; Release Client build, scoped format-verified exit0 and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-local-scale-content/{focused.trx,build.log,format-verified.log}. Temporary legacy settings folder deleted in finally; no gameplay content change. Self-review complete.
