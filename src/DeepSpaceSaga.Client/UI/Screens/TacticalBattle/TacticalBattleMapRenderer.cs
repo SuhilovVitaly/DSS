@@ -630,8 +630,8 @@ internal static class TacticalBattleMapRenderer
             string name = ControlText.Ellipsize(label, edge.Width - iconWidth, text);
             float width = iconWidth + text.MeasureText(name);
             float dx = target.X - edge.MidX, dy = target.Y - edge.MidY;
-            float horizontal = (float)(edge.Width * 0.5f / (double)Math.Abs(dx));
-            float vertical = (float)(edge.Height * 0.5f / (double)Math.Abs(dy));
+            double horizontal = edge.Width * 0.5 / Math.Abs(dx);
+            double vertical = edge.Height * 0.5 / Math.Abs(dy);
             bool side = horizontal <= vertical;
             float reach = (float)PyMath.Min(horizontal, vertical);
             float left = edge.MidX + dx * reach - width * 0.5f;
@@ -640,7 +640,8 @@ internal static class TacticalBattleMapRenderer
             for (int i = 0; i < 2 * units.Length + 1; i++)
             {
                 // Search either side of the ray's intersection with this edge.
-                float shift = ((i + 1) >> 1) * (i % 2 == 0 ? -step : step);
+                int slot = (int)((i + 1) / 2.0);
+                float shift = slot * (i % 2 == 0 ? -step : step);
                 var rect = SKRect.Create(
                     (float)PyMath.Clamp(left + (side ? 0 : shift), edge.Left, PyMath.Max(edge.Left, edge.Right - width)),
                     (float)PyMath.Clamp(top + (side ? shift : 0), edge.Top, edge.Bottom - height), width, height);
