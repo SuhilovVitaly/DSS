@@ -23,12 +23,37 @@ public sealed partial class GameSessionScreen
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
     private bool _mapCameraInitialized;
+    private MapWorldIdentity? _mapWorldIdentity;
+    private long _mapWorldSnapshotTime;
+    private ulong _mapWorldSnapshotSequence;
     internal MapDetailLevel MapDetail { get; private set; } = MapDetailLevel.Local;
     private double MapReferenceSpeed => MapScalePolicy.ReferenceSpeed(_mapSettings,
         _buffer.Presented?.Snapshot.ClusterMap?.Geography?.ReferenceSpeedKmS ?? _mapSettings.ReferenceSpeedKmS);
     internal double LocalMaximumPpu => MapScalePolicy.MaximumPpu(_mapSettings, _viewportW, _viewportH, MapReferenceSpeed);
     internal string RulerReferenceText(double meters) => string.Format(CultureInfo.InvariantCulture,
         Localization.Get("Map.ReferenceTime"), meters / 1000 / MapReferenceSpeed * 300 / 3600, MapReferenceSpeed);
+
+    private bool UpdateMapWorld(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot is null) return false;
+        var identity = MapDetailPolicy.IdentifyWorld(snapshot);
+        bool changed = _mapWorldIdentity is { } previous && (previous != identity ||
+            snapshot.SolarSystemMap is not null && snapshot.SnapshotSequence != _mapWorldSnapshotSequence && snapshot.MotionTimeMs < _mapWorldSnapshotTime);
+        _mapWorldIdentity = identity;
+        _mapWorldSnapshotTime = snapshot.MotionTimeMs;
+        _mapWorldSnapshotSequence = snapshot.SnapshotSequence;
+        if (!changed) return false;
+        _zoomTransition.Cancel(); _mapCameraInitialized = false; MapDetail = MapDetailLevel.Local;
+        _mapClusters.Clear(); _mapSummaryLabels.Clear(); _visibleSummaryLabels.Clear(); _mapSummaryLabelRects.Clear();
+        _clusteredObjectIds.Clear(); _clusterCells.Clear(); _clusterCellPool.Clear();
+        _selectionCycle = []; _selectionCycleIndex = 0;
+        _fittedBeltId = null; _fittedClusterId = null; _navigationTargetId = null;
+        _selectedFieldId = null; _selectedPoiId = null; _selectedObjectId = snapshot.SelectedObjectId; _activeObjectId = null;
+        _isPanningMap = false; _hasMousePosition = false; _isFocusAttachedToPlayer = true;
+        _pausedVisualAnchors.Clear(); _visualCorrections.Clear(); _lastSnapshotBaselineObjects.Clear(); _hasSnapshotBaseline = false;
+        _initialTrailBootstrapObjectIds.Clear(); _trailStore = new ObjectTrailStore(_predictor, _timestampProvider);
+        return true;
+    }
     private SKRect _mapToolbarRect;
     private readonly SKRect[] _mapViewButtons = new SKRect[11];
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
@@ -78,7 +103,7 @@ public sealed partial class GameSessionScreen
             double distance = double.Hypot(p.X - x, p.Y - y);
             if (distance <= ObjectHitTestRadiusPx)
                 candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
-            else if (_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
+            else if (HasSelectableMapLabel(state.Source) && _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
                 labelCandidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), 0));
         }
         // A compact plaque may overlap another object: actual marker hits win.
@@ -108,6 +133,8 @@ public sealed partial class GameSessionScreen
         AiMapPresentation.Base(_buffer.Presented?.Snapshot, id) is not null;
     private bool IsPrimaryMapLabel(string id) => id == _selectedObjectId || id == _navigationTargetId ||
         id == _buffer.Presented?.Snapshot.PlayerShipObjectId;
+    private static bool HasSelectableMapLabel(ObjectMotionSnapshot source) => ObjectLabelRenderer.HasSelectableShipLabel(source) ||
+        source.RenderObjectType is SpaceObjectType.Station or SpaceObjectType.Asteroid or SpaceObjectType.Planet or SpaceObjectType.Sun;
 
     private void SetFollowPlayer()
     {
@@ -237,7 +264,7 @@ public sealed partial class GameSessionScreen
         // Visible canonical markers win over aggregates beside their owners.
         if (_renderStates.Any(s => !_clusteredObjectIds.Contains(s.Pose.ObjectId) && MarkerHit(s.Pose.X, s.Pose.Y))) return false;
         if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest) && _poiGeometry.Any(p => Near(p.X, p.Y))) return false;
-        if (_labelRenderer.Geometries.Values.Any(g => g.PlaqueRect.Contains(x, y))) return false;
+        if (_renderStates.Any(s => HasSelectableMapLabel(s.Source) && _labelRenderer.Geometries.TryGetValue(s.Pose.ObjectId, out var g) && g.PlaqueRect.Contains(x, y))) return false;
         for (int i = 0; i < _mapClusters.Count; i++)
         {
             var cluster = _mapClusters[i];

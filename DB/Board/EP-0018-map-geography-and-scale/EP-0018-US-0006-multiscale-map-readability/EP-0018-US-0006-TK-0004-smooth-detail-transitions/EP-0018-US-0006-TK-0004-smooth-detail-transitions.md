@@ -5,7 +5,7 @@ ticket: EP-0018-US-0006-TK-0004-smooth-detail-transitions
 title: "Устойчивые переходы детализации и очистка состояния карты"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0006-TK-0003-map-label-priorities]
@@ -89,3 +89,6 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution evidence
+2026-11-07: materialized world identity(seed/version/player) or authoritative time rewind resets map detail/initial camera, pooled aggregate identities, selections/cycles, paused corrections and trails. Ordinary snapshot leaves manual camera/detail intact; legacy session replacement uses existing fresh-screen lifecycle. Hover now uses freshly computed frame label geometry after resize/pan; only known semantic labels and ships are selectable, preserving marker-only unknown-contact behavior. Reproduced/fixed moving-unknown hover regression in first broad run. Focused27 then extended interaction/lifecycle77 PASS; final full Client2109/2109 PASS. Release build-final, format-final and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-detail-lifecycle/{focused.trx,focused-verified.trx,client-full.trx,client-verified.trx,build-final.log,format-final.log}. Repeated threshold crossings/pause/fast snapshots and resize/canceled animation tested; no FPS/allocation performance claim before US8. Self-review complete.

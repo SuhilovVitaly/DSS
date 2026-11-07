@@ -1,6 +1,7 @@
 using System.Collections.Immutable;
 using System.Diagnostics;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
@@ -9,6 +10,94 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class TacticalMapSmoothnessTests
 {
+    private static AuthoritativeSnapshot DetailWorld(ulong sequence, ulong seed, string station, double x, long time = 0) =>
+        new(sequence, time * 300, SimulationSpeed.Speed0,
+            [new("player", x, 0, 0, 0, RenderObjectType: SpaceObjectType.PlayerShip),
+                new(station, x + 100, 0, 0, 0, RenderObjectType: SpaceObjectType.Station)], "player",
+            SimulationTimeMs: time, SolarSystemMap: new(2, seed, 1000000, [], [], []),
+            ClusterMap: new(2, "cluster-" + seed, [new("cluster-" + seed, "Cluster " + seed, "belt", [station], "mixed")],
+                [new(station, "cluster-" + seed, "mining")], [], [], new(4, 1, 1, 3)));
+
+    [Fact]
+    public void DetailThresholdDoesNotFlicker()
+    {
+        var snapshot = DetailWorld(1, 42, "station", 0);
+        var buffer = new SnapshotBuffer(() => 0); buffer.Update(snapshot);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => 0);
+        using var surface = SKSurface.Create(new SKImageInfo(1280, 720));
+        screen.Render(surface.Canvas, 1280, 720);
+        void Span(double days)
+        {
+            double ppu = 720 / (days * 4 * 86400 / 300 * 10);
+            var free = screen.AvailableMapRect();
+            screen.OnMouseWheel(free.MidX, free.MidY, (float)(Math.Log(ppu / screen.CameraPixelsPerWorldUnit) / Math.Log(1.25)));
+            screen.Render(surface.Canvas, 1280, 720);
+        }
+        for (int i = 0; i < 60; i++)
+        {
+            buffer.Update(snapshot with { SnapshotSequence = (ulong)i + 2, CurrentSpeed = i % 2 == 0 ? SimulationSpeed.Speed0 : SimulationSpeed.Speed4 });
+            Span(4d / 24 * (i % 2 == 0 ? 1.02 : 1.08));
+            Assert.Equal(MapDetailLevel.Local, screen.MapDetail);
+        }
+        Span(4d / 24 * 1.12); Assert.Equal(MapDetailLevel.Region, screen.MapDetail);
+        for (int i = 0; i < 60; i++)
+        {
+            Span(4d / 24 * (i % 2 == 0 ? 1.02 : 1.08));
+            Assert.Equal(MapDetailLevel.Region, screen.MapDetail);
+            Assert.InRange(screen.MapClusterCount, 0, 1);
+        }
+    }
+
+    [Fact]
+    public void NewSessionClearsOldClusterPresentation()
+    {
+        long clock = 0;
+        var buffer = new SnapshotBuffer(() => clock); buffer.Update(DetailWorld(1, 1, "old", 1000));
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), timestampProvider: () => clock,
+            mapSettings: new() { ZoomAnimationMs = 120 });
+        using var surface = SKSurface.Create(new SKImageInfo(1920, 1080));
+        screen.Render(surface.Canvas, 1920, 1080);
+        var overview = screen.ScaleButtonRects[4]; screen.OnMouseDown(overview.MidX, overview.MidY);
+        clock += Stopwatch.Frequency; screen.Render(surface.Canvas, 1920, 1080);
+        Assert.Equal(MapDetailLevel.System, screen.MapDetail); Assert.Equal(1, screen.MapClusterCount);
+        var free = screen.AvailableMapRect(); screen.OnMouseWheel(free.MidX, free.MidY, 1);
+        Assert.True(screen.IsZoomAnimating);
+        buffer.Update(DetailWorld(2, 2, "new", 5000));
+        screen.Render(surface.Canvas, 1920, 1080);
+        Assert.False(screen.IsZoomAnimating); Assert.Equal(MapDetailLevel.Local, screen.MapDetail);
+        Assert.Equal(screen.LocalMaximumPpu, screen.CameraPixelsPerWorldUnit);
+        Assert.Equal(5000, screen.CameraFocusX);
+        Assert.Equal(5000, screen.RenderStates.Single(s => s.Pose.ObjectId == "player").Pose.X);
+        Assert.DoesNotContain("old", screen.MapLabels.Keys); Assert.DoesNotContain("old", screen.AggregatedMapObjectIds);
+        Assert.Empty(screen.MapSummaryLabels);
+        free = screen.AvailableMapRect(); screen.OnMouseWheel(free.MidX, free.MidY, -1);
+        clock += Stopwatch.Frequency; screen.Render(surface.Canvas, 1920, 1080);
+        double manual = screen.CameraPixelsPerWorldUnit;
+        buffer.Update(DetailWorld(3, 2, "new", 5000, 100)); screen.Render(surface.Canvas, 1920, 1080);
+        Assert.Equal(manual, screen.CameraPixelsPerWorldUnit);
+        buffer.Update(DetailWorld(4, 2, "new", 5000)); screen.Render(surface.Canvas, 1920, 1080);
+        Assert.Equal(screen.LocalMaximumPpu, screen.CameraPixelsPerWorldUnit);
+    }
+
+    [Fact]
+    public void ResizeKeepsSelectionAndHitsAligned()
+    {
+        var buffer = new SnapshotBuffer(); buffer.Update(DetailWorld(1, 42, "station", 1000) with { SelectedObjectId = "station" });
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), mapSettings: new() { ZoomAnimationMs = 120 });
+        using var surface = SKSurface.Create(new SKImageInfo(1920, 1080));
+        screen.Render(surface.Canvas, 1920, 1080);
+        var free = screen.AvailableMapRect(); screen.OnMouseWheel(free.MidX, free.MidY, -1);
+        Assert.True(screen.IsZoomAnimating);
+        screen.SetUiScale(1.5f); screen.Render(surface.Canvas, 1280, 720);
+        Assert.False(screen.IsZoomAnimating); Assert.Equal("station", screen.SelectedObjectId);
+        var label = screen.MapLabels["station"].PlaqueRect;
+        Assert.InRange(label.Right, 0, 1280); Assert.InRange(label.Bottom, 0, 720);
+        screen.OnMouseMove(label.MidX, label.MidY); Assert.Equal("station", screen.ActiveObjectId);
+        screen.OnMouseDown(label.MidX, label.MidY, Silk.NET.Input.MouseButton.Right);
+        screen.OnMouseDown(label.MidX, label.MidY, Silk.NET.Input.MouseButton.Left);
+        Assert.Equal("station", screen.SelectedObjectId);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

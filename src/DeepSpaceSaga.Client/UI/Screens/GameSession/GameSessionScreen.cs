@@ -18,7 +18,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
-    private readonly ObjectTrailStore _trailStore;
+    private ObjectTrailStore _trailStore;
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly NavigationTrajectoryProjector _navigationTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
@@ -411,6 +411,7 @@ public sealed partial class GameSessionScreen : IScreen
         DisposeDebugTuning();
         _zoomTransition.Cancel();
         _isPanningMap = false;
+        _selectionCycle = []; _selectionCycleIndex = 0;
         _isCtrlLeftDown = false;
         _isCtrlRightDown = false;
         _hasMousePosition = false;
@@ -989,7 +990,7 @@ public sealed partial class GameSessionScreen : IScreen
             bool labelOnly = distanceSq > radiusSq;
             if (labelOnly)
             {
-                if (!_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
+                if (!HasSelectableMapLabel(state.Source) || !_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
                     continue;
                 distanceSq = 0;
             }
@@ -1145,6 +1146,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
+        bool mapWorldChanged = UpdateMapWorld(buffered?.Snapshot);
         UpdateObjectRenderStates(prediction, deltaSeconds);
         if (!_mapCameraInitialized && FindPlayerShip(_renderStates) is not null)
         {
@@ -1163,11 +1165,8 @@ public sealed partial class GameSessionScreen : IScreen
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateMapClusters();
 
-        // Recompute after render states + camera focus are current for this frame —
-        // covers pan/zoom, camera-focus changes, and an object moving under a
-        // stationary cursor (ТЗ §54). OnMouseMove already recomputes eagerly on input;
-        // this catches every other trigger that isn't a mouse-move event.
-        RecomputeActiveObjectId();
+        // Hover is recomputed below, after this frame's label layout, so resize,
+        // pan and moving contacts never use stale plaque hit regions.
         CompleteRenderStage("coordinates_and_hit_test");
 
         if (_diagInterestingFrame && PauseResumeDiagnostics.Enabled)
@@ -1234,10 +1233,11 @@ public sealed partial class GameSessionScreen : IScreen
 
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
-            bool resetSmoothing = viewportResized;
+            bool resetSmoothing = viewportResized || mapWorldChanged;
             PrepareMapSummaryLabels();
             _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing,
                 _mapSettings, IsPrimaryMapLabel, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _activeObjectId, MapDetail, _mapSummaryLabelRects);
+            RecomputeActiveObjectId();
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
