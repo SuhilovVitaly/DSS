@@ -989,8 +989,7 @@ public sealed partial class GameSessionScreen : IScreen
             bool labelOnly = distanceSq > radiusSq;
             if (labelOnly)
             {
-                if (!ObjectLabelRenderer.HasSelectableShipLabel(state.Source) ||
-                    !_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
+                if (!_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
                     continue;
                 distanceSq = 0;
             }
@@ -1236,8 +1235,9 @@ public sealed partial class GameSessionScreen : IScreen
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
             bool resetSmoothing = viewportResized;
+            PrepareMapSummaryLabels();
             _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing,
-                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _activeObjectId);
+                _mapSettings, IsPrimaryMapLabel, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _activeObjectId, MapDetail, _mapSummaryLabelRects);
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);

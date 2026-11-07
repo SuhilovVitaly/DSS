@@ -1,6 +1,6 @@
 # Исполнение EP-0018
 
-Статус на2026-11-07: IN PROGRESS. Опубликовано19/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0006TK0003; далее US5…US9.
+Статус на2026-11-07: IN PROGRESS. Опубликовано20/29тикетов; stories1/2 реализованы с открытым file-save gate. Следующий: US0006TK0004; далее US5…US9.
 
 ## Git и полномочия
 
@@ -153,3 +153,5 @@ US0005TK0002 published81183d40d45c066e4a4f686520a506c0423bc012 verified. US0005T
 US0005TK0003 publishedc71528defe18cd7117ab636ac567fba85531ea70 verified. US0006TK0001 semantic map detail focused30 PASS; build/format/diff PASS, map-detail evidence.
 
 US0006TK0001 publishedf2f1f02ebf8552aa8928925bd90611832da95c21 verified. US0006TK0002 orbital focused7 PASS; build/format/diff PASS, orbit-detail evidence.
+
+US0006TK0002 published9d6e9a66f4b6d287c512b81c490fa289db4d4298 verified. US0006TK0003 fullClient2106 PASS, focused84/compatibility27 PASS; build/format/diff PASS, map-labels evidence. Original failures and build-lock retained as evidence.

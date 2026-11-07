@@ -34,6 +34,11 @@ public sealed partial class GameSessionScreen
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
     private readonly HashSet<string> _clusteredObjectIds = new(StringComparer.Ordinal);
     private readonly List<MapCluster> _mapClusters = new();
+    private readonly List<SummaryLabel> _mapSummaryLabels = new();
+    private readonly List<SummaryLabel> _visibleSummaryLabels = new();
+    private readonly List<SKRect> _mapSummaryLabelRects = new();
+    private readonly record struct SummaryLabel(int ClusterIndex, string Text, SKRect Bounds);
+    internal IReadOnlyList<SKRect> MapSummaryLabels => _visibleSummaryLabels.Select(l => l.Bounds).ToArray();
     private readonly Dictionary<(double X, double Y), List<ObjectRenderState>> _clusterCells = new();
     private readonly Stack<List<ObjectRenderState>> _clusterCellPool = new();
     private readonly List<SKRect> _mapObstacles = new();
@@ -73,8 +78,7 @@ public sealed partial class GameSessionScreen
             double distance = double.Hypot(p.X - x, p.Y - y);
             if (distance <= ObjectHitTestRadiusPx)
                 candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
-            else if (ObjectLabelRenderer.HasSelectableShipLabel(state.Source) &&
-                _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
+            else if (_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
                 labelCandidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), 0));
         }
         // A compact plaque may overlap another object: actual marker hits win.
@@ -102,6 +106,8 @@ public sealed partial class GameSessionScreen
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
         id == _buffer.Presented?.Snapshot.PlayerShipObjectId ||
         AiMapPresentation.Base(_buffer.Presented?.Snapshot, id) is not null;
+    private bool IsPrimaryMapLabel(string id) => id == _selectedObjectId || id == _navigationTargetId ||
+        id == _buffer.Presented?.Snapshot.PlayerShipObjectId;
 
     private void SetFollowPlayer()
     {
@@ -185,28 +191,58 @@ public sealed partial class GameSessionScreen
         }
     }
 
+    private void PrepareMapSummaryLabels()
+    {
+        _mapSummaryLabels.Clear(); _mapSummaryLabelRects.Clear();
+        var available = AvailableMapRect();
+        if (available.Width < 32 || available.Height < 24) available = SKRect.Create(_viewportW, _viewportH);
+        for (int i = 0; i < _mapClusters.Count; i++)
+        {
+            var cluster = _mapClusters[i];
+            if (cluster.Name is null) continue;
+            var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
+            if (x < -15 || y < -15 || x > _viewportW + 15 || y > _viewportH + 15) continue;
+            string text = ObjectLabelRenderer.FitText(cluster.Name, _panelTextPaint, available.Width - 12);
+            float width = _panelTextPaint.MeasureText(text) + 8;
+            var desired = SKRect.Create(x - width / 2, y - 36, width, 18);
+            if (!ObjectLabelLayout.TryPlace(desired, _mapSummaryLabelRects, available, out var bounds)) continue;
+            _mapSummaryLabels.Add(new(i, text, bounds)); _mapSummaryLabelRects.Add(bounds);
+        }
+    }
+
     private void DrawMapClusters(SKCanvas canvas)
     {
+        _visibleSummaryLabels.Clear();
         foreach (var cluster in _mapClusters)
         {
             var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
             _mapMarkerPaint.Color = TacticalMapPalette.LabelBackground;
             canvas.DrawCircle(x, y, 15, _mapMarkerPaint);
-            string count = cluster.Name is null ? cluster.Count.ToString(CultureInfo.InvariantCulture) : $"{cluster.Name} · {cluster.Count}";
+            string count = cluster.Count.ToString(CultureInfo.InvariantCulture);
             canvas.DrawText(count, x - _panelTextPaint.MeasureText(count) / 2, y + 4, _panelTextPaint);
+        }
+        foreach (var label in _mapSummaryLabels)
+        {
+            // Explicit target plaques win when a very crowded viewport cannot fit both.
+            if (_labelRenderer.Geometries.Values.Any(g => g.PlaqueRect.IntersectsWith(label.Bounds))) continue;
+            _mapMarkerPaint.Color = TacticalMapPalette.LabelBackground;
+            canvas.DrawRect(label.Bounds, _mapMarkerPaint);
+            canvas.DrawText(label.Text, label.Bounds.Left + 4, label.Bounds.Bottom - 4, _panelTextPaint);
+            _visibleSummaryLabels.Add(label);
         }
     }
 
     private bool TryExpandMapCluster(float x, float y)
     {
-        // Explicit targets win over a nearby aggregate.
-        if (_renderStates.Any(s => (IsImportantMapObject(s.Pose.ObjectId) ||
-            s.Pose.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) && Near(s.Pose.X, s.Pose.Y))) return false;
+        // Visible canonical markers win over aggregates beside their owners.
+        if (_renderStates.Any(s => !_clusteredObjectIds.Contains(s.Pose.ObjectId) && MarkerHit(s.Pose.X, s.Pose.Y))) return false;
         if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest) && _poiGeometry.Any(p => Near(p.X, p.Y))) return false;
-        foreach (var cluster in _mapClusters)
+        if (_labelRenderer.Geometries.Values.Any(g => g.PlaqueRect.Contains(x, y))) return false;
+        for (int i = 0; i < _mapClusters.Count; i++)
         {
-            if (!Near(cluster.X, cluster.Y)) continue;
-            FitMapBounds(cluster.Bounds);
+            var cluster = _mapClusters[i];
+            if (!Near(cluster.X, cluster.Y) && !_visibleSummaryLabels.Any(l => l.ClusterIndex == i && l.Bounds.Contains(x, y))) continue;
+            if (cluster.ClusterId is { } id) FitCluster(id); else FitMapBounds(cluster.Bounds);
             return true;
         }
         return false;
@@ -214,6 +250,11 @@ public sealed partial class GameSessionScreen
         {
             var p = _camera.WorldToScreen(wx, wy, _viewportW, _viewportH);
             return (p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y) <= 225;
+        }
+        bool MarkerHit(double wx, double wy)
+        {
+            var p = _camera.WorldToScreen(wx, wy, _viewportW, _viewportH);
+            return double.Hypot(p.X - x, p.Y - y) <= ObjectHitTestRadiusPx;
         }
     }
 

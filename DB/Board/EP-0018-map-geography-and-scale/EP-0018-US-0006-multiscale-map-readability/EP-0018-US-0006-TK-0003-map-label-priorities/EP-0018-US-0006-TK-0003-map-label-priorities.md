@@ -5,7 +5,7 @@ ticket: EP-0018-US-0006-TK-0003-map-label-priorities
 title: "Приоритеты подписей и выбора на всех масштабах"
 stage: approved
 approval_kind: workflow
-implementation_status: not_started
+implementation_status: completed
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0018-US-0006-TK-0002-orbital-layer-policy]
@@ -90,3 +90,6 @@ Scoped format (будущие команды, из корня репозитор
 
 ## Self-containment check
 Разрешённые файлы, текущие точки входа, конечное поведение, шаги, planned API и точные проверки перечислены здесь. Общий продуктовый контракт — ../../ImplementationContract.md; зависимости — frontmatter. Прежде чем менять API вне этих границ, пересмотреть Board, а не угадывать.
+
+## Execution evidence
+2026-11-07: explicit targets first; semantic station/planet labels next; mandatory known/hostile ship labels retain existing budget override; local secondary labels follow. Deterministic bounded placement avoids overlaps/viewport edges and station/resource plaques avoid foreign marker hit regions. System cluster names have visible bounded plaques and cluster focus hit regions, no fake object ID. Hover/click use same visible label geometry, canonical markers win over nearby owner-resource aggregates. Reproduced/fixed station-label-to-aggregate interception and resource-summary-to-station interception; initial broad ship/pirate suppression regression corrected without modifying old tests. Focused84/84 and compatibility27/27 PASS; final full Client2106/2106 PASS includes selected every level, dense seed42 UI1/1.5/2, hidden resource composition and60-station selection. Build-last, scoped format-final/last/hover and diff PASS. Evidence D:/DeepSpaceSaga/artifacts/validation/ep-0018-map-geography-and-scale/20261107-map-labels/{focused.trx,focused-final.trx,focused-verified.trx,focused-passed.trx,compatibility-verified.trx,client-full.trx,client-verified.trx,build-last.log,format-last.log,format-hover.log}. One interim validation build failed because the still-running full testhost locked its DLL; final checks run sequentially and pass. Self-review complete; native readability remains US8.
