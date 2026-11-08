@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, TacticalBattleView View, SKRect Panel,
     float UiScale, bool Pending, string Status, TacticalBattlePresentation Presentation = TacticalBattlePresentation.Current,
     bool EnemyForecast = true, bool EnemySectors = false, string? SelectedDroneId = null, TacticalMovementFrame? Movement = null,
-    TacticalFirePlan? FirePlan = null, TacticalSalvoFrame? Salvo = null, bool AllFireSectors = true);
+    TacticalFirePlan? FirePlan = null, TacticalSalvoFrame? Salvo = null, bool AllFireSectors = true, string? HoverUnitId = null);
 
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
@@ -113,7 +113,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             SelectedDroneId: planning ? state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Selected : _orders.Selected : null,
             Movement: planning && state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null,
             FirePlan: planning && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null,
-            Salvo: salvo, AllFireSectors: false);
+            Salvo: salvo, AllFireSectors: false, HoverUnitId: HoverUnitId);
     }
 
     public override void Render(SKCanvas canvas, int width, int height)
