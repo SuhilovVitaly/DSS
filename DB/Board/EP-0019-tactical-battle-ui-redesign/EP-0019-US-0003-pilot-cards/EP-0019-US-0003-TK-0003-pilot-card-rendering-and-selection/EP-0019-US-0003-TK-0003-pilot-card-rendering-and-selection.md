@@ -56,7 +56,7 @@ revision: 1
 
 Клик по карточке не отправляет команд.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -87,10 +87,14 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
 
 ## Проверенное исполнение 2026-11-08 (продолжение)
 
 Render compact portrait cards and route card selection without sending commands
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us3-tk3. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+PilotCardColumnTests; OverlayBoundaryTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

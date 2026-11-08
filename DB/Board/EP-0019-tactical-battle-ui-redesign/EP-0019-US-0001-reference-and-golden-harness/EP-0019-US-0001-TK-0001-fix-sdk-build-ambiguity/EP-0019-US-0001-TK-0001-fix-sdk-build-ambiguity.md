@@ -54,7 +54,7 @@ No API change.
 
 Цвета, позиции и режим градиентов прежние.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -85,3 +85,7 @@ dotnet build DeepSpaceSaga.sln --no-restore
 2026-11-08: заменены ровно два коллекционных выражения на явные SKColor[]. Цвета, позиции, tile mode сохранены; других Gradient-вызовов в src/tests/tools нет. Self-review diff выполнен (не независимое review).
 
 Проверки Windows / SDK 10.0.400: Client build PASS (0 warnings/errors), solution build PASS (3 исходных MSB9008 о отсутствующем архивном ModApi), scoped whitespace format PASS, git diff --check PASS. Логи: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-setup/{baseline-build,tk1-solution-build,tk1-format}.log. SDK 8.0.4xx NOT RUN: не установлен; baseline на SDK 10 собирался и до правки. Подтверждена совместимая форма перегрузки, а не воспроизведение CS0121 на SDK 8. Native не применим к выбору перегрузки. Публикация проверяется в ExecutionStatus.md после коммита.
+
+## Фактическая привязка проверок
+
+Client/solution build; scoped format. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

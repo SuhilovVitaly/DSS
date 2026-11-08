@@ -57,7 +57,7 @@ No public API change.
 
 Тайминги `TacticalBattleResults` не меняются.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -88,10 +88,14 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
 
 ## Проверенное исполнение 2026-11-08 (продолжение)
 
 Present admitted fire queue results replay and continue actions
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us4-tk4. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+PhaseSalvoTests; ResultsPhaseTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

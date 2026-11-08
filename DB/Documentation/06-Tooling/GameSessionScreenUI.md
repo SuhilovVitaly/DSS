@@ -14,3 +14,5 @@ UI 2.0 поддержан renderer для матрицы проверки; menu 
 Пакеты оформления активного боя поставляются отдельно в Skins. Для авторов доступны [формат манифеста и карта ролей](../04-Engineering/TacticalBattleSkins.md).
 
 [Инструменты Performance](../../../tools/DeepSpaceSaga.Performance/README.md) разделяют CPU/raster, реальное окно с OpenGL и приёмку физического ввода. Порядок повторной проверки данных V4 — в [руководстве по источникам](CarrierWingSim.md).
+
+Активный бой использует файловые DejaVu Sans Regular/Bold с единым TextPaint и клиентский Data/UI/tactical-battle-pilots.json для портретов/рода. Карта имеет отдельный от мира масштаб H/720, компактные overlays и hit-testing в тех же координатах. [Контракт презентации и семи сцен](../04-Engineering/TacticalBattle.md#клиентская-презентация).

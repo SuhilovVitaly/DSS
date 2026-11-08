@@ -54,7 +54,7 @@ revision: 1
 
 Колесо (fitted×4 … ×0,125) и панорама ПКМ работают как раньше.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -84,10 +84,14 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
 
 ## Проверенное исполнение 2026-11-08 (продолжение)
 
 Fit phase camera to the design safe area and retain fire camera during playback
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us2-tk3. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+PhaseCameraTests; OverlayCameraInteractionTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

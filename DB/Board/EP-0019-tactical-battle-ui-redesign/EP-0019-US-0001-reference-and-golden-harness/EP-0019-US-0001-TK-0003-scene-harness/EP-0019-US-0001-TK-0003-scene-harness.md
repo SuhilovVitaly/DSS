@@ -61,7 +61,7 @@ A-01, A-06. Мир на паузе. Приказы — предложения И
 
 Харнесс не меняет данные боя и не тратит RNG сверх реальных команд.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -91,7 +91,7 @@ git diff --check
 
 Все ожидания — в DesignSpec §12; фикстура уже существует.
 
-## Исполнение
+## История начальной попытки (заменена возобновлением)
 
 2026-11-08: BLOCKED до реализации харнесса. Обязательный Assets/battle-data-seed1.txt отсутствует в HEAD f9fcbd45, свежем origin/main 50d96441, всей доступной Git-истории и локальных workspace artifacts. В Assets отслеживался только README; шрифты отдельно восстановлены TK-0002 по совпавшим SHA, но независимый oracle боя не восстановлен.
 
@@ -108,3 +108,7 @@ DesignSpec §12.1 и шаги 1/4 этого тикета требуют име�
 Restore seed1 reference with specification checks and real scene harness
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us1-tk3. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+Ep0019ViewTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

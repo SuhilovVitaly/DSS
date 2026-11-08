@@ -2,7 +2,7 @@
 epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0003-pilot-cards
 title: Карточки пилотов
-stage: draft
+stage: done
 dependencies: [EP-0019-US-0002-overlay-layout-shell]
 created: 2026-11-08T09:31:05Z
 source_request: "Левая колонка карточек пилотов варианта C во всех фазах: портрет, оружие, чип, броня/корпус/сознание полосами и строка параметров фазы."
@@ -48,7 +48,7 @@ D-02, D-04, D-05, D-06, D-07. [DesignSpec §5](../DesignSpec.md#5-левая-к�
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы-нужно-решение-до-утверждения)).
+Исполнение draft-карточек разрешено запросом выполнить весь эпик. Использованы записанные варианты по умолчанию; художественное/пользовательское одобрение не приписывается. Итог — [ExecutionStatus](../ExecutionStatus.md).
 
 ## Ticket map
 
@@ -57,3 +57,7 @@ D-02, D-04, D-05, D-06, D-07. [DesignSpec §5](../DesignSpec.md#5-левая-к�
 | [EP-0019-US-0003-TK-0001-pilot-portrait-data](EP-0019-US-0003-TK-0001-pilot-portrait-data/EP-0019-US-0003-TK-0001-pilot-portrait-data.md) | Портреты и пол пилотов | content-data | `EP-0019-US-0002-TK-0004-localization-strings` | US3-AC4 |
 | [EP-0019-US-0003-TK-0002-pilot-card-projection](EP-0019-US-0003-TK-0002-pilot-card-projection/EP-0019-US-0003-TK-0002-pilot-card-projection.md) | Данные карточки по фазам | client | `EP-0019-US-0003-TK-0001-pilot-portrait-data` | US3-AC2, US3-AC3 |
 | [EP-0019-US-0003-TK-0003-pilot-card-rendering-and-selection](EP-0019-US-0003-TK-0003-pilot-card-rendering-and-selection/EP-0019-US-0003-TK-0003-pilot-card-rendering-and-selection.md) | Отрисовка карточек и выбор кликом | client | `EP-0019-US-0003-TK-0002-pilot-card-projection` | US3-AC1, US3-AC2, US3-AC5 |
+
+## Итоговая проверка
+
+Все тикеты истории реализованы и опубликованы. Критерии сопоставлены проверкам в [ExecutionStatus](../ExecutionStatus.md); текущие результаты заменяют начальную запись blocked. Human/physical input и проверки недоступных ОС остаются отдельными gates.

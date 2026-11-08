@@ -2,7 +2,7 @@
 epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0007-project-documentation
 title: Документация проекта
-stage: draft
+stage: done
 dependencies: [EP-0019-US-0001-reference-and-golden-harness, EP-0019-US-0002-overlay-layout-shell, EP-0019-US-0003-pilot-cards, EP-0019-US-0004-phase-panel, EP-0019-US-0005-map-presentation, EP-0019-US-0006-hover-and-acceptance]
 created: 2026-11-08T09:31:05Z
 source_request: "Завершающая история по EpicExecutionPrompt: актуализировать документацию экрана, контракта боя и скинов, Board и граф."
@@ -45,10 +45,14 @@ revision: 1
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы-нужно-решение-до-утверждения)).
+Исполнение draft-карточек разрешено запросом выполнить весь эпик. Использованы записанные варианты по умолчанию; художественное/пользовательское одобрение не приписывается. Итог — [ExecutionStatus](../ExecutionStatus.md).
 
 ## Ticket map
 
 | ID | Название | Слой | Зависимости | Критерии |
 |---|---|---|---|---|
 | [EP-0019-US-0007-TK-0001-update-contracts-and-docs](EP-0019-US-0007-TK-0001-update-contracts-and-docs/EP-0019-US-0007-TK-0001-update-contracts-and-docs.md) | Итоговая документация | documentation | `EP-0019-US-0006-TK-0002-view-acceptance` | US7-AC1, US7-AC2, US7-AC3 |
+
+## Итоговая проверка
+
+Все тикеты истории реализованы и опубликованы. Критерии сопоставлены проверкам в [ExecutionStatus](../ExecutionStatus.md); текущие результаты заменяют начальную запись blocked. Human/physical input и проверки недоступных ОС остаются отдельными gates.

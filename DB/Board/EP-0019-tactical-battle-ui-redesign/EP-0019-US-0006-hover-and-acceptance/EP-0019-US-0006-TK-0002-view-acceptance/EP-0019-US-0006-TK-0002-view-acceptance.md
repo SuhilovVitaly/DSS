@@ -57,7 +57,7 @@ No public API change.
 
 Ожидания DesignSpec не подгоняются под рендер.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -87,7 +87,7 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
 
 Scope приёмки: независимые ожидания в Ep0019Acceptance.cs, миграция legacy UI tests (удалённые вкладки/флажки заменяются проверками нового контракта, сохраняются timing/session/SaveLoad assertions), обновление native tooling workflow, regression PNG. Снижение alpha disabled отменено в пользу нормативного §8.2/§12.4: Outcome действительно содержит disabled Веру, а пробы требуют Cyan. Не меняются проба или допуск.
 
@@ -96,3 +96,7 @@ Scope приёмки: независимые ожидания в Ep0019Acceptanc
 Accept seven scenes with regression snapshots full Client and secondary monitor native checks
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/acceptance-final. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+Ep0019ViewTests; tactical Client; full Client; OverlayBoundaryTests; native workflow. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

@@ -29,9 +29,10 @@ PANELS_EP='DB/Board/EP-0014-module-panels'
 TACTICAL_EP='DB/Board/EP-0015-tactical-carrier-battle'
 SKINS_EP='DB/Board/EP-0016-tactical-battle-skins'
 INITIATIVE_EP='DB/Board/EP-0017-pilot-initiative'
+UI_EP='DB/Board/EP-0019-tactical-battle-ui-redesign'
 GEOGRAPHY_EP='DB/Board/EP-0018-map-geography-and-scale'
 MAP_HISTORY_EPS=['DB/Board/EP-0002-procedural-solar-system','DB/Board/EP-0003-station-clusters-and-trade-geography','DB/Board/EP-0004-ai-territories-and-map-environment']
-EXCLUDED={**{GEOGRAPHY_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ImplementationStatus','DocumentationImpact','Tickets')},
+EXCLUDED={UI_EP+'/ExecutionStatus.md':'publication ledger', UI_EP+'/DocumentationImpact.md':'graph impact ledger', **{GEOGRAPHY_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ImplementationStatus','DocumentationImpact','Tickets')},
  GEOGRAPHY_EP+'/EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md':'final graph publication receipt',
  **{INITIATIVE_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact')},
  INITIATIVE_EP+'/EP-0017-US-0004-project-documentation/EP-0017-US-0004-TK-0001-current-contracts-and-evidence/EP-0017-US-0004-TK-0001-current-contracts-and-evidence.md':'final graph publication ticket',
@@ -65,7 +66,7 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP, INITIATIVE_EP, GEOGRAPHY_EP, *MAP_HISTORY_EPS] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
+ docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP, INITIATIVE_EP, GEOGRAPHY_EP, UI_EP, *MAP_HISTORY_EPS] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
  docs=[p for p in docs if not {'bin','obj'} & set(p.parts)]
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and ('evidence' not in p.relative_to(R).parts or p.relative_to(R).as_posix() in {POINT_EP+'/evidence/balance.md',POINT_EP+'/evidence/native.md'})]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)
@@ -119,7 +120,7 @@ def main():
  ('src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleFlow.cs','class TacticalBattleFlow','Client modal session flow','flow'),
  ('src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleSetupScreen.cs','class TacticalBattleSetupScreen','Scenario, tactic and loadout form','setup'),
  ('src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs','CaptureFrame','Tactical screen frame capture','screen'),
- ('src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMapRenderer.cs','internal static void Draw','Tactical battle renderer','renderer'),
+ ('src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs','internal static void Draw','Tactical battle renderer','renderer'),
  ('src/DeepSpaceSaga.Engine/Scenario/LegacyCombatSaveReader.cs','ExtractWorld','Legacy save extraction boundary','legacy'),
  ('src/DeepSpaceSaga.Engine/Scenario/SaveMigration20.cs','WorldOnly','Save20 world-only projection','save')]
  mechanisms={}

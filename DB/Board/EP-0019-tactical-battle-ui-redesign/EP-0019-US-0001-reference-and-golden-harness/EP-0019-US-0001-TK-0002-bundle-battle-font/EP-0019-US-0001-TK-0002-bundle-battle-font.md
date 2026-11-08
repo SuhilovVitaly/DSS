@@ -81,7 +81,7 @@ internal static class BattleTypography
 
 Остальные экраны продолжают использовать прежние шрифты и прежние настройки текста.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -120,3 +120,7 @@ git diff --check
 Windows, SDK 10.0.400: BattleTypographyTests 7/7 PASS, включая оба SHA, RU/EN glyph coverage, все флаги paint, ширины 185.9033/205.7153 ±0.01. Test build PASS (исходный warning MSB9008 об архивном ModApi). Scoped whitespace format/verify и diff check PASS. Debug publish --no-build --no-restore PASS; оба опубликованных SHA совпали, лицензия присутствует. Self-review выполнен; независимого review нет. Другие ОС NOT RUN: macOS недоступна, WSL/Ubuntu не установлены.
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-setup/tk2-tests.log, tk2-results/focused.trx, tk2-format.log, tk2-publish.log, input-audit.txt. Коммит/SHA и push — в ExecutionStatus.md.
+
+## Фактическая привязка проверок
+
+BattleTypographyTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

@@ -1,63 +1,78 @@
-# EP-0019 — частичное исполнение 2026-11-08
+# EP-0019 — итог исполнения 2026-11-08
 
-**BLOCKED, не завершён.** Выполнены 2 из 21 тикета; ни одна история целиком не завершена. Новый UI ещё не реализован. Последний опубликованный implementation ticket: EP-0019-US-0001-TK-0002.
+Реализованы все 7 историй и 21 тикет. Карта на весь экран, компактные карточки пилотов, панель пяти состояний, наведение, движение/назначение целей и воспроизведение залпа работают на настоящем session пути. Engine/Contracts/Motion, правила, RNG и Save20 не менялись.
 
-## Ветка и публикация
+Ветка: codex/ep-0019-tactical-battle-ui-redesign. Origin: https://github.com/SuhilovVitaly/DSS. База f9fcbd45; исходное дерево чистое. После каждого тикета отдельный commit/push и проверка remote SHA. Force push и переписывание опубликованной истории не применялись. Финальная документационная история выполнялась последней.
 
-- Ветка: `codex/ep-0019-tactical-battle-ui-redesign`.
-- Remote: `origin`, `https://github.com/SuhilovVitaly/DSS`.
-- База: `f9fcbd45`; исходное дерево чистое. После fetch `origin/main` = `50d96441`, его tree совпадает с базой; перенос чужих изменений не требовался.
-- Отдельный push сразу после каждого завершённого тикета; SHA проверены через `git ls-remote`. Force push и изменение опубликованной истории не применялись.
+## Публикация
 
 | Тикет | SHA | Push |
 |---|---|---|
-| EP-0019-US-0001-TK-0001 | `33ad15adacf7408d111476f7a6551301b91d9bbf` | подтверждён в origin |
-| EP-0019-US-0001-TK-0002 | `476bc097388d65b3e9b08f77b471e06b054fb02d` | подтверждён в origin |
+| EP-0019-US-0001-TK-0001 | 33ad15adacf7408d111476f7a6551301b91d9bbf | проверен в origin |
+| EP-0019-US-0001-TK-0002 | 476bc097388d65b3e9b08f77b471e06b054fb02d | проверен в origin |
+| EP-0019-US-0001-TK-0003 | 4161db5b3aa09efda03fcada03f0ee8aa6ec9e5f | проверен в origin |
+| EP-0019-US-0002-TK-0001 | ed5cd0d898ff5d75bbe80b88d97b3f7d6b43980c | проверен в origin |
+| EP-0019-US-0002-TK-0002 | 3154e8407f12dbdb617fe34fbb0a204b2e065047 | проверен в origin |
+| EP-0019-US-0002-TK-0003 | c5d2e25c1bc2dd6f062d1aba16caa387d3a9f37c | проверен в origin |
+| EP-0019-US-0002-TK-0004 | 7e994cd54495e92ea3ad3503fe3b4d66c264914d | проверен в origin |
+| EP-0019-US-0003-TK-0001 | de0dff28d92a5bc66601795bab841f29d08c195f | проверен в origin |
+| EP-0019-US-0003-TK-0002 | 49f367c599ff93ea29b8fc8a689723987cf00ea0 | проверен в origin |
+| EP-0019-US-0003-TK-0003 | af987d41c64029fef71719eab69471196f9292d3 | проверен в origin |
+| EP-0019-US-0004-TK-0001 | 021523b5921b52c0cd5c9ecd9c58fa8468a543c6 | проверен в origin |
+| EP-0019-US-0004-TK-0002 | 5ef990e76f8a6b862eff3a8d1d7fad3cdf251bd9 | проверен в origin |
+| EP-0019-US-0004-TK-0003 | 5e010aa54de610be5998604e4848efcd47fd7823 | проверен в origin |
+| EP-0019-US-0004-TK-0004 | 6daf9bd77dc11376e369fda74b8ad7962632cf0f | проверен в origin |
+| EP-0019-US-0004-TK-0005 | e957620e1a6906397143ddb75a50ab38e71213b2 | проверен в origin |
+| EP-0019-US-0005-TK-0001 | 3daacce24136395391a6d17b79d9b16049c48310 | проверен в origin |
+| EP-0019-US-0005-TK-0002 | 45294f90261efd7706aedc8ba51390e2a4b7c248 | проверен в origin |
+| EP-0019-US-0005-TK-0003 | 1c037f5af94e64878de3828b41db1e0d05437ab3 | проверен в origin |
+| EP-0019-US-0006-TK-0001 | 44c0102b472ec618077bf8de96e4e555f2a9e86a | проверен в origin |
+| EP-0019-US-0006-TK-0002 | 86d7567317f6188a4257233a064c8ddc8e44f663 | проверен в origin |
+| EP-0019-US-0007-TK-0001 | resolve-after-commit | проверяется после создания коммита |
 
-Поздний отдельный Board-коммит фиксирует блокер и этот отчёт; его собственный SHA проверяется после создания через Git, а не записывается заранее.
+SHA последней строки разрешается `git log -1 --format=%H --grep=EP-0019-US-0007-TK-0001` после коммита; итоговый remote HEAD также подтверждается после push. Собственный SHA не записывается заранее. Начальные незавершённые результаты — [ExecutionHistory](ExecutionHistory-20261108-start.md).
 
-## Реализованное и покрытие
+## Критерии и evidence
 
-| Критерий | Результат |
+Общий корень: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/. Перетикетные каталоги us1-tk3, us2-tk1…tk4, us3-tk1…tk3, us4-tk1…tk5, us5-tk1…tk3, us6-tk1 содержат tests.log/TRX и форматирование; первые два тикета — предыдущий 20261108-setup, как записано в карточках.
+
+| AC | Подтверждение |
 |---|---|
-| US1-AC1 | Два вызова градиента используют явные SKColor[] с прежними цветами/позициями/режимом. На установленном SDK 10.0.400 сборка PASS; SDK 8.0.4xx NOT RUN, не установлен. Baseline на SDK 10 тоже собирался, воспроизведение CS0121 на SDK 8 не заявляется. |
-| US1-AC2, часть TK-0002 | Точные DejaVu Regular/Bold и лицензия поставляются в build/publish. Factory задаёт настройки DesignSpec, глифы и ширины проверены. Подключение всего экрана к factory ещё не выполнено (US-0002). |
-| US1-AC3–AC5 | BLOCKED до реализации: отсутствует reference данных для харнесса. |
-| US2–US6 | NOT RUN / не реализованы, зависят от US1 TK-0003. |
-| US7 | Только подготовительное расширение scope по §6 EpicExecutionPrompt; история не выполнена, актуализация контрактов и Graphify rebuild не проводились. |
+| US1-AC1 | Явные SKColor[] в двух градиентах; solution build на установленном SDK10.0.400 PASS. SDK8 NOT RUN (не установлен). |
+| US1-AC2 | BattleTypographyTests 7/7: оба SHA, глифы RU/EN, нейтральные флаги и точные метрики. Весь новый активный UI использует BattleDesign/TextPaint. |
+| US1-AC3–AC5 | Реальные seven-scene session routes, recovered reference, сначала Skip вида, затем все проверки включены. |
+| US2-AC1–AC5 | OverlayShell, PhaseCamera, BattleDesign, OverlayLocalization: масштаб/ввод, формулы камеры, токены и parity ключей. |
+| US3-AC1–AC5 | PilotPortraitCatalog, PilotCardModel, PilotCardColumn: портреты/fallback, значения всех фаз, Mind100, выбор без команды и растровые полосы. |
+| US4-AC1–AC5 | PhasePanel/MoveInput/FireInput/Salvo/Outcome: геометрия, sliders, допустимые цели, timing/replay без повторного Fire, исход/возврат/New battle. |
+| US5-AC1–AC5 | MapDesign/Movement/Fire + сцены: маркеры/подписи/edges, актуальные Paths, сектор/стрелки, снаряд62%, выноски, отсутствующие старые слои. |
+| US6-AC1–AC3 | HoverCardTests; Ep0019ViewTests 29/29 (data + 7 layout + 7 text + 7 probes + 7 regression), без Skip. |
+| US7-AC1–AC3 | Актуальные канонические/внешние документы, [инвентаризация](DocumentationImpact.md), проверка ссылок/статусов/публикации и offline Graphify. |
 
-TK-0001 меняет только форму перегрузки в двух существующих строках Client. TK-0002 добавляет file-backed typography, семь тестов и точные font assets; остальная игра продолжает использовать прежние шрифты. Engine, Contracts, Motion, RNG и Save20 не менялись. Карта тикетов восстановлена из канонических карточек (21 строка вместо пустых).
+## Итоговые проверки
 
-## Блокер и попытки восстановления
+- Client полный текущий набор: client-published-final/focused.trx — 2163/2163 PASS, без Skip, 1m35s. Исправлена нестабильность новых тестов: thread-local locale создаётся после awaited fixture, не переносится между потоками.
+- После последнего UI-review: tactical-final/focused.trx — 307/307 PASS. acceptance-final/focused.trx — 34/34 PASS (данные, все семь сцен/снимков, hover, токены). Ограничение дерева каждого тестового процесса — 300000ms.
+- Снимки: начальное production capture после независимых проб, решение записано в Documentation.md. Regression thresholds не менялись: ΔRGB40, общий0.5%, block16×16 максимум25%; итоговые семь сравнений PASS. Рендеры, layout.json, probes.json, regression.json: acceptance-final/ep0019/<scene>/.
+- Scoped format и diff-check выполнены; общая итоговая сборка и проверка ссылок записываются в final-build.log / links.json. Исходные MSB9008 (архивная отсутствующая ModApi) отделены от ошибок; ошибок компиляции нет.
+- Native Windows/OpenGL: native-1920.json PASS (1920×1080, 312 кадров), native-secondary-final.json PASS (1280×720, 318 кадров). Intel Arc140V. Последний прогон — на другом, правом мониторе, фактическая позиция3440,0 и selected-monitor-position=true. Проверены реальный GPU capture, мышь/клавиши через router, replay, New battle после итога, возврат камеры/мира и QuickSave/QuickLoad. Это scripted input, не физическое нажатие человека.
+- Self-review выполнен по владению данными, pending/receipt, времени анимации, viewport/input, допуску урона и Save/Load. Независимое review не заявляется. После поздних поправок пройдены затронутые проверки.
 
-`Assets/battle-data-seed1.txt` отсутствует в рабочей копии, исходном `f9fcbd45`, актуальном `origin/main` и всей доступной Git-истории; поиск workspace, включая ignored artifacts, также не нашёл файл. В исходном Assets отслеживался только README. TK-0003, шаги 1/4, и DesignSpec §12.1 требуют независимый reference поз, приказов, целей/шансов и FireSteps ходов 1/3. Полных значений в DesignSpec §12.3 нет. Подстановка output текущего Engine вместо неизвестного reference не подтверждает требуемое совпадение; такой oracle и фиктивный PASS не созданы.
+## Решения восстановления и миграции тестов
 
-Шрифты тоже отсутствовали, но их удалось восстановить из официального Ubuntu `fonts-dejavu-core_2.37-2build1_all.deb`: оба исходных SHA совпали побайтно. Локальный шрифт Poppler и новый Ubuntu `2.37-8` проверены и отвергнуты из-за других хешей. Font stanza лицензии восстановлена из copyright старого пакета; удалён только лишний whitespace. Происхождение записано в [Assets/README](Assets/README.md).
+Изначальные font assets и battle-data-seed1.txt отсутствовали. TTF восстановлены из Ubuntu2.37-2build1 с точным совпадением исходных SHA. Reference восстановлен до изменения UI на неизменённых Engine/Contracts/TacticalBattle content относительно8c6f4e2a; известные числа проверены literal assertions DesignSpec. Это recovered baseline, а не найденный оригинал. Допуски и нормативный вид не подгонялись.
 
-Для продолжения нужен исходный `Assets/battle-data-seed1.txt` из сессии планирования либо независимая восстановленная версия с проверяемым происхождением. Следующий тикет — **EP-0019-US-0001-TK-0003-scene-harness**. После него остаётся ещё 18 тикетов (US-0002: 4; US-0003: 3; US-0004: 5; US-0005: 3; US-0006: 2; US-0007: 1). Ожидания DesignSpec и допуски сохранены.
+Проверки старых вкладок/toolbar/флажков/выпадающих списков, medical-cross, enemy forecast, world-aligned5×5 grid и прежних footprints заменены проверками нового контракта; отсутствующие элементы не сохраняются ради старых тестов. Сохранены независимые timeline/impact/replay, session identity, инициативы и возвращения мира. Marker-only disabled alpha из допущения тикета снята в пользу нормативных §8.2/§12.4: в Outcome действительно есть disabled Вера, но проба требует Cyan. Роли используют корректный kebab-case ui.pilot-card.
 
-## Фактические проверки
+Q-01/Q-02/Q-04 исполнены по записанным вариантам по умолчанию; Q-03 — по §6.6 как техническое допущение. Поручение исполнить draft не объявляется художественным одобрением пользователя.
 
-ОС Windows, SDK 10.0.400; каждый тестовый процесс ограничен 300000 ms с завершением дерева при превышении. Полные команды сборки/форматирования также указаны в карточках.
+## Ограничения и уборка
 
-| Проверка | Наблюдаемый результат |
-|---|---|
-| `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore -v:normal` | PASS, 0 warnings/errors, baseline до изменения градиентов |
-| `dotnet build DeepSpaceSaga.sln --no-restore` после TK-0001 | PASS, 0 errors, 3 исходных MSB9008 о ссылке на отсутствующий архивный ModApi |
-| `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter FullyQualifiedName~BattleTypographyTests --results-directory D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-setup/tk2-results --logger trx;LogFileName=focused.trx` | PASS 7/7, skip 0; test build PASS, исходный warning MSB9008 |
-| Scoped `dotnet format whitespace … --verify-no-changes` для двух Gradient-файлов, затем для BattleTypography и BattleTypographyTests | PASS; при загрузке test workspace предупреждения об исходной ссылке ModApi |
-| `dotnet publish src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj -c Debug --no-build --no-restore -o D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-setup/publish` | PASS, оба SHA совпали с Board, лицензия присутствует |
-| `git diff --check`, `git diff f9fcbd45 --check` | PASS после исправления whitespace восстановленной лицензии |
-| Self-review исходников, тестов и diff | Выполнен, независимое review не заявляется |
-| SDK 8 / macOS / Ubuntu | NOT RUN: недоступны; WSL не установлен |
-| Native UI/GPU/физический ввод, семь сцен, пробы, regression snapshots, полная tactical suite | NOT RUN; экран не изменён, харнесс заблокирован |
+macOS/Ubuntu и SDK8 NOT RUN: недоступны. Платформенная нейтральность настроек/метрик проверена на Windows; межплатформенная raster parity не заявляется. Human/art/physical-input acceptance остаётся открытой отдельно от реализации. Сознание100 — placeholder, журнал/прогноз/Стороны и ИИ-всем не возвращены в UI; для их развития нужен отдельный scope. Баланс боя и native80FPS этим эпиком не подтверждаются.
 
-## Evidence и уборка
+Task-owned временные scripts, packages, caches, slots и промежуточные результаты удаляются после завершения процессов; остаётся только evidence карточек/этого отчёта. cleanup.txt перечисляет итоговую уборку и проверки корней. В репозитории/корне workspace новые временные каталоги не создавались. Дополнительный worktree не создавался. Документы не содержат runtime dumps, PNG, JSON или TRX.
 
-Корень текущего evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-setup/`.
+### Итоговые уточнения проверки
 
-Сохраняются только используемые этим отчётом файлы: `baseline-build.log`, `tk1-solution-build.log`, `tk1-format.log`, `tk2-tests.log`, `tk2-format.log`, `tk2-publish.log`, `input-audit.txt`, `tk2-results/focused.trx`, `cleanup.txt`. `input-audit.txt` содержит SHA runtime/publish файлов и исходные Git tree/history проверки. Оригинальные TTF и лицензия сохранены в Board/runtime и опубликованы.
+Дополнительно опубликован исправляющий test-коммит US-0006-TK-0002: OverlayBoundaryTests 2/2 (восемь карточек до y697, missing portrait initials, широкий viewport). Первый Graphify rebuild: 782 code / 697 Markdown, 21154 nodes, 56949 edges, 700 communities, zero missing sources/dangling edges/self-loops after audit. Один AST parser warning в неизменённом ModulePanelLocalizationTests.cs; не C# ошибка. Свежая семантика — 16 nodes/16edges/1hyperedge из10 источников, hashes проверены, token cost unmeasured. Граф обновляется повторно после этой финальной синхронизации карточек и нового boundary test; точный итог — graph/verification.json.
 
-Временные пакеты, распакованные кандидаты и publish удаляются после проверки; task-owned фоновых процессов нет. Диагностические каталоги в корнях workspace/repository не создавались; дополнительный checkout/worktree не создавался. Итоговая проверка уборки и списка корневых каталогов сохраняется в `cleanup.txt` перед публикацией этого отчёта.
-
-Текущая документация игрового экрана не переписана под ещё не существующее поведение. История документации остаётся последней и незавершённой.
+Финальный граф после синхронизации: 783 code / 697 Markdown, 21181 nodes, 56986 edges, 705 communities; missing sources/out-of-range/dangling/self-loops = 0 после явно описанного audit pruning. Все10 semantic source hashes и полный source-manifest проверяются против итогового дерева. Graph token cost unmeasured; один pre-existing AST warning сохранён. Последняя solution build PASS, 3 baseline MSB9008, 0 errors. Cleanup выполнен; monitor enumeration и размещение подтверждены также Interface.log.

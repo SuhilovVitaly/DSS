@@ -59,7 +59,7 @@ Q-01/Q-02 по умолчанию: вкладки «Стороны/Журнал/
 
 `BuildMoveRequest`/`BuildFireRequest`, блокировка мировых клавиш (`TacticalBattleFlow.cs:123-131`), подтверждение выхода и возврат камеры мира не меняются.
 
-## Tests
+## Tests (исходный план; актуальные проверки ниже)
 
 Проект `DeepSpaceSaga.Client.Tests`. Именованные проверки:
 
@@ -89,7 +89,7 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+См. проверенное исполнение ниже.
 
 Scope: TacticalBattleScreen.Overlay.cs отделяет overlay geometry/input от session/presentation. Старые internal test hooks остаются для самостоятельных legacy проверок, но не подключены к active screen.
 
@@ -98,3 +98,7 @@ Scope: TacticalBattleScreen.Overlay.cs отделяет overlay geometry/input �
 Replace sidebar with full screen map and compact overlay hit regions
 
 Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us2-tk2. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
+
+## Фактическая привязка проверок
+
+OverlayShellTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.

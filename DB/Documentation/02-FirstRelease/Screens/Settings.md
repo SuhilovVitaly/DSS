@@ -11,3 +11,5 @@ UI scale изменяет панели, а zoom и ограничения Local 
 при наличии geography descriptor опорная скорость берётся из сохранённого мира.
 
 Источники: [SettingsScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Settings/SettingsScreen.cs).
+
+Активный тактический бой масштабирует макет по высоте H/720, независимо от menu UI scale. Выбор скина по-прежнему применяется при следующем открытии боя.

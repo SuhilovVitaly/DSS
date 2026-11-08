@@ -17,7 +17,7 @@ d1c3ff99f1e1ce1827a33efd4dad81f40babda06bff9e43bd7591c86662a287b  fonts/DejaVuSa
 
 В исходном коммите f9fcbd45 три файла fonts отсутствовали. Точные TTF восстановлены из [официального пакета Ubuntu 2.37-2build1](https://archive.ubuntu.com/ubuntu/pool/main/f/fonts-dejavu/fonts-dejavu-core_2.37-2build1_all.deb); оба хеша выше совпадают побайтно. LICENSE-DejaVu.txt содержит font stanza copyright этого пакета, без секции упаковки debian/*.
 
-Входной battle-data-seed1.txt всё ещё отсутствует: его описание выше является требованием, не подтверждением наличия файла. Воспроизводимые значения поз, приказов и FireSteps должны быть восстановлены из исходного reference, а не записаны как новый oracle из текущего production. См. ExecutionStatus.md эпика.
+При начальной попытке battle-data-seed1.txt отсутствовал. При возобновлении восстановлен версионированный baseline до изменения UI с независимыми literal assertions нормативных значений; происхождение и ограничения описаны ниже. Это не найденный оригинал. См. ExecutionStatus.md эпика.
 
 ### Recovered reference 2026-11-08
 

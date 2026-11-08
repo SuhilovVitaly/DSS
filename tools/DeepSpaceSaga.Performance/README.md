@@ -1,3 +1,17 @@
+# Tactical battle native acceptance
+
+From DSS root, run the built tool with absolute evidence output under workspace artifacts:
+`dotnet <tool.dll> D:/DeepSpaceSaga/DSS <absolute-report.json> --tactical-window 1 1280x720`.
+The EP-0019 route checks the full map/compact overlays, actual movement/fire, replay,
+New battle after outcome, exit, world camera/speed and QuickSave/QuickLoad.
+
+For another monitor, set DSS_TACTICAL_NATIVE_SETTINGS to a task-owned copy of Settings.json
+with gameSettings.selectedMonitorIndex. Set DSS_TACTICAL_NATIVE_EXPECT_SKIN to its effective
+skin ID (for example classic). The native report records monitorPosition and verifies
+selected-monitor-position against Silk monitor bounds. Do not change the players settings
+for a probe. Use Start-Process -WindowStyle Hidden and a 300000ms tree cap. This is scripted
+native input; physical-input/human acceptance remains separate.
+
 # GPU/window probe
 
 ## World-map v2 acceptance
