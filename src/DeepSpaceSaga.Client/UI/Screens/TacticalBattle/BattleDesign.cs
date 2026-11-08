@@ -12,6 +12,8 @@ internal enum EvadeButtonState { Unavailable, Available, Selected }
 
 internal static class BattleDesign
 {
+    public static readonly SKColor Heat = SKColor.Parse("#E05A78"), HeatDark = SKColor.Parse("#3A101E"),
+        Dust = SKColor.Parse("#B08CE8"), DustDark = SKColor.Parse("#24183A");
     public static readonly SKColor GreenDark = SKColor.Parse("#1E3A26"), DecoyIdle = SKColor.Parse("#142218");
     public static void DecoyRow(SKCanvas c, SKRect r, string text, int charges, int maxCharges, DecoyRowState state)
     {

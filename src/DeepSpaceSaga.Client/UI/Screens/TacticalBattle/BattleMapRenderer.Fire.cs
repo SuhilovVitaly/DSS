@@ -21,6 +21,9 @@ internal static partial class TacticalBattleMapRenderer
                 using var path = new SKPath(); path.MoveTo(p); path.ArcTo(SKRect.Create(p.X - r, p.Y - r, 2 * r, 2 * r), (float)(unit.Pose.Course - build.ArcDegrees / 2), (float)build.ArcDegrees, false); path.Close();
                 using var paint = new SKPaint { IsAntialias = true, Color = ArcFill }; c.DrawPath(path, paint);
                 paint.Color = ArcEdge; paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 1.1f; c.DrawPath(path, paint);
+                c.Save();
+                try { c.ClipPath(path, SKClipOperation.Intersect, true); AnomalyLayer.Draw(c, f); }
+                finally { c.Restore(); }
             }
             foreach (var row in plan.Rows.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
             {

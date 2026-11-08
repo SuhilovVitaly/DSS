@@ -81,3 +81,5 @@ EP-0020-US-0009-TK-0002 → 1c697ccd527a9076598a831aed19749cb6b60f8a → origin 
 EP-0020-US-0009-TK-0003 → 62f296bc6aa9dbbe78c18bfd8ee23395e2c80590 → origin проверен. TK4Engine146PASS,готов к публикации.
 
 EP-0020-US-0009-TK-0004 → 82c0b1450c67ea358a1cdcba5cb6f05c2ed637eb → origin проверен. US9завершена:Engine2924uniquePASS,series5000exactPASS,report5000PASS,Contracts197PASS; Motion1282PASS/1knownUIguardFAIL. TK5готов к публикации.
+
+EP-0020-US-0009-TK-0005 → d4c3d68455a5592eb6a86e34d7ef8c583f982f1e → origin проверен. US10/TK1Client5PASS,32pixels/formula/fullraster exactPASS,готов к публикации.

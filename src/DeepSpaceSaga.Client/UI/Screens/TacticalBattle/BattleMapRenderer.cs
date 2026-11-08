@@ -8,6 +8,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
+    private static readonly AnomalyFieldLayer AnomalyLayer = new();
     internal static readonly SKColor Own = Cyan, Enemy = Orange, Background = MapBg, Inactive = Muted.WithAlpha(140), Jammed = Yellow;
     internal static double RulerLength(double pixelsPerUnit, float uiScale) => 100;
     internal static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame f) => f.Battle.Units;
@@ -30,8 +31,19 @@ internal static partial class TacticalBattleMapRenderer
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
         Skin.Box(c, "field.background", SKRect.Create(v.PixelWidth, v.PixelHeight), MapBg, null, 1);
-        for (float x = 26; x < v.PixelWidth; x += 26) Stroke(c, new(x, 0), new(x, v.PixelHeight), Skin.Color("field.grid", "stroke", Grid), 1);
-        for (float y = 26; y < v.PixelHeight; y += 26) Stroke(c, new(0, y), new(v.PixelWidth, y), Skin.Color("field.grid", "stroke", Grid), 1);
+        AnomalyLayer.Draw(c, f);
+        bool field = !f.Battle.Anomalies.IsDefaultOrEmpty && f.Battle.Rules.Anomalies is not null;
+        using var grid = new SKPaint
+        {
+            IsAntialias = true,
+            Color = Skin.Color("field.grid", "stroke", Grid),
+            Style = SKPaintStyle.Stroke,
+            StrokeWidth = 1,
+            StrokeCap = SKStrokeCap.Round,
+            BlendMode = field ? SKBlendMode.Lighten : SKBlendMode.SrcOver
+        };
+        for (float x = 26; x < v.PixelWidth; x += 26) c.DrawLine(x, 0, x, v.PixelHeight, grid);
+        for (float y = 26; y < v.PixelHeight; y += 26) c.DrawLine(0, y, v.PixelWidth, y, grid);
         float len = (float)(100 * v.PixelsPerUnit);
         Stroke(c, new(14, 706), new(14 + len, 706), Yellow, 1.3f);
         Stroke(c, new(14, 701), new(14, 711), Yellow, 1.3f); Stroke(c, new(14 + len, 701), new(14 + len, 711), Yellow, 1.3f);
