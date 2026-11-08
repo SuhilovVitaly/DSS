@@ -18,3 +18,7 @@
 | Датированные Board EP-0015/16/17/18 | Исторические результаты не переписаны. EP-0019 явно заменяет active UI, но не старые механические результаты | Historical accuracy |
 
 Локальные Markdown links и Documentation Markdown-only проверяются в D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/links.json. Текущие Graphify цифры и warnings находятся в ExecutionStatus.md и artifacts graph/verification.json; навигационный граф не является доказательством native/physical acceptance.
+
+## Post-review P2 fixes 2026-11-08
+
+Обновлены текущий контракт Screens/TacticalBattle.md (выбор edge-маркера и прокрутка очереди), DesignSpec §6.4 (bounded viewport для очереди свыше 10 строк), две owning карточки и ExecutionStatus. Правила боя, save schema, настройки, README и другие исторические эпики изменения не требуют. Fresh Graphify: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-review-fixes/graph/; hashes/locations проверены в final-audit.json. Новых Markdown links не добавлено; существующие пути документов сохранены. Documentation остаётся Markdown-only.

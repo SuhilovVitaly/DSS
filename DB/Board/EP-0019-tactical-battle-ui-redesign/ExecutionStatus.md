@@ -76,3 +76,25 @@ Task-owned временные scripts, packages, caches, slots и промежу
 Дополнительно опубликован исправляющий test-коммит US-0006-TK-0002: OverlayBoundaryTests 2/2 (восемь карточек до y697, missing portrait initials, широкий viewport). Первый Graphify rebuild: 782 code / 697 Markdown, 21154 nodes, 56949 edges, 700 communities, zero missing sources/dangling edges/self-loops after audit. Один AST parser warning в неизменённом ModulePanelLocalizationTests.cs; не C# ошибка. Свежая семантика — 16 nodes/16edges/1hyperedge из10 источников, hashes проверены, token cost unmeasured. Граф обновляется повторно после этой финальной синхронизации карточек и нового boundary test; точный итог — graph/verification.json.
 
 Финальный граф после синхронизации: 783 code / 697 Markdown, 21181 nodes, 56986 edges, 705 communities; missing sources/out-of-range/dangling/self-loops = 0 после явно описанного audit pruning. Все10 semantic source hashes и полный source-manifest проверяются против итогового дерева. Graph token cost unmeasured; один pre-existing AST warning сохранён. Последняя solution build PASS, 3 baseline MSB9008, 0 errors. Cleanup выполнен; monitor enumeration и размещение подтверждены также Interface.log.
+
+## Исправления двух P2 после review 2026-11-08
+
+Диапазон исходного review: f9fcbd45..779de798. Оба замечания подтверждены и исправлены в прежней ветке эпика.
+
+| Связь с тикетом | Изменение | Опубликованный SHA |
+|---|---|---|
+| US-0004/TK-0003; US-0005/TK-0001 | Единая MarkerPoint для edge-маркера носителя, hover и назначения допустимой цели | 59b54907cf515c95251ab29b938bce5ad34d1543 |
+| US-0004/TK-0004 | Ограниченная очередь 10 строк, колесо, полоса прокрутки и auto-follow текущего стрелка | fbe61c06c6b5997beac01e2a7ae56aa2018eb0dc |
+
+Evidence root: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-review-fixes/.
+
+- `carrier-before.trx`, `queue-before.trx`: по 3 ожидаемых FAIL при восстановлении соответствующего дефектного алгоритма; тесты выявляют оба исходных дефекта.
+- `carrier-final.trx`: 9/9 PASS. `queue.trx`: 4/4 PASS. Новые boundary cases проверяют scale 1/1,5, широкий viewport, отказ недопустимой цели, пиксельную неизменность зоны действий при росте очереди 8→16, ручную прокрутку и показ активного 15-го стрелка.
+- `client-final.trx`, `client-final.out`: 2169/2169 PASS, skipped 0, 1m28s; включены все семь растровых acceptance/regression scenes. Команда: `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --no-build --results-directory D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-review-fixes --logger "trx;LogFileName=client-final.trx"`, после сборки тем же test project; DSS_VALIDATION_ROOT установлен в абсолютный `client-evidence`. Растровое evidence сохранено в `client-evidence/ep0019/`.
+- Первый tactical-only запуск без DSS_VALIDATION_ROOT завершился 22 ошибками пути артефактов (293 PASS); исправлена конфигурация запуска, тестовый код/ожидания ради этого не менялись. Итоговый полный прогон выше зелёный.
+- `native-secondary-final.json`: PASS, 317 frames, 1280×720, Intel Arc 140V; selected-monitor-position=true, фактическая позиция (3440,0), второй монитор. Запуск: performance harness `--tactical-window 1 1280x720`, DSS_TACTICAL_NATIVE_SETTINGS указывает `native.settings.json`, DSS_TACTICAL_NATIVE_EXPECT_SKIN=classic. Сохранены восемь PNG из captures. Первый native smoke без EXPECT_SKIN завершился отказом проверки harness; итоговый запуск с обязательным параметром прошёл. Это managed input/native smoke стандартного сценария; 16 участников покрыты raster/unit тестом, физический ввод не заявляется.
+- Сборка Client/test/performance и scoped whitespace checks пройдены; `git diff --check` PASS. Сохраняется baseline MSB9008 для отсутствующего архивного ModApi. Лог formatter сообщает baseline workspace-loading warning, новых whitespace errors нет.
+- Self-review: hit-test сохраняет список кандидатов и BuildTargets; scroll меняет только представление, не порядок/снимок/команды/тайминги; clip не заходит в status/actions. Повторного независимого review не заявляется. Engine/Contracts/Motion/Save20 не изменены.
+- Graphify перестроен offline по текущим исходникам и свежему selective semantic fragment: 21190 nodes, 57019 edges, 704 communities. `graph/final-audit.json`: 1480 source hashes и 18 export hashes проверены, changed/missing/out-of-range/dangling/self-loops 0. Остаётся прежний parser warning ModulePanelLocalizationTests.cs. Semantic coverage 7 inputs, 8 nodes/8 edges; token usage unmeasured. Граф не доказывает игровые acceptance criteria.
+
+Временные слоты, screenshots для технического F10 smoke, fixture-кэши и graph/cache удалены после остановки процессов; отчёты, fresh semantics, итоговый граф и явно указанное evidence сохранены. Посторонняя неотслеживаемая папка DB/Board/EP-0020-US-0005-project-documentation/ сохранена и в коммиты не включена. Ограничения human/physical/других ОС из исходной приёмки остаются открытыми.
