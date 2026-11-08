@@ -39,5 +39,9 @@ public static class TacticalHitChance
         return new(accuracy, maneuver, rules.Base, weapon, range, angle, rearBonus, shield, sum,
             PyMath.Clamp(sum, rules.MinChance, rules.MaxChance) / 100.0, rear, bonus, evasion);
     }
+    /// <summary>Probabilities use [0,1]; applied after the normal hit-chance clamp.</summary>
+    public static double WithDecoy(double chance, double missFactor, double minChance) =>
+        Math.Max(minChance, 1.0 - missFactor * (1.0 - chance));
+
     public static double Chance(TacticalHitRules rules, TacticalShotInput input) => Terms(rules, input).Chance;
 }

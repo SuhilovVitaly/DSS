@@ -47,3 +47,5 @@ EP-0020-US-0005-TK-0001 → c27a18c3686f2fcb73df45709ae0a54c3bd0a8b0 → origin 
 US5 завершена: Engine2834PASS(36TRX,no duplicate IDs),Motion7,Contracts26,seriesbefore/after5000PASS,legacy hashes5PASS. TK2 готов к публикации; переход к US6 после origin SHA.
 
 EP-0020-US-0005-TK-0002 → 7895e0b910377f88b3d73b810a70a873abe9fe46 → origin проверен. US6/TK1 Contracts27PASS,готов к публикации.
+
+EP-0020-US-0006-TK-0001 → 905b0cdef5cc70c5caf51046cab8676224ea79a3 → origin проверен. TK2Motion12PASS,готов к публикации.

@@ -7,6 +7,25 @@ public sealed class LimitsAndChanceTests
 {
     private static readonly TacticalHitRules Rules = new(50, 5, 95, 15, 12, 10, 30);
 
+    [Theory]
+    [InlineData(.47, .205)]
+    [InlineData(.56, .34)]
+    [InlineData(.30, .05)]
+    [InlineData(.95, .925)]
+    public void Decoy_multiplies_miss_chance_after_clamp(double chance, double expected)
+    {
+        Assert.Equal(expected, TacticalHitChance.WithDecoy(chance, 1.5, .05), 12);
+        Assert.Equal(chance, TacticalHitChance.WithDecoy(chance, 1, .05), 12);
+    }
+
+    [Fact]
+    public void Decoy_never_goes_below_min_chance()
+    {
+        Assert.Equal(.05, TacticalHitChance.WithDecoy(.05, 1.5, .05));
+        Assert.Equal(.1, TacticalHitChance.WithDecoy(.3, 100, .1));
+        Assert.Equal(1, TacticalHitChance.WithDecoy(1, 1.5, .05));
+    }
+
     [Fact]
     public void Module_mass_enters_limits_like_shield_mass()
     {
