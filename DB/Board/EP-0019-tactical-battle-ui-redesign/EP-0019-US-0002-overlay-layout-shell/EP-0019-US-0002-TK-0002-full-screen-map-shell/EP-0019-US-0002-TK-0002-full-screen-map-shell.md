@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0002-overlay-layout-shell
 ticket: EP-0019-US-0002-TK-0002-full-screen-map-shell
 title: Карта на весь экран и удаление старой панели
-stage: draft
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0002-TK-0001-design-tokens-and-primitives]
@@ -90,3 +90,11 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+Scope: TacticalBattleScreen.Overlay.cs отделяет overlay geometry/input от session/presentation. Старые internal test hooks остаются для самостоятельных legacy проверок, но не подключены к active screen.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Replace sidebar with full screen map and compact overlay hit regions
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us2-tk2. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.

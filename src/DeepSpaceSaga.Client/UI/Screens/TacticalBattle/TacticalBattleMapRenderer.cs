@@ -30,13 +30,9 @@ internal static class TacticalBattleMapRenderer
         float scale = frame.UiScale;
         var battle = frame.Battle;
         using var paint = new SKPaint { IsAntialias = true, StrokeWidth = scale };
-        if (SkinStyle.HasBoxStyle("field.background"))
-            SkinStyle.Box(canvas, "field.background", SKRect.Create(view.PixelWidth, view.PixelHeight), Background, null, scale);
-        using (SkinStyle.Stroke(paint, "field.grid", Background, scale, scale))
-            GridRenderer.DrawLines(canvas, view.CenterX, view.CenterY, view.PixelsPerUnit, view.PixelWidth, view.PixelHeight,
-                GridSettings, paint, Background, baseStep: 8, GridColor);
-        paint.PathEffect = null;
-        paint.StrokeWidth = scale;
+        BattleDesign.Round(canvas, SKRect.Create(view.PixelWidth, view.PixelHeight), BattleDesign.MapBg, radius: 0, role: "field.background");
+        for (float x = 26; x < view.PixelWidth; x += 26) BattleDesign.Stroke(canvas, new(x, 0), new(x, 720), BattleDesign.Grid, 1);
+        for (float y = 26; y < 720; y += 26) BattleDesign.Stroke(canvas, new(0, y), new(view.PixelWidth, y), BattleDesign.Grid, 1);
         var units = VisibleUnits(frame);
         if (frame.Presentation == TacticalBattlePresentation.Current)
         {
@@ -76,7 +72,11 @@ internal static class TacticalBattleMapRenderer
             if (map.Contains(point.X, point.Y))
                 DrawUnit(canvas, point, unit, unit.Side == battle.PlayerSide, unit.Id == frame.SelectedDroneId, scale, paint);
         }
-        DrawRuler(canvas, view, scale, paint);
+        float len = (float)(100 * view.PixelsPerUnit);
+        BattleDesign.Stroke(canvas, new(14, 706), new(14 + len, 706), BattleDesign.Yellow, 1.3f);
+        BattleDesign.Stroke(canvas, new(14, 701), new(14, 711), BattleDesign.Yellow, 1.3f);
+        BattleDesign.Stroke(canvas, new(14 + len, 701), new(14 + len, 711), BattleDesign.Yellow, 1.3f);
+        BattleDesign.T(canvas, "100 у.е.", 14 + len / 2, 699, 10.5f, BattleDesign.Text, align: SKTextAlign.Center);
     }
 
     private static SKColor GridColor(SKColor fallback) => SkinStyle.Color("field.grid", "stroke", fallback);
