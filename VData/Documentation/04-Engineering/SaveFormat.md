@@ -1,32 +1,23 @@
 # Сохранения и восстановление
 
-Текущий writer: `SaveFormat.CurrentSaveFormatVersion = 19`. Save entrypoint
-принимает 19 и 18; Save18 явно нормализуется в 19, остальные версии отвергаются
-до публикации мира. Сценарий с `saveFormatVersion = 0` — отдельный New Game input,
-а не разрешение загрузить произвольное старое сохранение.
+Текущий writer — Save20. Вход сохранения принимает Save20, Save19 и Save18; иные версии отвергаются. Файл нового сценария без версии сохранения — отдельный вход New Game.
 
-Сохраняются materialized объекты/орбиты/карта, оба игровых времени и остатки,
-master seed и RNG/counters, pending-команды/receipts, модульные циклы,
-рынки/события/knowledge, cargo provenance, рейсы/reservations/ledger,
-точечные projectiles, evasion, encounter и debug overlay. Load не переигрывает
-события и не генерирует мир заново. Catalog/rules fingerprints должны совпасть.
+Save20 сохраняет мир: материализованные объекты, орбиты и карту, календарное и физическое время, seed и курсоры мира, очереди/receipts, модульные циклы, экипаж и структуру модулей, рынки, грузы и рейсы, а также параметры отладки двигателей. Загрузка не генерирует мир заново. Идентичность экономического каталога проверяется перед заменой сессии.
 
-Save19 добавляет optional debug tuning и provenance для retimed flight.
-Save18 с полями, принадлежащими Save19, отвергается; отсутствующий debug overlay
-не означает разрешение игнорировать остальные invariants. Проверка выполняется
-до замены сессии; повреждённый источник не переписывается.
+География не увеличивает номер Save20. Поддержаны solar generatorVersion и
+cluster rulesVersion 1/2; при наличии обоих они совпадают. Для v2 обязательны
+материализованные кластеры и `geography`: frozen referenceSpeedKmS,
+minimumStationDays, neighbourMinDays/neighbourMaxDays. Для v1 descriptor отсутствует
+или null; non-null v2 descriptor отвергается. Неизвестные/смешанные версии,
+неполные descriptors, неверная геометрия/членство/ссылки отклоняются до замены мира.
+[Контракт географии](TradingAndSolarSystem.md).
 
-Live LauncherCombatSnapshot/DefenseSnapshot очищены от retired guided/mode/burst
-параметров. LauncherCombatSaveState и DefenseCombatSaveState в ScenarioData
-сохраняют прежнюю форму Save19/18 и строгую проверку устаревших значений;
-они не являются DTO для UI. Переход не повышает версию writer и не удаляет
-validation некорректных старых полей. Active flights, captured geometry,
-reload deadlines, command receipts, debug tuning и named RNG продолжаются
-после Load; повтор команды не создаёт второй projectile.
+Load восстанавливает позы, орбиты, graph/resource bindings и активные рейсы.
+Новые generation settings и текущая Vmax не применяются к материализованной
+географии; старые v1 сохранения не переходят на новое размещение автоматически.
 
-Program использует `Saves` рядом с executable, SaveSlotNaming задаёт имена файлов.
-Local file Load запускает продолжение на паузе. UI Save/Load не изменяет Engine
-самостоятельно и не выдаёт stale callback за разрешение перезаписать слот после Defeat.
-Правила стартового tuning-файла — в [DebugTuning](DebugTuning.md).
+Save18 и Save19 проходят проверку исторических секций и преобразуются в Save20 в памяти. Старый боевой код, снаряды, боевые модули, приказы и данные старой брони не загружаются в симуляцию. Миграция сохраняет небоевое состояние и исходный отпечаток каталога; исходный файл не переписывается. Save18 с полями, введёнными в Save19, отклоняется. Save20 отклоняет старые боевые секции и поля, а также неизвестные поля текущей схемы.
 
-Источники: [ScenarioData.cs](../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs), [ScenarioLoader.cs](../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs), [SimulationEngine.PointCombatPersistence.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.PointCombatPersistence.cs), [SimulationEngine.DebugTuningPersistence.cs](../../../src/DeepSpaceSaga.Engine/SimulationEngine.DebugTuningPersistence.cs), [SaveSlotNaming.cs](../../../src/DeepSpaceSaga.Engine.LocalClient/SaveSlotNaming.cs), [Program.cs](../../../src/DeepSpaceSaga.Client/Program.cs).
+[Тактический бой](TacticalBattle.md), его инициатива, tie rank, RNG и FireSteps не сохраняются. Инициатива не меняет схему Save20 и не добавляет миграцию мира. Пока бой активен, Engine запрещает запись, в том числе когда уже показан итог; выход возвращает обычную возможность записи. В обычной игре F5 записывает быстрый слот, F9 загружает его на паузе. Неуспешная загрузка оставляет текущую сессию. Имена слотов определены в [SaveSlotNaming](../../../src/DeepSpaceSaga.Engine.LocalClient/SaveSlotNaming.cs). Отдельный файл F12 описан в [DebugTuning](DebugTuning.md).
+
+Владельцы: [ScenarioData](../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioData.cs), [ScenarioLoader](../../../src/DeepSpaceSaga.Engine/Scenario/ScenarioLoader.cs), [LegacyCombatSaveReader](../../../src/DeepSpaceSaga.Engine/Scenario/LegacyCombatSaveReader.cs), [SaveMigration20](../../../src/DeepSpaceSaga.Engine/Scenario/SaveMigration20.cs).

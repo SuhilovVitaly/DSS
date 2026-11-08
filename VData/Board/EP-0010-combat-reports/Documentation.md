@@ -1,5 +1,8 @@
 # EP-0010 — текущая документация и grounding
 
+> **Заменено для боя реального времени (2026-11-06).** Действующий контракт — [тактический бой V4](../../Documentation/04-Engineering/TacticalBattle.md), состояние поставки — [EP-0015](../EP-0015-tactical-carrier-battle/ExecutionStatus.md). Эта запись относится к снятому бою и его боевым панелям, настройкам и результатам. Небоевые модули, ручное управление и настройка двигателей описаны в текущей документации. Предыдущие решения и результаты ниже сохранены как история.
+
+
 2026-10-16: production path реализован. [Текущая архитектура](../../Documentation/04-Engineering/CombatReports.md), [status/tests](ImplementationStatus.md), [публикация](Publication.md), [инвентаризация](DocumentationInventory.md), [Graphify](https://github.com/SuhilovVitaly/DSS/blob/aa8750dbac35f25b82b3ec44cbe5011fc02740a0/Documentation/06-Tooling/TradingSolarGraphify.md). Самостоятельные игровые запуски запрещены пользователем; native/human/FPS OPEN.
 
 ## Grounding
