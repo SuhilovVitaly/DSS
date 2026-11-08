@@ -14,8 +14,8 @@ public sealed class AnomalyFirePanelTests
     [Fact]
     public async Task Shot_plan_shows_effective_chance_and_absorption()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
         var state = await AnomalySceneSearch.First("heat-plan", s => s.Phase == TacticalBattlePhase.Fire && s.Targets.Any(g => g.List.Any(c => c.Absorption >= .1)));
+        using var locale = Localization.UseLocaleForTests("Russian");
         var group = state.Targets.First(g => g.List.Any(c => c.Absorption >= .1)); var candidate = group.List.First(c => c.Absorption >= .1);
         var orders = new TacticalBattleFireOrders(); orders.Observe(state, group.DroneId); Assert.True(orders.Select(group.DroneId)); Assert.True(orders.Choose(candidate.TargetId));
         var frame = AnomalySceneSearch.Frame(state, group.DroneId) with { FirePlan = orders.Capture() };
@@ -48,8 +48,8 @@ public sealed class AnomalyFirePanelTests
     [Fact]
     public async Task Dust_drone_panel_and_marks()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
         var state = await AnomalySceneSearch.First("dust-plan", s => s.Phase == TacticalBattlePhase.Fire && s.Units.Any(u => u.Side == s.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Air && u.InDust));
+        using var locale = Localization.UseLocaleForTests("Russian");
         var unit = state.Units.First(u => u.Side == state.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Air && u.InDust);
         var orders = new TacticalBattleFireOrders(); orders.Observe(state, unit.Id); Assert.True(orders.Select(unit.Id));
         Assert.Null(orders.Capture().Selected!.TargetId);
@@ -70,13 +70,13 @@ public sealed class AnomalyFirePanelTests
     [Fact]
     public async Task Move_end_in_dust_callout()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
         var state = await AnomalySceneSearch.First("move-dust", s => s.Phase == TacticalBattlePhase.Move && s.Suggestions.Any(o =>
         {
             var unit = s.Units.Single(u => u.Id == o.DroneId);
             var end = TacticalGeometry.Integrate(new(unit.Pose.X, unit.Pose.Y, unit.Pose.Course), o.Speed, o.Turn, s.Rules.Substeps);
             return AnomalyPresentation.Inside(s, TacticalAnomalyKind.Dust, new(end.X, end.Y, end.Course));
         }));
+        using var locale = Localization.UseLocaleForTests("Russian");
         var frame = AnomalySceneSearch.Frame(state, state.Suggestions.First(o =>
         {
             var unit = state.Units.Single(u => u.Id == o.DroneId);
@@ -91,8 +91,7 @@ public sealed class AnomalyFirePanelTests
     [Fact]
     public async Task Dust_summary_counts_evasion_before_dust_and_preserves_decoys()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var scene = await Ep0019Scenes.Create("1-move"); var own = scene.Screen.Flow.State!.Units.First(u => u.Kind == TacticalUnitKind.Drone);
+        await using var scene = await Ep0019Scenes.Create("1-move"); using var locale = Localization.UseLocaleForTests("Russian"); var own = scene.Screen.Flow.State!.Units.First(u => u.Kind == TacticalUnitKind.Drone);
         TacticalFirePlanRow Row(string id, bool dust, bool evade, string? target) => new(own with { Id = id, InDust = dust }, new(id, [], target), target) { Evade = evade };
         var plan = new TacticalFirePlan([Row("a", false, false, "target"), Row("b", true, true, null), Row("c", true, false, null), Row("d", false, false, null)], "c");
         Assert.Equal("1 стреляет · 1 уклоняется · 1 в пыли · 1 без цели", PhasePanel.FireSummary(plan));

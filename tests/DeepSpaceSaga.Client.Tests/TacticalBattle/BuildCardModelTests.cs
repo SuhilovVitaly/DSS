@@ -28,8 +28,7 @@ public sealed class BuildCardModelTests
     [Fact]
     public async Task Cells_and_texts_follow_slots()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var s = await Ep0019Scenes.Create("2-fire"); var b = s.Screen.Flow.State!;
+        await using var s = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian"); var b = s.Screen.Flow.State!;
         var model = BuildCardModel.From(b, null, "Марта")!;
         Assert.Equal("ПИЛОТ И СБОРКА", model.Heading);
         Assert.Contains("50–75", model.Cells.Single(c => c.Kind == TacticalSlotKind.Weapon).Detail);
@@ -44,8 +43,7 @@ public sealed class BuildCardModelTests
     [Fact]
     public async Task Damaged_slots_are_alerts()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var s = await Ep0019Scenes.Create("2-fire"); var b = s.Screen.Flow.State!; var u = b.Units.Single(u => u.Id == "Марта");
+        await using var s = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian"); var b = s.Screen.Flow.State!; var u = b.Units.Single(u => u.Id == "Марта");
         var changed = u with
         {
             Slots = u.Slots.Select(slot => slot.Kind == TacticalSlotKind.Weapon ? slot with { State = TacticalSlotState.Jammed }
@@ -78,7 +76,7 @@ public sealed class BuildCardModelTests
     [InlineData("English", "32.5", "PILOT AND BUILD")]
     public async Task Locale_is_complete(string language, string number, string heading)
     {
-        using var locale = Localization.UseLocaleForTests(language); await using var s = await Ep0019Scenes.Create("2-fire");
+        await using var s = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests(language);
         var model = BuildCardModel.From(s.Screen.Flow.State!, null, "Вера")!;
         Assert.Equal(heading, model.Heading); Assert.Equal(number, BuildCardModel.Number(32.5));
         Assert.DoesNotContain("TacticalBattle.", string.Join(" ", model.Cells.Select(c => c.Detail + c.Name)) + model.Frame + model.Mass + model.Motion);

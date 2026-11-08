@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using System.Collections.Immutable;
 using DeepSpaceSaga.Motion.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
@@ -13,6 +14,24 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
     internal BattleNavigationTests.Fixture Fixture { get; }
     internal TacticalBattleScreen Screen => (TacticalBattleScreen)Fixture.Screens.Current;
     private string? _contentFixture;
+    private bool _manualDamage;
+    internal TacticalBattleFrame Frame
+    {
+        get
+        {
+            var f = Screen.CaptureFrame(1920, 1080)!;
+            if (!_manualDamage) return f;
+            var u = f.Battle.Units.Single(u => u.Id == "Марта");
+            var changed = u with
+            {
+                Jammed = true,
+                Engines = u.Engines.SetItem(0, u.Engines[0] with { Factor = .5 }),
+                Slots = u.Slots.Select(slot => slot.Kind == TacticalSlotKind.Weapon ? slot with { State = TacticalSlotState.Jammed }
+                    : slot.Kind == TacticalSlotKind.Engine && slot.Index == 0 ? slot with { State = TacticalSlotState.Damaged, Factor = .5 } : slot).ToImmutableArray()
+            };
+            return f with { Battle = f.Battle with { Units = f.Battle.Units.Replace(u, changed) } };
+        }
+    }
     private Ep0019Scenes(BattleNavigationTests.Fixture fixture) => Fixture = fixture;
     internal static async Task<Ep0019Scenes> Create(string scene, bool withoutModules = false, bool withoutAnomalies = false)
     {
@@ -111,6 +130,17 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
                         && AnomalyPresentation.HoverKind(frame with { HoverPoint = p }) == TacticalAnomalyKindCode.Heat);
                 result.Screen.OnMouseMove(point.X * 1.5f, point.Y * 1.5f);
             }
+            if (scene.StartsWith("2-build-", StringComparison.Ordinal))
+            {
+                SelectDrone("Марта"); result.Screen.HoverUnitId = null;
+                if (scene == "2-build-hover")
+                {
+                    using (var first = result.Render()) { }
+                    var f2 = result.Screen.CaptureFrame(1920, 1080)!; var point = f2.View.Project(f2.Battle.Units.Single(u => u.Id == "Вера").Pose);
+                    result.Screen.OnMouseMove(point.X * 1.5f, point.Y * 1.5f);
+                }
+                result._manualDamage = scene == "2-build-damaged";
+            }
             return result;
 
             void SelectDrone(string id)
@@ -136,6 +166,7 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
     }
     internal SKBitmap Render()
     {
+        if (_manualDamage) return AnomalySceneSearch.Render(Frame, "manual-build-damage").Bitmap;
         var bitmap = new SKBitmap(1920, 1080);
         using var canvas = new SKCanvas(bitmap);
         Screen.Render(canvas, bitmap.Width, bitmap.Height);

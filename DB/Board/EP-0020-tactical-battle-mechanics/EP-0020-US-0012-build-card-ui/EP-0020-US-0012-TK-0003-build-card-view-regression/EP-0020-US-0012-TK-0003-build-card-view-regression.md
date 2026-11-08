@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0012-build-card-ui
 ticket: EP-0020-US-0012-TK-0003-build-card-view-regression
 title: Проверки вида EP-0019 после карточки сборки
-stage: draft
+stage: done
 layer: tests
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0012-TK-0002-build-card-render]
@@ -87,4 +87,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope расширен на Ep0019Acceptance/Snapshots, tracked baselines, Ep0020BuildScenesTests и native evidence harness: реальная карточка меняет own hover и занятые label areas; regression требует актуальных ожиданий и native E/D. До замены baseline проверяются неизменные left pilot panels и phase/action panels; полная регрессия затем без masks/capture flags.
+
+Full Client под нагрузкой выявил 3 исключения thread-local test locale при async continuation и старое ожидание5overlay вместо6. Scope расширен на Localization test seam и regression test: AsyncLocal сохраняет тестовую локаль в логическом async flow, production language selection не меняется; nested Task.Run/restore проверяются отдельно. Scope также включает текущие тесты EP20 (перенос locale scopes после async fixtures) и OverlayShell assertion6 плюс click inside build card. Это исправление воспроизведённой нестабильности, а не ослабление locale assertions.
+
+Завершено. Полная Client suite2252/2252PASS (включая29исходных EP19,15strict unmasked snapshots,3новые build scenes). До baseline update12сцен доказали pixel-exact прежних пилотных/phase/action panels; граница правой проверки RB+4 лежит в чистом зазоре перед AA новой карточки RB+6. Итог15snapshot different0/maxTile0; capture/masksOFF. Изменены6из12старых baseline только в сценах с build card, добавлены3новых; прежние enemy/anomaly cards не менялись. Повреждённая сцена явно ручная DTO projection, selection/hover реальные handlers. Client Debug/Performance Release buildPASS, scoped format/diffPASS. Самопроверка/визуальный осмотр3карточек выполнены. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us12-tk3/view-audit.json` и `client-final/tests.trx`. Native и полный geography corpus — последующий общий gate перед документацией, здесь не заявлены PASS.

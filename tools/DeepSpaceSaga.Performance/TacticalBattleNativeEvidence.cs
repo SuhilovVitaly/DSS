@@ -255,6 +255,17 @@ internal static class TacticalBattleNativeEvidence
                                     Click(active, p.X * height / 720f, p.Y * height / 720f);
                                 }
                                 Check("fire-plan", frame.FirePlan is { Rows.IsEmpty: false });
+                                var selectedId = active.CaptureFrame(width, height)!.SelectedDroneId!;
+                                KeyDown(Key.E);
+                                Check("evade-route", active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Evade);
+                                KeyDown(Key.D);
+                                Check("decoy-blocked-during-evade", !active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Decoy);
+                                KeyDown(Key.E); KeyDown(Key.D);
+                                Check("decoy-route", active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Decoy);
+                                KeyDown(Key.D);
+                                Check("orders-roundtrip", !active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Evade &&
+                                    !active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Decoy);
+                                Check("build-card-model", BuildCardModel.From(active.CaptureFrame(width, height)! with { HoverUnitId = null, HoverPoint = null })?.Unit.Id == selectedId);
                             }
                             if (active.Flow.State!.Phase == TacticalBattlePhase.Over)
                             {

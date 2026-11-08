@@ -14,8 +14,7 @@ public sealed partial class HoverCardTests
     [InlineData(TacticalAnomalyKindCode.Dust, "Пылевая")]
     public async Task Anomaly_hover_card(TacticalAnomalyKindCode kind, string name)
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var scene = await Ep0019Scenes.Create("1-move"); using (var initial = scene.Render()) { }
+        await using var scene = await Ep0019Scenes.Create("1-move"); using var locale = Localization.UseLocaleForTests("Russian"); using (var initial = scene.Render()) { }
         var before = scene.Screen.CaptureFrame(1920, 1080)!;
         var orders = scene.Screen.BuildMoveRequest().Orders;
         var point = before.Battle.Anomalies.Where(a => a.Kind == kind).SelectMany(a => a.Clumps).Select(c => new TacticalPoseSnapshot(c.X, c.Y, 0))

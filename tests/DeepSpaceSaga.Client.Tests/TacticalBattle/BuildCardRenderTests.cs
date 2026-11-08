@@ -14,8 +14,7 @@ public sealed class BuildCardRenderTests
     [Fact]
     public async Task Card_probes_match_ui_spec()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian");
         while (scene.Screen.CaptureFrame(1920, 1080)!.SelectedDroneId != "Марта") scene.Screen.OnKeyDown(Key.Tab);
         scene.Screen.HoverUnitId = null; using var image = scene.Render();
         var f = scene.Screen.CaptureFrame(1920, 1080)!; var model = BuildCardModel.From(f)!;
@@ -36,7 +35,7 @@ public sealed class BuildCardRenderTests
     [Fact]
     public async Task Hover_heavy_and_enemy_keep_correct_cards()
     {
-        using var locale = Localization.UseLocaleForTests("Russian"); await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian");
         scene.Screen.HoverUnitId = "Вера"; using var own = scene.Render(); var f = scene.Screen.CaptureFrame(1920, 1080)!;
         var model = BuildCardModel.From(f)!; Assert.Equal("ПОД КУРСОРОМ · СБОРКА", model.Heading);
         Assert.All(model.Cells.Where(c => c.Kind == TacticalSlotKind.Shield), c => Assert.False(c.Empty));
@@ -63,7 +62,7 @@ public sealed class BuildCardRenderTests
     [Fact]
     public async Task Damaged_borders_and_empty_slot_are_literal()
     {
-        using var locale = Localization.UseLocaleForTests("Russian"); await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian");
         var f = scene.Screen.CaptureFrame(1920, 1080)!; var u = f.Battle.Units.Single(u => u.Id == "Марта");
         var changed = u with
         {

@@ -16,6 +16,9 @@ public sealed class OverlayShellTests
         Assert.Equal(before, s.Screen.BuildMoveRequest().Orders);
         Assert.Equal(1280, s.Screen.View.PixelWidth);
         Assert.Equal(BattleDesign.MapBg, b.GetPixel(1100, 1040));
-        Assert.Equal(5, s.Screen.PanelRects.Count);
+        Assert.Equal(6, s.Screen.PanelRects.Count);
+        var card = s.Screen.Layout.Rects["build"];
+        s.Screen.OnMouseDown(card.MidX * 1.5f, card.MidY * 1.5f, MouseButton.Left);
+        Assert.Equal(before, s.Screen.BuildMoveRequest().Orders);
     }
 }

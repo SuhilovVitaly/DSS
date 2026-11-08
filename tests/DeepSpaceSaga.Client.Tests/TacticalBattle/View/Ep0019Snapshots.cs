@@ -11,6 +11,8 @@ public sealed partial class Ep0019ViewTests
     public Task Scene_matches_regression_snapshot(string name) => CompareSnapshot(name);
     [Theory, MemberData(nameof(Ep0020AnomalyScenesTests.Scenes), MemberType = typeof(Ep0020AnomalyScenesTests)), Trait("Category", "Ep0020View")]
     public Task Anomaly_scene_matches_regression_snapshot(string name, int seed, int turn) => CompareSnapshot(name, seed, turn);
+    [Theory, MemberData(nameof(Ep0020BuildScenesTests.Scenes), MemberType = typeof(Ep0020BuildScenesTests)), Trait("Category", "Ep0020View")]
+    public Task Build_scene_matches_regression_snapshot(string name) => CompareSnapshot(name, 1, 4);
     private static async Task CompareSnapshot(string name, int? seed = null, int? turn = null)
     {
         bool verifyM3Layout = Environment.GetEnvironmentVariable("DSS_EP0020_VERIFY_M3_LAYOUT") == "1";
@@ -25,6 +27,14 @@ public sealed partial class Ep0019ViewTests
         }
         using var expected = SKBitmap.Decode(Path.Combine(AppContext.BaseDirectory, "TacticalBattle", "View", "Snapshots", name + ".png"));
         Assert.NotNull(expected); Assert.Equal((1920, 1080), (expected.Width, expected.Height));
+        if (Environment.GetEnvironmentVariable("DSS_EP0020_VERIFY_M4_PANELS") == "1")
+        {
+            var frame = s.Screen.CaptureFrame(1920, 1080)!; int changed = 0;
+            for (int y = 0; y < 1080; y++) for (int x = 0; x < 1920; x++)
+                if ((x < 303 || x >= 1551 && y < (frame.Panel.Bottom + 4) * 1.5f) && expected.GetPixel(x, y) != current.GetPixel(x, y)) changed++;
+            File.WriteAllText(Path.Combine(Output(name), "m4-panels.json"), JsonSerializer.Serialize(new { changed, leftWidth = 303, rightStart = 1551, frame.Panel.Bottom }));
+            Assert.Equal(0, changed); return;
+        }
         var one = expected.Pixels; var two = current.Pixels; int[] tiles = new int[120 * 68]; int different = 0;
         bool verifyM1Masks = Environment.GetEnvironmentVariable("DSS_EP0020_VERIFY_M1_MASKS") == "1";
         for (int i = 0; i < one.Length; i++)

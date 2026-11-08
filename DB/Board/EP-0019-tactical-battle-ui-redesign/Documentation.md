@@ -143,3 +143,7 @@ current_review: epic
 ### EP-0020 M3: аномалии и новая приёмка
 
 US10/TK4: прежние7M2раскладок подтверждены unmasked real-engine no-anomaly сравнениями. После32independent formula pixels,36literal/probe и5handler cases обновлены7базовых и добавлены5M3снимков. Полная Client2230uniquePASS,12strict snapshotsdifferent0/maxTile0, все29Ep0019checksPASS. Новыйseed1:Fire4выбранЮн73%/73.4/0.4°, Results4shots/3hits,OutcomeA23turn42shots20hitsLoss0:6; cards130/0,322/−34,51/−34,209/−40. Порогов/площадейпроб не уменьшали; AA выбранногоtop93 иScreen поля учитываются независимыми reference в прежних областях (DesignSpecуточнение). Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us10-tk4/coverage-audit.json`. Человеческая/художественная/physical/native приёмка этим не закрывается.
+
+### EP-0020 M4 — карточка сборки
+
+2026-11-09: UiSpec EP20§22–26 заменяет own hover карточкой Пилот и сборка300design units и добавляет selected card. Enemy/carrier/anomaly hover сохраняется. До замены12baseline panels pixel-exact; после6обновлённых и3новых baseline все15строгих snapshots different0, полный Client2252PASS. Label occupied-area учитывает новую высоту; phase/action и pilot card layout не менялись. Повреждённая сцена обозначена ручной projection, selected/hover проходят реальные handlers. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us12-tk3/view-audit.json`. Human/art/physical-input не следуют из rasterPASS.

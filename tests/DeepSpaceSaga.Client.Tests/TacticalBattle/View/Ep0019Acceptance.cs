@@ -30,7 +30,10 @@ public sealed partial class Ep0019ViewTests
         int i = 0;
         foreach (var u in f.Battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide))
         { Rect(new(6, 6 + 87 * i, 196, 88 + 87 * i), l.Rects["pilot:" + u.Id]); i++; }
-        bool hover = name is not ("1-move-no-hover" or "5-outcome"); Assert.Equal(hover, l.Rects.ContainsKey("hover"));
+        bool build = name is "1-move-no-hover" or "2-fire-hover-own";
+        Assert.Equal(build, l.Rects.ContainsKey("build"));
+        if (build) Rect(new(1040, db + 126, 1274, db + 426), l.Rects["build"]);
+        bool hover = name is not ("1-move-no-hover" or "2-fire-hover-own" or "5-outcome"); Assert.Equal(hover, l.Rects.ContainsKey("hover"));
         if (hover) Rect(new(1040, db + 126, 1274, db + 230), l.Rects["hover"]);
         if (f.Movement is { } movement)
             foreach (var row in movement.Orders)
@@ -70,7 +73,7 @@ public sealed partial class Ep0019ViewTests
         await using var s = await Ep0019Scenes.Create(name); using var locale = Localization.UseLocaleForTests("Russian"); using var bitmap = s.Render();
         foreach (string text in ExpectedTexts(name)) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
         if (name is not ("1-move-no-hover" or "5-outcome"))
-            foreach (string text in name == "2-fire-hover-own" ? new[] { "ПОД КУРСОРОМ · ПИЛОТ", "Олег", "Корпус 55/55", "Броня 80/80", "Копьё I · 40–60 · точн. 50 · иниц. 50" } : new[] { "ПОД КУРСОРОМ · ПРОТИВНИК", "Таг-6", name == "4-salvo-results" ? "Корпус 0/40" : "Корпус 40/40", name == "4-salvo-results" ? "Броня 0/20" : "Броня 20/20", "Обрез I · 40–50 · дальн. 110 · иниц. 41" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
+            foreach (string text in name == "2-fire-hover-own" ? new[] { "ПОД КУРСОРОМ · СБОРКА", "Олег", "Корпус 55/55", "Броня 80/80", "Рама «Лёгкий»" } : new[] { "ПОД КУРСОРОМ · ПРОТИВНИК", "Таг-6", name == "4-salvo-results" ? "Корпус 0/40" : "Корпус 40/40", name == "4-salvo-results" ? "Броня 0/20" : "Броня 20/20", "Обрез I · 40–50 · дальн. 110 · иниц. 41" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
         if (name == "3-salvo-flight")
             foreach (string row in new[] { "Марта → Таг-1", "Вера — нет цели", "Таг-2 — нет цели", "Юн → Таг-6", "Олег → Таг-6", "Таг-1 — нет цели", "Таг-5 → Юн", "Таг-3 — нет цели", "Таг-4 — нет цели", "Таг-6 — нет цели" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == row);
         Assert.DoesNotContain(s.Screen.Layout.Texts, t => t.Text.Contains("TacticalBattle.", StringComparison.Ordinal));
