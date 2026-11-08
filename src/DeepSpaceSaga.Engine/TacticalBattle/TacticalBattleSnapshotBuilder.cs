@@ -12,7 +12,7 @@ internal static class TacticalBattleSnapshotBuilder
 
     public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
-    { LethalImpact = shot.LethalImpact };
+    { LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading };
 
     public static ImmutableArray<TacticalUnitSnapshot> Units(TacticalBattle battle)
     {
@@ -54,17 +54,27 @@ internal static class TacticalBattleSnapshotBuilder
         foreach (var d in battle.ActiveDrones(battle.EnemySide(playerSide)))
         {
             var candidate = TacticalBattleSalvo.DefaultTarget(d, TacticalBattleSalvo.Candidates(battle, d));
-            if (candidate is not null) rows.Add(new(d.Id, candidate.Target.Id, candidate.Terms.Chance, candidate.Distance,
-                candidate.Angle, candidate.Terms.IsRear, d.Weapon.RearKillChance));
+            if (candidate is not null)
+            {
+                var adjusted = CandidatesIfEvading(battle, d, candidate.Target.Id);
+                rows.Add(new(d.Id, candidate.Target.Id, candidate.Terms.Chance, candidate.Distance,
+                    candidate.Angle, candidate.Terms.IsRear, d.Weapon.RearKillChance)
+                { ChanceIfEvading = adjusted });
+            }
         }
         return rows.ToImmutable();
     }
+
+    private static double CandidatesIfEvading(TacticalBattle battle, TacticalDrone shooter, string targetId) =>
+        TacticalBattleSalvo.Candidates(battle, shooter, new HashSet<string>(StringComparer.Ordinal) { targetId })
+            .Single(c => c.Target.Id == targetId).Terms.Chance;
 
     public static ImmutableArray<TacticalLossCount> Losses(TacticalBattle battle) => TacticalBattleConstants.SideOrder
         .Select(side => new TacticalLossCount(side, battle.Drones.Count(d => d.Side == side && !d.IsActive))).ToImmutableArray();
     public static TacticalForecastRules Rules(TacticalRules r) => new(
         new(r.Hit.Base, r.Hit.MinChance, r.Hit.MaxChance, r.Hit.RangeBonus, r.Hit.AnglePenalty, r.Hit.RearBonus, r.Hit.RearBonusArcDeg),
-        r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps);
+        r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps)
+    { Evasion = new(r.Evasion.HitPenalty, r.Evasion.Cost, r.Evasion.MinConsciousness, r.Consciousness.RecoveryPerTurn, r.Consciousness.Max) };
     public static TacticalPoseSnapshot Pose(TacticalPose pose) => new(pose.X, pose.Y, pose.Course);
     public static TacticalOutcomeSnapshot? Outcome(TacticalBattleResult? result)
     {

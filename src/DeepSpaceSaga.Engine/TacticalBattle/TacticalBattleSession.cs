@@ -126,9 +126,9 @@ internal sealed class TacticalBattleSession
         _beforeSalvo = TacticalBattleSnapshotBuilder.Units(Battle);
         _fireQueue = TacticalBattleSnapshotBuilder.FireQueue(Battle);
         int turn = Battle.Turn;
-        Battle.Firing((drone, candidates) => drone.Side == PlayerSide
+        Battle.Firing((drone, candidates) => new(drone.Side == PlayerSide
             ? targets.FirstOrDefault(t => t.DroneId == drone.Id).TargetId
-            : TacticalBattleSalvo.DefaultTarget(drone, candidates)?.Target.Id);
+            : TacticalBattleSalvo.DefaultTarget(drone, candidates)?.Target.Id, false));
         var steps = ImmutableArray.CreateBuilder<TacticalFireStepSnapshot>();
         var previous = _beforeSalvo;
         foreach (var step in Battle.LastSalvo!.Steps)
@@ -165,7 +165,8 @@ internal sealed class TacticalBattleSession
             var outcome = TacticalBattleSnapshotBuilder.Outcome(step.Outcome);
             if (outcome is not null)
                 _log.Add(new TacticalBattleLogEvent(++_eventSequence, turn, TacticalBattlePhase.Fire,
-                    TacticalBattleLogKind.Outcome, Outcome: outcome) { FireStepIndex = step.Index });
+                    TacticalBattleLogKind.Outcome, Outcome: outcome)
+                { FireStepIndex = step.Index });
             steps.Add(new(step.Index, step.ShooterId, step.TargetId, step.SkipReason, shot, step.UnitsAfter,
                 _log.Skip(events).ToImmutableArray(), outcome));
             previous = step.UnitsAfter;

@@ -71,7 +71,7 @@ public sealed class OutcomeTests
             battle.Movement();
             Assert.Equal(TacticalTurnPhase.Firing, battle.Phase);
             Assert.Equal(10, battle.LastMovement.Length);
-            battle.Firing((_, _) => null);
+            battle.Firing((_, _) => new(null, false));
             Assert.Equal(TacticalTurnPhase.Planning, battle.Phase);
             Assert.NotNull(battle.LastSalvo);
             Assert.Null(battle.Result);

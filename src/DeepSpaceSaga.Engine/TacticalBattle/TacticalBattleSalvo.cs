@@ -5,9 +5,13 @@ using DeepSpaceSaga.Motion.TacticalBattle;
 namespace DeepSpaceSaga.Engine.TacticalBattle;
 
 internal sealed record TacticalCandidate(TacticalUnit Target, double Distance, double Angle, TacticalHitTerms Terms);
+internal sealed record TacticalFirePlan(string? TargetId, bool Evade);
 /// <summary>SoloHullLoss is the actual hull loss credited at this sequential shot; LethalImpact belongs to this shot only.</summary>
 internal sealed record TacticalShot(TacticalDrone Shooter, TacticalUnit Target, double Distance, double Angle,
-    double Chance, bool Hit, int Damage, bool Rear, bool Kill, int SoloHullLoss, bool LethalImpact = false);
+    double Chance, bool Hit, int Damage, bool Rear, bool Kill, int SoloHullLoss, bool LethalImpact = false)
+{
+    public bool TargetEvading { get; init; }
+}
 internal sealed record TacticalDamage(string TargetId, int Hull, int Armor, bool RearKill);
 internal sealed record TacticalSystemChange(string TargetId, string Effect, int? EngineIndex = null);
 internal sealed record TacticalSalvoResult(ImmutableArray<TacticalShot> Shots, ImmutableArray<TacticalDamage> Damage,
@@ -21,14 +25,14 @@ internal sealed record TacticalSalvoStep(int Index, string ShooterId, string? Ta
 
 internal static class TacticalBattleSalvo
 {
-    public static ImmutableArray<TacticalCandidate> Candidates(TacticalBattle battle, TacticalDrone shooter)
+    public static ImmutableArray<TacticalCandidate> Candidates(TacticalBattle battle, TacticalDrone shooter, IReadOnlySet<string>? evading = null)
     {
         if (!shooter.IsActive || shooter.Jammed) return [];
         var result = ImmutableArray.CreateBuilder<TacticalCandidate>();
         string enemy = battle.EnemySide(shooter.Side);
         var tuning = battle.Catalog.Rules;
         var hit = tuning.Hit;
-        var rules = new TacticalHitRules(hit.Base, hit.MinChance, hit.MaxChance, hit.RangeBonus, hit.AnglePenalty, hit.RearBonus, hit.RearBonusArcDeg);
+        var rules = new TacticalHitRules(hit.Base, hit.MinChance, hit.MaxChance, hit.RangeBonus, hit.AnglePenalty, hit.RearBonus, hit.RearBonusArcDeg, tuning.Evasion.HitPenalty);
         foreach (var target in battle.Drones.Cast<TacticalUnit>().Concat(battle.Carriers))
         {
             if (target.Side != enemy || !target.IsActive) continue;
@@ -38,7 +42,8 @@ internal static class TacticalBattleSalvo
             var drone = target as TacticalDrone;
             var input = new TacticalShotInput(shooter.Accuracy, target.Maneuver, shooter.Weapon.HitBonus,
                 shooter.Weapon.Range, shooter.Weapon.ArcDeg, distance, angle, TacticalHitChance.RearAngle(shooter.Pose, target.Pose),
-                drone is not null, drone?.Shield?.Defense ?? 0, drone?.ShieldCount ?? 0, tuning.Rear.ArcHalfDeg, shooter.Weapon.RangeBonus);
+                drone is not null, drone?.Shield?.Defense ?? 0, drone?.ShieldCount ?? 0, tuning.Rear.ArcHalfDeg, shooter.Weapon.RangeBonus,
+                evading?.Contains(target.Id) == true);
             result.Add(new(target, distance, angle, TacticalHitChance.Terms(rules, input)));
         }
         return result.ToImmutable();
@@ -47,17 +52,34 @@ internal static class TacticalBattleSalvo
     public static TacticalCandidate? DefaultTarget(TacticalDrone shooter, IReadOnlyList<TacticalCandidate> candidates) => candidates
         .OrderBy(c => (shooter.Role == "striker") == (c.Target is TacticalCarrier) ? 0 : 1).ThenBy(c => c.Distance).FirstOrDefault();
 
-    public static TacticalSalvoResult Fire(TacticalBattle battle, Func<TacticalDrone, IReadOnlyList<TacticalCandidate>, string?>? targetsFor = null)
+    public static TacticalFirePlan DefaultPlan(TacticalBattle battle, TacticalDrone drone, IReadOnlyList<TacticalCandidate> candidates)
+    {
+        var rules = battle.Catalog.Rules.Evasion;
+        return drone.Hull < rules.AiHullFraction * drone.MaxHull && drone.Consciousness >= rules.MinConsciousness
+            ? new(null, true) : new(DefaultTarget(drone, candidates)?.Target.Id, false);
+    }
+
+    public static TacticalSalvoResult Fire(TacticalBattle battle, Func<TacticalDrone, IReadOnlyList<TacticalCandidate>, TacticalFirePlan>? targetsFor = null)
     {
         // Freeze and validate every plan before draws, Dry or statistics mutate.
         var plans = battle.CaptureFireOrder().Select(shooter =>
         {
             var candidates = Candidates(battle, shooter);
-            string? id = targetsFor is null ? DefaultTarget(shooter, candidates)?.Target.Id : targetsFor(shooter, candidates);
+            var plan = targetsFor is null ? DefaultPlan(battle, shooter, candidates) : targetsFor(shooter, candidates);
+            if (plan is null) throw new ArgumentException("Fire plan must not be null.", nameof(targetsFor));
+            string? id = plan.TargetId;
+            if (plan.Evade && (id is not null || shooter.Consciousness < battle.Catalog.Rules.Evasion.MinConsciousness))
+                throw new ArgumentException("Evasion requires no target and sufficient consciousness.", nameof(targetsFor));
             if (id is not null && !candidates.Any(c => c.Target.Id == id))
                 throw new ArgumentException("Selected target is not an admissible candidate: " + id, nameof(targetsFor));
-            return (Shooter: shooter, TargetId: id, NoCandidates: candidates.IsEmpty);
+            return (Shooter: shooter, TargetId: id, plan.Evade, NoCandidates: candidates.IsEmpty);
         }).ToArray();
+        var evading = plans.Where(p => p.Evade).Select(p => p.Shooter.Id).ToHashSet(StringComparer.Ordinal);
+        foreach (var plan in plans.Where(p => p.Evade))
+        {
+            plan.Shooter.Consciousness -= battle.Catalog.Rules.Evasion.Cost;
+            battle.Statistics.Evasions++;
+        }
         foreach (var plan in plans) plan.Shooter.Dry = plan.NoCandidates ? plan.Shooter.Dry + 1 : 0;
         var shots = ImmutableArray.CreateBuilder<TacticalShot>();
         var applications = ImmutableArray.CreateBuilder<TacticalDamage>();
@@ -69,13 +91,14 @@ internal static class TacticalBattleSalvo
             var reason = battle.Result is not null ? TacticalFireSkipReason.BattleEnded
                 : shooter.Status == TacticalDroneStatus.Destroyed ? TacticalFireSkipReason.ShooterDestroyed
                 : shooter.Status == TacticalDroneStatus.Disabled ? TacticalFireSkipReason.ShooterDisabled
+                : plan.Evade ? TacticalFireSkipReason.Evading
                 : shooter.Jammed ? TacticalFireSkipReason.WeaponJammed
                 : plan.TargetId is null ? plan.NoCandidates ? TacticalFireSkipReason.NoTarget : TacticalFireSkipReason.Withheld
                 : TacticalFireSkipReason.None;
             TacticalCandidate? candidate = null;
             if (reason == TacticalFireSkipReason.None)
             {
-                candidate = Candidates(battle, shooter).FirstOrDefault(c => c.Target.Id == plan.TargetId);
+                candidate = Candidates(battle, shooter, evading).FirstOrDefault(c => c.Target.Id == plan.TargetId);
                 if (candidate is null) reason = TacticalFireSkipReason.TargetUnavailable;
             }
             TacticalShot? shot = null;
@@ -97,7 +120,13 @@ internal static class TacticalBattleSalvo
                 target.Armor -= split.Armor;
                 bool lethal = hit && target.Hull <= 0;
                 shot = new(shooter, target, candidate.Distance, candidate.Angle, candidate.Terms.Chance,
-                    hit, damage, rear, kill, actualHull, lethal);
+                    hit, damage, rear, kill, actualHull, lethal)
+                { TargetEvading = evading.Contains(target.Id) };
+                if (shot.TargetEvading)
+                {
+                    battle.Statistics.ShotsAtEvading++;
+                    if (hit) battle.Statistics.HitsOnEvading++;
+                }
                 shots.Add(shot);
                 var weapon = battle.Statistics.ForWeapon(shooter.Weapon.Id);
                 battle.Statistics.Shots++; weapon.Shots++;

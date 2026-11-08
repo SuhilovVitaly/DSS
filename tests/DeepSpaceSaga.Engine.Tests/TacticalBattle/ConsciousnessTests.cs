@@ -28,7 +28,7 @@ public sealed class ConsciousnessTests
         battle.Planning(_ => { });
         Assert.Equal(80, battle.Drones[0].Consciousness); // no recovery on turn one
         battle.Movement();
-        battle.Firing((_, _) => null);
+        battle.Firing((_, _) => new(null, false));
         long calls = battle.Random.Calls;
         battle.Planning(_ => { });
         Assert.Equal(85, battle.Drones[0].Consciousness);
@@ -54,7 +54,7 @@ public sealed class ConsciousnessTests
         if (state.Phase == TacticalBattlePhase.Fire)
             state = session.Fire(new("fire", state.BattleId, state.Revision)).State!;
         direct.Movement();
-        direct.Firing((_, _) => null);
+        direct.Firing((_, _) => new(null, false));
         direct.Planning(_ => { });
         Assert.Equal(85, state.Units.Single(u => u.Id == direct.Drones[0].Id).Consciousness);
         Assert.Equal(direct.Drones.Select(d => d.Consciousness), session.Battle.Drones.Select(d => d.Consciousness));

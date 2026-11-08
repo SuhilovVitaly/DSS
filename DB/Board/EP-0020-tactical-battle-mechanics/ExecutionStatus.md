@@ -21,3 +21,5 @@ Git status/branch/remote и удалённая база проверены. Сб
 US-0001: 118/118 content, 35/35 focused Engine, 23/23 Contracts; 1000×5 exact direct/explicit series parity PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/. Остальные истории не начаты.
 
 EP-0020-US-0002-TK-0001 → 80a74fe6b5034ded1c598b255021a8a78cfd0f78 → origin проверен. Contracts 25/25 PASS.
+
+EP-0020-US-0002-TK-0002 → 58c531de740eecdba06e595cf707662f66c6c83e → origin проверен. Motion 6/6 PASS, включая V4 trace.

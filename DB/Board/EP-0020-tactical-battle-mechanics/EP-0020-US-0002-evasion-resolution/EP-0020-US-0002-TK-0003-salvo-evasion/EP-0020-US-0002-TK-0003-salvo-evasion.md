@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0002-evasion-resolution
 ticket: EP-0020-US-0002-TK-0003-salvo-evasion
 title: Уклонение в разрешении залпа и правило ИИ
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0002-TK-0002-evasion-hit-term]
@@ -95,4 +95,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: планы фиксируются и валидируются целиком до списания; Evading действует весь залп; сознание списано даже при раннем уничтожении; порядок skip и статистика добавлены. Incoming.ChanceIfEvading рассчитан тем же Motion слагаемым, правила и shot metadata передаются в снимок. Evasion/Salvo/InitiativeFire/Outcome 44/44 PASS, build/scoped format/diff-check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us2-tk3/tests.trx. Self-review: atomic freeze, AI strict hull threshold, jam допускает evade, RNG только по фактическим выстрелам; US2-AC2/3/4 покрыты. Носители существующего Engine не имеют собственного шага стрельбы (стреляют дроны); у цели-носителя штрафа нет. Сессия пока оборачивает прежние цели без изменения поведения, TK-0004 подключает флаг.
+
+## Scope перед реализацией
+
+Смена callback с string на TacticalFirePlan требует компилирующей миграции callers в TacticalBattleSession.cs и тестах ConsciousnessTests, OutcomeTests, InitiativeFireTests, GoldenBattleTests помимо SalvoTests. В этом тикете callers оборачивают прежнюю цель в plan без уклонения; изменение session/explicit AI поведения остаётся в TK-0004/0005.

@@ -12,6 +12,9 @@ internal sealed class TacticalWeaponStatistics(string weaponId)
 
 internal sealed class TacticalBattleStatistics
 {
+    public long Evasions { get; set; }
+    public long ShotsAtEvading { get; set; }
+    public long HitsOnEvading { get; set; }
     private readonly List<TacticalWeaponStatistics> _weapons = [];
     public long Shots { get; set; }
     public long Hits { get; set; }
