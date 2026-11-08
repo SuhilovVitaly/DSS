@@ -71,7 +71,11 @@ public sealed class AnomalyGeneratorTests
         {
             var json = System.Text.Json.Nodes.JsonNode.Parse(GoldenBattleTests.Signature(GoldenBattleTests.Run(catalog, 1, row.Tactic, false)))!;
             json.AsObject().Remove("Absorbed"); json.AsObject().Remove("DustSkips");
-            foreach (var unit in json["Units"]!.AsArray()) unit!.AsObject().Remove("InDust");
+            foreach (var unit in json["Units"]!.AsArray())
+            {
+                unit!.AsObject().Remove("InDust"); unit.AsObject().Remove("Slots");
+                if (unit["Build"] is { } slotBuild) { slotBuild.AsObject().Remove("EngineSlots"); slotBuild.AsObject().Remove("ModuleSlots"); }
+            }
             Assert.Equal(row.Hash, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(json.ToJsonString()))));
         }
     }

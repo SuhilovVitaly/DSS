@@ -87,12 +87,14 @@ public sealed class DecoyStateTests
             foreach (var unit in json["Units"]!.AsArray())
             {
                 unit!.AsObject().Remove("DecoyCharges");
+                unit.AsObject().Remove("Slots");
                 unit.AsObject().Remove("InDust");
                 if (unit["Build"] is { } build)
                 {
                     build.AsObject().Remove("DecoyId");
                     build.AsObject().Remove("DecoyName");
                     build.AsObject().Remove("DecoyMaxCharges");
+                    build.AsObject().Remove("EngineSlots"); build.AsObject().Remove("ModuleSlots");
                 }
             }
             Assert.Equal(row.Hash, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json.ToJsonString()))));

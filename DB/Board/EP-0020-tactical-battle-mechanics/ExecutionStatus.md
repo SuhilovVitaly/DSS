@@ -91,3 +91,5 @@ EP-0020-US-0010-TK-0002 → 0616d4383cad76005f05198fb2b43922617d1265 → origin 
 EP-0020-US-0010-TK-0003 → a87bea55c16d845c4f4c5bb68cf37e53e56d0fd6 → origin проверен. US10завершена:Client2230uniquePASS,29Ep0019PASS,12strictsnapshotdifferent0,готов к публикации TK4. ДалееUS11слоты.
 
 EP-0020-US-0010-TK-0004 → 0dc878c33ca0311f58fc5937b5ede81366f54857 → origin проверен. US11/TK1Contracts32PASS,готов к публикации.
+
+EP-0020-US-0011-TK-0001 → 5ab552dd80de1b5701c42e033f74e5347c8f7533 → origin проверен. US11 завершена: Slots24/Engine128/Client34PASS,5000series exactPASS. TK2 готов к публикации.

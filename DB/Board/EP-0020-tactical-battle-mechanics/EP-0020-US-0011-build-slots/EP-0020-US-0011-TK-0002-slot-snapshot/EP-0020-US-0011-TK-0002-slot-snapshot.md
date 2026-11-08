@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0011-build-slots
 ticket: EP-0020-US-0011-TK-0002-slot-snapshot
 title: Заполнение слотов в снимке
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0011-TK-0001-slot-contracts]
@@ -84,4 +84,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope расширен на Golden/Series test signatures, два legacy hash tests и client reference data: удаляются только новые Slots/EngineSlots/ModuleSlots из исторического signature oracle, прежние outcome/units/RNG assertions сохраняются. Полные direct/explicit подписи сравниваются со слотами; нормализация только для byte-exact сравнения5000старыхM3подписей из US9. Данные client baseline обновляются только добавлением metadata;12растров должны остаться идентичны. armor.none остаётся установленной записью каталога с прежним Build.ArmorId; пустые slot определяются отсутствием установленной записи (shield/module/engine).
+
+Завершено. SlotSnapshotTests:24PASS (3 рамы, повреждения/истощённый модуль, все фазы20seeds); focused128PASS,5000direct/explicit пар с полными SlotsPASS; нормализованные5000подписей byte-exact прежним US9. Client34PASS: metadata-only JSON comparisonPASS,12растров без изменений. Build включён в тесты, scoped format/diffPASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us11-tk2/` (final-focus/tests.trx,series-comparison.json,metadata-comparison.json,client-view/tests.trx). Self-review: только DTO projection; пустые слоты, состояния, отсутствие RNG mutation подтверждены. US11-AC2/3 покрыты полностью автоматизированными проверками.

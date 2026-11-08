@@ -87,21 +87,32 @@ public sealed class GoldenBattleTests
         return battle;
     }
 
-    internal static string Signature(Battle battle) => JsonSerializer.Serialize(new
+    internal static string Signature(Battle battle, bool withoutSlots = false)
     {
-        Result = TacticalBattleSnapshotBuilder.Outcome(battle.Result),
-        Units = TacticalBattleSnapshotBuilder.Units(battle),
-        battle.Statistics.Absorbed,
-        battle.Statistics.DustSkips,
-        battle.Statistics.DecoysLaunched,
-        battle.Statistics.ShotsDecoyed,
-        battle.Statistics.HitsDecoyed,
-        battle.Statistics.DecoyChanceBefore,
-        battle.Statistics.DecoyChanceAfter,
-        battle.Statistics.Evasions,
-        battle.Statistics.ShotsAtEvading,
-        battle.Statistics.HitsOnEvading,
-        battle.InitiativeRandom.State,
-        battle.InitiativeRandom.Calls
-    });
+        string signature = JsonSerializer.Serialize(new
+        {
+            Result = TacticalBattleSnapshotBuilder.Outcome(battle.Result),
+            Units = TacticalBattleSnapshotBuilder.Units(battle),
+            battle.Statistics.Absorbed,
+            battle.Statistics.DustSkips,
+            battle.Statistics.DecoysLaunched,
+            battle.Statistics.ShotsDecoyed,
+            battle.Statistics.HitsDecoyed,
+            battle.Statistics.DecoyChanceBefore,
+            battle.Statistics.DecoyChanceAfter,
+            battle.Statistics.Evasions,
+            battle.Statistics.ShotsAtEvading,
+            battle.Statistics.HitsOnEvading,
+            battle.InitiativeRandom.State,
+            battle.InitiativeRandom.Calls
+        });
+        if (!withoutSlots) return signature;
+        var node = System.Text.Json.Nodes.JsonNode.Parse(signature)!;
+        foreach (var unit in node["Units"]!.AsArray())
+        {
+            unit!.AsObject().Remove("Slots");
+            if (unit["Build"] is { } build) { build.AsObject().Remove("EngineSlots"); build.AsObject().Remove("ModuleSlots"); }
+        }
+        return node.ToJsonString();
+    }
 }

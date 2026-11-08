@@ -18,6 +18,25 @@ internal static class TacticalBattleSnapshotBuilder
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
     { Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy };
 
+    private static ImmutableArray<TacticalSlotSnapshot> Slots(TacticalDrone d)
+    {
+        var slots = ImmutableArray.CreateBuilder<TacticalSlotSnapshot>();
+        slots.Add(new(TacticalSlotKind.Weapon, 0, d.Weapon.Id, d.Weapon.Name, d.Jammed ? TacticalSlotState.Jammed : TacticalSlotState.Ok));
+        slots.Add(new(TacticalSlotKind.Armor, 0, d.Plates.Id, d.Plates.Name, TacticalSlotState.Ok));
+        for (int i = 0; i < d.Frame.ShieldSlots; i++)
+            slots.Add(new(TacticalSlotKind.Shield, i, i < d.ShieldCount ? d.Shield?.Id : null,
+                i < d.ShieldCount ? d.Shield?.Name : null, TacticalSlotState.Ok));
+        for (int i = 0; i < d.Frame.EngineSlots; i++)
+        {
+            var engine = i < d.Engines.Length ? d.Engines[i] : null;
+            slots.Add(new(TacticalSlotKind.Engine, i, engine?.Definition.Id, engine?.Definition.Name,
+                engine?.Factor < 1 ? TacticalSlotState.Damaged : TacticalSlotState.Ok, engine?.Factor ?? 1));
+        }
+        for (int i = 0; i < d.Frame.ModuleSlots; i++)
+            slots.Add(new(TacticalSlotKind.Module, i, i == 0 ? d.Decoy?.Id : null, i == 0 ? d.Decoy?.Name : null, TacticalSlotState.Ok));
+        return slots.ToImmutable();
+    }
+
     public static ImmutableArray<TacticalUnitSnapshot> Units(TacticalBattle battle)
     {
         var units = ImmutableArray.CreateBuilder<TacticalUnitSnapshot>();
@@ -28,7 +47,7 @@ internal static class TacticalBattleSnapshotBuilder
                 w.DamageMin, w.DamageMax, w.Piercing, w.HitBonus, w.Range, w.ArcDeg, w.RangeBonus, w.RearKillChance,
                 d.Plates.Id, d.Plates.Name, d.Shield?.Id, d.Shield?.Name, d.Shield?.Defense ?? 0, d.ShieldCount, d.Frame.ShieldSlots,
                 d.Frame.FrameMassKg, d.Frame.ReferenceMassKg, w.MassKg, d.Plates.MassKg, d.Shield?.MassKg ?? 0)
-            { DecoyId = d.Decoy?.Id, DecoyName = d.Decoy?.Name, DecoyMaxCharges = d.Decoy?.Charges ?? 0 };
+            { EngineSlots = d.Frame.EngineSlots, ModuleSlots = d.Frame.ModuleSlots, DecoyId = d.Decoy?.Id, DecoyName = d.Decoy?.Name, DecoyMaxCharges = d.Decoy?.Charges ?? 0 };
             var limits = d.Limits;
             units.Add(new(d.Id, d.Side, TacticalUnitKind.Drone, d.Frame.Id, Pose(d.Pose), d.Speed, d.Hull, d.MaxHull, d.Armor, d.MaxArmor,
                 d.Status switch { TacticalDroneStatus.Air => TacticalUnitState.Air, TacticalDroneStatus.Disabled => TacticalUnitState.Disabled, _ => TacticalUnitState.Destroyed },
@@ -36,7 +55,7 @@ internal static class TacticalBattleSnapshotBuilder
                     e.Definition.MassKg, e.Definition.SpeedBonus, e.Definition.SpeedChange, e.Definition.TurnDeg)).ToImmutableArray(),
                 new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver,
                 battle.Catalog.Ai.Roles[d.Role].Name)
-            { InDust = TacticalBattleSalvo.InDust(battle, d), Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges });
+            { Slots = Slots(d), InDust = TacticalBattleSalvo.InDust(battle, d), Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges });
         }
         foreach (var c in battle.Carriers)
             units.Add(new(c.Id, c.Side, TacticalUnitKind.Carrier, TacticalBattleConstants.CarrierFrame, Pose(c.Pose), 0,
