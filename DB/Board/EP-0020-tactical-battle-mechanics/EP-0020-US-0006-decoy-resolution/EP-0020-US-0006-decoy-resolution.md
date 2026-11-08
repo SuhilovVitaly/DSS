@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0006-decoy-resolution
 title: Ловушки в движке
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0005-decoy-module]
 created: 2026-11-08T11:46:28Z
 source_request: "Добавить в фазу стрельбы пуск ловушки вместе с выстрелом или без него: ловушка «съедает» первый выстрел по дрону в очерёдности огня этого залпа, шанс промаха этого выстрела ×1,5; заряд −1; несовместимо с уклонением; ИИ пускает при угрозе ≥ 40 %."
@@ -61,3 +61,7 @@ Engine владеет RNG и исходом. Пуск ловушки не тра
 | [EP-0020-US-0006-TK-0003-salvo-decoy](EP-0020-US-0006-TK-0003-salvo-decoy/EP-0020-US-0006-TK-0003-salvo-decoy.md) | Ловушки в разрешении залпа и правило ИИ | engine | `EP-0020-US-0006-TK-0002-decoy-hit-transform` | US6-AC2, US6-AC3, US6-AC4, US6-AC5 |
 | [EP-0020-US-0006-TK-0004-session-decoy](EP-0020-US-0006-TK-0004-session-decoy/EP-0020-US-0006-TK-0004-session-decoy.md) | Сессия: приказ ловушки и скрытие до результатов | engine | `EP-0020-US-0006-TK-0003-salvo-decoy` | US6-AC1, US6-AC5 |
 | [EP-0020-US-0006-TK-0005-decoy-regression](EP-0020-US-0006-TK-0005-decoy-regression/EP-0020-US-0006-TK-0005-decoy-regression.md) | Регрессия боя с ловушками и отчёт | engine | `EP-0020-US-0006-TK-0004-session-decoy` | US6-AC6 |
+
+## Исполнение
+
+Все5тикетов завершены. AC1 Session142/Contracts27PASS; AC2 Motion12PASS; AC3/4/5 focused55+Golden/state94PASS; AC6 Engine2850PASS,5000exact seriesPASS,5000 reportPASS. Измерение:64776пусков,62097эффектов; средний шанс59.03%→38.66% (−34.51% ожидаемой частоты попаданий), initial scenario. Самопроверка выполнена; тактическое состояние не сохраняется, world Save20 suitePASS. Native/human UI приёмка здесь не заявляется.

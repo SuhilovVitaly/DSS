@@ -91,6 +91,11 @@ public sealed class GoldenBattleTests
     {
         Result = TacticalBattleSnapshotBuilder.Outcome(battle.Result),
         Units = TacticalBattleSnapshotBuilder.Units(battle),
+        battle.Statistics.DecoysLaunched,
+        battle.Statistics.ShotsDecoyed,
+        battle.Statistics.HitsDecoyed,
+        battle.Statistics.DecoyChanceBefore,
+        battle.Statistics.DecoyChanceAfter,
         battle.Statistics.Evasions,
         battle.Statistics.ShotsAtEvading,
         battle.Statistics.HitsOnEvading,

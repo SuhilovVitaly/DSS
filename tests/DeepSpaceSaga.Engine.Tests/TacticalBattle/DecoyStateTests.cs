@@ -80,6 +80,8 @@ public sealed class DecoyStateTests
         {
             var legacy = GoldenBattleTests.Run(noModule, 1, row.Tactic, false);
             var json = JsonNode.Parse(GoldenBattleTests.Signature(legacy))!;
+            foreach (string added in new[] { "DecoysLaunched", "ShotsDecoyed", "HitsDecoyed", "DecoyChanceBefore", "DecoyChanceAfter" })
+                json.AsObject().Remove(added);
             foreach (var unit in json["Units"]!.AsArray())
             {
                 unit!.AsObject().Remove("DecoyCharges");

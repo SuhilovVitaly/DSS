@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0006-decoy-resolution
 ticket: EP-0020-US-0006-TK-0005-decoy-regression
 title: Регрессия боя с ловушками и отчёт
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0006-TK-0004-session-decoy]
@@ -85,4 +85,21 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Golden signature теперь включает все счётчики/суммы ловушек. Scope расширен на DecoyState M1 hash: исключает только пять новых нулевых полей статистики для сравнения старой формы, проверяя все прежние данные. Before-подписи сохранены из фактического US5/TK2after (7895e0b9), до реализации эффекта ловушек; новые after вычисляются текущим кодом.
+
+
+### M2: измерение эффекта ловушек
+
+5000 боёв через production Run,1000сидов×5тактик. Параметры модуля1.5/2заряда и порогИИ0.4 не менялись.
+
+| Тактика | Пусков/бой | Сработавших | Шанс до | Шанс после | Промахов |
+|---|---|---|---|---|---|
+| dogfight | 12.142 | 95.25% | 59.07% | 38.68% | 60.48% |
+| raid | 13.172 | 94.47% | 60.44% | 40.79% | 58.95% |
+| defence | 12.978 | 96.45% | 58.71% | 38.11% | 61.70% |
+| balanced | 13.442 | 96.47% | 58.49% | 37.90% | 62.28% |
+| commander | 13.042 | 96.63% | 58.46% | 37.85% | 62.14% |
+
+Всего64776пусков, 62097выстрелов с эффектом; средний шанс59.03%→38.66%, ожидаемая частота попаданий снижена на34.51% на этих выстрелах. Это измерение initial scenario и выбранного AI, не универсальное обещание баланса. «Сработавшая» ловушка означает первый фактический выстрел, даже если он попал. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us6-tk5/report/ep0020-decoy/decoy-report.csv и aggregate.json. Полная механическая регрессия завершена.
+
+Завершено: ordinary Engine2850/2850 unique IDsPASS(main2220+corpus630,36TRX), no duplicates/failed/skipped; series5/5(5000 конфигураций,10000 исполнений) exactPASS; Balance report1/1(5000 Run)PASS. Default категория Balance сохраняет отчёт вне обычной suite. Build/scoped format/diff-checkPASS. Golden explicit AI обновлён TK3; результаты Session/Local oracle обновлены TK4 под фактический контроль игрока. Другие старые ожидания не менялись. Самопроверка всей US6 по AC1…AC6, атомарности, RNG, forecast, identity, журналу и world save boundary выполнена. UI consumption следует US7. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us6-tk5/coverage-audit.json,series-comparison.json,before/,after/,report/tests.trx,format-tests.log.
