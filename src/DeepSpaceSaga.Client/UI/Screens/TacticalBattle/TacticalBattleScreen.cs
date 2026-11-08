@@ -11,7 +11,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 public sealed record TacticalBattleFrame(TacticalBattleSnapshot Battle, TacticalBattleView View, SKRect Panel,
     float UiScale, bool Pending, string Status, TacticalBattlePresentation Presentation = TacticalBattlePresentation.Current,
     bool EnemyForecast = true, bool EnemySectors = false, string? SelectedDroneId = null, TacticalMovementFrame? Movement = null,
-    TacticalFirePlan? FirePlan = null, TacticalSalvoFrame? Salvo = null, bool AllFireSectors = true, string? HoverUnitId = null, SKPoint? HoverPoint = null);
+    TacticalFirePlan? FirePlan = null, TacticalSalvoFrame? Salvo = null, bool AllFireSectors = true, string? HoverUnitId = null, SKPoint? HoverPoint = null, string? LastSelectedDroneId = null);
 
 public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
@@ -42,6 +42,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private TacticalBattleSnapshot? _observedOrders;
     internal Func<long> ClockMilliseconds { get; set; } = () => Environment.TickCount64;
     private SKRect _panel;
+    private string? _lastSelectedDroneId;
     internal string? HoverUnitId { get; set; }
     internal BattleLayout Layout { get; private set; } = new();
     internal SKRect NewBattleBounds => Raw(_phasePanel.ButtonBounds("new"));
@@ -105,7 +106,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _viewport = BattleViewport.From(width, height);
         _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, OverlayBottom(state, salvo));
         _camera.Update(state, (int)_viewport.Wd, 720, salvo is not null);
-        if (planning) ObserveOrders(state);
+        if (planning)
+        {
+            ObserveOrders(state);
+            _lastSelectedDroneId = state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Selected : _orders.Selected;
+        }
         return new(state, _camera.View, _panel, 1, moving || Flow.Pending || presentation.Accepted.Revision != Flow.State?.Revision,
             BlockedNotice is { Length: > 0 } notice ? notice : moving ? L("AnimatingMovement") : Flow.Error,
             Presentation: salvo is null ? TacticalBattlePresentation.Current :
@@ -115,6 +120,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             Movement: planning && state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null,
             FirePlan: planning && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null,
             Salvo: salvo, AllFireSectors: false, HoverUnitId: HoverUnitId,
+            LastSelectedDroneId: _lastSelectedDroneId,
             HoverPoint: _lastPointer is { } pointer && !OverlayHit(pointer) ? pointer : null);
     }
 

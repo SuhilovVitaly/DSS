@@ -11,6 +11,7 @@ internal sealed class HoverCard
     internal static AnomalyHoverCard? Anomaly(TacticalBattleFrame frame) => AnomalyPresentation.HoverKind(frame) is { } kind
         ? new(M("Anomaly.Hover"), M("Anomaly." + kind), kind == TacticalAnomalyKindCode.Heat ? Heat : Dust,
             M("Anomaly." + kind + "Lines").Split(" / ", StringSplitOptions.None)) : null;
+    internal static BuildCardModel? Build(TacticalBattleFrame frame) => BuildCardModel.From(frame);
     public SKRect Bounds { get; private set; }
     public void Draw(SKCanvas c, TacticalBattleFrame f, PilotPortraitCatalog portraits)
     {
