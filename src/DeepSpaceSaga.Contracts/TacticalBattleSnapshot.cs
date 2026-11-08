@@ -38,6 +38,7 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
     double PreviousTurn, TacticalBuildSnapshot? Build, int Accuracy, int Maneuver, string? RoleName = null)
 {
     public int? Initiative { get; init; }
+    public int? Consciousness { get; init; }
 }
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);

@@ -85,6 +85,7 @@ internal sealed partial class TacticalBattle
             var initiative = catalog.Pilots[drone.PilotId].Initiative;
             drone.Initiative = initiative.IsRange
                 ? battle.InitiativeRandom.RandInt(initiative.Minimum, initiative.Maximum) : initiative.Minimum;
+            drone.Consciousness = catalog.Rules.Consciousness.Start;
         }
         battle.InitializeFireOrder();
         return battle;

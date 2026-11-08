@@ -8,8 +8,14 @@ EP-0019 stage done, US6-AC2 техническая приёмка выполне
 
 ## Публикация тикетов
 
-Пока нет завершённых тикетов. Служебная подготовка не считается выполнением тикета.
+| Тикет | SHA | Push |
+|---|---|---|
+| EP-0020-US-0001-TK-0001 | 024e5b72f1d6f3d58c9765fbc91442159c47d4b9 | origin проверен |
+
+TK-0002: реализация и проверки завершены; SHA фиксируется после commit. Служебная подготовка 9aad733e не считается выполнением тикета.
 
 ## Проверки
 
 Git status/branch/remote и удалённая база проверены. Сборки, тесты, калибровки и native-проверки EP-0020 пока NOT RUN.
+
+US-0001: 118/118 content, 35/35 focused Engine, 23/23 Contracts; 1000×5 exact direct/explicit series parity PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/. Остальные истории не начаты.

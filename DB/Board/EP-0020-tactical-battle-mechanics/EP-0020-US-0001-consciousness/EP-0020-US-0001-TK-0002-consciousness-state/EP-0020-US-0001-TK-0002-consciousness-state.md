@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0001-consciousness
 ticket: EP-0020-US-0001-TK-0002-consciousness-state
 title: Сознание в состоянии боя и снимках
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0001-TK-0001-rules-content]
@@ -94,4 +94,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: Consciousness материализуется без RNG, восстанавливается только у активных дронов с хода 2 с long-промежуточным сложением и ограничением Max. Снимки заполняются и для промежуточных UnitsAfter; носители null, старые payload читаются. US1-AC2/AC3 покрыты. Engine focused 35/35 PASS, Contracts 23/23 PASS. SeriesParity Dogfight/Raid/Defence/Balanced/Commander: 1000 seed каждый, exact direct/explicit parity PASS; signatures сохранены. Evidence root: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us1-tk2/. Первоначальный тест ожидал 42 calls и не учитывал RNG планировщика сессии; исправлена фикстура с независимым control-каталогом recovery=0, production не менялся ради теста. Scoped Engine/Contracts format и diff-check PASS. Self-review: граница Turn, inactive, overflow, отсутствие persistence/RNG side effects проверены.

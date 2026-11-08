@@ -16,6 +16,10 @@ internal sealed partial class TacticalBattle
         ArgumentNullException.ThrowIfNull(planner);
         Require(TacticalTurnPhase.Planning);
         Turn++;
+        if (Turn > 1)
+            foreach (var drone in Drones.Where(d => d.IsActive))
+                drone.Consciousness = (int)Math.Min(Catalog.Rules.Consciousness.Max,
+                    (long)drone.Consciousness + Catalog.Rules.Consciousness.RecoveryPerTurn);
         LastMovement = [];
         LastSalvo = null;
         planner(this);

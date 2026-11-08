@@ -95,6 +95,17 @@ public sealed class TacticalBattleContractTests
     }
 
     [Fact]
+    public void OldUnitPayloadWithoutConsciousnessRemainsReadable()
+    {
+        var unit = Frame().Units[0];
+        Assert.Equal(0, RoundTrip(unit with { Consciousness = 0 }).Consciousness);
+        Assert.Equal(100, RoundTrip(unit with { Consciousness = 100 }).Consciousness);
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(unit))!.AsObject();
+        node.Remove("Consciousness");
+        Assert.Null(JsonSerializer.Deserialize<TacticalUnitSnapshot>(node.ToJsonString())!.Consciousness);
+    }
+
+    [Fact]
     public void JournalPreservesTypedFactsAndOldEventPayloadsRemainReadable()
     {
         const string oldEvent = """{"Sequence":7,"Turn":2,"Phase":1,"Kind":10,"TargetId":"d","EngineIndex":1}""";

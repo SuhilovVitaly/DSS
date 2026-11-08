@@ -48,6 +48,7 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     public ImmutableArray<TacticalEngineState> Engines { get; } = engines;
     public int Accuracy { get; } = accuracy;
     public int Initiative { get; internal set; } = 50;
+    public int Consciousness { get; internal set; }
     public double Speed { get; set; } = speed;
     public double PreviousTurn { get; set; }
     public TacticalDroneStatus Status { get; set; } = TacticalDroneStatus.Air;

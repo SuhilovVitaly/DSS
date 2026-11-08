@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0001-consciousness
 title: Сознание пилота
-stage: draft
+stage: done
 dependencies: [EP-0019-tactical-battle-ui-redesign]
 created: 2026-11-08T11:46:28Z
 source_request: "Ввести у каждого пилота дрона ресурс «сознание» с правилами из данных: старт 100, максимум 100, +5 в начале каждого хода; значения видны клиенту в снимках."
@@ -54,3 +54,7 @@ D-05, D-11. Пилоты и сборка — `TacticalBattleAssembly.cs:55-58,83
 |---|---|---|---|---|
 | [EP-0020-US-0001-TK-0001-rules-content](EP-0020-US-0001-TK-0001-rules-content/EP-0020-US-0001-TK-0001-rules-content.md) | Правила сознания и уклонения в данных | content-data | — | US1-AC1 |
 | [EP-0020-US-0001-TK-0002-consciousness-state](EP-0020-US-0001-TK-0002-consciousness-state/EP-0020-US-0001-TK-0002-consciousness-state.md) | Сознание в состоянии боя и снимках | engine | `EP-0020-US-0001-TK-0001-rules-content` | US1-AC2, US1-AC3 |
+
+## Итоговая проверка
+
+US1-AC1: rules/content loader и ContentSync 118/118 PASS. US1-AC2: реальное восстановление, сессия/direct и RNG control; US1-AC3: снимки и legacy JSON, 23/23 Contracts PASS. 1000×5 series parity PASS, результаты в карточках. Save20 не меняется. Self-review истории выполнен, независимое review не заявляется.
