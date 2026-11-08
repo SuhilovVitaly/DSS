@@ -9,8 +9,8 @@ public sealed class PhaseFireInputTests
     [Fact]
     public async Task Fire_details_and_candidate_click_hold_fire()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var s = await Ep0019Scenes.Create("2-fire"); using var b = s.Render();
+
+        await using var s = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian"); using var b = s.Render();
         foreach (string text in new[] { "Марта → Таг-4", "56%", "Дистанция 108,1", "Угол 16,1°", "2 стреляют · 2 без цели" })
             Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
         var f = s.Screen.CaptureFrame(1920, 1080)!;

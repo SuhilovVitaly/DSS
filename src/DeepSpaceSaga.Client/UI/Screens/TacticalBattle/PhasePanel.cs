@@ -17,7 +17,7 @@ internal sealed partial class PhasePanel
     internal string? HitButton(SKPoint point) => _frame.Pending ? null : _buttons.FirstOrDefault(b => b.Value.Contains(point)).Key;
     internal void Draw(SKCanvas c, TacticalBattleFrame f, BattleLayout layout)
     {
-        _frame = f; _offset = f.View.PixelWidth - 1280; _buttons.Clear();
+        _frame = f; _offset = f.Panel.Right - 1274; _buttons.Clear();
         _db = Phase switch { "Salvo" => 262, "Results" => 246, "Outcome" => 238, _ => 250 };
         Bounds = R(1040, 6, 1274, _db + 120); Action = R(1040, _db + 28, 1274, _db + 120);
         layout.Rects["phase"] = Bounds; layout.Rects["action"] = Action; layout.Rects["details"] = R(1048, 68, 1266, _db + 24);
@@ -48,7 +48,7 @@ internal sealed partial class PhasePanel
     private void Head(SKCanvas c, string title, string tag)
     { T(c, title, 1050, 84, FitSize(title, 15, 214, true), Text, true); Tag(c, new(1048, 92, 1266, 110), U(tag)); }
     private void ButtonAt(SKCanvas c, string id, SKRect rect, string text, bool big = false)
-    { _buttons[id] = R(rect.Left, rect.Top, rect.Right, rect.Bottom); Recording!.Rects["button:" + id] = _buttons[id]; Button(c, rect, text, big); }
+    { _buttons[id] = R(rect.Left, rect.Top, rect.Right, rect.Bottom); if (Recording is { } layout) layout.Rects["button:" + id] = _buttons[id]; Button(c, rect, text, big); }
     private void StandardAction(SKCanvas c, string title, string status, string primary)
     {
         float y = _db + 28;

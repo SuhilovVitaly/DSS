@@ -40,7 +40,7 @@ internal static partial class TacticalBattleMapRenderer
                 Stroke(c, a, b, Yellow.WithAlpha(70), 1.1f, [5, 5]); var head = a + Scale(b - a, (float)flight.Progress);
                 using var shader = SKShader.CreateLinearGradient(a, head, new SKColor[] { Yellow.WithAlpha(0), Yellow }, null, SKShaderTileMode.Clamp);
                 using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3, StrokeCap = SKStrokeCap.Round, Shader = shader }; c.DrawLine(a, head, paint);
-                Circle(c, head, 8, Yellow.WithAlpha(70)); Circle(c, head, 3.5f, Shell);
+                Circle(c, head, 8, Yellow.WithAlpha(70)); Circle(c, head, TacticalBattleSkinRenderScope.Number("shot.projectile", "size", 3.5f), TacticalBattleSkinRenderScope.Color("shot.projectile", "fill", Shell));
                 if (Recording is { } l) l.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
             }
         if (f.Salvo is { InFlight: false } results)

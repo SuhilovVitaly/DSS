@@ -17,7 +17,7 @@ internal static partial class TacticalBattleMapRenderer
     internal static void Draw(SKCanvas c, TacticalBattleFrame f)
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
-        Round(c, SKRect.Create(v.PixelWidth, v.PixelHeight), MapBg, radius: 0, role: "field.background");
+        Skin.Box(c, "field.background", SKRect.Create(v.PixelWidth, v.PixelHeight), MapBg, null, 1);
         for (float x = 26; x < v.PixelWidth; x += 26) Stroke(c, new(x, 0), new(x, v.PixelHeight), Skin.Color("field.grid", "stroke", Grid), 1);
         for (float y = 26; y < v.PixelHeight; y += 26) Stroke(c, new(0, y), new(v.PixelWidth, y), Skin.Color("field.grid", "stroke", Grid), 1);
         float len = (float)(100 * v.PixelsPerUnit);
@@ -36,7 +36,6 @@ internal static partial class TacticalBattleMapRenderer
             var p = v.Project(u.Pose); bool own = u.Side == f.Battle.PlayerSide;
             string role = "field.unit." + (u.Kind == TacticalUnitKind.Carrier ? "carrier" : "drone") + (own ? ".own" : ".enemy");
             var color = Skin.Color(role, "fill", own ? Cyan : Orange);
-            if (u.State == TacticalUnitState.Disabled) color = color.WithAlpha(140);
             if (u.Kind == TacticalUnitKind.Carrier) { if (inside.Contains(p)) Hex(c, p, 15, color); else Edge(c, f, u, p, inside, occupied, color); }
             else { if (own) Diamond(c, p, 7.5f, color); else Triangle(c, p, 9, u.Pose.Course, color); if (u.Id == Selected(f)) Circle(c, p, 12, SKColors.Transparent, Text, 1.2f); }
         }

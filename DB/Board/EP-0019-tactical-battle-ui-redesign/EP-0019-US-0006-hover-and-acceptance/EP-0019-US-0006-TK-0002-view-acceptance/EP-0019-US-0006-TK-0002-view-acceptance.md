@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0006-hover-and-acceptance
 ticket: EP-0019-US-0006-TK-0002-view-acceptance
 title: Приёмка вида семи сцен
-stage: draft
+stage: done
 layer: tests
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0006-TK-0001-hover-hit-test-and-card]
@@ -88,3 +88,11 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+Scope приёмки: независимые ожидания в Ep0019Acceptance.cs, миграция legacy UI tests (удалённые вкладки/флажки заменяются проверками нового контракта, сохраняются timing/session/SaveLoad assertions), обновление native tooling workflow, regression PNG. Снижение alpha disabled отменено в пользу нормативного §8.2/§12.4: Outcome действительно содержит disabled Веру, а пробы требуют Cyan. Не меняются проба или допуск.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Accept seven scenes with regression snapshots full Client and secondary monitor native checks
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/acceptance-final. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.

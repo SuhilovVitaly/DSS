@@ -66,45 +66,7 @@ public sealed class ForecastTabTests
         Assert.False(expectedCarrier.Rear);
     }
 
-    [Fact]
-    public async Task ActualForecastUsesExactIncomingAndShowsOnlyArrivedResults()
-    {
-        await using var fixture = await BattleNavigationTests.Fixture.Create();
-        var screen = await Start(fixture);
-        for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
-            await fixture.Route(ScreenEvent.MoveTacticalBattle);
-        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
-        var frame = screen.CaptureFrame(1280, 720)!;
-        Assert.Equal(TacticalBattlePhase.Fire, frame.Battle.Phase);
-        var forecast = TacticalBattleForecastTab.PredictFire(frame.Battle, frame.FirePlan!);
-        Assert.Equal(frame.Battle.Incoming.Select(s => (s.ShooterId, s.TargetId, s.Chance, s.Rear)),
-            forecast.Incoming.Select(s => (s.Shooter, s.Target, s.Chance, s.Rear)));
-        Assert.NotEmpty(forecast.Incoming);
-        var outgoing = forecast.Outgoing.First();
-        Assert.Equal((outgoing.DamageMin + outgoing.DamageMax) / 2.0, outgoing.MeanDamage);
-        Assert.Equal(outgoing.Chance * outgoing.MeanDamage, outgoing.ExpectedDamage);
 
-        using var bitmap = new SKBitmap(1280, 720);
-        using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, 1280, 720);
-        var tabs = screen.PanelTabs;
-        screen.OnMouseDown(tabs.Bounds.Right - tabs.Bounds.Width / 8, tabs.Bounds.MidY, MouseButton.Left);
-        Assert.Equal("forecast", tabs.SelectedId);
-        screen.Render(canvas, 1280, 720);
-        Assert.Contains(BattleFormat.Localize("Forecast.FireNotice"), screen.ForecastTab.Text);
-        Assert.Contains(BattleFormat.Localize("Forecast.Legend8"), screen.ForecastTab.Text);
-        Save(bitmap);
-
-        fixture.ManualAnimation = true;
-        await fixture.Route(ScreenEvent.FireTacticalBattle);
-        screen.Render(canvas, 1280, 720);
-        Assert.Contains(BattleFormat.Localize("Forecast.InFlight"), screen.ForecastTab.Text);
-        Assert.DoesNotContain(BattleFormat.Localize("SalvoMiss"), screen.ForecastTab.Text);
-        screen.OnKeyDown(Key.Enter);
-        screen.Render(canvas, 1280, 720);
-        Assert.DoesNotContain(BattleFormat.Localize("Forecast.InFlight"), screen.ForecastTab.Text);
-        Assert.Contains(BattleFormat.Localize("Forecast.TargetResults"), screen.ForecastTab.Text);
-    }
 
     private static async Task<TacticalBattleScreen> Start(BattleNavigationTests.Fixture fixture)
     {

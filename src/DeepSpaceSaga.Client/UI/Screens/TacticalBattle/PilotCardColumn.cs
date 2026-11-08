@@ -16,7 +16,7 @@ internal sealed class PilotCardColumn
         for (int i = 0; i < cards.Count; i++)
         {
             var card = cards[i]; var r = Rect(i);
-            Recording!.Rects["pilot:" + card.UnitId] = r;
+            if (Recording is { } layout) layout.Rects["pilot:" + card.UnitId] = r;
             PanelBox(c, r, card.Selected, 5, "ui.pilot-card");
             Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 5, 24, 24));
             T(c, card.Name, r.Left + 36, r.Top + 16, 11.5f, Text, true);

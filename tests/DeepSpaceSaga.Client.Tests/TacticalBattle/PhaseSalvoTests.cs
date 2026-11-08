@@ -9,8 +9,8 @@ public sealed class PhaseSalvoTests
     [Fact]
     public async Task Salvo_results_replay_and_continue_use_same_revision()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var s = await Ep0019Scenes.Create("3-salvo-flight");
+
+        await using var s = await Ep0019Scenes.Create("3-salvo-flight"); using var locale = Localization.UseLocaleForTests("Russian");
         using (var b = s.Render()) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == "Выстрел 1 из 3");
         s.Screen.OnKeyDown(Key.Enter);
         using (var b = s.Render())

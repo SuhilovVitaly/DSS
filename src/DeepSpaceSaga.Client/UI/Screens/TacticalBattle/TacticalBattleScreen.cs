@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion.TacticalBattle;
@@ -120,6 +121,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame) { base.Render(canvas, width, height); return; }
+        if (_lastPointer is { } pointer) { _hoverFrame = frame; UpdateHover(pointer); frame = frame with { HoverUnitId = HoverUnitId }; }
         Layout = new() { Camera = frame.View };
         BattleDesign.Recording = Layout;
         canvas.Save();
@@ -130,7 +132,17 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     private void Fit()
     {
-        if (Flow.State is { } state) _camera.Fit(state);
+        if (Volatile.Read(ref _presentation)?.Results is { } results)
+            _camera.Fit(results.Battle with { Phase = TacticalBattlePhase.Fire, Units = results.Battle.BeforeSalvoUnits });
+        else if (Flow.State is { } state)
+        {
+            if (state.Phase == TacticalBattlePhase.Move)
+            {
+                ObserveOrders(state);
+                state = state with { Suggestions = _orders.Capture().Orders.Select(o => o.Order).ToImmutableArray() };
+            }
+            _camera.Fit(state);
+        }
     }
 
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
@@ -258,6 +270,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         if (ConfirmExit) return base.OnMouseMove(x, y);
         var p = DesignPoint(x, y);
+        _lastPointer = p;
         if (_camera.PanTo(p.X, p.Y)) return true;
         if (TurnBusy) return false;
         if (OverlayDrag(p)) return true;
@@ -285,6 +298,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         base.OnInputReset();
         EndOverlayDrag();
         HoverUnitId = null;
+        _lastPointer = null;
         _camera.EndPan();
         CancelOrderGesture();
         _firePanel.ResetInput();

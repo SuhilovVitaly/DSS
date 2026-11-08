@@ -13,8 +13,8 @@ public sealed class PilotCardModelTests
     [InlineData("5-outcome", "Вера", "Итог: нанесено 73 · получено −102", "выведена из строя")]
     public async Task Cards_match_reference_values(string scene, string name, string text, string chip)
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var s = await Ep0019Scenes.Create(scene);
+
+        await using var s = await Ep0019Scenes.Create(scene); using var locale = Localization.UseLocaleForTests("Russian");
         var cards = PilotCardModel.Project(s.Screen.CaptureFrame(1920, 1080)!);
         var c = cards.Single(c => c.Name == name);
         Assert.Equal(text, c.PhaseText); Assert.Equal(chip, c.Chip);

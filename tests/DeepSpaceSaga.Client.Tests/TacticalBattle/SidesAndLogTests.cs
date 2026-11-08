@@ -128,102 +128,11 @@ public sealed class SidesAndLogTests
         finally { Localization.ApplyLanguage(restore); }
     }
 
-    [Fact]
-    public async Task Reference_skin_changes_sides_log_and_forecast_without_changing_visible_facts()
-    {
-        await using var fixture = await BattleNavigationTests.Fixture.Create();
-        var classic = await Start(fixture);
-        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
-        var skin = catalog.GetOrClassic("contrast");
-        var themed = new TacticalBattleScreen(classic.Flow, classic.UiScale, skin);
-        var tabs = new[]
-        {
-            (Id: "sides", Color: new SKColor(44, 35, 64)),
-            (Id: "log", Color: new SKColor(48, 34, 62)),
-            (Id: "forecast", Color: new SKColor(46, 41, 73)),
-        };
-        foreach (var (id, color) in tabs)
-        {
-            using var baseline = Draw(classic, id);
-            using var contrast = Draw(themed, id);
-            Assert.Contains(color, contrast.Pixels);
-            Assert.DoesNotContain(color, baseline.Pixels);
-            Save(contrast, "contrast-" + id + ".png");
-            if (id == "sides")
-                Assert.Equal(classic.SidesTab.Selectable.ToArray(), themed.SidesTab.Selectable.ToArray());
-        }
-        Assert.Equal(classic.LogTab.Panel.Text, themed.LogTab.Panel.Text);
-        Assert.Equal(classic.ForecastTab.Text, themed.ForecastTab.Text);
-        Assert.Same(classic.Flow.State, themed.Flow.State);
 
-        static SKBitmap Draw(TacticalBattleScreen screen, string tab)
-        {
-            screen.PanelTabs.Select(tab, notify: true);
-            var bitmap = new SKBitmap(1280, 720);
-            using var canvas = new SKCanvas(bitmap);
-            screen.Render(canvas, bitmap.Width, bitmap.Height);
-            return bitmap;
-        }
-    }
 
-    [Fact]
-    public async Task OwnSideCardSelectsActualDroneWithoutEditingItsOrder()
-    {
-        await using var fixture = await BattleNavigationTests.Fixture.Create();
-        var screen = await Start(fixture);
-        using var bitmap = new SKBitmap(1280, 720);
-        using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, 1280, 720);
-        SelectTab(screen, "sides");
-        screen.Render(canvas, 1280, 720);
-        Assert.Equal("sides", screen.PanelTabs.SelectedId);
-        var card = screen.SidesTab.Selectable.First(c => c.Id != screen.Movement.Selected && c.Bounds.MidY < 704);
-        screen.OnMouseDown(card.Bounds.MidX, card.Bounds.MidY, MouseButton.Left);
-        Assert.Equal(card.Id, screen.Movement.Selected);
-        Assert.Empty(screen.BuildMoveRequest().Orders);
-        var rows = TacticalBattleSidesTab.Cards(screen.CaptureFrame(1280, 720)!).ToArray();
-        Assert.True(rows[0].Own);
-        Assert.Equal(TacticalUnitKind.Carrier, rows[0].Unit.Kind);
-        Assert.False(rows[0].Selectable);
-        Assert.All(rows.Where(r => !r.Own), r => Assert.False(r.Selectable));
-        Assert.Contains(rows, r => r.Selectable && r.Unit.Id == card.Id && r.Health.Contains("80/80", StringComparison.Ordinal));
-        screen.Render(canvas, 1280, 720);
-        Save(bitmap, "battle-sides.png");
-    }
 
-    [Fact]
-    public async Task LogAndSideCardsDoNotRevealTheAdmittedSalvoUntilArrival()
-    {
-        await using var fixture = await BattleNavigationTests.Fixture.Create();
-        var screen = await Start(fixture);
-        for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
-            await fixture.Route(ScreenEvent.MoveTacticalBattle);
-        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
-        var before = screen.Flow.State!;
-        Assert.Equal(TacticalBattlePhase.Fire, before.Phase);
-        fixture.ManualAnimation = true;
-        await fixture.Route(ScreenEvent.FireTacticalBattle);
-        var accepted = screen.Flow.State!;
-        var flight = screen.CaptureFrame(1280, 720)!;
-        Assert.Equal(TacticalBattlePresentation.SalvoFlight, flight.Presentation);
-        Assert.Equal(before.Log.AsEnumerable(), TacticalBattleLogTab.Visible(flight));
-        Assert.Equal(accepted.BeforeSalvoUnits.Select(u => (u.Id, u.Armor, u.Hull, u.State)).OrderBy(u => u.Id),
-            TacticalBattleSidesTab.Cards(flight).Select(c => (c.Unit.Id, c.Unit.Armor, c.Unit.Hull, c.Unit.State)).OrderBy(u => u.Id));
-        screen.OnKeyDown(Key.Enter);
-        var arrived = screen.CaptureFrame(1280, 720)!;
-        Assert.Equal(accepted.Log.AsEnumerable(), TacticalBattleLogTab.Visible(arrived));
-        Assert.Equal(accepted.Units.Select(u => (u.Id, u.Armor, u.Hull, u.State)).OrderBy(u => u.Id),
-            TacticalBattleSidesTab.Cards(arrived).Select(c => (c.Unit.Id, c.Unit.Armor, c.Unit.Hull, c.Unit.State)).OrderBy(u => u.Id));
-        using var bitmap = new SKBitmap(1280, 720);
-        using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, 1280, 720);
-        SelectTab(screen, "log");
-        screen.Render(canvas, 1280, 720);
-        var log = screen.LogTab.Panel;
-        Assert.Contains(BattleLogFormatter.Format(accepted.Log.Last()), log.Text);
-        Assert.Equal(log.MaximumScroll, log.ScrollOffset);
-        Save(bitmap, "battle-journal.png");
-    }
+
+
 
     [Fact]
     public void EveryTypedEventHasLocalizedTextAndKnownDetailsAreRetained()

@@ -224,7 +224,7 @@ public sealed class ResultsPhaseTests
         var flight = Assert.Single(frame.Salvo!.Flights.Where(flight => flight.Flying));
         var shot = flight.Shot;
         var from = frame.View.Project(shot.From);
-        var to = TacticalBattleResults.Endpoint(from, frame.View.Project(shot.To), shot.Hit, flight.Index, 1);
+        var to = frame.View.Project(shot.To);
         var head = new SKPoint(from.X + (to.X - from.X) * (float)flight.Progress,
             from.Y + (to.Y - from.Y) * (float)flight.Progress);
         var skin = TacticalBattleSkin.Parse("""

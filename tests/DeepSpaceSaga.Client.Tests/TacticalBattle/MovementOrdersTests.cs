@@ -19,20 +19,20 @@ public sealed class MovementOrdersTests
         var classic = await Start(fixture);
         var skin = TacticalBattleSkin.Parse("""
             {"schemaVersion":1,"id":"move","displayName":"Move","roles":{
-              "orders.move":{"fill":"#342B5A"},
-              "control.slider.thumb":{"fill":"#FF45AA"},
-              "orders.move.slider.turn.thumb":{"fill":"#29DDBA"}
+              "ui.panel":{"fill":"#342B5A"},
+              "ui.slider.speed":{"fill":"#FF45AA"},
+              "ui.slider.turn":{"fill":"#29DDBA"}
             }}
             """);
         var themed = new TacticalBattleScreen(classic.Flow, scale, skin);
         using var classicPixels = Draw(classic);
         using var themedPixels = Draw(themed);
-        Assert.Equal(classic.MovePanel.SpeedBounds, themed.MovePanel.SpeedBounds);
+        Assert.Equal(classic.Layout.Rects["slider:speed"], themed.Layout.Rects["slider:speed"]);
         Assert.Contains(new SKColor(255, 69, 170), themedPixels.Pixels);
         Assert.Contains(new SKColor(41, 221, 186), themedPixels.Pixels);
         Assert.DoesNotContain(new SKColor(255, 69, 170), classicPixels.Pixels);
 
-        var slider = classic.MovePanel.SpeedBounds;
+        var slider = classic.Layout.Rects["slider:speed"]; slider = new(slider.Left * 1000 / 720, slider.Top * 1000 / 720, slider.Right * 1000 / 720, slider.Bottom * 1000 / 720);
         float x = slider.Left + slider.Width * 0.85f;
         classic.OnMouseDown(x, slider.MidY, MouseButton.Left);
         themed.OnMouseDown(x, slider.MidY, MouseButton.Left);
@@ -115,71 +115,9 @@ public sealed class MovementOrdersTests
         Assert.Equal(new TacticalDroneOrder(unit.Id, 0, -45), Assert.Single(tie.EditedOrders()));
     }
 
-    [Fact]
-    public async Task HandleDragSelectsNearestUntouchedOnlyOnReleaseAndAiAllClearsEdits()
-    {
-        await using var fixture = await BattleNavigationTests.Fixture.Create();
-        var screen = await Start(fixture);
-        using var bitmap = new SKBitmap(1280, 720);
-        using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, 1280, 720);
-        Save(bitmap);
-        var selected = screen.Movement.SelectedOrder!;
-        var handle = screen.View.Project(selected.Path[^1]);
-        var nearest = screen.Movement.Orders.Where(o => o.Unit.Id != selected.Unit.Id).MinBy(o =>
-            TacticalGeometry.Dist(o.Unit.Pose.X, o.Unit.Pose.Y, selected.Unit.Pose.X, selected.Unit.Pose.Y))!;
-        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(handle.X, handle.Y, MouseButton.Left));
-        Assert.Empty(screen.BuildMoveRequest().Orders); // grab preserves exact AI order until movement
-        Assert.True(screen.OnMouseMove(handle.X + 22, handle.Y - 11));
-        Assert.Equal(selected.Unit.Id, screen.Movement.Selected);
-        Assert.Single(screen.BuildMoveRequest().Orders);
-        screen.OnMouseUp(handle.X + 22, handle.Y - 11, MouseButton.Left);
-        Assert.Equal(nearest.Unit.Id, screen.Movement.Selected);
 
-        screen.Render(canvas, 1280, 720);
-        var ai = screen.MovePanel.AiAllBounds;
-        screen.OnMouseDown(ai.MidX, ai.MidY, MouseButton.Left);
-        Assert.Empty(screen.BuildMoveRequest().Orders);
-        Assert.All(screen.Movement.Orders, o => Assert.Equal(o.Suggestion, o.Order));
-        var plainBody = screen.Movement.Orders.Select(o => (o.Unit.Id, Point: screen.View.Project(o.Unit.Pose)))
-            .First(row => screen.Movement.Orders.All(o =>
-            {
-                var end = screen.View.Project(o.Path[^1]);
-                return TacticalGeometry.Dist(row.Point.X, row.Point.Y, end.X, end.Y) > 12;
-            }));
-        screen.OnMouseDown(plainBody.Point.X, plainBody.Point.Y, MouseButton.Left);
-        screen.OnMouseUp(plainBody.Point.X, plainBody.Point.Y, MouseButton.Left);
-        Assert.Equal(plainBody.Id, screen.Movement.Selected);
-        Assert.Empty(screen.BuildMoveRequest().Orders);
-    }
 
-    [Fact]
-    public async Task SlidersConstrainTurnAndCardSelectionDoesNotTouchSecondOrder()
-    {
-        await using var fixture = await BattleNavigationTests.Fixture.Create();
-        var screen = await Start(fixture);
-        using var bitmap = new SKBitmap(1280, 720);
-        using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, 1280, 720);
-        var speed = screen.MovePanel.SpeedBounds;
-        screen.OnMouseDown(speed.Left + 0.1f, speed.MidY, MouseButton.Left);
-        screen.OnMouseMove(speed.Right + 30, speed.MidY);
-        screen.OnMouseUp(speed.Right + 30, speed.MidY, MouseButton.Left);
-        var speedChange = screen.Movement.SelectedOrder!;
-        Assert.Equal(speedChange.MaximumSpeed, speedChange.Order.Speed);
-        screen.Render(canvas, 1280, 720);
-        var turn = screen.MovePanel.TurnBounds;
-        screen.OnMouseDown(turn.MidX, turn.MidY, MouseButton.Left);
-        screen.OnMouseMove(turn.Right + 30, turn.MidY);
-        screen.OnMouseUp(turn.Right + 30, turn.MidY, MouseButton.Left);
-        var order = screen.Movement.SelectedOrder!;
-        Assert.Equal(order.MaximumTurn, order.Order.Turn);
-        Assert.True(order.TurnAtMinimum >= order.MaximumTurn);
-        var second = screen.MovePanel.Cards[1];
-        screen.OnMouseDown(second.Bounds.MidX, second.Bounds.MidY, MouseButton.Left);
-        Assert.Equal(second.Id, screen.Movement.Selected);
-        Assert.Equal(order.Unit.Id, Assert.Single(screen.BuildMoveRequest().Orders).DroneId);
-    }
+
 
     private static void Save(SKBitmap bitmap)
     {

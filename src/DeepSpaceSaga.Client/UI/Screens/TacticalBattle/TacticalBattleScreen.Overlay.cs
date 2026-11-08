@@ -8,6 +8,7 @@ public sealed partial class TacticalBattleScreen
 {
     private readonly HoverCard _hoverCard = new();
     private TacticalBattleFrame? _hoverFrame;
+    private SKPoint? _lastPointer;
     private readonly PhasePanel _phasePanel = new();
     private readonly PilotCardColumn _pilotColumn = new();
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;

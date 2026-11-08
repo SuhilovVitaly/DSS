@@ -10,8 +10,8 @@ public sealed class PhaseMoveInputTests
     [Fact]
     public async Task Slider_drag_changes_issued_order_and_restore_ai()
     {
-        using var locale = Localization.UseLocaleForTests("Russian");
-        await using var s = await Ep0019Scenes.Create("1-move"); using var b = s.Render();
+
+        await using var s = await Ep0019Scenes.Create("1-move"); using var locale = Localization.UseLocaleForTests("Russian"); using var b = s.Render();
         Assert.Contains(s.Screen.Layout.Texts, t => t.Text == "77,5");
         s.Screen.OnMouseDown(1054 * 1.5f, 140 * 1.5f, MouseButton.Left);
         s.Screen.OnMouseUp(1054 * 1.5f, 140 * 1.5f, MouseButton.Left);

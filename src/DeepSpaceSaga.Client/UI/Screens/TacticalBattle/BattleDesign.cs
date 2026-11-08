@@ -26,7 +26,7 @@ internal static class BattleDesign
     public static string Pct(double value) => Math.Round(value * 100).ToString(CultureInfo.InvariantCulture) + "%";
     public static string Plural(int n, string one, string few, string many) => n + " " +
         (n % 10 == 1 && n % 100 != 11 ? one : n % 10 is >= 2 and <= 4 && n % 100 is not (>= 12 and <= 14) ? few : many);
-    public static string Genitive(string name) => name.EndsWith('а') ? name[..^1] + ("гкхжшчщ".Contains(name[^2]) ? "и" : "ы") : name + "а";
+    public static string Genitive(string name) => name.Length > 1 && name.EndsWith('а') ? name[..^1] + ("гкхжшчщ".Contains(name[^2]) ? "и" : "ы") : name + "а";
     public static float Measure(string text, float size, bool bold = false)
     { using var p = BattleTypography.TextPaint(size, bold); return p.MeasureText(text); }
     public static float FitSize(string text, float size, float width, bool bold = false)
@@ -38,7 +38,7 @@ internal static class BattleDesign
         c.DrawText(text, x, y, p); Recording?.Texts.Add(new(text, p.Color));
     }
     public static void Pair(SKCanvas c, string label, string value, float x, float y, float size)
-    { T(c, label, x, y, size, Text, true); T(c, value, x + Measure(label, size, true), y, size + 1, Text, true); }
+    { T(c, label, x, y, size, Text, true); T(c, value, x + Measure(label, size, true), y, size + 1, Text, true); Recording?.Texts.Add(new(label + value, Text)); }
     public static void Stroke(SKCanvas c, SKPoint a, SKPoint b, SKColor color, float width, float[]? dash = null)
     {
         using var p = new SKPaint { IsAntialias = true, Color = color, Style = SKPaintStyle.Stroke, StrokeWidth = width, StrokeCap = SKStrokeCap.Round };

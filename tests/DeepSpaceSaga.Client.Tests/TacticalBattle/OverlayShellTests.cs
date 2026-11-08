@@ -12,7 +12,7 @@ public sealed class OverlayShellTests
     {
         await using var s = await Ep0019Scenes.Create("1-move-no-hover"); using var b = s.Render();
         var before = s.Screen.BuildMoveRequest().Orders;
-        s.Screen.OnMouseDown(1850, 200, MouseButton.Left);
+        s.Screen.OnMouseDown(1850, 90, MouseButton.Left);
         Assert.Equal(before, s.Screen.BuildMoveRequest().Orders);
         Assert.Equal(1280, s.Screen.View.PixelWidth);
         Assert.Equal(BattleDesign.MapBg, b.GetPixel(1100, 1040));
