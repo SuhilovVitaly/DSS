@@ -8,12 +8,13 @@ pause/resume; экран не должен добавлять второй не�
 |---|---|
 | [MainMenu](MainMenu.md) | Главное меню |
 | [ScenarioSelect](ScenarioSelect.md) | Выбор сценария |
-| [GameSession](GameSession.md) | Тактический экран |
+| [GameSession](GameSession.md) | Карта игровой сессии |
 | [GameMenu](GameMenu.md) | Меню игровой сессии |
 | [Settings](Settings.md) | Настройки |
 | [Save](Save.md) | Сохранение игры |
 | [Load](Load.md) | Загрузка игры |
-| [Defeat](Defeat.md) | Поражение |
+| [TacticalBattleSetup](TacticalBattleSetup.md) | Подготовка тактического боя с карты |
+| [TacticalBattle](TacticalBattle.md) | Движение, залп, журнал, прогноз и итог |
 | [Station](Station.md) | Окно станции |
 | [Trade](Trade.md) | Торговля |
 | [Finance](Finance.md) | Финансы |

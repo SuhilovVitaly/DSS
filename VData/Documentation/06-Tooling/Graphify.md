@@ -1,7 +1,10 @@
 # Навигационный граф
 
-Поддерживаемый offline rebuild находится в tools/graphify/rebuild.py;
-новый результат выводится в уникальный workspace artifacts/validation/graphify
+Поддерживаемый offline rebuild находится в tools/graphify/rebuild.py.
+Охват включает текущие контракты и канонический EP-0018 с map-history EP-0002/3/4.
+Код получает AST, документы — структуру и выборочную свежую семантику по source hashes;
+не следует принимать структурное включение файла за полный semantic review.
+Новый результат выводится в уникальный workspace artifacts/validation/graphify
 либо абсолютный DSS_GRAPH_OUTPUT, вне Documentation. Исторический src/graphify-out
 не заменяется автоматически.
 Скрипт поддерживает --prepare-ast, --dry-run и --force; последнее разрешает

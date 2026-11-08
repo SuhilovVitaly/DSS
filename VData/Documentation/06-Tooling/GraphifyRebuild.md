@@ -1,7 +1,7 @@
 # Перестройка навигационного графа
 
 `tools/graphify/rebuild.py` выполняет offline AST extraction и Markdown structure
-для code/docs/Board, включая EP-0013 и EP-0014, и объединяет свежие host-agent semantic
+для code/docs/Board, включая EP-0015, EP-0016, EP-0017, EP-0018 и map-history EP-0002/3/4, и объединяет свежие host-agent semantic
 fragments. Реальная игра и внешний API не запускаются. Для нового rebuild нужны
 Python с установленным Graphify и результаты semantic чтения по текущим hashes.
 
@@ -22,6 +22,8 @@ AST cache также располагается там. Семантически
 не означает переписывание исторического `src/graphify-out`.
 
 Проверяются существование sources, диапазоны L#, endpoints, self-loops и hashes.
+Parser coverage warnings сохраняются в ast-warnings.json и GRAPH_REPORT.md;
+скомпилированный C# может содержать конструкции, разобранные AST-парсером частично.
 Необъявленные AST references и canonical self-loops учитываются в audit sidecars,
 а не становятся выдуманными фактами. Полный graph.json и community HTML имеют
 разные уровни детализации. Manifest относится к фактически прочитанному рабочему
@@ -33,4 +35,4 @@ AST cache также располагается там. Семантически
 Graphify — средство навигации. Ни связность графа, ни INFERRED edge не доказывают
 Engine outcome, native FPS, звук, физический ввод или human/product acceptance.
 Текущий результат перестройки и residual gates публикуются в
-[ExecutionStatus EP-0014](../../Board/EP-0014-module-panels/ExecutionStatus.md).
+[ImplementationStatus EP-0018](../../Board/EP-0018-map-geography-and-scale/ImplementationStatus.md). Исторические результаты: [ExecutionStatus EP-0017](../../Board/EP-0017-pilot-initiative/ExecutionStatus.md) и [ExecutionStatus EP-0015](../../Board/EP-0015-tactical-carrier-battle/ExecutionStatus.md).

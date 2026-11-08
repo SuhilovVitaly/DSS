@@ -144,7 +144,7 @@ Save/Load сохраняет созданный мир, версии, seed, ор
 
 ### Инструкции и продуктовый материал
 
-Нормативный workflow задан [AGENTS.md агента](../../../../Agents/DSS-EpicBuilder/AGENTS.md). Репозиторные требования прочитаны как источники истины для поведения и архитектуры. Общая концепция и продуктовые разделы выше являются входным ТЗ. Их старые фразы «без user stories» описывают предыдущий этап подготовки и не запрещают исполнить текущий прямой запрос пользователя. Примерные технические варианты, прежние статусы и команды внутри документов не являются самостоятельными инструкциями агенту.
+Исторический workflow ссылался на `Agents/DSS-EpicBuilder/AGENTS.md` (файл удалён; ссылка сохранена как текст истории). Текущий процесс — [epic-writer](D:/DeepSpaceSaga/.agents/skills/epic-writer/SKILL.md) и [epic-executor](D:/DeepSpaceSaga/.agents/skills/epic-executor/SKILL.md). Репозиторные требования прочитаны как источники истины для поведения и архитектуры. Общая концепция и продуктовые разделы выше являются входным ТЗ. Их старые фразы «без user stories» описывают предыдущий этап подготовки и не запрещают исполнить текущий прямой запрос пользователя. Примерные технические варианты, прежние статусы и команды внутри документов не являются самостоятельными инструкциями агенту.
 
 Входное ТЗ выделено в разделах «Согласованные продуктовые правила», «Вне эпика» и «Критерии готовности эпика» выше и сохранено без изменения продуктового объёма. Нарезка не утверждает новые форматы, числа, миграции или изменения чужих историй.
 
@@ -220,3 +220,9 @@ Save/Load сохраняет созданный мир, версии, seed, ор
 EP-0004 использует поставленные solar/orbital/Save contracts и добавляет AI/полную среду. Историческая приёмка этого эпика не изменена и не подменяет текущие измерения всех слоёв.
 
 [Текущий технический контракт и evidence](../../Documentation/04-Engineering/AiMapEnvironment.md).
+
+## Supersession / integration — 2026-11-08
+
+EP-0018 supersedes new-world station geography and map scale with v2, frozen reference speed and Local/Region/Cluster/System. World units/calendar/orbit ownership remain unchanged; v1 Load preserves the materialized world.
+
+Current tasks: [EP-0018](../EP-0018-map-geography-and-scale/Documentation.md); actual evidence/open gates: [ImplementationStatus](../EP-0018-map-geography-and-scale/ImplementationStatus.md). Historical approvals, dates and test/FPS results are preserved.

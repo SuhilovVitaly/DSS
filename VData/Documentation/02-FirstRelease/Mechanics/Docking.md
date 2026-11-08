@@ -7,5 +7,8 @@ Approach, синхронизация и Dock — отдельные действ
 Пристыкованный корабль следует станции. Undock начинает физическое продолжение
 рейса с согласованной voyage/fuel моделью. Базы ИИ дают station_access_denied.
 Диалоговые эффекты исполняются транзакционно и не повторяются из-за redraw.
+Если служба безопасности станции уничтожает корабль игрока, мир останавливается,
+сохранение запрещено, а клиент показывает терминальный экран «Корабль уничтожен»
+с выбором «Загрузить» или «Главное меню».
 
-Источники: [DialogueEffectTransaction.cs](../../../../src/DeepSpaceSaga.Engine/Dialogue/DialogueEffectTransaction.cs), [StationSecuritySystem.cs](../../../../src/DeepSpaceSaga.Engine/Dialogue/StationSecuritySystem.cs).
+Источники: [DialogueEffectTransaction.cs](../../../../src/DeepSpaceSaga.Engine/Dialogue/DialogueEffectTransaction.cs), [StationSecuritySystem.cs](../../../../src/DeepSpaceSaga.Engine/Dialogue/StationSecuritySystem.cs), [ShipDestroyedScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/ShipDestroyed/ShipDestroyedScreen.cs).
