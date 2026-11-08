@@ -3,11 +3,11 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0001-reference-and-golden-harness
 ticket: EP-0019-US-0001-TK-0002-bundle-battle-font
 title: Поставка шрифта DejaVu Sans и единая растеризация текста
-stage: draft
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0001-TK-0001-fix-sdk-build-ambiguity]
-files_touched: 7
+files_touched: 11
 serves: [US1-AC2]
 created: 2026-11-08T09:31:05Z
 revision: 3
@@ -113,4 +113,10 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: оба точных TTF восстановлены из официального Ubuntu fonts-dejavu-core_2.37-2build1_all.deb; SHA-256 совпали с исходным Board. Восстановлены Assets/fonts и runtime UI/Fonts, лицензия взята из font stanza copyright пакета.
+
+Расширение scope: Assets/README.md и три Assets/fonts нужны из-за отсутствовавших входных файлов, чтобы последующее исполнение на другом компьютере было самодостаточным. CSProj явно копирует шрифты и лицензию также при publish. BattleTypography инициализирует оба начертания из файлов; ошибка даёт лог и меню-fallback с IsBundled=false; фабрика рисования/измерения использует все настройки DesignSpec. Экран пока не подключён к фабрике: это scope US-0002.
+
+Windows, SDK 10.0.400: BattleTypographyTests 7/7 PASS, включая оба SHA, RU/EN glyph coverage, все флаги paint, ширины 185.9033/205.7153 ±0.01. Test build PASS (исходный warning MSB9008 об архивном ModApi). Scoped whitespace format/verify и diff check PASS. Debug publish --no-build --no-restore PASS; оба опубликованных SHA совпали, лицензия присутствует. Self-review выполнен; независимого review нет. Другие ОС NOT RUN: macOS недоступна, WSL/Ubuntu не установлены.
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-setup/tk2-tests.log, tk2-results/focused.trx, tk2-format.log, tk2-publish.log, input-audit.txt. Коммит/SHA и push — в ExecutionStatus.md.
