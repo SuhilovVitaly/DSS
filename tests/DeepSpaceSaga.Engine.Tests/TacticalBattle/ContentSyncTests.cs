@@ -201,7 +201,10 @@ public sealed class ContentSyncTests
         if (text.StartsWith('['))
         {
             using var expected = JsonDocument.Parse(text);
-            Assert.Equal(expected.RootElement.EnumerateArray().Select(e => e.GetInt32()), actual.EnumerateArray().Select(e => e.GetInt32()));
+            Assert.Equal(expected.RootElement.GetArrayLength(), actual.GetArrayLength());
+            for (int i = 0; i < expected.RootElement.GetArrayLength(); i++)
+                if (expected.RootElement[i].TryGetInt32(out int integer)) Assert.Equal(integer, actual[i].GetInt32());
+                else Assert.Equal(expected.RootElement[i].GetDouble(), actual[i].GetDouble());
         }
         else if (text is "true" or "false") Assert.Equal(bool.Parse(text), actual.GetBoolean());
         else if (double.TryParse(text.Replace('−', '-'), NumberStyles.Float, CultureInfo.InvariantCulture, out double number)) Assert.Equal(number, actual.GetDouble());

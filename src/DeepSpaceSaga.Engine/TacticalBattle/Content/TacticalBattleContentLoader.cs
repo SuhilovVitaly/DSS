@@ -212,6 +212,19 @@ internal static class TacticalBattleContentLoader
             && r.Evasion.MinConsciousness <= r.Consciousness.Max && Unit(r.Evasion.AiHullFraction),
             "rules.json", "$.evasion", "Invalid evasion rules.");
         Require(Unit(r.Decoy.AiThreatChance), "rules.json", "$.decoy.aiThreatChance", "Expected fraction in [0,1].");
+        var anomaly = r.Anomalies;
+        Require(anomaly.Background >= 0 && anomaly.ZoneEdge > anomaly.Background, "rules.json", "$.anomalies.zoneEdge/background", "Zone edge must exceed nonnegative background.");
+        Require(anomaly.AbsorbSamples >= 1 && anomaly.MaxAttempts >= 0 && anomaly.AiDustSearch >= 1,
+            "rules.json", "$.anomalies.absorbSamples/maxAttempts/aiDustSearch", "Invalid sample or search counts.");
+        Require(anomaly.Clearance >= 0 && Unit(anomaly.BandFraction), "rules.json", "$.anomalies.clearance/bandFraction", "Invalid clearance or band fraction.");
+        foreach (var (name, values) in new[] { ("heatCount", anomaly.HeatCount), ("dustCount", anomaly.DustCount), ("clumps", anomaly.Clumps) })
+            Require(values.Length == 2 && values[0] >= 0 && values[1] >= values[0], "rules.json", "$.anomalies." + name, "Expected nonnegative ordered integer range.");
+        foreach (var (name, values, positive) in new[] { ("spread", anomaly.Spread, true), ("clumpAmp", anomaly.ClumpAmp, false),
+            ("clumpSigmaX", anomaly.ClumpSigmaX, true), ("clumpSigmaY", anomaly.ClumpSigmaY, true) })
+            Require(values.Length == 2 && (positive ? values[0] > 0 : values[0] >= 0) && values[1] >= values[0],
+                "rules.json", "$.anomalies." + name, "Expected ordered positive geometry or nonnegative amplitude range.");
+        Require(anomaly.CenterSpread.Length == 2 && anomaly.CenterSpread.All(value => value >= 0),
+            "rules.json", "$.anomalies.centerSpread", "Expected two nonnegative center-spread coordinates.");
         Require(r.Version == "4.0", "rules.json", "$.version", "Expected V4.0.");
         Require(r.Substeps > 0 && r.SeriesTurnCap > 0, "rules.json", "$.substeps/seriesTurnCap", "Counts must be positive.");
         Require(Unit(r.TurnAtMaxSpeedFraction) && Unit(r.Disabled.HullFraction) && Unit(r.Systems.EngineDamagedFactor), "rules.json", "$", "Fractions must be in [0,1].");

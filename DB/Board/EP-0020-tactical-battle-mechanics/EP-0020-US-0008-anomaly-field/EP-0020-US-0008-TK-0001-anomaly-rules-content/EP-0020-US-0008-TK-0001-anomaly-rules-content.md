@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0008-anomaly-field
 ticket: EP-0020-US-0008-TK-0001-anomaly-rules-content
 title: Правила аномалий в данных
-stage: draft
+stage: done
 layer: content-data
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0005-TK-0001-decoy-content]
@@ -89,4 +89,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Техническое представление неуточнённого aiDustSearch: целое4, число равных шагов предела поворота; по A-29 это k=1…4 с шагом¼, порядок скоростей order/min/max фиксирован правилом. CenterSpread — вектор двух неотрицательных долей, не диапазон (его заданный порядок0.45,0.35 сохраняется). Spread/Sigma строго положительны для определённого Gaussian поля; counts/amplitude/clearance/maxAttempts допускают0. Параметры пользователя не меняются.
+
+Первый прогон173/174: loader casesPASS, sync helper ранее поддерживал только int-массивы. Scope расширен на ContentSyncTests.Cell: сохраняется строгий GetInt32 для целых элементов, добавляется точное сравнение double для вещественных. Экспортёр массивы уже поддерживает; production exporter не меняется.
+
+Завершено: Content174/174PASS, Export-Content -Check30JSONPASS, Engine build/scoped-format/tests-format/diff-checkPASS. Все15полей US8-AC1 сверены с литералами;46invalid cases покрывают missing/null, размер/порядок/знак диапазонов, integer shape, positive geometry, vector, fractions, counts иnonfinite. CenterSpread0.45/0.35 не сортируется. Прочие значения JSON не менялись; генерации/боевого эффекта ещё нет. Самопроверка data ownership/единиц/shape выполнена. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us8-tk1/final/tests.trx,export-check.log,format-engine.log,format-tests.log.

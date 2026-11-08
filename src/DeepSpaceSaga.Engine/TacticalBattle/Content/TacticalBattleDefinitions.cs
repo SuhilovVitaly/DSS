@@ -4,10 +4,15 @@ namespace DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 internal sealed record TacticalRules(string Version, string Description, int Substeps,
     double TurnAtMaxSpeedFraction, DeployScatter DeployScatter, HitRules Hit, RearRules Rear,
-    DisabledRules Disabled, SystemRules Systems, ConsciousnessRules Consciousness, EvasionRules Evasion, DecoyRules Decoy, int SeriesTurnCap);
+    DisabledRules Disabled, SystemRules Systems, ConsciousnessRules Consciousness, EvasionRules Evasion, DecoyRules Decoy, AnomalyRules Anomalies, int SeriesTurnCap);
 internal sealed record ConsciousnessRules(int Start, int Max, int RecoveryPerTurn);
 internal sealed record EvasionRules(double HitPenalty, int Cost, int MinConsciousness, double AiHullFraction);
 internal sealed record DecoyRules(double AiThreatChance);
+internal sealed record AnomalyRules(double ZoneEdge, double Background, int AbsorbSamples,
+    ImmutableArray<int> HeatCount, ImmutableArray<int> DustCount, ImmutableArray<int> Clumps,
+    ImmutableArray<double> Spread, ImmutableArray<double> ClumpAmp, ImmutableArray<double> ClumpSigmaX,
+    ImmutableArray<double> ClumpSigmaY, ImmutableArray<double> CenterSpread,
+    double Clearance, double BandFraction, int MaxAttempts, int AiDustSearch);
 internal sealed record BattleDecoy(string Id, string Name, int Tier, int Charges, double MissFactor, double MassKg);
 internal sealed record DeployScatter(double Xy, double CourseDeg);
 internal sealed record HitRules(double Base, double MinChance, double MaxChance, double RangeBonus,

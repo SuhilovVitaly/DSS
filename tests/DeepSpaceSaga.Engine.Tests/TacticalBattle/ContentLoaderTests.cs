@@ -10,6 +10,43 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class ContentLoaderTests
 {
     [Fact]
+    public void Anomaly_rules_load_from_shipped_data()
+    {
+        var r = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle")).Rules.Anomalies;
+        Assert.Equal(170, r.ZoneEdge); Assert.Equal(100, r.Background); Assert.Equal(200, r.AbsorbSamples);
+        Assert.Equal(new[] { 1, 3 }, r.HeatCount); Assert.Equal(new[] { 1, 2 }, r.DustCount);
+        Assert.Equal(new[] { 6, 10 }, r.Clumps); Assert.Equal(new[] { 40.0, 55.0 }, r.Spread);
+        Assert.Equal(new[] { 70.0, 160.0 }, r.ClumpAmp); Assert.Equal(new[] { .18, .34 }, r.ClumpSigmaX);
+        Assert.Equal(new[] { .14, .26 }, r.ClumpSigmaY); Assert.Equal(new[] { .45, .35 }, r.CenterSpread);
+        Assert.Equal(60, r.Clearance); Assert.Equal(.6, r.BandFraction);
+        Assert.Equal(64, r.MaxAttempts); Assert.Equal(4, r.AiDustSearch);
+    }
+
+    public static IEnumerable<object[]> InvalidAnomalyRules()
+    {
+        foreach (string field in new[] { "heatCount", "dustCount", "clumps", "spread", "clumpAmp", "clumpSigmaX", "clumpSigmaY" })
+            foreach (string value in new[] { "[]", "[1]", "[3,1]", "[-1,1]" })
+                yield return new object[] { "/anomalies/" + field, value };
+        foreach (var (field, value) in new[] { ("", "<missing>"), ("", "null"), ("/zoneEdge", "100"),
+            ("/background", "-1"), ("/absorbSamples", "0"), ("/heatCount", "[1.5,3]"),
+            ("/spread", "[0,55]"), ("/clumpSigmaX", "[0,0.34]"), ("/clumpSigmaY", "[0,0.26]"),
+            ("/centerSpread", "[]"), ("/centerSpread", "[0.4]"), ("/centerSpread", "[-0.1,0.3]"),
+            ("/clearance", "-1"), ("/bandFraction", "-0.1"), ("/bandFraction", "1.1"),
+            ("/maxAttempts", "-1"), ("/aiDustSearch", "0"), ("/clumpAmp", "[1,1e400]") })
+            yield return new object[] { "/anomalies" + field, value };
+    }
+
+    [Theory, MemberData(nameof(InvalidAnomalyRules))]
+    public void Invalid_anomaly_rules_are_rejected(string pointer, string value)
+    {
+        using var fixture = new Fixture();
+        fixture.Change("rules.json", pointer, value);
+        var error = Assert.Throws<TacticalBattleContentException>(() => TacticalBattleContentLoader.Load(fixture.Battle));
+        Assert.Equal("rules.json", error.Issue.File);
+        Assert.StartsWith("$.anomalies", error.Issue.Field);
+    }
+
+    [Fact]
     public void Decoy_module_and_slots_load_from_shipped_data()
     {
         var catalog = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle"));

@@ -65,3 +65,5 @@ EP-0020-US-0007-TK-0001 → e3e213278a927321ae44347a5b71e12ef9299231 → origin 
 EP-0020-US-0007-TK-0002 → ee7e1013ca289413558356ac849673dd67460236 → origin проверен. TK3UI31/Engine44/Contracts27PASS,готов к публикации.
 
 EP-0020-US-0007-TK-0003 → 82314c8f4925efecc328f74ab41035917592f93e → origin проверен. US7завершена: Client2206PASS/29Ep0019PASS,masked7PASS; TK4готов к публикации,далееUS8.
+
+EP-0020-US-0007-TK-0004 → 773da5407093b98d5b8496da9cf6e65cf8fdbfb8 → origin проверен. US8/TK1Content174PASS,export30PASS,готов к публикации.

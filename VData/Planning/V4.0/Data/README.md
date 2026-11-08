@@ -85,8 +85,29 @@
 | `evasion.minConsciousness` | 10 |
 | `evasion.aiHullFraction` | 0.5 |
 | `decoy.aiThreatChance` | 0.4 |
+| `anomalies.zoneEdge` | 170 |
+| `anomalies.background` | 100 |
+| `anomalies.absorbSamples` | 200 |
+| `anomalies.heatCount` | [1,3] |
+| `anomalies.dustCount` | [1,2] |
+| `anomalies.clumps` | [6,10] |
+| `anomalies.spread` | [40,55] |
+| `anomalies.clumpAmp` | [70,160] |
+| `anomalies.clumpSigmaX` | [0.18,0.34] |
+| `anomalies.clumpSigmaY` | [0.14,0.26] |
+| `anomalies.centerSpread` | [0.45,0.35] |
+| `anomalies.clearance` | 60 |
+| `anomalies.bandFraction` | 0.6 |
+| `anomalies.maxAttempts` | 64 |
+| `anomalies.aiDustSearch` | 4 |
 | `seriesTurnCap` | 100 |
 <!-- /table -->
+
+`anomalies.*` — материализация температурных и пылевых зон по [EP-0020](../../../../DB/Board/EP-0020-tactical-battle-mechanics/Documentation.md).
+`heatCount`, `dustCount`, `clumps` — включительные целочисленные диапазоны; `spread`, `clumpAmp`, `clumpSigmaX/Y` — вещественные диапазоны.
+`centerSpread` — вектор X/Y, не диапазон. `zoneEdge` строго выше `background`; `absorbSamples` ≥1; `spread` и sigma >0.
+`clearance` — зазор центров от стартов, `bandFraction` — доля средней полосы, `maxAttempts` — число попыток на аномалию.
+`aiDustSearch` — число равных шагов предела поворота (4 → четверти), скорости поиска идут order/min/max.
 
 ## ai.json — ИИ
 
