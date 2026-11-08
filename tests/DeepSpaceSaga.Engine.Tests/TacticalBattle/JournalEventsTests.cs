@@ -9,6 +9,30 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class JournalEventsTests
 {
     [Fact]
+    public void Absorbed_shot_is_logged()
+    {
+        var catalog = AssemblyTests.Catalog();
+        catalog = catalog with { Rules = catalog.Rules with { Anomalies = catalog.Rules.Anomalies with { DustCount = [0, 0] } } };
+        using var engine = SessionTests.CloseFireEngine(catalog);
+        var battle = engine.TacticalBattleSessionForTests!.Battle;
+        var point = SessionTests.AnomalyPoint(battle, DeepSpaceSaga.Motion.TacticalBattle.TacticalAnomalyKind.Heat);
+        battle.Drones[0].Pose = point; battle.Drones[4].Pose = point;
+        var frame = engine.GetTacticalBattleState()!;
+        Assert.Equal(1, Assert.Single(frame.Targets.Single(g => g.DroneId == "Вера").List).Absorption);
+        var result = engine.FireTacticalBattle(new("absorbed-log", frame.BattleId, frame.Revision, [new("Вера", "Таг-1")]));
+        Assert.True(result.Accepted);
+        Assert.Equal(2, result.State!.Shots.Length);
+        Assert.All(result.State.Shots, s => { Assert.True(s.Absorbed); Assert.False(s.Hit); Assert.Equal(0, s.Damage); });
+        var absorbed = result.NewEvents.Where(e => e.Kind == TacticalBattleLogKind.ShotAbsorbed).ToArray();
+        Assert.Equal(2, absorbed.Length);
+        Assert.All(absorbed, e => { Assert.Equal(0, e.Amount); Assert.NotNull(e.FireStepIndex); Assert.Equal(0, e.Shot!.Chance); });
+        Assert.DoesNotContain(result.NewEvents, e => e.Kind is TacticalBattleLogKind.ShotMissed or TacticalBattleLogKind.DamageApplied);
+        Assert.All(absorbed, e => Assert.Contains(e, result.State.Log));
+        foreach (var step in result.State.FireSteps.Where(s => s.Shot is not null))
+            Assert.Equal(TacticalBattleLogKind.ShotAbsorbed, step.Events[0].Kind);
+    }
+
+    [Fact]
     public void Decoy_launch_is_logged()
     {
         using var engine = SessionTests.CloseFireEngine();

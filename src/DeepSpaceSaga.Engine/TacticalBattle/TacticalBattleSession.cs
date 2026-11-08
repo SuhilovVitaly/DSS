@@ -121,6 +121,8 @@ internal sealed class TacticalBattleSession
                 if (target.Evade && target.TargetId is not null) return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidRequest);
                 if (target.Evade && drone.Consciousness < Battle.Catalog.Rules.Evasion.MinConsciousness)
                     return Reject(request.CommandId, TacticalBattleRejectionCode.EvasionUnavailable);
+                if (target.TargetId is not null && TacticalBattleSalvo.InDust(Battle, drone))
+                    return Reject(request.CommandId, TacticalBattleRejectionCode.InDust);
                 if (target.TargetId is not null && !TacticalBattleSalvo.Candidates(Battle, drone).Any(c => c.Target.Id == target.TargetId))
                     return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidTarget);
                 targets.Add((drone.Id, new(target.TargetId, target.Evade, target.Decoy)));
@@ -150,7 +152,7 @@ internal sealed class TacticalBattleSession
             int events = _log.Count;
             TacticalShotSnapshot? shot = step.Shot is { } actual ? TacticalBattleSnapshotBuilder.Shot(actual, turn) : null;
             if (shot is not null)
-                Add(shot.Kill ? TacticalBattleLogKind.RearKill : shot.Hit ? TacticalBattleLogKind.ShotHit : TacticalBattleLogKind.ShotMissed,
+                Add(shot.Absorbed ? TacticalBattleLogKind.ShotAbsorbed : shot.Kill ? TacticalBattleLogKind.RearKill : shot.Hit ? TacticalBattleLogKind.ShotHit : TacticalBattleLogKind.ShotMissed,
                     TacticalBattlePhase.Fire, shot.ShooterId, shot.TargetId, amount: shot.Damage,
                     shot: new TacticalLogShot(shot.Chance, shot.Rear) { Decoyed = shot.Decoyed }, fireStepIndex: step.Index);
             else

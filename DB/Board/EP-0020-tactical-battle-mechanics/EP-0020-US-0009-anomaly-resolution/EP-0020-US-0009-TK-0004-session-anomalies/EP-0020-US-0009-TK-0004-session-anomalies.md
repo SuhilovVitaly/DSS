@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0009-anomaly-resolution
 ticket: EP-0020-US-0009-TK-0004-session-anomalies
 title: Сессия: отказ в пыли и журнал
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0009-TK-0003-ai-dust-avoidance]
@@ -85,4 +85,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope включает LocalSessionBattleTests: seed10/defence с аномалиями превысил прежний guard SeriesTurnCap*2 команд. Interactive API не вызывает series Run/Timeout; сначала проверяется расширенный guard с сохранением полного terminal outcome/unit oracle, production cap/данные не меняются.
+
+Завершено. Session/Journal/LocalSession/Connection146/146PASS; build/scopedformat/diffcheckPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us9-tk4/final/tests.trx`. AC3/5: атомарный late InDust отказ без траты предыдущего D, EV/D из пыли с receipt replay, реальные seed1 Heat shots и ShotAbsorbed без Miss/Damage, snapshots/typed steps проверены. Начальный новый heat-test совмещал позиции, но B был развёрнут180° от zero-distance bearing0; исправлена ориентация fixture, сохранено требование2реальных выстрелов. LocalSession seed10/defence действительно завершается позже series cap: guard расширен*20, прямой oracle идёт до фактического terminal turn frame.Turn, затем полные Outcome/Units/RNG сравниваются как раньше. Production timeout/параметры не менялись; обрезанный series oracle давал искусственный Timeout вместо реального B. Самопроверка ownership/атомарность/Save20/identity пройдена.

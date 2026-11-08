@@ -37,7 +37,7 @@ public sealed class LocalSessionBattleTests
         int command = 0;
         while (frame.Phase != TacticalBattlePhase.Over)
         {
-            Assert.True(command <= Catalog.Value.Rules.SeriesTurnCap * 2,
+            Assert.True(command <= Catalog.Value.Rules.SeriesTurnCap * 20,
                 $"seed={seed}, tactic={tactic}, explicit={explicitOrders}: exceeded new-rule safety turn cap");
             long calls = engine.TacticalBattleSessionForTests!.Battle.Random.Calls;
             string before = JsonSerializer.Serialize(frame);
@@ -49,7 +49,7 @@ public sealed class LocalSessionBattleTests
         }
         var direct = DeepSpaceSaga.Engine.TacticalBattle.TacticalBattle.Create(Catalog.Value, "initial", seed,
             new Dictionary<string, string> { ["A"] = tactic });
-        while (direct.Result is null && direct.Turn < Catalog.Value.Rules.SeriesTurnCap)
+        while (direct.Result is null && direct.Turn < frame.Turn)
         {
             direct.Planning(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
             direct.Movement();

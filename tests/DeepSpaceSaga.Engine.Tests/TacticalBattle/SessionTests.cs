@@ -12,6 +12,51 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class SessionTests
 {
     [Fact]
+    public void Fire_order_from_dust_is_rejected()
+    {
+        using var engine = CloseFireEngine();
+        var battle = engine.TacticalBattleSessionForTests!.Battle;
+        var own = battle.Drones[0]; own.Pose = AnomalyPoint(battle, TacticalAnomalyKind.Dust);
+        var second = battle.Drones[1]; second.Status = TacticalDroneStatus.Air;
+        var frame = engine.GetTacticalBattleState()!;
+        Assert.True(frame.Units.Single(u => u.Id == own.Id).InDust);
+        AssertRejectedUnchanged(engine, () => engine.FireTacticalBattle(new("dust-fire", frame.BattleId, frame.Revision,
+            [new(second.Id, null, Decoy: true), new(own.Id, "Таг-1")])), TacticalBattleRejectionCode.InDust);
+        Assert.Equal(2, second.DecoyCharges);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Dust_drone_may_evade_or_launch_decoy(bool evade)
+    {
+        using var engine = CloseFireEngine(); var battle = engine.TacticalBattleSessionForTests!.Battle;
+        var own = battle.Drones[0]; own.Pose = AnomalyPoint(battle, TacticalAnomalyKind.Dust);
+        battle.Drones[4].Jammed = true;
+        var frame = engine.GetTacticalBattleState()!;
+        var request = new FireTacticalBattleRequest("dust-defense", frame.BattleId, frame.Revision,
+            [new(own.Id, null, evade, !evade)]);
+        var result = engine.FireTacticalBattle(request); Assert.True(result.Accepted);
+        var step = result.State!.FireSteps.Single(s => s.ShooterId == own.Id);
+        Assert.Equal(evade ? TacticalFireSkipReason.Evading : TacticalFireSkipReason.InDust, step.SkipReason);
+        Assert.Null(step.Shot);
+        Assert.Equal(evade ? 2 : 1, own.DecoyCharges);
+        Assert.Equal(evade ? 90 : 100, step.UnitsAfter.Single(u => u.Id == own.Id).Consciousness);
+        var captured = JsonSerializer.Serialize(result.State); var random = (battle.Random.State, battle.Random.Calls);
+        Assert.Same(result, engine.FireTacticalBattle(request));
+        Assert.Equal(captured, JsonSerializer.Serialize(engine.GetTacticalBattleState()));
+        Assert.Equal(random, (battle.Random.State, battle.Random.Calls));
+    }
+
+    internal static TacticalPose AnomalyPoint(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattle battle, TacticalAnomalyKind kind)
+    {
+        var r = battle.Catalog.Rules.Anomalies;
+        var point = battle.Anomalies.Where(a => a.Kind == kind).SelectMany(a => a.Clumps)
+            .First(c => TacticalAnomalyMath.Inside(battle.Anomalies, kind, c.X, c.Y, r.Background, r.ZoneEdge));
+        return new(point.X, point.Y, 0);
+    }
+
+    [Fact]
     public void Decoy_order_is_validated_atomically()
     {
         using var engine = CloseFireEngine();
