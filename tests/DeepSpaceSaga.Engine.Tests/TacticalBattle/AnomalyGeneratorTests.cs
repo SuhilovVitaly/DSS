@@ -51,25 +51,46 @@ public sealed class AnomalyGeneratorTests
         Assert.Equal((a.Random.Calls, a.Random.State), (b.Random.Calls, b.Random.State));
         Assert.Equal((a.InitiativeRandom.Calls, a.InitiativeRandom.State), (b.InitiativeRandom.Calls, b.InitiativeRandom.State));
         Assert.Equal(a.Drones.Select(d => d.Pose), b.Drones.Select(d => d.Pose));
-        foreach (string tactic in new[] { "dogfight", "raid", "defence", "balanced", "commander" })
-            Assert.Equal(GoldenBattleTests.Signature(GoldenBattleTests.Run(empty, 1, tactic, false)),
-                GoldenBattleTests.Signature(GoldenBattleTests.Run(catalog, 1, tactic, false)));
+    }
+
+    [Fact]
+    public void Empty_fields_preserve_pre_anomaly_outcomes()
+    {
+        var catalog = AssemblyTests.Catalog();
+        catalog = catalog with { Rules = catalog.Rules with { Anomalies = catalog.Rules.Anomalies with { HeatCount = [0, 0], DustCount = [0, 0] } } };
+        // Independent US8/TK3 pre-effect whole-battle signatures, seed1, all five tactics.
+        (string Tactic, string Hash)[] previous =
+        [
+            ("balanced", "F4761D96FC47CBFBE0121F904D017C578B1CF0A95C06735583EBBEAFEFA24D1B"),
+            ("commander", "A1C2B743AB794E37F116DC50EC27ABAE9B600D32C4FB1F4973338519B4576DB2"),
+            ("defence", "C02508446BB2EFD8E9004699034BEF58E1CFC9F44B8F09A9B7687E431C270A49"),
+            ("dogfight", "EC07E8E50C89DB2C66BA134776FE50372F467E7B76DB40B81E3CB920189A7E89"),
+            ("raid", "EDA03C4AEEDA1DECE456FB3827F762224537A1D5167C2C570D26403CBF9B5E0D")
+        ];
+        foreach (var row in previous)
+        {
+            var json = System.Text.Json.Nodes.JsonNode.Parse(GoldenBattleTests.Signature(GoldenBattleTests.Run(catalog, 1, row.Tactic, false)))!;
+            json.AsObject().Remove("Absorbed"); json.AsObject().Remove("DustSkips");
+            foreach (var unit in json["Units"]!.AsArray()) unit!.AsObject().Remove("InDust");
+            Assert.Equal(row.Hash, Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(json.ToJsonString()))));
+        }
     }
 
     [Fact]
     public void Thousand_seeds_generate()
     {
         var catalog = AssemblyTests.Catalog();
+        string? evidenceRoot = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT");
         var lines = new List<string> { "seed,heat,dust,clumps" };
         for (int seed = 1; seed <= 1000; seed++)
         {
             var battle = Battle.Create(catalog, null, seed); Check(battle);
             Assert.Equal(42, battle.Random.Calls);
             lines.Add(FormattableString.Invariant($"{seed},{battle.Anomalies.Count(a => a.Kind == TacticalAnomalyKind.Heat)},{battle.Anomalies.Count(a => a.Kind == TacticalAnomalyKind.Dust)},{battle.Anomalies.Sum(a => a.Clumps.Length)}"));
-            if (seed == 1) File.WriteAllText(Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")!, "anomalies-seed1.json"),
+            if (seed == 1 && evidenceRoot is { Length: > 0 }) File.WriteAllText(Path.Combine(evidenceRoot, "anomalies-seed1.json"),
                 JsonSerializer.Serialize(battle.Anomalies, new JsonSerializerOptions { WriteIndented = true }));
         }
-        File.WriteAllLines(Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")!, "anomaly-generation.csv"), lines);
+        if (evidenceRoot is { Length: > 0 }) File.WriteAllLines(Path.Combine(evidenceRoot, "anomaly-generation.csv"), lines);
     }
 
     [Fact]

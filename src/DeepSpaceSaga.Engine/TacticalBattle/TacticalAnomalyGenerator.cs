@@ -16,7 +16,7 @@ internal static class TacticalAnomalyGenerator
         int dustCount = random.RandInt(rules.DustCount[0], rules.DustCount[1]);
         double xA = drones.Where(d => d.Side == "A").Average(d => d.Pose.X);
         double xB = drones.Where(d => d.Side == "B").Average(d => d.Pose.X);
-        double inset = (1 - rules.BandFraction) / 2 * (xB - xA);
+        double inset = (1 - rules.BandFraction) / 2.0 * (xB - xA);
         double x0 = xA + inset, x1 = xB - inset;
         double y0 = drones.Min(d => d.Pose.Y), y1 = drones.Max(d => d.Pose.Y);
         var starts = drones.Cast<TacticalUnit>().Concat(carriers).Select(u => u.Pose).ToArray();

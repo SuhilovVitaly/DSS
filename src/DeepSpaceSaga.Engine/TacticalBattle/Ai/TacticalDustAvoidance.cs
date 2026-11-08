@@ -21,7 +21,7 @@ internal static class TacticalDustAvoidance
             for (int k = 1; k <= steps; k++)
                 foreach (int sign in new[] { 1, -1 })
                 {
-                    double candidateTurn = PyMath.Clamp(turn + sign * k * limit / steps, -limit, limit);
+                    double candidateTurn = PyMath.Clamp(turn + sign * k * limit / (double)steps, -limit, limit);
                     if (!Inside(End(candidateSpeed, candidateTurn))) return new(candidateSpeed, candidateTurn);
                 }
         }

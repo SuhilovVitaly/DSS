@@ -50,6 +50,7 @@ public sealed class DecoyStateTests
         var catalog = AssemblyTests.Catalog();
         var noModule = catalog with
         {
+            Rules = catalog.Rules with { Anomalies = catalog.Rules.Anomalies with { HeatCount = [0, 0], DustCount = [0, 0] } },
             Layouts = new OrderedBattleCatalog<BattleLayout>(
             catalog.Layouts.Entries.Select(e => (e.Id, e.Value with { Module = null })))
         };
@@ -81,11 +82,12 @@ public sealed class DecoyStateTests
         {
             var legacy = GoldenBattleTests.Run(noModule, 1, row.Tactic, false);
             var json = JsonNode.Parse(GoldenBattleTests.Signature(legacy))!;
-            foreach (string added in new[] { "DecoysLaunched", "ShotsDecoyed", "HitsDecoyed", "DecoyChanceBefore", "DecoyChanceAfter" })
+            foreach (string added in new[] { "DecoysLaunched", "ShotsDecoyed", "HitsDecoyed", "DecoyChanceBefore", "DecoyChanceAfter", "Absorbed", "DustSkips" })
                 json.AsObject().Remove(added);
             foreach (var unit in json["Units"]!.AsArray())
             {
                 unit!.AsObject().Remove("DecoyCharges");
+                unit.AsObject().Remove("InDust");
                 if (unit["Build"] is { } build)
                 {
                     build.AsObject().Remove("DecoyId");

@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Motion.TacticalBattle;
 
 namespace DeepSpaceSaga.Engine.TacticalBattle;
 
@@ -18,7 +19,7 @@ internal sealed partial class TacticalBattle
         Turn++;
         if (Turn > 1)
             foreach (var drone in Drones.Where(d => d.IsActive))
-                drone.Consciousness = (int)Math.Min(Catalog.Rules.Consciousness.Max,
+                drone.Consciousness = (int)PyMath.Min(Catalog.Rules.Consciousness.Max,
                     (long)drone.Consciousness + Catalog.Rules.Consciousness.RecoveryPerTurn);
         LastMovement = [];
         LastSalvo = null;

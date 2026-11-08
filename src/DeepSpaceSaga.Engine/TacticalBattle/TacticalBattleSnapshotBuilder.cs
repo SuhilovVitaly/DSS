@@ -57,7 +57,7 @@ internal static class TacticalBattleSnapshotBuilder
     public static ImmutableArray<TacticalIncomingShotSnapshot> Incoming(TacticalBattle battle, string playerSide)
     {
         var rows = ImmutableArray.CreateBuilder<TacticalIncomingShotSnapshot>();
-        var first = new HashSet<string>(StringComparer.Ordinal);
+        var first = new List<string>();
         foreach (var d in battle.CaptureFireOrder().Where(d => d.Side == battle.EnemySide(playerSide)))
         {
             var candidate = TacticalBattleSalvo.DefaultTarget(d, TacticalBattleSalvo.Candidates(battle, d));
@@ -69,16 +69,17 @@ internal static class TacticalBattleSnapshotBuilder
                 {
                     Absorption = candidate.Absorption,
                     ChanceIfEvading = adjusted,
-                    ChanceIfDecoy = candidate.Target is TacticalDrone { Decoy: { } decoy } && first.Add(candidate.Target.Id)
+                    ChanceIfDecoy = candidate.Target is TacticalDrone { Decoy: { } decoy } && !first.Contains(candidate.Target.Id, StringComparer.Ordinal)
                         ? TacticalHitChance.WithDecoy(candidate.Terms.Chance, decoy.MissFactor, battle.Catalog.Rules.Hit.MinChance / 100.0) * (1 - candidate.Absorption) : null
                 });
+                if (candidate.Target is TacticalDrone { Decoy: not null }) first.Add(candidate.Target.Id);
             }
         }
         return rows.ToImmutable();
     }
 
     private static double CandidatesIfEvading(TacticalBattle battle, TacticalDrone shooter, string targetId) =>
-        TacticalBattleSalvo.Candidates(battle, shooter, new HashSet<string>(StringComparer.Ordinal) { targetId })
+        TacticalBattleSalvo.Candidates(battle, shooter, new[] { targetId })
             .Single(c => c.Target.Id == targetId).Chance;
 
     public static ImmutableArray<TacticalLossCount> Losses(TacticalBattle battle) => TacticalBattleConstants.SideOrder

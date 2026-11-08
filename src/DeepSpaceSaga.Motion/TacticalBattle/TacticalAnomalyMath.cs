@@ -38,12 +38,12 @@ public static class TacticalAnomalyMath
                 var (sin, cos) = Math.SinCos(clump.Rotation);
                 double dx = x - clump.X, dy = y - clump.Y;
                 double u = cos * dx + sin * dy, v = -sin * dx + cos * dy;
-                double nx = u / clump.SigmaX, ny = v / clump.SigmaY;
+                double nx = u / (double)clump.SigmaX, ny = v / (double)clump.SigmaY;
                 double value = clump.Amplitude * Math.Exp(-.5 * (nx * nx + ny * ny));
                 total += value;
                 if (!gradient || value == 0) continue;
-                gx -= value * (nx * cos / clump.SigmaX - ny * sin / clump.SigmaY);
-                gy -= value * (nx * sin / clump.SigmaX + ny * cos / clump.SigmaY);
+                gx -= value * (nx * cos / (double)clump.SigmaX - ny * sin / (double)clump.SigmaY);
+                gy -= value * (nx * sin / (double)clump.SigmaX + ny * cos / (double)clump.SigmaY);
             }
         }
         return total;
@@ -86,7 +86,7 @@ public static class TacticalAnomalyMath
     private static bool InsideSample(ImmutableArray<TacticalAnomaly> anomalies, TacticalPose a, TacticalPose b,
         double background, double zoneEdge, int samples, int index)
     {
-        double t = (index + .5) / samples;
+        double t = (index + .5) / (double)samples;
         return Inside(anomalies, TacticalAnomalyKind.Heat, a.X + (b.X - a.X) * t,
             a.Y + (b.Y - a.Y) * t, background, zoneEdge);
     }

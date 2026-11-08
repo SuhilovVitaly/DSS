@@ -35,7 +35,7 @@ internal sealed record TacticalSalvoStep(int Index, string ShooterId, string? Ta
 
 internal static class TacticalBattleSalvo
 {
-    public static ImmutableArray<TacticalCandidate> Candidates(TacticalBattle battle, TacticalDrone shooter, IReadOnlySet<string>? evading = null, bool ignoreDust = false, TacticalPose? pose = null)
+    public static ImmutableArray<TacticalCandidate> Candidates(TacticalBattle battle, TacticalDrone shooter, IReadOnlyCollection<string>? evading = null, bool ignoreDust = false, TacticalPose? pose = null)
     {
         if (!shooter.IsActive || shooter.Jammed || (!ignoreDust && InDust(battle, shooter))) return [];
         var origin = pose ?? shooter.Pose;
@@ -177,7 +177,7 @@ internal static class TacticalBattleSalvo
                 bool kill = hit && rear && battle.Random.Random() < shooter.Weapon.RearKillChance;
                 var split = !hit ? (Hull: 0, Armor: 0) : rear ? (Hull: damage, Armor: 0)
                     : Split(damage, shooter.Weapon.Piercing, target.Armor);
-                int actualHull = kill ? target.Hull : Math.Min(split.Hull, target.Hull);
+                int actualHull = kill ? target.Hull : (int)PyMath.Min(split.Hull, target.Hull);
                 target.Hull -= actualHull;
                 target.Armor -= split.Armor;
                 bool lethal = hit && target.Hull <= 0;
