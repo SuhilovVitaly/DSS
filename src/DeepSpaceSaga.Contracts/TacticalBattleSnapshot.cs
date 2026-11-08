@@ -11,13 +11,13 @@ public enum TacticalBattleLogKind
 {
     Started = 0, RoleChanged = 1, FighterBreak = 2, NoTargets = 3, ShotMissed = 4, ShotHit = 5,
     RearKill = 6, Disabled = 7, Destroyed = 8, WeaponJammed = 9, EngineDamaged = 10, Outcome = 11, Exited = 12,
-    DamageApplied = 13, FireSkipped = 14, DecoyLaunched = 15
+    DamageApplied = 13, FireSkipped = 14, DecoyLaunched = 15, ShotAbsorbed = 16
 }
 
 public enum TacticalFireSkipReason
 {
     None = 0, NoTarget = 1, Withheld = 2, ShooterDestroyed = 3, ShooterDisabled = 4,
-    WeaponJammed = 5, TargetUnavailable = 6, BattleEnded = 7, Evading = 8
+    WeaponJammed = 5, TargetUnavailable = 6, BattleEnded = 7, Evading = 8, InDust = 9
 }
 public sealed record TacticalFireQueueEntry(int Index, string ShooterId, int Initiative);
 public sealed record TacticalFireStepSnapshot(int Index, string ShooterId, string? TargetId, TacticalFireSkipReason SkipReason,
@@ -42,16 +42,21 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
     string? RoleId, bool Jammed, ImmutableArray<TacticalEngineSnapshot> Engines, TacticalMovementLimits? Limits,
     double PreviousTurn, TacticalBuildSnapshot? Build, int Accuracy, int Maneuver, string? RoleName = null)
 {
+    public bool InDust { get; init; }
     public int? Initiative { get; init; }
     public int? Consciousness { get; init; }
     public int? DecoyCharges { get; init; }
 }
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);
-public sealed record TacticalTargetCandidateSnapshot(string TargetId, double Distance, double Angle, bool Rear, double RearKillChance, double Chance);
+public sealed record TacticalTargetCandidateSnapshot(string TargetId, double Distance, double Angle, bool Rear, double RearKillChance, double Chance)
+{
+    public double Absorption { get; init; }
+}
 public sealed record TacticalTargetGroupSnapshot(string DroneId, ImmutableArray<TacticalTargetCandidateSnapshot> List, string? DefaultTargetId);
 public sealed record TacticalIncomingShotSnapshot(string ShooterId, string TargetId, double Chance, double Distance, double Angle, bool Rear, double RearKillChance)
 {
+    public double Absorption { get; init; }
     public double? ChanceIfEvading { get; init; }
     public double? ChanceIfDecoy { get; init; }
 }
@@ -60,6 +65,8 @@ public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string Tar
     TacticalPoseSnapshot To, double Chance, bool Hit, int Damage, bool Rear, bool Kill, bool Killed)
 {
     /// <summary>This impact transitions the target to destroyed.</summary>
+    public double Absorption { get; init; }
+    public bool Absorbed { get; init; }
     public bool LethalImpact { get; init; }
     public bool TargetEvading { get; init; }
     public bool Decoyed { get; init; }

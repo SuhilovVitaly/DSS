@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0009-anomaly-resolution
 ticket: EP-0020-US-0009-TK-0001-anomaly-contracts
 title: Контракты поглощения и пыли
-stage: draft
+stage: done
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0020-US-0008-TK-0003-anomaly-generator]
@@ -84,4 +84,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Завершено. Совместимые init-поля Absorption/Absorbed/InDust; ShotAbsorbed=16, InDust skip=9/rejection=25 добавлены в конец. Старые IDs и нагрузки проверены. Contracts30/30PASS, build/scopedformat/diffcheckPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us9-tk1/contracts/tests.trx`; format logs рядом. US9-AC3/5: контракты готовы, production-эффекты в следующих тикетах. Самопроверка совместимости пройдена; Save20 без изменений.
