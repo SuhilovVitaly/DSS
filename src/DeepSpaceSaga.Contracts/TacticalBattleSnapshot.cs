@@ -83,7 +83,10 @@ public sealed record TacticalBattleTotalsSnapshot(long Shots, long Hits, long Re
 public sealed record TacticalOutcomeSnapshot(TacticalBattleOutcomeCode Kind, ImmutableArray<TacticalOutcomeReasonSnapshot> Reasons,
     int Turns, ImmutableArray<TacticalLossCount> Losses, TacticalBattleTotalsSnapshot Statistics, long RandomCalls);
 /// <summary>Chance is the original zero-to-one probability; Rear describes this actual shot.</summary>
-public sealed record TacticalLogShot(double Chance, bool Rear);
+public sealed record TacticalLogShot(double Chance, bool Rear)
+{
+    public bool Decoyed { get; init; }
+}
 public sealed record TacticalLogDamage(int Hull, int Armor, int Hits, int HullRemaining);
 public sealed record TacticalLogUnit(TacticalUnitKind Kind, int Hull, int MaxHull, string? EngineName = null, double? EngineFactor = null);
 public sealed record TacticalBattleLogEvent(ulong Sequence, int Turn, TacticalBattlePhase Phase, TacticalBattleLogKind Kind,

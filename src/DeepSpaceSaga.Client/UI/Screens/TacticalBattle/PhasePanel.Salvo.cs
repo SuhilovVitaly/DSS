@@ -49,7 +49,13 @@ internal sealed partial class PhasePanel
                     if (active) Round(c, new(1046, y - 11, 1268, y + 4), YellowDark, Yellow);
                     string line = flight is null ? U("NoTargetRow", Name(q.ShooterId)) : Name(q.ShooterId) + " → " + Name(flight.Shot.TargetId);
                     T(c, (i + 1) + ".", 1050, y, 11, color, active); T(c, line, 1070, y, 11, color, active);
-                    if (flight is not null) T(c, Pct(flight.Shot.Chance), 1264, y, 11, color, active, SKTextAlign.Right);
+                    if (flight is not null)
+                    {
+                        bool ownTarget = _frame.Battle.Units.First(u => u.Id == flight.Shot.TargetId).Side == _frame.Battle.PlayerSide;
+                        bool decoyed = flight.Shot.Decoyed && ownTarget;
+                        double chance = flight.Shot.Decoyed && !ownTarget ? flight.Shot.ChanceWithoutDecoy ?? flight.Shot.Chance : flight.Shot.Chance;
+                        T(c, Pct(chance), 1264, y, 11, decoyed ? Green : color, active || decoyed, SKTextAlign.Right);
+                    }
                 }
             }
             finally { c.Restore(); }
@@ -66,6 +72,12 @@ internal sealed partial class PhasePanel
         {
             string result = shot is null ? M("EvadeNoFire") : U(shot.Hit ? "Hit" : "Miss");
             T(c, result, 1050, 140, FitSize(result, 22, 214, true), shot is null ? Purple : Yellow, true);
+            if (shot is { Decoyed: true })
+            {
+                T(c, M("DecoyOfTarget"), 1264, 128, 10.5f, Green, align: SKTextAlign.Right);
+                T(c, Pct(shot.ChanceWithoutDecoy ?? shot.Chance) + " → " + Pct(shot.Chance),
+                    1264, 144, 12, Green, true, SKTextAlign.Right);
+            }
             T(c, U("DamageDealt", shot?.Hit == true ? PilotCardModel.Dealt(_frame.Battle, shot.ShooterId, shot.Turn) : 0), 1050, 158, 12, Text); Line(c, 1050, 1264, 167);
             var unit = _frame.Battle.Units.FirstOrDefault(u => u.Id == shot?.ShooterId);
             var before = _frame.Battle.BeforeSalvoUnits.FirstOrDefault(u => u.Id == unit?.Id);

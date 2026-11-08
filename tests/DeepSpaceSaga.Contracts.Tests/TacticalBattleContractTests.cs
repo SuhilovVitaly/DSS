@@ -193,6 +193,8 @@ public sealed class TacticalBattleContractTests
         var legacy = JsonSerializer.Deserialize<TacticalBattleLogEvent>(oldEvent)!;
         Assert.Equal(TacticalBattleLogKind.EngineDamaged, legacy.Kind);
         Assert.Null(legacy.Shot);
+        Assert.False(JsonSerializer.Deserialize<TacticalLogShot>("""{"Chance":0.47,"Rear":false}""")!.Decoyed);
+        Assert.True(RoundTrip(new TacticalLogShot(.205, false) { Decoyed = true }).Decoyed);
         Assert.Null(legacy.Damage);
         Assert.Null(legacy.Unit);
         double chance = Math.BitIncrement(0.6123456789);

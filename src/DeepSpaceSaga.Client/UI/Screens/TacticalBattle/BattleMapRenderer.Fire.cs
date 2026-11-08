@@ -6,6 +6,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
+    internal static IEnumerable<TacticalShotSnapshot> DecoyMisses(TacticalBattleFrame frame) =>
+        frame.Salvo is { InFlight: false } salvo ? salvo.Flights.Where(f => f.Shot.Decoyed && !f.Shot.Hit).Select(f => f.Shot) : [];
     static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied)
     {
         if (f.Movement is not null) return;
@@ -53,6 +55,30 @@ internal static partial class TacticalBattleMapRenderer
                 foreach (var delta in new SKPoint[] { new(0, 32), new(half + 16, 10), new(0, -20), new(-half - 16, 10) })
                 { q = p + delta; var bounds = new SKRect(q.X - half - 10, q.Y - 27, q.X + half + 10, q.Y + 12); if (!markers.Any(bounds.Contains)) break; }
                 var rect = Callout(c, q.X, q.Y, text, Yellow, Yellow); occupied.Add(rect); if (Recording is { } l) l.Rects["callout:" + damage.Unit.Id] = rect;
+            }
+            var allMarkers = f.Battle.Units.Select(u => MarkerPoint(f.View, u)).ToArray();
+            var decoys = f.Battle.Units.Where(u => HasDecoy(f, u)).Select(u => DecoyPoint(f.View.Project(u.Pose), u.Pose.Course)).ToArray();
+            int index = 0;
+            foreach (var shot in DecoyMisses(f))
+            {
+                var target = f.Battle.Units.First(u => u.Id == shot.TargetId);
+                var shooter = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId);
+                var p = f.View.Project(target.Pose);
+                string text = M("DecoyMiss", shooter is null ? shot.ShooterId : PilotCardModel.Name(shooter));
+                float half = (Measure(text, 12) + 14) / 2;
+                SKPoint q = p + new SKPoint(0, -38);
+                foreach (var delta in new SKPoint[] { new(0, -38), new(0, 44), new(half + 20, 10), new(-half - 20, 10),
+                    new(.6f * half, -38), new(.6f * half, -60), new(0, -60), new(0, 64) })
+                {
+                    var candidate = p + delta;
+                    var rect = new SKRect(candidate.X - half, candidate.Y - 17, candidate.X + half, candidate.Y + 2);
+                    var expanded = rect; expanded.Inflate(10, 10);
+                    if (occupied.Any(r => r.IntersectsWith(rect)) || allMarkers.Any(expanded.Contains) || decoys.Any(expanded.Contains)) continue;
+                    q = candidate; break;
+                }
+                var bounds = Callout(c, q.X, q.Y, text, Green, Green);
+                occupied.Add(bounds);
+                if (Recording is { } layout) layout.Rects["decoy-callout:" + index++] = bounds;
             }
         }
     }

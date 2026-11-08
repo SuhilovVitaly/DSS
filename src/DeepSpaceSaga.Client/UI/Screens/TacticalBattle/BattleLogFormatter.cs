@@ -41,6 +41,7 @@ public static class BattleLogFormatter
             TacticalBattleLogKind.Exited => L("Log.Exited"),
             _ => L("Log.Unknown")
         };
+        if (entry.Shot?.Decoyed == true) body += " · " + L("DecoyChip");
         string phase = L(entry.Phase == TacticalBattlePhase.Fire ? "Log.FirePhase" : "Phase." + entry.Phase);
         return F("Log.Line", BattleFormat.Number(entry.Turn), phase, body);
     }

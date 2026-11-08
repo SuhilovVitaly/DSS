@@ -8,7 +8,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
 [Collection("InterfaceLog")]
-public sealed class ResultsPhaseTests
+public sealed partial class ResultsPhaseTests
 {
     [Fact]
     public async Task Enemy_evasion_is_revealed_only_after_salvo()

@@ -24,6 +24,7 @@ public sealed class JournalEventsTests
         Assert.Null(launch.FireStepIndex);
         Assert.All(result.NewEvents.Where(e => e.FireStepIndex is not null), e => Assert.True(e.Sequence > launch.Sequence));
         Assert.Contains(launch, result.State!.Log);
+        Assert.Contains(result.NewEvents, e => e.Shot?.Decoyed == true);
     }
 
     [Fact]
