@@ -660,5 +660,11 @@
   "TacticalBattle.Ui.HoverEnemyStats": "{0} · {1}–{2} · дальн. {3} · иниц. {4}",
   "TacticalBattle.Ui.PathEnd": "Конец пути",
   "TacticalBattle.Ui.ArmorLoss": "−{0} брони",
-  "TacticalBattle.Ui.ExitQuestion": "Выйти из боя?"
+  "TacticalBattle.Ui.ExitQuestion": "Выйти из боя?",
+  "TacticalBattle.Ui.ShotOne": "выстрел",
+  "TacticalBattle.Ui.ShotFew": "выстрела",
+  "TacticalBattle.Ui.ShotMany": "выстрелов",
+  "TacticalBattle.Ui.HitOne": "попадание",
+  "TacticalBattle.Ui.HitFew": "попадания",
+  "TacticalBattle.Ui.HitMany": "попаданий"
 }

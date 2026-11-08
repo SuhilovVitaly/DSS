@@ -660,5 +660,11 @@
   "TacticalBattle.Ui.HoverEnemyStats": "{0} · {1}–{2} · range {3} · init. {4}",
   "TacticalBattle.Ui.PathEnd": "Path end",
   "TacticalBattle.Ui.ArmorLoss": "−{0} armor",
-  "TacticalBattle.Ui.ExitQuestion": "Exit battle?"
+  "TacticalBattle.Ui.ExitQuestion": "Exit battle?",
+  "TacticalBattle.Ui.ShotOne": "shot",
+  "TacticalBattle.Ui.ShotFew": "shots",
+  "TacticalBattle.Ui.ShotMany": "shots",
+  "TacticalBattle.Ui.HitOne": "hit",
+  "TacticalBattle.Ui.HitFew": "hits",
+  "TacticalBattle.Ui.HitMany": "hits"
 }
