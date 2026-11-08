@@ -1,6 +1,6 @@
 ---
 epic: EP-0019-tactical-battle-ui-redesign
-stage: draft
+stage: blocked
 created: 2026-11-08T09:31:05Z
 ---
 
@@ -55,3 +55,7 @@ created: 2026-11-08T09:31:05Z
 - **US-0007:** документация и ExecutionStatus.
 
 Блокирующие решения пользователя: Q-01–Q-04 в [Documentation.md](Documentation.md#открытые-вопросы-нужно-решение-до-утверждения).
+
+## Фактический прогресс 2026-11-08
+
+Завершены и опубликованы US-0001 TK-0001/TK-0002 (2/21); US-0001 TK-0003 BLOCKED — отсутствует исходный Assets/battle-data-seed1.txt. Остальные 18 карточек не начаты по dependency order. Завершающая документационная история не выполнена. [Проверки и SHA](ExecutionStatus.md).
