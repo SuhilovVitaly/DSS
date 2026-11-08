@@ -39,7 +39,7 @@ internal sealed class TacticalBattleFireOrders
             if (unit.Jammed) group = group with { List = [], DefaultTargetId = null };
             _rows.Add(new(unit, group, group.DefaultTargetId));
         }
-        Selected = _rows.FirstOrDefault(r => r.Drone.Id == preferred)?.Drone.Id ?? _rows.FirstOrDefault()?.Drone.Id;
+        Selected = _rows.FirstOrDefault(r => r.TargetId is not null)?.Drone.Id ?? _rows.FirstOrDefault()?.Drone.Id;
     }
 
     public bool Select(string id)
@@ -84,7 +84,7 @@ internal sealed class TacticalBattleFireOrders
     {
         if (_state is not { } state || Capture().Selected is not { } selected) return false;
         string? hit = Hit(selected.Group.List.Select(c => c.TargetId), 14 * uiScale);
-        if (hit is not null) return Choose(hit, toggle: true);
+        if (hit is not null) return Choose(hit);
         hit = Hit(_rows.Select(r => r.Drone.Id), 12 * uiScale);
         return hit is not null && Select(hit);
 
