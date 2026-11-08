@@ -12,6 +12,11 @@ internal sealed class TacticalWeaponStatistics(string weaponId)
 
 internal sealed class TacticalBattleStatistics
 {
+    public long DecoysLaunched { get; set; }
+    public long ShotsDecoyed { get; set; }
+    public long HitsDecoyed { get; set; }
+    public double DecoyChanceBefore { get; set; }
+    public double DecoyChanceAfter { get; set; }
     public long Evasions { get; set; }
     public long ShotsAtEvading { get; set; }
     public long HitsOnEvading { get; set; }

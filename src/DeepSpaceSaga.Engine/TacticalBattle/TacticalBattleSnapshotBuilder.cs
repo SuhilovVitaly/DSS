@@ -12,7 +12,7 @@ internal static class TacticalBattleSnapshotBuilder
 
     public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
-    { LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading };
+    { LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy };
 
     public static ImmutableArray<TacticalUnitSnapshot> Units(TacticalBattle battle)
     {
@@ -52,7 +52,8 @@ internal static class TacticalBattleSnapshotBuilder
     public static ImmutableArray<TacticalIncomingShotSnapshot> Incoming(TacticalBattle battle, string playerSide)
     {
         var rows = ImmutableArray.CreateBuilder<TacticalIncomingShotSnapshot>();
-        foreach (var d in battle.ActiveDrones(battle.EnemySide(playerSide)))
+        var first = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var d in battle.CaptureFireOrder().Where(d => d.Side == battle.EnemySide(playerSide)))
         {
             var candidate = TacticalBattleSalvo.DefaultTarget(d, TacticalBattleSalvo.Candidates(battle, d));
             if (candidate is not null)
@@ -60,7 +61,11 @@ internal static class TacticalBattleSnapshotBuilder
                 var adjusted = CandidatesIfEvading(battle, d, candidate.Target.Id);
                 rows.Add(new(d.Id, candidate.Target.Id, candidate.Terms.Chance, candidate.Distance,
                     candidate.Angle, candidate.Terms.IsRear, d.Weapon.RearKillChance)
-                { ChanceIfEvading = adjusted });
+                {
+                    ChanceIfEvading = adjusted,
+                    ChanceIfDecoy = candidate.Target is TacticalDrone { Decoy: { } decoy } && first.Add(candidate.Target.Id)
+                        ? TacticalHitChance.WithDecoy(candidate.Terms.Chance, decoy.MissFactor, battle.Catalog.Rules.Hit.MinChance / 100.0) : null
+                });
             }
         }
         return rows.ToImmutable();
@@ -75,7 +80,10 @@ internal static class TacticalBattleSnapshotBuilder
     public static TacticalForecastRules Rules(TacticalRules r) => new(
         new(r.Hit.Base, r.Hit.MinChance, r.Hit.MaxChance, r.Hit.RangeBonus, r.Hit.AnglePenalty, r.Hit.RearBonus, r.Hit.RearBonusArcDeg),
         r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps)
-    { Evasion = new(r.Evasion.HitPenalty, r.Evasion.Cost, r.Evasion.MinConsciousness, r.Consciousness.RecoveryPerTurn, r.Consciousness.Max) };
+    {
+        Evasion = new(r.Evasion.HitPenalty, r.Evasion.Cost, r.Evasion.MinConsciousness, r.Consciousness.RecoveryPerTurn, r.Consciousness.Max),
+        Decoy = new(r.Decoy.AiThreatChance)
+    };
     public static TacticalPoseSnapshot Pose(TacticalPose pose) => new(pose.X, pose.Y, pose.Course);
     public static TacticalOutcomeSnapshot? Outcome(TacticalBattleResult? result)
     {

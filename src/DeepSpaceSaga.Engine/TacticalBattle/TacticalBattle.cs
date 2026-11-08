@@ -34,10 +34,11 @@ internal sealed partial class TacticalBattle
         CheckVictory();
     }
 
-    public void Firing(Func<TacticalDrone, IReadOnlyList<TacticalCandidate>, TacticalFirePlan>? targetsFor = null)
+    public void Firing(Func<TacticalDrone, IReadOnlyList<TacticalCandidate>, TacticalFirePlan>? targetsFor = null,
+        Func<TacticalDrone, bool>? aiDecoysFor = null)
     {
         Require(TacticalTurnPhase.Firing);
-        LastSalvo = TacticalBattleSalvo.Fire(this, targetsFor);
+        LastSalvo = TacticalBattleSalvo.Fire(this, targetsFor, aiDecoysFor);
         if (Result is null) Phase = TacticalTurnPhase.Planning;
         CheckVictory();
     }
