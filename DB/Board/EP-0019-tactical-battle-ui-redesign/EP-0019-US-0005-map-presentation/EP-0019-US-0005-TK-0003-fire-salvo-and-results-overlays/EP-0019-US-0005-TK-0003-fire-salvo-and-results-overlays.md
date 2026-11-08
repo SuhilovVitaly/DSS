@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0005-map-presentation
 ticket: EP-0019-US-0005-TK-0003-fire-salvo-and-results-overlays
 title: Слои стрельбы, залпа и результатов
-stage: draft
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0005-TK-0002-movement-overlays]
@@ -87,3 +87,9 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Draw selected fire plans projectile flight and admitted damage callouts
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us5-tk3. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
