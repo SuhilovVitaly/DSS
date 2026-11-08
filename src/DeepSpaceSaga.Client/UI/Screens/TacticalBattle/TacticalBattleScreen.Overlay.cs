@@ -30,9 +30,22 @@ public sealed partial class TacticalBattleScreen
     {
         if (button == MouseButton.Left && !HasSalvoPresentation && _pilotColumn.Hit(p) is { } id)
         { if (Flow.State?.Phase == TacticalBattlePhase.Move) _orders.Select(id); else _fireOrders.Select(id); }
+        if (button != MouseButton.Left) return ScreenEvent.None;
+        if (_phasePanel.BeginDrag(p, _orders)) return ScreenEvent.None;
+        switch (_phasePanel.HitButton(p))
+        {
+            case "straight": _orders.Straight(); break;
+            case "ai": _orders.Suggest(); break;
+            case "hold": _fireOrders.Choose(null); break;
+            case "primary":
+                if (HasSalvoPresentation) { AdvanceSalvo(); return ScreenEvent.None; }
+                return Flow.State?.Phase == TacticalBattlePhase.Over ? ScreenEvent.CloseTacticalBattle : ActionEvent;
+            case "replay": ReplaySalvo(); break;
+            case "new": return CanStartNewBattle ? ScreenEvent.NewTacticalBattle : ScreenEvent.None;
+        }
         return ScreenEvent.None;
     }
-    private bool OverlayDrag(SKPoint p) => false;
-    private void EndOverlayDrag() { }
+    private bool OverlayDrag(SKPoint p) => _phasePanel.Drag(p, _orders);
+    private void EndOverlayDrag() => _phasePanel.EndDrag();
     private void UpdateHover(SKPoint p) { }
 }
