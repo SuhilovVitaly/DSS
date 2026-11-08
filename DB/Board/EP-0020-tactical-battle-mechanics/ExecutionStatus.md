@@ -49,6 +49,7 @@
 | EP-0020-US-0012-TK-0002 | `083c4e4ca4e09abbaa127332ab903b45dad8077d` | origin verified |
 | EP-0020-US-0012-TK-0003 | `33c760488ecb62dc8fef4811ba1fd82c792f8981` | origin verified |
 | EP-0020-US-0013-TK-0001 | `793066946553c986f5a9c99ebdb2fccb2ee8ecf0` | origin verified |
+| EP-0020-US-0013-TK-0002 | `04fd48078894afe127cc5a7b386ddfe583d3b7e9` | origin verified |
 
 ## Проверки и общий review
 
