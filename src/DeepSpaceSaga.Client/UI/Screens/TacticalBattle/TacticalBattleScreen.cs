@@ -43,7 +43,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private SKRect _panel;
     internal string? HoverUnitId { get; set; }
     internal BattleLayout Layout { get; private set; } = new();
-    internal SKRect NewBattleBounds => _newBattle.Bounds;
+    internal SKRect NewBattleBounds => Raw(_phasePanel.ButtonBounds("new"));
     internal (SKRect Forecast, SKRect Sectors, SKRect AllFire) OverlayControls =>
         (_enemyForecast.Bounds, _enemySectors.Bounds, _allFireSectors.Bounds);
     internal TacticalBattleView View => _camera.View;
@@ -52,7 +52,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     internal TacticalBattleMovePanel MovePanel => _movePanel;
     internal TacticalBattleFirePanel FirePanel => _firePanel;
     internal bool HasSalvoPresentation => Volatile.Read(ref _presentation)?.Results is not null;
-    internal SKRect ReplaySalvoBounds => _replaySalvo.Bounds;
+    internal SKRect ReplaySalvoBounds => Raw(_phasePanel.ButtonBounds("replay"));
     internal TabStrip PanelTabs => _tabs;
     internal TacticalBattleSidesTab SidesTab => _sidesTab;
     internal TacticalBattleLogTab LogTab => _logTab;

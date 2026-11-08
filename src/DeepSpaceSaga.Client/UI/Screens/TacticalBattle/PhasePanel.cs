@@ -13,6 +13,7 @@ internal sealed partial class PhasePanel
     internal SKRect Action { get; private set; }
     internal string Phase => _frame.Salvo is { InFlight: true } ? "Salvo" : _frame.Salvo is not null ? "Results" : _frame.Battle.Phase == TacticalBattlePhase.Over ? "Outcome" : _frame.Battle.Phase == TacticalBattlePhase.Fire ? "Fire" : "Move";
     private SKRect R(float x0, float y0, float x1, float y1) => new(x0 + _offset, y0, x1 + _offset, y1);
+    internal SKRect ButtonBounds(string key) => _buttons.GetValueOrDefault(key);
     internal string? HitButton(SKPoint point) => _frame.Pending ? null : _buttons.FirstOrDefault(b => b.Value.Contains(point)).Key;
     internal void Draw(SKCanvas c, TacticalBattleFrame f, BattleLayout layout)
     {

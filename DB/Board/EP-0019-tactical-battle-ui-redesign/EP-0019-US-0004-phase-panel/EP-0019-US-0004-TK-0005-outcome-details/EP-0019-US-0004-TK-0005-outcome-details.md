@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0004-phase-panel
 ticket: EP-0019-US-0004-TK-0005-outcome-details
 title: Итог боя
-stage: draft
+stage: done
 layer: client
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0004-TK-0004-salvo-and-results-details]
@@ -86,3 +86,9 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Show outcome reasons totals and preserve new battle and world return routes
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us4-tk5. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
