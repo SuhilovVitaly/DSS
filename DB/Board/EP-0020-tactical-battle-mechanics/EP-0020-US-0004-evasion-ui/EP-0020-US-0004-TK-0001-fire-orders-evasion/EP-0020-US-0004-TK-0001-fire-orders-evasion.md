@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0004-evasion-ui
 ticket: EP-0020-US-0004-TK-0001-fire-orders-evasion
 title: Модель приказов: уклонение, клавиша E, сознание на карточке
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0002-TK-0004-session-evasion, EP-0019-tactical-battle-ui-redesign]
@@ -91,4 +91,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: rows содержат Evade/CanEvade, E без repeat/modifiers переключает выбранного дрона только в Fire, цель/hold снимают флаг; запрос передаёт Evade. Сознание и max/min берутся из snapshot/rules, ниже min красное значение при зелёной полосе. Значок уклонения фиолетовый, строки RU/EN из UiSpec §6. 28/28 FirePlanning/PilotCardModel/KeyboardRouting PASS; Client build и scoped format/diff-check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us4-tk1/final/tests.trx. Исходное Outcome ожидание Веры73/−102/disabled заменено на измеренное267/−46/встрою из-за M1 Engine, по A-12; остальные literal-сцены сохранены. Self-review по pending/phase/выбору/ресурсу и отсутствию client-side вычисления шанса выполнен. US4-AC1 и модельная часть AC2 покрыты; панель/кольца далее. Baseline MSB9008 относится к отсутствующему архивному ModApi.
+
+## Актуальный scope до реализации
+
+Добавлены PilotCardColumn.cs (отдельный цвет значения сознания и вид значка уклонения), BattleDesign.cs (PurpleDark) и обе Locale JSON: ключи UiSpec §6 вводятся сразу, чтобы первый UI commit не показывал fallback-ключи. Model test старого Outcome seed1 актуализируется по измеренному новому результату M1, как разрешает A-12; полная приёмка снимков остаётся в TK-0004.

@@ -4,12 +4,16 @@ using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
-internal sealed record PilotStat(string Kind, string Label, string Value, SKColor Tone, double Fill);
+internal sealed record PilotStat(string Kind, string Label, string Value, SKColor Tone, double Fill)
+{
+    public SKColor? ValueTone { get; init; }
+}
 internal sealed record PilotSegment(string Text, SKColor Tone, bool Bold = false);
 internal sealed record PilotCard(string UnitId, string Name, string Weapon, string PilotId, bool Selected,
     IReadOnlyList<PilotStat> Stats, string Chip, bool ChipAccent, IReadOnlyList<PilotSegment> Segments)
 {
     public string PhaseText => string.Concat(Segments.Select(s => s.Text));
+    public bool Evading { get; init; }
 }
 
 internal static class PilotCardModel
@@ -89,13 +93,17 @@ internal static class PilotCardModel
             {
                 var row = f.FirePlan?.Rows.FirstOrDefault(r => r.Drone.Id == u.Id);
                 bool has = row?.Target is not null;
-                chip = has ? row!.TargetId + " " + Pct(row.Target!.Chance) : U("NoTargets"); accent = has;
+                chip = row?.Evade == true ? BattleFormat.Localize("EvadeChip")
+                    : has ? row!.TargetId + " " + Pct(row.Target!.Chance) : U("NoTargets"); accent = has || row?.Evade == true;
                 Template("FireStats", (has ? "1" : "0", has ? Yellow : Muted), (has ? $"{u.Build?.DamageMin}–{u.Build?.DamageMax}" : "—", has ? Orange : Muted), (u.Initiative?.ToString() ?? "—", Text));
             }
             cards.Add(new(u.Id, Name(u), u.Build?.WeaponName ?? "", pilot, selected == u.Id,
                 [new("armor", U("Armor"), $"{u.Armor}/{u.MaxArmor}", Purple, u.MaxArmor > 0 ? u.Armor / (double)u.MaxArmor : 0),
                  new("hull", U("Hull"), $"{u.Hull}/{u.MaxHull}", Cyan, u.MaxHull > 0 ? u.Hull / (double)u.MaxHull : 0),
-                 new("mind", U("Mind"), "100", Green, 1)], chip, accent, segments));
+                 new("mind", U("Mind"), (u.Consciousness ?? 100).ToString(), Green,
+                     (u.Consciousness ?? 100) / (double)Math.Max(1, f.Battle.Rules.Evasion?.MaxConsciousness ?? 100))
+                 { ValueTone = u.Consciousness < (f.Battle.Rules.Evasion?.MinConsciousness ?? 0) ? Red : null }], chip, accent, segments)
+            { Evading = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true });
         }
         return cards;
     }

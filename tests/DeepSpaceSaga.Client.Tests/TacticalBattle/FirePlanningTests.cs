@@ -10,6 +10,58 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class FirePlanningTests
 {
     [Fact]
+    public async Task Evade_toggle_reaches_request_and_choosing_target_clears_it()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var orders = new TacticalBattleFireOrders();
+        orders.Observe(screen.Flow.State!, null);
+        var row = orders.Capture().Selected!;
+        Assert.NotNull(row.TargetId);
+        Assert.True(orders.ToggleEvade(row.Drone.Id));
+        var target = orders.BuildTargets().Single(t => t.DroneId == row.Drone.Id);
+        Assert.True(target.Evade);
+        Assert.Null(target.TargetId);
+        Assert.True(orders.Choose(row.TargetId));
+        Assert.False(orders.BuildTargets().Single(t => t.DroneId == row.Drone.Id).Evade);
+        Assert.Equal(row.TargetId, orders.Capture().Selected!.TargetId);
+        orders.ToggleEvade(row.Drone.Id);
+        orders.Choose(null);
+        Assert.False(orders.Capture().Selected!.Evade);
+    }
+
+    [Fact]
+    public async Task Evade_is_unavailable_below_min_consciousness()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var state = screen.Flow.State!;
+        state = state with { Units = [.. state.Units.Select(u => u with { Consciousness = 9 })] };
+        var orders = new TacticalBattleFireOrders();
+        orders.Observe(state, null);
+        var row = orders.Capture().Selected!;
+        Assert.False(row.CanEvade);
+        Assert.False(orders.ToggleEvade(row.Drone.Id));
+        Assert.All(orders.BuildTargets(), t => Assert.False(t.Evade));
+    }
+
+    [Fact]
+    public async Task Fire_phase_without_targets_allows_evade_or_hold()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var state = screen.Flow.State! with { Targets = [] };
+        var orders = new TacticalBattleFireOrders();
+        orders.Observe(state, null);
+        Assert.NotEmpty(orders.Capture().Rows);
+        Assert.All(orders.Capture().Rows, r => Assert.Empty(r.Group.List));
+        Assert.True(orders.ToggleEvade(orders.Capture().Selected!.Drone.Id));
+        Assert.Contains(orders.BuildTargets(), t => t.Evade && t.TargetId is null);
+        orders.ClearAll();
+        Assert.All(orders.BuildTargets(), t => { Assert.False(t.Evade); Assert.Null(t.TargetId); });
+    }
+
+    [Fact]
     public async Task FirePlanningDisplaysEngineQueueAcrossBothSides()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

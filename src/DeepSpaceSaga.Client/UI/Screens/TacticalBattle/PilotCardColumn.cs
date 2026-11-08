@@ -25,15 +25,16 @@ internal sealed class PilotCardColumn
             {
                 float w = Measure(card.Chip, 9, card.ChipAccent) + 9;
                 var chip = new SKRect(r.Right - 6 - w, r.Top + 6, r.Right - 6, r.Top + 19);
-                Round(c, chip, card.ChipAccent ? YellowDark : Box, card.ChipAccent ? Yellow.WithAlpha(170) : BoxEdge, .8f, role: "ui.pilot-card.chip");
-                T(c, card.Chip, chip.MidX, chip.MidY + 3.2f, 9, card.ChipAccent ? Yellow : Text, card.ChipAccent, SKTextAlign.Center);
+                Round(c, chip, card.Evading ? PurpleDark : card.ChipAccent ? YellowDark : Box,
+                    card.Evading ? Purple.WithAlpha(200) : card.ChipAccent ? Yellow.WithAlpha(170) : BoxEdge, .8f, role: "ui.pilot-card.chip");
+                T(c, card.Chip, chip.MidX, chip.MidY + 3.2f, 9, card.Evading ? Purple : card.ChipAccent ? Yellow : Text, card.ChipAccent, SKTextAlign.Center);
             }
             Line(c, r.Left + 6, r.Right - 6, r.Top + 33);
             for (int j = 0; j < card.Stats.Count; j++)
             {
                 var stat = card.Stats[j]; float y = r.Top + 44 + 11 * j;
                 T(c, stat.Label, r.Left + 7, y, 9, Text);
-                T(c, stat.Value, r.Right - 7, y, 9.5f, Text, true, SKTextAlign.Right);
+                T(c, stat.Value, r.Right - 7, y, 9.5f, stat.ValueTone ?? Text, true, SKTextAlign.Right);
                 float x0 = r.Left + 60, x1 = r.Right - 41;
                 Stroke(c, new(x0, y - 3), new(x1, y - 3), Track, 3);
                 var color = TacticalBattleSkinRenderScope.Color("ui.pilot-card.bar." + stat.Kind, "fill", stat.Tone);

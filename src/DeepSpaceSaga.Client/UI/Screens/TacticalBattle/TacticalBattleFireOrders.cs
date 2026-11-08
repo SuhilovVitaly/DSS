@@ -7,6 +7,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 public sealed record TacticalFirePlanRow(TacticalUnitSnapshot Drone, TacticalTargetGroupSnapshot Group, string? TargetId)
 {
+    public bool Evade { get; init; }
+    public bool CanEvade { get; init; }
     public TacticalTargetCandidateSnapshot? Target => Group.List.FirstOrDefault(c => c.TargetId == TargetId);
 }
 
@@ -37,7 +39,8 @@ internal sealed class TacticalBattleFireOrders
             if (unit.Side != state.PlayerSide || unit.Kind != TacticalUnitKind.Drone || unit.State != TacticalUnitState.Air) continue;
             var group = state.Targets.FirstOrDefault(g => g.DroneId == unit.Id) ?? new(unit.Id, [], null);
             if (unit.Jammed) group = group with { List = [], DefaultTargetId = null };
-            _rows.Add(new(unit, group, group.DefaultTargetId));
+            _rows.Add(new(unit, group, group.DefaultTargetId)
+            { CanEvade = state.Rules.Evasion is { } rules && (unit.Consciousness ?? rules.MaxConsciousness) >= rules.MinConsciousness });
         }
         Selected = _rows.FirstOrDefault(r => r.TargetId is not null)?.Drone.Id ?? _rows.FirstOrDefault()?.Drone.Id;
     }
@@ -63,9 +66,9 @@ internal sealed class TacticalBattleFireOrders
         var row = _rows[index];
         if (target is not null && !row.Group.List.Any(c => c.TargetId == target)) return false;
         string? actual = toggle && row.TargetId == target ? null : target;
-        if (row.TargetId != actual)
+        if (row.TargetId != actual || row.Evade)
         {
-            _rows[index] = row with { TargetId = actual };
+            _rows[index] = row with { TargetId = actual, Evade = false };
             _cached = null;
         }
         return true;
@@ -73,12 +76,21 @@ internal sealed class TacticalBattleFireOrders
 
     public void ClearAll()
     {
-        for (int i = 0; i < _rows.Count; i++) _rows[i] = _rows[i] with { TargetId = null };
+        for (int i = 0; i < _rows.Count; i++) _rows[i] = _rows[i] with { TargetId = null, Evade = false };
         _cached = null;
     }
 
+    public bool ToggleEvade(string droneId)
+    {
+        int index = _rows.FindIndex(r => r.Drone.Id == droneId);
+        if (index < 0 || !_rows[index].CanEvade) return false;
+        _rows[index] = _rows[index] with { TargetId = null, Evade = !_rows[index].Evade };
+        _cached = null;
+        return true;
+    }
+
     public TacticalFirePlan Capture() => _cached ??= new(_rows.ToImmutableArray(), Selected);
-    public ImmutableArray<TacticalFireTarget> BuildTargets() => _rows.Select(r => new TacticalFireTarget(r.Drone.Id, r.TargetId)).ToImmutableArray();
+    public ImmutableArray<TacticalFireTarget> BuildTargets() => _rows.Select(r => new TacticalFireTarget(r.Drone.Id, r.TargetId, r.Evade)).ToImmutableArray();
 
     public bool ChooseAt(TacticalBattleView view, SKPoint pointer, float uiScale)
     {

@@ -185,6 +185,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (!ConfirmExit && Flow.State is { Phase: TacticalBattlePhase.Fire } firing)
         {
             ObserveOrders(firing);
+            if (!repeat && modifiers == KeyModifiers.None && key == Key.E && _fireOrders.Selected is { } evader)
+            {
+                _fireOrders.ToggleEvade(evader);
+                return ScreenEvent.None;
+            }
             if (key == Key.Tab && !repeat && (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == 0)
             {
                 _firePanel.ResetInput();
