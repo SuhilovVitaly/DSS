@@ -99,3 +99,9 @@ Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us4-tk3.
 ## Фактическая привязка проверок
 
 PhaseFireInputTests; FirePlanningTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.
+
+## Исправление P2 после review 2026-11-08
+
+Scope расширен на BattleMapRenderer.cs, BattleMapRenderer.Hover.cs и PhaseFireInputTests.cs: отрисовка, наведение и hit-test носителя должны использовать одну MarkerPoint. Это исправляет US4-AC3 совместно с US5-AC2 (US-0005/TK-0001), без изменения списка кандидатов Engine.
+
+Воспроизведение: три разрешения с прежним hit-test дали 3/3 ожидаемых FAIL; после исправления focused PhaseFireInputTests/FirePlanningTests/MapDesignTests — 9/9 PASS. Проверяется назначение допустимого носителя через смещённый маркер и отказ для недопустимой цели. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-review-fixes/carrier-before.trx и carrier-final.trx. Нативный ввод этим тестом не подтверждается.

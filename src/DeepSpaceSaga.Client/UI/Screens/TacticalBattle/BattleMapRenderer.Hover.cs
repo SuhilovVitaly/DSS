@@ -6,13 +6,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
-    internal static SKPoint HoverPoint(TacticalBattleFrame f, TacticalUnitSnapshot u)
-    {
-        var p = f.View.Project(u.Pose);
-        if (u.Kind != TacticalUnitKind.Carrier) return p;
-        var safe = Safe(f.View); safe.Inflate(-34, -34);
-        return new(Math.Clamp(p.X, safe.Left, safe.Right), Math.Clamp(p.Y, safe.Top, safe.Bottom));
-    }
+    internal static SKPoint HoverPoint(TacticalBattleFrame f, TacticalUnitSnapshot u) => MarkerPoint(f.View, u);
     static partial void DrawHover(SKCanvas c, TacticalBattleFrame f)
     {
         var u = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId); if (u is null) return;

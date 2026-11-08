@@ -96,7 +96,7 @@ internal sealed class TacticalBattleFireOrders
             {
                 var unit = state.Units.FirstOrDefault(u => u.Id == id);
                 if (unit is null) continue;
-                var p = view.Project(unit.Pose);
+                var p = TacticalBattleMapRenderer.MarkerPoint(view, unit);
                 double distance = TacticalGeometry.Dist(pointer.X, pointer.Y, p.X, p.Y);
                 if (distance > radius || distance >= best) continue;
                 nearest = id; best = distance;

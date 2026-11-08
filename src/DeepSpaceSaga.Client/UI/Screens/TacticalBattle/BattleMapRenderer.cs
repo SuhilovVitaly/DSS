@@ -14,6 +14,13 @@ internal static partial class TacticalBattleMapRenderer
     internal static int TargetCount(TacticalBattleFrame f, TacticalUnitSnapshot u) => u.Jammed || u.State != TacticalUnitState.Air || f.FirePlan is null ? 0 : u.Side == f.Battle.PlayerSide ? f.FirePlan.Rows.FirstOrDefault(r => r.Drone.Id == u.Id)?.Group.List.Length ?? 0 : f.Battle.Incoming.Count(i => i.ShooterId == u.Id);
     internal static string? Selected(TacticalBattleFrame f) => f.Salvo is { InFlight: true } ? PilotCardModel.ActiveShooter(f) : f.Salvo is not null ? PilotCardModel.ResultShot(f)?.ShooterId : f.SelectedDroneId;
     internal static SKRect Safe(TacticalBattleView v) => new(202, 6, v.PixelWidth - 246, 714);
+    internal static SKPoint MarkerPoint(TacticalBattleView view, TacticalUnitSnapshot unit)
+    {
+        var p = view.Project(unit.Pose);
+        if (unit.Kind != TacticalUnitKind.Carrier) return p;
+        var safe = Safe(view); safe.Inflate(-34, -34);
+        return new(Math.Clamp(p.X, safe.Left, safe.Right), Math.Clamp(p.Y, safe.Top, safe.Bottom));
+    }
     internal static void Draw(SKCanvas c, TacticalBattleFrame f)
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
@@ -70,7 +77,7 @@ internal static partial class TacticalBattleMapRenderer
     }
     private static void Edge(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, SKPoint p, SKRect safe, List<SKRect> occupied, SKColor color)
     {
-        var q = new SKPoint(Math.Clamp(p.X, safe.Left, safe.Right), Math.Clamp(p.Y, safe.Top, safe.Bottom));
+        var q = MarkerPoint(f.View, u);
         Hex(c, q, 11, color.WithAlpha(200)); float distance = SKPoint.Distance(q, p); var direction = Scale(p - q, 1 / Math.Max(1, distance));
         var tip = q + Scale(direction, 24); var side = new SKPoint(-direction.Y * 6, direction.X * 6);
         Stroke(c, tip, tip - Scale(direction, 7) + side, color, 2); Stroke(c, tip, tip - Scale(direction, 7) - side, color, 2);
