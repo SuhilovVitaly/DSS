@@ -217,7 +217,7 @@ public class TacticalBattleModalScreen : IScreen
             var box = SKRect.Create(width / 2f - 260 * scale, height / 2f - 90 * scale, 520 * scale, 180 * scale);
             BattleDesign.Round(canvas, SKRect.Create(width, height), new(0, 0, 0, 180), radius: 0, role: "modal.exit.dim");
             BattleDesign.PanelBox(canvas, box, radius: 6 * scale, role: "modal.exit");
-            BattleDesign.T(canvas, L("ExitConfirm"), box.Left + 24 * scale, box.Top + 44 * scale, 16 * scale, BattleDesign.Text, true);
+            BattleDesign.T(canvas, L("ConfirmExit"), box.Left + 24 * scale, box.Top + 44 * scale, 16 * scale, BattleDesign.Text, true);
             _confirm.Bounds = SKRect.Create(box.Left + 24 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _cancel.Bounds = SKRect.Create(box.Right - 244 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _confirm.Enabled = !Flow.Pending;

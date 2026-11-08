@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0002-overlay-layout-shell
 ticket: EP-0019-US-0002-TK-0004-localization-strings
 title: Строки RU/EN нового интерфейса
-stage: draft
+stage: done
 layer: content-data
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0002-TK-0002-full-screen-map-shell]
@@ -84,3 +84,9 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Localize redesigned battle controls and validate RU EN placeholder parity
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us2-tk4. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
