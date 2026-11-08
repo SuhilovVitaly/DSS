@@ -27,6 +27,14 @@ internal sealed class PilotCardColumn
                 var chip = new SKRect(r.Right - 6 - w, r.Top + 6, r.Right - 6, r.Top + 19);
                 Round(c, chip, card.Evading ? PurpleDark : card.ChipAccent ? YellowDark : Box,
                     card.Evading ? Purple.WithAlpha(200) : card.ChipAccent ? Yellow.WithAlpha(170) : BoxEdge, .8f, role: "ui.pilot-card.chip");
+                if (card.Decoy)
+                {
+                    var icon = new SKRect(chip.Left - 17, chip.Top, chip.Left - 4, chip.Bottom);
+                    Round(c, icon, GreenDark, Green.WithAlpha(200), .8f);
+                    Diamond(c, new(icon.MidX, icon.MidY), 4, SKColors.Transparent, Green, 1);
+                    Circle(c, new(icon.MidX, icon.MidY), 1.2f, Green);
+                    if (Recording is { } recorded) recorded.Rects["pilot-decoy:" + card.UnitId] = icon;
+                }
                 T(c, card.Chip, chip.MidX, chip.MidY + 3.2f, 9, card.Evading ? Purple : card.ChipAccent ? Yellow : Text, card.ChipAccent, SKTextAlign.Center);
             }
             Line(c, r.Left + 6, r.Right - 6, r.Top + 33);

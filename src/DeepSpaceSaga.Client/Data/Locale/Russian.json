@@ -691,5 +691,19 @@
   "TacticalBattle.Ui.ShotMany": "выстрелов",
   "TacticalBattle.Ui.HitOne": "попадание",
   "TacticalBattle.Ui.HitFew": "попадания",
-  "TacticalBattle.Ui.HitMany": "попаданий"
+  "TacticalBattle.Ui.HitMany": "попаданий",
+  "TacticalBattle.Decoy": "Ловушка [D]",
+  "TacticalBattle.DecoyArmed": "Ловушка: {0} {1} → {2} [D]",
+  "TacticalBattle.DecoyArmedNoThreat": "Ловушка выпущена [D]",
+  "TacticalBattle.DecoyEmpty": "Ловушек нет",
+  "TacticalBattle.DecoyChip": "Ловушка",
+  "TacticalBattle.DecoyMiss": "Ловушка · промах {0}",
+  "TacticalBattle.DecoyOfTarget": "ловушка цели",
+  "TacticalBattle.TargetArmorThenHull": "{0}: броня {1}/{2}, затем корпус {3}/{4}",
+  "TacticalBattle.TargetHullOnly": "{0}: брони нет, урон в корпус {1}/{2}",
+  "TacticalBattle.Decoys.One": "ловушка",
+  "TacticalBattle.Decoys.Few": "ловушки",
+  "TacticalBattle.Decoys.Many": "ловушек",
+  "TacticalBattle.Log.DecoyLaunched": "{0} выпускает ловушку",
+  "TacticalBattle.Refusal.DecoyUnavailable": "Ловушка недоступна"
 }

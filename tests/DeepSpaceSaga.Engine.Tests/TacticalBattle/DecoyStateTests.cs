@@ -29,6 +29,7 @@ public sealed class DecoyStateTests
             Assert.Equal(2, u.DecoyCharges);
             Assert.Equal("decoy.t1", u.Build!.DecoyId);
             Assert.Equal("Ловушки I", u.Build.DecoyName);
+            Assert.Equal(2, u.Build.DecoyMaxCharges);
         });
     }
 
@@ -89,6 +90,7 @@ public sealed class DecoyStateTests
                 {
                     build.AsObject().Remove("DecoyId");
                     build.AsObject().Remove("DecoyName");
+                    build.AsObject().Remove("DecoyMaxCharges");
                 }
             }
             Assert.Equal(row.Hash, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(json.ToJsonString()))));

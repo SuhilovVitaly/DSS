@@ -31,10 +31,12 @@ public sealed class TacticalBattleContractTests
         payload.AsObject().Remove("DecoyCharges");
         payload["Build"]!.AsObject().Remove("DecoyId");
         payload["Build"]!.AsObject().Remove("DecoyName");
+        payload["Build"]!.AsObject().Remove("DecoyMaxCharges");
         var old = JsonSerializer.Deserialize<TacticalUnitSnapshot>(payload.ToJsonString())!;
         Assert.Null(old.DecoyCharges);
         Assert.Null(old.Build!.DecoyId);
         Assert.Null(old.Build.DecoyName);
+        Assert.Equal(0, old.Build.DecoyMaxCharges);
         Assert.False(JsonSerializer.Deserialize<TacticalFireTarget>("""{"DroneId":"d","TargetId":null}""")!.Decoy);
         Assert.Null(JsonSerializer.Deserialize<TacticalIncomingShotSnapshot>("""{"ShooterId":"s","TargetId":"d","Chance":0.5}""")!.ChanceIfDecoy);
         var legacyFrame = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!;
@@ -54,11 +56,12 @@ public sealed class TacticalBattleContractTests
         {
             DecoyCharges = 0,
             Build = unit.Build! with
-            { DecoyId = "decoy.t1", DecoyName = "Ловушки I" }
+            { DecoyId = "decoy.t1", DecoyName = "Ловушки I", DecoyMaxCharges = 2 }
         });
         Assert.Equal(0, changed.DecoyCharges);
         Assert.Equal("decoy.t1", changed.Build!.DecoyId);
         Assert.Equal("Ловушки I", changed.Build.DecoyName);
+        Assert.Equal(2, changed.Build.DecoyMaxCharges);
     }
 
     [Fact]

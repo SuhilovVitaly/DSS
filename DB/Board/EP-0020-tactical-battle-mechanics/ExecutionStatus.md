@@ -59,3 +59,5 @@ EP-0020-US-0006-TK-0004 → bc3ba57f2c03a58bd700451838d6e58c9ade6c43 → origin 
 US6 завершена: Engine2850/2850 uniquePASS,series5000exactPASS,report5000PASS. TK5готов к публикации; далее US7 UIловушек.
 
 EP-0020-US-0006-TK-0005 → 180c896d82f8f781173322ccb89c7fe7885889cd → origin проверен. US7/TK1UI28PASS,готов к публикации.
+
+EP-0020-US-0007-TK-0001 → e3e213278a927321ae44347a5b71e12ef9299231 → origin проверен. TK2Panel18/Engine94/Contracts27PASS,готов к публикации.

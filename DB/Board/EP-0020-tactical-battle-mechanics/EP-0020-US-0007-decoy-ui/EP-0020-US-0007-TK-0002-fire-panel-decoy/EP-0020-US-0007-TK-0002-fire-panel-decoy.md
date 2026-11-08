@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0007-decoy-ui
 ticket: EP-0020-US-0007-TK-0002-fire-panel-decoy
 title: Строка ловушки, значок карточки, метка на карте, строки
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0007-TK-0001-fire-orders-decoy]
@@ -94,4 +94,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope уточнён до реализации: фактический renderer — BattleMapRenderer.cs; Overlay.cs нужен для клика строки. UiSpec §8 и M4 Build.Module требуют max charges из данных, но DTO содержал только текущие: добавляется init DecoyMaxCharges(default0) в Build, Engine projection и compatibility/hash tests; UI не хранит константу2. Полные ключи §14, Refusal.DecoyUnavailable и formatter DecoyLaunched добавляются здесь для LocalizationCoverage; reveal/flight filtering остаётсяTK3.
+
+Технический gap A-22: production seed1/Turn3 после +10кг имеет Incoming=[] у всех своих, поэтому fallback на другого своего невозможен (no-threat-probe/no-threat.json). Растровые пробы остаются seed1/Turn3 и проверяют ветку §8 «Ловушка выпущена[D]»; отдельный тест первого следующего реального Fire с Incoming проверяет строку Chance→ChanceIfDecoy. Геометрия/палитра/пороги неизменны, фиктивные входящие не добавляются.
+
+UiSpec §8/§13 уточняется тем же техническим gap: источник max — DecoyMaxCharges; при Incoming=[] несуществующие угрозы не создаются. Ветка со стрелкой проверена реальным ходом4. Завершено: PanelDecoy/Localization18/18PASS,EngineGolden/state94/94PASS,Contracts27/27PASS; build/все scoped-format/diff-checkPASS. Визуальная самопроверка production render выполнена. US7-AC2 покрыт: точные прямоугольники/цвета/ромбы/карточка/map occupied mark, без ослабления ΔRGB40 и процентных проб; EV layout не менялся. Локализация§14полная. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us7-tk2/real-scenes/tests.trx,engine/tests.trx,contracts/tests.trx,format-*.log; gap evidence no-threat-probe/no-threat.json; реальные кадры в real-scenes/. Native/human приёмка не заявлена.

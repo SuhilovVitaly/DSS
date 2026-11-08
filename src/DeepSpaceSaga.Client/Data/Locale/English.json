@@ -691,5 +691,19 @@
   "TacticalBattle.Ui.ShotMany": "shots",
   "TacticalBattle.Ui.HitOne": "hit",
   "TacticalBattle.Ui.HitFew": "hits",
-  "TacticalBattle.Ui.HitMany": "hits"
+  "TacticalBattle.Ui.HitMany": "hits",
+  "TacticalBattle.Decoy": "Decoy [D]",
+  "TacticalBattle.DecoyArmed": "Decoy: {0} {1} → {2} [D]",
+  "TacticalBattle.DecoyArmedNoThreat": "Decoy launched [D]",
+  "TacticalBattle.DecoyEmpty": "No decoys left",
+  "TacticalBattle.DecoyChip": "Decoy",
+  "TacticalBattle.DecoyMiss": "Decoy · {0} missed",
+  "TacticalBattle.DecoyOfTarget": "target decoy",
+  "TacticalBattle.TargetArmorThenHull": "{0}: armor {1}/{2}, then hull {3}/{4}",
+  "TacticalBattle.TargetHullOnly": "{0}: no armor, damage to hull {1}/{2}",
+  "TacticalBattle.Decoys.One": "decoy",
+  "TacticalBattle.Decoys.Few": "decoys",
+  "TacticalBattle.Decoys.Many": "decoys",
+  "TacticalBattle.Log.DecoyLaunched": "{0} launches a decoy",
+  "TacticalBattle.Refusal.DecoyUnavailable": "Decoy unavailable"
 }

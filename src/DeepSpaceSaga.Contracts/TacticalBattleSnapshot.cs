@@ -35,6 +35,7 @@ public sealed record TacticalBuildSnapshot(string FrameName, string PilotId, str
 {
     public string? DecoyId { get; init; }
     public string? DecoyName { get; init; }
+    public int DecoyMaxCharges { get; init; }
 }
 public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKind Kind, string FrameId,
     TacticalPoseSnapshot Pose, double Speed, int Hull, int MaxHull, int Armor, int MaxArmor, TacticalUnitState State,

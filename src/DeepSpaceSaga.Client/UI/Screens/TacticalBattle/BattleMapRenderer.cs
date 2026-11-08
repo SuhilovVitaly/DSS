@@ -13,6 +13,8 @@ internal static partial class TacticalBattleMapRenderer
     internal static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame f) => f.Battle.Units;
     internal static bool IsEvading(TacticalBattleFrame frame, string id) =>
         frame.FirePlan?.Rows.Any(r => r.Drone.Id == id && r.Evade) == true || frame.Salvo?.Evading.Contains(id) == true;
+    internal static bool HasDecoy(TacticalBattleFrame frame, TacticalUnitSnapshot unit) =>
+        unit.Side == frame.Battle.PlayerSide && frame.FirePlan?.Rows.Any(r => r.Drone.Id == unit.Id && r.Decoy) == true;
     internal static int TargetCount(TacticalBattleFrame f, TacticalUnitSnapshot u) => u.Jammed || u.State != TacticalUnitState.Air || f.FirePlan is null ? 0 : u.Side == f.Battle.PlayerSide ? f.FirePlan.Rows.FirstOrDefault(r => r.Drone.Id == u.Id)?.Group.List.Length ?? 0 : f.Battle.Incoming.Count(i => i.ShooterId == u.Id);
     internal static string? Selected(TacticalBattleFrame f) => f.Salvo is { InFlight: true } ? PilotCardModel.ActiveShooter(f) : f.Salvo is not null ? PilotCardModel.ResultShot(f)?.ShooterId : f.SelectedDroneId;
     internal static SKRect Safe(TacticalBattleView v) => new(202, 6, v.PixelWidth - 246, 714);
@@ -49,6 +51,14 @@ internal static partial class TacticalBattleMapRenderer
             else { if (own) Diamond(c, p, 7.5f, color); else Triangle(c, p, 9, u.Pose.Course, color); if (u.Id == Selected(f)) Circle(c, p, 12, SKColors.Transparent, Text, 1.2f); }
             if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
                 EvasionRing(c, p);
+            if (u.Kind == TacticalUnitKind.Drone && HasDecoy(f, u))
+            {
+                DecoyMark(c, p, u.Pose.Course);
+                var q = DecoyPoint(p, u.Pose.Course);
+                var r = new SKRect(q.X - 8, q.Y - 8, q.X + 8, q.Y + 8);
+                occupied.Add(r);
+                if (Recording is { } layout) layout.Rects["decoy:" + u.Id] = r;
+            }
         }
         foreach (var u in units.Where(u => u.Kind != TacticalUnitKind.Carrier || inside.Contains(v.Project(u.Pose)))
                      .OrderBy(u => u.Id == Selected(f) ? 0 : u.Kind == TacticalUnitKind.Carrier ? 1 : 2).ThenBy(u => v.Project(u.Pose).Y)) Label(c, f, u, occupied);

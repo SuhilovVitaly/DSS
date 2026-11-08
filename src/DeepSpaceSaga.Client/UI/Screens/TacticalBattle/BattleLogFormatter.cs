@@ -15,6 +15,7 @@ public static class BattleLogFormatter
             TacticalBattleLogKind.RoleChanged when entry.NoAttackers => F("Log.NoAttackers", actor),
             TacticalBattleLogKind.RoleChanged => F("Log.Role", actor, entry.RoleName ?? entry.RoleId ?? ""),
             TacticalBattleLogKind.FighterBreak => F("Log.FighterBreak", actor),
+            TacticalBattleLogKind.DecoyLaunched => F("Log.DecoyLaunched", actor),
             TacticalBattleLogKind.NoTargets => L("Log.NoTargets"),
             TacticalBattleLogKind.FireSkipped => F("Log.FireSkipped", actor, SkipText(entry.SkipReason)),
             TacticalBattleLogKind.ShotMissed => F("Log.ShotMiss", actor, target, chance),

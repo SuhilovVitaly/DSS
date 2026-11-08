@@ -6,14 +6,31 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class PhasePanel
 {
-    internal static string ThreatText(TacticalBattleSnapshot battle, string droneId, bool evade)
+    internal static string ThreatText(TacticalBattleSnapshot battle, string droneId, bool evade, bool decoy = false)
     {
         string text = string.Join(" · ", battle.Incoming.Where(i => i.TargetId == droneId).Select(i =>
         {
             string name = battle.Units.FirstOrDefault(u => u.Id == i.ShooterId) is { } unit ? PilotCardModel.Name(unit) : i.ShooterId;
-            return name + ": " + Pct(i.Chance) + (evade ? " → " + Pct(i.ChanceIfEvading ?? i.Chance) : "");
+            return name + ": " + Pct(i.Chance) + (evade ? " → " + Pct(i.ChanceIfEvading ?? i.Chance) : decoy && i.ChanceIfDecoy is { } chance ? " → " + Pct(chance) : "");
         }));
         return text.Length > 0 ? text : M("NobodyAims");
+    }
+    internal static string DecoyText(TacticalBattleSnapshot battle, TacticalFirePlanRow row)
+    {
+        if (!row.CanDecoy) return M("DecoyEmpty");
+        if (!row.Decoy) return M("Decoy");
+        var incoming = battle.Incoming.FirstOrDefault(i => i.TargetId == row.Drone.Id && i.ChanceIfDecoy is not null);
+        if (incoming is null) return M("DecoyArmedNoThreat");
+        string name = battle.Units.FirstOrDefault(u => u.Id == incoming.ShooterId) is { } unit ? PilotCardModel.Name(unit) : incoming.ShooterId;
+        return M("DecoyArmed", name, Pct(incoming.Chance), Pct(incoming.ChanceIfDecoy!.Value));
+    }
+    private void DrawDecoy(SKCanvas c, TacticalFirePlanRow row, float top)
+    {
+        var r = new SKRect(1048, top, 1266, 238);
+        _buttons["decoy"] = R(r.Left, r.Top, r.Right, r.Bottom);
+        if (Recording is { } layout) layout.Rects["button:decoy"] = _buttons["decoy"];
+        DecoyRow(c, r, DecoyText(_frame.Battle, row), row.Drone.DecoyCharges ?? 0,
+            row.Drone.Build?.DecoyMaxCharges ?? 0, row.DecoyState);
     }
     partial void DrawFire(SKCanvas c)
     {
@@ -43,12 +60,13 @@ internal sealed partial class PhasePanel
             Tag(c, new(1048, 92, 1266, 110), M("NoTargetsTag"));
             T(c, M("NoTargetsInArc"), 1050, 140, 14, Text, true);
             T(c, M("WeaponReach", unit.Build?.WeaponName, unit.Build?.Range, unit.Build?.ArcDegrees), 1050, 158, 11, Muted);
-            Line(c, 1050, 1264, 167);
-            T(c, M("UnderFire"), 1050, 185, 12, Text);
-            BoxText(c, new(1048, 192, 1266, 212), ThreatText(_frame.Battle, unit.Id, false));
+            Line(c, 1050, 1264, 165);
+            T(c, M("UnderFire"), 1050, 180, 12, Text);
+            BoxText(c, new(1048, 186, 1266, 204), ThreatText(_frame.Battle, unit.Id, false, row.Decoy));
             string hint = row.CanEvade && rules is not null ? M("EvadeHint", rules.HitPenalty, rules.Cost)
                 : M("EvadeLowMind", mind, rules?.MinConsciousness ?? 10);
-            T(c, hint, 1050, 230, FitSize(hint, 11, 214), row.CanEvade ? Muted : Red);
+            T(c, hint, 1050, 217, FitSize(hint, 11, 214), row.CanEvade ? Muted : Red);
+            DrawDecoy(c, row, 222);
         }
         else
         {
@@ -59,8 +77,10 @@ internal sealed partial class PhasePanel
             T(c, U("Angle", row.Target is null ? "—" : F(Math.Abs(row.Target.Angle))), 1264, 154, 12, Text, align: SKTextAlign.Right);
             Line(c, 1050, 1264, 172);
             T(c, U("WeaponDamage", unit.Build?.WeaponName, unit.Build?.DamageMin, unit.Build?.DamageMax), 1050, 189, 12, Text);
-            BoxText(c, new(1048, 196, 1266, 216), target is { Armor: > 0 } ? U("ArmorFirst", target.Armor) : U("NoArmor"));
-            if (target is not null) T(c, U("TargetHealth", PilotCardModel.Name(target), target.Hull, target.MaxHull, target.Armor, target.MaxArmor), 1050, 234, 11, Text);
+            BoxText(c, new(1048, 196, 1266, 216), target is null ? U("NoArmor") : target.Armor > 0
+                ? M("TargetArmorThenHull", PilotCardModel.Name(target), target.Armor, target.MaxArmor, target.Hull, target.MaxHull)
+                : M("TargetHullOnly", PilotCardModel.Name(target), target.Hull, target.MaxHull));
+            DrawDecoy(c, row, 221);
         }
         ButtonAt(c, "hold", new(1048, 242, 1154, 264), U("HoldFire"));
         var button = new SKRect(1160, 242, 1266, 264);
@@ -71,6 +91,12 @@ internal sealed partial class PhasePanel
         string summary = evades == 0 ? U("FireCount", count, _frame.FirePlan.Rows.Length - count)
             : M("FireSummaryEvade", count, M(count == 1 ? "Shoots.One" : "Shoots.Many"), evades,
                 M(evades == 1 ? "Evades.One" : "Evades.Many"), _frame.FirePlan.Rows.Length - count - evades);
+        int decoys = _frame.FirePlan.Rows.Count(r => r.Decoy);
+        if (decoys > 0)
+        {
+            string form = decoys % 100 is >= 11 and <= 14 ? "Many" : decoys % 10 == 1 ? "One" : decoys % 10 is >= 2 and <= 4 ? "Few" : "Many";
+            summary += " · " + decoys + " " + M("Decoys." + form);
+        }
         StandardAction(c, summary, U("FireStatus"), U("FireAction"));
     }
 }

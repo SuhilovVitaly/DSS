@@ -12,6 +12,31 @@ internal enum EvadeButtonState { Unavailable, Available, Selected }
 
 internal static class BattleDesign
 {
+    public static readonly SKColor GreenDark = SKColor.Parse("#1E3A26"), DecoyIdle = SKColor.Parse("#142218");
+    public static void DecoyRow(SKCanvas c, SKRect r, string text, int charges, int maxCharges, DecoyRowState state)
+    {
+        bool active = state == DecoyRowState.Selected, enabled = state != DecoyRowState.Unavailable;
+        Round(c, r, active ? GreenDark : enabled ? DecoyIdle : Box,
+            enabled ? Green.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1);
+        float left = r.Right - 8 - Math.Max(0, maxCharges - 1) * 9;
+        float size = FitSize(text, 11, left - 8 - (r.Left + 7), active);
+        T(c, text, r.Left + 7, r.MidY + size * .36f, size, active ? Text : enabled ? Green : Muted, active);
+        for (int i = 0; i < maxCharges; i++)
+        {
+            bool full = i < charges - (active ? 1 : 0);
+            Diamond(c, new(left + i * 9, r.MidY), 3.5f, full ? enabled ? Green : Muted : SKColors.Transparent,
+                full ? null : enabled ? Green.WithAlpha(150) : BoxEdge, 1);
+        }
+    }
+    public static SKPoint DecoyPoint(SKPoint point, double courseDeg) => new(
+        point.X - 24 * (float)Math.Cos(courseDeg * Math.PI / 180), point.Y - 24 * (float)Math.Sin(courseDeg * Math.PI / 180));
+    public static void DecoyMark(SKCanvas c, SKPoint point, double courseDeg)
+    {
+        var q = DecoyPoint(point, courseDeg);
+        Stroke(c, point, q, Green.WithAlpha(130), 1, [2, 3]);
+        Diamond(c, q, 6, MapBg, Green, 1.5f);
+        Circle(c, q, 1.8f, Green);
+    }
     public static readonly SKColor EvadeIdle = SKColor.Parse("#1A1A2A");
     public static string M(string key, params object?[] values) => values.Length == 0 ? Localization.Get("TacticalBattle." + key)
         : string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle." + key), values);
