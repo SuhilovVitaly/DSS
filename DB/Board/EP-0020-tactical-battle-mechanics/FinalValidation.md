@@ -19,3 +19,5 @@ Self-review: слой Motion содержит чистую математику 
 Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/final-engine/coverage-audit.json`, `us12-tk3/view-audit.json`, `us12-tk3/native-audit.json`, `us12-tk3/client-final/tests.trx`, `final-contracts/tests.trx`, `final-motion/tests.trx` относительно того же абсолютного evidence root. Все test processes capped300000ms; corpus разбит по точным IDs без пропусков.
 
 Human/product/art, physical input, hardware audio, независимый review, otherOS NOT RUN. Известный Motion guard и FPS остаются открытыми техническими ограничениями; ни один не переименован вPASS.
+
+Graph/doc checks:56AC/44tickets/13stories,78canonical dependencies. Offline graph22594nodes/60077edges,814code/755Markdown,1569source hashes и4fresh semantic hashes проверены; derived missing/invalid/dangling/selfloops0. Один partial AST parser warning и разрешённые pruning/unlocated ограничения записаны в `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us13-tk4/graph-quality.json`. Graph является навигацией, не приёмкой.

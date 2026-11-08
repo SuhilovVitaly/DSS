@@ -55,7 +55,7 @@ D-24, D-25, D-29–D-31, A-23–A-25. Сборка боя — `src/DeepSpaceSaga
 |---|---|---|---|---|
 | [EP-0020-US-0008-TK-0001-anomaly-rules-content](EP-0020-US-0008-TK-0001-anomaly-rules-content/EP-0020-US-0008-TK-0001-anomaly-rules-content.md) | Правила аномалий в данных | content-data | `EP-0020-US-0005-TK-0001-decoy-content` | US8-AC1 |
 | [EP-0020-US-0008-TK-0002-anomaly-math](EP-0020-US-0008-TK-0002-anomaly-math/EP-0020-US-0008-TK-0002-anomaly-math.md) | Математика поля аномалий | motion | `EP-0020-US-0008-TK-0001-anomaly-rules-content` | US8-AC2 |
-| [EP-0020-US-0008-TK-0003-anomaly-generator](EP-0020-US-0008-TK-0003-anomaly-generator/EP-0020-US-0008-TK-0003-anomaly-generator.md) | Генерация аномалий из seed боя | engine | `EP-0020-US-0008-TK-0002-anomaly-math`, `EP-0020-US-0006-TK-0005-decoy-regression` | US8-AC3 |
+| [EP-0020-US-0008-TK-0003-anomaly-generator](EP-0020-US-0008-TK-0003-anomaly-generator/EP-0020-US-0008-TK-0003-anomaly-generator.md) | Генерация аномалий из seed боя | engine | `EP-0020-US-0008-TK-0002-anomaly-math`, `EP-0020-US-0006-TK-0005-decoy-regression` | US8-AC3, US8-AC4 |
 
 ## Исполнение
 

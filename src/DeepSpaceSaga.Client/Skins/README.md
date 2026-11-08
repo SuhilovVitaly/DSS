@@ -9,3 +9,5 @@ surfaces read the same admitted FireSteps projection; packs cannot change firing
 order or playback timing. See the [battle contract](../../../DB/Documentation/04-Engineering/TacticalBattle.md).
 
 The active screen uses the compact EP-0019 overlay. Use the current ui.panel, ui.pilot-card, ui.slider and ui.button roles in the authoring contract; legacy tabs/orders controls are no longer connected. Bundled DejaVu typography and height-based layout keep Classic consistent between machines. Packs only change the properties consumed by active primitives.
+
+EP-0020 build cards use the existing panel/box/bar/text roles and bundled typography. Slot identities, damage, evasion, decoys and anomaly geometry remain captured game data. Procedural fields and silhouette/type marks add no skin manifest version or dedicated roles; unused role names do not introduce new features.

@@ -31,8 +31,11 @@ SKINS_EP='DB/Board/EP-0016-tactical-battle-skins'
 INITIATIVE_EP='DB/Board/EP-0017-pilot-initiative'
 UI_EP='DB/Board/EP-0019-tactical-battle-ui-redesign'
 GEOGRAPHY_EP='DB/Board/EP-0018-map-geography-and-scale'
+MECHANICS_EP='DB/Board/EP-0020-tactical-battle-mechanics'
 MAP_HISTORY_EPS=['DB/Board/EP-0002-procedural-solar-system','DB/Board/EP-0003-station-clusters-and-trade-geography','DB/Board/EP-0004-ai-territories-and-map-environment']
-EXCLUDED={UI_EP+'/ExecutionStatus.md':'publication ledger', UI_EP+'/DocumentationImpact.md':'graph impact ledger', **{GEOGRAPHY_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ImplementationStatus','DocumentationImpact','Tickets')},
+EXCLUDED={**{MECHANICS_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact','FinalValidation','Tickets')},
+ MECHANICS_EP+'/EP-0020-US-0013-project-documentation/EP-0020-US-0013-TK-0004-build-card-documentation/EP-0020-US-0013-TK-0004-build-card-documentation.md':'final graph publication receipt',
+ UI_EP+'/ExecutionStatus.md':'publication ledger', UI_EP+'/DocumentationImpact.md':'graph impact ledger', **{GEOGRAPHY_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ImplementationStatus','DocumentationImpact','Tickets')},
  GEOGRAPHY_EP+'/EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md':'final graph publication receipt',
  **{INITIATIVE_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact')},
  INITIATIVE_EP+'/EP-0017-US-0004-project-documentation/EP-0017-US-0004-TK-0001-current-contracts-and-evidence/EP-0017-US-0004-TK-0001-current-contracts-and-evidence.md':'final graph publication ticket',
@@ -66,7 +69,7 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP, INITIATIVE_EP, GEOGRAPHY_EP, UI_EP, *MAP_HISTORY_EPS] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
+ docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP, INITIATIVE_EP, GEOGRAPHY_EP, UI_EP, MECHANICS_EP, *MAP_HISTORY_EPS] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
  docs=[p for p in docs if not {'bin','obj'} & set(p.parts)]
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and ('evidence' not in p.relative_to(R).parts or p.relative_to(R).as_posix() in {POINT_EP+'/evidence/balance.md',POINT_EP+'/evidence/native.md'})]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)
@@ -185,7 +188,7 @@ def main():
  for k,members in c.items():
   counts=Counter(str(G.nodes[n].get('source_file','')).replace('\\','/').split('/')[1] for n in members if '/' in str(G.nodes[n].get('source_file','')))
   family=counts.most_common(1)[0][0] if counts else ''
-  readable={'DeepSpaceSaga.Engine':'Engine simulation','DeepSpaceSaga.Client':'Client interface','DeepSpaceSaga.Contracts':'Snapshot contracts','DeepSpaceSaga.Engine.LocalClient':'Local session transport','DeepSpaceSaga.Client.Tests':'Client verification','DeepSpaceSaga.Engine.Tests':'Engine verification','EP-0015-tactical-carrier-battle':'Tactical carrier battle','EP-0017-pilot-initiative':'Pilot initiative','EP-0016-tactical-battle-skins':'Tactical battle skins','EP-0010-combat-reports':'Historical combat report planning','EP-0012-combat-rebuild':'Point combat contract','EP-0009-battle':'Historical module combat','04-Engineering':'Engineering documentation','02-FirstRelease':'Release requirements','01-Requirements':'Gameplay requirements'}
+  readable={'DeepSpaceSaga.Engine':'Engine simulation','DeepSpaceSaga.Client':'Client interface','DeepSpaceSaga.Contracts':'Snapshot contracts','DeepSpaceSaga.Engine.LocalClient':'Local session transport','DeepSpaceSaga.Client.Tests':'Client verification','DeepSpaceSaga.Engine.Tests':'Engine verification','EP-0020-tactical-battle-mechanics':'Tactical battle mechanics','EP-0015-tactical-carrier-battle':'Tactical carrier battle','EP-0017-pilot-initiative':'Pilot initiative','EP-0016-tactical-battle-skins':'Tactical battle skins','EP-0010-combat-reports':'Historical combat report planning','EP-0012-combat-rebuild':'Point combat contract','EP-0009-battle':'Historical module combat','04-Engineering':'Engineering documentation','02-FirstRelease':'Release requirements','01-Requirements':'Gameplay requirements'}
   labels[k]=readable.get(family,family.replace('DeepSpaceSaga.','').replace('-',' ') or 'Shared references')+f' {k}'
  head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
  if not to_json(G,c,str(O/'graph.json'),force=args.force,built_at_commit=head,community_labels=labels):raise SystemExit('Fresh graph shrank: inspect scope and use --force only if intentional.')

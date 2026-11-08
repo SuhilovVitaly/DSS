@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0013-project-documentation
 title: Документация механик
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0003-evasion-calibration, EP-0020-US-0004-evasion-ui, EP-0020-US-0006-decoy-resolution, EP-0020-US-0007-decoy-ui, EP-0020-US-0009-anomaly-resolution, EP-0020-US-0010-anomaly-ui, EP-0020-US-0012-build-card-ui]
 created: 2026-11-08T11:46:28Z
 source_request: "Отразить механики эпика в канонической документации и Board."
@@ -50,7 +50,7 @@ revision: 1
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы)).
+Исполнение всего эпика разрешено текущим поручением пользователя.
 
 ## Ticket map
 
@@ -64,3 +64,7 @@ revision: 1
 ## Полнота завершающей истории
 
 По EpicExecutionPrompt §6 история выполняется после всех функциональных историй. TK-0001…TK-0004 также охватывают инвентаризацию влияния итогового diff во всём репозитории, актуализацию README и документов рядом с кодом/тестами/content/tools, совместимость Save20, сохранение исторической точности, проверку ссылок/ID/coverage, ticket-to-SHA и offline Graphify rebuild после итогового кода и текстов. Scope документационных тикетов расширяется на выявленные релевантные документы с записью причины. Инвентаризация ведётся в DocumentationImpact.md этого эпика.
+
+## Исполнение
+
+US13-AC1…5: текущие механики/экраны/снимки и итоговые численные параметры описаны; полная инвентаризация — DocumentationImpact, результаты/калибровка/отчёты и ticket-to-SHA — ExecutionStatus, ограничения — FinalValidation. Исторические исходы не переписываются. Save20 не менялся. Отдельный финальный graph receipt фиксируется TK4/ExecutionStatus. Документация выполнена после 40 функциональных тикетов и общих automated/native проверок.

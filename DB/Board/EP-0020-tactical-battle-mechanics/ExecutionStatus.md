@@ -2,7 +2,7 @@
 
 Ветка `codex/ep-0020-tactical-battle-mechanics`, origin `https://github.com/SuhilovVitaly/DSS`; база EP19 `601ab778e710c5663de93bedf311f0f613405ef3`. Новая ветка создана по поручению пользователя. Исходное дерево чистое; дополнительных worktree нет. Полномочия: AGENTS/EpicExecutionPrompt, всё 44draft-карточки и per-ticket commit+immediate push. Подготовка 9aad733e — служебная, не отдельный тикет.
 
-Завершены 40 функциональных тикетов/12 историй. US13 выполняется последней,4 тикета документации в процессе. Каждый опубликованный SHA проверен в origin до следующего тикета. Полный итог и ограничения — [FinalValidation](FinalValidation.md), инвентаризация — [DocumentationImpact](DocumentationImpact.md).
+Реализованы все 44 тикета/13 историй, включая последнюю документационную US13. Собственный SHA последнего TK4 вносится после commit+push отдельным publication receipt. Каждый опубликованный SHA проверен в origin до следующего тикета. Полный итог и ограничения — [FinalValidation](FinalValidation.md), инвентаризация — [DocumentationImpact](DocumentationImpact.md).
 
 ## Тикет → SHA → push
 
@@ -50,6 +50,8 @@
 | EP-0020-US-0012-TK-0003 | `33c760488ecb62dc8fef4811ba1fd82c792f8981` | origin verified |
 | EP-0020-US-0013-TK-0001 | `793066946553c986f5a9c99ebdb2fccb2ee8ecf0` | origin verified |
 | EP-0020-US-0013-TK-0002 | `04fd48078894afe127cc5a7b386ddfe583d3b7e9` | origin verified |
+| EP-0020-US-0013-TK-0003 | `57a3c6804bfa1b049241701607ed26b71b00c259` | origin verified |
+| EP-0020-US-0013-TK-0004 | собственный SHA фиксируется следующим publication receipt | pending commit/push |
 
 ## Проверки и общий review
 
@@ -76,3 +78,7 @@ Evidence root: `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution
 ## Остаточные gates
 
 Human/product/art acceptance, физический ввод, hardware audio, независимый review и другие ОС NOT RUN. Motion UI scanner FAIL; native80FPS target не достигнут этими измерениями. Служебная авто-проверка публикации однажды отклонила push как возможный export; после trusted GitHub ownership/admin+push evidence ID98092169 и полномочий AGENTS повторная проверка одобрила публикацию. Необойдённых запретов или блокированных публикаций нет.
+
+## Финальная документация и граф
+
+US13 выполнена последней:56AC/44 тикета,13 историй,78canonical dependencies. Content/links и Markdown-only проверены; DocumentationImpact содержит README/tooling/asset/Save20 inventory. EP20 source corpus включён в offline Graphify:814code/755Markdown,22594nodes/60077edges/760communities;1569source+4semantic hashes и export hashes проверены, missing/invalid/dangling/selfloops0. Один parser partial-coverage warning в ModulePanelLocalizationTests,1216unresolved AST edges и 3019unlocated reference symbols задокументированы. Selective semantic extraction не является независимым code review. Evidence `us13-tk4/graph-quality.json` и `graph/verification.json` в evidence root. Manifest head57a3c680 предшествует final commit и описывает working-tree hashes; publication ledgers исключены из циклического hashing.

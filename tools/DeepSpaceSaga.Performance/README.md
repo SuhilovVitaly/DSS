@@ -228,7 +228,9 @@ historical evidence in the [Board](../../DB/Board).
 For a skin verification case, point `DSS_TACTICAL_NATIVE_SETTINGS` at an isolated `Settings.json` with its own sibling `Skins` directory and set `DSS_TACTICAL_NATIVE_EXPECT_SKIN` to the effective ID. Set `DSS_TACTICAL_NATIVE_PICK_LAST=1` to choose the last catalog entry through the live Settings overlay before F8. The native report records the outcome and the effective-skin checks for both active battle entries. Use the same seed, viewport and scale when comparing runs. [Skin authoring contract](../../DB/Documentation/04-Engineering/TacticalBattleSkins.md)
 
 Current rules and evidence: [TacticalBattle](../../DB/Documentation/04-Engineering/TacticalBattle.md),
-[ExecutionStatus EP-0017](../../DB/Board/EP-0017-pilot-initiative/ExecutionStatus.md).
+[ExecutionStatus EP-0020](../../DB/Board/EP-0020-tactical-battle-mechanics/ExecutionStatus.md).
 Select another monitor through `gameSettings.selectedMonitorIndex` in the isolated
 settings profile (zero based); leave the regular user settings untouched. Native
 scripted input does not establish physical-input, human/product or balance acceptance.
+
+The current tactical native workflow also exercises E/D through the live keyboard router, rejects D while evading, checks the build-card model and restores the order flags before submission. It verifies replay, outcome/new battle, unchanged world/camera and quick Save/Load after exit. Run one native case at a time with no concurrent builds/tests; use both 1280x720/S1 and 1920x1080/S1.5 and an isolated settings profile for language/monitor. A passed interaction report does not mean80FPS: inspect nativeDraw timings separately, and keep physical input and human acceptance open.

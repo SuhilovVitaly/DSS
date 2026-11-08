@@ -44,3 +44,5 @@ determinism. Each test process needs a 300000 ms process-tree cap.
 The exporter does not generate or alter battle, series or trace expectations.
 
 For independent reference checks and single-tactic LongRunning commands, see [V4 sources and validation](../../DB/Documentation/06-Tooling/CarrierWingSim.md).
+
+Ordinary Engine runs exclude both Category=LongRunning and Category=Balance. Run EvasionCalibrationTests/DecoyReportTests/AnomalyReportTests explicitly for balance evidence; their CSV/JSON outputs must stay under the absolute validation root. SeriesParityTests compares complete current outcomes, units, slots and RNG; the optional DSS_EP0020_NORMALIZE_SLOTS flag changes only exported cross-version signature hashes, never the full direct/explicit assertion. Legacy no-module/no-anomaly fixtures preserve historical M1/M2 evidence and are explicitly named; current M3/M4 views use runtime content. [Current execution evidence](../../DB/Board/EP-0020-tactical-battle-mechanics/ExecutionStatus.md).

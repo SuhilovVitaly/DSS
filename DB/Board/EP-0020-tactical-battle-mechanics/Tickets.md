@@ -1,6 +1,6 @@
 ---
 epic: EP-0020-tactical-battle-mechanics
-stage: draft
+stage: done
 created: 2026-11-08T11:46:28Z
 ---
 
@@ -57,7 +57,7 @@ created: 2026-11-08T11:46:28Z
 | [EP-0020-US-0007-TK-0004-decoy-view-regression](EP-0020-US-0007-decoy-ui/EP-0020-US-0007-TK-0004-decoy-view-regression/EP-0020-US-0007-TK-0004-decoy-view-regression.md) | Проверки вида EP-0019 после ловушек | tests | [EP-0020-US-0007-TK-0003-salvo-decoy-reveal] | [US7-AC4] |
 | [EP-0020-US-0008-TK-0001-anomaly-rules-content](EP-0020-US-0008-anomaly-field/EP-0020-US-0008-TK-0001-anomaly-rules-content/EP-0020-US-0008-TK-0001-anomaly-rules-content.md) | Правила аномалий в данных | content-data | [EP-0020-US-0005-TK-0001-decoy-content] | [US8-AC1] |
 | [EP-0020-US-0008-TK-0002-anomaly-math](EP-0020-US-0008-anomaly-field/EP-0020-US-0008-TK-0002-anomaly-math/EP-0020-US-0008-TK-0002-anomaly-math.md) | Математика поля аномалий | motion | [EP-0020-US-0008-TK-0001-anomaly-rules-content] | [US8-AC2] |
-| [EP-0020-US-0008-TK-0003-anomaly-generator](EP-0020-US-0008-anomaly-field/EP-0020-US-0008-TK-0003-anomaly-generator/EP-0020-US-0008-TK-0003-anomaly-generator.md) | Генерация аномалий из seed боя | engine | [EP-0020-US-0008-TK-0002-anomaly-math, EP-0020-US-0006-TK-0005-decoy-regression] | [US8-AC3] |
+| [EP-0020-US-0008-TK-0003-anomaly-generator](EP-0020-US-0008-anomaly-field/EP-0020-US-0008-TK-0003-anomaly-generator/EP-0020-US-0008-TK-0003-anomaly-generator.md) | Генерация аномалий из seed боя | engine | [EP-0020-US-0008-TK-0002-anomaly-math, EP-0020-US-0006-TK-0005-decoy-regression] | [US8-AC3, US8-AC4] |
 | [EP-0020-US-0009-TK-0001-anomaly-contracts](EP-0020-US-0009-anomaly-resolution/EP-0020-US-0009-TK-0001-anomaly-contracts/EP-0020-US-0009-TK-0001-anomaly-contracts.md) | Контракты поглощения и пыли | contracts | [EP-0020-US-0008-TK-0003-anomaly-generator] | [US9-AC3, US9-AC5] |
 | [EP-0020-US-0009-TK-0002-salvo-anomalies](EP-0020-US-0009-anomaly-resolution/EP-0020-US-0009-TK-0002-salvo-anomalies/EP-0020-US-0009-TK-0002-salvo-anomalies.md) | Поглощение и пыль в залпе | engine | [EP-0020-US-0009-TK-0001-anomaly-contracts] | [US9-AC1, US9-AC2, US9-AC3] |
 | [EP-0020-US-0009-TK-0003-ai-dust-avoidance](EP-0020-US-0009-anomaly-resolution/EP-0020-US-0009-TK-0003-ai-dust-avoidance/EP-0020-US-0009-TK-0003-ai-dust-avoidance.md) | ИИ: не заканчивать ход в пыли | engine | [EP-0020-US-0009-TK-0002-salvo-anomalies] | [US9-AC4] |
