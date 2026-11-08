@@ -67,7 +67,10 @@ internal sealed partial class TacticalBattle
             double course = TacticalGeometry.Norm(drone.Pose.Course + random.Uniform(-scatter.CourseDeg, scatter.CourseDeg));
             drone.Pose = new(x, y, course);
         }
-        var battle = new TacticalBattle(catalog, scenarioId, seed, drones.ToImmutable(), carriers.ToImmutable(), selectedTactics.ToImmutable(), random);
+        var assembledDrones = drones.ToImmutable();
+        var assembledCarriers = carriers.ToImmutable();
+        var battle = new TacticalBattle(catalog, scenarioId, seed, assembledDrones, assembledCarriers, selectedTactics.ToImmutable(), random)
+        { Anomalies = TacticalAnomalyGenerator.Generate(catalog, seed, assembledDrones, assembledCarriers) };
         for (int i = 0; i < scenario.Sides.Length; i++)
         {
             var tactic = catalog.Ai.Tactics[battle.Tactics[i]];

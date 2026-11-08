@@ -228,7 +228,8 @@ internal sealed class TacticalBattleSession
     {
         FireQueue = !_fireSteps.IsEmpty ? _fireQueue : Phase == TacticalBattlePhase.Fire ? TacticalBattleSnapshotBuilder.FireQueue(Battle) : [],
         FireSteps = _fireSteps,
-        DecoysLaunched = _decoysLaunched
+        DecoysLaunched = _decoysLaunched,
+        Anomalies = TacticalBattleSnapshotBuilder.Anomalies(Battle)
     };
     public TacticalBattleResponse Initial(string commandId) => Accepted(commandId, 0);
     public TacticalBattleResponse Reject(string commandId, TacticalBattleRejectionCode code) => new(commandId, false, code, Phase, Capture(), []);

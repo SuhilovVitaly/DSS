@@ -5,7 +5,12 @@ namespace DeepSpaceSaga.Motion.TacticalBattle;
 public enum TacticalAnomalyKind { Heat = 0, Dust = 1 }
 /// <summary>Gaussian center, amplitude, positive world-unit sigmas and rotation in radians.</summary>
 public readonly record struct TacticalClump(double X, double Y, double Amplitude, double SigmaX, double SigmaY, double Rotation);
-public sealed record TacticalAnomaly(string Id, TacticalAnomalyKind Kind, ImmutableArray<TacticalClump> Clumps);
+public sealed record TacticalAnomaly(string Id, TacticalAnomalyKind Kind, ImmutableArray<TacticalClump> Clumps)
+{
+    /// <summary>Generation anchor for placement evidence; the field depends only on Clumps.</summary>
+    public double CenterX { get; init; }
+    public double CenterY { get; init; }
+}
 public readonly record struct TacticalAnomalySegment(double T0, double T1);
 
 /// <summary>Pure Gaussian field and shared midpoint integration; all tuning is captured input.</summary>

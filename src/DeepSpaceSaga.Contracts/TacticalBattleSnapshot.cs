@@ -67,12 +67,17 @@ public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string Tar
 }
 public sealed record TacticalHitRulesSnapshot(double Base, double MinChance, double MaxChance, double RangeBonus,
     double AnglePenalty, double RearBonus, double RearBonusArc);
+public enum TacticalAnomalyKindCode { Heat = 0, Dust = 1 }
+public sealed record TacticalClumpSnapshot(double X, double Y, double Amplitude, double SigmaX, double SigmaY, double Rotation);
+public sealed record TacticalAnomalySnapshot(string Id, TacticalAnomalyKindCode Kind, ImmutableArray<TacticalClumpSnapshot> Clumps);
+public sealed record TacticalAnomalyRulesSnapshot(double ZoneEdge, double Background, int AbsorbSamples);
 public sealed record TacticalDecoyRulesSnapshot(double AiThreatChance);
 public sealed record TacticalEvasionRulesSnapshot(double HitPenalty, int Cost, int MinConsciousness, int RecoveryPerTurn, int MaxConsciousness);
 public sealed record TacticalForecastRules(TacticalHitRulesSnapshot Hit, double TurnAtMaxSpeedFraction, double RearArc, int Substeps)
 {
     public TacticalEvasionRulesSnapshot? Evasion { get; init; }
     public TacticalDecoyRulesSnapshot? Decoy { get; init; }
+    public TacticalAnomalyRulesSnapshot? Anomalies { get; init; }
 }
 public sealed record TacticalLossCount(string Side, int Count);
 public sealed record TacticalOutcomeReasonSnapshot(TacticalOutcomeReasonCode Kind, string? CarrierId = null, int? Cap = null);
@@ -107,6 +112,7 @@ public sealed record TacticalBattleSnapshot(string BattleId, ulong Revision, Tac
     ImmutableArray<TacticalUnitSnapshot> BeforeSalvoUnits, bool FireSkipped, TacticalForecastRules Rules,
     ImmutableArray<TacticalLossCount> Losses, TacticalOutcomeSnapshot? Outcome, ImmutableArray<TacticalBattleLogEvent> Log)
 {
+    public ImmutableArray<TacticalAnomalySnapshot> Anomalies { get; init; } = [];
     public ImmutableArray<string> DecoysLaunched { get; init; } = [];
     public ImmutableArray<TacticalFireQueueEntry> FireQueue { get; init; } = [];
     public ImmutableArray<TacticalFireStepSnapshot> FireSteps { get; init; } = [];

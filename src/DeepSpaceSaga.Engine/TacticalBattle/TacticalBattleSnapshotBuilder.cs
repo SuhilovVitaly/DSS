@@ -7,6 +7,10 @@ namespace DeepSpaceSaga.Engine.TacticalBattle;
 
 internal static class TacticalBattleSnapshotBuilder
 {
+    public static ImmutableArray<TacticalAnomalySnapshot> Anomalies(TacticalBattle battle) => battle.Anomalies.Select(a =>
+        new TacticalAnomalySnapshot(a.Id, (TacticalAnomalyKindCode)a.Kind, a.Clumps.Select(c =>
+            new TacticalClumpSnapshot(c.X, c.Y, c.Amplitude, c.SigmaX, c.SigmaY, c.Rotation)).ToImmutableArray())).ToImmutableArray();
+
     public static ImmutableArray<TacticalFireQueueEntry> FireQueue(TacticalBattle battle) => battle.CaptureFireOrder()
         .Select((drone, index) => new TacticalFireQueueEntry(index, drone.Id, drone.Initiative)).ToImmutableArray();
 
@@ -82,7 +86,8 @@ internal static class TacticalBattleSnapshotBuilder
         r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps)
     {
         Evasion = new(r.Evasion.HitPenalty, r.Evasion.Cost, r.Evasion.MinConsciousness, r.Consciousness.RecoveryPerTurn, r.Consciousness.Max),
-        Decoy = new(r.Decoy.AiThreatChance)
+        Decoy = new(r.Decoy.AiThreatChance),
+        Anomalies = new(r.Anomalies.ZoneEdge, r.Anomalies.Background, r.Anomalies.AbsorbSamples)
     };
     public static TacticalPoseSnapshot Pose(TacticalPose pose) => new(pose.X, pose.Y, pose.Course);
     public static TacticalOutcomeSnapshot? Outcome(TacticalBattleResult? result)

@@ -69,3 +69,5 @@ EP-0020-US-0007-TK-0003 → 82314c8f4925efecc328f74ab41035917592f93e → origin 
 EP-0020-US-0007-TK-0004 → 773da5407093b98d5b8496da9cf6e65cf8fdbfb8 → origin проверен. US8/TK1Content174PASS,export30PASS,готов к публикации.
 
 EP-0020-US-0008-TK-0001 → 3d86c03f8df36b9f2ad84085c7a92f5656248007 → origin проверен. TK2Motion20PASS,готов к публикации.
+
+EP-0020-US-0008-TK-0002 → f684ff1a3dc009937246f29aeea12ebd011c193e → origin проверен. US8 завершена: TK3Engine103/Contracts28/series5000exactPASS, готов к публикации.

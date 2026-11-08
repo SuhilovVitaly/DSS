@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0008-anomaly-field
 title: Аномалии: правила, математика, генерация
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0006-decoy-resolution]
 created: 2026-11-08T11:46:28Z
 source_request: "Ввести две неподвижные аномалии тактического боя — температурную и пылевую — как кластеры эллиптических гауссиан, сгенерированные из seed боя отдельным потоком RNG; общая математика поля, порога и доли линии огня в `DeepSpaceSaga.Motion`; аномалии в снимке."
@@ -56,3 +56,7 @@ D-24, D-25, D-29–D-31, A-23–A-25. Сборка боя — `src/DeepSpaceSaga
 | [EP-0020-US-0008-TK-0001-anomaly-rules-content](EP-0020-US-0008-TK-0001-anomaly-rules-content/EP-0020-US-0008-TK-0001-anomaly-rules-content.md) | Правила аномалий в данных | content-data | `EP-0020-US-0005-TK-0001-decoy-content` | US8-AC1 |
 | [EP-0020-US-0008-TK-0002-anomaly-math](EP-0020-US-0008-TK-0002-anomaly-math/EP-0020-US-0008-TK-0002-anomaly-math.md) | Математика поля аномалий | motion | `EP-0020-US-0008-TK-0001-anomaly-rules-content` | US8-AC2 |
 | [EP-0020-US-0008-TK-0003-anomaly-generator](EP-0020-US-0008-TK-0003-anomaly-generator/EP-0020-US-0008-TK-0003-anomaly-generator.md) | Генерация аномалий из seed боя | engine | `EP-0020-US-0008-TK-0002-anomaly-math`, `EP-0020-US-0006-TK-0005-decoy-regression` | US8-AC3 |
+
+## Исполнение
+
+US8 завершена. AC1 Content174PASS/export30PASS (TK1); AC2 Motion20PASS (TK2); AC3 генерация1000сидов+5000before/afterexactPASS (TK3); AC4 Contracts28PASS и реальная Session.Capture. Evidence в карточках. Самопроверка ownership/RNG/immutable snapshot пройдена; независимая и человеческая приёмка этим не заменяются.

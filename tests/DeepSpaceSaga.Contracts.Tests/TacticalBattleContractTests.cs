@@ -7,6 +7,26 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void OldPayloadsWithoutAnomaliesRemainReadable()
+    {
+        var old = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!;
+        old.AsObject().Remove("Anomalies"); old["Rules"]!.AsObject().Remove("Anomalies");
+        var legacy = JsonSerializer.Deserialize<TacticalBattleSnapshot>(old.ToJsonString())!;
+        Assert.Empty(legacy.Anomalies); Assert.Null(legacy.Rules.Anomalies);
+        var frame = RoundTrip(Frame() with
+        {
+            Anomalies = [new("heat-1", TacticalAnomalyKindCode.Heat,
+            [new(1, 2, 100, 3, 4, .7)])],
+            Rules = Frame().Rules with { Anomalies = new(170, 100, 200) }
+        });
+        var field = Assert.Single(frame.Anomalies);
+        Assert.Equal("heat-1", field.Id); Assert.Equal(TacticalAnomalyKindCode.Heat, field.Kind);
+        Assert.Equal(new TacticalClumpSnapshot(1, 2, 100, 3, 4, .7), Assert.Single(field.Clumps));
+        Assert.Equal(new TacticalAnomalyRulesSnapshot(170, 100, 200), frame.Rules.Anomalies);
+        Assert.Equal(0, (int)TacticalAnomalyKindCode.Heat); Assert.Equal(1, (int)TacticalAnomalyKindCode.Dust);
+    }
+
+    [Fact]
     public void Decoy_order_and_shot_fields_round_trip()
     {
         Assert.True(RoundTrip(new TacticalFireTarget("d", "e", Decoy: true)).Decoy);

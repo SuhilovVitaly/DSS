@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0008-anomaly-field
 ticket: EP-0020-US-0008-TK-0003-anomaly-generator
 title: Генерация аномалий из seed боя
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0008-TK-0002-anomaly-math, EP-0020-US-0006-TK-0005-decoy-regression]
@@ -96,4 +96,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope: Motion TacticalAnomaly получает диагностические init CenterX/CenterY для проверки anchor placement (не влияют на поле и не входят в обязательный DTO); Session.Capture передаёт материализованный список. Техническая фиксация порядка нового RNG: lower32 DeriveStreamSeed(unchecked ulong seed,"tactical-anomalies"); сначала оба count(drawHeat,drawDust), затем все Heat и Dust; после принятого центра spread,clumpCount; одна Box-Muller пара на X/Y (ровно2Random, radialUniform=1−Random исключает log0), затем amplitude/sigmaX/sigmaY/rotation. Это уточнение воспроизводимости, не новое пользовательское решение.
+
+Завершено. Engine103/103PASS (генерация1000сидов, независимый FNV/Mulberry anchor, clearance/полоса/пропуски, основной42draws и initiative state неизменны); Contracts28/28PASS. Series5/5PASS:1000×5 direct/explicit и побайтовое before/after совпадение всех5000 итогов, статистики, состояний и RNG. Scopedformat5проектов и diffcheckPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us8-tk3/` (focus/tests.trx,contracts/tests.trx,before/after/tests.trx,series-comparison.json,focus/anomaly-generation.csv,focus/anomalies-seed1.json). Самопроверка: immutable field materialization; Session.Capture без draw; эффекты не подключены. US8-AC3/4 выполнены; тактический бой не сохраняется, Save20 не меняется.
