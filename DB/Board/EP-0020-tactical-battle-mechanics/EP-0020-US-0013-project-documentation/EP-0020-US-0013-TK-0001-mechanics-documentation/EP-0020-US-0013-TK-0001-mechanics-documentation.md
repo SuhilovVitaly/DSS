@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0013-project-documentation
 ticket: EP-0020-US-0013-TK-0001-mechanics-documentation
 title: Документация уклонения и сознания
-stage: draft
+stage: done
 layer: documentation
 test_project: —
 depends_on: [EP-0020-US-0004-TK-0004-view-regression]
@@ -81,4 +81,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope расширен по завершающему §6 на FirstReleaseRequirements, README index, SaveFormat, tooling docs, DocumentationImpact и FinalValidation; причины перечислены в impact inventory. Собраны текущие ссылки/числа, status переписан как единая 40-ticket publication table без устаревших промежуточных утверждений.
+
+Завершено. US13-AC1: численные EV/consciousness правила, recovery, AI, фаза и E описаны по исходникам; US13-AC2:40 реальных тикет→SHA→push и общие результаты, калибровка/отчёты записаны. Self-review исправил точность rejection: цель+EV→InvalidRequest, недостаток сознания→EvasionUnavailable. Content/relative links123PASS, Documentation Markdown-onlyPASS, diffPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us13-tk1/content-links.json`. Новые runtime tests не запускались: тикет меняет только Markdown; итоговые технические проверки уже завершены до US13.

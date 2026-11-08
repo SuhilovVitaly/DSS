@@ -38,7 +38,7 @@ locations on another host. Fixtures are removed after each test. Process output,
 TRX and other diagnostics belong in the workspace validation root.
 
 Reference Markdown is historical independent evidence of the original simultaneous implementation.
-It is not the oracle for current initiative firing. Explicit manual cases and a
+It is not the oracle for current initiative firing or EP-0020 evasion, decoys and anomalies. Explicit manual cases and a
 limited independent oracle check the new rules; seeded direct/API parity checks
 determinism. Each test process needs a 300000 ms process-tree cap.
 The exporter does not generate or alter battle, series or trace expectations.
