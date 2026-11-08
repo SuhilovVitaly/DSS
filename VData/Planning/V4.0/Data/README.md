@@ -50,6 +50,8 @@
 - `rear.arcHalfDeg` — кормовой сектор (§6.3);
 - `disabled.hullFraction` — порог «выведен из строя»;
 - `systems.*` — повреждение систем (§6.4);
+- `consciousness.*` — старт, максимум и восстановление сознания пилота;
+- `evasion.*` — штраф попадания, цена/порог сознания и строгий порог корпуса ИИ ([EP-0020](../../../../DB/Board/EP-0020-tactical-battle-mechanics/Documentation.md));
 - `seriesTurnCap` — технический предел хода в автоматических сериях; в игре лимита нет.
 
 <!-- table:rules -->
@@ -73,6 +75,13 @@
 | `systems.minHullLoss` | 40 |
 | `systems.engineDamagedFactor` | 0.5 |
 | `systems.table` | [effect: weaponJammed, weight: 1, effect: engineDamaged, weight: 1] |
+| `consciousness.start` | 100 |
+| `consciousness.max` | 100 |
+| `consciousness.recoveryPerTurn` | 5 |
+| `evasion.hitPenalty` | 20 |
+| `evasion.cost` | 10 |
+| `evasion.minConsciousness` | 10 |
+| `evasion.aiHullFraction` | 0.5 |
 | `seriesTurnCap` | 100 |
 <!-- /table -->
 

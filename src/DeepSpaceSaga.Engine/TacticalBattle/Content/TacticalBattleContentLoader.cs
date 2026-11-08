@@ -53,7 +53,8 @@ internal static class TacticalBattleContentLoader
             var initiative = Skill(Property(p.Value, "initiative", "pilots.json", field), field + ".initiative");
             Require(initiative.Minimum >= 0 && initiative.Maximum <= 100, "pilots.json", field + ".initiative", "Initiative must be in [0,100].");
             return (p.Name, new BattlePilot(name, Skill(Property(p.Value, "accuracy", "pilots.json", field), field + ".accuracy"),
-                Skill(Property(p.Value, "maneuver", "pilots.json", field), field + ".maneuver")) { Initiative = initiative });
+                Skill(Property(p.Value, "maneuver", "pilots.json", field), field + ".maneuver"))
+            { Initiative = initiative });
         }));
         var catalog = new TacticalBattleCatalog(rules, ai, DirectoryCatalog<BattleFrame>("Frames"),
             DirectoryCatalog<BattleWeapon>("Modules/Weapons"), DirectoryCatalog<BattleEngine>("Modules/Engines"),
@@ -205,6 +206,11 @@ internal static class TacticalBattleContentLoader
     private static void Validate(TacticalBattleCatalog c, JsonElement aiRoot, Func<string, JsonElement> root)
     {
         var r = c.Rules;
+        Require(r.Consciousness.Start >= 0 && r.Consciousness.Max >= r.Consciousness.Start
+            && r.Consciousness.RecoveryPerTurn >= 0, "rules.json", "$.consciousness", "Invalid consciousness limits.");
+        Require(r.Evasion.HitPenalty >= 0 && r.Evasion.Cost >= 0 && r.Evasion.MinConsciousness >= 0
+            && r.Evasion.MinConsciousness <= r.Consciousness.Max && Unit(r.Evasion.AiHullFraction),
+            "rules.json", "$.evasion", "Invalid evasion rules.");
         Require(r.Version == "4.0", "rules.json", "$.version", "Expected V4.0.");
         Require(r.Substeps > 0 && r.SeriesTurnCap > 0, "rules.json", "$.substeps/seriesTurnCap", "Counts must be positive.");
         Require(Unit(r.TurnAtMaxSpeedFraction) && Unit(r.Disabled.HullFraction) && Unit(r.Systems.EngineDamagedFactor), "rules.json", "$", "Fractions must be in [0,1].");

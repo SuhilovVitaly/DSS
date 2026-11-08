@@ -4,7 +4,9 @@ namespace DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 internal sealed record TacticalRules(string Version, string Description, int Substeps,
     double TurnAtMaxSpeedFraction, DeployScatter DeployScatter, HitRules Hit, RearRules Rear,
-    DisabledRules Disabled, SystemRules Systems, int SeriesTurnCap);
+    DisabledRules Disabled, SystemRules Systems, ConsciousnessRules Consciousness, EvasionRules Evasion, int SeriesTurnCap);
+internal sealed record ConsciousnessRules(int Start, int Max, int RecoveryPerTurn);
+internal sealed record EvasionRules(double HitPenalty, int Cost, int MinConsciousness, double AiHullFraction);
 internal sealed record DeployScatter(double Xy, double CourseDeg);
 internal sealed record HitRules(double Base, double MinChance, double MaxChance, double RangeBonus,
     double AnglePenalty, double RearBonus, double RearBonusArcDeg);

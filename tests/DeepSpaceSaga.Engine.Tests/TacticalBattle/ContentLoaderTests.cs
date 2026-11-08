@@ -9,6 +9,37 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 
 public sealed class ContentLoaderTests
 {
+    [Fact]
+    public void Evasion_and_consciousness_rules_load_from_shipped_data()
+    {
+        var rules = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle")).Rules;
+        Assert.Equal(new ConsciousnessRules(100, 100, 5), rules.Consciousness);
+        Assert.Equal(new EvasionRules(20, 10, 10, 0.5), rules.Evasion);
+    }
+
+    [Theory]
+    [InlineData("/consciousness", "<missing>")]
+    [InlineData("/evasion", "null")]
+    [InlineData("/consciousness/start", "-1")]
+    [InlineData("/consciousness/max", "99")]
+    [InlineData("/consciousness/recoveryPerTurn", "-1")]
+    [InlineData("/evasion/hitPenalty", "-1")]
+    [InlineData("/evasion/cost", "-1")]
+    [InlineData("/evasion/minConsciousness", "-1")]
+    [InlineData("/evasion/minConsciousness", "101")]
+    [InlineData("/evasion/aiHullFraction", "-0.1")]
+    [InlineData("/evasion/aiHullFraction", "1.1")]
+    [InlineData("/consciousness/start", "1.5")]
+    public void Invalid_evasion_or_consciousness_values_are_rejected(string pointer, string value)
+    {
+        using var fixture = new Fixture();
+        fixture.Change("rules.json", pointer, value);
+        var error = Assert.Throws<TacticalBattleContentException>(() => TacticalBattleContentLoader.Load(fixture.Battle));
+        Assert.Equal("rules.json", error.Issue.File);
+        Assert.True(error.Issue.Field.StartsWith("$.consciousness", StringComparison.Ordinal)
+            || error.Issue.Field.StartsWith("$.evasion", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("0", 0, 0, false)]
     [InlineData("100", 100, 100, false)]

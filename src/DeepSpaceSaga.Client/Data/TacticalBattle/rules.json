@@ -36,5 +36,16 @@
       }
     ]
   },
+  "consciousness": {
+    "start": 100,
+    "max": 100,
+    "recoveryPerTurn": 5
+  },
+  "evasion": {
+    "hitPenalty": 20,
+    "cost": 10,
+    "minConsciousness": 10,
+    "aiHullFraction": 0.5
+  },
   "seriesTurnCap": 100
 }
