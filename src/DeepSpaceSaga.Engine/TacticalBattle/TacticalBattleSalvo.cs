@@ -35,9 +35,10 @@ internal sealed record TacticalSalvoStep(int Index, string ShooterId, string? Ta
 
 internal static class TacticalBattleSalvo
 {
-    public static ImmutableArray<TacticalCandidate> Candidates(TacticalBattle battle, TacticalDrone shooter, IReadOnlySet<string>? evading = null, bool ignoreDust = false)
+    public static ImmutableArray<TacticalCandidate> Candidates(TacticalBattle battle, TacticalDrone shooter, IReadOnlySet<string>? evading = null, bool ignoreDust = false, TacticalPose? pose = null)
     {
         if (!shooter.IsActive || shooter.Jammed || (!ignoreDust && InDust(battle, shooter))) return [];
+        var origin = pose ?? shooter.Pose;
         var result = ImmutableArray.CreateBuilder<TacticalCandidate>();
         string enemy = battle.EnemySide(shooter.Side);
         var tuning = battle.Catalog.Rules;
@@ -46,18 +47,18 @@ internal static class TacticalBattleSalvo
         foreach (var target in battle.Drones.Cast<TacticalUnit>().Concat(battle.Carriers))
         {
             if (target.Side != enemy || !target.IsActive) continue;
-            double distance = TacticalGeometry.Dist(shooter.Pose.X, shooter.Pose.Y, target.Pose.X, target.Pose.Y);
-            double angle = TacticalGeometry.Norm(TacticalGeometry.Bearing(shooter.Pose.X, shooter.Pose.Y, target.Pose.X, target.Pose.Y) - shooter.Pose.Course);
+            double distance = TacticalGeometry.Dist(origin.X, origin.Y, target.Pose.X, target.Pose.Y);
+            double angle = TacticalGeometry.Norm(TacticalGeometry.Bearing(origin.X, origin.Y, target.Pose.X, target.Pose.Y) - origin.Course);
             if (distance > shooter.Weapon.Range || Math.Abs(angle) > shooter.Weapon.ArcDeg) continue;
             var drone = target as TacticalDrone;
             var input = new TacticalShotInput(shooter.Accuracy, target.Maneuver, shooter.Weapon.HitBonus,
-                shooter.Weapon.Range, shooter.Weapon.ArcDeg, distance, angle, TacticalHitChance.RearAngle(shooter.Pose, target.Pose),
+                shooter.Weapon.Range, shooter.Weapon.ArcDeg, distance, angle, TacticalHitChance.RearAngle(origin, target.Pose),
                 drone is not null, drone?.Shield?.Defense ?? 0, drone?.ShieldCount ?? 0, tuning.Rear.ArcHalfDeg, shooter.Weapon.RangeBonus,
                 evading?.Contains(target.Id) == true);
             result.Add(new(target, distance, angle, TacticalHitChance.Terms(rules, input))
             {
                 HasAnomalies = !battle.Anomalies.IsDefaultOrEmpty,
-                Absorption = TacticalAnomalyMath.Absorption(battle.Anomalies, shooter.Pose, target.Pose,
+                Absorption = TacticalAnomalyMath.Absorption(battle.Anomalies, origin, target.Pose,
                 tuning.Anomalies.Background, tuning.Anomalies.ZoneEdge, tuning.Anomalies.AbsorbSamples)
             });
         }
