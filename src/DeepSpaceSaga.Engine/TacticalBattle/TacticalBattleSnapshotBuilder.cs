@@ -23,7 +23,8 @@ internal static class TacticalBattleSnapshotBuilder
             var build = new TacticalBuildSnapshot(d.Frame.Name, d.PilotId, battle.Catalog.Pilots[d.PilotId].Name, w.Id, w.Name,
                 w.DamageMin, w.DamageMax, w.Piercing, w.HitBonus, w.Range, w.ArcDeg, w.RangeBonus, w.RearKillChance,
                 d.Plates.Id, d.Plates.Name, d.Shield?.Id, d.Shield?.Name, d.Shield?.Defense ?? 0, d.ShieldCount, d.Frame.ShieldSlots,
-                d.Frame.FrameMassKg, d.Frame.ReferenceMassKg, w.MassKg, d.Plates.MassKg, d.Shield?.MassKg ?? 0);
+                d.Frame.FrameMassKg, d.Frame.ReferenceMassKg, w.MassKg, d.Plates.MassKg, d.Shield?.MassKg ?? 0)
+            { DecoyId = d.Decoy?.Id, DecoyName = d.Decoy?.Name };
             var limits = d.Limits;
             units.Add(new(d.Id, d.Side, TacticalUnitKind.Drone, d.Frame.Id, Pose(d.Pose), d.Speed, d.Hull, d.MaxHull, d.Armor, d.MaxArmor,
                 d.Status switch { TacticalDroneStatus.Air => TacticalUnitState.Air, TacticalDroneStatus.Disabled => TacticalUnitState.Disabled, _ => TacticalUnitState.Destroyed },
@@ -31,7 +32,7 @@ internal static class TacticalBattleSnapshotBuilder
                     e.Definition.MassKg, e.Definition.SpeedBonus, e.Definition.SpeedChange, e.Definition.TurnDeg)).ToImmutableArray(),
                 new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver,
                 battle.Catalog.Ai.Roles[d.Role].Name)
-            { Initiative = d.Initiative, Consciousness = d.Consciousness });
+            { Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges });
         }
         foreach (var c in battle.Carriers)
             units.Add(new(c.Id, c.Side, TacticalUnitKind.Carrier, TacticalBattleConstants.CarrierFrame, Pose(c.Pose), 0,

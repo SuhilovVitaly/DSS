@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0005-decoy-module
 title: Модуль ловушек: данные и сборка дрона
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0002-evasion-resolution]
 created: 2026-11-08T11:46:28Z
 source_request: "Добавить модуль ловушек: слот `moduleSlots` у рам дронов, модуль `decoy.t1` (2 заряда, промах ×1,5, масса 10 кг) во всех компоновках дронов, порог ИИ 0,4 в `rules.json`; масса модуля входит в массу дрона."
@@ -54,3 +54,7 @@ D-15, D-20, D-21, A-13–A-15. Рамы и модули — `src/DeepSpaceSaga.E
 |---|---|---|---|---|
 | [EP-0020-US-0005-TK-0001-decoy-content](EP-0020-US-0005-TK-0001-decoy-content/EP-0020-US-0005-TK-0001-decoy-content.md) | Модуль ловушек, слот рамы и порог ИИ в данных | content-data | `EP-0020-US-0001-TK-0001-rules-content` | US5-AC1, US5-AC2 |
 | [EP-0020-US-0005-TK-0002-decoy-state](EP-0020-US-0005-TK-0002-decoy-state/EP-0020-US-0005-TK-0002-decoy-state.md) | Модуль и заряды в состоянии боя, масса, снимки | engine | `EP-0020-US-0005-TK-0001-decoy-content`, `EP-0020-US-0002-TK-0005-evasion-regression` | US5-AC3, US5-AC4 |
+
+## Исполнение
+
+Оба тикета завершены. AC1/AC2: Content131PASS/export30JSON; AC3/AC4: Engine2834PASS,Motion7PASS,Contracts26PASS,серии5000до/после с точным direct/explicit совпадением; no-module M1 full-state hashes5/5. Сохранение мира/тактическое состояние без Save20 изменений проверены Engine suite. Самопроверка выполнена; независимый/human/native gate не заявлен.

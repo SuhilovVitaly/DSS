@@ -75,7 +75,7 @@ public sealed class AiSteeringTests
     [Fact]
     public void FirstPursuitMatchesIndependentTraceOrderAndConsumesExactlyXThenYDraws()
     {
-        var battle = Battle.Create(AssemblyTests.Catalog(), "initial", 1);
+        var battle = Battle.Create(AssemblyTests.WithoutModules(), "initial", 1);
         var drone = battle.Drones[0];
         var enemy = PyMath.MinByFirst(battle.ActiveDrones("B"), e => TacticalGeometry.Dist(drone.Pose.X, drone.Pose.Y, e.Pose.X, e.Pose.Y));
         var order = TacticalSteering.Pursue(battle, drone, enemy);

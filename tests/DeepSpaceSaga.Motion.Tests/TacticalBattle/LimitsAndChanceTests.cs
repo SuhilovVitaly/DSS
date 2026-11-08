@@ -8,6 +8,17 @@ public sealed class LimitsAndChanceTests
     private static readonly TacticalHitRules Rules = new(50, 5, 95, 15, 12, 10, 30);
 
     [Fact]
+    public void Module_mass_enters_limits_like_shield_mass()
+    {
+        var frame = new TacticalFrameLimits(460, 760, 50, 110, 70);
+        TacticalDrive[] engines = [new(100, 25, 10, 32.5, 1), new(100, 25, 10, 32.5, .5)];
+        Assert.Equal(TacticalLimits.Of(frame, 120, 70, 10, 2, engines, 10),
+            TacticalLimits.Of(frame, 120, 70, 15, 2, engines));
+        Assert.Equal(TacticalLimits.Of(frame, 120, 70, 10, 2, engines),
+            TacticalLimits.Of(frame, 120, 70, 10, 2, engines, 0));
+    }
+
+    [Fact]
     public void CombatSectionThreeExamplesAndDamagedEngineLimitsMatch()
     {
         var heavy = new TacticalFrameLimits(460, 760, 50, 110, 70);

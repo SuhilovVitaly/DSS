@@ -31,7 +31,11 @@ public sealed record TacticalEngineSnapshot(string Id, string Name, double Facto
 public sealed record TacticalBuildSnapshot(string FrameName, string PilotId, string PilotName, string WeaponId, string WeaponName,
     int DamageMin, int DamageMax, int Piercing, int HitBonus, double Range, double ArcDegrees, double? RangeBonus, double RearKillChance,
     string ArmorId, string ArmorName, string? ShieldId, string? ShieldName, int ShieldDefense, int ShieldCount, int ShieldSlots,
-    double FrameMass, double ReferenceMass, double WeaponMass, double ArmorMass, double ShieldMass);
+    double FrameMass, double ReferenceMass, double WeaponMass, double ArmorMass, double ShieldMass)
+{
+    public string? DecoyId { get; init; }
+    public string? DecoyName { get; init; }
+}
 public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKind Kind, string FrameId,
     TacticalPoseSnapshot Pose, double Speed, int Hull, int MaxHull, int Armor, int MaxArmor, TacticalUnitState State,
     string? RoleId, bool Jammed, ImmutableArray<TacticalEngineSnapshot> Engines, TacticalMovementLimits? Limits,
@@ -39,6 +43,7 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
 {
     public int? Initiative { get; init; }
     public int? Consciousness { get; init; }
+    public int? DecoyCharges { get; init; }
 }
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);

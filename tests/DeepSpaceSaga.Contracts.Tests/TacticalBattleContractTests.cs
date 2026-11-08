@@ -7,6 +7,29 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void OldPayloadsWithoutDecoyFieldsRemainReadable()
+    {
+        var unit = Frame().Units[0];
+        var payload = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(unit))!;
+        payload.AsObject().Remove("DecoyCharges");
+        payload["Build"]!.AsObject().Remove("DecoyId");
+        payload["Build"]!.AsObject().Remove("DecoyName");
+        var old = JsonSerializer.Deserialize<TacticalUnitSnapshot>(payload.ToJsonString())!;
+        Assert.Null(old.DecoyCharges);
+        Assert.Null(old.Build!.DecoyId);
+        Assert.Null(old.Build.DecoyName);
+        var changed = RoundTrip(unit with
+        {
+            DecoyCharges = 0,
+            Build = unit.Build! with
+            { DecoyId = "decoy.t1", DecoyName = "Ловушки I" }
+        });
+        Assert.Equal(0, changed.DecoyCharges);
+        Assert.Equal("decoy.t1", changed.Build!.DecoyId);
+        Assert.Equal("Ловушки I", changed.Build.DecoyName);
+    }
+
+    [Fact]
     public void Evade_order_and_skip_reason_round_trip()
     {
         Assert.True(RoundTrip(new TacticalFireTarget("d", null, true)).Evade);

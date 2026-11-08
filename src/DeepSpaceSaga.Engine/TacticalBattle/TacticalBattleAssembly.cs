@@ -47,15 +47,16 @@ internal sealed partial class TacticalBattle
                 var weapon = catalog.Weapons[layout.Weapon!];
                 var armor = catalog.Armor[layout.Armor];
                 var shield = layout.Shield is { } shieldId ? catalog.Shields[shieldId] : null;
+                var decoy = layout.Module is { } module ? catalog.Decoys[module] : null;
                 int shieldCount = shield is null ? 0 : layout.ShieldCount ?? TacticalBattleConstants.DefaultShieldCount;
                 var engines = layout.Engines.Select(id => new TacticalEngineState(catalog.Engines[id])).ToImmutableArray();
                 var limits = TacticalLimits.Of(new(frame.FrameMassKg, frame.ReferenceMassKg, frame.MinSpeed, frame.MaxSpeedCap, frame.TurnCapDeg),
-                    armor.MassKg, weapon.MassKg, shield?.MassKg ?? 0, shieldCount, engines.Select(e => e.Motion).ToArray());
+                    armor.MassKg, weapon.MassKg, shield?.MassKg ?? 0, shieldCount, engines.Select(e => e.Motion).ToArray(), moduleMass: decoy?.MassKg ?? 0);
                 double speed = PyMath.Clamp(start.Speed, limits.MinSpeed, limits.MaxSpeed);
                 var pilot = catalog.Pilots[start.Pilot];
                 int accuracy = Skill(pilot.Accuracy), maneuver = Skill(pilot.Maneuver);
                 drones.Add(new(start.Id, side.Id, new(start.X, start.Y, start.Course), layout.Hull ?? frame.Hull,
-                    armor.Armor, maneuver, accuracy, start.Pilot, layout, frame, weapon, armor, shield, shieldCount, engines, speed));
+                    armor.Armor, maneuver, accuracy, start.Pilot, layout, frame, weapon, armor, shield, shieldCount, engines, speed, decoy));
             }
         }
         foreach (var drone in drones)

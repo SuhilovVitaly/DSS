@@ -41,3 +41,7 @@ EP-0020-US-0004-TK-0002 → 8644df07914a5053c1bb4bb578cea1cc7aa0389f → origin 
 EP-0020-US-0004-TK-0003 → 80664d446e78e9bf56e15e5590f339b96179f904 → origin проверен. US4 завершена: Client2182/2182PASS, все29Ep0019PASS, masked6/6PASS; TK4готов к публикации.
 
 EP-0020-US-0004-TK-0004 → db4e0ea3670cd96c5f4d2bde2b80e6959d45d087 → origin проверен. US5/TK1 Content131/131PASS, export30PASS; готов к публикации.
+
+EP-0020-US-0005-TK-0001 → c27a18c3686f2fcb73df45709ae0a54c3bd0a8b0 → origin проверен. TK-0002 в процессе: main2204/2204PASS; Motion7/7,Contracts26/26; before/after5000 exact seriesPASS. Corpus630 ещё выполняется; тикет не объявлен завершённым. Evidence us5-tk2/series-comparison.json.
+
+US5 завершена: Engine2834PASS(36TRX,no duplicate IDs),Motion7,Contracts26,seriesbefore/after5000PASS,legacy hashes5PASS. TK2 готов к публикации; переход к US6 после origin SHA.
