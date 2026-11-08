@@ -22,7 +22,10 @@ internal static partial class TacticalBattleMapRenderer
             if (Recording is { } layout) layout.Rects["endpoint:" + row.Unit.Id] = rect;
             var inflated = rect; inflated.Inflate(1, 1); occupied.Add(inflated);
             if (selected)
-            { var box = Callout(c, end.X, end.Y - 16, U("PathEnd"), Cyan, Text); occupied.Add(box); if (Recording is { } l) l.Rects["callout:endpoint"] = box; }
+            {
+                bool dust = AnomalyPresentation.Inside(f.Battle, DeepSpaceSaga.Motion.TacticalBattle.TacticalAnomalyKind.Dust, row.Path[^1]);
+                var box = Callout(c, end.X, end.Y - 16, dust ? M("MoveEndInDust") : U("PathEnd"), dust ? Dust : Cyan, dust ? Dust : Text); occupied.Add(box); if (Recording is { } l) l.Rects["callout:endpoint"] = box;
+            }
         }
     }
 }

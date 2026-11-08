@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0010-anomaly-ui
 ticket: EP-0020-US-0010-TK-0002-anomaly-move-fire
 title: Аномалии в движении и стрельбе
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0010-TK-0001-anomaly-field-layer]
@@ -91,4 +91,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope: реальные BattleMapRenderer.Movement.cs/Fire.cs и новый AnomalyPresentation.cs для общей визуальной геометрии; FireOrders.Observe обнуляет группу InDust как Jammed, чтобы запрет работал до Draw. Подпись ChanceWithAbsorption получает итоговый Chance из DTO (без повторного множителя), как буквальное <шанс> §18.3; движок уже включил поглощение. Строки §21 добавляются целиком; форматирование ShotAbsorbed/InDust подключается здесь для осмысленного журнала сразу после введения строк. Новые UI-сцены ищут первый seed≥1/turn с реальной ситуацией, без подстановки полей решений.
+
+Scope для переходной регрессии расширен на Ep0019Scenes и FirePanelEvasion/DecoyTests: новый production seed1 открывает первый Fire на Turn4 вместо3. Старые M1/M2 геометрические пробы сохраняются на явно помеченном JSON-only withoutAnomalies fixture с реальным Engine; они не выдаются за новый M3 baseline. Пересчёт всех production-сцен остаётся TK4. Heat seed1Turn4 имеет Absorption1% и весь короткий участок скрыт маркером цели; для пяти видимых dash-проб ищется первая seed≥1 ситуация с Absorption≥10%, без изменения решений/шансов.
+
+Завершено. Client31/31PASS, build/scopedformat/diffcheckPASS. Новые4M3проверки: реальные heat seed1Turn4Олег→Таг1 (Absorption.355,Chance.400664818770654), dust seed6Turn5Олег, move-end dust seed1Turn3; RUтексты/32+existinglocale проверок, доля PurpleDark≥90%, пять центров6/3dash с≥3Heat, priorityEV/dust summary, D/EVдоступны, targetguard доDraw. 5dashпроб берутся в серединах включённых участков6/3паттерна, не случайных пробелов; число/цветовой допуск не ослаблены. Старые M1/M2 пробы сохранены на явном withoutAnomalies контенте; M3production baseline пересчитывается в TK4. Все временные content-fixture удалены Dispose. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us10-tk2/final/` (tests.trx иJSONреальныхсцен); raster просмотрен. AC2 выполнен, решения только из DTO; графика использует shared Motion.Segments/Inside. Human/native/независимая приёмка отдельно.

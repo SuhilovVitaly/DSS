@@ -6,6 +6,25 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class PhasePanel
 {
+    internal static string FireCaption(TacticalTargetCandidateSnapshot? candidate) => candidate is { Absorption: > 0 }
+        ? M("ChanceWithAbsorption", Pct(candidate.Chance), Math.Round(candidate.Absorption * 100)) : U("HitChance");
+    internal static (string Tag, string Message, string Detail) DustText =>
+        (M("FireImpossibleTag"), M("DroneInDust"), M("DustForbidsFire"));
+    internal static string FireSummary(TacticalFirePlan plan)
+    {
+        int count = plan.Rows.Count(r => r.TargetId is not null && !r.Evade && !r.Drone.InDust), evades = plan.Rows.Count(r => r.Evade);
+        int dust = plan.Rows.Count(r => r.Drone.InDust && !r.Evade), none = plan.Rows.Length - count - evades - dust;
+        string shoots = M(count == 1 ? "Shoots.One" : "Shoots.Many"), evading = M(evades == 1 ? "Evades.One" : "Evades.Many");
+        string summary = dust > 0 ? M("FireSummaryDust", count, shoots + (evades > 0 ? " · " + evades + " " + evading : ""), dust, none)
+            : evades == 0 ? U("FireCount", count, none) : M("FireSummaryEvade", count, shoots, evades, evading, none);
+        int decoys = plan.Rows.Count(r => r.Decoy);
+        if (decoys > 0)
+        {
+            string form = decoys % 100 is >= 11 and <= 14 ? "Many" : decoys % 10 == 1 ? "One" : decoys % 10 is >= 2 and <= 4 ? "Few" : "Many";
+            summary += " · " + decoys + " " + M("Decoys." + form);
+        }
+        return summary;
+    }
     internal static string ThreatText(TacticalBattleSnapshot battle, string droneId, bool evade, bool decoy = false)
     {
         string text = string.Join(" · ", battle.Incoming.Where(i => i.TargetId == droneId).Select(i =>
@@ -54,12 +73,22 @@ internal sealed partial class PhasePanel
             BoxText(c, new(1048, 196, 1266, 216), ThreatText(_frame.Battle, unit.Id, true));
             T(c, M("MindRecovery", rules.RecoveryPerTurn), 1050, 234, 11, Muted);
         }
-        else if (row.Group.List.IsEmpty)
+        else if (row.Group.List.IsEmpty || unit.InDust)
         {
             T(c, PilotCardModel.Name(unit), 1050, 84, 15, Text, true);
-            Tag(c, new(1048, 92, 1266, 110), M("NoTargetsTag"));
-            T(c, M("NoTargetsInArc"), 1050, 140, 14, Text, true);
-            T(c, M("WeaponReach", unit.Build?.WeaponName, unit.Build?.Range, unit.Build?.ArcDegrees), 1050, 158, 11, Muted);
+            if (unit.InDust)
+            {
+                var text = DustText; var tag = new SKRect(1048, 92, 1266, 110);
+                Round(c, tag, PurpleDark, Dust, 1.2f, 0); T(c, text.Tag, 1055, tag.MidY + 11 * .36f, 11, Dust, true);
+                T(c, text.Message, 1050, 140, 14, Text, true);
+                T(c, text.Detail, 1050, 158, FitSize(text.Detail, 11, 214), Dust);
+            }
+            else
+            {
+                Tag(c, new(1048, 92, 1266, 110), M("NoTargetsTag"));
+                T(c, M("NoTargetsInArc"), 1050, 140, 14, Text, true);
+                T(c, M("WeaponReach", unit.Build?.WeaponName, unit.Build?.Range, unit.Build?.ArcDegrees), 1050, 158, 11, Muted);
+            }
             Line(c, 1050, 1264, 165);
             T(c, M("UnderFire"), 1050, 180, 12, Text);
             BoxText(c, new(1048, 186, 1266, 204), ThreatText(_frame.Battle, unit.Id, false, row.Decoy));
@@ -72,7 +101,7 @@ internal sealed partial class PhasePanel
         {
             Head(c, PilotCardModel.Name(unit) + " → " + (target is null ? "—" : PilotCardModel.Name(target)), "FireTag");
             T(c, row.Target is { } candidate ? Pct(candidate.Chance) : "—", 1050, 148, 28, Yellow, true);
-            T(c, U("HitChance"), 1051, 163, 10.5f, Muted);
+            T(c, FireCaption(row.Target), 1051, 163, 10.5f, row.Target?.Absorption > 0 ? Heat : Muted);
             T(c, U("Distance", row.Target is null ? "—" : F(row.Target.Distance)), 1264, 136, 12, Text, align: SKTextAlign.Right);
             T(c, U("Angle", row.Target is null ? "—" : F(Math.Abs(row.Target.Angle))), 1264, 154, 12, Text, align: SKTextAlign.Right);
             Line(c, 1050, 1264, 172);
@@ -87,16 +116,6 @@ internal sealed partial class PhasePanel
         _buttons["evade"] = R(button.Left, button.Top, button.Right, button.Bottom);
         if (Recording is { } layout) layout.Rects["button:evade"] = _buttons["evade"];
         EvadeButton(c, button, M(row.Evade ? "EvadeActive" : row.CanEvade ? "Evade" : "EvadeUnavailable"), row.Evade ? EvadeButtonState.Selected : row.CanEvade ? EvadeButtonState.Available : EvadeButtonState.Unavailable);
-        int count = _frame.FirePlan.Rows.Count(r => r.TargetId is not null), evades = _frame.FirePlan.Rows.Count(r => r.Evade);
-        string summary = evades == 0 ? U("FireCount", count, _frame.FirePlan.Rows.Length - count)
-            : M("FireSummaryEvade", count, M(count == 1 ? "Shoots.One" : "Shoots.Many"), evades,
-                M(evades == 1 ? "Evades.One" : "Evades.Many"), _frame.FirePlan.Rows.Length - count - evades);
-        int decoys = _frame.FirePlan.Rows.Count(r => r.Decoy);
-        if (decoys > 0)
-        {
-            string form = decoys % 100 is >= 11 and <= 14 ? "Many" : decoys % 10 == 1 ? "One" : decoys % 10 is >= 2 and <= 4 ? "Few" : "Many";
-            summary += " · " + decoys + " " + M("Decoys." + form);
-        }
-        StandardAction(c, summary, U("FireStatus"), U("FireAction"));
+        StandardAction(c, FireSummary(_frame.FirePlan), U("FireStatus"), U("FireAction"));
     }
 }

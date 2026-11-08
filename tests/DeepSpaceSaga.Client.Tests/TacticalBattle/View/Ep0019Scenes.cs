@@ -13,10 +13,10 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
     internal TacticalBattleScreen Screen => (TacticalBattleScreen)Fixture.Screens.Current;
     private string? _contentFixture;
     private Ep0019Scenes(BattleNavigationTests.Fixture fixture) => Fixture = fixture;
-    internal static async Task<Ep0019Scenes> Create(string scene, bool withoutModules = false)
+    internal static async Task<Ep0019Scenes> Create(string scene, bool withoutModules = false, bool withoutAnomalies = false)
     {
         string? directory = null;
-        string? settings = withoutModules ? LegacySettings(out directory) : null;
+        string? settings = withoutModules || withoutAnomalies ? LegacySettings(out directory, withoutModules, withoutModules || withoutAnomalies) : null;
         BattleNavigationTests.Fixture f;
         try { f = await BattleNavigationTests.Fixture.Create(engineSettingsPath: settings); }
         catch { if (directory is not null) DeleteFixture(directory); throw; }
@@ -80,7 +80,7 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
         Screen.Render(canvas, bitmap.Width, bitmap.Height);
         return bitmap;
     }
-    private static string LegacySettings(out string? directory)
+    private static string LegacySettings(out string? directory, bool withoutModules, bool withoutAnomalies)
     {
         string validation = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")!;
         directory = Path.Combine(validation, "content-fixture-" + Guid.NewGuid().ToString("N"));
@@ -93,10 +93,19 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
             Directory.CreateDirectory(Path.GetDirectoryName(target)!);
             File.Copy(file, target);
         }
-        string layoutsPath = Path.Combine(content, "layouts.json");
-        var layouts = JsonNode.Parse(File.ReadAllText(layoutsPath))!.AsObject();
-        foreach (var entry in layouts) entry.Value!["module"] = null;
-        File.WriteAllText(layoutsPath, layouts.ToJsonString());
+        if (withoutModules)
+        {
+            string layoutsPath = Path.Combine(content, "layouts.json");
+            var layouts = JsonNode.Parse(File.ReadAllText(layoutsPath))!.AsObject();
+            foreach (var entry in layouts) entry.Value!["module"] = null;
+            File.WriteAllText(layoutsPath, layouts.ToJsonString());
+        }
+        if (withoutAnomalies)
+        {
+            string rulesPath = Path.Combine(content, "rules.json"); var rules = JsonNode.Parse(File.ReadAllText(rulesPath))!;
+            rules["anomalies"]!["heatCount"] = new JsonArray(0, 0); rules["anomalies"]!["dustCount"] = new JsonArray(0, 0);
+            File.WriteAllText(rulesPath, rules.ToJsonString());
+        }
         var settings = JsonNode.Parse(File.ReadAllText(Path.Combine(AppContext.BaseDirectory, "Settings.json")))!;
         foreach (var entry in settings["typeData"]!.AsObject().ToArray())
             if (entry.Value is JsonValue value && value.TryGetValue<string>(out var path))

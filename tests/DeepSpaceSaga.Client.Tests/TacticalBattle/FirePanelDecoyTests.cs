@@ -16,7 +16,7 @@ public sealed class FirePanelDecoyTests
     [InlineData("4-decoy-results")]
     public async Task Decoy_scenes_use_actual_engine_data(string name)
     {
-        await using var scene = await Ep0019Scenes.Create(name);
+        await using var scene = await Ep0019Scenes.Create(name, withoutAnomalies: true);
         using var bitmap = scene.Render();
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         if (name == "2-decoy-empty")
@@ -36,7 +36,7 @@ public sealed class FirePanelDecoyTests
     [Fact]
     public async Task Shot_plan_with_decoy_matches_ui_spec()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         using (var idle = scene.Render())
         {
@@ -67,7 +67,7 @@ public sealed class FirePanelDecoyTests
     [Fact]
     public async Task No_target_with_decoy_matches_ui_spec()
     {
-        await using var scene = await Ep0019Scenes.Create("2-no-target");
+        await using var scene = await Ep0019Scenes.Create("2-no-target", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         Assert.Empty(frame.FirePlan!.Selected!.Group.List);
@@ -98,7 +98,7 @@ public sealed class FirePanelDecoyTests
     [Fact]
     public async Task Card_and_map_decoy_marks()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         scene.Screen.OnKeyDown(Key.D);
         using var bitmap = scene.Render();
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
@@ -121,7 +121,7 @@ public sealed class FirePanelDecoyTests
     [Fact]
     public async Task Empty_charges_panel_shows_disabled_row()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         var row = frame.FirePlan!.Selected!;
@@ -144,7 +144,7 @@ public sealed class FirePanelDecoyTests
     [InlineData("English")]
     public async Task Decoy_texts_have_no_resource_fallback(string language)
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests(language);
         scene.Screen.OnKeyDown(Key.D);
         using var bitmap = scene.Render();
@@ -154,7 +154,7 @@ public sealed class FirePanelDecoyTests
     [Fact]
     public async Task Armed_row_uses_first_incoming_from_real_later_turn()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         for (int step = 0; step < 24; step++)
         {
             var frame = scene.Screen.CaptureFrame(1920, 1080)!;

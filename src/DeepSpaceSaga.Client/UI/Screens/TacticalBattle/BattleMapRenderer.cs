@@ -17,7 +17,7 @@ internal static partial class TacticalBattleMapRenderer
     internal static bool HasDecoy(TacticalBattleFrame frame, TacticalUnitSnapshot unit) =>
         unit.Side == frame.Battle.PlayerSide && frame.FirePlan?.Rows.Any(r => r.Drone.Id == unit.Id && r.Decoy) == true
         || frame.Salvo is { } salvo && salvo.DecoysLaunched.Contains(unit.Id) && (!salvo.InFlight || unit.Side == frame.Battle.PlayerSide);
-    internal static int TargetCount(TacticalBattleFrame f, TacticalUnitSnapshot u) => u.Jammed || u.State != TacticalUnitState.Air || f.FirePlan is null ? 0 : u.Side == f.Battle.PlayerSide ? f.FirePlan.Rows.FirstOrDefault(r => r.Drone.Id == u.Id)?.Group.List.Length ?? 0 : f.Battle.Incoming.Count(i => i.ShooterId == u.Id);
+    internal static int TargetCount(TacticalBattleFrame f, TacticalUnitSnapshot u) => u.Jammed || u.InDust || u.State != TacticalUnitState.Air || f.FirePlan is null ? 0 : u.Side == f.Battle.PlayerSide ? f.FirePlan.Rows.FirstOrDefault(r => r.Drone.Id == u.Id)?.Group.List.Length ?? 0 : f.Battle.Incoming.Count(i => i.ShooterId == u.Id);
     internal static string? Selected(TacticalBattleFrame f) => f.Salvo is { InFlight: true } ? PilotCardModel.ActiveShooter(f) : f.Salvo is not null ? PilotCardModel.ResultShot(f)?.ShooterId : f.SelectedDroneId;
     internal static SKRect Safe(TacticalBattleView v) => new(202, 6, v.PixelWidth - 246, 714);
     internal static SKPoint MarkerPoint(TacticalBattleView view, TacticalUnitSnapshot unit)

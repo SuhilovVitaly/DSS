@@ -12,7 +12,7 @@ public sealed class FirePanelEvasionTests
     [Fact]
     public async Task Evade_plan_panel_matches_ui_spec()
     {
-        await using var scene = await Ep0019Scenes.Create("2-evasion-plan");
+        await using var scene = await Ep0019Scenes.Create("2-evasion-plan", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         using var bitmap = scene.Render();
         Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 94, 1053, 108), PurpleDark), .9, 1);
@@ -41,7 +41,7 @@ public sealed class FirePanelEvasionTests
     [Fact]
     public async Task No_target_panel_matches_ui_spec()
     {
-        await using var scene = await Ep0019Scenes.Create("2-no-target");
+        await using var scene = await Ep0019Scenes.Create("2-no-target", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         scene.Screen.OnMouseDown(30, 30, MouseButton.Left); // safe before the first Render
         using (var initial = scene.Render()) { }

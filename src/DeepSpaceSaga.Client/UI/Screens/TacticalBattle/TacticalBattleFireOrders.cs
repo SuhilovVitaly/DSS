@@ -43,7 +43,7 @@ internal sealed class TacticalBattleFireOrders
         {
             if (unit.Side != state.PlayerSide || unit.Kind != TacticalUnitKind.Drone || unit.State != TacticalUnitState.Air) continue;
             var group = state.Targets.FirstOrDefault(g => g.DroneId == unit.Id) ?? new(unit.Id, [], null);
-            if (unit.Jammed) group = group with { List = [], DefaultTargetId = null };
+            if (unit.Jammed || unit.InDust) group = group with { List = [], DefaultTargetId = null };
             _rows.Add(new(unit, group, group.DefaultTargetId)
             { CanEvade = state.Rules.Evasion is { } rules && (unit.Consciousness ?? rules.MaxConsciousness) >= rules.MinConsciousness });
         }

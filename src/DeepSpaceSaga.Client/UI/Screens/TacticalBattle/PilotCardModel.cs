@@ -96,7 +96,7 @@ internal static class PilotCardModel
                 var row = f.FirePlan?.Rows.FirstOrDefault(r => r.Drone.Id == u.Id);
                 bool has = row?.Target is not null;
                 chip = row?.Evade == true ? BattleFormat.Localize("EvadeChip")
-                    : has ? row!.TargetId + " " + Pct(row.Target!.Chance) : U("NoTargets"); accent = has || row?.Evade == true;
+                    : u.InDust ? M("InDust") : has ? row!.TargetId + " " + Pct(row.Target!.Chance) : U("NoTargets"); accent = has && !u.InDust || row?.Evade == true;
                 Template("FireStats", (has ? "1" : "0", has ? Yellow : Muted), (has ? $"{u.Build?.DamageMin}–{u.Build?.DamageMax}" : "—", has ? Orange : Muted), (u.Initiative?.ToString() ?? "—", Text));
             }
             cards.Add(new(u.Id, Name(u), u.Build?.WeaponName ?? "", pilot, selected == u.Id,

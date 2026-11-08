@@ -18,6 +18,7 @@ public static class BattleLogFormatter
             TacticalBattleLogKind.DecoyLaunched => F("Log.DecoyLaunched", actor),
             TacticalBattleLogKind.NoTargets => L("Log.NoTargets"),
             TacticalBattleLogKind.FireSkipped => F("Log.FireSkipped", actor, SkipText(entry.SkipReason)),
+            TacticalBattleLogKind.ShotAbsorbed => F("Log.ShotAbsorbed", actor, target),
             TacticalBattleLogKind.ShotMissed => F("Log.ShotMiss", actor, target, chance),
             TacticalBattleLogKind.ShotHit or TacticalBattleLogKind.RearKill => F("Log.ShotHit", actor, target,
                 L(entry.Shot?.Rear == true || entry.Kind == TacticalBattleLogKind.RearKill ? "Log.HitRear" : "Log.HitHull"),
@@ -48,6 +49,7 @@ public static class BattleLogFormatter
 
     private static string SkipText(TacticalFireSkipReason? reason) => reason switch
     {
+        TacticalFireSkipReason.InDust => L("Skip.InDust"),
         TacticalFireSkipReason.Evading => L("Skip.Evading"),
         TacticalFireSkipReason.NoTarget => L("Skip.NoTarget"),
         TacticalFireSkipReason.Withheld => L("Skip.Withheld"),

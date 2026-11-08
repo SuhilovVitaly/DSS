@@ -25,9 +25,15 @@ internal static partial class TacticalBattleMapRenderer
                 try { c.ClipPath(path, SKClipOperation.Intersect, true); AnomalyLayer.Draw(c, f); }
                 finally { c.Restore(); }
             }
+            foreach (var row in plan.Rows.Where(r => r.Drone.InDust))
+            {
+                var p = f.View.Project(row.Drone.Pose);
+                var box = Callout(c, p.X, p.Y + 34, M("InDustNoFire"), Dust, Dust); occupied.Add(box);
+                if (Recording is { } l) l.Rects["dust:" + row.Drone.Id] = box;
+            }
             foreach (var row in plan.Rows.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
             {
-                var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId); if (target is null) continue;
+                var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId); if (target is null || row.Drone.InDust) continue;
                 var a = f.View.Project(row.Drone.Pose); var b = f.View.Project(target.Pose); bool selected = row.Drone.Id == plan.SelectedDroneId;
                 Arrow(c, a, b, selected ? Yellow : Text.WithAlpha(170), selected ? 2.6f : 1.3f, selected ? 12 : 9);
                 if (selected && row.Target is { } candidate)
@@ -35,6 +41,20 @@ internal static partial class TacticalBattleMapRenderer
                     string text = Pct(candidate.Chance); var p = new SKPoint((a.X + b.X) / 2, (a.Y + b.Y) / 2); float w = Measure(text, 16, true);
                     var rect = new SKRect(p.X - w / 2, p.Y - 25, p.X + w / 2, p.Y - 7); occupied.Add(rect); if (Recording is { } l) l.Rects["chance"] = rect;
                     T(c, text, p.X, p.Y - 9, 16, Yellow, true, SKTextAlign.Center);
+                    if (candidate.Absorption > 0)
+                    {
+                        var segments = AnomalyPresentation.Segments(f.Battle, row.Drone.Pose, target.Pose);
+                        using var effect = SKPathEffect.CreateDash([6, 3], 0);
+                        using var heat = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = Heat, StrokeWidth = 3.2f, PathEffect = effect };
+                        foreach (var segment in segments) c.DrawLine(a + Scale(b - a, (float)segment.T0), a + Scale(b - a, (float)segment.T1), heat);
+                        if (!segments.IsEmpty)
+                        {
+                            var longest = segments.OrderByDescending(s => s.T1 - s.T0).First();
+                            var mid = a + Scale(b - a, (float)((longest.T0 + longest.T1) / 2.0));
+                            var box = Callout(c, mid.X, mid.Y + 26, M("Absorption", Math.Round(candidate.Absorption * 100)), Heat, Heat);
+                            occupied.Add(box); if (Recording is { } record) record.Rects["absorption:" + row.Drone.Id] = box;
+                        }
+                    }
                 }
             }
         }
