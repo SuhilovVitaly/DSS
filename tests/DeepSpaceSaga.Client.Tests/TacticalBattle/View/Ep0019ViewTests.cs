@@ -39,10 +39,10 @@ public sealed partial class Ep0019ViewTests
             }
             if (name == "5-outcome")
             {
-                Assert.Equal(20, state.Outcome!.Turns);
+                Assert.Equal(28, state.Outcome!.Turns);
                 Assert.Equal(TacticalBattleOutcomeCode.A, state.Outcome.Kind);
-                Assert.Equal(30, state.Outcome.Statistics.Shots);
-                Assert.Equal(18, state.Outcome.Statistics.Hits);
+                Assert.Equal(38, state.Outcome.Statistics.Shots);
+                Assert.Equal(24, state.Outcome.Statistics.Hits);
             }
         }
         string json = JsonSerializer.Serialize(states, new JsonSerializerOptions { WriteIndented = true });

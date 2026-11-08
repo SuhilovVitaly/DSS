@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0004-evasion-ui
 ticket: EP-0020-US-0004-TK-0004-view-regression
 title: Проверки вида EP-0019 после уклонения
-stage: draft
+stage: done
 layer: tests
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0004-TK-0003-results-evasion-reveal]
@@ -90,4 +90,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Перед правкой scope расширен на фактические partial-файлы Ep0019Acceptance.cs/Ep0019Snapshots.cs и три разрешённых regression assets: код EP-0019 разделён по partial-файлам. Пороги не меняются. Сначала независимые строки/геометрия/пробы и masked compare старых снимков; затем замена только двух Fire и Outcome.
+
+Полная Client suite выявила второй literal Outcome в PhaseOutcomeTests.cs; scope расширен на него по той же причине D-10/AI. Четыре ожидания заменены на независимо проверенные 28/38/24/2:6; проверки navigation/exit сохранены.
+
+Итог: независимые проверки27/27 PASS; старые masked snapshots6/6 PASS; обновлены только два Fire и Outcome. Полная Client suite2182/2182 PASS, в том числе все29 Ep0019, FirePanel, Results, navigation, session/save границы. Build/scoped-format/diff-check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us4-tk4/client-final/tests.trx, independent/, masked/, format.log, format-outcome.log. Визуальная самопроверка production render выполнена; independent/human/native acceptance не заявляется. US4-AC4 выполнен. Пороги не ослаблены; переходный режим масок явно включается только env-флагом и отсутствует в финальной suite.

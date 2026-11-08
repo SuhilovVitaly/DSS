@@ -37,3 +37,5 @@ EP-0020-US-0002-TK-0005 → 57624cffd59d2392626d2037bf817b5b706bb33c → origin 
 EP-0020-US-0004-TK-0001 → 953cc4738c77ec84e389311a5739f9bfd8da693e → origin проверен. UI panel13/13 PASS с guards до первого Draw, пробами UiSpec и RU/EN; всё в карточке TK-0002.
 
 EP-0020-US-0004-TK-0002 → 8644df07914a5053c1bb4bb578cea1cc7aa0389f → origin проверен. Results reveal/zero-shot21/21 PASS.
+
+EP-0020-US-0004-TK-0003 → 80664d446e78e9bf56e15e5590f339b96179f904 → origin проверен. US4 завершена: Client2182/2182PASS, все29Ep0019PASS, masked6/6PASS; TK4готов к публикации.

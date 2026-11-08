@@ -35,6 +35,10 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
                 // First own candidate in the canonical scenario is Marta.
                 while (result.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected?.Target is null)
                     result.Screen.OnKeyDown(Key.Tab);
+                if (scene == "2-evasion-plan") result.Screen.OnKeyDown(Key.E);
+                if (scene == "2-no-target")
+                    while (result.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!.Drone.Id != "Вера")
+                        result.Screen.OnKeyDown(Key.Tab);
                 if (scene is "3-salvo-flight" or "4-salvo-results")
                 {
                     f.ManualAnimation = true;
