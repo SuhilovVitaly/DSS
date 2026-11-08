@@ -52,6 +52,7 @@ public sealed record TacticalTargetGroupSnapshot(string DroneId, ImmutableArray<
 public sealed record TacticalIncomingShotSnapshot(string ShooterId, string TargetId, double Chance, double Distance, double Angle, bool Rear, double RearKillChance)
 {
     public double? ChanceIfEvading { get; init; }
+    public double? ChanceIfDecoy { get; init; }
 }
 /// <summary>Killed means this shot destroyed the target at its step; Kill is this shot's rear-kill roll.</summary>
 public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string TargetId, TacticalPoseSnapshot From,
@@ -60,13 +61,17 @@ public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string Tar
     /// <summary>This impact transitions the target to destroyed.</summary>
     public bool LethalImpact { get; init; }
     public bool TargetEvading { get; init; }
+    public bool Decoyed { get; init; }
+    public double? ChanceWithoutDecoy { get; init; }
 }
 public sealed record TacticalHitRulesSnapshot(double Base, double MinChance, double MaxChance, double RangeBonus,
     double AnglePenalty, double RearBonus, double RearBonusArc);
+public sealed record TacticalDecoyRulesSnapshot(double AiThreatChance);
 public sealed record TacticalEvasionRulesSnapshot(double HitPenalty, int Cost, int MinConsciousness, int RecoveryPerTurn, int MaxConsciousness);
 public sealed record TacticalForecastRules(TacticalHitRulesSnapshot Hit, double TurnAtMaxSpeedFraction, double RearArc, int Substeps)
 {
     public TacticalEvasionRulesSnapshot? Evasion { get; init; }
+    public TacticalDecoyRulesSnapshot? Decoy { get; init; }
 }
 public sealed record TacticalLossCount(string Side, int Count);
 public sealed record TacticalOutcomeReasonSnapshot(TacticalOutcomeReasonCode Kind, string? CarrierId = null, int? Cap = null);
@@ -98,6 +103,7 @@ public sealed record TacticalBattleSnapshot(string BattleId, ulong Revision, Tac
     ImmutableArray<TacticalUnitSnapshot> BeforeSalvoUnits, bool FireSkipped, TacticalForecastRules Rules,
     ImmutableArray<TacticalLossCount> Losses, TacticalOutcomeSnapshot? Outcome, ImmutableArray<TacticalBattleLogEvent> Log)
 {
+    public ImmutableArray<string> DecoysLaunched { get; init; } = [];
     public ImmutableArray<TacticalFireQueueEntry> FireQueue { get; init; } = [];
     public ImmutableArray<TacticalFireStepSnapshot> FireSteps { get; init; } = [];
 }

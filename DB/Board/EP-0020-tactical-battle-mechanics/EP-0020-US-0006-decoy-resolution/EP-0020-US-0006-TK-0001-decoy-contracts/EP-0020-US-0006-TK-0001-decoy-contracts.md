@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0006-decoy-resolution
 ticket: EP-0020-US-0006-TK-0001-decoy-contracts
 title: Контракты ловушки
-stage: draft
+stage: done
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0020-US-0005-TK-0002-decoy-state, EP-0020-US-0002-TK-0001-evasion-contracts]
@@ -84,4 +84,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Выполнено: приказ Decoy(default false), DecoyUnavailable24, nullable forecast/shot/rules поля и пустой DecoysLaunched. Contracts27/27PASS; build/scoped-format/diff-checkPASS. Удалённые из реального JSON новые поля читаются с прежними defaults; новые значения round-trip без потери. Старые enum IDs сохранены. Самопроверка совместимости выполнена, US6-AC1 контрактная часть покрыта. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us6-tk1/contracts/tests.trx, format-contracts.log, format-tests.log. Engine/Client consumption следует зависимыми тикетами.

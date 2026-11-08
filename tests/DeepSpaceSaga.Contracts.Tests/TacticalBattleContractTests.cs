@@ -7,6 +7,23 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void Decoy_order_and_shot_fields_round_trip()
+    {
+        Assert.True(RoundTrip(new TacticalFireTarget("d", "e", Decoy: true)).Decoy);
+        var shot = RoundTrip(Frame().Shots[0] with { Decoyed = true, ChanceWithoutDecoy = .47, Chance = .205 });
+        Assert.True(shot.Decoyed);
+        Assert.Equal(.47, shot.ChanceWithoutDecoy);
+        Assert.Equal(.205, shot.Chance);
+        var incoming = new TacticalIncomingShotSnapshot("s", "d", .47, 10, 0, false, 0) { ChanceIfDecoy = .205 };
+        Assert.Equal(.205, RoundTrip(incoming).ChanceIfDecoy);
+        var frame = RoundTrip(Frame() with { DecoysLaunched = ["d"], Rules = Frame().Rules with { Decoy = new(.4) } });
+        Assert.Equal(new[] { "d" }, frame.DecoysLaunched);
+        Assert.Equal(.4, frame.Rules.Decoy!.AiThreatChance);
+        Assert.Equal(24, (int)TacticalBattleRejectionCode.DecoyUnavailable);
+        Assert.Equal(23, (int)TacticalBattleRejectionCode.EvasionUnavailable);
+    }
+
+    [Fact]
     public void OldPayloadsWithoutDecoyFieldsRemainReadable()
     {
         var unit = Frame().Units[0];
@@ -18,6 +35,21 @@ public sealed class TacticalBattleContractTests
         Assert.Null(old.DecoyCharges);
         Assert.Null(old.Build!.DecoyId);
         Assert.Null(old.Build.DecoyName);
+        Assert.False(JsonSerializer.Deserialize<TacticalFireTarget>("""{"DroneId":"d","TargetId":null}""")!.Decoy);
+        Assert.Null(JsonSerializer.Deserialize<TacticalIncomingShotSnapshot>("""{"ShooterId":"s","TargetId":"d","Chance":0.5}""")!.ChanceIfDecoy);
+        var legacyFrame = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!;
+        legacyFrame.AsObject().Remove("DecoysLaunched");
+        legacyFrame["Rules"]!.AsObject().Remove("Decoy");
+        foreach (var value in legacyFrame["Shots"]!.AsArray())
+        {
+            value!.AsObject().Remove("Decoyed");
+            value.AsObject().Remove("ChanceWithoutDecoy");
+        }
+        var restored = JsonSerializer.Deserialize<TacticalBattleSnapshot>(legacyFrame.ToJsonString())!;
+        Assert.Empty(restored.DecoysLaunched);
+        Assert.Null(restored.Rules.Decoy);
+        Assert.False(restored.Shots[0].Decoyed);
+        Assert.Null(restored.Shots[0].ChanceWithoutDecoy);
         var changed = RoundTrip(unit with
         {
             DecoyCharges = 0,
