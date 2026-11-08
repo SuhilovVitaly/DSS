@@ -19,9 +19,11 @@ internal sealed class HoverCard
         if (own && unit.Kind == TacticalUnitKind.Drone)
         { PilotCardColumn.Portrait(c, portraits, unit.Build?.PilotId ?? "", PilotCardModel.Name(unit), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32)); x = r.Left + 48; }
         T(c, PilotCardModel.Name(unit), x, r.Top + 38, 14, own ? Cyan : Orange, true);
-        string state = PilotCardModel.State(unit); float w = Measure(state, 10.5f) + 12;
-        var chip = new SKRect(r.Right - 8 - w, r.Top + 25, r.Right - 8, r.Top + 41); Round(c, chip, Box);
-        T(c, state, chip.MidX, chip.MidY + 4, 10.5f, Text, align: SKTextAlign.Center);
+        bool evading = TacticalBattleMapRenderer.IsEvading(f, unit.Id);
+        string state = evading ? M("EvadeChip") : PilotCardModel.State(unit); float w = Measure(state, 10.5f, evading) + 12;
+        var chip = new SKRect(r.Right - 8 - w, r.Top + 25, r.Right - 8, r.Top + 41);
+        Round(c, chip, evading ? PurpleDark : Box, evading ? Purple : null);
+        T(c, state, chip.MidX, chip.MidY + 4, 10.5f, evading ? Purple : Text, evading, align: SKTextAlign.Center);
         T(c, U("HullValue", unit.Hull, unit.MaxHull), x, r.Top + 56, 10.5f, Text);
         Bar(c, r.Left + 130, r.Top + 51, r.Width - 138, 5, unit.MaxHull > 0 ? unit.Hull / (double)unit.MaxHull : 0, Cyan);
         T(c, U("ArmorValue", unit.Armor, unit.MaxArmor), r.Left + 9, r.Top + 75, 10.5f, Text);

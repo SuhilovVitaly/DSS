@@ -64,7 +64,8 @@ internal sealed partial class PhasePanel
         }
         else
         {
-            T(c, U(shot?.Hit == true ? "Hit" : "Miss"), 1050, 140, 22, Yellow, true);
+            string result = shot is null ? M("EvadeNoFire") : U(shot.Hit ? "Hit" : "Miss");
+            T(c, result, 1050, 140, FitSize(result, 22, 214, true), shot is null ? Purple : Yellow, true);
             T(c, U("DamageDealt", shot?.Hit == true ? PilotCardModel.Dealt(_frame.Battle, shot.ShooterId, shot.Turn) : 0), 1050, 158, 12, Text); Line(c, 1050, 1264, 167);
             var unit = _frame.Battle.Units.FirstOrDefault(u => u.Id == shot?.ShooterId);
             var before = _frame.Battle.BeforeSalvoUnits.FirstOrDefault(u => u.Id == unit?.Id);

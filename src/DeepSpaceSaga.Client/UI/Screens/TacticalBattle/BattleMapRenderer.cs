@@ -11,6 +11,8 @@ internal static partial class TacticalBattleMapRenderer
     internal static readonly SKColor Own = Cyan, Enemy = Orange, Background = MapBg, Inactive = Muted.WithAlpha(140), Jammed = Yellow;
     internal static double RulerLength(double pixelsPerUnit, float uiScale) => 100;
     internal static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame f) => f.Battle.Units;
+    internal static bool IsEvading(TacticalBattleFrame frame, string id) =>
+        frame.FirePlan?.Rows.Any(r => r.Drone.Id == id && r.Evade) == true || frame.Salvo?.Evading.Contains(id) == true;
     internal static int TargetCount(TacticalBattleFrame f, TacticalUnitSnapshot u) => u.Jammed || u.State != TacticalUnitState.Air || f.FirePlan is null ? 0 : u.Side == f.Battle.PlayerSide ? f.FirePlan.Rows.FirstOrDefault(r => r.Drone.Id == u.Id)?.Group.List.Length ?? 0 : f.Battle.Incoming.Count(i => i.ShooterId == u.Id);
     internal static string? Selected(TacticalBattleFrame f) => f.Salvo is { InFlight: true } ? PilotCardModel.ActiveShooter(f) : f.Salvo is not null ? PilotCardModel.ResultShot(f)?.ShooterId : f.SelectedDroneId;
     internal static SKRect Safe(TacticalBattleView v) => new(202, 6, v.PixelWidth - 246, 714);
@@ -45,7 +47,7 @@ internal static partial class TacticalBattleMapRenderer
             var color = Skin.Color(role, "fill", own ? Cyan : Orange);
             if (u.Kind == TacticalUnitKind.Carrier) { if (inside.Contains(p)) Hex(c, p, 15, color); else Edge(c, f, u, p, inside, occupied, color); }
             else { if (own) Diamond(c, p, 7.5f, color); else Triangle(c, p, 9, u.Pose.Course, color); if (u.Id == Selected(f)) Circle(c, p, 12, SKColors.Transparent, Text, 1.2f); }
-            if (own && u.Kind == TacticalUnitKind.Drone && f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true)
+            if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
                 EvasionRing(c, p);
         }
         foreach (var u in units.Where(u => u.Kind != TacticalUnitKind.Carrier || inside.Contains(v.Project(u.Pose)))

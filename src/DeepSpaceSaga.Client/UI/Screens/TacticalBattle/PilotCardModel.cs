@@ -73,6 +73,7 @@ internal static class PilotCardModel
                     selected = ResultShot(f)?.ShooterId;
                     int received = salvo.Damage.FirstOrDefault(d => d.Unit.Id == u.Id) is { } d ? d.Armor + d.Hull : 0;
                     chip = U(shot is null ? portraits.IsFemale(pilot) ? "NotFiredFemale" : "NotFiredMale" : shot.Hit ? "HitChip" : "MissChip");
+                    if (salvo.Evading.Contains(u.Id)) chip = BattleFormat.Localize("EvadeChipResult");
                     accent = received > 0;
                     Template("ResultStats", (shot is null ? "—" : shot.Hit ? Dealt(f.Battle, u.Id, shot.Turn).ToString() : "0", shot?.Hit == true ? Orange : Muted), (received > 0 ? "−" + received : "0", received > 0 ? Red : Muted));
                 }
@@ -103,7 +104,10 @@ internal static class PilotCardModel
                  new("mind", U("Mind"), (u.Consciousness ?? 100).ToString(), Green,
                      (u.Consciousness ?? 100) / (double)Math.Max(1, f.Battle.Rules.Evasion?.MaxConsciousness ?? 100))
                  { ValueTone = u.Consciousness < (f.Battle.Rules.Evasion?.MinConsciousness ?? 0) ? Red : null }], chip, accent, segments)
-            { Evading = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true });
+            {
+                Evading = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true
+                || f.Salvo is { InFlight: false } result && result.Evading.Contains(u.Id)
+            });
         }
         return cards;
     }

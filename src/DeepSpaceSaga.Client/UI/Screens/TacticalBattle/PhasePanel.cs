@@ -25,7 +25,7 @@ internal sealed partial class PhasePanel
         try
         {
             PanelBox(c, new(1040, 6, 1274, _db + 120));
-            int turn = f.Salvo?.Flights.FirstOrDefault()?.Shot.Turn ?? f.Battle.Turn;
+            int turn = f.Salvo is { Turn: > 0 } s ? s.Turn : f.Salvo?.Flights.FirstOrDefault()?.Shot.Turn ?? f.Battle.Turn;
             string heading = U("Turn", turn), phase = U(Phase);
             T(c, heading, 1050, 28, 14, Text, true);
             float px = 1050 + Measure(heading, 14, true) + 8;
