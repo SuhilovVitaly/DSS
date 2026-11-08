@@ -1,8 +1,8 @@
 # EP-0020 — исполнение
 
-Ветка `codex/ep-0020-tactical-battle-mechanics`, origin `https://github.com/SuhilovVitaly/DSS`; база EP19 `601ab778e710c5663de93bedf311f0f613405ef3`. Новая ветка создана по поручению пользователя. Исходное дерево чистое; дополнительных worktree нет. Полномочия: AGENTS/EpicExecutionPrompt, всё 44draft-карточки и per-ticket commit+immediate push. Подготовка 9aad733e — служебная, не отдельный тикет.
+Ветка `codex/ep-0020-tactical-battle-mechanics`, origin `https://github.com/SuhilovVitaly/DSS`; база EP19 `601ab778e710c5663de93bedf311f0f613405ef3`. Новая ветка создана по поручению пользователя. Исходное дерево чистое; дополнительных worktree нет. Полномочия: AGENTS/EpicExecutionPrompt, все 44 draft-карточки и per-ticket commit+immediate push. Подготовка 9aad733e — служебная, не отдельный тикет.
 
-Реализованы все 44 тикета/13 историй, включая последнюю документационную US13. Собственный SHA последнего TK4 вносится после commit+push отдельным publication receipt. Каждый опубликованный SHA проверен в origin до следующего тикета. Полный итог и ограничения — [FinalValidation](FinalValidation.md), инвентаризация — [DocumentationImpact](DocumentationImpact.md).
+Реализованы и опубликованы все 44 тикета/13 историй, включая последнюю документационную US13. Последний тикет TK4 — `fb631c893f21c5e86052b6d959f2619bcf78e262`, origin проверен после commit/push. Каждый SHA опубликован до следующего тикета. Полный итог и ограничения — [FinalValidation](FinalValidation.md), инвентаризация — [DocumentationImpact](DocumentationImpact.md).
 
 ## Тикет → SHA → push
 
@@ -51,7 +51,7 @@
 | EP-0020-US-0013-TK-0001 | `793066946553c986f5a9c99ebdb2fccb2ee8ecf0` | origin verified |
 | EP-0020-US-0013-TK-0002 | `04fd48078894afe127cc5a7b386ddfe583d3b7e9` | origin verified |
 | EP-0020-US-0013-TK-0003 | `57a3c6804bfa1b049241701607ed26b71b00c259` | origin verified |
-| EP-0020-US-0013-TK-0004 | собственный SHA фиксируется следующим publication receipt | pending commit/push |
+| EP-0020-US-0013-TK-0004 | `fb631c893f21c5e86052b6d959f2619bcf78e262` | origin verified |
 
 ## Проверки и общий review
 
@@ -82,3 +82,9 @@ Human/product/art acceptance, физический ввод, hardware audio, н�
 ## Финальная документация и граф
 
 US13 выполнена последней:56AC/44 тикета,13 историй,78canonical dependencies. Content/links и Markdown-only проверены; DocumentationImpact содержит README/tooling/asset/Save20 inventory. EP20 source corpus включён в offline Graphify:814code/755Markdown,22594nodes/60077edges/760communities;1569source+4semantic hashes и export hashes проверены, missing/invalid/dangling/selfloops0. Один parser partial-coverage warning в ModulePanelLocalizationTests,1216unresolved AST edges и 3019unlocated reference symbols задокументированы. Selective semantic extraction не является независимым code review. Evidence `us13-tk4/graph-quality.json` и `graph/verification.json` в evidence root. Manifest head57a3c680 предшествует final commit и описывает working-tree hashes; publication ledgers исключены из циклического hashing.
+
+## Publication receipt и уборка
+
+Последний тикет EP-0020-US-0013-TK-0004 опубликован как `fb631c893f21c5e86052b6d959f2619bcf78e262`; ls-remote совпал с локальным HEAD. Все 44 ID присутствуют в истории ветки и таблице выше. Служебный receipt не является дополнительным тикетом и не меняет runtime.
+
+После завершения bounded процессов убраны 331 временный каталог и 1053 disposable файла (task scripts/cache/tmp/worker claims/intermediate raster/binaries); retained TRX/JSON/CSV/signatures, native evidence и graph exports требуются ссылками карточек/итогового отчёта. Проверка: 0 temporary dirs, запрещённого DSS/artifacts нет; task-created worktrees 0, первичный checkout сохранён. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/cleanup.json` и `publication-audit.json`. Чужие/старые workspace каталоги не удалялись. Source/export graph hashes перепроверены после commit и cleanup. Финальный remote HEAD проверяется после публикации этого receipt.
