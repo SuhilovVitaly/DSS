@@ -103,7 +103,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         bool planning = !moving && salvo is null;
         _viewport = BattleViewport.From(width, height);
         _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, OverlayBottom(state, salvo));
-        _camera.Update(state, (int)_viewport.Wd, 720);
+        _camera.Update(state, (int)_viewport.Wd, 720, salvo is not null);
         if (planning) ObserveOrders(state);
         return new(state, _camera.View, _panel, 1, moving || Flow.Pending || presentation.Accepted.Revision != Flow.State?.Revision,
             BlockedNotice is { Length: > 0 } notice ? notice : moving ? L("AnimatingMovement") : Flow.Error,
