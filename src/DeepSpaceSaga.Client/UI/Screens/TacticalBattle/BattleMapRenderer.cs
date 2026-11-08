@@ -50,7 +50,7 @@ internal static partial class TacticalBattleMapRenderer
         T(c, "100 " + BattleFormat.Localize("MapUnits"), 14 + len / 2, 699, 10.5f, Text, align: SKTextAlign.Center);
         var occupied = units.Select(u => { var p = v.Project(u.Pose); float r = u.Kind == TacticalUnitKind.Carrier ? 16 : 9; return new SKRect(p.X - r, p.Y - r, p.X + r, p.Y + r); }).ToList();
         occupied.Add(new(0, 0, 202, 6 + 87 * f.Battle.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide)));
-        occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, f.Panel.Bottom + (f.HoverUnitId is null ? 6 : 116)));
+        occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, f.Panel.Bottom + (f.HoverUnitId is null && AnomalyPresentation.HoverKind(f) is null ? 6 : 116)));
         occupied.Add(new(10, 686, 18 + len, 714));
         occupied.AddRange([new(0, 0, v.PixelWidth, 2), new(0, 718, v.PixelWidth, 720), new(0, 0, 2, 720), new(v.PixelWidth - 2, 0, v.PixelWidth, 720)]);
         DrawMovement(c, f, occupied); DrawPhaseOverlays(c, f, occupied);

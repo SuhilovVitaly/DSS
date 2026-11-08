@@ -3,7 +3,7 @@ using DeepSpaceSaga.Client.Tests.TacticalBattle.View;
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
 [Collection("InterfaceLog")]
-public sealed class HoverCardTests
+public sealed partial class HoverCardTests
 {
     [Theory]
     [InlineData("Таг-6", "ПОД КУРСОРОМ · ПРОТИВНИК", "Обрез I · 40–50 · дальн. 110 · иниц. 41")]
@@ -11,7 +11,7 @@ public sealed class HoverCardTests
     public async Task Mouse_hover_changes_only_hover_projection(string id, string heading, string details)
     {
 
-        await using var s = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian"); using var initial = s.Render();
+        await using var s = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true); using var locale = Localization.UseLocaleForTests("Russian"); using var initial = s.Render();
         var f = s.Screen.CaptureFrame(1920, 1080)!; var p = f.View.Project(f.Battle.Units.Single(u => u.Id == id).Pose);
         var targets = s.Screen.BuildFireRequest().Targets;
         s.Screen.OnMouseMove(p.X * 1.5f, p.Y * 1.5f);

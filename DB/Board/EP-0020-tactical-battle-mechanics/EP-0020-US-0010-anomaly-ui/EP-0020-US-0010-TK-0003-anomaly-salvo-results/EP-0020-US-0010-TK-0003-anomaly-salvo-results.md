@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0010-anomaly-ui
 ticket: EP-0020-US-0010-TK-0003-anomaly-salvo-results
 title: Аномалии в залпе, результатах и карточке наведения
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0010-TK-0002-anomaly-move-fire]
@@ -89,4 +89,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Scope включает реальные BattleMapRenderer.Fire/Hover.cs, PilotCardModel, AnomalyPresentation, TacticalBattleFrame и Screen.Overlay: hovered design pointer передаётся в captured frame, без пересчёта правил/изменения приказов; unit hover имеет приоритет. Occupied/right overlay bounds учитывают anomaly card. Absorbed+Decoyed не классифицируется как DecoyMiss; расход ловушки остаётся фактом. Старые M1/M2 results/hover fixtures временно явно withoutAnomalies, production view пересчёт — TK4. Журнал уже подключён TK2.
+
+Visual review реального seed1Turn11 выявил коллизии M2/M3: длинное ПОГЛОЩЁН22px пересекает зелёную пару шансов, а фиксированная выноска пересекает обязательный decoy marker. Минимальное техническое согласование UiSpec: для Absorbed пара условного hit-chance M2 не выводится (hit-roll не было; D остаётся в marker/charges/log), thermal выноска предпочитает q−16, при пересечении маркеров выбирает ближайшую свободную позицию из фиксированного списка как M2. Это устранение измеренного overlap, не изменение данных/решений пользователя. Scope UiSpec §19 уточнён до кода.
+
+Завершено. Client28/28PASS, build/scopedformat/diffcheckPASS. Реальный seed1Turn11: Марта→Таг5,Absorption.175,Absorbed=true; обязательные title/detail/chip/callout/радиусы6/10/точка первогоSegments, отсутствие DecoyMiss/early chip, effectiveChance queue без повторного множителя, privacyD и typed journal проверены. Heat/Dust hover через actual Screen.OnMouseMove,3строки, overlaybounds, неизменность приказов, unit priority/heat overlap priorityPASS. Visual review повторён: коллизии title/Dannotation и callout/Dmarker устранены; UiSpec уточнение записано выше. Старые M1/M2 results/hover проверки используют явный withoutAnomalies fixture; production snapshots — следующий TK4. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us10-tk3/verified/` (tests.trx,absorbed-result.json,absorbed-queue.json). Самопроверка AC3 пройдена; native/human/independent отдельно.

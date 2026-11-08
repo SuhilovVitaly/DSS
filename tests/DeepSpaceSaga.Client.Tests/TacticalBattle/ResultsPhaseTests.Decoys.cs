@@ -13,7 +13,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Enemy_decoy_is_revealed_only_in_results()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         var before = scene.Screen.CaptureFrame(1920, 1080)!;
         Assert.Empty(before.Battle.DecoysLaunched);
         scene.Fixture.ManualAnimation = true;
@@ -53,7 +53,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Own_decoy_is_visible_during_flight_with_paid_charge()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         string own = scene.Screen.CaptureFrame(1920, 1080)!.FirePlan!.SelectedDroneId!;
         scene.Screen.OnKeyDown(Key.D);
         scene.Fixture.ManualAnimation = true;
@@ -68,7 +68,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Decoy_marks_disappear_after_results()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         scene.Screen.OnKeyDown(Key.D);
         scene.Fixture.ManualAnimation = true;
         await scene.Fixture.Route(ScreenEvent.FireTacticalBattle);
@@ -85,7 +85,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Decoyed_miss_gets_callout_and_panel_line()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         var f = scene.Screen.CaptureFrame(1920, 1080)!;
         var own = f.FirePlan!.Selected!.Drone;
@@ -128,7 +128,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Zero_shot_decoy_has_results_without_fake_projectile_or_miss()
     {
-        await using var scene = await Ep0019Scenes.Create("2-fire");
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         foreach (var drone in scene.Fixture.Engine.TacticalBattleSessionForTests!.Battle.Drones.Where(d => d.Side == "B")) drone.Jammed = true;
         for (int i = 0; i < 4; i++)

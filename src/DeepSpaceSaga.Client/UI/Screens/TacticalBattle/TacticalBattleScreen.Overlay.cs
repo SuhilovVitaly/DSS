@@ -21,7 +21,7 @@ public sealed partial class TacticalBattleScreen
     private IEnumerable<SKRect> OverlayRects()
     {
         yield return _panel;
-        if (HoverUnitId is not null && !_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
+        if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
         int count = Flow.State?.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == Flow.State.PlayerSide) ?? 0;
         for (int i = 0; i < count; i++) yield return new(6, 6 + 87 * i, 196, 88 + 87 * i);
     }

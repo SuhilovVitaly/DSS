@@ -17,7 +17,7 @@ internal static class AnomalySceneSearch
         for (long seed = 1; seed <= 64; seed++)
         {
             var session = TacticalBattleSession.TryCreate(catalog, new("anomaly-" + seed, seed), out _)!;
-            for (int command = 0; command < 100 && session.Phase != TacticalBattlePhase.Over; command++)
+            for (int command = 0; command < 100; command++)
             {
                 var state = session.Capture();
                 if (predicate(state))
@@ -26,6 +26,7 @@ internal static class AnomalySceneSearch
                         File.WriteAllText(Path.Combine(root, name + ".json"), JsonSerializer.Serialize(state, new JsonSerializerOptions { WriteIndented = true }));
                     return state;
                 }
+                if (state.Phase == TacticalBattlePhase.Over) break;
                 var result = state.Phase == TacticalBattlePhase.Move ? session.Move(new("m" + command, state.BattleId, state.Revision))
                     : session.Fire(new("f" + command, state.BattleId, state.Revision,
                         state.Targets.Select(g => new TacticalFireTarget(g.DroneId, g.DefaultTargetId)).ToImmutableArray()));
@@ -54,6 +55,7 @@ internal static class AnomalySceneSearch
             using var canvas = new SKCanvas(bitmap); canvas.Scale(1.5f);
             TacticalBattleMapRenderer.Draw(canvas, frame); new PhasePanel().Draw(canvas, frame, layout);
             new PilotCardColumn().Draw(canvas, PilotCardModel.Project(frame), PilotPortraitCatalog.Default);
+            new HoverCard().Draw(canvas, frame, PilotPortraitCatalog.Default);
         }
         finally { BattleDesign.Recording = null; }
         if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } root)

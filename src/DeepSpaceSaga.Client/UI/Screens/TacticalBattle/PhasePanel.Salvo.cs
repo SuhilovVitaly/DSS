@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
@@ -5,6 +6,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class PhasePanel
 {
+    internal static double QueueChance(TacticalBattleFrame frame, TacticalShotSnapshot shot) =>
+        shot.Decoyed && frame.Battle.Units.First(u => u.Id == shot.TargetId).Side != frame.Battle.PlayerSide
+            ? shot.ChanceWithoutDecoy ?? shot.Chance : shot.Chance;
+    internal static (string Title, string Detail)? AbsorbedText(TacticalShotSnapshot? shot) => shot?.Absorbed == true
+        ? (M("Absorbed"), M("AbsorbedBy", Math.Round(shot.Absorption * 100))) : null;
     private int _queueFirst, _queueCount;
     private const int QueueVisibleRows = 10;
     private (string BattleId, int Turn, string? Shooter)? _queueFocus;
@@ -53,7 +59,7 @@ internal sealed partial class PhasePanel
                     {
                         bool ownTarget = _frame.Battle.Units.First(u => u.Id == flight.Shot.TargetId).Side == _frame.Battle.PlayerSide;
                         bool decoyed = flight.Shot.Decoyed && ownTarget;
-                        double chance = flight.Shot.Decoyed && !ownTarget ? flight.Shot.ChanceWithoutDecoy ?? flight.Shot.Chance : flight.Shot.Chance;
+                        double chance = QueueChance(_frame, flight.Shot);
                         T(c, Pct(chance), 1264, y, 11, decoyed ? Green : color, active || decoyed, SKTextAlign.Right);
                     }
                 }
@@ -70,15 +76,17 @@ internal sealed partial class PhasePanel
         }
         else
         {
-            string result = shot is null ? M("EvadeNoFire") : U(shot.Hit ? "Hit" : "Miss");
-            T(c, result, 1050, 140, FitSize(result, 22, 214, true), shot is null ? Purple : Yellow, true);
-            if (shot is { Decoyed: true })
+            var absorbed = AbsorbedText(shot);
+            string result = absorbed?.Title ?? (shot is null ? M("EvadeNoFire") : U(shot.Hit ? "Hit" : "Miss"));
+            T(c, result, 1050, 140, FitSize(result, 22, 214, true), absorbed is not null ? Heat : shot is null ? Purple : Yellow, true);
+            if (shot is { Decoyed: true, Absorbed: false })
             {
                 T(c, M("DecoyOfTarget"), 1264, 128, 10.5f, Green, align: SKTextAlign.Right);
                 T(c, Pct(shot.ChanceWithoutDecoy ?? shot.Chance) + " → " + Pct(shot.Chance),
                     1264, 144, 12, Green, true, SKTextAlign.Right);
             }
-            T(c, U("DamageDealt", shot?.Hit == true ? PilotCardModel.Dealt(_frame.Battle, shot.ShooterId, shot.Turn) : 0), 1050, 158, 12, Text); Line(c, 1050, 1264, 167);
+            string detail = absorbed?.Detail ?? U("DamageDealt", shot?.Hit == true ? PilotCardModel.Dealt(_frame.Battle, shot.ShooterId, shot.Turn) : 0);
+            T(c, detail, 1050, 158, FitSize(detail, 12, 214), Text); Line(c, 1050, 1264, 167);
             var unit = _frame.Battle.Units.FirstOrDefault(u => u.Id == shot?.ShooterId);
             var before = _frame.Battle.BeforeSalvoUnits.FirstOrDefault(u => u.Id == unit?.Id);
             if (unit is not null && before is not null)

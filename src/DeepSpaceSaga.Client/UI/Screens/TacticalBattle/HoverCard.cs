@@ -4,13 +4,30 @@ using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
+internal sealed record AnomalyHoverCard(string Heading, string Name, SKColor Tone, IReadOnlyList<string> Lines);
+
 internal sealed class HoverCard
 {
+    internal static AnomalyHoverCard? Anomaly(TacticalBattleFrame frame) => AnomalyPresentation.HoverKind(frame) is { } kind
+        ? new(M("Anomaly.Hover"), M("Anomaly." + kind), kind == TacticalAnomalyKindCode.Heat ? Heat : Dust,
+            M("Anomaly." + kind + "Lines").Split(" / ", StringSplitOptions.None)) : null;
     public SKRect Bounds { get; private set; }
     public void Draw(SKCanvas c, TacticalBattleFrame f, PilotPortraitCatalog portraits)
     {
         Bounds = SKRect.Empty;
-        var unit = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId); if (unit is null) return;
+        var unit = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId);
+        if (unit is null)
+        {
+            if (Anomaly(f) is not { } anomaly) return;
+            var box = new SKRect(f.Panel.Left, f.Panel.Bottom + 6, f.Panel.Right, f.Panel.Bottom + 110); Bounds = box;
+            if (Recording is { } recorded) recorded.Rects["hover"] = box;
+            PanelBox(c, box); CursorGlyph(c, box.Left + 9, box.Top + 8, .6f);
+            T(c, anomaly.Heading, box.Left + 24, box.Top + 18, 10.5f, Muted, true);
+            T(c, anomaly.Name, box.Left + 9, box.Top + 38, 14, anomaly.Tone, true);
+            for (int i = 0; i < anomaly.Lines.Count; i++)
+                T(c, anomaly.Lines[i], box.Left + 9, box.Top + 58 + 16 * i, FitSize(anomaly.Lines[i], 11, box.Width - 18), Text);
+            return;
+        }
         bool own = unit.Side == f.Battle.PlayerSide;
         var r = new SKRect(f.Panel.Left, f.Panel.Bottom + 6, f.Panel.Right, f.Panel.Bottom + 110); Bounds = r;
         Recording!.Rects["hover"] = r; PanelBox(c, r); CursorGlyph(c, r.Left + 9, r.Top + 8, .6f);

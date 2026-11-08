@@ -13,7 +13,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Enemy_evasion_is_revealed_only_after_salvo()
     {
-        await using var scene = await View.Ep0019Scenes.Create("2-fire");
+        await using var scene = await View.Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         var enemy = scene.Fixture.Engine.TacticalBattleSessionForTests!.Battle.Drones.First(d => d.Side == "B");
         enemy.Hull = enemy.MaxHull / 2 - 1;
@@ -38,7 +38,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Own_evaded_drone_card_shows_evasion()
     {
-        await using var scene = await View.Ep0019Scenes.Create("2-fire");
+        await using var scene = await View.Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         string id = scene.Screen.CaptureFrame(1920, 1080)!.FirePlan!.SelectedDroneId!;
         scene.Screen.OnKeyDown(Key.E);
@@ -55,7 +55,7 @@ public sealed partial class ResultsPhaseTests
     [Fact]
     public async Task Zero_shot_evasion_has_results_without_fake_projectiles_or_miss()
     {
-        await using var scene = await View.Ep0019Scenes.Create("2-fire");
+        await using var scene = await View.Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         var battle = scene.Fixture.Engine.TacticalBattleSessionForTests!.Battle;
         foreach (var drone in battle.Drones.Where(d => d.Side == "B")) drone.Jammed = true;

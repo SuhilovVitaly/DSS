@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 internal static partial class TacticalBattleMapRenderer
 {
     internal static IEnumerable<TacticalShotSnapshot> DecoyMisses(TacticalBattleFrame frame) =>
-        frame.Salvo is { InFlight: false } salvo ? salvo.Flights.Where(f => f.Shot.Decoyed && !f.Shot.Hit).Select(f => f.Shot) : [];
+        frame.Salvo is { InFlight: false } salvo ? salvo.Flights.Where(f => f.Shot.Decoyed && !f.Shot.Hit && !f.Shot.Absorbed).Select(f => f.Shot) : [];
     static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied)
     {
         if (f.Movement is not null) return;
@@ -79,6 +79,26 @@ internal static partial class TacticalBattleMapRenderer
                 { q = p + delta; var bounds = new SKRect(q.X - half - 10, q.Y - 27, q.X + half + 10, q.Y + 12); if (!markers.Any(bounds.Contains)) break; }
                 var rect = Callout(c, q.X, q.Y, text, Yellow, Yellow); occupied.Add(rect); if (Recording is { } l) l.Rects["callout:" + damage.Unit.Id] = rect;
             }
+            foreach (var shot in results.Flights.Select(flight => flight.Shot).Where(s => s.Absorbed))
+            {
+                var q = AnomalyPresentation.AbsorptionPoint(f, shot);
+                Circle(c, q, 6, SKColors.Transparent, Heat, 1.6f); Circle(c, q, 10, SKColors.Transparent, Heat, 1.6f);
+                var shooter = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId);
+                string text = M("AbsorbedCallout", shooter is null ? shot.ShooterId : PilotCardModel.Name(shooter));
+                float half = (Measure(text, 12) + 14) / 2;
+                var absorptionMarkers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => MarkerPoint(f.View, u))
+                    .Concat(f.Battle.Units.Where(u => HasDecoy(f, u)).Select(u => DecoyPoint(f.View.Project(u.Pose), u.Pose.Course))).ToArray();
+                var callout = q + new SKPoint(0, -16);
+                foreach (var delta in new SKPoint[] { new(0, -16), new(0, -38), new(0, 38), new(half + 20, -16), new(-half - 20, -16), new(0, -60), new(0, 60) })
+                {
+                    var p = q + delta; var rect = new SKRect(p.X - half, p.Y - 17, p.X + half, p.Y + 2); var expanded = rect; expanded.Inflate(10, 10);
+                    if (occupied.Any(r => r.IntersectsWith(rect)) || absorptionMarkers.Any(expanded.Contains)) continue;
+                    callout = p; break;
+                }
+                var box = Callout(c, callout.X, callout.Y, text, Heat, Heat);
+                occupied.Add(box);
+                if (Recording is { } layout) { layout.Rects["absorbed:" + shot.ShooterId] = box; layout.Rects["absorption-flash:" + shot.ShooterId] = new(q.X - 10, q.Y - 10, q.X + 10, q.Y + 10); }
+            }
             var allMarkers = f.Battle.Units.Select(u => MarkerPoint(f.View, u)).ToArray();
             var decoys = f.Battle.Units.Where(u => HasDecoy(f, u)).Select(u => DecoyPoint(f.View.Project(u.Pose), u.Pose.Course)).ToArray();
             int index = 0;
@@ -110,7 +130,13 @@ internal static partial class TacticalBattleMapRenderer
         if (f.Salvo is { InFlight: false } results)
             foreach (var d in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide)) Diamond(c, f.View.Project(d.Unit.Pose), 10, SKColors.Transparent, Yellow, 1.5f);
         if (f.Salvo is { } salvo)
-            foreach (var flight in salvo.Flights.Where(s => s.Flash)) Circle(c, f.View.Project(flight.Shot.To), 15, SKColors.Transparent, flight.Shot.Hit ? Yellow : Red, 2);
+            foreach (var flight in salvo.Flights.Where(s => s.Flash))
+                if (flight.Shot.Absorbed)
+                {
+                    var q = AnomalyPresentation.AbsorptionPoint(f, flight.Shot);
+                    Circle(c, q, 6, SKColors.Transparent, Heat, 1.6f); Circle(c, q, 10, SKColors.Transparent, Heat, 1.6f);
+                }
+                else Circle(c, f.View.Project(flight.Shot.To), 15, SKColors.Transparent, flight.Shot.Hit ? Yellow : Red, 2);
         // The admitted projection changes State only at impact, so wrecks cannot reveal a future kill.
         foreach (var u in f.Battle.Units.Where(u => u.State == TacticalUnitState.Destroyed))
         { var p = f.View.Project(u.Pose); Stroke(c, new(p.X - 6, p.Y - 6), new(p.X + 6, p.Y + 6), Muted, 1.5f); Stroke(c, new(p.X - 6, p.Y + 6), new(p.X + 6, p.Y - 6), Muted, 1.5f); }
