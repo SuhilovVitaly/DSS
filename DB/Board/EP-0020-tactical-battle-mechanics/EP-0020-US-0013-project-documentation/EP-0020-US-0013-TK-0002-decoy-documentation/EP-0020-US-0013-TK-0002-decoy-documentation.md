@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0013-project-documentation
 ticket: EP-0020-US-0013-TK-0002-decoy-documentation
 title: Документация ловушек
-stage: draft
+stage: done
 layer: documentation
 test_project: —
 depends_on: [EP-0020-US-0013-TK-0001-mechanics-documentation, EP-0020-US-0006-TK-0005-decoy-regression, EP-0020-US-0007-TK-0004-decoy-view-regression]
@@ -81,4 +81,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Завершено. Scope расширен на Data/Frames README, V4 workflow README и Setup screen contract: убраны ложные carrier-only поля и указано отсутствие module selector. US13-AC3: module1/0,10 кг,2 заряда,missFactor1.5/ИИ 0.4, frozen/first actual shot/expiry/раскрытие описаны по production. US13-AC2 отчёт M2 уже консолидирован в ExecutionStatus. Проверены ссылки, экспортируемые таблицы не менялись, runtime test rerun для Markdown не нужен. Self-review/DiffPASS; evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us13-tk2/content-links.json`.
