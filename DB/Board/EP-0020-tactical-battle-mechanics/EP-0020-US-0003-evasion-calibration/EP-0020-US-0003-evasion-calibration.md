@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0003-evasion-calibration
 title: Калибровка штрафа уклонения
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0002-evasion-resolution]
 created: 2026-11-08T11:46:28Z
 source_request: "На большом числе боёв измерить, насколько штраф −20 (D-12) снижает урон по уклоняющемуся дрону, и показать, какой штраф дал бы критерий D-04."
@@ -52,3 +52,7 @@ D-03, D-04, D-12. Предварительная оценка на движке 
 | ID | Название | Слой | Зависимости | Критерии |
 |---|---|---|---|---|
 | [EP-0020-US-0003-TK-0001-evasion-calibration](EP-0020-US-0003-TK-0001-evasion-calibration/EP-0020-US-0003-TK-0001-evasion-calibration.md) | Прогон калибровки и отчёт | tooling | `EP-0020-US-0002-TK-0005-evasion-regression` | US3-AC1, US3-AC2, US3-AC3 |
+
+## Итоговая проверка
+
+US3-AC1/2/3 выполнены, полная таблица — в тикете. R(20)=0.680413; ближайший штраф32 (R=0.494949). Все31 ограниченных процесса PASS. Данные не менялись; self-review выполнен, независимое review не заявляется.

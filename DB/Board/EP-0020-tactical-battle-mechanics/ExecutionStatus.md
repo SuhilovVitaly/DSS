@@ -29,3 +29,5 @@ EP-0020-US-0002-TK-0003 → 8393a0571a16496e132a722320eb183838f52780 → origin 
 EP-0020-US-0002-TK-0004 → 8413b1b2c8adc6a5fc818f7890eb45c428442d03 → origin проверен. Session/Connection/Journal 137/137 PASS. TK-0005 в процессе: Engine main2188/2188, Golden91/91, series1000×5 PASS; 630 geography corpus ещё выполняются, итоговый audit pending. Предварительный UI baseline после M1 Engine:26/29 PASS,3 ожидаемых FAIL только Outcome/data (разрешённое изменение D-10 и AI уклонения); UI ещё не менялся.
 
 US-0002 завершена: Engine2818/2818 уникальных IDs PASS по36TRX; geography630/630 PASS; series1000×5 PASS. Итоговый audit: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us2-tk5/coverage-audit.json. Начальные timeout/class batches не включены в успешный счёт. TK-0005 готов к commit/push.
+
+EP-0020-US-0002-TK-0005 → 57624cffd59d2392626d2037bf817b5b706bb33c → origin проверен. EP-0020-US-0003-TK-0001 (инструмент) → 30aa693fd1ff80ec3ef8f8268ec7cc910baa3aa7 → origin проверен. Калибровка31/31 PASS,155000 конфигураций,310000 исполнений с повторами; R20=0.680413, ближайший штраф32(R=0.494949), production20. Default filter/scoped format PASS.
