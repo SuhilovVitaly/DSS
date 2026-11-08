@@ -8,8 +8,27 @@ internal readonly record struct BattleViewport(float S, float Wd)
     public static BattleViewport From(int width, int height) => new(height / 720f, width * 720f / height);
 }
 
+internal enum EvadeButtonState { Unavailable, Available, Selected }
+
 internal static class BattleDesign
 {
+    public static readonly SKColor EvadeIdle = SKColor.Parse("#1A1A2A");
+    public static string M(string key, params object?[] values) => values.Length == 0 ? Localization.Get("TacticalBattle." + key)
+        : string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle." + key), values);
+    public static void EvadeButton(SKCanvas c, SKRect r, string text, EvadeButtonState state)
+    {
+        bool active = state == EvadeButtonState.Selected, enabled = state != EvadeButtonState.Unavailable;
+        Round(c, r, active ? PurpleDark : enabled ? EvadeIdle : Box,
+            enabled ? Purple.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1);
+        float size = FitSize(text, 12, r.Width - 10);
+        T(c, text, r.MidX, r.MidY + size * .36f, size, active ? Text : enabled ? Purple : Muted, active, SKTextAlign.Center);
+    }
+    public static void EvasionRing(SKCanvas c, SKPoint point)
+    {
+        using var effect = SKPathEffect.CreateDash([3, 3], 3);
+        using var paint = new SKPaint { IsAntialias = true, Color = Purple, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f, PathEffect = effect };
+        c.DrawCircle(point, 15, paint);
+    }
     public static readonly SKColor PurpleDark = SKColor.Parse("#2A2145");
     public static string U(string key, params object?[] values) => values.Length == 0 ? Localization.Get("TacticalBattle.Ui." + key) : string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle.Ui." + key), values);
     public static readonly SKColor Bg = SKColor.Parse("#0A0E11"), MapBg = SKColor.Parse("#101518"), Grid = SKColor.Parse("#1C2428"),

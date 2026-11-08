@@ -44,6 +44,7 @@ public sealed partial class TacticalBattleScreen
             case "straight": _orders.Straight(); break;
             case "ai": _orders.Suggest(); break;
             case "hold": _fireOrders.Choose(null); break;
+            case "evade": if (_fireOrders.Selected is { } evader) _fireOrders.ToggleEvade(evader); break;
             case "primary":
                 if (HasSalvoPresentation) { AdvanceSalvo(); return ScreenEvent.None; }
                 return Flow.State?.Phase == TacticalBattlePhase.Over ? ScreenEvent.CloseTacticalBattle : ActionEvent;

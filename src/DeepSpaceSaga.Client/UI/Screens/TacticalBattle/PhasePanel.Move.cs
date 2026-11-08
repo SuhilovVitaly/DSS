@@ -24,7 +24,7 @@ internal sealed partial class PhasePanel
     }
     internal bool BeginDrag(SKPoint p, TacticalBattleOrders orders)
     {
-        if (Phase != "Move" || _frame.Pending || !R(1048, 128, 1266, 196).Contains(p)) return false;
+        if (_frame is null || Phase != "Move" || _frame.Pending || !R(1048, 128, 1266, 196).Contains(p)) return false;
         if (Math.Abs(p.Y - 140) <= 10) _dragAxis = 1;
         else if (Math.Abs(p.Y - 186) <= 10) _dragAxis = 2;
         return Drag(p, orders);

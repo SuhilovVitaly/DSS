@@ -46,6 +46,7 @@ public static class BattleLogFormatter
 
     private static string SkipText(TacticalFireSkipReason? reason) => reason switch
     {
+        TacticalFireSkipReason.Evading => L("Skip.Evading"),
         TacticalFireSkipReason.NoTarget => L("Skip.NoTarget"),
         TacticalFireSkipReason.Withheld => L("Skip.Withheld"),
         TacticalFireSkipReason.ShooterDestroyed => L("Skip.ShooterDestroyed"),

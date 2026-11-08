@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0004-evasion-ui
 ticket: EP-0020-US-0004-TK-0002-fire-panel-evasion
 title: Панель стрельбы, кольцо уклонения, строки
-stage: draft
+stage: done
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0004-TK-0001-fire-orders-evasion]
@@ -35,7 +35,7 @@ revision: 1
 |---|---|---|
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.Fire.cs` | EP-0019: деталь огня, кнопка «Не стрелять» на всю ширину | Три состояния UiSpec §3; две половинные кнопки. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleDesign.cs` | EP-0019: токены и примитивы | `PurpleDark`, `EvadeButton(state)` (§2), фиолетовый вариант `Tag` (§3.2); заголовок зоны действия с `FitSize` (§3.4). |
-| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMapRenderer.cs` | EP-0019: маркеры юнитов | Кольцо UiSpec §5. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs` | EP-0019: маркеры юнитов | Кольцо UiSpec §5. |
 | `src/DeepSpaceSaga.Client/Data/Locale/Russian.json` | `TacticalBattle.*` | Ключи UiSpec §6. |
 | `src/DeepSpaceSaga.Client/Data/Locale/English.json` | `TacticalBattle.*` | Ключи UiSpec §6. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/FirePanelEvasionTests.cs` | нет | Растровые пробы UiSpec §7 и тексты. |
@@ -75,7 +75,7 @@ revision: 1
 ```powershell
 dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore
 dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --no-restore --filter "FullyQualifiedName~FirePanelEvasionTests|FullyQualifiedName~LocalizationCoverageTests" --results-directory "D:/DeepSpaceSaga/artifacts/validation/ep-0020/<run>/us4-tk2" --logger "trx;LogFileName=client.trx"
-dotnet format whitespace src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore --include src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.Fire.cs src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleDesign.cs src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleMapRenderer.cs --verify-no-changes
+dotnet format whitespace src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj --no-restore --include src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.Fire.cs src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleDesign.cs src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs --verify-no-changes
 git diff --check
 ```
 
@@ -92,4 +92,14 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: реализованы три состояния панели по UiSpec §3, две кнопки, E click, сводка действий и кольцо r15/purple1.6/dash3/3. UiSpec §7 пробы (плашка/кнопка/штраф/16 точек кольца), literal threat47→27, реальный клик, три состояния кнопки и RU/EN coverage:13/13 PASS. Client build, scoped format/diff-check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us4-tk2/guard-final/tests.trx; финальные рендеры в той же директории. Рендер осмотрен. Фаза пунктира3 выбрана при неизменных3/3/radius/color/tolerances: при фазе0 все16 равномерных точек попадали в промежутки. Воспроизведены и исправлены null entry points до первого Draw (BeginDrag, HitButton, Phase); regression проходит. Skip.Evading и EvasionUnavailable локализованы без fallback. Self-review по snapshot-only шансам, pending, geometry/hit scale и вводу выполнен. US4-AC2 покрыт; раскрытие результата в TK-0003, полная regression в TK-0004.
+
+## Grounding scope
+
+Фактический renderer после EP-0019 — BattleMapRenderer.cs (partial TacticalBattleMapRenderer); старого имени файла нет. Добавлен TacticalBattleScreen.Overlay.cs для реального клика новой кнопки. Ключи UiSpec §6 уже введены TK-0001, здесь проверяются их покрытие и использование.
+
+## Уточнение scope проверками
+
+LocalizationCoverageTests перечисляет новые enum: mapping Skip.Evading в BattleLogFormatter и Refusal.EvasionUnavailable в Locale добавляются здесь, иначе реальная ошибка/журнал показывали бы неизвестное событие. Добавлен null-guard PhasePanel.Move.BeginDrag: первый click до первого Render выявил NullReference; выбор карточки в растровой фикстуре выполняется после первого рендера.
+
+Предрендерный regression case дополнительно выявил тот же null state в PhasePanel.cs HitButton/Phase; оба entry point теперь безопасны до первого Draw, без отправки команд.

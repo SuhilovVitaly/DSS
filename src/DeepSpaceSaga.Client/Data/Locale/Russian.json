@@ -1,4 +1,5 @@
 {
+  "TacticalBattle.Refusal.EvasionUnavailable": "Недостаточно сознания для уклонения",
   "TacticalBattle.Evade": "Уклониться [E]",
   "TacticalBattle.EvadeActive": "Уклоняется [E]",
   "TacticalBattle.EvadeUnavailable": "Уклониться",

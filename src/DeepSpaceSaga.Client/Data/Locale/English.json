@@ -1,4 +1,5 @@
 {
+  "TacticalBattle.Refusal.EvasionUnavailable": "Not enough consciousness to evade",
   "TacticalBattle.Evade": "Evade [E]",
   "TacticalBattle.EvadeActive": "Evading [E]",
   "TacticalBattle.EvadeUnavailable": "Evade",

@@ -45,6 +45,8 @@ internal static partial class TacticalBattleMapRenderer
             var color = Skin.Color(role, "fill", own ? Cyan : Orange);
             if (u.Kind == TacticalUnitKind.Carrier) { if (inside.Contains(p)) Hex(c, p, 15, color); else Edge(c, f, u, p, inside, occupied, color); }
             else { if (own) Diamond(c, p, 7.5f, color); else Triangle(c, p, 9, u.Pose.Course, color); if (u.Id == Selected(f)) Circle(c, p, 12, SKColors.Transparent, Text, 1.2f); }
+            if (own && u.Kind == TacticalUnitKind.Drone && f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true)
+                EvasionRing(c, p);
         }
         foreach (var u in units.Where(u => u.Kind != TacticalUnitKind.Carrier || inside.Contains(v.Project(u.Pose)))
                      .OrderBy(u => u.Id == Selected(f) ? 0 : u.Kind == TacticalUnitKind.Carrier ? 1 : 2).ThenBy(u => v.Project(u.Pose).Y)) Label(c, f, u, occupied);
