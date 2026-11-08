@@ -1,0 +1,98 @@
+using System.Collections.Immutable;
+using DeepSpaceSaga.Client.Tests.TacticalBattle.View;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Contracts;
+using Silk.NET.Input;
+using SkiaSharp;
+using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
+
+namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
+
+[Collection("InterfaceLog")]
+public sealed class BuildCardRenderTests
+{
+    [Fact]
+    public async Task Card_probes_match_ui_spec()
+    {
+        using var locale = Localization.UseLocaleForTests("Russian");
+        await using var scene = await Ep0019Scenes.Create("2-fire");
+        while (scene.Screen.CaptureFrame(1920, 1080)!.SelectedDroneId != "Марта") scene.Screen.OnKeyDown(Key.Tab);
+        scene.Screen.HoverUnitId = null; using var image = scene.Render();
+        var f = scene.Screen.CaptureFrame(1920, 1080)!; var model = BuildCardModel.From(f)!;
+        Assert.Equal(4, f.Battle.Turn); Assert.Equal("light", model.Unit.FrameId);
+        var r = scene.Screen.Layout.Rects["build"]; Assert.Equal(300, r.Height); Assert.Equal(1040, r.Left);
+        foreach (var (kind, tone) in new[] { (TacticalSlotKind.Weapon, Yellow), (TacticalSlotKind.Armor, Purple), (TacticalSlotKind.Shield, Cyan), (TacticalSlotKind.Module, Green), (TacticalSlotKind.Engine, Text) })
+        {
+            var cell = scene.Screen.Layout.Rects[$"build:{kind}:0"];
+            Assert.InRange(Fraction(image, new(cell.Left + 2, cell.MidY - 2, cell.Left + 3, cell.MidY + 2), tone), .9, 1);
+        }
+        Assert.InRange(Fraction(image, SKRect.Create(r.MidX - 1.5f, r.Top + 88 + 112 - 1.5f, 3, 3), SKColor.Parse("#122024")), .5, 1);
+        Assert.True(model.Cells.Single(c => c.Kind == TacticalSlotKind.Shield && c.Index == 1).NoSlot);
+        foreach (var text in new[] { model.Heading, model.Frame, model.Mass, model.Motion, model.Legend }) Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == text);
+        Assert.Contains(scene.Screen.PanelRects, raw => raw.Top == r.Top * 1.5f && raw.Bottom == r.Bottom * 1.5f);
+        foreach (var label in scene.Screen.Layout.Rects.Where(p => p.Key.StartsWith("label:", StringComparison.Ordinal))) Assert.False(label.Value.IntersectsWith(r), label.Key);
+        Save(image, "selected");
+    }
+    [Fact]
+    public async Task Hover_heavy_and_enemy_keep_correct_cards()
+    {
+        using var locale = Localization.UseLocaleForTests("Russian"); await using var scene = await Ep0019Scenes.Create("2-fire");
+        scene.Screen.HoverUnitId = "Вера"; using var own = scene.Render(); var f = scene.Screen.CaptureFrame(1920, 1080)!;
+        var model = BuildCardModel.From(f)!; Assert.Equal("ПОД КУРСОРОМ · СБОРКА", model.Heading);
+        Assert.All(model.Cells.Where(c => c.Kind == TacticalSlotKind.Shield), c => Assert.False(c.Empty));
+        var r = scene.Screen.Layout.Rects["build"];
+        Assert.InRange(Fraction(own, SKRect.Create(r.MidX + 98.5f, r.Top + 88 + 78.5f, 3, 3), SKColor.Parse("#122024")), .5, 1);
+        Save(own, "hover-heavy");
+        scene.Screen.HoverUnitId = "Таг-6"; using var enemy = scene.Render(); Assert.False(scene.Screen.Layout.Rects.ContainsKey("build"));
+        Assert.Equal(104, scene.Screen.Layout.Rects["hover"].Height); Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "ПОД КУРСОРОМ · ПРОТИВНИК");
+    }
+    [Theory]
+    [InlineData("light", 9)]
+    [InlineData("heavy", 8)]
+    [InlineData("thug", 8)]
+    [InlineData("unknown", 9)]
+    public void Silhouette_per_frame(string frame, int count)
+    {
+        Assert.Equal(count, BuildCard.Silhouette(frame).Count);
+        if (frame == "unknown") Assert.Equal(BuildCard.Silhouette("light"), BuildCard.Silhouette(frame));
+        using var bitmap = new SKBitmap(240, 180); using var c = new SKCanvas(bitmap); c.Clear(SKColors.Transparent);
+        Polygon(c, BuildCard.Silhouette(frame).Select(p => new SKPoint(120 + p.X, 10 + p.Y)), SKColor.Parse("#122024"), BoxEdge);
+        Assert.Equal(SKColor.Parse("#122024"), bitmap.GetPixel(120, 120));
+        if (frame == "heavy") Assert.Equal(SKColor.Parse("#122024"), bitmap.GetPixel(220, 90));
+    }
+    [Fact]
+    public async Task Damaged_borders_and_empty_slot_are_literal()
+    {
+        using var locale = Localization.UseLocaleForTests("Russian"); await using var scene = await Ep0019Scenes.Create("2-fire");
+        var f = scene.Screen.CaptureFrame(1920, 1080)!; var u = f.Battle.Units.Single(u => u.Id == "Марта");
+        var changed = u with
+        {
+            Slots = u.Slots.Select(s => s.Kind == TacticalSlotKind.Weapon ? s with { State = TacticalSlotState.Jammed }
+            : s.Kind == TacticalSlotKind.Engine && s.Index == 0 ? s with { State = TacticalSlotState.Damaged, Factor = .5 } : s).ToImmutableArray()
+        };
+        var model = BuildCardModel.From(f.Battle with { Units = f.Battle.Units.Replace(u, changed) }, null, u.Id)!;
+        var r = BuildCard.Bounds(f); using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap); canvas.Clear(Bg); canvas.Scale(1.5f);
+        var old = Recording; var layout = new BattleLayout(); Recording = layout;
+        try { BuildCard.Draw(canvas, model, r, PilotPortraitCatalog.Default); } finally { Recording = old; }
+        foreach (var cell in model.Cells.Where(c => c.Alert))
+        {
+            var box = BuildCard.CellBounds(model, cell, r);
+            Assert.InRange(Fraction(bitmap, new(box.Left + 7, box.Top - .35f, box.Right - 7, box.Top + .35f), Red), .5, 1);
+        }
+        Assert.Contains(model.Cells, c => c.Detail == "заклинило"); Assert.Contains(model.Cells, c => c.Detail == "повреждён ×0,5");
+        Save(bitmap, "damaged");
+    }
+    private static double Fraction(SKBitmap b, SKRect r, SKColor color)
+    {
+        int total = 0, same = 0;
+        for (int y = (int)Math.Ceiling(r.Top * 1.5f); y < (int)Math.Ceiling(r.Bottom * 1.5f); y++)
+            for (int x = (int)Math.Ceiling(r.Left * 1.5f); x < (int)Math.Ceiling(r.Right * 1.5f); x++)
+            { var p = b.GetPixel(x, y); total++; if (Math.Abs(p.Red - color.Red) <= 40 && Math.Abs(p.Green - color.Green) <= 40 && Math.Abs(p.Blue - color.Blue) <= 40) same++; }
+        return same / (double)total;
+    }
+    private static void Save(SKBitmap image, string name)
+    {
+        string? root = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT"); if (root is null) return;
+        using var png = image.Encode(SKEncodedImageFormat.Png, 100); File.WriteAllBytes(Path.Combine(root, "build-" + name + ".png"), png.ToArray());
+    }
+}

@@ -16,6 +16,8 @@ internal sealed class HoverCard
     public void Draw(SKCanvas c, TacticalBattleFrame f, PilotPortraitCatalog portraits)
     {
         Bounds = SKRect.Empty;
+        if (Build(f) is { } build)
+        { Bounds = BuildCard.Bounds(f); BuildCard.Draw(c, build, Bounds, portraits); return; }
         var unit = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId);
         if (unit is null)
         {
@@ -30,6 +32,7 @@ internal sealed class HoverCard
             return;
         }
         bool own = unit.Side == f.Battle.PlayerSide;
+        if (own && unit.Kind == TacticalUnitKind.Drone && f.Salvo is null && f.Battle.Phase == TacticalBattlePhase.Over) return;
         var r = new SKRect(f.Panel.Left, f.Panel.Bottom + 6, f.Panel.Right, f.Panel.Bottom + 110); Bounds = r;
         Recording!.Rects["hover"] = r; PanelBox(c, r); CursorGlyph(c, r.Left + 9, r.Top + 8, .6f);
         T(c, U(own ? "HoverOwn" : "HoverEnemy"), r.Left + 24, r.Top + 18, 10.5f, Muted, true);
