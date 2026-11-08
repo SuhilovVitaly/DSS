@@ -81,6 +81,34 @@ public sealed class LimitsAndChanceTests
     }
 
     [Fact]
+    public void Evasion_term_subtracts_penalty_before_clamp()
+    {
+        var shot = new TacticalShotInput(59, 47, 0, 125, 50, 50, 0, 180, true, 10, 1, 45);
+        var rules = Rules with { EvasionPenalty = 20 };
+        Assert.Equal(0.61, TacticalHitChance.Chance(rules, shot));
+        var terms = TacticalHitChance.Terms(rules, shot with { TargetEvading = true });
+        Assert.Equal(-20, terms.Evasion);
+        Assert.Equal(41, terms.Raw);
+        Assert.Equal(0.41, terms.Chance);
+        Assert.Equal(0.9, TacticalHitChance.Chance(rules, shot with { Accuracy = 108, TargetEvading = true }));
+        Assert.Equal(0.05, TacticalHitChance.Chance(rules, shot with { Accuracy = 0, TargetEvading = true }));
+        Assert.Equal(0.95, TacticalHitChance.Chance(rules, shot with { Accuracy = 1000, TargetEvading = true }));
+        Assert.Equal(0, TacticalHitChance.Terms(rules, shot with { TargetIsDrone = false, TargetEvading = true }).Evasion);
+    }
+
+    [Fact]
+    public void Evasion_applies_to_rear_shots()
+    {
+        var shot = new TacticalShotInput(59, 47, 0, 125, 50, 50, 0, 0, true, 10, 1, 45, TargetEvading: true);
+        var terms = TacticalHitChance.Terms(Rules with { EvasionPenalty = 20 }, shot);
+        Assert.True(terms.IsRear);
+        Assert.Equal(10, terms.Rear);
+        Assert.Equal(0, terms.Shield);
+        Assert.Equal(-20, terms.Evasion);
+        Assert.Equal(0.61, terms.Chance);
+    }
+
+    [Fact]
     public void AllPublishedSeedOneShotChancesMatchAtOriginalSixDecimalPrecision()
     {
         string repo = Repository();

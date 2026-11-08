@@ -19,3 +19,5 @@ EP-0019 stage done, US6-AC2 техническая приёмка выполне
 Git status/branch/remote и удалённая база проверены. Сборки, тесты, калибровки и native-проверки EP-0020 пока NOT RUN.
 
 US-0001: 118/118 content, 35/35 focused Engine, 23/23 Contracts; 1000×5 exact direct/explicit series parity PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/. Остальные истории не начаты.
+
+EP-0020-US-0002-TK-0001 → 80a74fe6b5034ded1c598b255021a8a78cfd0f78 → origin проверен. Contracts 25/25 PASS.
