@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0002-evasion-resolution
 ticket: EP-0020-US-0002-TK-0005-evasion-regression
 title: Регрессия боя с уклонением
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0002-TK-0004-session-evasion]
@@ -84,4 +84,8 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе 2026-11-08: explicit путь переведён на DefaultPlan, подпись расширена Evasions/ShotsAtEvading/HitsOnEvading. 91/91 Golden cases (90 corpus+ручной oracle), 1000×5 series exact parity PASS; 2188/2188 Engine main PASS. Полный монолитный процесс достиг 300000ms и остановлен; первые class batches заменены точными corpus-фильтрами. Оставшиеся 630 географических случаев выполняются по corpus-manifest.json, итоговый audit ещё НЕ выполнен. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us2-tk5/. TK-0005 не завершён и ещё не опубликован.
+
+## Завершение проверки 2026-11-08
+
+PASS: 2818 уникальных Engine test IDs, 36 итоговых TRX: 2188 main + 540 v1 corpus + 90 v2 corpus. Failed/skipped/duplicate IDs =0. coverage-audit.json и corpus-manifest.json находятся в указанном evidence root. Сокращённые display names длинных InlineData иногда совпадают; полнота и уникальность проверены по testId, не по сокращённой подписи. Монолитный timeout и остановленный batch-0 в PASS не включены. Все35 corpus-групп уложились в300000ms, использованы проверенные разделяющие фильтры прежнего corpus с новыми результатами. Scoped format/diff-check PASS. Self-review: direct/explicit используют одинаковое правило ИИ, ручной oracle сохранён, подписи включают сознание и новые счётчики; изменены результаты боёв только по M1, балансовые числа прежние. US2-AC7 покрыт. Тикет завершён, SHA проверяется после commit.

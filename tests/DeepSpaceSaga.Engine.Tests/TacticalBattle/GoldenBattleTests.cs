@@ -65,7 +65,7 @@ public sealed class GoldenBattleTests
             battle.Movement();
             if (battle.Result is not null) break;
             var queue = battle.CaptureFireOrder();
-            battle.Firing((d, candidates) => new(TacticalBattleSalvo.DefaultTarget(d, candidates)?.Target.Id, false));
+            battle.Firing((d, candidates) => TacticalBattleSalvo.DefaultPlan(battle, d, candidates));
             var salvo = battle.LastSalvo!;
             Assert.Equal(queue.Select(d => d.Id), salvo.Steps.Select(s => s.ShooterId));
             Assert.Equal(Enumerable.Range(0, queue.Length), salvo.Steps.Select(s => s.Index));
@@ -91,6 +91,9 @@ public sealed class GoldenBattleTests
     {
         Result = TacticalBattleSnapshotBuilder.Outcome(battle.Result),
         Units = TacticalBattleSnapshotBuilder.Units(battle),
+        battle.Statistics.Evasions,
+        battle.Statistics.ShotsAtEvading,
+        battle.Statistics.HitsOnEvading,
         battle.InitiativeRandom.State,
         battle.InitiativeRandom.Calls
     });

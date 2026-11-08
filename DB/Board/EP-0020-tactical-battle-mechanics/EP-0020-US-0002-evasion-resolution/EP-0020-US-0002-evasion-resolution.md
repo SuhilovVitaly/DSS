@@ -2,7 +2,7 @@
 epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0002-evasion-resolution
 title: Уклонение в движке
-stage: draft
+stage: done
 dependencies: [EP-0020-US-0001-consciousness]
 created: 2026-11-08T11:46:28Z
 source_request: "Добавить в фазу стрельбы выбор «уклонение» вместо выстрела: −20 к шансу любого выстрела по уклоняющемуся дрону, −10 сознания, ИИ противника уклоняется при корпусе < 50 %, фаза стрельбы открывается при угрозе дронам игрока."
@@ -62,3 +62,7 @@ Engine владеет RNG и исходом. Выбор уклонения не 
 | [EP-0020-US-0002-TK-0003-salvo-evasion](EP-0020-US-0002-TK-0003-salvo-evasion/EP-0020-US-0002-TK-0003-salvo-evasion.md) | Уклонение в разрешении залпа и правило ИИ | engine | `EP-0020-US-0002-TK-0002-evasion-hit-term` | US2-AC2, US2-AC3, US2-AC4 |
 | [EP-0020-US-0002-TK-0004-session-evasion](EP-0020-US-0002-TK-0004-session-evasion/EP-0020-US-0002-TK-0004-session-evasion.md) | Сессия: приказ уклонения и открытие фазы стрельбы | engine | `EP-0020-US-0002-TK-0003-salvo-evasion` | US2-AC1, US2-AC5, US2-AC6 |
 | [EP-0020-US-0002-TK-0005-evasion-regression](EP-0020-US-0002-TK-0005-evasion-regression/EP-0020-US-0002-TK-0005-evasion-regression.md) | Регрессия боя с уклонением | engine | `EP-0020-US-0002-TK-0004-session-evasion` | US2-AC7 |
+
+## Итоговая проверка
+
+US2-AC1/5/6 — session/connection/legacy contracts; AC2 — Motion front/rear/clamp и V4 trace; AC3/4 — atomic freeze/cost/AI/skip/RNG; AC7 — 90 corpus + ручной oracle, exact parity1000×5 и полный Engine2818/2818. Все проверки и допущения записаны в карточках. Production UI ещё не подключён (US-0004); Save20 и границы мира не меняются. Self-review выполнен, независимое review не заявляется.
