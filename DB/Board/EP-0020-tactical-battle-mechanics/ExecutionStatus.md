@@ -23,3 +23,5 @@ US-0001: 118/118 content, 35/35 focused Engine, 23/23 Contracts; 1000×5 exact d
 EP-0020-US-0002-TK-0001 → 80a74fe6b5034ded1c598b255021a8a78cfd0f78 → origin проверен. Contracts 25/25 PASS.
 
 EP-0020-US-0002-TK-0002 → 58c531de740eecdba06e595cf707662f66c6c83e → origin проверен. Motion 6/6 PASS, включая V4 trace.
+
+EP-0020-US-0002-TK-0003 → 8393a0571a16496e132a722320eb183838f52780 → origin проверен. Salvo focused 44/44 PASS.

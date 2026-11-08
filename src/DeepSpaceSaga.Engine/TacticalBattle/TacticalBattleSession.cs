@@ -89,7 +89,9 @@ internal sealed class TacticalBattleSession
         _paths = Battle.LastMovement.Select(m => new TacticalMovementPath(Battle.Turn, m.DroneId,
             m.Path.Select(TacticalBattleSnapshotBuilder.Pose).ToImmutableArray())).ToImmutableArray();
         if (Battle.Result is not null) AddOutcome(TacticalBattlePhase.Move);
-        else if (!Battle.ActiveDrones(PlayerSide).Any(d => !TacticalBattleSalvo.Candidates(Battle, d).IsEmpty))
+        else if (!Battle.ActiveDrones(PlayerSide).Any(d => !TacticalBattleSalvo.Candidates(Battle, d).IsEmpty)
+            && !Battle.ActiveDrones(Battle.EnemySide(PlayerSide)).Any(d =>
+                TacticalBattleSalvo.Candidates(Battle, d).Any(c => c.Target is TacticalDrone)))
         {
             _fireSkipped = true;
             Add(TacticalBattleLogKind.NoTargets, TacticalBattlePhase.Move);
@@ -103,7 +105,7 @@ internal sealed class TacticalBattleSession
     {
         var error = Check(request.BattleId, request.ExpectedRevision, TacticalBattlePhase.Fire);
         if (error != TacticalBattleRejectionCode.None) return Reject(request.CommandId, error);
-        var targets = new List<(string DroneId, string? TargetId)>();
+        var targets = new List<(string DroneId, TacticalFirePlan Plan)>();
         if (!request.Targets.IsDefault)
             foreach (var target in request.Targets)
             {
@@ -111,9 +113,12 @@ internal sealed class TacticalBattleSession
                 var drone = Own(target.DroneId);
                 if (drone is null) return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidDrone);
                 if (targets.Any(t => t.DroneId == drone.Id)) return Reject(request.CommandId, TacticalBattleRejectionCode.DuplicateDrone);
+                if (target.Evade && target.TargetId is not null) return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidRequest);
+                if (target.Evade && drone.Consciousness < Battle.Catalog.Rules.Evasion.MinConsciousness)
+                    return Reject(request.CommandId, TacticalBattleRejectionCode.EvasionUnavailable);
                 if (target.TargetId is not null && !TacticalBattleSalvo.Candidates(Battle, drone).Any(c => c.Target.Id == target.TargetId))
                     return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidTarget);
-                targets.Add((drone.Id, target.TargetId));
+                targets.Add((drone.Id, new(target.TargetId, target.Evade)));
             }
         int events = _log.Count;
         ResolveFire(targets);
@@ -121,14 +126,14 @@ internal sealed class TacticalBattleSession
         return Accepted(request.CommandId, events);
     }
 
-    private void ResolveFire(IReadOnlyList<(string DroneId, string? TargetId)> targets)
+    private void ResolveFire(IReadOnlyList<(string DroneId, TacticalFirePlan Plan)> targets)
     {
         _beforeSalvo = TacticalBattleSnapshotBuilder.Units(Battle);
         _fireQueue = TacticalBattleSnapshotBuilder.FireQueue(Battle);
         int turn = Battle.Turn;
-        Battle.Firing((drone, candidates) => new(drone.Side == PlayerSide
-            ? targets.FirstOrDefault(t => t.DroneId == drone.Id).TargetId
-            : TacticalBattleSalvo.DefaultTarget(drone, candidates)?.Target.Id, false));
+        Battle.Firing((drone, candidates) => drone.Side == PlayerSide
+            ? targets.FirstOrDefault(t => t.DroneId == drone.Id).Plan ?? new(null, false)
+            : TacticalBattleSalvo.DefaultPlan(Battle, drone, candidates));
         var steps = ImmutableArray.CreateBuilder<TacticalFireStepSnapshot>();
         var previous = _beforeSalvo;
         foreach (var step in Battle.LastSalvo!.Steps)

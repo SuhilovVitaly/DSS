@@ -9,6 +9,17 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class JournalEventsTests
 {
     [Fact]
+    public void Evading_step_is_logged_with_reason()
+    {
+        using var engine = SessionTests.CloseFireEngine();
+        var frame = engine.GetTacticalBattleState()!;
+        var result = engine.FireTacticalBattle(new("evade", frame.BattleId, frame.Revision, [new("Вера", null, true)]));
+        Assert.True(result.Accepted);
+        Assert.Contains(result.NewEvents, e => e.ActorId == "Вера" && e.Kind == TacticalBattleLogKind.FireSkipped
+            && e.SkipReason == TacticalFireSkipReason.Evading && e.FireStepIndex is not null);
+    }
+
+    [Fact]
     public void RetainedJournalCarriesActualShotsDamageAndSystemChangesInResolutionOrder()
     {
         using var engine = Create();
