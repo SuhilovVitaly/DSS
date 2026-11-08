@@ -12,6 +12,25 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class KeyboardRoutingTests
 {
     [Fact]
+    public async Task D_toggles_decoy_only_in_fire_phase()
+    {
+        await using (var move = await View.Ep0019Scenes.Create("1-move"))
+        {
+            move.Screen.OnKeyDown(Key.D);
+            Assert.Null(move.Screen.CaptureFrame(1920, 1080)!.FirePlan);
+        }
+        await using var fire = await View.Ep0019Scenes.Create("2-fire");
+        string selected = fire.Screen.CaptureFrame(1920, 1080)!.FirePlan!.SelectedDroneId!;
+        fire.Screen.OnKeyDown(Key.D);
+        Assert.True(fire.Screen.BuildFireRequest().Targets.Single(t => t.DroneId == selected).Decoy);
+        fire.Screen.OnKeyDown(Key.D, KeyModifiers.None, true);
+        fire.Screen.OnKeyDown(Key.D, KeyModifiers.Control, false);
+        Assert.True(fire.Screen.BuildFireRequest().Targets.Single(t => t.DroneId == selected).Decoy);
+        fire.Screen.OnKeyDown(Key.D);
+        Assert.False(fire.Screen.BuildFireRequest().Targets.Single(t => t.DroneId == selected).Decoy);
+    }
+
+    [Fact]
     public async Task E_toggles_evade_only_in_fire_phase()
     {
         await using (var move = await View.Ep0019Scenes.Create("1-move"))

@@ -190,6 +190,11 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
                 _fireOrders.ToggleEvade(evader);
                 return ScreenEvent.None;
             }
+            if (!repeat && modifiers == KeyModifiers.None && key == Key.D && _fireOrders.Selected is { } decoy)
+            {
+                _fireOrders.ToggleDecoy(decoy);
+                return ScreenEvent.None;
+            }
             if (key == Key.Tab && !repeat && (modifiers & (KeyModifiers.Control | KeyModifiers.Alt)) == 0)
             {
                 _firePanel.ResetInput();

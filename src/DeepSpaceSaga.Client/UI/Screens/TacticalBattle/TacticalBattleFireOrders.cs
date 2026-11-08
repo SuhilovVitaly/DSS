@@ -5,9 +5,14 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
+public enum DecoyRowState { Unavailable = 0, Available = 1, Selected = 2 }
+
 public sealed record TacticalFirePlanRow(TacticalUnitSnapshot Drone, TacticalTargetGroupSnapshot Group, string? TargetId)
 {
     public bool Evade { get; init; }
+    public bool Decoy { get; init; }
+    public bool CanDecoy => !Evade && Drone.Build?.DecoyId is not null && Drone.DecoyCharges > 0;
+    public DecoyRowState DecoyState => Decoy ? DecoyRowState.Selected : CanDecoy ? DecoyRowState.Available : DecoyRowState.Unavailable;
     public bool CanEvade { get; init; }
     public TacticalTargetCandidateSnapshot? Target => Group.List.FirstOrDefault(c => c.TargetId == TargetId);
 }
@@ -76,7 +81,7 @@ internal sealed class TacticalBattleFireOrders
 
     public void ClearAll()
     {
-        for (int i = 0; i < _rows.Count; i++) _rows[i] = _rows[i] with { TargetId = null, Evade = false };
+        for (int i = 0; i < _rows.Count; i++) _rows[i] = _rows[i] with { TargetId = null, Evade = false, Decoy = false };
         _cached = null;
     }
 
@@ -84,13 +89,22 @@ internal sealed class TacticalBattleFireOrders
     {
         int index = _rows.FindIndex(r => r.Drone.Id == droneId);
         if (index < 0 || !_rows[index].CanEvade) return false;
-        _rows[index] = _rows[index] with { TargetId = null, Evade = !_rows[index].Evade };
+        _rows[index] = _rows[index] with { TargetId = null, Evade = !_rows[index].Evade, Decoy = false };
+        _cached = null;
+        return true;
+    }
+
+    public bool ToggleDecoy(string droneId)
+    {
+        int index = _rows.FindIndex(r => r.Drone.Id == droneId);
+        if (index < 0 || !_rows[index].CanDecoy) return false;
+        _rows[index] = _rows[index] with { Decoy = !_rows[index].Decoy };
         _cached = null;
         return true;
     }
 
     public TacticalFirePlan Capture() => _cached ??= new(_rows.ToImmutableArray(), Selected);
-    public ImmutableArray<TacticalFireTarget> BuildTargets() => _rows.Select(r => new TacticalFireTarget(r.Drone.Id, r.TargetId, r.Evade)).ToImmutableArray();
+    public ImmutableArray<TacticalFireTarget> BuildTargets() => _rows.Select(r => new TacticalFireTarget(r.Drone.Id, r.TargetId, r.Evade, r.Decoy)).ToImmutableArray();
 
     public bool ChooseAt(TacticalBattleView view, SKPoint pointer, float uiScale)
     {

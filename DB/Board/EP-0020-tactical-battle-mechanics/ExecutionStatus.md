@@ -57,3 +57,5 @@ EP-0020-US-0006-TK-0003 → d5892a727d0df6bbd734ea2f6843db6dd51a4ead → origin 
 EP-0020-US-0006-TK-0004 → bc3ba57f2c03a58bd700451838d6e58c9ade6c43 → origin проверен. TK5main2220PASS, series5000direct/explicitPASS,report5000PASS; corpus630 выполняется. Полная таблица эффекта ловушки записана в карточку/review log.
 
 US6 завершена: Engine2850/2850 uniquePASS,series5000exactPASS,report5000PASS. TK5готов к публикации; далее US7 UIловушек.
+
+EP-0020-US-0006-TK-0005 → 180c896d82f8f781173322ccb89c7fe7885889cd → origin проверен. US7/TK1UI28PASS,готов к публикации.

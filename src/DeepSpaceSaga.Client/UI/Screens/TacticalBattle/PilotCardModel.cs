@@ -14,6 +14,7 @@ internal sealed record PilotCard(string UnitId, string Name, string Weapon, stri
 {
     public string PhaseText => string.Concat(Segments.Select(s => s.Text));
     public bool Evading { get; init; }
+    public bool Decoy { get; init; }
 }
 
 internal static class PilotCardModel
@@ -105,6 +106,7 @@ internal static class PilotCardModel
                      (u.Consciousness ?? 100) / (double)Math.Max(1, f.Battle.Rules.Evasion?.MaxConsciousness ?? 100))
                  { ValueTone = u.Consciousness < (f.Battle.Rules.Evasion?.MinConsciousness ?? 0) ? Red : null }], chip, accent, segments)
             {
+                Decoy = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Decoy) == true,
                 Evading = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true
                 || f.Salvo is { InFlight: false } result && result.Evading.Contains(u.Id)
             });

@@ -10,6 +10,63 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class FirePlanningTests
 {
     [Fact]
+    public async Task Decoy_toggle_reaches_request_and_target_choice_keeps_it()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var orders = new TacticalBattleFireOrders();
+        orders.Observe(screen.Flow.State!, null);
+        var row = orders.Capture().Selected!;
+        Assert.Equal(DecoyRowState.Available, row.DecoyState);
+        Assert.True(orders.ToggleDecoy(row.Drone.Id));
+        Assert.True(orders.BuildTargets().Single(t => t.DroneId == row.Drone.Id).Decoy);
+        Assert.Equal(row.TargetId, orders.Capture().Selected!.TargetId);
+        Assert.Equal(DecoyRowState.Selected, orders.Capture().Selected!.DecoyState);
+        orders.Choose(null);
+        Assert.True(orders.Capture().Selected!.Decoy);
+        orders.Choose(row.TargetId);
+        Assert.True(orders.Capture().Selected!.Decoy);
+        orders.ClearAll();
+        Assert.All(orders.BuildTargets(), t => Assert.False(t.Decoy || t.Evade));
+        screen.OnKeyDown(Key.D);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        Assert.True(PilotCardModel.Project(frame).Single(c => c.UnitId == frame.FirePlan!.SelectedDroneId).Decoy);
+    }
+
+    [Fact]
+    public async Task Evade_clears_decoy_and_decoy_is_unavailable_while_evading()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var orders = new TacticalBattleFireOrders();
+        orders.Observe(screen.Flow.State!, null);
+        string id = orders.Capture().SelectedDroneId!;
+        Assert.True(orders.ToggleDecoy(id));
+        Assert.True(orders.ToggleEvade(id));
+        Assert.False(orders.Capture().Selected!.Decoy);
+        Assert.False(orders.ToggleDecoy(id));
+        Assert.True(orders.BuildTargets().Single(t => t.DroneId == id).Evade);
+        Assert.True(orders.ToggleEvade(id));
+        Assert.True(orders.ToggleDecoy(id));
+        Assert.False(orders.Capture().Selected!.Evade);
+    }
+
+    [Theory]
+    [InlineData(0)]
+    [InlineData(null)]
+    public async Task Decoy_is_unavailable_without_charges(int? charges)
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var state = screen.Flow.State!;
+        var orders = new TacticalBattleFireOrders();
+        orders.Observe(state with { Units = [.. state.Units.Select(u => u with { DecoyCharges = charges })] }, null);
+        Assert.False(orders.ToggleDecoy(orders.Selected!));
+        Assert.Equal(DecoyRowState.Unavailable, orders.Capture().Selected!.DecoyState);
+        Assert.All(orders.BuildTargets(), t => Assert.False(t.Decoy));
+    }
+
+    [Fact]
     public async Task Evade_toggle_reaches_request_and_choosing_target_clears_it()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
@@ -147,7 +204,9 @@ public sealed class FirePlanningTests
         var ownShot = Assert.Single(resolved.Shots.Where(s => plan.Rows.Any(row => row.Drone.Id == s.ShooterId)));
         Assert.Equal(shooter.Drone.Id, ownShot.ShooterId);
         Assert.Equal(chosen, ownShot.TargetId);
-        Assert.Equal(shooter.Group.List.Single(t => t.TargetId == chosen).Chance, ownShot.Chance);
+        Assert.Equal(shooter.Group.List.Single(t => t.TargetId == chosen).Chance, ownShot.ChanceWithoutDecoy ?? ownShot.Chance);
+        Assert.Equal(ownShot.Decoyed, ownShot.ChanceWithoutDecoy is not null);
+        Assert.True(ownShot.Chance <= shooter.Group.List.Single(t => t.TargetId == chosen).Chance);
 
         TacticalFireTarget ForShooter() => screen.BuildFireRequest().Targets.Single(t => t.DroneId == shooter.Drone.Id);
     }
