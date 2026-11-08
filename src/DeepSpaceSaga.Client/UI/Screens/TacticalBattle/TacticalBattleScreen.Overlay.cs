@@ -6,6 +6,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 public sealed partial class TacticalBattleScreen
 {
+    private readonly HoverCard _hoverCard = new();
+    private TacticalBattleFrame? _hoverFrame;
     private readonly PhasePanel _phasePanel = new();
     private readonly PilotCardColumn _pilotColumn = new();
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;
@@ -18,14 +20,17 @@ public sealed partial class TacticalBattleScreen
     private IEnumerable<SKRect> OverlayRects()
     {
         yield return _panel;
+        if (HoverUnitId is not null && !_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
         int count = Flow.State?.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == Flow.State.PlayerSide) ?? 0;
         for (int i = 0; i < count; i++) yield return new(6, 6 + 87 * i, 196, 88 + 87 * i);
     }
     private bool OverlayHit(SKPoint p) => OverlayRects().Any(r => r.Contains(p));
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)
     {
+        _hoverFrame = f;
         _phasePanel.Draw(c, f, Layout);
         _pilotColumn.Draw(c, PilotCardModel.Project(f, _portraits), _portraits);
+        _hoverCard.Draw(c, f, _portraits);
     }
     private ScreenEvent OverlayClick(SKPoint p, MouseButton button)
     {
@@ -48,5 +53,12 @@ public sealed partial class TacticalBattleScreen
     }
     private bool OverlayDrag(SKPoint p) => _phasePanel.Drag(p, _orders);
     private void EndOverlayDrag() => _phasePanel.EndDrag();
-    private void UpdateHover(SKPoint p) { }
+    private void UpdateHover(SKPoint p)
+    {
+        if (_hoverFrame is not { } f || OverlayHit(p)) { HoverUnitId = null; return; }
+        HoverUnitId = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed)
+            .Select(u => (Unit: u, Distance: SKPoint.Distance(p, TacticalBattleMapRenderer.HoverPoint(f, u))))
+            .Where(pair => pair.Distance <= (pair.Unit.Kind == TacticalUnitKind.Carrier ? 16 : 12))
+            .OrderBy(pair => pair.Distance).FirstOrDefault().Unit?.Id;
+    }
 }
