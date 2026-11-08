@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using DeepSpaceSaga.Motion.TacticalBattle;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
@@ -15,6 +16,7 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
     private Ep0019Scenes(BattleNavigationTests.Fixture fixture) => Fixture = fixture;
     internal static async Task<Ep0019Scenes> Create(string scene, bool withoutModules = false, bool withoutAnomalies = false)
     {
+        long seed = scene == "2-anomaly-dust" ? 6 : 1;
         string? directory = null;
         string? settings = withoutModules || withoutAnomalies ? LegacySettings(out directory, withoutModules, withoutModules || withoutAnomalies) : null;
         BattleNavigationTests.Fixture f;
@@ -26,21 +28,28 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
             await f.Route(ScreenEvent.OpenTacticalBattle);
             var setup = (TacticalBattleModalScreen)f.Screens.Current;
             await setup.Flow.OptionsTask!;
+            if (seed != 1)
+            {
+                var form = (TacticalBattleSetupScreen)setup; var original = form.BuildStartRequest().Loadout;
+                for (int i = 0; form.SeedText.Length > 0 && i < 128; i++) { form.OnKeyDown(Key.Tab); form.OnKeyDown(Key.Backspace); }
+                Assert.Empty(form.SeedText); foreach (char c in seed.ToString(System.Globalization.CultureInfo.InvariantCulture)) form.OnTextInput(c);
+                Assert.Equal(seed, form.BuildStartRequest().Seed); Assert.Equal(original.ToArray(), form.BuildStartRequest().Loadout.ToArray());
+            }
             await f.Route(setup.OnKeyDown(Key.Enter));
-            Assert.Equal(1, result.Screen.Flow.State!.Seed);
+            Assert.Equal(seed, result.Screen.Flow.State!.Seed);
             if (scene == "2-decoy-empty")
-                f.Engine.TacticalBattleSessionForTests!.Battle.Drones.Single(d => d.Id == "Марта").DecoyCharges = 0;
+                f.Engine.TacticalBattleSessionForTests!.Battle.Drones.Single(d => d.Id == (withoutModules || withoutAnomalies ? "Марта" : "Юн")).DecoyCharges = 0;
             if (!scene.StartsWith("1-", StringComparison.Ordinal))
             {
                 while (result.Screen.Flow.State!.Phase != TacticalBattlePhase.Fire)
                 {
-                    Assert.True(result.Screen.Flow.State.Turn <= 3);
+                    Assert.True(result.Screen.Flow.State.Turn <= (seed != 1 ? 10 : withoutModules || withoutAnomalies ? 3 : 4));
                     await f.Route(ScreenEvent.MoveTacticalBattle);
                     f.FinishPresentation();
                 }
-                Assert.Equal(3, result.Screen.Flow.State.Turn);
+                if (seed == 1) Assert.Equal(withoutModules || withoutAnomalies ? 3 : 4, result.Screen.Flow.State.Turn);
                 result.Screen.CaptureFrame(1920, 1080);
-                // First own candidate in the canonical scenario is Marta.
+                // Follow the first legal own candidate from the current Engine snapshot.
                 while (result.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected?.Target is null)
                     result.Screen.OnKeyDown(Key.Tab);
                 if (scene == "2-evasion-plan") result.Screen.OnKeyDown(Key.E);
@@ -66,10 +75,62 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
                     Assert.Equal(TacticalBattlePhase.Over, result.Screen.Flow.State!.Phase);
                 }
             }
-            var hoverName = scene is "1-move-no-hover" or "5-outcome" ? null : scene == "2-fire-hover-own" ? "Олег" : "Таг-6";
+            if (scene == "2-anomaly-absorption")
+            {
+                SelectDrone("Олег"); using (var initial = result.Render()) { }
+                var frame = result.Screen.CaptureFrame(1920, 1080)!; var point = frame.View.Project(frame.Battle.Units.Single(u => u.Id == "Таг-1").Pose);
+                result.Screen.OnMouseDown(point.X * 1.5f, point.Y * 1.5f, MouseButton.Left);
+                Assert.Equal(.355, result.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!.Target!.Absorption, 12);
+            }
+            if (scene == "2-anomaly-dust")
+            {
+                await Until(s => s.Phase == TacticalBattlePhase.Fire && s.Units.Any(u => u.Side == s.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Air && u.InDust));
+                SelectDrone(result.Screen.Flow.State!.Units.First(u => u.Side == result.Screen.Flow.State.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State == TacticalUnitState.Air && u.InDust).Id);
+            }
+            if (scene == "1-anomaly-move-dust")
+            {
+                await Until(s => s.Phase == TacticalBattlePhase.Move && EndInDust(s) is not null);
+                SelectDrone(EndInDust(result.Screen.Flow.State!)!);
+            }
+            if (scene == "4-anomaly-absorbed")
+            {
+                await Until(s => s.Shots.FirstOrDefault(shot => s.Units.Any(u => u.Id == shot.ShooterId && u.Side == s.PlayerSide))?.Absorbed == true);
+                Assert.True(result.Screen.HasSalvoPresentation);
+                if (result.Screen.CaptureFrame(1920, 1080)!.Salvo!.InFlight) result.Screen.OnKeyDown(Key.Enter);
+            }
+            var hoverName = scene.Contains("anomaly", StringComparison.Ordinal) || scene is "1-move-no-hover" or "5-outcome" ? null : scene == "2-fire-hover-own" ? "Олег" : "Таг-6";
             result.Screen.HoverUnitId = result.Screen.Flow.State!.Units.FirstOrDefault(u =>
                 (u.Build?.PilotName ?? u.Id) == hoverName)?.Id;
+            if (scene == "1-anomaly-hover")
+            {
+                using (var initial = result.Render()) { }
+                var frame = result.Screen.CaptureFrame(1920, 1080)!;
+                var point = frame.Battle.Anomalies.Where(a => a.Kind == TacticalAnomalyKindCode.Heat).SelectMany(a => a.Clumps)
+                    .Select(c => frame.View.Project(c.X, c.Y)).First(p => p.X > 202 && p.X < 1034 && p.Y > 6 && p.Y < 714
+                        && frame.Battle.Units.All(u => SKPoint.Distance(p, TacticalBattleMapRenderer.HoverPoint(frame, u)) > 25)
+                        && AnomalyPresentation.HoverKind(frame with { HoverPoint = p }) == TacticalAnomalyKindCode.Heat);
+                result.Screen.OnMouseMove(point.X * 1.5f, point.Y * 1.5f);
+            }
             return result;
+
+            void SelectDrone(string id)
+            {
+                for (int i = 0; result.Screen.CaptureFrame(1920, 1080)!.SelectedDroneId != id && i < 16; i++) result.Screen.OnKeyDown(Key.Tab);
+                Assert.Equal(id, result.Screen.CaptureFrame(1920, 1080)!.SelectedDroneId);
+            }
+            async Task Until(Func<TacticalBattleSnapshot, bool> predicate)
+            {
+                f.ManualAnimation = true;
+                for (int i = 0; !predicate(result.Screen.Flow.State!) && i < 100; i++)
+                { Assert.NotEqual(TacticalBattlePhase.Over, result.Screen.Flow.State!.Phase); f.FinishPresentation(); await f.Route(result.Screen.OnKeyDown(Key.Enter)); }
+                Assert.True(predicate(result.Screen.Flow.State!), scene);
+                if (scene != "4-anomaly-absorbed") f.FinishPresentation();
+            }
+            static string? EndInDust(TacticalBattleSnapshot state)
+            {
+                var orders = new TacticalBattleOrders(); orders.Observe(state);
+                return orders.Capture().Orders.FirstOrDefault(o => AnomalyPresentation.Inside(state, TacticalAnomalyKind.Dust, o.Path[^1]))?.Unit.Id;
+            }
         }
         catch { await result.DisposeAsync(); throw; }
     }
