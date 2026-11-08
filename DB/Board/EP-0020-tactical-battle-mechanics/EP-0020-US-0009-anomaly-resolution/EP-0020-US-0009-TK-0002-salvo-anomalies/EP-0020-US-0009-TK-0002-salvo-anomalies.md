@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0009-anomaly-resolution
 ticket: EP-0020-US-0009-TK-0002-salvo-anomalies
 title: Поглощение и пыль в залпе
-stage: draft
+stage: done
 layer: engine
 test_project: tests/DeepSpaceSaga.Engine.Tests
 depends_on: [EP-0020-US-0009-TK-0001-anomaly-contracts]
@@ -93,4 +93,6 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Техническое уточнение: Terms.Chance остаётся условным шансом hit-roll после EV/clamp; Candidate.Chance — итоговый Terms.Chance*(1−Absorption). Decoy применяется к условному шансу, затем множитель поглощения. При пустом списке аномалий старый role/distance выбор сохраняется (явный инвариант); при непустом первичен итоговый шанс, даже если локально Absorption=0; tie-break прежний. Журнал ShotAbsorbed материализует Session в TK4; TK2 даёт факт Absorbed в shot/step.
+
+Завершено. Focus47/47PASS: 100 последовательных ручных RNG-проверок absorption=.17, full/zero crossing, rear/carrier, расход ловушки, dust priority/targetability, forecast decoy-before-absorption; Decoy/Evasion/Salvo regressionPASS. Build/scopedformat/diffcheckPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us9-tk2/final/tests.trx` (первый focus выявил ошибочный minChance=47 в новом тестовом arena, исправлено на5; production clamp не менялся). US9-AC1/2 выполнены, AC3 залп/AC5 поля snapshot готовы; session refusal/log в TK4. Самопроверка: при Absorption0 дополнительного RNG нет, при поглощении ровно1draw и нет damage/rear/system draws, планы dust зафиксированы до мутаций. Save20 не меняется.

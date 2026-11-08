@@ -16,7 +16,7 @@ internal static class TacticalBattleSnapshotBuilder
 
     public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
-    { LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy };
+    { Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy };
 
     public static ImmutableArray<TacticalUnitSnapshot> Units(TacticalBattle battle)
     {
@@ -36,7 +36,7 @@ internal static class TacticalBattleSnapshotBuilder
                     e.Definition.MassKg, e.Definition.SpeedBonus, e.Definition.SpeedChange, e.Definition.TurnDeg)).ToImmutableArray(),
                 new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver,
                 battle.Catalog.Ai.Roles[d.Role].Name)
-            { Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges });
+            { InDust = TacticalBattleSalvo.InDust(battle, d), Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges });
         }
         foreach (var c in battle.Carriers)
             units.Add(new(c.Id, c.Side, TacticalUnitKind.Carrier, TacticalBattleConstants.CarrierFrame, Pose(c.Pose), 0,
@@ -49,7 +49,8 @@ internal static class TacticalBattleSnapshotBuilder
     {
         var candidates = TacticalBattleSalvo.Candidates(battle, d);
         return new TacticalTargetGroupSnapshot(d.Id, candidates.Select(c => new TacticalTargetCandidateSnapshot(c.Target.Id,
-            c.Distance, c.Angle, c.Terms.IsRear, d.Weapon.RearKillChance, c.Terms.Chance)).ToImmutableArray(),
+            c.Distance, c.Angle, c.Terms.IsRear, d.Weapon.RearKillChance, c.Chance)
+        { Absorption = c.Absorption }).ToImmutableArray(),
             TacticalBattleSalvo.DefaultTarget(d, candidates)?.Target.Id);
     }).ToImmutableArray();
 
@@ -63,12 +64,13 @@ internal static class TacticalBattleSnapshotBuilder
             if (candidate is not null)
             {
                 var adjusted = CandidatesIfEvading(battle, d, candidate.Target.Id);
-                rows.Add(new(d.Id, candidate.Target.Id, candidate.Terms.Chance, candidate.Distance,
+                rows.Add(new(d.Id, candidate.Target.Id, candidate.Chance, candidate.Distance,
                     candidate.Angle, candidate.Terms.IsRear, d.Weapon.RearKillChance)
                 {
+                    Absorption = candidate.Absorption,
                     ChanceIfEvading = adjusted,
                     ChanceIfDecoy = candidate.Target is TacticalDrone { Decoy: { } decoy } && first.Add(candidate.Target.Id)
-                        ? TacticalHitChance.WithDecoy(candidate.Terms.Chance, decoy.MissFactor, battle.Catalog.Rules.Hit.MinChance / 100.0) : null
+                        ? TacticalHitChance.WithDecoy(candidate.Terms.Chance, decoy.MissFactor, battle.Catalog.Rules.Hit.MinChance / 100.0) * (1 - candidate.Absorption) : null
                 });
             }
         }
@@ -77,7 +79,7 @@ internal static class TacticalBattleSnapshotBuilder
 
     private static double CandidatesIfEvading(TacticalBattle battle, TacticalDrone shooter, string targetId) =>
         TacticalBattleSalvo.Candidates(battle, shooter, new HashSet<string>(StringComparer.Ordinal) { targetId })
-            .Single(c => c.Target.Id == targetId).Terms.Chance;
+            .Single(c => c.Target.Id == targetId).Chance;
 
     public static ImmutableArray<TacticalLossCount> Losses(TacticalBattle battle) => TacticalBattleConstants.SideOrder
         .Select(side => new TacticalLossCount(side, battle.Drones.Count(d => d.Side == side && !d.IsActive))).ToImmutableArray();
