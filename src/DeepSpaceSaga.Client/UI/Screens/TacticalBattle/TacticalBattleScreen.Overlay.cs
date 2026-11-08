@@ -6,6 +6,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 public sealed partial class TacticalBattleScreen
 {
+    private readonly PhasePanel _phasePanel = new();
     private readonly PilotCardColumn _pilotColumn = new();
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;
     private BattleViewport _viewport = new(1, 1280);
@@ -22,8 +23,7 @@ public sealed partial class TacticalBattleScreen
     private bool OverlayHit(SKPoint p) => OverlayRects().Any(r => r.Contains(p));
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)
     {
-        BattleDesign.PanelBox(c, f.Panel);
-        Layout.Rects["phase"] = f.Panel;
+        _phasePanel.Draw(c, f, Layout);
         _pilotColumn.Draw(c, PilotCardModel.Project(f, _portraits), _portraits);
     }
     private ScreenEvent OverlayClick(SKPoint p, MouseButton button)
