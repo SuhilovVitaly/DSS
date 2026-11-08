@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0007-decoy-ui
 ticket: EP-0020-US-0007-TK-0004-decoy-view-regression
 title: Проверки вида EP-0019 после ловушек
-stage: draft
+stage: done
 layer: tests
 test_project: tests/DeepSpaceSaga.Client.Tests
 depends_on: [EP-0020-US-0007-TK-0003-salvo-decoy-reveal]
@@ -91,4 +91,10 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+В процессе. Раскладка7/7PASS до обновления; старые строки/снимки/data ожидаемо изменены массой иAI. Scope: фактические partial Ep0019Acceptance/Ep0019Snapshots, связанные literal PilotCardModel/PhaseOutcome и тестовый Fixture.engineSettingsPath. Для старых masked snapshots используется реальная Engine-сцена module:null через временный JSON-content fixture под DSS_VALIDATION_ROOT (без копии source/checkout); это изолирует стиль от изменений данных. Старые payload assets остаются нетронутыми до independent data/probes PASS.
+
+Технический gap исходной пробы DesignSpec §12.4: бинарное «броня≤10%→Track» неверно при частичном заполнении внутри фиксированной области. Новый Outcome Юна даёт смешанные пиксели и0.231Track. Проба сравнивает ожидаемый цвет каждого пикселя с геометрией полосы §5 (fill,3px round stroke), сохраняя область61…70, ΔRGB40 и80%; аналогично сознанию. Это усиление проверки реального заполнения вместо бинарной эвристики; DesignSpec уточняется. Отсутствующую при новом no-damage исходе выноску не подменяем фиктивным уроном.
+
+FullClient2201/2206 выявил5 дополнительных owning literal тестов: ContentData count29→30(новый decoyJSON), PhaseFire distance108.1→112.2, PhaseMove77.5→77.3,PhaseSalvo3/1→2/0 иMapFireArmorcallout. Scope расширен на эти файлы; old armor callout−41 дополнительно сохранён в реальном module:null сценарии, а текущая production сцена проверяет DecoyMiss. Проверки ввода/replay/revision/допуски сохраняются.
+
+Завершено: до замены snapshots masked7/7PASS на module:null Engine, независимые данные/геометрия/probes47/47PASS. Полная Client2206/2206PASS со строгими7новыми snapshots и captureseed1; все29Ep0019PASS. Все значения изменены по сохранённому actual прогону: движение/позиции +10кг, enemyAIdecoys и дальнейшееRNG-ветвление; итог16ходов/23выстрела/13попаданий/0:6. Frame3безincoming, Frame4проверяетстрелкутекста. Новый per-pixel oracle полос сохраняет координаты,stroke3,Δ40,80%; snapshot thresholds0.005/tile0.25 не менялись. Реальные4decoy-сцены добавлены; временныеJSON contentfixtures автоматически удалены (проверено0оставшихся). Build/scoped-format/diff-checkPASS. Самопроверка US7-AC4 и всей истории выполнена; world save/input/navigation/replay проверены полнойsuite. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us7-tk4/client-final/tests.trx,masked/tests.trx,independent/tests.trx,format-tests.log,format-additional.log. Native будет выполнен по итоговой реализации; human/physical-input gates открыты.

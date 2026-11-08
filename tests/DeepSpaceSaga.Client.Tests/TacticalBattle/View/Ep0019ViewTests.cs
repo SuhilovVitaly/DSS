@@ -21,7 +21,7 @@ public sealed partial class Ep0019ViewTests
             {
                 Assert.Equal(1, state.Turn);
                 Assert.Equal(4, state.Suggestions.Length);
-                Assert.InRange(state.Suggestions[0].Speed, 77.45, 77.55);
+                Assert.InRange(state.Suggestions[0].Speed, 77.26, 77.28);
                 Assert.InRange(state.Suggestions[0].Turn, 5.45, 5.55);
             }
             if (name == "2-fire")
@@ -29,20 +29,22 @@ public sealed partial class Ep0019ViewTests
                 var frame = scene.Screen.CaptureFrame(1920, 1080)!;
                 Assert.Equal("Марта", frame.FirePlan!.Selected!.Drone.Build!.PilotName);
                 Assert.InRange(frame.FirePlan.Selected.Target!.Chance, 0.555, 0.565);
-                Assert.InRange(frame.FirePlan.Selected.Target.Distance, 108.05, 108.15);
+                Assert.InRange(frame.FirePlan.Selected.Target.Distance, 112.15, 112.25);
             }
             if (name == "4-salvo-results")
             {
-                Assert.Equal(3, state.Shots.Length);
-                Assert.Single(state.Shots.Where(s => s.Hit));
-                Assert.Equal(39, state.Units.Single(u => u.Build?.PilotName == "Марта").Armor);
+                Assert.Equal(2, state.Shots.Length);
+                Assert.Empty(state.Shots.Where(s => s.Hit));
+                Assert.All(state.Shots, s => Assert.True(s.Decoyed));
+                Assert.Equal(new[] { "Таг-4", "Таг-5" }, state.DecoysLaunched.OrderBy(id => id, StringComparer.Ordinal));
+                Assert.Equal(80, state.Units.Single(u => u.Build?.PilotName == "Марта").Armor);
             }
             if (name == "5-outcome")
             {
-                Assert.Equal(28, state.Outcome!.Turns);
+                Assert.Equal(16, state.Outcome!.Turns);
                 Assert.Equal(TacticalBattleOutcomeCode.A, state.Outcome.Kind);
-                Assert.Equal(38, state.Outcome.Statistics.Shots);
-                Assert.Equal(24, state.Outcome.Statistics.Hits);
+                Assert.Equal(23, state.Outcome.Statistics.Shots);
+                Assert.Equal(13, state.Outcome.Statistics.Hits);
             }
         }
         string json = JsonSerializer.Serialize(states, new JsonSerializerOptions { WriteIndented = true });

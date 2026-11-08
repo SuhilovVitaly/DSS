@@ -9,6 +9,30 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class FirePanelDecoyTests
 {
+    [Theory]
+    [InlineData("2-decoy-plan")]
+    [InlineData("2-decoy-empty")]
+    [InlineData("3-decoy-flight")]
+    [InlineData("4-decoy-results")]
+    public async Task Decoy_scenes_use_actual_engine_data(string name)
+    {
+        await using var scene = await Ep0019Scenes.Create(name);
+        using var bitmap = scene.Render();
+        var frame = scene.Screen.CaptureFrame(1920, 1080)!;
+        if (name == "2-decoy-empty")
+        {
+            Assert.Equal(0, frame.FirePlan!.Selected!.Drone.DecoyCharges);
+            Assert.Equal(DecoyRowState.Unavailable, frame.FirePlan.Selected.DecoyState);
+        }
+        else if (name == "2-decoy-plan") Assert.True(frame.FirePlan!.Selected!.Decoy);
+        else
+        {
+            Assert.Equal(name == "3-decoy-flight", frame.Salvo!.InFlight);
+            Assert.Contains("Марта", frame.Salvo.DecoysLaunched);
+        }
+        Assert.DoesNotContain(scene.Screen.Layout.Texts, t => t.Text.Contains("TacticalBattle.", StringComparison.Ordinal));
+    }
+
     [Fact]
     public async Task Shot_plan_with_decoy_matches_ui_spec()
     {

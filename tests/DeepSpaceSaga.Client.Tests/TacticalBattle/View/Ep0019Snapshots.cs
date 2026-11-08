@@ -10,7 +10,8 @@ public sealed partial class Ep0019ViewTests
     [Theory, MemberData(nameof(Scenes)), Trait("Category", "Ep0019View")]
     public async Task Scene_matches_regression_snapshot(string name)
     {
-        await using var s = await Ep0019Scenes.Create(name); using var locale = Localization.UseLocaleForTests("Russian"); using var current = s.Render();
+        bool verifyM2Masks = Environment.GetEnvironmentVariable("DSS_EP0020_VERIFY_M2_MASKS") == "1";
+        await using var s = await Ep0019Scenes.Create(name, withoutModules: verifyM2Masks); using var locale = Localization.UseLocaleForTests("Russian"); using var current = s.Render();
         if (Environment.GetEnvironmentVariable("DSS_EP0019_ACCEPT_SNAPSHOTS") == "1")
         {
             string dir = Path.Combine(SourceDirectory(), "Snapshots"); Directory.CreateDirectory(dir);
@@ -26,11 +27,13 @@ public sealed partial class Ep0019ViewTests
             // Transitional comparison against EP-0019: only the two UiSpec §7 rectangles.
             if (verifyM1Masks && name.StartsWith("2-", StringComparison.Ordinal) && px >= 1560 && px < 1911
                 && ((py >= 357 && py < 402) || (py >= 417 && py < 456))) continue;
+            if (verifyM2Masks && name.StartsWith("2-", StringComparison.Ordinal) && px >= 1560 && px < 1911
+                && ((py >= 285 && py < 405) || (py >= 417 && py < 456))) continue;
             if (Math.Abs(one[i].Red - two[i].Red) <= 40 && Math.Abs(one[i].Green - two[i].Green) <= 40 && Math.Abs(one[i].Blue - two[i].Blue) <= 40) continue;
             different++; int x = i % 1920, y = i / 1920; tiles[y / 16 * 120 + x / 16]++;
         }
         double maxTile = tiles.Select((count, index) => count / (double)(16 * (index / 120 == 67 ? 8 : 16))).Max();
-        File.WriteAllText(Path.Combine(Output(name), "regression.json"), JsonSerializer.Serialize(new { verifyM1Masks, different, fraction = different / (double)one.Length, maxTile }));
+        File.WriteAllText(Path.Combine(Output(name), "regression.json"), JsonSerializer.Serialize(new { verifyM1Masks, verifyM2Masks, different, fraction = different / (double)one.Length, maxTile }));
         Assert.InRange(different / (double)one.Length, 0, .005); Assert.InRange(maxTile, 0, .25);
     }
 }

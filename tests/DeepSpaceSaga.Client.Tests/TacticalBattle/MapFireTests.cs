@@ -28,7 +28,17 @@ public sealed class MapFireTests
         await using (var s = await Ep0019Scenes.Create("4-salvo-results"))
         {
             using var locale = Localization.UseLocaleForTests("Russian");
-            using var b = s.Render(); Assert.Contains(s.Screen.Layout.Texts, t => t.Text == "−41 брони"); Assert.True(s.Screen.Layout.Rects.ContainsKey("callout:Марта"));
+            using var b = s.Render();
+            Assert.Contains(s.Screen.Layout.Texts, t => t.Text == "Ловушка · промах Марта");
+            Assert.True(s.Screen.Layout.Rects.ContainsKey("decoy-callout:0"));
+            Assert.False(s.Screen.Layout.Rects.ContainsKey("callout:Марта"));
+        }
+        await using (var legacy = await Ep0019Scenes.Create("4-salvo-results", withoutModules: true))
+        {
+            using var locale = Localization.UseLocaleForTests("Russian");
+            using var bitmap = legacy.Render();
+            Assert.Contains(legacy.Screen.Layout.Texts, t => t.Text == "−41 брони");
+            Assert.True(legacy.Screen.Layout.Rects.ContainsKey("callout:Марта"));
         }
     }
 }

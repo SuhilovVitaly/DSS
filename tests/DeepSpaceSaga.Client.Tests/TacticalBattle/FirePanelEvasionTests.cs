@@ -20,7 +20,7 @@ public sealed class FirePanelEvasionTests
         Assert.InRange(RasterProbe.Fraction(bitmap, new(1050, 122, 1100, 150), Purple), .1, 1);
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         var selected = frame.FirePlan!.Selected!;
-        Assert.Equal("Таг-4: 47% → 27%", PhasePanel.ThreatText(frame.Battle, selected.Drone.Id, true));
+        Assert.Equal("Никто не целится", PhasePanel.ThreatText(frame.Battle, selected.Drone.Id, true));
         Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "Сознание 100 → 90");
         Assert.Equal("Уклонение", PilotCardModel.Project(frame).Single(c => c.UnitId == selected.Drone.Id).Chip);
         Save(bitmap, "evade-plan");

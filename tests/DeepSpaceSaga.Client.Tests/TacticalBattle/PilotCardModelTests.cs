@@ -13,8 +13,11 @@ public sealed class PilotCardModelTests
         using var locale = Localization.UseLocaleForTests("Russian");
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         var own = frame.Battle.Units.First(u => u.Side == frame.Battle.PlayerSide);
-        frame = frame with { Battle = frame.Battle with
-        { Units = [.. frame.Battle.Units.Select(u => u.Id == own.Id ? u with { Consciousness = 9 } : u)] } };
+        frame = frame with
+        {
+            Battle = frame.Battle with
+            { Units = [.. frame.Battle.Units.Select(u => u.Id == own.Id ? u with { Consciousness = 9 } : u)] }
+        };
         var stat = PilotCardModel.Project(frame).Single(c => c.UnitId == own.Id).Stats[2];
         Assert.Equal("9", stat.Value);
         Assert.Equal(0.09, stat.Fill);
@@ -23,10 +26,10 @@ public sealed class PilotCardModelTests
     }
 
     [Theory]
-    [InlineData("1-move", "Вера", "Движение: скорость 77,5 · поворот +5,5°", "ИИ")]
+    [InlineData("1-move", "Вера", "Движение: скорость 77,3 · поворот +5,5°", "ИИ")]
     [InlineData("2-fire", "Марта", "Стрельба: целей 1 · урон 50–75 · иниц. 59", "Таг-4 56%")]
-    [InlineData("4-salvo-results", "Марта", "Итог: нанесено 0 · получено −41", "промах")]
-    [InlineData("5-outcome", "Вера", "Итог: нанесено 267 · получено −46", "в строю")]
+    [InlineData("4-salvo-results", "Марта", "Итог: нанесено 0 · получено 0", "промах")]
+    [InlineData("5-outcome", "Вера", "Итог: нанесено 193 · получено 0", "в строю")]
     public async Task Cards_match_reference_values(string scene, string name, string text, string chip)
     {
 

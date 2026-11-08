@@ -58,11 +58,11 @@ public sealed partial class Ep0019ViewTests
     }
     private static string[] ExpectedTexts(string name) => name switch
     {
-        "1-move" or "1-move-no-hover" => ["ХОД 1  •", "ДВИЖЕНИЕ", "Начальный бой · свои 4 · враг 6 · потери 0:0", "Вера · манёвр", "ПЛАН ДВИЖЕНИЯ", "Скорость: 77,5", "50,0", "77,5", "Поворот: +5,5°", "−38,9°", "+38,9°", "4 предложения ИИ", "Движение не выполнено", "Выполнить движение [Enter]", "Движение: скорость 77,6 · поворот −24,3°", "Движение: скорость 81,7 · поворот +4,3°", "Движение: скорость 81,9 · поворот −6,8°", "ИИ"],
-        "2-fire" or "2-fire-hover-own" => ["ХОД 3  •", "СТРЕЛЬБА", "Марта → Таг-4", "ПЛАН ВЫСТРЕЛА", "56%", "шанс попадания", "Дистанция 108,1", "Угол 16,1°", "Меч I · урон 50–75", "Сначала броня (20), затем корпус", "Таг-4: корпус 40/40 · броня 20/20", "Не стрелять", "Уклониться [E]", "2 стреляют · 2 без цели", "План готов к отправке", "Выполнить залп [Enter]", "нет целей", "Таг-4 56%", "Таг-5 55%", "Стрельба: целей 1 · урон 50–75 · иниц. 59"],
-        "3-salvo-flight" => ["ХОД 3  •", "ЗАЛП", "Марта → Таг-4", "ВЫСТРЕЛ В ПОЛЁТЕ", "Очерёдность огня", "Снаряды в полёте", "Выстрел 1 из 3", "Пропустить полёт [Enter]", "огонь", "ждёт", "без цели"],
-        "4-salvo-results" => ["ХОД 3  •", "РЕЗУЛЬТАТЫ", "Марта → Таг-4", "РЕЗУЛЬТАТ ВЫСТРЕЛА", "ПРОМАХ", "Нанесённый урон: 0", "Повреждения Марты", "Броня: 80 → 39", "49%", "Корпус: 55/55 · без урона", "В строю", "Залп завершён", "3 выстрела · 1 попадание", "↺ Повтор", "К движению [Enter]", "−41 брони", "не стреляла", "не стрелял", "промах"],
-        _ => ["ХОД 28  •", "ИТОГ", "Начальный бой · свои 3 · враг 2 · потери 2:6", "Начальный бой", "ИТОГ БОЯ", "ПОБЕДА", "у противника не осталось дронов", "Ходов", "28", "Выстрелов", "38", "Попаданий", "24", "Потери", "свои 2 · враг 6", "Бой окончен", "Esc — вернуться на карту мира", "Новый бой", "Выйти [Esc]", "уничтожена", "Итог: нанесено 267 · получено −46", "Итог: нанесено 205 · получено −39", "Итог: нанесено 213 · получено −135", "Итог: нанесено 42 · получено −85"]
+        "1-move" or "1-move-no-hover" => ["ХОД 1  •", "ДВИЖЕНИЕ", "Начальный бой · свои 4 · враг 6 · потери 0:0", "Вера · манёвр", "ПЛАН ДВИЖЕНИЯ", "Скорость: 77,3", "50,0", "77,3", "Поворот: +5,5°", "−38,4°", "+38,4°", "4 предложения ИИ", "Движение не выполнено", "Выполнить движение [Enter]", "Движение: скорость 77,4 · поворот −24,3°", "Движение: скорость 81,4 · поворот +4,3°", "Движение: скорость 81,6 · поворот −6,8°", "ИИ"],
+        "2-fire" or "2-fire-hover-own" => ["ХОД 3  •", "СТРЕЛЬБА", "Марта → Таг-4", "ПЛАН ВЫСТРЕЛА", "56%", "шанс попадания", "Дистанция 112,2", "Угол 16,1°", "Меч I · урон 50–75", "Таг-4: броня 20/20, затем корпус 40/40", "Ловушка [D]", "Не стрелять", "Уклониться [E]", "2 стреляют · 2 без цели", "План готов к отправке", "Выполнить залп [Enter]", "нет целей", "Таг-4 56%", "Таг-5 54%", "Стрельба: целей 1 · урон 50–75 · иниц. 59"],
+        "3-salvo-flight" => ["ХОД 3  •", "ЗАЛП", "Марта → Таг-4", "ВЫСТРЕЛ В ПОЛЁТЕ", "Очерёдность огня", "Снаряды в полёте", "Выстрел 1 из 2", "Пропустить полёт [Enter]", "огонь", "ждёт", "без цели"],
+        "4-salvo-results" => ["ХОД 3  •", "РЕЗУЛЬТАТЫ", "Марта → Таг-4", "РЕЗУЛЬТАТ ВЫСТРЕЛА", "ПРОМАХ", "Нанесённый урон: 0", "Повреждения Марты", "Броня: 80 → 80", "100%", "Корпус: 55/55 · без урона", "В строю", "Залп завершён", "2 выстрела · 0 попаданий", "ловушка цели", "56% → 34%", "↺ Повтор", "К движению [Enter]", "не стреляла", "не стрелял", "промах"],
+        _ => ["ХОД 16  •", "ИТОГ", "Начальный бой · свои 4 · враг 1 · потери 0:6", "Начальный бой", "ИТОГ БОЯ", "ПОБЕДА", "у противника не осталось дронов", "Ходов", "16", "Выстрелов", "23", "Попаданий", "13", "Потери", "свои 0 · враг 6", "Бой окончен", "Esc — вернуться на карту мира", "Новый бой", "Выйти [Esc]", "Итог: нанесено 193 · получено 0", "Итог: нанесено 14 · получено −74", "Итог: нанесено 193 · получено 0", "Итог: нанесено 93 · получено 0"]
     };
     [Theory, MemberData(nameof(Scenes)), Trait("Category", "Ep0019View")]
     public async Task Scene_texts_match_design_spec(string name)
@@ -72,7 +72,7 @@ public sealed partial class Ep0019ViewTests
         if (name is not ("1-move-no-hover" or "5-outcome"))
             foreach (string text in name == "2-fire-hover-own" ? new[] { "ПОД КУРСОРОМ · ПИЛОТ", "Олег", "Корпус 55/55", "Броня 80/80", "Копьё I · 40–60 · точн. 50 · иниц. 50" } : new[] { "ПОД КУРСОРОМ · ПРОТИВНИК", "Таг-6", "Корпус 40/40", "Броня 20/20", "Обрез I · 40–50 · дальн. 110 · иниц. 41" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
         if (name == "3-salvo-flight")
-            foreach (string row in new[] { "Марта → Таг-4", "Вера — нет цели", "Таг-2 — нет цели", "Юн — нет цели", "Олег → Таг-5", "Таг-1 — нет цели", "Таг-5 — нет цели", "Таг-3 — нет цели", "Таг-4 → Марта", "Таг-6 — нет цели" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == row);
+            foreach (string row in new[] { "Марта → Таг-4", "Вера — нет цели", "Таг-2 — нет цели", "Юн — нет цели", "Олег → Таг-5", "Таг-1 — нет цели", "Таг-5 — нет цели", "Таг-3 — нет цели", "Таг-4 — нет цели", "Таг-6 — нет цели" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == row);
         Assert.DoesNotContain(s.Screen.Layout.Texts, t => t.Text.Contains("TacticalBattle.", StringComparison.Ordinal));
     }
     [Theory, MemberData(nameof(Scenes)), Trait("Category", "Ep0019View")]
@@ -82,14 +82,34 @@ public sealed partial class Ep0019ViewTests
         var probes = new List<object>(); var failures = new List<string>();
         void Probe(string key, SKRect r, double limit, params SKColor[] colors)
         { double fraction = RasterProbe.Fraction(b, r, colors); probes.Add(new { key, area = new { r.Left, r.Top, r.Right, r.Bottom }, fraction, limit, passed = fraction >= limit }); if (fraction < limit) failures.Add(key + "=" + fraction.ToString("F3")); }
+        void BarProbe(string key, SKRect area, SKRect card, PilotStat stat, float centerY)
+        {
+            double x0 = card.Left + 60, x1 = card.Right - 41;
+            double end = x0 + (x1 - x0) * Math.Clamp(stat.Fill, 0, 1);
+            int matches = 0, count = 0;
+            for (int y = (int)Math.Ceiling(area.Top * 1.5); y < area.Bottom * 1.5; y++)
+                for (int x = (int)Math.Ceiling(area.Left * 1.5); x < area.Right * 1.5; x++)
+                {
+                    double px = (x + .5) / 1.5, py = (y + .5) / 1.5;
+                    double dx = px - Math.Clamp(px, x0, end), dy = py - centerY;
+                    var expected = stat.Fill > 0 && dx * dx + dy * dy <= 2.25 ? stat.Tone : Track;
+                    var actual = b.GetPixel(x, y);
+                    if (Math.Abs(actual.Red - expected.Red) <= 40 && Math.Abs(actual.Green - expected.Green) <= 40
+                        && Math.Abs(actual.Blue - expected.Blue) <= 40) matches++;
+                    count++;
+                }
+            double fraction = matches / (double)count;
+            probes.Add(new { key, area = new { area.Left, area.Top, area.Right, area.Bottom }, stat.Fill, fraction, limit = .8 });
+            if (fraction < .8) failures.Add(key + "=" + fraction.ToString("F3"));
+        }
         Probe("panel", new(1046, 62, 1270, 66), .9, Panel); Probe("tag", new(1049.5f, 94, 1053, 108), .9, YellowDark);
         Probe("map", new(700, 690, 760, 700), .95, MapBg, Grid);
         var action = l.Rects["action"]; Probe("primary", new(name is "4-salvo-results" or "5-outcome" ? 1150 : 1078, action.Top + 58.5f, 1236, action.Top + 61), .9, Yellow);
         var cards = PilotCardModel.Project(f);
         foreach (var card in cards)
         {
-            var r = l.Rects["pilot:" + card.UnitId]; Probe("armor:" + card.UnitId, new(r.Left + 61, r.Top + 40.5f, r.Left + 70, r.Top + 41.5f), .8, card.Stats[0].Fill > .1 ? Purple : Track);
-            Probe("mind:" + card.UnitId, new(r.Left + 61, r.Top + 62.5f, r.Left + 70, r.Top + 63.5f), .8, Green);
+            var r = l.Rects["pilot:" + card.UnitId]; BarProbe("armor:" + card.UnitId, new(r.Left + 61, r.Top + 40.5f, r.Left + 70, r.Top + 41.5f), r, card.Stats[0], r.Top + 41);
+            BarProbe("mind:" + card.UnitId, new(r.Left + 61, r.Top + 62.5f, r.Left + 70, r.Top + 63.5f), r, card.Stats[2], r.Top + 63);
             if (card.Selected) Probe("selected:" + card.UnitId, new(r.Left + 20, r.Top - .4f, r.Right - 20, r.Top + .4f), .6, Yellow);
         }
         foreach (var u in f.Battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone && u.State != TacticalUnitState.Destroyed))
@@ -120,7 +140,16 @@ public sealed partial class Ep0019ViewTests
             Probe("sector", SKRect.Create(a.X + (float)(radius * Math.Cos(angle)) - 1.5f, a.Y + (float)(radius * Math.Sin(angle)) - 1.5f, 3, 3), .5, SKColor.Parse("#174A47"));
         }
         if (name == "3-salvo-flight") { var r = l.Rects["projectile"]; Probe("shell", SKRect.Create(r.MidX - 1, r.MidY - 1, 2, 2), .75, Shell); }
-        if (name == "4-salvo-results") { var r = l.Rects["callout:Марта"]; Probe("damage-callout", SKRect.Create(r.Left + 3, r.Top + 3, 4, 2), .9, YellowDark); }
+        if (name == "4-salvo-results")
+        {
+            foreach (var damage in f.Salvo!.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
+            {
+                var r = l.Rects["callout:" + damage.Unit.Id];
+                Probe("damage-callout:" + damage.Unit.Id, SKRect.Create(r.Left + 3, r.Top + 3, 4, 2), .9, YellowDark);
+            }
+            if (f.Salvo.Damage.All(d => d.Armor == 0 || d.Unit.Side != f.Battle.PlayerSide))
+                Assert.DoesNotContain(l.Rects.Keys, key => key.StartsWith("callout:", StringComparison.Ordinal));
+        }
         if (name == "5-outcome") Probe("victory", new(1052, 128, 1060, 140), .15, Yellow);
         Save(name, b, l); File.WriteAllText(Path.Combine(Output(name), "probes.json"), JsonSerializer.Serialize(probes, new JsonSerializerOptions { WriteIndented = true }));
         Assert.True(failures.Count == 0, name + ": " + string.Join(", ", failures));
