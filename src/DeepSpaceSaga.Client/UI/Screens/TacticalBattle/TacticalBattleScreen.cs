@@ -41,6 +41,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private TacticalBattleSnapshot? _observedOrders;
     internal Func<long> ClockMilliseconds { get; set; } = () => Environment.TickCount64;
     private SKRect _panel;
+    internal string? HoverUnitId { get; set; }
+    internal BattleLayout Layout { get; private set; } = new();
     internal SKRect NewBattleBounds => _newBattle.Bounds;
     internal (SKRect Forecast, SKRect Sectors, SKRect AllFire) OverlayControls =>
         (_enemyForecast.Bounds, _enemySectors.Bounds, _allFireSectors.Bounds);
