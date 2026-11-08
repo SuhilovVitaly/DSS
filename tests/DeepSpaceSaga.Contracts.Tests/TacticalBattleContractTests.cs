@@ -139,7 +139,7 @@ public sealed class TacticalBattleContractTests
         Assert.Equal(TacticalBattleLogKind.DamageApplied, entry.Kind);
         Assert.Null(entry.SkipReason);
         Assert.Null(entry.FireStepIndex);
-        Assert.Equal(Enumerable.Range(0, 15), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
+        Assert.Equal(Enumerable.Range(0, 16), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
         var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!.AsObject();
         node.Remove("FireQueue"); node.Remove("FireSteps");
         var legacy = JsonSerializer.Deserialize<TacticalBattleSnapshot>(node.ToJsonString())!;

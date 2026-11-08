@@ -11,6 +11,7 @@ internal sealed class TacticalBattleSession
     private ulong _eventSequence;
     private ImmutableArray<TacticalMovementPath> _paths = [];
     private ImmutableArray<TacticalShotSnapshot> _shots = [];
+    private ImmutableArray<string> _decoysLaunched = [];
     private ImmutableArray<TacticalUnitSnapshot> _beforeSalvo = [];
     private bool _fireSkipped;
     private ImmutableArray<TacticalFireQueueEntry> _fireQueue = [];
@@ -81,6 +82,7 @@ internal sealed class TacticalBattleSession
         int events = _log.Count;
         foreach (var proposal in proposed) proposal.Drone.Order = proposal.Order;
         _shots = [];
+        _decoysLaunched = [];
         _fireQueue = [];
         _fireSteps = [];
         _beforeSalvo = [];
@@ -113,12 +115,15 @@ internal sealed class TacticalBattleSession
                 var drone = Own(target.DroneId);
                 if (drone is null) return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidDrone);
                 if (targets.Any(t => t.DroneId == drone.Id)) return Reject(request.CommandId, TacticalBattleRejectionCode.DuplicateDrone);
+                if (target.Decoy && target.Evade) return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidRequest);
+                if (target.Decoy && (drone.Decoy is null || drone.DecoyCharges < 1))
+                    return Reject(request.CommandId, TacticalBattleRejectionCode.DecoyUnavailable);
                 if (target.Evade && target.TargetId is not null) return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidRequest);
                 if (target.Evade && drone.Consciousness < Battle.Catalog.Rules.Evasion.MinConsciousness)
                     return Reject(request.CommandId, TacticalBattleRejectionCode.EvasionUnavailable);
                 if (target.TargetId is not null && !TacticalBattleSalvo.Candidates(Battle, drone).Any(c => c.Target.Id == target.TargetId))
                     return Reject(request.CommandId, TacticalBattleRejectionCode.InvalidTarget);
-                targets.Add((drone.Id, new(target.TargetId, target.Evade)));
+                targets.Add((drone.Id, new(target.TargetId, target.Evade, target.Decoy)));
             }
         int events = _log.Count;
         ResolveFire(targets);
@@ -133,7 +138,11 @@ internal sealed class TacticalBattleSession
         int turn = Battle.Turn;
         Battle.Firing((drone, candidates) => drone.Side == PlayerSide
             ? targets.FirstOrDefault(t => t.DroneId == drone.Id).Plan ?? new(null, false)
-            : TacticalBattleSalvo.DefaultPlan(Battle, drone, candidates));
+            : TacticalBattleSalvo.DefaultPlan(Battle, drone, candidates), drone => drone.Side != PlayerSide);
+        _decoysLaunched = Battle.LastSalvo!.DecoysLaunched;
+        foreach (string droneId in _decoysLaunched)
+            Add(TacticalBattleLogKind.DecoyLaunched, TacticalBattlePhase.Fire, actor: droneId,
+                amount: Battle.Drones.Single(d => d.Id == droneId).DecoyCharges);
         var steps = ImmutableArray.CreateBuilder<TacticalFireStepSnapshot>();
         var previous = _beforeSalvo;
         foreach (var step in Battle.LastSalvo!.Steps)
@@ -218,7 +227,8 @@ internal sealed class TacticalBattleSession
         TacticalBattleSnapshotBuilder.Losses(Battle), TacticalBattleSnapshotBuilder.Outcome(Battle.Result), _log.ToImmutableArray())
     {
         FireQueue = !_fireSteps.IsEmpty ? _fireQueue : Phase == TacticalBattlePhase.Fire ? TacticalBattleSnapshotBuilder.FireQueue(Battle) : [],
-        FireSteps = _fireSteps
+        FireSteps = _fireSteps,
+        DecoysLaunched = _decoysLaunched
     };
     public TacticalBattleResponse Initial(string commandId) => Accepted(commandId, 0);
     public TacticalBattleResponse Reject(string commandId, TacticalBattleRejectionCode code) => new(commandId, false, code, Phase, Capture(), []);

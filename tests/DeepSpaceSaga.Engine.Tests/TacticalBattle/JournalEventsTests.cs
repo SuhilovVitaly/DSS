@@ -9,6 +9,24 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class JournalEventsTests
 {
     [Fact]
+    public void Decoy_launch_is_logged()
+    {
+        using var engine = SessionTests.CloseFireEngine();
+        var frame = engine.GetTacticalBattleState()!;
+        var result = engine.FireTacticalBattle(new("decoy-log", frame.BattleId, frame.Revision,
+            [new("Вера", null, Decoy: true)]));
+        Assert.True(result.Accepted);
+        var launch = Assert.Single(result.NewEvents.Where(e => e.Kind == TacticalBattleLogKind.DecoyLaunched));
+        Assert.Equal("Вера", launch.ActorId);
+        Assert.Equal(1, launch.Amount);
+        Assert.Equal(frame.Turn, launch.Turn);
+        Assert.Equal(TacticalBattlePhase.Fire, launch.Phase);
+        Assert.Null(launch.FireStepIndex);
+        Assert.All(result.NewEvents.Where(e => e.FireStepIndex is not null), e => Assert.True(e.Sequence > launch.Sequence));
+        Assert.Contains(launch, result.State!.Log);
+    }
+
+    [Fact]
     public void Evading_step_is_logged_with_reason()
     {
         using var engine = SessionTests.CloseFireEngine();

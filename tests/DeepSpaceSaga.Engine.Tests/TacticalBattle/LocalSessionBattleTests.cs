@@ -58,7 +58,7 @@ public sealed class LocalSessionBattleTests
                 || direct.ActiveDrones("B").Any(d => DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSalvo.Candidates(direct, d)
                     .Any(c => c.Target is DeepSpaceSaga.Engine.TacticalBattle.TacticalDrone));
             direct.Firing((d, candidates) => d.Side == "A" && !playerPhase ? new(null, false)
-                : DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSalvo.DefaultPlan(direct, d, candidates));
+                : DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSalvo.DefaultPlan(direct, d, candidates), d => d.Side != "A");
         }
         direct.Run(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
         Assert.Equal(JsonSerializer.Serialize(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSnapshotBuilder.Outcome(direct.Result)),

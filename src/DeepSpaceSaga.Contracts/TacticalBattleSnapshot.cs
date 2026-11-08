@@ -11,7 +11,7 @@ public enum TacticalBattleLogKind
 {
     Started = 0, RoleChanged = 1, FighterBreak = 2, NoTargets = 3, ShotMissed = 4, ShotHit = 5,
     RearKill = 6, Disabled = 7, Destroyed = 8, WeaponJammed = 9, EngineDamaged = 10, Outcome = 11, Exited = 12,
-    DamageApplied = 13, FireSkipped = 14
+    DamageApplied = 13, FireSkipped = 14, DecoyLaunched = 15
 }
 
 public enum TacticalFireSkipReason
