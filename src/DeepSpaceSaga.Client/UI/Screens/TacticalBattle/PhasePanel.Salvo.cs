@@ -5,6 +5,16 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class PhasePanel
 {
+    private int _queueFirst, _queueCount;
+    private const int QueueVisibleRows = 10;
+    private (string BattleId, int Turn, string? Shooter)? _queueFocus;
+    internal SKRect QueueBounds { get; private set; }
+    internal bool ScrollQueue(SKPoint point, float delta)
+    {
+        if (_frame is null || Phase != "Salvo" || !QueueBounds.Contains(point) || !float.IsFinite(delta)) return false;
+        if (delta != 0) _queueFirst = Math.Clamp(_queueFirst - Math.Sign(delta) * 3, 0, Math.Max(0, _queueCount - QueueVisibleRows));
+        return true;
+    }
     partial void DrawSalvo(SKCanvas c)
     {
         var salvo = _frame.Salvo!;
@@ -14,18 +24,41 @@ internal sealed partial class PhasePanel
         Head(c, shot is null ? "—" : Name(shot.ShooterId) + " → " + Name(shot.TargetId), salvo.InFlight ? "FlightTag" : "ResultTag");
         if (salvo.InFlight)
         {
-            T(c, U("FireQueue"), 1050, 128, 10.5f, Muted);
-            for (int i = 0; i < _frame.Battle.FireQueue.Length; i++)
+            _queueCount = _frame.Battle.FireQueue.Length;
+            var focus = (_frame.Battle.BattleId, _frame.Battle.Turn, current?.Shot.ShooterId);
+            if (_queueFocus != focus)
             {
-                var q = _frame.Battle.FireQueue[i]; float y = 145 + 13.6f * i;
-                var flight = salvo.Flights.FirstOrDefault(f => f.Shot.ShooterId == q.ShooterId);
-                bool active = current?.Shot.ShooterId == q.ShooterId;
-                bool enemy = _frame.Battle.Units.First(u => u.Id == q.ShooterId).Side != _frame.Battle.PlayerSide;
-                var color = active ? Yellow : flight is null ? Muted.WithAlpha(150) : enemy ? Orange : Text;
-                if (active) Round(c, new(1046, y - 11, 1268, y + 4), YellowDark, Yellow);
-                string line = flight is null ? U("NoTargetRow", Name(q.ShooterId)) : Name(q.ShooterId) + " → " + Name(flight.Shot.TargetId);
-                T(c, (i + 1) + ".", 1050, y, 11, color, active); T(c, line, 1070, y, 11, color, active);
-                if (flight is not null) T(c, Pct(flight.Shot.Chance), 1264, y, 11, color, active, SKTextAlign.Right);
+                int activeIndex = Array.FindIndex(_frame.Battle.FireQueue.ToArray(), q => q.ShooterId == current?.Shot.ShooterId);
+                if (activeIndex >= 0) _queueFirst = Math.Clamp(_queueFirst, Math.Max(0, activeIndex - QueueVisibleRows + 1), activeIndex);
+                _queueFocus = focus;
+            }
+            _queueFirst = Math.Clamp(_queueFirst, 0, Math.Max(0, _queueCount - QueueVisibleRows));
+            QueueBounds = R(1045, 133, 1273, 281);
+            if (Recording is { } layout) layout.Rects["queue"] = QueueBounds;
+            T(c, U("FireQueue"), 1050, 128, 10.5f, Muted);
+            c.Save(); c.ClipRect(new(1045, 133, 1273, 281));
+            try
+            {
+                for (int i = _queueFirst; i < Math.Min(_queueCount, _queueFirst + QueueVisibleRows); i++)
+                {
+                    var q = _frame.Battle.FireQueue[i]; float y = 145 + 13.6f * (i - _queueFirst);
+                    var flight = salvo.Flights.FirstOrDefault(f => f.Shot.ShooterId == q.ShooterId);
+                    bool active = current?.Shot.ShooterId == q.ShooterId;
+                    bool enemy = _frame.Battle.Units.First(u => u.Id == q.ShooterId).Side != _frame.Battle.PlayerSide;
+                    var color = active ? Yellow : flight is null ? Muted.WithAlpha(150) : enemy ? Orange : Text;
+                    if (active) Round(c, new(1046, y - 11, 1268, y + 4), YellowDark, Yellow);
+                    string line = flight is null ? U("NoTargetRow", Name(q.ShooterId)) : Name(q.ShooterId) + " → " + Name(flight.Shot.TargetId);
+                    T(c, (i + 1) + ".", 1050, y, 11, color, active); T(c, line, 1070, y, 11, color, active);
+                    if (flight is not null) T(c, Pct(flight.Shot.Chance), 1264, y, 11, color, active, SKTextAlign.Right);
+                }
+            }
+            finally { c.Restore(); }
+            if (_queueCount > QueueVisibleRows)
+            {
+                float thumb = 146f * QueueVisibleRows / _queueCount;
+                float top = 134 + (146 - thumb) * _queueFirst / (_queueCount - QueueVisibleRows);
+                Stroke(c, new(1271, 134), new(1271, 280), Track, 2);
+                Stroke(c, new(1271, top), new(1271, top + thumb), Muted, 2);
             }
             StandardAction(c, U("FlightTitle"), U("FlightStatus", (current?.Index ?? 0) + 1, salvo.Flights.Length), U("FlightAction"));
         }

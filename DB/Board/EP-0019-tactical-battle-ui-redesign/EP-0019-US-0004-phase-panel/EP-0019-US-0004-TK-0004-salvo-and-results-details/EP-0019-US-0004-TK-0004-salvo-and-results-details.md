@@ -99,3 +99,9 @@ Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us4-tk4.
 ## Фактическая привязка проверок
 
 PhaseSalvoTests; ResultsPhaseTests. Плановые имена тестов заменены реализацией тех же AC в указанных owning classes; результаты и paths — ExecutionStatus.md. Source scope разнесён по partial-компонентам overlay/map/phase для сохранения session ownership; никакой Engine-side реализации не добавлялось.
+
+## Исправление P2 после review 2026-11-08
+
+Scope расширен на PhaseSalvoTests.cs и текущие описания экрана/DesignSpec: воспроизводится очередь 16 участников, исправляется US4-AC4. Очередь ограничена областью 133…281, выводит до 10 строк, поддерживает колесо (3 строки) и возвращает активного стрелка в видимую область при смене шага. Порядок Engine, номера и тайминги сохранены; статус и кнопки не прокручиваются.
+
+Тест сравнивает пиксели зоны статуса/действия для 8 и 16 участников, проверяет прокрутку и активного 15-го стрелка при scale 1/1,5 и широком окне. Прежний неограниченный вывод дал 3/3 ожидаемых FAIL (queue-before.trx); исправленные PhaseSalvoTests — 4/4 PASS (queue.trx). Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-review-fixes/. Итоговые проверки и native smoke фиксируются в ExecutionStatus; физический ввод не заявляется.
