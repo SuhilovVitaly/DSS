@@ -1,0 +1,9 @@
+{
+  "version": 1,
+  "pilots": {
+    "vera": { "portrait": "W4/Portraits/CHR-20260915-102445-3C5C5D", "female": true },
+    "yun": { "portrait": "M4/Portraits/CHR-20260915-105946-BD904A", "female": false },
+    "marta": { "portrait": "W4/Portraits/CHR-20260915-104315-4DF131", "female": true },
+    "oleg": { "portrait": "M4/Portraits/CHR-20260915-105947-6DC202", "female": false }
+  }
+}

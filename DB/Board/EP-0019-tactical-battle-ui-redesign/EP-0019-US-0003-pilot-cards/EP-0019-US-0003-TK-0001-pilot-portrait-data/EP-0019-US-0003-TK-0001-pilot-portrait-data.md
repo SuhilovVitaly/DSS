@@ -3,7 +3,7 @@ epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0003-pilot-cards
 ticket: EP-0019-US-0003-TK-0001-pilot-portrait-data
 title: Портреты и пол пилотов
-stage: draft
+stage: done
 layer: content-data
 test_project: DeepSpaceSaga.Client.Tests
 depends_on: [EP-0019-US-0002-TK-0004-localization-strings]
@@ -87,3 +87,9 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+## Проверенное исполнение 2026-11-08 (продолжение)
+
+Load pilot portraits and grammatical gender from client data with safe fallback
+
+Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0019/20261108-resume/us3-tk1. Self-review выполнен; это не независимое review. Build в составе test run, scoped whitespace и diff-check проверены перед публикацией. Остаточные native/OS gates отражаются в ExecutionStatus.
