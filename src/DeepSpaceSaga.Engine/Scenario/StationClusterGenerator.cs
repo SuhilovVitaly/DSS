@@ -27,10 +27,16 @@ internal static class StationClusterGenerator
         string reason = "placement exhausted";
         for (int attempt = 0; attempt < 128; attempt++)
         {
+            if (source.GameState.SolarSystem?.GeneratorVersion == 2)
+            {
+                try { return StationGeographyV2.BuildGraph(StationGeographyV2.Expand(StationGeographyV2.Place(source, config, registry, seed, attempt), config, registry, seed, attempt), config, registry); }
+                catch (ScenarioException ex) { reason = ex.Message; }
+                continue;
+            }
             try { return Expand(Place(source, config, registry, seed, attempt), config, registry, seed); }
             catch (ScenarioException ex) { reason = ex.Message; }
         }
-        throw new ScenarioException($"clusters/v1 seed={seed} stage=local attempts=128: {reason}");
+        throw new ScenarioException($"clusters/v{source.GameState.SolarSystem?.GeneratorVersion ?? 1} seed={seed} stage=local attempts=128: {reason}");
     }
 
     private static ClusterGenerationResult Expand(ClusterGenerationResult first, ClusterGenerationConfig config, GameDataRegistry registry, ulong seed)
@@ -219,7 +225,7 @@ internal static class StationClusterGenerator
             GameState = result.World.GameState with
             {
                 SpaceObjects = objects.Values.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray(),
-                StationResourceFields = fields with { Asteroids = fields.Asteroids.Select(a => a with { CompositionKnown = true }).ToArray() },
+                StationResourceFields = result.Map.RulesVersion == 2 ? fields : fields with { Asteroids = fields.Asteroids.Select(a => a with { CompositionKnown = true }).ToArray() },
                 SolarSystem = result.World.GameState.SolarSystem! with { Orbits = objects.Values.Where(o => o.Orbit is not null).Select(o => new OrbitMapData(o.ObjectId, o.Orbit!)).ToImmutableArray() }
             }
         };

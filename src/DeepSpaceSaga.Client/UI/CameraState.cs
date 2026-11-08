@@ -39,9 +39,9 @@ public sealed class CameraState
     /// Set the zoom level (pixels per world unit). Does not adjust focus.
     /// Clamped to [MinPpu, MaxPpu]. NaN, Infinity, zero and negative → coerced to safe bound.
     /// </summary>
-    public void SetZoom(double pixelsPerWorldUnit)
+    public void SetZoom(double pixelsPerWorldUnit, double minPpu = DefaultMinPpu, double maxPpu = DefaultMaxPpu)
     {
-        PixelsPerWorldUnit = ClampZoom(pixelsPerWorldUnit);
+        PixelsPerWorldUnit = ClampZoom(pixelsPerWorldUnit, minPpu, maxPpu);
     }
 
     /// <summary>

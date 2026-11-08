@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Engine.Content;
+using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Engine.Scenario;
 
@@ -67,10 +68,22 @@ internal static class TradingMapGeometryGenerator
         IReadOnlyList<SpaceObjectData> existingObjects,
         ulong masterSeed,
         GameDataRegistry registry)
+        => ValidateMaterialized(map, existingObjects, masterSeed, registry, null, null);
+
+    internal static void ValidateMaterialized(
+        TradingMapStateData map,
+        IReadOnlyList<SpaceObjectData> existingObjects,
+        ulong masterSeed,
+        GameDataRegistry registry,
+        SolarSystemMapSnapshot? solarSystem,
+        StationClusterMapSnapshot? clusters)
     {
         ArgumentNullException.ThrowIfNull(map);
         ArgumentNullException.ThrowIfNull(existingObjects);
         ArgumentNullException.ThrowIfNull(registry);
+        bool geographyV2 = solarSystem?.GeneratorVersion == 2 && clusters?.RulesVersion == 2 && clusters.Geography is not null;
+        if ((solarSystem?.GeneratorVersion == 2 || clusters?.RulesVersion == 2) && !geographyV2)
+            throw new ScenarioException("tradingMap requires coherent materialized v2 geography.");
 
         var rules = map.Rules ?? throw new ScenarioException("tradingMap saved state requires rules.");
         var graph = TradingGraphGenerator.Generate(rules, masterSeed, registry);
@@ -97,7 +110,7 @@ internal static class TradingMapGeometryGenerator
         var template = graph.Template;
         var startStation = ResolveExistingStart(rules, stationById, existingObjects);
         var existingById = CanonicalizeExistingObjects(existingObjects);
-        var expectedStations = BuildStations(rules, template, stationById, startStation, map.QuarterTurns);
+        var expectedStations = geographyV2 ? null : BuildStations(rules, template, stationById, startStation, map.QuarterTurns);
         var actualStations = new List<SpaceObjectData>(stationById.Count);
 
         foreach (var stationRule in stationById.Values.OrderBy(station => station.ObjectId, StringComparer.Ordinal))
@@ -113,10 +126,15 @@ internal static class TradingMapGeometryGenerator
                     $"tradingMap saved station '{actual.ObjectId}' must be known and stationary.");
             }
 
-            var expected = expectedStations.Single(station =>
+            if (!string.Equals(actual.MarketProfileId, stationRule.MarketProfileId, StringComparison.Ordinal))
+                throw new ScenarioException($"tradingMap saved station '{actual.ObjectId}' has a different market profile.");
+            if (geographyV2 && (actual.Orbit is null || !clusters!.Stations.Any(s =>
+                s.ObjectId == actual.ObjectId && s.MarketProfileId == actual.MarketProfileId)))
+                throw new ScenarioException($"tradingMap saved station '{actual.ObjectId}' is not a materialized cluster member.");
+            var expected = expectedStations?.Single(station =>
                 string.Equals(station.ObjectId, actual.ObjectId, StringComparison.OrdinalIgnoreCase));
-            if (!NearlyEqual(actual.PositionX, expected.PositionX) ||
-                !NearlyEqual(actual.PositionY, expected.PositionY))
+            if (expected is not null && (!NearlyEqual(actual.PositionX, expected.PositionX) ||
+                !NearlyEqual(actual.PositionY, expected.PositionY)))
             {
                 throw new ScenarioException(
                     $"tradingMap saved station '{actual.ObjectId}' coordinates do not match the selected template geometry.");
@@ -125,8 +143,8 @@ internal static class TradingMapGeometryGenerator
         }
 
         ValidatePlacement(rules, actualStations, existingObjects, startStation.ObjectId);
-        var expectedEdges = BuildEdges(rules, template, actualStations);
-        ValidateEdgeCoverage(rules, expectedEdges);
+        var expectedEdges = BuildEdges(rules, template, actualStations, geographyV2);
+        if (!geographyV2) ValidateEdgeCoverage(rules, expectedEdges);
         var actualEdges = map.Edges.ToDictionary(
             edge => EndpointKey(edge.FromStationObjectId, edge.ToStationObjectId),
             StringComparer.Ordinal);
@@ -409,7 +427,8 @@ internal static class TradingMapGeometryGenerator
     private static IReadOnlyList<TradingMapEdgeData> BuildEdges(
         TradingMapGenerationData rules,
         TradingMapTemplateData template,
-        IReadOnlyList<SpaceObjectData> stations)
+        IReadOnlyList<SpaceObjectData> stations,
+        bool geographyV2 = false)
     {
         var stationById = stations.ToDictionary(station => station.ObjectId, StringComparer.OrdinalIgnoreCase);
         var riskById = rules.RiskProfiles.ToDictionary(risk => risk.RiskProfileId, StringComparer.OrdinalIgnoreCase);
@@ -423,7 +442,7 @@ internal static class TradingMapGeometryGenerator
                 throw new ScenarioException(
                     $"template '{template.TemplateId}' edge '{from.ObjectId}'/'{to.ObjectId}' has invalid distance.");
 
-            var travelEstimate = CalculateTravelEstimate(rules, template.TemplateId, from.ObjectId, to.ObjectId, distanceKm);
+            var travelEstimate = CalculateTravelEstimate(rules, template.TemplateId, from.ObjectId, to.ObjectId, distanceKm, geographyV2);
             var distanceClass = travelEstimate <= rules.ShortMaxGameTimeMs
                 ? "Short"
                 : travelEstimate <= rules.MediumMaxGameTimeMs
@@ -454,7 +473,8 @@ internal static class TradingMapGeometryGenerator
         string templateId,
         string fromStationId,
         string toStationId,
-        double distanceKm)
+        double distanceKm,
+        bool geographyV2 = false)
     {
         var referenceSpeedKmPerSecond = rules.ReferenceSpeedMps / 1000.0;
         var gameMilliseconds = distanceKm / referenceSpeedKmPerSecond * 1000.0 * GameMillisecondsPerSecond;
@@ -464,7 +484,7 @@ internal static class TradingMapGeometryGenerator
                 $"template '{templateId}' edge '{fromStationId}'/'{toStationId}' has an unrepresentable travel estimate.");
 
         var estimate = checked((long)Math.Ceiling(gameMilliseconds));
-        if (estimate > rules.MaxTravelGameTimeMs)
+        if (!geographyV2 && estimate > rules.MaxTravelGameTimeMs)
             throw new ScenarioException(
                 $"template '{templateId}' edge '{fromStationId}'/'{toStationId}' travel estimate {estimate} " +
                 $"exceeds maxTravelGameTimeMs {rules.MaxTravelGameTimeMs}.");

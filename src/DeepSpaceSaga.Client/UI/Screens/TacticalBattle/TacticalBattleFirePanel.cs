@@ -38,7 +38,8 @@ internal sealed class TacticalBattleFirePanel
         using var layout = new SKPaint { Typeface = MenuStyle.TypefaceRegular, TextSize = 14 * scale };
         float width = (float)PyMath.Max(1, bounds.Width - 6 * scale);
         string summaryText = Format("FireSummary", string.Join(" · ", plan.Rows.Select(r =>
-            r.Drone.Id + " " + BattleFormat.Text("→") + " " + (r.TargetId ?? L("FireNoTarget")))));
+            r.Drone.Id + " " + BattleFormat.Text("→") + " " + (r.TargetId ?? L("FireNoTarget")))))
+            + "\n" + L("FireConditional") + "\n" + QueueText(snapshot);
         int summaryRows = ControlText.Wrap(summaryText, width, layout).Length;
         using var text = ControlText.Paint(scale, "orders.fire.text", summaryText);
         text.TextSize = (float)PyMath.Min(text.TextSize, 17 * scale);
@@ -162,6 +163,10 @@ internal sealed class TacticalBattleFirePanel
         : row.Drone.Build is { } build
             ? Format("FireEmptySector", BattleFormat.Degrees(2 * build.ArcDegrees), BattleFormat.Number(build.Range))
             : L("FireNone");
+
+    internal static string QueueText(TacticalBattleSnapshot battle) => L("FireQueue") + "\n" +
+        (battle.FireQueue.IsDefaultOrEmpty ? L("FireNoTarget") : string.Join("\n", battle.FireQueue.Select(entry =>
+            BattleFormat.Number(entry.Index + 1) + ". " + entry.ShooterId + " · " + Format("Initiative", BattleFormat.Number(entry.Initiative)))));
 
     internal static string CandidateCaption(TacticalTargetCandidateSnapshot candidate, TacticalBattleSnapshot snapshot)
     {

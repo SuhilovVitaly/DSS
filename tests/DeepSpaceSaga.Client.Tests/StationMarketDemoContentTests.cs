@@ -211,7 +211,23 @@ public sealed class StationMarketDemoContentTests
     {
         // Each sequential navigation, dialogue, and trade action waits for the real 1 Hz world stream.
         using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
-        await using IGameSessionConnection connection = LocalGameSessionConnection.CreateFromScenarioFile(SettingsPath, DemoScenarioPath);
+        using var bootstrap = SimulationEngine.CreateFromScenarioFile(SettingsPath, DemoScenarioPath);
+        bootstrap.SetSpeed(SimulationSpeed.Speed0);
+        var staged = bootstrap.CaptureSaveState();
+        var station = staged.GameState.SpaceObjects.Single(o => o.ObjectId == stationId);
+        // This test covers docking/dialogue/trade. Real day-scale travel has separate voyage integration coverage.
+        var nearStation = staged with
+        {
+            GameState = staged.GameState with
+            {
+                SpaceObjects = staged.GameState.SpaceObjects.Select(o =>
+            o.ObjectId == PlayerId ? o with { PositionX = station.PositionX + 1, PositionY = station.PositionY + 1 } : o).ToArray()
+            }
+        };
+        var registry = EngineContentLoader.LoadRegistryFromSettingsFile(SettingsPath, out _, out _);
+        var engine = new SimulationEngine(registry);
+        engine.LoadScenario(nearStation, true);
+        await using IGameSessionConnection connection = new LocalGameSessionConnection(engine);
         await using var snapshots = connection.ReadSnapshotsAsync(timeout.Token)
             .GetAsyncEnumerator(timeout.Token);
 

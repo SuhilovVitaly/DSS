@@ -10,6 +10,125 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SidesAndLogTests
 {
     [Fact]
+    public async Task JournalShowsOnlyArrivedStepEventsAndTypedSkipReasons()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var results = ResultsPhaseTests.ControlledResults(screen.Flow.State!);
+        foreach (long time in new long[] { 1274, 1275, 2250 })
+        {
+            var frame = screen.CaptureFrame(1280, 720)! with
+            { Battle = results.Project(time), Presentation = TacticalBattlePresentation.SalvoFlight, Salvo = results.Capture(time) };
+            Assert.Equal(time < 1275 ? 0 : time < 2250 ? 1 : 2, TacticalBattleLogTab.Visible(frame).Count());
+            Assert.Equal(frame.Battle.Log.AsEnumerable(), TacticalBattleLogTab.Visible(frame));
+        }
+        foreach (var reason in Enum.GetValues<TacticalFireSkipReason>().Where(r => r != TacticalFireSkipReason.None))
+        {
+            var entry = new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.FireSkipped, "actor")
+            { SkipReason = reason, FireStepIndex = 0 };
+            Assert.Contains("actor", BattleLogFormatter.Format(entry));
+            Assert.Contains(BattleFormat.Localize("Skip." + reason), BattleLogFormatter.Format(entry));
+        }
+    }
+
+    [Fact]
+    public async Task MapCardsAndHeaderShareEveryIntermediateStepState()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var results = ResultsPhaseTests.ControlledResults(screen.Flow.State!);
+        foreach (var (time, expectedHull) in new[] { (0L, 100), (1275L, 95), (2250L, 80) })
+        {
+            var projected = results.Project(time);
+            var frame = screen.CaptureFrame(1280, 720)! with
+            {
+                Battle = projected,
+                Presentation = time < results.EndMs ? TacticalBattlePresentation.SalvoFlight : TacticalBattlePresentation.SalvoResults,
+                Movement = null,
+                FirePlan = null,
+                Salvo = results.Capture(time)
+            };
+            Assert.Equal(expectedHull, Assert.Single(TacticalBattleMapRenderer.VisibleUnits(frame)).Hull);
+            Assert.Equal(expectedHull, Assert.Single(TacticalBattleSidesTab.Cards(frame)).Unit.Hull);
+            Assert.Equal(projected.Units[0].Armor, Assert.Single(TacticalBattleSidesTab.Cards(frame)).Unit.Armor);
+            Assert.Contains("0", TacticalBattlePanelHeader.Capture(frame).Losses);
+        }
+    }
+
+    [Fact]
+    public async Task DisabledAndJammedCardsStopOfferingActionsDuringPlayback()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        var own = frame.Battle.Units.First(u => u.Side == frame.Battle.PlayerSide && u.Kind == TacticalUnitKind.Drone);
+        foreach (var state in new[] { TacticalUnitState.Air, TacticalUnitState.Disabled, TacticalUnitState.Destroyed })
+        {
+            var unit = own with { State = state, Jammed = true };
+            var playback = frame with { Battle = frame.Battle with { Units = [unit] }, Presentation = TacticalBattlePresentation.SalvoFlight };
+            Assert.False(Assert.Single(TacticalBattleSidesTab.Cards(playback)).Selectable);
+        }
+        Assert.True(TacticalBattleSidesTab.Describe(own, true).Selectable);
+    }
+
+    [Fact]
+    public async Task PilotCardsShowOwnAndEnemyInitiativeAndPreserveZero()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var units = screen.Flow.State!.Units;
+        foreach (var unit in units.Where(u => u.Kind == TacticalUnitKind.Drone))
+        {
+            foreach (var state in new[] { TacticalUnitState.Air, TacticalUnitState.Disabled, TacticalUnitState.Destroyed })
+            {
+                var changed = unit with { Initiative = unit.Side == "A" ? 55 : 0, State = state };
+                var card = TacticalBattleSidesTab.Describe(changed, unit.Side == "A");
+                string label = string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                    BattleFormat.Localize("Initiative"), changed.Initiative);
+                Assert.Contains(label, card.Details);
+            }
+            Assert.Contains(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                BattleFormat.Localize("Initiative"), "—"), TacticalBattleSidesTab.Describe(unit with { Initiative = null }, true).Details);
+        }
+        foreach (var carrier in units.Where(u => u.Kind == TacticalUnitKind.Carrier))
+            Assert.DoesNotContain(string.Format(System.Globalization.CultureInfo.InvariantCulture,
+                BattleFormat.Localize("Initiative"), "—"), TacticalBattleSidesTab.Describe(carrier, true).Details);
+    }
+
+    [Fact]
+    public async Task PilotCardInitiativeSurvivesLocaleSkinAndSelectionChanges()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        using var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        string restore = Localization.ReadLanguageSetting();
+        try
+        {
+            foreach (string language in new[] { "Russian", "English" })
+            {
+                Localization.ApplyLanguage(language);
+                foreach (string id in new[] { "classic", "contrast" })
+                {
+                    var themed = new TacticalBattleScreen(screen.Flow, 1.5f, skins.GetOrClassic(id));
+                    themed.PanelTabs.Select("sides", notify: true);
+                    using var bitmap = new SKBitmap(1024, 768);
+                    using var canvas = new SKCanvas(bitmap);
+                    themed.Render(canvas, 1024, 768);
+                    foreach (var card in TacticalBattleSidesTab.Cards(themed.CaptureFrame(1024, 768)!))
+                    {
+                        if (card.Unit.Kind != TacticalUnitKind.Drone) continue;
+                        Assert.NotNull(card.Unit.Initiative);
+                        Assert.Contains((language == "Russian" ? "иниц " : "init ") + card.Unit.Initiative, card.Details);
+                    }
+                    themed.OnKeyDown(Key.Tab);
+                    Assert.Equal(screen.Flow.State!.Units.Select(u => u.Initiative), themed.CaptureFrame(1024, 768)!.Battle.Units.Select(u => u.Initiative));
+                }
+            }
+        }
+        finally { Localization.ApplyLanguage(restore); }
+    }
+
+    [Fact]
     public async Task Reference_skin_changes_sides_log_and_forecast_without_changing_visible_facts()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

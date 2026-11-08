@@ -5,6 +5,8 @@ Never executes the game or external APIs. Run with graphify 0.9.66.
 from pathlib import Path
 from collections import Counter
 from datetime import datetime, timezone
+from contextlib import redirect_stdout, redirect_stderr
+from io import StringIO
 import argparse, hashlib, json, os, re, subprocess, sys
 from urllib.parse import unquote
 from graphify.extract import collect_files, extract
@@ -26,7 +28,14 @@ TUNING_EP='DB/Board/EP-0013-debug-tuning-panel'
 PANELS_EP='DB/Board/EP-0014-module-panels'
 TACTICAL_EP='DB/Board/EP-0015-tactical-carrier-battle'
 SKINS_EP='DB/Board/EP-0016-tactical-battle-skins'
-EXCLUDED={SKINS_EP+'/ExecutionStatus.md':'publication and graph evidence ledger',
+INITIATIVE_EP='DB/Board/EP-0017-pilot-initiative'
+GEOGRAPHY_EP='DB/Board/EP-0018-map-geography-and-scale'
+MAP_HISTORY_EPS=['DB/Board/EP-0002-procedural-solar-system','DB/Board/EP-0003-station-clusters-and-trade-geography','DB/Board/EP-0004-ai-territories-and-map-environment']
+EXCLUDED={**{GEOGRAPHY_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ImplementationStatus','DocumentationImpact','Tickets')},
+ GEOGRAPHY_EP+'/EP-0018-US-0009-project-documentation/EP-0018-US-0009-TK-0003-documentation-navigation/EP-0018-US-0009-TK-0003-documentation-navigation.md':'final graph publication receipt',
+ **{INITIATIVE_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact')},
+ INITIATIVE_EP+'/EP-0017-US-0004-project-documentation/EP-0017-US-0004-TK-0001-current-contracts-and-evidence/EP-0017-US-0004-TK-0001-current-contracts-and-evidence.md':'final graph publication ticket',
+ SKINS_EP+'/ExecutionStatus.md':'publication and graph evidence ledger',
  SKINS_EP+'/EP-0016-US-0004-project-documentation/EP-0016-US-0004-TK-0001-update-contracts-and-graph/EP-0016-US-0004-TK-0001-update-contracts-and-graph.md':'graph publication receipt',
  **{TACTICAL_EP+'/'+name+'.md':'execution/evidence ledger written with graph' for name in ('ExecutionStatus','FinalValidation','AcceptanceCoverage','Tickets')},PANELS_EP+'/ExecutionStatus.md':'publication ledger updated after graph',
  PANELS_EP+'/PublicationStatus.md':'publication ledger updated after graph',
@@ -56,11 +65,17 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
+ docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP, INITIATIVE_EP, GEOGRAPHY_EP, *MAP_HISTORY_EPS] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
  docs=[p for p in docs if not {'bin','obj'} & set(p.parts)]
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and ('evidence' not in p.relative_to(R).parts or p.relative_to(R).as_posix() in {POINT_EP+'/evidence/balance.md',POINT_EP+'/evidence/native.md'})]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)
- ast=extract(code,cache_root=O/'cache',root=R,parallel=False)
+ ast_log=StringIO()
+ with redirect_stdout(ast_log), redirect_stderr(ast_log):
+  ast=extract(code,cache_root=O/'cache',root=R,parallel=False)
+ ast_output=ast_log.getvalue();print(ast_output,end='',flush=True)
+ (O/'ast-extraction.log').write_text(ast_output,encoding='utf-8')
+ ast_warnings=[line for line in ast_output.splitlines() if 'warning:' in line.lower()]
+ dump('ast-warnings.json',dict(warnings=ast_warnings,meaning='Parser coverage limitations; not C# compiler failures. Do not claim complete extraction of warned files.'))
  if ast.get('failed_sources'):raise ValueError('AST failed sources: '+str(ast['failed_sources']))
  if args.prepare_ast: print(len(ast['nodes']),len(ast['edges'])); return
  ns=list(ast['nodes']); es=list(ast['edges']); containers={}; semantic_files=[]; headings=links=0
@@ -169,7 +184,7 @@ def main():
  for k,members in c.items():
   counts=Counter(str(G.nodes[n].get('source_file','')).replace('\\','/').split('/')[1] for n in members if '/' in str(G.nodes[n].get('source_file','')))
   family=counts.most_common(1)[0][0] if counts else ''
-  readable={'DeepSpaceSaga.Engine':'Engine simulation','DeepSpaceSaga.Client':'Client interface','DeepSpaceSaga.Contracts':'Snapshot contracts','DeepSpaceSaga.Engine.LocalClient':'Local session transport','DeepSpaceSaga.Client.Tests':'Client verification','DeepSpaceSaga.Engine.Tests':'Engine verification','EP-0015-tactical-carrier-battle':'Tactical carrier battle','EP-0016-tactical-battle-skins':'Tactical battle skins','EP-0010-combat-reports':'Historical combat report planning','EP-0012-combat-rebuild':'Point combat contract','EP-0009-battle':'Historical module combat','04-Engineering':'Engineering documentation','02-FirstRelease':'Release requirements','01-Requirements':'Gameplay requirements'}
+  readable={'DeepSpaceSaga.Engine':'Engine simulation','DeepSpaceSaga.Client':'Client interface','DeepSpaceSaga.Contracts':'Snapshot contracts','DeepSpaceSaga.Engine.LocalClient':'Local session transport','DeepSpaceSaga.Client.Tests':'Client verification','DeepSpaceSaga.Engine.Tests':'Engine verification','EP-0015-tactical-carrier-battle':'Tactical carrier battle','EP-0017-pilot-initiative':'Pilot initiative','EP-0016-tactical-battle-skins':'Tactical battle skins','EP-0010-combat-reports':'Historical combat report planning','EP-0012-combat-rebuild':'Point combat contract','EP-0009-battle':'Historical module combat','04-Engineering':'Engineering documentation','02-FirstRelease':'Release requirements','01-Requirements':'Gameplay requirements'}
   labels[k]=readable.get(family,family.replace('DeepSpaceSaga.','').replace('-',' ') or 'Shared references')+f' {k}'
  head=subprocess.check_output(['git','rev-parse','HEAD'],cwd=R,text=True).strip()
  if not to_json(G,c,str(O/'graph.json'),force=args.force,built_at_commit=head,community_labels=labels):raise SystemExit('Fresh graph shrank: inspect scope and use --force only if intentional.')
@@ -184,6 +199,7 @@ def main():
  report=report.replace('Run `graphify update .` after code changes (no API cost).','Rebuild this selected corpus with `tools/graphify/rebuild.py`; AST/Markdown extraction is offline and curated semantic evidence tokens are revalidated.')
  prefix='# DSS fresh structural and host-agent semantic graph\n\nFresh AST covers selected code. Markdown headings/links are structural evidence. Fresh host-agent fragments cover the explicit source hashes listed in semantic-coverage.json; coverage is selective and recorded per run. Remaining Board/code semantics are selective, including validated EP15 tactical mechanisms. Historical combat documentation appears as Board history. No image extraction or external API runs. Token usage is unmeasured. Navigation does not establish gameplay, FPS, physical input, audio or human acceptance. HTML aggregates communities; JSON contains the complete graph. Recorded HEAD is pre-export; hashes describe the actual working tree, including concurrent documentation curation.\n\n'
  prefix+='Reproduce with tools/graphify/rebuild.py and the fresh DSS_GRAPH_SEMANTICS fragments; choose DSS_GRAPH_OUTPUT outside the repository. --dry-run validates without exporting.\n\n'
+ if ast_warnings:prefix+='AST coverage warnings (see ast-warnings.json):\n\n'+'\n'.join('- '+line.strip() for line in ast_warnings)+'\n\n'
  prefix+=f'Audit: {len(pruned)} unresolved AST endpoint edges were explicitly pruned; {len(unlocated)} reference-only symbols have no local declaration location. Canonicalization produced {len(canonical_selfloops)} self-loops, removed from the derived graph. The undirected export combines some relations and canonicalizes equivalent nodes; extraction.json retains original non-loop relationships. See diagnostics.json and the dedicated audit sidecars before interpreting absence of a path.\n\n'
  (O/'GRAPH_REPORT.md').write_text(prefix+report,encoding='utf-8');dump('extraction.json',ex);dump('.graphify_labels.json',labels);dump('community-cohesion.json',co);dump('diagnostics.json',diagnose_extraction(ex,directed=False,root=R));dump('pruned-unresolved-edges.json',dict(reason='AST references without declared endpoints; not invented as facts',edges=pruned));dump('unlocated-references.json',dict(reason='Symbols without local declaration location',nodes=unlocated))
  stamp=datetime.now(timezone.utc).isoformat();dump('input-evidence.json',dict(head=head,working_tree=True,captured_at=stamp,inputs=hashes,exclusions=EXCLUDED,excluded_directories=['src/graphify-out','DB/Board/*/evidence','**/bin','**/obj'],policy='No game/API execution; navigation is not acceptance'));dump('source-manifest.json',dict(algorithm='sha256',files=hashes,excluded=EXCLUDED))
@@ -193,5 +209,8 @@ def main():
  save_manifest({'code':[str(p) for p in code]},manifest_path=str(O/'manifest.json'),kind='ast',root=R,scan_corpus=[str(p) for p in code],clear_semantic=[str(p) for p in code])
  dump('semantic-coverage.json',dict(mode='Fresh AST + Markdown structure + fresh reviewed project semantics',code_files=len(code),markdown_files=len(docs),doc_heading_occurrences=headings,resolved_markdown_links=links,curated_mechanisms=len(mechanisms)+len(fragment["nodes"]),curated_source_files=sorted(set(semantic_files)|set(fragment["input_sha256"])),host_semantic_chunks=fragment["chunks"],host_semantic_inputs=len(fragment["input_sha256"]),limitations=['Host semantic coverage is selective; exact current inputs are listed in curated_source_files','No image vision extraction','INFERRED architecture mappings are not runtime traces','Undirected graph collapses some relations; extraction.json retains them','Generated status and graph docs excluded to avoid circular hashes','Historical semantic fragments intentionally replaced'],token_usage=dict(input=None,output=None,status='unmeasured host-agent extraction')))
  counts=dict(nodes=G.number_of_nodes(),edges=G.number_of_edges(),communities=len(c),extraction_nodes=len(ns),extraction_edges=len(es),code_files=len(code),markdown_files=len(docs),pruned_unresolved_edges=len(pruned),canonical_selfloops_pruned=len(canonical_selfloops),unlocated_reference_nodes=len(unlocated));dump('counts.json',counts);dump('cost.json',dict(run=stamp,input_tokens=None,output_tokens=None,status='unmeasured',backend='Host-agent semantics; offline AST/Markdown'));(O/'.graphify_root').write_text(str(R),encoding='utf-8');(O/'.graphify_python').write_text(sys.executable,encoding='utf-8')
- v=dict(head=head,working_tree=True,input_hashes_verified=len(hashes),semantic_input_hashes_verified=len(fragment['input_sha256']),missing_source_files=0,out_of_range_locations=0,dangling_edges=0,self_loops=0,**counts);v['artifact_sha256']={p.name:sha(p) for p in sorted(O.iterdir()) if p.is_file() and p.name!='verification.json'};dump('verification.json',v);print(json.dumps(counts),flush=True)
+ # Hash only stable exports owned by this builder. Live logs and later quality/
+ # publication receipts can change after verification, and must not form a cycle.
+ export_names={'graph.json','graph.html','GRAPH_REPORT.md','extraction.json','.graphify_labels.json','community-cohesion.json','diagnostics.json','pruned-unresolved-edges.json','unlocated-references.json','input-evidence.json','source-manifest.json','manifest.json','semantic-coverage.json','counts.json','cost.json','.graphify_root','.graphify_python','ast-warnings.json'}
+ v=dict(head=head,working_tree=True,input_hashes_verified=len(hashes),semantic_input_hashes_verified=len(fragment['input_sha256']),missing_source_files=0,out_of_range_locations=0,dangling_edges=0,self_loops=0,ast_warnings=ast_warnings,**counts);v['artifact_sha256']={name:sha(O/name) for name in sorted(export_names)};dump('verification.json',v);print(json.dumps(counts),flush=True)
 if __name__=='__main__':main()

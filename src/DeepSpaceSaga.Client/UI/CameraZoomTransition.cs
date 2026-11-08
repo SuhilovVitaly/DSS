@@ -9,20 +9,21 @@ internal sealed class CameraZoomTransition
     internal double TargetPpu(CameraState camera) => Active ? _targetPpu : camera.PixelsPerWorldUnit;
     internal void Cancel() => Active = false;
 
-    internal void Start(CameraState camera, double target, float x, float y, TacticalMapSettings settings, int w, int h)
+    internal void Start(CameraState camera, double target, float x, float y, TacticalMapSettings settings, int w, int h, double? maximumPpu = null)
     {
         _startPpu = camera.PixelsPerWorldUnit;
-        _targetPpu = Math.Clamp(target, settings.MinimumPpu, settings.MaximumPpu);
+        double maximum = maximumPpu ?? settings.MaximumPpu;
+        _targetPpu = Math.Clamp(target, settings.MinimumPpu, maximum);
         _anchorX = x; _anchorY = y; _elapsed = 0;
         Active = _startPpu != _targetPpu;
         if (settings.ZoomAnimationMs == 0)
         {
-            camera.ZoomAt(_targetPpu / _startPpu, x, y, w, h, settings.MinimumPpu, settings.MaximumPpu);
+            camera.ZoomAt(_targetPpu / _startPpu, x, y, w, h, settings.MinimumPpu, maximum);
             Active = false;
         }
     }
 
-    internal void Advance(CameraState camera, double seconds, bool follow, TacticalMapSettings settings, int w, int h)
+    internal void Advance(CameraState camera, double seconds, bool follow, TacticalMapSettings settings, int w, int h, double? maximumPpu = null)
     {
         if (!Active) return;
         _elapsed += Math.Max(0, seconds) * 1000;
@@ -30,7 +31,7 @@ internal sealed class CameraZoomTransition
         double eased = t * t * (3 - 2 * t);
         double ppu = t == 1 ? _targetPpu : Math.Exp(Math.Log(_startPpu) + Math.Log(_targetPpu / _startPpu) * eased);
         camera.ZoomAt(ppu / camera.PixelsPerWorldUnit, follow ? w / 2f : _anchorX, follow ? h / 2f : _anchorY,
-            w, h, settings.MinimumPpu, settings.MaximumPpu);
+            w, h, settings.MinimumPpu, maximumPpu ?? settings.MaximumPpu);
         if (t == 1) Active = false;
     }
 }

@@ -11,6 +11,49 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class ClusterTravelEstimatesTests
 {
+    [Fact]
+    public void V2EtaUsesCurrentEngineWhileScaleUsesFrozenReference()
+    {
+        var source = LocalClusterMapTests.Snapshot() with { SelectedObjectId = "s1" };
+        var snapshot = source with
+        {
+            ClusterMap = source.ClusterMap! with { RulesVersion = 2, Geography = new(4, 1, 1, 3) },
+            Objects = source.Objects.SetItem(0, source.Objects[0] with { MaxSpeedKmS = 4 })
+        };
+        var buffer = new SnapshotBuffer(() => 0); buffer.Update(snapshot);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        var before = screen.SelectedOrActiveObjectInfo!.Value;
+        using var locale = DeepSpaceSaga.Client.Localization.UseLocaleForTests("English");
+        string reference = screen.RulerReferenceText(12000);
+        buffer.Update(snapshot with { SnapshotSequence = 2, Objects = snapshot.Objects.SetItem(0, snapshot.Objects[0] with { MaxSpeedKmS = 8 }) });
+        screen.Render(canvas, 1920, 1080);
+        var after = screen.SelectedOrActiveObjectInfo!.Value;
+        Assert.Equal(before.DistanceKm, after.DistanceKm);
+        Assert.Equal(before.StraightFlightDays!.Value / 2, after.StraightFlightDays);
+        Assert.Equal(reference, screen.RulerReferenceText(12000));
+        Assert.Equal("0.25 h at reference 4 km/s", reference);
+        Assert.Contains(ObjectInfoPanel.BuildLines(after), l => l.Label == "Straight flight estimate" && l.Value.Contains("calendar hours", StringComparison.Ordinal));
+        Assert.Equal(snapshot.ClusterMap, buffer.Latest!.Snapshot.ClusterMap);
+    }
+
+    [Fact]
+    public void MissingEngineShowsUnavailableAndDayBoundaryIsHonest()
+    {
+        var source = LocalClusterMapTests.Snapshot() with { SelectedObjectId = "s1" };
+        var snapshot = source with { ClusterMap = source.ClusterMap! with { RulesVersion = 2, Geography = new(4, 1, 1, 3) } };
+        var info = Render(snapshot);
+        Assert.Null(info.StraightFlightDays);
+        Assert.Contains(ObjectInfoPanel.BuildLines(info), l => l.Label == "Straight flight estimate" && l.Value == "Unavailable");
+        Assert.Equal("1 calendar hour", ClusterMapPresentation.FormatStraightFlightDays(1d / 24));
+        Assert.Equal("< 1 calendar day", ClusterMapPresentation.FormatStraightFlightDays(.999999999));
+        Assert.Equal("1 calendar day", ClusterMapPresentation.FormatStraightFlightDays(1));
+        Assert.Equal("1.5 calendar days", ClusterMapPresentation.FormatStraightFlightDays(1.5));
+        Assert.Equal("Unavailable", ClusterMapPresentation.FormatStraightFlightDays(double.NaN));
+        Assert.Null(ClusterMapPresentation.EstimateStraightDays(double.NaN, 4));
+    }
+
     private static ObjectInfoPanelData Render(AuthoritativeSnapshot snapshot, int width = 1920, int height = 1080)
     {
         var buffer = new SnapshotBuffer(() => 0); buffer.Update(snapshot);

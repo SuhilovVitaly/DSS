@@ -1,15 +1,23 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion.TacticalBattle;
 
 namespace DeepSpaceSaga.Engine.TacticalBattle;
 
 internal sealed record TacticalCandidate(TacticalUnit Target, double Distance, double Angle, TacticalHitTerms Terms);
+/// <summary>SoloHullLoss is the actual hull loss credited at this sequential shot; LethalImpact belongs to this shot only.</summary>
 internal sealed record TacticalShot(TacticalDrone Shooter, TacticalUnit Target, double Distance, double Angle,
     double Chance, bool Hit, int Damage, bool Rear, bool Kill, int SoloHullLoss, bool LethalImpact = false);
 internal sealed record TacticalDamage(string TargetId, int Hull, int Armor, bool RearKill);
 internal sealed record TacticalSystemChange(string TargetId, string Effect, int? EngineIndex = null);
 internal sealed record TacticalSalvoResult(ImmutableArray<TacticalShot> Shots, ImmutableArray<TacticalDamage> Damage,
-    ImmutableArray<TacticalSystemChange> Systems);
+    ImmutableArray<TacticalSystemChange> Systems)
+{
+    public ImmutableArray<TacticalSalvoStep> Steps { get; init; } = [];
+}
+internal sealed record TacticalSalvoStep(int Index, string ShooterId, string? TargetId, TacticalFireSkipReason SkipReason,
+    TacticalShot? Shot, TacticalDamage? Damage, ImmutableArray<TacticalSystemChange> Systems,
+    ImmutableArray<TacticalUnitSnapshot> UnitsAfter, TacticalBattleResult? Outcome);
 
 internal static class TacticalBattleSalvo
 {
@@ -41,103 +49,108 @@ internal static class TacticalBattleSalvo
 
     public static TacticalSalvoResult Fire(TacticalBattle battle, Func<TacticalDrone, IReadOnlyList<TacticalCandidate>, string?>? targetsFor = null)
     {
-        var plans = new List<(TacticalDrone Shooter, ImmutableArray<TacticalCandidate> Candidates, TacticalCandidate? Selected)>();
-        var previouslyActive = battle.Drones.Cast<TacticalUnit>().Concat(battle.Carriers).Where(u => u.IsActive).ToArray();
-        foreach (var shooter in battle.Drones)
+        // Freeze and validate every plan before draws, Dry or statistics mutate.
+        var plans = battle.CaptureFireOrder().Select(shooter =>
         {
-            if (!shooter.IsActive) continue;
             var candidates = Candidates(battle, shooter);
             string? id = targetsFor is null ? DefaultTarget(shooter, candidates)?.Target.Id : targetsFor(shooter, candidates);
-            var selected = id is null ? null : candidates.FirstOrDefault(c => c.Target.Id == id);
-            if (id is not null && selected is null) throw new ArgumentException("Selected target is not an admissible candidate: " + id, nameof(targetsFor));
-            plans.Add((shooter, candidates, selected));
-        }
-        foreach (var plan in plans) plan.Shooter.Dry = plan.Candidates.IsEmpty ? plan.Shooter.Dry + 1 : 0;
+            if (id is not null && !candidates.Any(c => c.Target.Id == id))
+                throw new ArgumentException("Selected target is not an admissible candidate: " + id, nameof(targetsFor));
+            return (Shooter: shooter, TargetId: id, NoCandidates: candidates.IsEmpty);
+        }).ToArray();
+        foreach (var plan in plans) plan.Shooter.Dry = plan.NoCandidates ? plan.Shooter.Dry + 1 : 0;
         var shots = ImmutableArray.CreateBuilder<TacticalShot>();
+        var applications = ImmutableArray.CreateBuilder<TacticalDamage>();
+        var allChanges = ImmutableArray.CreateBuilder<TacticalSystemChange>();
+        var steps = ImmutableArray.CreateBuilder<TacticalSalvoStep>(plans.Length);
         foreach (var plan in plans)
         {
-            if (plan.Selected is not { } candidate) continue;
             var shooter = plan.Shooter;
-            bool hit = battle.Random.Random() < candidate.Terms.Chance;
-            int damage = hit ? battle.Random.RandInt(shooter.Weapon.DamageMin, shooter.Weapon.DamageMax) : 0;
-            bool rear = candidate.Terms.IsRear;
-            bool kill = hit && rear && battle.Random.Random() < shooter.Weapon.RearKillChance;
-            int soloHull = hit ? rear ? damage : Split(damage, shooter.Weapon.Piercing, candidate.Target.Armor).Hull : 0;
-            var shot = new TacticalShot(shooter, candidate.Target, candidate.Distance, candidate.Angle, candidate.Terms.Chance, hit, damage, rear, kill, soloHull);
-            shots.Add(shot);
-            var weapon = battle.Statistics.ForWeapon(shooter.Weapon.Id);
-            battle.Statistics.Shots++;
-            weapon.Shots++;
-            if (!hit) continue;
-            battle.Statistics.Hits++;
-            weapon.Hits++;
-            if (rear) { battle.Statistics.RearHits++; weapon.RearHits++; }
-            if (kill) { battle.Statistics.RearKills++; weapon.RearKills++; }
-        }
-        var applications = ImmutableArray.CreateBuilder<TacticalDamage>();
-        foreach (var target in PyMath.OrderedUnique(shots.Where(s => s.Hit).Select(s => s.Target)))
-        {
-            var hits = shots.Where(s => s.Hit && ReferenceEquals(s.Target, target)).ToArray();
-            long hullLoss = 0;
-            int armorLoss = 0;
-            TacticalShot? lethal = null;
-            foreach (var shot in hits)
+            var reason = battle.Result is not null ? TacticalFireSkipReason.BattleEnded
+                : shooter.Status == TacticalDroneStatus.Destroyed ? TacticalFireSkipReason.ShooterDestroyed
+                : shooter.Status == TacticalDroneStatus.Disabled ? TacticalFireSkipReason.ShooterDisabled
+                : shooter.Jammed ? TacticalFireSkipReason.WeaponJammed
+                : plan.TargetId is null ? plan.NoCandidates ? TacticalFireSkipReason.NoTarget : TacticalFireSkipReason.Withheld
+                : TacticalFireSkipReason.None;
+            TacticalCandidate? candidate = null;
+            if (reason == TacticalFireSkipReason.None)
             {
-                if (shot.Rear) hullLoss += shot.Damage;
-                else
+                candidate = Candidates(battle, shooter).FirstOrDefault(c => c.Target.Id == plan.TargetId);
+                if (candidate is null) reason = TacticalFireSkipReason.TargetUnavailable;
+            }
+            TacticalShot? shot = null;
+            TacticalDamage? application = null;
+            var changes = ImmutableArray.CreateBuilder<TacticalSystemChange>();
+            var priorOutcome = battle.Result;
+            if (candidate is not null)
+            {
+                var target = candidate.Target;
+                bool wasActive = target.IsActive;
+                bool hit = battle.Random.Random() < candidate.Terms.Chance;
+                int damage = hit ? battle.Random.RandInt(shooter.Weapon.DamageMin, shooter.Weapon.DamageMax) : 0;
+                bool rear = candidate.Terms.IsRear;
+                bool kill = hit && rear && battle.Random.Random() < shooter.Weapon.RearKillChance;
+                var split = !hit ? (Hull: 0, Armor: 0) : rear ? (Hull: damage, Armor: 0)
+                    : Split(damage, shooter.Weapon.Piercing, target.Armor);
+                int actualHull = kill ? target.Hull : Math.Min(split.Hull, target.Hull);
+                target.Hull -= actualHull;
+                target.Armor -= split.Armor;
+                bool lethal = hit && target.Hull <= 0;
+                shot = new(shooter, target, candidate.Distance, candidate.Angle, candidate.Terms.Chance,
+                    hit, damage, rear, kill, actualHull, lethal);
+                shots.Add(shot);
+                var weapon = battle.Statistics.ForWeapon(shooter.Weapon.Id);
+                battle.Statistics.Shots++; weapon.Shots++;
+                if (hit)
                 {
-                    var split = Split(shot.Damage, shot.Shooter.Weapon.Piercing, target.Armor - armorLoss);
-                    hullLoss += split.Hull;
-                    armorLoss += split.Armor;
+                    battle.Statistics.Hits++; weapon.Hits++;
+                    if (rear) { battle.Statistics.RearHits++; weapon.RearHits++; }
+                    if (kill) { battle.Statistics.RearKills++; weapon.RearKills++; }
+                    application = new(target.Id, actualHull, split.Armor, kill);
+                    applications.Add(application);
+                    battle.Statistics.Hull += actualHull;
+                    battle.Statistics.Armor += split.Armor;
+                    weapon.Hull += actualHull;
+                    if (target is TacticalCarrier) battle.Statistics.CarrierHull += actualHull;
+                    if (target is TacticalDrone drone)
+                    {
+                        if (drone.Hull <= 0) { drone.Status = TacticalDroneStatus.Destroyed; drone.Speed = 0; }
+                        else if (drone.Hull <= PyMath.FloorNonNeg(battle.Catalog.Rules.Disabled.HullFraction * drone.MaxHull))
+                        {
+                            drone.Status = TacticalDroneStatus.Disabled; drone.Speed = 0; battle.Statistics.Disabled++;
+                        }
+                        if (drone.IsActive && actualHull >= battle.Catalog.Rules.Systems.MinHullLoss)
+                        {
+                            var systems = battle.Catalog.Rules.Systems;
+                            battle.Statistics.Systems++;
+                            string effect = battle.Random.Weighted(systems.Table.Select(e => (e.Effect, (double)e.Weight)).ToArray());
+                            if (effect == "weaponJammed")
+                            {
+                                if (!drone.Jammed) { drone.Jammed = true; changes.Add(new(drone.Id, effect)); }
+                            }
+                            else
+                            {
+                                var intact = Enumerable.Range(0, drone.Engines.Length)
+                                    .Where(i => drone.Engines[i].Factor == TacticalBattleConstants.IntactEngineFactor).ToArray();
+                                if (intact.Length > 0)
+                                {
+                                    int index = battle.Random.Choice(intact);
+                                    drone.Engines[index].Factor = systems.EngineDamagedFactor;
+                                    changes.Add(new(drone.Id, "engineDamaged", index));
+                                }
+                            }
+                        }
+                    }
+                    if (wasActive && !target.IsActive) battle.Statistics.FirstLoss ??= target.Side;
                 }
-                if (lethal is null && (shot.Kill || hullLoss >= target.Hull)) lethal = shot;
             }
-            if (lethal is not null) shots[shots.IndexOf(lethal)] = lethal with { LethalImpact = true };
-            bool rearKill = hits.Any(s => s.Kill);
-            if (rearKill) hullLoss = target.Hull;
-            int actualHull = (int)PyMath.Min(hullLoss, target.Hull);
-            target.Hull -= actualHull;
-            target.Armor -= armorLoss;
-            applications.Add(new(target.Id, actualHull, armorLoss, rearKill));
-            battle.Statistics.Hull += actualHull;
-            battle.Statistics.Armor += armorLoss;
-            if (target is TacticalCarrier) battle.Statistics.CarrierHull += actualHull;
-            foreach (var shot in hits)
-                battle.Statistics.ForWeapon(shot.Shooter.Weapon.Id).Hull += shot.Kill ? actualHull : (int)PyMath.Min(shot.SoloHullLoss, actualHull);
+            // A completed step includes statistics and system damage before victory is captured.
+            var outcome = priorOutcome is null ? battle.CheckVictory() : null;
+            allChanges.AddRange(changes);
+            steps.Add(new(steps.Count, shooter.Id, plan.TargetId, reason, shot, application, changes.ToImmutable(),
+                TacticalBattleSnapshotBuilder.Units(battle), outcome));
         }
-        foreach (var drone in battle.Drones)
-        {
-            if (!drone.IsActive) continue;
-            if (drone.Hull <= 0) { drone.Status = TacticalDroneStatus.Destroyed; drone.Speed = 0; }
-            else if (drone.Hull <= PyMath.FloorNonNeg(battle.Catalog.Rules.Disabled.HullFraction * drone.MaxHull))
-            {
-                drone.Status = TacticalDroneStatus.Disabled;
-                drone.Speed = 0;
-                battle.Statistics.Disabled++;
-            }
-        }
-        battle.Statistics.FirstLoss ??= previouslyActive.FirstOrDefault(u => !u.IsActive)?.Side;
-        var changes = ImmutableArray.CreateBuilder<TacticalSystemChange>();
-        foreach (var shot in shots)
-        {
-            if (!shot.Hit || shot.Target is not TacticalDrone target || !target.IsActive || shot.SoloHullLoss < battle.Catalog.Rules.Systems.MinHullLoss) continue;
-            var systems = battle.Catalog.Rules.Systems;
-            battle.Statistics.Systems++;
-            string effect = battle.Random.Weighted(systems.Table.Select(e => (e.Effect, (double)e.Weight)).ToArray());
-            if (effect == "weaponJammed")
-            {
-                if (!target.Jammed) { target.Jammed = true; changes.Add(new(target.Id, effect)); }
-            }
-            else
-            {
-                var intact = Enumerable.Range(0, target.Engines.Length).Where(i => target.Engines[i].Factor == TacticalBattleConstants.IntactEngineFactor).ToArray();
-                if (intact.Length == 0) continue;
-                int index = battle.Random.Choice(intact);
-                target.Engines[index].Factor = systems.EngineDamagedFactor;
-                changes.Add(new(target.Id, "engineDamaged", index));
-            }
-        }
-        return new(shots.ToImmutable(), applications.ToImmutable(), changes.ToImmutable());
+        return new(shots.ToImmutable(), applications.ToImmutable(), allChanges.ToImmutable()) { Steps = steps.MoveToImmutable() };
     }
 
     public static (int Hull, int Armor) Split(int damage, int piercing, int armor)

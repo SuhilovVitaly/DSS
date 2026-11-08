@@ -18,7 +18,7 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly IMotionPredictor _predictor;
     private readonly CameraState _camera;
     private readonly GridRenderer _grid;
-    private readonly ObjectTrailStore _trailStore;
+    private ObjectTrailStore _trailStore;
     private readonly FutureTrajectoryProjector _futureTrajectoryProjector;
     private readonly NavigationTrajectoryProjector _navigationTrajectoryProjector;
     private readonly ObjectLabelRenderer _labelRenderer;
@@ -52,7 +52,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// from it.
     /// </summary>
     private float _uiScale = 1.0f;
-    private static readonly float[] AllowedUiScales = { 0.8f, 1.0f, 1.2f, 1.5f };
+    private static readonly float[] AllowedUiScales = { 0.8f, 1.0f, 1.2f, 1.5f, 2.0f };
 
     // Object paints
     private readonly SKPaint _trailPaint;
@@ -411,6 +411,7 @@ public sealed partial class GameSessionScreen : IScreen
         DisposeDebugTuning();
         _zoomTransition.Cancel();
         _isPanningMap = false;
+        _selectionCycle = []; _selectionCycleIndex = 0;
         _isCtrlLeftDown = false;
         _isCtrlRightDown = false;
         _hasMousePosition = false;
@@ -989,8 +990,7 @@ public sealed partial class GameSessionScreen : IScreen
             bool labelOnly = distanceSq > radiusSq;
             if (labelOnly)
             {
-                if (!ObjectLabelRenderer.HasSelectableShipLabel(state.Source) ||
-                    !_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
+                if (!HasSelectableMapLabel(state.Source) || !_labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) || !label.PlaqueRect.Contains(x, y))
                     continue;
                 distanceSq = 0;
             }
@@ -1110,6 +1110,9 @@ public sealed partial class GameSessionScreen : IScreen
         RenderStageCompleted?.Invoke("begin");
         _viewportW = width;
         _viewportH = height;
+        var prediction = _buffer.LatestPrediction;
+        var buffered = prediction?.BufferedSnapshot;
+        _mapPresentationSnapshot = buffered?.Snapshot;
 
         // Frame timing for label smoothing.
         long now = _timestampProvider();
@@ -1131,15 +1134,28 @@ public sealed partial class GameSessionScreen : IScreen
             uiTimeMs = 0;
 
         bool viewportResized = width != _lastViewportW || height != _lastViewportH;
+        double previousMaximum = MapScalePolicy.MaximumPpu(_mapSettings, _lastViewportW, _lastViewportH, MapReferenceSpeed);
         _lastViewportW = width;
         _lastViewportH = height;
 
-        if (viewportResized) _zoomTransition.Cancel();
-        _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height);
+        if (viewportResized)
+        {
+            _zoomTransition.Cancel();
+            double zoom = Math.Abs(_camera.PixelsPerWorldUnit / previousMaximum - 1) < 1e-10
+                ? LocalMaximumPpu : _camera.PixelsPerWorldUnit;
+            _camera.SetZoom(zoom, _mapSettings.MinimumPpu, LocalMaximumPpu);
+        }
+        _zoomTransition.Advance(_camera, deltaSeconds, _isFocusAttachedToPlayer, _mapSettings, width, height, LocalMaximumPpu);
 
-        var prediction = _buffer.LatestPrediction;
-        var buffered = prediction?.BufferedSnapshot;
+        bool mapWorldChanged = UpdateMapWorld(buffered?.Snapshot);
         UpdateObjectRenderStates(prediction, deltaSeconds);
+        if (!_mapCameraInitialized && FindPlayerShip(_renderStates) is not null)
+        {
+            _mapCameraInitialized = true;
+            _zoomTransition.Cancel();
+            _isFocusAttachedToPlayer = true;
+            _camera.SetZoom(LocalMaximumPpu, _mapSettings.MinimumPpu, LocalMaximumPpu);
+        }
         _travelEstimateMotionTimeMs = prediction is null ? 0 : GetPredictedGameTimeMs(prediction);
         _fieldGeometry = buffered is null ? [] : EnvironmentFieldRenderer.Resolve(buffered.Snapshot,
             _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
@@ -1150,11 +1166,8 @@ public sealed partial class GameSessionScreen : IScreen
         UpdateCameraFocusFromPlayer(_renderStates);
         UpdateMapClusters();
 
-        // Recompute after render states + camera focus are current for this frame —
-        // covers pan/zoom, camera-focus changes, and an object moving under a
-        // stationary cursor (ТЗ §54). OnMouseMove already recomputes eagerly on input;
-        // this catches every other trigger that isn't a mouse-move event.
-        RecomputeActiveObjectId();
+        // Hover is recomputed below, after this frame's label layout, so resize,
+        // pan and moving contacts never use stale plaque hit regions.
         CompleteRenderStage("coordinates_and_hit_test");
 
         if (_diagInterestingFrame && PauseResumeDiagnostics.Enabled)
@@ -1169,7 +1182,8 @@ public sealed partial class GameSessionScreen : IScreen
 
         if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
         {
-            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits);
+            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits, MapDetail,
+                _renderStates.Select(s => s.Predicted).ToArray(), _selectedObjectId, _navigationTargetId, buffered.Snapshot.PlayerShipObjectId);
         }
 
         // 2. Camera focus indicator
@@ -1179,7 +1193,7 @@ public sealed partial class GameSessionScreen : IScreen
             RenderStageCompleted?.Invoke("fields");
             if (MapLayers.HasFlag(MapLayerFlags.Territories)) AiMapPresentation.DrawTerritories(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
             RenderStageCompleted?.Invoke("territories");
-            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId);
+            ClusterMapPresentation.Draw(canvas, buffered.Snapshot, _renderStates.Select(s => s.Predicted), _camera, width, height, _selectedObjectId, MapDetail);
         }
         float cx = width / 2f;
         float cy = height / 2f;
@@ -1220,9 +1234,11 @@ public sealed partial class GameSessionScreen : IScreen
 
             // Compute smoothed label geometries once per frame so both
             // DrawLeaders and DrawPlaques see the same positions.
-            bool resetSmoothing = viewportResized;
+            bool resetSmoothing = viewportResized || mapWorldChanged;
+            PrepareMapSummaryLabels();
             _labelRenderer.ComputeGeometries(_renderStates, deltaSeconds, width, height, _camera, resetSmoothing,
-                _mapSettings, IsImportantMapObject, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _activeObjectId);
+                _mapSettings, IsPrimaryMapLabel, _clusteredObjectIds, AvailableMapRect(), _selectedObjectId, _activeObjectId, MapDetail, _mapSummaryLabelRects);
+            RecomputeActiveObjectId();
 
             // 3.75. Label leader lines (behind objects)
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
@@ -2098,7 +2114,7 @@ public sealed partial class GameSessionScreen : IScreen
 
     private void ApplyScale(double targetPpu)
     {
-        _zoomTransition.Start(_camera, targetPpu, _viewportW / 2f, _viewportH / 2f, _mapSettings, _viewportW, _viewportH);
+        _zoomTransition.Start(_camera, targetPpu, _viewportW / 2f, _viewportH / 2f, _mapSettings, _viewportW, _viewportH, LocalMaximumPpu);
         InterfaceLog.Write($"Scale → PPU={targetPpu:F4}");
     }
 

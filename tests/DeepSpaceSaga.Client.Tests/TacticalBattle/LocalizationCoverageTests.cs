@@ -22,6 +22,34 @@ public sealed class LocalizationCoverageTests
     private const string Prefix = "TacticalBattle.";
     private static readonly string Source = SourceDirectory();
 
+    [Theory]
+    [InlineData("Russian")]
+    [InlineData("English")]
+    public void ActualRussianAndEnglishFireTextsContainNoResourceKeys(string language)
+    {
+        using var scope = Localization.UseLocaleForTests(language);
+        string[] suffixes = ["Initiative", "FireQueue", "FireConditional", "Log.FireSkipped", "Skip.NoTarget", "Skip.Withheld",
+            "Skip.ShooterDestroyed", "Skip.ShooterDisabled", "Skip.WeaponJammed", "Skip.TargetUnavailable", "Skip.BattleEnded"];
+        foreach (string suffix in suffixes)
+        {
+            string text = BattleFormat.Localize(suffix);
+            Assert.False(string.IsNullOrWhiteSpace(text));
+            Assert.DoesNotContain("TacticalBattle.", text);
+        }
+        foreach (var reason in Enum.GetValues<TacticalFireSkipReason>().Where(r => r != TacticalFireSkipReason.None))
+        {
+            var entry = new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.FireSkipped, "pilot") { SkipReason = reason };
+            string text = BattleLogFormatter.Format(entry);
+            Assert.Contains(language == "Russian" ? "выстрел пропущен" : "shot skipped", text);
+            Assert.Contains(BattleFormat.Localize("Skip." + reason), text);
+            Assert.DoesNotContain("TacticalBattle.", text);
+        }
+        var unknown = new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.FireSkipped, "pilot")
+        { SkipReason = (TacticalFireSkipReason)999 };
+        Assert.DoesNotContain("999", BattleLogFormatter.Format(unknown));
+        Assert.DoesNotContain("TacticalBattle.", BattleLogFormatter.Format(unknown with { SkipReason = null }));
+    }
+
     private static string SourceDirectory([CallerFilePath] string sourceFile = "") =>
         Path.GetFullPath(Path.Combine(Path.GetDirectoryName(sourceFile)!, "../../../src/DeepSpaceSaga.Client"));
 

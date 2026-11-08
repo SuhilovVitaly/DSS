@@ -7,6 +7,94 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void FireSequenceRoundTripPreservesOrderAndIndependentStepStates()
+    {
+        var frame = Frame();
+        var before = frame.Units[0] with { Id = "Цель", Armor = 10, Hull = 65 };
+        var first = before with { Armor = 0, Hull = 60 };
+        var second = first with { Hull = 45 };
+        var shot = frame.Shots[0] with { TargetId = "Цель", Damage = 15, Killed = false, LethalImpact = false };
+        frame = frame with
+        {
+            BeforeSalvoUnits = [before],
+            Units = [second],
+            FireQueue = [new(0, "A80", 80), new(1, "B0", 0)],
+            FireSteps = [new(0, "A80", "Цель", TacticalFireSkipReason.None, shot, [first],
+                [new TacticalBattleLogEvent(100, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.DamageApplied,
+                    Damage: new(5, 10, 1, 60)) { FireStepIndex = 0 }], null),
+                new(1, "B0", "Цель", TacticalFireSkipReason.None, shot, [second], [], frame.Outcome)]
+        };
+        var restored = RoundTrip(frame);
+        Assert.Equal(new[] { "A80", "B0" }, restored.FireQueue.Select(e => e.ShooterId));
+        Assert.Equal(0, restored.FireQueue[1].Initiative);
+        Assert.Equal(10, restored.BeforeSalvoUnits[0].Armor);
+        Assert.Equal(60, restored.FireSteps[0].UnitsAfter[0].Hull);
+        Assert.Equal(45, restored.FireSteps[1].UnitsAfter[0].Hull);
+        Assert.Equal(0, restored.FireSteps[0].Events[0].FireStepIndex);
+        Assert.Equal(5, restored.FireSteps[0].Events[0].Damage!.Hull);
+        Assert.NotNull(restored.FireSteps[1].Outcome);
+    }
+
+    [Theory]
+    [InlineData(TacticalFireSkipReason.NoTarget)]
+    [InlineData(TacticalFireSkipReason.Withheld)]
+    [InlineData(TacticalFireSkipReason.ShooterDestroyed)]
+    [InlineData(TacticalFireSkipReason.ShooterDisabled)]
+    [InlineData(TacticalFireSkipReason.WeaponJammed)]
+    [InlineData(TacticalFireSkipReason.TargetUnavailable)]
+    [InlineData(TacticalFireSkipReason.BattleEnded)]
+    public void SkippedShotHasReasonButNoShotOrRngClaim(TacticalFireSkipReason reason)
+    {
+        var entry = new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.FireSkipped, "дрон")
+        { SkipReason = reason, FireStepIndex = 2 };
+        var step = RoundTrip(new TacticalFireStepSnapshot(2, "дрон", null, reason, null, Frame().Units, [entry], null));
+        Assert.Null(step.Shot);
+        Assert.Equal(reason, step.SkipReason);
+        Assert.Equal(reason, step.Events[0].SkipReason);
+        Assert.Equal(2, step.Events[0].FireStepIndex);
+    }
+
+    [Fact]
+    public void OldTacticalEventsAndEnumIdsRemainReadable()
+    {
+        var entry = JsonSerializer.Deserialize<TacticalBattleLogEvent>("""{"Sequence":1,"Turn":2,"Phase":1,"Kind":13}""")!;
+        Assert.Equal(TacticalBattleLogKind.DamageApplied, entry.Kind);
+        Assert.Null(entry.SkipReason);
+        Assert.Null(entry.FireStepIndex);
+        Assert.Equal(Enumerable.Range(0, 15), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!.AsObject();
+        node.Remove("FireQueue"); node.Remove("FireSteps");
+        var legacy = JsonSerializer.Deserialize<TacticalBattleSnapshot>(node.ToJsonString())!;
+        Assert.Empty(legacy.FireQueue);
+        Assert.Empty(legacy.FireSteps);
+    }
+
+    [Fact]
+    public void InitiativeRoundTripDistinguishesZeroNullAndRange()
+    {
+        var unit = Frame().Units[0];
+        Assert.Equal(0, RoundTrip(unit with { Initiative = 0 }).Initiative);
+        Assert.Equal(100, RoundTrip(unit with { Initiative = 100 }).Initiative);
+        Assert.Null(RoundTrip(unit).Initiative);
+        var option = new TacticalDroneSetupOption("d", "A", "light", "Light", "p", "Pilot",
+            new(55, 55, false), new(50, 50, false), 65, "gun", "armor", null, 0, 1);
+        foreach (var skill in new TacticalSkillRange[] { new(0, 0, false), new(40, 55, true), new(50, 50, true) })
+            Assert.Equal(skill, RoundTrip(option with { Initiative = skill }).Initiative);
+        Assert.Null(RoundTrip(option).Initiative);
+    }
+
+    [Fact]
+    public void OldBattlePayloadWithoutInitiativeRemainsReadable()
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!;
+        foreach (var unit in node["Units"]!.AsArray()) unit!.AsObject().Remove("Initiative");
+        var restored = JsonSerializer.Deserialize<TacticalBattleSnapshot>(node.ToJsonString())!;
+        Assert.All(restored.Units, unit => Assert.Null(unit.Initiative));
+        Assert.Equal("battle", restored.BattleId);
+        Assert.Equal(TacticalBattlePhase.Over, restored.Phase);
+    }
+
+    [Fact]
     public void JournalPreservesTypedFactsAndOldEventPayloadsRemainReadable()
     {
         const string oldEvent = """{"Sequence":7,"Turn":2,"Phase":1,"Kind":10,"TargetId":"d","EngineIndex":1}""";

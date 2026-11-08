@@ -10,6 +10,10 @@ Ctrl+клик по свободной карте задаёт engine.orbit. Вы
 проходит через выбранную точку и продолжается до края viewport. Ручной поворот,
 Approach и синхронизация скорости — разные команды. NPC future line использует
 только наблюдения. Настройки масштаба/LOD берутся из Settings.gameSettings.tacticalMap.
+Local/Region/Cluster/System определяются охватом короткой стороны при опорной
+скорости мира с hysteresis, а не номером preset. +/- и колесо меняют zoom,
+End показывает систему, Home возвращает Follow. Station local доступен для
+выбранной станции; выбор для осмотра не отправляет Approach/Dock.
 Детали: [дизайн карты](../../03-Design/TacticalMapSpecification.md) и
 [NPC-прогноз](../../04-Engineering/NpcObservedTrajectories.md).
 

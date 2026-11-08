@@ -7,6 +7,27 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class SaveMigration20Tests
 {
+    [Theory]
+    [InlineData(18)]
+    [InlineData(19)]
+    [InlineData(20)]
+    public void LegacySolarWorldIsNotRegenerated(int saveVersion)
+    {
+        using var original = LocalClusterGenerationTests.Create("MarketProfiles");
+        var save = original.CaptureSaveStateForTests(86400000, SimulationSpeed.Speed0, 288000);
+        var historical = save with { SaveFormatVersion = saveVersion };
+        // The migration unit receives decoded world DTOs; archived combat-envelope ingress
+        // is covered separately by the real Save18/19 fixtures in this class.
+        var migrated = SaveMigration20.Upgrade(historical);
+        Assert.Equal(20, migrated.SaveFormatVersion);
+        using var restored = new SimulationEngine(SeededWorldBootstrapTests.Registry());
+        restored.LoadScenario(migrated, true, GenerationInputSchemaTests.V2Config());
+        Assert.Equal(1, restored.CaptureSnapshot().SolarSystemMap!.GeneratorVersion);
+        Assert.Equal(JsonSerializer.Serialize(save.GameState.ClusterMap), JsonSerializer.Serialize(restored.CaptureSaveState().GameState.ClusterMap));
+        GeneratedWorldPersistenceTests.EqualWorld(original.CaptureSnapshotForTests(86700000, SimulationSpeed.Speed0, 289000),
+            restored.CaptureSnapshotForTests(86700000, SimulationSpeed.Speed0, 289000));
+    }
+
     private static readonly string[] Obsolete = ["combatState", "defenseState", "hostileCombatState", "combatReportsState",
         "combatReactionDelays", "pointCombatState"];
 

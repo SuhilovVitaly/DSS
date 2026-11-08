@@ -10,6 +10,41 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class PoiMapSelectionTests
 {
+    [Fact]
+    public void DetailTransitionsPreservePoiAndResourceSelection()
+    {
+        var snapshot = Snapshot();
+        var asteroid = new ObjectMotionSnapshot("resource", 400, 0, 0, 0, RenderObjectType: SpaceObjectType.Asteroid,
+            Survey: new(100, false, true, null, []));
+        snapshot = snapshot with
+        {
+            Objects = snapshot.Objects.Add(asteroid),
+            ClusterMap = new(2, "c",
+            [new("c", "Home", "belt", ["station"], "mixed")], [new("station", "c", "mining")], [],
+            [new("resource", "c", "station", 200, 0)], new(4, 1, 1, 3))
+        };
+        var buffer = new SnapshotBuffer(); buffer.Update(snapshot);
+        var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
+        using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1920, 1080);
+        screen.OnMouseDown(1260, 540); screen.OnMouseUp(1260, 540);
+        Assert.Equal("poi", screen.SelectedPoiId);
+        var overview = screen.ScaleButtonRects[4]; screen.OnMouseDown(overview.MidX, overview.MidY);
+        screen.Render(canvas, 1920, 1080);
+        Assert.Equal("poi", screen.SelectedPoiId);
+        Assert.False(screen.IsModuleCommandEnabled(NavigationComputerCommandTypes.Dock));
+        Assert.True(screen.FocusStation("station")); screen.Render(canvas, 1920, 1080);
+        Assert.Equal("poi", screen.SelectedPoiId);
+        var pose = screen.RenderStates.Single(s => s.Pose.ObjectId == "resource").Pose;
+        float x = (float)(960 + (pose.X - screen.CameraFocusX) * screen.CameraPixelsPerWorldUnit);
+        float y = (float)(540 + (pose.Y - screen.CameraFocusY) * screen.CameraPixelsPerWorldUnit);
+        screen.OnMouseDown(x, y); screen.OnMouseUp(x, y);
+        Assert.Equal("resource", screen.SelectedObjectId); Assert.Null(screen.SelectedPoiId);
+        screen.OnMouseDown(overview.MidX, overview.MidY); screen.Render(canvas, 1920, 1080);
+        Assert.Equal("resource", screen.SelectedObjectId);
+        Assert.DoesNotContain("resource", screen.AggregatedMapObjectIds);
+    }
+
     private static AuthoritativeSnapshot Snapshot() => new(1, 0, SimulationSpeed.Speed0,
         [new("ship", 0, 0, 0, 0, RenderObjectType: "PlayerShip"), new("station", 200, 0, 0, 0, RenderObjectType: "Station")], "ship",
         InstalledModules: [new("nav", "nav", "Navigation", 0, [NavigationComputerCommandTypes.Dock], "On", "Ready", 100,
@@ -52,7 +87,8 @@ public sealed class PoiMapSelectionTests
         foreach (var binding in snapshot.ClusterMap.ResourceBindings)
         {
             var resource = Assert.Single(snapshot.Objects, o => o.ObjectId == binding.FieldId);
-            Assert.True(resource.Survey!.CompositionKnown);
+            Assert.False(resource.Survey!.CompositionKnown);
+            Assert.Empty(resource.Survey.Resources);
             Assert.Equal(binding, ClusterMapPresentation.Resource(snapshot, resource.ObjectId));
             Assert.DoesNotContain(snapshot.AiMap.PointsOfInterest, p => p.ObjectId == resource.ObjectId);
         }
@@ -73,7 +109,7 @@ public sealed class PoiMapSelectionTests
         Assert.Equal(0, connection.Actions); Assert.DoesNotContain(connection.Interactions, p => p.Active == "poi" || p.Selected == "poi");
     }
 
-    private sealed class RecordingConnection : IGameSessionConnection
+    internal sealed class RecordingConnection : IGameSessionConnection
     {
         public int Actions { get; private set; }
         public List<(string? Active, string? Selected)> Interactions { get; } = [];

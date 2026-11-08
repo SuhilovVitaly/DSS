@@ -1,6 +1,8 @@
 using System.Runtime.CompilerServices;
 using System.Threading.Channels;
 using DeepSpaceSaga.Client.UI;
+using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
@@ -8,6 +10,76 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class SessionHandleBattleTests
 {
+    [Fact]
+    public async Task ReplayAndDuplicateResponseDoNotDuplicateJournal()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        var before = screen.Flow.State!;
+        fixture.ManualAnimation = true;
+        await fixture.Route(ScreenEvent.FireTacticalBattle);
+        var accepted = screen.Flow.State!;
+        fixture.AdvanceAnimation(500);
+        var first = screen.CaptureFrame(1280, 720)!;
+        var duplicate = new TacticalBattleResponse("duplicate", true, TacticalBattleRejectionCode.None, accepted.Phase, accepted, []);
+        screen.OnBattleUpdated(before, duplicate);
+        Assert.True(screen.HasSalvoPresentation);
+        var after = screen.CaptureFrame(1280, 720)!;
+        Assert.Equal(first.Salvo!.Flights.Select(f => f.ElapsedMs), after.Salvo!.Flights.Select(f => f.ElapsedMs));
+        Assert.Equal(first.Battle.Log.AsEnumerable(), after.Battle.Log);
+        screen.OnBattleUpdated(before, duplicate with { Accepted = false, Code = TacticalBattleRejectionCode.StaleRevision, State = before });
+        Assert.True(screen.HasSalvoPresentation);
+        screen.OnKeyDown(Silk.NET.Input.Key.Enter);
+        Assert.Equal(accepted.Log.AsEnumerable(), screen.CaptureFrame(1280, 720)!.Battle.Log);
+        using var bitmap = new SkiaSharp.SKBitmap(1280, 720);
+        using var canvas = new SkiaSharp.SKCanvas(bitmap);
+        screen.Render(canvas, 1280, 720);
+        string log = ReadLog();
+        var replay = screen.ReplaySalvoBounds;
+        screen.OnMouseDown(replay.MidX, replay.MidY, Silk.NET.Input.MouseButton.Left);
+        Assert.Equal(before.Log.AsEnumerable(), screen.CaptureFrame(1280, 720)!.Battle.Log);
+        Assert.Equal(log, ReadLog());
+        Assert.Equal(1, fixture.Proxy.Fires);
+        Assert.Same(accepted, screen.Flow.State);
+    }
+
+    [Fact]
+    public async Task NewBattleDoesNotReuseOldQueueOrLogPrefix()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await ReachFire(fixture);
+        fixture.ManualAnimation = true;
+        await fixture.Route(ScreenEvent.FireTacticalBattle);
+        var old = screen.Flow.State!;
+        Assert.True(screen.HasSalvoPresentation);
+        // Recover a live battle that replaced the stale client's battle at the actual owner boundary.
+        Assert.True(fixture.Engine.ExitTacticalBattle(new("external-exit", old.BattleId)).Accepted);
+        var live = fixture.Engine.StartTacticalBattle(new("live-battle", 2)).State!;
+        var refused = await screen.Flow.FireAsync(new("stale-address", old.BattleId, old.Revision));
+        Assert.Equal(TacticalBattleRejectionCode.WrongBattle, refused!.Code);
+        screen.OnBattleUpdated(old, refused);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        Assert.Equal(live.BattleId, frame.Battle.BattleId);
+        Assert.False(screen.HasSalvoPresentation);
+        Assert.Empty(frame.Battle.FireQueue);
+        Assert.Empty(frame.Battle.FireSteps);
+        Assert.Equal(live.Log.AsEnumerable(), TacticalBattleLogTab.Visible(frame));
+        Assert.NotEqual(old.BattleId, frame.Battle.BattleId);
+    }
+
+    private static async Task<TacticalBattleScreen> ReachFire(BattleNavigationTests.Fixture fixture)
+    {
+        await fixture.Route(ScreenEvent.OpenTacticalBattle);
+        var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
+        await setup.Flow.OptionsTask!;
+        await fixture.Route(ScreenEvent.StartTacticalBattle);
+        var screen = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
+        for (int turn = 0; turn < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; turn++)
+            await fixture.Route(ScreenEvent.MoveTacticalBattle);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+        return screen;
+    }
+
     [Fact]
     public async Task AllMethodsForwardOriginalPayloadsAndLogCommandsAndRefusals()
     {

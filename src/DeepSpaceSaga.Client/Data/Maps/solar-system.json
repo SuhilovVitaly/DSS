@@ -1,6 +1,6 @@
 {
   "schemaVersion": 1,
-  "generatorVersion": 1,
+  "generatorVersion": 2,
   "maxPlacementAttempts": 64,
   "minPlanets": 3,
   "maxPlanets": 7,
@@ -9,7 +9,7 @@
   "startMinDays": 50,
   "startMaxDays": 75,
   "orbitSpeedFraction": 0.001,
-  "beltWidthFraction": 0.08,
+  "beltWidthFraction": 0.20,
   "orbitClearanceWorld": 100,
   "asteroidsPerBelt": 24,
   "decorationSamplesPerBelt": 2048,
@@ -47,11 +47,12 @@
     "maxClusters": 5,
     "minStations": 10,
     "maxStations": 12,
-    "neighbourMinDays": 0.5,
-    "neighbourMaxDays": 2,
-    "diameterMinDays": 3,
-    "diameterMaxDays": 7,
-    "interclusterMinDays": 15,
-    "interclusterMaxDays": 35
+    "neighbourMinDays": 1,
+    "neighbourMaxDays": 3,
+    "diameterMinDays": 10,
+    "diameterMaxDays": 16,
+    "interclusterMinDays": 30,
+    "interclusterMaxDays": 50,
+    "minimumStationDays": 1
   }
 }

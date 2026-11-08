@@ -52,3 +52,7 @@ Draft; human approval отсутствует. Решения и сообщени
 ## Execution review — 2026-11-06
 
 All six tickets completed technically, including the two authoritative journal prerequisites. Real local connection and CPU rasters verify target planning, result playback, side/log views and forecast. Goldens remain unchanged. Native/physical and human acceptance remain open.
+
+## Supersession — 2026-11-07
+
+Инициативная последовательная стрельба EP-0017 заменяет прежний одновременный залп и допуск всего урона в конце анимации. Исходные критерии и результаты ниже сохранены как история. Текущий [контракт](../../../Documentation/04-Engineering/TacticalBattle.md) и [исполнение EP-0017](../../EP-0017-pilot-initiative/ExecutionStatus.md) описывают действующее поведение.

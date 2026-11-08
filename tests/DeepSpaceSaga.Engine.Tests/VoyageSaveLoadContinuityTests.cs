@@ -6,6 +6,34 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class VoyageSaveLoadContinuityTests
 {
+    [Fact]
+    public void V2ActiveVoyageHasExactlyOnceFuelSettlement()
+    {
+        using var continuous = new ClusterVoyageFixture(42, true, 1000000, GenerationInputSchemaTests.V2Config());
+        continuous.Trade(TradeCommandTypes.Buy, continuous.OutboundItem);
+        ClusterVoyageFixture? resumed = null;
+        VoyageStateData? active = null;
+        try
+        {
+            continuous.FlyTo(continuous.Destination, midpoint =>
+            {
+                active = midpoint.Save().GameState.VoyageState!;
+                resumed = midpoint.Reload();
+                ClusterSaveStateTests.SameFacts(midpoint, resumed);
+            });
+            resumed!.FinishFlightTo(resumed.Destination);
+            ClusterSaveStateTests.SameFacts(continuous, resumed);
+            var receipt = resumed.Snapshot.LastVoyageFuelSettlement;
+            string before = ScenarioLoader.Serialize(resumed.Save());
+            Assert.Equal(receipt, resumed.Engine.ReplayVoyageTerminalForTests(active!, true));
+            Assert.Equal(before, ScenarioLoader.Serialize(resumed.Save()));
+            using var reloaded = resumed.Reload();
+            ClusterSaveStateTests.SameFacts(resumed, reloaded);
+            Assert.Single(reloaded.Save().GameState.VoyageFuelSettlements!);
+        }
+        finally { resumed?.Dispose(); }
+    }
+
     private static string Json<T>(T value) => JsonSerializer.Serialize(value);
     private static void SameFinance(ScenarioFile a, ScenarioFile b)
     {

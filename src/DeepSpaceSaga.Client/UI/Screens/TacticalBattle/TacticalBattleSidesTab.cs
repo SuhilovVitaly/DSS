@@ -19,10 +19,13 @@ internal sealed class TacticalBattleSidesTab
     internal static IEnumerable<Card> Cards(TacticalBattleFrame frame)
     {
         var battle = frame.Battle;
-        var units = frame.Presentation == TacticalBattlePresentation.SalvoFlight && !battle.BeforeSalvoUnits.IsDefaultOrEmpty
-            ? battle.BeforeSalvoUnits : battle.Units;
-        return units.OrderBy(u => u.Side == battle.PlayerSide ? 0 : 1).ThenBy(u => u.Kind == TacticalUnitKind.Carrier ? 0 : 1)
-            .Select(u => Describe(u, u.Side == battle.PlayerSide));
+        return battle.Units.OrderBy(u => u.Side == battle.PlayerSide ? 0 : 1).ThenBy(u => u.Kind == TacticalUnitKind.Carrier ? 0 : 1)
+            .Select(u =>
+            {
+                var card = Describe(u, u.Side == battle.PlayerSide);
+                return frame.Presentation == TacticalBattlePresentation.Current && !frame.Pending
+                    ? card : card with { Selectable = false };
+            });
     }
 
     internal void Draw(SKCanvas canvas, TacticalBattleFrame frame, SKRect bounds)
@@ -132,6 +135,8 @@ internal sealed class TacticalBattleSidesTab
             _ when unit.Kind == TacticalUnitKind.Carrier => L("Sides.Carrier"),
             _ => BuildDetails(unit)
         };
+        if (unit.Kind == TacticalUnitKind.Drone)
+            details += " · " + F("Initiative", unit.Initiative is { } initiative ? N(initiative) : "—");
         return new(unit, own, health, details, own && unit.Kind == TacticalUnitKind.Drone && unit.State == TacticalUnitState.Air);
     }
 

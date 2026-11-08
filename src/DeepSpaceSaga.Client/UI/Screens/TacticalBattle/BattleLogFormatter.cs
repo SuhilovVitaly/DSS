@@ -16,6 +16,7 @@ public static class BattleLogFormatter
             TacticalBattleLogKind.RoleChanged => F("Log.Role", actor, entry.RoleName ?? entry.RoleId ?? ""),
             TacticalBattleLogKind.FighterBreak => F("Log.FighterBreak", actor),
             TacticalBattleLogKind.NoTargets => L("Log.NoTargets"),
+            TacticalBattleLogKind.FireSkipped => F("Log.FireSkipped", actor, SkipText(entry.SkipReason)),
             TacticalBattleLogKind.ShotMissed => F("Log.ShotMiss", actor, target, chance),
             TacticalBattleLogKind.ShotHit or TacticalBattleLogKind.RearKill => F("Log.ShotHit", actor, target,
                 L(entry.Shot?.Rear == true || entry.Kind == TacticalBattleLogKind.RearKill ? "Log.HitRear" : "Log.HitHull"),
@@ -42,6 +43,18 @@ public static class BattleLogFormatter
         string phase = L(entry.Phase == TacticalBattlePhase.Fire ? "Log.FirePhase" : "Phase." + entry.Phase);
         return F("Log.Line", BattleFormat.Number(entry.Turn), phase, body);
     }
+
+    private static string SkipText(TacticalFireSkipReason? reason) => reason switch
+    {
+        TacticalFireSkipReason.NoTarget => L("Skip.NoTarget"),
+        TacticalFireSkipReason.Withheld => L("Skip.Withheld"),
+        TacticalFireSkipReason.ShooterDestroyed => L("Skip.ShooterDestroyed"),
+        TacticalFireSkipReason.ShooterDisabled => L("Skip.ShooterDisabled"),
+        TacticalFireSkipReason.WeaponJammed => L("Skip.WeaponJammed"),
+        TacticalFireSkipReason.TargetUnavailable => L("Skip.TargetUnavailable"),
+        TacticalFireSkipReason.BattleEnded => L("Skip.BattleEnded"),
+        _ => L("Log.Unknown")
+    };
 
     private static string L(string key) => BattleFormat.Localize(key);
     private static string F(string key, params object[] args) => BattleFormat.Text(string.Format(CultureInfo.InvariantCulture, L(key), args));

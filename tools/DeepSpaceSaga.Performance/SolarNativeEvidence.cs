@@ -12,6 +12,8 @@ using DeepSpaceSaga.Motion;
 
 internal static class SolarNativeEvidence
 {
+    internal static int RunV2(string[] args) => V2NativeMapAcceptance.Run(args);
+
     internal static int Run(string[] args)
     {
         if (args.Length < 7) throw new ArgumentException("Usage: <root> <output.json> --solar-window min|max system|belt|selected|cluster 1|1.2|1.5 1280x720|1920x1080");
@@ -24,6 +26,20 @@ internal static class SolarNativeEvidence
         string settings = Path.Combine(client, "Settings.json");
         var registry = EngineContentLoader.LoadRegistryFromSettingsFile(settings, out _, out _);
         var config = EngineContentLoader.LoadSolarSystemGenerationConfig(settings)!;
+        config = config with
+        {
+            GeneratorVersion = 1,
+            BeltWidthFraction = .08,
+            Clusters = config.Clusters is null ? null : config.Clusters with
+            {
+                NeighbourMinDays = .5,
+                NeighbourMaxDays = 2,
+                DiameterMinDays = 3,
+                DiameterMaxDays = 7,
+                InterclusterMinDays = 15,
+                InterclusterMaxDays = 35
+            }
+        };
         bool clusters = args.Contains("--clusters");
         bool allMapLayers = args.Contains("--all-map-layers");
         if (allMapLayers && !clusters) throw new ArgumentException("--all-map-layers requires --clusters.");

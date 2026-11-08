@@ -14,6 +14,32 @@ public sealed class SessionTests
     private static readonly Lazy<TacticalBattleCatalog> Catalog = new(AssemblyTests.Catalog);
 
     [Fact]
+    public void FrozenQueueSurvivesNextTurnButClearsOnNextMove()
+    {
+        using var engine = CloseFireEngine();
+        var before = engine.GetTacticalBattleState()!;
+        Assert.Equal(new[] { "Вера", "Таг-1" }, before.FireQueue.Select(q => q.ShooterId));
+        Assert.Empty(before.FireSteps);
+        var request = new FireTacticalBattleRequest("timeline", before.BattleId, before.Revision);
+        var response = engine.FireTacticalBattle(request);
+        var state = response.State!;
+        Assert.Equal(TacticalBattlePhase.Move, state.Phase);
+        Assert.Equal(before.FireQueue.AsEnumerable(), state.FireQueue);
+        Assert.Equal(state.FireQueue.Length, state.FireSteps.Length);
+        string frozen = JsonSerializer.Serialize(state.FireSteps);
+        var battle = engine.TacticalBattleSessionForTests!.Battle;
+        var random = (battle.Random.State, battle.InitiativeRandom.State);
+        Assert.Same(response, engine.FireTacticalBattle(request));
+        Assert.Equal(random, (battle.Random.State, battle.InitiativeRandom.State));
+        foreach (var drone in battle.Drones.Where(d => d.IsActive)) drone.Pose = new(0, 0, drone.Side == "A" ? 0 : 180);
+        var next = engine.MoveTacticalBattle(new("next", state.BattleId, state.Revision,
+            [new("Вера", 0, 0)])).State!;
+        if (!next.FireSkipped) Assert.Empty(next.FireSteps);
+        else Assert.All(next.FireSteps.SelectMany(s => s.Events), e => Assert.Equal(state.Turn, e.Turn));
+        Assert.Equal(frozen, JsonSerializer.Serialize(state.FireSteps));
+    }
+
+    [Fact]
     public void OptionsAndSnapshotsAreCompleteImmutableAndQueriesConsumeNoRandom()
     {
         using var engine = Engine();
@@ -316,7 +342,7 @@ public sealed class SessionTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void CompleteSeedOneThroughEngineApiMatchesIndependentSummary(bool explicitSuggestions)
+    public void CompleteSeedOneThroughEngineApiMatchesNewDirectRules(bool explicitSuggestions)
     {
         using var engine = Engine();
         var frame = engine.StartTacticalBattle(new("s", 1)).State!;
@@ -331,15 +357,10 @@ public sealed class SessionTests
             Assert.True(response.Accepted, response.Code.ToString());
             frame = response.State!;
         }
-        using var source = ReferenceFixtureTests.Open("battles");
-        var expected = source.RootElement.GetProperty("data")[0];
-        Assert.Equal(TacticalBattleOutcomeCode.A, frame.Outcome!.Kind);
-        Assert.Equal(expected.GetProperty("turns").GetInt32(), frame.Outcome.Turns);
-        Assert.Equal(expected.GetProperty("shots").GetInt64(), frame.Outcome.Statistics.Shots);
-        Assert.Equal(expected.GetProperty("hits").GetInt64(), frame.Outcome.Statistics.Hits);
-        Assert.Equal(expected.GetProperty("totalCalls").GetInt64(), frame.Outcome.RandomCalls);
-        Assert.Equal(expected.GetProperty("carrierHull")[1].GetInt32(), frame.Units.First(u => u.Id == "Логово").Hull);
-        Assert.Equal(new[] { 0, 6 }, frame.Outcome.Losses.Select(l => l.Count));
+        var direct = DeepSpaceSaga.Engine.TacticalBattle.TacticalBattle.Create(Catalog.Value, "initial", 1);
+        direct.Run(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
+        Assert.Equal(JsonSerializer.Serialize(TacticalBattleSnapshotBuilder.Outcome(direct.Result)), JsonSerializer.Serialize(frame.Outcome));
+        Assert.Equal(JsonSerializer.Serialize(TacticalBattleSnapshotBuilder.Units(direct)), JsonSerializer.Serialize(frame.Units));
         Assert.Empty(frame.Suggestions);
         Assert.Empty(frame.Targets);
         Assert.Empty(frame.Incoming);
@@ -366,12 +387,14 @@ public sealed class SessionTests
     {
         string before = JsonSerializer.Serialize(engine.GetTacticalBattleState());
         long calls = Calls(engine);
+        uint initiativeState = engine.TacticalBattleSessionForTests!.Battle.InitiativeRandom.State;
         var result = action();
         Assert.False(result.Accepted);
         Assert.Equal(code, result.Code);
         Assert.Empty(result.NewEvents);
         Assert.Equal(before, JsonSerializer.Serialize(engine.GetTacticalBattleState()));
         Assert.Equal(calls, Calls(engine));
+        Assert.Equal(initiativeState, engine.TacticalBattleSessionForTests!.Battle.InitiativeRandom.State);
     }
     private static long Calls(SimulationEngine engine) => engine.TacticalBattleSessionForTests!.Battle.Random.Calls;
     private static SimulationEngine Engine(TacticalBattleCatalog? catalog = null)

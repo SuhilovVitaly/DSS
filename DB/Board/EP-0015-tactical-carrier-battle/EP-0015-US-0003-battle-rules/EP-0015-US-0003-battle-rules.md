@@ -52,3 +52,7 @@ Draft; human approval отсутствует. Решения и сообщени
 ## Execution result
 
 Four rules tickets complete. Targeted source slices and 6443 fresh regression cases PASS; detailed evidence is in ticket execution sections. AI/full-battle parity and real session/UI integration remain the dependent US-0004/0005 work; no playable-screen acceptance is claimed.
+
+## Supersession — 2026-11-07
+
+Инициативная последовательная стрельба EP-0017 заменяет прежний одновременный залп и допуск всего урона в конце анимации. Исходные критерии и результаты ниже сохранены как история. Текущий [контракт](../../../Documentation/04-Engineering/TacticalBattle.md) и [исполнение EP-0017](../../EP-0017-pilot-initiative/ExecutionStatus.md) описывают действующее поведение.

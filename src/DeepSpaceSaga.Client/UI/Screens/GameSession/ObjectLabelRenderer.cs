@@ -38,6 +38,8 @@ internal sealed class ObjectLabelRenderer
     private readonly Dictionary<string, LabelMetrics> _labels = new(StringComparer.Ordinal);
     private readonly List<string> _staleLabels = new();
     private readonly List<SKRect> _occupiedPlaques = new();
+    private readonly List<SKRect> _markerObstacles = new();
+    private readonly List<SKRect> _labelObstacles = new();
     private readonly record struct LabelMetrics(string? RenderType, string? Name, string Text, float Width, float MaximumWidth);
 
     public ObjectLabelRenderer()
@@ -109,12 +111,15 @@ internal sealed class ObjectLabelRenderer
         IReadOnlySet<string>? clusteredIds = null,
         SKRect? availableMap = null,
         string? selectedObjectId = null,
-        string? hoveredObjectId = null)
+        string? hoveredObjectId = null,
+        MapDetailLevel detail = MapDetailLevel.Local,
+        IReadOnlyList<SKRect>? summaryLabels = null)
     {
         _geometries.Clear();
         _activeIds.Clear();
         _opacity.Clear();
         _occupiedPlaques.Clear();
+        _markerObstacles.Clear();
 
         if (viewportW <= 0 || viewportH <= 0) return;
 
@@ -122,9 +127,21 @@ internal sealed class ObjectLabelRenderer
             _smoother.ResetAll();
 
         var viewport = new SKSize(viewportW, viewportH);
+        if (mapSettings is not null)
+            foreach (var state in renderStates)
+            {
+                if (clusteredIds?.Contains(state.Pose.ObjectId) == true) continue;
+                var (x, y) = camera.WorldToScreen(state.Pose.X, state.Pose.Y, viewportW, viewportH);
+                if (x < -14 || y < -14 || x > viewportW + 14 || y > viewportH + 14) continue;
+                // Keep plaques outside marker hit regions so a visible station label
+                // cannot accidentally select a different contact underneath it.
+                _markerObstacles.Add(new SKRect(x - 14, y - 14, x + 14, y + 14));
+            }
 
         // Reserve space for the player and explicit targets before secondary labels.
-        for (int pass = 0; pass < 2; pass++)
+        for (int pass = 0; pass < 4; pass++)
+        {
+            if (pass == 1 && summaryLabels is not null) _occupiedPlaques.AddRange(summaryLabels);
             for (int i = 0; i < renderStates.Count; i++)
             {
                 var state = renderStates[i];
@@ -132,13 +149,18 @@ internal sealed class ObjectLabelRenderer
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
                 bool focused = objectId == selectedObjectId || objectId == hoveredObjectId;
-                bool important = focused || state.IsPlayerShip || HasSelectableShipLabel(state.Source) || isImportant?.Invoke(objectId) == true ||
+                bool required = focused || state.IsPlayerShip || isImportant?.Invoke(objectId) == true;
+                bool important = required || HasSelectableShipLabel(state.Source) ||
                     predicted is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy };
-                if (important != (pass == 0)) continue;
-                if (mapSettings is not null && !important && _occupiedPlaques.Count >= mapSettings.MaximumLabels) continue;
-                if (mapSettings is not null && !important && camera.PixelsPerWorldUnit < mapSettings.LabelDetailPpu * .5) continue;
-                _opacity[objectId] = mapSettings is null || important ? (byte)255 :
+                bool semantic = predicted.RenderObjectType is SpaceObjectType.Station or SpaceObjectType.Planet or SpaceObjectType.Sun;
+                int priority = required ? 0 : semantic ? 1 : important ? 2 : 3;
+                if (priority != pass) continue;
+                if (mapSettings is not null && !important && _geometries.Count >= mapSettings.MaximumLabels) continue;
+                bool detailedSemantic = semantic && detail != MapDetailLevel.Local;
+                if (mapSettings is not null && !important && !detailedSemantic && camera.PixelsPerWorldUnit < mapSettings.LabelDetailPpu * .5) continue;
+                _opacity[objectId] = mapSettings is null || important || detailedSemantic ? (byte)255 :
                     (byte)(255 * Math.Clamp((camera.PixelsPerWorldUnit / mapSettings.LabelDetailPpu - .5) * 2, 0, 1));
+                if (_opacity[objectId] == 0) continue;
 
                 var (objSx, objSy) = camera.WorldToScreen(predicted.X, predicted.Y, viewportW, viewportH);
 
@@ -156,6 +178,8 @@ internal sealed class ObjectLabelRenderer
 
                 bool isUnknown = predicted.RenderObjectType == SpaceObjectType.UnknownSpaceObject;
                 float maximumWidth = ObjectLabelLayout.MaximumTextWidth(viewportW);
+                if (availableMap is { Width: > 32 } area)
+                    maximumWidth = Math.Min(maximumWidth, ObjectLabelLayout.MaximumTextWidth(area.Width));
                 if (!_labels.TryGetValue(objectId, out var label) ||
                     label.RenderType != predicted.RenderObjectType || label.Name != predicted.DisplayName ||
                     label.MaximumWidth != maximumWidth)
@@ -191,7 +215,19 @@ internal sealed class ObjectLabelRenderer
                     visiblePlaque = new SKRect(x, y, x + visiblePlaque.Width, y + visiblePlaque.Height);
                 }
 
-                if (mapSettings is not null && !important && OverlapsExistingPlaque(visiblePlaque)) continue;
+                if (mapSettings is not null)
+                {
+                    var labelArea = availableMap is { Width: > 32, Height: > 24 } freeArea ? freeArea : SKRect.Create(viewportW, viewportH);
+                    IReadOnlyList<SKRect> obstacles = _occupiedPlaques;
+                    if (!state.IsPlayerShip && !HasSelectableShipLabel(state.Source))
+                    {
+                        _labelObstacles.Clear(); _labelObstacles.AddRange(_occupiedPlaques); _labelObstacles.AddRange(_markerObstacles);
+                        obstacles = _labelObstacles;
+                    }
+                    bool placed = ObjectLabelLayout.TryPlace(visiblePlaque, obstacles, labelArea, out var candidate);
+                    if (!placed && !important) continue;
+                    visiblePlaque = candidate;
+                }
                 _occupiedPlaques.Add(visiblePlaque);
 
                 // Leader endpoint — always bottom-left corner of the visible plaque.
@@ -212,6 +248,7 @@ internal sealed class ObjectLabelRenderer
                     targetGeom.PlaqueCenter);
             }
 
+        }
         _smoother.RemoveStaleExcept(_activeIds);
         _staleLabels.Clear();
         foreach (string id in _labels.Keys)

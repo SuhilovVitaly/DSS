@@ -56,7 +56,8 @@ public sealed record ClusterGenerationConfig(
     [property: JsonPropertyName("diameterMinDays")] double DiameterMinDays,
     [property: JsonPropertyName("diameterMaxDays")] double DiameterMaxDays,
     [property: JsonPropertyName("interclusterMinDays")] double InterclusterMinDays,
-    [property: JsonPropertyName("interclusterMaxDays")] double InterclusterMaxDays);
+    [property: JsonPropertyName("interclusterMaxDays")] double InterclusterMaxDays,
+    [property: JsonPropertyName("minimumStationDays")] double MinimumStationDays = 1);
 
 public static class SolarSystemGeneration
 {
@@ -67,7 +68,7 @@ public static class SolarSystemGeneration
 
     public static SolarSystemGenerationConfig ValidateConfig(SolarSystemGenerationConfig c)
     {
-        if (c.SchemaVersion != 1 || c.GeneratorVersion != 1)
+        if (c.SchemaVersion != 1 || c.GeneratorVersion is not (1 or 2))
             throw new ContentException("solarSystem: unsupported schemaVersion/generatorVersion.");
         if (c.MaxPlacementAttempts is <= 0 or > MaximumPlacementAttempts || c.MinPlanets < 3 || c.MaxPlanets > 7 || c.MaxPlanets < c.MinPlanets ||
             c.MinBelts < 2 || c.MaxBelts > 5 || c.MaxBelts < c.MinBelts ||
@@ -83,6 +84,11 @@ public static class SolarSystemGeneration
             c.EnabledScenarios.Distinct(StringComparer.OrdinalIgnoreCase).Count() != c.EnabledScenarios.Count)
             throw new ContentException("solarSystem: invalid generation ranges, dimensions or enabledScenarios.");
         if (c.Clusters is { } clusters) StationClusterGenerator.ValidateConfig(clusters);
+        if (c.GeneratorVersion == 2 && (c.Clusters is not { } geography ||
+            !double.IsFinite(geography.MinimumStationDays) || geography.MinimumStationDays < 1 ||
+            geography.NeighbourMinDays < geography.MinimumStationDays ||
+            geography.NeighbourMaxDays < geography.NeighbourMinDays))
+            throw new ContentException("solarSystem/v2: clusters require finite minimumStationDays >= 1 and consistent neighbour bounds.");
         if (c.Ai is { } ai) AiBaseGenerator.ValidateConfig(ai);
         if (c.Environment is { } environment) EnvironmentFieldGenerator.ValidateConfig(environment);
         if (c.PoiTemplates is { } templates) PointOfInterestGenerator.ValidateConfig(templates);
@@ -107,8 +113,11 @@ public static class SolarSystemGeneration
                 throw new ScenarioException($"{obj.ObjectId}: invalid worldOffset.");
             if (obj.Orbit is { } orbit) ValidateOrbit(orbit, $"{obj.ObjectId}.orbit");
         }
+        if (state.ClusterMap is { } clusters && (state.SolarSystem is null ||
+            clusters.RulesVersion is not (1 or 2) || clusters.RulesVersion != state.SolarSystem.GeneratorVersion))
+            throw new ScenarioException("solarSystem: incoherent solar/cluster versions.");
         if (state.SolarSystem is not { } map) return;
-        if (map.GeneratorVersion != 1 || !double.IsFinite(map.SystemRadius) || map.SystemRadius <= 0 ||
+        if (map.GeneratorVersion is not (1 or 2) || !double.IsFinite(map.SystemRadius) || map.SystemRadius <= 0 ||
             map.Belts.IsDefault || map.Planets.IsDefault || map.Orbits.IsDefault ||
             state.MasterSeed != map.Seed)
             throw new ScenarioException("solarSystem: invalid version, seed, radius or arrays.");

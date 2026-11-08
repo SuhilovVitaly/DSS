@@ -255,6 +255,38 @@ internal static class StationResourceFields
     internal static GameStateData ExtendForClusters(GameStateData materialized, ulong masterSeed, StationResourceFieldConfig config, GameDataRegistry registry)
         => GenerateCore(materialized, masterSeed, config, registry, true);
 
+    /// <summary>Preserve every declared local resource vector and payload; consume no random draws.</summary>
+    internal static GameStateData RelocateDeclared(GameStateData original, GameStateData candidate)
+    {
+        if (original.StationResourceFields is not { } fields) return candidate;
+        var before = original.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
+        var objects = candidate.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
+        var resourceIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var manifest in fields.Asteroids)
+        {
+            Saved(resourceIds.Add(manifest.ObjectId) && before.ContainsKey(manifest.ObjectId) &&
+                before.ContainsKey(manifest.StationObjectId) && objects.ContainsKey(manifest.ObjectId) && objects.ContainsKey(manifest.StationObjectId),
+                "Declared resource/owner identity is missing or duplicated.");
+            var source = before[manifest.ObjectId]; var oldOwner = before[manifest.StationObjectId];
+            var owner = objects[manifest.StationObjectId];
+            double x = owner.PositionX + source.PositionX - oldOwner.PositionX;
+            double y = owner.PositionY + source.PositionY - oldOwner.PositionY;
+            Saved(double.IsFinite(x) && double.IsFinite(y), "Declared resource relocation exceeds finite coordinates.");
+            objects[manifest.ObjectId] = source with
+            {
+                PositionX = x, PositionY = y, SpeedMps = 0, DirectionDegrees = 0,
+                MovementType = "Stationary", Orbit = null, WorldOffsetX = 0, WorldOffsetY = 0
+            };
+        }
+        return candidate with
+        {
+            SpaceObjects = objects.Values.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray(),
+            StationResourceFields = fields,
+            SolarSystem = candidate.SolarSystem! with
+            { Orbits = candidate.SolarSystem.Orbits.Where(o => !resourceIds.Contains(o.ObjectId)).ToImmutableArray() }
+        };
+    }
+
     private static GameStateData GenerateCore(GameStateData materialized, ulong masterSeed, StationResourceFieldConfig config, GameDataRegistry registry, bool append)
     {
         config = ValidateConfig(config, registry);
@@ -330,6 +362,9 @@ internal static class StationResourceFields
         double stationClearanceKm = Math.Max(rules.StationClearanceKm, world.TradingMap?.Rules.ClearanceKm ?? 0);
         if (world.SpaceObjects.Where(o => o.ObjectType == "Station").Any(o => Distance(x, y, o) < stationClearanceKm)) return false;
         if (asteroids.Any(o => Distance(x, y, o) < rules.AsteroidSpacingKm)) return false;
+        // V2 fields preserve station-local vectors on rigid orbits. Legacy template edges
+        // do not reserve static physical roads through that materialized environment.
+        if (world.SolarSystem?.GeneratorVersion == 2) return true;
         foreach (var edge in world.TradingMap?.Edges ?? [])
         {
             var a = world.SpaceObjects.Single(o => o.ObjectId == edge.FromStationObjectId);

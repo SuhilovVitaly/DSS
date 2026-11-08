@@ -6,6 +6,31 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class OrbitalDockingDepartureTests
 {
+    [Fact]
+    public void V2DockAndDepartureAreContinuous()
+    {
+        using var engine = StationGeographyBootstrapTests.Create(config: GenerationInputSchemaTests.V2Config());
+        long time = ApproachAndSynchronize(engine);
+        var docked = Dock(engine, time);
+        Assert.Equal(Target(docked).X + 1, Player(docked).X, 6);
+        Assert.Equal(Target(docked).Y + 1, Player(docked).Y, 6);
+        time += 50000;
+        var before = At(engine, time);
+        var command = new PlayerCommand("v2-undock", 3, Ship, "MOD-PLAYER-BRIDGE-01", NavigationComputerCommandTypes.Undock,
+            TargetObjectId: before.Voyage!.RouteOptions.First(o => o.IsAvailable).DestinationStationObjectId);
+        engine.ReceiveCommand(command);
+        var released = At(engine, time);
+        Assert.False(Player(released).IsDocked); Assert.Null(Player(released).Orbit);
+        Assert.Equal(Player(before).X, Player(released).X); Assert.Equal(Player(before).Y, Player(released).Y);
+        Assert.Equal(Player(before).SpeedKmS, Player(released).SpeedKmS); Assert.Equal(Player(before).Direction, Player(released).Direction);
+        long fuel = engine.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Ship).Modules!.Sum(m => m.FuelAmountKg ?? 0);
+        engine.ReceiveCommand(command); At(engine, time);
+        Assert.Equal(fuel, engine.CaptureSaveState().GameState.SpaceObjects.Single(o => o.ObjectId == Ship).Modules!.Sum(m => m.FuelAmountKg ?? 0));
+        var next = Player(At(engine, time + 1000)); var pose = Player(released);
+        Assert.Equal(pose.X + Math.Sin(pose.Direction * Math.PI / 180) * pose.SpeedKmS * 10, next.X, 6);
+        Assert.Equal(pose.Y - Math.Cos(pose.Direction * Math.PI / 180) * pose.SpeedKmS * 10, next.Y, 6);
+    }
+
     internal static long ApproachAndSynchronize(SimulationEngine engine)
     {
         Send(engine, NavigationComputerCommandTypes.Approach, "approach");

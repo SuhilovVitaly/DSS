@@ -8,23 +8,122 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class ClusterCorrectnessCorpusTests
 {
+    internal static (double Minimum, double NearestMinimum, double NearestMaximum, double LaneMinimum) VerifyV2Geography(ScenarioFile world)
+    {
+        var state = world.GameState; var map = state.ClusterMap!;
+        Assert.Equal(2, map.RulesVersion);
+        var rules = map.Geography!; Assert.Equal(1, rules.MinimumStationDays);
+        double units = rules.ReferenceSpeedKmS * 86400 / 300 * 10;
+        Assert.True(double.IsFinite(units) && units > 0);
+        var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId);
+        var lanes = map.Clusters.Select(cluster =>
+        {
+            var first = objects[cluster.StationIds[0]].Orbit!;
+            foreach (string id in cluster.StationIds)
+            {
+                var orbit = objects[id].Orbit!;
+                Assert.Equal(first.SemiMajorAxis, orbit.SemiMajorAxis, 6);
+                Assert.Equal(first.SemiMinorAxis, orbit.SemiMinorAxis, 6);
+                Assert.Equal(first.SemiMajorAxis, orbit.SemiMinorAxis, 6);
+                Assert.Equal(first.OrbitalPeriodMs, orbit.OrbitalPeriodMs);
+                Assert.Equal(first.EpochSimulationTimeMs, orbit.EpochSimulationTimeMs);
+                Assert.Equal(first.OrbitDirection, orbit.OrbitDirection);
+            }
+            var all = cluster.StationIds.Concat(map.ResourceBindings.Where(b => b.ClusterId == cluster.Id).Select(b => b.FieldId)).ToArray();
+            double min = all.Min(id => objects[id].Orbit!.SemiMinorAxis), max = all.Max(id => objects[id].Orbit!.SemiMajorAxis);
+            var belt = state.SolarSystem!.Belts.Single(b => b.Id == cluster.BeltId);
+            Assert.InRange(min, belt.InnerRadius - 1e-6, belt.OuterRadius + 1e-6);
+            Assert.InRange(max, belt.InnerRadius - 1e-6, belt.OuterRadius + 1e-6);
+            return (Radius: first.SemiMajorAxis, Minimum: min, Maximum: max);
+        }).OrderBy(l => l.Radius).ToArray();
+        double laneMinimum = double.PositiveInfinity;
+        for (int i = 1; i < lanes.Length; i++)
+        {
+            // |r2-r1| is a lower bound at every relative phase, not a sampled claim.
+            double gap = (lanes[i].Radius - lanes[i - 1].Radius) / units;
+            Assert.True(gap >= 1 - 1e-9);
+            Assert.True(lanes[i].Minimum > lanes[i - 1].Maximum);
+            laneMinimum = Math.Min(laneMinimum, gap);
+        }
+        double minimum = double.PositiveInfinity, nearestMinimum = double.PositiveInfinity, nearestMaximum = 0;
+        foreach (long time in new[] { 0L, 288000, 30 * 288000L, 365 * 288000L })
+        {
+            var poses = objects.ToDictionary(p => p.Key, p => FullMapCorrectnessCorpusTests.Position(p.Value, time));
+            double Distance(string a, string b) => double.Hypot(poses[a].X - poses[b].X, poses[a].Y - poses[b].Y) / units;
+            for (int i = 0; i < map.Stations.Length; i++)
+                for (int j = i + 1; j < map.Stations.Length; j++)
+                {
+                    double distance = Distance(map.Stations[i].ObjectId, map.Stations[j].ObjectId);
+                    Assert.True(distance >= 1 - 1e-8, $"pair={map.Stations[i].ObjectId}/{map.Stations[j].ObjectId};motion={time};days={distance:R}");
+                    minimum = Math.Min(minimum, distance);
+                }
+            foreach (var cluster in map.Clusters)
+            {
+                double diameter = 0;
+                foreach (string id in cluster.StationIds)
+                {
+                    var distances = cluster.StationIds.Where(other => other != id).Select(other => Distance(id, other)).ToArray();
+                    double nearest = distances.Min();
+                    Assert.InRange(nearest, 1 - 1e-8, 3 + 1e-8);
+                    nearestMinimum = Math.Min(nearestMinimum, nearest); nearestMaximum = Math.Max(nearestMaximum, nearest);
+                    diameter = Math.Max(diameter, distances.Max());
+                }
+                Assert.InRange(diameter, 10 - 1e-8, 16 + 1e-8);
+            }
+            foreach (var binding in map.ResourceBindings)
+            {
+                double km = double.Hypot(poses[binding.FieldId].X - poses[binding.AnchorStationId].X,
+                    poses[binding.FieldId].Y - poses[binding.AnchorStationId].Y) / 10;
+                Assert.InRange(km, 2.5 - 1e-6, 4.5 + 1e-6);
+            }
+        }
+        return (minimum, nearestMinimum, nearestMaximum, laneMinimum);
+    }
+
+    [Theory]
+    [MemberData(nameof(SystemCorrectnessCorpusTests.V2Ranges), MemberType = typeof(SystemCorrectnessCorpusTests))]
+    public void V2EveryPairAndNeighbourIndependentOracle(string scenario, string range, int seedStart)
+    {
+        Assert.Equal($"{seedStart:000}-{seedStart + 19:000}", range);
+        for (ulong seed = (ulong)seedStart; seed < (ulong)seedStart + 20; seed++)
+        {
+            var config = SystemCorrectnessCorpusTests.V2BoundaryConfig(seed); ScenarioFile? world = null;
+            try
+            {
+                using var engine = SystemCorrectnessCorpusTests.V2Create(scenario, seed, config);
+                world = engine.CaptureSaveState(); VerifyV2Geography(world);
+                var map = world.GameState.ClusterMap!;
+                foreach (var member in map.Stations)
+                {
+                    Assert.True(map.Links.Count(l => l.FromStationId == member.ObjectId) >= 2);
+                    var seen = new HashSet<string> { member.ObjectId }; var queue = new Queue<string>(); queue.Enqueue(member.ObjectId);
+                    while (queue.TryDequeue(out var id))
+                        foreach (var link in map.Links.Where(l => l.FromStationId == id)) if (seen.Add(link.ToStationId)) queue.Enqueue(link.ToStationId);
+                    Assert.Equal(map.Stations.Length, seen.Count);
+                }
+            }
+            catch (Exception error) { SystemCorrectnessCorpusTests.CorpusFailure(error, scenario, seed, config, "cluster-oracle", world); }
+        }
+    }
+
     public static IEnumerable<object[]> Cases()
     {
         foreach (string scenario in new[] { "Default", "Default_500", "Docked", "Undocked", "MarketProfiles", "PlayerShipOnly" })
             foreach (int clusters in new[] { 3, 5 }) foreach (int stations in new[] { 10, 12 }) foreach (int belts in new[] { 2, 5 })
-                yield return [scenario, clusters, stations, belts];
+                foreach (int start in new[] { 1, 21, 41, 61, 81 }) yield return [scenario, clusters, stations, belts, $"{start:000}-{start + 19:000}", start];
     }
 
     [Theory]
     [MemberData(nameof(Cases))]
-    public void HundredSeedClusterBoundaryMatrix(string scenario, int clusters, int stations, int belts)
+    public void HundredSeedClusterBoundaryMatrix(string scenario, int clusters, int stations, int belts, string range, int seedStart)
     {
+        Assert.Equal($"{seedStart:000}-{seedStart + 19:000}", range);
         var registry = SeededWorldBootstrapTests.Registry();
         var source = SeededWorldBootstrapTests.Scenario(scenario);
-        var config = EngineContentLoader.LoadSolarSystemGenerationConfig(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Settings.json"))!;
+        var config = SystemCorrectnessCorpusTests.LegacyConfig();
         config = config with { MinBelts = belts, MaxBelts = belts, Clusters = config.Clusters! with { MinClusters = clusters, MaxClusters = clusters, MinStations = stations, MaxStations = stations } };
         var fields = JsonSerializer.Deserialize<StationResourceFieldConfig>(File.ReadAllText(Path.Combine(SeededWorldBootstrapTests.ClientRoot, "Data/World/station-resource-fields.json")))!;
-        for (ulong seed = 1; seed <= 100; seed++)
+        for (ulong seed = (ulong)seedStart; seed < (ulong)seedStart + 20; seed++)
         {
             try
             {
@@ -63,7 +162,7 @@ public sealed class ClusterCorrectnessCorpusTests
                 GeneratedWorldPersistenceTests.EqualWorld(expected,
                     loaded.CaptureSnapshotForTests(15000 * 300, SimulationSpeed.Speed0, 15000));
             }
-            catch (Exception e) { throw new Xunit.Sdk.XunitException($"seed={seed};scenario={scenario};clusters={clusters};stations={stations};belts={belts};config={JsonSerializer.Serialize(config)}: {e}"); }
+            catch (Exception e) { SystemCorrectnessCorpusTests.CorpusFailure(e, scenario, seed, config, "legacy-cluster"); }
         }
     }
 

@@ -8,7 +8,7 @@ using Xunit;
 namespace DeepSpaceSaga.Client.Tests;
 
 /// <summary>
-/// UI scale (100% / 120% / 150%) must only resize the GameSession overlay panels —
+/// UI scale (80% / 100% / 120% / 150% / 200%) must only resize the GameSession overlay panels —
 /// never the tactical map, camera, or map hit-testing. See DB/Documentation/00-Process/CLAUDE.md and the "UI
 /// scale only in the main game session window" requirements.
 /// </summary>
@@ -47,6 +47,7 @@ public class GameSessionUiScaleTests
     [InlineData(1.0f)]
     [InlineData(1.2f)]
     [InlineData(1.5f)]
+    [InlineData(2.0f)]
     public void Allowed_uiScale_values_are_accepted(float scale)
     {
         var (_, screen) = CreateScreen(scale);
@@ -57,7 +58,7 @@ public class GameSessionUiScaleTests
     [InlineData(0.7f)]
     [InlineData(0f)]
     [InlineData(-1f)]
-    [InlineData(2.0f)]
+    [InlineData(2.5f)]
     public void Invalid_uiScale_falls_back_to_100_percent(float invalidScale)
     {
         var (_, screen) = CreateScreen(invalidScale);
@@ -130,17 +131,19 @@ public class GameSessionUiScaleTests
 
     // ── Hit-testing follows the visual (scaled) position ─────────
 
-    [Fact]
-    public void Speed_button_hit_test_uses_scaled_raw_coordinates()
+    [Theory]
+    [InlineData(1.5f)]
+    [InlineData(2.0f)]
+    public void Speed_button_hit_test_uses_scaled_raw_coordinates(float scale)
     {
-        var (buffer, screen) = CreateScreen(1.5f);
+        var (buffer, screen) = CreateScreen(scale);
         Render(screen);
 
         // Logical (unscaled) button center — the button actually renders at
         // logicalCenter * uiScale in raw window pixels.
         var logicalRect = screen.SpeedButtonRects[2]; // "5x"
-        float rawX = logicalRect.MidX * 1.5f;
-        float rawY = logicalRect.MidY * 1.5f;
+        float rawX = logicalRect.MidX * scale;
+        float rawY = logicalRect.MidY * scale;
 
         screen.OnMouseDown(rawX, rawY);
 

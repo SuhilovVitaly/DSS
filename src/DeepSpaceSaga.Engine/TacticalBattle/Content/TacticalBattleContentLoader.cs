@@ -47,11 +47,13 @@ internal static class TacticalBattleContentLoader
             string field = "$." + p.Name;
             Require(!string.IsNullOrWhiteSpace(p.Name), "pilots.json", field, "Pilot ID must not be empty.");
             Require(p.Value.ValueKind == JsonValueKind.Object, "pilots.json", field, "Expected pilot object.");
-            Require(p.Value.EnumerateObject().All(v => v.Name is "name" or "accuracy" or "maneuver"), "pilots.json", field, "Unknown pilot field.");
+            Require(p.Value.EnumerateObject().All(v => v.Name is "name" or "accuracy" or "maneuver" or "initiative"), "pilots.json", field, "Unknown pilot field.");
             string name = Property(p.Value, "name", "pilots.json", field).ValueKind == JsonValueKind.String
                 ? p.Value.GetProperty("name").GetString()! : throw Error("pilots.json", field + ".name", "Expected name.");
+            var initiative = Skill(Property(p.Value, "initiative", "pilots.json", field), field + ".initiative");
+            Require(initiative.Minimum >= 0 && initiative.Maximum <= 100, "pilots.json", field + ".initiative", "Initiative must be in [0,100].");
             return (p.Name, new BattlePilot(name, Skill(Property(p.Value, "accuracy", "pilots.json", field), field + ".accuracy"),
-                Skill(Property(p.Value, "maneuver", "pilots.json", field), field + ".maneuver")));
+                Skill(Property(p.Value, "maneuver", "pilots.json", field), field + ".maneuver")) { Initiative = initiative });
         }));
         var catalog = new TacticalBattleCatalog(rules, ai, DirectoryCatalog<BattleFrame>("Frames"),
             DirectoryCatalog<BattleWeapon>("Modules/Weapons"), DirectoryCatalog<BattleEngine>("Modules/Engines"),

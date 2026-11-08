@@ -11,6 +11,29 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class ForecastTabTests
 {
     [Fact]
+    public async Task ForecastMarksEveryPlannedShotConditionalAndUsesNoFutureSteps()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        for (int i = 0; i < 30 && screen.Flow.State?.Phase == TacticalBattlePhase.Move; i++)
+            await fixture.Route(ScreenEvent.MoveTacticalBattle);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        string expected = TacticalBattleForecastTab.BuildText(frame);
+        Assert.Contains(BattleFormat.Localize("FireConditional"), expected);
+        Assert.Contains(BattleFormat.Localize("FireQueue"), expected);
+        var future = new TacticalFireStepSnapshot(0, "secret-future", null, TacticalFireSkipReason.BattleEnded, null, [], [], null);
+        Assert.Equal(expected, TacticalBattleForecastTab.BuildText(frame with { Battle = frame.Battle with { FireSteps = [future] } }));
+        int previous = -1;
+        foreach (var entry in frame.Battle.FireQueue)
+        {
+            int index = expected.IndexOf((entry.Index + 1) + ". " + entry.ShooterId, StringComparison.Ordinal);
+            Assert.True(index > previous);
+            previous = index;
+        }
+    }
+
+    [Fact]
     public async Task MovementPredictionUsesSharedChanceIncludesCarrierAndSortsContacts()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

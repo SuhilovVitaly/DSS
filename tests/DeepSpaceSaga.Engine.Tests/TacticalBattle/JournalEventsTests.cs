@@ -34,30 +34,48 @@ public sealed class JournalEventsTests
             Assert.All(fired, e => Assert.Equal(TacticalBattlePhase.Fire, e.Phase));
             shotsSeen += fired.Length;
             var damages = response.NewEvents.Where(e => e.Kind == TacticalBattleLogKind.DamageApplied).ToArray();
-            Assert.Equal(frame.Shots.Where(s => s.Hit).Select(s => s.TargetId).Distinct(), damages.Select(e => e.TargetId!));
-            foreach (var row in damages)
+            Assert.Equal(frame.Shots.Where(s => s.Hit).Select(s => s.TargetId), damages.Select(e => e.TargetId!));
+            Assert.Equal(frame.FireQueue.Length, frame.FireSteps.Length);
+            var previous = frame.BeforeSalvoUnits;
+            foreach (var step in frame.FireSteps)
             {
-                var original = frame.BeforeSalvoUnits.Single(u => u.Id == row.TargetId);
-                var now = frame.Units.Single(u => u.Id == row.TargetId);
-                Assert.Equal(new TacticalLogDamage(original.Hull - now.Hull, original.Armor - now.Armor,
-                    frame.Shots.Count(s => s.TargetId == row.TargetId && s.Hit), now.Hull), row.Damage);
-                Assert.True(row.Sequence > fired[^1].Sequence);
+                Assert.Equal(step.ShooterId, frame.FireQueue[step.Index].ShooterId);
+                Assert.All(step.Events, e => Assert.Equal(step.Index, e.FireStepIndex));
+                if (step.Shot is null)
+                {
+                    var skipped = Assert.Single(step.Events);
+                    Assert.Equal(TacticalBattleLogKind.FireSkipped, skipped.Kind);
+                    Assert.Equal(step.SkipReason, skipped.SkipReason);
+                }
+                else
+                {
+                    Assert.NotNull(step.Events[0].Shot);
+                    Assert.Equal(step.Shot.ShooterId, step.Events[0].ActorId);
+                    foreach (var row in step.Events.Where(e => e.Damage is not null))
+                    {
+                        var original = previous.Single(u => u.Id == row.TargetId);
+                        var now = step.UnitsAfter.Single(u => u.Id == row.TargetId);
+                        Assert.Equal(new TacticalLogDamage(original.Hull - now.Hull, original.Armor - now.Armor, 1, now.Hull), row.Damage);
+                        Assert.True(row.Sequence > step.Events[0].Sequence);
+                    }
+                    foreach (var evt in step.Events.Where(e => e.Unit is not null))
+                    {
+                        var unit = step.UnitsAfter.Single(u => u.Id == evt.TargetId);
+                        Assert.Equal(unit.Kind, evt.Unit!.Kind);
+                        Assert.Equal(unit.MaxHull, evt.Unit.MaxHull);
+                        Assert.Equal(unit.Hull, evt.Unit.Hull);
+                        if (evt.EngineIndex is { } index)
+                        {
+                            Assert.Equal(unit.Engines[index].Name, evt.Unit.EngineName);
+                            Assert.Equal(unit.Engines[index].Factor, evt.Unit.EngineFactor);
+                        }
+                        unitChangesSeen++;
+                    }
+                }
+                previous = step.UnitsAfter;
             }
             damageSeen += damages.Length;
-            foreach (var evt in response.NewEvents.Where(e => e.Unit is not null))
-            {
-                var unit = frame.Units.Single(u => u.Id == evt.TargetId);
-                Assert.Equal(unit.Kind, evt.Unit!.Kind);
-                Assert.Equal(unit.MaxHull, evt.Unit.MaxHull);
-                Assert.Equal(unit.Hull, evt.Unit.Hull);
-                if (evt.EngineIndex is { } index)
-                {
-                    Assert.Equal(unit.Engines[index].Name, evt.Unit.EngineName);
-                    Assert.Equal(unit.Engines[index].Factor, evt.Unit.EngineFactor);
-                }
-                Assert.True(evt.Sequence > damages[^1].Sequence);
-                unitChangesSeen++;
-            }
+            Assert.Equal(response.NewEvents.Where(e => e.FireStepIndex is not null), frame.FireSteps.SelectMany(s => s.Events));
             if (remembered.Count == 0) remembered.AddRange(fired);
         }
         Assert.Equal(TacticalBattlePhase.Over, frame.Phase);

@@ -38,7 +38,8 @@ public sealed class ConnectionApiTests
     [Fact]
     public async Task LocalApiForwardsAllPhasesAndTypedRejections()
     {
-        await using var connection = new LocalGameSessionConnection(Engine());
+        var engine = Engine();
+        await using var connection = new LocalGameSessionConnection(engine);
         Assert.True((await connection.GetTacticalBattleOptionsAsync()).Availability.Available);
         Assert.Null(await connection.GetTacticalBattleStateAsync());
         var invalid = await connection.StartTacticalBattleAsync(new("invalid", 1, "unknown"));
@@ -52,9 +53,17 @@ public sealed class ConnectionApiTests
         var move = await connection.MoveTacticalBattleAsync(new("move", "start", start.State.Revision));
         Assert.True(move.Accepted);
         Assert.True(move.State!.FireSkipped);
+        Assert.Equal(move.State.FireQueue.Length, move.State.FireSteps.Length);
+        Assert.NotEmpty(move.State.FireSteps);
+        Assert.All(move.State.FireSteps, step => Assert.Equal(move.State.FireQueue[step.Index].ShooterId, step.ShooterId));
+        var randomState = (engine.TacticalBattleSessionForTests!.Battle.Random.State, engine.TacticalBattleSessionForTests.Battle.InitiativeRandom.State);
+        string timeline = System.Text.Json.JsonSerializer.Serialize(move.State.FireSteps);
+        Assert.Equal(timeline, System.Text.Json.JsonSerializer.Serialize((await connection.GetTacticalBattleStateAsync())!.FireSteps));
+        Assert.Equal(randomState, (engine.TacticalBattleSessionForTests.Battle.Random.State, engine.TacticalBattleSessionForTests.Battle.InitiativeRandom.State));
         Assert.Equal(move, await connection.MoveTacticalBattleAsync(new("move", "start", start.State.Revision)));
         Assert.True((await connection.ExitTacticalBattleAsync(new("exit", "start"))).Accepted);
         Assert.Null(await connection.GetTacticalBattleStateAsync());
+
     }
 
     [Fact]

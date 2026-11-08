@@ -5,6 +5,46 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class ContentDataTests
 {
     [Fact]
+    public void ShippedPilotsHaveApprovedInitiativeValues()
+    {
+        string path = Path.Combine(FindRepository(), "src", "DeepSpaceSaga.Client", "Data", "TacticalBattle", "pilots.json");
+        using var pilots = JsonDocument.Parse(File.ReadAllText(path));
+        Assert.Equal(10, pilots.RootElement.EnumerateObject().Count());
+        string[] ids = ["vera", "yun", "marta", "oleg"];
+        int[] expected = [55, 53, 59, 50];
+        for (int i = 0; i < ids.Length; i++)
+            Assert.Equal(expected[i], pilots.RootElement.GetProperty(ids[i]).GetProperty("initiative").GetInt32());
+        for (int i = 1; i <= 6; i++)
+            Assert.Equal(new[] { 40, 55 }, pilots.RootElement.GetProperty($"thug{i}").GetProperty("initiative")
+                .EnumerateArray().Select(value => value.GetInt32()));
+    }
+
+    [Fact]
+    public void InitiativeTextsHaveMatchingLocaleKeysAndPlaceholders()
+    {
+        string locale = Path.Combine(FindRepository(), "src", "DeepSpaceSaga.Client", "Data", "Locale");
+        using var russian = JsonDocument.Parse(File.ReadAllText(Path.Combine(locale, "Russian.json")));
+        using var english = JsonDocument.Parse(File.ReadAllText(Path.Combine(locale, "English.json")));
+        string[] keys = ["Initiative", "FireQueue", "FireConditional", "Log.FireSkipped", "Skip.NoTarget",
+            "Skip.Withheld", "Skip.ShooterDestroyed", "Skip.ShooterDisabled", "Skip.WeaponJammed",
+            "Skip.TargetUnavailable", "Skip.BattleEnded"];
+        foreach (string suffix in keys)
+        {
+            string key = "TacticalBattle." + suffix;
+            string ru = russian.RootElement.GetProperty(key).GetString()!;
+            string en = english.RootElement.GetProperty(key).GetString()!;
+            Assert.False(string.IsNullOrWhiteSpace(ru));
+            Assert.False(string.IsNullOrWhiteSpace(en));
+            Assert.DoesNotContain("TacticalBattle.", ru);
+            Assert.DoesNotContain("TacticalBattle.", en);
+            string[] expected = suffix == "Initiative" ? ["{0}"] : suffix == "Log.FireSkipped" ? ["{0}", "{1}"] : [];
+            Assert.Equal(expected, System.Text.RegularExpressions.Regex.Matches(ru, @"\{\d+\}").Select(match => match.Value));
+            Assert.Equal(expected, System.Text.RegularExpressions.Regex.Matches(en, @"\{\d+\}").Select(match => match.Value));
+        }
+        Assert.Equal("acc {0} · man {1}", english.RootElement.GetProperty("TacticalBattle.SetupSkills").GetString());
+    }
+
+    [Fact]
     public void SettingsDeclaresBattleContentAndClientBuildShipsEveryJson()
     {
         string repo = FindRepository();

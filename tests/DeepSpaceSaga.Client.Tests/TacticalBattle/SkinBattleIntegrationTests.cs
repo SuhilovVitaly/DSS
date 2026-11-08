@@ -16,6 +16,36 @@ public sealed class SkinBattleIntegrationTests
     private static readonly SKColor EditedColor = new(23, 113, 72);
 
     [Fact]
+    public async Task ClassicAndContrastShareIdenticalPlaybackFacts()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var classic = await Start(fixture);
+        for (int turn = 0; turn < 30 && classic.Flow.State?.Phase == TacticalBattlePhase.Move; turn++)
+            await fixture.Route(ScreenEvent.MoveTacticalBattle);
+        fixture.AdvanceAnimation(TacticalBattleMovementAnimation.FireTransitionDurationMs);
+        var before = classic.Flow.State!;
+        using var skins = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var contrast = new TacticalBattleScreen(classic.Flow, 1, skins.GetOrClassic("contrast"))
+        { ClockMilliseconds = classic.ClockMilliseconds };
+        fixture.ManualAnimation = true;
+        await fixture.Route(ScreenEvent.FireTacticalBattle);
+        var accepted = classic.Flow.State!;
+        contrast.OnBattleUpdated(before, new("same-presentation", true, TacticalBattleRejectionCode.None, accepted.Phase, accepted, []));
+        foreach (long elapsed in new long[] { 0, 300, 975, 975, 10000 })
+        {
+            fixture.AdvanceAnimation(elapsed);
+            var one = classic.CaptureFrame(1280, 720)!;
+            var two = contrast.CaptureFrame(1280, 720)!;
+            Assert.Equal(JsonSerializer.Serialize(one.Battle), JsonSerializer.Serialize(two.Battle));
+            Assert.Equal(one.Presentation, two.Presentation);
+            Assert.Equal(one.Salvo!.Flights.Select(f => (f.LaunchMs, f.DurationMs, f.Arrived)),
+                two.Salvo!.Flights.Select(f => (f.LaunchMs, f.DurationMs, f.Arrived)));
+        }
+        Assert.Equal(1, fixture.Proxy.Fires);
+        Assert.Same(accepted, classic.Flow.State);
+    }
+
+    [Fact]
     public async Task Installed_pack_flows_from_settings_to_real_battle_and_survives_restart()
     {
         using var profile = new Profile();

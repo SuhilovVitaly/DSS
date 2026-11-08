@@ -1,12 +1,40 @@
 using DeepSpaceSaga.Contracts;
+using System.Globalization;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
 internal sealed record ClusterStationPresentation(string ClusterName, string Profile, string Directions);
+internal sealed record DomainMapMarker(string Id, string Name, string[] MemberIds, double X, double Y, MapWorldBounds Bounds);
 
 internal static class ClusterMapPresentation
 {
+    internal static IReadOnlyList<DomainMapMarker> DomainMarkers(StationClusterMapSnapshot map, IEnumerable<ObjectMotionSnapshot> objects)
+    {
+        var poses = PosesById(objects);
+        return map.Clusters.Where(c => !c.StationIds.IsDefaultOrEmpty).Select(c =>
+            Marker(c.Id, c.Name, c.StationIds.Where(poses.ContainsKey).Select(id => poses[id]).ToArray()))
+            .Where(m => m is not null).Cast<DomainMapMarker>().ToArray();
+    }
+
+    internal static IReadOnlyList<DomainMapMarker> ResourceMarkers(StationClusterMapSnapshot map, IEnumerable<ObjectMotionSnapshot> objects)
+    {
+        if (map.ResourceBindings.IsDefaultOrEmpty) return [];
+        var poses = PosesById(objects);
+        return map.ResourceBindings.GroupBy(b => b.AnchorStationId, StringComparer.Ordinal).OrderBy(g => g.Key, StringComparer.Ordinal)
+            .Select(g => Marker(g.Key, g.Key, g.Where(b => poses.ContainsKey(b.FieldId)).Select(b => poses[b.FieldId]).ToArray()))
+            .Where(m => m is not null).Cast<DomainMapMarker>().ToArray();
+    }
+
+    private static DomainMapMarker? Marker(string id, string name, ObjectMotionSnapshot[] members)
+    {
+        if (members.Length == 0) return null;
+        MapWorldBounds bounds = new();
+        foreach (var member in members) bounds.Include(member.X, member.Y);
+        return new(id, name, members.Select(m => m.ObjectId).Order(StringComparer.Ordinal).ToArray(),
+            bounds.MinX + (bounds.MaxX - bounds.MinX) / 2, bounds.MinY + (bounds.MaxY - bounds.MinY) / 2, bounds);
+    }
+
     internal static string? ClusterName(AuthoritativeSnapshot? snapshot, string? stationId)
     {
         var map = snapshot?.ClusterMap;
@@ -20,6 +48,19 @@ internal static class ClusterMapPresentation
         if (!double.IsFinite(distanceWorld) || distanceWorld < 0 || !double.IsFinite(maxSpeedKmS) || maxSpeedKmS <= 0) return null;
         double days = distanceWorld / 10 / maxSpeedKmS * 300 / 86400;
         return double.IsFinite(days) ? days : null;
+    }
+
+    internal static string FormatStraightFlightDays(double? days)
+    {
+        if (days is not { } value || !double.IsFinite(value) || value < 0) return "Unavailable";
+        if (value < 1)
+        {
+            double hours = value * 24;
+            if (Math.Round(hours, 3) >= 24) return "< 1 calendar day";
+            if (hours is > 0 and < .001) return "< 0.001 calendar hours";
+            return string.Format(CultureInfo.InvariantCulture, "{0:0.###} calendar {1}", hours, hours == 1 ? "hour" : "hours");
+        }
+        return string.Format(CultureInfo.InvariantCulture, "{0:0.###} calendar {1}", value, value == 1 ? "day" : "days");
     }
 
     internal static void DrawDirections(SKCanvas canvas, StationClusterMapSnapshot map, string? selectedId,
@@ -82,14 +123,23 @@ internal static class ClusterMapPresentation
         return bounds;
     }
 
+    internal static MapWorldBounds StationBounds(string stationId, IEnumerable<ObjectMotionSnapshot> objects)
+    {
+        MapWorldBounds bounds = new();
+        var station = objects.FirstOrDefault(o => o.ObjectId == stationId && o.RenderObjectType == SpaceObjectType.Station);
+        if (station is not null) bounds.Include(station.X, station.Y);
+        return bounds;
+    }
+
     internal static ClusterResourceBinding? Resource(AuthoritativeSnapshot? snapshot, string objectId)
     {
         var bindings = snapshot?.ClusterMap?.ResourceBindings ?? default;
         return bindings.IsDefaultOrEmpty ? null : bindings.FirstOrDefault(b => b.FieldId == objectId);
     }
 
-    internal static void Draw(SKCanvas canvas, AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> objects, CameraState camera, int width, int height, string? selectedId = null)
+    internal static void Draw(SKCanvas canvas, AuthoritativeSnapshot snapshot, IEnumerable<ObjectMotionSnapshot> objects, CameraState camera, int width, int height, string? selectedId = null, MapDetailLevel detail = MapDetailLevel.Cluster)
     {
+        if (detail != MapDetailLevel.Cluster) return;
         if (snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
         var poses = PosesById(objects);
         DrawDirections(canvas, map, selectedId, poses, camera, width, height);

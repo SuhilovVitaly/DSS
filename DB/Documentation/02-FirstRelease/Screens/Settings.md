@@ -4,4 +4,10 @@
 
 См. [каталог экранов](ScreenCatalog.md) и [основные требования](../../01-Requirements/EngineRequirements.md).
 
+GameSession renderer дополнительно принимает параметр UI scale 2.0 в tooling/constructor.
+Обычный SkiaWindow и меню по-прежнему принимают перечисленные выше значения.
+UI scale изменяет панели, а zoom и ограничения Local используют raw viewport.
+Параметры tacticalMap ReferenceSpeedKmS/MaxLocalHours валидируются отдельно;
+при наличии geography descriptor опорная скорость берётся из сохранённого мира.
+
 Источники: [SettingsScreen.cs](../../../../src/DeepSpaceSaga.Client/UI/Screens/Settings/SettingsScreen.cs).

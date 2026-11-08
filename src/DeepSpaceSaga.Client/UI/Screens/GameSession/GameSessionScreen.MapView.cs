@@ -22,11 +22,49 @@ public sealed partial class GameSessionScreen
         : BattleFormat.Localize("BattleTitle");
     private readonly TacticalMapSettings _mapSettings;
     private readonly CameraZoomTransition _zoomTransition = new();
+    private bool _mapCameraInitialized;
+    private AuthoritativeSnapshot? _mapPresentationSnapshot;
+    private MapWorldIdentity? _mapWorldIdentity;
+    private long _mapWorldSnapshotTime;
+    private ulong _mapWorldSnapshotSequence;
+    internal MapDetailLevel MapDetail { get; private set; } = MapDetailLevel.Local;
+    private double MapReferenceSpeed => MapScalePolicy.ReferenceSpeed(_mapSettings,
+        _mapPresentationSnapshot?.ClusterMap?.Geography?.ReferenceSpeedKmS ?? _mapSettings.ReferenceSpeedKmS);
+    internal double LocalMaximumPpu => MapScalePolicy.MaximumPpu(_mapSettings, _viewportW, _viewportH, MapReferenceSpeed);
+    internal string RulerReferenceText(double meters) => string.Format(CultureInfo.InvariantCulture,
+        Localization.Get("Map.ReferenceTime"), meters / 1000 / MapReferenceSpeed * 300 / 3600, MapReferenceSpeed);
+
+    private bool UpdateMapWorld(AuthoritativeSnapshot? snapshot)
+    {
+        if (snapshot is null) return false;
+        var identity = MapDetailPolicy.IdentifyWorld(snapshot);
+        bool changed = _mapWorldIdentity is { } previous && (previous != identity ||
+            snapshot.SolarSystemMap is not null && snapshot.SnapshotSequence != _mapWorldSnapshotSequence && snapshot.MotionTimeMs < _mapWorldSnapshotTime);
+        _mapWorldIdentity = identity;
+        _mapWorldSnapshotTime = snapshot.MotionTimeMs;
+        _mapWorldSnapshotSequence = snapshot.SnapshotSequence;
+        if (!changed) return false;
+        _zoomTransition.Cancel(); _mapCameraInitialized = false; MapDetail = MapDetailLevel.Local;
+        _mapClusters.Clear(); _mapSummaryLabels.Clear(); _visibleSummaryLabels.Clear(); _mapSummaryLabelRects.Clear();
+        _clusteredObjectIds.Clear(); _clusterCells.Clear(); _clusterCellPool.Clear();
+        _selectionCycle = []; _selectionCycleIndex = 0;
+        _fittedBeltId = null; _fittedClusterId = null; _navigationTargetId = null;
+        _selectedFieldId = null; _selectedPoiId = null; _selectedObjectId = snapshot.SelectedObjectId; _activeObjectId = null;
+        _isPanningMap = false; _hasMousePosition = false; _isFocusAttachedToPlayer = true;
+        _pausedVisualAnchors.Clear(); _visualCorrections.Clear(); _lastSnapshotBaselineObjects.Clear(); _hasSnapshotBaseline = false;
+        _initialTrailBootstrapObjectIds.Clear(); _trailStore = new ObjectTrailStore(_predictor, _timestampProvider);
+        return true;
+    }
     private SKRect _mapToolbarRect;
-    private readonly SKRect[] _mapViewButtons = new SKRect[11];
+    private readonly SKRect[] _mapViewButtons = new SKRect[12];
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
     private readonly HashSet<string> _clusteredObjectIds = new(StringComparer.Ordinal);
     private readonly List<MapCluster> _mapClusters = new();
+    private readonly List<SummaryLabel> _mapSummaryLabels = new();
+    private readonly List<SummaryLabel> _visibleSummaryLabels = new();
+    private readonly List<SKRect> _mapSummaryLabelRects = new();
+    private readonly record struct SummaryLabel(int ClusterIndex, string Text, SKRect Bounds);
+    internal IReadOnlyList<SKRect> MapSummaryLabels => _visibleSummaryLabels.Select(l => l.Bounds).ToArray();
     private readonly Dictionary<(double X, double Y), List<ObjectRenderState>> _clusterCells = new();
     private readonly Stack<List<ObjectRenderState>> _clusterCellPool = new();
     private readonly List<SKRect> _mapObstacles = new();
@@ -48,8 +86,9 @@ public sealed partial class GameSessionScreen
     internal IReadOnlyList<SKRect> MapViewButtonRects => _mapViewButtons;
     internal SKRect MapToolbarRect => _mapToolbarRect;
     internal int MapClusterCount => _mapClusters.Count;
+    internal IReadOnlySet<string> AggregatedMapObjectIds => _clusteredObjectIds;
     internal bool IsZoomAnimating => _zoomTransition.Active;
-    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds);
+    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds, string? Name = null, string? ClusterId = null);
     private string[] _selectionCycle = [];
     private int _selectionCycleIndex;
     private float _selectionCycleX, _selectionCycleY;
@@ -65,8 +104,7 @@ public sealed partial class GameSessionScreen
             double distance = double.Hypot(p.X - x, p.Y - y);
             if (distance <= ObjectHitTestRadiusPx)
                 candidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), distance));
-            else if (ObjectLabelRenderer.HasSelectableShipLabel(state.Source) &&
-                _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
+            else if (HasSelectableMapLabel(state.Source) && _labelRenderer.Geometries.TryGetValue(state.Source.ObjectId, out var label) && label.PlaqueRect.Contains(x, y))
                 labelCandidates.Add((state.Pose.ObjectId, 0, GetClickPriority(state), 0));
         }
         // A compact plaque may overlap another object: actual marker hits win.
@@ -92,8 +130,12 @@ public sealed partial class GameSessionScreen
     }
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
-        id == _buffer.Presented?.Snapshot.PlayerShipObjectId ||
-        AiMapPresentation.Base(_buffer.Presented?.Snapshot, id) is not null;
+        id == _mapPresentationSnapshot?.PlayerShipObjectId ||
+        AiMapPresentation.Base(_mapPresentationSnapshot, id) is not null;
+    private bool IsPrimaryMapLabel(string id) => id == _selectedObjectId || id == _navigationTargetId ||
+        id == _mapPresentationSnapshot?.PlayerShipObjectId;
+    private static bool HasSelectableMapLabel(ObjectMotionSnapshot source) => ObjectLabelRenderer.HasSelectableShipLabel(source) ||
+        source.RenderObjectType is SpaceObjectType.Station or SpaceObjectType.Asteroid or SpaceObjectType.Planet or SpaceObjectType.Sun;
 
     private void SetFollowPlayer()
     {
@@ -107,10 +149,10 @@ public sealed partial class GameSessionScreen
         if (_viewportW <= 0 || _viewportH <= 0 || !double.IsFinite(steps)) return;
         double previous = _zoomTransition.TargetPpu(_camera);
         double target = Math.Clamp(previous * Math.Pow(_mapSettings.WheelFactor, Math.Clamp(steps, -32, 32)),
-            _mapSettings.MinimumPpu, _mapSettings.MaximumPpu);
+            _mapSettings.MinimumPpu, LocalMaximumPpu);
         if (target == previous) return;
         _zoomTransition.Start(_camera, target, _isFocusAttachedToPlayer ? _viewportW / 2f : x,
-            _isFocusAttachedToPlayer ? _viewportH / 2f : y, _mapSettings, _viewportW, _viewportH);
+            _isFocusAttachedToPlayer ? _viewportH / 2f : y, _mapSettings, _viewportW, _viewportH, LocalMaximumPpu);
         InterfaceLog.Write($"Scale → PPU={target:G6}");
     }
 
@@ -123,11 +165,37 @@ public sealed partial class GameSessionScreen
             _clusterCellPool.Push(cell);
         }
         _mapClusters.Clear(); _clusteredObjectIds.Clear(); _clusterCells.Clear();
+        MapDetail = MapDetailPolicy.Resolve(_viewportW, _viewportH, _camera.PixelsPerWorldUnit, MapReferenceSpeed, MapDetail);
+        var map = _mapPresentationSnapshot?.ClusterMap;
+        if (map is not null && !map.Clusters.IsDefaultOrEmpty)
+        {
+            var poses = _renderStates.Select(s => s.Predicted);
+            if (MapDetail == MapDetailLevel.System)
+            {
+                foreach (var marker in ClusterMapPresentation.DomainMarkers(map, poses))
+                {
+                    foreach (string id in marker.MemberIds) if (!IsImportantMapObject(id)) _clusteredObjectIds.Add(id);
+                    _mapClusters.Add(new(marker.X, marker.Y, marker.MemberIds.Length, marker.Bounds, marker.Name, marker.Id));
+                }
+                foreach (var state in _renderStates)
+                    if (state.Pose.RenderObjectType == SpaceObjectType.Asteroid && !IsImportantMapObject(state.Pose.ObjectId))
+                        _clusteredObjectIds.Add(state.Pose.ObjectId);
+            }
+            else if (MapDetail is MapDetailLevel.Region or MapDetailLevel.Cluster)
+            {
+                foreach (var marker in ClusterMapPresentation.ResourceMarkers(map, poses))
+                {
+                    foreach (string id in marker.MemberIds) if (!IsImportantMapObject(id)) _clusteredObjectIds.Add(id);
+                    _mapClusters.Add(new(marker.X, marker.Y, marker.MemberIds.Length, marker.Bounds));
+                }
+            }
+        }
         if (_camera.PixelsPerWorldUnit > _mapSettings.ClusterPpu) return;
         double cellSize = _mapSettings.ClusterCellPixels / _camera.PixelsPerWorldUnit;
         foreach (var state in _renderStates)
         {
             var p = state.Pose;
+            if (_clusteredObjectIds.Contains(p.ObjectId) || map?.Stations.Any(s => s.ObjectId == p.ObjectId) == true) continue;
             if (IsImportantMapObject(p.ObjectId) || p.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) continue;
             if (p is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy }) continue;
             var (sx, sy) = _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH);
@@ -151,28 +219,58 @@ public sealed partial class GameSessionScreen
         }
     }
 
+    private void PrepareMapSummaryLabels()
+    {
+        _mapSummaryLabels.Clear(); _mapSummaryLabelRects.Clear();
+        var available = AvailableMapRect();
+        if (available.Width < 32 || available.Height < 24) available = SKRect.Create(_viewportW, _viewportH);
+        for (int i = 0; i < _mapClusters.Count; i++)
+        {
+            var cluster = _mapClusters[i];
+            if (cluster.Name is null) continue;
+            var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
+            if (x < -15 || y < -15 || x > _viewportW + 15 || y > _viewportH + 15) continue;
+            string text = ObjectLabelRenderer.FitText(cluster.Name, _panelTextPaint, available.Width - 12);
+            float width = _panelTextPaint.MeasureText(text) + 8;
+            var desired = SKRect.Create(x - width / 2, y - 36, width, 18);
+            if (!ObjectLabelLayout.TryPlace(desired, _mapSummaryLabelRects, available, out var bounds)) continue;
+            _mapSummaryLabels.Add(new(i, text, bounds)); _mapSummaryLabelRects.Add(bounds);
+        }
+    }
+
     private void DrawMapClusters(SKCanvas canvas)
     {
+        _visibleSummaryLabels.Clear();
         foreach (var cluster in _mapClusters)
         {
             var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
             _mapMarkerPaint.Color = TacticalMapPalette.LabelBackground;
             canvas.DrawCircle(x, y, 15, _mapMarkerPaint);
-            string count = cluster.Count.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            string count = cluster.Count.ToString(CultureInfo.InvariantCulture);
             canvas.DrawText(count, x - _panelTextPaint.MeasureText(count) / 2, y + 4, _panelTextPaint);
+        }
+        foreach (var label in _mapSummaryLabels)
+        {
+            // Explicit target plaques win when a very crowded viewport cannot fit both.
+            if (_labelRenderer.Geometries.Values.Any(g => g.PlaqueRect.IntersectsWith(label.Bounds))) continue;
+            _mapMarkerPaint.Color = TacticalMapPalette.LabelBackground;
+            canvas.DrawRect(label.Bounds, _mapMarkerPaint);
+            canvas.DrawText(label.Text, label.Bounds.Left + 4, label.Bounds.Bottom - 4, _panelTextPaint);
+            _visibleSummaryLabels.Add(label);
         }
     }
 
     private bool TryExpandMapCluster(float x, float y)
     {
-        // Explicit targets win over a nearby aggregate.
-        if (_renderStates.Any(s => (IsImportantMapObject(s.Pose.ObjectId) ||
-            s.Pose.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) && Near(s.Pose.X, s.Pose.Y))) return false;
+        // Visible canonical markers win over aggregates beside their owners.
+        if (_renderStates.Any(s => !_clusteredObjectIds.Contains(s.Pose.ObjectId) && MarkerHit(s.Pose.X, s.Pose.Y))) return false;
         if (MapLayers.HasFlag(MapLayerFlags.PointsOfInterest) && _poiGeometry.Any(p => Near(p.X, p.Y))) return false;
-        foreach (var cluster in _mapClusters)
+        if (_renderStates.Any(s => HasSelectableMapLabel(s.Source) && _labelRenderer.Geometries.TryGetValue(s.Pose.ObjectId, out var g) && g.PlaqueRect.Contains(x, y))) return false;
+        for (int i = 0; i < _mapClusters.Count; i++)
         {
-            if (!Near(cluster.X, cluster.Y)) continue;
-            FitMapBounds(cluster.Bounds);
+            var cluster = _mapClusters[i];
+            if (!Near(cluster.X, cluster.Y) && !_visibleSummaryLabels.Any(l => l.ClusterIndex == i && l.Bounds.Contains(x, y))) continue;
+            if (cluster.ClusterId is { } id) FitCluster(id); else FitMapBounds(cluster.Bounds);
             return true;
         }
         return false;
@@ -180,6 +278,11 @@ public sealed partial class GameSessionScreen
         {
             var p = _camera.WorldToScreen(wx, wy, _viewportW, _viewportH);
             return (p.X - x) * (p.X - x) + (p.Y - y) * (p.Y - y) <= 225;
+        }
+        bool MarkerHit(double wx, double wy)
+        {
+            var p = _camera.WorldToScreen(wx, wy, _viewportW, _viewportH);
+            return double.Hypot(p.X - x, p.Y - y) <= ObjectHitTestRadiusPx;
         }
     }
 
@@ -211,13 +314,13 @@ public sealed partial class GameSessionScreen
     {
         if (!bounds.HasValue) return;
         _zoomTransition.Cancel(); _isFocusAttachedToPlayer = false; _isPanningMap = false;
-        MapViewGeometry.Fit(_camera, bounds, AvailableMapRect(), _viewportW, _viewportH, _mapSettings);
+        MapViewGeometry.Fit(_camera, bounds, AvailableMapRect(), _viewportW, _viewportH, _mapSettings, LocalMaximumPpu);
         UpdateMapClusters(); RecomputeActiveObjectId();
     }
 
     internal bool FitBelt(string beltId)
     {
-        var belt = _buffer.Presented?.Snapshot.SolarSystemMap?.Belts.FirstOrDefault(b => b.Id == beltId);
+        var belt = _mapPresentationSnapshot?.SolarSystemMap?.Belts.FirstOrDefault(b => b.Id == beltId);
         if (belt is null || _viewportW <= 0 || _viewportH <= 0) return false;
         MapWorldBounds bounds = new();
         bounds.Include(-belt.OuterRadius, -belt.OuterRadius);
@@ -229,7 +332,7 @@ public sealed partial class GameSessionScreen
 
     internal bool FitCluster(string clusterId)
     {
-        var cluster = _buffer.Presented?.Snapshot.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == clusterId);
+        var cluster = _mapPresentationSnapshot?.ClusterMap?.Clusters.FirstOrDefault(c => c.Id == clusterId);
         if (cluster is null || _viewportW <= 0 || _viewportH <= 0) return false;
         var bounds = ClusterMapPresentation.Bounds(cluster, _renderStates.Select(s => s.Predicted));
         if (!bounds.HasValue) return false;
@@ -238,9 +341,26 @@ public sealed partial class GameSessionScreen
         return true;
     }
 
+    internal bool FocusStation(string stationId)
+    {
+        if (_viewportW <= 0 || _viewportH <= 0) return false;
+        var bounds = ClusterMapPresentation.StationBounds(stationId, _renderStates.Select(s => s.Predicted));
+        if (!bounds.HasValue) return false;
+        _zoomTransition.Cancel(); _isFocusAttachedToPlayer = false; _isPanningMap = false;
+        double ppu = LocalMaximumPpu;
+        _camera.SetZoom(ppu, _mapSettings.MinimumPpu, ppu);
+        var free = AvailableMapRect();
+        _camera.SetFocus(bounds.MinX - (free.MidX - _viewportW / 2d) / ppu,
+            bounds.MinY - (free.MidY - _viewportH / 2d) / ppu);
+        _selectionCycle = []; _selectionCycleIndex = 0;
+        _visibleSummaryLabels.Clear();
+        UpdateMapClusters();
+        return true;
+    }
+
     private void FitNextBelt()
     {
-        if (_buffer.Presented?.Snapshot.SolarSystemMap is not { } map || map.Belts.IsEmpty) return;
+        if (_mapPresentationSnapshot?.SolarSystemMap is not { } map || map.Belts.IsEmpty) return;
         int index = -1;
         for (int i = 0; i < map.Belts.Length; i++) if (map.Belts[i].Id == _fittedBeltId) index = i;
         FitBelt(map.Belts[(index + 1) % map.Belts.Length].Id);
@@ -248,7 +368,7 @@ public sealed partial class GameSessionScreen
 
     private void FitNextCluster()
     {
-        if (_buffer.Presented?.Snapshot.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
+        if (_mapPresentationSnapshot?.ClusterMap is not { } map || map.Clusters.IsDefaultOrEmpty) return;
         int index = -1;
         for (int i = 0; i < map.Clusters.Length; i++) if (map.Clusters[i].Id == _fittedClusterId) index = i;
         FitCluster(map.Clusters[(index + 1) % map.Clusters.Length].Id);
@@ -262,7 +382,7 @@ public sealed partial class GameSessionScreen
         bounds.Include(ship.X, ship.Y);
         if (mode == MapFitMode.System)
         {
-            if (_buffer.Presented?.Snapshot.SolarSystemMap is { } system)
+            if (_mapPresentationSnapshot?.SolarSystemMap is { } system)
             {
                 bounds.Include(-system.SystemRadius, -system.SystemRadius);
                 bounds.Include(system.SystemRadius, system.SystemRadius);
@@ -350,6 +470,7 @@ public sealed partial class GameSessionScreen
             else if (i == 5 && IsMapViewAvailable(i)) ToggleMapLayer(MapLayerFlags.Orbits);
             else if (i == 6) FitNextBelt();
             else if (i == 7) FitNextCluster();
+            else if (i == 11) { if (IsMapViewAvailable(i)) FocusStation(_selectedObjectId!); }
             else if (i >= 8) ToggleMapLayer((MapLayerFlags)(1 << (i - 7)));
             return true;
         }
@@ -358,10 +479,12 @@ public sealed partial class GameSessionScreen
 
     private void DrawMapToolbar(SKCanvas canvas)
     {
-        bool hasMapLayers = _buffer.Presented?.Snapshot.AiMap is not null;
-        float layerRowHeight = hasMapLayers ? 28 : 0;
+        bool hasMapLayers = _mapPresentationSnapshot?.AiMap is not null;
+        bool hasDetailRow = hasMapLayers || _mapPresentationSnapshot?.SolarSystemMap is not null ||
+            _mapPresentationSnapshot?.ClusterMap is not null || _renderStates.Any(s => s.Pose.RenderObjectType == SpaceObjectType.Station);
+        float layerRowHeight = hasDetailRow ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
-        float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 62 - layerRowHeight;
+        float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 78 - layerRowHeight;
         float battleRow = TacticalBattleEntryHeight;
         if (_commandsPanel.BodyRect.Bottom > top - 27 - battleRow)
         {
@@ -371,7 +494,7 @@ public sealed partial class GameSessionScreen
         int columns = width < 520 ? 4 : 8;
         float wrappedRowHeight = columns == 4 ? 27 : 0;
         top -= wrappedRowHeight;
-        _mapToolbarRect = new(left, top - battleRow, left + width, top + 58 + layerRowHeight + wrappedRowHeight);
+        _mapToolbarRect = new(left, top - battleRow, left + width, top + 74 + layerRowHeight + wrappedRowHeight);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
         float battleWidth = Math.Min(280, width - 8);
         _tacticalBattleEntry.Bounds = battleRow > 0 && battleWidth > 0
@@ -396,16 +519,18 @@ public sealed partial class GameSessionScreen
             string label = Localization.Get(keys[i]) + (i == 4 && !enabled ? "…" : "");
             canvas.DrawText(label, r.MidX, r.MidY + 4, _scaleBtnTextPaint);
         }
-        string[] layers = ["Territories", "Fields", "POI"];
-        Array.Clear(_mapViewButtons, 8, 3);
-        for (int i = 0; hasMapLayers && i < layers.Length; i++)
+        string[] layers = ["Territories", "Fields", "POI", Localization.Get("Map.StationLocal")];
+        Array.Clear(_mapViewButtons, 8, 4);
+        for (int i = 0; hasDetailRow && i < layers.Length; i++)
         {
-            var r = new SKRect(left + 4 + i * (width - 8) / 3, top + 31 + wrappedRowHeight, left + 2 + (i + 1) * (width - 8) / 3, top + 54 + wrappedRowHeight);
+            if (i < 3 && !hasMapLayers) continue;
+            var r = new SKRect(left + 4 + i * (width - 8) / 4, top + 31 + wrappedRowHeight, left + 2 + (i + 1) * (width - 8) / 4, top + 54 + wrappedRowHeight);
             _mapViewButtons[8 + i] = r;
-            canvas.DrawRect(r, MapLayers.HasFlag((MapLayerFlags)(1 << (i + 1))) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
+            bool enabled = i < 3 || IsMapViewAvailable(11);
+            canvas.DrawRect(r, i < 3 && MapLayers.HasFlag((MapLayerFlags)(1 << (i + 1))) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
             canvas.DrawRect(r, _panelBorderPaint);
-            _scaleBtnTextPaint.Color = new SKColor(180, 180, 180);
-            canvas.DrawText(layers[i], r.MidX, r.MidY + 4, _scaleBtnTextPaint);
+            _scaleBtnTextPaint.Color = enabled ? new SKColor(180, 180, 180) : new SKColor(80, 80, 80);
+            canvas.DrawText(ObjectLabelRenderer.FitText(layers[i], _scaleBtnTextPaint, Math.Max(0, r.Width - 8)), r.MidX, r.MidY + 4, _scaleBtnTextPaint);
         }
         _scaleBtnTextPaint.Color = new SKColor(180, 180, 180);
         string scale = $"1 px = {TacticalMapSettings.FormatDistance(100 / _camera.PixelsPerWorldUnit)}";
@@ -422,6 +547,7 @@ public sealed partial class GameSessionScreen
         canvas.DrawLine(rx, ry - 3, rx, ry + 3, _mapMarkerPaint);
         canvas.DrawLine(rx + rulerWidth, ry - 3, rx + rulerWidth, ry + 3, _mapMarkerPaint);
         canvas.DrawText(TacticalMapSettings.FormatDistance(nice), rx + rulerWidth / 2, ry - 5, _scaleBtnTextPaint);
+        canvas.DrawText(RulerReferenceText(nice), left + 8, top + 66 + layerRowHeight + wrappedRowHeight, _panelTextPaint);
         int hovered = HitTestScalePanel(_uiMouseX, _uiMouseY);
         if (hovered >= 0)
         {
@@ -440,9 +566,10 @@ public sealed partial class GameSessionScreen
         {
             1 => (_selectedObjectId is not null && _selectedObjectId != ship.ObjectId) || ship.NavigationTargetX is not null,
             2 => ship.NavigationTargetX is not null,
-            5 => _buffer.Presented?.Snapshot.SolarSystemMap is not null,
-            6 => _buffer.Presented?.Snapshot.SolarSystemMap?.Belts.Length > 0,
-            7 => _buffer.Presented?.Snapshot.ClusterMap?.Clusters.Length > 0,
+            5 => _mapPresentationSnapshot?.SolarSystemMap is not null,
+            6 => _mapPresentationSnapshot?.SolarSystemMap?.Belts.Length > 0,
+            7 => _mapPresentationSnapshot?.ClusterMap?.Clusters.Length > 0,
+            11 => _selectedObjectId is not null && _renderStates.Any(s => s.Pose.ObjectId == _selectedObjectId && s.Pose.RenderObjectType == SpaceObjectType.Station),
             _ => true
         };
     }

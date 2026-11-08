@@ -264,6 +264,9 @@ public static class ScenarioLoader
                 $"Player ship '{playerShip.ObjectId}' has objectType '{playerShip.ObjectType}', expected 'PlayerShip'.");
 
         ValidateEconomyTime(scenario);
+        // Serialized v2 worlds are complete materializations, unlike the private solar candidate.
+        if (gs.SolarSystem?.GeneratorVersion == 2 && gs.ClusterMap is null)
+            throw new ScenarioException("solarSystem: version 2 requires materialized clusterMap.");
         SolarSystemGeneration.ValidateWorld(gs);
         AiBaseGenerator.ValidateWorld(gs);
         EnvironmentFieldGenerator.ValidateWorld(gs);

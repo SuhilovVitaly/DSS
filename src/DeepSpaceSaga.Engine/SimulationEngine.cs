@@ -287,10 +287,16 @@ public sealed partial class SimulationEngine : IDisposable
             resolvedMasterSeedWasMissingOnLoad = true;
         }
 
-        gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
-        if (gs.StationResourceFields is not null)
+        bool geographyV2 = !isSave && scenario.SaveFormatVersion == 0 && generation?.GeneratorVersion == 2;
+        if (geographyV2)
+        {
+            SolarSystemGeneration.ValidateConfig(generation!);
+            if (gs.TradingMap is not null) gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
+        }
+        else gs = MaterializeOrRestoreTradingMap(scenario, gs, isSave, resolvedMasterSeed);
+        if (!geographyV2 && gs.StationResourceFields is not null)
             gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
-        else if (!isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
+        else if (!geographyV2 && !isSave && scenario.SaveFormatVersion == 0 && gs.TradingMap is not null && _stationResourceFieldConfig is not null)
             gs = StationResourceFields.Generate(gs, resolvedMasterSeed, _stationResourceFieldConfig, _registry);
         StationClusterMapSnapshot? clusterMap = gs.ClusterMap;
         if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
@@ -299,7 +305,12 @@ public sealed partial class SimulationEngine : IDisposable
             if (generation.Clusters is { } clusters)
             {
                 var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed);
-                if (_stationResourceFieldConfig is { } resourceConfig)
+                if (geographyV2)
+                {
+                    result = StationGeographyV2.CompleteBootstrap(scenario, result, generation, _registry, resolvedMasterSeed);
+                    result = result with { World = result.World with { GameState = StationResourceFields.RelocateDeclared(scenario.GameState, result.World.GameState) } };
+                }
+                if ((geographyV2 ? result.World.GameState.StationResourceFields?.Rules ?? _stationResourceFieldConfig : _stationResourceFieldConfig) is { } resourceConfig)
                 {
                     result = result with { World = result.World with { GameState = StationResourceFields.ExtendForClusters(result.World.GameState, resolvedMasterSeed, resourceConfig, _registry) } };
                     result = StationClusterGenerator.BindResources(result);
@@ -313,6 +324,12 @@ public sealed partial class SimulationEngine : IDisposable
                 gs = EnvironmentFieldGenerator.Generate(gs with { ClusterMap = clusterMap }, environment, resolvedMasterSeed);
             if (generation.PoiTemplates is { } templates)
                 gs = PointOfInterestGenerator.Generate(gs with { ClusterMap = clusterMap }, templates, resolvedMasterSeed);
+        }
+        if (geographyV2)
+        {
+            gs = gs with { ClusterMap = clusterMap };
+            if (gs.StationResourceFields is not null)
+                gs = gs with { StationResourceFields = StationResourceFields.ValidateSaved(ScenarioGroupPlacement.InitialGeometry(gs), _registry).StationResourceFields };
         }
         var resourceAsteroids = (gs.StationResourceFields?.Asteroids ?? [])
             .ToImmutableDictionary(a => a.ObjectId, StringComparer.Ordinal);
@@ -546,7 +563,7 @@ public sealed partial class SimulationEngine : IDisposable
                     // Startup clearance is not a constraint on their saved flight position.
                     .Where(o => (!isSave && scenario.SaveFormatVersion == 0 && normalizedState.SolarSystem is null) ||
                         (o.ObjectType is not (SpaceObjectType.PlayerShip or SpaceObjectType.NpcShip) && o.PersistenceType != "Temporary"))
-                    .ToArray(), masterSeed, _registry);
+                    .ToArray(), masterSeed, _registry, normalizedState.SolarSystem, normalizedState.ClusterMap);
             return normalizedState;
         }
 

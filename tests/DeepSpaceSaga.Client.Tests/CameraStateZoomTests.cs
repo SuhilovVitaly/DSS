@@ -4,6 +4,24 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public class CameraStateZoomTests
 {
+    [Fact]
+    public void EffectiveMaximumKeepsCoordinateTransformsInvertible()
+    {
+        var settings = new TacticalMapSettings();
+        double maximum = MapScalePolicy.MaximumPpu(settings, int.MaxValue, 1000, 2);
+        Assert.True(maximum > 10);
+        var camera = new CameraState(1e8, -1e8, 1);
+        var before = camera.ScreenToWorld(800, 450, 1920, 1080);
+        camera.ZoomAt(maximum, 800, 450, 1920, 1080, settings.MinimumPpu, maximum);
+        var after = camera.ScreenToWorld(800, 450, 1920, 1080);
+        Assert.Equal(before.X, after.X, 6); Assert.Equal(before.Y, after.Y, 6);
+        camera.SetZoom(maximum * 2, settings.MinimumPpu, maximum);
+        Assert.Equal(maximum, camera.PixelsPerWorldUnit);
+        var screen = camera.WorldToScreen(after.X, after.Y, 1920, 1080);
+        Assert.InRange(Math.Abs(screen.X - 800), 0, .01);
+        Assert.InRange(Math.Abs(screen.Y - 450), 0, .01);
+    }
+
     private const int ViewportW = 1920;
     private const int ViewportH = 1080;
 

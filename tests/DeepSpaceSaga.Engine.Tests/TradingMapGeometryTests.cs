@@ -8,6 +8,44 @@ namespace DeepSpaceSaga.Engine.Tests;
 public sealed class TradingMapGeometryTests
 {
     [Fact]
+    public void V2LoadUsesMaterializedClusterGeometry()
+    {
+        using var original = StationGeographyBootstrapTests.Create();
+        var saved = original.CaptureSaveStateForTests(86400000, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 288000);
+        Assert.All(saved.GameState.TradingMap!.Edges, e => Assert.True(e.TravelEstimateGameTimeMs > saved.GameState.TradingMap.Rules.MaxTravelGameTimeMs));
+        using var loaded = new SimulationEngine(SeededWorldBootstrapTests.Registry());
+        loaded.LoadScenario(ScenarioLoader.LoadFromJson(ScenarioLoader.Serialize(saved), true), true);
+        var restored = loaded.CaptureSaveStateForTests(86400000, DeepSpaceSaga.Contracts.SimulationSpeed.Speed0, 288000);
+        Assert.Equal(ScenarioLoader.Serialize(saved), ScenarioLoader.Serialize(restored));
+    }
+
+    [Theory]
+    [InlineData("profile")]
+    [InlineData("risk")]
+    [InlineData("cargo")]
+    [InlineData("seed")]
+    [InlineData("rng")]
+    [InlineData("distance")]
+    public void V2DoesNotBypassTradingSemanticValidation(string corruption)
+    {
+        using var engine = StationGeographyBootstrapTests.Create();
+        var save = engine.CaptureSaveState(); var state = save.GameState; var map = state.TradingMap!;
+        var invalid = corruption switch
+        {
+            "profile" => state with { SpaceObjects = state.SpaceObjects.Select(o => o.ObjectId == map.Rules.StartStationObjectId ? o with { MarketProfileId = "market.mining" } : o).ToArray() },
+            "seed" => state with { MasterSeed = state.MasterSeed + 1 },
+            "rng" => state with { TradingMap = map with { RngStreams = map.RngStreams.Select((r, i) => i == 0 ? r with { Counter = r.Counter + 1 } : r).ToArray() } },
+            "risk" => state with { TradingMap = map with { Edges = map.Edges.Select((e, i) => i == 0 ? e with { FuelMultiplierPermille = e.FuelMultiplierPermille + 1 } : e).ToArray() } },
+            "cargo" => state with { TradingMap = map with { CargoFlows = map.CargoFlows.Skip(1).ToArray() } },
+            _ => state with { TradingMap = map with { Edges = map.Edges.Select((e, i) => i == 0 ? e with { DistanceKm = e.DistanceKm + 1 } : e).ToArray() } }
+        };
+        string before = ScenarioLoader.Serialize(save);
+        Assert.Throws<ScenarioException>(() => engine.LoadScenario(ScenarioLoader.LoadFromJson(
+            ScenarioLoader.Serialize(save with { GameState = invalid }), true), true));
+        Assert.Equal(before, ScenarioLoader.Serialize(engine.CaptureSaveState()));
+    }
+
+    [Fact]
     public void Geometry_is_deterministic_for_same_seed_and_reordered_inputs()
     {
         var graph = TradingGraphGenerator.Generate(Rules(), 77, Registry());

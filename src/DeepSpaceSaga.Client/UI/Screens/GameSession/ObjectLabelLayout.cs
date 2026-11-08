@@ -10,6 +10,23 @@ namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 /// </summary>
 internal static class ObjectLabelLayout
 {
+    internal static bool TryPlace(SKRect desired, IReadOnlyList<SKRect> occupied, SKRect available, out SKRect placed)
+    {
+        float left = available.Left + 2, top = available.Top + 2;
+        float right = Math.Max(left, available.Right - desired.Width - 2);
+        float bottom = Math.Max(top, available.Bottom - desired.Height - 2);
+        for (int step = 0; step < 33; step++)
+        {
+            float offset = step == 0 ? 0 : ((step + 1) / 2) * (desired.Height + 4) * (step % 2 == 1 ? 1 : -1);
+            float x = Math.Clamp(desired.Left, left, right), y = Math.Clamp(desired.Top + offset, top, bottom);
+            placed = SKRect.Create(x, y, Math.Min(desired.Width, Math.Max(0, available.Width - 4)), desired.Height);
+            var margin = placed; margin.Inflate(2, 2);
+            if (!occupied.Any(r => r.IntersectsWith(margin))) return true;
+        }
+        placed = SKRect.Create(Math.Clamp(desired.Left, left, right), Math.Clamp(desired.Top, top, bottom), desired.Width, desired.Height);
+        return false;
+    }
+
     public const float PlaqueHeight = 16f;
     public const float ModuleBarHeight = 2f;
     public const float ModuleBarSpace = 2f;

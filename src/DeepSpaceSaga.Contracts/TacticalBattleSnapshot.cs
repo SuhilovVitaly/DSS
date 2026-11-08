@@ -11,8 +11,18 @@ public enum TacticalBattleLogKind
 {
     Started = 0, RoleChanged = 1, FighterBreak = 2, NoTargets = 3, ShotMissed = 4, ShotHit = 5,
     RearKill = 6, Disabled = 7, Destroyed = 8, WeaponJammed = 9, EngineDamaged = 10, Outcome = 11, Exited = 12,
-    DamageApplied = 13
+    DamageApplied = 13, FireSkipped = 14
 }
+
+public enum TacticalFireSkipReason
+{
+    None = 0, NoTarget = 1, Withheld = 2, ShooterDestroyed = 3, ShooterDisabled = 4,
+    WeaponJammed = 5, TargetUnavailable = 6, BattleEnded = 7
+}
+public sealed record TacticalFireQueueEntry(int Index, string ShooterId, int Initiative);
+public sealed record TacticalFireStepSnapshot(int Index, string ShooterId, string? TargetId, TacticalFireSkipReason SkipReason,
+    TacticalShotSnapshot? Shot, ImmutableArray<TacticalUnitSnapshot> UnitsAfter,
+    ImmutableArray<TacticalBattleLogEvent> Events, TacticalOutcomeSnapshot? Outcome);
 
 public readonly record struct TacticalPoseSnapshot(double X, double Y, double Course);
 public sealed record TacticalSideTactic(string Side, string TacticId);
@@ -25,17 +35,20 @@ public sealed record TacticalBuildSnapshot(string FrameName, string PilotId, str
 public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKind Kind, string FrameId,
     TacticalPoseSnapshot Pose, double Speed, int Hull, int MaxHull, int Armor, int MaxArmor, TacticalUnitState State,
     string? RoleId, bool Jammed, ImmutableArray<TacticalEngineSnapshot> Engines, TacticalMovementLimits? Limits,
-    double PreviousTurn, TacticalBuildSnapshot? Build, int Accuracy, int Maneuver, string? RoleName = null);
+    double PreviousTurn, TacticalBuildSnapshot? Build, int Accuracy, int Maneuver, string? RoleName = null)
+{
+    public int? Initiative { get; init; }
+}
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);
 public sealed record TacticalTargetCandidateSnapshot(string TargetId, double Distance, double Angle, bool Rear, double RearKillChance, double Chance);
 public sealed record TacticalTargetGroupSnapshot(string DroneId, ImmutableArray<TacticalTargetCandidateSnapshot> List, string? DefaultTargetId);
 public sealed record TacticalIncomingShotSnapshot(string ShooterId, string TargetId, double Chance, double Distance, double Angle, bool Rear, double RearKillChance);
-/// <summary>Killed means the target is destroyed after the whole simultaneous salvo; Kill is this shot's rear-kill roll.</summary>
+/// <summary>Killed means this shot destroyed the target at its step; Kill is this shot's rear-kill roll.</summary>
 public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string TargetId, TacticalPoseSnapshot From,
     TacticalPoseSnapshot To, double Chance, bool Hit, int Damage, bool Rear, bool Kill, bool Killed)
 {
-    /// <summary>The first impact that exhausts the target's hull in playback order.</summary>
+    /// <summary>This impact transitions the target to destroyed.</summary>
     public bool LethalImpact { get; init; }
 }
 public sealed record TacticalHitRulesSnapshot(double Base, double MinChance, double MaxChance, double RangeBonus,
@@ -56,7 +69,11 @@ public sealed record TacticalLogUnit(TacticalUnitKind Kind, int Hull, int MaxHul
 public sealed record TacticalBattleLogEvent(ulong Sequence, int Turn, TacticalBattlePhase Phase, TacticalBattleLogKind Kind,
     string? ActorId = null, string? TargetId = null, string? RoleId = null, int? Amount = null, int? EngineIndex = null,
     bool NoAttackers = false, TacticalOutcomeSnapshot? Outcome = null, TacticalLogShot? Shot = null,
-    TacticalLogDamage? Damage = null, TacticalLogUnit? Unit = null, string? RoleName = null);
+    TacticalLogDamage? Damage = null, TacticalLogUnit? Unit = null, string? RoleName = null)
+{
+    public TacticalFireSkipReason? SkipReason { get; init; }
+    public int? FireStepIndex { get; init; }
+}
 
 /// <summary>Captured data only. Suggestions appear in Move; Targets/Incoming appear in Fire. Log is the full retained journal.</summary>
 public sealed record TacticalBattleSnapshot(string BattleId, ulong Revision, TacticalBattlePhase Phase, int Turn, string PlayerSide,
@@ -65,4 +82,8 @@ public sealed record TacticalBattleSnapshot(string BattleId, ulong Revision, Tac
     ImmutableArray<TacticalMovementPath> Paths, ImmutableArray<TacticalTargetGroupSnapshot> Targets,
     ImmutableArray<TacticalIncomingShotSnapshot> Incoming, ImmutableArray<TacticalShotSnapshot> Shots,
     ImmutableArray<TacticalUnitSnapshot> BeforeSalvoUnits, bool FireSkipped, TacticalForecastRules Rules,
-    ImmutableArray<TacticalLossCount> Losses, TacticalOutcomeSnapshot? Outcome, ImmutableArray<TacticalBattleLogEvent> Log);
+    ImmutableArray<TacticalLossCount> Losses, TacticalOutcomeSnapshot? Outcome, ImmutableArray<TacticalBattleLogEvent> Log)
+{
+    public ImmutableArray<TacticalFireQueueEntry> FireQueue { get; init; } = [];
+    public ImmutableArray<TacticalFireStepSnapshot> FireSteps { get; init; } = [];
+}

@@ -6,6 +6,40 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class ClusterGeographyContractTests
 {
     [Fact]
+    public void V2GeographyRulesRoundTrip()
+    {
+        var map = new StationClusterMapSnapshot(2, "home", default, default, default,
+            Geography: new ClusterGeographyRules(4, 1, 1, 3));
+        var snapshot = new AuthoritativeSnapshot(1, 0, SimulationSpeed.Speed0, [], ClusterMap: map);
+        var json = JsonSerializer.Serialize(snapshot);
+        using var document = JsonDocument.Parse(json);
+        var rules = document.RootElement.GetProperty("clusterMap").GetProperty("geography");
+        Assert.Equal(4, rules.EnumerateObject().Count());
+        Assert.Equal(4, rules.GetProperty("referenceSpeedKmS").GetDouble());
+        Assert.Equal(1, rules.GetProperty("minimumStationDays").GetDouble());
+        Assert.Equal(1, rules.GetProperty("neighbourMinDays").GetDouble());
+        Assert.Equal(3, rules.GetProperty("neighbourMaxDays").GetDouble());
+        var restored = JsonSerializer.Deserialize<AuthoritativeSnapshot>(json)!;
+        Assert.Equal(map.Geography, restored.ClusterMap!.Geography);
+        Assert.Equal(2, restored.ClusterMap.RulesVersion);
+        Assert.Equal(json, JsonSerializer.Serialize(restored));
+        Assert.True(restored.ClusterMap.ResourceBindings.IsEmpty);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData(",\"geography\":null")]
+    public void LegacyMissingGeographyRemainsNull(string optionalField)
+    {
+        var json = "{\"rulesVersion\":1,\"startClusterId\":\"home\",\"clusters\":[],\"stations\":[],\"links\":[]" + optionalField + "}";
+        var restored = JsonSerializer.Deserialize<StationClusterMapSnapshot>(json)!;
+        Assert.Null(restored.Geography);
+        Assert.Equal(1, restored.RulesVersion);
+        Assert.True(restored.ResourceBindings.IsDefault);
+        Assert.Null(new StationClusterMapSnapshot(1, "home", default, default, default).Geography);
+    }
+
+    [Fact]
     public void ClusterSnapshotRoundTrip()
     {
         var map = new StationClusterMapSnapshot(1, "cluster-1",

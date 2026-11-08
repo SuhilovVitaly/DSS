@@ -7,6 +7,66 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 
 public sealed class AssemblyTests
 {
+    [Fact]
+    public void SeededInitiativeIsStableIndependentAndDoesNotAdvanceCombatRng()
+    {
+        var catalog = Catalog();
+        var one = Battle.Create(catalog, null, 1);
+        var two = Battle.Create(catalog, null, 1);
+        // Hand-derived Mulberry32 vector for uint(1) XOR 0x494E4954, six inclusive [40,55] draws.
+        Assert.Equal(new[] { 55, 53, 59, 50, 45, 53, 43, 42, 44, 41 }, one.Drones.Select(d => d.Initiative));
+        Assert.Equal(one.Drones.Select(d => d.Initiative), two.Drones.Select(d => d.Initiative));
+        Assert.Equal(7, one.InitiativeRandom.Calls); // six range draws + one tie at initiative 53
+        Assert.Equal(42, one.Random.Calls);
+        one.InitiativeRandom.Random();
+        Assert.Equal(7, two.InitiativeRandom.Calls);
+        Assert.Equal(42, one.Random.Calls);
+    }
+
+    [Fact]
+    public void DegenerateInitiativeRangeConsumesOnlyInitiativeStream()
+    {
+        var catalog = Catalog();
+        catalog = catalog with
+        {
+            Pilots = new(catalog.Pilots.Entries.Select(e =>
+            (e.Id, e.Value with { Initiative = PilotSkill.Fixed(50) })))
+        };
+        var fixedBattle = Battle.Create(catalog, null, 1);
+        Assert.Equal(9, fixedBattle.InitiativeRandom.Calls); // one group of ten
+        catalog = catalog with
+        {
+            Pilots = new(catalog.Pilots.Entries.Select(e =>
+            (e.Id, e.Id == "vera" ? e.Value with { Initiative = PilotSkill.Range(50, 50) } : e.Value)))
+        };
+        var rangeBattle = Battle.Create(catalog, null, 1);
+        Assert.Equal(10, rangeBattle.InitiativeRandom.Calls); // one range draw + nine shuffle draws
+        Assert.Equal(fixedBattle.Random.State, rangeBattle.Random.State);
+        Assert.Equal(42, rangeBattle.Random.Calls);
+        Assert.All(rangeBattle.Drones, d => Assert.Equal(50, d.Initiative));
+    }
+
+    [Fact]
+    public void SnapshotAndOptionsExposeInitiativeWithoutReroll()
+    {
+        var catalog = Catalog();
+        var battle = Battle.Create(catalog, null, 1);
+        var expected = battle.Drones.Select(d => (int?)d.Initiative).ToArray();
+        uint state = battle.InitiativeRandom.State;
+        for (int turn = 0; turn < 3; turn++)
+        {
+            var units = TacticalBattleSnapshotBuilder.Units(battle);
+            Assert.Equal(expected, units.Where(u => u.Kind == Contracts.TacticalUnitKind.Drone).Select(u => u.Initiative));
+            Assert.All(units.Where(u => u.Kind == Contracts.TacticalUnitKind.Carrier), u => Assert.Null(u.Initiative));
+            var options = TacticalBattleSnapshotBuilder.Options(catalog).Scenarios[0].Drones;
+            Assert.Equal(new Contracts.TacticalSkillRange(40, 55, true), options[4].Initiative);
+            Assert.Equal(new Contracts.TacticalSkillRange(55, 55, false), options[0].Initiative);
+            Assert.Equal(state, battle.InitiativeRandom.State);
+            if (turn < 2) battle.Step(_ => { });
+        }
+        Assert.Equal(state, battle.InitiativeRandom.State);
+    }
+
     internal static TacticalBattleCatalog Catalog()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

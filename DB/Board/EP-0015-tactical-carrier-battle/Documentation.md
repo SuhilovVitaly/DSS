@@ -216,3 +216,7 @@ Added US-0006 TK-0007 for missing Linux Skia runtime exposed by actual raster/gl
 ## Journal prerequisites — 2026-11-06
 
 Display §6 requires retained exact shot chance, rear flag, per-target damage and system metadata. Added US-0009 TK-0005 (Contracts) and TK-0006 (Engine) as prerequisites for the Client tabs to keep ownership and historical journal facts intact. Current total 81 tickets / 17 stories.
+
+## Supersession — 2026-11-07
+
+Инициативная последовательная стрельба EP-0017 заменяет прежний одновременный залп и допуск всего урона в конце анимации. Исходные критерии и результаты ниже сохранены как история. Текущий [контракт](../../Documentation/04-Engineering/TacticalBattle.md) и [исполнение EP-0017](../EP-0017-pilot-initiative/ExecutionStatus.md) описывают действующее поведение.

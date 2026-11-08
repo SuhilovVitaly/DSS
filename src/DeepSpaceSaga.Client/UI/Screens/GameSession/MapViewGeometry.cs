@@ -41,15 +41,16 @@ internal static class MapViewGeometry
         return best;
     }
 
-    internal static void Fit(CameraState camera, MapWorldBounds bounds, SKRect available, int width, int height, TacticalMapSettings settings)
+    internal static void Fit(CameraState camera, MapWorldBounds bounds, SKRect available, int width, int height, TacticalMapSettings settings, double? maximumPpu = null)
     {
         if (!bounds.HasValue || width <= 0 || height <= 0) return;
         float padding = (float)Math.Min(settings.FitPaddingPixels, Math.Min(available.Width, available.Height) / 4);
         available.Inflate(-padding, -padding);
         double ppu = Math.Min(Math.Max(1, available.Width) / Math.Max(1, bounds.MaxX - bounds.MinX),
             Math.Max(1, available.Height) / Math.Max(1, bounds.MaxY - bounds.MinY));
-        ppu = Math.Clamp(ppu, settings.MinimumPpu, settings.MaximumPpu);
-        camera.SetZoom(ppu);
+        double maximum = maximumPpu ?? settings.MaximumPpu;
+        ppu = Math.Clamp(ppu, settings.MinimumPpu, maximum);
+        camera.SetZoom(ppu, settings.MinimumPpu, maximum);
         camera.SetFocus(bounds.MinX + (bounds.MaxX - bounds.MinX) / 2 - (available.MidX - width / 2.0) / ppu,
             bounds.MinY + (bounds.MaxY - bounds.MinY) / 2 - (available.MidY - height / 2.0) / ppu);
     }

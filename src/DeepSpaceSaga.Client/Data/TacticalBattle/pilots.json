@@ -2,22 +2,26 @@
   "vera": {
     "name": "Вера",
     "accuracy": 55,
-    "maneuver": 52
+    "maneuver": 52,
+    "initiative": 55
   },
   "yun": {
     "name": "Юн",
     "accuracy": 53,
-    "maneuver": 55
+    "maneuver": 55,
+    "initiative": 53
   },
   "marta": {
     "name": "Марта",
     "accuracy": 59,
-    "maneuver": 54
+    "maneuver": 54,
+    "initiative": 59
   },
   "oleg": {
     "name": "Олег",
     "accuracy": 50,
-    "maneuver": 51
+    "maneuver": 51,
+    "initiative": 50
   },
   "thug1": {
     "name": "Таг-1",
@@ -26,6 +30,10 @@
       55
     ],
     "maneuver": [
+      40,
+      55
+    ],
+    "initiative": [
       40,
       55
     ]
@@ -39,6 +47,10 @@
     "maneuver": [
       40,
       55
+    ],
+    "initiative": [
+      40,
+      55
     ]
   },
   "thug3": {
@@ -48,6 +60,10 @@
       55
     ],
     "maneuver": [
+      40,
+      55
+    ],
+    "initiative": [
       40,
       55
     ]
@@ -61,6 +77,10 @@
     "maneuver": [
       40,
       55
+    ],
+    "initiative": [
+      40,
+      55
     ]
   },
   "thug5": {
@@ -72,6 +92,10 @@
     "maneuver": [
       40,
       55
+    ],
+    "initiative": [
+      40,
+      55
     ]
   },
   "thug6": {
@@ -81,6 +105,10 @@
       55
     ],
     "maneuver": [
+      40,
+      55
+    ],
+    "initiative": [
       40,
       55
     ]
