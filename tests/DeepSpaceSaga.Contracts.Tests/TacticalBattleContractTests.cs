@@ -7,6 +7,29 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void Evade_order_and_skip_reason_round_trip()
+    {
+        Assert.True(RoundTrip(new TacticalFireTarget("d", null, true)).Evade);
+        var incoming = new TacticalIncomingShotSnapshot("s", "d", 0.95, 10, 0, false, 0) { ChanceIfEvading = 0.9 };
+        Assert.Equal(0.9, RoundTrip(incoming).ChanceIfEvading);
+        Assert.True(RoundTrip(Frame().Shots[0] with { TargetEvading = true }).TargetEvading);
+        Assert.Equal(TacticalFireSkipReason.Evading, RoundTrip(TacticalFireSkipReason.Evading));
+        Assert.Equal(8, (int)TacticalFireSkipReason.Evading);
+        Assert.Equal(23, (int)TacticalBattleRejectionCode.EvasionUnavailable);
+        var rules = Frame().Rules with { Evasion = new(20, 10, 10, 5, 100) };
+        Assert.Equal(rules, RoundTrip(rules));
+    }
+
+    [Fact]
+    public void OldPayloadsWithoutEvasionFieldsRemainReadable()
+    {
+        Assert.False(JsonSerializer.Deserialize<TacticalFireTarget>("{\"DroneId\":\"d\",\"TargetId\":null}")!.Evade);
+        Assert.Null(RoundTrip(Frame().Rules).Evasion);
+        Assert.False(RoundTrip(Frame().Shots[0]).TargetEvading);
+        Assert.Null(RoundTrip(new TacticalIncomingShotSnapshot("s", "d", 0.5, 10, 0, false, 0)).ChanceIfEvading);
+    }
+
+    [Fact]
     public void FireSequenceRoundTripPreservesOrderAndIndependentStepStates()
     {
         var frame = Frame();

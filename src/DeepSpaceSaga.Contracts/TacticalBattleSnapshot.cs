@@ -17,7 +17,7 @@ public enum TacticalBattleLogKind
 public enum TacticalFireSkipReason
 {
     None = 0, NoTarget = 1, Withheld = 2, ShooterDestroyed = 3, ShooterDisabled = 4,
-    WeaponJammed = 5, TargetUnavailable = 6, BattleEnded = 7
+    WeaponJammed = 5, TargetUnavailable = 6, BattleEnded = 7, Evading = 8
 }
 public sealed record TacticalFireQueueEntry(int Index, string ShooterId, int Initiative);
 public sealed record TacticalFireStepSnapshot(int Index, string ShooterId, string? TargetId, TacticalFireSkipReason SkipReason,
@@ -44,17 +44,25 @@ public sealed record TacticalDroneOrder(string DroneId, double Speed, double Tur
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);
 public sealed record TacticalTargetCandidateSnapshot(string TargetId, double Distance, double Angle, bool Rear, double RearKillChance, double Chance);
 public sealed record TacticalTargetGroupSnapshot(string DroneId, ImmutableArray<TacticalTargetCandidateSnapshot> List, string? DefaultTargetId);
-public sealed record TacticalIncomingShotSnapshot(string ShooterId, string TargetId, double Chance, double Distance, double Angle, bool Rear, double RearKillChance);
+public sealed record TacticalIncomingShotSnapshot(string ShooterId, string TargetId, double Chance, double Distance, double Angle, bool Rear, double RearKillChance)
+{
+    public double? ChanceIfEvading { get; init; }
+}
 /// <summary>Killed means this shot destroyed the target at its step; Kill is this shot's rear-kill roll.</summary>
 public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string TargetId, TacticalPoseSnapshot From,
     TacticalPoseSnapshot To, double Chance, bool Hit, int Damage, bool Rear, bool Kill, bool Killed)
 {
     /// <summary>This impact transitions the target to destroyed.</summary>
     public bool LethalImpact { get; init; }
+    public bool TargetEvading { get; init; }
 }
 public sealed record TacticalHitRulesSnapshot(double Base, double MinChance, double MaxChance, double RangeBonus,
     double AnglePenalty, double RearBonus, double RearBonusArc);
-public sealed record TacticalForecastRules(TacticalHitRulesSnapshot Hit, double TurnAtMaxSpeedFraction, double RearArc, int Substeps);
+public sealed record TacticalEvasionRulesSnapshot(double HitPenalty, int Cost, int MinConsciousness, int RecoveryPerTurn, int MaxConsciousness);
+public sealed record TacticalForecastRules(TacticalHitRulesSnapshot Hit, double TurnAtMaxSpeedFraction, double RearArc, int Substeps)
+{
+    public TacticalEvasionRulesSnapshot? Evasion { get; init; }
+}
 public sealed record TacticalLossCount(string Side, int Count);
 public sealed record TacticalOutcomeReasonSnapshot(TacticalOutcomeReasonCode Kind, string? CarrierId = null, int? Cap = null);
 public sealed record TacticalWeaponTotalsSnapshot(string WeaponId, long Shots, long Hits, long RearHits, long RearKills, long Hull);

@@ -3,7 +3,7 @@ epic: EP-0020-tactical-battle-mechanics
 story: EP-0020-US-0002-evasion-resolution
 ticket: EP-0020-US-0002-TK-0001-evasion-contracts
 title: Контракты уклонения
-stage: draft
+stage: done
 layer: contracts
 test_project: tests/DeepSpaceSaga.Contracts.Tests
 depends_on: [EP-0020-US-0001-TK-0002-consciousness-state]
@@ -84,4 +84,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+2026-11-08: добавлены Evade, EvasionUnavailable=23, Evading=8, прогноз и метка фактического выстрела, nullable Evasion rules. 25/25 TacticalBattleContractTests PASS, build и scoped format PASS; git diff --check PASS. Evidence: D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us2-tk1/tests.trx. Self-review: старые ID сохранены, defaults читаются, RNG/Save20 не затронуты. US2-AC1/AC6: транспортные поля готовы; production resolution следует в TK-0003/0004.
