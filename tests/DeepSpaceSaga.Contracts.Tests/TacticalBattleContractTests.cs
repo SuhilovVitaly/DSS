@@ -7,6 +7,32 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void Slots_round_trip()
+    {
+        var unit = RoundTrip(Frame().Units[0] with
+        {
+            Slots = [new(TacticalSlotKind.Weapon, 0, "gun", "Gun", TacticalSlotState.Jammed),
+                new(TacticalSlotKind.Engine, 1, "engine", "Engine", TacticalSlotState.Damaged, .5),
+                new(TacticalSlotKind.Shield, 1, null, null, TacticalSlotState.Ok)],
+            Build = Frame().Units[0].Build! with { EngineSlots = 2, ModuleSlots = 1 }
+        });
+        Assert.Equal(3, unit.Slots.Length); Assert.Equal(TacticalSlotState.Jammed, unit.Slots[0].State);
+        Assert.Equal(.5, unit.Slots[1].Factor); Assert.Equal(1, unit.Slots[2].Factor); Assert.Null(unit.Slots[2].ModuleId);
+        Assert.Equal(2, unit.Build!.EngineSlots); Assert.Equal(1, unit.Build.ModuleSlots);
+        Assert.Equal(Enumerable.Range(0, 5), Enum.GetValues<TacticalSlotKind>().Select(k => (int)k));
+        Assert.Equal(Enumerable.Range(0, 3), Enum.GetValues<TacticalSlotState>().Select(k => (int)k));
+    }
+
+    [Fact]
+    public void OldPayloadsWithoutSlotsRemainReadable()
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame().Units[0]))!;
+        node.AsObject().Remove("Slots"); node["Build"]!.AsObject().Remove("EngineSlots"); node["Build"]!.AsObject().Remove("ModuleSlots");
+        var unit = JsonSerializer.Deserialize<TacticalUnitSnapshot>(node.ToJsonString())!;
+        Assert.Empty(unit.Slots); Assert.Equal(0, unit.Build!.EngineSlots); Assert.Equal(0, unit.Build.ModuleSlots);
+    }
+
+    [Fact]
     public void Anomaly_fields_round_trip()
     {
         Assert.True(RoundTrip(Frame().Units[0] with { InDust = true }).InDust);

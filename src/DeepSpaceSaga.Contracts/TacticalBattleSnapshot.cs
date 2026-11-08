@@ -27,12 +27,17 @@ public sealed record TacticalFireStepSnapshot(int Index, string ShooterId, strin
 public readonly record struct TacticalPoseSnapshot(double X, double Y, double Course);
 public sealed record TacticalSideTactic(string Side, string TacticId);
 public sealed record TacticalMovementLimits(double Mass, double MassFactor, double MinSpeed, double MaxSpeed, double Change, double Turn);
+public enum TacticalSlotKind { Weapon = 0, Armor = 1, Shield = 2, Engine = 3, Module = 4 }
+public enum TacticalSlotState { Ok = 0, Jammed = 1, Damaged = 2 }
+public sealed record TacticalSlotSnapshot(TacticalSlotKind Kind, int Index, string? ModuleId, string? ModuleName, TacticalSlotState State, double Factor = 1);
 public sealed record TacticalEngineSnapshot(string Id, string Name, double Factor, double Mass, double SpeedBonus, double SpeedChange, double Turn);
 public sealed record TacticalBuildSnapshot(string FrameName, string PilotId, string PilotName, string WeaponId, string WeaponName,
     int DamageMin, int DamageMax, int Piercing, int HitBonus, double Range, double ArcDegrees, double? RangeBonus, double RearKillChance,
     string ArmorId, string ArmorName, string? ShieldId, string? ShieldName, int ShieldDefense, int ShieldCount, int ShieldSlots,
     double FrameMass, double ReferenceMass, double WeaponMass, double ArmorMass, double ShieldMass)
 {
+    public int EngineSlots { get; init; }
+    public int ModuleSlots { get; init; }
     public string? DecoyId { get; init; }
     public string? DecoyName { get; init; }
     public int DecoyMaxCharges { get; init; }
@@ -42,6 +47,7 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
     string? RoleId, bool Jammed, ImmutableArray<TacticalEngineSnapshot> Engines, TacticalMovementLimits? Limits,
     double PreviousTurn, TacticalBuildSnapshot? Build, int Accuracy, int Maneuver, string? RoleName = null)
 {
+    public ImmutableArray<TacticalSlotSnapshot> Slots { get; init; } = [];
     public bool InDust { get; init; }
     public int? Initiative { get; init; }
     public int? Consciousness { get; init; }

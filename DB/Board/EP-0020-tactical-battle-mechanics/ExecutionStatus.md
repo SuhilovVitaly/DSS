@@ -89,3 +89,5 @@ EP-0020-US-0010-TK-0001 → cee0349de9c1a39767ca7c33b287bde8ccb1f9c3 → origin 
 EP-0020-US-0010-TK-0002 → 0616d4383cad76005f05198fb2b43922617d1265 → origin проверен. TK3Client28PASS,готов к публикации; далее M3whole-viewregression TK4.
 
 EP-0020-US-0010-TK-0003 → a87bea55c16d845c4f4c5bb68cf37e53e56d0fd6 → origin проверен. US10завершена:Client2230uniquePASS,29Ep0019PASS,12strictsnapshotdifferent0,готов к публикации TK4. ДалееUS11слоты.
+
+EP-0020-US-0010-TK-0004 → 0dc878c33ca0311f58fc5937b5ede81366f54857 → origin проверен. US11/TK1Contracts32PASS,готов к публикации.
