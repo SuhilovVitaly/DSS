@@ -12,16 +12,17 @@
 | `maxSpeedCap` | потолок vmax |
 | `turnCapDeg` | потолок поворота за ход, ° |
 | `engineSlots` | сколько двигателей можно поставить |
+| `moduleSlots` | сколько модулей ловушек можно поставить, по умолчанию 0 |
 | `shieldSlots` | сколько щитов можно поставить; по умолчанию 1 |
 | `maneuver` | только у `carrier`: его «манёвренность» в формуле шанса, целое |
 
 Рама `carrier` обязательна. У неё только `name`, `hull`, `maneuver`; прочерк в таблице — поля нет.
 
 <!-- table:frames -->
-| id | name | hull | frameMassKg | referenceMassKg | minSpeed | maxSpeedCap | turnCapDeg | engineSlots | shieldSlots | maneuver |
-|---|---|---|---|---|---|---|---|---|---|---|
-| carrier | Носитель | 400 | — | — | — | — | — | — | — | 35 |
-| heavy | Тяжёлый | 65 | 460 | 760 | 50 | 110 | 70 | 2 | 2 | — |
-| light | Лёгкий | 55 | 300 | 760 | 50 | 120 | 80 | 2 | 1 | — |
-| thug | Таг | 45 | 260 | 760 | 45 | 105 | 70 | 1 | 1 | — |
+| id | name | hull | frameMassKg | referenceMassKg | minSpeed | maxSpeedCap | turnCapDeg | engineSlots | shieldSlots | maneuver | moduleSlots |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| carrier | Носитель | 400 | — | — | — | — | — | — | — | 35 | 0 |
+| heavy | Тяжёлый | 65 | 460 | 760 | 50 | 110 | 70 | 2 | 2 | — | 1 |
+| light | Лёгкий | 55 | 300 | 760 | 50 | 120 | 80 | 2 | 1 | — | 1 |
+| thug | Таг | 45 | 260 | 760 | 45 | 105 | 70 | 1 | 1 | — | 1 |
 <!-- /table -->

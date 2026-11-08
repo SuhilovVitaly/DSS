@@ -58,7 +58,7 @@ internal static class TacticalBattleContentLoader
         }));
         var catalog = new TacticalBattleCatalog(rules, ai, DirectoryCatalog<BattleFrame>("Frames"),
             DirectoryCatalog<BattleWeapon>("Modules/Weapons"), DirectoryCatalog<BattleEngine>("Modules/Engines"),
-            DirectoryCatalog<BattleShield>("Modules/Shields"), DirectoryCatalog<BattleArmor>("Modules/Armor"), pilots,
+            DirectoryCatalog<BattleShield>("Modules/Shields"), DirectoryCatalog<BattleDecoy>("Modules/Decoys"), DirectoryCatalog<BattleArmor>("Modules/Armor"), pilots,
             Named<BattleLayout>(FileRoot("layouts.json"), "layouts.json", "$"),
             Named<BattleScenario>(FileRoot("scenarios.json"), "scenarios.json", "$"));
         Validate(catalog, aiRoot, name => FileRoot(name));
@@ -211,6 +211,7 @@ internal static class TacticalBattleContentLoader
         Require(r.Evasion.HitPenalty >= 0 && r.Evasion.Cost >= 0 && r.Evasion.MinConsciousness >= 0
             && r.Evasion.MinConsciousness <= r.Consciousness.Max && Unit(r.Evasion.AiHullFraction),
             "rules.json", "$.evasion", "Invalid evasion rules.");
+        Require(Unit(r.Decoy.AiThreatChance), "rules.json", "$.decoy.aiThreatChance", "Expected fraction in [0,1].");
         Require(r.Version == "4.0", "rules.json", "$.version", "Expected V4.0.");
         Require(r.Substeps > 0 && r.SeriesTurnCap > 0, "rules.json", "$.substeps/seriesTurnCap", "Counts must be positive.");
         Require(Unit(r.TurnAtMaxSpeedFraction) && Unit(r.Disabled.HullFraction) && Unit(r.Systems.EngineDamagedFactor), "rules.json", "$", "Fractions must be in [0,1].");
@@ -229,6 +230,7 @@ internal static class TacticalBattleContentLoader
         foreach (var (id, frame) in c.Frames.Entries)
         {
             string file = $"Frames/{id}.json";
+            Require(frame.ModuleSlots >= 0, file, "$.moduleSlots", "Slots must not be negative.");
             Require(frame.Hull > 0, file, "$.hull", "Hull must be positive.");
             if (id == TacticalBattleConstants.CarrierFrame)
             {
@@ -252,6 +254,9 @@ internal static class TacticalBattleContentLoader
             Require(e.SpeedBonus >= 0 && e.SpeedChange >= 0 && e.TurnDeg >= 0 && e.MassKg >= 0, $"Modules/Engines/{id}.json", "$", "Negative engine value.");
         foreach (var (id, s) in c.Shields.Entries)
             Require(s.Defense >= 0 && s.MassKg >= 0 && s.Tier >= 0, $"Modules/Shields/{id}.json", "$", "Negative shield value.");
+        foreach (var (id, d) in c.Decoys.Entries)
+            Require(d.Charges >= 1 && d.MissFactor >= 1 && d.MassKg >= 0 && d.Tier >= 0,
+                $"Modules/Decoys/{id}.json", "$", "Invalid decoy charges, multiplier, mass or tier.");
         foreach (var (id, a) in c.Armor.Entries)
             Require(a.Armor >= 0 && a.MassKg >= 0 && a.Tier >= 0, $"Modules/Armor/{id}.json", "$", "Negative armor value.");
         Require(c.Layouts.Count > 0 && c.Pilots.Count > 0 && c.Scenarios.Count > 0 && c.Ai.Tactics.Count > 0, "layouts/pilots/scenarios/ai.json", "$", "Catalogs must not be empty.");
@@ -262,6 +267,9 @@ internal static class TacticalBattleContentLoader
             Require(c.Armor.Contains(layout.Armor), "layouts.json", field + ".armor", "Unknown armor.");
             Require(layout.Hull is null or > 0, "layouts.json", field + ".hull", "Hull must be positive.");
             var frame = c.Frames[layout.Class];
+            if (layout.Module is { } module)
+                Require(c.Decoys.Contains(module) && frame.ModuleSlots > 0 && layout.Class != TacticalBattleConstants.CarrierFrame,
+                    "layouts.json", field + ".module", "Unknown module or no available drone module slot.");
             if (layout.Class == TacticalBattleConstants.CarrierFrame)
                 Require(layout.Weapon is null && layout.Engines.IsEmpty && layout.Shield is null && (layout.ShieldCount ?? 0) == 0, "layouts.json", field, "Carrier must not mount weapons, engines or shields.");
             else

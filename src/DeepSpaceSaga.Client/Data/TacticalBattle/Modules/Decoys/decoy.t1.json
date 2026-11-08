@@ -1,0 +1,8 @@
+{
+  "id": "decoy.t1",
+  "name": "Ловушки I",
+  "tier": 1,
+  "charges": 2,
+  "missFactor": 1.5,
+  "massKg": 10
+}

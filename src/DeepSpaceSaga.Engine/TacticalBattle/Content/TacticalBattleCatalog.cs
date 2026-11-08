@@ -22,5 +22,5 @@ internal sealed class OrderedBattleCatalog<T>
 internal sealed record TacticalBattleCatalog(TacticalRules Rules, BattleAi Ai,
     OrderedBattleCatalog<BattleFrame> Frames, OrderedBattleCatalog<BattleWeapon> Weapons,
     OrderedBattleCatalog<BattleEngine> Engines, OrderedBattleCatalog<BattleShield> Shields,
-    OrderedBattleCatalog<BattleArmor> Armor, OrderedBattleCatalog<BattlePilot> Pilots,
+    OrderedBattleCatalog<BattleDecoy> Decoys, OrderedBattleCatalog<BattleArmor> Armor, OrderedBattleCatalog<BattlePilot> Pilots,
     OrderedBattleCatalog<BattleLayout> Layouts, OrderedBattleCatalog<BattleScenario> Scenarios);

@@ -10,6 +10,41 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 public sealed class ContentLoaderTests
 {
     [Fact]
+    public void Decoy_module_and_slots_load_from_shipped_data()
+    {
+        var catalog = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle"));
+        Assert.Equal(new BattleDecoy("decoy.t1", "Ловушки I", 1, 2, 1.5, 10), catalog.Decoys["decoy.t1"]);
+        Assert.Equal(.4, catalog.Rules.Decoy.AiThreatChance);
+        foreach (var (id, frame) in catalog.Frames.Entries)
+            Assert.Equal(id == "carrier" ? 0 : 1, frame.ModuleSlots);
+        foreach (var (_, layout) in catalog.Layouts.Entries)
+            Assert.Equal(layout.Class == "carrier" ? null : "decoy.t1", layout.Module);
+        using var fixture = new Fixture();
+        fixture.Change("layouts.json", "/light.spear/module", "<missing>");
+        Assert.Null(TacticalBattleContentLoader.Load(fixture.Battle).Layouts["light.spear"].Module);
+    }
+
+    [Theory]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/charges", "0")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/charges", "1.5")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/missFactor", "0.9")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/massKg", "-1")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/tier", "-1")]
+    [InlineData("Frames/light.json", "/moduleSlots", "0")]
+    [InlineData("Frames/carrier.json", "/moduleSlots", "-1")]
+    [InlineData("layouts.json", "/light.spear/module", "\"unknown\"")]
+    [InlineData("layouts.json", "/carrier.standard/module", "\"decoy.t1\"")]
+    [InlineData("rules.json", "/decoy/aiThreatChance", "-0.01")]
+    [InlineData("rules.json", "/decoy/aiThreatChance", "1.01")]
+    [InlineData("rules.json", "/decoy", "<missing>")]
+    public void Invalid_decoy_module_or_slot_is_rejected(string file, string pointer, string value)
+    {
+        using var fixture = new Fixture();
+        fixture.Change(file, pointer, value);
+        Assert.Throws<TacticalBattleContentException>(() => TacticalBattleContentLoader.Load(fixture.Battle));
+    }
+
+    [Fact]
     public void Evasion_and_consciousness_rules_load_from_shipped_data()
     {
         var rules = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle")).Rules;

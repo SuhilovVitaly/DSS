@@ -8,5 +8,6 @@
   "maxSpeedCap": 110,
   "turnCapDeg": 70,
   "engineSlots": 2,
-  "shieldSlots": 2
+  "shieldSlots": 2,
+  "moduleSlots": 1
 }

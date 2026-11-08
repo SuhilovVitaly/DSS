@@ -48,7 +48,7 @@ public sealed class ContentSyncTests
             Assert.Equal(expectedLeaves, Leaves(doc.RootElement, ""));
         }
         foreach (var (folder, table) in new[] { ("Frames", "frames"), ("Modules/Weapons", "weapons"),
-            ("Modules/Engines", "engines"), ("Modules/Shields", "shields"), ("Modules/Armor", "armor") })
+            ("Modules/Engines", "engines"), ("Modules/Shields", "shields"), ("Modules/Armor", "armor"), ("Modules/Decoys", "decoys") })
             foreach (var row in Table(folder + "/README.md", table))
             {
                 using var doc = Open(folder + "/" + row["id"] + ".json");
@@ -176,7 +176,7 @@ public sealed class ContentSyncTests
             if (skip.Contains(key, StringComparer.Ordinal)) continue;
             if (value == "—")
             {
-                if (layout && key is "weapon" or "shield" or "engines") continue;
+                if (layout && key is "weapon" or "shield" or "engines" or "module") continue;
                 Assert.False(actual.TryGetProperty(key, out _), key);
                 continue;
             }
@@ -185,7 +185,7 @@ public sealed class ContentSyncTests
             else Cell(value, actual.GetProperty(key));
         }
         if (layout)
-            foreach (string key in new[] { "weapon", "shield", "engines" })
+            foreach (string key in new[] { "weapon", "shield", "engines", "module" })
                 if (row[key] == "—")
                 {
                     expected.Add(key);

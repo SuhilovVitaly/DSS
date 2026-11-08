@@ -47,5 +47,8 @@
     "minConsciousness": 10,
     "aiHullFraction": 0.5
   },
+  "decoy": {
+    "aiThreatChance": 0.4
+  },
   "seriesTurnCap": 100
 }

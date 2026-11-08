@@ -16,6 +16,7 @@
 | `Modules/Engines/<id>.json` | двигатели | `engines` |
 | `Modules/Shields/<id>.json` | щиты | `shields` |
 | `Modules/Armor/<id>.json` | бронеплиты | `armor` |
+| `Modules/Decoys/<id>.json` | модули ловушек | `decoys` |
 
 **Правила файлов:**
 - Файл рамы и модуля — один объект с полем `id`, равным имени файла без `.json`. Остальные поля описаны в README папки.
@@ -33,6 +34,7 @@
 | бронеплиты | ровно 1 (`armor.none` — без брони) | `armor` → `Modules/Armor/` |
 | щиты | 0…`shieldSlots` рамы одинаковых | `shield` (null — нет) × `shieldCount` (по умолчанию 1) → `Modules/Shields/` |
 | двигатели | 1…`engineSlots` рамы (у носителя 0) | `engines[]` → `Modules/Engines/` |
+| модуль | 0…`moduleSlots` рамы | `module` (null — нет) → `Modules/Decoys/` |
 
 - Корпус дрона — `hull` компоновки, если он задан, иначе `hull` рамы.
 - Масса дрона — масса рамы + масса всех модулей; от неё зависят скорость, разгон и поворот (Spec/Combat.md §3).
@@ -82,6 +84,7 @@
 | `evasion.cost` | 10 |
 | `evasion.minConsciousness` | 10 |
 | `evasion.aiHullFraction` | 0.5 |
+| `decoy.aiThreatChance` | 0.4 |
 | `seriesTurnCap` | 100 |
 <!-- /table -->
 
@@ -174,16 +177,16 @@
 `hull` и `shieldCount` необязательны, прочерк — поле не задано.
 
 <!-- table:layouts -->
-| id | name | class | hull | weapon | armor | shield | shieldCount | engines |
-|---|---|---|---|---|---|---|---|---|
-| heavy.sword.shield | Тяжёлый · меч I · средние плиты · щит I ×2 | heavy | — | gun.sword.t1 | plate.medium | shield.t1 | 2 | drive.standard, drive.standard |
-| heavy.spear.shield | Тяжёлый · копьё I · средние плиты · щит I ×2 | heavy | — | gun.spear.t1 | plate.medium | shield.t1 | 2 | drive.standard, drive.standard |
-| light.sword.shield | Лёгкий · меч I · средние плиты · щит I | light | — | gun.sword.t1 | plate.medium | shield.t1 | — | drive.standard, drive.standard |
-| light.spear | Лёгкий · копьё I · средние плиты · щит I | light | — | gun.spear.t1 | plate.medium | shield.t1 | — | drive.standard, drive.standard |
-| thug.scrap | Таг · самопал I · латаные плиты | thug | — | gun.scrap.t1 | plate.patched | — | — | drive.light |
-| thug.sawn | Таг · обрез I · обшивка из хлама | thug | 40 | gun.sawn.t1 | plate.rags | — | — | drive.light |
-| thug.scrap.shield | Таг · самопал I · лёгкие плиты · щит I | thug | 50 | gun.scrap.t1 | plate.light | shield.t1 | — | drive.light |
-| carrier.standard | Носитель · без вооружения | carrier | — | — | armor.none | — | — | — |
+| id | name | class | hull | weapon | armor | shield | shieldCount | engines | module |
+|---|---|---|---|---|---|---|---|---|---|
+| heavy.sword.shield | Тяжёлый · меч I · средние плиты · щит I ×2 | heavy | — | gun.sword.t1 | plate.medium | shield.t1 | 2 | drive.standard, drive.standard | decoy.t1 |
+| heavy.spear.shield | Тяжёлый · копьё I · средние плиты · щит I ×2 | heavy | — | gun.spear.t1 | plate.medium | shield.t1 | 2 | drive.standard, drive.standard | decoy.t1 |
+| light.sword.shield | Лёгкий · меч I · средние плиты · щит I | light | — | gun.sword.t1 | plate.medium | shield.t1 | — | drive.standard, drive.standard | decoy.t1 |
+| light.spear | Лёгкий · копьё I · средние плиты · щит I | light | — | gun.spear.t1 | plate.medium | shield.t1 | — | drive.standard, drive.standard | decoy.t1 |
+| thug.scrap | Таг · самопал I · латаные плиты | thug | — | gun.scrap.t1 | plate.patched | — | — | drive.light | decoy.t1 |
+| thug.sawn | Таг · обрез I · обшивка из хлама | thug | 40 | gun.sawn.t1 | plate.rags | — | — | drive.light | decoy.t1 |
+| thug.scrap.shield | Таг · самопал I · лёгкие плиты · щит I | thug | 50 | gun.scrap.t1 | plate.light | shield.t1 | — | drive.light | decoy.t1 |
+| carrier.standard | Носитель · без вооружения | carrier | — | — | armor.none | — | — | — | — |
 <!-- /table -->
 
 ## scenarios.json — сценарии
