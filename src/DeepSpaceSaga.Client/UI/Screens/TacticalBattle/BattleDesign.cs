@@ -10,7 +10,7 @@ internal readonly record struct BattleViewport(float S, float Wd)
 
 internal static class BattleDesign
 {
-    public static string U(string key, params object?[] values) => string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle.Ui." + key), values);
+    public static string U(string key, params object?[] values) => values.Length == 0 ? Localization.Get("TacticalBattle.Ui." + key) : string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle.Ui." + key), values);
     public static readonly SKColor Bg = SKColor.Parse("#0A0E11"), MapBg = SKColor.Parse("#101518"), Grid = SKColor.Parse("#1C2428"),
         Panel = SKColor.Parse("#0E1B1F"), PanelSel = SKColor.Parse("#1A1E18"), PanelEdge = SKColor.Parse("#2BC7C9"),
         Box = SKColor.Parse("#16262A"), BoxEdge = SKColor.Parse("#2A454A"), ButtonFill = SKColor.Parse("#152A2D"),
