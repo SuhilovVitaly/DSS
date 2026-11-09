@@ -213,8 +213,8 @@ public class TacticalBattleModalScreen : IScreen
     {
         if (!IsSetup)
         {
-            float scale = height / 720f;
-            var box = SKRect.Create(width / 2f - 260 * scale, height / 2f - 90 * scale, 520 * scale, 180 * scale);
+            float scale = (float)(height / 720d);
+            var box = SKRect.Create(width * .5f - 260 * scale, height * .5f - 90 * scale, 520 * scale, 180 * scale);
             BattleDesign.Round(canvas, SKRect.Create(width, height), new(0, 0, 0, 180), radius: 0, role: "modal.exit.dim");
             BattleDesign.PanelBox(canvas, box, radius: 6 * scale, role: "modal.exit");
             BattleDesign.T(canvas, L("ConfirmExit"), box.Left + 24 * scale, box.Top + 44 * scale, 16 * scale, BattleDesign.Text, true);

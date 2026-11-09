@@ -87,12 +87,14 @@ public sealed class SkiaWindow : IDisposable
     private string? _graphicsVersion;
     private readonly MapFrameEvidence? _mapFrameEvidence = MapFrameEvidence.FromEnvironment();
     private double? _monitorRefreshHz;
+    private readonly bool _requireSmallerMonitor = Environment.GetEnvironmentVariable("DSS_VALIDATION_SMALL_MONITOR") == "1";
     private readonly TacticalBattleSkinCatalog _battleSkinCatalog;
     private TacticalBattleSkin _battleSkin;
     // Optional native evidence hook: the surface still contains this screen's
     // rendered pixels, before polling transitions or swapping the framebuffer.
     internal Action<SKSurface, IScreen?>? NativeFrameRendered { get; set; }
     internal Action<IScreen?, double>? NativeFrameMeasured { get; set; }
+    internal Action<IScreen?, long, double, double, double>? NativeFramePresented { get; set; }
 
     public SkiaWindow(IScreen initialScreen, IGameSessionFactory sessionFactory, System.Diagnostics.Stopwatch? startupStopwatch = null)
         : this(initialScreen, sessionFactory, startupStopwatch, createNativeWindow: true) { }
@@ -120,6 +122,7 @@ public sealed class SkiaWindow : IDisposable
         var options = WindowOptions.Default with
         {
             Title = "Deep Space Saga",
+            IsVisible = !_requireSmallerMonitor,
             WindowBorder = WindowBorder.Hidden,
             WindowState = WindowState.Normal,
             // Since the window is deliberately 1px shorter than the monitor (see
@@ -185,6 +188,19 @@ public sealed class SkiaWindow : IDisposable
             ? monitors[selectedMonitorIndex]
             : Silk.NET.Windowing.Monitor.GetMainMonitor(_window);
 
+        if (_requireSmallerMonitor)
+        {
+            static long Area(Silk.NET.Windowing.IMonitor monitor)
+            {
+                var size = monitor.VideoMode.Resolution ?? monitor.Bounds.Size;
+                return (long)size.X * size.Y;
+            }
+
+            if (selectedMonitorIndex < 0 || selectedMonitorIndex >= monitors.Length || target is null ||
+                monitors.Length < 2 || Area(target) >= monitors.Max(Area))
+                throw new InvalidOperationException("Validation requires an explicitly selected monitor smaller than the largest display.");
+        }
+
         if (target is not null)
         {
             _window.Position = target.Bounds.Origin;
@@ -211,6 +227,8 @@ public sealed class SkiaWindow : IDisposable
                 width >= 640 && height >= 480)
                 _window.Size = new Silk.NET.Maths.Vector2D<int>(width, height);
         }
+
+        if (_requireSmallerMonitor) _window.IsVisible = true;
 
         _gl = _window.CreateOpenGL();
         _graphicsRenderer = _gl.GetStringS(StringName.Renderer);
@@ -367,7 +385,8 @@ public sealed class SkiaWindow : IDisposable
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
-            screen.Render(canvas, windowSize.X, windowSize.Y);
+            if (screen is TacticalBattleScreen battle) battle.RenderNative(canvas, windowSize.X, windowSize.Y);
+            else screen.Render(canvas, windowSize.X, windowSize.Y);
             if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
             index++;
         }
@@ -407,6 +426,9 @@ public sealed class SkiaWindow : IDisposable
         long presentStart = Stopwatch.GetTimestamp();
         _window.SwapBuffers();
         double presentWaitMs = Stopwatch.GetElapsedTime(presentStart).TotalMilliseconds;
+        NativeFramePresented?.Invoke(_screens.Current, Stopwatch.GetTimestamp(),
+            Stopwatch.GetElapsedTime(callbackStart, presentStart).TotalMilliseconds, presentWaitMs,
+            Stopwatch.GetElapsedTime(flushStart, flushEnd).TotalMilliseconds);
         if (_mapFrameEvidence is { Completed: false } evidence && profiledScreen is not null)
         {
             var snapshot = profiledScreen.FrameEvidenceSnapshot;

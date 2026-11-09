@@ -234,3 +234,16 @@ settings profile (zero based); leave the regular user settings untouched. Native
 scripted input does not establish physical-input, human/product or balance acceptance.
 
 The current tactical native workflow also exercises E/D through the live keyboard router, rejects D while evading, checks the build-card model and restores the order flags before submission. It verifies replay, outcome/new battle, unchanged world/camera and quick Save/Load after exit. Run one native case at a time with no concurrent builds/tests; use both 1280x720/S1 and 1920x1080/S1.5 and an isolated settings profile for language/monitor. A passed interaction report does not mean80FPS: inspect nativeDraw timings separately, and keep physical input and human acceptance open.
+
+
+Set `DSS_VALIDATION_SMALL_MONITOR=1` and supply an isolated settings profile
+with an explicit smaller monitor index before launching a native battle. The
+window checks the selection before becoming visible. The requested framebuffer
+must fit the selected monitor.
+
+With `DSS_TACTICAL_MEASURE_CADENCE=1`, the native harness measures 600
+swap-completion intervals after 120 warm-up frames for four cases covering
+stationary movement planning, panning, zooming and salvo playback. The 80 FPS
+budget is p99 at or below 12.5 ms. Submit, flush and swap wait are reported
+separately. Use `DSS_TACTICAL_BENCH_UNCAPPED=1` with cadence measurement to
+measure rendering throughput on a lower-refresh validation display.

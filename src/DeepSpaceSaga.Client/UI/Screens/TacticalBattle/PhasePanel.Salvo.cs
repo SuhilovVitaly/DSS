@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Motion.TacticalBattle;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
@@ -18,7 +19,7 @@ internal sealed partial class PhasePanel
     internal bool ScrollQueue(SKPoint point, float delta)
     {
         if (_frame is null || Phase != "Salvo" || !QueueBounds.Contains(point) || !float.IsFinite(delta)) return false;
-        if (delta != 0) _queueFirst = Math.Clamp(_queueFirst - Math.Sign(delta) * 3, 0, Math.Max(0, _queueCount - QueueVisibleRows));
+        if (delta != 0) _queueFirst = (int)PyMath.Clamp(_queueFirst - Math.Sign(delta) * 3, 0, PyMath.Max(0, _queueCount - QueueVisibleRows));
         return true;
     }
     partial void DrawSalvo(SKCanvas c)
@@ -35,17 +36,17 @@ internal sealed partial class PhasePanel
             if (_queueFocus != focus)
             {
                 int activeIndex = Array.FindIndex(_frame.Battle.FireQueue.ToArray(), q => q.ShooterId == current?.Shot.ShooterId);
-                if (activeIndex >= 0) _queueFirst = Math.Clamp(_queueFirst, Math.Max(0, activeIndex - QueueVisibleRows + 1), activeIndex);
+                if (activeIndex >= 0) _queueFirst = (int)PyMath.Clamp(_queueFirst, PyMath.Max(0, activeIndex - QueueVisibleRows + 1), activeIndex);
                 _queueFocus = focus;
             }
-            _queueFirst = Math.Clamp(_queueFirst, 0, Math.Max(0, _queueCount - QueueVisibleRows));
+            _queueFirst = (int)PyMath.Clamp(_queueFirst, 0, PyMath.Max(0, _queueCount - QueueVisibleRows));
             QueueBounds = R(1045, 133, 1273, 281);
             if (Recording is { } layout) layout.Rects["queue"] = QueueBounds;
             T(c, U("FireQueue"), 1050, 128, 10.5f, Muted);
             c.Save(); c.ClipRect(new(1045, 133, 1273, 281));
             try
             {
-                for (int i = _queueFirst; i < Math.Min(_queueCount, _queueFirst + QueueVisibleRows); i++)
+                for (int i = _queueFirst; i < PyMath.Min(_queueCount, _queueFirst + QueueVisibleRows); i++)
                 {
                     var q = _frame.Battle.FireQueue[i]; float y = 145 + 13.6f * (i - _queueFirst);
                     var flight = salvo.Flights.FirstOrDefault(f => f.Shot.ShooterId == q.ShooterId);
@@ -67,8 +68,8 @@ internal sealed partial class PhasePanel
             finally { c.Restore(); }
             if (_queueCount > QueueVisibleRows)
             {
-                float thumb = 146f * QueueVisibleRows / _queueCount;
-                float top = 134 + (146 - thumb) * _queueFirst / (_queueCount - QueueVisibleRows);
+                float thumb = (float)(146d * QueueVisibleRows / (double)_queueCount);
+                float top = 134 + (float)((146 - thumb) * _queueFirst / (double)(_queueCount - QueueVisibleRows));
                 Stroke(c, new(1271, 134), new(1271, 280), Track, 2);
                 Stroke(c, new(1271, top), new(1271, top + thumb), Muted, 2);
             }

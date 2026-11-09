@@ -8,7 +8,7 @@ internal static partial class TacticalBattleMapRenderer
 {
     internal static IEnumerable<TacticalShotSnapshot> DecoyMisses(TacticalBattleFrame frame) =>
         frame.Salvo is { InFlight: false } salvo ? salvo.Flights.Where(f => f.Shot.Decoyed && !f.Shot.Hit && !f.Shot.Absorbed).Select(f => f.Shot) : [];
-    static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied)
+    static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied, InteractiveAnomalyField? interactiveField)
     {
         if (f.Movement is not null) return;
         foreach (var trail in f.Battle.Paths)
@@ -18,11 +18,11 @@ internal static partial class TacticalBattleMapRenderer
             if (plan.Selected?.Drone.Build is { } build)
             {
                 var unit = plan.Selected.Drone; var p = f.View.Project(unit.Pose); float r = (float)(build.Range * f.View.PixelsPerUnit);
-                using var path = new SKPath(); path.MoveTo(p); path.ArcTo(SKRect.Create(p.X - r, p.Y - r, 2 * r, 2 * r), (float)(unit.Pose.Course - build.ArcDegrees / 2), (float)build.ArcDegrees, false); path.Close();
+                using var path = new SKPath(); path.MoveTo(p); path.ArcTo(SKRect.Create(p.X - r, p.Y - r, 2 * r, 2 * r), (float)(unit.Pose.Course - build.ArcDegrees * .5), (float)build.ArcDegrees, false); path.Close();
                 using var paint = new SKPaint { IsAntialias = true, Color = ArcFill }; c.DrawPath(path, paint);
                 paint.Color = ArcEdge; paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 1.1f; c.DrawPath(path, paint);
                 c.Save();
-                try { c.ClipPath(path, SKClipOperation.Intersect, true); AnomalyLayer.Draw(c, f); }
+                try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
                 finally { c.Restore(); }
             }
             foreach (var row in plan.Rows.Where(r => r.Drone.InDust))
@@ -38,8 +38,8 @@ internal static partial class TacticalBattleMapRenderer
                 Arrow(c, a, b, selected ? Yellow : Text.WithAlpha(170), selected ? 2.6f : 1.3f, selected ? 12 : 9);
                 if (selected && row.Target is { } candidate)
                 {
-                    string text = Pct(candidate.Chance); var p = new SKPoint((a.X + b.X) / 2, (a.Y + b.Y) / 2); float w = Measure(text, 16, true);
-                    var rect = new SKRect(p.X - w / 2, p.Y - 25, p.X + w / 2, p.Y - 7); occupied.Add(rect); if (Recording is { } l) l.Rects["chance"] = rect;
+                    string text = Pct(candidate.Chance); var p = new SKPoint((a.X + b.X) * .5f, (a.Y + b.Y) * .5f); float w = Measure(text, 16, true);
+                    var rect = new SKRect(p.X - w * .5f, p.Y - 25, p.X + w * .5f, p.Y - 7); occupied.Add(rect); if (Recording is { } l) l.Rects["chance"] = rect;
                     T(c, text, p.X, p.Y - 9, 16, Yellow, true, SKTextAlign.Center);
                     if (candidate.Absorption > 0)
                     {
@@ -73,7 +73,7 @@ internal static partial class TacticalBattleMapRenderer
             var markers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => f.View.Project(u.Pose)).ToArray();
             foreach (var damage in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
             {
-                var p = f.View.Project(damage.Unit.Pose); string text = U("ArmorLoss", damage.Armor); float half = (Measure(text, 12) + 14) / 2;
+                var p = f.View.Project(damage.Unit.Pose); string text = U("ArmorLoss", damage.Armor); float half = (Measure(text, 12) + 14) * .5f;
                 SKPoint q = default;
                 foreach (var delta in new SKPoint[] { new(0, 32), new(half + 16, 10), new(0, -20), new(-half - 16, 10) })
                 { q = p + delta; var bounds = new SKRect(q.X - half - 10, q.Y - 27, q.X + half + 10, q.Y + 12); if (!markers.Any(bounds.Contains)) break; }
@@ -85,7 +85,7 @@ internal static partial class TacticalBattleMapRenderer
                 Circle(c, q, 6, SKColors.Transparent, Heat, 1.6f); Circle(c, q, 10, SKColors.Transparent, Heat, 1.6f);
                 var shooter = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId);
                 string text = M("AbsorbedCallout", shooter is null ? shot.ShooterId : PilotCardModel.Name(shooter));
-                float half = (Measure(text, 12) + 14) / 2;
+                float half = (Measure(text, 12) + 14) * .5f;
                 var absorptionMarkers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => MarkerPoint(f.View, u))
                     .Concat(f.Battle.Units.Where(u => HasDecoy(f, u)).Select(u => DecoyPoint(f.View.Project(u.Pose), u.Pose.Course))).ToArray();
                 var callout = q + new SKPoint(0, -16);
@@ -108,7 +108,7 @@ internal static partial class TacticalBattleMapRenderer
                 var shooter = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId);
                 var p = f.View.Project(target.Pose);
                 string text = M("DecoyMiss", shooter is null ? shot.ShooterId : PilotCardModel.Name(shooter));
-                float half = (Measure(text, 12) + 14) / 2;
+                float half = (Measure(text, 12) + 14) * .5f;
                 SKPoint q = p + new SKPoint(0, -38);
                 foreach (var delta in new SKPoint[] { new(0, -38), new(0, 44), new(half + 20, 10), new(-half - 20, 10),
                     new(.6f * half, -38), new(.6f * half, -60), new(0, -60), new(0, 64) })

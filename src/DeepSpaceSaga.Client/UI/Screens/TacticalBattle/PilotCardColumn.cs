@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Motion.TacticalBattle;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
@@ -46,7 +47,7 @@ internal sealed class PilotCardColumn
                 float x0 = r.Left + 60, x1 = r.Right - 41;
                 Stroke(c, new(x0, y - 3), new(x1, y - 3), Track, 3);
                 var color = TacticalBattleSkinRenderScope.Color("ui.pilot-card.bar." + stat.Kind, "fill", stat.Tone);
-                if (stat.Fill > 0) Stroke(c, new(x0, y - 3), new(x0 + (x1 - x0) * (float)Math.Clamp(stat.Fill, 0, 1), y - 3), color, 3);
+                if (stat.Fill > 0) Stroke(c, new(x0, y - 3), new(x0 + (x1 - x0) * (float)PyMath.Clamp(stat.Fill, 0, 1), y - 3), color, 3);
             }
             float fs = 8.5f;
             float Width() => card.Segments.Sum(s => Measure(s.Text, fs, s.Bold));

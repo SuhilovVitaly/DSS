@@ -129,6 +129,30 @@ public sealed class AnomalyFieldLayerTests
     }
 
     [Fact]
+    public async Task Interactive_field_does_not_reuse_screen_space_pixels_after_large_camera_change()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move");
+        var frame = scene.Screen.CaptureFrame(320, 180)!;
+        var strongest = frame.Battle.Anomalies.SelectMany(a => a.Clumps).MaxBy(c => c.Amplitude)!;
+        var view = new TacticalBattleView(320, 180, strongest.X, strongest.Y, 2);
+        using var layer = new InteractiveAnomalyField();
+        using var bitmap = new SKBitmap(320, 180);
+        using var canvas = new SKCanvas(bitmap);
+
+        SKColor CenterAt(TacticalBattleView camera)
+        {
+            canvas.Clear(SKColors.Black);
+            Assert.True(layer.Prepare(canvas, frame with { View = camera }));
+            layer.Draw(canvas);
+            return bitmap.GetPixel(160, 90);
+        }
+
+        Assert.NotEqual(SKColors.Black, CenterAt(view));
+        Assert.Equal(SKColors.Black, CenterAt(view with { CenterX = 100000, CenterY = 100000 }));
+        Assert.NotEqual(SKColors.Black, CenterAt(view));
+    }
+
+    [Fact]
     public async Task Layer_is_cached_per_camera()
     {
         await using var scene = await Ep0019Scenes.Create("1-move"); var battle = scene.Screen.Flow.State!;

@@ -5,6 +5,15 @@ Do not create `D:/DeepSpaceSaga/DSS/artifacts/`; avoid relative `artifacts/...`
 output paths when running repository commands. Tracked evidence explicitly
 required inside Board remains part of the canonical task documentation.
 
+## Game launches
+
+Never launch or move the game onto the largest connected monitor. This applies
+to manual checks, native benchmarks, screenshots and automated UI runs. Verify
+the display layout first and use an isolated profile with an explicit smaller
+monitor index. For SkiaWindow validation set `DSS_VALIDATION_SMALL_MONITOR=1`
+so placement is checked before the window is shown. If no smaller monitor can
+be verified, run headless checks only.
+
 ## DSS Board is the only task source
 
 For Deep Space Saga, `D:/DeepSpaceSaga/DSS/DB/Board/` is the only authoritative

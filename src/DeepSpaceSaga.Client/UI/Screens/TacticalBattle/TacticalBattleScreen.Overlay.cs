@@ -17,7 +17,7 @@ public sealed partial class TacticalBattleScreen
     private static float OverlayBottom(TacticalBattleSnapshot b, TacticalSalvoFrame? salvo) =>
         120 + (salvo is { InFlight: true } ? 262 : salvo is not null ? 246 : b.Phase == TacticalBattlePhase.Over ? 238 : 250);
     private SKRect Raw(SKRect r) => new(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S);
-    private SKPoint DesignPoint(float x, float y) => new(x / _viewport.S, y / _viewport.S);
+    private SKPoint DesignPoint(float x, float y) => new((float)(x / (double)_viewport.S), (float)(y / (double)_viewport.S));
     private IEnumerable<SKRect> OverlayRects()
     {
         yield return _panel;
