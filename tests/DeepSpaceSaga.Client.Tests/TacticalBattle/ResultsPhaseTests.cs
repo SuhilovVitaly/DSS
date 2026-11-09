@@ -8,8 +8,74 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
 [Collection("InterfaceLog")]
-public sealed class ResultsPhaseTests
+public sealed partial class ResultsPhaseTests
 {
+    [Fact]
+    public async Task Enemy_evasion_is_revealed_only_after_salvo()
+    {
+        await using var scene = await View.Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
+        using var locale = Localization.UseLocaleForTests("Russian");
+        var enemy = scene.Fixture.Engine.TacticalBattleSessionForTests!.Battle.Drones.First(d => d.Side == "B");
+        enemy.Hull = enemy.MaxHull / 2 - 1;
+        var before = scene.Screen.CaptureFrame(1920, 1080)!;
+        Assert.False(TacticalBattleMapRenderer.IsEvading(before, enemy.Id));
+        Assert.Empty(before.Battle.FireSteps);
+        scene.Fixture.ManualAnimation = true;
+        await scene.Fixture.Route(ScreenEvent.FireTacticalBattle);
+        var flight = scene.Screen.CaptureFrame(1920, 1080)!;
+        Assert.True(flight.Salvo!.InFlight);
+        Assert.True(TacticalBattleMapRenderer.IsEvading(flight, enemy.Id));
+        scene.Screen.HoverUnitId = enemy.Id;
+        using (var bitmap = scene.Render()) { }
+        Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "Уклонение");
+        scene.Screen.OnKeyDown(Key.Enter);
+        Assert.True(TacticalBattleMapRenderer.IsEvading(scene.Screen.CaptureFrame(1920, 1080)!, enemy.Id));
+        scene.Screen.OnKeyDown(Key.Enter);
+        Assert.False(TacticalBattleMapRenderer.IsEvading(scene.Screen.CaptureFrame(1920, 1080)!, enemy.Id));
+        Assert.Equal(1, scene.Fixture.Proxy.Fires);
+    }
+
+    [Fact]
+    public async Task Own_evaded_drone_card_shows_evasion()
+    {
+        await using var scene = await View.Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
+        using var locale = Localization.UseLocaleForTests("Russian");
+        string id = scene.Screen.CaptureFrame(1920, 1080)!.FirePlan!.SelectedDroneId!;
+        scene.Screen.OnKeyDown(Key.E);
+        scene.Fixture.ManualAnimation = true;
+        await scene.Fixture.Route(ScreenEvent.FireTacticalBattle);
+        scene.Screen.OnKeyDown(Key.Enter);
+        var frame = scene.Screen.CaptureFrame(1920, 1080)!;
+        var card = PilotCardModel.Project(frame).Single(c => c.UnitId == id);
+        Assert.Equal("уклонение", card.Chip);
+        Assert.True(card.Evading);
+        Assert.Contains(frame.Battle.Log, e => e.ActorId == id && e.SkipReason == TacticalFireSkipReason.Evading);
+    }
+
+    [Fact]
+    public async Task Zero_shot_evasion_has_results_without_fake_projectiles_or_miss()
+    {
+        await using var scene = await View.Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
+        using var locale = Localization.UseLocaleForTests("Russian");
+        var battle = scene.Fixture.Engine.TacticalBattleSessionForTests!.Battle;
+        foreach (var drone in battle.Drones.Where(d => d.Side == "B")) drone.Jammed = true;
+        for (int i = 0; i < 4; i++) { scene.Screen.OnKeyDown(Key.E); scene.Screen.OnKeyDown(Key.Tab); }
+        scene.Fixture.ManualAnimation = true;
+        await scene.Fixture.Route(ScreenEvent.FireTacticalBattle);
+        var frame = scene.Screen.CaptureFrame(1920, 1080)!;
+        Assert.False(frame.Salvo!.InFlight);
+        Assert.Empty(frame.Salvo.Flights);
+        Assert.Equal(4, frame.Salvo.Evading.Count);
+        Assert.Equal(3, frame.Salvo.Turn);
+        using (var bitmap = scene.Render()) { }
+        Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "огонь не ведётся");
+        Assert.DoesNotContain(scene.Screen.Layout.Texts, t => t.Text == "ПРОМАХ");
+        Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "ХОД 3  •");
+        scene.Screen.OnKeyDown(Key.Enter);
+        Assert.Null(scene.Screen.CaptureFrame(1920, 1080)!.Salvo);
+        Assert.Equal(1, scene.Fixture.Proxy.Fires);
+    }
+
     [Fact]
     public async Task SequentialPlaybackAppliesDamageAtEachImpactBeforeNextLaunch()
     {
@@ -224,7 +290,7 @@ public sealed class ResultsPhaseTests
         var flight = Assert.Single(frame.Salvo!.Flights.Where(flight => flight.Flying));
         var shot = flight.Shot;
         var from = frame.View.Project(shot.From);
-        var to = TacticalBattleResults.Endpoint(from, frame.View.Project(shot.To), shot.Hit, flight.Index, 1);
+        var to = frame.View.Project(shot.To);
         var head = new SKPoint(from.X + (to.X - from.X) * (float)flight.Progress,
             from.Y + (to.Y - from.Y) * (float)flight.Progress);
         var skin = TacticalBattleSkin.Parse("""

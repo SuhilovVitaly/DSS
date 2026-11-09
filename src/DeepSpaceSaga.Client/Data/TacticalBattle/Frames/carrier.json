@@ -2,5 +2,6 @@
   "id": "carrier",
   "name": "Носитель",
   "hull": 400,
-  "maneuver": 35
+  "maneuver": 35,
+  "moduleSlots": 0
 }

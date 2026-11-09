@@ -184,7 +184,7 @@ public sealed class AiCommanderTests
     [Fact]
     public void WholeFirstPlanningStageMatchesEveryIndependentOrderAndCallCount()
     {
-        var battle = Battle.Create(AssemblyTests.Catalog(), "initial", 1);
+        var battle = Battle.Create(AssemblyTests.WithoutModules(), "initial", 1);
         var positions = battle.Drones.Select(d => d.Pose).ToArray();
         battle.Planning(TacticalBattleAi.Plan);
         using var trace = ReferenceFixtureTests.Open("trace-seed-1");

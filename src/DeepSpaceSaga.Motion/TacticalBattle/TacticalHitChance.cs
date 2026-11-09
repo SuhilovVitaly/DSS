@@ -1,12 +1,12 @@
 namespace DeepSpaceSaga.Motion.TacticalBattle;
 
 public readonly record struct TacticalHitRules(double Base, double MinChance, double MaxChance, double RangeBonus,
-    double AnglePenalty, double RearBonus, double RearBonusArc);
+    double AnglePenalty, double RearBonus, double RearBonusArc, double EvasionPenalty = 0);
 public readonly record struct TacticalShotInput(int Accuracy, int TargetManeuver, int WeaponHitBonus,
     double Range, double Arc, double Distance, double Angle, double RearAngle, bool TargetIsDrone,
-    int ShieldDefense, int ShieldCount, double RearHalfArc, double? WeaponRangeBonus = null);
+    int ShieldDefense, int ShieldCount, double RearHalfArc, double? WeaponRangeBonus = null, bool TargetEvading = false);
 public readonly record struct TacticalHitTerms(double Accuracy, double Maneuver, double Base, double Weapon,
-    double Range, double Angle, double Rear, double Shield, double Raw, double Chance, bool IsRear, bool HasRearBonus);
+    double Range, double Angle, double Rear, double Shield, double Raw, double Chance, bool IsRear, bool HasRearBonus, double Evasion = 0);
 
 /// <summary>Deterministic hit terms without RNG, V4 Combat §§6.2–6.3.</summary>
 public static class TacticalHitChance
@@ -34,8 +34,14 @@ public static class TacticalHitChance
         sum += angle;
         sum += rearBonus;
         sum += shield;
+        double evasion = input.TargetIsDrone && input.TargetEvading ? -rules.EvasionPenalty : 0;
+        sum += evasion;
         return new(accuracy, maneuver, rules.Base, weapon, range, angle, rearBonus, shield, sum,
-            PyMath.Clamp(sum, rules.MinChance, rules.MaxChance) / 100.0, rear, bonus);
+            PyMath.Clamp(sum, rules.MinChance, rules.MaxChance) / 100.0, rear, bonus, evasion);
     }
+    /// <summary>Probabilities use [0,1]; applied after the normal hit-chance clamp.</summary>
+    public static double WithDecoy(double chance, double missFactor, double minChance) =>
+        PyMath.Max(minChance, 1.0 - missFactor * (1.0 - chance));
+
     public static double Chance(TacticalHitRules rules, TacticalShotInput input) => Terms(rules, input).Chance;
 }

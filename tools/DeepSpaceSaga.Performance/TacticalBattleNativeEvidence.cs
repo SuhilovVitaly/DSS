@@ -45,6 +45,7 @@ internal static class TacticalBattleNativeEvidence
         var captures = new List<string>();
         var drawMs = new List<double>();
         int tacticalFrames = 0;
+        int positionX = 0, positionY = 0;
         var factory = new Factory(settings, saves);
         string? renderer = null, failure = null;
         long clock = 0;
@@ -92,6 +93,17 @@ internal static class TacticalBattleNativeEvidence
                             renderer = Field<string?>(window, "_graphicsRenderer");
                             Check("real-open-gl", Field<GRContext?>(window, "_grContext") is not null && !string.IsNullOrWhiteSpace(renderer));
                             Check("framebuffer-size", native.FramebufferSize.X == width && native.FramebufferSize.Y == height);
+                            positionX = native.Position.X; positionY = native.Position.Y;
+                            if (skinSettings is not null)
+                            {
+                                using var configuration = JsonDocument.Parse(File.ReadAllText(skinSettings));
+                                if (configuration.RootElement.GetProperty("gameSettings").TryGetProperty("selectedMonitorIndex", out var index))
+                                {
+                                    var monitors = Silk.NET.Windowing.Monitor.GetMonitors(native).ToArray();
+                                    var selectedMonitor = monitors[index.GetInt32()];
+                                    Check("selected-monitor-position", native.Position == selectedMonitor.Bounds.Origin);
+                                }
+                            }
                             Check(language.ToLowerInvariant(), BattleFormat.Localize("Phase.Move") ==
                                 (language == "Russian" ? "Движение" : "Movement"));
                             originalCamera = (game.CameraFocusX, game.CameraFocusY, game.CameraPixelsPerWorldUnit);
@@ -157,15 +169,6 @@ internal static class TacticalBattleNativeEvidence
                             Check("battle", battle.UiScale == scale && battle.Flow.State is { Seed: 1, ScenarioId: "initial", Phase: TacticalBattlePhase.Move });
                             if (expectedSkin is not null)
                                 Check(restarted ? "restarted-battle-skin" : "battle-skin", battle.SkinId == expectedSkin);
-                            if (!restarted)
-                            {
-                                var bounds = battle.NewBattleBounds;
-                                var action = Click(battle, bounds.MidX, bounds.MidY);
-                                Check("new-battle-action", action == ScreenEvent.NewTacticalBattle);
-                                typeof(SkiaWindow).GetField("_pendingKeyboardTransition", Private)!.SetValue(window, Route.Invoke(window, [action, null]));
-                                step = 20;
-                                return;
-                            }
                             ulong revision = battle.Flow.State!.Revision;
                             foreach (var key in new[] { Key.F5, Key.F9, Key.F12, Key.F8, Key.Space, Key.I, Key.Number1, Key.Number2, Key.Number3, Key.Number4 })
                                 KeyDown(key);
@@ -181,12 +184,12 @@ internal static class TacticalBattleNativeEvidence
                             KeyDown(Key.F10);
                             Check("F10-screenshot", Directory.Exists("Screenshots") && Directory.EnumerateFiles("Screenshots", "*.png").Any());
                             var view = battle.View;
-                            battle.OnMouseWheel(view.PixelWidth / 2f, view.PixelHeight / 2f, 1);
+                            battle.OnMouseWheel(600 * height / 720f, 500 * height / 720f, 1);
                             Check("wheel-zoom", battle.View.PixelsPerUnit != view.PixelsPerUnit);
                             var beforePan = battle.View;
-                            battle.OnMouseDown(140, 160, MouseButton.Right);
-                            battle.OnMouseMove(196, 189);
-                            battle.OnMouseUp(196, 189, MouseButton.Right);
+                            battle.OnMouseDown(600 * height / 720f, 500 * height / 720f, MouseButton.Right);
+                            battle.OnMouseMove(640 * height / 720f, 520 * height / 720f);
+                            battle.OnMouseUp(640 * height / 720f, 520 * height / 720f, MouseButton.Right);
                             Check("right-drag", battle.View.CenterX != beforePan.CenterX);
                             KeyDown(Key.Number0);
                             KeyDown(Key.Keypad0);
@@ -199,26 +202,11 @@ internal static class TacticalBattleNativeEvidence
                             Check("arrows-edit", battle.Movement.SelectedOrder!.Order != original);
                             battle.OnKeyDown(Key.Tab, KeyModifiers.Shift, false);
                             Check("shift-tab-cycle", battle.Movement.Selected == selected);
-                            Check("mouse-aim", Aim(battle));
-                            foreach (var (index, id) in new[] { (1, "sides"), (2, "log"), (3, "forecast"), (0, "phase") })
-                            {
-                                var tabs = battle.PanelTabs.Bounds;
-                                Click(battle, tabs.Left + (index + .5f) * tabs.Width / 4, tabs.MidY);
-                                Check("tab-" + id, battle.PanelTabs.SelectedId == id);
-                            }
+                            Check("mouse-aim", Aim(battle, height / 720f));
                             Capture(surface, "move");
-                            var overlay = battle.OverlayControls;
-                            var initialOverlays = battle.CaptureFrame(width, height)!;
-                            Check("overlay-defaults", initialOverlays.EnemyForecast && initialOverlays.EnemySectors && initialOverlays.AllFireSectors);
-                            Click(battle, overlay.Forecast.MidX, overlay.Forecast.MidY);
-                            var forecastOff = battle.CaptureFrame(width, height)!;
-                            Check("forecast-toggle", !forecastOff.EnemyForecast && forecastOff.EnemySectors && forecastOff.AllFireSectors);
-                            Click(battle, overlay.Sectors.MidX, overlay.Sectors.MidY);
-                            var sectorsOff = battle.CaptureFrame(width, height)!;
-                            Check("rear-sectors-toggle", !sectorsOff.EnemyForecast && !sectorsOff.EnemySectors && sectorsOff.AllFireSectors);
-                            Click(battle, overlay.AllFire.MidX, overlay.AllFire.MidY);
-                            var overlays = battle.CaptureFrame(width, height)!;
-                            Check("overlay-toggles", !overlays.EnemyForecast && !overlays.EnemySectors && !overlays.AllFireSectors);
+                            var overlay = battle.CaptureFrame(width, height)!;
+                            Check("removed-overlays", !overlay.EnemyForecast && !overlay.EnemySectors && !overlay.AllFireSectors);
+                            Check("compact-panels", battle.PanelRects.Count >= 5 && overlay.View.PixelWidth == (int)(width * 720f / height));
                             step++;
                             break;
                         case 20:
@@ -263,16 +251,34 @@ internal static class TacticalBattleNativeEvidence
                                 if (target is not null)
                                 {
                                     var p = frame.View.Project(frame.Battle.Units.Single(u => u.Id == target).Pose);
-                                    Click(active, p.X, p.Y); // clear then restore the valid default
-                                    Click(active, p.X, p.Y);
+                                    Click(active, p.X * height / 720f, p.Y * height / 720f); // clear then restore the valid default
+                                    Click(active, p.X * height / 720f, p.Y * height / 720f);
                                 }
                                 Check("fire-plan", frame.FirePlan is { Rows.IsEmpty: false });
+                                var selectedId = active.CaptureFrame(width, height)!.SelectedDroneId!;
+                                KeyDown(Key.E);
+                                Check("evade-route", active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Evade);
+                                KeyDown(Key.D);
+                                Check("decoy-blocked-during-evade", !active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Decoy);
+                                KeyDown(Key.E); KeyDown(Key.D);
+                                Check("decoy-route", active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Decoy);
+                                KeyDown(Key.D);
+                                Check("orders-roundtrip", !active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Evade &&
+                                    !active.BuildFireRequest().Targets.Single(t => t.DroneId == selectedId).Decoy);
+                                Check("build-card-model", BuildCardModel.From(active.CaptureFrame(width, height)! with { HoverUnitId = null, HoverPoint = null })?.Unit.Id == selectedId);
                             }
                             if (active.Flow.State!.Phase == TacticalBattlePhase.Over)
                             {
                                 outcome = active.Flow.State.Outcome;
                                 Check("complete-battle", outcome is not null && fireSeen && animationSeen && resultSeen && replaySeen);
                                 Capture(surface, "outcome");
+                                if (!restarted)
+                                {
+                                    var rect = active.NewBattleBounds;
+                                    var action = Click(active, rect.MidX, rect.MidY);
+                                    Check("new-battle-after-outcome", action == ScreenEvent.NewTacticalBattle);
+                                    RouteEvent(action); step = 20; return;
+                                }
                                 KeyDown(Key.Escape);
                                 step++;
                                 return;
@@ -329,6 +335,7 @@ internal static class TacticalBattleNativeEvidence
             width,
             height,
             renderer,
+            monitorPosition = new { positionX, positionY },
             language,
             skin = expectedSkin,
             outcome,
@@ -357,16 +364,16 @@ internal static class TacticalBattleNativeEvidence
         }
     }
 
-    private static bool Aim(TacticalBattleScreen screen)
+    private static bool Aim(TacticalBattleScreen screen, float scale)
     {
         var selected = screen.Movement.SelectedOrder!;
         var end = screen.View.Project(selected.Path[^1]);
         int x = screen.View.PixelWidth, y = screen.View.PixelHeight;
         if (end.X <= 0 || end.X >= x || end.Y <= 0 || end.Y >= y) return false;
         float tx = end.X < x / 2f ? end.X + 60 : end.X - 60, ty = end.Y < y / 2f ? end.Y + 55 : end.Y - 55;
-        screen.OnMouseDown(end.X, end.Y, MouseButton.Left);
-        bool captured = screen.OnMouseMove(tx, ty);
-        screen.OnMouseUp(tx, ty, MouseButton.Left);
+        screen.OnMouseDown(end.X * scale, end.Y * scale, MouseButton.Left);
+        bool captured = screen.OnMouseMove(tx * scale, ty * scale);
+        screen.OnMouseUp(tx * scale, ty * scale, MouseButton.Left);
         return captured && screen.Movement.Orders.Any(o => o.Unit.Id == selected.Unit.Id && o.Touched);
     }
 

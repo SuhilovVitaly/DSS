@@ -211,6 +211,21 @@ public class TacticalBattleModalScreen : IScreen
     }
     protected void DrawExitConfirmation(SKCanvas canvas, int width, int height)
     {
+        if (!IsSetup)
+        {
+            float scale = height / 720f;
+            var box = SKRect.Create(width / 2f - 260 * scale, height / 2f - 90 * scale, 520 * scale, 180 * scale);
+            BattleDesign.Round(canvas, SKRect.Create(width, height), new(0, 0, 0, 180), radius: 0, role: "modal.exit.dim");
+            BattleDesign.PanelBox(canvas, box, radius: 6 * scale, role: "modal.exit");
+            BattleDesign.T(canvas, L("ConfirmExit"), box.Left + 24 * scale, box.Top + 44 * scale, 16 * scale, BattleDesign.Text, true);
+            _confirm.Bounds = SKRect.Create(box.Left + 24 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
+            _cancel.Bounds = SKRect.Create(box.Right - 244 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
+            _confirm.Enabled = !Flow.Pending;
+            BattleDesign.BigButton(canvas, _confirm.Bounds, L("ExitBattle"));
+            BattleDesign.Button(canvas, _cancel.Bounds, L("Cancel"));
+            return;
+        }
+
         float s = UiScale;
         TacticalBattleSkinRenderScope.Box(canvas, "modal.exit.dim", SKRect.Create(width, height), new(0, 0, 0, 180), null, s, antialias: false);
         var rect = SKRect.Create((float)(width / 2.0) - 260 * s, (float)(height / 2.0) - 90 * s, 520 * s, 180 * s);

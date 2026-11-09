@@ -59,7 +59,7 @@ public sealed class SalvoTests
         var (battle, a, b) = Arena(damage: 40, hull: 100, systems: "weaponJammed");
         var second = ActivateSecondA(battle);
         b.Armor = 50;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d.Side == "A" ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d.Side == "A" ? b.Id : null, false));
         Assert.Equal(new[] { a.Id, second.Id }, salvo.Shots.Select(s => s.Shooter.Id));
         Assert.Equal(new[] { 0, 30 }, salvo.Shots.Select(s => s.SoloHullLoss));
         Assert.Equal(70, b.Hull);
@@ -76,7 +76,7 @@ public sealed class SalvoTests
         a.Dry = 4;
         b.Dry = 5;
         long calls = battle.Random.Calls;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d == a ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? b.Id : null, false));
         var shot = Assert.Single(salvo.Shots);
         Assert.False(shot.Hit);
         Assert.Equal(0, shot.Damage);
@@ -93,7 +93,7 @@ public sealed class SalvoTests
         b.Pose = b.Pose with { Course = 0 };
         b.Armor = 80;
         long calls = battle.Random.Calls;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d == a ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? b.Id : null, false));
         var shot = Assert.Single(salvo.Shots);
         Assert.True(shot.Rear);
         Assert.False(shot.Kill);
@@ -110,7 +110,7 @@ public sealed class SalvoTests
         var (battle, a, b) = Arena(hull: 60);
         var second = ActivateSecondA(battle);
         b.Armor = 0;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d.Side == "A" ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d.Side == "A" ? b.Id : null, false));
         Assert.Equal(new[] { a.Id, second.Id }, salvo.Shots.Select(s => s.Shooter.Id));
         Assert.Equal(new[] { false, true }, salvo.Shots.Select(s => s.LethalImpact));
         Assert.Equal(TacticalDroneStatus.Destroyed, b.Status);
@@ -122,7 +122,7 @@ public sealed class SalvoTests
         var (battle, a, b) = Arena(hull: 1000, killChance: 1);
         b.Pose = b.Pose with { Course = 0 };
         b.Armor = 80;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d == a ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? b.Id : null, false));
         var shot = Assert.Single(salvo.Shots);
         Assert.True(shot.Kill);
         Assert.True(shot.LethalImpact);
@@ -137,7 +137,7 @@ public sealed class SalvoTests
     public void DisabledThresholdAppliesBeforeSystemsAndStopsUnit()
     {
         var (battle, a, b) = Arena(damage: 80, systems: "weaponJammed");
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d == a ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? b.Id : null, false));
         Assert.Equal(20, b.Hull);
         Assert.Equal(TacticalDroneStatus.Disabled, b.Status);
         Assert.Equal(0, b.Speed);
@@ -158,7 +158,7 @@ public sealed class SalvoTests
         ActivateSecondA(battle);
         double speed = b.Speed;
         long calls = battle.Random.Calls;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d.Side == "A" ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d.Side == "A" ? b.Id : null, false));
         Assert.Equal(2, battle.Statistics.Systems);
         Assert.Single(salvo.Systems);
         Assert.Equal(draws, battle.Random.Calls - calls);
@@ -175,7 +175,7 @@ public sealed class SalvoTests
         other.Status = TacticalDroneStatus.Air;
         other.Pose = new(10, 1, 180);
         long calls = battle.Random.Calls;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d.Side == "B" ? a.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d.Side == "B" ? a.Id : null, false));
         Assert.Equal(2, salvo.Systems.Length);
         Assert.Equal(new[] { 0, 1 }, salvo.Systems.Select(s => s.EngineIndex!.Value).Order());
         Assert.All(a.Engines, e => Assert.Equal(0.5, e.Factor));
@@ -213,7 +213,7 @@ public sealed class SalvoTests
         var carrier = battle.Carrier("B");
         carrier.Pose = new(10, 0, 0);
         carrier.Armor = 80;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d == a ? carrier.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? carrier.Id : null, false));
         var shot = Assert.Single(salvo.Shots);
         Assert.False(shot.Rear);
         Assert.Equal((20, 80), (salvo.Damage[0].Hull, salvo.Damage[0].Armor));
@@ -231,7 +231,7 @@ public sealed class SalvoTests
         var (battle, a, b) = Arena();
         a.Dry = 3;
         long calls = battle.Random.Calls;
-        Assert.Throws<ArgumentException>(() => TacticalBattleSalvo.Fire(battle, (d, _) => d == a ? b.Id : "missing"));
+        Assert.Throws<ArgumentException>(() => TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? b.Id : "missing", false)));
         Assert.Equal(calls, battle.Random.Calls);
         Assert.Equal(0, battle.Statistics.Shots);
         Assert.Equal(3, a.Dry);

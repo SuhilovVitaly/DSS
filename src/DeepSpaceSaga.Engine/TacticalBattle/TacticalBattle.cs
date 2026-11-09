@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Motion.TacticalBattle;
 
 namespace DeepSpaceSaga.Engine.TacticalBattle;
 
@@ -16,6 +17,10 @@ internal sealed partial class TacticalBattle
         ArgumentNullException.ThrowIfNull(planner);
         Require(TacticalTurnPhase.Planning);
         Turn++;
+        if (Turn > 1)
+            foreach (var drone in Drones.Where(d => d.IsActive))
+                drone.Consciousness = (int)PyMath.Min(Catalog.Rules.Consciousness.Max,
+                    (long)drone.Consciousness + Catalog.Rules.Consciousness.RecoveryPerTurn);
         LastMovement = [];
         LastSalvo = null;
         planner(this);
@@ -30,10 +35,11 @@ internal sealed partial class TacticalBattle
         CheckVictory();
     }
 
-    public void Firing(Func<TacticalDrone, IReadOnlyList<TacticalCandidate>, string?>? targetsFor = null)
+    public void Firing(Func<TacticalDrone, IReadOnlyList<TacticalCandidate>, TacticalFirePlan>? targetsFor = null,
+        Func<TacticalDrone, bool>? aiDecoysFor = null)
     {
         Require(TacticalTurnPhase.Firing);
-        LastSalvo = TacticalBattleSalvo.Fire(this, targetsFor);
+        LastSalvo = TacticalBattleSalvo.Fire(this, targetsFor, aiDecoysFor);
         if (Result is null) Phase = TacticalTurnPhase.Planning;
         CheckVictory();
     }

@@ -28,6 +28,7 @@ public sealed class SeriesParityTests(ITestOutputHelper output)
             var explicitBattle = GoldenBattleTests.Run(Catalog.Value, seed, tactic, true);
             string signature = GoldenBattleTests.Signature(direct);
             Assert.Equal(signature, GoldenBattleTests.Signature(explicitBattle));
+            if (Environment.GetEnvironmentVariable("DSS_EP0020_NORMALIZE_SLOTS") == "1") signature = GoldenBattleTests.Signature(direct, withoutSlots: true);
             var result = direct.Result!;
             Assert.InRange(result.Turns, 1, Catalog.Value.Rules.SeriesTurnCap);
             Assert.InRange(result.Losses[0], 0, 4); Assert.InRange(result.Losses[1], 0, 6);

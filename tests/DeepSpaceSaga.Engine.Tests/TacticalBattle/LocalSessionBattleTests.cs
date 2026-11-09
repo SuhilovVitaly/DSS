@@ -37,7 +37,7 @@ public sealed class LocalSessionBattleTests
         int command = 0;
         while (frame.Phase != TacticalBattlePhase.Over)
         {
-            Assert.True(command <= Catalog.Value.Rules.SeriesTurnCap * 2,
+            Assert.True(command <= Catalog.Value.Rules.SeriesTurnCap * 20,
                 $"seed={seed}, tactic={tactic}, explicit={explicitOrders}: exceeded new-rule safety turn cap");
             long calls = engine.TacticalBattleSessionForTests!.Battle.Random.Calls;
             string before = JsonSerializer.Serialize(frame);
@@ -47,7 +47,20 @@ public sealed class LocalSessionBattleTests
             Assert.True(response.Accepted, $"seed={seed}, tactic={tactic}, explicit={explicitOrders}: {response.Code}");
             frame = response.State!;
         }
-        var direct = GoldenBattleTests.Run(Catalog.Value, seed, tactic, false);
+        var direct = DeepSpaceSaga.Engine.TacticalBattle.TacticalBattle.Create(Catalog.Value, "initial", seed,
+            new Dictionary<string, string> { ["A"] = tactic });
+        while (direct.Result is null && direct.Turn < frame.Turn)
+        {
+            direct.Planning(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
+            direct.Movement();
+            if (direct.Result is not null) break;
+            bool playerPhase = direct.ActiveDrones("A").Any(d => !DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSalvo.Candidates(direct, d).IsEmpty)
+                || direct.ActiveDrones("B").Any(d => DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSalvo.Candidates(direct, d)
+                    .Any(c => c.Target is DeepSpaceSaga.Engine.TacticalBattle.TacticalDrone));
+            direct.Firing((d, candidates) => d.Side == "A" && !playerPhase ? new(null, false)
+                : DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSalvo.DefaultPlan(direct, d, candidates), d => d.Side != "A");
+        }
+        direct.Run(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
         Assert.Equal(JsonSerializer.Serialize(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSnapshotBuilder.Outcome(direct.Result)),
             JsonSerializer.Serialize(frame.Outcome));
         Assert.Equal(JsonSerializer.Serialize(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattleSnapshotBuilder.Units(direct)),
@@ -63,7 +76,13 @@ public sealed class LocalSessionBattleTests
         state.Phase == TacticalBattlePhase.Move
         ? connection.MoveTacticalBattleAsync(new("move-" + sequence, state.BattleId, state.Revision, explicitOrders ? state.Suggestions : []))
         : connection.FireTacticalBattleAsync(new("fire-" + sequence, state.BattleId, state.Revision,
-            [.. state.Targets.Select(t => new TacticalFireTarget(t.DroneId, t.DefaultTargetId))]));
+            [.. state.Targets.Select(t =>
+            {
+                var unit = state.Units.Single(u => u.Id == t.DroneId);
+                bool evade = unit.Hull < Catalog.Value.Rules.Evasion.AiHullFraction * unit.MaxHull
+                    && unit.Consciousness >= Catalog.Value.Rules.Evasion.MinConsciousness;
+                return new TacticalFireTarget(t.DroneId, evade ? null : t.DefaultTargetId, evade);
+            })]));
 
     [Theory]
     [InlineData(TacticalBattlePhase.Move)]

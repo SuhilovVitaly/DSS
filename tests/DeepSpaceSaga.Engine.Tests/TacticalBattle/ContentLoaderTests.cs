@@ -9,6 +9,109 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 
 public sealed class ContentLoaderTests
 {
+    [Fact]
+    public void Anomaly_rules_load_from_shipped_data()
+    {
+        var r = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle")).Rules.Anomalies;
+        Assert.Equal(170, r.ZoneEdge); Assert.Equal(100, r.Background); Assert.Equal(200, r.AbsorbSamples);
+        Assert.Equal(new[] { 1, 3 }, r.HeatCount); Assert.Equal(new[] { 1, 2 }, r.DustCount);
+        Assert.Equal(new[] { 6, 10 }, r.Clumps); Assert.Equal(new[] { 40.0, 55.0 }, r.Spread);
+        Assert.Equal(new[] { 70.0, 160.0 }, r.ClumpAmp); Assert.Equal(new[] { .18, .34 }, r.ClumpSigmaX);
+        Assert.Equal(new[] { .14, .26 }, r.ClumpSigmaY); Assert.Equal(new[] { .45, .35 }, r.CenterSpread);
+        Assert.Equal(60, r.Clearance); Assert.Equal(.6, r.BandFraction);
+        Assert.Equal(64, r.MaxAttempts); Assert.Equal(4, r.AiDustSearch);
+    }
+
+    public static IEnumerable<object[]> InvalidAnomalyRules()
+    {
+        foreach (string field in new[] { "heatCount", "dustCount", "clumps", "spread", "clumpAmp", "clumpSigmaX", "clumpSigmaY" })
+            foreach (string value in new[] { "[]", "[1]", "[3,1]", "[-1,1]" })
+                yield return new object[] { "/anomalies/" + field, value };
+        foreach (var (field, value) in new[] { ("", "<missing>"), ("", "null"), ("/zoneEdge", "100"),
+            ("/background", "-1"), ("/absorbSamples", "0"), ("/heatCount", "[1.5,3]"),
+            ("/spread", "[0,55]"), ("/clumpSigmaX", "[0,0.34]"), ("/clumpSigmaY", "[0,0.26]"),
+            ("/centerSpread", "[]"), ("/centerSpread", "[0.4]"), ("/centerSpread", "[-0.1,0.3]"),
+            ("/clearance", "-1"), ("/bandFraction", "-0.1"), ("/bandFraction", "1.1"),
+            ("/maxAttempts", "-1"), ("/aiDustSearch", "0"), ("/clumpAmp", "[1,1e400]") })
+            yield return new object[] { "/anomalies" + field, value };
+    }
+
+    [Theory, MemberData(nameof(InvalidAnomalyRules))]
+    public void Invalid_anomaly_rules_are_rejected(string pointer, string value)
+    {
+        using var fixture = new Fixture();
+        fixture.Change("rules.json", pointer, value);
+        var error = Assert.Throws<TacticalBattleContentException>(() => TacticalBattleContentLoader.Load(fixture.Battle));
+        Assert.Equal("rules.json", error.Issue.File);
+        Assert.StartsWith("$.anomalies", error.Issue.Field);
+    }
+
+    [Fact]
+    public void Decoy_module_and_slots_load_from_shipped_data()
+    {
+        var catalog = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle"));
+        Assert.Equal(new BattleDecoy("decoy.t1", "Ловушки I", 1, 2, 1.5, 10), catalog.Decoys["decoy.t1"]);
+        Assert.Equal(.4, catalog.Rules.Decoy.AiThreatChance);
+        foreach (var (id, frame) in catalog.Frames.Entries)
+            Assert.Equal(id == "carrier" ? 0 : 1, frame.ModuleSlots);
+        foreach (var (_, layout) in catalog.Layouts.Entries)
+            Assert.Equal(layout.Class == "carrier" ? null : "decoy.t1", layout.Module);
+        using var fixture = new Fixture();
+        fixture.Change("layouts.json", "/light.spear/module", "<missing>");
+        Assert.Null(TacticalBattleContentLoader.Load(fixture.Battle).Layouts["light.spear"].Module);
+    }
+
+    [Theory]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/charges", "0")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/charges", "1.5")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/missFactor", "0.9")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/massKg", "-1")]
+    [InlineData("Modules/Decoys/decoy.t1.json", "/tier", "-1")]
+    [InlineData("Frames/light.json", "/moduleSlots", "0")]
+    [InlineData("Frames/carrier.json", "/moduleSlots", "-1")]
+    [InlineData("layouts.json", "/light.spear/module", "\"unknown\"")]
+    [InlineData("layouts.json", "/carrier.standard/module", "\"decoy.t1\"")]
+    [InlineData("rules.json", "/decoy/aiThreatChance", "-0.01")]
+    [InlineData("rules.json", "/decoy/aiThreatChance", "1.01")]
+    [InlineData("rules.json", "/decoy", "<missing>")]
+    public void Invalid_decoy_module_or_slot_is_rejected(string file, string pointer, string value)
+    {
+        using var fixture = new Fixture();
+        fixture.Change(file, pointer, value);
+        Assert.Throws<TacticalBattleContentException>(() => TacticalBattleContentLoader.Load(fixture.Battle));
+    }
+
+    [Fact]
+    public void Evasion_and_consciousness_rules_load_from_shipped_data()
+    {
+        var rules = TacticalBattleContentLoader.Load(Path.Combine(ClientRoot, "Data/TacticalBattle")).Rules;
+        Assert.Equal(new ConsciousnessRules(100, 100, 5), rules.Consciousness);
+        Assert.Equal(new EvasionRules(20, 10, 10, 0.5), rules.Evasion);
+    }
+
+    [Theory]
+    [InlineData("/consciousness", "<missing>")]
+    [InlineData("/evasion", "null")]
+    [InlineData("/consciousness/start", "-1")]
+    [InlineData("/consciousness/max", "99")]
+    [InlineData("/consciousness/recoveryPerTurn", "-1")]
+    [InlineData("/evasion/hitPenalty", "-1")]
+    [InlineData("/evasion/cost", "-1")]
+    [InlineData("/evasion/minConsciousness", "-1")]
+    [InlineData("/evasion/minConsciousness", "101")]
+    [InlineData("/evasion/aiHullFraction", "-0.1")]
+    [InlineData("/evasion/aiHullFraction", "1.1")]
+    [InlineData("/consciousness/start", "1.5")]
+    public void Invalid_evasion_or_consciousness_values_are_rejected(string pointer, string value)
+    {
+        using var fixture = new Fixture();
+        fixture.Change("rules.json", pointer, value);
+        var error = Assert.Throws<TacticalBattleContentException>(() => TacticalBattleContentLoader.Load(fixture.Battle));
+        Assert.Equal("rules.json", error.Issue.File);
+        Assert.True(error.Issue.Field.StartsWith("$.consciousness", StringComparison.Ordinal)
+            || error.Issue.Field.StartsWith("$.evasion", StringComparison.Ordinal));
+    }
+
     [Theory]
     [InlineData("0", 0, 0, false)]
     [InlineData("100", 100, 100, false)]

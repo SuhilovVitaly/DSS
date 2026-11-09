@@ -9,7 +9,7 @@
 1. Скопируйте `Skins/contrast/` в новую подпапку `Skins/` рядом с исполняемым файлом. Используйте отдельный `id` и видимое `displayName`.
 2. Измените `skin.json` и положите используемые PNG, TTF или OTF в `assets/`. Указывайте пути со слешем `/` и точным регистом имён файлов.
 3. Перезапустите игру после изменения пакета. Выберите его в Settings и откройте бой через F8 → Start.
-4. Проверьте одинаковый seed с Classic и новым пакетом. Пройдите движение, огонь, залп, итог, вкладки и подтверждение выхода. При ошибке установки проверьте сообщения `TACTICAL SKIN` в журнале интерфейса.
+4. Проверьте одинаковый seed с Classic и новым пакетом. Пройдите движение, огонь, залп, итог, наведение и подтверждение выхода. При ошибке установки проверьте сообщения `TACTICAL SKIN` в журнале интерфейса.
 
 Каталог сканирует непосредственные подпапки, игнорирует папки без манифеста и перечисляет доступные ID после Classic в порядке ordinal. Конфликтующие ID исключаются вместе. Ошибка одного пакета сохраняет доступность других пакетов. Исходный пример и его фоновый PNG поставляются в build и publish. [Манифест Contrast](../../../src/DeepSpaceSaga.Client/Skins/contrast/skin.json)
 
@@ -43,21 +43,26 @@
 
 Клиент ищет каждое свойство от конкретной роли к её родителям. Например, `field.unit.drone.own.light` может переопределить размер только у лёгкого своего дрона. У общего виджета локальная роль вызова дополняет общую роль контрола. Пропуски получают штатные значения. При отсутствии печатаемого глифа используется штатный шрифт. Пакеты принадлежат каталогу окна, ресурсы готовятся до рендера.
 
-## Поверхности и роли
+## Поверхности нового интерфейса
 
-| Поверхность | Роли и примеры |
+Штатный Classic использует токены EP-0019. Manifest v1 и механизм наследования ролей прежние; Contrast продолжает загружаться. Паритет с прежней компоновкой не требуется. Неприменимые свойства манифеста сами по себе не добавляют элементы или механику.
+
+| Активная поверхность | Роли и свойства |
 |---|---|
-| Поле, сетка и шкала | `field.background`, `field.grid`, `field.ruler`. Фон принимает PNG, сетка и линейка принимают ширину и штрих. `field.ruler.metrics.tick-size` задаёт длину штриха шкалы. |
-| Носитель, дрон и состояние | `field.unit.carrier`, `field.unit.drone`. Подроли `.own`, `.enemy`, ID рамы, `.inactive.disabled`, `.inactive.destroyed`, `.jammed`, `.selected`, `.wreck`. Силуэт, контур, изображение и размер. |
-| Подпись, состояние, здоровье и края | `field.label`, `field.label.disabled-cross`, `field.bar.armor`, `field.bar.hull`, `field.offscreen.arrow/label/background`. `field.unit.drone.wreck.label` оформляет имя обломка. |
-| Движение и огонь | `field.move.trail/forecast/forecast.endpoint/area/path/handle/ghost` и `field.fire.sector/sector.rear/target/target.badge/line/label.chance`. Для линий наведения используйте `field.fire.line.candidate` и `field.fire.line.assigned`. `arrow-length` задаёт длину наконечника на поддерживающих ролях стрелок. |
-| Полёт и попадание | `shot.projectile/trail/flash/caption/damage`, состояния `.hit`, `.miss`, `.kill`. `tail-length` задаёт длину хвоста в логических пикселях, `flash-scale` масштаб вспышки. `torpedo.projectile` и `torpedo.trail` зарезервированы до появления достоверной проекции торпед. |
-| Панель и подтверждение | `panel.background/divider/summary/phase/status/outcome` и `modal.background/error/exit/exit.dim`. Исходы адресуются `.victory`, `.defeat`, `.draw`, `.timeout`. |
-| Общие виджеты | `control.frame/label/tab/dropdown/tooltip/button/toggle/slider/progress`. Для отдельных флажков используйте `control.toggle.all-fire-sectors`, `control.toggle.enemy-rear-sectors`, `control.toggle.enemy-forecast`. |
-| Приказы и информация | `orders.move`, `orders.fire`, `tabs.sides`, `tabs.log`, `tabs.forecast` с подролями текста, карточек, полос и прокрутки. Например, `orders.move.slider.turn.thumb` переопределяет рукоятку поворота, `tabs.log.text` задаёт типографику журнала. |
+| Карта | field.background: fill/image; field.grid: stroke; field.unit.carrier/drone.own/enemy: fill |
+| Конец пути | field.move.handle: fill/stroke |
+| Снаряд | shot.projectile: fill/size; расписание остаётся данными презентации |
+| Панель, карточки, статус | ui.panel, ui.pilot-card, ui.pilot-card.chip, ui.box: fill/stroke |
+| Полосы карточек | ui.pilot-card.bar.armor/hull/mind: fill; общий ui.bar: fill |
+| Ползунки | ui.slider.speed/turn: fill |
+| Теги и кнопки | ui.tag, ui.button, ui.button.primary, ui.button.glow: fill/stroke; ui.button/primary: text |
+| Остальной текст | ui.text: text; файловая BattleTypography задаёт метрики |
+| Подтверждение выхода | modal.exit и modal.exit.dim: fill/stroke |
 
-Для каждой роли меняйте применимые свойства. Например, `dash` действует на линии, `font` — на текст, а `shape` — на маркеры с поддержкой фигур. Полная карта покрытия и результаты хранятся в [Board](../../Board/EP-0016-tactical-battle-skins/Tickets.md).
+Имена ролей lower ASCII kebab-case, поэтому используется ui.pilot-card, а не плановое camel-case ui.pilotCard. Изменение скина не меняет геометрию/команды, инициативу, очередность и момент допуска impact. Карта и панели читают одну presentation-проекцию.
 
-Инициатива и общая очередь используют существующие роли orders.fire, tabs.forecast и tabs.sides; причины пропуска — tabs.log. Все пакеты читают одну допущенную presentation-проекцию после каждого impact. Скин не сортирует очередь и не меняет моменты урона, отмен или исхода; новый manifest для инициативы не требуется.
+Роли старых вкладок tabs.*, controls вкладок/списков целей, orders.move/orders.fire и флажки enemy-forecast/enemy-rear-sectors/all-fire-sectors больше не оформляют активный бой: соответствующие элементы убраны. Прежние forecast/rear/area/ghost/target-badge/medical-cross слои не входят в новый дизайн. Legacy helpers могут оставаться в коде для самостоятельных model/formatter tests; это не доступные окна игрока. Торпедные роли остаются зарезервированными.
 
-Оформление применяется синхронно внутри рендера активного боя. Подготовка, карта мира, Settings и отдельный экран уничтожения корабля используют свои стили. Боевые позиции, команды, допуск фактов, таймеры, RNG и сохранение мира определяются [контрактом боя](TacticalBattle.md).
+Карточка сборки использует существующие ui.panel/ui.box/ui.bar/ui.text и файловую типографику; manifest v1 не меняется. Силуэты, пунктир пустого слота и полосы типов — кодовые примитивы; процедурные Heat/Dust и отметки EV/D имеют согласованную игровую палитру, новых manifest-ролей для них нет. Наличие неиспользуемой роли не добавляет её поддержку.
+
+Подготовка, Settings и карта мира используют собственные стили. Точное управление — [экран боя](../02-FirstRelease/Screens/TacticalBattle.md), владение данными и расписание — [контракт боя](TacticalBattle.md). Историческое покрытие EP-0016 сохраняется в Board; текущая приёмка вида и расширений — в EP-0020, исходный redesign — в EP-0019.

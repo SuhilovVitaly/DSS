@@ -419,7 +419,7 @@ internal sealed class TacticalMapDepthRenderer
         // on both sides instead of being fully covered by its opaque fill.
         using var flameShader = SKShader.CreateLinearGradient(new SKPoint(baseX, baseY),
             new SKPoint(baseX - dx * radius * 2.2f * flicker, baseY - dy * radius * 2.2f * flicker),
-            [new SKColor(127, 169, 199, 153), new SKColor(127, 169, 199, 0)], null, SKShaderTileMode.Clamp);
+            new SKColor[] { new SKColor(127, 169, 199, 153), new SKColor(127, 169, 199, 0) }, null, SKShaderTileMode.Clamp);
         _engineFlameOuterPaint.Color = SKColors.White;
         _engineFlameOuterPaint.Shader = flameShader;
         DrawFlameLayer(canvas, baseX, baseY, dx, dy, rx, ry, radius * 0.9f, radius * 2.2f * flicker, _engineFlameOuterPaint);

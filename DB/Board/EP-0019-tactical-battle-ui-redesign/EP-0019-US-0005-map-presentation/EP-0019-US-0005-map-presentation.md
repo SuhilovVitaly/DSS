@@ -2,7 +2,7 @@
 epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0005-map-presentation
 title: Карта в новом стиле
-stage: draft
+stage: done
 dependencies: [EP-0019-US-0002-overlay-layout-shell]
 created: 2026-11-08T09:31:05Z
 source_request: "Перерисовать содержимое карты по DesignSpec §8: маркеры, подписи с выносками, носители за краем, прогнозы пути, секторы и стрелки огня, снаряд, выноски результатов."
@@ -47,7 +47,7 @@ A-09, A-11. [DesignSpec §8](../DesignSpec.md#8-карта). Текущий ре
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы-нужно-решение-до-утверждения)).
+Исполнение draft-карточек разрешено запросом выполнить весь эпик. Использованы записанные варианты по умолчанию; художественное/пользовательское одобрение не приписывается. Итог — [ExecutionStatus](../ExecutionStatus.md).
 
 ## Ticket map
 
@@ -56,3 +56,7 @@ A-09, A-11. [DesignSpec §8](../DesignSpec.md#8-карта). Текущий ре
 | [EP-0019-US-0005-TK-0001-markers-labels-and-edge](EP-0019-US-0005-TK-0001-markers-labels-and-edge/EP-0019-US-0005-TK-0001-markers-labels-and-edge.md) | Маркеры, подписи и носители за краем | client | `EP-0019-US-0002-TK-0003-phase-camera-fit` | US5-AC1, US5-AC2, US5-AC5 |
 | [EP-0019-US-0005-TK-0002-movement-overlays](EP-0019-US-0005-TK-0002-movement-overlays/EP-0019-US-0005-TK-0002-movement-overlays.md) | Слои фазы движения | client | `EP-0019-US-0005-TK-0001-markers-labels-and-edge` | US5-AC3 |
 | [EP-0019-US-0005-TK-0003-fire-salvo-and-results-overlays](EP-0019-US-0005-TK-0003-fire-salvo-and-results-overlays/EP-0019-US-0005-TK-0003-fire-salvo-and-results-overlays.md) | Слои стрельбы, залпа и результатов | client | `EP-0019-US-0005-TK-0002-movement-overlays` | US5-AC4 |
+
+## Итоговая проверка
+
+Все тикеты истории реализованы и опубликованы. Критерии сопоставлены проверкам в [ExecutionStatus](../ExecutionStatus.md); текущие результаты заменяют начальную запись blocked. Human/physical input и проверки недоступных ОС остаются отдельными gates.

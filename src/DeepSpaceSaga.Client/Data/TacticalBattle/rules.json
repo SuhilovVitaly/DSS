@@ -36,5 +36,60 @@
       }
     ]
   },
+  "consciousness": {
+    "start": 100,
+    "max": 100,
+    "recoveryPerTurn": 5
+  },
+  "evasion": {
+    "hitPenalty": 20,
+    "cost": 10,
+    "minConsciousness": 10,
+    "aiHullFraction": 0.5
+  },
+  "decoy": {
+    "aiThreatChance": 0.4
+  },
+  "anomalies": {
+    "zoneEdge": 170,
+    "background": 100,
+    "absorbSamples": 200,
+    "heatCount": [
+      1,
+      3
+    ],
+    "dustCount": [
+      1,
+      2
+    ],
+    "clumps": [
+      6,
+      10
+    ],
+    "spread": [
+      40,
+      55
+    ],
+    "clumpAmp": [
+      70,
+      160
+    ],
+    "clumpSigmaX": [
+      0.18,
+      0.34
+    ],
+    "clumpSigmaY": [
+      0.14,
+      0.26
+    ],
+    "centerSpread": [
+      0.45,
+      0.35
+    ],
+    "clearance": 60,
+    "bandFraction": 0.6,
+    "maxAttempts": 64,
+    "aiDustSearch": 4
+  },
   "seriesTurnCap": 100
 }

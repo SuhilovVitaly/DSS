@@ -38,7 +38,7 @@ public sealed class GoldenBattleTests
             Assert.Equal(example.ExpectedShots, expected.Steps.Where(s => s.Fired).Select(s => s.ShooterId));
             var battle = InitiativeReferenceCases.Create(example);
             long calls = battle.Random.Calls;
-            var actual = TacticalBattleSalvo.Fire(battle, (d, _) => example.Units.Single(u => u.Id == d.Id).TargetId);
+            var actual = TacticalBattleSalvo.Fire(battle, (d, _) => new(example.Units.Single(u => u.Id == d.Id).TargetId, false));
             Assert.Equal(expected.Calls, battle.Random.Calls - calls);
             Assert.Equal(expected.Steps.Select(s => (s.ShooterId, s.Reason)), actual.Steps.Select(s => (s.ShooterId, s.SkipReason)));
             Assert.Equal(example.ExpectedShots, actual.Shots.Select(s => s.Shooter.Id));
@@ -65,7 +65,7 @@ public sealed class GoldenBattleTests
             battle.Movement();
             if (battle.Result is not null) break;
             var queue = battle.CaptureFireOrder();
-            battle.Firing((d, candidates) => TacticalBattleSalvo.DefaultTarget(d, candidates)?.Target.Id);
+            battle.Firing((d, candidates) => TacticalBattleSalvo.DefaultPlan(battle, d, candidates), _ => true);
             var salvo = battle.LastSalvo!;
             Assert.Equal(queue.Select(d => d.Id), salvo.Steps.Select(s => s.ShooterId));
             Assert.Equal(Enumerable.Range(0, queue.Length), salvo.Steps.Select(s => s.Index));
@@ -87,11 +87,32 @@ public sealed class GoldenBattleTests
         return battle;
     }
 
-    internal static string Signature(Battle battle) => JsonSerializer.Serialize(new
+    internal static string Signature(Battle battle, bool withoutSlots = false)
     {
-        Result = TacticalBattleSnapshotBuilder.Outcome(battle.Result),
-        Units = TacticalBattleSnapshotBuilder.Units(battle),
-        battle.InitiativeRandom.State,
-        battle.InitiativeRandom.Calls
-    });
+        string signature = JsonSerializer.Serialize(new
+        {
+            Result = TacticalBattleSnapshotBuilder.Outcome(battle.Result),
+            Units = TacticalBattleSnapshotBuilder.Units(battle),
+            battle.Statistics.Absorbed,
+            battle.Statistics.DustSkips,
+            battle.Statistics.DecoysLaunched,
+            battle.Statistics.ShotsDecoyed,
+            battle.Statistics.HitsDecoyed,
+            battle.Statistics.DecoyChanceBefore,
+            battle.Statistics.DecoyChanceAfter,
+            battle.Statistics.Evasions,
+            battle.Statistics.ShotsAtEvading,
+            battle.Statistics.HitsOnEvading,
+            battle.InitiativeRandom.State,
+            battle.InitiativeRandom.Calls
+        });
+        if (!withoutSlots) return signature;
+        var node = System.Text.Json.Nodes.JsonNode.Parse(signature)!;
+        foreach (var unit in node["Units"]!.AsArray())
+        {
+            unit!.AsObject().Remove("Slots");
+            if (unit["Build"] is { } build) { build.AsObject().Remove("EngineSlots"); build.AsObject().Remove("ModuleSlots"); }
+        }
+        return node.ToJsonString();
+    }
 }

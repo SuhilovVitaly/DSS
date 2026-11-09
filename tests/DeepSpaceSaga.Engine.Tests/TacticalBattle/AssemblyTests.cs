@@ -67,6 +67,17 @@ public sealed class AssemblyTests
         Assert.Equal(state, battle.InitiativeRandom.State);
     }
 
+    internal static TacticalBattleCatalog WithoutModules()
+    {
+        var catalog = Catalog();
+        return catalog with
+        {
+            Rules = catalog.Rules with { Anomalies = catalog.Rules.Anomalies with { HeatCount = [0, 0], DustCount = [0, 0] } },
+            Layouts = new(catalog.Layouts.Entries.Select(e =>
+            (e.Id, e.Value with { Module = null })))
+        };
+    }
+
     internal static TacticalBattleCatalog Catalog()
     {
         for (var dir = new DirectoryInfo(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

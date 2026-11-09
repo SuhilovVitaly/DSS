@@ -11,10 +11,10 @@ public static class Localization
 {
     private static readonly Lazy<Dictionary<string, string>> _startupStrings = new(() => Load(ReadLanguageSetting()));
     private static Dictionary<string, string>? _selectedStrings;
-    [ThreadStatic] private static Dictionary<string, string>? _testStrings;
+    private static readonly AsyncLocal<Dictionary<string, string>?> TestStrings = new();
 
     public static string Get(string key) =>
-        (_testStrings ?? Volatile.Read(ref _selectedStrings) ?? _startupStrings.Value)
+        (TestStrings.Value ?? Volatile.Read(ref _selectedStrings) ?? _startupStrings.Value)
             .TryGetValue(key, out var value) ? value : key;
 
     internal static void ApplyLanguage(string language) =>
@@ -48,19 +48,18 @@ public static class Localization
         _ => label
     };
 
-    /// <summary>Thread-local test seam using the actual locale files.</summary>
+    /// <summary>Async-flow-local test seam using the actual locale files.</summary>
     internal static IDisposable UseLocaleForTests(string language)
     {
-        var previous = _testStrings;
-        _testStrings = LoadLocaleFile(language) ?? throw new InvalidOperationException("Missing test locale: " + language);
-        return new LocaleScope(previous, Environment.CurrentManagedThreadId);
+        var previous = TestStrings.Value;
+        TestStrings.Value = LoadLocaleFile(language) ?? throw new InvalidOperationException("Missing test locale: " + language);
+        return new LocaleScope(previous);
     }
-    private sealed class LocaleScope(Dictionary<string, string>? previous, int threadId) : IDisposable
+    private sealed class LocaleScope(Dictionary<string, string>? previous) : IDisposable
     {
         public void Dispose()
         {
-            if (Environment.CurrentManagedThreadId != threadId) throw new InvalidOperationException("Locale test scope must remain on its UI thread.");
-            _testStrings = previous;
+            TestStrings.Value = previous;
         }
     }
 

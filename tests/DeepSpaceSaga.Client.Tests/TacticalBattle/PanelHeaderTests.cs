@@ -137,9 +137,7 @@ public sealed class PanelHeaderTests
         using var classicFrame = Draw(classic);
         using var styledFrame = Draw(styled);
         Assert.Equal(classic.OverlayControls, styled.OverlayControls);
-        AssertToggle(styled.OverlayControls.AllFire, new(59, 48, 69));
-        AssertToggle(styled.OverlayControls.Forecast, new(109, 59, 69));
-        AssertToggle(styled.OverlayControls.Sectors, new(59, 86, 69));
+        Assert.All(new[] { styled.OverlayControls.AllFire, styled.OverlayControls.Forecast, styled.OverlayControls.Sectors }, r => Assert.True(r.IsEmpty));
         Assert.Equal(ScreenEvent.None, styled.OnKeyDown(Key.Escape));
         using var confirm = Draw(styled);
         Assert.True(styled.ConfirmExit);
@@ -158,14 +156,6 @@ public sealed class PanelHeaderTests
             outcome.Draw(canvas, SKRect.Create(400, 200), 1);
         }
         Assert.Contains(new SKColor(113, 128, 44), header.Pixels);
-
-        void AssertToggle(SKRect bounds, SKColor expected)
-        {
-            int x = (int)bounds.Left + 4;
-            int y = (int)bounds.MidY - 6;
-            Assert.NotEqual(expected, classicFrame.GetPixel(x, y));
-            Assert.Equal(expected, styledFrame.GetPixel(x, y));
-        }
 
         static SKBitmap Draw(IScreen screen)
         {

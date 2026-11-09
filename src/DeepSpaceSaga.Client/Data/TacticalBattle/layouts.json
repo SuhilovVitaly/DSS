@@ -9,7 +9,8 @@
     "engines": [
       "drive.standard",
       "drive.standard"
-    ]
+    ],
+    "module": "decoy.t1"
   },
   "heavy.spear.shield": {
     "name": "Тяжёлый · копьё I · средние плиты · щит I ×2",
@@ -21,7 +22,8 @@
     "engines": [
       "drive.standard",
       "drive.standard"
-    ]
+    ],
+    "module": "decoy.t1"
   },
   "light.sword.shield": {
     "name": "Лёгкий · меч I · средние плиты · щит I",
@@ -32,7 +34,8 @@
     "engines": [
       "drive.standard",
       "drive.standard"
-    ]
+    ],
+    "module": "decoy.t1"
   },
   "light.spear": {
     "name": "Лёгкий · копьё I · средние плиты · щит I",
@@ -43,7 +46,8 @@
     "engines": [
       "drive.standard",
       "drive.standard"
-    ]
+    ],
+    "module": "decoy.t1"
   },
   "thug.scrap": {
     "name": "Таг · самопал I · латаные плиты",
@@ -53,6 +57,7 @@
     "engines": [
       "drive.light"
     ],
+    "module": "decoy.t1",
     "shield": null
   },
   "thug.sawn": {
@@ -64,6 +69,7 @@
     "engines": [
       "drive.light"
     ],
+    "module": "decoy.t1",
     "shield": null
   },
   "thug.scrap.shield": {
@@ -75,7 +81,8 @@
     "shield": "shield.t1",
     "engines": [
       "drive.light"
-    ]
+    ],
+    "module": "decoy.t1"
   },
   "carrier.standard": {
     "name": "Носитель · без вооружения",
@@ -83,6 +90,7 @@
     "armor": "armor.none",
     "weapon": null,
     "shield": null,
-    "engines": []
+    "engines": [],
+    "module": null
   }
 }

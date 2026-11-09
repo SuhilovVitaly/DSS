@@ -11,6 +11,206 @@ namespace DeepSpaceSaga.Engine.Tests.TacticalBattle;
 
 public sealed class SessionTests
 {
+    [Fact]
+    public void Fire_order_from_dust_is_rejected()
+    {
+        using var engine = CloseFireEngine();
+        var battle = engine.TacticalBattleSessionForTests!.Battle;
+        var own = battle.Drones[0]; own.Pose = AnomalyPoint(battle, TacticalAnomalyKind.Dust);
+        var second = battle.Drones[1]; second.Status = TacticalDroneStatus.Air;
+        var frame = engine.GetTacticalBattleState()!;
+        Assert.True(frame.Units.Single(u => u.Id == own.Id).InDust);
+        AssertRejectedUnchanged(engine, () => engine.FireTacticalBattle(new("dust-fire", frame.BattleId, frame.Revision,
+            [new(second.Id, null, Decoy: true), new(own.Id, "Таг-1")])), TacticalBattleRejectionCode.InDust);
+        Assert.Equal(2, second.DecoyCharges);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Dust_drone_may_evade_or_launch_decoy(bool evade)
+    {
+        using var engine = CloseFireEngine(); var battle = engine.TacticalBattleSessionForTests!.Battle;
+        var own = battle.Drones[0]; own.Pose = AnomalyPoint(battle, TacticalAnomalyKind.Dust);
+        battle.Drones[4].Jammed = true;
+        var frame = engine.GetTacticalBattleState()!;
+        var request = new FireTacticalBattleRequest("dust-defense", frame.BattleId, frame.Revision,
+            [new(own.Id, null, evade, !evade)]);
+        var result = engine.FireTacticalBattle(request); Assert.True(result.Accepted);
+        var step = result.State!.FireSteps.Single(s => s.ShooterId == own.Id);
+        Assert.Equal(evade ? TacticalFireSkipReason.Evading : TacticalFireSkipReason.InDust, step.SkipReason);
+        Assert.Null(step.Shot);
+        Assert.Equal(evade ? 2 : 1, own.DecoyCharges);
+        Assert.Equal(evade ? 90 : 100, step.UnitsAfter.Single(u => u.Id == own.Id).Consciousness);
+        var captured = JsonSerializer.Serialize(result.State); var random = (battle.Random.State, battle.Random.Calls);
+        Assert.Same(result, engine.FireTacticalBattle(request));
+        Assert.Equal(captured, JsonSerializer.Serialize(engine.GetTacticalBattleState()));
+        Assert.Equal(random, (battle.Random.State, battle.Random.Calls));
+    }
+
+    internal static TacticalPose AnomalyPoint(DeepSpaceSaga.Engine.TacticalBattle.TacticalBattle battle, TacticalAnomalyKind kind)
+    {
+        var r = battle.Catalog.Rules.Anomalies;
+        var point = battle.Anomalies.Where(a => a.Kind == kind).SelectMany(a => a.Clumps)
+            .First(c => TacticalAnomalyMath.Inside(battle.Anomalies, kind, c.X, c.Y, r.Background, r.ZoneEdge));
+        return new(point.X, point.Y, 0);
+    }
+
+    [Fact]
+    public void Decoy_order_is_validated_atomically()
+    {
+        using var engine = CloseFireEngine();
+        var battle = engine.TacticalBattleSessionForTests!.Battle;
+        var second = battle.Drones[1];
+        second.Status = TacticalDroneStatus.Air;
+        second.DecoyCharges = 0;
+        var frame = engine.GetTacticalBattleState()!;
+        AssertRejectedUnchanged(engine, () => engine.FireTacticalBattle(new("late-decoy", frame.BattleId, frame.Revision,
+            [new("Вера", null, Decoy: true), new(second.Id, null, Decoy: true)])), TacticalBattleRejectionCode.DecoyUnavailable);
+        Assert.Equal(2, battle.Drones[0].DecoyCharges);
+        using var noModule = CloseFireEngine(AssemblyTests.WithoutModules());
+        var legacy = noModule.GetTacticalBattleState()!;
+        AssertRejectedUnchanged(noModule, () => noModule.FireTacticalBattle(new("no-module", legacy.BattleId, legacy.Revision,
+            [new("Вера", null, Decoy: true)])), TacticalBattleRejectionCode.DecoyUnavailable);
+    }
+
+    [Fact]
+    public void Decoy_with_evade_is_rejected()
+    {
+        using var engine = CloseFireEngine();
+        var frame = engine.GetTacticalBattleState()!;
+        AssertRejectedUnchanged(engine, () => engine.FireTacticalBattle(new("both-defenses", frame.BattleId, frame.Revision,
+            [new("Вера", null, true, true)])), TacticalBattleRejectionCode.InvalidRequest);
+    }
+
+    [Fact]
+    public void Decoy_without_target_and_with_jammed_weapon_is_accepted_once()
+    {
+        using var engine = CloseFireEngine();
+        var battle = engine.TacticalBattleSessionForTests!.Battle;
+        battle.Drones[0].Jammed = battle.Drones[4].Jammed = true;
+        var frame = engine.GetTacticalBattleState()!;
+        var request = new FireTacticalBattleRequest("jammed-decoy", frame.BattleId, frame.Revision,
+            [new("Вера", null, Decoy: true)]);
+        var result = engine.FireTacticalBattle(request);
+        Assert.True(result.Accepted);
+        Assert.Equal(new[] { "Вера" }, result.State!.DecoysLaunched);
+        Assert.Empty(result.State.Shots);
+        Assert.Equal(1, battle.Drones[0].DecoyCharges);
+        var random = (battle.Random.Calls, battle.Random.State);
+        Assert.Same(result, engine.FireTacticalBattle(request));
+        Assert.Equal(1, battle.Drones[0].DecoyCharges);
+        Assert.Equal(random, (battle.Random.Calls, battle.Random.State));
+        var conflict = engine.FireTacticalBattle(request with { Targets = [new("Вера", null)] });
+        Assert.Equal(TacticalBattleRejectionCode.IdentityConflict, conflict.Code);
+        Assert.Equal(1, battle.Drones[0].DecoyCharges);
+    }
+
+    [Fact]
+    public void Enemy_decoys_are_hidden_until_salvo_resolves()
+    {
+        var catalog = Catalog.Value with
+        {
+            Weapons = new(Catalog.Value.Weapons.Entries.Select(e =>
+            (e.Id, e.Value with { DamageMin = 1, DamageMax = 1 })))
+        };
+        using var engine = CloseFireEngine(catalog);
+        var before = engine.GetTacticalBattleState()!;
+        Assert.Empty(before.DecoysLaunched);
+        Assert.DoesNotContain(before.Log, e => e.Kind == TacticalBattleLogKind.DecoyLaunched);
+        Assert.All(before.Units.Where(u => u.Kind == TacticalUnitKind.Drone), u => Assert.Equal(2, u.DecoyCharges));
+        var result = engine.FireTacticalBattle(new("enemy-decoy", before.BattleId, before.Revision,
+            [new("Вера", "Таг-1")]));
+        Assert.True(result.Accepted);
+        var frame = result.State!;
+        Assert.Contains("Таг-1", frame.DecoysLaunched);
+        Assert.DoesNotContain("Вера", frame.DecoysLaunched);
+        Assert.Equal(1, frame.Units.Single(u => u.Id == "Таг-1").DecoyCharges);
+        Assert.Equal(2, frame.Units.Single(u => u.Id == "Вера").DecoyCharges);
+        Assert.True(frame.Shots.Single(s => s.ShooterId == "Вера").Decoyed);
+        Assert.Equal(2, before.Units.Single(u => u.Id == "Таг-1").DecoyCharges);
+        Assert.Equal(TacticalBattlePhase.Move, frame.Phase);
+        var next = engine.MoveTacticalBattle(new("after-decoy", frame.BattleId, frame.Revision));
+        Assert.Empty(next.State!.DecoysLaunched);
+    }
+
+    [Fact]
+    public void Evade_order_is_validated_atomically()
+    {
+        using var engine = CloseFireEngine();
+        var frame = engine.GetTacticalBattleState()!;
+        AssertRejectedUnchanged(engine, () => engine.FireTacticalBattle(new("both", frame.BattleId, frame.Revision,
+            [new("Вера", "Таг-1", true)])), TacticalBattleRejectionCode.InvalidRequest);
+        var own = engine.TacticalBattleSessionForTests!.Battle.Drones[0];
+        own.Consciousness = 9;
+        AssertRejectedUnchanged(engine, () => engine.FireTacticalBattle(new("low", frame.BattleId, frame.Revision,
+            [new("Вера", null, true)])), TacticalBattleRejectionCode.EvasionUnavailable);
+        own.Consciousness = 10;
+        own.Jammed = true;
+        var result = engine.FireTacticalBattle(new("evade", frame.BattleId, frame.Revision, [new("Вера", null, true)]));
+        Assert.True(result.Accepted);
+        Assert.Contains(result.State!.FireSteps, s => s.ShooterId == "Вера" && s.SkipReason == TacticalFireSkipReason.Evading);
+        Assert.Equal(0, result.State.FireSteps[0].UnitsAfter.Single(u => u.Id == "Вера").Consciousness);
+        Assert.Equal(5, result.State.Units.Single(u => u.Id == "Вера").Consciousness);
+    }
+
+    [Fact]
+    public void Fire_phase_opens_when_enemy_threatens_player_drones_without_player_targets()
+    {
+        using var engine = ThreatEngine(false);
+        var frame = engine.GetTacticalBattleState()!;
+        Assert.Equal(TacticalBattlePhase.Fire, frame.Phase);
+        Assert.All(frame.Targets, t => Assert.Empty(t.List));
+        Assert.Contains(frame.Incoming, i => i.TargetId == "Вера");
+        Assert.False(frame.FireSkipped);
+        Assert.True(engine.FireTacticalBattle(new("hold", frame.BattleId, frame.Revision)).Accepted);
+    }
+
+    [Fact]
+    public void Carrier_only_threat_still_skips_fire_phase()
+    {
+        using var engine = ThreatEngine(true);
+        var frame = engine.GetTacticalBattleState()!;
+        Assert.True(frame.FireSkipped);
+        Assert.Equal(TacticalBattlePhase.Move, frame.Phase);
+        Assert.DoesNotContain(frame.Shots, s => s.TargetId == "Вера");
+    }
+
+    [Fact]
+    public void Enemy_evasion_is_hidden_until_salvo_resolves()
+    {
+        using var engine = CloseFireEngine();
+        var enemy = engine.TacticalBattleSessionForTests!.Battle.Drones[4];
+        enemy.Hull = enemy.MaxHull / 2 - 1;
+        var before = engine.GetTacticalBattleState()!;
+        Assert.Empty(before.FireSteps);
+        Assert.Empty(before.Shots);
+        Assert.Equal(100, before.Units.Single(u => u.Id == enemy.Id).Consciousness);
+        var response = engine.FireTacticalBattle(new("enemy-evade", before.BattleId, before.Revision));
+        Assert.Contains(response.State!.FireSteps, s => s.ShooterId == enemy.Id && s.SkipReason == TacticalFireSkipReason.Evading);
+        Assert.Equal(95, response.State.Units.Single(u => u.Id == enemy.Id).Consciousness);
+    }
+
+    private static SimulationEngine ThreatEngine(bool carrierOnly)
+    {
+        var engine = Engine();
+        var frame = engine.StartTacticalBattle(new("threat", 1)).State!;
+        var battle = engine.TacticalBattleSessionForTests!.Battle;
+        foreach (var drone in battle.Drones) drone.Status = TacticalDroneStatus.Disabled;
+        var a = battle.Drones[0];
+        var b = battle.Drones[4];
+        a.Status = b.Status = TacticalDroneStatus.Air;
+        a.Pose = new(carrierOnly ? -10000 : 0, 0, 0);
+        a.Jammed = true;
+        b.Pose = new(150, 0, 180);
+        b.Order = new(20, 0);
+        battle.Carrier("A").Pose = new(carrierOnly ? 0 : -10000, 0, 0);
+        battle.Carrier("B").Pose = new(10000, 0, 0);
+        var response = engine.MoveTacticalBattle(new("threat-move", frame.BattleId, frame.Revision, [new(a.Id, 20, 0)]));
+        Assert.True(response.Accepted);
+        return engine;
+    }
+
     private static readonly Lazy<TacticalBattleCatalog> Catalog = new(AssemblyTests.Catalog);
 
     [Fact]
@@ -71,7 +271,7 @@ public sealed class SessionTests
         Assert.Equal(80, frame.Units[0].MaxArmor);
         Assert.Equal(2, frame.Units[0].Engines.Length);
         Assert.Equal(50, frame.Units[0].Build!.DamageMin);
-        Assert.Equal(870, frame.Units[0].Limits!.Mass);
+        Assert.Equal(880, frame.Units[0].Limits!.Mass);
         var moved = engine.MoveTacticalBattle(new("move", frame.BattleId, frame.Revision));
         Assert.True(moved.Accepted);
         Assert.Equal(original, JsonSerializer.Serialize(frame));
@@ -353,11 +553,27 @@ public sealed class SessionTests
             TacticalBattleResponse response = frame.Phase == TacticalBattlePhase.Move
                 ? engine.MoveTacticalBattle(new("m" + command++, frame.BattleId, frame.Revision, explicitSuggestions ? frame.Suggestions : []))
                 : engine.FireTacticalBattle(new("f" + command++, frame.BattleId, frame.Revision,
-                    frame.Targets.Select(t => new TacticalFireTarget(t.DroneId, t.DefaultTargetId)).ToImmutableArray()));
+                    frame.Targets.Select(t =>
+                    {
+                        var unit = frame.Units.Single(u => u.Id == t.DroneId);
+                        bool evade = unit.Hull < Catalog.Value.Rules.Evasion.AiHullFraction * unit.MaxHull
+                            && unit.Consciousness >= Catalog.Value.Rules.Evasion.MinConsciousness;
+                        return new TacticalFireTarget(t.DroneId, evade ? null : t.DefaultTargetId, evade);
+                    }).ToImmutableArray()));
             Assert.True(response.Accepted, response.Code.ToString());
             frame = response.State!;
         }
         var direct = DeepSpaceSaga.Engine.TacticalBattle.TacticalBattle.Create(Catalog.Value, "initial", 1);
+        while (direct.Result is null && direct.Turn < Catalog.Value.Rules.SeriesTurnCap)
+        {
+            direct.Planning(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
+            direct.Movement();
+            if (direct.Result is not null) break;
+            bool playerPhase = direct.ActiveDrones("A").Any(d => !TacticalBattleSalvo.Candidates(direct, d).IsEmpty)
+                || direct.ActiveDrones("B").Any(d => TacticalBattleSalvo.Candidates(direct, d).Any(c => c.Target is TacticalDrone));
+            direct.Firing((d, candidates) => d.Side == "A" && !playerPhase ? new(null, false)
+                : TacticalBattleSalvo.DefaultPlan(direct, d, candidates), d => d.Side != "A");
+        }
         direct.Run(DeepSpaceSaga.Engine.TacticalBattle.Ai.TacticalBattleAi.Plan);
         Assert.Equal(JsonSerializer.Serialize(TacticalBattleSnapshotBuilder.Outcome(direct.Result)), JsonSerializer.Serialize(frame.Outcome));
         Assert.Equal(JsonSerializer.Serialize(TacticalBattleSnapshotBuilder.Units(direct)), JsonSerializer.Serialize(frame.Units));
@@ -367,9 +583,9 @@ public sealed class SessionTests
         Assert.Equal(frame.Log.Length, frame.Log.Select(e => e.Sequence).Distinct().Count());
     }
 
-    private static SimulationEngine CloseFireEngine()
+    internal static SimulationEngine CloseFireEngine(TacticalBattleCatalog? catalog = null)
     {
-        var engine = Engine();
+        var engine = Engine(catalog);
         var frame = engine.StartTacticalBattle(new("s", 1)).State!;
         var battle = engine.TacticalBattleSessionForTests!.Battle;
         foreach (var d in battle.Drones) d.Status = TacticalDroneStatus.Disabled;

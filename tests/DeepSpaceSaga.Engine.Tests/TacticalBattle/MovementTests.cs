@@ -9,7 +9,7 @@ public sealed class MovementTests
     [Fact]
     public void EveryPublishedMovementSliceMatchesAtRoundedInputPrecision()
     {
-        var battle = Battle.Create(AssemblyTests.Catalog(), "initial", 1);
+        var battle = Battle.Create(AssemblyTests.WithoutModules(), "initial", 1);
         using var trace = ReferenceFixtureTests.Open("trace-seed-1");
         int compared = 0;
         foreach (var turn in trace.RootElement.GetProperty("data").GetProperty("turns").EnumerateArray())

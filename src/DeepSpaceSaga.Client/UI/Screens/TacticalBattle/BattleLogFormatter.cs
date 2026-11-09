@@ -15,8 +15,10 @@ public static class BattleLogFormatter
             TacticalBattleLogKind.RoleChanged when entry.NoAttackers => F("Log.NoAttackers", actor),
             TacticalBattleLogKind.RoleChanged => F("Log.Role", actor, entry.RoleName ?? entry.RoleId ?? ""),
             TacticalBattleLogKind.FighterBreak => F("Log.FighterBreak", actor),
+            TacticalBattleLogKind.DecoyLaunched => F("Log.DecoyLaunched", actor),
             TacticalBattleLogKind.NoTargets => L("Log.NoTargets"),
             TacticalBattleLogKind.FireSkipped => F("Log.FireSkipped", actor, SkipText(entry.SkipReason)),
+            TacticalBattleLogKind.ShotAbsorbed => F("Log.ShotAbsorbed", actor, target),
             TacticalBattleLogKind.ShotMissed => F("Log.ShotMiss", actor, target, chance),
             TacticalBattleLogKind.ShotHit or TacticalBattleLogKind.RearKill => F("Log.ShotHit", actor, target,
                 L(entry.Shot?.Rear == true || entry.Kind == TacticalBattleLogKind.RearKill ? "Log.HitRear" : "Log.HitHull"),
@@ -40,12 +42,15 @@ public static class BattleLogFormatter
             TacticalBattleLogKind.Exited => L("Log.Exited"),
             _ => L("Log.Unknown")
         };
+        if (entry.Shot?.Decoyed == true) body += " · " + L("DecoyChip");
         string phase = L(entry.Phase == TacticalBattlePhase.Fire ? "Log.FirePhase" : "Phase." + entry.Phase);
         return F("Log.Line", BattleFormat.Number(entry.Turn), phase, body);
     }
 
     private static string SkipText(TacticalFireSkipReason? reason) => reason switch
     {
+        TacticalFireSkipReason.InDust => L("Skip.InDust"),
+        TacticalFireSkipReason.Evading => L("Skip.Evading"),
         TacticalFireSkipReason.NoTarget => L("Skip.NoTarget"),
         TacticalFireSkipReason.Withheld => L("Skip.Withheld"),
         TacticalFireSkipReason.ShooterDestroyed => L("Skip.ShooterDestroyed"),

@@ -7,12 +7,35 @@ namespace DeepSpaceSaga.Engine.TacticalBattle;
 
 internal static class TacticalBattleSnapshotBuilder
 {
+    public static ImmutableArray<TacticalAnomalySnapshot> Anomalies(TacticalBattle battle) => battle.Anomalies.Select(a =>
+        new TacticalAnomalySnapshot(a.Id, (TacticalAnomalyKindCode)a.Kind, a.Clumps.Select(c =>
+            new TacticalClumpSnapshot(c.X, c.Y, c.Amplitude, c.SigmaX, c.SigmaY, c.Rotation)).ToImmutableArray())).ToImmutableArray();
+
     public static ImmutableArray<TacticalFireQueueEntry> FireQueue(TacticalBattle battle) => battle.CaptureFireOrder()
         .Select((drone, index) => new TacticalFireQueueEntry(index, drone.Id, drone.Initiative)).ToImmutableArray();
 
     public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
-    { LethalImpact = shot.LethalImpact };
+    { Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy };
+
+    private static ImmutableArray<TacticalSlotSnapshot> Slots(TacticalDrone d)
+    {
+        var slots = ImmutableArray.CreateBuilder<TacticalSlotSnapshot>();
+        slots.Add(new(TacticalSlotKind.Weapon, 0, d.Weapon.Id, d.Weapon.Name, d.Jammed ? TacticalSlotState.Jammed : TacticalSlotState.Ok));
+        slots.Add(new(TacticalSlotKind.Armor, 0, d.Plates.Id, d.Plates.Name, TacticalSlotState.Ok));
+        for (int i = 0; i < d.Frame.ShieldSlots; i++)
+            slots.Add(new(TacticalSlotKind.Shield, i, i < d.ShieldCount ? d.Shield?.Id : null,
+                i < d.ShieldCount ? d.Shield?.Name : null, TacticalSlotState.Ok));
+        for (int i = 0; i < d.Frame.EngineSlots; i++)
+        {
+            var engine = i < d.Engines.Length ? d.Engines[i] : null;
+            slots.Add(new(TacticalSlotKind.Engine, i, engine?.Definition.Id, engine?.Definition.Name,
+                engine?.Factor < 1 ? TacticalSlotState.Damaged : TacticalSlotState.Ok, engine?.Factor ?? 1));
+        }
+        for (int i = 0; i < d.Frame.ModuleSlots; i++)
+            slots.Add(new(TacticalSlotKind.Module, i, i == 0 ? d.Decoy?.Id : null, i == 0 ? d.Decoy?.Name : null, TacticalSlotState.Ok));
+        return slots.ToImmutable();
+    }
 
     public static ImmutableArray<TacticalUnitSnapshot> Units(TacticalBattle battle)
     {
@@ -23,14 +46,16 @@ internal static class TacticalBattleSnapshotBuilder
             var build = new TacticalBuildSnapshot(d.Frame.Name, d.PilotId, battle.Catalog.Pilots[d.PilotId].Name, w.Id, w.Name,
                 w.DamageMin, w.DamageMax, w.Piercing, w.HitBonus, w.Range, w.ArcDeg, w.RangeBonus, w.RearKillChance,
                 d.Plates.Id, d.Plates.Name, d.Shield?.Id, d.Shield?.Name, d.Shield?.Defense ?? 0, d.ShieldCount, d.Frame.ShieldSlots,
-                d.Frame.FrameMassKg, d.Frame.ReferenceMassKg, w.MassKg, d.Plates.MassKg, d.Shield?.MassKg ?? 0);
+                d.Frame.FrameMassKg, d.Frame.ReferenceMassKg, w.MassKg, d.Plates.MassKg, d.Shield?.MassKg ?? 0)
+            { EngineSlots = d.Frame.EngineSlots, ModuleSlots = d.Frame.ModuleSlots, DecoyId = d.Decoy?.Id, DecoyName = d.Decoy?.Name, DecoyMaxCharges = d.Decoy?.Charges ?? 0 };
             var limits = d.Limits;
             units.Add(new(d.Id, d.Side, TacticalUnitKind.Drone, d.Frame.Id, Pose(d.Pose), d.Speed, d.Hull, d.MaxHull, d.Armor, d.MaxArmor,
                 d.Status switch { TacticalDroneStatus.Air => TacticalUnitState.Air, TacticalDroneStatus.Disabled => TacticalUnitState.Disabled, _ => TacticalUnitState.Destroyed },
                 d.Role, d.Jammed, d.Engines.Select(e => new TacticalEngineSnapshot(e.Definition.Id, e.Definition.Name, e.Factor,
                     e.Definition.MassKg, e.Definition.SpeedBonus, e.Definition.SpeedChange, e.Definition.TurnDeg)).ToImmutableArray(),
                 new(limits.Mass, limits.MassFactor, limits.MinSpeed, limits.MaxSpeed, limits.Change, limits.Turn), d.PreviousTurn, build, d.Accuracy, d.Maneuver,
-                battle.Catalog.Ai.Roles[d.Role].Name) { Initiative = d.Initiative });
+                battle.Catalog.Ai.Roles[d.Role].Name)
+            { Slots = Slots(d), InDust = TacticalBattleSalvo.InDust(battle, d), Initiative = d.Initiative, Consciousness = d.Consciousness, DecoyCharges = d.DecoyCharges });
         }
         foreach (var c in battle.Carriers)
             units.Add(new(c.Id, c.Side, TacticalUnitKind.Carrier, TacticalBattleConstants.CarrierFrame, Pose(c.Pose), 0,
@@ -43,27 +68,49 @@ internal static class TacticalBattleSnapshotBuilder
     {
         var candidates = TacticalBattleSalvo.Candidates(battle, d);
         return new TacticalTargetGroupSnapshot(d.Id, candidates.Select(c => new TacticalTargetCandidateSnapshot(c.Target.Id,
-            c.Distance, c.Angle, c.Terms.IsRear, d.Weapon.RearKillChance, c.Terms.Chance)).ToImmutableArray(),
+            c.Distance, c.Angle, c.Terms.IsRear, d.Weapon.RearKillChance, c.Chance)
+        { Absorption = c.Absorption }).ToImmutableArray(),
             TacticalBattleSalvo.DefaultTarget(d, candidates)?.Target.Id);
     }).ToImmutableArray();
 
     public static ImmutableArray<TacticalIncomingShotSnapshot> Incoming(TacticalBattle battle, string playerSide)
     {
         var rows = ImmutableArray.CreateBuilder<TacticalIncomingShotSnapshot>();
-        foreach (var d in battle.ActiveDrones(battle.EnemySide(playerSide)))
+        var first = new List<string>();
+        foreach (var d in battle.CaptureFireOrder().Where(d => d.Side == battle.EnemySide(playerSide)))
         {
             var candidate = TacticalBattleSalvo.DefaultTarget(d, TacticalBattleSalvo.Candidates(battle, d));
-            if (candidate is not null) rows.Add(new(d.Id, candidate.Target.Id, candidate.Terms.Chance, candidate.Distance,
-                candidate.Angle, candidate.Terms.IsRear, d.Weapon.RearKillChance));
+            if (candidate is not null)
+            {
+                var adjusted = CandidatesIfEvading(battle, d, candidate.Target.Id);
+                rows.Add(new(d.Id, candidate.Target.Id, candidate.Chance, candidate.Distance,
+                    candidate.Angle, candidate.Terms.IsRear, d.Weapon.RearKillChance)
+                {
+                    Absorption = candidate.Absorption,
+                    ChanceIfEvading = adjusted,
+                    ChanceIfDecoy = candidate.Target is TacticalDrone { Decoy: { } decoy } && !first.Contains(candidate.Target.Id, StringComparer.Ordinal)
+                        ? TacticalHitChance.WithDecoy(candidate.Terms.Chance, decoy.MissFactor, battle.Catalog.Rules.Hit.MinChance / 100.0) * (1 - candidate.Absorption) : null
+                });
+                if (candidate.Target is TacticalDrone { Decoy: not null }) first.Add(candidate.Target.Id);
+            }
         }
         return rows.ToImmutable();
     }
+
+    private static double CandidatesIfEvading(TacticalBattle battle, TacticalDrone shooter, string targetId) =>
+        TacticalBattleSalvo.Candidates(battle, shooter, new[] { targetId })
+            .Single(c => c.Target.Id == targetId).Chance;
 
     public static ImmutableArray<TacticalLossCount> Losses(TacticalBattle battle) => TacticalBattleConstants.SideOrder
         .Select(side => new TacticalLossCount(side, battle.Drones.Count(d => d.Side == side && !d.IsActive))).ToImmutableArray();
     public static TacticalForecastRules Rules(TacticalRules r) => new(
         new(r.Hit.Base, r.Hit.MinChance, r.Hit.MaxChance, r.Hit.RangeBonus, r.Hit.AnglePenalty, r.Hit.RearBonus, r.Hit.RearBonusArcDeg),
-        r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps);
+        r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps)
+    {
+        Evasion = new(r.Evasion.HitPenalty, r.Evasion.Cost, r.Evasion.MinConsciousness, r.Consciousness.RecoveryPerTurn, r.Consciousness.Max),
+        Decoy = new(r.Decoy.AiThreatChance),
+        Anomalies = new(r.Anomalies.ZoneEdge, r.Anomalies.Background, r.Anomalies.AbsorbSamples)
+    };
     public static TacticalPoseSnapshot Pose(TacticalPose pose) => new(pose.X, pose.Y, pose.Course);
     public static TacticalOutcomeSnapshot? Outcome(TacticalBattleResult? result)
     {

@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class BattleEndTests
 {
     [Fact]
-    public async Task NewBattleDuringMoveExitsFirstAndPrefillsAcceptedSetupWithoutResumingWorld()
+    public async Task NewBattleAfterOutcomeExitsFirstAndPrefillsAcceptedSetupWithoutResumingWorld()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         await fixture.Route(ScreenEvent.OpenTacticalBattle);
@@ -31,8 +31,11 @@ public sealed class BattleEndTests
         var first = battle.Flow.State!;
         Assert.Equal(TacticalBattlePhase.Move, first.Phase);
         battle.Render(canvas, 1280, 720);
+        Assert.True(battle.NewBattleBounds.IsEmpty);
+        for (int n = 0; battle.Flow.State!.Phase != TacticalBattlePhase.Over && n < 200; n++) { fixture.FinishPresentation(); await fixture.Route(battle.OnKeyDown(Key.Enter)); }
+        fixture.FinishPresentation(); battle.Render(canvas, 1280, 720);
         var rect = battle.NewBattleBounds;
-        Assert.True(rect.Top < 250);
+        Assert.True(rect.Top > 300);
         Assert.Equal(ScreenEvent.NewTacticalBattle, battle.OnMouseDown(rect.MidX, rect.MidY, MouseButton.Left));
         await fixture.Route(ScreenEvent.NewTacticalBattle);
         var next = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);

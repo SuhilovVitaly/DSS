@@ -7,7 +7,7 @@ public readonly record struct TacticalDrive(double Mass, double SpeedBonus, doub
 public readonly record struct TacticalLimits(double Mass, double MassFactor, double MinSpeed, double MaxSpeed, double Change, double Turn)
 {
     public static TacticalLimits Of(TacticalFrameLimits frame, double armorMass, double weaponMass,
-        double shieldMass, int shieldCount, IReadOnlyList<TacticalDrive> engines)
+        double shieldMass, int shieldCount, IReadOnlyList<TacticalDrive> engines, double moduleMass = 0)
     {
         ArgumentNullException.ThrowIfNull(engines);
         double engineMass = 0, speedBonus = 0, speedChange = 0, turn = 0;
@@ -18,7 +18,7 @@ public readonly record struct TacticalLimits(double Mass, double MassFactor, dou
             speedChange += engine.SpeedChange * engine.Factor;
             turn += engine.Turn * engine.Factor;
         }
-        double mass = frame.Mass + armorMass + weaponMass + shieldMass * shieldCount + engineMass;
+        double mass = frame.Mass + armorMass + weaponMass + shieldMass * shieldCount + engineMass + moduleMass;
         if (!double.IsFinite(mass) || mass <= 0 || !double.IsFinite(frame.ReferenceMass) || frame.ReferenceMass <= 0)
             throw new ArgumentOutOfRangeException(nameof(frame), "Positive finite total and reference mass are required.");
         double k = frame.ReferenceMass / (double)mass;

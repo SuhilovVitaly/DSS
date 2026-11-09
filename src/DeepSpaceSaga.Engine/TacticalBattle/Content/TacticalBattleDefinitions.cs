@@ -4,7 +4,16 @@ namespace DeepSpaceSaga.Engine.TacticalBattle.Content;
 
 internal sealed record TacticalRules(string Version, string Description, int Substeps,
     double TurnAtMaxSpeedFraction, DeployScatter DeployScatter, HitRules Hit, RearRules Rear,
-    DisabledRules Disabled, SystemRules Systems, int SeriesTurnCap);
+    DisabledRules Disabled, SystemRules Systems, ConsciousnessRules Consciousness, EvasionRules Evasion, DecoyRules Decoy, AnomalyRules Anomalies, int SeriesTurnCap);
+internal sealed record ConsciousnessRules(int Start, int Max, int RecoveryPerTurn);
+internal sealed record EvasionRules(double HitPenalty, int Cost, int MinConsciousness, double AiHullFraction);
+internal sealed record DecoyRules(double AiThreatChance);
+internal sealed record AnomalyRules(double ZoneEdge, double Background, int AbsorbSamples,
+    ImmutableArray<int> HeatCount, ImmutableArray<int> DustCount, ImmutableArray<int> Clumps,
+    ImmutableArray<double> Spread, ImmutableArray<double> ClumpAmp, ImmutableArray<double> ClumpSigmaX,
+    ImmutableArray<double> ClumpSigmaY, ImmutableArray<double> CenterSpread,
+    double Clearance, double BandFraction, int MaxAttempts, int AiDustSearch);
+internal sealed record BattleDecoy(string Id, string Name, int Tier, int Charges, double MissFactor, double MassKg);
 internal sealed record DeployScatter(double Xy, double CourseDeg);
 internal sealed record HitRules(double Base, double MinChance, double MaxChance, double RangeBonus,
     double AnglePenalty, double RearBonus, double RearBonusArcDeg);
@@ -15,7 +24,7 @@ internal sealed record SystemEffect(string Effect, int Weight);
 
 internal sealed record BattleFrame(string Id, string Name, int Hull, double FrameMassKg = 0,
     double ReferenceMassKg = 0, double MinSpeed = 0, double MaxSpeedCap = 0, double TurnCapDeg = 0,
-    int EngineSlots = 0, int ShieldSlots = 1, int? Maneuver = null);
+    int EngineSlots = 0, int ShieldSlots = 1, int? Maneuver = null, int ModuleSlots = 0);
 internal sealed record BattleWeapon(string Id, string Name, int Tier, double ArcDeg, double Range,
     int DamageMin, int DamageMax, int Piercing, int HitBonus, double RearKillChance, double MassKg,
     double? RangeBonus = null);
@@ -35,7 +44,7 @@ internal sealed record BattlePilot(string Name, PilotSkill Accuracy, PilotSkill 
     public PilotSkill Initiative { get; init; } = PilotSkill.Fixed(50);
 }
 internal sealed record BattleLayout(string Name, string Class, string Armor, string? Weapon,
-    string? Shield, ImmutableArray<string> Engines, int? Hull = null, int? ShieldCount = null);
+    string? Shield, ImmutableArray<string> Engines, int? Hull = null, int? ShieldCount = null, string? Module = null);
 internal sealed record BattleGoal(string PlayerSide, double WinMaxOneLoss, double WinNoLoss,
     double Tolerance, ImmutableArray<long> Seeds);
 internal sealed record BattleScenario(string Name, string Description, ImmutableArray<BattleSide> Sides,

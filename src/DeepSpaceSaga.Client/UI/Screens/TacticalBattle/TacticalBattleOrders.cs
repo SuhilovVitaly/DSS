@@ -167,7 +167,9 @@ internal sealed class TacticalBattleOrders
             if (endpoint && row.Path.IsDefaultOrEmpty) continue;
             var target = view.Project(endpoint ? row.Path[^1] : row.Unit.Pose);
             double distance = TacticalGeometry.Dist(p.X, p.Y, target.X, target.Y);
-            if (distance > radius || distance >= best) continue;
+            float half = row.Unit.Id == Selected ? 5 : 4;
+            if (endpoint ? Math.Abs(p.X - target.X) > half || Math.Abs(p.Y - target.Y) > half : distance > radius) continue;
+            if (distance >= best) continue;
             nearest = row.Unit.Id; best = distance;
         }
         return nearest;

@@ -68,12 +68,13 @@ foreach ($name in @('rules', 'ai')) {
 
 foreach ($category in @(
     @('Frames', 'frames'), @('Modules/Weapons', 'weapons'), @('Modules/Engines', 'engines'),
-    @('Modules/Shields', 'shields'), @('Modules/Armor', 'armor'))) {
+    @('Modules/Shields', 'shields'), @('Modules/Armor', 'armor'), @('Modules/Decoys', 'decoys'))) {
     foreach ($row in Read-Table "$($category[0])/README.md" $category[1]) {
         $content = [ordered]@{}
         foreach ($field in $row.Keys) {
             if ($row[$field] -ne '—') { $content[$field] = Parse-Cell $row[$field] }
         }
+        if ($category[0] -eq 'Frames' -and -not $content.Contains('moduleSlots')) { $content['moduleSlots'] = 0 }
         $documents["$($category[0])/$($row['id']).json"] = $content
     }
 }
@@ -94,6 +95,7 @@ foreach ($name in @('pilots', 'layouts')) {
             if (-not $entry.Contains('weapon')) { $entry['weapon'] = $null }
             if (-not $entry.Contains('shield')) { $entry['shield'] = $null }
             if (-not $entry.Contains('engines')) { $entry['engines'] = @() }
+            if (-not $entry.Contains('module')) { $entry['module'] = $null }
         }
         $content[$row['id']] = $entry
     }

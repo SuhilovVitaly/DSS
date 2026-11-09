@@ -45,7 +45,7 @@ public sealed class InitiativeFireTests
         other.Status = TacticalDroneStatus.Air;
         other.Pose = b.Pose with { Y = 10 }; // both A shooters initially prefer b
         other.Jammed = true;
-        var salvo = TacticalBattleSalvo.Fire(battle, explicitOrders ? (d, _) => d.Side == "A" ? b.Id : null : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, explicitOrders ? (d, _) => new(d.Side == "A" ? b.Id : null, false) : null);
         Assert.Equal(a.Id, Assert.Single(salvo.Shots).Shooter.Id);
         Assert.Equal(40, other.Hull);
         Assert.Equal(1, battle.Statistics.Shots);
@@ -60,7 +60,7 @@ public sealed class InitiativeFireTests
         var (battle, _, b) = SalvoTests.Arena(damage: 15, hull: 100);
         SalvoTests.ActivateSecondA(battle);
         b.Armor = 10;
-        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => d.Side == "A" ? b.Id : null);
+        var salvo = TacticalBattleSalvo.Fire(battle, (d, _) => new(d.Side == "A" ? b.Id : null, false));
         Assert.Equal(2, salvo.Shots.Length);
         Assert.Equal(80, b.Hull);
         Assert.Equal(0, b.Armor);
@@ -90,7 +90,7 @@ public sealed class InitiativeFireTests
         battle.Movement();
         a.Pose = new(0, 0, 0); b.Pose = new(10, 0, 180);
         if (carrier) battle.Carrier("B").Pose = b.Pose;
-        battle.Firing((d, _) => d == a ? target : a.Id);
+        battle.Firing((d, _) => new(d == a ? target : a.Id, false));
         Assert.Equal(TacticalTurnPhase.Complete, battle.Phase);
         Assert.Equal(TacticalOutcomeKind.A, battle.Result!.Kind);
         Assert.Equal(1, battle.Result.Statistics.Shots);
@@ -106,11 +106,11 @@ public sealed class InitiativeFireTests
         long calls = battle.Random.Calls;
         uint initiativeState = battle.InitiativeRandom.State;
         a.Dry = 3;
-        Assert.Throws<ArgumentException>(() => TacticalBattleSalvo.Fire(battle, (_, _) => "invalid"));
+        Assert.Throws<ArgumentException>(() => TacticalBattleSalvo.Fire(battle, (_, _) => new("invalid", false)));
         Assert.Equal(calls, battle.Random.Calls);
         Assert.Equal(3, a.Dry);
         Assert.Equal(0, battle.Statistics.Shots);
-        var held = TacticalBattleSalvo.Fire(battle, (_, _) => null);
+        var held = TacticalBattleSalvo.Fire(battle, (_, _) => new(null, false));
         Assert.All(held.Steps, step => Assert.Equal(TacticalFireSkipReason.Withheld, step.SkipReason));
         Assert.Equal(calls, battle.Random.Calls);
         var miss = TacticalBattleSalvo.Fire(battle);

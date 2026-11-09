@@ -7,6 +7,36 @@ public sealed class LimitsAndChanceTests
 {
     private static readonly TacticalHitRules Rules = new(50, 5, 95, 15, 12, 10, 30);
 
+    [Theory]
+    [InlineData(.47, .205)]
+    [InlineData(.56, .34)]
+    [InlineData(.30, .05)]
+    [InlineData(.95, .925)]
+    public void Decoy_multiplies_miss_chance_after_clamp(double chance, double expected)
+    {
+        Assert.Equal(expected, TacticalHitChance.WithDecoy(chance, 1.5, .05), 12);
+        Assert.Equal(chance, TacticalHitChance.WithDecoy(chance, 1, .05), 12);
+    }
+
+    [Fact]
+    public void Decoy_never_goes_below_min_chance()
+    {
+        Assert.Equal(.05, TacticalHitChance.WithDecoy(.05, 1.5, .05));
+        Assert.Equal(.1, TacticalHitChance.WithDecoy(.3, 100, .1));
+        Assert.Equal(1, TacticalHitChance.WithDecoy(1, 1.5, .05));
+    }
+
+    [Fact]
+    public void Module_mass_enters_limits_like_shield_mass()
+    {
+        var frame = new TacticalFrameLimits(460, 760, 50, 110, 70);
+        TacticalDrive[] engines = [new(100, 25, 10, 32.5, 1), new(100, 25, 10, 32.5, .5)];
+        Assert.Equal(TacticalLimits.Of(frame, 120, 70, 10, 2, engines, 10),
+            TacticalLimits.Of(frame, 120, 70, 15, 2, engines));
+        Assert.Equal(TacticalLimits.Of(frame, 120, 70, 10, 2, engines),
+            TacticalLimits.Of(frame, 120, 70, 10, 2, engines, 0));
+    }
+
     [Fact]
     public void CombatSectionThreeExamplesAndDamagedEngineLimitsMatch()
     {
@@ -78,6 +108,34 @@ public sealed class LimitsAndChanceTests
         Assert.Equal(0.95, TacticalHitChance.Chance(Rules, front with { Accuracy = 1000 }));
         Assert.Equal(0.05, TacticalHitChance.Chance(Rules, front with { Accuracy = -1000 }));
         Assert.Equal(0, TacticalHitChance.Terms(Rules, front with { ShieldCount = 0 }).Shield);
+    }
+
+    [Fact]
+    public void Evasion_term_subtracts_penalty_before_clamp()
+    {
+        var shot = new TacticalShotInput(59, 47, 0, 125, 50, 50, 0, 180, true, 10, 1, 45);
+        var rules = Rules with { EvasionPenalty = 20 };
+        Assert.Equal(0.61, TacticalHitChance.Chance(rules, shot));
+        var terms = TacticalHitChance.Terms(rules, shot with { TargetEvading = true });
+        Assert.Equal(-20, terms.Evasion);
+        Assert.Equal(41, terms.Raw);
+        Assert.Equal(0.41, terms.Chance);
+        Assert.Equal(0.9, TacticalHitChance.Chance(rules, shot with { Accuracy = 108, TargetEvading = true }));
+        Assert.Equal(0.05, TacticalHitChance.Chance(rules, shot with { Accuracy = 0, TargetEvading = true }));
+        Assert.Equal(0.95, TacticalHitChance.Chance(rules, shot with { Accuracy = 1000, TargetEvading = true }));
+        Assert.Equal(0, TacticalHitChance.Terms(rules, shot with { TargetIsDrone = false, TargetEvading = true }).Evasion);
+    }
+
+    [Fact]
+    public void Evasion_applies_to_rear_shots()
+    {
+        var shot = new TacticalShotInput(59, 47, 0, 125, 50, 50, 0, 0, true, 10, 1, 45, TargetEvading: true);
+        var terms = TacticalHitChance.Terms(Rules with { EvasionPenalty = 20 }, shot);
+        Assert.True(terms.IsRear);
+        Assert.Equal(10, terms.Rear);
+        Assert.Equal(0, terms.Shield);
+        Assert.Equal(-20, terms.Evasion);
+        Assert.Equal(0.61, terms.Chance);
     }
 
     [Fact]

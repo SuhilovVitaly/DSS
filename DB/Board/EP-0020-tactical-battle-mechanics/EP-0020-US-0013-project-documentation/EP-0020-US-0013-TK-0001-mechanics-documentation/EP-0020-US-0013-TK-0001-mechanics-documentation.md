@@ -1,0 +1,86 @@
+---
+epic: EP-0020-tactical-battle-mechanics
+story: EP-0020-US-0013-project-documentation
+ticket: EP-0020-US-0013-TK-0001-mechanics-documentation
+title: Документация уклонения и сознания
+stage: done
+layer: documentation
+test_project: —
+depends_on: [EP-0020-US-0004-TK-0004-view-regression]
+files_touched: 4
+serves: [US13-AC1, US13-AC2]
+created: 2026-11-08T11:46:28Z
+revision: 1
+---
+
+# Документация уклонения и сознания
+
+## Why
+
+Канонические документы должны описывать действующую механику.
+
+## Decisions
+
+Применяются [D-01–D-42](../../Documentation.md#решения-пользователя). Нормативный вид — [UiSpec](../../UiSpec.md) и DesignSpec EP-0019. Утверждение эпика пользователем — в [review log эпика](../../Documentation.md#review-log).
+
+## Assumptions
+
+—
+
+## Code context
+
+Строки — `main` @ `8c6f4e2a`, файлы EP-0019 — по его карточкам; перед правкой сверить с текущей веткой.
+
+| File | Current state | Allowed change |
+|---|---|---|
+| `DB/Documentation/01-Requirements/EngineRequirements.md` | раздел «Тактический бой» | Сознание, уклонение, ИИ, фаза. |
+| `DB/Documentation/04-Engineering/TacticalBattle.md` | :15-39 | Раздел «Уклонение и сознание». |
+| `DB/Documentation/02-FirstRelease/Screens/TacticalBattle.md` | :5-7 | Управление фазой стрельбы. |
+| `DB/Board/EP-0020-tactical-battle-mechanics/ExecutionStatus.md` | нет | Итоги. |
+
+## Public API after the change
+
+No API change.
+
+## Implementation steps
+
+1. Обновить документы.
+2. Записать ExecutionStatus.
+3. Проверить ссылки.
+
+## Out of scope
+
+Код.
+
+## Invariants
+
+Документы не противоречат данным.
+
+## Tests
+
+Проект `—`. Именованные проверки:
+
+- Проверка содержания и ссылок.
+
+Команды из корня DSS. Заменить `<run>` уникальным ID, создать каталог результатов заранее, ограничить дерево каждого тестового процесса 300000 ms.
+
+```powershell
+git diff --check
+```
+
+## Definition of Done
+
+- Выполнены все шаги в пределах Code context (расширение scope — по EpicExecutionPrompt с записью причины в карточке).
+- Для US13-AC1, US13-AC2 записано, какую часть критерия демонстрирует тикет и каким результатом это подтверждено.
+- Именованные проверки, сборка и scoped форматирование выполнены; фактические результаты и пути artifacts записаны в раздел «Исполнение».
+- Соблюдены инварианты.
+
+## Self-containment check
+
+Все документы перечислены.
+
+## Исполнение
+
+В процессе. Scope расширен по завершающему §6 на FirstReleaseRequirements, README index, SaveFormat, tooling docs, DocumentationImpact и FinalValidation; причины перечислены в impact inventory. Собраны текущие ссылки/числа, status переписан как единая 40-ticket publication table без устаревших промежуточных утверждений.
+
+Завершено. US13-AC1: численные EV/consciousness правила, recovery, AI, фаза и E описаны по исходникам; US13-AC2:40 реальных тикет→SHA→push и общие результаты, калибровка/отчёты записаны. Self-review исправил точность rejection: цель+EV→InvalidRequest, недостаток сознания→EvasionUnavailable. Content/relative links123PASS, Documentation Markdown-onlyPASS, diffPASS. Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us13-tk1/content-links.json`. Новые runtime tests не запускались: тикет меняет только Markdown; итоговые технические проверки уже завершены до US13.

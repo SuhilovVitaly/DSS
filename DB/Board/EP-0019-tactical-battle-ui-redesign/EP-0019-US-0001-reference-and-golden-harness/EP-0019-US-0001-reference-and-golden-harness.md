@@ -2,7 +2,7 @@
 epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0001-reference-and-golden-harness
 title: Харнесс сцен и проверки вида
-stage: draft
+stage: done
 dependencies: []
 created: 2026-11-08T09:31:05Z
 source_request: "Подготовить сборку, шрифт и автоматическую сборку настоящего экрана боя в семи сценах DesignSpec §12 с проверками данных, геометрии, текстов и растровых проб."
@@ -48,7 +48,7 @@ revision: 1
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы-нужно-решение-до-утверждения)).
+Исполнение draft-карточек разрешено запросом выполнить весь эпик. Использованы записанные варианты по умолчанию; художественное/пользовательское одобрение не приписывается. Итог — [ExecutionStatus](../ExecutionStatus.md).
 
 ## Ticket map
 
@@ -57,3 +57,11 @@ revision: 1
 | [EP-0019-US-0001-TK-0001-fix-sdk-build-ambiguity](EP-0019-US-0001-TK-0001-fix-sdk-build-ambiguity/EP-0019-US-0001-TK-0001-fix-sdk-build-ambiguity.md) | Сборка на SDK 8.0.4xx | client | — | US1-AC1 |
 | [EP-0019-US-0001-TK-0002-bundle-battle-font](EP-0019-US-0001-TK-0002-bundle-battle-font/EP-0019-US-0001-TK-0002-bundle-battle-font.md) | Поставка шрифта DejaVu Sans и единая растеризация текста | client | `EP-0019-US-0001-TK-0001-fix-sdk-build-ambiguity` | US1-AC2 |
 | [EP-0019-US-0001-TK-0003-scene-harness](EP-0019-US-0001-TK-0003-scene-harness/EP-0019-US-0001-TK-0003-scene-harness.md) | Харнесс сцен и проверки вида | tests | `EP-0019-US-0001-TK-0002-bundle-battle-font` | US1-AC3, US1-AC4, US1-AC5 |
+
+## Исполнение 2026-11-08
+
+TK-0001/TK-0002 выполнены на Windows SDK 10.0.400 и опубликованы; TK-0003 блокируется отсутствием исходного reference данных боя. US1-AC1: SDK 8 NOT RUN, установленный SDK PASS. US1-AC2: factory/font subset PASS, подключение всего экрана к фабрике зависит от US-0002 и не выполнено. US1-AC3–AC5 не выполнены. История не завершена; подробности — [ExecutionStatus](../ExecutionStatus.md).
+
+## Итоговая проверка
+
+Все тикеты истории реализованы и опубликованы. Критерии сопоставлены проверкам в [ExecutionStatus](../ExecutionStatus.md); текущие результаты заменяют начальную запись blocked. Human/physical input и проверки недоступных ОС остаются отдельными gates.

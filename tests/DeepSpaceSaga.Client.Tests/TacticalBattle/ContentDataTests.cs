@@ -56,7 +56,8 @@ public sealed class ContentDataTests
         string configuration = new DirectoryInfo(AppContext.BaseDirectory).Parent!.Name;
         string output = Path.Combine(client, "bin", configuration, "net8.0", relative);
         var files = Directory.GetFiles(source, "*.json", SearchOption.AllDirectories);
-        Assert.Equal(29, files.Length);
+        Assert.Equal(30, files.Length);
+        Assert.Contains(files, p => Path.GetRelativePath(source, p).Replace(Path.DirectorySeparatorChar, '/') == "Modules/Decoys/decoy.t1.json");
         foreach (string file in files)
         {
             string deployed = Path.Combine(output, Path.GetRelativePath(source, file));
@@ -90,6 +91,7 @@ public sealed class ContentDataTests
             AssertCatalog("Modules/Armor", layout.Value.GetProperty("armor").GetString()!);
             if (layout.Value.GetProperty("weapon").GetString() is { } weapon) AssertCatalog("Modules/Weapons", weapon);
             if (layout.Value.GetProperty("shield").GetString() is { } shield) AssertCatalog("Modules/Shields", shield);
+            if (layout.Value.GetProperty("module").GetString() is { } decoy) AssertCatalog("Modules/Decoys", decoy);
             foreach (var engine in layout.Value.GetProperty("engines").EnumerateArray()) AssertCatalog("Modules/Engines", engine.GetString()!);
         }
 

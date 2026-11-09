@@ -2,7 +2,7 @@
 epic: EP-0019-tactical-battle-ui-redesign
 story: EP-0019-US-0002-overlay-layout-shell
 title: Каркас экрана: карта под панелями
-stage: draft
+stage: done
 dependencies: [EP-0019-US-0001-reference-and-golden-harness]
 created: 2026-11-08T09:31:05Z
 source_request: "Перевести экран боя на пространство макета 1280×720 с токенами и примитивами DesignSpec, карту на весь экран и камеру по фазам; убрать старую правую панель."
@@ -48,7 +48,7 @@ D-01, D-02, D-03. [DesignSpec §1–3, §7, §10](../DesignSpec.md). Текущ�
 
 ## Решения и согласование
 
-Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы-нужно-решение-до-утверждения)).
+Исполнение draft-карточек разрешено запросом выполнить весь эпик. Использованы записанные варианты по умолчанию; художественное/пользовательское одобрение не приписывается. Итог — [ExecutionStatus](../ExecutionStatus.md).
 
 ## Ticket map
 
@@ -58,3 +58,7 @@ D-01, D-02, D-03. [DesignSpec §1–3, §7, §10](../DesignSpec.md). Текущ�
 | [EP-0019-US-0002-TK-0002-full-screen-map-shell](EP-0019-US-0002-TK-0002-full-screen-map-shell/EP-0019-US-0002-TK-0002-full-screen-map-shell.md) | Карта на весь экран и удаление старой панели | client | `EP-0019-US-0002-TK-0001-design-tokens-and-primitives` | US2-AC1, US2-AC3 |
 | [EP-0019-US-0002-TK-0003-phase-camera-fit](EP-0019-US-0002-TK-0003-phase-camera-fit/EP-0019-US-0002-TK-0003-phase-camera-fit.md) | Камера по фазам | client | `EP-0019-US-0002-TK-0002-full-screen-map-shell` | US2-AC4 |
 | [EP-0019-US-0002-TK-0004-localization-strings](EP-0019-US-0002-TK-0004-localization-strings/EP-0019-US-0002-TK-0004-localization-strings.md) | Строки RU/EN нового интерфейса | content-data | `EP-0019-US-0002-TK-0002-full-screen-map-shell` | US2-AC5 |
+
+## Итоговая проверка
+
+Все тикеты истории реализованы и опубликованы. Критерии сопоставлены проверкам в [ExecutionStatus](../ExecutionStatus.md); текущие результаты заменяют начальную запись blocked. Human/physical input и проверки недоступных ОС остаются отдельными gates.

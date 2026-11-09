@@ -287,9 +287,9 @@ public sealed class BattleNavigationTests
         }
         internal ScreenStack Screens => Field<ScreenStack>(Window, "_screens");
         internal int Depth => Field<int>(Window, "_modalDepth");
-        private Fixture(TacticalBattleInputSettings? inputs, float uiScale, string? saveDirectory, SimulationSpeed initialSpeed, string? settingsPath)
+        private Fixture(TacticalBattleInputSettings? inputs, float uiScale, string? saveDirectory, SimulationSpeed initialSpeed, string? settingsPath, string? engineSettingsPath)
         {
-            string settings = Path.Combine(AppContext.BaseDirectory, "Settings.json");
+            string settings = engineSettingsPath ?? Path.Combine(AppContext.BaseDirectory, "Settings.json");
             Engine = SimulationEngine.CreateFromSettingsFile(settings);
             Engine.SetSpeed(initialSpeed);
             var connection = DispatchProxy.Create<IGameSessionConnection, ConnectionProxy>();
@@ -301,9 +301,9 @@ public sealed class BattleNavigationTests
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
         }
         internal static async Task<Fixture> Create(TacticalBattleInputSettings? inputs = null, float uiScale = 1,
-            string? saveDirectory = null, SimulationSpeed initialSpeed = SimulationSpeed.Speed2, string? settingsPath = null)
+            string? saveDirectory = null, SimulationSpeed initialSpeed = SimulationSpeed.Speed2, string? settingsPath = null, string? engineSettingsPath = null)
         {
-            var fixture = new Fixture(inputs, uiScale, saveDirectory, initialSpeed, settingsPath);
+            var fixture = new Fixture(inputs, uiScale, saveDirectory, initialSpeed, settingsPath, engineSettingsPath);
             try
             {
                 using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));

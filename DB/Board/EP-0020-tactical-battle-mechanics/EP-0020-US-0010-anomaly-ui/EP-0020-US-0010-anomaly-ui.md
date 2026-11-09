@@ -1,0 +1,63 @@
+---
+epic: EP-0020-tactical-battle-mechanics
+story: EP-0020-US-0010-anomaly-ui
+title: Аномалии в интерфейсе боя
+stage: done
+dependencies: [EP-0020-US-0009-anomaly-resolution, EP-0020-US-0007-decoy-ui]
+created: 2026-11-08T11:46:28Z
+source_request: "Нарисовать аномалии как малиново-розовые и фиолетовые пятна EP-0010 (без контуров) и показать их правила: участок линии огня внутри зоны, долю поглощения, итоговый шанс, «в пыли», поглощённые выстрелы и карточку наведения аномалии — точно по [UiSpec](../UiSpec.md) §15–§21."
+current_review: epic
+revision: 1
+---
+
+# Аномалии в интерфейсе боя
+
+## Входное техническое задание
+
+D-25–D-29, D-33. Вид задаёт только [UiSpec](../UiSpec.md) §15–§21.
+
+## User story
+
+Как игрок, я хочу ещё до приказа видеть, какую часть линии огня съест аномалия и какие дроны в пыли, а после залпа — какой выстрел поглощён.
+
+## Dependencies
+
+[EP-0020-US-0009-anomaly-resolution](../EP-0020-US-0009-anomaly-resolution/EP-0020-US-0009-anomaly-resolution.md), [EP-0020-US-0007-decoy-ui](../EP-0020-US-0007-decoy-ui/EP-0020-US-0007-decoy-ui.md)
+
+## Completion evidence
+
+- Слой поля на карте во всех фазах; поверх сектора огня — тот же слой в режиме «экран».
+- Движение, стрельба, залп, результаты и карточка наведения показывают правила аномалий.
+- Проверки вида EP-0019 и пробы UiSpec §20 зелёные.
+
+## Acceptance criteria
+
+- **US10-AC1.** Слой поля по UiSpec §16 считается из `Anomalies` снимка через `TacticalAnomalyMath.FieldWithGradient`, кешируется по камере и размеру окна, лежит под сеткой (сетка — `Lighten`); в фазе стрельбы внутри сектора выбранного стрелка повторяется в режиме `Screen`. Значения 20 контрольных пикселей совпадают с формулой §16 с допуском 6 на канал.
+- **US10-AC2.** Движение: выноска конца пути в пыли (§17). Стрельба: итоговые шансы на стрелке, карточке и в панели; строка поглощения; пунктир участков внутри зоны и выноска «поглощение N%»; дроны в пыли — выноска, значок карточки, панель «ОГОНЬ НЕВОЗМОЖЕН», итог действий (§18).
+- **US10-AC3.** Залп и результаты: итоговые шансы в очерёдности; «ПОГЛОЩЁН», строка «Термоаномалия · N% пути», вспышка и выноска на карте, значок карточки (§19). Карточка наведения аномалии (§19.4).
+- **US10-AC4.** Проверки вида и регрессионные снимки EP-0019 обновлены по US-0010 TK-0004: все сцены пересчитаны на бое seed 1 с аномалиями.
+
+## Non-goals
+
+Анимация, подсказки обучения, переключатель слоя.
+
+## Invariants
+
+Клиент не считает долю поглощения для решений — берёт её из снимка; геометрию участков для рисования берёт из `TacticalAnomalyMath.Segments`.
+
+## Решения и согласование
+
+Ожидает утверждения эпика пользователем (см. [открытые вопросы](../Documentation.md#открытые-вопросы)).
+
+## Ticket map
+
+| ID | Название | Слой | Зависимости | Критерии |
+|---|---|---|---|---|
+| [EP-0020-US-0010-TK-0001-anomaly-field-layer](EP-0020-US-0010-TK-0001-anomaly-field-layer/EP-0020-US-0010-TK-0001-anomaly-field-layer.md) | Слой поля аномалий на карте | client | `EP-0020-US-0009-TK-0005-anomaly-regression`, `EP-0020-US-0007-TK-0004-decoy-view-regression` | US10-AC1 |
+| [EP-0020-US-0010-TK-0002-anomaly-move-fire](EP-0020-US-0010-TK-0002-anomaly-move-fire/EP-0020-US-0010-TK-0002-anomaly-move-fire.md) | Аномалии в движении и стрельбе | client | `EP-0020-US-0010-TK-0001-anomaly-field-layer` | US10-AC2 |
+| [EP-0020-US-0010-TK-0003-anomaly-salvo-results](EP-0020-US-0010-TK-0003-anomaly-salvo-results/EP-0020-US-0010-TK-0003-anomaly-salvo-results.md) | Аномалии в залпе, результатах и карточке наведения | client | `EP-0020-US-0010-TK-0002-anomaly-move-fire` | US10-AC3 |
+| [EP-0020-US-0010-TK-0004-anomaly-view-regression](EP-0020-US-0010-TK-0004-anomaly-view-regression/EP-0020-US-0010-TK-0004-anomaly-view-regression.md) | Проверки вида EP-0019 после аномалий | tests | `EP-0020-US-0010-TK-0003-anomaly-salvo-results` | US10-AC4 |
+
+## Исполнение
+
+US10 завершена. AC1:32independent scalar pixels/5fieldtests/полныерастры exact до-послеоптимизации; AC2:31UI/localePASS, реальные seed1/6 сцены, guards доDraw, только capturedChance/InDust; AC3:28results/hover/logPASS, actual absorbedMarta seed1Turn11, cursor priority/privacy/нетраннегораскрытия; AC4:Client2230uniquePASS,29Ep0019+5новыхstrictsnapshot+5productionhandlerchecksPASS,12снимковdifferent0/maxTile0. Растер проверен визуально, native/human/art/independentreview отдельно. Evidence и измеренные уточнения UiSpec — в тикетах.

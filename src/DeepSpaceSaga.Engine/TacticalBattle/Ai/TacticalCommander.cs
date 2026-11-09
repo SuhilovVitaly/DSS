@@ -119,7 +119,7 @@ internal static class TacticalBattleAi
                 "fighter" => TacticalRoles.Fighter(battle, drone),
                 _ => throw new InvalidOperationException("Unknown battle role: " + role)
             };
-            drone.Order = TacticalTail.Apply(battle, drone, role, proposed);
+            drone.Order = TacticalDustAvoidance.Apply(battle, drone, TacticalTail.Apply(battle, drone, role, proposed));
         }
     }
 }

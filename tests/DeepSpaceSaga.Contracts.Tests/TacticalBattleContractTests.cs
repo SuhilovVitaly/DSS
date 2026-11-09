@@ -7,6 +7,167 @@ namespace DeepSpaceSaga.Contracts.Tests;
 public sealed class TacticalBattleContractTests
 {
     [Fact]
+    public void Slots_round_trip()
+    {
+        var unit = RoundTrip(Frame().Units[0] with
+        {
+            Slots = [new(TacticalSlotKind.Weapon, 0, "gun", "Gun", TacticalSlotState.Jammed),
+                new(TacticalSlotKind.Engine, 1, "engine", "Engine", TacticalSlotState.Damaged, .5),
+                new(TacticalSlotKind.Shield, 1, null, null, TacticalSlotState.Ok)],
+            Build = Frame().Units[0].Build! with { EngineSlots = 2, ModuleSlots = 1 }
+        });
+        Assert.Equal(3, unit.Slots.Length); Assert.Equal(TacticalSlotState.Jammed, unit.Slots[0].State);
+        Assert.Equal(.5, unit.Slots[1].Factor); Assert.Equal(1, unit.Slots[2].Factor); Assert.Null(unit.Slots[2].ModuleId);
+        Assert.Equal(2, unit.Build!.EngineSlots); Assert.Equal(1, unit.Build.ModuleSlots);
+        Assert.Equal(Enumerable.Range(0, 5), Enum.GetValues<TacticalSlotKind>().Select(k => (int)k));
+        Assert.Equal(Enumerable.Range(0, 3), Enum.GetValues<TacticalSlotState>().Select(k => (int)k));
+    }
+
+    [Fact]
+    public void OldPayloadsWithoutSlotsRemainReadable()
+    {
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame().Units[0]))!;
+        node.AsObject().Remove("Slots"); node["Build"]!.AsObject().Remove("EngineSlots"); node["Build"]!.AsObject().Remove("ModuleSlots");
+        var unit = JsonSerializer.Deserialize<TacticalUnitSnapshot>(node.ToJsonString())!;
+        Assert.Empty(unit.Slots); Assert.Equal(0, unit.Build!.EngineSlots); Assert.Equal(0, unit.Build.ModuleSlots);
+    }
+
+    [Fact]
+    public void Anomaly_fields_round_trip()
+    {
+        Assert.True(RoundTrip(Frame().Units[0] with { InDust = true }).InDust);
+        var target = new TacticalTargetCandidateSnapshot("e", 10, 0, false, 0, .3) { Absorption = .4 };
+        Assert.Equal(.4, RoundTrip(target).Absorption);
+        var incoming = new TacticalIncomingShotSnapshot("s", "d", .3, 10, 0, false, 0) { Absorption = .4 };
+        Assert.Equal(.4, RoundTrip(incoming).Absorption);
+        var shot = RoundTrip(Frame().Shots[0] with { Absorption = .4, Absorbed = true, Hit = false, Damage = 0 });
+        Assert.Equal(.4, shot.Absorption); Assert.True(shot.Absorbed); Assert.False(shot.Hit); Assert.Equal(0, shot.Damage);
+        Assert.Equal(9, (int)TacticalFireSkipReason.InDust);
+        Assert.Equal(25, (int)TacticalBattleRejectionCode.InDust);
+        Assert.Equal(16, (int)TacticalBattleLogKind.ShotAbsorbed);
+        var log = RoundTrip(new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.ShotAbsorbed));
+        Assert.Equal(TacticalBattleLogKind.ShotAbsorbed, log.Kind);
+    }
+
+    [Fact]
+    public void OldPayloadsWithoutAnomalyFieldsRemainReadable()
+    {
+        var unit = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame().Units[0]))!;
+        unit.AsObject().Remove("InDust");
+        Assert.False(JsonSerializer.Deserialize<TacticalUnitSnapshot>(unit.ToJsonString())!.InDust);
+        var shot = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame().Shots[0]))!;
+        shot.AsObject().Remove("Absorption"); shot.AsObject().Remove("Absorbed");
+        var oldShot = JsonSerializer.Deserialize<TacticalShotSnapshot>(shot.ToJsonString())!;
+        Assert.Equal(0, oldShot.Absorption); Assert.False(oldShot.Absorbed);
+        Assert.Equal(0, JsonSerializer.Deserialize<TacticalTargetCandidateSnapshot>("""{"TargetId":"e","Chance":0.3}""")!.Absorption);
+        Assert.Equal(0, JsonSerializer.Deserialize<TacticalIncomingShotSnapshot>("""{"ShooterId":"s","TargetId":"d","Chance":0.3}""")!.Absorption);
+        Assert.Equal(8, (int)TacticalFireSkipReason.Evading);
+        Assert.Equal(24, (int)TacticalBattleRejectionCode.DecoyUnavailable);
+        Assert.Equal(15, (int)TacticalBattleLogKind.DecoyLaunched);
+    }
+
+    [Fact]
+    public void OldPayloadsWithoutAnomaliesRemainReadable()
+    {
+        var old = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!;
+        old.AsObject().Remove("Anomalies"); old["Rules"]!.AsObject().Remove("Anomalies");
+        var legacy = JsonSerializer.Deserialize<TacticalBattleSnapshot>(old.ToJsonString())!;
+        Assert.Empty(legacy.Anomalies); Assert.Null(legacy.Rules.Anomalies);
+        var frame = RoundTrip(Frame() with
+        {
+            Anomalies = [new("heat-1", TacticalAnomalyKindCode.Heat,
+            [new(1, 2, 100, 3, 4, .7)])],
+            Rules = Frame().Rules with { Anomalies = new(170, 100, 200) }
+        });
+        var field = Assert.Single(frame.Anomalies);
+        Assert.Equal("heat-1", field.Id); Assert.Equal(TacticalAnomalyKindCode.Heat, field.Kind);
+        Assert.Equal(new TacticalClumpSnapshot(1, 2, 100, 3, 4, .7), Assert.Single(field.Clumps));
+        Assert.Equal(new TacticalAnomalyRulesSnapshot(170, 100, 200), frame.Rules.Anomalies);
+        Assert.Equal(0, (int)TacticalAnomalyKindCode.Heat); Assert.Equal(1, (int)TacticalAnomalyKindCode.Dust);
+    }
+
+    [Fact]
+    public void Decoy_order_and_shot_fields_round_trip()
+    {
+        Assert.True(RoundTrip(new TacticalFireTarget("d", "e", Decoy: true)).Decoy);
+        var shot = RoundTrip(Frame().Shots[0] with { Decoyed = true, ChanceWithoutDecoy = .47, Chance = .205 });
+        Assert.True(shot.Decoyed);
+        Assert.Equal(.47, shot.ChanceWithoutDecoy);
+        Assert.Equal(.205, shot.Chance);
+        var incoming = new TacticalIncomingShotSnapshot("s", "d", .47, 10, 0, false, 0) { ChanceIfDecoy = .205 };
+        Assert.Equal(.205, RoundTrip(incoming).ChanceIfDecoy);
+        var frame = RoundTrip(Frame() with { DecoysLaunched = ["d"], Rules = Frame().Rules with { Decoy = new(.4) } });
+        Assert.Equal(new[] { "d" }, frame.DecoysLaunched);
+        Assert.Equal(.4, frame.Rules.Decoy!.AiThreatChance);
+        Assert.Equal(24, (int)TacticalBattleRejectionCode.DecoyUnavailable);
+        Assert.Equal(23, (int)TacticalBattleRejectionCode.EvasionUnavailable);
+    }
+
+    [Fact]
+    public void OldPayloadsWithoutDecoyFieldsRemainReadable()
+    {
+        var unit = Frame().Units[0];
+        var payload = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(unit))!;
+        payload.AsObject().Remove("DecoyCharges");
+        payload["Build"]!.AsObject().Remove("DecoyId");
+        payload["Build"]!.AsObject().Remove("DecoyName");
+        payload["Build"]!.AsObject().Remove("DecoyMaxCharges");
+        var old = JsonSerializer.Deserialize<TacticalUnitSnapshot>(payload.ToJsonString())!;
+        Assert.Null(old.DecoyCharges);
+        Assert.Null(old.Build!.DecoyId);
+        Assert.Null(old.Build.DecoyName);
+        Assert.Equal(0, old.Build.DecoyMaxCharges);
+        Assert.False(JsonSerializer.Deserialize<TacticalFireTarget>("""{"DroneId":"d","TargetId":null}""")!.Decoy);
+        Assert.Null(JsonSerializer.Deserialize<TacticalIncomingShotSnapshot>("""{"ShooterId":"s","TargetId":"d","Chance":0.5}""")!.ChanceIfDecoy);
+        var legacyFrame = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!;
+        legacyFrame.AsObject().Remove("DecoysLaunched");
+        legacyFrame["Rules"]!.AsObject().Remove("Decoy");
+        foreach (var value in legacyFrame["Shots"]!.AsArray())
+        {
+            value!.AsObject().Remove("Decoyed");
+            value.AsObject().Remove("ChanceWithoutDecoy");
+        }
+        var restored = JsonSerializer.Deserialize<TacticalBattleSnapshot>(legacyFrame.ToJsonString())!;
+        Assert.Empty(restored.DecoysLaunched);
+        Assert.Null(restored.Rules.Decoy);
+        Assert.False(restored.Shots[0].Decoyed);
+        Assert.Null(restored.Shots[0].ChanceWithoutDecoy);
+        var changed = RoundTrip(unit with
+        {
+            DecoyCharges = 0,
+            Build = unit.Build! with
+            { DecoyId = "decoy.t1", DecoyName = "Ловушки I", DecoyMaxCharges = 2 }
+        });
+        Assert.Equal(0, changed.DecoyCharges);
+        Assert.Equal("decoy.t1", changed.Build!.DecoyId);
+        Assert.Equal("Ловушки I", changed.Build.DecoyName);
+        Assert.Equal(2, changed.Build.DecoyMaxCharges);
+    }
+
+    [Fact]
+    public void Evade_order_and_skip_reason_round_trip()
+    {
+        Assert.True(RoundTrip(new TacticalFireTarget("d", null, true)).Evade);
+        var incoming = new TacticalIncomingShotSnapshot("s", "d", 0.95, 10, 0, false, 0) { ChanceIfEvading = 0.9 };
+        Assert.Equal(0.9, RoundTrip(incoming).ChanceIfEvading);
+        Assert.True(RoundTrip(Frame().Shots[0] with { TargetEvading = true }).TargetEvading);
+        Assert.Equal(TacticalFireSkipReason.Evading, RoundTrip(TacticalFireSkipReason.Evading));
+        Assert.Equal(8, (int)TacticalFireSkipReason.Evading);
+        Assert.Equal(23, (int)TacticalBattleRejectionCode.EvasionUnavailable);
+        var rules = Frame().Rules with { Evasion = new(20, 10, 10, 5, 100) };
+        Assert.Equal(rules, RoundTrip(rules));
+    }
+
+    [Fact]
+    public void OldPayloadsWithoutEvasionFieldsRemainReadable()
+    {
+        Assert.False(JsonSerializer.Deserialize<TacticalFireTarget>("{\"DroneId\":\"d\",\"TargetId\":null}")!.Evade);
+        Assert.Null(RoundTrip(Frame().Rules).Evasion);
+        Assert.False(RoundTrip(Frame().Shots[0]).TargetEvading);
+        Assert.Null(RoundTrip(new TacticalIncomingShotSnapshot("s", "d", 0.5, 10, 0, false, 0)).ChanceIfEvading);
+    }
+
+    [Fact]
     public void FireSequenceRoundTripPreservesOrderAndIndependentStepStates()
     {
         var frame = Frame();
@@ -61,7 +222,7 @@ public sealed class TacticalBattleContractTests
         Assert.Equal(TacticalBattleLogKind.DamageApplied, entry.Kind);
         Assert.Null(entry.SkipReason);
         Assert.Null(entry.FireStepIndex);
-        Assert.Equal(Enumerable.Range(0, 15), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
+        Assert.Equal(Enumerable.Range(0, 17), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
         var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!.AsObject();
         node.Remove("FireQueue"); node.Remove("FireSteps");
         var legacy = JsonSerializer.Deserialize<TacticalBattleSnapshot>(node.ToJsonString())!;
@@ -95,12 +256,25 @@ public sealed class TacticalBattleContractTests
     }
 
     [Fact]
+    public void OldUnitPayloadWithoutConsciousnessRemainsReadable()
+    {
+        var unit = Frame().Units[0];
+        Assert.Equal(0, RoundTrip(unit with { Consciousness = 0 }).Consciousness);
+        Assert.Equal(100, RoundTrip(unit with { Consciousness = 100 }).Consciousness);
+        var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(unit))!.AsObject();
+        node.Remove("Consciousness");
+        Assert.Null(JsonSerializer.Deserialize<TacticalUnitSnapshot>(node.ToJsonString())!.Consciousness);
+    }
+
+    [Fact]
     public void JournalPreservesTypedFactsAndOldEventPayloadsRemainReadable()
     {
         const string oldEvent = """{"Sequence":7,"Turn":2,"Phase":1,"Kind":10,"TargetId":"d","EngineIndex":1}""";
         var legacy = JsonSerializer.Deserialize<TacticalBattleLogEvent>(oldEvent)!;
         Assert.Equal(TacticalBattleLogKind.EngineDamaged, legacy.Kind);
         Assert.Null(legacy.Shot);
+        Assert.False(JsonSerializer.Deserialize<TacticalLogShot>("""{"Chance":0.47,"Rear":false}""")!.Decoyed);
+        Assert.True(RoundTrip(new TacticalLogShot(.205, false) { Decoyed = true }).Decoyed);
         Assert.Null(legacy.Damage);
         Assert.Null(legacy.Unit);
         double chance = Math.BitIncrement(0.6123456789);

@@ -245,4 +245,18 @@ public class LocalizationTests
         Assert.NotEqual(russian["Finance.PortFeesAssessed"], russian["Finance.PortFeeDebt"]);
     }
 
+    [Fact]
+    public async Task Test_locale_follows_async_flow_without_leaking_nested_language()
+    {
+        using var outer = Localization.UseLocaleForTests("Russian");
+        Assert.Equal("ПИЛОТ И СБОРКА", Localization.Get("TacticalBattle.Build.Title"));
+        await Task.Run(async () =>
+        {
+            Assert.Equal("ПИЛОТ И СБОРКА", Localization.Get("TacticalBattle.Build.Title"));
+            using var nested = Localization.UseLocaleForTests("English");
+            await Task.Yield();
+            Assert.Equal("PILOT AND BUILD", Localization.Get("TacticalBattle.Build.Title"));
+        });
+        Assert.Equal("ПИЛОТ И СБОРКА", Localization.Get("TacticalBattle.Build.Title"));
+    }
 }

@@ -35,7 +35,7 @@ internal sealed class TacticalCarrier(string id, string side, TacticalPose pose,
 
 internal sealed class TacticalDrone(string id, string side, TacticalPose pose, int hull, int armor, int maneuver,
     int accuracy, string pilotId, BattleLayout layout, BattleFrame frame, BattleWeapon weapon, BattleArmor plates,
-    BattleShield? shield, int shieldCount, ImmutableArray<TacticalEngineState> engines, double speed)
+    BattleShield? shield, int shieldCount, ImmutableArray<TacticalEngineState> engines, double speed, BattleDecoy? decoy = null)
     : TacticalUnit(id, side, pose, hull, armor, maneuver)
 {
     public string PilotId { get; } = pilotId;
@@ -48,6 +48,9 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     public ImmutableArray<TacticalEngineState> Engines { get; } = engines;
     public int Accuracy { get; } = accuracy;
     public int Initiative { get; internal set; } = 50;
+    public int Consciousness { get; internal set; }
+    public BattleDecoy? Decoy { get; } = decoy;
+    public int DecoyCharges { get; internal set; } = decoy?.Charges ?? 0;
     public double Speed { get; set; } = speed;
     public double PreviousTurn { get; set; }
     public TacticalDroneStatus Status { get; set; } = TacticalDroneStatus.Air;
@@ -62,7 +65,7 @@ internal sealed class TacticalDrone(string id, string side, TacticalPose pose, i
     public override bool IsActive => Status == TacticalDroneStatus.Air;
     public TacticalLimits Limits => TacticalLimits.Of(new(Frame.FrameMassKg, Frame.ReferenceMassKg, Frame.MinSpeed,
         Frame.MaxSpeedCap, Frame.TurnCapDeg), Plates.MassKg, Weapon.MassKg, Shield?.MassKg ?? 0, ShieldCount,
-        Engines.Select(e => e.Motion).ToArray());
+        Engines.Select(e => e.Motion).ToArray(), moduleMass: Decoy?.MassKg ?? 0);
 }
 
 internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, string scenarioId, long seed,
@@ -71,6 +74,7 @@ internal sealed partial class TacticalBattle(TacticalBattleCatalog catalog, stri
     public TacticalBattleCatalog Catalog { get; } = catalog;
     public string ScenarioId { get; } = scenarioId;
     public long Seed { get; } = seed;
+    public ImmutableArray<TacticalAnomaly> Anomalies { get; init; } = [];
     public ImmutableArray<TacticalDrone> Drones { get; } = drones;
     public ImmutableArray<TacticalCarrier> Carriers { get; } = carriers;
     public ImmutableArray<string> Tactics { get; } = tactics;
