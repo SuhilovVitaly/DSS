@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Motion.TacticalBattle;
 using System.Globalization;
 using SkiaSharp;
 
@@ -5,7 +6,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal readonly record struct BattleViewport(float S, float Wd)
 {
-    public static BattleViewport From(int width, int height) => new(height / 720f, width * 720f / height);
+    public static BattleViewport From(int width, int height) => new((float)(height / 720d), (float)(width * 720f / (double)height));
 }
 
 internal enum EvadeButtonState { Unavailable, Available, Selected }
@@ -20,7 +21,7 @@ internal static class BattleDesign
         bool active = state == DecoyRowState.Selected, enabled = state != DecoyRowState.Unavailable;
         Round(c, r, active ? GreenDark : enabled ? DecoyIdle : Box,
             enabled ? Green.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1);
-        float left = r.Right - 8 - Math.Max(0, maxCharges - 1) * 9;
+        float left = r.Right - 8 - (float)PyMath.Max(0, maxCharges - 1) * 9;
         float size = FitSize(text, 11, left - 8 - (r.Left + 7), active);
         T(c, text, r.Left + 7, r.MidY + size * .36f, size, active ? Text : enabled ? Green : Muted, active);
         for (int i = 0; i < maxCharges; i++)
@@ -31,7 +32,7 @@ internal static class BattleDesign
         }
     }
     public static SKPoint DecoyPoint(SKPoint point, double courseDeg) => new(
-        point.X - 24 * (float)Math.Cos(courseDeg * Math.PI / 180), point.Y - 24 * (float)Math.Sin(courseDeg * Math.PI / 180));
+        point.X - 24 * (float)Math.Cos(courseDeg * Math.PI / 180.0), point.Y - 24 * (float)Math.Sin(courseDeg * Math.PI / 180.0));
     public static void DecoyMark(SKCanvas c, SKPoint point, double courseDeg)
     {
         var q = DecoyPoint(point, courseDeg);
@@ -115,22 +116,22 @@ internal static class BattleDesign
     }
     public static void BigButton(SKCanvas c, SKRect r, string text) => Button(c, r, text, true);
     public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color)
-    { Round(c, SKRect.Create(x, y, w, h), Track, radius: h / 2); if (frac > 0) Round(c, SKRect.Create(x, y, w * (float)Math.Clamp(frac, 0, 1), h), color, radius: h / 2, role: "ui.bar"); }
+    { Round(c, SKRect.Create(x, y, w, h), Track, radius: h * .5f); if (frac > 0) Round(c, SKRect.Create(x, y, w * (float)PyMath.Clamp(frac, 0, 1), h), color, radius: h * .5f, role: "ui.bar"); }
     public static void Slider(SKCanvas c, float x0, float x1, float y, double t, SKColor color)
-    { float x = x0 + (x1 - x0) * (float)Math.Clamp(t, 0, 1); Stroke(c, new(x0, y), new(x1, y), Track, 4); Stroke(c, new(x0, y), new(x, y), color, 4); Circle(c, new(x, y), 6, color, Text, 1.2f); }
+    { float x = x0 + (x1 - x0) * (float)PyMath.Clamp(t, 0, 1); Stroke(c, new(x0, y), new(x1, y), Track, 4); Stroke(c, new(x0, y), new(x, y), color, 4); Circle(c, new(x, y), 6, color, Text, 1.2f); }
     public static void Line(SKCanvas c, float x0, float x1, float y) => Stroke(c, new(x0, y), new(x1, y), BoxEdge, 1);
     public static SKRect Callout(SKCanvas c, float x, float y, string text, SKColor edge, SKColor color)
-    { float w = Measure(text, 12) + 14; SKRect r = new(x - w / 2, y - 17, x + w / 2, y + 2); Round(c, r, edge == Yellow ? YellowDark : Panel, edge, 1.2f); T(c, text, x, y - 3.5f, 12, color, align: SKTextAlign.Center); return r; }
+    { float w = Measure(text, 12) + 14; SKRect r = new(x - w * .5f, y - 17, x + w * .5f, y + 2); Round(c, r, edge == Yellow ? YellowDark : Panel, edge, 1.2f); T(c, text, x, y - 3.5f, 12, color, align: SKTextAlign.Center); return r; }
     public static void Circle(SKCanvas c, SKPoint p, float r, SKColor fill, SKColor? edge = null, float width = 1)
     { using var paint = new SKPaint { IsAntialias = true, Color = fill }; c.DrawCircle(p, r, paint); if (edge is not null) { paint.Color = edge.Value; paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = width; c.DrawCircle(p, r, paint); } }
     public static void Polygon(SKCanvas c, IEnumerable<SKPoint> points, SKColor fill, SKColor? edge = null, float width = 1)
     { using var path = new SKPath(); var pts = points.ToArray(); path.AddPoly(pts, true); using var p = new SKPaint { IsAntialias = true, Color = fill, StrokeCap = SKStrokeCap.Round }; c.DrawPath(path, p); if (edge is not null) { p.Color = edge.Value; p.Style = SKPaintStyle.Stroke; p.StrokeWidth = width; c.DrawPath(path, p); } }
     public static void Diamond(SKCanvas c, SKPoint p, float r, SKColor fill, SKColor? edge = null, float width = 1) => Polygon(c, [new(p.X, p.Y - r), new(p.X + r, p.Y), new(p.X, p.Y + r), new(p.X - r, p.Y)], fill, edge, width);
-    public static void Hex(SKCanvas c, SKPoint p, float r, SKColor color) => Polygon(c, Enumerable.Range(0, 6).Select(i => new SKPoint(p.X + r * MathF.Cos(i * MathF.PI / 3), p.Y + r * MathF.Sin(i * MathF.PI / 3))), color);
+    public static void Hex(SKCanvas c, SKPoint p, float r, SKColor color) => Polygon(c, Enumerable.Range(0, 6).Select(i => new SKPoint(p.X + r * MathF.Cos((float)(i * MathF.PI / 3.0)), p.Y + r * MathF.Sin((float)(i * MathF.PI / 3.0)))), color);
     public static void Triangle(SKCanvas c, SKPoint p, float r, double course, SKColor color)
-    { float a = (float)(course * Math.PI / 180), x = MathF.Cos(a), y = MathF.Sin(a); Polygon(c, [new(p.X + r * x, p.Y + r * y), new(p.X - .7f * r * (x + y), p.Y + .7f * r * (x - y)), new(p.X + .7f * r * (y - x), p.Y - .7f * r * (x + y))], color); }
+    { float a = (float)(course * Math.PI / 180.0), x = MathF.Cos(a), y = MathF.Sin(a); Polygon(c, [new(p.X + r * x, p.Y + r * y), new(p.X - .7f * r * (x + y), p.Y + .7f * r * (x - y)), new(p.X + .7f * r * (y - x), p.Y - .7f * r * (x + y))], color); }
     public static void Arrow(SKCanvas c, SKPoint a, SKPoint b, SKColor color, float width, float head)
-    { float len = SKPoint.Distance(a, b); if (len < 1) return; SKPoint u = Scale(b - a, 1 / len), tip = b - Scale(u, 12), tail = tip - Scale(u, head), side = new(-u.Y * head * .45f, u.X * head * .45f); Stroke(c, a + Scale(u, 9), tip - Scale(u, .6f * head), color, width); Polygon(c, [tip, tail + side, tail - side], color); }
+    { float len = SKPoint.Distance(a, b); if (len < 1) return; SKPoint u = Scale(b - a, (float)(1d / len)), tip = b - Scale(u, 12), tail = tip - Scale(u, head), side = new(-u.Y * head * .45f, u.X * head * .45f); Stroke(c, a + Scale(u, 9), tip - Scale(u, .6f * head), color, width); Polygon(c, [tip, tail + side, tail - side], color); }
     public static SKPoint Scale(SKPoint p, float scale) => new(p.X * scale, p.Y * scale);
     public static void CursorGlyph(SKCanvas c, float x, float y, float k) => Polygon(c, new SKPoint[] { new(0, 0), new(0, 17), new(4.5f, 13), new(7.5f, 20), new(10, 19), new(7, 12), new(12.5f, 12) }.Select(p => new SKPoint(x + p.X * k, y + p.Y * k)), Text, Bg);
 }

@@ -45,6 +45,18 @@ internal static class TacticalBattleNativeEvidence
         var captures = new List<string>();
         var drawMs = new List<double>();
         int tacticalFrames = 0;
+        bool measureCadence = Environment.GetEnvironmentVariable("DSS_TACTICAL_MEASURE_CADENCE") == "1";
+        const int warmup = 120, samples = 600;
+        string[] cases = ["steady", "pan", "zoom", "salvo"];
+        var intervals = cases.Select(_ => new List<double>(samples)).ToArray();
+        var submit = cases.Select(_ => new List<double>(samples)).ToArray();
+        var swap = cases.Select(_ => new List<double>(samples)).ToArray();
+        var flush = cases.Select(_ => new List<double>(samples)).ToArray();
+        int benchmark = -1, benchmarkFrame = 0;
+        long previousPresent = 0, salvoClock = 0;
+        double? refreshHz = null;
+        bool panObserved = false, zoomObserved = false;
+        bool vsync = true;
         int positionX = 0, positionY = 0;
         var factory = new Factory(settings, saves);
         string? renderer = null, failure = null;
@@ -71,11 +83,24 @@ internal static class TacticalBattleNativeEvidence
             {
                 if (screen is TacticalBattleScreen && ++tacticalFrames > 5) drawMs.Add(elapsed);
             };
+            if (measureCadence)
+                window.NativeFramePresented = (screen, presentedAt, cpuMs, swapMs, flushMs) =>
+                {
+                    if (benchmark < 0 || screen is not TacticalBattleScreen) return;
+                    if (++benchmarkFrame > warmup && benchmarkFrame <= warmup + samples)
+                    {
+                        intervals[benchmark].Add(Stopwatch.GetElapsedTime(previousPresent, presentedAt).TotalMilliseconds);
+                        submit[benchmark].Add(cpuMs);
+                        swap[benchmark].Add(swapMs);
+                        flush[benchmark].Add(flushMs);
+                    }
+                    previousPresent = presentedAt;
+                };
             window.NativeFrameRendered = (surface, current) =>
             {
                 try
                 {
-                    if (watch.Elapsed.TotalSeconds > 90) throw new TimeoutException($"Native tactical window stage {step}.");
+                    if (watch.Elapsed.TotalSeconds > 125) throw new TimeoutException($"Native tactical window stage {step}.");
                     frames++;
                     if (Field<Task?>(window, "_pendingKeyboardTransition") is { } pending)
                     {
@@ -85,6 +110,11 @@ internal static class TacticalBattleNativeEvidence
                     switch (step)
                     {
                         case 0:
+                            if (Environment.GetEnvironmentVariable("DSS_VALIDATION_SMALL_MONITOR") == "1")
+                            {
+                                var monitor = Silk.NET.Windowing.Monitor.GetMonitors(native).Single(m => m.Bounds.Origin == native.Position);
+                                Check("window-fits-smaller-monitor", width <= monitor.Bounds.Size.X && height <= monitor.Bounds.Size.Y);
+                            }
                             native.Size = new(width, height);
                             step++;
                             break;
@@ -94,6 +124,10 @@ internal static class TacticalBattleNativeEvidence
                             Check("real-open-gl", Field<GRContext?>(window, "_grContext") is not null && !string.IsNullOrWhiteSpace(renderer));
                             Check("framebuffer-size", native.FramebufferSize.X == width && native.FramebufferSize.Y == height);
                             positionX = native.Position.X; positionY = native.Position.Y;
+                            refreshHz = Field<double?>(window, "_monitorRefreshHz");
+                            if (measureCadence && Environment.GetEnvironmentVariable("DSS_TACTICAL_BENCH_UNCAPPED") == "1")
+                                native.VSync = false;
+                            vsync = native.VSync;
                             if (skinSettings is not null)
                             {
                                 using var configuration = JsonDocument.Parse(File.ReadAllText(skinSettings));
@@ -182,7 +216,8 @@ internal static class TacticalBattleNativeEvidence
                             KeyDown(Key.Escape);
                             Check("cancel-exit", !battle.ConfirmExit);
                             KeyDown(Key.F10);
-                            Check("F10-screenshot", Directory.Exists("Screenshots") && Directory.EnumerateFiles("Screenshots", "*.png").Any());
+                            string screenshots = Path.Combine(Path.GetDirectoryName(InterfaceLog.FileName) ?? "", "Screenshots");
+                            Check("F10-screenshot", Directory.Exists(screenshots) && Directory.EnumerateFiles(screenshots, "*.png").Any());
                             var view = battle.View;
                             battle.OnMouseWheel(600 * height / 720f, 500 * height / 720f, 1);
                             Check("wheel-zoom", battle.View.PixelsPerUnit != view.PixelsPerUnit);
@@ -219,9 +254,57 @@ internal static class TacticalBattleNativeEvidence
                             break;
                         case 4:
                             if (current is not TacticalBattleScreen active) return;
+                            if (measureCadence && !restarted && intervals[2].Count < samples)
+                            {
+                                if (benchmark < 0) benchmark = 0;
+                                else if (intervals[benchmark].Count == samples)
+                                {
+                                    benchmark++;
+                                    benchmarkFrame = 0;
+                                    if (benchmark == 1)
+                                        active.OnMouseDown(width * .5f, height * .5f, MouseButton.Right);
+                                    else
+                                        active.OnMouseUp(width * .5f, height * .5f, MouseButton.Right);
+                                }
+                                if (benchmark == 1)
+                                {
+                                    int offset = 30 - Math.Abs(30 - benchmarkFrame % 60);
+                                    var beforeInput = active.View;
+                                    active.OnMouseMove(width * .5f + offset * 2, height * .5f);
+                                    panObserved |= beforeInput.CenterX != active.View.CenterX || beforeInput.CenterY != active.View.CenterY;
+                                }
+                                if (benchmark == 2 && benchmarkFrame % 8 == 0)
+                                {
+                                    var beforeInput = active.View;
+                                    active.OnMouseWheel(width * .5f, height * .5f, benchmarkFrame % 16 == 0 ? 1 : -1);
+                                    zoomObserved |= beforeInput.PixelsPerUnit != active.View.PixelsPerUnit;
+                                }
+                                return;
+                            }
+                            if (benchmark is >= 0 and <= 2)
+                            {
+                                benchmark = -1;
+                                KeyDown(Key.Number0);
+                            }
                             if (active.TurnBusy) { clock += 1000; return; }
                             if (active.HasSalvoPresentation)
                             {
+                                if (measureCadence && !restarted && intervals[3].Count < samples)
+                                {
+                                    if (benchmark < 0)
+                                    {
+                                        benchmark = 3;
+                                        benchmarkFrame = 0;
+                                        salvoClock = clock;
+                                    }
+                                    clock = salvoClock + benchmarkFrame * 16 % 4500;
+                                    return;
+                                }
+                                if (benchmark == 3)
+                                {
+                                    benchmark = -1;
+                                    clock = salvoClock;
+                                }
                                 var frame = active.CaptureFrame(width, height)!;
                                 if (!animationSeen && frame.Presentation == TacticalBattlePresentation.SalvoFlight)
                                 {
@@ -322,6 +405,12 @@ internal static class TacticalBattleNativeEvidence
         }
         catch (Exception ex) { failure = ex.ToString(); }
         finally { Directory.SetCurrentDirectory(oldDirectory); }
+        if (measureCadence)
+        {
+            checks["cadence-sample-counts"] = intervals.All(x => x.Count == samples);
+            checks["cadence-pan-input"] = panObserved;
+            checks["cadence-zoom-input"] = zoomObserved;
+        }
         bool passed = step == 8 && failure is null && checks.Values.All(v => v);
         var sorted = drawMs.Order().ToArray();
         var nativeDraw = sorted.Length == 0 ? null : new { count = sorted.Length, p95Ms = sorted[(int)Math.Ceiling(sorted.Length * .95) - 1], maxMs = sorted[^1] };
@@ -342,9 +431,30 @@ internal static class TacticalBattleNativeEvidence
             input = "Managed keyboard edges through the native SkiaWindow router and mouse events through the live screen; no physical input claim.",
             checks,
             captures,
-            nativeDraw
+            nativeDraw,
+            refreshHz,
+            vsync,
+            targetFrameMs = 12.5,
+            cadenceWarmupFrames = measureCadence ? warmup : 0,
+            cadence = !measureCadence || intervals.Any(x => x.Count != samples) ? null :
+                cases.Select(Cadence).ToArray()
         }, new JsonSerializerOptions { WriteIndented = true }));
         return passed ? 0 : 1;
+
+        object Cadence(string name, int index)
+        {
+            var frame = MapFrameEvidence.Statistics(intervals[index]);
+            return new
+            {
+                name,
+                frame,
+                submit = MapFrameEvidence.Statistics(submit[index]),
+                swap = MapFrameEvidence.Statistics(swap[index]),
+                flush = MapFrameEvidence.Statistics(flush[index]),
+                verdict = vsync && refreshHz is > 0 and < 80 ? "display-limited"
+                    : frame.P99Ms <= 12.5 ? "passed" : "failed"
+            };
+        }
 
         void Check(string name, bool ok)
         {

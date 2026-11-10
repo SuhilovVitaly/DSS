@@ -65,12 +65,12 @@ internal sealed class TacticalBattleCamera
         if (points.Count == 0) points.Add(new(0, 0, 0));
         double left = points.Min(p => p.X), right = points.Max(p => p.X), top = points.Min(p => p.Y), bottom = points.Max(p => p.Y);
         double margin = snapshot.Phase == TacticalBattlePhase.Move ? 50 : 70;
-        double ppu = Math.Max(.00001, Math.Min((_width - 448 - 2 * margin) / Math.Max(1, right - left), (_height - 12 - 2 * margin) / Math.Max(1, bottom - top)));
-        _fittedWidth = _width / ppu;
+        double ppu = PyMath.Max(.00001, PyMath.Min((_width - 448 - 2 * margin) / (double)PyMath.Max(1, right - left), (_height - 12 - 2 * margin) / (double)PyMath.Max(1, bottom - top)));
+        _fittedWidth = (double)_width / ppu;
         // TacticalBattleView projects around the entire canvas; offset focus to center the safe area.
         double safeX = (202 + _width - 246) * .5, safeY = _height * .5;
-        _camera.SetFocus((left + right) * .5 + (_width * .5 - safeX) / ppu,
-            (top + bottom) * .5 + (_height * .5 - safeY) / ppu);
+        _camera.SetFocus((left + right) * .5 + (_width * .5 - safeX) / (double)ppu,
+            (top + bottom) * .5 + (_height * .5 - safeY) / (double)ppu);
         SetZoom(ppu);
     }
 

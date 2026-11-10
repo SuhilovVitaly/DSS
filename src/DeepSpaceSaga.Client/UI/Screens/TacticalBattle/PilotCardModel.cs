@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Motion.TacticalBattle;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
@@ -104,7 +105,7 @@ internal static class PilotCardModel
                 [new("armor", U("Armor"), $"{u.Armor}/{u.MaxArmor}", Purple, u.MaxArmor > 0 ? u.Armor / (double)u.MaxArmor : 0),
                  new("hull", U("Hull"), $"{u.Hull}/{u.MaxHull}", Cyan, u.MaxHull > 0 ? u.Hull / (double)u.MaxHull : 0),
                  new("mind", U("Mind"), (u.Consciousness ?? 100).ToString(), Green,
-                     (u.Consciousness ?? 100) / (double)Math.Max(1, f.Battle.Rules.Evasion?.MaxConsciousness ?? 100))
+                     (u.Consciousness ?? 100) / (double)PyMath.Max(1, f.Battle.Rules.Evasion?.MaxConsciousness ?? 100))
                  { ValueTone = u.Consciousness < (f.Battle.Rules.Evasion?.MinConsciousness ?? 0) ? Red : null }], chip, accent, segments)
             {
                 Decoy = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Decoy) == true,

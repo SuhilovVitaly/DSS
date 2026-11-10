@@ -124,7 +124,21 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             HoverPoint: _lastPointer is { } pointer && !OverlayHit(pointer) ? pointer : null);
     }
 
-    public override void Render(SKCanvas canvas, int width, int height)
+    private InteractiveAnomalyField? _interactiveField;
+
+    public override void OnDeactivated()
+    {
+        _interactiveField?.Dispose();
+        _interactiveField = null;
+        base.OnDeactivated();
+    }
+
+    public override void Render(SKCanvas canvas, int width, int height) => RenderFrame(canvas, width, height, null);
+
+    internal void RenderNative(SKCanvas canvas, int width, int height) =>
+        RenderFrame(canvas, width, height, _interactiveField ??= new());
+
+    private void RenderFrame(SKCanvas canvas, int width, int height, InteractiveAnomalyField? interactiveField)
     {
         using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame) { base.Render(canvas, width, height); return; }
@@ -132,7 +146,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         Layout = new() { Camera = frame.View };
         BattleDesign.Recording = Layout;
         canvas.Save();
-        try { canvas.Scale(_viewport.S); TacticalBattleMapRenderer.Draw(canvas, frame); DrawOverlay(canvas, frame); }
+        try { canvas.Scale(_viewport.S); TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField); DrawOverlay(canvas, frame); }
         finally { canvas.Restore(); BattleDesign.Recording = null; }
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
     }

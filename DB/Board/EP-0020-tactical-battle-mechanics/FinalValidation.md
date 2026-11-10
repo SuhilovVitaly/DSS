@@ -23,3 +23,23 @@ Human/product/art, physical input, hardware audio, независимый review
 Graph/doc checks:56AC/44tickets/13stories,78canonical dependencies. Offline graph22594nodes/60077edges,814code/755Markdown,1569source hashes и4fresh semantic hashes проверены; derived missing/invalid/dangling/selfloops0. Один partial AST parser warning и разрешённые pruning/unlocated ограничения записаны в `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/us13-tk4/graph-quality.json`. Graph является навигацией, не приёмкой.
 
 Закрытие: все 44 тикета опубликованы, последний TK4 `fb631c893f21c5e86052b6d959f2619bcf78e262` проверен в origin. Cleanup receipt `D:/DeepSpaceSaga/artifacts/validation/ep-0020/20261108-execution/cleanup.json`: 331 temporary directories и 1053 disposable files удалены, task-created worktrees 0, все task processes завершены. Сохранены validation/native/graph evidence и требуемые подписи/отчёты.
+
+
+## Повторная проверка 2026-11-09
+
+Motion прошёл 1283 из 1283, включая исходный `ForbiddenCallsTests`. В клиентских расчётах использованы `PyMath` и явное вещественное деление. Полный Client suite прошёл 2253 из 2253.
+
+Декодированные портреты стали неизменяемыми для повторного использования текстур. Сетка рисуется одним путём. При движении камеры поле аномалий использует проекцию готовой текстуры и уточняется в фоне после стабилизации. Большое смещение камеры и эталоны проверены отдельно.
+
+Окно 1920×1080 запускалось на меньшем мониторе 2560×1440. В каждом сценарии измерены 600 интервалов между завершениями `SwapBuffers` после 120 прогревочных кадров. Все четыре сценария уложились в бюджет 12,5 мс по p99.
+
+| Сценарий | p99 без VSync, мс | p99 с VSync, мс |
+|---|---:|---:|
+| Покой | 6.69 | 11.61 |
+| Панорамирование | 5.86 | 11.41 |
+| Масштабирование | 6.35 | 11.46 |
+| Залп | 6.37 | 11.39 |
+
+При VSync средняя частота завершения обмена буферов составила около 100 кадров/с. Частота выбранной панели и второго меньшего монитора составляет 59 Гц, поэтому физический вывод 80 кадров/с остаётся непроверенным. Правило выбора монитора закреплено в инструкциях проекта.
+
+[Исходный оконный замер](D:/DeepSpaceSaga/artifacts/validation/tactical-fps/20261109-01/baseline-small/report.json) · [замер без VSync](D:/DeepSpaceSaga/artifacts/validation/tactical-fps/20261109-01/measured-uncapped/report.json) · [замер с VSync](D:/DeepSpaceSaga/artifacts/validation/tactical-fps/20261109-01/measured-vsync/report.json) · [Motion](D:/DeepSpaceSaga/artifacts/validation/tactical-fps/20261109-01/motion-final-pass/tests.trx) · [Client](D:/DeepSpaceSaga/artifacts/validation/tactical-fps/20261109-01/client-full/tests.trx).

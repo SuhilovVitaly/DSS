@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Motion.TacticalBattle;
 using System.Globalization;
 using DeepSpaceSaga.Contracts;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
@@ -71,7 +72,7 @@ internal sealed record BuildCardModel(TacticalUnitSnapshot Unit, bool Hovered, I
         Cell(TacticalSlotKind.Weapon, 0, 124); Cell(TacticalSlotKind.Armor, 0, 140);
         Cell(TacticalSlotKind.Shield, 0, 64); Cell(TacticalSlotKind.Shield, 1, 64); Cell(TacticalSlotKind.Module, 0, 78);
         int engines = u.Slots.Count(s => s.Kind == TacticalSlotKind.Engine);
-        for (int i = 0; i < Math.Max(1, engines); i++) Cell(TacticalSlotKind.Engine, i, engines <= 1 ? 104 : 95);
+        for (int i = 0; i < PyMath.Max(1, engines); i++) Cell(TacticalSlotKind.Engine, i, engines <= 1 ? 104 : 95);
         var limits = u.Limits;
         return new(u, hovered is not null, cells, M(hovered is null ? "Build.Title" : "Build.HoverTitle"),
             M("Build.Frame", u.Build?.FrameName ?? u.FrameId),

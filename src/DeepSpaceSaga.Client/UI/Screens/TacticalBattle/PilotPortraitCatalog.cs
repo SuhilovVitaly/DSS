@@ -23,6 +23,7 @@ internal sealed class PilotPortraitCatalog : IDisposable
                     throw new FormatException("Invalid portrait path");
                 string path = Path.Combine(new[] { baseDir, "Images", "Persons" }.Concat(segments).ToArray()) + ".png";
                 SKBitmap? bitmap = File.Exists(path) ? SKBitmap.Decode(path) : null;
+                bitmap?.SetImmutable();
                 if (!catalog._pilots.TryAdd(pilot.Name, (bitmap, pilot.Value.GetProperty("female").GetBoolean())))
                 { bitmap?.Dispose(); throw new FormatException("Duplicate pilot ID"); }
             }

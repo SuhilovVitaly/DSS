@@ -12,7 +12,7 @@ public sealed record TacticalShotFlight(TacticalShotSnapshot Shot, int Index, do
     public bool Flying => ElapsedMs >= LaunchMs && !Arrived;
     public bool Flash => Arrived &&
         ElapsedMs < LaunchMs + DurationMs + TacticalBattleResults.FlashMs;
-    public double Progress => PyMath.Clamp((ElapsedMs - LaunchMs) / DurationMs, 0, 1);
+    public double Progress => PyMath.Clamp((ElapsedMs - LaunchMs) / (double)DurationMs, 0, 1);
 }
 
 public sealed record TacticalSalvoDamage(TacticalUnitSnapshot Unit, int Armor, int Hull, bool StateChanged);
@@ -54,7 +54,7 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
     internal ImmutableArray<TacticalBattleLogEvent> BeforeLog { get; init; } = [];
     private int _cachedStep = int.MinValue;
     private TacticalBattleSnapshot? _cachedProjection;
-    internal double DurationMs => Shots.IsEmpty ? 0 : PyMath.Min(FlightMs, (CapMs - InitialDelayMs) / Shots.Length);
+    internal double DurationMs => Shots.IsEmpty ? 0 : PyMath.Min(FlightMs, (CapMs - InitialDelayMs) / (double)Shots.Length);
     internal double LaunchInterval => DurationMs;
     internal double EndMs => Shots.IsEmpty ? 0 : InitialDelayMs + DurationMs * Shots.Length;
     internal bool InFlight(long nowMs) => !Skipped && nowMs - StartedMs < EndMs;
