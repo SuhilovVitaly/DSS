@@ -53,12 +53,39 @@ public sealed class BattleKeyTests
         RenderMap(fixture);
         var rect = fixture.Game.TacticalBattleEntryBounds;
         Assert.False(rect.IsEmpty);
+        var toolbar = fixture.Game.MapToolbarRect;
+        Assert.NotEqual(ScreenEvent.OpenTacticalBattle,
+            fixture.Game.OnMouseDown(toolbar.MidX * fixture.Game.UiScale, (toolbar.Top - 16) * fixture.Game.UiScale, MouseButton.Left));
         float x = rect.MidX * fixture.Game.UiScale, y = rect.MidY * fixture.Game.UiScale;
         Assert.True(fixture.Game.OnMouseMove(x, y));
         var click = fixture.Game.OnMouseDown(x, y, MouseButton.Left);
         Assert.Equal(ScreenEvent.OpenTacticalBattle, click);
         await fixture.Route(click);
         Assert.True(Assert.IsAssignableFrom<TacticalBattleModalScreen>(fixture.Screens.Current).IsSetup);
+    }
+
+    [Theory]
+    [InlineData(1f)]
+    [InlineData(1.2f)]
+    public async Task BattleEntryStaysInBottomRightAfterResize(float scale)
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create(uiScale: scale);
+        foreach (var (width, height) in new[] { (1280, 720), (720, 540) })
+        {
+            RenderMap(fixture, width, height);
+            var game = fixture.Game;
+            var entry = game.TacticalBattleEntryBounds;
+            Assert.False(entry.IsEmpty);
+            Assert.InRange(width / scale - entry.Right, 7.99f, 8.01f);
+            Assert.InRange(height / scale - entry.Bottom, 7.99f, 8.01f);
+            Assert.False(entry.IntersectsWith(game.MapToolbarRect));
+            foreach (var (rect, expected) in new[] { (game.LastFinanceButtonRect, ScreenEvent.OpenFinance), (game.LastShipButtonRect, ScreenEvent.OpenShip) })
+            {
+                Assert.False(entry.IntersectsWith(rect));
+                Assert.Equal(expected, game.OnMouseDown(rect.MidX * scale, rect.MidY * scale, MouseButton.Left));
+            }
+            Assert.True(game.OnMouseMove(entry.MidX * scale, entry.MidY * scale));
+        }
     }
 
     [Fact]
@@ -89,9 +116,9 @@ public sealed class BattleKeyTests
         Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
     }
 
-    private static void RenderMap(BattleNavigationTests.Fixture fixture)
+    private static void RenderMap(BattleNavigationTests.Fixture fixture, int width = 1280, int height = 720)
     {
-        using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
-        fixture.Game.Render(canvas, 1280, 720);
+        using var bitmap = new SKBitmap(width, height); using var canvas = new SKCanvas(bitmap);
+        fixture.Game.Render(canvas, width, height);
     }
 }
