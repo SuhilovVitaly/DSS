@@ -15,7 +15,7 @@ internal static partial class TacticalBattleMapRenderer
         {
             if (plan.Selected?.Drone.Build is { } build)
             {
-                using var path = CreateFireSector(f.View, plan.Selected.Drone.Pose, build.Range, build.ArcDegrees);
+                using var path = CreateFireSector(f.View, plan.Selected.Drone.Pose, build.Range, 2 * build.ArcDegrees);
                 DrawFireSector(c, path, ArcFill, ArcEdge);
                 c.Save();
                 try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
@@ -27,6 +27,8 @@ internal static partial class TacticalBattleMapRenderer
                 var box = Callout(c, p.X, p.Y + 34, M("InDustNoFire"), Dust, Dust); occupied.Add(box);
                 if (Recording is { } l) l.Rects["dust:" + row.Drone.Id] = box;
             }
+            if (plan.Selected is { } shooter)
+                DrawAlternativeTargets(c, f, shooter, occupied);
             foreach (var row in plan.Rows.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
             {
                 var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId); if (target is null || row.Drone.InDust) continue;
@@ -121,6 +123,40 @@ internal static partial class TacticalBattleMapRenderer
             }
         }
     }
+    private static void DrawAlternativeTargets(SKCanvas canvas, TacticalBattleFrame frame, TacticalFirePlanRow shooter, List<SKRect> occupied)
+    {
+        var origin = frame.View.Project(shooter.Drone.Pose);
+        var color = Yellow.WithAlpha(155);
+        foreach (var candidate in shooter.Group.List)
+        {
+            if (candidate.TargetId == shooter.TargetId) continue;
+            var target = frame.Battle.Units.FirstOrDefault(unit => unit.Id == candidate.TargetId);
+            if (target is null) continue;
+            var point = MarkerPoint(frame.View, target);
+            const float radius = 12;
+            float length = SKPoint.Distance(origin, point);
+            if (length > 2 * radius)
+            {
+                var offset = Scale(point - origin, radius / length);
+                Stroke(canvas, origin + offset, point - offset, color, 1, [4, 4]);
+            }
+            Circle(canvas, point, radius, SKColors.Transparent, color, 1.2f);
+            var ring = new SKRect(point.X - radius, point.Y - radius, point.X + radius, point.Y + radius);
+            occupied.Add(ring);
+            if (Recording is { } layout) layout.Rects["candidate:" + target.Id] = ring;
+
+            string chance = Pct(candidate.Chance);
+            float halfWidth = (Measure(chance, 12) + 14) * .5f;
+            foreach (float y in new[] { point.Y - 15, point.Y + 32 })
+            {
+                var bounds = new SKRect(point.X - halfWidth, y - 17, point.X + halfWidth, y + 2);
+                if (!Safe(frame.View).Contains(bounds) || occupied.Any(rect => rect.IntersectsWith(bounds))) continue;
+                occupied.Add(Callout(canvas, point.X, y, chance, color, Text));
+                break;
+            }
+        }
+    }
+
     private static SKPath CreateFireSector(TacticalBattleView view, TacticalPoseSnapshot pose, double range, double arcDegrees)
     {
         var origin = view.Project(pose);

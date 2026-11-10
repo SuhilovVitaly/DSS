@@ -97,9 +97,13 @@ internal static class PilotCardModel
             {
                 var row = f.FirePlan?.Rows.FirstOrDefault(r => r.Drone.Id == u.Id);
                 bool has = row?.Target is not null;
+                int targetCount = row?.Group.List.Length ?? 0;
                 chip = row?.Evade == true ? BattleFormat.Localize("EvadeChip")
-                    : u.InDust ? M("InDust") : has ? row!.TargetId + " " + Pct(row.Target!.Chance) : U("NoTargets"); accent = has && !u.InDust || row?.Evade == true;
-                Template("FireStats", (has ? "1" : "0", has ? Yellow : Muted), (has ? $"{u.Build?.DamageMin}–{u.Build?.DamageMax}" : "—", has ? Orange : Muted), (u.Initiative?.ToString() ?? "—", Text));
+                    : u.InDust ? M("InDust") : has ? row!.TargetId + " " + Pct(row.Target!.Chance)
+                    : U(targetCount > 0 ? "HoldFire" : "NoTargets");
+                accent = has && !u.InDust || row?.Evade == true;
+                Template("FireStats", (targetCount.ToString(), targetCount > 0 ? Yellow : Muted),
+                    (has ? $"{u.Build?.DamageMin}–{u.Build?.DamageMax}" : "—", has ? Orange : Muted), (u.Initiative?.ToString() ?? "—", Text));
             }
             cards.Add(new(u.Id, Name(u), u.Build?.WeaponName ?? "", pilot, selected == u.Id,
                 [new("armor", U("Armor"), $"{u.Armor}/{u.MaxArmor}", Purple, u.MaxArmor > 0 ? u.Armor / (double)u.MaxArmor : 0),
