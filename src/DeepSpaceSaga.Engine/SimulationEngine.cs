@@ -302,15 +302,20 @@ public sealed partial class SimulationEngine : IDisposable
         if (!isSave && scenario.SaveFormatVersion == 0 && generation is not null)
         {
             gs = SolarSystemGenerator.Generate(scenario with { GameState = gs }, generation, _registry, resolvedMasterSeed).GameState;
+            generation = generation.WithScaledDistances();
             if (generation.Clusters is { } clusters)
             {
-                var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed);
+                var formationRules = generation.DistanceScale > 1 && gs.StationResourceFields is null && _stationResourceFieldConfig is { } rules
+                    ? StationResourceFields.WithStationFormation(rules, generation.DistanceScale)
+                    : null;
+                double formationPadding = (formationRules?.OuterRadiusKm ?? 0) * 20;
+                var result = StationClusterGenerator.Generate(scenario with { GameState = gs }, clusters, _registry, resolvedMasterSeed, formationPadding);
                 if (geographyV2)
                 {
-                    result = StationGeographyV2.CompleteBootstrap(scenario, result, generation, _registry, resolvedMasterSeed);
+                    result = StationGeographyV2.CompleteBootstrap(scenario, result, generation, _registry, resolvedMasterSeed, formationPadding);
                     result = result with { World = result.World with { GameState = StationResourceFields.RelocateDeclared(scenario.GameState, result.World.GameState) } };
                 }
-                if ((geographyV2 ? result.World.GameState.StationResourceFields?.Rules ?? _stationResourceFieldConfig : _stationResourceFieldConfig) is { } resourceConfig)
+                if ((formationRules ?? (geographyV2 ? result.World.GameState.StationResourceFields?.Rules : null) ?? _stationResourceFieldConfig) is { } resourceConfig)
                 {
                     result = result with { World = result.World with { GameState = StationResourceFields.ExtendForClusters(result.World.GameState, resolvedMasterSeed, resourceConfig, _registry) } };
                     result = StationClusterGenerator.BindResources(result);
@@ -324,6 +329,8 @@ public sealed partial class SimulationEngine : IDisposable
                 gs = EnvironmentFieldGenerator.Generate(gs with { ClusterMap = clusterMap }, environment, resolvedMasterSeed);
             if (generation.PoiTemplates is { } templates)
                 gs = PointOfInterestGenerator.Generate(gs with { ClusterMap = clusterMap }, templates, resolvedMasterSeed);
+            if (geographyV2)
+                gs = SolarSystemGenerator.BindScenarioAsteroidOrbits(scenario.GameState, gs, generation, _registry);
         }
         if (geographyV2)
         {

@@ -13,6 +13,8 @@ internal sealed class AnomalyFieldLayer : IDisposable
         [(0, SKColors.Black), (.15, SKColor.Parse("#16060B")), (.45, SKColor.Parse("#44101F")), (.75, SKColor.Parse("#7A1C32")), (1, SKColor.Parse("#C23A52"))];
     private static readonly (double T, SKColor Color)[] HotRamp =
         [(0, SKColors.Black), (.12, SKColor.Parse("#0E0918")), (.40, SKColor.Parse("#2B1745")), (.70, SKColor.Parse("#4F2A74")), (1, SKColor.Parse("#8A5CC0"))];
+    internal static ReadOnlySpan<(double T, SKColor Color)> DustRamp => HotRamp;
+    internal static ReadOnlySpan<(double T, SKColor Color)> HeatRamp => RedRamp;
     private readonly object _gate = new();
     private ImmutableArray<TacticalAnomalySnapshot> _source = [];
     private TacticalAnomalyRulesSnapshot? _rules;

@@ -28,10 +28,10 @@
     "tacticalMap": {
       "metersPerPixel": [
         100,
-        1000,
-        100000,
-        1000000,
-        10000000
+        32608,
+        3260775,
+        32607749,
+        326077492
       ],
       "minimumPpu": 1e-12,
       "referenceSpeedKmS": 4,

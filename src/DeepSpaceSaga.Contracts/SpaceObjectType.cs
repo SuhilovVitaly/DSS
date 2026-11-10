@@ -7,6 +7,7 @@ public static class SpaceObjectType
     public const string NpcShip = "NpcShip";
     public const string Asteroid = "Asteroid";
     public const string Station = "Station";
+    public const string Factory = "Factory";
     public const string Container = "Container";
     public const string Planet = "Planet";
     public const string Sun = "Sun";

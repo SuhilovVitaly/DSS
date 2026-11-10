@@ -25,13 +25,20 @@ public sealed class StationResourceFieldContentTests
         Assert.Equal(1, rules.SchemaVersion);
         Assert.Equal(1000, rules.FirstObjectNumber);
         Assert.Equal(64, rules.MaxPlacementAttempts);
-        Assert.Equal((2.5, 4.5, 2d, 0.1, 0.25),
-            (rules.InnerRadiusKm, rules.OuterRadiusKm, rules.StationClearanceKm,
-                rules.AsteroidSpacingKm, rules.CorridorHalfWidthKm));
+        double radius = double.Hypot(100, 55);
+        double scale = radius / 3.5;
+        Assert.Equal(radius, rules.InnerRadiusKm, 9);
+        Assert.Equal(radius, rules.OuterRadiusKm, 9);
+        Assert.Equal(2 * scale, rules.StationClearanceKm, 9);
+        Assert.Equal(0.1 * scale, rules.AsteroidSpacingKm, 9);
+        Assert.Equal(0.25, rules.CorridorHalfWidthKm);
         Assert.Equal(new ResourceSurveyRulesData(120, 60000, 85), rules.StructuralScan);
         Assert.Equal(5, rules.Roles.Count);
         foreach (var role in rules.Roles)
+        {
             Assert.True(registry.StationMarketProfiles.GetIndex(role.MarketProfileId) >= 0);
+            Assert.Equal(1, Assert.Single(role.Fields).AsteroidCount);
+        }
 
         var expectedVariants = new (string Kind, string Variant, string Composition, int Weight, string Fractions)[]
         {

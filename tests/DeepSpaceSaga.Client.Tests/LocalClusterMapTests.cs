@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
@@ -9,6 +10,41 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class LocalClusterMapTests
 {
+    [Fact]
+    public void ClusterCaptionFollowsAVisibleStationAndVanishesOverEmptySpace()
+    {
+        var snapshot = Snapshot(3);
+        var members = snapshot.Objects.Skip(1).ToArray();
+        var camera = new CameraState(0, 0, 1);
+        using var bitmap = new SKBitmap(400, 400);
+        using var canvas = new SKCanvas(bitmap);
+
+        ObjectMotionSnapshot[] inFrame =
+        [
+            members[0] with { X = 0, Y = -400 },
+            members[1] with { X = 0, Y = 0 },
+            members[2] with { X = 0, Y = 100 }
+        ];
+        canvas.Clear(SKColors.Transparent);
+        ClusterMapPresentation.Draw(canvas, snapshot, inFrame, camera, 400, 400);
+        Assert.True(HasCaptionBetween(165, 183));
+        Assert.False(HasCaptionBetween(60, 85));
+
+        ObjectMotionSnapshot[] outside =
+        [
+            members[0] with { X = 0, Y = -500 },
+            members[1] with { X = 0, Y = -400 },
+            members[2] with { X = 0, Y = 900 }
+        ];
+        canvas.Clear(SKColors.Transparent);
+        ClusterMapPresentation.Draw(canvas, snapshot, outside, camera, 400, 400);
+        Assert.False(HasCaptionBetween(0, 400));
+
+        bool HasCaptionBetween(int top, int bottom) =>
+            Enumerable.Range(top, bottom - top).Any(y =>
+                Enumerable.Range(0, bitmap.Width).Any(x => bitmap.GetPixel(x, y).Alpha > 100));
+    }
+
     [Fact]
     public void V2StationSelectionDoesNotEnableRemoteTrade()
     {

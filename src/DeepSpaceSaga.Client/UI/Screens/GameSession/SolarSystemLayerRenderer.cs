@@ -3,78 +3,119 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
 
+internal readonly record struct MapOrbitCurve(double Major, double Minor, double X, double Y);
+
 internal sealed class SolarSystemLayerRenderer
 {
-    internal static IReadOnlyList<OrbitMapData> VisibleOrbits(SolarSystemMapSnapshot map, bool showOrbits, MapDetailLevel detail,
-        IReadOnlyList<ObjectMotionSnapshot>? objects = null, string? selectedId = null, string? navigationTargetId = null, string? playerId = null)
+    private const double OrbitMergeDistancePx = 2;
+    private static IEnumerable<MapOrbitCurve> VisibleOrbits(
+        IReadOnlyList<ObjectRenderState> objects, IReadOnlySet<string>? hidden, CameraState camera, int width, int height,
+        IEnumerable<MapOrbitCurve>? districtOrbits, IReadOnlySet<string>? districtMembers)
     {
-        if (!showOrbits) return [];
-        var allowed = new HashSet<string>(StringComparer.Ordinal);
-        if (detail is MapDetailLevel.Cluster or MapDetailLevel.System)
-            foreach (var planet in map.Planets) allowed.Add(planet.ObjectId);
-        if (objects is not null)
+        var curves = new List<MapOrbitCurve>();
+        double mergeDistance = OrbitMergeDistancePx / camera.PixelsPerWorldUnit;
+        double halfWidth = width / (2 * camera.PixelsPerWorldUnit);
+        double halfHeight = height / (2 * camera.PixelsPerWorldUnit);
+        foreach (var orbit in districtOrbits ?? [])
         {
-            foreach (string? id in new[] { selectedId, navigationTargetId, playerId })
-            {
-                if (id is null) continue;
-                var obj = objects.FirstOrDefault(o => o.ObjectId == id);
-                if (obj is null) continue;
-                if (id != playerId && obj.RenderObjectType is SpaceObjectType.Station or SpaceObjectType.Asteroid)
-                    allowed.Add(id);
-                if (obj.IsDocked && obj.DockedStationObjectId is { } parent &&
-                    objects.Any(o => o.ObjectId == parent && o.RenderObjectType == SpaceObjectType.Station)) allowed.Add(parent);
-            }
+            if (curves.Any(drawn => AreClose(drawn, orbit, camera, halfWidth, halfHeight, mergeDistance))) continue;
+            curves.Add(orbit);
+            yield return orbit;
         }
-        var curves = new HashSet<(double Major, double Minor)>();
-        return map.Orbits.Where(o => allowed.Contains(o.ObjectId) && curves.Add((o.Elements.SemiMajorAxis, o.Elements.SemiMinorAxis))).ToArray();
+        // Prefer district and station curves when other orbits coincide on screen.
+        for (int pass = 0; pass < 2; pass++)
+        foreach (var state in objects)
+        {
+            var pose = state.Pose;
+            if ((pose.RenderObjectType == SpaceObjectType.Station) != (pass == 0)) continue;
+            if (state.Source.Orbit is not { } orbit || hidden?.Contains(pose.ObjectId) == true ||
+                pose.RenderObjectType == SpaceObjectType.Factory || districtMembers?.Contains(pose.ObjectId) == true) continue;
+
+            var (sx, sy) = camera.WorldToScreen(pose.X, pose.Y, width, height);
+            float markerRadius = TacticalMapMarkerPolicy.GetMarkerRadiusPx(state.IsPlayerShip ? SpaceObjectType.PlayerShip : pose.RenderObjectType);
+            if (!TacticalMapMarkerPolicy.IsInViewport(sx, sy, markerRadius, width, height)) continue;
+
+            var curve = new MapOrbitCurve(orbit.SemiMajorAxis, orbit.SemiMinorAxis, state.Source.WorldOffsetX, state.Source.WorldOffsetY);
+            bool merged = false;
+            foreach (var drawn in curves)
+            {
+                if (!AreClose(drawn, curve, camera, halfWidth, halfHeight, mergeDistance)) continue;
+                merged = true;
+                break;
+            }
+            if (merged) continue;
+            curves.Add(curve);
+            yield return curve;
+        }
     }
 
-    internal void Draw(SKCanvas canvas, SolarSystemMapSnapshot map, CameraState camera, SKRect viewport, bool showOrbits = true,
-        MapDetailLevel detail = MapDetailLevel.System, IReadOnlyList<ObjectMotionSnapshot>? objects = null,
-        string? selectedId = null, string? navigationTargetId = null, string? playerId = null)
+    private static bool AreClose(MapOrbitCurve first, MapOrbitCurve second, CameraState camera,
+        double halfWidth, double halfHeight, double mergeDistance)
     {
-        PrepareMap(map);
-        var (cx, cy) = camera.WorldToScreen(0, 0, (int)viewport.Width, (int)viewport.Height);
+        double dx = first.X - second.X, dy = first.Y - second.Y;
+        double centerDistance = double.Hypot(dx, dy);
+        double majorDifference = Math.Abs(first.Major - second.Major);
+        if (centerDistance + Math.Max(majorDifference, Math.Abs(first.Minor - second.Minor)) <= mergeDistance)
+            return true;
+
+        if (first.Major != first.Minor || second.Major != second.Minor || majorDifference > centerDistance + mergeDistance)
+            return false;
+
+        // For circles, the difference of squared distances to their outlines is affine in the
+        // sample position. Bound it over the viewport so parallel local arcs can merge, while
+        // arcs that only cross at one point stay separate.
+        double sumRadii = first.Major + second.Major;
+        double minimumDenominator = sumRadii - centerDistance;
+        if (minimumDenominator <= 0) return false;
+        double differenceAtCenter = (first.Major - second.Major) * sumRadii + dx * dx + dy * dy +
+            2 * ((camera.FocusX - first.X) * dx + (camera.FocusY - first.Y) * dy);
+        double maximumDifference = Math.Abs(differenceAtCenter) + 2 * (Math.Abs(dx) * halfWidth + Math.Abs(dy) * halfHeight);
+        return maximumDifference <= mergeDistance * minimumDenominator;
+    }
+
+    internal void Draw(SKCanvas canvas, SolarSystemMapSnapshot? map, CameraState camera, SKRect viewport, bool showOrbits = true,
+        IReadOnlyList<ObjectRenderState>? objects = null, IReadOnlySet<string>? hidden = null,
+        IEnumerable<MapOrbitCurve>? districtOrbits = null, IReadOnlySet<string>? districtMembers = null)
+    {
+        if (map is null && (!showOrbits || objects is null)) return;
+        double ppu = camera.PixelsPerWorldUnit;
+        double cx = viewport.Width / 2d - camera.FocusX * ppu;
+        double cy = viewport.Height / 2d - camera.FocusY * ppu;
         using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
         using var visibleArc = new SKPath();
         canvas.Save();
         canvas.ClipRect(viewport);
         paint.Color = new SKColor(169, 150, 133, 31);
-        foreach (var belt in map.Belts)
+        if (map is not null)
         {
-            Ring(belt.InnerRadius);
-            Ring(belt.OuterRadius);
-            DrawDecoration(canvas, belt, camera, viewport);
+            PrepareMap(map);
+            foreach (var belt in map.Belts)
+            {
+                Ellipse(cx, cy, belt.InnerRadius * ppu, belt.InnerRadius * ppu);
+                Ellipse(cx, cy, belt.OuterRadius * ppu, belt.OuterRadius * ppu);
+                DrawDecoration(canvas, belt, camera, viewport);
+            }
         }
         paint.Color = new SKColor(127, 169, 199, 51);
-        foreach (var orbit in VisibleOrbits(map, showOrbits, detail, objects, selectedId, navigationTargetId, playerId))
-        {
-            float a = (float)(orbit.Elements.SemiMajorAxis * camera.PixelsPerWorldUnit);
-            float b = (float)(orbit.Elements.SemiMinorAxis * camera.PixelsPerWorldUnit);
-            Ellipse(a, b);
-        }
+        if (showOrbits && objects is not null)
+            foreach (var orbit in VisibleOrbits(objects, hidden, camera, (int)viewport.Width, (int)viewport.Height, districtOrbits, districtMembers))
+                Ellipse(cx + orbit.X * ppu, cy + orbit.Y * ppu, orbit.Major * ppu, orbit.Minor * ppu);
         paint.Color = SpaceMapColorResolver.SunColor;
         paint.StrokeWidth = 2;
-        if (viewport.Contains(cx, cy)) canvas.DrawCircle(cx, cy, 8, paint);
+        if (map is not null && viewport.Contains((float)cx, (float)cy)) canvas.DrawCircle((float)cx, (float)cy, 8, paint);
         canvas.Restore();
 
-        void Ring(double radius)
+        void Ellipse(double x, double y, double a, double b)
         {
-            float pixels = (float)(radius * camera.PixelsPerWorldUnit);
-            Ellipse(pixels, pixels);
-        }
-
-        void Ellipse(float a, float b)
-        {
-            if (!float.IsFinite(a) || !float.IsFinite(b) || a <= 0 || b <= 0) return;
+            if (!double.IsFinite(a) || !double.IsFinite(b) || a <= 0 || b <= 0) return;
             if (Math.Max(a, b) <= 4 * Math.Max(viewport.Width, viewport.Height))
-                canvas.DrawOval(cx, cy, a, b, paint);
+                canvas.DrawOval((float)x, (float)y, (float)a, (float)b, paint);
             else
             {
                 // Huge analytic ovals generate viewport-sized GPU coverage even
                 // when only a tiny arc is visible. Bound geometry before submission.
                 var expanded = viewport; expanded.Inflate(2, 2);
-                BuildVisibleEllipse(cx, cy, a, b, expanded, visibleArc);
+                BuildVisibleEllipse(x, y, a, b, expanded, visibleArc);
                 if (!visibleArc.IsEmpty) canvas.DrawPath(visibleArc, paint);
             }
         }

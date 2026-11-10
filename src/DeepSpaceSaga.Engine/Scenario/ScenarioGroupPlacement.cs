@@ -35,11 +35,14 @@ internal static class ScenarioGroupPlacement
         foreach (string id in home.StationIds)
         {
             var station = objects[id];
+            var orbit = station.Orbit!;
+            double stationRadius = orbit.SemiMajorAxis + (correctedRadius - radius);
+            double scale = stationRadius / orbit.SemiMajorAxis;
             objects[id] = station with
             {
-                PositionX = station.PositionX * correctedRadius / radius,
-                PositionY = station.PositionY * correctedRadius / radius,
-                Orbit = station.Orbit! with { SemiMajorAxis = correctedRadius, SemiMinorAxis = correctedRadius }
+                PositionX = station.PositionX * scale,
+                PositionY = station.PositionY * scale,
+                Orbit = orbit with { SemiMajorAxis = stationRadius, SemiMinorAxis = stationRadius }
             };
         }
         anchor = objects[anchorId];

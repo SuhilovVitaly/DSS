@@ -17,7 +17,7 @@ public sealed class MapLayerControlsTests
         InstalledModules: [new("nav", "nav", "Navigation", 0, [NavigationComputerCommandTypes.Dock], "On", "Ready", 100,
             Commands: [new(NavigationComputerCommandTypes.Dock, "Dock", "object")])],
         SolarSystemMap: new(1, 1, 1000, [], [], []),
-        AiMap: new(1, [new("base", "Orbital", "Ai", null, new(100, 100, 30000, 0, 90, 0, "clockwise"), 0, 0)],
+        AiMap: new(1, [],
             [new("territory", "base", 20, 40)], [new("field", "Debris", .75, "Parent", "base", null, 0, 0, 0, 300, 0, 360, 1)],
             [new("poi", "Relay", "Inactive relay", "base", null, 0, 0)]));
 
@@ -31,6 +31,8 @@ public sealed class MapLayerControlsTests
         handle.Buffer.Update(Overlap()); var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
         using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, 1920, 1080); screen.OnMouseDown(1060, 540); screen.OnMouseUp(1060, 540);
+        Assert.False(screen.MapLayers.HasFlag(MapLayerFlags.PointsOfInterest));
+        Click(screen, screen.MapViewButtonRects[10]);
         string before = JsonSerializer.Serialize(handle.Buffer.Latest!.Snapshot);
         foreach (int index in new[] { 5, 8, 9, 10 }) Click(screen, screen.MapViewButtonRects[index]);
         screen.Render(canvas, 1920, 1080); Assert.Equal((MapLayerFlags)0, screen.MapLayers); Assert.Equal("base", screen.SelectedObjectId);
@@ -55,6 +57,8 @@ public sealed class MapLayerControlsTests
                 var snapshot = Overlap();
                 buffer = new SnapshotBuffer(); buffer.Update(snapshot with { Objects = snapshot.Objects.SetItem(1, snapshot.Objects[1] with { X = pickX - width / 2, Y = pickY - height / 2 }) });
                 screen = new GameSessionScreen(buffer, new LinearMotionPredictor(), uiScale: scale);
+                screen.Render(canvas, width, height);
+                Click(screen, screen.MapViewButtonRects[10], scale);
                 screen.Render(canvas, width, height);
                 void Pick() { screen.OnMouseDown(pickX, pickY); screen.OnMouseUp(pickX, pickY); screen.Render(canvas, width, height); }
                 screen.OnMouseMove(pickX, pickY);

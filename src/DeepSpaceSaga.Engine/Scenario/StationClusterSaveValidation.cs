@@ -87,6 +87,8 @@ internal static class StationClusterSaveValidation
         while (queue.TryDequeue(out var id)) foreach (var l in map.Links.Where(l => l.ToStationId == id)) if (seen.Add(l.FromStationId)) queue.Enqueue(l.FromStationId);
         Require(seen.Count == members.Count, "geography has no return path");
         var fields = state.StationResourceFields?.Asteroids ?? [];
+        var rules = state.StationResourceFields?.Rules;
+        bool formation = map.RulesVersion == 2 && rules is not null && rules.InnerRadiusKm == rules.OuterRadiusKm;
         var bindings = map.ResourceBindings.IsDefault ? [] : map.ResourceBindings.ToArray();
         Require(bindings.Length == fields.Count, "partial resource bindings");
         var bound = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
@@ -101,10 +103,28 @@ internal static class StationClusterSaveValidation
             Require(owner.Orbit is { } orbit && field.Orbit is { } fo && fo.SemiMajorAxis == fo.SemiMinorAxis &&
                 fo.OrbitalPeriodMs == orbit.OrbitalPeriodMs && fo.EpochSimulationTimeMs == orbit.EpochSimulationTimeMs && fo.OrbitDirection == orbit.OrbitDirection,
                 "nonrigid resource orbit");
-            ObjectMotionSnapshot AtEpoch(SpaceObjectData obj) => OrbitalMotionMath.At(new(obj.ObjectId, obj.PositionX, obj.PositionY, 0, 0), obj.Orbit!, owner.Orbit!.EpochSimulationTimeMs);
+            ObjectMotionSnapshot AtEpoch(SpaceObjectData obj) => OrbitalMotionMath.At(
+                new(obj.ObjectId, obj.PositionX, obj.PositionY, 0, 0, WorldOffsetX: obj.WorldOffsetX, WorldOffsetY: obj.WorldOffsetY),
+                obj.Orbit!, owner.Orbit!.EpochSimulationTimeMs);
             var a = AtEpoch(owner); var f = AtEpoch(field);
             Require(Math.Abs(f.X - a.X - b.OffsetX) <= 0.000001 && Math.Abs(f.Y - a.Y - b.OffsetY) <= 0.000001, "resource offset differs from orbit");
+            if (!formation) continue;
+            Require(field.Orbit == owner.Orbit, "resource velocity differs from station");
+            double radius = rules!.EffectiveFactoryRadiusKm * 10;
+            // Compact saves can contain either the original ring or the irregular layout.
+            double tolerance = rules.FactoryRadiusKm.HasValue ? radius * StationClusterGenerator.CompactFactoryRadiusVariation : 0;
+            for (int number = 1; number <= StationClusterGenerator.FactoriesPerStation; number++)
+            {
+                string id = StationClusterGenerator.FactoryId(owner.ObjectId, number);
+                Require(objects.TryGetValue(id, out var factory) && factory.ObjectType == SpaceObjectType.Factory &&
+                    factory.Orbit == owner.Orbit && factory.IsKnown && !factory.IsDestroyed &&
+                    Math.Abs(double.Hypot(factory.WorldOffsetX, factory.WorldOffsetY) - radius) <= tolerance + 1e-6,
+                    "invalid station factory formation");
+            }
         }
+        if (formation)
+            Require(objects.Values.Count(o => o.ObjectType == SpaceObjectType.Factory) == fields.Count * StationClusterGenerator.FactoriesPerStation,
+                "unexpected station factory count");
     }
 
     private static void ValidateV2Geography(StationClusterMapSnapshot map,
@@ -120,15 +140,15 @@ internal static class StationClusterSaveValidation
         double units = rules!.ReferenceSpeedKmS * 86400 / 300 * 10;
         Require(double.IsFinite(units) && units > 0, "reference speed exceeds supported range");
         var poses = new Dictionary<string, ObjectMotionSnapshot>(StringComparer.Ordinal);
-        var radii = new List<double>();
+        var lanes = new List<(double Inner, double Outer)>();
         foreach (var cluster in map.Clusters)
         {
             var reference = objects[cluster.StationIds[0]].Orbit!;
-            radii.Add(reference.SemiMajorAxis);
+            var radii = cluster.StationIds.Select(id => objects[id].Orbit!.SemiMajorAxis).ToArray();
+            lanes.Add((radii.Min(), radii.Max()));
             foreach (string id in cluster.StationIds)
             {
                 var obj = objects[id];
-                Require(obj.Orbit!.SemiMajorAxis == reference.SemiMajorAxis, "members must share a circular radius");
                 poses.Add(id, OrbitalMotionMath.At(new(id, 0, 0, 0, 0), obj.Orbit!, reference.EpochSimulationTimeMs));
             }
             foreach (string id in cluster.StationIds)
@@ -146,10 +166,10 @@ internal static class StationClusterSaveValidation
                     "nearest station outside configured days");
             }
         }
-        radii.Sort();
-        for (int i = 1; i < radii.Count; i++)
+        lanes.Sort((a, b) => a.Inner.CompareTo(b.Inner));
+        for (int i = 1; i < lanes.Count; i++)
         {
-            double gap = radii[i] - radii[i - 1];
+            double gap = lanes[i].Inner - lanes[i - 1].Outer;
             Require(gap + 1e-6 + Math.Abs(gap) * 1e-10 >= rules.MinimumStationDays * units,
                 "radial lanes do not prove the all-phase station minimum");
         }

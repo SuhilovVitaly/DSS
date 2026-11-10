@@ -50,7 +50,12 @@ public sealed class StationGeographyV2Tests
                 Assert.Equal(5, stations.Select(s => s.MarketProfileId).Distinct().Count());
                 Assert.All(stations, a => Assert.InRange(stations.Where(b => a.ObjectId != b.ObjectId)
                     .Min(b => double.Hypot(a.PositionX - b.PositionX, a.PositionY - b.PositionY) / units), 1, 3));
-                Assert.Single(stations.Select(s => s.Orbit!.SemiMajorAxis).Distinct());
+                var radii = stations.Select(s => s.Orbit!.SemiMajorAxis).Distinct().ToArray();
+                Assert.Equal(count, radii.Length);
+                Assert.InRange((radii.Max() - radii.Min()) / units, 7.5, 7.7);
+                double phase = Math.Atan2(stations.Average(s => s.PositionX), -stations.Average(s => s.PositionY));
+                var tangents = stations.Select(s => s.PositionX * Math.Cos(phase) + s.PositionY * Math.Sin(phase)).ToArray();
+                Assert.InRange((tangents.Max() - tangents.Min()) / units, 7.0, 7.5);
                 Assert.Single(stations.Select(s => s.Orbit!.OrbitalPeriodMs).Distinct());
                 double diameter = stations.SelectMany(a => stations.Select(b => double.Hypot(a.PositionX - b.PositionX, a.PositionY - b.PositionY))).Max() / units;
                 Assert.InRange(diameter, 10 - 1e-9, 16 + 1e-9);

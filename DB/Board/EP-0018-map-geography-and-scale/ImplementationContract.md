@@ -1,5 +1,8 @@
 # Контракт переделки карты — EP-0018
 
+Актуальное изменение масштаба и станционных окрестностей оформлено в
+[EP-maintenance-US-0001](../EP-maintenance/Done/EP-maintenance-US-0001-station-local-geography/EP-maintenance-US-0001-station-local-geography.md).
+
 Это планируемое поведение нового мира, не описание уже поставленного кода. Source of truth до исполнения — данный Board вместе с Documentation.md. Нормативные общие единицы/ownership остаются в EngineRequirements.
 
 ## C-01 — расстояния и география
@@ -10,7 +13,7 @@ distanceDays = hypot(dx,dy) / unitsPerDay.
 
 Минимум относится к каждой паре человеческих Station в ClusterMap, в том числе к разным кластерам и preserved IDs. AI planetary/orbital bases исключены из human membership. Nearest — минимум по другим станциям собственного кластера, на старте 1–3d и неизменен при rigid orbit. Межкластерные nearest не обещаются в каждом будущем календарном году.
 
-Формация: одна circular орбита на кластер, общий epoch/period/direction; все станции включая legacy располагаются заново по стабильному ID порядку и seeded ориентации на дуге. В пределах кластера проектировать одинаковый радиус, общий период; neighbor chord 1.2d как исходный ориентир. Проверять фактические хорды, весь diameter 10–16d, а не длину дуги. Не требовать максимум 3d для любых пар — только nearest.
+Формация: станции нового дистрикта занимают четыре радиальных ряда с детерминированным разбросом радиусов и фаз. Размах поперёк орбиты больше размаха вдоль неё. Общие epoch, period и direction сохраняют расстояния. Проверять фактический диаметр 10–16d и диапазон ближайшего соседа.
 Дополнительные кластеры занимают радиальные полосы в том же поясе; min расстояние между радиусами станций разных кластеров >=1d с запасом для ресурсов. Это аналитическое доказательство глобального min при любых фазах, а не только конечная выборка. beltWidthFraction=0.20, center nearest at epoch 30–50d — исходные настройки. Если placement невозможен, конечная детерминированная ошибка до публикации.
 
 ## C-02 — версии и descriptor
@@ -48,9 +51,9 @@ New Game открывает локальный вид около игрока; �
 Реализованный Client internal enum MapDetailLevel { Local, Region, Cluster, System } и MapDetailPolicy, pure function snapshot+camera+viewport+previousLevel.
 Пороги по short-side span при reference speed: Local <=4ч, Region до4д, Cluster до30д, System выше; hysteresis 10% на выход/вход, тестировать граничные переходы. Допустима перекалибровка только записанным изменением assumptions с native evidence.
 Local: отдельные local objects/ресурсы, ближайшая станция, selected и nav target. Никакого отсева реальных близких станций только ради выполнения E18-AC-06.
-Region: станции и компактные resource fields; Cluster: все station members, selected connections и имя кластера; System: доменные cluster markers, планеты, Солнце, пояса. Экранные spatial cells — лишь средство снижения плотности; они не меняют membership.
+Region: станции и компактные resource fields; Cluster: все station members, selected connections и имя кластера; System: при экранном диаметре до 220 px показывается сводный маркер дистрикта с усреднённой орбитой, выше порога видны отдельные станции и их орбиты. Экранные spatial cells агрегируют остальные контакты без изменения membership.
 Selected/player/nav target сохраняют индивидуальную видимость и hit target; агрегация не создаёт фиктивную station identity. На дальнем масштабе click marker -> fit cluster; station -> local focus через явное действие. Переключение LOD не переносит world objects.
-Орбиты: planet orbits на overview при ShowOrbits; station orbit — выбранной станции; asteroid orbit — выбранного asteroid только при включённом ShowOrbits. Учитывать родительскую орбиту docked target; deduplicate identical curves. Planet/body bounds и whole belts входят в FitSystem.
+Орбиты: при ShowOrbits рисовать орбиты объектов с видимым маркером на любом масштабе, включая неопознанные контакты. Заводы исключить. Кривые с экранным расхождением до двух пикселей рисовать один раз. Planet/body bounds и whole belts входят в FitSystem.
 Не раскрывать скрытые composition/mass или NPC plans ради подписи/агрегации.
 
 ## C-07 — измерения и приёмка

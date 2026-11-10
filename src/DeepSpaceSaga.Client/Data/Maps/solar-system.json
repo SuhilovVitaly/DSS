@@ -1,6 +1,7 @@
 {
   "schemaVersion": 1,
   "generatorVersion": 2,
+  "distanceScale": 32.60774917289522,
   "maxPlacementAttempts": 64,
   "minPlanets": 3,
   "maxPlanets": 7,

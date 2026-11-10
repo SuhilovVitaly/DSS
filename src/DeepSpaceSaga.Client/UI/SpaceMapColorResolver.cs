@@ -25,6 +25,7 @@ internal static class SpaceMapColorResolver
                 _ => NpcNeutralColor
             },
             SpaceObjectType.Asteroid => AsteroidColor,
+            SpaceObjectType.Factory => FactoryColor,
             SpaceObjectType.Container => ContainerColor,
             SpaceObjectType.Station => StationColor,
             SpaceObjectType.Planet => PlanetColor,
@@ -40,6 +41,7 @@ internal static class SpaceMapColorResolver
     internal static readonly SKColor NpcEnemyColor = new(240, 128, 136);
     internal static readonly SKColor NpcFriendColor = new(101, 201, 165);
     internal static readonly SKColor AsteroidColor = new(165, 180, 194, 217);
+    internal static readonly SKColor FactoryColor = new(130, 191, 180, 230);
     internal static readonly SKColor ContainerColor = new(180, 154, 224, 230);
     internal static readonly SKColor StationColor = new(201, 173, 125);
     internal static readonly SKColor PlanetColor = new(201, 173, 125, 230);

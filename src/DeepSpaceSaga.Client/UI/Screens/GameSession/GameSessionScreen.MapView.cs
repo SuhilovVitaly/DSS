@@ -46,7 +46,7 @@ public sealed partial class GameSessionScreen
         if (!changed) return false;
         _zoomTransition.Cancel(); _mapCameraInitialized = false; MapDetail = MapDetailLevel.Local;
         _mapClusters.Clear(); _mapSummaryLabels.Clear(); _visibleSummaryLabels.Clear(); _mapSummaryLabelRects.Clear();
-        _clusteredObjectIds.Clear(); _clusterCells.Clear(); _clusterCellPool.Clear();
+        _clusteredObjectIds.Clear(); _clusterCells.Clear(); _clusterCellPool.Clear(); _districtOrbitMemberIds.Clear();
         _selectionCycle = []; _selectionCycleIndex = 0;
         _fittedBeltId = null; _fittedClusterId = null; _navigationTargetId = null;
         _selectedFieldId = null; _selectedPoiId = null; _selectedObjectId = snapshot.SelectedObjectId; _activeObjectId = null;
@@ -60,6 +60,7 @@ public sealed partial class GameSessionScreen
     private readonly SKPaint _mapMarkerPaint = new() { IsAntialias = true };
     private readonly HashSet<string> _clusteredObjectIds = new(StringComparer.Ordinal);
     private readonly List<MapCluster> _mapClusters = new();
+    private readonly HashSet<string> _districtOrbitMemberIds = new(StringComparer.Ordinal);
     private readonly List<SummaryLabel> _mapSummaryLabels = new();
     private readonly List<SummaryLabel> _visibleSummaryLabels = new();
     private readonly List<SKRect> _mapSummaryLabelRects = new();
@@ -73,7 +74,7 @@ public sealed partial class GameSessionScreen
     private string? _navigationTargetId;
     private string? _fittedBeltId;
     private string? _fittedClusterId;
-    internal MapLayerFlags MapLayers { get; private set; } = MapLayerFlags.All;
+    internal MapLayerFlags MapLayers { get; private set; } = MapLayerFlags.All & ~MapLayerFlags.PointsOfInterest;
     internal bool ShowOrbits => MapLayers.HasFlag(MapLayerFlags.Orbits);
     private void ToggleMapLayer(MapLayerFlags layer)
     {
@@ -88,7 +89,8 @@ public sealed partial class GameSessionScreen
     internal int MapClusterCount => _mapClusters.Count;
     internal IReadOnlySet<string> AggregatedMapObjectIds => _clusteredObjectIds;
     internal bool IsZoomAnimating => _zoomTransition.Active;
-    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds, string? Name = null, string? ClusterId = null);
+    private readonly record struct MapCluster(double X, double Y, int Count, MapWorldBounds Bounds, string? Name = null,
+        string? ClusterId = null, MapOrbitCurve? Orbit = null);
     private string[] _selectionCycle = [];
     private int _selectionCycleIndex;
     private float _selectionCycleX, _selectionCycleY;
@@ -130,8 +132,7 @@ public sealed partial class GameSessionScreen
     }
 
     private bool IsImportantMapObject(string id) => id == _selectedObjectId || id == _activeObjectId || id == _navigationTargetId ||
-        id == _mapPresentationSnapshot?.PlayerShipObjectId ||
-        AiMapPresentation.Base(_mapPresentationSnapshot, id) is not null;
+        id == _mapPresentationSnapshot?.PlayerShipObjectId;
     private bool IsPrimaryMapLabel(string id) => id == _selectedObjectId || id == _navigationTargetId ||
         id == _mapPresentationSnapshot?.PlayerShipObjectId;
     private static bool HasSelectableMapLabel(ObjectMotionSnapshot source) => ObjectLabelRenderer.HasSelectableShipLabel(source) ||
@@ -164,18 +165,38 @@ public sealed partial class GameSessionScreen
             cell.Clear();
             _clusterCellPool.Push(cell);
         }
-        _mapClusters.Clear(); _clusteredObjectIds.Clear(); _clusterCells.Clear();
+        _mapClusters.Clear(); _clusteredObjectIds.Clear(); _clusterCells.Clear(); _districtOrbitMemberIds.Clear();
+        if (_mapPresentationSnapshot?.AiMap is { Bases.IsDefaultOrEmpty: false } ai)
+        {
+            foreach (var aiBase in ai.Bases) _clusteredObjectIds.Add(aiBase.ObjectId);
+            if (_selectedObjectId is { } id && _clusteredObjectIds.Contains(id)) SetSelectedObjectId(null);
+        }
         MapDetail = MapDetailPolicy.Resolve(_viewportW, _viewportH, _camera.PixelsPerWorldUnit, MapReferenceSpeed, MapDetail);
         var map = _mapPresentationSnapshot?.ClusterMap;
         if (map is not null && !map.Clusters.IsDefaultOrEmpty)
         {
+            foreach (var state in _renderStates)
+            {
+                var pose = state.Pose;
+                if (pose.RenderObjectType != SpaceObjectType.Factory || IsImportantMapObject(pose.ObjectId)) continue;
+                const double minimumFactorySeparationPx = 12;
+                double separationPx = double.Hypot(state.Source.WorldOffsetX, state.Source.WorldOffsetY) * _camera.PixelsPerWorldUnit;
+                if (MapDetail == MapDetailLevel.System || separationPx < minimumFactorySeparationPx)
+                    _clusteredObjectIds.Add(pose.ObjectId);
+            }
             var poses = _renderStates.Select(s => s.Predicted);
             if (MapDetail == MapDetailLevel.System)
             {
                 foreach (var marker in ClusterMapPresentation.DomainMarkers(map, poses))
                 {
-                    foreach (string id in marker.MemberIds) if (!IsImportantMapObject(id)) _clusteredObjectIds.Add(id);
-                    _mapClusters.Add(new(marker.X, marker.Y, marker.MemberIds.Length, marker.Bounds, marker.Name, marker.Id));
+                    const double districtSummaryDiameterPx = 220;
+                    if (marker.Diameter * _camera.PixelsPerWorldUnit > districtSummaryDiameterPx) continue;
+                    _mapClusters.Add(new(marker.X, marker.Y, marker.MemberIds.Length, marker.Bounds, marker.Name, marker.Id, marker.Orbit));
+                    foreach (string id in marker.MemberIds)
+                    {
+                        _districtOrbitMemberIds.Add(id);
+                        if (!IsPrimaryMapLabel(id)) _clusteredObjectIds.Add(id);
+                    }
                 }
                 foreach (var state in _renderStates)
                     if (state.Pose.RenderObjectType == SpaceObjectType.Asteroid && !IsImportantMapObject(state.Pose.ObjectId))
@@ -196,7 +217,7 @@ public sealed partial class GameSessionScreen
         {
             var p = state.Pose;
             if (_clusteredObjectIds.Contains(p.ObjectId) || map?.Stations.Any(s => s.ObjectId == p.ObjectId) == true) continue;
-            if (IsImportantMapObject(p.ObjectId) || p.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet) continue;
+            if (IsImportantMapObject(p.ObjectId) || p.RenderObjectType is SpaceObjectType.Sun or SpaceObjectType.Planet or SpaceObjectType.Factory or SpaceObjectType.Station) continue;
             if (p is { RenderObjectType: SpaceObjectType.NpcShip, RelationToPlayer: PlayerRelation.Enemy }) continue;
             var (sx, sy) = _camera.WorldToScreen(p.X, p.Y, _viewportW, _viewportH);
             if (sx < -40 || sy < -40 || sx > _viewportW + 40 || sy > _viewportH + 40) continue;
@@ -216,6 +237,17 @@ public sealed partial class GameSessionScreen
             }
             _mapClusters.Add(new(bounds.MinX + (bounds.MaxX - bounds.MinX) / 2,
                 bounds.MinY + (bounds.MaxY - bounds.MinY) / 2, cell.Count, bounds));
+        }
+    }
+
+    private IEnumerable<MapOrbitCurve> VisibleDistrictOrbits()
+    {
+        foreach (var cluster in _mapClusters)
+        {
+            if (cluster.Orbit is not { } orbit) continue;
+            var (x, y) = _camera.WorldToScreen(cluster.X, cluster.Y, _viewportW, _viewportH);
+            if (TacticalMapMarkerPolicy.IsInViewport(x, y, 15, _viewportW, _viewportH))
+                yield return orbit;
         }
     }
 
@@ -346,14 +378,19 @@ public sealed partial class GameSessionScreen
         if (_viewportW <= 0 || _viewportH <= 0) return false;
         var bounds = ClusterMapPresentation.StationBounds(stationId, _renderStates.Select(s => s.Predicted));
         if (!bounds.HasValue) return false;
+        _selectionCycle = []; _selectionCycleIndex = 0;
+        _visibleSummaryLabels.Clear();
+        if (bounds.MinX != bounds.MaxX || bounds.MinY != bounds.MaxY)
+        {
+            FitMapBounds(bounds);
+            return true;
+        }
         _zoomTransition.Cancel(); _isFocusAttachedToPlayer = false; _isPanningMap = false;
         double ppu = LocalMaximumPpu;
         _camera.SetZoom(ppu, _mapSettings.MinimumPpu, ppu);
         var free = AvailableMapRect();
         _camera.SetFocus(bounds.MinX - (free.MidX - _viewportW / 2d) / ppu,
             bounds.MinY - (free.MidY - _viewportH / 2d) / ppu);
-        _selectionCycle = []; _selectionCycleIndex = 0;
-        _visibleSummaryLabels.Clear();
         UpdateMapClusters();
         return true;
     }
@@ -433,7 +470,7 @@ public sealed partial class GameSessionScreen
         var emitted = new HashSet<string>(StringComparer.Ordinal);
         var ship = FindPlayerShip(_renderStates)?.Predicted;
         foreach (var state in _renderStates)
-            if (!state.IsPlayerShip && IsImportantMapObject(state.Pose.ObjectId))
+            if (!state.IsPlayerShip && IsImportantMapObject(state.Pose.ObjectId) && !_clusteredObjectIds.Contains(state.Pose.ObjectId))
                 Draw(state.Pose.ObjectId, state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
         if (ship?.NavigationTargetX is { } tx && ship.NavigationTargetY is { } ty &&
             (_navigationTargetId is null || !_renderStates.Any(s => s.Pose.ObjectId == _navigationTargetId)))
@@ -566,7 +603,8 @@ public sealed partial class GameSessionScreen
         {
             1 => (_selectedObjectId is not null && _selectedObjectId != ship.ObjectId) || ship.NavigationTargetX is not null,
             2 => ship.NavigationTargetX is not null,
-            5 => _mapPresentationSnapshot?.SolarSystemMap is not null,
+            5 => _mapPresentationSnapshot?.SolarSystemMap is not null || _renderStates.Any(s =>
+                s.Source.Orbit is not null && s.Pose.RenderObjectType != SpaceObjectType.Factory),
             6 => _mapPresentationSnapshot?.SolarSystemMap?.Belts.Length > 0,
             7 => _mapPresentationSnapshot?.ClusterMap?.Clusters.Length > 0,
             11 => _selectedObjectId is not null && _renderStates.Any(s => s.Pose.ObjectId == _selectedObjectId && s.Pose.RenderObjectType == SpaceObjectType.Station),

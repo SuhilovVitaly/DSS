@@ -10,6 +10,15 @@ namespace DeepSpaceSaga.Client.Tests;
 
 public sealed class PoiMapSelectionTests
 {
+    private static void EnablePoi(GameSessionScreen screen, SKCanvas canvas)
+    {
+        var button = screen.MapViewButtonRects[10];
+        screen.OnMouseDown(button.MidX, button.MidY);
+        screen.OnMouseUp(button.MidX, button.MidY);
+        screen.Render(canvas, 1920, 1080);
+        Assert.True(screen.MapLayers.HasFlag(MapLayerFlags.PointsOfInterest));
+    }
+
     [Fact]
     public void DetailTransitionsPreservePoiAndResourceSelection()
     {
@@ -27,6 +36,7 @@ public sealed class PoiMapSelectionTests
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
         using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, 1920, 1080);
+        EnablePoi(screen, canvas);
         screen.OnMouseDown(1260, 540); screen.OnMouseUp(1260, 540);
         Assert.Equal("poi", screen.SelectedPoiId);
         var overview = screen.ScaleButtonRects[4]; screen.OnMouseDown(overview.MidX, overview.MidY);
@@ -57,7 +67,12 @@ public sealed class PoiMapSelectionTests
     {
         var buffer = new SnapshotBuffer(); buffer.Update(Snapshot()); var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
         using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
-        screen.Render(canvas, 1920, 1080); screen.OnMouseDown(960, 540); screen.OnMouseUp(960, 540);
+        screen.Render(canvas, 1920, 1080);
+        Assert.False(screen.MapLayers.HasFlag(MapLayerFlags.PointsOfInterest));
+        screen.OnMouseDown(1260, 540); screen.OnMouseUp(1260, 540);
+        Assert.Null(screen.SelectedPoiId);
+        EnablePoi(screen, canvas);
+        screen.OnMouseDown(960, 540); screen.OnMouseUp(960, 540);
         screen.OnMouseDown(1260, 540); screen.OnMouseUp(1260, 540); screen.Render(canvas, 1920, 1080);
         Assert.Equal("poi", screen.SelectedPoiId); Assert.Equal("ship", screen.SelectedObjectId); Assert.Null(screen.SelectedFieldId);
         var lines = ObjectInfoPanel.BuildLines(screen.SelectedOrActiveObjectInfo);
@@ -102,6 +117,7 @@ public sealed class PoiMapSelectionTests
         handle.Buffer.Update(Snapshot()); var screen = new GameSessionScreen(handle.Buffer, new LinearMotionPredictor(), handle);
         using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
         screen.Render(canvas, 1920, 1080);
+        EnablePoi(screen, canvas);
         for (int i = 0; i < 3; i++) { screen.OnMouseDown(1260, 540); screen.OnMouseUp(1260, 540); screen.Render(canvas, 1920, 1080); }
         Assert.Equal("poi", screen.SelectedPoiId); Assert.False(screen.IsModuleCommandEnabled(NavigationComputerCommandTypes.Dock));
         foreach (var button in screen.CommandsPanel.AllCommandButtons.Where(b => b.CommandTypeId == NavigationComputerCommandTypes.Dock))

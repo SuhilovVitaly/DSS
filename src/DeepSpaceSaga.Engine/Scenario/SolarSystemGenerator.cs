@@ -22,6 +22,7 @@ internal static class SolarSystemGenerator
         GameDataRegistry registry, ulong masterSeed)
     {
         SolarSystemGeneration.ValidateConfig(config);
+        config = config.WithScaledDistances();
         if (source.GameState.SolarSystem is not null)
             throw new ScenarioException("solar-system/v1: New Game already has a materialized system.");
         var objects = source.GameState.SpaceObjects.OrderBy(o => o.ObjectId, StringComparer.Ordinal).ToArray();
@@ -57,6 +58,12 @@ internal static class SolarSystemGenerator
         double min = objects.Min(o => Math.Sqrt(o.PositionX * o.PositionX + o.PositionY * o.PositionY));
         double max = objects.Max(o => Math.Sqrt(o.PositionX * o.PositionX + o.PositionY * o.PositionY));
         double halfWidth = radius * c.BeltWidthFraction / 2;
+        if (c.GeneratorVersion == 2 && c.Clusters is { } clusters)
+        {
+            int lanes = StationGeographyV2.ClusterCount(clusters, seed);
+            // Add the space occupied by the station spread while retaining the configured gap budget.
+            halfWidth += (2 * (lanes / 2) + 1) * StationGeographyV2.LaneHalfWidth(clusters, radius / days);
+        }
         var corridors = new List<(double Inner, double Outer)> { (Math.Min(radius - halfWidth, min - c.OrbitClearanceWorld), Math.Max(radius + halfWidth, max + c.OrbitClearanceWorld)) };
         if (corridors[0].Inner <= 0 || corridors[0].Outer >= radius * 2.5)
             throw new PlacementException("start corridor does not fit");
@@ -160,6 +167,46 @@ internal static class SolarSystemGenerator
                 if (!placed) throw new PlacementException($"belt {belt.Id} asteroid {index + 1} clearance exhausted");
             }
         }
+    }
+
+    internal static GameStateData BindScenarioAsteroidOrbits(GameStateData source, GameStateData world,
+        SolarSystemGenerationConfig config, GameDataRegistry registry)
+    {
+        var asteroidIds = source.SpaceObjects.Where(o => o.ObjectType == SpaceObjectType.Asteroid)
+            .Select(o => o.ObjectId).ToHashSet(StringComparer.Ordinal);
+        if (asteroidIds.Count == 0) return world;
+
+        var system = world.SolarSystem!;
+        var orbits = system.Orbits.ToBuilder();
+        var player = world.SpaceObjects.Single(o => o.ObjectId == world.PlayerShipObjectId);
+        double defaultSpeed = OperationalMaxSpeedKmS(player, registry)!.Value * config.OrbitSpeedFraction;
+        var objects = world.SpaceObjects.Select(obj =>
+        {
+            if (!asteroidIds.Contains(obj.ObjectId) || obj.Orbit is not null) return obj;
+            double radius = double.Hypot(obj.PositionX, obj.PositionY);
+            if (radius == 0) return obj;
+            double phase = (Math.Atan2(obj.PositionX, -obj.PositionY) * 180 / Math.PI + 360) % 360;
+            double speed = obj.SpeedMps > 0 ? obj.SpeedMps / 1000 : defaultSpeed;
+            double periodAtUnitSpeed = Math.Tau * radius / 10 * 1000 * SimulationSpeedExtensions.BaseGameSecondsPerRealSecond;
+            double period = Math.Max(1, Math.Round(periodAtUnitSpeed / speed));
+            if (obj.PersistenceType == "Temporary")
+            {
+                // Keep the sampled speed inside the save format's bounds after integer period rounding.
+                double minimumPeriod = Math.Floor(periodAtUnitSpeed / 20) + 1;
+                double maximumPeriod = Math.Ceiling(periodAtUnitSpeed / 0.1) - 1;
+                if (maximumPeriod >= minimumPeriod) period = Math.Clamp(period, minimumPeriod, maximumPeriod);
+            }
+            if (!double.IsFinite(period) || period >= long.MaxValue)
+                throw new ScenarioException($"{obj.ObjectId}: scenario asteroid orbital period exceeds the supported range.");
+            double headingDifference = (obj.DirectionDegrees - phase - 90) * Math.PI / 180;
+            string direction = Math.Cos(headingDifference) >= 0 ? "clockwise" : "counterclockwise";
+            var orbit = new OrbitalElements(radius, radius, (long)period, (int)phase, phase - (int)phase, world.MotionTimeMs, direction);
+            orbits.Add(new(obj.ObjectId, orbit));
+            return obj with { Orbit = orbit, MovementType = "Orbital" };
+        }).ToArray();
+        var result = world with { SpaceObjects = objects, SolarSystem = system with { Orbits = orbits.ToImmutable() } };
+        SolarSystemGeneration.ValidateWorld(result);
+        return result;
     }
 
     internal static OrbitalElements CircularOrbit(double radius, double phase, double vmax,

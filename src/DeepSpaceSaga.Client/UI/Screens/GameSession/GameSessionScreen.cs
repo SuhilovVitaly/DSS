@@ -1160,7 +1160,9 @@ public sealed partial class GameSessionScreen : IScreen
         _fieldGeometry = buffered is null ? [] : EnvironmentFieldRenderer.Resolve(buffered.Snapshot,
             _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
         if (_selectedFieldId is not null && !_fieldGeometry.Any(f => f.Data.Id == _selectedFieldId)) _selectedFieldId = null;
-        _poiGeometry = buffered is null ? [] : AiMapPresentation.Points(buffered.Snapshot, _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs);
+        _poiGeometry = buffered is not null && MapLayers.HasFlag(MapLayerFlags.PointsOfInterest)
+            ? AiMapPresentation.Points(buffered.Snapshot, _renderStates.Select(s => s.Predicted), _travelEstimateMotionTimeMs)
+            : [];
         if (_selectedPoiId is not null && !_poiGeometry.Any(p => p.Data.ObjectId == _selectedPoiId)) _selectedPoiId = null;
 
         UpdateCameraFocusFromPlayer(_renderStates);
@@ -1180,11 +1182,8 @@ public sealed partial class GameSessionScreen : IScreen
         // 1. Grid
         _grid.Draw(canvas, _camera, width, height);
 
-        if (buffered?.Snapshot.SolarSystemMap is { } systemMap)
-        {
-            _solarSystemLayer.Draw(canvas, systemMap, _camera, SKRect.Create(width, height), ShowOrbits, MapDetail,
-                _renderStates.Select(s => s.Predicted).ToArray(), _selectedObjectId, _navigationTargetId, buffered.Snapshot.PlayerShipObjectId);
-        }
+        _solarSystemLayer.Draw(canvas, buffered?.Snapshot.SolarSystemMap, _camera, SKRect.Create(width, height),
+            ShowOrbits, _renderStates, _clusteredObjectIds, VisibleDistrictOrbits(), _districtOrbitMemberIds);
 
         // 2. Camera focus indicator
         if (buffered is not null)
@@ -1241,6 +1240,7 @@ public sealed partial class GameSessionScreen : IScreen
             RecomputeActiveObjectId();
 
             // 3.75. Label leader lines (behind objects)
+            ClusterMapPresentation.DrawFactoryLinks(canvas, _renderStates, _clusteredObjectIds, _camera, width, height);
             _labelRenderer.DrawLeaders(canvas, _renderStates, width, height, _camera);
             RenderStageCompleted?.Invoke("label_leaders");
 
@@ -1258,9 +1258,7 @@ public sealed partial class GameSessionScreen : IScreen
                     // the payload — legacy payloads without RenderObjectType still draw as a ship.
                     float r = TacticalMapMarkerPolicy.GetMarkerRadiusPx(
                         state.IsPlayerShip ? SpaceObjectType.PlayerShip : state.Pose.RenderObjectType);
-                    // Include halo, reticle and engine flame extents, not just the core.
-                    float margin = r * 5 + 4;
-                    if (sx < -margin || sy < -margin || sx > width + margin || sy > height + margin)
+                    if (!TacticalMapMarkerPolicy.IsInViewport(sx, sy, r, width, height))
                         continue;
 
                     if (state.Pose.RenderObjectType == SpaceObjectType.Planet && buffered?.Snapshot.SolarSystemMap is { } planetMap)
@@ -1691,6 +1689,7 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var kvp in _trailStore.Trails)
         {
+            if (AiMapPresentation.Base(_mapPresentationSnapshot, kvp.Key) is not null) continue;
             if (_camera.PixelsPerWorldUnit < _mapSettings.TrailDetailPpu && !IsImportantMapObject(kvp.Key)) continue;
             var points = kvp.Value;
             if (points.Count < 2)
@@ -1771,6 +1770,9 @@ public sealed partial class GameSessionScreen : IScreen
 
         foreach (var state in _renderStates)
         {
+            if (state.Pose.RenderObjectType == SpaceObjectType.Factory)
+                continue;
+
             // The player ship always gets its own ballistic preview (subject to the
             // Approach exclusion below). A non-player object only gets one when it is
             // the current SelectedObjectId — e.g. the target of an active
@@ -1781,6 +1783,8 @@ public sealed partial class GameSessionScreen : IScreen
                 (state.Pose.ObjectId == _selectedObjectId || state.Pose.ObjectId == _navigationTargetId);
 
             if (!state.IsPlayerShip && !isSelectedTarget)
+                continue;
+            if (isSelectedTarget && AiMapPresentation.Base(_mapPresentationSnapshot, state.Pose.ObjectId) is not null)
                 continue;
 
             if (!(state.Pose.SpeedKmS > 0 || state.Pose.ActiveEngineCommandType is not null))

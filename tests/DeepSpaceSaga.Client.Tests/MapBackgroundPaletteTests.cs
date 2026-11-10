@@ -8,11 +8,8 @@ namespace DeepSpaceSaga.Client.Tests;
 public class MapBackgroundPaletteTests
 {
     [Theory]
-    [InlineData("Radiation", -1, 15, 64)]
-    [InlineData("Radiation", .5, 23, 64)]
-    [InlineData("Radiation", 2, 31, 64)]
-    [InlineData("Dust", -1, 13, 51)]
-    [InlineData("Dust", .5, 19, 51)]
+    [InlineData("Debris", -1, 13, 51)]
+    [InlineData("Debris", .5, 19, 51)]
     [InlineData("Debris", 2, 26, 51)]
     public void Field_fill_clamps_intensity_and_raster_uses_the_fill(string kind, double intensity, byte fillAlpha, byte borderAlpha)
     {

@@ -26,6 +26,13 @@ If a supplied artifact is outside Board, locate its canonical Board version;
 if none exists, record the gap and create a Board artifact only within the
 user-authorized planning scope. Do not implement from an external copy.
 
+## Исправления и доделки
+
+- Для каждого исправления бага, регрессии или небольшой доделки заведи или обнови отдельный тикет в [постоянном эпике `EP-maintenance`](../../Board/EP-maintenance/Documentation.md). Укажи проблему или требуемый результат, а перед публикацией запиши статус и выполненные проверки.
+- Продолжение уже заведённой работы веди в существующем тикете и его user story.
+- После завершения тикета в `EP-maintenance` перенеси его папку в `EP-maintenance/Done/<папка истории>/`. Когда завершена вся история, перенеси её документ и оставшиеся материалы в ту же папку. Активные истории и тикеты держи вне `Done`. Ищи существующие ID в обеих частях эпика, сохраняй ID и обновляй ссылки при переносе.
+- При `git push` исправления или доделки включай в тот же пуш в ту же удалённую ветку коммит с соответствующим новым или обновлённым тикетом. Если для тикета понадобилась новая user story, публикуй её тем же пушем.
+
 ## Validation artifacts
 
 - Run builds and tests from the DSS repository root.
