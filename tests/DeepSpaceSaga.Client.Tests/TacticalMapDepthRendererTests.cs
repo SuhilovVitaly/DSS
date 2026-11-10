@@ -200,108 +200,34 @@ public class TacticalMapDepthRendererTests
     }
 
     [Fact]
-    public void Focus_indicator_leaves_the_exact_center_point_unpainted()
+    public void Focus_indicator_draws_half_size_cross_in_existing_color()
     {
         var renderer = new TacticalMapDepthRenderer();
-
-        // Indicator's own footprint (corner radius 26 + tick gap 4 + tick length 14
-        // = 44px from center) needs more room than the shared 64px CanvasSize, so
-        // this test uses a larger canvas.
-        const int canvasSize = 128;
-        const float centerX = 64f;
-        const float centerY = 64f;
-
-        using var bitmap = new SKBitmap(canvasSize, canvasSize);
+        using var bitmap = new SKBitmap(128, 128);
         using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Black);
+        canvas.Clear(SKColors.Transparent);
+        renderer.DrawFocusIndicator(canvas, 64.5f, 64.5f);
 
-        renderer.DrawFocusIndicator(canvas, centerX, centerY);
+        Assert.InRange(bitmap.GetPixel(64, 64).Alpha, 100, 104);
+        foreach (var (dx, dy) in new[] { (1, 0), (-1, 0), (0, 1), (0, -1) })
+        {
+            var arm = bitmap.GetPixel(64 + dx * 12, 64 + dy * 12);
+            Assert.InRange(arm.Red, 149, 153);
+            Assert.InRange(arm.Green, 166, 170);
+            Assert.InRange(arm.Blue, 182, 186);
+            Assert.InRange(arm.Alpha, 100, 104);
+            Assert.NotEqual(0, bitmap.GetPixel(64 + dx * 22, 64 + dy * 22).Alpha);
+            Assert.Equal(0, bitmap.GetPixel(64 + dx * 23, 64 + dy * 23).Alpha);
+        }
 
-        SKColor center = bitmap.GetPixel((int)centerX, (int)centerY);
-        Assert.Equal(SKColors.Black, center);
-    }
-
-    [Fact]
-    public void Focus_indicator_draws_a_visible_corner_bracket_arm()
-    {
-        var renderer = new TacticalMapDepthRenderer();
-
-        const int canvasSize = 128;
-        const float centerX = 64f;
-        const float centerY = 64f;
-
-        using var bitmap = new SKBitmap(canvasSize, canvasSize);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Black);
-
-        renderer.DrawFocusIndicator(canvas, centerX, centerY);
-
-        // A few px in from the top-left corner (26,26 away from center) along its
-        // horizontal arm (running toward the center).
-        SKColor bracketArm = bitmap.GetPixel((int)(centerX - 26 + 4), (int)(centerY - 26));
-        Assert.NotEqual(SKColors.Black, bracketArm);
-    }
-
-    [Fact]
-    public void Focus_indicator_draws_a_visible_axis_tick_mark()
-    {
-        var renderer = new TacticalMapDepthRenderer();
-
-        const int canvasSize = 128;
-        const float centerX = 64f;
-        const float centerY = 64f;
-
-        using var bitmap = new SKBitmap(canvasSize, canvasSize);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Black);
-
-        renderer.DrawFocusIndicator(canvas, centerX, centerY);
-
-        // Midway along the top tick's length (starts at 26+4=30 from center,
-        // extends 14px further, so 30+7=37 lands in the middle of it).
-        SKColor tick = bitmap.GetPixel((int)centerX, (int)(centerY - 26 - 4 - 7));
-        Assert.NotEqual(SKColors.Black, tick);
-    }
-
-    [Fact]
-    public void Focus_indicator_is_bounded_beyond_the_tick_tips()
-    {
-        var renderer = new TacticalMapDepthRenderer();
-
-        const int canvasSize = 128;
-        const float centerX = 64f;
-        const float centerY = 64f;
-
-        using var bitmap = new SKBitmap(canvasSize, canvasSize);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Black);
-
-        renderer.DrawFocusIndicator(canvas, centerX, centerY);
-
-        // Past the right tick's outer end (26+4+14=44 from center).
-        SKColor beyond = bitmap.GetPixel((int)(centerX + 50), (int)centerY);
-        Assert.Equal(SKColors.Black, beyond);
-    }
-
-    [Fact]
-    public void Focus_indicator_has_a_real_gap_between_bracket_and_tick()
-    {
-        var renderer = new TacticalMapDepthRenderer();
-
-        const int canvasSize = 128;
-        const float centerX = 64f;
-        const float centerY = 64f;
-
-        using var bitmap = new SKBitmap(canvasSize, canvasSize);
-        using var canvas = new SKCanvas(bitmap);
-        canvas.Clear(SKColors.Black);
-
-        renderer.DrawFocusIndicator(canvas, centerX, centerY);
-
-        // 2px into the 4px gap above the top bracket level, below where the top
-        // tick starts — proves the bracket and tick are genuinely disconnected.
-        SKColor gap = bitmap.GetPixel((int)centerX, (int)(centerY - 26 - 2));
-        Assert.Equal(SKColors.Black, gap);
+        for (int y = 0; y < bitmap.Height; y++)
+        {
+            for (int x = 0; x < bitmap.Width; x++)
+            {
+                if (Math.Abs(x - 64) > 1 && Math.Abs(y - 64) > 1)
+                    Assert.Equal(0, bitmap.GetPixel(x, y).Alpha);
+            }
+        }
     }
 
     private static int Luminance(SKColor color)

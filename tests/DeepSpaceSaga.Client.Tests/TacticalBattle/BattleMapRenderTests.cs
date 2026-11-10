@@ -45,14 +45,29 @@ public sealed class BattleMapRenderTests
         };
         var results = new TacticalBattleResults(state, state.Shots, [], 0);
         long arrivalMs = (long)(TacticalBattleResults.InitialDelayMs + TacticalBattleResults.FlightMs);
-        using var flying = Raster(frame with { Battle = results.Project(arrivalMs - 1), Salvo = results.Capture(arrivalMs - 1) });
+        var liveLayout = new BattleLayout();
+        var wreckLayout = new BattleLayout();
+        using var flying = Record(frame with { Battle = results.Project(arrivalMs - 1), Salvo = results.Capture(arrivalMs - 1) }, liveLayout);
         var arrival = results.Capture(arrivalMs);
         Assert.True(arrival.InFlight);
-        using var impact = Raster(frame with { Battle = results.Project(arrivalMs), Salvo = arrival });
+        using var impact = Record(frame with { Battle = results.Project(arrivalMs), Salvo = arrival }, wreckLayout);
         using var movement = Raster(frame with { Presentation = TacticalBattlePresentation.Current });
-        Assert.Equal(TacticalBattleMapRenderer.Enemy, flying.GetPixel(490, 360));
+        Assert.NotEmpty(MarkerPixels(flying, new SKPoint(490, 360), TacticalBattleMapRenderer.Enemy));
         Assert.NotEqual(flying.GetPixel(490, 360), impact.GetPixel(490, 360));
         Assert.Equal(impact.GetPixel(490, 360), movement.GetPixel(490, 360));
+        string name = PilotCardModel.Name(enemy);
+        Assert.Contains(liveLayout.Texts, text => text.Text == name && text.Color == BattleDesign.Text);
+        Assert.Contains(wreckLayout.Texts, text => text.Text == name && text.Color == BattleDesign.Muted);
+        var label = wreckLayout.Rects["label:" + enemy.Id];
+        Assert.InRange(label.Height, 11, 13);
+        Assert.False(label.IntersectsWith(new SKRect(483, 353, 497, 367)));
+
+        static SKBitmap Record(TacticalBattleFrame current, BattleLayout layout)
+        {
+            BattleDesign.Recording = layout;
+            try { return Raster(current); }
+            finally { BattleDesign.Recording = null; }
+        }
 
     }
 
@@ -97,6 +112,7 @@ public sealed class BattleMapRenderTests
             using var withoutTrail = Raster(frame with { Battle = frame.Battle with { Paths = [] } });
             Assert.Contains(Enumerable.Range(221, 24), x =>
                 withTrail.GetPixel(x, 360).Green > withoutTrail.GetPixel(x, 360).Green + 15);
+            Assert.Contains(Enumerable.Range(221, 24), x => withTrail.GetPixel(x, 360) == withoutTrail.GetPixel(x, 360));
         }
     }
 
@@ -138,13 +154,163 @@ public sealed class BattleMapRenderTests
         using var classic = Raster(frame);
         using var contrast = Raster(frame, skin);
 
-        Assert.Equal(TacticalBattleMapRenderer.Own, classic.GetPixel(340, 380));
-        Assert.Equal(new SKColor(117, 244, 209), contrast.GetPixel(340, 380));
+        Assert.Equal(TacticalBattleMapRenderer.Own, classic.GetPixel(340, 382));
+        Assert.Equal(new SKColor(117, 244, 209), contrast.GetPixel(340, 382));
         Assert.NotEqual(classic.GetPixel(25, 25), contrast.GetPixel(25, 25));
         Assert.NotEqual(classic.GetPixel(300, 380), contrast.GetPixel(300, 380));
         Assert.NotEqual(classic.GetPixel(630, 300), contrast.GetPixel(630, 300));
         Assert.Same(state, screen.Flow.State);
         Save(contrast, "contrast-field.png");
+    }
+
+    [Fact]
+    public async Task DroneSilhouettesFollowFrameAndCourse()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var own = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side == battle.PlayerSide);
+        var enemy = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side != battle.PlayerSide);
+        var units = new[]
+        {
+            own with { Id = "light", FrameId = "light", Pose = new(-19, 0, 270) },
+            own with { Id = "heavy", FrameId = "heavy", Pose = new(0, 0, 270) },
+            enemy with { Id = "thug", FrameId = "thug", Pose = new(19, 0, 270) }
+        };
+        var view = new TacticalBattleView(880, 720, 0, 0, 1);
+        var frame = new TacticalBattleFrame(battle with { Units = [.. units], Paths = [], Anomalies = [] },
+            view, SKRect.Empty, 1, false, "", EnemyForecast: false);
+        var rotated = frame with
+        {
+            Battle = frame.Battle with { Units = [.. units.Select(u => u with { Pose = u.Pose with { Course = 0 } })] }
+        };
+        var upLayout = new BattleLayout();
+        var rightLayout = new BattleLayout();
+        BattleDesign.Recording = upLayout;
+        try
+        {
+            using var up = Raster(frame);
+            BattleDesign.Recording = rightLayout;
+            using var right = Raster(rotated);
+            BattleDesign.Recording = null;
+            var masks = new List<HashSet<(int X, int Y)>>();
+            var upBounds = new List<SKRect>();
+            var rightBounds = new List<SKRect>();
+            foreach (var unit in units)
+            {
+                var center = view.Project(unit.Pose);
+                Assert.Equal(center, TacticalBattleMapRenderer.HoverPoint(frame, unit));
+                var color = unit.Side == battle.PlayerSide ? TacticalBattleMapRenderer.Own : TacticalBattleMapRenderer.Enemy;
+                var upPixels = MarkerPixels(up, center, color);
+                var rightPixels = MarkerPixels(right, center, color);
+                Assert.InRange(upPixels.Count, 10, 50);
+                Assert.InRange(upPixels.Count(p => rightPixels.Contains((-p.Y - 1, p.X))), upPixels.Count - 4, upPixels.Count);
+                Assert.All(upPixels, pixel => Assert.InRange(pixel.X, -5, 4));
+                Assert.Contains(upPixels, pixel => Math.Abs(pixel.X) <= 1 && Math.Abs(pixel.Y) <= 1);
+                masks.Add(upPixels);
+                upBounds.Add(PixelBounds(center, upPixels));
+                rightBounds.Add(PixelBounds(center, rightPixels));
+            }
+            Assert.False(masks[0].SetEquals(masks[1]));
+            Assert.False(masks[0].SetEquals(masks[2]));
+            Assert.False(masks[1].SetEquals(masks[2]));
+            AssertLabelsClear(upLayout, upBounds);
+            AssertLabelsClear(rightLayout, rightBounds);
+            using var selected = Raster(rotated with { SelectedDroneId = "heavy", HoverUnitId = "heavy" });
+            Save(selected, "modular-drone-silhouettes.png");
+        }
+        finally
+        {
+            BattleDesign.Recording = null;
+        }
+
+        static SKRect PixelBounds(SKPoint center, HashSet<(int X, int Y)> pixels) =>
+            new(center.X + pixels.Min(p => p.X), center.Y + pixels.Min(p => p.Y),
+                center.X + pixels.Max(p => p.X) + 1, center.Y + pixels.Max(p => p.Y) + 1);
+
+        void AssertLabelsClear(BattleLayout layout, List<SKRect> markerBounds)
+        {
+            var labels = units.Select(unit => layout.Rects["label:" + unit.Id]).ToArray();
+            for (int i = 0; i < labels.Length; i++)
+            {
+                Assert.DoesNotContain(markerBounds, bounds => labels[i].IntersectsWith(bounds));
+                Assert.DoesNotContain(labels.Take(i), label => labels[i].IntersectsWith(label));
+            }
+        }
+    }
+
+    [Fact]
+    public async Task UnknownDroneFrameKeepsSideMarker()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var own = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side == battle.PlayerSide) with
+        {
+            FrameId = "unknown",
+            Pose = new(-35, 0, 0)
+        };
+        var enemy = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side != battle.PlayerSide) with
+        {
+            FrameId = "unknown",
+            Pose = new(35, 0, 0)
+        };
+        var view = new TacticalBattleView(880, 720, 0, 0, 1);
+        var frame = new TacticalBattleFrame(battle with { Units = [own, enemy], Paths = [], Anomalies = [] },
+            view, SKRect.Empty, 1, false, "", EnemyForecast: false);
+        using var raster = Raster(frame);
+        var diamond = MarkerPixels(raster, view.Project(own.Pose), TacticalBattleMapRenderer.Own);
+        Assert.Contains((0, -3), diamond);
+        Assert.Contains((0, 2), diamond);
+        Assert.DoesNotContain((5, 5), diamond);
+        var triangle = MarkerPixels(raster, view.Project(enemy.Pose), TacticalBattleMapRenderer.Enemy);
+        Assert.Contains(triangle, pixel => pixel.X > 0 && Math.Abs(pixel.Y) <= 1);
+        Assert.Contains(triangle, pixel => pixel.X < 0 && pixel.Y >= 1);
+        Assert.DoesNotContain((5, 4), triangle);
+    }
+
+    [Fact]
+    public async Task Disabled_marker_is_grey_with_a_red_cross_even_at_the_same_hull_as_an_active_drone()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var unit = battle.Units.First(u => u.Kind == TacticalUnitKind.Drone && u.Side != battle.PlayerSide) with
+        {
+            Hull = 5,
+            MaxHull = 45,
+            Armor = 0,
+            Pose = new(0, 0, 270)
+        };
+        var frame = new TacticalBattleFrame(battle with { Units = [unit], Paths = [], Anomalies = [] },
+            new(1280, 720, 0, 0, 1), SKRect.Empty, 1, false, "");
+        var layout = new BattleLayout();
+        BattleDesign.Recording = layout;
+        try
+        {
+            using var active = Raster(frame);
+            Assert.DoesNotContain("disabled:" + unit.Id, layout.Rects.Keys);
+            using var disabled = Raster(frame with { Battle = frame.Battle with { Units = [unit with { State = TacticalUnitState.Disabled }] } });
+            Assert.Contains(active.Pixels, color => color == BattleDesign.Orange);
+            Assert.Contains(disabled.Pixels, color => color == new SKColor(146, 151, 154));
+            var cross = layout.Rects["disabled:" + unit.Id];
+            Assert.True(cross.Right < layout.Rects["label:" + unit.Id].MidX - 12.5f);
+            Assert.Contains(disabled.Pixels, color => color.Red > 150 && color.Red > 2 * color.Green);
+        }
+        finally { BattleDesign.Recording = null; }
+    }
+
+    private static HashSet<(int X, int Y)> MarkerPixels(SKBitmap bitmap, SKPoint center, SKColor color)
+    {
+        var pixels = new HashSet<(int, int)>();
+        for (int y = -9; y < 9; y++)
+        {
+            for (int x = -9; x < 9; x++)
+            {
+                var actual = bitmap.GetPixel((int)center.X + x, (int)center.Y + y);
+                if (Math.Abs(actual.Red - color.Red) <= 45 && Math.Abs(actual.Green - color.Green) <= 45 &&
+                    Math.Abs(actual.Blue - color.Blue) <= 45)
+                    pixels.Add((x, y));
+            }
+        }
+        return pixels;
     }
 
     [Fact]

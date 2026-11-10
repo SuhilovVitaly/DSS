@@ -32,6 +32,68 @@ public class PointCombatUS0020TK0002Tests
     }
 
     [Theory]
+    [InlineData("English")]
+    [InlineData("Russian")]
+    public void Structure_bar_segments_share_vertical_bounds(string language)
+    {
+        using var locale = Localization.UseLocaleForTests(language);
+        using var typeface = SKTypeface.FromFamilyName("Consolas");
+        using var paint = new SKPaint { TextSize = 12, Typeface = typeface };
+        string prefix = Localization.Get("World.Panel.Structure") + " " + Localization.Get("World.Panel.BarLeft");
+        float segmentWidth = paint.MeasureText(Localization.Get("World.Panel.BarFull"));
+
+        var full = RenderBar(150);
+        foreach (var (value, filled) in new[] { (0, 0), (60, 2), (80, 3), (150, 6) })
+        {
+            var pixels = RenderBar(value);
+            for (int segment = 0; segment < 6; segment++)
+            {
+                Assert.Equal(full[segment].Top, pixels[segment].Top);
+                Assert.Equal(full[segment].Bottom, pixels[segment].Bottom);
+                Assert.Equal(segment < filled, full[segment].Count == pixels[segment].Count);
+            }
+        }
+
+        (int Top, int Bottom, int Count)[] RenderBar(int value)
+        {
+            InstalledModuleSnapshot[] modules = [new("m", "type", "Module", 0, [], StructureCurrent: value, StructureMax: 150)];
+            var diagram = new ModuleDiagram();
+            diagram.Update([.. modules]);
+            var panel = new CommandsPanel { OwnModuleDiagram = diagram };
+            using var bitmap = new SKBitmap(450, 900);
+            using var canvas = new SKCanvas(bitmap);
+            try
+            {
+                panel.Render(canvas, modules, bitmap.Height);
+                var row = Assert.Single(panel.CommandPanelRows, row => row.Name == "Navigation");
+                Assert.Contains(row.DetailLines, line => line.StartsWith(prefix, StringComparison.Ordinal) && line.EndsWith($" {value}", StringComparison.Ordinal));
+                int baseline = (int)Math.Max(row.BodyRect.Top + 16, row.Buttons.IsDefaultOrEmpty ? 0 : row.Buttons.Max(b => b.Rect.Bottom) + 16) + 16;
+                float left = row.BodyRect.Left + 10 + paint.MeasureText(prefix);
+                return Enumerable.Range(0, 6).Select(segment =>
+                {
+                    var rows = new List<int>();
+                    int solid = 0;
+                    for (int y = baseline - 14; y < baseline + 9; y++)
+                    {
+                        for (int x = (int)Math.Ceiling(left + segment * segmentWidth); x < (int)Math.Floor(left + (segment + 1) * segmentWidth); x++)
+                        {
+                            byte green = bitmap.GetPixel(x, y).Green;
+                            if (green > 120) rows.Add(y);
+                            if (green > 225) solid++;
+                        }
+                    }
+                    Assert.NotEmpty(rows);
+                    return (rows.Min() - baseline, rows.Max() - baseline, solid);
+                }).ToArray();
+            }
+            finally
+            {
+                panel.ReleasePresentationCache();
+            }
+        }
+    }
+
+    [Theory]
     [InlineData(1280, 720, 1.5f)]
     [InlineData(1920, 1080, 1f)]
     public async Task Panels_survive_resize_and_selection(int width, int height, float scale)

@@ -10,13 +10,15 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 public sealed class TacticalBattleFlow(GameSessionHandle session)
 {
     private TacticalBattleOptions? _options;
-    private TacticalBattleSnapshot? _state;
+    private sealed record BattleObservation(TacticalBattleSnapshot State, TacticalBattleSnapshot Presentation);
+    private BattleObservation? _observed;
     private string _error = "";
     private int _pending;
     private CancellationTokenSource? _optionsCancellation;
     public GameSessionHandle Session { get; } = session;
     public TacticalBattleOptions? Options => Volatile.Read(ref _options);
-    public TacticalBattleSnapshot? State => Volatile.Read(ref _state);
+    public TacticalBattleSnapshot? State => Volatile.Read(ref _observed)?.State;
+    internal TacticalBattleSnapshot? PresentationState => Volatile.Read(ref _observed)?.Presentation;
     public string Error => Volatile.Read(ref _error);
     public bool Pending => Volatile.Read(ref _pending) != 0;
     public Task? OptionsTask { get; private set; }
@@ -73,7 +75,7 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
     }
     private bool Forget()
     {
-        Volatile.Write(ref _state, null);
+        Volatile.Write(ref _observed, null);
         return true;
     }
     private static bool IsLiveBattleRefusal(TacticalBattleResponse response) => !response.Accepted &&
@@ -84,15 +86,26 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         try
         {
             var response = await send();
-            var previous = State;
-            if (response.Accepted && exiting) Volatile.Write(ref _state, null);
-            else if (response.State is { } state && (starting && response.Accepted || IsLiveBattleRefusal(response) || previous is not null && state.BattleId == previous.BattleId && state.Revision >= previous.Revision))
-                Volatile.Write(ref _state, state);
+            var previous = Volatile.Read(ref _observed);
+            if (response.Accepted && exiting) Forget();
+            else if (response.State is { } state && (starting && response.Accepted || IsLiveBattleRefusal(response) || previous is not null && state.BattleId == previous.State.BattleId && state.Revision >= previous.State.Revision))
+                Volatile.Write(ref _observed, new(state, WithRecentPaths(state, previous?.Presentation)));
             Volatile.Write(ref _error, response.Accepted ? "" : BattleFormat.Text(GameSessionHandle.TacticalBattleRefusalText(response.Code) + " " + Issue(response.ContentError)));
             return response;
         }
         finally { Volatile.Write(ref _pending, 0); }
     }
+
+    private static TacticalBattleSnapshot WithRecentPaths(TacticalBattleSnapshot state, TacticalBattleSnapshot? previous)
+    {
+        if (previous?.BattleId != state.BattleId || previous.Paths.IsDefaultOrEmpty || state.Paths.IsDefaultOrEmpty)
+            return state;
+        int latestTurn = state.Paths.Max(path => path.Turn);
+        if (state.Paths.Any(path => path.Turn == latestTurn - 1)) return state;
+        var olderPaths = previous.Paths.Where(path => path.Turn == latestTurn - 1).ToImmutableArray();
+        return olderPaths.IsEmpty ? state : state with { Paths = olderPaths.AddRange(state.Paths) };
+    }
+
     public static string NewIdentity(string operation) => "TB-" + operation + "-" + Guid.NewGuid().ToString("N");
 }
 

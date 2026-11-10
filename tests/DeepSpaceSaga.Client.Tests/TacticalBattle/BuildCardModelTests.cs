@@ -2,6 +2,7 @@ using System.Collections.Immutable;
 using DeepSpaceSaga.Client.Tests.TacticalBattle.View;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
+using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
@@ -59,7 +60,7 @@ public sealed class BuildCardModelTests
         Assert.EndsWith("…", text); Assert.True(BattleDesign.Measure(text, 9.5f, true) <= 52);
     }
     [Fact]
-    public async Task Flight_enemy_falls_back_and_results_select_own_shooter()
+    public async Task Flight_enemy_falls_back_and_results_build_requires_hover()
     {
         await using var s = await Ep0019Scenes.Create("3-salvo-flight");
         var f = s.Screen.CaptureFrame(1920, 1080)! with { HoverUnitId = null, HoverPoint = null, LastSelectedDroneId = "Марта" };
@@ -68,8 +69,74 @@ public sealed class BuildCardModelTests
         var enemyFlight = f with { Salvo = f.Salvo with { Flights = [new(shot, 0, 0, 100)] } };
         Assert.Equal("Марта", BuildCardModel.From(enemyFlight)!.Unit.Id);
         var ownShot = shot with { ShooterId = "Олег" };
-        Assert.Equal("Олег", BuildCardModel.From(f with { Salvo = f.Salvo with { InFlight = false, Flights = [new(ownShot, 0, 0, 2000)] } })!.Unit.Id);
+        var results = f with { Salvo = f.Salvo with { InFlight = false, Flights = [new(ownShot, 0, 0, 2000)] } };
+        Assert.Null(BuildCardModel.From(results));
+        Assert.Equal("Олег", BuildCardModel.From(results with { HoverUnitId = "Олег" })!.Unit.Id);
         Assert.Equal("Марта", f.LastSelectedDroneId);
+    }
+    [Fact]
+    public async Task Results_report_lists_shots_and_returns_after_unit_hover()
+    {
+        await using var scene = await Ep0019Scenes.Create("4-salvo-results");
+        scene.Screen.HoverUnitId = null;
+        using var report = scene.Render();
+        Assert.Contains("salvo-report", scene.Screen.Layout.Rects.Keys);
+        var frame = scene.Frame;
+        foreach (var flight in frame.Salvo!.Flights)
+        {
+            string Name(string id) => PilotCardModel.Name(frame.Battle.Units.Single(u => u.Id == id));
+            Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == Name(flight.Shot.ShooterId) + " → " + Name(flight.Shot.TargetId));
+        }
+        var own = frame.Battle.Units.Single(unit => unit.Id == "Марта");
+        var point = frame.View.Project(own.Pose);
+        scene.Screen.OnMouseMove(point.X * 1.5f, point.Y * 1.5f);
+        using var hovered = scene.Render();
+        Assert.Contains("build", scene.Screen.Layout.Rects.Keys);
+        Assert.DoesNotContain("salvo-report", scene.Screen.Layout.Rects.Keys);
+        var enemy = frame.Battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone &&
+            unit.Side != frame.Battle.PlayerSide && unit.State == TacticalUnitState.Air &&
+            TacticalBattleMapRenderer.Safe(frame.View).Contains(frame.View.Project(unit.Pose)));
+        point = frame.View.Project(enemy.Pose);
+        scene.Screen.OnMouseMove(point.X * 1.5f, point.Y * 1.5f);
+        using var enemyHovered = scene.Render();
+        Assert.Contains("hover", scene.Screen.Layout.Rects.Keys);
+        Assert.DoesNotContain("salvo-report", scene.Screen.Layout.Rects.Keys);
+        scene.Screen.OnMouseMove(10, 900);
+        using var cleared = scene.Render();
+        Assert.Contains("salvo-report", scene.Screen.Layout.Rects.Keys);
+    }
+    [Fact]
+    public async Task Completed_report_scrolls_to_the_last_shot()
+    {
+        await using var scene = await Ep0019Scenes.Create("4-salvo-results");
+        var frame = scene.Frame;
+        var salvo = frame.Salvo!;
+        var example = salvo.Flights[0];
+        var flights = Enumerable.Range(0, 12).Select(index => example with
+        {
+            Index = index,
+            Shot = example.Shot with { ShooterId = "Shooter " + index, TargetId = "Target" }
+        }).ToImmutableArray();
+        var reportFrame = frame with { HoverUnitId = null, Salvo = salvo with { Flights = flights } };
+        var card = new HoverCard();
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        var before = Draw();
+        Assert.Contains(before.Texts, t => t.Text == "Shooter 0 → Target");
+        Assert.DoesNotContain(before.Texts, t => t.Text == "Shooter 11 → Target");
+        Assert.True(card.ScrollResults(new(card.Bounds.MidX, card.Bounds.MidY), -100));
+        var after = Draw();
+        Assert.DoesNotContain(after.Texts, t => t.Text == "Shooter 0 → Target");
+        Assert.Contains(after.Texts, t => t.Text == "Shooter 11 → Target");
+
+        BattleLayout Draw()
+        {
+            var layout = new BattleLayout();
+            BattleDesign.Recording = layout;
+            try { card.Draw(canvas, reportFrame, PilotPortraitCatalog.Default); }
+            finally { BattleDesign.Recording = null; }
+            return layout;
+        }
     }
     [Theory]
     [InlineData("Russian", "32,5", "ПИЛОТ И СБОРКА")]

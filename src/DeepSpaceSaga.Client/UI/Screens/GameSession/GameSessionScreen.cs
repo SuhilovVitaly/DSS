@@ -212,6 +212,8 @@ public sealed partial class GameSessionScreen : IScreen
     // window (Finance, Ship, ...), all sharing the same button size.
     private const float MechanicsPanelPadding = 6f;
     private const float MechanicsButtonWidth = 56f;
+    private const float PortraitButtonWidth = 188f;
+    private const float MechanicsPanelWidth = (MechanicsButtonWidth + MechanicsButtonGap + MechanicsPanelPadding) * 2 + PortraitButtonWidth;
     private const float MechanicsButtonHeight = 32f;
     private const float MechanicsButtonGap = 6f;
 
@@ -1079,7 +1081,7 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private bool IsClickOnUiPanel(float uiX, float uiY)
     {
-        if (_mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
+        if (_tacticalBattleEntry.Bounds.Contains(uiX, uiY) || _mapToolbarRect.Contains(uiX, uiY) || _lastScalePanelRect.Contains(uiX, uiY) ||
             _lastSpeedPanelRect.Contains(uiX, uiY) || _lastMechanicsPanelRect.Contains(uiX, uiY)) return true;
         if (HitTestScalePanel(uiX, uiY) >= 0)
             return true;
@@ -1110,6 +1112,9 @@ public sealed partial class GameSessionScreen : IScreen
         RenderStageCompleted?.Invoke("begin");
         _viewportW = width;
         _viewportH = height;
+        _uiViewportW = width / _uiScale;
+        _uiViewportH = height / _uiScale;
+        LayoutTacticalBattleEntry();
         var prediction = _buffer.LatestPrediction;
         var buffered = prediction?.BufferedSnapshot;
         _mapPresentationSnapshot = buffered?.Snapshot;
@@ -1328,9 +1333,6 @@ public sealed partial class GameSessionScreen : IScreen
         // the canvas transform is the only thing that grows them to _uiScale. Text
         // scales vectorially as part of this transform — base font sizes are never
         // multiplied, and the transform is never combined with a TextSize change.
-        _uiViewportW = width / _uiScale;
-        _uiViewportH = height / _uiScale;
-
         canvas.Save();
         canvas.Scale(_uiScale);
 
@@ -1345,6 +1347,8 @@ public sealed partial class GameSessionScreen : IScreen
         if (_panelVisible) LayoutInfoPanel(buffered);
         float commandsBottom = _panelVisible && _lastPanelRect.Left < CommandsPanel.PanelWidth + PanelMargin
             ? _lastPanelRect.Top - PanelMargin : _uiViewportH;
+        if (!_tacticalBattleEntry.Bounds.IsEmpty && _tacticalBattleEntry.Bounds.Left < CommandsPanel.PanelWidth + PanelMargin)
+            commandsBottom = Math.Min(commandsBottom, _tacticalBattleEntry.Bounds.Top - PanelMargin);
         var playerShip = FindPlayerShip(_renderStates);
         _commandsPanel.PresentationRevision = HashCode.Combine(buffered?.Snapshot.SnapshotSequence, _mouseX, _mouseY, _selectedObjectId);
         if (buffered?.Snapshot is { } moduleSnapshot)
@@ -1358,7 +1362,7 @@ public sealed partial class GameSessionScreen : IScreen
             buffered?.Snapshot.PlayerShipObjectId);
         CompleteRenderStage("command_panel");
 
-        float rightHudTop = ComputeScaleSpeedRowY() - 62 - (buffered?.Snapshot.AiMap is null ? 0 : 28) - 27 - 8 - TacticalBattleEntryHeight;
+        float rightHudTop = ComputeScaleSpeedRowY() - 62 - (buffered?.Snapshot.AiMap is null ? 0 : 28) - 27 - 8;
 
         // 7. Info panel (bottom-left)
         if (_panelVisible)
@@ -1373,6 +1377,7 @@ public sealed partial class GameSessionScreen : IScreen
         DrawMechanicsPanel(canvas);
         DrawMapToolbar(canvas);
         DrawGameTime(canvas);
+        DrawTacticalBattleEntry(canvas);
         if (_panelVisible)
         {
             canvas.DrawRect(_lastCloseRect, _panelBgPaint);
@@ -1919,7 +1924,16 @@ public sealed partial class GameSessionScreen : IScreen
     {
         float mechanicsPanelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
         float rowH = SpeedPanelPadY * 2 + SpeedBtnH + SpeedIndicatorSize + 2f; // same formula as the Scale panel's height
-        return _uiViewportH - PanelMargin - mechanicsPanelH - PanelMargin - rowH;
+        return MechanicsPanelBottom() - mechanicsPanelH - PanelMargin - rowH;
+    }
+
+    private float MechanicsPanelBottom()
+    {
+        var entry = _tacticalBattleEntry.Bounds;
+        float panelRight = BottomControlLeft(MechanicsPanelWidth) + MechanicsPanelWidth;
+        return !entry.IsEmpty && panelRight + PanelMargin > entry.Left
+            ? entry.Top - PanelMargin
+            : _uiViewportH - PanelMargin;
     }
 
     private float ComputeScalePanelWidth()
@@ -2256,6 +2270,9 @@ public sealed partial class GameSessionScreen : IScreen
 
         float panelX = PanelMargin;
         float panelY = _uiViewportH - panelH - PanelMargin;
+        var entry = _tacticalBattleEntry.Bounds;
+        if (!entry.IsEmpty && panelX + panelW + PanelMargin > entry.Left)
+            panelY = Math.Max(PanelMargin, entry.Top - PanelMargin - panelH);
 
         _lastPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
 
@@ -2416,14 +2433,11 @@ public sealed partial class GameSessionScreen : IScreen
     /// </summary>
     private void DrawMechanicsPanel(SKCanvas canvas)
     {
-        const int buttonCount = 2;
-        const float portraitButtonWidth = 188f;
-        float panelW = MechanicsButtonWidth * buttonCount + MechanicsButtonGap * buttonCount + MechanicsPanelPadding * 2 + portraitButtonWidth;
         float panelH = MechanicsButtonHeight + MechanicsPanelPadding * 2;
-        float panelX = BottomControlLeft(panelW);
-        float panelY = _uiViewportH - panelH - PanelMargin;
+        float panelX = BottomControlLeft(MechanicsPanelWidth);
+        float panelY = MechanicsPanelBottom() - panelH;
 
-        _lastMechanicsPanelRect = new SKRect(panelX, panelY, panelX + panelW, panelY + panelH);
+        _lastMechanicsPanelRect = new SKRect(panelX, panelY, panelX + MechanicsPanelWidth, panelY + panelH);
         canvas.DrawRect(_lastMechanicsPanelRect, _panelBgPaint);
         canvas.DrawRect(_lastMechanicsPanelRect, _panelBorderPaint);
 
@@ -2437,7 +2451,7 @@ public sealed partial class GameSessionScreen : IScreen
         _lastShipButtonRect = new SKRect(btnX, btnY, btnX + MechanicsButtonWidth, btnY + MechanicsButtonHeight);
         DrawMechanicsButton(canvas, _lastShipButtonRect, "S", _isShipButtonHovered);
         btnX += MechanicsButtonWidth + MechanicsButtonGap;
-        _lastTempCharacterImageButtonRect = new SKRect(btnX, btnY, btnX + portraitButtonWidth, btnY + MechanicsButtonHeight);
+        _lastTempCharacterImageButtonRect = new SKRect(btnX, btnY, btnX + PortraitButtonWidth, btnY + MechanicsButtonHeight);
         canvas.DrawRect(_lastTempCharacterImageButtonRect, _isTempCharacterImageButtonHovered ? _mechanicsBtnHoverPaint : _mechanicsBtnNormalPaint);
         canvas.DrawRect(_lastTempCharacterImageButtonRect, _panelBorderPaint);
         canvas.DrawText("TempCharacterImage", _lastTempCharacterImageButtonRect.MidX, _lastTempCharacterImageButtonRect.MidY + 5, PortraitButtonTextPaint);

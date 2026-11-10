@@ -2,6 +2,7 @@ using System.Collections.Concurrent;
 using System.Reflection;
 using DeepSpaceSaga.Client.UI;
 using DeepSpaceSaga.Client.UI.Screens;
+using DeepSpaceSaga.Client.UI.Screens.GameMenu;
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
@@ -16,6 +17,38 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class BattleNavigationTests
 {
+    [Fact]
+    public async Task FirstEscapeOpensGameMenuImmediatelyAfterFocusRegain()
+    {
+        await using var fixture = await Fixture.Create();
+        fixture.ChangeFocus(false);
+        fixture.ChangeFocus(true);
+
+        Assert.Same(fixture.Game, fixture.Screens.Current);
+        Assert.InRange(Environment.TickCount64 - Field<long>(fixture.Window, "_focusRegainedAtMs"), 0, 1499);
+        await fixture.PressKey(Key.Escape);
+
+        var menu = Assert.IsType<GameMenuScreen>(fixture.Screens.Current);
+        Assert.Equal(2, fixture.Screens.Count);
+        await fixture.Route(ScreenEvent.OpenGameMenu);
+        Assert.Same(menu, fixture.Screens.Current);
+        Assert.Equal(2, fixture.Screens.Count);
+    }
+
+    [Fact]
+    public async Task EscapeMenuStillPausesAndRestoresMapSpeed()
+    {
+        await using var fixture = await Fixture.Create(initialSpeed: SimulationSpeed.Speed2);
+        await fixture.PressKey(Key.Escape);
+        Assert.IsType<GameMenuScreen>(fixture.Screens.Current);
+        Assert.Equal(SimulationSpeed.Speed0, fixture.Engine.CurrentSpeed);
+
+        await fixture.PressKey(Key.Escape);
+        Assert.Same(fixture.Game, fixture.Screens.Current);
+        Assert.Equal(1, fixture.Screens.Count);
+        Assert.Equal(SimulationSpeed.Speed2, fixture.Engine.CurrentSpeed);
+    }
+
     [Fact]
     public async Task RealBattleAndNewBattleReplaceOneOpaqueModalAndRestoreWorldCameraAndSpeed()
     {
@@ -333,6 +366,9 @@ public sealed class BattleNavigationTests
             typeof(SkiaWindow).GetMethod("HandleKeyboardEdge", BindingFlags.Instance | BindingFlags.NonPublic)!.Invoke(Window, new object[] { key });
             if (Field<Task?>(Window, "_pendingKeyboardTransition") is { } task) await task;
         }
+        internal void ChangeFocus(bool focused) =>
+            typeof(SkiaWindow).GetMethod("OnFocusChanged", BindingFlags.Instance | BindingFlags.NonPublic)!
+                .Invoke(Window, [focused]);
         public IGameSessionConnection CreateSession() => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromSave(string slotId) => throw new NotSupportedException();
         public IGameSessionConnection CreateSessionFromScenario(string path) => throw new NotSupportedException();

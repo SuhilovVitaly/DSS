@@ -23,20 +23,44 @@ internal static class TacticalAnomalyGenerator
         var result = ImmutableArray.CreateBuilder<TacticalAnomaly>();
         GenerateKind(TacticalAnomalyKind.Heat, heatCount, "heat");
         GenerateKind(TacticalAnomalyKind.Dust, dustCount, "dust");
+        AddPeriphery();
+        AddOuterField();
         return result.ToImmutable();
 
         void GenerateKind(TacticalAnomalyKind kind, int count, string prefix)
         {
             for (int i = 0; i < count; i++)
+                TryPlace(kind, FormattableString.Invariant($"{prefix}-{i + 1}"), x0, x1, y0, y1, 0);
+        }
+
+        void AddPeriphery()
+        {
+            if (heatCount + dustCount == 0) return;
+            double margin = rules.Spread[1];
+            double left = starts.Min(p => p.X) - margin;
+            double cellWidth = (starts.Max(p => p.X) + margin - left) / 3;
+            double spacing = rules.Spread[0] * 2;
+            for (int row = 0; row < 2; row++)
             {
-                bool found = false; double x = 0, y = 0;
-                for (int attempt = 0; attempt < rules.MaxAttempts; attempt++)
+                double top = row == 0 ? y0 - 3 * margin : y1 + 2 * margin;
+                for (int column = 0; column < 3; column++)
                 {
-                    x = random.Uniform(x0, x1); y = random.Uniform(y0, y1);
-                    if (starts.Any(p => TacticalGeometry.Dist(x, y, p.X, p.Y) < rules.Clearance)) continue;
-                    found = true; break;
+                    bool heat = heatCount > 0 && (dustCount == 0 || (row + column) % 2 == 0);
+                    var kind = heat ? TacticalAnomalyKind.Heat : TacticalAnomalyKind.Dust;
+                    double cellLeft = left + column * cellWidth;
+                    TryPlace(kind, FormattableString.Invariant($"periphery-{row + 1}-{column + 1}"),
+                        cellLeft, cellLeft + cellWidth, top, top + margin, spacing);
                 }
-                if (!found) continue;
+            }
+        }
+
+        void TryPlace(TacticalAnomalyKind kind, string id, double left, double right, double top, double bottom, double spacing)
+        {
+            for (int attempt = 0; attempt < rules.MaxAttempts; attempt++)
+            {
+                double x = random.Uniform(left, right), y = random.Uniform(top, bottom);
+                if (starts.Any(p => TacticalGeometry.Dist(x, y, p.X, p.Y) < rules.Clearance)) continue;
+                if (spacing > 0 && result.Any(a => TacticalGeometry.Dist(x, y, a.CenterX, a.CenterY) < spacing)) continue;
                 double spread = Range(rules.Spread);
                 int clumpCount = random.RandInt(rules.Clumps[0], rules.Clumps[1]);
                 var clumps = ImmutableArray.CreateBuilder<TacticalClump>(clumpCount);
@@ -51,9 +75,27 @@ internal static class TacticalAnomalyGenerator
                     double rotation = random.Uniform(0, Math.PI);
                     clumps.Add(new(cx, cy, amplitude, sigmaX, sigmaY, rotation));
                 }
-                result.Add(new(FormattableString.Invariant($"{prefix}-{i + 1}"), kind, clumps.MoveToImmutable())
-                { CenterX = x, CenterY = y });
+                result.Add(new(id, kind, clumps.MoveToImmutable()) { CenterX = x, CenterY = y });
+                return;
             }
+        }
+
+        void AddOuterField()
+        {
+            if (heatCount + dustCount == 0) return;
+            double left = starts.Min(p => p.X), right = starts.Max(p => p.X);
+            double span = Math.Max(right - left, 4 * rules.Spread[1]);
+            double centerX = (left + right) / 2, centerY = (y0 + y1) / 2;
+            double spacing = 2 * rules.Spread[0];
+            for (int row = 0; row < 4; row++)
+                for (int column = 0; column < 4; column++)
+                {
+                    if (row is 1 or 2 && column is 1 or 2) continue;
+                    double x = centerX + (column - 2) * span, y = centerY + (row - 2) * span;
+                    bool heat = heatCount > 0 && (dustCount == 0 || (row + column) % 2 == 0);
+                    TryPlace(heat ? TacticalAnomalyKind.Heat : TacticalAnomalyKind.Dust,
+                        FormattableString.Invariant($"outer-{row + 1}-{column + 1}"), x, x + span, y, y + span, spacing);
+                }
         }
         double Range(ImmutableArray<double> range) => random.Uniform(range[0], range[1]);
     }

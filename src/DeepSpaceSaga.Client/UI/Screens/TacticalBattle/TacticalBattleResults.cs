@@ -8,10 +8,10 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 public sealed record TacticalShotFlight(TacticalShotSnapshot Shot, int Index, double LaunchMs, double ElapsedMs)
 {
     public double DurationMs { get; init; } = TacticalBattleResults.FlightMs;
-    public bool Arrived => ElapsedMs >= LaunchMs + DurationMs;
+    internal double ImpactAgeMs => ElapsedMs - (LaunchMs + DurationMs);
+    public bool Arrived => ImpactAgeMs >= 0;
     public bool Flying => ElapsedMs >= LaunchMs && !Arrived;
-    public bool Flash => Arrived &&
-        ElapsedMs < LaunchMs + DurationMs + TacticalBattleResults.FlashMs;
+    public bool Flash => Arrived && ImpactAgeMs < TacticalBattleResults.FlashMs;
     public double Progress => PyMath.Clamp((ElapsedMs - LaunchMs) / (double)DurationMs, 0, 1);
 }
 
@@ -23,6 +23,8 @@ public sealed record TacticalSalvoFrame(bool InFlight, bool AutoFire, ImmutableA
     public int Hits => Flights.Count(f => f.Arrived && f.Shot.Hit);
     public ImmutableHashSet<string> Evading { get; init; } = ImmutableHashSet<string>.Empty;
     public int Turn { get; init; }
+    internal bool PlaybackSkipped { get; init; }
+    internal bool ShowResultCallouts { get; init; } = true;
     public ImmutableHashSet<string> DecoysLaunched { get; init; } = ImmutableHashSet<string>.Empty;
 }
 
@@ -52,6 +54,7 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
     }
 
     internal ImmutableArray<TacticalBattleLogEvent> BeforeLog { get; init; } = [];
+    internal long? SkippedAtMs { get; init; }
     private int _cachedStep = int.MinValue;
     private TacticalBattleSnapshot? _cachedProjection;
     internal double DurationMs => Shots.IsEmpty ? 0 : PyMath.Min(FlightMs, (CapMs - InitialDelayMs) / (double)Shots.Length);
@@ -138,7 +141,9 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
             DecoysLaunched = Battle.DecoysLaunched.Where(id => !InFlight(nowMs) || Own(id)).ToImmutableHashSet(StringComparer.Ordinal),
             Evading = Battle.FireSteps.Where(s => s.SkipReason == TacticalFireSkipReason.Evading)
                 .Select(s => s.ShooterId).ToImmutableHashSet(StringComparer.Ordinal),
-            Turn = Shots.FirstOrDefault()?.Turn ?? Battle.FireSteps.SelectMany(s => s.Events).FirstOrDefault()?.Turn ?? Battle.Turn
+            Turn = Shots.FirstOrDefault()?.Turn ?? Battle.FireSteps.SelectMany(s => s.Events).FirstOrDefault()?.Turn ?? Battle.Turn,
+            PlaybackSkipped = Skipped,
+            ShowResultCallouts = nowMs - (SkippedAtMs ?? StartedMs + EndMs) < 1400
         };
     }
 

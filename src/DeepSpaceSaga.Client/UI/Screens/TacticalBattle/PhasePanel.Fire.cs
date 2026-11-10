@@ -6,6 +6,50 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class PhasePanel
 {
+    private const int VisibleTargetRows = 3;
+    private const int TargetRowHeight = 20;
+    private TacticalTargetGroupSnapshot? _targetGroup;
+    private int _targetFirst;
+    private SKRect _targetList;
+
+    internal static int TargetListHeight(TacticalFirePlan? plan) =>
+        plan?.Selected is { Group.List.Length: > 1 } row ? Math.Min(VisibleTargetRows, row.Group.List.Length) * TargetRowHeight : 0;
+
+    internal bool ScrollTargets(SKPoint point, float delta)
+    {
+        if (Phase != "Fire" || _targetList.IsEmpty || !_targetList.Contains(point) || !float.IsFinite(delta)) return false;
+        _targetFirst = Math.Clamp(_targetFirst - Math.Sign(delta), 0, Math.Max(0, (_targetGroup?.List.Length ?? 0) - VisibleTargetRows));
+        return true;
+    }
+
+    private void DrawTargetList(SKCanvas canvas, TacticalFirePlanRow row)
+    {
+        if (!ReferenceEquals(_targetGroup, row.Group)) { _targetGroup = row.Group; _targetFirst = 0; }
+        int rows = Math.Min(VisibleTargetRows, row.Group.List.Length);
+        _targetList = R(1048, 271, 1266, 271 + rows * TargetRowHeight);
+        for (int index = 0; index < rows; index++)
+        {
+            var candidate = row.Group.List[_targetFirst + index];
+            var target = _frame.Battle.Units.FirstOrDefault(unit => unit.Id == candidate.TargetId);
+            string caption = (target is null ? candidate.TargetId : PilotCardModel.Name(target)) + " · " + Pct(candidate.Chance);
+            float y = 271 + index * TargetRowHeight;
+            var bounds = new SKRect(1048, y, 1266, y + TargetRowHeight - 2);
+            string key = "target:" + candidate.TargetId;
+            _buttons[key] = R(bounds.Left, bounds.Top, bounds.Right, bounds.Bottom);
+            if (Recording is { } layout) layout.Rects["button:" + key] = _buttons[key];
+            bool selected = candidate.TargetId == row.TargetId;
+            Round(canvas, bounds, selected ? YellowDark : Box, selected ? Yellow : BoxEdge);
+            T(canvas, caption, bounds.Left + 6, y + 12.5f, FitSize(caption, 11, bounds.Width - 12), selected ? Yellow : Text, selected);
+        }
+        if (row.Group.List.Length > rows)
+        {
+            float height = rows * TargetRowHeight - 2;
+            float thumb = height * rows / row.Group.List.Length;
+            float y = 271 + (height - thumb) * _targetFirst / (row.Group.List.Length - rows);
+            Stroke(canvas, new(1264, 271), new(1264, 271 + height), Track, 2);
+            Stroke(canvas, new(1264, y), new(1264, y + thumb), Muted, 2);
+        }
+    }
     internal static string FireCaption(TacticalTargetCandidateSnapshot? candidate) => candidate is { Absorption: > 0 }
         ? M("ChanceWithAbsorption", Pct(candidate.Chance), Math.Round(candidate.Absorption * 100)) : U("HitChance");
     internal static (string Tag, string Message, string Detail) DustText =>
@@ -116,6 +160,7 @@ internal sealed partial class PhasePanel
         _buttons["evade"] = R(button.Left, button.Top, button.Right, button.Bottom);
         if (Recording is { } layout) layout.Rects["button:evade"] = _buttons["evade"];
         EvadeButton(c, button, M(row.Evade ? "EvadeActive" : row.CanEvade ? "Evade" : "EvadeUnavailable"), row.Evade ? EvadeButtonState.Selected : row.CanEvade ? EvadeButtonState.Available : EvadeButtonState.Unavailable);
+        if (row.Group.List.Length > 1) DrawTargetList(c, row);
         StandardAction(c, FireSummary(_frame.FirePlan), U("FireStatus"), U("FireAction"));
     }
 }

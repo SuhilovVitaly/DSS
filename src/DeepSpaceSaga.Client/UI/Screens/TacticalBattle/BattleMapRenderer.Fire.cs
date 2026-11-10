@@ -11,16 +11,12 @@ internal static partial class TacticalBattleMapRenderer
     static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied, InteractiveAnomalyField? interactiveField)
     {
         if (f.Movement is not null) return;
-        foreach (var trail in f.Battle.Paths)
-            for (int i = 1; i < trail.Points.Length; i++) Stroke(c, f.View.Project(trail.Points[i - 1]), f.View.Project(trail.Points[i]), Text.WithAlpha(150), 1.2f, [4, 4]);
         if (f.FirePlan is { } plan)
         {
             if (plan.Selected?.Drone.Build is { } build)
             {
-                var unit = plan.Selected.Drone; var p = f.View.Project(unit.Pose); float r = (float)(build.Range * f.View.PixelsPerUnit);
-                using var path = new SKPath(); path.MoveTo(p); path.ArcTo(SKRect.Create(p.X - r, p.Y - r, 2 * r, 2 * r), (float)(unit.Pose.Course - build.ArcDegrees * .5), (float)build.ArcDegrees, false); path.Close();
-                using var paint = new SKPaint { IsAntialias = true, Color = ArcFill }; c.DrawPath(path, paint);
-                paint.Color = ArcEdge; paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 1.1f; c.DrawPath(path, paint);
+                using var path = CreateFireSector(f.View, plan.Selected.Drone.Pose, build.Range, 2 * build.ArcDegrees);
+                DrawFireSector(c, path, ArcFill, ArcEdge);
                 c.Save();
                 try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
                 finally { c.Restore(); }
@@ -31,6 +27,8 @@ internal static partial class TacticalBattleMapRenderer
                 var box = Callout(c, p.X, p.Y + 34, M("InDustNoFire"), Dust, Dust); occupied.Add(box);
                 if (Recording is { } l) l.Rects["dust:" + row.Drone.Id] = box;
             }
+            if (plan.Selected is { } shooter)
+                DrawAlternativeTargets(c, f, shooter, occupied);
             foreach (var row in plan.Rows.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
             {
                 var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId); if (target is null || row.Drone.InDust) continue;
@@ -68,7 +66,7 @@ internal static partial class TacticalBattleMapRenderer
                 Circle(c, head, 8, Yellow.WithAlpha(70)); Circle(c, head, TacticalBattleSkinRenderScope.Number("shot.projectile", "size", 3.5f), TacticalBattleSkinRenderScope.Color("shot.projectile", "fill", Shell));
                 if (Recording is { } l) l.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
             }
-        if (f.Salvo is { InFlight: false } results)
+        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
         {
             var markers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => f.View.Project(u.Pose)).ToArray();
             foreach (var damage in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
@@ -124,10 +122,91 @@ internal static partial class TacticalBattleMapRenderer
                 if (Recording is { } layout) layout.Rects["decoy-callout:" + index++] = bounds;
             }
         }
+        if (f.Salvo is { PlaybackSkipped: false } feedback)
+            DrawFloatingShotResults(c, f, feedback, occupied);
     }
+
+    private static void DrawFloatingShotResults(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, List<SKRect> occupied)
+    {
+        const double durationMs = 1400;
+        foreach (var flight in salvo.Flights)
+        {
+            double age = flight.ImpactAgeMs;
+            if (age < 0 || age >= durationMs) continue;
+            var shot = flight.Shot;
+            var damage = frame.Battle.FireSteps.FirstOrDefault(step => step.ShooterId == shot.ShooterId)?.Events
+                .FirstOrDefault(entry => entry.Kind == TacticalBattleLogKind.DamageApplied)?.Damage;
+            string text = shot.Absorbed ? M("Absorbed") : shot.Hit ? $"−{damage?.Hull + damage?.Armor ?? shot.Damage}" : U("MissChip");
+            float progress = (float)(age / durationMs);
+            var color = shot.Absorbed ? Heat : shot.Hit ? Yellow : Text;
+            color = color.WithAlpha((byte)(255 * Math.Min(1, (1 - progress) * 2)));
+            var point = frame.View.Project(shot.To) + new SKPoint((flight.Index % 3 - 1) * 14, -19 - 44 * progress);
+            float width = Measure(text, 14, true);
+            var bounds = new SKRect(point.X - width / 2, point.Y - 14, point.X + width / 2, point.Y + 2);
+            occupied.Add(bounds);
+            if (Recording is { } layout) layout.Rects["floating-shot:" + flight.Index] = bounds;
+            T(canvas, text, point.X, point.Y, 14, color, true, SKTextAlign.Center);
+        }
+    }
+    private static void DrawAlternativeTargets(SKCanvas canvas, TacticalBattleFrame frame, TacticalFirePlanRow shooter, List<SKRect> occupied)
+    {
+        var origin = frame.View.Project(shooter.Drone.Pose);
+        var color = Yellow.WithAlpha(155);
+        foreach (var candidate in shooter.Group.List)
+        {
+            if (candidate.TargetId == shooter.TargetId) continue;
+            var target = frame.Battle.Units.FirstOrDefault(unit => unit.Id == candidate.TargetId);
+            if (target is null) continue;
+            var point = MarkerPoint(frame.View, target);
+            const float radius = 12;
+            float length = SKPoint.Distance(origin, point);
+            if (length > 2 * radius)
+            {
+                var offset = Scale(point - origin, radius / length);
+                Stroke(canvas, origin + offset, point - offset, color, 1, [4, 4]);
+            }
+            Circle(canvas, point, radius, SKColors.Transparent, color, 1.2f);
+            var ring = new SKRect(point.X - radius, point.Y - radius, point.X + radius, point.Y + radius);
+            occupied.Add(ring);
+            if (Recording is { } layout) layout.Rects["candidate:" + target.Id] = ring;
+
+            string chance = Pct(candidate.Chance);
+            float halfWidth = (Measure(chance, 12) + 14) * .5f;
+            foreach (float y in new[] { point.Y - 15, point.Y + 32 })
+            {
+                var bounds = new SKRect(point.X - halfWidth, y - 17, point.X + halfWidth, y + 2);
+                if (!Safe(frame.View).Contains(bounds) || occupied.Any(rect => rect.IntersectsWith(bounds))) continue;
+                occupied.Add(Callout(canvas, point.X, y, chance, color, Text));
+                break;
+            }
+        }
+    }
+
+    private static SKPath CreateFireSector(TacticalBattleView view, TacticalPoseSnapshot pose, double range, double arcDegrees)
+    {
+        var origin = view.Project(pose);
+        float radius = (float)(range * view.PixelsPerUnit);
+        var path = new SKPath();
+        path.MoveTo(origin);
+        path.ArcTo(SKRect.Create(origin.X - radius, origin.Y - radius, 2 * radius, 2 * radius),
+            (float)(pose.Course - arcDegrees * .5), (float)arcDegrees, false);
+        path.Close();
+        return path;
+    }
+
+    private static void DrawFireSector(SKCanvas canvas, SKPath path, SKColor fill, SKColor edge)
+    {
+        using var paint = new SKPaint { IsAntialias = true, Color = fill };
+        canvas.DrawPath(path, paint);
+        paint.Color = edge;
+        paint.Style = SKPaintStyle.Stroke;
+        paint.StrokeWidth = 1.1f;
+        canvas.DrawPath(path, paint);
+    }
+
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f)
     {
-        if (f.Salvo is { InFlight: false } results)
+        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
             foreach (var d in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide)) Diamond(c, f.View.Project(d.Unit.Pose), 10, SKColors.Transparent, Yellow, 1.5f);
         if (f.Salvo is { } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flash))
@@ -137,8 +216,5 @@ internal static partial class TacticalBattleMapRenderer
                     Circle(c, q, 6, SKColors.Transparent, Heat, 1.6f); Circle(c, q, 10, SKColors.Transparent, Heat, 1.6f);
                 }
                 else Circle(c, f.View.Project(flight.Shot.To), 15, SKColors.Transparent, flight.Shot.Hit ? Yellow : Red, 2);
-        // The admitted projection changes State only at impact, so wrecks cannot reveal a future kill.
-        foreach (var u in f.Battle.Units.Where(u => u.State == TacticalUnitState.Destroyed))
-        { var p = f.View.Project(u.Pose); Stroke(c, new(p.X - 6, p.Y - 6), new(p.X + 6, p.Y + 6), Muted, 1.5f); Stroke(c, new(p.X - 6, p.Y + 6), new(p.X + 6, p.Y - 6), Muted, 1.5f); }
     }
 }

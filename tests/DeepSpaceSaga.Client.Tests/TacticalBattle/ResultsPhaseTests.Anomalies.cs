@@ -14,7 +14,7 @@ public sealed partial class ResultsPhaseTests
         using var locale = Localization.UseLocaleForTests("Russian");
         var state = await AnomalySceneSearch.First("absorbed-result", s => s.Shots.FirstOrDefault(shot =>
             s.Units.Any(u => u.Id == shot.ShooterId && u.Side == s.PlayerSide))?.Absorbed == true);
-        var result = new TacticalBattleResults(state, state.Shots, [], 0, Skipped: true);
+        var result = new TacticalBattleResults(state, state.Shots, [], 0, Skipped: true) { SkippedAtMs = 10000 };
         var camera = new TacticalBattleCamera(); camera.Update(state with { Phase = TacticalBattlePhase.Fire }, 1280, 720);
         var frame = new TacticalBattleFrame(state, camera.View, new(1040, 6, 1274, 366), 1, false, "", Salvo: result.Capture(10000));
         var shot = PilotCardModel.ResultShot(frame)!; Assert.True(shot.Absorbed);

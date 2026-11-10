@@ -96,7 +96,7 @@ public sealed partial class ResultsPhaseTests
         var shots = new[] { Shot(own, enemy), Shot(enemy, own) };
         var state = f.Battle with { Shots = [.. shots], DecoysLaunched = [own.Id, enemy.Id], BeforeSalvoUnits = f.Battle.Units };
         var presentation = new TacticalBattleResults(state, state.Shots, [], 0);
-        f = f with { Battle = state, FirePlan = null, Movement = null, Salvo = presentation.Capture(10000) };
+        f = f with { Battle = state, FirePlan = null, Movement = null, Salvo = presentation.Capture((long)Math.Ceiling(presentation.EndMs)) };
         Assert.Equal(new[] { own.Id, enemy.Id }, TacticalBattleMapRenderer.DecoyMisses(f).Select(s => s.ShooterId));
         using var bitmap = new SKBitmap(1920, 1080);
         using var canvas = new SKCanvas(bitmap);

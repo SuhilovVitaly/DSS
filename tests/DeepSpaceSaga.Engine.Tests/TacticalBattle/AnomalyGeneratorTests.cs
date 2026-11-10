@@ -27,7 +27,22 @@ public sealed class AnomalyGeneratorTests
     {
         var battle = Battle.Create(AssemblyTests.Catalog(), null, 1);
         Check(battle);
-        Assert.Equal(battle.Anomalies.Select(a => a.Kind).OrderBy(k => k), battle.Anomalies.Select(a => a.Kind));
+        var core = battle.Anomalies.Where(a => !Peripheral(a) && !Outer(a)).Select(a => a.Kind);
+        Assert.Equal(core.OrderBy(k => k), core);
+        var outer = battle.Anomalies.Where(Peripheral).ToArray();
+        Assert.Equal(6, outer.Length);
+        Assert.All(Enumerable.Range(1, 3), column => Assert.Equal(2, outer.Count(a => a.Id.EndsWith("-" + column, StringComparison.Ordinal))));
+        var far = battle.Anomalies.Where(Outer).ToArray();
+        Assert.Equal(12, far.Length);
+        foreach (string corner in new[] { "outer-1-1", "outer-1-4", "outer-4-1", "outer-4-4" })
+            Assert.Contains(far, anomaly => anomaly.Id == corner);
+        var starts = battle.Drones.Cast<TacticalUnit>().Concat(battle.Carriers).ToArray();
+        double left = starts.Min(unit => unit.Pose.X), right = starts.Max(unit => unit.Pose.X);
+        double span = right - left;
+        double centerX = (left + right) / 2;
+        double centerY = (battle.Drones.Min(unit => unit.Pose.Y) + battle.Drones.Max(unit => unit.Pose.Y)) / 2;
+        Assert.All(far, anomaly => Assert.True(Math.Abs(anomaly.CenterX - centerX) >= span ||
+            Math.Abs(anomaly.CenterY - centerY) >= span));
         var session = TacticalBattleSession.TryCreate(battle.Catalog, new("anomaly-snapshot", 1), out _)!;
         var first = session.Capture(); long calls = session.Battle.Random.Calls;
         Assert.Equal(battle.Anomalies.Length, first.Anomalies.Length);
@@ -120,7 +135,7 @@ public sealed class AnomalyGeneratorTests
                 { HeatCount = [1, 1], DustCount = [0, 0], Clumps = [0, 0], Spread = [40, 40], Clearance = 0, BandFraction = 1, MaxAttempts = 1 }
             }
         };
-        var battle = Battle.Create(catalog, null, 1); var anomaly = Assert.Single(battle.Anomalies);
+        var battle = Battle.Create(catalog, null, 1); var anomaly = Assert.Single(battle.Anomalies.Where(a => !Peripheral(a) && !Outer(a)));
         // Independent FNV-1a64 vector: seed1/name -> 10816105672073054107, low32=1962968987.
         // Two fixed count draws precede these third/fourth Mulberry32 uniforms.
         double xA = battle.Drones.Where(d => d.Side == "A").Average(d => d.Pose.X);
@@ -131,11 +146,14 @@ public sealed class AnomalyGeneratorTests
         Assert.Empty(anomaly.Clumps);
     }
 
+    private static bool Peripheral(TacticalAnomaly anomaly) => anomaly.Id.StartsWith("periphery-", StringComparison.Ordinal);
+    private static bool Outer(TacticalAnomaly anomaly) => anomaly.Id.StartsWith("outer-", StringComparison.Ordinal);
+
     private static void Check(Battle battle)
     {
         var r = battle.Catalog.Rules.Anomalies;
-        Assert.InRange(battle.Anomalies.Count(a => a.Kind == TacticalAnomalyKind.Heat), r.HeatCount[0], r.HeatCount[1]);
-        Assert.InRange(battle.Anomalies.Count(a => a.Kind == TacticalAnomalyKind.Dust), r.DustCount[0], r.DustCount[1]);
+        Assert.InRange(battle.Anomalies.Count(a => !Peripheral(a) && !Outer(a) && a.Kind == TacticalAnomalyKind.Heat), r.HeatCount[0], r.HeatCount[1]);
+        Assert.InRange(battle.Anomalies.Count(a => !Peripheral(a) && !Outer(a) && a.Kind == TacticalAnomalyKind.Dust), r.DustCount[0], r.DustCount[1]);
         Assert.Equal(battle.Anomalies.Length, battle.Anomalies.Select(a => a.Id).Distinct().Count());
         double xA = battle.Drones.Where(d => d.Side == "A").Average(d => d.Pose.X);
         double xB = battle.Drones.Where(d => d.Side == "B").Average(d => d.Pose.X);
@@ -143,8 +161,19 @@ public sealed class AnomalyGeneratorTests
         double left = Math.Min(xA + inset, xB - inset), right = Math.Max(xA + inset, xB - inset);
         foreach (var a in battle.Anomalies)
         {
-            Assert.InRange(a.CenterX, left, right);
-            Assert.InRange(a.CenterY, battle.Drones.Min(d => d.Pose.Y), battle.Drones.Max(d => d.Pose.Y));
+            double top = battle.Drones.Min(d => d.Pose.Y), bottom = battle.Drones.Max(d => d.Pose.Y);
+            if (Peripheral(a) || Outer(a))
+            {
+                if (Peripheral(a))
+                    Assert.True(a.CenterY <= top - 2 * r.Spread[1] || a.CenterY >= bottom + 2 * r.Spread[1]);
+                Assert.All(battle.Anomalies.Where(other => other.Id != a.Id), other =>
+                    Assert.True(TacticalGeometry.Dist(a.CenterX, a.CenterY, other.CenterX, other.CenterY) >= 2 * r.Spread[0]));
+            }
+            else
+            {
+                Assert.InRange(a.CenterX, left, right);
+                Assert.InRange(a.CenterY, top, bottom);
+            }
             Assert.All(battle.Drones.Cast<TacticalUnit>().Concat(battle.Carriers), u =>
                 Assert.True(TacticalGeometry.Dist(a.CenterX, a.CenterY, u.Pose.X, u.Pose.Y) >= r.Clearance));
             Assert.InRange(a.Clumps.Length, r.Clumps[0], r.Clumps[1]);

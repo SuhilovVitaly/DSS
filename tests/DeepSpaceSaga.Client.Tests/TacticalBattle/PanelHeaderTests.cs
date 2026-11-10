@@ -122,6 +122,7 @@ public sealed class PanelHeaderTests
         var setup = Assert.IsType<TacticalBattleSetupScreen>(fixture.Screens.Current);
         await setup.Flow.OptionsTask!;
         using var setupBefore = Draw(setup);
+        string seedBefore = setup.SeedText;
         await fixture.Route(ScreenEvent.StartTacticalBattle);
         var classic = Assert.IsType<TacticalBattleScreen>(fixture.Screens.Current);
         var skin = TacticalBattleSkin.Parse("""
@@ -145,6 +146,7 @@ public sealed class PanelHeaderTests
         Assert.Equal(ScreenEvent.None, styled.OnKeyDown(Key.Escape));
         Assert.False(styled.ConfirmExit);
         using var setupAfter = Draw(setup);
+        Assert.Equal(seedBefore, setup.SeedText);
         Assert.Equal(setupBefore.Pixels, setupAfter.Pixels);
 
         var outcome = new TacticalBattlePanelHeader("Test", "Over", SKColors.Yellow, "", "", "Victory", "", SKColors.Green, "", true);
@@ -162,6 +164,12 @@ public sealed class PanelHeaderTests
             var bitmap = new SKBitmap(1280, 720);
             using var canvas = new SKCanvas(bitmap);
             screen.Render(canvas, 1280, 720);
+            // Ignore the setup seed's real-time blinking caret when comparing skin styling.
+            if (screen is TacticalBattleSetupScreen form)
+            {
+                using var mask = new SKPaint { Color = SKColors.Black };
+                canvas.DrawRect(form.CurrentLayout!.Seed, mask);
+            }
             return bitmap;
         }
     }

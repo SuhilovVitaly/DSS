@@ -29,7 +29,7 @@ public sealed class PilotCardModelTests
     [InlineData("1-move", "Вера", "Движение: скорость 77,3 · поворот +5,5°", "ИИ")]
     [InlineData("2-fire", "Марта", "Стрельба: целей 1 · урон 50–75 · иниц. 59", "Таг-1 55%")]
     [InlineData("4-salvo-results", "Марта", "Итог: нанесено 0 · получено 0", "промах")]
-    [InlineData("5-outcome", "Вера", "Итог: нанесено 130 · получено 0", "в строю")]
+    [InlineData("5-outcome", "Вера", "Итог: нанесено 205 · получено 0", "в строю")]
     public async Task Cards_match_reference_values(string scene, string name, string text, string chip)
     {
 

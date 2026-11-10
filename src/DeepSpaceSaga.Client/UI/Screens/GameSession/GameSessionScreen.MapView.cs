@@ -15,7 +15,6 @@ public sealed partial class GameSessionScreen
     private readonly TacticalBattleInputSettings _tacticalBattleInputs;
     private readonly ShortcutButton _tacticalBattleEntry = new("");
     private bool CanOpenTacticalBattle => _handle is { Failure: null };
-    private float TacticalBattleEntryHeight => CanOpenTacticalBattle ? 32 : 0;
     internal SKRect TacticalBattleEntryBounds => _tacticalBattleEntry.Bounds;
     internal string TacticalBattleHint => _tacticalBattleInputs.ShortcutAvailable
         ? string.Format(CultureInfo.InvariantCulture, BattleFormat.Localize("OpenHint"), _tacticalBattleInputs.TacticalBattle)
@@ -329,6 +328,7 @@ public sealed partial class GameSessionScreen
         Add(_objectInfoPanel.CaptionRect); Add(_objectInfoPanel.BodyRect);
         if (_panelVisible) Add(_lastPanelRect);
         Add(_lastScalePanelRect); Add(_lastSpeedPanelRect); Add(_lastMechanicsPanelRect); Add(_mapToolbarRect); Add(_lastGameTimeRect);
+        Add(_tacticalBattleEntry.Bounds);
         var hash = new HashCode(); hash.Add(_viewportW); hash.Add(_viewportH);
         foreach (var r in _mapObstacles) hash.Add(r);
         int value = hash.ToHashCode();
@@ -468,7 +468,10 @@ public sealed partial class GameSessionScreen
         if (rect.Width <= 0 || rect.Height <= 0) return;
         var screenBounds = new SKRect(0, 0, _viewportW, _viewportH);
         var emitted = new HashSet<string>(StringComparer.Ordinal);
-        var ship = FindPlayerShip(_renderStates)?.Predicted;
+        var player = FindPlayerShip(_renderStates);
+        var ship = player?.Predicted;
+        if (player is { } own)
+            Draw(own.Pose.ObjectId, own.Pose.X, own.Pose.Y, "World.Panel.PlayerShip", showDistance: false);
         foreach (var state in _renderStates)
             if (!state.IsPlayerShip && IsImportantMapObject(state.Pose.ObjectId) && !_clusteredObjectIds.Contains(state.Pose.ObjectId))
                 Draw(state.Pose.ObjectId, state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
@@ -476,7 +479,7 @@ public sealed partial class GameSessionScreen
             (_navigationTargetId is null || !_renderStates.Any(s => s.Pose.ObjectId == _navigationTargetId)))
             Draw(_navigationTargetId ?? "navigation-point", tx, ty, "Map.Target");
 
-        void Draw(string id, double worldX, double worldY, string labelKey)
+        void Draw(string id, double worldX, double worldY, string labelKey, bool showDistance = true)
         {
             var (sx, sy) = _camera.WorldToScreen(worldX, worldY, _viewportW, _viewportH);
             if (screenBounds.Contains(sx, sy) || !emitted.Add(id)) return;
@@ -489,8 +492,12 @@ public sealed partial class GameSessionScreen
             _mapMarkerPaint.Color = TacticalMapPalette.Target;
             using var arrow = new SKPath(); arrow.MoveTo(8, 0); arrow.LineTo(-5, -5); arrow.LineTo(-5, 5); arrow.Close();
             canvas.DrawPath(arrow, _mapMarkerPaint); canvas.Restore();
-            double meters = ship is null ? 0 : Math.Sqrt(Math.Pow(worldX - ship.X, 2) + Math.Pow(worldY - ship.Y, 2)) * 100;
-            string text = $"{Localization.Get(labelKey)} · {TacticalMapSettings.FormatDistance(meters)}";
+            string text = Localization.Get(labelKey);
+            if (showDistance)
+            {
+                double meters = ship is null ? 0 : Math.Sqrt(Math.Pow(worldX - ship.X, 2) + Math.Pow(worldY - ship.Y, 2)) * 100;
+                text += $" · {TacticalMapSettings.FormatDistance(meters)}";
+            }
             float textX = Math.Clamp(x - _panelTextPaint.MeasureText(text) / 2, rect.Left, Math.Max(rect.Left, rect.Right - _panelTextPaint.MeasureText(text)));
             canvas.DrawText(text, textX, y < rect.MidY ? y + 22 : y - 12, _panelTextPaint);
         }
@@ -514,6 +521,26 @@ public sealed partial class GameSessionScreen
         return _mapToolbarRect.Contains(x, y);
     }
 
+    private void LayoutTacticalBattleEntry()
+    {
+        float width = Math.Min(280, _uiViewportW - 2 * PanelMargin);
+        float height = Math.Min(26, _uiViewportH - 2 * PanelMargin);
+        _tacticalBattleEntry.Enabled = CanOpenTacticalBattle;
+        _tacticalBattleEntry.Bounds = CanOpenTacticalBattle && width > 0 && height > 0
+            ? SKRect.Create(_uiViewportW - PanelMargin - width, _uiViewportH - PanelMargin - height, width, height)
+            : SKRect.Empty;
+        if (!_tacticalBattleEntry.Bounds.Contains(_uiMouseX, _uiMouseY))
+            _tacticalBattleEntry.ResetInput();
+    }
+
+    private void DrawTacticalBattleEntry(SKCanvas canvas)
+    {
+        if (_tacticalBattleEntry.Bounds.IsEmpty) return;
+        _tacticalBattleEntry.Label = TacticalBattleHint;
+        _tacticalBattleEntry.Tooltip = BattleFormat.Localize("OpenTooltip");
+        _tacticalBattleEntry.Draw(canvas);
+    }
+
     private void DrawMapToolbar(SKCanvas canvas)
     {
         bool hasMapLayers = _mapPresentationSnapshot?.AiMap is not null;
@@ -522,8 +549,7 @@ public sealed partial class GameSessionScreen
         float layerRowHeight = hasDetailRow ? 28 : 0;
         float width = Math.Min(640, Math.Max(260, _uiViewportW - 16));
         float left = (_uiViewportW - width) / 2, top = ComputeScaleSpeedRowY() - 78 - layerRowHeight;
-        float battleRow = TacticalBattleEntryHeight;
-        if (_commandsPanel.BodyRect.Bottom > top - 27 - battleRow)
+        if (_commandsPanel.BodyRect.Bottom > top - 27)
         {
             left = Math.Max(left, _commandsPanel.BodyRect.Right + 8);
             width = Math.Min(width, _uiViewportW - left - 8);
@@ -531,18 +557,8 @@ public sealed partial class GameSessionScreen
         int columns = width < 520 ? 4 : 8;
         float wrappedRowHeight = columns == 4 ? 27 : 0;
         top -= wrappedRowHeight;
-        _mapToolbarRect = new(left, top - battleRow, left + width, top + 74 + layerRowHeight + wrappedRowHeight);
+        _mapToolbarRect = new(left, top, left + width, top + 74 + layerRowHeight + wrappedRowHeight);
         canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
-        float battleWidth = Math.Min(280, width - 8);
-        _tacticalBattleEntry.Bounds = battleRow > 0 && battleWidth > 0
-            ? SKRect.Create(left + (width - battleWidth) / 2, top - 29, battleWidth, 26) : SKRect.Empty;
-        _tacticalBattleEntry.Enabled = CanOpenTacticalBattle;
-        if (!_tacticalBattleEntry.Bounds.IsEmpty)
-        {
-            _tacticalBattleEntry.Label = TacticalBattleHint;
-            _tacticalBattleEntry.Tooltip = BattleFormat.Localize("OpenTooltip");
-            _tacticalBattleEntry.Draw(canvas);
-        }
         string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt", "Map.Cluster"];
         float buttonWidth = (width - 12) / columns;
         for (int i = 0; i < keys.Length; i++)

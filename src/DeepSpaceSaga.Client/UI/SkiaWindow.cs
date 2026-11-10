@@ -73,11 +73,8 @@ public sealed class SkiaWindow : IDisposable
     private bool _disposed;
     private bool _closing;
     private bool _isFocused = true;
-    // Deliberately not long.MinValue: Environment.TickCount64 - long.MinValue overflows,
-    // which would wrap around to a small/negative gap and wrongly suppress the very
-    // first Escape press of a session (before any real focus event has ever fired).
+    // Leave room for the elapsed-time diagnostic before the first focus event.
     private long _focusRegainedAtMs = long.MinValue / 2;
-    private const long MenuOpenFocusRegainGuardMs = 1500;
 
     // TEMP DIAG — startup timing investigation, remove once resolved.
     private readonly System.Diagnostics.Stopwatch? _startupStopwatch;
@@ -562,7 +559,8 @@ public sealed class SkiaWindow : IDisposable
         // itself is the foreground window. Keeping TopMost on while unfocused would
         // pin the game over whatever the user switched to — e.g. the Snipping Tool
         // that Print Screen just opened, or an alt-tabbed app.
-        _window.TopMost = isFocused;
+        if (_window is not null)
+            _window.TopMost = isFocused;
 
         if (isFocused)
         {
@@ -1168,18 +1166,6 @@ public sealed class SkiaWindow : IDisposable
         // Guard: don't push overlay on top of another overlay
         if (_screens.Current is GameMenuScreen)
             return;
-
-        long msSinceFocusRegain = Environment.TickCount64 - _focusRegainedAtMs;
-        if (msSinceFocusRegain < MenuOpenFocusRegainGuardMs)
-        {
-            // Keep the menu hidden: an Escape landing this soon after the window
-            // regained OS focus is almost always fallout from whatever stole focus
-            // (e.g. Windows' Print Screen -> Snipping Tool) rather than a deliberate
-            // request to pause and open the menu. A real Escape press a beat later
-            // still opens it normally.
-            InterfaceLog.Write($"DIAG OpenGameMenu kept hidden msSinceFocusRegain={msSinceFocusRegain}");
-            return;
-        }
 
         await PushModalAsync(new GameMenuScreen());
     }

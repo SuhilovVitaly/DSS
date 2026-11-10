@@ -29,10 +29,12 @@ internal sealed record BuildCardModel(TacticalUnitSnapshot Unit, bool Hovered, I
     internal static BuildCardModel? From(TacticalBattleFrame f)
     {
         if (f.Salvo is null && f.Battle.Phase == TacticalBattlePhase.Over) return null;
+        if (f.Salvo is { InFlight: false })
+            return f.Battle.Units.Any(u => u.Id == f.HoverUnitId && u.State != TacticalUnitState.Destroyed && Own(f.Battle, u))
+                ? From(f.Battle, f.HoverUnitId, null, allowTerminal: true) : null;
         // Foreign units, carriers and anomaly hover retain their dedicated cards.
         if (f.HoverUnitId is null && AnomalyPresentation.HoverKind(f) is not null) return null;
-        string? selected = f.Salvo is { InFlight: true } ? PilotCardModel.ActiveShooter(f)
-            : f.Salvo is not null ? PilotCardModel.ResultShot(f)?.ShooterId : f.SelectedDroneId;
+        string? selected = f.Salvo is { InFlight: true } ? PilotCardModel.ActiveShooter(f) : f.SelectedDroneId;
         if (!f.Battle.Units.Any(u => u.Id == selected && Own(f.Battle, u))) selected = f.LastSelectedDroneId;
         return From(f.Battle, f.HoverUnitId, selected, allowTerminal: f.Salvo is not null);
     }
