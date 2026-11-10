@@ -68,6 +68,46 @@ public sealed class CommandsPanel
             string.Concat(Enumerable.Repeat(Localization.Get("World.Panel.BarEmpty"), 6 - filled)) + Localization.Get("World.Panel.BarRight");
     }
 
+    private static void DrawDetailLine(SKCanvas canvas, string line, float x, float y, SKPaint paint)
+    {
+        string prefix = Localization.Get("World.Panel.Structure") + " " + Localization.Get("World.Panel.BarLeft");
+        int barEnd = line.StartsWith(prefix, StringComparison.Ordinal)
+            ? line.IndexOf(Localization.Get("World.Panel.BarRight"), prefix.Length, StringComparison.Ordinal)
+            : -1;
+        if (barEnd < 0)
+        {
+            canvas.DrawText(line, x, y, paint);
+            return;
+        }
+
+        string full = Localization.Get("World.Panel.BarFull");
+        string empty = Localization.Get("World.Panel.BarEmpty");
+        var segments = line.AsSpan(prefix.Length, barEnd - prefix.Length);
+        var bounds = new SKRect();
+        float segmentWidth = paint.MeasureText(full, ref bounds);
+        canvas.DrawText(prefix, x, y, paint);
+        float segmentX = x + paint.MeasureText(prefix);
+        canvas.Save();
+        canvas.ClipRect(new SKRect(segmentX, y + bounds.Top, segmentX + segmentWidth * 6, y + bounds.Bottom));
+        for (int i = 0; i < 6 && !segments.IsEmpty; i++)
+        {
+            string glyph = segments.StartsWith(full, StringComparison.Ordinal) ? full : empty;
+            if (!segments.StartsWith(glyph, StringComparison.Ordinal)) break;
+            float left = segmentX + i * segmentWidth;
+            if (glyph == empty)
+            {
+                var color = paint.Color;
+                paint.Color = color.WithAlpha((byte)(color.Alpha * .6f));
+                canvas.DrawRect(left, y + bounds.Top, segmentWidth, bounds.Height, paint);
+                paint.Color = color;
+            }
+            canvas.DrawText(glyph, left, y, paint);
+            segments = segments[glyph.Length..];
+        }
+        canvas.Restore();
+        canvas.DrawText(line[barEnd..], segmentX + segmentWidth * 6, y, paint);
+    }
+
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
     private const float XenonBodySliceInset = 12f;
     private const float XenonButtonSliceInset = 8f;
@@ -914,7 +954,7 @@ public sealed class CommandsPanel
                 {
                     paint.Color = row.DetailsMuted ? XenonStyle.CyanBright.WithAlpha(100) : XenonStyle.CyanBright;
                     float y = Math.Max(row.BodyRect.Top + 16, row.Buttons.IsDefaultOrEmpty ? 0 : row.Buttons.Max(b => b.Rect.Bottom) + 16) + i * 16;
-                    canvas.DrawText(row.DetailLines[i], row.BodyRect.Left + 10, y, paint);
+                    DrawDetailLine(canvas, row.DetailLines[i], row.BodyRect.Left + 10, y, paint);
                 }
                 canvas.Restore();
             }
