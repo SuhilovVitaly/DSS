@@ -8,17 +8,35 @@ internal sealed record AnomalyHoverCard(string Heading, string Name, SKColor Ton
 
 internal sealed class HoverCard
 {
+    private const int ReportVisibleRows = 10;
+    private SKRect _reportBounds;
+    private (string BattleId, int Turn)? _reportKey;
+    private int _reportFirst, _reportCount;
     internal static AnomalyHoverCard? Anomaly(TacticalBattleFrame frame) => AnomalyPresentation.HoverKind(frame) is { } kind
         ? new(M("Anomaly.Hover"), M("Anomaly." + kind), kind == TacticalAnomalyKindCode.Heat ? Heat : Dust,
             M("Anomaly." + kind + "Lines").Split(" / ", StringSplitOptions.None)) : null;
     internal static BuildCardModel? Build(TacticalBattleFrame frame) => BuildCardModel.From(frame);
     public SKRect Bounds { get; private set; }
+    internal bool ScrollResults(SKPoint point, float delta)
+    {
+        if (_reportBounds.IsEmpty || !_reportBounds.Contains(point) || !float.IsFinite(delta)) return false;
+        _reportFirst = Math.Clamp(_reportFirst - Math.Sign(delta) * 3, 0, Math.Max(0, _reportCount - ReportVisibleRows));
+        return true;
+    }
+
     public void Draw(SKCanvas c, TacticalBattleFrame f, PilotPortraitCatalog portraits)
     {
         Bounds = SKRect.Empty;
+        _reportBounds = SKRect.Empty;
         if (Build(f) is { } build)
         { Bounds = BuildCard.Bounds(f); BuildCard.Draw(c, build, Bounds, portraits); return; }
         var unit = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId);
+        if (f.Salvo is { InFlight: false } salvo &&
+            unit is not { Kind: TacticalUnitKind.Drone, State: not TacticalUnitState.Destroyed })
+        {
+            DrawRoundReport(c, f, salvo);
+            return;
+        }
         if (unit is null)
         {
             if (Anomaly(f) is not { } anomaly) return;
@@ -54,5 +72,46 @@ internal sealed class HoverCard
         string details = unit.Build is { } b ? U(own ? "HoverOwnStats" : "HoverEnemyStats", b.WeaponName, b.DamageMin, b.DamageMax,
             own ? unit.Accuracy : Math.Round(b.Range), unit.Initiative?.ToString() ?? "—") : "—";
         T(c, details, r.MidX, r.Top + 96, FitSize(details, 10.5f, r.Width - 16), Muted, align: SKTextAlign.Center);
+    }
+
+    private void DrawRoundReport(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo)
+    {
+        var key = (frame.Battle.BattleId, salvo.Turn);
+        if (_reportKey != key) { _reportKey = key; _reportFirst = 0; }
+        _reportCount = salvo.Flights.Length;
+        _reportFirst = Math.Min(_reportFirst, Math.Max(0, _reportCount - ReportVisibleRows));
+        int rows = Math.Min(ReportVisibleRows, _reportCount);
+        float top = frame.Panel.Bottom + 6;
+        Bounds = _reportBounds = new(frame.Panel.Left, top, frame.Panel.Right, top + 32 + Math.Max(1, rows) * 17);
+        if (Recording is { } layout) layout.Rects["salvo-report"] = Bounds;
+        PanelBox(canvas, Bounds);
+        T(canvas, U("SalvoComplete"), Bounds.Left + 9, top + 19, 12, Text, true);
+        if (_reportCount == 0)
+        {
+            T(canvas, M("EvadeNoFire"), Bounds.Left + 9, top + 37, 11, Muted);
+            return;
+        }
+
+        string Name(string id) => frame.Battle.Units.FirstOrDefault(u => u.Id == id) is { } unit
+            ? PilotCardModel.Name(unit) : id;
+        for (int i = 0; i < rows; i++)
+        {
+            var shot = salvo.Flights[_reportFirst + i].Shot;
+            float y = top + 36 + i * 17;
+            string pair = Name(shot.ShooterId) + " → " + Name(shot.TargetId);
+            T(canvas, BuildCardModel.Ellipsize(pair, Bounds.Width - 93, 11, false), Bounds.Left + 9, y, 11, Text);
+            string outcome = shot.Absorbed ? M("Absorbed") : U(shot.Hit ? "Hit" : "Miss");
+            T(canvas, outcome, Bounds.Right - 13, y, FitSize(outcome, 10, 69), shot.Absorbed ? Heat : shot.Hit ? Yellow : Muted,
+                align: SKTextAlign.Right);
+        }
+        if (_reportCount > rows)
+        {
+            float height = rows * 17;
+            float thumb = height * rows / _reportCount;
+            float offset = (height - thumb) * _reportFirst / (_reportCount - rows);
+            float x = Bounds.Right - 5;
+            Stroke(canvas, new(x, top + 24), new(x, top + 24 + height), Track, 2);
+            Stroke(canvas, new(x, top + 24 + offset), new(x, top + 24 + offset + thumb), Muted, 2);
+        }
     }
 }

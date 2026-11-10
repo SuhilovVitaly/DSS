@@ -2,13 +2,13 @@
 epic: EP-maintenance
 story: EP-maintenance-US-0010-tactical-readability-and-results
 stage: approved
-implementation_status: in_progress
+implementation_status: implemented
 created: "2026-11-10T14:03:31.830Z"
 ---
 
 # Читаемость карты и результаты залпа
 
-[Эпик «Исправления и доделки»](../Documentation.md)
+[Эпик «Исправления и доделки»](../../Documentation.md)
 
 ## Входное задание
 
@@ -28,15 +28,15 @@ created: "2026-11-10T14:03:31.830Z"
 
 ## Dependencies
 
-Продолжает [US-0009](../Done/EP-maintenance-US-0009-tactical-map-feedback/EP-maintenance-US-0009-tactical-map-feedback.md). Тикеты можно проверять последовательно независимо.
+Продолжает [US-0009](../EP-maintenance-US-0009-tactical-map-feedback/EP-maintenance-US-0009-tactical-map-feedback.md). Тикеты можно проверять последовательно независимо.
 
 ## Approved ticket map
 
-- [EP-maintenance-US-0010-TK-0001-held-movement-zone](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0001-held-movement-zone/EP-maintenance-US-0010-TK-0001-held-movement-zone.md) — AC1, выполнен
-- [EP-maintenance-US-0010-TK-0002-floating-shot-feedback](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0002-floating-shot-feedback/EP-maintenance-US-0010-TK-0002-floating-shot-feedback.md) — AC2, выполнен
-- [EP-maintenance-US-0010-TK-0003-compact-unit-markers](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0003-compact-unit-markers/EP-maintenance-US-0010-TK-0003-compact-unit-markers.md) — AC3, выполнен
-- [EP-maintenance-US-0010-TK-0004-wreck-names](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0004-wreck-names/EP-maintenance-US-0010-TK-0004-wreck-names.md) — AC4, выполнен
-- EP-maintenance-US-0010-TK-0005-round-shot-report — AC5
+- [EP-maintenance-US-0010-TK-0001-held-movement-zone](./EP-maintenance-US-0010-TK-0001-held-movement-zone/EP-maintenance-US-0010-TK-0001-held-movement-zone.md) — AC1, выполнен
+- [EP-maintenance-US-0010-TK-0002-floating-shot-feedback](./EP-maintenance-US-0010-TK-0002-floating-shot-feedback/EP-maintenance-US-0010-TK-0002-floating-shot-feedback.md) — AC2, выполнен
+- [EP-maintenance-US-0010-TK-0003-compact-unit-markers](./EP-maintenance-US-0010-TK-0003-compact-unit-markers/EP-maintenance-US-0010-TK-0003-compact-unit-markers.md) — AC3, выполнен
+- [EP-maintenance-US-0010-TK-0004-wreck-names](./EP-maintenance-US-0010-TK-0004-wreck-names/EP-maintenance-US-0010-TK-0004-wreck-names.md) — AC4, выполнен
+- [EP-maintenance-US-0010-TK-0005-round-shot-report](./EP-maintenance-US-0010-TK-0005-round-shot-report/EP-maintenance-US-0010-TK-0005-round-shot-report.md) — AC5, выполнен
 
 ## Review log
 

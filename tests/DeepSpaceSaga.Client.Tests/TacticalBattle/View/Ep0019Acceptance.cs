@@ -33,7 +33,8 @@ public sealed partial class Ep0019ViewTests
         bool build = name is "1-move-no-hover" or "2-fire-hover-own";
         Assert.Equal(build, l.Rects.ContainsKey("build"));
         if (build) Rect(new(1040, db + 126, 1274, db + 426), l.Rects["build"]);
-        bool hover = name is not ("1-move-no-hover" or "2-fire-hover-own" or "5-outcome"); Assert.Equal(hover, l.Rects.ContainsKey("hover"));
+        bool hover = name is not ("1-move-no-hover" or "2-fire-hover-own" or "4-salvo-results" or "5-outcome"); Assert.Equal(hover, l.Rects.ContainsKey("hover"));
+        Assert.Equal(name == "4-salvo-results", l.Rects.ContainsKey("salvo-report"));
         if (hover) Rect(new(1040, db + 126, 1274, db + 230), l.Rects["hover"]);
         if (f.Movement is { } movement)
             foreach (var row in movement.Orders)
@@ -74,14 +75,14 @@ public sealed partial class Ep0019ViewTests
         "2-fire" or "2-fire-hover-own" => ["ХОД 4  •", "СТРЕЛЬБА", "Юн → Таг-6", "ПЛАН ВЫСТРЕЛА", "73%", "шанс попадания", "Дистанция 73,4", "Угол 0,4°", "Копьё I · урон 40–60", "Таг-6: броня 20/20, затем корпус 40/40", "Ловушка [D]", "Не стрелять", "Уклониться [E]", "3 стреляют · 1 без цели", "План готов к отправке", "Выполнить залп [Enter]", "нет целей", "Таг-1 55%", "Таг-6 73%", "Таг-6 71%", "Стрельба: целей 2 · урон 40–60 · иниц. 53"],
         "3-salvo-flight" => ["ХОД 4  •", "ЗАЛП", "Марта → Таг-1", "ВЫСТРЕЛ В ПОЛЁТЕ", "Очерёдность огня", "Снаряды в полёте", "Выстрел 1 из 4", "Пропустить полёт [Enter]", "огонь", "ждёт", "без цели"],
         "4-salvo-results" => ["ХОД 4  •", "РЕЗУЛЬТАТЫ", "Марта → Таг-1", "РЕЗУЛЬТАТ ВЫСТРЕЛА", "ПРОМАХ", "Нанесённый урон: 0", "Повреждения Марты", "Броня: 80 → 80", "100%", "Корпус: 55/55 · без урона", "В строю", "Залп завершён", "4 выстрела · 3 попадания", "ловушка цели", "55% → 34%", "↺ Повтор", "К движению [Enter]", "не стреляла", "попадание", "промах"],
-        _ => ["ХОД 23  •", "ИТОГ", "Начальный бой · свои 4 · враг 0 · потери 0:6", "Начальный бой", "ИТОГ БОЯ", "ПОБЕДА", "у противника не осталось дронов", "Ходов", "23", "Выстрелов", "42", "Попаданий", "20", "Потери", "свои 0 · враг 6", "Бой окончен", "Esc — вернуться на карту мира", "Новый бой", "Выйти [Esc]", "Итог: нанесено 130 · получено 0", "Итог: нанесено 322 · получено −34", "Итог: нанесено 51 · получено −34", "Итог: нанесено 209 · получено −40"]
+        _ => ["ХОД 21  •", "ИТОГ", "Начальный бой · свои 4 · враг 1 · потери 1:5", "Начальный бой", "ИТОГ БОЯ", "ПОБЕДА", "носитель Логово уничтожен", "Ходов", "21", "Выстрелов", "40", "Попаданий", "20", "Потери", "свои 1 · враг 5", "Бой окончен", "Esc — вернуться на карту мира", "Новый бой", "Выйти [Esc]", "Итог: нанесено 205 · получено 0", "Итог: нанесено 228 · получено −34", "Итог: нанесено 51 · получено −130", "Итог: нанесено 176 · получено 0"]
     };
     [Theory, MemberData(nameof(Scenes)), Trait("Category", "Ep0019View")]
     public async Task Scene_texts_match_design_spec(string name)
     {
         await using var s = await Ep0019Scenes.Create(name); using var locale = Localization.UseLocaleForTests("Russian"); using var bitmap = s.Render();
         foreach (string text in ExpectedTexts(name)) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
-        if (name is not ("1-move-no-hover" or "5-outcome"))
+        if (name is not ("1-move-no-hover" or "4-salvo-results" or "5-outcome"))
             foreach (string text in name == "2-fire-hover-own" ? new[] { "ПОД КУРСОРОМ · СБОРКА", "Олег", "Корпус 55/55", "Броня 80/80", "Рама «Лёгкий»" } : new[] { "ПОД КУРСОРОМ · ПРОТИВНИК", "Таг-6", name == "4-salvo-results" ? "Корпус 0/40" : "Корпус 40/40", name == "4-salvo-results" ? "Броня 0/20" : "Броня 20/20", "Обрез I · 40–50 · дальн. 110 · иниц. 41" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
         if (name == "3-salvo-flight")
             foreach (string row in new[] { "Марта → Таг-1", "Вера — нет цели", "Таг-2 — нет цели", "Юн → Таг-6", "Олег → Таг-6", "Таг-1 — нет цели", "Таг-5 → Юн", "Таг-3 — нет цели", "Таг-4 — нет цели", "Таг-6 — нет цели" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == row);
