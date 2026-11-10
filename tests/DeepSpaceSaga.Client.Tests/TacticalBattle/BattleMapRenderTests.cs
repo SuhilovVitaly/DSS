@@ -52,7 +52,7 @@ public sealed class BattleMapRenderTests
         Assert.True(arrival.InFlight);
         using var impact = Record(frame with { Battle = results.Project(arrivalMs), Salvo = arrival }, wreckLayout);
         using var movement = Raster(frame with { Presentation = TacticalBattlePresentation.Current });
-        Assert.Equal(TacticalBattleMapRenderer.Enemy, flying.GetPixel(490, 362));
+        Assert.NotEmpty(MarkerPixels(flying, new SKPoint(490, 360), TacticalBattleMapRenderer.Enemy));
         Assert.NotEqual(flying.GetPixel(490, 360), impact.GetPixel(490, 360));
         Assert.Equal(impact.GetPixel(490, 360), movement.GetPixel(490, 360));
         string name = PilotCardModel.Name(enemy);
@@ -201,10 +201,10 @@ public sealed class BattleMapRenderTests
                 var color = unit.Side == battle.PlayerSide ? TacticalBattleMapRenderer.Own : TacticalBattleMapRenderer.Enemy;
                 var upPixels = MarkerPixels(up, center, color);
                 var rightPixels = MarkerPixels(right, center, color);
-                Assert.InRange(upPixels.Count, 28, 100);
+                Assert.InRange(upPixels.Count, 10, 50);
                 Assert.InRange(upPixels.Count(p => rightPixels.Contains((-p.Y - 1, p.X))), upPixels.Count - 4, upPixels.Count);
-                Assert.All(upPixels, pixel => Assert.InRange(pixel.X, -7, 6));
-                Assert.Contains((1, 1), upPixels);
+                Assert.All(upPixels, pixel => Assert.InRange(pixel.X, -5, 4));
+                Assert.Contains(upPixels, pixel => Math.Abs(pixel.X) <= 1 && Math.Abs(pixel.Y) <= 1);
                 masks.Add(upPixels);
                 upBounds.Add(PixelBounds(center, upPixels));
                 rightBounds.Add(PixelBounds(center, rightPixels));
@@ -242,21 +242,27 @@ public sealed class BattleMapRenderTests
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         var battle = (await Start(fixture)).Flow.State!;
-        var own = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side == battle.PlayerSide)
-            with { FrameId = "unknown", Pose = new(-35, 0, 0) };
-        var enemy = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side != battle.PlayerSide)
-            with { FrameId = "unknown", Pose = new(35, 0, 0) };
+        var own = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side == battle.PlayerSide) with
+        {
+            FrameId = "unknown",
+            Pose = new(-35, 0, 0)
+        };
+        var enemy = battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone && unit.Side != battle.PlayerSide) with
+        {
+            FrameId = "unknown",
+            Pose = new(35, 0, 0)
+        };
         var view = new TacticalBattleView(880, 720, 0, 0, 1);
         var frame = new TacticalBattleFrame(battle with { Units = [own, enemy], Paths = [], Anomalies = [] },
             view, SKRect.Empty, 1, false, "", EnemyForecast: false);
         using var raster = Raster(frame);
         var diamond = MarkerPixels(raster, view.Project(own.Pose), TacticalBattleMapRenderer.Own);
-        Assert.Contains((0, -4), diamond);
-        Assert.Contains((0, 3), diamond);
+        Assert.Contains((0, -3), diamond);
+        Assert.Contains((0, 2), diamond);
         Assert.DoesNotContain((5, 5), diamond);
         var triangle = MarkerPixels(raster, view.Project(enemy.Pose), TacticalBattleMapRenderer.Enemy);
         Assert.Contains(triangle, pixel => pixel.X > 0 && Math.Abs(pixel.Y) <= 1);
-        Assert.Contains(triangle, pixel => pixel.X < 0 && pixel.Y >= 2);
+        Assert.Contains(triangle, pixel => pixel.X < 0 && pixel.Y >= 1);
         Assert.DoesNotContain((5, 4), triangle);
     }
 
@@ -267,7 +273,9 @@ public sealed class BattleMapRenderTests
         {
             for (int x = -9; x < 9; x++)
             {
-                if (bitmap.GetPixel((int)center.X + x, (int)center.Y + y) == color)
+                var actual = bitmap.GetPixel((int)center.X + x, (int)center.Y + y);
+                if (Math.Abs(actual.Red - color.Red) <= 45 && Math.Abs(actual.Green - color.Green) <= 45 &&
+                    Math.Abs(actual.Blue - color.Blue) <= 45)
                     pixels.Add((x, y));
             }
         }

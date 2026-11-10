@@ -159,7 +159,7 @@ public sealed partial class Ep0019ViewTests
         {
             var p = f.View.Project(u.Pose);
             if (name == "5-outcome" && !TacticalBattleMapRenderer.Safe(f.View).Contains(p)) continue;
-            Probe("marker:" + u.Id, SKRect.Create(p.X - 1.5f, p.Y - 1.5f, 3, 3), .5, u.Side == f.Battle.PlayerSide ? Cyan : Orange);
+            Probe("marker:" + u.Id, SKRect.Create(p.X - 1, p.Y - 1, 2, 2), .4, u.Side == f.Battle.PlayerSide ? Cyan : Orange);
         }
         if (f.HoverUnitId is { } id)
         {

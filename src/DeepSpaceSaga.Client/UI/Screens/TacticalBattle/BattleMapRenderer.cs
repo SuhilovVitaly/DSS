@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
-    private const float DroneSilhouetteScale = .60f;
+    private const float DroneSilhouetteScale = .42f;
     private static readonly SKPath LightDrone = DronePath("M0 -11 4 -5 4 8 -4 8 -4 -5Z M-6 -2H-9V8H-6Z M6 -2H9V8H6Z");
     private static readonly SKPath HeavyDrone = DronePath("M-4 -9H4L7 -5V9H-7V-5Z M-9 -5H-12V9H-9Z M9 -5H12V9H9Z");
     private static readonly SKPath ThugDrone = DronePath("M-3 -11 4 -7 5 6 2 9 -5 8 -6 -3Z M-8 -4 -11 -1 -10 7 -7 5Z M7 -2H11V6H7Z");
@@ -79,7 +79,7 @@ internal static partial class TacticalBattleMapRenderer
             }
             else
             {
-                float radius = unit.Kind == TacticalUnitKind.Carrier ? 16 : 7;
+                float radius = unit.Kind == TacticalUnitKind.Carrier ? 16 : 5;
                 occupied.Add(new(p.X - radius, p.Y - radius, p.X + radius, p.Y + radius));
             }
         }
@@ -117,9 +117,9 @@ internal static partial class TacticalBattleMapRenderer
                     c.DrawLine(0, -5 * DroneSilhouetteScale, 0, 4 * DroneSilhouetteScale, hullPaint);
                     c.Restore();
                 }
-                else if (own) Diamond(c, p, 6, color);
-                else Triangle(c, p, 7, u.Pose.Course, color);
-                if (u.Id == Selected(f)) Circle(c, p, 10, SKColors.Transparent, Text, 1.2f);
+                else if (own) Diamond(c, p, 4.2f, color);
+                else Triangle(c, p, 4.9f, u.Pose.Course, color);
+                if (u.Id == Selected(f)) Circle(c, p, 7, SKColors.Transparent, Text, 1.2f);
             }
             if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
                 EvasionRing(c, p);
