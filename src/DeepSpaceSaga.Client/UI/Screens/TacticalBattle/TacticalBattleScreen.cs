@@ -290,7 +290,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             ObserveOrders(state);
             if (_orders.Hit(View, p, 7, true) is { } handle)
             { _orders.Select(handle); _orderDrag = true; _orderDragEdited = false; _lastAim = p; }
-            else if (_orders.Hit(View, p, 12, false) is { } id) _orders.Select(id);
+            else if (_orders.Hit(View, p, 12, false) is { } id) _orders.ToggleSelection(id);
             else { _orderDrag = _orders.Selected is not null; if (_orderDrag) AimOrder(p); }
         }
         else if (Flow.State is { Phase: TacticalBattlePhase.Fire } fire)

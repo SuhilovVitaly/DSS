@@ -35,7 +35,7 @@ revision: 1
 ## Approved ticket map
 
 - [EP-maintenance-US-0009-TK-0001-directional-endpoints](../Done/EP-maintenance-US-0009-tactical-map-feedback/EP-maintenance-US-0009-TK-0001-directional-endpoints/EP-maintenance-US-0009-TK-0001-directional-endpoints.md) — AC1, Client, выполнен
-- EP-maintenance-US-0009-TK-0002-selection-only-zones — AC2, Client, ожидает публикации
+- [EP-maintenance-US-0009-TK-0002-selection-only-zones](../Done/EP-maintenance-US-0009-tactical-map-feedback/EP-maintenance-US-0009-TK-0002-selection-only-zones/EP-maintenance-US-0009-TK-0002-selection-only-zones.md) — AC2, Client, выполнен
 - EP-maintenance-US-0009-TK-0003-stable-battle-camera — AC3, Client, ожидает публикации
 - EP-maintenance-US-0009-TK-0004-two-turn-trails — AC4, Client, ожидает публикации
 - EP-maintenance-US-0009-TK-0005-show-all-fire-candidates — AC5, Client, ожидает публикации

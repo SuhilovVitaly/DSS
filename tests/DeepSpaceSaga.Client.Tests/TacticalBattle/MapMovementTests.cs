@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.Tests.TacticalBattle.View;
+using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using Silk.NET.Input;
 using SkiaSharp;
@@ -91,6 +92,52 @@ public sealed class MapMovementTests
                 File.WriteAllBytes(Path.Combine(root, $"movement-{scale}.png"), image.ToArray());
             }
         }
+    }
+
+    [Fact]
+    public async Task Clicking_selected_drone_hides_movement_and_fire_zones_without_resetting_paths()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        using var initialRaster = scene.Render();
+        scene.Screen.OnKeyDown(Key.Right);
+        var frame = scene.Frame;
+        var selected = frame.Movement!.SelectedOrder!;
+        var position = frame.View.Project(selected.Unit.Pose);
+        scene.Screen.OnMouseDown(position.X * 1.5f, position.Y * 1.5f, MouseButton.Left);
+        var cleared = scene.Frame;
+        Assert.Null(cleared.SelectedDroneId);
+        Assert.Null(cleared.Movement!.SelectedOrder);
+        Assert.Empty(cleared.Movement.Reachable);
+        Assert.Equal(frame.Movement.Orders.ToArray(), cleared.Movement.Orders.ToArray());
+        AssertPhaseButton(scene, ScreenEvent.MoveTacticalBattle);
+        scene.Screen.OnMouseDown(position.X * 1.5f, position.Y * 1.5f, MouseButton.Left);
+        Assert.Equal(selected.Unit.Id, scene.Frame.SelectedDroneId);
+        Assert.Equal(selected.Path, scene.Frame.Movement!.SelectedOrder!.Path);
+    }
+
+    [Fact]
+    public async Task Clicking_selected_shooter_hides_fire_sector_without_clearing_order()
+    {
+        await using var scene = await Ep0019Scenes.Create("2-fire");
+        using var initialRaster = scene.Render();
+        var frame = scene.Frame;
+        var shooter = frame.FirePlan!.Selected!;
+        var position = frame.View.Project(shooter.Drone.Pose);
+        var orders = scene.Screen.BuildFireRequest().Targets;
+
+        scene.Screen.OnMouseDown(position.X * 1.5f, position.Y * 1.5f, MouseButton.Left);
+        Assert.Null(scene.Frame.FirePlan!.Selected);
+        Assert.Equal(orders.ToArray(), scene.Screen.BuildFireRequest().Targets.ToArray());
+        AssertPhaseButton(scene, ScreenEvent.FireTacticalBattle);
+        scene.Screen.OnMouseDown(position.X * 1.5f, position.Y * 1.5f, MouseButton.Left);
+        Assert.Equal(shooter, scene.Frame.FirePlan!.Selected);
+    }
+
+    private static void AssertPhaseButton(Ep0019Scenes scene, ScreenEvent expected)
+    {
+        using var raster = scene.Render();
+        var button = scene.Screen.Layout.Rects["button:primary"];
+        Assert.Equal(expected, scene.Screen.OnMouseDown(button.MidX * 1.5f, button.MidY * 1.5f, MouseButton.Left));
     }
 
     [Fact]

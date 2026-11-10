@@ -37,7 +37,13 @@ internal sealed partial class PhasePanel
             Line(c, 1048, 1266, 59); Line(c, 1048, 1266, _db + 27);
             switch (Phase)
             {
+                case "Move" when f.Movement is { SelectedOrder: null } move:
+                    StandardAction(c, U("AiSuggestions", move.Orders.Count(o => o.Order == o.Suggestion)), U("MoveStatus"), U("MoveAction"));
+                    break;
                 case "Move": DrawMove(c); break;
+                case "Fire" when f.FirePlan is { Selected: null } fire:
+                    StandardAction(c, FireSummary(fire), U("FireStatus"), U("FireAction"));
+                    break;
                 case "Fire": DrawFire(c); break;
                 case "Salvo": case "Results": DrawSalvo(c); break;
                 case "Outcome": DrawOutcome(c); break;

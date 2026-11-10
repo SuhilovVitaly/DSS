@@ -61,6 +61,7 @@ internal sealed class TacticalBattleFireOrders
     {
         if (_rows.Count == 0) return;
         int index = _rows.FindIndex(r => r.Drone.Id == Selected);
+        if (index < 0 && backwards) index = 0;
         Select(_rows[(index + _rows.Count + (backwards ? -1 : 1)) % _rows.Count].Drone.Id);
     }
 
@@ -108,13 +109,19 @@ internal sealed class TacticalBattleFireOrders
 
     public bool ChooseAt(TacticalBattleView view, SKPoint pointer, float uiScale)
     {
-        if (_state is not { } state || Capture().Selected is not { } selected) return false;
-        string? hit = Hit(selected.Group.List.Select(c => c.TargetId), 14 * uiScale);
-        if (hit is not null) return Choose(hit);
-        hit = Hit(_rows.Select(r => r.Drone.Id), 12 * uiScale);
-        return hit is not null && Select(hit);
+        if (_state is not { } state) return false;
+        var own = Hit(_rows.Select(r => r.Drone.Id), 12 * uiScale);
+        var target = Capture().Selected is { } selected
+            ? Hit(selected.Group.List.Select(c => c.TargetId), 14 * uiScale)
+            : null;
+        if (target is { } enemy && (own is null || enemy.Distance < own.Value.Distance)) return Choose(enemy.Id);
+        if (own is not { } hit) return false;
+        if (hit.Id != Selected) return Select(hit.Id);
+        Selected = null;
+        _cached = null;
+        return true;
 
-        string? Hit(IEnumerable<string> ids, float radius)
+        (string Id, double Distance)? Hit(IEnumerable<string> ids, float radius)
         {
             double best = double.PositiveInfinity;
             string? nearest = null;
@@ -127,7 +134,7 @@ internal sealed class TacticalBattleFireOrders
                 if (distance > radius || distance >= best) continue;
                 nearest = id; best = distance;
             }
-            return nearest;
+            return nearest is null ? null : (nearest, best);
         }
     }
 }

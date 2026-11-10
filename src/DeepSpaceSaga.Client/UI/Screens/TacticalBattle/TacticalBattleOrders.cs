@@ -73,9 +73,17 @@ internal sealed class TacticalBattleOrders
         return true;
     }
 
+    public void ToggleSelection(string id)
+    {
+        if (Selected != id) { Select(id); return; }
+        _selected = null;
+        _cached = null;
+    }
+
     public bool Cycle(bool backwards)
     {
-        if (_selected is null || _entries.Count == 0) return false;
+        if (_entries.Count == 0) return false;
+        if (_selected is null) return Select((backwards ? _entries[^1] : _entries[0]).Unit.Id);
         int current = _entries.IndexOf(_selected);
         int index = (current + _entries.Count + (backwards ? -1 : 1)) % _entries.Count;
         return Select(_entries[index].Unit.Id);
