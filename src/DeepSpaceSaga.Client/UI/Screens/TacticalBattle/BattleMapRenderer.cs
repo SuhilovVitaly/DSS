@@ -221,14 +221,16 @@ internal static partial class TacticalBattleMapRenderer
                 last = trail.Points[^1];
             }
         }
+        using var dots = SKPathEffect.CreateDash([1, 4], 0);
         using var paint = new SKPaint
         {
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
-            Color = Text.WithAlpha(135),
-            StrokeWidth = 1.2f,
+            Color = Text.WithAlpha(95),
+            StrokeWidth = .85f,
             StrokeCap = SKStrokeCap.Round,
-            StrokeJoin = SKStrokeJoin.Round
+            StrokeJoin = SKStrokeJoin.Round,
+            PathEffect = dots
         };
         canvas.DrawPath(path, paint);
     }

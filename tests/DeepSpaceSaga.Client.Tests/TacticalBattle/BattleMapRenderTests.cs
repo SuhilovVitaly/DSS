@@ -112,6 +112,7 @@ public sealed class BattleMapRenderTests
             using var withoutTrail = Raster(frame with { Battle = frame.Battle with { Paths = [] } });
             Assert.Contains(Enumerable.Range(221, 24), x =>
                 withTrail.GetPixel(x, 360).Green > withoutTrail.GetPixel(x, 360).Green + 15);
+            Assert.Contains(Enumerable.Range(221, 24), x => withTrail.GetPixel(x, 360) == withoutTrail.GetPixel(x, 360));
         }
     }
 
