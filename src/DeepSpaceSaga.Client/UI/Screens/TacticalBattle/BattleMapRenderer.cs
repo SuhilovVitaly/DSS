@@ -9,6 +9,11 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
+    private const float DroneSilhouetteScale = .75f;
+    private static readonly SKPath LightDrone = DronePath("M0 -11 4 -5 4 8 -4 8 -4 -5Z M-6 -2H-9V8H-6Z M6 -2H9V8H6Z");
+    private static readonly SKPath HeavyDrone = DronePath("M-4 -9H4L7 -5V9H-7V-5Z M-9 -5H-12V9H-9Z M9 -5H12V9H9Z");
+    private static readonly SKPath ThugDrone = DronePath("M-3 -11 4 -7 5 6 2 9 -5 8 -6 -3Z M-8 -4 -11 -1 -10 7 -7 5Z M7 -2H11V6H7Z");
+
     private static readonly AnomalyFieldLayer AnomalyLayer = new();
     internal static readonly SKColor Own = Cyan, Enemy = Orange, Background = MapBg, Inactive = Muted.WithAlpha(140), Jammed = Yellow;
     internal static double RulerLength(double pixelsPerUnit, float uiScale) => 100;
@@ -60,20 +65,55 @@ internal static partial class TacticalBattleMapRenderer
         Stroke(c, new(14, 706), new(14 + len, 706), Yellow, 1.3f);
         Stroke(c, new(14, 701), new(14, 711), Yellow, 1.3f); Stroke(c, new(14 + len, 701), new(14 + len, 711), Yellow, 1.3f);
         T(c, "100 " + BattleFormat.Localize("MapUnits"), 14 + len * .5f, 699, 10.5f, Text, align: SKTextAlign.Center);
-        var occupied = units.Select(u => { var p = v.Project(u.Pose); float r = u.Kind == TacticalUnitKind.Carrier ? 16 : 9; return new SKRect(p.X - r, p.Y - r, p.X + r, p.Y + r); }).ToList();
+        var occupied = new List<SKRect>(units.Length);
+        using var rotatedHull = new SKPath();
+        foreach (var unit in units)
+        {
+            var p = v.Project(unit.Pose);
+            if (unit.Kind == TacticalUnitKind.Drone && DroneSilhouette(unit.FrameId) is { } hull)
+            {
+                hull.Transform(SKMatrix.CreateRotationDegrees(DroneRotation(unit)), rotatedHull);
+                var bounds = rotatedHull.Bounds;
+                bounds.Offset(p.X, p.Y);
+                occupied.Add(bounds);
+            }
+            else
+            {
+                float radius = unit.Kind == TacticalUnitKind.Carrier ? 16 : 9;
+                occupied.Add(new(p.X - radius, p.Y - radius, p.X + radius, p.Y + radius));
+            }
+        }
         occupied.Add(new(0, 0, 202, 6 + 87 * f.Battle.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide)));
         occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, f.Panel.Bottom + (HoverCard.Build(f) is not null ? 306 : f.HoverUnitId is null && AnomalyPresentation.HoverKind(f) is null ? 6 : 116)));
         occupied.Add(new(10, 686, 18 + len, 714));
         occupied.AddRange([new(0, 0, v.PixelWidth, 2), new(0, 718, v.PixelWidth, 720), new(0, 0, 2, 720), new(v.PixelWidth - 2, 0, v.PixelWidth, 720)]);
         DrawMovement(c, f, occupied); DrawPhaseOverlays(c, f, occupied, interactiveField);
         var inside = Safe(v); inside.Inflate(-34, -34);
+        using var hullPaint = new SKPaint { IsAntialias = true, StrokeWidth = .8f };
+        var seamColor = Skin.Color("field.background", "fill", MapBg).WithAlpha(40);
         foreach (var u in units)
         {
             var p = v.Project(u.Pose); bool own = u.Side == f.Battle.PlayerSide;
             string role = "field.unit." + (u.Kind == TacticalUnitKind.Carrier ? "carrier" : "drone") + (own ? ".own" : ".enemy");
             var color = Skin.Color(role, "fill", own ? Cyan : Orange);
             if (u.Kind == TacticalUnitKind.Carrier) { if (inside.Contains(p)) Hex(c, p, 15, color); else Edge(c, f, u, p, inside, occupied, color); }
-            else { if (own) Diamond(c, p, 7.5f, color); else Triangle(c, p, 9, u.Pose.Course, color); if (u.Id == Selected(f)) Circle(c, p, 12, SKColors.Transparent, Text, 1.2f); }
+            else
+            {
+                if (DroneSilhouette(u.FrameId) is { } hull)
+                {
+                    c.Save();
+                    c.Translate(p.X, p.Y);
+                    c.RotateDegrees(DroneRotation(u));
+                    hullPaint.Color = color;
+                    c.DrawPath(hull, hullPaint);
+                    hullPaint.Color = seamColor;
+                    c.DrawLine(0, -5 * DroneSilhouetteScale, 0, 4 * DroneSilhouetteScale, hullPaint);
+                    c.Restore();
+                }
+                else if (own) Diamond(c, p, 7.5f, color);
+                else Triangle(c, p, 9, u.Pose.Course, color);
+                if (u.Id == Selected(f)) Circle(c, p, 12, SKColors.Transparent, Text, 1.2f);
+            }
             if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
                 EvasionRing(c, p);
         }
@@ -90,6 +130,25 @@ internal static partial class TacticalBattleMapRenderer
                      .OrderBy(u => u.Id == Selected(f) ? 0 : u.Kind == TacticalUnitKind.Carrier ? 1 : 2).ThenBy(u => v.Project(u.Pose).Y)) Label(c, f, u, occupied);
         DrawResultHighlights(c, f); DrawHover(c, f);
     }
+
+    private static SKPath DronePath(string svg)
+    {
+        var path = SKPath.ParseSvgPathData(svg);
+        path.Transform(SKMatrix.CreateScale(DroneSilhouetteScale, DroneSilhouetteScale));
+        return path;
+    }
+
+    private static SKPath? DroneSilhouette(string frameId) => frameId switch
+    {
+        "light" => LightDrone,
+        "heavy" => HeavyDrone,
+        "thug" => ThugDrone,
+        _ => null
+    };
+
+    // The paths point up, while course zero points right.
+    private static float DroneRotation(TacticalUnitSnapshot unit) => (float)(unit.Pose.Course + 90);
+
     private static void Label(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, List<SKRect> occupied)
     {
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
