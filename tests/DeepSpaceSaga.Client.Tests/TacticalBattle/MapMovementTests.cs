@@ -68,14 +68,26 @@ public sealed class MapMovementTests
     {
         await using var scene = await Ep0019Scenes.Create("1-move");
         var first = scene.Frame;
-        var firstArea = FindFill(first);
+        using var idle = BattleMapRenderTests.Raster(first);
+        using var withoutArea = BattleMapRenderTests.Raster(first with { Movement = first.Movement! with { Reachable = [] } });
+        Assert.Equal(idle.Pixels, withoutArea.Pixels);
+        var firstArea = FindFill(first with { AimingMovement = true });
         var next = first.Movement!.Orders.First(row => row.Unit.Id != first.Movement.Selected);
         var nextPoint = first.View.Project(next.Unit.Pose);
         scene.Screen.OnMouseDown(nextPoint.X * 1.5f, nextPoint.Y * 1.5f, MouseButton.Left);
         scene.Screen.OnMouseUp(nextPoint.X * 1.5f, nextPoint.Y * 1.5f, MouseButton.Left);
         var second = scene.Frame;
         Assert.Equal(next.Unit.Id, second.Movement!.Selected);
-        Assert.NotEqual(firstArea, FindFill(second));
+        var endpoint = second.View.Project(second.Movement.SelectedOrder!.Path[^1]);
+        scene.Screen.OnMouseDown(endpoint.X * 1.5f, endpoint.Y * 1.5f, MouseButton.Left);
+        var aiming = scene.Frame;
+        Assert.True(aiming.AimingMovement);
+        Assert.NotEqual(firstArea, FindFill(aiming));
+        scene.Screen.OnMouseUp(endpoint.X * 1.5f, endpoint.Y * 1.5f, MouseButton.Left);
+        Assert.False(scene.Frame.AimingMovement);
+        scene.Screen.OnMouseDown(endpoint.X * 1.5f, endpoint.Y * 1.5f, MouseButton.Left);
+        scene.Screen.OnInputReset();
+        Assert.False(scene.Frame.AimingMovement);
 
         using var noPlan = BattleMapRenderTests.Raster(second with { Movement = null });
         using var noSelection = BattleMapRenderTests.Raster(second with { Movement = second.Movement with { Orders = [], Selected = null } });

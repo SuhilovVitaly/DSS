@@ -15,7 +15,7 @@ internal static partial class TacticalBattleMapRenderer
             var forecast = new SKColor(47, 191, 143);
             DrawFireSector(c, sector, forecast.WithAlpha(35), forecast.WithAlpha(115));
         }
-        DrawReachableArea(c, f.View, movement);
+        if (f.AimingMovement) DrawReachableArea(c, f.View, movement);
         using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Round };
         foreach (var row in movement.Orders)
         {
