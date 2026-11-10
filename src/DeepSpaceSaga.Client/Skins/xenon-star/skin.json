@@ -11,6 +11,22 @@
     "ui.button.art": { "image": "assets/smb_normal.png", "opacity": 0.85 },
     "ui.button.primary": { "fill": "#284556", "text": "#EDF6FD" },
     "ui.button.primary.art": { "image": "assets/smb_hover.png", "opacity": 0.85 },
-    "ui.button.glow": { "stroke": "#86BEDE40" }
+    "ui.button.glow": { "stroke": "#86BEDE40" },
+    "field.background": { "fill": "#0C1116" },
+    "field.atmosphere": { "image": "assets/space_scene_no_cockpit.png", "opacity": 0.20 },
+    "field.hud.frame": { "image": "assets/hudf11.png", "opacity": 0.30 },
+    "field.hud.rule": { "image": "assets/hl1.png", "opacity": 0.36 },
+    "field.grid": { "stroke": "#26343D9C" },
+    "ui.map.ruler": { "stroke": "#96BDCF" },
+    "field.unit.carrier.own": { "fill": "#93BED0" },
+    "field.unit.carrier.enemy": { "fill": "#C99787" },
+    "field.unit.drone.own": { "fill": "#B6D7E5" },
+    "field.unit.drone.enemy": { "fill": "#D6A796" },
+    "field.move.handle": { "fill": "#9CD4E8" },
+    "ui.map.fire.sector": { "fill": "#659C9B49", "stroke": "#85C7C6C8" },
+    "ui.map.fire.assigned": { "stroke": "#ABD6E9", "text": "#ABD6E9" },
+    "ui.map.fire.assigned.art": { "image": "assets/tre14.png", "opacity": 0.62 },
+    "ui.map.fire.candidate": { "stroke": "#A0B5B995" },
+    "ui.map.fire.candidate.art": { "image": "assets/tre7.png", "opacity": 0.30 }
   }
 }

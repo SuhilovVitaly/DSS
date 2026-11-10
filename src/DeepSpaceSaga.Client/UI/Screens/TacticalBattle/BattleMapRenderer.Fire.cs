@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
+using Skin = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -16,7 +17,8 @@ internal static partial class TacticalBattleMapRenderer
             if (plan.Selected?.Drone.Build is { } build)
             {
                 using var path = CreateFireSector(f.View, plan.Selected.Drone.Pose, build.Range, 2 * build.ArcDegrees);
-                DrawFireSector(c, path, ArcFill, ArcEdge);
+                DrawFireSector(c, path, Skin.Color("ui.map.fire.sector", "fill", ArcFill),
+                    Skin.Color("ui.map.fire.sector", "stroke", ArcEdge));
                 c.Save();
                 try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
                 finally { c.Restore(); }
@@ -33,12 +35,15 @@ internal static partial class TacticalBattleMapRenderer
             {
                 var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId); if (target is null || row.Drone.InDust) continue;
                 var a = f.View.Project(row.Drone.Pose); var b = f.View.Project(target.Pose); bool selected = row.Drone.Id == plan.SelectedDroneId;
-                Arrow(c, a, b, selected ? Yellow : Text.WithAlpha(170), selected ? 2.6f : 1.3f, selected ? 12 : 9);
+                var lineColor = selected ? Skin.Color("ui.map.fire.assigned", "stroke", Yellow) : Text.WithAlpha(170);
+                Arrow(c, a, b, lineColor, selected ? 2.6f : 1.3f, selected ? 12 : 9);
                 if (selected && row.Target is { } candidate)
                 {
+                    var targetPoint = MarkerPoint(f.View, target);
+                    Skin.Image(c, "ui.map.fire.assigned.art", SKRect.Create(targetPoint.X - 11, targetPoint.Y - 11, 22, 22));
                     string text = Pct(candidate.Chance); var p = new SKPoint((a.X + b.X) * .5f, (a.Y + b.Y) * .5f); float w = Measure(text, 16, true);
                     var rect = new SKRect(p.X - w * .5f, p.Y - 25, p.X + w * .5f, p.Y - 7); occupied.Add(rect); if (Recording is { } l) l.Rects["chance"] = rect;
-                    T(c, text, p.X, p.Y - 9, 16, Yellow, true, SKTextAlign.Center);
+                    T(c, text, p.X, p.Y - 9, 16, Yellow, true, SKTextAlign.Center, "ui.map.fire.assigned");
                     if (candidate.Absorption > 0)
                     {
                         var segments = AnomalyPresentation.Segments(f.Battle, row.Drone.Pose, target.Pose);
@@ -151,7 +156,8 @@ internal static partial class TacticalBattleMapRenderer
     private static void DrawAlternativeTargets(SKCanvas canvas, TacticalBattleFrame frame, TacticalFirePlanRow shooter, List<SKRect> occupied)
     {
         var origin = frame.View.Project(shooter.Drone.Pose);
-        var color = Yellow.WithAlpha(155);
+        var classicColor = Yellow.WithAlpha(155);
+        var color = Skin.Color("ui.map.fire.candidate", "stroke", classicColor);
         foreach (var candidate in shooter.Group.List)
         {
             if (candidate.TargetId == shooter.TargetId) continue;
@@ -167,6 +173,7 @@ internal static partial class TacticalBattleMapRenderer
             }
             Circle(canvas, point, radius, SKColors.Transparent, color, 1.2f);
             var ring = new SKRect(point.X - radius, point.Y - radius, point.X + radius, point.Y + radius);
+            Skin.Image(canvas, "ui.map.fire.candidate.art", ring);
             occupied.Add(ring);
             if (Recording is { } layout) layout.Rects["candidate:" + target.Id] = ring;
 
@@ -176,7 +183,7 @@ internal static partial class TacticalBattleMapRenderer
             {
                 var bounds = new SKRect(point.X - halfWidth, y - 17, point.X + halfWidth, y + 2);
                 if (!Safe(frame.View).Contains(bounds) || occupied.Any(rect => rect.IntersectsWith(bounds))) continue;
-                occupied.Add(Callout(canvas, point.X, y, chance, color, Text));
+                occupied.Add(Callout(canvas, point.X, y, chance, classicColor, Text));
                 break;
             }
         }

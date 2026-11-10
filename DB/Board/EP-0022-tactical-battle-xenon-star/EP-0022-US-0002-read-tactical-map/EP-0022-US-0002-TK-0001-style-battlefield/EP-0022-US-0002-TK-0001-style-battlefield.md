@@ -3,7 +3,7 @@ epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0002-read-tactical-map
 ticket: EP-0022-US-0002-TK-0001-style-battlefield
 title: Оформить слои карты и прицелы
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0022-US-0001-TK-0001]
 files_touched: 5
@@ -69,3 +69,9 @@ AC-01 подтверждён целевыми проверками. Реальн
 ## Self-containment check
 
 Production seam и проверка перечислены в Code context. Существующие команды и fixtures сохраняются.
+
+## Execution
+
+- Release Client — 25/25 целевых тестов. Парный рендер двух фаз сравнил карту, прямоугольники и текст одного кадра. В обоих кадрах видны спокойная рамка, разметка и различимые аномалии.
+- Scoped formatter после приведения нового файла к CRLF и git diff --check прошли. Добавлены пять локальных срезов с исходными путями в csproj.
+- Нативная камера и приёмка владельцем проверяются после функциональных тикетов.

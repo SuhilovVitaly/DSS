@@ -37,7 +37,17 @@ internal static partial class TacticalBattleMapRenderer
     internal static void Draw(SKCanvas c, TacticalBattleFrame f, InteractiveAnomalyField? interactiveField = null)
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
-        Skin.Box(c, "field.background", SKRect.Create(v.PixelWidth, v.PixelHeight), MapBg, null, 1);
+        var fieldBounds = SKRect.Create(v.PixelWidth, v.PixelHeight);
+        Skin.Box(c, "field.background", fieldBounds, MapBg, null, 1);
+        Skin.Image(c, "field.atmosphere", fieldBounds);
+        var safe = Safe(v);
+        if (!safe.IsEmpty)
+        {
+            Skin.Image(c, "field.hud.frame", new(safe.Left + 12, 116, safe.Right - 12, 604));
+            float ruleWidth = MathF.Min(400, safe.Width);
+            Skin.Image(c, "field.hud.rule", SKRect.Create(v.PixelWidth / 2f - ruleWidth / 2f, 19, ruleWidth, 12));
+            Skin.Image(c, "field.hud.rule", SKRect.Create(v.PixelWidth / 2f - ruleWidth / 2f, 686, ruleWidth, 12));
+        }
         if (interactiveField is null || interactiveField.Prepare(c, f))
             DrawAnomalies(c, f, interactiveField);
         bool field = !f.Battle.Anomalies.IsDefaultOrEmpty && f.Battle.Rules.Anomalies is not null;
@@ -63,8 +73,9 @@ internal static partial class TacticalBattleMapRenderer
         }
         c.DrawPath(gridPath, grid);
         float len = (float)(100 * v.PixelsPerUnit);
-        Stroke(c, new(14, 706), new(14 + len, 706), Yellow, 1.3f);
-        Stroke(c, new(14, 701), new(14, 711), Yellow, 1.3f); Stroke(c, new(14 + len, 701), new(14 + len, 711), Yellow, 1.3f);
+        var ruler = Skin.Color("ui.map.ruler", "stroke", Yellow);
+        Stroke(c, new(14, 706), new(14 + len, 706), ruler, 1.3f);
+        Stroke(c, new(14, 701), new(14, 711), ruler, 1.3f); Stroke(c, new(14 + len, 701), new(14 + len, 711), ruler, 1.3f);
         T(c, "100 " + BattleFormat.Localize("MapUnits"), 14 + len * .5f, 699, 10.5f, Text, align: SKTextAlign.Center);
         var occupied = new List<SKRect>(units.Length);
         using var rotatedHull = new SKPath();
