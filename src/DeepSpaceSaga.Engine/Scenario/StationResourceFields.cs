@@ -19,7 +19,13 @@ public sealed record StationResourceFieldConfig(
     [property: JsonPropertyName("roles")] IReadOnlyList<ResourceFieldRoleData> Roles,
     [property: JsonPropertyName("fieldKinds")] IReadOnlyList<ResourceFieldKindData> FieldKinds,
     [property: JsonPropertyName("massBands")] IReadOnlyList<ResourceMassBandData> MassBands,
-    [property: JsonPropertyName("structuralScan")] ResourceSurveyRulesData StructuralScan);
+    [property: JsonPropertyName("structuralScan")] ResourceSurveyRulesData StructuralScan,
+    [property: JsonPropertyName("factoryRadiusKm"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    double? FactoryRadiusKm = null)
+{
+    // Early formation saves predate the separate factory radius.
+    internal double EffectiveFactoryRadiusKm => FactoryRadiusKm ?? OuterRadiusKm * 2;
+}
 
 public sealed record ResourceFieldRoleData(
     [property: JsonPropertyName("marketProfileId")] string MarketProfileId,
@@ -119,6 +125,24 @@ internal static class StationResourceFields
         ["market.transit", "market.mining", "market.industrial", "market.hydroponic", "market.scientific-military"];
     private static readonly string[] Purposes = ["Geometry", "Composition", "Mass"];
 
+    internal static StationResourceFieldConfig WithStationFormation(StationResourceFieldConfig config, double scale)
+    {
+        double factoryRadius = (config.InnerRadiusKm + config.OuterRadiusKm) / 2;
+        double radius = factoryRadius * scale;
+        return config with
+        {
+            InnerRadiusKm = radius,
+            OuterRadiusKm = radius,
+            FactoryRadiusKm = factoryRadius,
+            StationClearanceKm = config.StationClearanceKm * scale,
+            AsteroidSpacingKm = config.AsteroidSpacingKm * scale,
+            Roles = config.Roles.Select(role => role with
+            {
+                Fields = [role.Fields.OrderByDescending(field => field.AsteroidCount).First() with { AsteroidCount = 1 }]
+            }).ToArray()
+        };
+    }
+
     internal static StationResourceFieldConfig ValidateConfig(StationResourceFieldConfig config, GameDataRegistry registry)
     {
         try
@@ -127,8 +151,11 @@ internal static class StationResourceFields
             Require(config!.FirstObjectNumber >= 1 && config.MaxPlacementAttempts > 0, "Invalid ID range or placement attempts.");
             Require(new[] { config.InnerRadiusKm, config.OuterRadiusKm, config.StationClearanceKm,
                 config.AsteroidSpacingKm, config.CorridorHalfWidthKm }.All(v => double.IsFinite(v) && v > 0), "Geometry must be finite and positive.");
-            Require(config.StationClearanceKm <= config.InnerRadiusKm && config.InnerRadiusKm < config.OuterRadiusKm &&
+            Require(config.StationClearanceKm <= config.InnerRadiusKm && config.InnerRadiusKm <= config.OuterRadiusKm &&
                 double.IsFinite(config.OuterRadiusKm * config.OuterRadiusKm * 100), "Invalid annulus/clearance.");
+            Require(config.FactoryRadiusKm is not { } factoryRadius ||
+                (double.IsFinite(factoryRadius) && factoryRadius > 0 && factoryRadius < config.InnerRadiusKm &&
+                 config.InnerRadiusKm == config.OuterRadiusKm), "Invalid compact factory radius.");
             var scan = config.StructuralScan;
             Require(scan is not null && double.IsFinite(scan.RangeKm) && scan.RangeKm > 0 &&
                 scan.DurationGameTimeMs > 0 && scan.SuccessChancePercent is >= 0 and <= 100, "Invalid structuralScan rules.");
@@ -422,7 +449,7 @@ internal static class StationResourceFields
                         rules.MassBands.Any(b => b.Weight > 0 && obj.MassKg >= b.MinKg && obj.MassKg <= b.MaxKg), "Invalid saved asteroid physics/composition/mass.");
                     double radius = Distance(obj!.PositionX, obj.PositionY, owner);
                     // A tiny tolerance accommodates subtraction of translated world coordinates.
-                    Saved(radius >= rules.InnerRadiusKm - 1e-10 && radius <= rules.OuterRadiusKm + 1e-10 &&
+                    Saved(radius >= rules.InnerRadiusKm - 1e-6 && radius <= rules.OuterRadiusKm + 1e-6 &&
                         Clear(obj.PositionX, obj.PositionY, rules, state, placed), "Saved field geometry violates placement rules.");
                     placed.Add(obj);
                     normalized.Add(m! with { Resources = variant!.Resources });

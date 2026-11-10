@@ -11,7 +11,7 @@ namespace DeepSpaceSaga.Engine.Scenario;
 public static class ScenarioLoader
 {
     private static readonly HashSet<string> KnownObjectTypes = new(StringComparer.OrdinalIgnoreCase)
-        { "PlayerShip", "NpcShip", "Station", "Asteroid", "Wreck", "Missile", "Countermeasure", "Sun", "Planet" };
+        { "PlayerShip", "NpcShip", "Station", "Asteroid", SpaceObjectType.Factory, "Wreck", "Missile", "Countermeasure", "Sun", "Planet" };
 
     private static readonly HashSet<string> KnownPersistenceTypes = new(StringComparer.OrdinalIgnoreCase)
         { "Permanent", "Temporary" };

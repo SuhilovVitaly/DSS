@@ -22,8 +22,9 @@ public sealed class EnvironmentFieldContentTests
             Assert.Equal(2, fields.Count(f => f.Kind == "Dust")); Assert.Equal(2, fields.Count(f => f.Kind == "Debris"));
             Assert.Equal(5, fields.Select(f => f.Id).Distinct(StringComparer.OrdinalIgnoreCase).Count());
             Assert.All(fields, f => Assert.DoesNotContain(snapshot.Objects, o => o.ObjectId == f.Id));
-            Assert.All(fields.Where(f => f.Kind == "Radiation"), f => Assert.Equal(50000, f.OuterRadius));
-            Assert.All(fields.Where(f => f.Kind == "Debris"), f => Assert.Equal(2500, f.OuterRadius));
+            Assert.All(fields.Where(f => f.Kind == "Radiation"), f => Assert.Equal(50000 * config.DistanceScale, f.OuterRadius, 6));
+            Assert.All(fields.Where(f => f.Kind == "Dust"), f => Assert.Equal(1000 * config.DistanceScale, f.OuterRadius - f.InnerRadius, 6));
+            Assert.All(fields.Where(f => f.Kind == "Debris"), f => Assert.Equal(2500 * config.DistanceScale, f.OuterRadius, 6));
         }
     }
 

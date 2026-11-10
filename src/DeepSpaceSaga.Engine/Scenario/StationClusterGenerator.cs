@@ -21,7 +21,8 @@ internal static class StationClusterGenerator
         static bool Range(double min, double max) => double.IsFinite(min) && double.IsFinite(max) && min > 0 && max >= min;
     }
 
-    internal static ClusterGenerationResult Generate(ScenarioFile source, ClusterGenerationConfig config, GameDataRegistry registry, ulong seed)
+    internal static ClusterGenerationResult Generate(ScenarioFile source, ClusterGenerationConfig config, GameDataRegistry registry, ulong seed,
+        double formationPadding = 0)
     {
         ValidateConfig(config);
         string reason = "placement exhausted";
@@ -29,7 +30,7 @@ internal static class StationClusterGenerator
         {
             if (source.GameState.SolarSystem?.GeneratorVersion == 2)
             {
-                try { return StationGeographyV2.BuildGraph(StationGeographyV2.Expand(StationGeographyV2.Place(source, config, registry, seed, attempt), config, registry, seed, attempt), config, registry); }
+                try { return StationGeographyV2.BuildGraph(StationGeographyV2.Expand(StationGeographyV2.Place(source, config, registry, seed, attempt), config, registry, seed, attempt, formationPadding), config, registry); }
                 catch (ScenarioException ex) { reason = ex.Message; }
                 continue;
             }
@@ -207,6 +208,7 @@ internal static class StationClusterGenerator
         if (fields is null) return result;
         var objects = result.World.GameState.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.Ordinal);
         var bindings = ImmutableArray.CreateBuilder<ClusterResourceBinding>();
+        bool formation = result.Map.RulesVersion == 2 && fields.Rules.InnerRadiusKm == fields.Rules.OuterRadiusKm;
         foreach (var asteroid in fields.Asteroids)
         {
             var owner = objects[asteroid.StationObjectId];
@@ -215,10 +217,15 @@ internal static class StationClusterGenerator
             double radius = Math.Sqrt(obj.PositionX * obj.PositionX + obj.PositionY * obj.PositionY);
             double phase = (Math.Atan2(obj.PositionX, -obj.PositionY) * 180 / Math.PI + 360) % 360;
             var orbit = owner.Orbit! with { SemiMajorAxis = radius, SemiMinorAxis = radius, InitialPhase = (int)phase, PhaseOffsetDegrees = phase - (int)phase };
-            objects[obj.ObjectId] = obj with { Orbit = orbit, MovementType = "Orbital" };
+            double offsetX = obj.PositionX - owner.PositionX;
+            double offsetY = obj.PositionY - owner.PositionY;
+            objects[obj.ObjectId] = formation
+                ? obj with { Orbit = owner.Orbit, MovementType = "Orbital", WorldOffsetX = offsetX, WorldOffsetY = offsetY }
+                : obj with { Orbit = orbit, MovementType = "Orbital" };
+            if (formation) AddFactories(objects, owner, Math.Atan2(offsetY, offsetX), fields.Rules);
             // The existing resource API is an asteroid manifest, with no separate field entity.
             // Use its canonical object ID as the binding ID, preserving one source of composition.
-            bindings.Add(new(obj.ObjectId, member.ClusterId, owner.ObjectId, obj.PositionX - owner.PositionX, obj.PositionY - owner.PositionY));
+            bindings.Add(new(obj.ObjectId, member.ClusterId, owner.ObjectId, offsetX, offsetY));
         }
         var world = result.World with
         {
@@ -231,6 +238,33 @@ internal static class StationClusterGenerator
         };
         SolarSystemGeneration.ValidateWorld(world.GameState);
         return new(world, result.Map with { ResourceBindings = bindings.ToImmutable() });
+    }
+
+    internal const int FactoriesPerStation = 5;
+    internal const double CompactFactoryRadiusVariation = 0.25;
+    private static readonly (double AngleDegrees, double RadiusFactor)[] CompactFactoryLayout =
+        [(0, 0.88), (57, 1.18), (132, 0.76), (221, 1.02), (301, 1.24)];
+
+    internal static string FactoryId(string stationId, int number) => FormattableString.Invariant($"FACTORY-{stationId}-{number}");
+
+    private static void AddFactories(Dictionary<string, SpaceObjectData> objects, SpaceObjectData owner, double angle, StationResourceFieldConfig rules)
+    {
+        double radius = rules.EffectiveFactoryRadiusKm * 10;
+        for (int number = 1; number <= FactoriesPerStation; number++)
+        {
+            var (angleDegrees, radiusFactor) = rules.FactoryRadiusKm.HasValue
+                ? CompactFactoryLayout[number - 1]
+                : (360d * (number - 1) / FactoriesPerStation, 1d);
+            double phase = angle + angleDegrees * Math.PI / 180;
+            double x = Math.Cos(phase) * radius * radiusFactor;
+            double y = Math.Sin(phase) * radius * radiusFactor;
+            string id = FactoryId(owner.ObjectId, number);
+            var factory = new SpaceObjectData(id, SpaceObjectType.Factory, "Permanent", FormattableString.Invariant($"Factory {number}"),
+                owner.PositionX + x, owner.PositionY + y, 0, 0, "Orbital", null, null, null, IsKnown: true,
+                Image: "Images/CelestialObjects/Factory/factory.png", Orbit: owner.Orbit, WorldOffsetX: x, WorldOffsetY: y);
+            if (!objects.TryAdd(id, factory))
+                throw new ScenarioException($"Station formation object ID collision: {id}.");
+        }
     }
 
     internal static ImmutableArray<ClusterTradeLink> BuildLinks(IReadOnlyList<SpaceObjectData> stations, GameDataRegistry registry, Func<SpaceObjectData, SpaceObjectData, bool> eligible)

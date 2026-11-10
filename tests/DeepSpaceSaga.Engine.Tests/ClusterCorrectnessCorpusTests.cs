@@ -8,12 +8,12 @@ namespace DeepSpaceSaga.Engine.Tests;
 
 public sealed class ClusterCorrectnessCorpusTests
 {
-    internal static (double Minimum, double NearestMinimum, double NearestMaximum, double LaneMinimum) VerifyV2Geography(ScenarioFile world)
+    internal static (double Minimum, double NearestMinimum, double NearestMaximum, double LaneMinimum) VerifyV2Geography(ScenarioFile world, double scale = 1)
     {
         var state = world.GameState; var map = state.ClusterMap!;
         Assert.Equal(2, map.RulesVersion);
-        var rules = map.Geography!; Assert.Equal(1, rules.MinimumStationDays);
-        double units = rules.ReferenceSpeedKmS * 86400 / 300 * 10;
+        var rules = map.Geography!; Assert.Equal(scale, rules.MinimumStationDays);
+        double units = rules.ReferenceSpeedKmS * 86400 / 300 * 10 * scale;
         Assert.True(double.IsFinite(units) && units > 0);
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId);
         var lanes = map.Clusters.Select(cluster =>
@@ -22,9 +22,7 @@ public sealed class ClusterCorrectnessCorpusTests
             foreach (string id in cluster.StationIds)
             {
                 var orbit = objects[id].Orbit!;
-                Assert.Equal(first.SemiMajorAxis, orbit.SemiMajorAxis, 6);
-                Assert.Equal(first.SemiMinorAxis, orbit.SemiMinorAxis, 6);
-                Assert.Equal(first.SemiMajorAxis, orbit.SemiMinorAxis, 6);
+                Assert.Equal(orbit.SemiMajorAxis, orbit.SemiMinorAxis, 6);
                 Assert.Equal(first.OrbitalPeriodMs, orbit.OrbitalPeriodMs);
                 Assert.Equal(first.EpochSimulationTimeMs, orbit.EpochSimulationTimeMs);
                 Assert.Equal(first.OrbitDirection, orbit.OrbitDirection);
@@ -34,15 +32,14 @@ public sealed class ClusterCorrectnessCorpusTests
             var belt = state.SolarSystem!.Belts.Single(b => b.Id == cluster.BeltId);
             Assert.InRange(min, belt.InnerRadius - 1e-6, belt.OuterRadius + 1e-6);
             Assert.InRange(max, belt.InnerRadius - 1e-6, belt.OuterRadius + 1e-6);
-            return (Radius: first.SemiMajorAxis, Minimum: min, Maximum: max);
-        }).OrderBy(l => l.Radius).ToArray();
+            return (Minimum: min, Maximum: max);
+        }).OrderBy(l => l.Minimum).ToArray();
         double laneMinimum = double.PositiveInfinity;
         for (int i = 1; i < lanes.Length; i++)
         {
             // |r2-r1| is a lower bound at every relative phase, not a sampled claim.
-            double gap = (lanes[i].Radius - lanes[i - 1].Radius) / units;
+            double gap = (lanes[i].Minimum - lanes[i - 1].Maximum) / units;
             Assert.True(gap >= 1 - 1e-9);
-            Assert.True(lanes[i].Minimum > lanes[i - 1].Maximum);
             laneMinimum = Math.Min(laneMinimum, gap);
         }
         double minimum = double.PositiveInfinity, nearestMinimum = double.PositiveInfinity, nearestMaximum = 0;
@@ -74,7 +71,7 @@ public sealed class ClusterCorrectnessCorpusTests
             {
                 double km = double.Hypot(poses[binding.FieldId].X - poses[binding.AnchorStationId].X,
                     poses[binding.FieldId].Y - poses[binding.AnchorStationId].Y) / 10;
-                Assert.InRange(km, 2.5 - 1e-6, 4.5 + 1e-6);
+                Assert.InRange(km, 2.5 * scale - 1e-6, 4.5 * scale + 1e-6);
             }
         }
         return (minimum, nearestMinimum, nearestMaximum, laneMinimum);
@@ -91,7 +88,7 @@ public sealed class ClusterCorrectnessCorpusTests
             try
             {
                 using var engine = SystemCorrectnessCorpusTests.V2Create(scenario, seed, config);
-                world = engine.CaptureSaveState(); VerifyV2Geography(world);
+                world = engine.CaptureSaveState(); VerifyV2Geography(world, config.DistanceScale);
                 var map = world.GameState.ClusterMap!;
                 foreach (var member in map.Stations)
                 {

@@ -42,6 +42,13 @@ internal static class TacticalMapMarkerPolicy
         return GetMarkerSizePx(renderObjectType) / 2f;
     }
 
+    internal static bool IsInViewport(float x, float y, float radius, int width, int height)
+    {
+        // Include the halo, reticle and engine flame, not just the core.
+        float margin = radius * 5 + 4;
+        return x >= -margin && y >= -margin && x <= width + margin && y <= height + margin;
+    }
+
     /// <summary>
     /// Whether the given client-visible render type should draw as a soft
     /// glinting point of light (bright core + fading halo, no directional

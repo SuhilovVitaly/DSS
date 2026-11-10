@@ -1,5 +1,4 @@
 using DeepSpaceSaga.Client.UI.Screens.GameSession;
-using DeepSpaceSaga.Client.UI.Screens.GameSession.Controls;
 using DeepSpaceSaga.Contracts;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
@@ -21,23 +20,35 @@ public sealed class AiBasePresentationTests
     [Theory]
     [InlineData("Planetary")]
     [InlineData("Orbital")]
-    public void AiBaseSelectableAndIdentified(string type)
+    public void AiBaseMarkerOrbitAndSelectionAreHidden(string type)
     {
-        var buffer = new SnapshotBuffer(); buffer.Update(Snapshot(type, true));
+        var source = Snapshot(type, true);
+        var orbit = new OrbitalElements(150, 150, 30000, 90, 0, 0, "clockwise");
+        var snapshot = source with
+        {
+            Objects = source.Objects.SetItem(1, source.Objects[1] with { Orbit = orbit }),
+            SelectedObjectId = "station"
+        };
+        var buffer = new SnapshotBuffer(); buffer.Update(snapshot);
         var screen = new GameSessionScreen(buffer, new LinearMotionPredictor());
         using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Black);
+        screen.Render(canvas, 1920, 1080);
+        Assert.True(screen.ShowOrbits);
+        Assert.Contains("station", screen.AggregatedMapObjectIds);
+        Assert.DoesNotContain("station", screen.MapLabels.Keys);
+        Assert.Null(screen.SelectedObjectId);
+        // At the orbit's rightmost point only the planet marker overlaps. Check the
+        // opposite arc against a frame containing no base.
+        var pixel = bitmap.GetPixel(810, 540);
+        buffer.Update(source with { SnapshotSequence = 2, Objects = source.Objects.RemoveAt(1), AiMap = source.AiMap! with { Bases = [] } });
+        canvas.Clear(SKColors.Black);
+        screen.Render(canvas, 1920, 1080);
+        Assert.Equal(pixel, bitmap.GetPixel(810, 540));
+        buffer.Update(snapshot with { SnapshotSequence = 3, SelectedObjectId = null });
         screen.Render(canvas, 1920, 1080);
         screen.OnMouseDown(1110, 540); screen.OnMouseUp(1110, 540);
-        screen.Render(canvas, 1920, 1080);
-        Assert.Equal("station", screen.SelectedObjectId);
-        var data = screen.SelectedOrActiveObjectInfo!.Value;
-        Assert.Equal("Ai", data.Owner); Assert.Equal(type, data.BaseType);
-        Assert.Contains(ObjectInfoPanel.BuildLines(data), l => l.Label == "Owner" && l.Value == "Ai");
-        Assert.False(screen.IsModuleCommandEnabled(NavigationComputerCommandTypes.Dock));
-        using var glyph = new SKBitmap(64, 64); using var glyphCanvas = new SKCanvas(glyph);
-        glyphCanvas.Clear(SKColors.Transparent);
-        AiMapPresentation.DrawBase(glyphCanvas, buffer.Latest!.Snapshot.AiMap!.Bases[0], 24, 24, 10);
-        Assert.Contains(glyph.Pixels, p => p.Alpha > 0);
+        Assert.Equal("planet", screen.SelectedObjectId);
     }
 
     [Fact]

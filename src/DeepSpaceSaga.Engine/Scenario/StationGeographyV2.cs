@@ -7,8 +7,23 @@ namespace DeepSpaceSaga.Engine.Scenario;
 /// <summary>Detached version-two station candidates. Never publishes a world or consumes live RNG.</summary>
 internal static class StationGeographyV2
 {
+    private const int FormationColumns = 3;
+    private const int FormationRows = 4;
+    private const int AnchorRow = 1;
+    private const double RadialRowSpacing = 0.875;
+    private const double PositionJitter = 0.012;
+
+    private static double FormationSpacing(ClusterGenerationConfig config, double units) =>
+        Math.Min(config.NeighbourMaxDays * 0.965, config.DiameterMaxDays / 3.7) * units;
+
+    internal static double LaneHalfWidth(ClusterGenerationConfig config, double units) =>
+        ((FormationRows - 1 - AnchorRow) * RadialRowSpacing + PositionJitter) * FormationSpacing(config, units);
+
+    internal static int ClusterCount(ClusterGenerationConfig config, ulong seed) =>
+        SolarSystemGenerator.GeographyRng(seed, "cluster-count", 0).NextInt(config.MinClusters, config.MaxClusters + 1);
+
     internal static ClusterGenerationResult CompleteBootstrap(ScenarioFile original, ClusterGenerationResult candidate,
-        SolarSystemGenerationConfig config, GameDataRegistry registry, ulong seed)
+        SolarSystemGenerationConfig config, GameDataRegistry registry, ulong seed, double formationPadding = 0)
     {
         var player = candidate.World.GameState.SpaceObjects.Single(o => o.ObjectId == original.GameState.PlayerShipObjectId);
         double targetRadius = double.Hypot(player.PositionX, player.PositionY);
@@ -18,17 +33,18 @@ internal static class StationGeographyV2
         double units = candidate.Map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
         foreach (var cluster in candidate.Map.Clusters)
             ValidateDistances(cluster.StationIds.Select(id => objects[id]).ToArray(), config.Clusters!, units);
-        double resourcePadding = Math.Max(200, (state.StationResourceFields?.Rules.OuterRadiusKm ?? 0) * 10);
-        var radii = candidate.Map.Clusters.Select(c =>
+        double resourcePadding = Math.Max(Math.Max(200, formationPadding), (state.StationResourceFields?.Rules.OuterRadiusKm ?? 0) * 10);
+        var lanes = candidate.Map.Clusters.Select(c =>
         {
-            double r = objects[c.StationIds[0]].Orbit!.SemiMajorAxis;
+            var radii = c.StationIds.Select(id => objects[id].Orbit!.SemiMajorAxis).ToArray();
+            double inner = radii.Min(), outer = radii.Max();
             var belt = state.SolarSystem!.Belts.Single(b => b.Id == c.BeltId);
-            if (r - resourcePadding < belt.InnerRadius || r + resourcePadding > belt.OuterRadius)
+            if (inner - resourcePadding < belt.InnerRadius || outer + resourcePadding > belt.OuterRadius)
                 throw new ScenarioException("geography/v2: corrected start exceeds the human belt resource envelope.");
-            return r;
-        }).Order().ToArray();
-        for (int i = 1; i < radii.Length; i++)
-            if (radii[i] - radii[i - 1] < config.Clusters!.MinimumStationDays * units + 2 * resourcePadding)
+            return (Inner: inner, Outer: outer);
+        }).OrderBy(l => l.Inner).ToArray();
+        for (int i = 1; i < lanes.Length; i++)
+            if (lanes[i].Inner - lanes[i - 1].Outer < config.Clusters!.MinimumStationDays * units + 2 * resourcePadding)
                 throw new ScenarioException("geography/v2: corrected start violates reserved radial lanes.");
         player = objects[state.PlayerShipObjectId];
         double actual = double.Hypot(player.PositionX, player.PositionY);
@@ -113,9 +129,9 @@ internal static class StationGeographyV2
     }
 
     internal static ClusterGenerationResult Expand(ClusterGenerationResult first, ClusterGenerationConfig config,
-        GameDataRegistry registry, ulong seed, int attempt)
+        GameDataRegistry registry, ulong seed, int attempt, double formationPadding = 0)
     {
-        int count = SolarSystemGenerator.GeographyRng(seed, "cluster-count", 0).NextInt(config.MinClusters, config.MaxClusters + 1);
+        int count = ClusterCount(config, seed);
         if (count == 1) return first;
         var state = first.World.GameState;
         var system = state.SolarSystem!;
@@ -123,18 +139,18 @@ internal static class StationGeographyV2
         var player = state.SpaceObjects.Single(o => o.ObjectId == state.PlayerShipObjectId);
         var home = first.Map.Clusters[0].StationIds.Select(id => state.SpaceObjects.Single(o => o.ObjectId == id)).ToArray();
         double units = first.Map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
-        double radius = home[0].Orbit!.SemiMajorAxis;
-        double padding = Math.Max(200, (state.StationResourceFields?.Rules.OuterRadiusKm ?? 0) * 10);
-        double laneSpacing = config.MinimumStationDays * units * 1.25 + 2 * padding;
-        var lanes = Enumerable.Range(1, count - 1).Select(i => radius + (i % 2 == 1 ? 1 : -1) * ((i + 1) / 2) * laneSpacing).ToArray();
-        if (new[] { radius }.Concat(lanes).Any(r => r - padding < belt.InnerRadius || r + padding > belt.OuterRadius))
+        double radius = double.Hypot(player.PositionX, player.PositionY);
+        double padding = Math.Max(Math.Max(200, formationPadding), (state.StationResourceFields?.Rules.OuterRadiusKm ?? 0) * 10);
+        double envelope = LaneHalfWidth(config, units) + padding;
+        double laneSpacing = config.MinimumStationDays * units * 1.25 + 2 * envelope;
+        var lanes = Enumerable.Range(1, count - 1).Select(i => i % 2 == 1 ? (i + 1) / 2 : -i / 2)
+            .OrderByDescending(i => i > 0).ThenBy(i => Math.Abs(i)).Select(i => radius + i * laneSpacing).ToArray();
+        if (new[] { radius }.Concat(lanes).Any(r => r - envelope < belt.InnerRadius || r + envelope > belt.OuterRadius))
             throw new ScenarioException("geography/v2: human belt cannot fit separated radial lanes and resource envelopes.");
         double centerX = home.Average(o => o.PositionX), centerY = home.Average(o => o.PositionY);
         double centerRadius = double.Hypot(centerX, centerY);
         double phase = Math.Atan2(centerX, -centerY);
         double spacing = (config.InterclusterMinDays + config.InterclusterMaxDays) / 2 * units;
-        double phaseStep = 2 * Math.Asin(spacing / (2 * centerRadius));
-        if (!double.IsFinite(phaseStep)) throw new ScenarioException("geography/v2: cluster centers cannot fit the human belt.");
         var clusters = first.Map.Clusters.ToBuilder();
         var members = first.Map.Stations.ToBuilder();
         var links = first.Map.Links.ToBuilder();
@@ -143,28 +159,37 @@ internal static class StationGeographyV2
         for (int index = 1; index < count; index++)
         {
             string id = $"CLUSTER-{index + 1}";
-            double r = lanes[index - 1], angle = phase + index * phaseStep;
+            double r = lanes[index - 1];
             var isolated = first.World with
             {
                 GameState = state with
                 {
                     TradingMap = null, TradingMapGeneration = null, ClusterMap = null, StationResourceFields = null,
                     SpaceObjects = [.. state.SpaceObjects.Where(o => o.ObjectType != SpaceObjectType.Station).Select(o => o.ObjectId == player.ObjectId
-                        ? o with { PositionX = r * Math.Sin(angle), PositionY = -r * Math.Cos(angle), IsDocked = false, DockedStationObjectId = null } : o)]
+                        ? o with { PositionX = r * Math.Sin(phase), PositionY = -r * Math.Cos(phase), IsDocked = false, DockedStationObjectId = null } : o)]
                 }
             };
             ulong groupSeed = RngStreamSeedDerivation.DeriveStreamSeed(seed, $"station-clusters/v2/{id}");
             var group = Place(isolated, config with { MinClusters = 1, MaxClusters = 1 }, registry, groupSeed, attempt);
             var stations = group.World.GameState.SpaceObjects.Where(o => group.Map.Clusters[0].StationIds.Contains(o.ObjectId)).ToArray();
-            double centerPhase = Math.Atan2(stations.Average(s => s.PositionX), -stations.Average(s => s.PositionY));
+            double groupX = stations.Average(s => s.PositionX), groupY = stations.Average(s => s.PositionY);
+            double groupRadius = double.Hypot(groupX, groupY);
+            double centerPhase = Math.Atan2(groupX, -groupY);
+            // Compute the chord between actual district centers on their different radii.
+            double radialGap = groupRadius - centerRadius;
+            double phaseStep = 2 * Math.Asin(Math.Sqrt((spacing * spacing - radialGap * radialGap) / (4 * centerRadius * groupRadius)));
+            if (!double.IsFinite(phaseStep)) throw new ScenarioException("geography/v2: cluster centers cannot fit the human belt.");
+            phase += phaseStep;
+            centerRadius = groupRadius;
             stations = stations.Select(s =>
             {
-                double p = ((s.Orbit!.InitialPhase + s.Orbit.PhaseOffsetDegrees) * Math.PI / 180 + angle - centerPhase);
+                double p = (s.Orbit!.InitialPhase + s.Orbit.PhaseOffsetDegrees) * Math.PI / 180 + phase - centerPhase;
                 double degrees = (p * 180 / Math.PI % 360 + 360) % 360;
+                double stationRadius = s.Orbit.SemiMajorAxis;
                 return s with
                 {
                     ObjectId = s.ObjectId.Replace("CLUSTER-1", id, StringComparison.Ordinal), Name = $"District {index + 1} {s.Name}",
-                    PositionX = r * Math.Sin(p), PositionY = -r * Math.Cos(p),
+                    PositionX = stationRadius * Math.Sin(p), PositionY = -stationRadius * Math.Cos(p),
                     Orbit = s.Orbit with { InitialPhase = (int)degrees, PhaseOffsetDegrees = degrees - (int)degrees }
                 };
             }).ToArray();
@@ -249,28 +274,45 @@ internal static class StationGeographyV2
         double phase = anchor is null || anchor.PositionX == 0 && anchor.PositionY == 0
             ? Math.Atan2(player.PositionX, -player.PositionY) : Math.Atan2(anchor.PositionX, -anchor.PositionY);
         int anchorIndex = Math.Max(0, stations.FindIndex(s => s.ObjectId == anchorId));
-        double diameterDays = (config.DiameterMinDays + config.DiameterMaxDays) / 2;
-        double ratio = diameterDays * unitsPerDay / (2 * radius);
-        if (!double.IsFinite(ratio) || ratio <= 0 || ratio >= 1)
-            throw new ScenarioException("geography/v2: diameter cannot fit a circular formation.");
-        double step = 2 * Math.Asin(ratio) / (count - 1);
+        double spacing = FormationSpacing(config, unitsPerDay);
         var orientation = SolarSystemGenerator.GeographyRng(seed, "orientation", attempt);
-        phase += (orientation.NextDouble() - 0.5) * step * 0.1;
+        phase += (orientation.NextDouble() - 0.5) * spacing / radius * 0.1;
         var reference = system.Orbits.OrderBy(o => Math.Abs(o.Elements.SemiMajorAxis - radius)).FirstOrDefault()?.Elements ??
             throw new ScenarioException("geography/v2: orbital reference missing.");
         long period;
         try { period = checked((long)Math.Round(reference.OrbitalPeriodMs * (radius / reference.SemiMajorAxis))); }
         catch (OverflowException) { throw new ScenarioException("geography/v2: orbital period overflow."); }
         if (period <= 0) throw new ScenarioException("geography/v2: nonpositive orbital period.");
+        var scatter = SolarSystemGenerator.GeographyRng(seed, "station-scatter", attempt);
+        const int anchorSlot = AnchorRow * FormationColumns + FormationColumns / 2;
+        // Keep opposite corners at every supported station count so the diameter stays stable.
+        var slots = Enumerable.Range(0, FormationRows * FormationColumns)
+            .Where(slot => slot != anchorSlot && (count == 12 || slot != 2) && (count > 10 || slot != 9)).ToArray();
+        for (int i = slots.Length - 1; i > 0; i--)
+        {
+            int j = scatter.NextInt(0, i + 1);
+            (slots[i], slots[j]) = (slots[j], slots[i]);
+        }
+        int nextSlot = 0;
         for (int i = 0; i < stations.Count; i++)
         {
-            double angle = phase + (i - anchorIndex) * step;
+            bool isAnchor = i == anchorIndex;
+            int slot = isAnchor ? anchorSlot : slots[nextSlot++];
+            int row = slot / FormationColumns;
+            double radialOffset = (row - AnchorRow) * RadialRowSpacing;
+            // Stagger adjacent rows so diagonal neighbours are reachable too.
+            double tangentOffset = slot % FormationColumns - FormationColumns / 2 - (row % 2 == 0 ? 0.5 : 0);
+            double stationRadius = isAnchor ? radius : radius + (radialOffset + (scatter.NextDouble() * 2 - 1) * PositionJitter) * spacing;
+            double tangent = isAnchor ? 0 : (tangentOffset + (scatter.NextDouble() * 2 - 1) * PositionJitter) * spacing;
+            double angle = phase + Math.Asin(tangent / stationRadius);
+            if (stationRadius <= 0 || !double.IsFinite(angle))
+                throw new ScenarioException("geography/v2: formation cannot fit around the selected radius.");
             double degrees = (angle * 180 / Math.PI % 360 + 360) % 360;
-            var orbit = new OrbitalElements(radius, radius, period, (int)degrees, degrees - (int)degrees,
+            var orbit = new OrbitalElements(stationRadius, stationRadius, period, (int)degrees, degrees - (int)degrees,
                 state.MotionTimeMs, "clockwise");
             stations[i] = stations[i] with
             {
-                PositionX = radius * Math.Sin(angle), PositionY = -radius * Math.Cos(angle),
+                PositionX = stationRadius * Math.Sin(angle), PositionY = -stationRadius * Math.Cos(angle),
                 MovementType = "Orbital", Orbit = orbit, SpeedMps = 0, WorldOffsetX = 0, WorldOffsetY = 0
             };
         }

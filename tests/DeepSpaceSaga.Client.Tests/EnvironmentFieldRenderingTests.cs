@@ -27,6 +27,49 @@ public sealed class EnvironmentFieldRenderingTests
     }
 
     [Fact]
+    public void DustIsPurpleSoftAndWorldAnchored()
+    {
+        var renderer = new EnvironmentFieldRenderer();
+        EnvironmentFieldRenderer.Geometry[] dust = [new(Field("Dust"), 0, 0)];
+        using var bitmap = new SKBitmap(240, 240);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+        renderer.Draw(canvas, dust, new(0, 0, 1), 240, 240, null);
+
+        var row = Enumerable.Range(130, 75).Select(x => bitmap.GetPixel(x, 120)).ToArray();
+        Assert.Contains(row, p => p.Alpha > 25 && p.Blue > p.Red && p.Red > p.Green);
+        Assert.True(row.Select(p => p.Alpha).Distinct().Count() >= 10);
+        Assert.Equal(0, bitmap.GetPixel(10, 10).Alpha);
+
+        canvas.Clear(SKColors.Transparent);
+        renderer.Draw(canvas, dust, new(20, 0, 1), 240, 240, null);
+        Assert.Equal(row, Enumerable.Range(110, 75).Select(x => bitmap.GetPixel(x, 120)));
+    }
+
+    [Fact]
+    public void RadiationUsesRedBattlePaletteAndFadesTowardItsBoundary()
+    {
+        var renderer = new EnvironmentFieldRenderer();
+        EnvironmentFieldRenderer.Geometry[] fields = [new(Field("Radiation"), 0, 0)];
+        using var bitmap = new SKBitmap(240, 240);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Black);
+        renderer.Draw(canvas, fields, new(0, 0, 1), 240, 240, null);
+
+        var core = bitmap.GetPixel(120, 120);
+        Assert.True(core.Red > core.Blue && core.Blue > core.Green);
+        Assert.True(core.Red > bitmap.GetPixel(205, 120).Red);
+        Assert.Equal(SKColors.Black, bitmap.GetPixel(224, 120));
+        var row = Enumerable.Range(190, 30).Select(x => bitmap.GetPixel(x, 120)).ToArray();
+        Assert.True(row.Select(p => p.Red).Distinct().Count() >= 5);
+        Assert.All(row.Where(p => p.Red >= 8), p => Assert.True(p.Red > p.Green * 2 && p.Red > p.Blue * 1.5));
+
+        canvas.Clear(SKColors.Black);
+        renderer.Draw(canvas, fields, new(20, 0, 1), 240, 240, null);
+        Assert.Equal(row, Enumerable.Range(170, 30).Select(x => bitmap.GetPixel(x, 120)));
+    }
+
+    [Fact]
     public void FieldSelectionMatchesAuthoritativeBoundary()
     {
         var orbit = new OrbitalElements(100, 100, 30000, 0, 0, 0, "clockwise");

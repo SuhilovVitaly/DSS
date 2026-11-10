@@ -148,6 +148,7 @@ internal sealed class ObjectLabelRenderer
                 var predicted = state.Pose;
                 string objectId = predicted.ObjectId;
                 if (clusteredIds?.Contains(objectId) == true) continue;
+                if (predicted.RenderObjectType == SpaceObjectType.Factory && objectId != hoveredObjectId) continue;
                 bool focused = objectId == selectedObjectId || objectId == hoveredObjectId;
                 bool required = focused || state.IsPlayerShip || isImportant?.Invoke(objectId) == true;
                 bool important = required || HasSelectableShipLabel(state.Source) ||

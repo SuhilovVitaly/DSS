@@ -14,8 +14,12 @@ public sealed class MultiClusterPlacementTests
         { Clusters = GenerationInputSchemaTests.V2Config().Clusters! with { MinClusters = 5, MaxClusters = 5, MinStations = 12, MaxStations = 12 } });
         var state = candidate.World.GameState; var map = candidate.Map;
         double units = map.Geography!.ReferenceSpeedKmS * 86400 / 300 * 10;
-        var radii = map.Clusters.Select(c => state.SpaceObjects.Single(o => o.ObjectId == c.StationIds[0]).Orbit!.SemiMajorAxis).Order().ToArray();
-        for (int i = 1; i < radii.Length; i++) Assert.True(radii[i] - radii[i - 1] >= units);
+        var lanes = map.Clusters.Select(c =>
+        {
+            var radii = state.SpaceObjects.Where(o => c.StationIds.Contains(o.ObjectId)).Select(o => o.Orbit!.SemiMajorAxis).ToArray();
+            return (Inner: radii.Min(), Outer: radii.Max());
+        }).OrderBy(lane => lane.Inner).ToArray();
+        for (int i = 1; i < lanes.Length; i++) Assert.True(lanes[i].Inner - lanes[i - 1].Outer >= units);
         // Reverse triangle inequality: |p-q| >= ||p|-|q|| >= one day for all relative phases.
         foreach (int days in new[] { 0, 1, 30, 365 })
         {
@@ -50,7 +54,7 @@ public sealed class MultiClusterPlacementTests
                 {
                     var stations = state.SpaceObjects.Where(o => cluster.StationIds.Contains(o.ObjectId)).ToArray();
                     Assert.Equal(stationCount, stations.Length);
-                    Assert.Single(stations.Select(o => o.Orbit!.SemiMajorAxis).Distinct());
+                    Assert.Equal(stationCount, stations.Select(o => o.Orbit!.SemiMajorAxis).Distinct().Count());
                     Assert.Single(stations.Select(o => o.Orbit!.OrbitalPeriodMs).Distinct());
                     foreach (var a in stations) Assert.InRange(stations.Where(b => b.ObjectId != a.ObjectId)
                         .Min(b => double.Hypot(a.PositionX - b.PositionX, a.PositionY - b.PositionY)) / units, 1, 3);

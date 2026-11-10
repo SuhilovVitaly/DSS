@@ -56,8 +56,19 @@ public sealed class DefaultSystemContentTests
         foreach (var original in scenario.GameState.SpaceObjects)
         {
             var actual = saved.GameState.SpaceObjects.Single(o => o.ObjectId == original.ObjectId);
-            if (original.ObjectType != SpaceObjectType.Station) Assert.Equal(original.SpeedMps, actual.SpeedMps);
-            else Assert.NotNull(actual.Orbit);
+            if (original.ObjectType == SpaceObjectType.Asteroid)
+            {
+                Assert.Equal(original.SpeedMps, actual.SpeedMps, 5);
+                var first = snapshot.Objects.Single(o => o.ObjectId == original.ObjectId);
+                Assert.NotNull(first.Orbit);
+                Assert.Equal(actual.Orbit, first.Orbit);
+                var start = snapshot.Objects.Single(o => o.ObjectId == "SPC-0002");
+                var originalStart = scenario.GameState.SpaceObjects.Single(o => o.ObjectId == start.ObjectId);
+                Assert.Equal(original.PositionX - originalStart.PositionX, first.X - start.X, 5);
+                Assert.Equal(original.PositionY - originalStart.PositionY, first.Y - start.Y, 5);
+            }
+            else if (original.ObjectType == SpaceObjectType.Station) Assert.NotNull(actual.Orbit);
+            else Assert.Equal(original.SpeedMps, actual.SpeedMps);
             Assert.Equal((original.Modules ?? []).Where(m => !m.ModuleTypeId.StartsWith("module.torpedo.", StringComparison.Ordinal) &&
                 !m.ModuleTypeId.StartsWith("module.countermeasure.", StringComparison.Ordinal) && m.ModuleTypeId != "module.combat.laser")
                 .Select(m => (m.ModuleId, m.ModuleTypeId)),

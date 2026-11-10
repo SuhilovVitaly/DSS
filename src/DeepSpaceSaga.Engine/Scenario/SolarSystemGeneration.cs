@@ -23,7 +23,41 @@ public sealed record SolarSystemGenerationConfig(
     [property: JsonPropertyName("clusters")] ClusterGenerationConfig? Clusters = null,
     [property: JsonPropertyName("ai")] AiGenerationConfig? Ai = null,
     [property: JsonPropertyName("environment")] EnvironmentGenerationConfig? Environment = null,
-    [property: JsonPropertyName("poiTemplates")] IReadOnlyList<PoiTemplate>? PoiTemplates = null);
+    [property: JsonPropertyName("poiTemplates")] IReadOnlyList<PoiTemplate>? PoiTemplates = null,
+    [property: JsonPropertyName("distanceScale")] double DistanceScale = 1)
+{
+    internal SolarSystemGenerationConfig WithScaledDistances()
+    {
+        if (DistanceScale == 1) return this;
+        return this with
+        {
+            StartMinDays = StartMinDays * DistanceScale,
+            StartMaxDays = StartMaxDays * DistanceScale,
+            OrbitClearanceWorld = OrbitClearanceWorld * DistanceScale,
+            Clusters = Clusters is { } c ? c with
+            {
+                MinimumStationDays = c.MinimumStationDays * DistanceScale,
+                NeighbourMinDays = c.NeighbourMinDays * DistanceScale,
+                NeighbourMaxDays = c.NeighbourMaxDays * DistanceScale,
+                DiameterMinDays = c.DiameterMinDays * DistanceScale,
+                DiameterMaxDays = c.DiameterMaxDays * DistanceScale,
+                InterclusterMinDays = c.InterclusterMinDays * DistanceScale,
+                InterclusterMaxDays = c.InterclusterMaxDays * DistanceScale
+            } : null,
+            Environment = Environment is { } e ? e with
+            {
+                RadiationRadiusKm = e.RadiationRadiusKm * DistanceScale,
+                DustWidthKm = e.DustWidthKm * DistanceScale,
+                DebrisRadiusKm = e.DebrisRadiusKm * DistanceScale
+            } : null,
+            Ai = Ai is { } a ? a with
+            {
+                DefenceRadiusKm = a.DefenceRadiusKm * DistanceScale,
+                PatrolRadiusKm = a.PatrolRadiusKm * DistanceScale
+            } : null
+        };
+    }
+}
 
 public sealed record PoiTemplate(
     [property: JsonPropertyName("id")] string Id,
@@ -70,6 +104,9 @@ public static class SolarSystemGeneration
     {
         if (c.SchemaVersion != 1 || c.GeneratorVersion is not (1 or 2))
             throw new ContentException("solarSystem: unsupported schemaVersion/generatorVersion.");
+        if (!double.IsFinite(c.DistanceScale) || c.DistanceScale is < 1 or > 100 ||
+            (c.GeneratorVersion == 1 && c.DistanceScale != 1))
+            throw new ContentException("solarSystem: invalid distance scale.");
         if (c.MaxPlacementAttempts is <= 0 or > MaximumPlacementAttempts || c.MinPlanets < 3 || c.MaxPlanets > 7 || c.MaxPlanets < c.MinPlanets ||
             c.MinBelts < 2 || c.MaxBelts > 5 || c.MaxBelts < c.MinBelts ||
             !double.IsFinite(c.StartMinDays) || !double.IsFinite(c.StartMaxDays) ||
@@ -128,7 +165,9 @@ public static class SolarSystemGeneration
         var sun = state.SpaceObjects.Single(o => string.Equals(o.ObjectType, "Sun", StringComparison.OrdinalIgnoreCase));
         if (sun.Orbit is not null || sun.PositionX != 0 || sun.PositionY != 0 || sun.SpeedMps != 0)
             throw new ScenarioException("solarSystem: Sun must remain at the origin.");
-        if (state.SpaceObjects.Any(o => o.WorldOffsetX != 0 || o.WorldOffsetY != 0 ||
+        var resourceIds = (state.StationResourceFields?.Asteroids ?? []).Select(a => a.ObjectId).ToHashSet(StringComparer.Ordinal);
+        if (state.SpaceObjects.Any(o => ((o.WorldOffsetX != 0 || o.WorldOffsetY != 0) &&
+            (map.GeneratorVersion != 2 || o.Orbit is null || (o.ObjectType != SpaceObjectType.Factory && !resourceIds.Contains(o.ObjectId)))) ||
             string.Equals(o.ObjectType, "Station", StringComparison.OrdinalIgnoreCase) && o.Orbit is null))
             throw new ScenarioException("solarSystem: invalid offset or missing station orbit.");
         var objects = state.SpaceObjects.ToDictionary(o => o.ObjectId, StringComparer.OrdinalIgnoreCase);
