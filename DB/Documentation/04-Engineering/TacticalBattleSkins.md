@@ -50,7 +50,7 @@
 | Активная поверхность | Роли и свойства |
 |---|---|
 | Карта | field.background: fill/image; field.grid: stroke; field.unit.carrier/drone.own/enemy: fill |
-| Конец пути | field.move.handle: fill/stroke |
+| Треугольник конца пути | field.move.handle: fill |
 | Снаряд | shot.projectile: fill/size; расписание остаётся данными презентации |
 | Панель, карточки, статус | ui.panel, ui.pilot-card, ui.pilot-card.chip, ui.box: fill/stroke |
 | Полосы карточек | ui.pilot-card.bar.armor/hull/mind: fill; общий ui.bar: fill |

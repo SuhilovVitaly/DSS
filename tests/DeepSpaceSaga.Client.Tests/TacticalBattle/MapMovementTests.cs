@@ -32,6 +32,36 @@ public sealed class MapMovementTests
         Assert.Contains(s.Screen.BuildMoveRequest().Orders, o => o.DroneId == row.Unit.Id && o != row.Suggestion);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(90)]
+    [InlineData(180)]
+    public async Task Endpoint_triangle_points_along_final_course(double course)
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move");
+        var frame = scene.Frame;
+        var movement = frame.Movement!;
+        var order = movement.SelectedOrder!;
+        var view = new TacticalBattleView(1280, 720, 0, 0, 1);
+        using var raster = BattleMapRenderTests.Raster(frame with
+        {
+            View = view,
+            Battle = frame.Battle with { Units = [], Paths = [], Anomalies = [] },
+            Movement = movement with { Orders = [order with { Path = [new(0, 0, course)] }], Reachable = [] }
+        });
+        var center = view.Project(0, 0);
+        double radians = course * Math.PI / 180;
+        var axis = new SKPoint((float)Math.Cos(radians), (float)Math.Sin(radians));
+        var side = new SKPoint(-axis.Y, axis.X);
+        var nose = center + BattleDesign.Scale(axis, 3);
+        var flank = BattleDesign.Scale(side, 2);
+        Assert.True(Pixel(nose).Blue > 160);
+        Assert.True(Pixel(center - BattleDesign.Scale(axis, 2) + flank).Blue > 160);
+        Assert.True(Pixel(nose + flank).Blue < 100);
+
+        SKColor Pixel(SKPoint point) => raster.GetPixel((int)Math.Floor(point.X), (int)Math.Floor(point.Y));
+    }
+
     [Fact]
     public async Task Reachable_area_follows_selected_drone_during_move_planning()
     {
