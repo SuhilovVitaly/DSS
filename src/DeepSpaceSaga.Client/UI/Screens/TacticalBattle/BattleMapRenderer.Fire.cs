@@ -121,17 +121,17 @@ internal static partial class TacticalBattleMapRenderer
                 occupied.Add(bounds);
                 if (Recording is { } layout) layout.Rects["decoy-callout:" + index++] = bounds;
             }
-            DrawFloatingShotResults(c, f, results, occupied);
         }
+        if (f.Salvo is { PlaybackSkipped: false } feedback)
+            DrawFloatingShotResults(c, f, feedback, occupied);
     }
 
     private static void DrawFloatingShotResults(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, List<SKRect> occupied)
     {
         const double durationMs = 1400;
-        if (salvo.ResultsAgeMs >= durationMs + 450) return;
         foreach (var flight in salvo.Flights)
         {
-            double age = salvo.ResultsAgeMs - Math.Min(450, flight.Index * 90);
+            double age = flight.ImpactAgeMs;
             if (age < 0 || age >= durationMs) continue;
             var shot = flight.Shot;
             var damage = frame.Battle.FireSteps.FirstOrDefault(step => step.ShooterId == shot.ShooterId)?.Events

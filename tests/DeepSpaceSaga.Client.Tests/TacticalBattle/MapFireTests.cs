@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Client.Tests.TacticalBattle.View;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
 using SkiaSharp;
 
@@ -9,19 +10,35 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class MapFireTests
 {
     [Fact]
-    public async Task Results_text_rises_and_expires_after_skipping_flight()
+    public async Task Damage_text_starts_on_torpedo_impact_during_the_salvo()
     {
-        await using var scene = await Ep0019Scenes.Create("4-salvo-results");
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
         using var locale = Localization.UseLocaleForTests("Russian");
-        using var initial = scene.Render();
-        var first = scene.Screen.Layout.Rects["floating-shot:0"];
-        Assert.Contains(scene.Screen.Layout.Texts, item => item.Text == "промах");
+        var hit = scene.Frame.Salvo!.Flights.First(flight => flight.Shot.Hit);
+        string key = "floating-shot:" + hit.Index;
+        scene.Fixture.AdvanceAnimation((long)Math.Ceiling(hit.LaunchMs + hit.DurationMs) - (long)hit.ElapsedMs - 1);
+        using var before = scene.Render();
+        Assert.DoesNotContain(key, scene.Screen.Layout.Rects.Keys);
+        scene.Fixture.AdvanceAnimation(1);
+        using var impact = scene.Render();
+        Assert.True(scene.Frame.Salvo!.InFlight);
+        var first = scene.Screen.Layout.Rects[key];
+        var damage = scene.Frame.Battle.FireSteps.Single(step => step.ShooterId == hit.Shot.ShooterId)
+            .Events.Single(entry => entry.Kind == TacticalBattleLogKind.DamageApplied).Damage!;
+        Assert.Contains(scene.Screen.Layout.Texts, item => item.Text == $"−{damage.Hull + damage.Armor}");
         scene.Fixture.AdvanceAnimation(550);
         using var later = scene.Render();
-        Assert.True(scene.Screen.Layout.Rects["floating-shot:0"].Top < first.Top);
-        Assert.Contains(scene.Screen.Layout.Texts, item => item.Text.StartsWith("−", StringComparison.Ordinal) && item.Text.Length <= 4);
-        scene.Fixture.AdvanceAnimation(1500);
+        Assert.True(scene.Screen.Layout.Rects[key].Top < first.Top);
+        scene.Fixture.AdvanceAnimation(900);
         using var expired = scene.Render();
+        Assert.DoesNotContain(key, scene.Screen.Layout.Rects.Keys);
+    }
+
+    [Fact]
+    public async Task Skipping_flight_does_not_start_impact_text_in_results()
+    {
+        await using var scene = await Ep0019Scenes.Create("4-salvo-results");
+        using var raster = scene.Render();
         Assert.DoesNotContain(scene.Screen.Layout.Rects.Keys, key => key.StartsWith("floating-shot:", StringComparison.Ordinal));
     }
 

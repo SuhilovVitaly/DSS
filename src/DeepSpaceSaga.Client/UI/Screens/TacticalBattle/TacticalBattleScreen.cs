@@ -335,8 +335,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         var current = Volatile.Read(ref _presentation);
         if (current?.Results is not { } salvo) return;
-        long now = ClockMilliseconds();
-        var next = salvo.InFlight(now) ? salvo with { Skipped = true, SkippedAtMs = now } : null;
+        var next = salvo.InFlight(ClockMilliseconds()) ? salvo with { Skipped = true } : null;
         Interlocked.CompareExchange(ref _presentation, current with { Results = next }, current);
     }
 
@@ -352,7 +351,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         var current = Volatile.Read(ref _presentation);
         long now = ClockMilliseconds();
         if (current?.Results is not { } salvo || salvo.InFlight(now)) return;
-        Interlocked.CompareExchange(ref _presentation, current with { Results = salvo with { StartedMs = now, Skipped = false, SkippedAtMs = null } }, current);
+        Interlocked.CompareExchange(ref _presentation, current with { Results = salvo with { StartedMs = now, Skipped = false } }, current);
     }
 
     private void AimOrder(SKPoint p)
