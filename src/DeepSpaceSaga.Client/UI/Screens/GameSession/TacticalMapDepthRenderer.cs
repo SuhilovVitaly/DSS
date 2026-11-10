@@ -16,10 +16,7 @@ internal sealed class TacticalMapDepthRenderer
     private const long ActiveReticleRotationPeriodMs = 3_500;
     private const long SelectedReticleRotationPeriodMs = 9_000;
     private const long FlamePulsePeriodMs = 180;
-    private const float FocusIndicatorCornerRadius = 26f;
-    private const float FocusIndicatorBracketArmLength = 9f;
-    private const float FocusIndicatorTickGap = 4f;
-    private const float FocusIndicatorTickLength = 14f;
+    private const float FocusIndicatorHalfSpan = 22f;
 
     private readonly SKPaint _markerShadowPaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
     private readonly SKPaint _markerBasePaint = new() { Style = SKPaintStyle.Fill, IsAntialias = true };
@@ -238,57 +235,16 @@ internal sealed class TacticalMapDepthRenderer
         canvas.DrawCircle(centerX, centerY, Math.Max(0.9f, radius * 0.45f), _glintCorePaint);
     }
 
-    /// <summary>
-    /// Draws the camera-focus indicator: a tactical targeting reticle made of 4
-    /// small L-shaped corner brackets (opening inward) plus 4 axis tick marks on
-    /// the cardinal directions (sitting just outside the brackets, with a gap
-    /// between them), marking the exact point the camera is focused on (always
-    /// the viewport center). The exact center point is deliberately left
-    /// unpainted — a large open area in the middle, unlike a solid crosshair.
-    /// Drawn unconditionally, regardless of whether the camera is on a free map
-    /// point or following an object.
-    /// </summary>
+    /// <summary>Draws the camera focus as a cross in screen pixels.</summary>
     public void DrawFocusIndicator(SKCanvas canvas, float centerX, float centerY)
     {
-        const float r = FocusIndicatorCornerRadius;
-        const float arm = FocusIndicatorBracketArmLength;
-        const float tickStart = FocusIndicatorCornerRadius + FocusIndicatorTickGap;
-        const float tickEnd = tickStart + FocusIndicatorTickLength;
-
+        const float r = FocusIndicatorHalfSpan;
         _focusIndicatorPath.Reset();
-
-        // Corner brackets: each pair of arms meets at its corner point and runs
-        // toward the center along the two edges of the implied square.
-        AddCornerBracket(_focusIndicatorPath, centerX - r, centerY - r, arm, arm);
-        AddCornerBracket(_focusIndicatorPath, centerX + r, centerY - r, -arm, arm);
-        AddCornerBracket(_focusIndicatorPath, centerX - r, centerY + r, arm, -arm);
-        AddCornerBracket(_focusIndicatorPath, centerX + r, centerY + r, -arm, -arm);
-
-        // Axis tick marks: short segments starting just outside the corner
-        // radius (leaving a real gap) and extending further outward.
-        _focusIndicatorPath.MoveTo(centerX, centerY - tickStart);
-        _focusIndicatorPath.LineTo(centerX, centerY - tickEnd);
-        _focusIndicatorPath.MoveTo(centerX, centerY + tickStart);
-        _focusIndicatorPath.LineTo(centerX, centerY + tickEnd);
-        _focusIndicatorPath.MoveTo(centerX - tickStart, centerY);
-        _focusIndicatorPath.LineTo(centerX - tickEnd, centerY);
-        _focusIndicatorPath.MoveTo(centerX + tickStart, centerY);
-        _focusIndicatorPath.LineTo(centerX + tickEnd, centerY);
-
+        _focusIndicatorPath.MoveTo(centerX - r, centerY);
+        _focusIndicatorPath.LineTo(centerX + r, centerY);
+        _focusIndicatorPath.MoveTo(centerX, centerY - r);
+        _focusIndicatorPath.LineTo(centerX, centerY + r);
         canvas.DrawPath(_focusIndicatorPath, _focusIndicatorPaint);
-    }
-
-    /// <summary>
-    /// Adds one L-shaped corner bracket to <paramref name="path"/>: two segments
-    /// meeting at (cornerX, cornerY), one running horizontally by
-    /// <paramref name="dx"/> and one running vertically by <paramref name="dy"/>
-    /// — both pointing back toward the center (inward) from the corner.
-    /// </summary>
-    private static void AddCornerBracket(SKPath path, float cornerX, float cornerY, float dx, float dy)
-    {
-        path.MoveTo(cornerX + dx, cornerY);
-        path.LineTo(cornerX, cornerY);
-        path.LineTo(cornerX, cornerY + dy);
     }
 
     /// <summary>

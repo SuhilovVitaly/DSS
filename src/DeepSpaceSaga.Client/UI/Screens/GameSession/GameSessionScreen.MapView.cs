@@ -468,7 +468,10 @@ public sealed partial class GameSessionScreen
         if (rect.Width <= 0 || rect.Height <= 0) return;
         var screenBounds = new SKRect(0, 0, _viewportW, _viewportH);
         var emitted = new HashSet<string>(StringComparer.Ordinal);
-        var ship = FindPlayerShip(_renderStates)?.Predicted;
+        var player = FindPlayerShip(_renderStates);
+        var ship = player?.Predicted;
+        if (player is { } own)
+            Draw(own.Pose.ObjectId, own.Pose.X, own.Pose.Y, "World.Panel.PlayerShip", showDistance: false);
         foreach (var state in _renderStates)
             if (!state.IsPlayerShip && IsImportantMapObject(state.Pose.ObjectId) && !_clusteredObjectIds.Contains(state.Pose.ObjectId))
                 Draw(state.Pose.ObjectId, state.Pose.X, state.Pose.Y, state.Pose.ObjectId == _selectedObjectId ? "Map.Selected" : "Map.Target");
@@ -476,7 +479,7 @@ public sealed partial class GameSessionScreen
             (_navigationTargetId is null || !_renderStates.Any(s => s.Pose.ObjectId == _navigationTargetId)))
             Draw(_navigationTargetId ?? "navigation-point", tx, ty, "Map.Target");
 
-        void Draw(string id, double worldX, double worldY, string labelKey)
+        void Draw(string id, double worldX, double worldY, string labelKey, bool showDistance = true)
         {
             var (sx, sy) = _camera.WorldToScreen(worldX, worldY, _viewportW, _viewportH);
             if (screenBounds.Contains(sx, sy) || !emitted.Add(id)) return;
@@ -489,8 +492,12 @@ public sealed partial class GameSessionScreen
             _mapMarkerPaint.Color = TacticalMapPalette.Target;
             using var arrow = new SKPath(); arrow.MoveTo(8, 0); arrow.LineTo(-5, -5); arrow.LineTo(-5, 5); arrow.Close();
             canvas.DrawPath(arrow, _mapMarkerPaint); canvas.Restore();
-            double meters = ship is null ? 0 : Math.Sqrt(Math.Pow(worldX - ship.X, 2) + Math.Pow(worldY - ship.Y, 2)) * 100;
-            string text = $"{Localization.Get(labelKey)} · {TacticalMapSettings.FormatDistance(meters)}";
+            string text = Localization.Get(labelKey);
+            if (showDistance)
+            {
+                double meters = ship is null ? 0 : Math.Sqrt(Math.Pow(worldX - ship.X, 2) + Math.Pow(worldY - ship.Y, 2)) * 100;
+                text += $" · {TacticalMapSettings.FormatDistance(meters)}";
+            }
             float textX = Math.Clamp(x - _panelTextPaint.MeasureText(text) / 2, rect.Left, Math.Max(rect.Left, rect.Right - _panelTextPaint.MeasureText(text)));
             canvas.DrawText(text, textX, y < rect.MidY ? y + 22 : y - 12, _panelTextPaint);
         }
