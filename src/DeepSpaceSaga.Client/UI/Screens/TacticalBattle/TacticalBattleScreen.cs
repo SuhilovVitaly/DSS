@@ -17,7 +17,6 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 {
     private readonly TacticalBattleCamera _camera = new();
     private readonly TacticalBattleSkin _skin;
-    private readonly ShortcutButton _fit = new("", "0");
     private readonly ShortcutButton _exitBattle = new("", "Esc");
     private readonly ShortcutButton _phaseAction = new("", "Enter");
     private readonly ShortcutButton _newBattle = new("");
@@ -105,7 +104,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         bool planning = !moving && salvo is null;
         _viewport = BattleViewport.From(width, height);
         _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, OverlayBottom(state, salvo));
-        _camera.Update(state, (int)_viewport.Wd, 720, salvo is not null);
+        _camera.Update(state, (int)_viewport.Wd, 720);
         if (planning)
         {
             ObserveOrders(state);
@@ -151,21 +150,6 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
     }
 
-    private void Fit()
-    {
-        if (Volatile.Read(ref _presentation)?.Results is { } results)
-            _camera.Fit(results.Battle with { Phase = TacticalBattlePhase.Fire, Units = results.Battle.BeforeSalvoUnits });
-        else if (Flow.State is { } state)
-        {
-            if (state.Phase == TacticalBattlePhase.Move)
-            {
-                ObserveOrders(state);
-                state = state with { Suggestions = _orders.Capture().Orders.Select(o => o.Order).ToImmutableArray() };
-            }
-            _camera.Fit(state);
-        }
-    }
-
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
@@ -173,11 +157,6 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (key == Key.Escape && !repeat && OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
 
 
-        if (!ConfirmExit && !repeat && modifiers == KeyModifiers.None && key is Key.Number0 or Key.Keypad0)
-        {
-            Fit();
-            return ScreenEvent.None;
-        }
         if (!ConfirmExit && HasSalvoPresentation)
         {
             if (!repeat && key is Key.Enter or Key.KeypadEnter) AdvanceSalvo();
@@ -336,7 +315,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _firePanel.ResetInput();
         _logTab.ResetInput();
         _forecastTab.ResetInput();
-        _fit.ResetInput(); _exitBattle.ResetInput(); _newBattle.ResetInput(); _phaseAction.ResetInput(); _replaySalvo.ResetInput();
+        _exitBattle.ResetInput(); _newBattle.ResetInput(); _phaseAction.ResetInput(); _replaySalvo.ResetInput();
         _enemyForecast.HasFocus = _enemySectors.HasFocus = _allFireSectors.HasFocus = false;
     }
 

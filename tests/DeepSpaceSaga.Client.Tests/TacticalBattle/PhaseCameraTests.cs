@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Client.Tests.TacticalBattle.View;
 using DeepSpaceSaga.Contracts;
+using Silk.NET.Input;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
@@ -20,5 +21,36 @@ public sealed class PhaseCameraTests
         Assert.InRange(f.View.PixelsPerUnit, expected - .00001, expected + .00001);
         var center = f.View.Project((points.Max(p => p.X) + points.Min(p => p.X)) / 2, (points.Max(p => p.Y) + points.Min(p => p.Y)) / 2);
         Assert.InRange(center.X, 617.99, 618.01); Assert.InRange(center.Y, 359.99, 360.01);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Execute_movement_keeps_center_and_scale_through_playback_and_fire(bool adjustCamera)
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        scene.Fixture.ManualAnimation = true;
+        var screen = scene.Screen;
+        using var raster = scene.Render();
+        if (adjustCamera)
+        {
+            screen.OnMouseWheel(900, 540, -100);
+            screen.OnMouseDown(900, 540, MouseButton.Right);
+            screen.OnMouseMove(960, 570);
+            screen.OnMouseUp(960, 570, MouseButton.Right);
+        }
+        var expected = scene.Frame.View;
+        while (scene.Frame.Battle.Phase == TacticalBattlePhase.Move)
+        {
+            Assert.True(scene.Frame.Battle.Turn <= 4);
+            await scene.Fixture.Route(screen.OnKeyDown(Key.Enter));
+            Assert.True(scene.Frame.Pending);
+            Assert.Equal(expected, scene.Frame.View);
+            scene.Fixture.AdvanceAnimation(650);
+            Assert.Equal(expected, scene.Frame.View);
+            scene.Fixture.FinishPresentation();
+            Assert.Equal(expected, scene.Frame.View);
+        }
+        Assert.Equal(TacticalBattlePhase.Fire, scene.Frame.Battle.Phase);
     }
 }
