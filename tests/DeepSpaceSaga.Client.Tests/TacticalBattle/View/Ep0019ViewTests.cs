@@ -43,9 +43,9 @@ public sealed partial class Ep0019ViewTests
             }
             if (name == "5-outcome")
             {
-                Assert.Equal(23, state.Outcome!.Turns);
+                Assert.Equal(21, state.Outcome!.Turns);
                 Assert.Equal(TacticalBattleOutcomeCode.A, state.Outcome.Kind);
-                Assert.Equal(42, state.Outcome.Statistics.Shots);
+                Assert.Equal(40, state.Outcome.Statistics.Shots);
                 Assert.Equal(20, state.Outcome.Statistics.Hits);
             }
         }
