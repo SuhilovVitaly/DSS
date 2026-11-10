@@ -1,4 +1,6 @@
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Client.UI.Screens;
+using Silk.NET.Input;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle.View;
@@ -15,6 +17,10 @@ public sealed class Ep0022SkinScenesTests
     [InlineData("2-anomaly-absorption")]
     [InlineData("2-evasion-plan")]
     [InlineData("2-decoy-empty")]
+    [InlineData("3-salvo-flight")]
+    [InlineData("4-salvo-results")]
+    [InlineData("4-anomaly-absorbed")]
+    [InlineData("5-outcome")]
     public async Task Xenon_and_Classic_share_layout_and_text(string scene)
     {
         if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")
@@ -34,6 +40,34 @@ public sealed class Ep0022SkinScenesTests
         Assert.Equal(classic.Layout.Texts.Select(text => text.Text), styled.Layout.Texts.Select(text => text.Text));
         Assert.NotEqual(classicBitmap.GetPixel(540, 138), styledBitmap.GetPixel(540, 138));
         Assert.IsType<SKImage>(xenon.Image("field.hud.frame"));
+    }
+
+    [Fact]
+    public async Task Exit_confirmation_keeps_the_same_actions_at_compact_size()
+    {
+        if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")
+            return;
+
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        Assert.True(catalog.TryGet("xenon-star", out var xenon));
+        await using var scenes = await Ep0019Scenes.Create("1-move-no-hover");
+        var classic = scenes.Screen;
+        var themed = new TacticalBattleScreen(classic.Flow, 1, xenon);
+        using var first = RenderConfirmation(classic);
+        using var second = RenderConfirmation(themed);
+        Assert.NotEqual(first.GetPixel(640, 365), second.GetPixel(640, 365));
+        Assert.Equal(ScreenEvent.CloseTacticalBattle, classic.OnKeyDown(Key.Enter));
+        Assert.Equal(ScreenEvent.CloseTacticalBattle, themed.OnKeyDown(Key.Enter));
+
+        static SKBitmap RenderConfirmation(TacticalBattleScreen screen)
+        {
+            Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Escape));
+            Assert.True(screen.ConfirmExit);
+            var bitmap = new SKBitmap(1280, 720);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, bitmap.Width, bitmap.Height);
+            return bitmap;
+        }
     }
 
     [Fact]

@@ -51,6 +51,15 @@
     "ui.box.evade.unavailable": { "fill": "#172128", "stroke": "#3A4C58" },
     "ui.box.decoy": { "fill": "#152A25", "stroke": "#55806B" },
     "ui.box.decoy.selected": { "fill": "#1E392D", "stroke": "#8EE6AE" },
-    "ui.box.decoy.unavailable": { "fill": "#172128", "stroke": "#3A4C58" }
+    "ui.box.decoy.unavailable": { "fill": "#172128", "stroke": "#3A4C58" },
+    "ui.box.salvo.active": { "fill": "#253846", "stroke": "#A9CDD9", "text": "#DCECF3" },
+    "ui.salvo.result.hit": { "text": "#ACDBEA" },
+    "ui.salvo.result.miss": { "text": "#CED8DE" },
+    "ui.panel.report.art": { "image": "assets/weapons_bg.png", "opacity": 0.55 },
+    "ui.report": { "stroke": "#68808F" },
+    "ui.outcome.victory": { "text": "#A9D7E6" },
+    "ui.outcome.defeat": { "text": "#FF8181" },
+    "modal.exit": { "fill": "#101B26", "stroke": "#5E8195" },
+    "modal.exit.art": { "image": "assets/weapons_bg.png", "opacity": 0.52 }
   }
 }

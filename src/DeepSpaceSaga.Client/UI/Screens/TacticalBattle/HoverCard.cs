@@ -84,7 +84,7 @@ internal sealed class HoverCard
         float top = frame.Panel.Bottom + 6;
         Bounds = _reportBounds = new(frame.Panel.Left, top, frame.Panel.Right, top + 32 + Math.Max(1, rows) * 17);
         if (Recording is { } layout) layout.Rects["salvo-report"] = Bounds;
-        PanelBox(canvas, Bounds);
+        PanelBox(canvas, Bounds, role: "ui.panel.report");
         T(canvas, U("SalvoComplete"), Bounds.Left + 9, top + 19, 12, Text, true);
         if (_reportCount == 0)
         {
@@ -94,6 +94,10 @@ internal sealed class HoverCard
 
         string Name(string id) => frame.Battle.Units.FirstOrDefault(u => u.Id == id) is { } unit
             ? PilotCardModel.Name(unit) : id;
+        bool indicators = TacticalBattleSkinRenderScope.Has("ui.report", "stroke");
+        if (indicators)
+            Stroke(canvas, new(Bounds.Left + 9, top + 24), new(Bounds.Right - 9, top + 24),
+                TacticalBattleSkinRenderScope.Color("ui.report", "stroke", BoxEdge), 1);
         for (int i = 0; i < rows; i++)
         {
             var shot = salvo.Flights[_reportFirst + i].Shot;
@@ -101,8 +105,16 @@ internal sealed class HoverCard
             string pair = Name(shot.ShooterId) + " → " + Name(shot.TargetId);
             T(canvas, BuildCardModel.Ellipsize(pair, Bounds.Width - 93, 11, false), Bounds.Left + 9, y, 11, Text);
             string outcome = shot.Absorbed ? M("Absorbed") : U(shot.Hit ? "Hit" : "Miss");
-            T(canvas, outcome, Bounds.Right - 13, y, FitSize(outcome, 10, 69), shot.Absorbed ? Heat : shot.Hit ? Yellow : Muted,
-                align: SKTextAlign.Right);
+            var tone = shot.Absorbed ? Heat : shot.Hit ? Yellow : Muted;
+            if (indicators)
+            {
+                var point = new SKPoint(Bounds.Right - 9.5f, y - 3.5f);
+                if (shot.Absorbed) Circle(canvas, point, 2, SKColors.Transparent, tone);
+                else if (shot.Hit) Diamond(canvas, point, 2, tone);
+                else Stroke(canvas, point + new SKPoint(-2, 0), point + new SKPoint(2, 0), tone, 1);
+            }
+            string role = shot.Absorbed ? "ui.text" : shot.Hit ? "ui.salvo.result.hit" : "ui.salvo.result.miss";
+            T(canvas, outcome, Bounds.Right - 13, y, FitSize(outcome, 10, 69), tone, align: SKTextAlign.Right, role: role);
         }
         if (_reportCount > rows)
         {

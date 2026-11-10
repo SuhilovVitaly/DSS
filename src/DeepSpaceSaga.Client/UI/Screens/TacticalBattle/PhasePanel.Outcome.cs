@@ -12,7 +12,8 @@ internal sealed partial class PhasePanel
         Head(c, b.ScenarioName, "OutcomeTag");
         bool victory = outcome.Kind.ToString() == b.PlayerSide;
         string title = U(outcome.Kind switch { TacticalBattleOutcomeCode.Draw => "Draw", TacticalBattleOutcomeCode.Timeout => "Timeout", _ => victory ? "Victory" : "Defeat" });
-        T(c, title, 1050, 140, 22, victory ? Yellow : Red, true);
+        T(c, title, 1050, 140, 22, victory ? Yellow : Red, true,
+            role: victory ? "ui.outcome.victory" : "ui.outcome.defeat");
         string reason = string.Join("; ", outcome.Reasons.Select(r => r.Kind switch
         { TacticalOutcomeReasonCode.CarrierDestroyed => U("CarrierDestroyed", r.CarrierId), TacticalOutcomeReasonCode.NoDrones => U(victory ? "EnemyNoDrones" : "OwnNoDrones"), _ => U("TurnLimit", r.Cap) }));
         T(c, reason, 1050, 158, FitSize(reason, 12, 214), Text); Line(c, 1050, 1264, 167);

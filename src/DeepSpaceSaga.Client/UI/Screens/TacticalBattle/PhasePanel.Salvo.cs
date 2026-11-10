@@ -53,9 +53,11 @@ internal sealed partial class PhasePanel
                     bool active = current?.Shot.ShooterId == q.ShooterId;
                     bool enemy = _frame.Battle.Units.First(u => u.Id == q.ShooterId).Side != _frame.Battle.PlayerSide;
                     var color = active ? Yellow : flight is null ? Muted.WithAlpha(150) : enemy ? Orange : Text;
-                    if (active) Round(c, new(1046, y - 11, 1268, y + 4), YellowDark, Yellow);
+                    string role = active ? "ui.box.salvo.active" : "ui.text";
+                    if (active) Round(c, new(1046, y - 11, 1268, y + 4), YellowDark, Yellow, role: role);
                     string line = flight is null ? U("NoTargetRow", Name(q.ShooterId)) : Name(q.ShooterId) + " → " + Name(flight.Shot.TargetId);
-                    T(c, (i + 1) + ".", 1050, y, 11, color, active); T(c, line, 1070, y, 11, color, active);
+                    T(c, (i + 1) + ".", 1050, y, 11, color, active, role: role);
+                    T(c, line, 1070, y, 11, color, active, role: role);
                     if (flight is not null)
                     {
                         bool ownTarget = _frame.Battle.Units.First(u => u.Id == flight.Shot.TargetId).Side == _frame.Battle.PlayerSide;
@@ -79,7 +81,9 @@ internal sealed partial class PhasePanel
         {
             var absorbed = AbsorbedText(shot);
             string result = absorbed?.Title ?? (shot is null ? M("EvadeNoFire") : U(shot.Hit ? "Hit" : "Miss"));
-            T(c, result, 1050, 140, FitSize(result, 22, 214, true), absorbed is not null ? Heat : shot is null ? Purple : Yellow, true);
+            string resultRole = shot is { Absorbed: false } ? shot.Hit ? "ui.salvo.result.hit" : "ui.salvo.result.miss" : "ui.text";
+            T(c, result, 1050, 140, FitSize(result, 22, 214, true), absorbed is not null ? Heat : shot is null ? Purple : Yellow,
+                true, role: resultRole);
             if (shot is { Decoyed: true, Absorbed: false })
             {
                 T(c, M("DecoyOfTarget"), 1264, 128, 10.5f, Green, align: SKTextAlign.Right);

@@ -3,7 +3,7 @@ epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0006-read-salvo-results
 ticket: EP-0022-US-0006-TK-0001-style-salvo-results
 title: Оформить полёт залпа и итог
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001, EP-0022-US-0005-TK-0001]
 files_touched: 5
@@ -69,3 +69,9 @@ AC-01 подтверждён целевыми проверками. Реальн
 ## Self-containment check
 
 Production seam и проверка перечислены в Code context. Существующие команды и fixtures сохраняются.
+
+## Execution
+
+- Release Client — 46/46 целевых тестов. Парные кадры проверили полёт, завершение, поглощение и итог. В окне 1280×720 проверена та же команда подтверждения выхода.
+- Очередь, применение урона, прокрутка, переходы, повтор и отчёт используют прежние проекции и зоны. Дополнительные метки попадания, промаха и поглощения находятся внутри строки справа от подписи.
+- Scoped форматирование и git diff --check прошли.
