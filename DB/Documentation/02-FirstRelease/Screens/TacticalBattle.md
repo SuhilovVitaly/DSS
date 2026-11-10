@@ -24,4 +24,6 @@ Esc открывает подтверждение выхода, на итоге 
 
 Масштаб боя определяется высотой окна, независимо от menu UI scale. Файловые DejaVu Sans, роли оформления, данные портретов и проверки вида описаны в [контракте презентации](../../04-Engineering/TacticalBattle.md#клиентская-презентация). [Скины](../../04-Engineering/TacticalBattleSkins.md) применяются при открытии боя.
 
+Xenon Star оформляет поле под тактической картой, панели фаз, карточки пилотов и сборки, полёт залпа, отчёт, итог и подтверждение выхода. Скин использует общие зоны ввода и координаты карты. Пустое место рядом с оверлеями доступно для взаимодействия с картой.
+
 Источники: [TacticalBattleScreen](../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs), [PhasePanel](../../../../src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.cs), [подготовка](TacticalBattleSetup.md).

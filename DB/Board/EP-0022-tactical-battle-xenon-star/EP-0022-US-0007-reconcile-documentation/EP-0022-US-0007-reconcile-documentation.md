@@ -2,7 +2,7 @@
 epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0007-reconcile-documentation
 title: Синхронизировать документацию по итогам эпика
-stage: draft
+stage: implemented
 dependencies: [EP-0022-US-0001-select-xenon-skin, EP-0022-US-0002-read-tactical-map, EP-0022-US-0003-read-pilot-and-loadout, EP-0022-US-0004-plan-movement, EP-0022-US-0005-plan-fire, EP-0022-US-0006-read-salvo-results]
 ---
 

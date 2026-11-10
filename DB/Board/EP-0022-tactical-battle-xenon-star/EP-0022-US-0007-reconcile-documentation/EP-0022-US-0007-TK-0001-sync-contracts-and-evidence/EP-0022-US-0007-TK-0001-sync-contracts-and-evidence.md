@@ -3,10 +3,10 @@ epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0007-reconcile-documentation
 ticket: EP-0022-US-0007-TK-0001-sync-contracts-and-evidence
 title: Синхронизировать документацию и доказательства
-stage: draft
+stage: implemented
 layer: client
-depends_on: [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001, EP-0022-US-0003-TK-0001, EP-0022-US-0004-TK-0001, EP-0022-US-0005-TK-0001, EP-0022-US-0006-TK-0001]
-files_touched: 4
+depends_on: [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001, EP-0022-US-0003-TK-0001, EP-0022-US-0004-TK-0001, EP-0022-US-0005-TK-0001, EP-0022-US-0006-TK-0001, EP-0022-US-0001-TK-0002, EP-0022-US-0003-TK-0002]
+files_touched: 8
 serves: [AC-01]
 created: 2026-11-10T16:52:26Z
 revision: 1
@@ -36,6 +36,12 @@ EP-0022 D-01/D-02 задают визуальное направление и г
 | `DB/Documentation/02-FirstRelease/Screens/TacticalBattle.md` | Геометрия и ввод | Уточнить визуальный охват. |
 | `DB/Documentation/02-FirstRelease/Screens/Settings.md` | Действующий выбор | Уточнить наличие опционального пакета. |
 | `src/DeepSpaceSaga.Client/Skins/README.md` | Инструкция автору | Добавить воспроизводимую команду и область лицензии. |
+| `DB/Documentation/06-Tooling/GameSessionScreenUI.md` | Установка Skins рядом с приложением | Связать с фактической поставкой Xenon Star. |
+| `DB/Documentation/06-Tooling/Graphify.md` | Актуальный corpus | Добавить EP-0022. |
+| `DB/Documentation/06-Tooling/GraphifyRebuild.md` | Порядок офлайн rebuild | Уточнить corpus и запись нового evidence. |
+| `tools/graphify/rebuild.py` | Явный набор эпиков | Включить EP-0022 в структурный корпус. |
+
+Объём расширен по разделу 6 EpicExecutionPrompt. Список corpus задаёт инструмент, поэтому перестройка должна охватывать этот Board вместе с клиентским контрактом.
 
 ## Public API after the change
 
@@ -67,3 +73,9 @@ AC-01 подтверждён целевыми проверками. Реальн
 ## Self-containment check
 
 Production seam и проверка перечислены в Code context. Существующие команды и fixtures сохраняются.
+
+## Execution
+
+- Обновлены пользовательский и инженерный контракт скина, инструкция сборки с происхождением срезов, инвентарь влияния, Board и данные проверки. Лицензия публичной поставки, FPS и продуктовая приёмка имеют отдельные открытые статусы.
+- Offline Graphify перестроен по итоговому коду, рабочим текстам и новому Board. Получены 22 885 узлов и 60 954 связи. HTML агрегирует 762 сообщества. Предупреждение частичного AST одного исходного теста зафиксировано в отчёте.
+- Проверены пути, зависимости, карта публикации и отсутствие новых файлов других форматов в Documentation. Результаты и источники хранятся в [отчёте исполнения](../../ExecutionStatus.md).
