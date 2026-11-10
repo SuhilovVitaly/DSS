@@ -108,13 +108,14 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (!moving && presentation.Results is { } results) state = results.Project(now);
         bool planning = !moving && salvo is null;
         _viewport = BattleViewport.From(width, height);
-        _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, OverlayBottom(state, salvo));
         _camera.Update(state, (int)_viewport.Wd, 720);
         if (planning)
         {
             ObserveOrders(state);
             _lastSelectedDroneId = state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Selected : _orders.Selected;
         }
+        var firePlan = planning && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null;
+        _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, OverlayBottom(state, salvo, firePlan));
         return new(state, _camera.View, _panel, 1, moving || Flow.Pending || presentation.Accepted.Revision != Flow.State?.Revision,
             BlockedNotice is { Length: > 0 } notice ? notice : moving ? L("AnimatingMovement") : Flow.Error,
             Presentation: salvo is null ? TacticalBattlePresentation.Current :
@@ -122,7 +123,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             EnemyForecast: false, EnemySectors: false,
             SelectedDroneId: planning ? state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Selected : _orders.Selected : null,
             Movement: planning && state.Phase == TacticalBattlePhase.Move ? _orders.Capture() : null,
-            FirePlan: planning && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null,
+            FirePlan: firePlan,
             Salvo: salvo, AllFireSectors: false, HoverUnitId: HoverUnitId,
             LastSelectedDroneId: _lastSelectedDroneId,
             HoverPoint: _lastPointer is { } pointer && !OverlayHit(pointer) ? pointer : null)
@@ -312,7 +313,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         var p = DesignPoint(x, y);
-        if (!ConfirmExit && (_phasePanel.ScrollQueue(p, delta) || _hoverCard.ScrollResults(p, delta))) return ScreenEvent.None;
+        if (!ConfirmExit && (_phasePanel.ScrollTargets(p, delta) || _phasePanel.ScrollQueue(p, delta) || _hoverCard.ScrollResults(p, delta))) return ScreenEvent.None;
         if (!ConfirmExit && !TurnBusy && !_orderDrag && !OverlayHit(p)) _camera.Zoom(p.X, p.Y, delta);
         return ScreenEvent.None;
     }

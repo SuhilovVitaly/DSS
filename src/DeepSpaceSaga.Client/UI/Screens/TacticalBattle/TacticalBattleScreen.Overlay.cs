@@ -14,8 +14,8 @@ public sealed partial class TacticalBattleScreen
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;
     private BattleViewport _viewport = new(1, 1280);
     internal IReadOnlyList<SKRect> PanelRects => OverlayRects().Select(r => new SKRect(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S)).ToArray();
-    private static float OverlayBottom(TacticalBattleSnapshot b, TacticalSalvoFrame? salvo) =>
-        120 + (salvo is { InFlight: true } ? 262 : salvo is not null ? 246 : b.Phase == TacticalBattlePhase.Over ? 238 : 250);
+    private static float OverlayBottom(TacticalBattleSnapshot b, TacticalSalvoFrame? salvo, TacticalFirePlan? firePlan) =>
+        120 + (salvo is { InFlight: true } ? 262 : salvo is not null ? 246 : b.Phase == TacticalBattlePhase.Over ? 238 : 250 + PhasePanel.TargetListHeight(firePlan));
     private SKRect Raw(SKRect r) => new(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S);
     private SKPoint DesignPoint(float x, float y) => new((float)(x / (double)_viewport.S), (float)(y / (double)_viewport.S));
     private IEnumerable<SKRect> OverlayRects()
@@ -39,7 +39,14 @@ public sealed partial class TacticalBattleScreen
         { if (Flow.State?.Phase == TacticalBattlePhase.Move) _orders.Select(id); else _fireOrders.Select(id); }
         if (button != MouseButton.Left) return ScreenEvent.None;
         if (_phasePanel.BeginDrag(p, _orders)) return ScreenEvent.None;
-        switch (_phasePanel.HitButton(p))
+        var action = _phasePanel.HitButton(p);
+        const string targetPrefix = "target:";
+        if (action?.StartsWith(targetPrefix, StringComparison.Ordinal) == true)
+        {
+            _fireOrders.Choose(action[targetPrefix.Length..]);
+            return ScreenEvent.None;
+        }
+        switch (action)
         {
             case "straight": _orders.Straight(); break;
             case "ai": _orders.Suggest(); break;

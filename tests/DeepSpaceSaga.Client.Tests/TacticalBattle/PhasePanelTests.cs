@@ -8,7 +8,7 @@ public sealed class PhasePanelTests
 {
     [Theory]
     [InlineData("1-move", 370)]
-    [InlineData("2-fire", 370)]
+    [InlineData("2-fire", 410)]
     [InlineData("3-salvo-flight", 382)]
     [InlineData("4-salvo-results", 366)]
     [InlineData("5-outcome", 358)]

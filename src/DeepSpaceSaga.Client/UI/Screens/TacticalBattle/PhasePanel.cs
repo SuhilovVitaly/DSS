@@ -18,7 +18,8 @@ internal sealed partial class PhasePanel
     internal void Draw(SKCanvas c, TacticalBattleFrame f, BattleLayout layout)
     {
         _frame = f; _offset = f.Panel.Right - 1274; _buttons.Clear();
-        _db = Phase switch { "Salvo" => 262, "Results" => 246, "Outcome" => 238, _ => 250 };
+        _targetList = SKRect.Empty;
+        _db = Phase switch { "Salvo" => 262, "Results" => 246, "Outcome" => 238, "Fire" => 250 + TargetListHeight(f.FirePlan), _ => 250 };
         Bounds = R(1040, 6, 1274, _db + 120); Action = R(1040, _db + 28, 1274, _db + 120);
         layout.Rects["phase"] = Bounds; layout.Rects["action"] = Action; layout.Rects["details"] = R(1048, 68, 1266, _db + 24);
         c.Save(); c.Translate(_offset, 0);

@@ -49,6 +49,19 @@ public sealed class MapFireTests
     }
 
     [Fact]
+    public async Task Right_panel_can_assign_an_alternative_target()
+    {
+        await using var scene = await Ep0019Scenes.Create("2-fire");
+        using var raster = scene.Render();
+        var plan = scene.Frame.FirePlan!.Selected!;
+        var alternative = plan.Group.List.First(candidate => candidate.TargetId != plan.TargetId);
+        var bounds = scene.Screen.Layout.Rects["button:target:" + alternative.TargetId];
+        scene.Screen.OnMouseDown(bounds.MidX * 1.5f, bounds.MidY * 1.5f, MouseButton.Left);
+        Assert.Equal(alternative.TargetId, scene.Screen.BuildFireRequest().Targets.Single(order => order.DroneId == plan.Drone.Id).TargetId);
+        Assert.Equal(alternative.TargetId, scene.Frame.FirePlan!.Selected!.TargetId);
+    }
+
+    [Fact]
     public async Task Alternative_target_is_visible_and_can_replace_the_planned_shot()
     {
         await using var scene = await Ep0019Scenes.Create("2-fire");
