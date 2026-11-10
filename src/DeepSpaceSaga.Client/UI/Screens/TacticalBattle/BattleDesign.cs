@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Motion.TacticalBattle;
 using System.Globalization;
 using SkiaSharp;
+using Skin = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -96,6 +97,15 @@ internal static class BattleDesign
     {
         using var p = new SKPaint { IsAntialias = true, Color = TacticalBattleSkinRenderScope.Color(role, "fill", fill) };
         c.DrawRoundRect(r, radius, radius, p);
+        if (Skin.Current is { } skin && !ReferenceEquals(skin, TacticalBattleSkin.Classic) &&
+            Skin.Has(role + ".art", "image") && !r.IsEmpty)
+        {
+            using var clip = new SKRoundRect(r, radius, radius);
+            c.Save();
+            c.ClipRoundRect(clip, antialias: true);
+            Skin.Image(c, role + ".art", r);
+            c.Restore();
+        }
         if (edge is not null) { p.Color = TacticalBattleSkinRenderScope.Color(role, "stroke", edge.Value); p.Style = SKPaintStyle.Stroke; p.StrokeWidth = width; c.DrawRoundRect(r, radius, radius, p); }
     }
     public static void PanelBox(SKCanvas c, SKRect r, bool selected = false, float radius = 6, string role = "ui.panel")
@@ -104,7 +114,7 @@ internal static class BattleDesign
         Round(c, r, selected ? PanelSel : Panel, selected ? Yellow : PanelEdge.WithAlpha(190), selected ? 1.8f : 1.2f, radius, role);
     }
     public static void Tag(SKCanvas c, SKRect r, string text, float size = 11, bool center = false)
-    { Round(c, r, YellowDark, Yellow, 1.2f, 0, "ui.tag"); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + size * 0.36f, size, Yellow, true, center ? SKTextAlign.Center : SKTextAlign.Left); }
+    { Round(c, r, YellowDark, Yellow, 1.2f, 0, "ui.tag"); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + size * 0.36f, size, Yellow, true, center ? SKTextAlign.Center : SKTextAlign.Left, "ui.tag"); }
     public static void BoxText(SKCanvas c, SKRect r, string text, bool center = false)
     { Round(c, r, Box, BoxEdge); float fs = FitSize(text, 11, r.Width - 14); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + fs * 0.36f, fs, Text, align: center ? SKTextAlign.Center : SKTextAlign.Left); }
     public static void Button(SKCanvas c, SKRect r, string text, bool big = false)

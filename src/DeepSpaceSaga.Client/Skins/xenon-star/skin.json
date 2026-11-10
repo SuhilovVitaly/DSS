@@ -1,0 +1,16 @@
+{
+  "schemaVersion": 1,
+  "id": "xenon-star",
+  "displayName": "Xenon Star",
+  "roles": {
+    "ui.panel": { "fill": "#101B26", "stroke": "#354F60" },
+    "ui.panel.art": { "image": "assets/weapons_bg.png", "opacity": 0.65 },
+    "ui.box": { "fill": "#15252D", "stroke": "#324951" },
+    "ui.tag": { "fill": "#182938", "stroke": "#466376", "text": "#A7CBDD" },
+    "ui.button": { "fill": "#14242E", "stroke": "#516F81" },
+    "ui.button.art": { "image": "assets/smb_normal.png", "opacity": 0.85 },
+    "ui.button.primary": { "fill": "#284556", "text": "#EDF6FD" },
+    "ui.button.primary.art": { "image": "assets/smb_hover.png", "opacity": 0.85 },
+    "ui.button.glow": { "stroke": "#86BEDE40" }
+  }
+}
