@@ -8,6 +8,7 @@ public sealed class Ep0022SkinScenesTests
 {
     [Theory]
     [InlineData("1-move-no-hover")]
+    [InlineData("1-anomaly-move-dust")]
     [InlineData("2-fire-hover-own")]
     [InlineData("2-build-damaged")]
     public async Task Xenon_and_Classic_share_layout_and_text(string scene)

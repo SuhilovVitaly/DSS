@@ -3,10 +3,10 @@ epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0004-plan-movement
 ticket: EP-0022-US-0004-TK-0001-style-move-controls
 title: Оформить панель движения
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001]
-files_touched: 3
+files_touched: 5
 serves: [AC-01]
 created: 2026-11-10T16:52:26Z
 revision: 1
@@ -35,6 +35,10 @@ EP-0022 D-01/D-02 задают визуальное направление и г
 | `src/DeepSpaceSaga.Client/Skins/xenon-star/skin.json` | Роли локального пакета | Добавить состояния движения и ползунки. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleDesign.cs` | Slider | Настроить визуал трека и ручки. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.Move.cs` | DrawMove | Роли статуса и предупреждения движения. |
+| `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.cs` | ButtonAt передаёт геометрию в отрисовку | Передать существующий Pending только для оформления. |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Ep0022SkinScenesTests.cs` | Парный рендер | Добавить сцену конца движения в пыли. |
+
+Scope включает визуальный Pending и парный контроль предупреждения пыли.
 
 ## Public API after the change
 
@@ -65,3 +69,8 @@ AC-01 подтверждён целевыми проверками. Реальн
 ## Self-containment check
 
 Production seam и проверка перечислены в Code context. Существующие команды и fixtures сохраняются.
+
+## Execution
+
+- Release Client — 19/19 целевых тестов. Парный рендер конца движения в пыли сохранил подпись предупреждения и геометрию обеих фаз.
+- Кнопки используют существующий Pending для визуального состояния. Клавиши, ползунки и расчёт команды используют прежние координаты и значения. Scoped форматирование и git diff --check прошли.

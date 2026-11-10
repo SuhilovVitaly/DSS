@@ -117,12 +117,16 @@ internal static class BattleDesign
     { Round(c, r, YellowDark, Yellow, 1.2f, 0, "ui.tag"); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + size * 0.36f, size, Yellow, true, center ? SKTextAlign.Center : SKTextAlign.Left, "ui.tag"); }
     public static void BoxText(SKCanvas c, SKRect r, string text, bool center = false)
     { Round(c, r, Box, BoxEdge); float fs = FitSize(text, 11, r.Width - 14); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + fs * 0.36f, fs, Text, align: center ? SKTextAlign.Center : SKTextAlign.Left); }
-    public static void Button(SKCanvas c, SKRect r, string text, bool big = false)
+    public static void Button(SKCanvas c, SKRect r, string text, bool big = false, bool pending = false)
     {
-        if (big) Round(c, r, SKColors.Transparent, Yellow.WithAlpha(60), 4, 5, "ui.button.glow");
-        Round(c, r, big ? Yellow : ButtonFill, big ? null : PanelEdge.WithAlpha(150), radius: big ? 5 : 3, role: big ? "ui.button.primary" : "ui.button");
+        string role = big ? "ui.button.primary" : "ui.button";
+        string pendingRole = role + ".pending";
+        bool dimmed = pending && Skin.Current?.Find<object?>(pendingRole, "fill", null, pendingRole) is not null;
+        if (big && !dimmed) Round(c, r, SKColors.Transparent, Yellow.WithAlpha(60), 4, 5, "ui.button.glow");
+        if (dimmed) role = pendingRole;
+        Round(c, r, big ? Yellow : ButtonFill, big ? null : PanelEdge.WithAlpha(150), radius: big ? 5 : 3, role: role);
         float fs = FitSize(text, big ? 14 : 12, r.Width - (big ? 16 : 10), big);
-        T(c, text, r.MidX, r.MidY + fs * 0.36f, fs, big ? ButtonInk : Text, big, SKTextAlign.Center, big ? "ui.button.primary" : "ui.button");
+        T(c, text, r.MidX, r.MidY + fs * 0.36f, fs, big ? ButtonInk : Text, big, SKTextAlign.Center, role);
     }
     public static void BigButton(SKCanvas c, SKRect r, string text) => Button(c, r, text, true);
     public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color)
@@ -144,7 +148,16 @@ internal static class BattleDesign
         }
     }
     public static void Slider(SKCanvas c, float x0, float x1, float y, double t, SKColor color)
-    { float x = x0 + (x1 - x0) * (float)PyMath.Clamp(t, 0, 1); Stroke(c, new(x0, y), new(x1, y), Track, 4); Stroke(c, new(x0, y), new(x, y), color, 4); Circle(c, new(x, y), 6, color, Text, 1.2f); }
+    {
+        float x = x0 + (x1 - x0) * (float)PyMath.Clamp(t, 0, 1);
+        Stroke(c, new(x0, y), new(x1, y), Skin.Color("ui.slider.track", "stroke", Track), 4);
+        Stroke(c, new(x0, y), new(x, y), color, 4);
+        var edge = Skin.Color("ui.slider.thumb", "stroke", Text);
+        if (Skin.Shape("ui.slider.thumb") == "diamond")
+            Diamond(c, new(x, y), 6, color, edge, 1.2f);
+        else
+            Circle(c, new(x, y), 6, color, edge, 1.2f);
+    }
     public static void Line(SKCanvas c, float x0, float x1, float y) => Stroke(c, new(x0, y), new(x1, y), BoxEdge, 1);
     public static SKRect Callout(SKCanvas c, float x, float y, string text, SKColor edge, SKColor color)
     { float w = Measure(text, 12) + 14; SKRect r = new(x - w * .5f, y - 17, x + w * .5f, y + 2); Round(c, r, edge == Yellow ? YellowDark : Panel, edge, 1.2f); T(c, text, x, y - 3.5f, 12, color, align: SKTextAlign.Center); return r; }

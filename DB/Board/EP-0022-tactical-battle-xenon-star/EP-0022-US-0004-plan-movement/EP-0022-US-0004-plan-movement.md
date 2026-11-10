@@ -2,7 +2,7 @@
 epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0004-plan-movement
 title: Считывать и подтверждать приказ движения
-stage: draft
+stage: implemented
 dependencies: [EP-0022-US-0001-select-xenon-skin, EP-0022-US-0002-read-tactical-map]
 ---
 

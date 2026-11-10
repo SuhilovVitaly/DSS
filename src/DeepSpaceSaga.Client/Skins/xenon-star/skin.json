@@ -11,6 +11,8 @@
     "ui.button.art": { "image": "assets/smb_normal.png", "opacity": 0.85 },
     "ui.button.primary": { "fill": "#284556", "text": "#EDF6FD" },
     "ui.button.primary.art": { "image": "assets/smb_hover.png", "opacity": 0.85 },
+    "ui.button.primary.pending": { "fill": "#182834", "text": "#A0B2BB" },
+    "ui.button.pending": { "fill": "#18242B", "stroke": "#3F535D", "text": "#A0B2BB" },
     "ui.button.glow": { "stroke": "#86BEDE40" },
     "field.background": { "fill": "#0C1116" },
     "field.atmosphere": { "image": "assets/space_scene_no_cockpit.png", "opacity": 0.20 },
@@ -36,6 +38,11 @@
     "ui.pilot-card.chip": { "stroke": "#496679" },
     "ui.bar.segments": { "image": "assets/hull_fill.png", "opacity": 0.50 },
     "ui.panel.build.art": { "image": "assets/your_screen_bg.png", "opacity": 0.62 },
-    "ui.box.build-slot.alert": { "stroke": "#FF7474" }
+    "ui.box.build-slot.alert": { "stroke": "#FF7474" },
+    "ui.slider.track": { "stroke": "#3C5664" },
+    "ui.slider.speed": { "fill": "#91C6DC" },
+    "ui.slider.turn": { "fill": "#B6ADCF" },
+    "ui.slider.thumb": { "stroke": "#F2F8FD", "shape": "diamond" },
+    "ui.move.help": { "text": "#A9BECC" }
   }
 }
