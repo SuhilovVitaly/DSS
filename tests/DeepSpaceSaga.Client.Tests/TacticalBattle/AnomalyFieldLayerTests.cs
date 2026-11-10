@@ -82,7 +82,7 @@ public sealed class AnomalyFieldLayerTests
     public async Task Field_is_screen_blended_again_inside_selected_sector()
     {
         await using var scene = await Ep0019Scenes.Create("1-move"); var frame = scene.Screen.CaptureFrame(1920, 1080)!;
-        var strongest = frame.Battle.Anomalies.Where(a => a.Kind == TacticalAnomalyKindCode.Heat)
+        var strongest = frame.Battle.Anomalies.Where(a => a.Kind == TacticalAnomalyKindCode.Heat && !a.Id.StartsWith("outer-", StringComparison.Ordinal))
             .SelectMany(a => a.Clumps).OrderByDescending(c => c.Amplitude).First();
         var own = frame.Battle.Units.First(u => u.Side == frame.Battle.PlayerSide && u.Kind == TacticalUnitKind.Drone);
         own = own with { Pose = new(strongest.X - 50, strongest.Y, 0), Build = own.Build! with { Range = 200, ArcDegrees = 90 } };
