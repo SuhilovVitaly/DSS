@@ -66,7 +66,7 @@ internal static partial class TacticalBattleMapRenderer
                 Circle(c, head, 8, Yellow.WithAlpha(70)); Circle(c, head, TacticalBattleSkinRenderScope.Number("shot.projectile", "size", 3.5f), TacticalBattleSkinRenderScope.Color("shot.projectile", "fill", Shell));
                 if (Recording is { } l) l.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
             }
-        if (f.Salvo is { InFlight: false } results)
+        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
         {
             var markers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => f.View.Project(u.Pose)).ToArray();
             foreach (var damage in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
@@ -206,7 +206,7 @@ internal static partial class TacticalBattleMapRenderer
 
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f)
     {
-        if (f.Salvo is { InFlight: false } results)
+        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
             foreach (var d in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide)) Diamond(c, f.View.Project(d.Unit.Pose), 10, SKColors.Transparent, Yellow, 1.5f);
         if (f.Salvo is { } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flash))

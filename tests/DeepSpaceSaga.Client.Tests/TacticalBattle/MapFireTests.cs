@@ -40,6 +40,12 @@ public sealed class MapFireTests
         await using var scene = await Ep0019Scenes.Create("4-salvo-results");
         using var raster = scene.Render();
         Assert.DoesNotContain(scene.Screen.Layout.Rects.Keys, key => key.StartsWith("floating-shot:", StringComparison.Ordinal));
+        Assert.Contains(scene.Screen.Layout.Rects.Keys, key => key.StartsWith("decoy-callout:", StringComparison.Ordinal));
+        Assert.Contains(scene.Screen.Layout.Rects.Keys, key => key.StartsWith("callout:", StringComparison.Ordinal));
+        scene.Fixture.AdvanceAnimation(1500);
+        using var expired = scene.Render();
+        Assert.DoesNotContain(scene.Screen.Layout.Rects.Keys, key => key.StartsWith("decoy-callout:", StringComparison.Ordinal) ||
+            key.StartsWith("callout:", StringComparison.Ordinal));
     }
 
     [Fact]
