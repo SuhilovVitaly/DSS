@@ -8,6 +8,12 @@ internal static partial class TacticalBattleMapRenderer
     static partial void DrawMovement(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied)
     {
         if (f.Movement is not { } movement) return;
+        if (movement.SelectedOrder is { } selectedOrder && !selectedOrder.Path.IsDefaultOrEmpty &&
+            selectedOrder.Unit.Build is { Range: > 0, ArcDegrees: > 0 } build)
+        {
+            using var sector = CreateFireSector(f.View, selectedOrder.Path[^1], build.Range, build.ArcDegrees);
+            DrawFireSector(c, sector, Yellow.WithAlpha(28), Yellow.WithAlpha(115));
+        }
         DrawReachableArea(c, f.View, movement);
         using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Round };
         foreach (var row in movement.Orders)

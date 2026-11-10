@@ -17,10 +17,8 @@ internal static partial class TacticalBattleMapRenderer
         {
             if (plan.Selected?.Drone.Build is { } build)
             {
-                var unit = plan.Selected.Drone; var p = f.View.Project(unit.Pose); float r = (float)(build.Range * f.View.PixelsPerUnit);
-                using var path = new SKPath(); path.MoveTo(p); path.ArcTo(SKRect.Create(p.X - r, p.Y - r, 2 * r, 2 * r), (float)(unit.Pose.Course - build.ArcDegrees * .5), (float)build.ArcDegrees, false); path.Close();
-                using var paint = new SKPaint { IsAntialias = true, Color = ArcFill }; c.DrawPath(path, paint);
-                paint.Color = ArcEdge; paint.Style = SKPaintStyle.Stroke; paint.StrokeWidth = 1.1f; c.DrawPath(path, paint);
+                using var path = CreateFireSector(f.View, plan.Selected.Drone.Pose, build.Range, build.ArcDegrees);
+                DrawFireSector(c, path, ArcFill, ArcEdge);
                 c.Save();
                 try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
                 finally { c.Restore(); }
@@ -125,6 +123,28 @@ internal static partial class TacticalBattleMapRenderer
             }
         }
     }
+    private static SKPath CreateFireSector(TacticalBattleView view, TacticalPoseSnapshot pose, double range, double arcDegrees)
+    {
+        var origin = view.Project(pose);
+        float radius = (float)(range * view.PixelsPerUnit);
+        var path = new SKPath();
+        path.MoveTo(origin);
+        path.ArcTo(SKRect.Create(origin.X - radius, origin.Y - radius, 2 * radius, 2 * radius),
+            (float)(pose.Course - arcDegrees * .5), (float)arcDegrees, false);
+        path.Close();
+        return path;
+    }
+
+    private static void DrawFireSector(SKCanvas canvas, SKPath path, SKColor fill, SKColor edge)
+    {
+        using var paint = new SKPaint { IsAntialias = true, Color = fill };
+        canvas.DrawPath(path, paint);
+        paint.Color = edge;
+        paint.Style = SKPaintStyle.Stroke;
+        paint.StrokeWidth = 1.1f;
+        canvas.DrawPath(path, paint);
+    }
+
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f)
     {
         if (f.Salvo is { InFlight: false } results)

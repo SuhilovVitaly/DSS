@@ -63,6 +63,78 @@ public sealed class MapMovementTests
         }
     }
 
+    [Fact]
+    public async Task Planned_fire_sector_follows_selected_drone_endpoint_and_course()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move");
+        var initial = scene.Frame;
+        AssertSector(initial);
+
+        scene.Screen.OnKeyDown(Key.Right);
+        var edited = scene.Frame;
+        var oldEnd = initial.Movement!.SelectedOrder!.Path[^1];
+        var newEnd = edited.Movement!.SelectedOrder!.Path[^1];
+        Assert.NotEqual((oldEnd.X, oldEnd.Y), (newEnd.X, newEnd.Y));
+        Assert.NotEqual(oldEnd.Course, newEnd.Course);
+        AssertSector(edited);
+
+        scene.Screen.OnKeyDown(Key.Tab);
+        var next = scene.Frame;
+        Assert.NotEqual(edited.Movement.Selected, next.Movement!.Selected);
+        AssertSector(next);
+
+        static void AssertSector(TacticalBattleFrame frame)
+        {
+            var movement = frame.Movement!;
+            var order = movement.SelectedOrder!;
+            var end = order.Path[^1];
+            float range = (float)(order.Unit.Build!.Range * frame.View.PixelsPerUnit);
+            var origin = frame.View.Project(end);
+            float radians = (float)(end.Course * Math.PI / 180);
+            var forward = new SKPoint(MathF.Cos(radians), MathF.Sin(radians));
+            var withoutWeapon = order with { Unit = order.Unit with { Build = null } };
+            using var visible = BattleMapRenderTests.Raster(frame);
+            using var hidden = BattleMapRenderTests.Raster(frame with
+            {
+                Movement = movement with { Orders = movement.Orders.Replace(order, withoutWeapon) }
+            });
+            Compare(origin + Scale(forward, 10), filled: true);
+            Compare(origin + Scale(forward, range * .6f), filled: true);
+            Compare(origin - Scale(forward, 10), filled: false);
+            Compare(origin + Scale(forward, range + 4), filled: false);
+
+            void Compare(SKPoint p, bool filled)
+            {
+                var a = visible.GetPixel((int)p.X, (int)p.Y);
+                var b = hidden.GetPixel((int)p.X, (int)p.Y);
+                if (filled) Assert.True(a.Red > b.Red + 12);
+                else Assert.Equal(b, a);
+            }
+        }
+
+        static SKPoint Scale(SKPoint p, float value) => new(p.X * value, p.Y * value);
+    }
+
+    [Fact]
+    public async Task Planned_fire_sector_is_hidden_without_usable_selected_order()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move");
+        var frame = scene.Frame;
+        var movement = frame.Movement!;
+        var order = movement.SelectedOrder!;
+        using var withoutMovement = BattleMapRenderTests.Raster(frame with { Movement = null });
+        using var withoutOrder = BattleMapRenderTests.Raster(frame with
+        {
+            Movement = movement with { Orders = [] }
+        });
+        using var withoutPath = BattleMapRenderTests.Raster(frame with
+        {
+            Movement = movement with { Orders = [order with { Path = [] }], Reachable = [] }
+        });
+        Assert.Equal(withoutMovement.Pixels, withoutOrder.Pixels);
+        Assert.Equal(withoutMovement.Pixels, withoutPath.Pixels);
+    }
+
     private static (int X, int Y) FindFill(TacticalBattleFrame frame)
     {
         var movement = frame.Movement!;
