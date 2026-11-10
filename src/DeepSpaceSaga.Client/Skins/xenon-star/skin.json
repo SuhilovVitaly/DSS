@@ -43,6 +43,14 @@
     "ui.slider.speed": { "fill": "#91C6DC" },
     "ui.slider.turn": { "fill": "#B6ADCF" },
     "ui.slider.thumb": { "stroke": "#F2F8FD", "shape": "diamond" },
-    "ui.move.help": { "text": "#A9BECC" }
+    "ui.move.help": { "text": "#A9BECC" },
+    "ui.fire.chance": { "text": "#A7CBDE" },
+    "ui.box.target.selected": { "fill": "#302B20", "stroke": "#A6C8D8", "text": "#BEDDEA" },
+    "ui.box.evade": { "fill": "#201E2D", "stroke": "#756A92" },
+    "ui.box.evade.selected": { "fill": "#302744", "stroke": "#C6B4F0" },
+    "ui.box.evade.unavailable": { "fill": "#172128", "stroke": "#3A4C58" },
+    "ui.box.decoy": { "fill": "#152A25", "stroke": "#55806B" },
+    "ui.box.decoy.selected": { "fill": "#1E392D", "stroke": "#8EE6AE" },
+    "ui.box.decoy.unavailable": { "fill": "#172128", "stroke": "#3A4C58" }
   }
 }

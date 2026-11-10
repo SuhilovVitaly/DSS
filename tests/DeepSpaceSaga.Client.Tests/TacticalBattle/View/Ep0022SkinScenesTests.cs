@@ -11,6 +11,10 @@ public sealed class Ep0022SkinScenesTests
     [InlineData("1-anomaly-move-dust")]
     [InlineData("2-fire-hover-own")]
     [InlineData("2-build-damaged")]
+    [InlineData("2-no-target")]
+    [InlineData("2-anomaly-absorption")]
+    [InlineData("2-evasion-plan")]
+    [InlineData("2-decoy-empty")]
     public async Task Xenon_and_Classic_share_layout_and_text(string scene)
     {
         if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")

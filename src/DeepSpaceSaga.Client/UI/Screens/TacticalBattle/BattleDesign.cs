@@ -20,8 +20,9 @@ internal static class BattleDesign
     public static void DecoyRow(SKCanvas c, SKRect r, string text, int charges, int maxCharges, DecoyRowState state)
     {
         bool active = state == DecoyRowState.Selected, enabled = state != DecoyRowState.Unavailable;
+        string role = active ? "ui.box.decoy.selected" : enabled ? "ui.box.decoy" : "ui.box.decoy.unavailable";
         Round(c, r, active ? GreenDark : enabled ? DecoyIdle : Box,
-            enabled ? Green.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1);
+            enabled ? Green.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1, role: role);
         float left = r.Right - 8 - (float)PyMath.Max(0, maxCharges - 1) * 9;
         float size = FitSize(text, 11, left - 8 - (r.Left + 7), active);
         T(c, text, r.Left + 7, r.MidY + size * .36f, size, active ? Text : enabled ? Green : Muted, active);
@@ -47,8 +48,9 @@ internal static class BattleDesign
     public static void EvadeButton(SKCanvas c, SKRect r, string text, EvadeButtonState state)
     {
         bool active = state == EvadeButtonState.Selected, enabled = state != EvadeButtonState.Unavailable;
+        string role = active ? "ui.box.evade.selected" : enabled ? "ui.box.evade" : "ui.box.evade.unavailable";
         Round(c, r, active ? PurpleDark : enabled ? EvadeIdle : Box,
-            enabled ? Purple.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1);
+            enabled ? Purple.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1, role: role);
         float size = FitSize(text, 12, r.Width - 10);
         T(c, text, r.MidX, r.MidY + size * .36f, size, active ? Text : enabled ? Purple : Muted, active, SKTextAlign.Center);
     }

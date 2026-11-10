@@ -3,10 +3,10 @@ epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0005-plan-fire
 ticket: EP-0022-US-0005-TK-0001-style-fire-controls
 title: Оформить цель и действия стрельбы
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001]
-files_touched: 3
+files_touched: 4
 serves: [AC-01]
 created: 2026-11-10T16:52:26Z
 revision: 1
@@ -35,6 +35,9 @@ EP-0022 D-01/D-02 задают визуальное направление и г
 | `src/DeepSpaceSaga.Client/Skins/xenon-star/skin.json` | Роли локального пакета | Добавить роли планирования огня. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.Fire.cs` | DrawTargets, DrawFire | Оформить активную строку, шанс и состояние плана. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleDesign.cs` | EvadeButton, DecoyRow | Оформить разные состояния уклонения и ловушки. |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Ep0022SkinScenesTests.cs` | Парный рендер | Добавить сцены без цели, с поглощением, уклонением и исчерпанной ловушкой. |
+
+Scope включает парные сценарии для значений и доступности, которые меняются между состояниями Fire.
 
 ## Public API after the change
 
@@ -65,3 +68,8 @@ AC-01 подтверждён целевыми проверками. Реальн
 ## Self-containment check
 
 Production seam и проверка перечислены в Code context. Существующие команды и fixtures сохраняются.
+
+## Execution
+
+- Release Client — 47/47 целевых тестов. Парные сцены содержат несколько целей, отсутствие цели, поглощение, уклонение и пустые заряды.
+- Существующие тесты маршрутизации проверили выбор цели и обработку E/D. Роли оформления не влияют на список целей и отправляемые команды. Scoped форматирование и git diff --check прошли.
