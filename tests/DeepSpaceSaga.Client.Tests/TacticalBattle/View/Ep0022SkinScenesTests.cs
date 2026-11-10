@@ -23,11 +23,9 @@ public sealed class Ep0022SkinScenesTests
     [InlineData("5-outcome")]
     public async Task Xenon_and_Classic_share_layout_and_text(string scene)
     {
-        if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")
-            return;
-
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
-        Assert.True(catalog.TryGet("xenon-star", out var xenon));
+        if (!TryGetXenon(catalog, out var xenon))
+            return;
         await using var scenes = await Ep0019Scenes.Create(scene);
         var frame = scenes.Frame;
         var classic = AnomalySceneSearch.Render(frame, "classic-" + scene);
@@ -45,11 +43,9 @@ public sealed class Ep0022SkinScenesTests
     [Fact]
     public async Task Exit_confirmation_keeps_the_same_actions_at_compact_size()
     {
-        if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")
-            return;
-
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
-        Assert.True(catalog.TryGet("xenon-star", out var xenon));
+        if (!TryGetXenon(catalog, out var xenon))
+            return;
         await using var scenes = await Ep0019Scenes.Create("1-move-no-hover");
         var classic = scenes.Screen;
         var themed = new TacticalBattleScreen(classic.Flow, 1, xenon);
@@ -73,11 +69,9 @@ public sealed class Ep0022SkinScenesTests
     [Fact]
     public void Segmented_meter_clips_texture_to_the_value()
     {
-        if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")
-            return;
-
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
-        Assert.True(catalog.TryGet("xenon-star", out var xenon));
+        if (!TryGetXenon(catalog, out var xenon))
+            return;
         using var scope = TacticalBattleSkinRenderScope.Enter(xenon);
         using var bitmap = new SKBitmap(110, 42);
         using var canvas = new SKCanvas(bitmap);
@@ -88,5 +82,13 @@ public sealed class Ep0022SkinScenesTests
         Assert.Equal(bitmap.GetPixel(75, 6), bitmap.GetPixel(75, 19));
         Assert.NotEqual(bitmap.GetPixel(25, 6), bitmap.GetPixel(25, 19));
         Assert.NotEqual(bitmap.GetPixel(75, 6), bitmap.GetPixel(75, 32));
+    }
+
+    private static bool TryGetXenon(TacticalBattleSkinCatalog catalog, out TacticalBattleSkin skin)
+    {
+        bool installed = catalog.TryGet("xenon-star", out skin);
+        if (!installed)
+            Assert.NotEqual("1", Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR"));
+        return installed;
     }
 }

@@ -10,12 +10,15 @@ public sealed class ShippedSkinTests
     {
         string root = Path.Combine(AppContext.BaseDirectory, "Skins");
         string pack = Path.Combine(root, "xenon-star");
-        bool expected = Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") == "1";
         using var catalog = TacticalBattleSkinCatalog.Load(root);
-        Assert.Equal(expected, catalog.TryGet("xenon-star", out var xenon));
+        bool installed = catalog.TryGet("xenon-star", out var xenon);
+        string? expectation = Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR");
+        if (expectation is "0" or "1")
+            Assert.Equal(expectation == "1", installed);
         Assert.Contains(("contrast", "Contrast"), catalog.Options);
-        if (!expected)
+        if (!installed)
         {
+            Assert.False(File.Exists(Path.Combine(pack, "skin.json")), "An installed Xenon Star manifest failed to load.");
             Assert.Same(TacticalBattleSkin.Classic, catalog.GetOrClassic("xenon-star"));
             return;
         }
