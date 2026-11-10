@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
-    private const float DroneSilhouetteScale = .75f;
+    private const float DroneSilhouetteScale = .60f;
     private static readonly SKPath LightDrone = DronePath("M0 -11 4 -5 4 8 -4 8 -4 -5Z M-6 -2H-9V8H-6Z M6 -2H9V8H6Z");
     private static readonly SKPath HeavyDrone = DronePath("M-4 -9H4L7 -5V9H-7V-5Z M-9 -5H-12V9H-9Z M9 -5H12V9H9Z");
     private static readonly SKPath ThugDrone = DronePath("M-3 -11 4 -7 5 6 2 9 -5 8 -6 -3Z M-8 -4 -11 -1 -10 7 -7 5Z M7 -2H11V6H7Z");
@@ -79,7 +79,7 @@ internal static partial class TacticalBattleMapRenderer
             }
             else
             {
-                float radius = unit.Kind == TacticalUnitKind.Carrier ? 16 : 9;
+                float radius = unit.Kind == TacticalUnitKind.Carrier ? 16 : 7;
                 occupied.Add(new(p.X - radius, p.Y - radius, p.X + radius, p.Y + radius));
             }
         }
@@ -111,9 +111,9 @@ internal static partial class TacticalBattleMapRenderer
                     c.DrawLine(0, -5 * DroneSilhouetteScale, 0, 4 * DroneSilhouetteScale, hullPaint);
                     c.Restore();
                 }
-                else if (own) Diamond(c, p, 7.5f, color);
-                else Triangle(c, p, 9, u.Pose.Course, color);
-                if (u.Id == Selected(f)) Circle(c, p, 12, SKColors.Transparent, Text, 1.2f);
+                else if (own) Diamond(c, p, 6, color);
+                else Triangle(c, p, 7, u.Pose.Course, color);
+                if (u.Id == Selected(f)) Circle(c, p, 10, SKColors.Transparent, Text, 1.2f);
             }
             if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
                 EvasionRing(c, p);
@@ -153,8 +153,8 @@ internal static partial class TacticalBattleMapRenderer
     private static void Label(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, List<SKRect> occupied)
     {
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
-        var p = f.View.Project(u.Pose); float size = carrier ? 13.5f : 12.5f, bw = carrier ? 54 : 32, gap = carrier ? 20 : 11;
-        string text = carrier ? u.Id : PilotCardModel.Name(u); float w = (float)PyMath.Max(Measure(text, size), bw), h = size + 11;
+        var p = f.View.Project(u.Pose); float size = carrier ? 13.5f : 10, bw = carrier ? 54 : 25, gap = carrier ? 20 : 9;
+        string text = carrier ? u.Id : PilotCardModel.Name(u); float w = (float)PyMath.Max(Measure(text, size), bw), h = size + (carrier ? 11 : 9);
         string[] sides = carrier ? ["d", "u", "l", "r"] : u.Side == f.Battle.PlayerSide ? ["l", "u", "d", "r"] : ["r", "u", "d", "l"];
         SKRect rect = default; int chosenOffset = 0; bool found = false;
         foreach (int offset in new[] { 0, 10, 20, 32, 46, 62, 80 })
@@ -171,9 +171,11 @@ internal static partial class TacticalBattleMapRenderer
         if (chosenOffset > 0)
         { var q = new SKPoint((float)PyMath.Clamp(p.X, rect.Left, rect.Right), (float)PyMath.Clamp(p.Y, rect.Top, rect.Bottom)); float distance = SKPoint.Distance(p, q); if (distance > 0) Stroke(c, p + Scale(q - p, (float)(10d / distance)), q, Muted.WithAlpha(140), .9f); }
         float y = rect.Top + size - 1; T(c, text, rect.MidX, y, size, Text, align: SKTextAlign.Center); float x0 = rect.MidX - bw * .5f;
-        void Health(float yy, double fraction, SKColor color) { Stroke(c, new(x0, yy), new(x0 + bw, yy), Track, 2); if (fraction > 0) Stroke(c, new(x0, yy), new(x0 + bw * (float)PyMath.Clamp(fraction, 0, 1), yy), color, 2); }
+        float thickness = carrier ? 2 : 1.5f;
+        void Health(float yy, double fraction, SKColor color) { Stroke(c, new(x0, yy), new(x0 + bw, yy), Track, thickness); if (fraction > 0) Stroke(c, new(x0, yy), new(x0 + bw * (float)PyMath.Clamp(fraction, 0, 1), yy), color, thickness); }
         double hull = u.MaxHull > 0 ? u.Hull / (double)u.MaxHull : 0;
-        Health(y + 5, carrier ? hull : u.MaxArmor > 0 ? u.Armor / (double)u.MaxArmor : 0, carrier ? Cyan : Purple); Health(y + 9, hull, Cyan);
+        Health(y + (carrier ? 5 : 4), carrier ? hull : u.MaxArmor > 0 ? u.Armor / (double)u.MaxArmor : 0, carrier ? Cyan : Purple);
+        Health(y + (carrier ? 9 : 7), hull, Cyan);
     }
     private static void Edge(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, SKPoint p, SKRect safe, List<SKRect> occupied, SKColor color)
     {

@@ -59,10 +59,10 @@ public sealed partial class Ep0019ViewTests
             Rect(new(1048, 242, 1154, 264), l.Rects["button:hold"]);
             Rect(new(1160, 242, 1266, 264), l.Rects["button:evade"]);
             var unit = f.Battle.Units.Single(u => u.Id == "Марта"); var position = f.View.Project(unit.Pose);
-            using var text = BattleTypography.TextPaint(12.5f, false);
-            float width = Math.Max(32, text.MeasureText("Марта"));
+            using var text = BattleTypography.TextPaint(10, false);
+            float width = Math.Max(25, text.MeasureText("Марта"));
             // The selected unit is placed first; its first left candidate is clear in the supplied seed1 geometry.
-            Rect(SKRect.Create(position.X - 11 - width, position.Y - 11.75f, width, 23.5f), l.Rects["label:Марта"]);
+            Rect(SKRect.Create(position.X - 9 - width, position.Y - 9.5f, width, 19), l.Rects["label:Марта"]);
         }
         Save(name, bitmap, l);
         static void Rect(SKRect expected, SKRect actual)

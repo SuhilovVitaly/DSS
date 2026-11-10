@@ -186,9 +186,9 @@ public sealed class BattleMapRenderTests
                 var color = unit.Side == battle.PlayerSide ? TacticalBattleMapRenderer.Own : TacticalBattleMapRenderer.Enemy;
                 var upPixels = MarkerPixels(up, center, color);
                 var rightPixels = MarkerPixels(right, center, color);
-                Assert.InRange(upPixels.Count, 45, 155);
+                Assert.InRange(upPixels.Count, 28, 100);
                 Assert.InRange(upPixels.Count(p => rightPixels.Contains((-p.Y - 1, p.X))), upPixels.Count - 4, upPixels.Count);
-                Assert.DoesNotContain((unit.FrameId == "heavy" ? 6 : 4, 1), upPixels);
+                Assert.All(upPixels, pixel => Assert.InRange(pixel.X, -7, 6));
                 Assert.Contains((1, 1), upPixels);
                 masks.Add(upPixels);
                 upBounds.Add(PixelBounds(center, upPixels));
@@ -236,12 +236,12 @@ public sealed class BattleMapRenderTests
             view, SKRect.Empty, 1, false, "", EnemyForecast: false);
         using var raster = Raster(frame);
         var diamond = MarkerPixels(raster, view.Project(own.Pose), TacticalBattleMapRenderer.Own);
-        Assert.Contains((0, -5), diamond);
-        Assert.Contains((0, 5), diamond);
+        Assert.Contains((0, -4), diamond);
+        Assert.Contains((0, 3), diamond);
         Assert.DoesNotContain((5, 5), diamond);
         var triangle = MarkerPixels(raster, view.Project(enemy.Pose), TacticalBattleMapRenderer.Enemy);
-        Assert.Contains((4, 0), triangle);
-        Assert.Contains((-5, 4), triangle);
+        Assert.Contains(triangle, pixel => pixel.X > 0 && Math.Abs(pixel.Y) <= 1);
+        Assert.Contains(triangle, pixel => pixel.X < 0 && pixel.Y >= 2);
         Assert.DoesNotContain((5, 4), triangle);
     }
 
