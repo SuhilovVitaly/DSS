@@ -267,6 +267,36 @@ public sealed class BattleMapRenderTests
         Assert.DoesNotContain((5, 4), triangle);
     }
 
+    [Fact]
+    public async Task Disabled_marker_is_grey_with_a_red_cross_even_at_the_same_hull_as_an_active_drone()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var battle = (await Start(fixture)).Flow.State!;
+        var unit = battle.Units.First(u => u.Kind == TacticalUnitKind.Drone && u.Side != battle.PlayerSide) with
+        {
+            Hull = 5,
+            MaxHull = 45,
+            Armor = 0,
+            Pose = new(0, 0, 270)
+        };
+        var frame = new TacticalBattleFrame(battle with { Units = [unit], Paths = [], Anomalies = [] },
+            new(1280, 720, 0, 0, 1), SKRect.Empty, 1, false, "");
+        var layout = new BattleLayout();
+        BattleDesign.Recording = layout;
+        try
+        {
+            using var active = Raster(frame);
+            Assert.DoesNotContain("disabled:" + unit.Id, layout.Rects.Keys);
+            using var disabled = Raster(frame with { Battle = frame.Battle with { Units = [unit with { State = TacticalUnitState.Disabled }] } });
+            Assert.Contains(active.Pixels, color => color == BattleDesign.Orange);
+            Assert.Contains(disabled.Pixels, color => color == new SKColor(146, 151, 154));
+            var cross = layout.Rects["disabled:" + unit.Id];
+            Assert.True(cross.Right < layout.Rects["label:" + unit.Id].MidX - 12.5f);
+            Assert.Contains(disabled.Pixels, color => color.Red > 150 && color.Red > 2 * color.Green);
+        }
+        finally { BattleDesign.Recording = null; }
+    }
+
     private static HashSet<(int X, int Y)> MarkerPixels(SKBitmap bitmap, SKPoint center, SKColor color)
     {
         var pixels = new HashSet<(int, int)>();

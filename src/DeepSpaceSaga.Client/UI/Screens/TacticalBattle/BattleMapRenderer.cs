@@ -10,6 +10,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 internal static partial class TacticalBattleMapRenderer
 {
     private const float DroneSilhouetteScale = .42f;
+    private static readonly SKColor DisabledDrone = new(146, 151, 154);
     private static readonly SKPath LightDrone = DronePath("M0 -11 4 -5 4 8 -4 8 -4 -5Z M-6 -2H-9V8H-6Z M6 -2H9V8H6Z");
     private static readonly SKPath HeavyDrone = DronePath("M-4 -9H4L7 -5V9H-7V-5Z M-9 -5H-12V9H-9Z M9 -5H12V9H9Z");
     private static readonly SKPath ThugDrone = DronePath("M-3 -11 4 -7 5 6 2 9 -5 8 -6 -3Z M-8 -4 -11 -1 -10 7 -7 5Z M7 -2H11V6H7Z");
@@ -102,7 +103,7 @@ internal static partial class TacticalBattleMapRenderer
         {
             var p = v.Project(u.Pose); bool own = u.Side == f.Battle.PlayerSide;
             string role = "field.unit." + (u.Kind == TacticalUnitKind.Carrier ? "carrier" : "drone") + (own ? ".own" : ".enemy");
-            var color = Skin.Color(role, "fill", own ? Cyan : Orange);
+            var color = u.State == TacticalUnitState.Disabled ? DisabledDrone : Skin.Color(role, "fill", own ? Cyan : Orange);
             if (u.Kind == TacticalUnitKind.Carrier) { if (inside.Contains(p)) Hex(c, p, 15, color); else Edge(c, f, u, p, inside, occupied, color); }
             else
             {
@@ -167,6 +168,7 @@ internal static partial class TacticalBattleMapRenderer
     {
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
         bool wreck = u.State == TacticalUnitState.Destroyed;
+        bool disabled = u.State == TacticalUnitState.Disabled;
         var p = f.View.Project(u.Pose); float size = carrier ? 13.5f : 10, bw = carrier ? 54 : wreck ? 0 : 25, gap = carrier ? 20 : 9;
         string text = carrier ? u.Id : PilotCardModel.Name(u); float w = (float)PyMath.Max(Measure(text, size), bw), h = size + (carrier ? 11 : wreck ? 2 : 9);
         string[] sides = carrier ? ["d", "u", "l", "r"] : u.Side == f.Battle.PlayerSide ? ["l", "u", "d", "r"] : ["r", "u", "d", "l"];
@@ -177,6 +179,7 @@ internal static partial class TacticalBattleMapRenderer
             {
                 rect = side switch { "l" => SKRect.Create(p.X - gap - offset - w, p.Y - h * .5f, w, h), "r" => SKRect.Create(p.X + gap + offset, p.Y - h * .5f, w, h), "u" => SKRect.Create(p.X - w * .5f, p.Y - gap - offset - h, w, h), _ => SKRect.Create(p.X - w * .5f, p.Y + gap + offset, w, h) };
                 chosenOffset = offset; var expanded = rect; expanded.Inflate(2, 1);
+                if (disabled) expanded.Left = Math.Min(expanded.Left, rect.MidX - bw * .5f - 11);
                 if (occupied.Any(r => r.IntersectsWith(expanded))) continue; found = true; break;
             }
             if (found) break;
@@ -188,6 +191,14 @@ internal static partial class TacticalBattleMapRenderer
         T(c, text, rect.MidX, y, size, wreck ? Muted : Text, align: SKTextAlign.Center);
         if (wreck) return;
         float x0 = rect.MidX - bw * .5f;
+        if (disabled)
+        {
+            var cross = new SKRect(x0 - 10, y + 2, x0 - 3, y + 9);
+            Stroke(c, new(cross.Left, cross.Top), new(cross.Right, cross.Bottom), Red, 1.3f);
+            Stroke(c, new(cross.Left, cross.Bottom), new(cross.Right, cross.Top), Red, 1.3f);
+            occupied.Add(cross);
+            if (Recording is { } record) record.Rects["disabled:" + u.Id] = cross;
+        }
         float thickness = carrier ? 2 : 1.5f;
         void Health(float yy, double fraction, SKColor color) { Stroke(c, new(x0, yy), new(x0 + bw, yy), Track, thickness); if (fraction > 0) Stroke(c, new(x0, yy), new(x0 + bw * (float)PyMath.Clamp(fraction, 0, 1), yy), color, thickness); }
         double hull = u.MaxHull > 0 ? u.Hull / (double)u.MaxHull : 0;
