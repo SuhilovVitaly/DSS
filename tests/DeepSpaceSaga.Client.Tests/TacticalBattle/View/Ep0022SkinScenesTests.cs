@@ -91,4 +91,26 @@ public sealed class Ep0022SkinScenesTests
             Assert.NotEqual("1", Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR"));
         return installed;
     }
+
+    [Fact]
+    public void Pilot_meters_do_not_inherit_the_dark_panel_fill()
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        if (!TryGetXenon(catalog, out var xenon))
+            return;
+
+        using var scope = TacticalBattleSkinRenderScope.Enter(xenon);
+        using var bitmap = new SKBitmap(202, 92);
+        using var canvas = new SKCanvas(bitmap);
+        var card = new PilotCard("pilot", "Pilot", "", "", false,
+            [
+                new("armor", "Armor", "80/80", BattleDesign.Purple, 1),
+                new("hull", "Hull", "60/60", BattleDesign.Cyan, 1),
+                new("mind", "Mind", "100", BattleDesign.Green, 1),
+            ], "", false, []);
+        new PilotCardColumn().Draw(canvas, [card], PilotPortraitCatalog.Default);
+        SKColor[] fills = [bitmap.GetPixel(100, 47), bitmap.GetPixel(100, 58), bitmap.GetPixel(100, 69)];
+        Assert.All(fills, fill => Assert.True(Math.Max(fill.Green, fill.Blue) >= 140, $"Unclear meter fill {fill}"));
+        Assert.Equal(3, fills.Distinct().Count());
+    }
 }

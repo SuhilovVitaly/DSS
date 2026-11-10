@@ -1,6 +1,6 @@
 # Тикеты EP-0022
 
-Семь историй, восемь тикетов. [Контракт и общая приёмка](Documentation.md).
+Семь историй, девять тикетов. [Контракт и общая приёмка](Documentation.md).
 
 | ID | Результат | Зависимости | Статус |
 |---|---|---|---|
@@ -11,4 +11,5 @@
 | [EP-0022-US-0005-TK-0001](EP-0022-US-0005-plan-fire/EP-0022-US-0005-TK-0001-style-fire-controls/EP-0022-US-0005-TK-0001-style-fire-controls.md) | Оформить цель и действия стрельбы | [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001] | implemented |
 | [EP-0022-US-0006-TK-0001](EP-0022-US-0006-read-salvo-results/EP-0022-US-0006-TK-0001-style-salvo-results/EP-0022-US-0006-TK-0001-style-salvo-results.md) | Оформить полёт залпа и итог | [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001, EP-0022-US-0005-TK-0001] | implemented |
 | [EP-0022-US-0001-TK-0002](EP-0022-US-0001-select-xenon-skin/EP-0022-US-0001-TK-0002-validate-installed-skin/EP-0022-US-0001-TK-0002-validate-installed-skin.md) | Проверять установленный Xenon Star без дополнительного флага | [EP-0022-US-0001-TK-0001, EP-0022-US-0006-TK-0001] | implemented |
+| [EP-0022-US-0003-TK-0002](EP-0022-US-0003-read-pilot-and-loadout/EP-0022-US-0003-TK-0002-restore-meter-contrast/EP-0022-US-0003-TK-0002-restore-meter-contrast.md) | Восстановить читаемость шкал пилотов | [EP-0022-US-0003-TK-0001, EP-0022-US-0001-TK-0002] | implemented |
 | [EP-0022-US-0007-TK-0001](EP-0022-US-0007-reconcile-documentation/EP-0022-US-0007-TK-0001-sync-contracts-and-evidence/EP-0022-US-0007-TK-0001-sync-contracts-and-evidence.md) | Синхронизировать документацию и доказательства | [EP-0022-US-0001-TK-0001, EP-0022-US-0002-TK-0001, EP-0022-US-0003-TK-0001, EP-0022-US-0004-TK-0001, EP-0022-US-0005-TK-0001, EP-0022-US-0006-TK-0001] | planned |
