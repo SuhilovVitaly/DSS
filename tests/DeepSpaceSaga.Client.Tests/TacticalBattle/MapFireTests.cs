@@ -9,6 +9,23 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class MapFireTests
 {
     [Fact]
+    public async Task Results_text_rises_and_expires_after_skipping_flight()
+    {
+        await using var scene = await Ep0019Scenes.Create("4-salvo-results");
+        using var locale = Localization.UseLocaleForTests("Russian");
+        using var initial = scene.Render();
+        var first = scene.Screen.Layout.Rects["floating-shot:0"];
+        Assert.Contains(scene.Screen.Layout.Texts, item => item.Text == "промах");
+        scene.Fixture.AdvanceAnimation(550);
+        using var later = scene.Render();
+        Assert.True(scene.Screen.Layout.Rects["floating-shot:0"].Top < first.Top);
+        Assert.Contains(scene.Screen.Layout.Texts, item => item.Text.StartsWith("−", StringComparison.Ordinal) && item.Text.Length <= 4);
+        scene.Fixture.AdvanceAnimation(1500);
+        using var expired = scene.Render();
+        Assert.DoesNotContain(scene.Screen.Layout.Rects.Keys, key => key.StartsWith("floating-shot:", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public async Task Alternative_target_is_visible_and_can_replace_the_planned_shot()
     {
         await using var scene = await Ep0019Scenes.Create("2-fire");

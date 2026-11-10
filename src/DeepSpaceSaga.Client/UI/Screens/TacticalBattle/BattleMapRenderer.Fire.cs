@@ -121,6 +121,31 @@ internal static partial class TacticalBattleMapRenderer
                 occupied.Add(bounds);
                 if (Recording is { } layout) layout.Rects["decoy-callout:" + index++] = bounds;
             }
+            DrawFloatingShotResults(c, f, results, occupied);
+        }
+    }
+
+    private static void DrawFloatingShotResults(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, List<SKRect> occupied)
+    {
+        const double durationMs = 1400;
+        if (salvo.ResultsAgeMs >= durationMs + 450) return;
+        foreach (var flight in salvo.Flights)
+        {
+            double age = salvo.ResultsAgeMs - Math.Min(450, flight.Index * 90);
+            if (age < 0 || age >= durationMs) continue;
+            var shot = flight.Shot;
+            var damage = frame.Battle.FireSteps.FirstOrDefault(step => step.ShooterId == shot.ShooterId)?.Events
+                .FirstOrDefault(entry => entry.Kind == TacticalBattleLogKind.DamageApplied)?.Damage;
+            string text = shot.Absorbed ? M("Absorbed") : shot.Hit ? $"−{damage?.Hull + damage?.Armor ?? shot.Damage}" : U("MissChip");
+            float progress = (float)(age / durationMs);
+            var color = shot.Absorbed ? Heat : shot.Hit ? Yellow : Text;
+            color = color.WithAlpha((byte)(255 * Math.Min(1, (1 - progress) * 2)));
+            var point = frame.View.Project(shot.To) + new SKPoint((flight.Index % 3 - 1) * 14, -19 - 44 * progress);
+            float width = Measure(text, 14, true);
+            var bounds = new SKRect(point.X - width / 2, point.Y - 14, point.X + width / 2, point.Y + 2);
+            occupied.Add(bounds);
+            if (Recording is { } layout) layout.Rects["floating-shot:" + flight.Index] = bounds;
+            T(canvas, text, point.X, point.Y, 14, color, true, SKTextAlign.Center);
         }
     }
     private static void DrawAlternativeTargets(SKCanvas canvas, TacticalBattleFrame frame, TacticalFirePlanRow shooter, List<SKRect> occupied)

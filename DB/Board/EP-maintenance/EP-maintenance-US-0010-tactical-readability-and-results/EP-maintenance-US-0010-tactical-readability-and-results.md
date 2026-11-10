@@ -33,7 +33,7 @@ created: "2026-11-10T14:03:31.830Z"
 ## Approved ticket map
 
 - [EP-maintenance-US-0010-TK-0001-held-movement-zone](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0001-held-movement-zone/EP-maintenance-US-0010-TK-0001-held-movement-zone.md) — AC1, выполнен
-- EP-maintenance-US-0010-TK-0002-floating-shot-feedback — AC2
+- [EP-maintenance-US-0010-TK-0002-floating-shot-feedback](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0002-floating-shot-feedback/EP-maintenance-US-0010-TK-0002-floating-shot-feedback.md) — AC2, выполнен
 - EP-maintenance-US-0010-TK-0003-compact-unit-markers — AC3
 - EP-maintenance-US-0010-TK-0004-wreck-names — AC4
 - EP-maintenance-US-0010-TK-0005-round-shot-report — AC5
