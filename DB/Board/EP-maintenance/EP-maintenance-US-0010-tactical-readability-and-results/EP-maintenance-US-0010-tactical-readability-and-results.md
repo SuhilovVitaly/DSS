@@ -35,7 +35,7 @@ created: "2026-11-10T14:03:31.830Z"
 - [EP-maintenance-US-0010-TK-0001-held-movement-zone](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0001-held-movement-zone/EP-maintenance-US-0010-TK-0001-held-movement-zone.md) — AC1, выполнен
 - [EP-maintenance-US-0010-TK-0002-floating-shot-feedback](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0002-floating-shot-feedback/EP-maintenance-US-0010-TK-0002-floating-shot-feedback.md) — AC2, выполнен
 - [EP-maintenance-US-0010-TK-0003-compact-unit-markers](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0003-compact-unit-markers/EP-maintenance-US-0010-TK-0003-compact-unit-markers.md) — AC3, выполнен
-- EP-maintenance-US-0010-TK-0004-wreck-names — AC4
+- [EP-maintenance-US-0010-TK-0004-wreck-names](../Done/EP-maintenance-US-0010-tactical-readability-and-results/EP-maintenance-US-0010-TK-0004-wreck-names/EP-maintenance-US-0010-TK-0004-wreck-names.md) — AC4, выполнен
 - EP-maintenance-US-0010-TK-0005-round-shot-report — AC5
 
 ## Review log

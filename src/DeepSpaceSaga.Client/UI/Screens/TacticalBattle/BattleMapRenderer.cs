@@ -87,6 +87,12 @@ internal static partial class TacticalBattleMapRenderer
         occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, f.Panel.Bottom + (HoverCard.Build(f) is not null ? 306 : f.HoverUnitId is null && AnomalyPresentation.HoverKind(f) is null ? 6 : 116)));
         occupied.Add(new(10, 686, 18 + len, 714));
         occupied.AddRange([new(0, 0, v.PixelWidth, 2), new(0, 718, v.PixelWidth, 720), new(0, 0, 2, 720), new(v.PixelWidth - 2, 0, v.PixelWidth, 720)]);
+        var wrecks = f.Battle.Units.Where(u => u.State == TacticalUnitState.Destroyed).ToArray();
+        foreach (var wreck in wrecks)
+        {
+            var point = v.Project(wreck.Pose);
+            occupied.Add(new(point.X - 7, point.Y - 7, point.X + 7, point.Y + 7));
+        }
         DrawTraversedPaths(c, f);
         DrawMovement(c, f, occupied); DrawPhaseOverlays(c, f, occupied, interactiveField);
         var inside = Safe(v); inside.Inflate(-34, -34);
@@ -129,6 +135,13 @@ internal static partial class TacticalBattleMapRenderer
         }
         foreach (var u in units.Where(u => u.Kind != TacticalUnitKind.Carrier || inside.Contains(v.Project(u.Pose)))
                      .OrderBy(u => u.Id == Selected(f) ? 0 : u.Kind == TacticalUnitKind.Carrier ? 1 : 2).ThenBy(u => v.Project(u.Pose).Y)) Label(c, f, u, occupied);
+        foreach (var wreck in wrecks)
+        {
+            var point = v.Project(wreck.Pose);
+            Stroke(c, point + new SKPoint(-6, -6), point + new SKPoint(6, 6), Muted, 1.5f);
+            Stroke(c, point + new SKPoint(-6, 6), point + new SKPoint(6, -6), Muted, 1.5f);
+            if (wreck.Kind == TacticalUnitKind.Drone) Label(c, f, wreck, occupied);
+        }
         DrawResultHighlights(c, f); DrawHover(c, f);
     }
 
@@ -153,8 +166,9 @@ internal static partial class TacticalBattleMapRenderer
     private static void Label(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, List<SKRect> occupied)
     {
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
-        var p = f.View.Project(u.Pose); float size = carrier ? 13.5f : 10, bw = carrier ? 54 : 25, gap = carrier ? 20 : 9;
-        string text = carrier ? u.Id : PilotCardModel.Name(u); float w = (float)PyMath.Max(Measure(text, size), bw), h = size + (carrier ? 11 : 9);
+        bool wreck = u.State == TacticalUnitState.Destroyed;
+        var p = f.View.Project(u.Pose); float size = carrier ? 13.5f : 10, bw = carrier ? 54 : wreck ? 0 : 25, gap = carrier ? 20 : 9;
+        string text = carrier ? u.Id : PilotCardModel.Name(u); float w = (float)PyMath.Max(Measure(text, size), bw), h = size + (carrier ? 11 : wreck ? 2 : 9);
         string[] sides = carrier ? ["d", "u", "l", "r"] : u.Side == f.Battle.PlayerSide ? ["l", "u", "d", "r"] : ["r", "u", "d", "l"];
         SKRect rect = default; int chosenOffset = 0; bool found = false;
         foreach (int offset in new[] { 0, 10, 20, 32, 46, 62, 80 })
@@ -170,7 +184,10 @@ internal static partial class TacticalBattleMapRenderer
         occupied.Add(rect); if (Recording is { } layout) layout.Rects["label:" + u.Id] = rect;
         if (chosenOffset > 0)
         { var q = new SKPoint((float)PyMath.Clamp(p.X, rect.Left, rect.Right), (float)PyMath.Clamp(p.Y, rect.Top, rect.Bottom)); float distance = SKPoint.Distance(p, q); if (distance > 0) Stroke(c, p + Scale(q - p, (float)(10d / distance)), q, Muted.WithAlpha(140), .9f); }
-        float y = rect.Top + size - 1; T(c, text, rect.MidX, y, size, Text, align: SKTextAlign.Center); float x0 = rect.MidX - bw * .5f;
+        float y = rect.Top + size - 1;
+        T(c, text, rect.MidX, y, size, wreck ? Muted : Text, align: SKTextAlign.Center);
+        if (wreck) return;
+        float x0 = rect.MidX - bw * .5f;
         float thickness = carrier ? 2 : 1.5f;
         void Health(float yy, double fraction, SKColor color) { Stroke(c, new(x0, yy), new(x0 + bw, yy), Track, thickness); if (fraction > 0) Stroke(c, new(x0, yy), new(x0 + bw * (float)PyMath.Clamp(fraction, 0, 1), yy), color, thickness); }
         double hull = u.MaxHull > 0 ? u.Hull / (double)u.MaxHull : 0;

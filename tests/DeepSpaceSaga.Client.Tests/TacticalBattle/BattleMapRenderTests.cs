@@ -45,14 +45,29 @@ public sealed class BattleMapRenderTests
         };
         var results = new TacticalBattleResults(state, state.Shots, [], 0);
         long arrivalMs = (long)(TacticalBattleResults.InitialDelayMs + TacticalBattleResults.FlightMs);
-        using var flying = Raster(frame with { Battle = results.Project(arrivalMs - 1), Salvo = results.Capture(arrivalMs - 1) });
+        var liveLayout = new BattleLayout();
+        var wreckLayout = new BattleLayout();
+        using var flying = Record(frame with { Battle = results.Project(arrivalMs - 1), Salvo = results.Capture(arrivalMs - 1) }, liveLayout);
         var arrival = results.Capture(arrivalMs);
         Assert.True(arrival.InFlight);
-        using var impact = Raster(frame with { Battle = results.Project(arrivalMs), Salvo = arrival });
+        using var impact = Record(frame with { Battle = results.Project(arrivalMs), Salvo = arrival }, wreckLayout);
         using var movement = Raster(frame with { Presentation = TacticalBattlePresentation.Current });
         Assert.Equal(TacticalBattleMapRenderer.Enemy, flying.GetPixel(490, 362));
         Assert.NotEqual(flying.GetPixel(490, 360), impact.GetPixel(490, 360));
         Assert.Equal(impact.GetPixel(490, 360), movement.GetPixel(490, 360));
+        string name = PilotCardModel.Name(enemy);
+        Assert.Contains(liveLayout.Texts, text => text.Text == name && text.Color == BattleDesign.Text);
+        Assert.Contains(wreckLayout.Texts, text => text.Text == name && text.Color == BattleDesign.Muted);
+        var label = wreckLayout.Rects["label:" + enemy.Id];
+        Assert.InRange(label.Height, 11, 13);
+        Assert.False(label.IntersectsWith(new SKRect(483, 353, 497, 367)));
+
+        static SKBitmap Record(TacticalBattleFrame current, BattleLayout layout)
+        {
+            BattleDesign.Recording = layout;
+            try { return Raster(current); }
+            finally { BattleDesign.Recording = null; }
+        }
 
     }
 

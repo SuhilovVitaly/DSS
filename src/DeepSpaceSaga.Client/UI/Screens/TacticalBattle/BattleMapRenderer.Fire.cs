@@ -216,8 +216,5 @@ internal static partial class TacticalBattleMapRenderer
                     Circle(c, q, 6, SKColors.Transparent, Heat, 1.6f); Circle(c, q, 10, SKColors.Transparent, Heat, 1.6f);
                 }
                 else Circle(c, f.View.Project(flight.Shot.To), 15, SKColors.Transparent, flight.Shot.Hit ? Yellow : Red, 2);
-        // The admitted projection changes State only at impact, so wrecks cannot reveal a future kill.
-        foreach (var u in f.Battle.Units.Where(u => u.State == TacticalUnitState.Destroyed))
-        { var p = f.View.Project(u.Pose); Stroke(c, new(p.X - 6, p.Y - 6), new(p.X + 6, p.Y + 6), Muted, 1.5f); Stroke(c, new(p.X - 6, p.Y + 6), new(p.X + 6, p.Y - 6), Muted, 1.5f); }
     }
 }
