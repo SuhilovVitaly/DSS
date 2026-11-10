@@ -11,8 +11,9 @@ internal static partial class TacticalBattleMapRenderer
         if (movement.SelectedOrder is { } selectedOrder && !selectedOrder.Path.IsDefaultOrEmpty &&
             selectedOrder.Unit.Build is { Range: > 0, ArcDegrees: > 0 } build)
         {
-            using var sector = CreateFireSector(f.View, selectedOrder.Path[^1], build.Range, build.ArcDegrees);
-            DrawFireSector(c, sector, Yellow.WithAlpha(28), Yellow.WithAlpha(115));
+            using var sector = CreateFireSector(f.View, selectedOrder.Path[^1], build.Range, 2 * build.ArcDegrees);
+            var forecast = new SKColor(47, 191, 143);
+            DrawFireSector(c, sector, forecast.WithAlpha(35), forecast.WithAlpha(115));
         }
         DrawReachableArea(c, f.View, movement);
         using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Round };

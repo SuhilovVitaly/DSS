@@ -88,31 +88,43 @@ public sealed class MapMovementTests
             var movement = frame.Movement!;
             var order = movement.SelectedOrder!;
             var end = order.Path[^1];
-            float range = (float)(order.Unit.Build!.Range * frame.View.PixelsPerUnit);
+            var build = order.Unit.Build!;
+            float range = (float)(build.Range * frame.View.PixelsPerUnit);
             var origin = frame.View.Project(end);
-            float radians = (float)(end.Course * Math.PI / 180);
-            var forward = new SKPoint(MathF.Cos(radians), MathF.Sin(radians));
             var withoutWeapon = order with { Unit = order.Unit with { Build = null } };
             using var visible = BattleMapRenderTests.Raster(frame);
             using var hidden = BattleMapRenderTests.Raster(frame with
             {
                 Movement = movement with { Orders = movement.Orders.Replace(order, withoutWeapon) }
             });
-            Compare(origin + Scale(forward, 10), filled: true);
-            Compare(origin + Scale(forward, range * .6f), filled: true);
-            Compare(origin - Scale(forward, 10), filled: false);
-            Compare(origin + Scale(forward, range + 4), filled: false);
+            Compare(PointAt(0, 10), filled: true);
+            Compare(PointAt(0, range * .6f), filled: true);
+            Compare(PointAt(180, 10), filled: false);
+            Compare(PointAt(0, range + 4), filled: false);
+            foreach (int side in new[] { -1, 1 })
+            {
+                Compare(PointAt(side * build.ArcDegrees * .75, range * .6f), filled: true);
+                Compare(PointAt(side * build.ArcDegrees * 1.25, range * .6f), filled: false);
+            }
+
+            SKPoint PointAt(double courseOffset, float distance)
+            {
+                float radians = (float)((end.Course + courseOffset) * Math.PI / 180);
+                return origin + new SKPoint(MathF.Cos(radians) * distance, MathF.Sin(radians) * distance);
+            }
 
             void Compare(SKPoint p, bool filled)
             {
                 var a = visible.GetPixel((int)p.X, (int)p.Y);
                 var b = hidden.GetPixel((int)p.X, (int)p.Y);
-                if (filled) Assert.True(a.Red > b.Red + 12);
+                if (filled)
+                {
+                    Assert.True(a.Green > b.Green + 12, $"Expected green fill at {p}, got {a} over {b}.");
+                    Assert.True(a.Green - b.Green > a.Red - b.Red + 8);
+                }
                 else Assert.Equal(b, a);
             }
         }
-
-        static SKPoint Scale(SKPoint p, float value) => new(p.X * value, p.Y * value);
     }
 
     [Fact]
