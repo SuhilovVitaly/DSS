@@ -3,10 +3,10 @@ epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0003-read-pilot-and-loadout
 ticket: EP-0022-US-0003-TK-0001-style-context-cards
 title: Оформить пилотов и контекст
-stage: draft
+stage: implemented
 layer: client
 depends_on: [EP-0022-US-0001-TK-0001]
-files_touched: 5
+files_touched: 6
 serves: [AC-01]
 created: 2026-11-10T16:52:26Z
 revision: 1
@@ -37,6 +37,9 @@ EP-0022 D-01/D-02 задают визуальное направление и г
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs` | Draw | Отрисовать выбранное состояние, сегменты и портрет без изменения hit-test. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BuildCard.cs` | Draw | Оформить контекст сборки. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleDesign.cs` | Bar | Сегментация в границах заполнения. |
+| `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Ep0022SkinScenesTests.cs` | Парный рендер одинаковых кадров | Добавить повреждённую сборку и проверку заполнения шкалы. |
+
+Scope расширен на тест, который проверяет новую графическую маску в реальном пакете и паритет показателей при повреждении.
 
 ## Public API after the change
 
@@ -69,3 +72,8 @@ AC-01 подтверждён целевыми проверками. Реальн
 ## Self-containment check
 
 Production seam и проверка перечислены в Code context. Существующие команды и fixtures сохраняются.
+
+## Execution
+
+- Release Client — 19/19 целевых тестов. Парный кадр включает повреждённую сборку и совпадающие подписи и зоны. Растровая проверка фиксирует нулевую, частичную и полную доли шкалы.
+- Scoped форматирование и git diff --check прошли. Статус и приоритет контекста используют прежнюю проекцию. Добавлены два локальных среза из Cockpit HUD.

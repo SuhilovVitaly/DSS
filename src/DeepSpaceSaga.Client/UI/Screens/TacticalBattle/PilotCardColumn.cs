@@ -14,11 +14,13 @@ internal sealed class PilotCardColumn
     public void Draw(SKCanvas c, IReadOnlyList<PilotCard> cards, PilotPortraitCatalog portraits)
     {
         _cards = cards;
+        bool segmented = TacticalBattleSkinRenderScope.Has("ui.bar.segments", "image");
+        bool selectedArt = TacticalBattleSkinRenderScope.Has("ui.pilot-card.selected.art", "image");
         for (int i = 0; i < cards.Count; i++)
         {
             var card = cards[i]; var r = Rect(i);
             if (Recording is { } layout) layout.Rects["pilot:" + card.UnitId] = r;
-            PanelBox(c, r, card.Selected, 5, "ui.pilot-card");
+            PanelBox(c, r, card.Selected, 5, card.Selected && selectedArt ? "ui.pilot-card.selected" : "ui.pilot-card");
             Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 5, 24, 24));
             T(c, card.Name, r.Left + 36, r.Top + 16, 11.5f, Text, true);
             T(c, card.Weapon, r.Left + 36, r.Top + 27, 8.5f, Muted);
@@ -45,9 +47,14 @@ internal sealed class PilotCardColumn
                 T(c, stat.Label, r.Left + 7, y, 9, Text);
                 T(c, stat.Value, r.Right - 7, y, 9.5f, stat.ValueTone ?? Text, true, SKTextAlign.Right);
                 float x0 = r.Left + 60, x1 = r.Right - 41;
-                Stroke(c, new(x0, y - 3), new(x1, y - 3), Track, 3);
                 var color = TacticalBattleSkinRenderScope.Color("ui.pilot-card.bar." + stat.Kind, "fill", stat.Tone);
-                if (stat.Fill > 0) Stroke(c, new(x0, y - 3), new(x0 + (x1 - x0) * (float)PyMath.Clamp(stat.Fill, 0, 1), y - 3), color, 3);
+                if (segmented)
+                    Bar(c, x0, y - 4.5f, x1 - x0, 3, stat.Fill, color);
+                else
+                {
+                    Stroke(c, new(x0, y - 3), new(x1, y - 3), Track, 3);
+                    if (stat.Fill > 0) Stroke(c, new(x0, y - 3), new(x0 + (x1 - x0) * (float)PyMath.Clamp(stat.Fill, 0, 1), y - 3), color, 3);
+                }
             }
             float fs = 8.5f;
             float Width() => card.Segments.Sum(s => Measure(s.Text, fs, s.Bold));

@@ -126,7 +126,23 @@ internal static class BattleDesign
     }
     public static void BigButton(SKCanvas c, SKRect r, string text) => Button(c, r, text, true);
     public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color)
-    { Round(c, SKRect.Create(x, y, w, h), Track, radius: h * .5f); if (frac > 0) Round(c, SKRect.Create(x, y, w * (float)PyMath.Clamp(frac, 0, 1), h), color, radius: h * .5f, role: "ui.bar"); }
+    {
+        var track = SKRect.Create(x, y, w, h);
+        Round(c, track, Track, radius: h * .5f);
+        if (!(frac > 0))
+            return;
+
+        var fill = SKRect.Create(x, y, w * (float)PyMath.Clamp(frac, 0, 1), h);
+        Round(c, fill, color, radius: h * .5f, role: "ui.bar");
+        if (Skin.Has("ui.bar.segments", "image"))
+        {
+            using var clip = new SKRoundRect(fill, h * .5f, h * .5f);
+            c.Save();
+            c.ClipRoundRect(clip, antialias: true);
+            Skin.Image(c, "ui.bar.segments", track);
+            c.Restore();
+        }
+    }
     public static void Slider(SKCanvas c, float x0, float x1, float y, double t, SKColor color)
     { float x = x0 + (x1 - x0) * (float)PyMath.Clamp(t, 0, 1); Stroke(c, new(x0, y), new(x1, y), Track, 4); Stroke(c, new(x0, y), new(x, y), color, 4); Circle(c, new(x, y), 6, color, Text, 1.2f); }
     public static void Line(SKCanvas c, float x0, float x1, float y) => Stroke(c, new(x0, y), new(x1, y), BoxEdge, 1);

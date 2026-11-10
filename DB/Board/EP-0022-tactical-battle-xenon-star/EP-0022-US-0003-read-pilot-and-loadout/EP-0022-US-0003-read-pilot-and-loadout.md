@@ -2,7 +2,7 @@
 epic: EP-0022-tactical-battle-xenon-star
 story: EP-0022-US-0003-read-pilot-and-loadout
 title: Считывать пилотов, сборку и контекст
-stage: draft
+stage: implemented
 dependencies: [EP-0022-US-0001-select-xenon-skin]
 ---
 

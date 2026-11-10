@@ -56,6 +56,8 @@
     <XenonStarSlice Include="$(XenonStarSource)/Sliced/Modular Elements/Horizontal Lines/hl1.png" />
     <XenonStarSlice Include="$(XenonStarSource)/Sliced/Modular Elements/Target Reticles/tre7.png" />
     <XenonStarSlice Include="$(XenonStarSource)/Sliced/Modular Elements/Target Reticles/tre14.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/In Space/Ship Status - You and Target/your_screen_bg.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/In Space/Ship Status - You and Target/hull_fill.png" />
     <Content Include="@(XenonStarSlice)" Link="Skins/xenon-star/assets/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <None Update="Skins/xenon-star/skin.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>

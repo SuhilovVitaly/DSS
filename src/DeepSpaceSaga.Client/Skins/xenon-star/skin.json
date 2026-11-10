@@ -27,6 +27,15 @@
     "ui.map.fire.assigned": { "stroke": "#ABD6E9", "text": "#ABD6E9" },
     "ui.map.fire.assigned.art": { "image": "assets/tre14.png", "opacity": 0.62 },
     "ui.map.fire.candidate": { "stroke": "#A0B5B995" },
-    "ui.map.fire.candidate.art": { "image": "assets/tre7.png", "opacity": 0.30 }
+    "ui.map.fire.candidate.art": { "image": "assets/tre7.png", "opacity": 0.30 },
+    "ui.pilot-card": { "fill": "#0F1A25", "stroke": "#354F60" },
+    "ui.pilot-card.art": { "image": "assets/your_screen_bg.png", "opacity": 0.54 },
+    "ui.pilot-card.selected": { "fill": "#142638", "stroke": "#9ABFD0" },
+    "ui.pilot-card.selected.art": { "image": "assets/your_screen_bg.png", "opacity": 0.65 },
+    "ui.pilot-card.selected.glow": { "fill": "#00000000", "stroke": "#7BB6D038" },
+    "ui.pilot-card.chip": { "stroke": "#496679" },
+    "ui.bar.segments": { "image": "assets/hull_fill.png", "opacity": 0.50 },
+    "ui.panel.build.art": { "image": "assets/your_screen_bg.png", "opacity": 0.62 },
+    "ui.box.build-slot.alert": { "stroke": "#FF7474" }
   }
 }

@@ -9,6 +9,7 @@ public sealed class Ep0022SkinScenesTests
     [Theory]
     [InlineData("1-move-no-hover")]
     [InlineData("2-fire-hover-own")]
+    [InlineData("2-build-damaged")]
     public async Task Xenon_and_Classic_share_layout_and_text(string scene)
     {
         if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")
@@ -28,5 +29,25 @@ public sealed class Ep0022SkinScenesTests
         Assert.Equal(classic.Layout.Texts.Select(text => text.Text), styled.Layout.Texts.Select(text => text.Text));
         Assert.NotEqual(classicBitmap.GetPixel(540, 138), styledBitmap.GetPixel(540, 138));
         Assert.IsType<SKImage>(xenon.Image("field.hud.frame"));
+    }
+
+    [Fact]
+    public void Segmented_meter_clips_texture_to_the_value()
+    {
+        if (Environment.GetEnvironmentVariable("DSS_EXPECT_XENON_STAR") != "1")
+            return;
+
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        Assert.True(catalog.TryGet("xenon-star", out var xenon));
+        using var scope = TacticalBattleSkinRenderScope.Enter(xenon);
+        using var bitmap = new SKBitmap(110, 42);
+        using var canvas = new SKCanvas(bitmap);
+        BattleDesign.Bar(canvas, 5, 2, 100, 8, 0, BattleDesign.Cyan);
+        BattleDesign.Bar(canvas, 5, 15, 100, 8, .4, BattleDesign.Cyan);
+        BattleDesign.Bar(canvas, 5, 28, 100, 8, 1, BattleDesign.Cyan);
+        Assert.Equal(bitmap.GetPixel(25, 6), bitmap.GetPixel(75, 6));
+        Assert.Equal(bitmap.GetPixel(75, 6), bitmap.GetPixel(75, 19));
+        Assert.NotEqual(bitmap.GetPixel(25, 6), bitmap.GetPixel(25, 19));
+        Assert.NotEqual(bitmap.GetPixel(75, 6), bitmap.GetPixel(75, 32));
     }
 }
