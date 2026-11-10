@@ -11,8 +11,6 @@ internal static partial class TacticalBattleMapRenderer
     static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied, InteractiveAnomalyField? interactiveField)
     {
         if (f.Movement is not null) return;
-        foreach (var trail in f.Battle.Paths)
-            for (int i = 1; i < trail.Points.Length; i++) Stroke(c, f.View.Project(trail.Points[i - 1]), f.View.Project(trail.Points[i]), Text.WithAlpha(150), 1.2f, [4, 4]);
         if (f.FirePlan is { } plan)
         {
             if (plan.Selected?.Drone.Build is { } build)

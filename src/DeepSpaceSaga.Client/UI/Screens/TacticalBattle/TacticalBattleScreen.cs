@@ -36,7 +36,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     private bool _orderDrag, _orderDragEdited;
     private SKPoint _lastAim;
     private sealed record TurnPresentation(TacticalBattleSnapshot Accepted, TacticalBattleMovementAnimation? Animation,
-        TacticalBattleResults? Results = null);
+        TacticalBattleResults? Results = null, ImmutableArray<TacticalMovementPath> PreviousPaths = default);
     private TurnPresentation? _presentation;
     private TacticalBattleSnapshot? _observedOrders;
     internal Func<long> ClockMilliseconds { get; set; } = () => Environment.TickCount64;
@@ -73,7 +73,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             _logTab.ResetInput();
             _forecastTab.ResetInput();
         };
-        if (flow.State is { } state) _presentation = new(state, null);
+        if (flow.PresentationState is { } state) _presentation = new(state, null);
     }
 
     internal bool TurnBusy
@@ -99,6 +99,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         long now = ClockMilliseconds();
         bool moving = presentation.Animation?.IsActive(now) == true;
         var state = moving ? presentation.Animation!.Interpolate(now) : presentation.Accepted;
+        if (moving && !presentation.PreviousPaths.IsDefaultOrEmpty)
+            state = state with { Paths = presentation.PreviousPaths.AddRange(state.Paths) };
         var salvo = moving ? null : presentation.Results?.Capture(now);
         if (!moving && presentation.Results is { } results) state = results.Project(now);
         bool planning = !moving && salvo is null;
@@ -223,7 +225,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override void OnBattleUpdated(TacticalBattleSnapshot? before, TacticalBattleResponse response)
     {
-        if (Flow.State is not { } state) return;
+        if (Flow.PresentationState is not { } state) return;
         if (response.State is null) return;
         var current = Volatile.Read(ref _presentation);
         if (current?.Accepted.BattleId == state.BattleId && current.Accepted.Revision >= state.Revision) return;
@@ -233,9 +235,13 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             return;
         }
         long now = ClockMilliseconds();
-        var animation = TacticalBattleMovementAnimation.Create(before, response, now);
-        var results = TacticalBattleResults.Create(before, response, now + (animation?.PlaybackDurationMs ?? 0));
-        Volatile.Write(ref _presentation, new(state, animation, results));
+        var projectedResponse = response with { State = state };
+        var animation = TacticalBattleMovementAnimation.Create(before, projectedResponse, now);
+        var results = TacticalBattleResults.Create(before, projectedResponse, now + (animation?.PlaybackDurationMs ?? 0));
+        var previousPaths = animation is not null && before is not null && !before.Paths.IsDefaultOrEmpty
+            ? before.Paths.Where(path => path.Turn == before.Turn - 1).ToImmutableArray()
+            : [];
+        Volatile.Write(ref _presentation, new(state, animation, results, previousPaths));
     }
 
     private void ObserveOrders(TacticalBattleSnapshot state)

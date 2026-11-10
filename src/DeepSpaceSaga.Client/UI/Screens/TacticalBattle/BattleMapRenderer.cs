@@ -87,6 +87,7 @@ internal static partial class TacticalBattleMapRenderer
         occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, f.Panel.Bottom + (HoverCard.Build(f) is not null ? 306 : f.HoverUnitId is null && AnomalyPresentation.HoverKind(f) is null ? 6 : 116)));
         occupied.Add(new(10, 686, 18 + len, 714));
         occupied.AddRange([new(0, 0, v.PixelWidth, 2), new(0, 718, v.PixelWidth, 720), new(0, 0, 2, 720), new(v.PixelWidth - 2, 0, v.PixelWidth, 720)]);
+        DrawTraversedPaths(c, f);
         DrawMovement(c, f, occupied); DrawPhaseOverlays(c, f, occupied, interactiveField);
         var inside = Safe(v); inside.Inflate(-34, -34);
         using var hullPaint = new SKPaint { IsAntialias = true, StrokeWidth = .8f };
@@ -186,6 +187,33 @@ internal static partial class TacticalBattleMapRenderer
         { bool left = p.X < q.X; float x = shift == 0 ? left ? q.X + 18 : q.X - 18 - w : left ? q.X - 12 : q.X + 12 - w; y = q.Y + shift; rect = new(x - 2, y - 12, x + w + 2, y + 9); if (!occupied.Any(r => r.IntersectsWith(rect))) break; }
         occupied.Add(rect); if (Recording is { } layout) layout.Rects["edge:" + u.Id] = rect; T(c, text, rect.Left + 2, y + 5, 14, Text);
     }
+    private static void DrawTraversedPaths(SKCanvas canvas, TacticalBattleFrame frame)
+    {
+        if (frame.Battle.Paths.IsDefaultOrEmpty) return;
+        using var path = new SKPath();
+        foreach (var dronePaths in frame.Battle.Paths.GroupBy(trail => trail.DroneId))
+        {
+            TacticalPoseSnapshot? last = null;
+            foreach (var trail in dronePaths.OrderBy(trail => trail.Turn))
+            {
+                if (trail.Points.Length < 2) continue;
+                if (last != trail.Points[0]) path.MoveTo(frame.View.Project(trail.Points[0]));
+                for (int i = 1; i < trail.Points.Length; i++) path.LineTo(frame.View.Project(trail.Points[i]));
+                last = trail.Points[^1];
+            }
+        }
+        using var paint = new SKPaint
+        {
+            IsAntialias = true,
+            Style = SKPaintStyle.Stroke,
+            Color = Text.WithAlpha(135),
+            StrokeWidth = 1.2f,
+            StrokeCap = SKStrokeCap.Round,
+            StrokeJoin = SKStrokeJoin.Round
+        };
+        canvas.DrawPath(path, paint);
+    }
+
     static partial void DrawMovement(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied);
     static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied, InteractiveAnomalyField? interactiveField);
 

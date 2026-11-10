@@ -83,6 +83,38 @@ public sealed class MovementAnimationTests
     }
 
     [Fact]
+    public async Task Both_sides_keep_two_movement_trails_and_playback_reveals_only_traversed_points()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        screen.CaptureFrame(1280, 720);
+
+        for (int turn = 1; turn <= 3; turn++)
+        {
+            Assert.Equal(turn, screen.Flow.State!.Turn);
+            await fixture.Route(ScreenEvent.MoveTacticalBattle);
+            fixture.AdvanceAnimation(400);
+            var moving = screen.CaptureFrame(1280, 720)!;
+            var current = moving.Battle.Paths.Where(path => path.Turn == turn).ToArray();
+            var expectedTurns = turn == 1 ? new[] { turn } : new[] { turn - 1, turn };
+            Assert.Equal(expectedTurns, moving.Battle.Paths.Select(path => path.Turn).Distinct());
+            Assert.Equal(2, current.Select(path => moving.Battle.Units.Single(unit => unit.Id == path.DroneId).Side).Distinct().Count());
+            foreach (var trail in current)
+            {
+                Assert.Equal(moving.Battle.Units.Single(unit => unit.Id == trail.DroneId).Pose, trail.Points[^1]);
+                Assert.NotEqual(screen.Flow.State!.Units.Single(unit => unit.Id == trail.DroneId).Pose, trail.Points[^1]);
+            }
+            fixture.FinishPresentation();
+            var finished = screen.CaptureFrame(1280, 720)!;
+            Assert.Equal(expectedTurns, finished.Battle.Paths.Select(path => path.Turn).Distinct());
+            var reopened = new TacticalBattleScreen(screen.Flow, 1);
+            Assert.Equal(finished.Battle.Paths, reopened.CaptureFrame(1280, 720)!.Battle.Paths);
+            foreach (var trail in finished.Battle.Paths.Where(path => path.Turn == turn))
+                Assert.Equal(finished.Battle.Units.Single(unit => unit.Id == trail.DroneId).Pose, trail.Points[^1]);
+        }
+    }
+
+    [Fact]
     public async Task NonEmptyAutomaticSalvoUsesSlowerMovementThanAnEmptySalvo()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
