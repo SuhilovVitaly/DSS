@@ -2,6 +2,7 @@ using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using DeepSpaceSaga.Contracts;
 using Silk.NET.Input;
+using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
@@ -13,6 +14,11 @@ public sealed class MovementAnimationTests
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();
         var screen = await Start(fixture);
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        screen.Render(canvas, 1280, 720);
+        var turn = screen.CardCommandBounds("turn+");
+        Assert.False(turn.IsEmpty);
         var before = screen.Flow.State!;
         var gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         fixture.Proxy.MoveGate = gate;
@@ -27,6 +33,7 @@ public sealed class MovementAnimationTests
             Assert.Same(before, pending.Battle);
             Assert.Equal(ScreenEvent.None, screen.OnKeyDown(Key.Enter));
             Assert.Equal(ScreenEvent.None, screen.OnMouseDown(400, 300, MouseButton.Left));
+            Assert.Equal(ScreenEvent.None, screen.OnMouseDown(turn.MidX, turn.MidY, MouseButton.Left));
             Assert.Empty(screen.BuildMoveRequest().Orders);
             queuedMove = fixture.Route(ScreenEvent.MoveTacticalBattle);
             queuedFire = fixture.Route(ScreenEvent.FireTacticalBattle);
@@ -45,6 +52,10 @@ public sealed class MovementAnimationTests
         Assert.Equal(TacticalBattlePhase.Move, atStart.Battle.Phase);
         Assert.Equal(BattleFormat.Localize("AnimatingMovement"), atStart.Status);
         Assert.Null(atStart.Movement);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(turn.MidX, turn.MidY, MouseButton.Left));
+        Assert.Empty(screen.BuildMoveRequest().Orders);
+        screen.Render(canvas, 1280, 720);
+        Assert.True(screen.CardCommandBounds("turn+").IsEmpty);
         Assert.Equal(path.Points[0], atStart.Battle.Units.Single(u => u.Id == path.DroneId).Pose);
         Assert.Equal(path.Points[0], Assert.Single(atStart.Battle.Paths.Single(p => p.DroneId == path.DroneId).Points));
 
