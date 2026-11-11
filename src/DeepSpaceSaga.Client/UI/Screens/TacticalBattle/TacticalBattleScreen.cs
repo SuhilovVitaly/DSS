@@ -321,7 +321,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         var p = DesignPoint(x, y);
         if (!ConfirmExit && !TurnBusy && !HasSalvoPresentation && _pilotColumn.ScrollTargets(SelectedPlanningDrone, p, delta))
             return ScreenEvent.None;
-        if (!ConfirmExit && (_pilotColumn.Scroll(p, delta) || _phasePanel.ScrollTargets(p, delta) || _phasePanel.ScrollQueue(p, delta) || _hoverCard.ScrollResults(p, delta))) return ScreenEvent.None;
+        if (!ConfirmExit && (_pilotColumn.Scroll(p, delta) || _phasePanel.ScrollQueue(p, delta) || _hoverCard.ScrollResults(p, delta))) return ScreenEvent.None;
         if (!ConfirmExit && !TurnBusy && !_orderDrag && !OverlayHit(p)) _camera.Zoom(p.X, p.Y, delta);
         return ScreenEvent.None;
     }

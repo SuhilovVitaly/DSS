@@ -66,7 +66,6 @@ public sealed partial class TacticalBattleScreen
             return ScreenEvent.None;
         }
         var action = _phasePanel.HitButton(p);
-        if (ApplyPilotAction(action)) return ScreenEvent.None;
         switch (action)
         {
             case "primary":
@@ -101,14 +100,9 @@ public sealed partial class TacticalBattleScreen
         return true;
     }
 
-    private bool OverlayDrag(SKPoint p) => !HasSalvoPresentation &&
-        (_pilotColumn.DragSlider(p, _orders) || _phasePanel.Drag(p, _orders));
+    private bool OverlayDrag(SKPoint p) => !HasSalvoPresentation && _pilotColumn.DragSlider(p, _orders);
 
-    private void EndOverlayDrag()
-    {
-        _pilotColumn.EndSlider();
-        _phasePanel.EndDrag();
-    }
+    private void EndOverlayDrag() => _pilotColumn.EndSlider();
     private void UpdateHover(SKPoint p)
     {
         if (_hoverFrame is not { } f || OverlayHit(p)) { HoverUnitId = null; return; }

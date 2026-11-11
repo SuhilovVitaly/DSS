@@ -15,13 +15,15 @@ public sealed class FirePanelEvasionTests
         await using var scene = await Ep0019Scenes.Create("2-evasion-plan", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         using var bitmap = scene.Render();
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 94, 1053, 108), PurpleDark), .9, 1);
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1162, 244, 1264, 246), PurpleDark), .9, 1);
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1050, 122, 1100, 150), Purple), .1, 1);
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         var selected = frame.FirePlan!.Selected!;
+        var card = scene.Screen.Layout.Rects["pilot:" + selected.Drone.Id];
+        var evade = scene.Screen.Layout.Rects["card-command:evade"];
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(card.Left + 8, card.Top + 108, 3, 22), PurpleDark), .9, 1);
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(evade.Left + 2, evade.MidY - 3, 1, 6), PurpleDark), .9, 1);
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(card.Left + 12, card.Top + 108, 115, 12), Purple), .05, 1);
         Assert.Equal("Никто не целится", PhasePanel.ThreatText(frame.Battle, selected.Drone.Id, true));
-        Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "Сознание 100 → 90");
+        Assert.Contains(scene.Screen.Layout.Texts, t => t.Text.StartsWith("Сознание 100 → 90", StringComparison.Ordinal));
         Assert.Equal("Уклонение", PilotCardModel.Project(frame).Single(c => c.UnitId == selected.Drone.Id).Chip);
         Save(bitmap, "evade-plan");
         var point = frame.View.Project(selected.Drone.Pose);
@@ -47,8 +49,10 @@ public sealed class FirePanelEvasionTests
         using (var initial = scene.Render()) { }
         scene.Screen.OnMouseDown(30, 30, MouseButton.Left);
         using var bitmap = scene.Render();
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 94, 1053, 108), YellowDark), .9, 1);
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1162, 244, 1264, 246), EvadeIdle), .9, 1);
+        var card = scene.Screen.Layout.Rects["pilot:Вера"];
+        var evade = scene.Screen.Layout.Rects["card-command:evade"];
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(card.Left + 8, card.Top + 108, 3, 22), Box), .9, 1);
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(evade.Left + 4, evade.Top + 3, 5, 2), EvadeIdle), .9, 1);
         Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "Уклонение: −20 к попаданию, сознание −10");
         var button = scene.Screen.CardCommandBounds("evade");
         Assert.False(button.IsEmpty);

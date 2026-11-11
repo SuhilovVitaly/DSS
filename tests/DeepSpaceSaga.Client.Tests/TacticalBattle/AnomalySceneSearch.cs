@@ -41,10 +41,10 @@ internal static class AnomalySceneSearch
         if (movement)
         {
             var orders = new TacticalBattleOrders(); orders.Observe(state); Assert.True(orders.Select(selected));
-            return new(state, camera.View, new(1040, 6, 1274, 370), 1, false, "", SelectedDroneId: selected, Movement: orders.Capture());
+            return new(state, camera.View, new(1040, 6, 1274, 152), 1, false, "", SelectedDroneId: selected, Movement: orders.Capture());
         }
         var fire = new TacticalBattleFireOrders(); fire.Observe(state, selected); Assert.True(fire.Select(selected));
-        return new(state, camera.View, new(1040, 6, 1274, 370), 1, false, "", SelectedDroneId: selected, FirePlan: fire.Capture());
+        return new(state, camera.View, new(1040, 6, 1274, 152), 1, false, "", SelectedDroneId: selected, FirePlan: fire.Capture());
     }
     internal static (SKBitmap Bitmap, BattleLayout Layout) Render(TacticalBattleFrame frame, string name)
     {
@@ -53,8 +53,11 @@ internal static class AnomalySceneSearch
         try
         {
             using var canvas = new SKCanvas(bitmap); canvas.Scale(1.5f);
-            TacticalBattleMapRenderer.Draw(canvas, frame); new PhasePanel().Draw(canvas, frame, layout);
-            new PilotCardColumn().Draw(canvas, PilotCardModel.Project(frame), PilotPortraitCatalog.Default);
+            var column = new PilotCardColumn();
+            column.Arrange(frame, PilotCardModel.Project(frame));
+            TacticalBattleMapRenderer.Draw(canvas, frame, pilotColumnBottom: column.Bounds.Bottom);
+            new PhasePanel().Draw(canvas, frame, layout);
+            column.Draw(canvas, PilotPortraitCatalog.Default);
             new HoverCard().Draw(canvas, frame, PilotPortraitCatalog.Default);
         }
         finally { BattleDesign.Recording = null; }

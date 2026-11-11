@@ -22,7 +22,6 @@ internal sealed partial class PhasePanel
     internal void Draw(SKCanvas c, TacticalBattleFrame f, BattleLayout layout)
     {
         _frame = f; _offset = f.Panel.Right - 1274; _buttons.Clear();
-        _targetList = SKRect.Empty;
         _db = Bottom(f.Battle.Phase, f.Salvo) - 120;
         Bounds = R(1040, 6, 1274, _db + 120); Action = R(1040, _db + 28, 1274, _db + 120);
         layout.Rects["phase"] = Bounds; layout.Rects["action"] = Action; layout.Rects["details"] = R(1048, 68, 1266, _db + 24);
@@ -67,8 +66,6 @@ internal sealed partial class PhasePanel
         BoxText(c, new(1048, y + 28, 1266, y + 48), _frame.Status.Length > 0 ? _frame.Status : status);
         ButtonAt(c, "primary", new(1048, y + 56, 1266, _db + 112), primary, true);
     }
-    partial void DrawMove(SKCanvas c);
-    partial void DrawFire(SKCanvas c);
     partial void DrawSalvo(SKCanvas c);
     partial void DrawOutcome(SKCanvas c);
 }

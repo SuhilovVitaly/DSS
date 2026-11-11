@@ -27,12 +27,13 @@ public sealed class MovementOrdersTests
         var themed = new TacticalBattleScreen(classic.Flow, scale, skin);
         using var classicPixels = Draw(classic);
         using var themedPixels = Draw(themed);
-        Assert.Equal(classic.Layout.Rects["slider:speed"], themed.Layout.Rects["slider:speed"]);
+        Assert.Equal(classic.CardCommandBounds("slider:speed"), themed.CardCommandBounds("slider:speed"));
         Assert.Contains(new SKColor(255, 69, 170), themedPixels.Pixels);
         Assert.Contains(new SKColor(41, 221, 186), themedPixels.Pixels);
         Assert.DoesNotContain(new SKColor(255, 69, 170), classicPixels.Pixels);
 
-        var slider = classic.Layout.Rects["slider:speed"]; slider = new(slider.Left * 1000 / 720, slider.Top * 1000 / 720, slider.Right * 1000 / 720, slider.Bottom * 1000 / 720);
+        var slider = classic.CardCommandBounds("slider:speed");
+        Assert.False(slider.IsEmpty);
         float x = slider.Left + slider.Width * 0.85f;
         classic.OnMouseDown(x, slider.MidY, MouseButton.Left);
         themed.OnMouseDown(x, slider.MidY, MouseButton.Left);

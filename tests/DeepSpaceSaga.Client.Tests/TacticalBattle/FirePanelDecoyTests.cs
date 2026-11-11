@@ -40,17 +40,19 @@ public sealed class FirePanelDecoyTests
         using var locale = Localization.UseLocaleForTests("Russian");
         using (var idle = scene.Render())
         {
-            Assert.InRange(RasterProbe.Fraction(idle, new(1049.5f, 223, 1053, 236), DecoyIdle), .9, 1);
-            foreach (float x in new[] { 1249f, 1258f })
-                Assert.InRange(RasterProbe.Fraction(idle, SKRect.Create(x - 1.5f, 228, 3, 3), Green), .5, 1);
+            var rowBounds = scene.Screen.Layout.Rects["card-command:decoy"];
+            Assert.InRange(RasterProbe.Fraction(idle, SKRect.Create(rowBounds.Left + 2, rowBounds.Top + 3, 3, 10), DecoyIdle), .9, 1);
+            foreach (float x in new[] { rowBounds.Right - 17, rowBounds.Right - 8 })
+                Assert.InRange(RasterProbe.Fraction(idle, SKRect.Create(x - 1.5f, rowBounds.MidY - 1.5f, 3, 3), Green), .5, 1);
         }
         scene.Screen.OnKeyDown(Key.D);
         using var bitmap = scene.Render();
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         var row = frame.FirePlan!.Selected!;
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 223, 1053, 236), GreenDark), .9, 1);
-        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(1247.5f, 228, 3, 3), Green), .5, 1);
-        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(1256.5f, 228, 3, 3), GreenDark), .5, 1);
+        var activeBounds = scene.Screen.Layout.Rects["card-command:decoy"];
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(activeBounds.Left + 2, activeBounds.Top + 3, 3, 10), GreenDark), .9, 1);
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(activeBounds.Right - 18.5f, activeBounds.MidY - 1.5f, 3, 3), Green), .5, 1);
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(activeBounds.Right - 9.5f, activeBounds.MidY - 1.5f, 3, 3), GreenDark), .5, 1);
         var incoming = frame.Battle.Incoming.SingleOrDefault(i => i.TargetId == row.Drone.Id && i.ChanceIfDecoy is not null);
         string expected = incoming is null ? M("DecoyArmedNoThreat") : M("DecoyArmed",
             PilotCardModel.Name(frame.Battle.Units.Single(u => u.Id == incoming.ShooterId)),
@@ -73,8 +75,9 @@ public sealed class FirePanelDecoyTests
         var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         Assert.Empty(frame.FirePlan!.Selected!.Group.List);
         using var bitmap = scene.Render();
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 224, 1053, 236), DecoyIdle), .9, 1);
-        Assert.Equal(new SKRect(1048, 222, 1266, 238), scene.Screen.Layout.Rects["button:decoy"]);
+        var decoy = scene.Screen.Layout.Rects["card-command:decoy"];
+        Assert.Equal(new SKRect(12, 170, 190, 188), decoy);
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(decoy.Left + 2, decoy.Top + 3, 3, 10), DecoyIdle), .9, 1);
         scene.Screen.OnKeyDown(Key.D);
         using var armed = scene.Render();
         frame = scene.Screen.CaptureFrame(1920, 1080)!;
@@ -114,7 +117,7 @@ public sealed class FirePanelDecoyTests
         Assert.DoesNotContain(scene.Screen.Layout.Rects.Keys, k => k.StartsWith("decoy:Таг", StringComparison.Ordinal));
         scene.Screen.OnKeyDown(Key.E);
         using var evading = scene.Render();
-        Assert.False(scene.Screen.Layout.Rects.ContainsKey("button:decoy"));
+        Assert.True(scene.Screen.CardCommandBounds("decoy").IsEmpty);
         Assert.False(scene.Screen.Layout.Rects.ContainsKey("pilot-decoy:" + unit.Id));
         Assert.False(scene.Screen.Layout.Rects.ContainsKey("decoy:" + unit.Id));
     }
@@ -133,11 +136,18 @@ public sealed class FirePanelDecoyTests
         canvas.Scale(1.5f);
         var layout = new BattleLayout();
         Recording = layout;
-        try { new PhasePanel().Draw(canvas, frame, layout); }
+        try
+        {
+            var column = new PilotCardColumn();
+            column.Arrange(frame, PilotCardModel.Project(frame));
+            column.Draw(canvas, PilotPortraitCatalog.Default);
+        }
         finally { Recording = null; }
         Assert.Equal(M("DecoyEmpty"), PhasePanel.DecoyText(frame.Battle, row));
         Assert.Contains(layout.Texts, t => t.Text == "Ловушек нет");
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 223, 1053, 236), Box), .9, 1);
+        var card = layout.Rects["pilot:" + row.Drone.Id];
+        Assert.DoesNotContain("card-command:decoy", layout.Rects.Keys);
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(card.Left + 8, card.Bottom - 53, 3, 10), Box), .9, 1);
     }
 
     [Theory]

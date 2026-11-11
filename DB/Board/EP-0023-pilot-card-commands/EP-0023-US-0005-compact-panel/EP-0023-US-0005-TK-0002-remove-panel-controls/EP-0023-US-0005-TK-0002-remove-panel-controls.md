@@ -3,11 +3,11 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0005-compact-panel
 ticket: EP-0023-US-0005-TK-0002-remove-panel-controls
 title: Удаление элементов выбранного дрона из правой панели
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0005-TK-0001-compact-panel]
-files_touched: 6
+files_touched: 11
 serves: [US5-AC3]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -39,6 +39,8 @@ revision: 1
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/TacticalBattleScreen.cs` | :316 `_phasePanel.ScrollTargets` | Удалить вызов. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/Ep0019Acceptance.cs` | пробы панели EP-0019 | Перевести пробы деталей выбранного дрона на карточку (UiSpec §10). |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/AnomalySceneSearch.cs` | поиск сцен по элементам панели | Перевести на карточку. |
+
+Дополнительно: PhasePanel.cs очищает декларации прежних блоков; FirePanelDecoyTests.cs, FirePanelEvasionTests.cs, AnomalyFirePanelTests.cs и MovementOrdersTests.cs переводят оставшиеся пробы на карточку, сохраняя проверки цветов, команд и карты.
 
 ## Public API after the change
 
@@ -86,4 +88,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US5-AC3: прежние обработчики, отрисовка и прокрутка деталей справа удалены. Проверки карты, выбранной карточки, зарядов и недоступных команд переведены на рабочую геометрию. Build, 70/70 тестов, scoped format, diff check и самопроверка: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us5-tk2-03/. Снимки обновляются в US-0007.
