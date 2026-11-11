@@ -21,23 +21,64 @@ public sealed class Ep0022SkinScenesTests
     [InlineData("4-salvo-results")]
     [InlineData("4-anomaly-absorbed")]
     [InlineData("5-outcome")]
-    public async Task Xenon_and_Classic_share_layout_and_text(string scene)
+    public async Task Shipped_skins_share_card_and_phase_geometry_at_both_scales(string scene)
     {
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
-        if (!TryGetXenon(catalog, out var xenon))
-            return;
+        Assert.True(catalog.TryGet("contrast", out var contrast));
+        var skins = new List<TacticalBattleSkin> { contrast };
+        if (TryGetXenon(catalog, out var xenon))
+        {
+            skins.Add(xenon);
+            Assert.IsType<SKImage>(xenon.Image("field.hud.frame"));
+        }
+
         await using var scenes = await Ep0019Scenes.Create(scene);
+        using var locale = Localization.UseLocaleForTests("Russian");
         var frame = scenes.Frame;
-        var classic = AnomalySceneSearch.Render(frame, "classic-" + scene);
-        using var classicBitmap = classic.Bitmap;
-        using var scope = TacticalBattleSkinRenderScope.Enter(xenon);
-        var styled = AnomalySceneSearch.Render(frame, "xenon-" + scene);
-        using var styledBitmap = styled.Bitmap;
-        Assert.Equal(classic.Layout.Camera, styled.Layout.Camera);
-        Assert.Equal(classic.Layout.Rects, styled.Layout.Rects);
-        Assert.Equal(classic.Layout.Texts.Select(text => text.Text), styled.Layout.Texts.Select(text => text.Text));
-        Assert.NotEqual(classicBitmap.GetPixel(540, 138), styledBitmap.GetPixel(540, 138));
-        Assert.IsType<SKImage>(xenon.Image("field.hud.frame"));
+        foreach (float scale in new[] { 1f, 1.5f })
+        {
+            var classic = AnomalySceneSearch.Render(frame, $"classic-{scene}-{scale}", scale);
+            using var classicBitmap = classic.Bitmap;
+            foreach (var skin in skins)
+            {
+                using var scope = TacticalBattleSkinRenderScope.Enter(skin);
+                var styled = AnomalySceneSearch.Render(frame, $"{skin.Id}-{scene}-{scale}", scale);
+                using var styledBitmap = styled.Bitmap;
+                Assert.Equal(classic.Layout.Camera, styled.Layout.Camera);
+                Assert.Equal(classic.Layout.Rects, styled.Layout.Rects);
+                Assert.Equal(classic.Layout.Texts.Select(text => text.Text), styled.Layout.Texts.Select(text => text.Text));
+                Assert.NotEqual(classicBitmap.GetPixel((int)(360 * scale), (int)(92 * scale)),
+                    styledBitmap.GetPixel((int)(360 * scale), (int)(92 * scale)));
+                Assert.Equal(PhasePanel.Bottom(frame.Battle.Phase, frame.Salvo), styled.Layout.Rects["phase"].Bottom);
+
+                var selected = PilotCardModel.Project(frame).SingleOrDefault(card => card.Selected);
+                if (selected is null) continue;
+                var card = styled.Layout.Rects["pilot:" + selected.UnitId];
+                Assert.True(card.Height > 82);
+                for (int i = 0; i < selected.Stats.Count; i++)
+                {
+                    if (selected.Stats[i].ValueTone is not null) continue;
+                    float x = card.Left + 129 + i * 22;
+                    Assert.True(HasReadableValue(styledBitmap, scale, x, card.Top),
+                        $"{skin.Id}/{scene}/{scale}: unreadable {selected.Stats[i].Kind} value");
+                }
+            }
+        }
+    }
+
+    private static bool HasReadableValue(SKBitmap bitmap, float scale, float center, float top)
+    {
+        int bright = 0;
+        for (int y = (int)((top + 5) * scale); y < (top + 13) * scale; y++)
+            for (int x = (int)((center - 8) * scale); x < (center + 8) * scale; x++)
+            {
+                var pixel = bitmap.GetPixel(x, y);
+                if (pixel.Red >= 180 && pixel.Green >= 180 && pixel.Blue >= 180)
+                    bright++;
+            }
+
+        var background = bitmap.GetPixel((int)((center + 9) * scale), (int)((top + 9) * scale));
+        return bright >= 3 && background.Green < 140;
     }
 
     [Fact]
@@ -109,8 +150,35 @@ public sealed class Ep0022SkinScenesTests
                 new("mind", "Mind", "100", BattleDesign.Green, 1),
             ], "", false, []);
         new PilotCardColumn().Draw(canvas, [card], PilotPortraitCatalog.Default);
-        SKColor[] fills = [bitmap.GetPixel(100, 47), bitmap.GetPixel(100, 58), bitmap.GetPixel(100, 69)];
+        SKColor[] fills = [bitmap.GetPixel(135, 50), bitmap.GetPixel(157, 50), bitmap.GetPixel(179, 50)];
         Assert.All(fills, fill => Assert.True(Math.Max(fill.Green, fill.Blue) >= 140, $"Unclear meter fill {fill}"));
         Assert.Equal(3, fills.Distinct().Count());
+    }
+
+    [Fact]
+    public void User_pack_panel_color_does_not_leak_into_gauge_defaults()
+    {
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"local-test","displayName":"Local test","roles":{
+                "ui.pilot-card":{"fill":"#382040","stroke":"#FF9922"},
+                "ui.pilot-card.gauge.track":{"fill":"#191F28"},
+                "ui.pilot-card.icon.mind":{"stroke":"#F0A0EF"}
+            }}
+            """);
+        using var scope = TacticalBattleSkinRenderScope.Enter(skin);
+        using var bitmap = new SKBitmap(202, 92);
+        using var canvas = new SKCanvas(bitmap);
+        var card = new PilotCard("pilot", "Pilot", "", "", false,
+            [
+                new("armor", "Armor", "40/80", BattleDesign.Purple, .5),
+                new("hull", "Hull", "30/60", BattleDesign.Cyan, .5),
+                new("mind", "Mind", "50", BattleDesign.Green, .5),
+            ], "", false, []);
+        new PilotCardColumn().Draw(canvas, [card], PilotPortraitCatalog.Default);
+        Assert.Equal(SKColor.Parse("#191F28"), bitmap.GetPixel(135, 29));
+        Assert.Equal(BattleDesign.Purple, bitmap.GetPixel(135, 53));
+        Assert.Equal(BattleDesign.Cyan, bitmap.GetPixel(157, 53));
+        Assert.Equal(BattleDesign.Green, bitmap.GetPixel(179, 53));
+        Assert.Equal(SKColor.Parse("#F0A0EF"), bitmap.GetPixel(179, 71));
     }
 }
