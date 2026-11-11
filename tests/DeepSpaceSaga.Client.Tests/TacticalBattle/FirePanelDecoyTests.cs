@@ -58,8 +58,9 @@ public sealed class FirePanelDecoyTests
         Assert.Equal(expected, PhasePanel.DecoyText(frame.Battle, row));
         Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == expected);
         Assert.Contains(scene.Screen.Layout.Texts, t => t.Text.EndsWith(" · 1 ловушка", StringComparison.Ordinal));
-        var r = scene.Screen.Layout.Rects["button:decoy"];
-        scene.Screen.OnMouseDown(r.MidX * 1.5f, r.MidY * 1.5f, MouseButton.Left);
+        var r = scene.Screen.CardCommandBounds("decoy");
+        Assert.False(r.IsEmpty);
+        scene.Screen.OnMouseDown(r.MidX, r.MidY, MouseButton.Left);
         Assert.False(scene.Screen.BuildFireRequest().Targets.Single(t => t.DroneId == row.Drone.Id).Decoy);
         Save(bitmap, "decoy-plan");
     }

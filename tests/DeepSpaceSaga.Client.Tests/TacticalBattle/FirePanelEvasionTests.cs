@@ -50,8 +50,9 @@ public sealed class FirePanelEvasionTests
         Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 94, 1053, 108), YellowDark), .9, 1);
         Assert.InRange(RasterProbe.Fraction(bitmap, new(1162, 244, 1264, 246), EvadeIdle), .9, 1);
         Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "Уклонение: −20 к попаданию, сознание −10");
-        var button = scene.Screen.Layout.Rects["button:evade"];
-        scene.Screen.OnMouseDown(button.MidX * 1.5f, button.MidY * 1.5f, MouseButton.Left);
+        var button = scene.Screen.CardCommandBounds("evade");
+        Assert.False(button.IsEmpty);
+        scene.Screen.OnMouseDown(button.MidX, button.MidY, MouseButton.Left);
         Assert.True(scene.Screen.BuildFireRequest().Targets.Single(t => t.DroneId == "Вера").Evade);
         Save(bitmap, "no-target");
     }

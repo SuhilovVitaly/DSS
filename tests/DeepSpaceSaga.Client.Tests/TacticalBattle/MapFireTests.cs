@@ -55,8 +55,9 @@ public sealed class MapFireTests
         using var raster = scene.Render();
         var plan = scene.Frame.FirePlan!.Selected!;
         var alternative = plan.Group.List.First(candidate => candidate.TargetId != plan.TargetId);
-        var bounds = scene.Screen.Layout.Rects["button:target:" + alternative.TargetId];
-        scene.Screen.OnMouseDown(bounds.MidX * 1.5f, bounds.MidY * 1.5f, MouseButton.Left);
+        var bounds = scene.Screen.CardCommandBounds("target:" + alternative.TargetId);
+        Assert.False(bounds.IsEmpty);
+        scene.Screen.OnMouseDown(bounds.MidX, bounds.MidY, MouseButton.Left);
         Assert.Equal(alternative.TargetId, scene.Screen.BuildFireRequest().Targets.Single(order => order.DroneId == plan.Drone.Id).TargetId);
         Assert.Equal(alternative.TargetId, scene.Frame.FirePlan!.Selected!.TargetId);
     }

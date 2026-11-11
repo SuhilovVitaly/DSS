@@ -5,11 +5,35 @@ using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.PilotCardColumn;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
-internal static class PilotCardFireBlock
+internal sealed class PilotCardFireBlock
 {
     private const int VisibleRows = 3;
     private const float RowHeight = 20;
     private const float ListTop = 14;
+
+    private TacticalTargetGroupSnapshot? _group;
+    private int _first;
+    private SKRect _list;
+
+    public void Observe(TacticalFirePlanRow? selected)
+    {
+        var group = selected?.Group;
+        if (!ReferenceEquals(group, _group))
+        {
+            _group = group;
+            _first = 0;
+        }
+        _list = SKRect.Empty;
+    }
+
+    public bool Scroll(SKPoint point, float delta)
+    {
+        if (_group is not { List.Length: > VisibleRows } group || _list.IsEmpty ||
+            !_list.Contains(point) || !float.IsFinite(delta) || delta == 0)
+            return false;
+        _first = Math.Clamp(_first - Math.Sign(delta), 0, group.List.Length - VisibleRows);
+        return true;
+    }
 
     private static bool HasTargets(TacticalFirePlanRow row) => !row.Evade && !row.Drone.InDust && !row.Group.List.IsEmpty;
     private static float BodyHeight(TacticalFirePlanRow row) =>
@@ -17,7 +41,7 @@ internal static class PilotCardFireBlock
 
     public static float Height(TacticalFirePlanRow row) => ListTop + BodyHeight(row) + 78;
 
-    public static void Draw(SKCanvas canvas, PilotCardColumn column, TacticalBattleSnapshot battle,
+    public void Draw(SKCanvas canvas, PilotCardColumn column, TacticalBattleSnapshot battle,
         TacticalFirePlanRow row, float left, float right, float top)
     {
         string id = row.Drone.Id;
@@ -100,13 +124,16 @@ internal static class PilotCardFireBlock
         }
     }
 
-    private static void DrawTargets(SKCanvas canvas, PilotCardColumn column, TacticalBattleSnapshot battle,
+    private void DrawTargets(SKCanvas canvas, PilotCardColumn column, TacticalBattleSnapshot battle,
         TacticalFirePlanRow row, float left, float right, float top)
     {
         int rows = Math.Min(VisibleRows, row.Group.List.Length);
+        bool overflowing = row.Group.List.Length > rows;
+        float height = rows * RowHeight - 2;
+        _list = SKRect.Intersect(SKRect.Create(left, top, right - left, height), PilotColumnLayout.Viewport);
         for (int i = 0; i < rows; i++)
         {
-            var candidate = row.Group.List[i];
+            var candidate = row.Group.List[_first + i];
             var bounds = SKRect.Create(left, top + i * RowHeight, right - left, RowHeight - 2);
             bool selected = candidate.TargetId == row.TargetId;
             string role = selected ? "ui.box.target.selected" : "ui.box";
@@ -128,5 +155,11 @@ internal static class PilotCardFireBlock
             FittedText(canvas, name, bounds.Left + 6, y, 9.5f, x - bounds.Left - 6, tone, selected);
             column.RegisterCommand(row.Drone.Id, "target:" + candidate.TargetId, bounds);
         }
+        if (!overflowing) return;
+        float xTrack = right - 1;
+        float thumb = height * rows / row.Group.List.Length;
+        float thumbTop = top + (height - thumb) * _first / (row.Group.List.Length - rows);
+        Stroke(canvas, new(xTrack, top), new(xTrack, top + height), Track, 2);
+        Stroke(canvas, new(xTrack, thumbTop), new(xTrack, thumbTop + thumb), Muted, 2);
     }
 }

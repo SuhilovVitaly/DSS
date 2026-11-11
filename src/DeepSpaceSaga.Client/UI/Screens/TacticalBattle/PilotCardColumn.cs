@@ -11,6 +11,7 @@ internal sealed class PilotCardColumn
     private IReadOnlyList<PilotCard> _cards = [];
     private readonly List<PilotCardCommand> _commands = [];
     private PilotCardCommand? _slider;
+    private readonly PilotCardFireBlock _fireBlock = new();
     private TacticalBattleFrame? _frame;
     private float _scroll;
     private string? _selectedId;
@@ -76,9 +77,12 @@ internal sealed class PilotCardColumn
         else orders.SetTurn((2 * fraction - 1) * row.MaximumTurn);
     }
 
+    public bool ScrollTargets(string? selectedId, SKPoint point, float delta) =>
+        selectedId is not null && selectedId == _selectedId && _fireBlock.Scroll(point, delta);
+
     public bool Scroll(SKPoint point, float delta)
     {
-        if (delta == 0 || Layout.MaxScroll == 0 || !PilotColumnLayout.Viewport.Contains(point))
+        if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 || !PilotColumnLayout.Viewport.Contains(point))
             return false;
         _scroll = Math.Clamp(_scroll - 40 * Math.Sign(delta), 0, Layout.MaxScroll);
         return true;
@@ -87,6 +91,7 @@ internal sealed class PilotCardColumn
     public void Arrange(TacticalBattleFrame frame, IReadOnlyList<PilotCard> cards)
     {
         _frame = frame;
+        _fireBlock.Observe(frame.FirePlan?.Selected);
         Arrange(cards, card => ExpandedHeight(frame, card));
     }
 
@@ -176,7 +181,7 @@ internal sealed class PilotCardColumn
         if (_frame?.Movement?.SelectedOrder is { } move)
             PilotCardMoveBlock.Draw(c, this, card.UnitId, move, x0, x1, top);
         else if (_frame?.FirePlan?.Selected is { } fire)
-            PilotCardFireBlock.Draw(c, this, _frame.Battle, fire, x0, x1, top);
+            _fireBlock.Draw(c, this, _frame.Battle, fire, x0, x1, top);
     }
 
     internal static void CommandButton(SKCanvas c, SKRect bounds, string label, bool active = false, float size = 9.5f)
