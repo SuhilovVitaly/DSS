@@ -59,7 +59,9 @@ Classic, Contrast и Xenon Star используют один макет акт�
 | Треугольник конца пути | field.move.handle: fill |
 | Снаряд | shot.projectile: fill/size; расписание остаётся данными презентации |
 | Панель, карточки, статус | `ui.panel`, `ui.panel.build`, `ui.panel.report`, `ui.pilot-card`, `ui.pilot-card.selected`, `ui.pilot-card.chip`, `ui.box` (fill/stroke). Опциональная `.art` у прямоугольного примитива задаёт image/opacity между фоном и контуром. |
-| Полосы карточек | `ui.pilot-card.bar.armor/hull/mind`, `ui.bar` (fill). `ui.bar.segments` (image/opacity) рисуется в масштабе всей шкалы с отсечением по фактическому заполнению. |
+| Вертикальные шкалы | `ui.pilot-card.bar.armor/hull/mind` (fill, Classic Purple/Cyan/Green), `ui.pilot-card.gauge.track` (fill, Track). `ui.bar.segments` (image/opacity) масштабируется на всю дорожку и отсекается по вертикальному заполнению. |
+| Иконки показателей | `ui.pilot-card.icon.armor/hull/mind` (stroke, по умолчанию цвет соответствующей шкалы). |
+| Раскрытая карточка и прокрутка | `ui.pilot-card.divider` (stroke/dash, BoxEdge и [2, 2]), `ui.pilot-card.scroll` (fill/stroke, Track и Muted). Эти роли и шкалы не наследуют заливку или рамку карточки. |
 | Ползунки | `ui.slider.speed/turn` (fill), `ui.slider.track` (stroke), `ui.slider.thumb` (stroke и форма diamond) |
 | Теги и кнопки | `ui.tag`, `ui.button`, `ui.button.primary`, `ui.button.glow` (fill/stroke). Тег и кнопки поддерживают text. Явная `.pending` с fill стилизует недоступную кнопку. |
 | Панель стрельбы | `ui.fire.chance` (text), `ui.box.target.selected` (fill/stroke/text), `ui.box.evade` и `ui.box.decoy` с вариантами `.selected` и `.unavailable` (fill/stroke) |

@@ -3,6 +3,12 @@
   "id": "contrast",
   "displayName": "Contrast",
   "roles": {
+    "ui.pilot-card.gauge.track": {"fill": "#2A3337"},
+    "ui.pilot-card.icon.armor": {"stroke": "#A98BF5"},
+    "ui.pilot-card.icon.hull": {"stroke": "#22E3F0"},
+    "ui.pilot-card.icon.mind": {"stroke": "#6EE08C"},
+    "ui.pilot-card.divider": {"stroke": "#2A454A", "dash": [2, 2]},
+    "ui.pilot-card.scroll": {"fill": "#2A3337", "stroke": "#9FB3B8"},
     "field.background": {
       "fill": "#111021",
       "image": "assets/field.png"

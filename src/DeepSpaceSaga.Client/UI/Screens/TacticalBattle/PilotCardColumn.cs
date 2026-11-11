@@ -1,5 +1,6 @@
 using DeepSpaceSaga.Motion.TacticalBattle;
 using SkiaSharp;
+using Skin = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
@@ -147,13 +148,17 @@ internal sealed class PilotCardColumn
         var track = SKRect.Create(198, PilotColumnLayout.Viewport.Top, 2, PilotColumnLayout.Viewport.Height);
         float thumbHeight = Math.Max(24, track.Height * track.Height / Layout.ContentHeight);
         float thumbTop = track.Top + (track.Height - thumbHeight) * Layout.Scroll / Layout.MaxScroll;
-        Round(c, track, Track, radius: 1);
-        Round(c, SKRect.Create(track.Left, thumbTop, track.Width, thumbHeight), Muted, radius: 1);
+        const string scrollRole = "ui.pilot-card.scroll";
+        var role = new Skin.Role(scrollRole, ScopeRoot: scrollRole);
+        using var paint = new SKPaint { IsAntialias = true, Color = Skin.Color(role, "fill", Track) };
+        c.DrawRoundRect(track, 1, 1, paint);
+        paint.Color = Skin.Color(role, "stroke", Muted);
+        c.DrawRoundRect(SKRect.Create(track.Left, thumbTop, track.Width, thumbHeight), 1, 1, paint);
     }
 
     private void DrawCards(SKCanvas c, PilotPortraitCatalog portraits)
     {
-        bool segmented = TacticalBattleSkinRenderScope.Has("ui.bar.segments", "image");
+        bool segmented = Skin.Has("ui.bar.segments", "image");
         for (int i = 0; i < _cards.Count; i++)
         {
             var visible = Rect(i);
@@ -177,7 +182,10 @@ internal sealed class PilotCardColumn
     private void DrawExpanded(SKCanvas c, PilotCard card, SKRect r)
     {
         float x0 = r.Left + 6, x1 = r.Right - 6;
-        Stroke(c, new(x0, r.Top + 83), new(x1, r.Top + 83), BoxEdge, 1, [2, 2]);
+        const string divider = "ui.pilot-card.divider";
+        using (var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke })
+        using (Skin.Stroke(paint, new(divider, ScopeRoot: divider), BoxEdge, 1, 1, [2, 2]))
+            c.DrawLine(x0, r.Top + 83, x1, r.Top + 83, paint);
         float top = r.Top + 88;
         if (_frame?.Movement?.SelectedOrder is { } move)
             PilotCardMoveBlock.Draw(c, this, card.UnitId, move, x0, x1, top);
@@ -236,24 +244,33 @@ internal sealed class PilotCardColumn
         string value = separator < 0 ? stat.Value : stat.Value[..separator];
         T(c, value, x, top + 12, 8.5f, stat.ValueTone ?? Text, true, SKTextAlign.Center);
         var track = SKRect.Create(x - 4, top + 16, 8, 40);
-        Round(c, track, Track, radius: 2, role: "ui.pilot-card.gauge.track");
-        string role = "ui.pilot-card.bar." + stat.Kind;
-        var color = TacticalBattleSkinRenderScope.Color(role, "fill", stat.Tone);
+        const string trackRole = "ui.pilot-card.gauge.track";
+        using var paint = new SKPaint
+        {
+            IsAntialias = true,
+            Color = Skin.Color(new Skin.Role(trackRole, ScopeRoot: trackRole), "fill", Track)
+        };
+        c.DrawRoundRect(track, 2, 2, paint);
+        const string barRoot = "ui.pilot-card.bar";
+        var color = Skin.Color(new Skin.Role(barRoot + "." + stat.Kind, ScopeRoot: barRoot), "fill", stat.Tone);
         float height = 40 * (float)PyMath.Clamp(stat.Fill, 0, 1);
         if (height > 0)
         {
             var fill = SKRect.Create(track.Left, track.Bottom - height, track.Width, height);
-            Round(c, fill, stat.Tone, radius: 2, role: role);
+            paint.Color = color;
+            c.DrawRoundRect(fill, 2, 2, paint);
             if (segmented)
             {
                 using var clip = new SKRoundRect(fill, 2, 2);
                 c.Save();
                 c.ClipRoundRect(clip, antialias: true);
-                TacticalBattleSkinRenderScope.Image(c, "ui.bar.segments", track);
+                Skin.Image(c, "ui.bar.segments", track);
                 c.Restore();
             }
         }
-        PilotCardIcons.StatIcon(c, stat.Kind, new(x, top + 65), color);
+        const string iconRoot = "ui.pilot-card.icon";
+        var icon = Skin.Color(new Skin.Role(iconRoot + "." + stat.Kind, ScopeRoot: iconRoot), "stroke", color);
+        PilotCardIcons.StatIcon(c, stat.Kind, new(x, top + 65), icon);
     }
 
     private static void DrawPhase(SKCanvas c, PilotCard card, SKRect r)

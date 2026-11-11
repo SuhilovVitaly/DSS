@@ -3,7 +3,7 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0006-skins
 ticket: EP-0023-US-0006-TK-0001-skin-roles
 title: Роли скина для новой карточки и значения в паках
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0005-TK-0002-remove-panel-controls]
@@ -88,4 +88,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US6-AC1/AC3: дорожка, иконки, разделитель и прокрутка потребляют отдельные роли с резервами Classic. Заливка панели не переопределяет шкалы при отсутствии узких ролей. Обновлены оба манифеста v1 и руководство. Xenon Star собран с локальным исходником лицензированных изображений, без добавления изображений в Git. Build, 46/46 тестов, scoped format, diff check и самопроверка: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us6-tk1/.
