@@ -100,6 +100,7 @@ internal sealed class PilotCardColumn
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
             return 10 + PilotCardFireBlock.Height(fire);
+        if (frame.Salvo is { } salvo) return 10 + PilotCardSalvoBlock.Height(salvo);
         return 0;
     }
 
@@ -182,6 +183,8 @@ internal sealed class PilotCardColumn
             PilotCardMoveBlock.Draw(c, this, card.UnitId, move, x0, x1, top);
         else if (_frame?.FirePlan?.Selected is { } fire)
             _fireBlock.Draw(c, this, _frame.Battle, fire, x0, x1, top);
+        else if (_frame?.Salvo is not null)
+            PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, x0, x1, top);
     }
 
     internal static void CommandButton(SKCanvas c, SKRect bounds, string label, bool active = false, float size = 9.5f)

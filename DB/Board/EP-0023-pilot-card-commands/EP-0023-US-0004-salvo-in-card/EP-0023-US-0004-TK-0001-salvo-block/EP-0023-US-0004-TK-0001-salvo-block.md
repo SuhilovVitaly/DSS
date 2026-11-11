@@ -3,7 +3,7 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0004-salvo-in-card
 ticket: EP-0023-US-0004-TK-0001-salvo-block
 title: Блок залпа и итога выстрела в карточке
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0001-TK-0001-column-layout]
@@ -85,4 +85,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US4-AC1/AC2: раскрытие собственного активного стрелка и показ результата по проекции, без команд. Проверены высоты 108/122, исход и урон, отсутствие повторного запроса, нулевой залп и скрытие вражеской ловушки в полёте. Уточнение UiSpec §10.4: 55% — исходный шанс, 34% — итоговый шанс выстрела Марты после ловушки; результат показывает подтверждённый итоговый шанс. Build, 24/24 тестов, scoped format, diff check и самопроверка: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us4-tk1-02/.
