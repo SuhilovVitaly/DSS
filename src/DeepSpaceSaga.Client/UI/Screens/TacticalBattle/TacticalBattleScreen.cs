@@ -150,11 +150,17 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame) { base.Render(canvas, width, height); return; }
-        if (_lastPointer is { } pointer) { _hoverFrame = frame; UpdateHover(pointer); frame = frame with { HoverUnitId = HoverUnitId }; }
+        _pilotColumn.Arrange(PilotCardModel.Project(frame, _portraits));
+        if (_lastPointer is { } pointer)
+        {
+            _hoverFrame = frame;
+            UpdateHover(pointer);
+            frame = frame with { HoverUnitId = HoverUnitId, HoverPoint = OverlayHit(pointer) ? null : pointer };
+        }
         Layout = new() { Camera = frame.View };
         BattleDesign.Recording = Layout;
         canvas.Save();
-        try { canvas.Scale(_viewport.S); TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField); DrawOverlay(canvas, frame); }
+        try { canvas.Scale(_viewport.S); TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom); DrawOverlay(canvas, frame); }
         finally { canvas.Restore(); BattleDesign.Recording = null; }
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
     }
@@ -313,7 +319,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         var p = DesignPoint(x, y);
-        if (!ConfirmExit && (_phasePanel.ScrollTargets(p, delta) || _phasePanel.ScrollQueue(p, delta) || _hoverCard.ScrollResults(p, delta))) return ScreenEvent.None;
+        if (!ConfirmExit && (_pilotColumn.Scroll(p, delta) || _phasePanel.ScrollTargets(p, delta) || _phasePanel.ScrollQueue(p, delta) || _hoverCard.ScrollResults(p, delta))) return ScreenEvent.None;
         if (!ConfirmExit && !TurnBusy && !_orderDrag && !OverlayHit(p)) _camera.Zoom(p.X, p.Y, delta);
         return ScreenEvent.None;
     }

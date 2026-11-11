@@ -22,15 +22,18 @@ public sealed partial class TacticalBattleScreen
     {
         yield return _panel;
         if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
-        int count = Flow.State?.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == Flow.State.PlayerSide) ?? 0;
-        for (int i = 0; i < count; i++) yield return new(6, 6 + 87 * i, 196, 88 + 87 * i);
+        for (int i = 0; i < _pilotColumn.Layout.Cards.Count; i++)
+        {
+            var rect = _pilotColumn.Rect(i);
+            if (!rect.IsEmpty) yield return rect;
+        }
     }
     private bool OverlayHit(SKPoint p) => OverlayRects().Any(r => r.Contains(p));
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)
     {
         _hoverFrame = f;
         _phasePanel.Draw(c, f, Layout);
-        _pilotColumn.Draw(c, PilotCardModel.Project(f, _portraits), _portraits);
+        _pilotColumn.Draw(c, _portraits);
         _hoverCard.Draw(c, f, _portraits);
     }
     private ScreenEvent OverlayClick(SKPoint p, MouseButton button)

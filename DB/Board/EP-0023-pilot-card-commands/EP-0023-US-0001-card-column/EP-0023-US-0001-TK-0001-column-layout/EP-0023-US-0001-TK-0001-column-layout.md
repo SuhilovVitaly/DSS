@@ -3,7 +3,7 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0001-card-column
 ticket: EP-0023-US-0001-TK-0001-column-layout
 title: Раскладка колонки переменной высоты и прокрутка
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
@@ -91,4 +91,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US1-AC2/AC3: общая раскладка используется рендером, кликами и зоной подписей. В headless-пробах подтверждены 697 без раскрытия, 853/145 при высоте 244, отсечение попаданий и показ восьмой карточки после смены выбора. Клиент собран, 5/5 целевых тестов, scoped format и diff check прошли. Проверки: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us1-tk1/. Самопроверка diff выполнена. Блоки раскрытия подключаются в US-0002–US-0004.

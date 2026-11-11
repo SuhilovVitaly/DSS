@@ -36,3 +36,34 @@ public sealed class OverlayBoundaryTests
         Assert.Equal(1, s.Screen.CaptureFrame(1600, 720)!.UiScale);
     }
 }
+
+public sealed class PilotColumnScrollTests
+{
+    [Fact]
+    public void Wheel_clips_hits_and_switching_selection_reveals_the_entire_card()
+    {
+        var column = new PilotCardColumn();
+        PilotCard[] cards = Enumerable.Range(0, 8).Select(i => new PilotCard(
+            $"drone{i}", "Pilot", "", "missing", i == 0, [], "", false, [])).ToArray();
+        column.Arrange(cards, _ => 162);
+        Assert.Equal(853, column.Layout.ContentHeight);
+        Assert.Equal(145, column.Layout.MaxScroll);
+        Assert.Equal(714, column.Bounds.Bottom);
+        Assert.False(column.Scroll(new(202, 300), -1));
+        Assert.True(column.Scroll(new(100, 300), -1));
+        column.Arrange(cards, _ => 162);
+        Assert.Equal(40, column.Layout.Scroll);
+        Assert.Equal(new SKRect(6, 6, 196, 210), column.Rect(0));
+        Assert.Null(column.Hit(new(100, 5)));
+        Assert.Null(column.Hit(new(100, 212)));
+
+        cards[0] = cards[0] with { Selected = false };
+        cards[7] = cards[7] with { Selected = true };
+        column.Arrange(cards, _ => 162);
+        Assert.Equal(145, column.Layout.Scroll);
+        Assert.Equal(new SKRect(6, 470, 196, 714), column.Rect(7));
+        Assert.Equal("drone7", column.Hit(new(100, 700)));
+        Assert.True(column.Rect(0).IsEmpty);
+        Assert.Null(column.Hit(new(100, 715)));
+    }
+}

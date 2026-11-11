@@ -7,19 +7,86 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 internal sealed class PilotCardColumn
 {
     private IReadOnlyList<PilotCard> _cards = [];
-    public SKRect Bounds => _cards.Count == 0 ? SKRect.Empty : new(6, 6, 196, 88 + 87 * (_cards.Count - 1));
-    public static SKRect Rect(int index) => new(6, 6 + 87 * index, 196, 88 + 87 * index);
-    public string? Hit(SKPoint p)
-    { for (int i = 0; i < _cards.Count; i++) if (Rect(i).Contains(p)) return _cards[i].UnitId; return null; }
-    public void Draw(SKCanvas c, IReadOnlyList<PilotCard> cards, PilotPortraitCatalog portraits)
+    private float _scroll;
+    private string? _selectedId;
+    private float _selectedHeight;
+    public PilotColumnLayout Layout { get; private set; } = new([], 0);
+    public SKRect Bounds => Layout.Bounds;
+    public SKRect Rect(int index) => Layout.Visible(index);
+
+    public string? Hit(SKPoint point)
     {
-        _cards = cards;
-        bool segmented = TacticalBattleSkinRenderScope.Has("ui.bar.segments", "image");
-        bool selectedArt = TacticalBattleSkinRenderScope.Has("ui.pilot-card.selected.art", "image");
+        for (int i = 0; i < _cards.Count; i++)
+            if (!Rect(i).IsEmpty && Rect(i).Contains(point))
+                return _cards[i].UnitId;
+        return null;
+    }
+
+    public bool Scroll(SKPoint point, float delta)
+    {
+        if (delta == 0 || Layout.MaxScroll == 0 || !PilotColumnLayout.Viewport.Contains(point))
+            return false;
+        _scroll = Math.Clamp(_scroll - 40 * Math.Sign(delta), 0, Layout.MaxScroll);
+        return true;
+    }
+
+    public void Arrange(IReadOnlyList<PilotCard> cards, Func<PilotCard, float>? expandedHeight = null)
+    {
+        int selected = -1;
+        var heights = new float[cards.Count];
         for (int i = 0; i < cards.Count; i++)
         {
-            var card = cards[i]; var r = Rect(i);
-            if (Recording is { } layout) layout.Rects["pilot:" + card.UnitId] = r;
+            heights[i] = PilotColumnLayout.BaseHeight;
+            if (!cards[i].Selected) continue;
+            selected = i;
+            heights[i] += expandedHeight?.Invoke(cards[i]) ?? 0;
+        }
+
+        string? selectedId = selected < 0 ? null : cards[selected].UnitId;
+        float selectedHeight = selected < 0 ? 0 : heights[selected];
+        int reveal = selectedId != _selectedId || selectedHeight != _selectedHeight ? selected : -1;
+        Layout = new(heights, _scroll, reveal);
+        _scroll = Layout.Scroll;
+        _selectedId = selectedId;
+        _selectedHeight = selectedHeight;
+        _cards = cards;
+    }
+
+    public void Draw(SKCanvas c, IReadOnlyList<PilotCard> cards, PilotPortraitCatalog portraits)
+    {
+        Arrange(cards);
+        Draw(c, portraits);
+    }
+
+    public void Draw(SKCanvas c, PilotPortraitCatalog portraits)
+    {
+        c.Save();
+        try
+        {
+            c.ClipRect(PilotColumnLayout.Viewport);
+            DrawCards(c, portraits);
+        }
+        finally { c.Restore(); }
+
+        if (Layout.MaxScroll == 0) return;
+        var track = SKRect.Create(198, PilotColumnLayout.Viewport.Top, 2, PilotColumnLayout.Viewport.Height);
+        float thumbHeight = Math.Max(24, track.Height * track.Height / Layout.ContentHeight);
+        float thumbTop = track.Top + (track.Height - thumbHeight) * Layout.Scroll / Layout.MaxScroll;
+        Round(c, track, Track, radius: 1);
+        Round(c, SKRect.Create(track.Left, thumbTop, track.Width, thumbHeight), Muted, radius: 1);
+    }
+
+    private void DrawCards(SKCanvas c, PilotPortraitCatalog portraits)
+    {
+        bool segmented = TacticalBattleSkinRenderScope.Has("ui.bar.segments", "image");
+        bool selectedArt = TacticalBattleSkinRenderScope.Has("ui.pilot-card.selected.art", "image");
+        for (int i = 0; i < _cards.Count; i++)
+        {
+            var visible = Rect(i);
+            if (visible.IsEmpty) continue;
+            var card = _cards[i];
+            var r = Layout.Cards[i];
+            if (Recording is { } layout) layout.Rects["pilot:" + card.UnitId] = visible;
             PanelBox(c, r, card.Selected, 5, card.Selected && selectedArt ? "ui.pilot-card.selected" : "ui.pilot-card");
             Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 5, 24, 24));
             T(c, card.Name, r.Left + 36, r.Top + 16, 11.5f, Text, true);
@@ -61,7 +128,7 @@ internal sealed class PilotCardColumn
             while (fs > 7 && Width() > 176) fs -= .25f;
             float x = r.Left + 7;
             foreach (var segment in card.Segments)
-            { T(c, segment.Text, x, r.Bottom - 6, fs, segment.Tone, segment.Bold); x += Measure(segment.Text, fs, segment.Bold); }
+            { T(c, segment.Text, x, r.Top + PilotColumnLayout.BaseHeight - 6, fs, segment.Tone, segment.Bold); x += Measure(segment.Text, fs, segment.Bold); }
             // Retain the complete semantic line as well as painted colored runs.
             Recording?.Texts.Add(new(card.PhaseText, Muted));
         }

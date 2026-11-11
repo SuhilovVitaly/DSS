@@ -14,9 +14,13 @@ public sealed class PilotCardColumnTests
     public async Task Column_layout_probes_and_click_selection(string scene)
     {
         await using var s = await Ep0019Scenes.Create(scene); using var bitmap = s.Render();
-        for (int i = 0; i < 4; i++)
+        var cards = s.Screen.Layout.Rects.Where(pair => pair.Key.StartsWith("pilot:", StringComparison.Ordinal))
+            .Select(pair => pair.Value).OrderBy(rect => rect.Top).ToArray();
+        Assert.Equal(4, cards.Length);
+        for (int i = 0; i < cards.Length; i++)
         {
-            var r = PilotCardColumn.Rect(i);
+            var r = cards[i];
+            Assert.Equal(new SKRect(6, 6 + 87 * i, 196, 88 + 87 * i), r);
             Assert.True(RasterProbe.Fraction(bitmap, new(r.Left + 61, r.Top + 40.5f, r.Left + 70, r.Top + 41.5f), BattleDesign.Purple) >= .8);
             Assert.True(RasterProbe.Fraction(bitmap, new(r.Left + 61, r.Top + 62.5f, r.Left + 70, r.Top + 63.5f), BattleDesign.Green) >= .8);
         }
