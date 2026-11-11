@@ -373,5 +373,6 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         _orderDrag = _orderDragEdited = false;
         _movePanel.ResetInput();
+        EndOverlayDrag();
     }
 }

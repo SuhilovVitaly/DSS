@@ -4,9 +4,13 @@ using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
+internal readonly record struct PilotCardCommand(string UnitId, string Action, SKRect Bounds, SKRect Visible);
+
 internal sealed class PilotCardColumn
 {
     private IReadOnlyList<PilotCard> _cards = [];
+    private readonly List<PilotCardCommand> _commands = [];
+    private PilotCardCommand? _slider;
     private float _scroll;
     private string? _selectedId;
     private float _selectedHeight;
@@ -22,6 +26,55 @@ internal sealed class PilotCardColumn
         return null;
     }
 
+    public void RegisterCommand(string unitId, string action, SKRect bounds)
+    {
+        if (unitId != _selectedId) return;
+        var visible = SKRect.Intersect(bounds, PilotColumnLayout.Viewport);
+        if (visible.IsEmpty) return;
+        _commands.Add(new(unitId, action, bounds, visible));
+        if (Recording is { } layout) layout.Rects["card-command:" + action] = visible;
+    }
+
+    public PilotCardCommand? HitCommand(SKPoint point)
+    {
+        foreach (var command in _commands)
+            if (command.Visible.Contains(point))
+                return command;
+        return null;
+    }
+
+    public SKRect CommandBounds(string action) =>
+        _commands.Find(command => command.Action == action).Visible;
+
+    public bool BeginSlider(PilotCardCommand command, SKPoint point, TacticalBattleOrders orders)
+    {
+        if (command.Action is not ("slider:speed" or "slider:turn")) return false;
+        _slider = command;
+        return DragSlider(point, orders);
+    }
+
+    public bool DragSlider(SKPoint point, TacticalBattleOrders orders)
+    {
+        if (_slider is not { } command) return false;
+        if (orders.Selected != command.UnitId)
+        {
+            EndSlider();
+            return false;
+        }
+        ApplySlider(orders, command.Action == "slider:speed", point.X, command.Bounds.Left + 7, command.Bounds.Right - 7);
+        return true;
+    }
+
+    public void EndSlider() => _slider = null;
+
+    internal static void ApplySlider(TacticalBattleOrders orders, bool speed, float x, float start, float end)
+    {
+        if (orders.Capture().SelectedOrder is not { } row) return;
+        double fraction = Math.Clamp((x - (double)start) / (end - start), 0, 1);
+        if (speed) orders.SetSpeed(row.MinimumSpeed + fraction * (row.MaximumSpeed - row.MinimumSpeed));
+        else orders.SetTurn((2 * fraction - 1) * row.MaximumTurn);
+    }
+
     public bool Scroll(SKPoint point, float delta)
     {
         if (delta == 0 || Layout.MaxScroll == 0 || !PilotColumnLayout.Viewport.Contains(point))
@@ -32,6 +85,7 @@ internal sealed class PilotCardColumn
 
     public void Arrange(IReadOnlyList<PilotCard> cards, Func<PilotCard, float>? expandedHeight = null)
     {
+        _commands.Clear();
         int selected = -1;
         var heights = new float[cards.Count];
         for (int i = 0; i < cards.Count; i++)
