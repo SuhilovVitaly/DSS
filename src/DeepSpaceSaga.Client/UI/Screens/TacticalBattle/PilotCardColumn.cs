@@ -79,7 +79,6 @@ internal sealed class PilotCardColumn
     private void DrawCards(SKCanvas c, PilotPortraitCatalog portraits)
     {
         bool segmented = TacticalBattleSkinRenderScope.Has("ui.bar.segments", "image");
-        bool selectedArt = TacticalBattleSkinRenderScope.Has("ui.pilot-card.selected.art", "image");
         for (int i = 0; i < _cards.Count; i++)
         {
             var visible = Rect(i);
@@ -87,52 +86,89 @@ internal sealed class PilotCardColumn
             var card = _cards[i];
             var r = Layout.Cards[i];
             if (Recording is { } layout) layout.Rects["pilot:" + card.UnitId] = visible;
-            PanelBox(c, r, card.Selected, 5, card.Selected && selectedArt ? "ui.pilot-card.selected" : "ui.pilot-card");
-            Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 5, 24, 24));
-            T(c, card.Name, r.Left + 36, r.Top + 16, 11.5f, Text, true);
-            T(c, card.Weapon, r.Left + 36, r.Top + 27, 8.5f, Muted);
-            if (card.Chip.Length > 0)
-            {
-                float w = Measure(card.Chip, 9, card.ChipAccent) + 9;
-                var chip = new SKRect(r.Right - 6 - w, r.Top + 6, r.Right - 6, r.Top + 19);
-                Round(c, chip, card.Evading ? PurpleDark : card.ChipAccent ? YellowDark : Box,
-                    card.Evading ? Purple.WithAlpha(200) : card.ChipAccent ? Yellow.WithAlpha(170) : BoxEdge, .8f, role: "ui.pilot-card.chip");
-                if (card.Decoy)
-                {
-                    var icon = new SKRect(chip.Left - 17, chip.Top, chip.Left - 4, chip.Bottom);
-                    Round(c, icon, GreenDark, Green.WithAlpha(200), .8f);
-                    Diamond(c, new(icon.MidX, icon.MidY), 4, SKColors.Transparent, Green, 1);
-                    Circle(c, new(icon.MidX, icon.MidY), 1.2f, Green);
-                    if (Recording is { } recorded) recorded.Rects["pilot-decoy:" + card.UnitId] = icon;
-                }
-                T(c, card.Chip, chip.MidX, chip.MidY + 3.2f, 9, card.Evading ? Purple : card.ChipAccent ? Yellow : Text, card.ChipAccent, SKTextAlign.Center);
-            }
-            Line(c, r.Left + 6, r.Right - 6, r.Top + 33);
+            PanelBox(c, r, card.Selected, 5, card.Selected ? "ui.pilot-card.selected" : "ui.pilot-card");
+            Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 6, 34, 34));
+            DrawChip(c, card, r);
+            T(c, BuildCardModel.Ellipsize(card.Name, 108, 11.5f), r.Left + 6, r.Top + 51, 11.5f, Text, true);
+            T(c, BuildCardModel.Ellipsize(card.Weapon, 108, 8.5f, false), r.Left + 6, r.Top + 62, 8.5f, Muted);
             for (int j = 0; j < card.Stats.Count; j++)
-            {
-                var stat = card.Stats[j]; float y = r.Top + 44 + 11 * j;
-                T(c, stat.Label, r.Left + 7, y, 9, Text);
-                T(c, stat.Value, r.Right - 7, y, 9.5f, stat.ValueTone ?? Text, true, SKTextAlign.Right);
-                float x0 = r.Left + 60, x1 = r.Right - 41;
-                var color = TacticalBattleSkinRenderScope.Color("ui.pilot-card.bar." + stat.Kind, "fill", stat.Tone);
-                if (segmented)
-                    Bar(c, x0, y - 4.5f, x1 - x0, 3, stat.Fill, color);
-                else
-                {
-                    Stroke(c, new(x0, y - 3), new(x1, y - 3), Track, 3);
-                    if (stat.Fill > 0) Stroke(c, new(x0, y - 3), new(x0 + (x1 - x0) * (float)PyMath.Clamp(stat.Fill, 0, 1), y - 3), color, 3);
-                }
-            }
-            float fs = 8.5f;
-            float Width() => card.Segments.Sum(s => Measure(s.Text, fs, s.Bold));
-            while (fs > 7 && Width() > 176) fs -= .25f;
-            float x = r.Left + 7;
-            foreach (var segment in card.Segments)
-            { T(c, segment.Text, x, r.Top + PilotColumnLayout.BaseHeight - 6, fs, segment.Tone, segment.Bold); x += Measure(segment.Text, fs, segment.Bold); }
-            // Retain the complete semantic line as well as painted colored runs.
-            Recording?.Texts.Add(new(card.PhaseText, Muted));
+                DrawGauge(c, card.Stats[j], r.Left + 129 + 22 * j, r.Top, segmented);
+            DrawPhase(c, card, r);
         }
     }
+
+    private static void DrawChip(SKCanvas c, PilotCard card, SKRect r)
+    {
+        if (card.Chip.Length == 0) return;
+        float maxWidth = card.Decoy ? 51 : 68;
+        float fontSize = 9;
+        while (fontSize > 7 && Measure(card.Chip, fontSize, card.ChipAccent) > maxWidth - 9)
+            fontSize -= .25f;
+        string text = BuildCardModel.Ellipsize(card.Chip, maxWidth - 9, fontSize, card.ChipAccent);
+        float width = Measure(text, fontSize, card.ChipAccent) + 9;
+        var chip = SKRect.Create(r.Left + 46, r.Top + 6, width, 13);
+        Round(c, chip, card.Evading ? PurpleDark : card.ChipAccent ? YellowDark : Box,
+            card.Evading ? Purple.WithAlpha(200) : card.ChipAccent ? Yellow.WithAlpha(170) : BoxEdge,
+            .8f, role: "ui.pilot-card.chip");
+        var tone = card.Evading ? Purple : card.ChipAccent ? Yellow : Text;
+        T(c, text, chip.MidX, chip.MidY + 3.2f, fontSize, tone, card.ChipAccent, SKTextAlign.Center);
+        if (text != card.Chip) Recording?.Texts.Add(new(card.Chip, tone));
+        if (!card.Decoy) return;
+
+        var icon = SKRect.Create(chip.Right + 4, chip.Top, 13, 13);
+        Round(c, icon, GreenDark, Green.WithAlpha(200), .8f);
+        Diamond(c, new(icon.MidX, icon.MidY), 4, SKColors.Transparent, Green, 1);
+        Circle(c, new(icon.MidX, icon.MidY), 1.2f, Green);
+        var visible = SKRect.Intersect(icon, PilotColumnLayout.Viewport);
+        if (!visible.IsEmpty && Recording is { } recorded)
+            recorded.Rects["pilot-decoy:" + card.UnitId] = visible;
+    }
+
+    private static void DrawGauge(SKCanvas c, PilotStat stat, float x, float top, bool segmented)
+    {
+        int separator = stat.Value.IndexOf('/');
+        string value = separator < 0 ? stat.Value : stat.Value[..separator];
+        T(c, value, x, top + 12, 8.5f, stat.ValueTone ?? Text, true, SKTextAlign.Center);
+        var track = SKRect.Create(x - 4, top + 16, 8, 40);
+        Round(c, track, Track, radius: 2, role: "ui.pilot-card.gauge.track");
+        string role = "ui.pilot-card.bar." + stat.Kind;
+        var color = TacticalBattleSkinRenderScope.Color(role, "fill", stat.Tone);
+        float height = 40 * (float)PyMath.Clamp(stat.Fill, 0, 1);
+        if (height > 0)
+        {
+            var fill = SKRect.Create(track.Left, track.Bottom - height, track.Width, height);
+            Round(c, fill, stat.Tone, radius: 2, role: role);
+            if (segmented)
+            {
+                using var clip = new SKRoundRect(fill, 2, 2);
+                c.Save();
+                c.ClipRoundRect(clip, antialias: true);
+                TacticalBattleSkinRenderScope.Image(c, "ui.bar.segments", track);
+                c.Restore();
+            }
+        }
+        PilotCardIcons.StatIcon(c, stat.Kind, new(x, top + 65), color);
+    }
+
+    private static void DrawPhase(SKCanvas c, PilotCard card, SKRect r)
+    {
+        float size = 8.5f;
+        const float width = 178;
+        float Width() => card.Segments.Sum(segment => Measure(segment.Text, size, segment.Bold));
+        while (size > 6.5f && Width() > width) size -= .25f;
+        float x = r.Left + 6;
+        float right = x + width;
+        foreach (var segment in card.Segments)
+        {
+            string text = BuildCardModel.Ellipsize(segment.Text, right - x, size, segment.Bold);
+            if (text.Length > 0)
+                T(c, text, x, r.Top + 76, size, segment.Tone, segment.Bold);
+            if (text != segment.Text) break;
+            x += Measure(text, size, segment.Bold);
+        }
+        Recording?.Texts.Add(new(card.PhaseText, Muted));
+    }
+
     internal static void Portrait(SKCanvas c, PilotPortraitCatalog catalog, string id, string name, SKRect r)
     {
         Round(c, r, PortraitBg);
