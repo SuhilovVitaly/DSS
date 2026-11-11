@@ -3,11 +3,11 @@ epic: EP-0023-pilot-card-commands
 story: EP-0023-US-0002-move-in-card
 ticket: EP-0023-US-0002-TK-0001-move-block
 title: Блок движения в карточке: отрисовка и управление
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0001-TK-0003-card-commands-input]
-files_touched: 4
+files_touched: 8
 serves: [US2-AC1, US2-AC2, US2-AC3]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -37,6 +37,8 @@ A-04, A-06. Шаги кнопок равны шагам стрелок; полз
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PilotCardColumn.cs` | функция высоты блока (US-0001-TK-0001) | Для фазы движения возвращать высоту блока движения у выбранной карточки. |
 | `src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/PhasePanel.Move.cs` | :33-40 `Drag` (формула значения по ползунку) | Вынести формулу в общую функцию и вызывать из карточки; панель пока не меняется. |
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/MovementOrdersTests.cs` | сценарии ползунков и кнопок панели | Дублировать сценарии для карточки (`CardCommandBounds`); проверка равенства `EditedOrders()`. |
+
+Дополнительно: TacticalBattleScreen.cs передаёт кадр в раскладку до карты; PilotCardColumnTests.cs и OverlayBoundaryTests.cs получают новые проверяемые координаты движения; PilotCardMoveBlockTests.cs проверяет рабочий ввод, включая сравнение прикидок с клавиатурой.
 
 ## Public API after the change
 
@@ -86,4 +88,4 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+US2-AC1–AC3: блок 196, кнопки шагов и перетаскивание работают через TacticalBattleOrders. Сверены координаты speed+/ai, равенство с клавиатурой, Прямо, восстановление предложения, предел ползунка и отказ для устаревшего выбора. В существующем контракте восстановление ИИ выдаёт явно заданный приказ со значением Suggestion. Build, 23/23 тестов, scoped format и diff check: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us2-tk1-02/. Самопроверка diff выполнена. Правая панель остаётся промежуточной до US-0005.

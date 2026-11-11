@@ -1,4 +1,3 @@
-using DeepSpaceSaga.Motion.TacticalBattle;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
@@ -32,10 +31,8 @@ internal sealed partial class PhasePanel
     }
     internal bool Drag(SKPoint p, TacticalBattleOrders orders)
     {
-        if (_dragAxis == 0 || orders.Capture().SelectedOrder is not { } row) return false;
-        double t = PyMath.Clamp((p.X - _offset - 1054) / 206.0, 0, 1);
-        if (_dragAxis == 1) orders.SetSpeed(row.MinimumSpeed + t * (row.MaximumSpeed - row.MinimumSpeed));
-        else orders.SetTurn((2 * t - 1) * row.MaximumTurn);
+        if (_dragAxis == 0 || orders.Selected is null) return false;
+        PilotCardColumn.ApplySlider(orders, _dragAxis == 1, p.X, _offset + 1054, _offset + 1260);
         return true;
     }
     internal void EndDrag() => _dragAxis = 0;

@@ -11,6 +11,7 @@ internal sealed class PilotCardColumn
     private IReadOnlyList<PilotCard> _cards = [];
     private readonly List<PilotCardCommand> _commands = [];
     private PilotCardCommand? _slider;
+    private TacticalBattleFrame? _frame;
     private float _scroll;
     private string? _selectedId;
     private float _selectedHeight;
@@ -83,6 +84,15 @@ internal sealed class PilotCardColumn
         return true;
     }
 
+    public void Arrange(TacticalBattleFrame frame, IReadOnlyList<PilotCard> cards)
+    {
+        _frame = frame;
+        Arrange(cards, card => ExpandedHeight(frame, card));
+    }
+
+    private static float ExpandedHeight(TacticalBattleFrame frame, PilotCard card) =>
+        frame.Movement?.Selected == card.UnitId ? 10 + PilotCardMoveBlock.Height : 0;
+
     public void Arrange(IReadOnlyList<PilotCard> cards, Func<PilotCard, float>? expandedHeight = null)
     {
         _commands.Clear();
@@ -148,7 +158,24 @@ internal sealed class PilotCardColumn
             for (int j = 0; j < card.Stats.Count; j++)
                 DrawGauge(c, card.Stats[j], r.Left + 129 + 22 * j, r.Top, segmented);
             DrawPhase(c, card, r);
+            if (card.Selected && r.Height > PilotColumnLayout.BaseHeight)
+                DrawExpanded(c, card, r);
         }
+    }
+
+    private void DrawExpanded(SKCanvas c, PilotCard card, SKRect r)
+    {
+        float x0 = r.Left + 6, x1 = r.Right - 6;
+        Stroke(c, new(x0, r.Top + 83), new(x1, r.Top + 83), BoxEdge, 1, [2, 2]);
+        if (_frame?.Movement?.SelectedOrder is { } move)
+            PilotCardMoveBlock.Draw(c, this, card.UnitId, move, x0, x1, r.Top + 88);
+    }
+
+    internal static void CommandButton(SKCanvas c, SKRect bounds, string label, bool active = false, float size = 9.5f)
+    {
+        Round(c, bounds, active ? YellowDark : ButtonFill, active ? Yellow : BoxEdge, .8f, 2.5f, "ui.button");
+        T(c, BuildCardModel.Ellipsize(label, bounds.Width - 4, size, active), bounds.MidX,
+            bounds.MidY + size * .36f, size, active ? Yellow : Text, active, SKTextAlign.Center, "ui.button");
     }
 
     private static void DrawChip(SKCanvas c, PilotCard card, SKRect r)

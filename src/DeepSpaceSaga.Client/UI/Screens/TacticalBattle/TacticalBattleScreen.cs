@@ -150,7 +150,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame) { base.Render(canvas, width, height); return; }
-        _pilotColumn.Arrange(PilotCardModel.Project(frame, _portraits));
+        _pilotColumn.Arrange(frame, PilotCardModel.Project(frame, _portraits));
         if (_lastPointer is { } pointer)
         {
             _hoverFrame = frame;
