@@ -7,7 +7,7 @@ stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0005-TK-0001-compact-panel]
-files_touched: 11
+files_touched: 13
 serves: [US5-AC3]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -41,6 +41,8 @@ revision: 1
 | `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/AnomalySceneSearch.cs` | поиск сцен по элементам панели | Перевести на карточку. |
 
 Дополнительно: PhasePanel.cs очищает декларации прежних блоков; FirePanelDecoyTests.cs, FirePanelEvasionTests.cs, AnomalyFirePanelTests.cs и MovementOrdersTests.cs переводят оставшиеся пробы на карточку, сохраняя проверки цветов, команд и карты.
+
+Итоговая Client suite обнаружила два оставшихся теста с координатами прежней панели. PhaseMoveInputTests.cs и PhaseFireInputTests.cs перенесены на реальные зоны карточки и кнопку компактной панели с сохранением проверок отправляемых приказов.
 
 ## Public API after the change
 
@@ -89,3 +91,5 @@ git diff --check
 ## Исполнение
 
 US5-AC3: прежние обработчики, отрисовка и прокрутка деталей справа удалены. Проверки карты, выбранной карточки, зарядов и недоступных команд переведены на рабочую геометрию. Build, 70/70 тестов, scoped format, diff check и самопроверка: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us5-tk2-03/. Снимки обновляются в US-0007.
+
+Итоговая Client suite воспроизвела два устаревших теста ввода. Исправленные пробы сохраняют проверку минимальной скорости, возврата ИИ, допущенной цели, отказа от огня и отправки фазы. Build, 15/15 тестов, scoped format и diff check: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/phase-input-review/.
