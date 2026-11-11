@@ -46,6 +46,26 @@
     </None>
   </ItemGroup>
 
+  <!-- The original Xenon Star graphics come from the builder's local licensed copy. -->
+  <ItemGroup Condition="'$(XenonStarSource)' != ''">
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/In Space/Weapon Systems Screen/weapons_bg.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/In Space/System Map/smb_normal.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/In Space/System Map/smb_hover.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/Backgrounds/space_scene_no_cockpit.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Modular Elements/HUD Frames/hudf11.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Modular Elements/Horizontal Lines/hl1.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Modular Elements/Target Reticles/tre7.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Modular Elements/Target Reticles/tre14.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/In Space/Ship Status - You and Target/your_screen_bg.png" />
+    <XenonStarSlice Include="$(XenonStarSource)/Sliced/Cockpit HUD/In Space/Ship Status - You and Target/hull_fill.png" />
+    <Content Include="@(XenonStarSlice)" Link="Skins/xenon-star/assets/%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <None Update="Skins/xenon-star/skin.json" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+
+  <Target Name="CheckXenonStarSlices" BeforeTargets="PrepareForBuild" Condition="'$(XenonStarSource)' != ''">
+    <Error Condition="!Exists('%(XenonStarSlice.Identity)')" Text="Xenon Star slice missing: %(XenonStarSlice.Identity)" />
+  </Target>
+
   <Target Name="CheckPortraitPackPresent" BeforeTargets="PrepareForBuild" Condition="'$(SkipPortraitPackCheck)' != 'true'">
     <!-- Both selectable portrait packs must be available in the workshop. -->
     <Error Condition="!Exists('Images/Persons/W4/parts.json') Or !Exists('Images/Persons/W4/portrait-style.json')" Text="Portrait asset pack missing in Images/Persons/W4 (see DB/Documentation/03-Design/PortraitGeneratorW4.md)." />

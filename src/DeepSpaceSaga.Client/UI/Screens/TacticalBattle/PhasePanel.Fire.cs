@@ -38,8 +38,10 @@ internal sealed partial class PhasePanel
             _buttons[key] = R(bounds.Left, bounds.Top, bounds.Right, bounds.Bottom);
             if (Recording is { } layout) layout.Rects["button:" + key] = _buttons[key];
             bool selected = candidate.TargetId == row.TargetId;
-            Round(canvas, bounds, selected ? YellowDark : Box, selected ? Yellow : BoxEdge);
-            T(canvas, caption, bounds.Left + 6, y + 12.5f, FitSize(caption, 11, bounds.Width - 12), selected ? Yellow : Text, selected);
+            Round(canvas, bounds, selected ? YellowDark : Box, selected ? Yellow : BoxEdge,
+                role: selected ? "ui.box.target.selected" : "ui.box");
+            T(canvas, caption, bounds.Left + 6, y + 12.5f, FitSize(caption, 11, bounds.Width - 12),
+                selected ? Yellow : Text, selected, role: selected ? "ui.box.target.selected" : "ui.text");
         }
         if (row.Group.List.Length > rows)
         {
@@ -144,7 +146,7 @@ internal sealed partial class PhasePanel
         else
         {
             Head(c, PilotCardModel.Name(unit) + " → " + (target is null ? "—" : PilotCardModel.Name(target)), "FireTag");
-            T(c, row.Target is { } candidate ? Pct(candidate.Chance) : "—", 1050, 148, 28, Yellow, true);
+            T(c, row.Target is { } candidate ? Pct(candidate.Chance) : "—", 1050, 148, 28, Yellow, true, role: "ui.fire.chance");
             T(c, FireCaption(row.Target), 1051, 163, 10.5f, row.Target?.Absorption > 0 ? Heat : Muted);
             T(c, U("Distance", row.Target is null ? "—" : F(row.Target.Distance)), 1264, 136, 12, Text, align: SKTextAlign.Right);
             T(c, U("Angle", row.Target is null ? "—" : F(Math.Abs(row.Target.Angle))), 1264, 154, 12, Text, align: SKTextAlign.Right);

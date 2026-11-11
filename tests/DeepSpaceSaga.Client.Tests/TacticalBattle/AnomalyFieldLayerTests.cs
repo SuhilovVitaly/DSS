@@ -9,6 +9,79 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class AnomalyFieldLayerTests
 {
+    [Fact]
+    public async Task Cancelled_raster_returns_no_partial_image_or_first_chance_exception()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move");
+        var battle = scene.Screen.Flow.State!;
+        int exceptions = 0;
+        void Observe(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+        {
+            if (e.Exception is OperationCanceledException &&
+                e.Exception.StackTrace?.Contains(nameof(AnomalyFieldLayer), StringComparison.Ordinal) == true)
+                Interlocked.Increment(ref exceptions);
+        }
+        AppDomain.CurrentDomain.FirstChanceException += Observe;
+        try
+        {
+            using var cancelled = new CancellationTokenSource();
+            cancelled.Cancel();
+            Assert.Null(AnomalyFieldLayer.Build(battle.Anomalies, battle.Rules.Anomalies!, Camera, Size, 1.5f,
+                new ParallelOptions { CancellationToken = cancelled.Token }));
+
+            using var duringBuild = new CancellationTokenSource();
+            using var started = new ManualResetEventSlim();
+            var pending = Task.Run(() =>
+            {
+                started.Set();
+                return AnomalyFieldLayer.Build(battle.Anomalies, battle.Rules.Anomalies!, Camera, Size, 1.5f,
+                    new ParallelOptions { CancellationToken = duringBuild.Token, MaxDegreeOfParallelism = 1 });
+            });
+            Assert.True(started.Wait(TimeSpan.FromSeconds(5)));
+            await Task.Delay(25);
+            Assert.False(pending.IsCompleted);
+            duringBuild.Cancel();
+            using var result = await pending.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Null(result);
+            Assert.Equal(0, Volatile.Read(ref exceptions));
+        }
+        finally { AppDomain.CurrentDomain.FirstChanceException -= Observe; }
+    }
+
+    [Fact]
+    public async Task Leaving_battle_stops_pending_refinement_without_first_chance_cancellation()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move");
+        var frame = scene.Screen.CaptureFrame(1280, 720)!;
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        int cancellations = 0;
+        void Observe(object? sender, System.Runtime.ExceptionServices.FirstChanceExceptionEventArgs e)
+        {
+            if (e.Exception is OperationCanceledException &&
+                e.Exception.StackTrace?.Contains(nameof(AnomalyFieldLayer), StringComparison.Ordinal) == true)
+                Interlocked.Increment(ref cancellations);
+        }
+        AppDomain.CurrentDomain.FirstChanceException += Observe;
+        try
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                using var layer = new InteractiveAnomalyField();
+                Assert.True(layer.Prepare(canvas, frame));
+                var pending = Assert.IsAssignableFrom<Task>(typeof(InteractiveAnomalyField)
+                    .GetField("_pending", System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic)!.GetValue(layer));
+                Assert.False(pending.IsCompleted);
+                layer.Dispose();
+                Assert.Same(pending, await Task.WhenAny(pending, Task.Delay(TimeSpan.FromSeconds(10))));
+                Assert.True(pending.IsCompletedSuccessfully, "Normal screen exit must complete refinement without cancellation exceptions.");
+                layer.Dispose();
+            }
+            Assert.Equal(0, Volatile.Read(ref cancellations));
+        }
+        finally { AppDomain.CurrentDomain.FirstChanceException -= Observe; }
+    }
+
     // Independent Python scalar formula, actual seed1 clumps. Six strongest centers,
     // four rotated one-sigma points each and two background points:32, exceeding AC's20.
     private static readonly (int X, int Y, byte R, byte G, byte B)[] Reference =

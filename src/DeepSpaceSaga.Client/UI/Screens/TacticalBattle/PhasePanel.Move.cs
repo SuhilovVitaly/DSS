@@ -20,7 +20,7 @@ internal sealed partial class PhasePanel
         Slider(c, 1054, 1260, 186, row.MaximumTurn == 0 ? .5 : (row.Order.Turn + row.MaximumTurn) / (double)(2 * row.MaximumTurn), TacticalBattleSkinRenderScope.Color("ui.slider.turn", "fill", Purple));
         T(c, Deg(-row.MaximumTurn), 1050, 202, 10.5f, Muted); T(c, Deg(row.MaximumTurn), 1264, 202, 10.5f, Muted, align: SKTextAlign.Right);
         ButtonAt(c, "straight", new(1048, 214, 1154, 236), U("Straight")); ButtonAt(c, "ai", new(1160, 214, 1266, 236), U("RestoreAi"));
-        T(c, U("MoveHelp"), 1157, 256, 10.5f, Muted, align: SKTextAlign.Center);
+        T(c, U("MoveHelp"), 1157, 256, 10.5f, Muted, align: SKTextAlign.Center, role: "ui.move.help");
         StandardAction(c, U("AiSuggestions", _frame.Movement.Orders.Count(o => o.Order == o.Suggestion)), U("MoveStatus"), U("MoveAction"));
     }
     internal bool BeginDrag(SKPoint p, TacticalBattleOrders orders)

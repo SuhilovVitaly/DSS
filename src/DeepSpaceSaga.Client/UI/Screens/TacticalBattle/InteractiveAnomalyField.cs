@@ -10,7 +10,8 @@ internal sealed class InteractiveAnomalyField : IDisposable
 {
     private readonly CancellationTokenSource _lifetime = new();
     private readonly SKPaint _paint = new() { BlendMode = SKBlendMode.Screen };
-    private Task<FieldImage>? _pending;
+    private Task<FieldImage?>? _pending;
+    private bool _disposed;
     private FieldImage? _displayed;
     private Request? _wanted;
     private long _changedAt;
@@ -27,6 +28,7 @@ internal sealed class InteractiveAnomalyField : IDisposable
 
     internal bool Prepare(SKCanvas canvas, TacticalBattleFrame frame)
     {
+        if (_disposed) return false;
         if (frame.Battle.Anomalies.IsDefaultOrEmpty || frame.Battle.Rules.Anomalies is not { } rules) return false;
         var request = new Request(frame.Battle.Anomalies, rules, frame.View, Math.Abs(canvas.TotalMatrix.ScaleX));
         long now = Environment.TickCount64;
@@ -39,13 +41,19 @@ internal sealed class InteractiveAnomalyField : IDisposable
         {
             _pending = null;
             var ready = completed.GetAwaiter().GetResult();
-            if (ready.Request.SameField(request)) Replace(ready);
-            else ready.Image.Dispose();
+            if (ready is not null)
+            {
+                if (ready.Request.SameField(request)) Replace(ready);
+                else ready.Image.Dispose();
+            }
         }
 
         bool newField = _displayed is null || !_displayed.Request.SameField(request);
         if (newField || !CoversViewport(Project(_displayed!.Extent, request.View), request.View))
-            Replace(Build(request, preview: true, _lifetime.Token));
+        {
+            if (Build(request, preview: true, _lifetime.Token) is not { } preview) return false;
+            Replace(preview);
+        }
 
         // Refine once the camera settles. During movement the cached texture
         // stays anchored in world coordinates and the overscan covers drag edges.
@@ -54,7 +62,9 @@ internal sealed class InteractiveAnomalyField : IDisposable
         if (_pending is null && !exact && (newField || now - _changedAt >= 90))
         {
             var token = _lifetime.Token;
-            _pending = Task.Run(() => Build(request, preview: false, token), token);
+            // The worker returns null on normal cancellation, even if exit wins
+            // the race before it starts. Do not cancel the Task itself.
+            _pending = Task.Run(() => Build(request, preview: false, token));
         }
 
         _destination = Project(displayed.Extent, request.View);
@@ -76,7 +86,7 @@ internal sealed class InteractiveAnomalyField : IDisposable
     private static bool CoversViewport(SKRect destination, TacticalBattleView view) =>
         destination.Left <= 0 && destination.Top <= 0 && destination.Right >= view.PixelWidth && destination.Bottom >= view.PixelHeight;
 
-    private static FieldImage Build(Request request, bool preview, CancellationToken token)
+    private static FieldImage? Build(Request request, bool preview, CancellationToken token)
     {
         const int margin = 96;
         var view = request.View with
@@ -88,7 +98,7 @@ internal sealed class InteractiveAnomalyField : IDisposable
         var size = new SKSizeI((int)Math.Round(view.PixelWidth * scale), (int)Math.Round(view.PixelHeight * scale));
         var image = AnomalyFieldLayer.Build(request.Anomalies, request.Rules, view, size, scale,
             new ParallelOptions { CancellationToken = token, MaxDegreeOfParallelism = preview ? 1 : 2 }, request.Scale);
-        return new(request, view, image, !preview);
+        return image is null ? null : new(request, view, image, !preview);
     }
 
     private void Replace(FieldImage next)
@@ -99,16 +109,19 @@ internal sealed class InteractiveAnomalyField : IDisposable
 
     public void Dispose()
     {
+        if (_disposed) return;
+        _disposed = true;
         _lifetime.Cancel();
         if (_pending is { } pending)
             _ = pending.ContinueWith(task =>
             {
-                if (task.IsCompletedSuccessfully) task.Result.Image.Dispose();
+                if (task.IsCompletedSuccessfully) task.Result?.Image.Dispose();
                 else _ = task.Exception;
                 _lifetime.Dispose();
             }, CancellationToken.None, TaskContinuationOptions.ExecuteSynchronously, TaskScheduler.Default);
         else _lifetime.Dispose();
         _displayed?.Image.Dispose();
+        _displayed = null;
         _paint.Dispose();
     }
 }

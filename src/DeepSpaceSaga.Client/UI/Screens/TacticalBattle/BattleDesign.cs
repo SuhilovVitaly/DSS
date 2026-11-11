@@ -1,6 +1,7 @@
 using DeepSpaceSaga.Motion.TacticalBattle;
 using System.Globalization;
 using SkiaSharp;
+using Skin = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -19,8 +20,9 @@ internal static class BattleDesign
     public static void DecoyRow(SKCanvas c, SKRect r, string text, int charges, int maxCharges, DecoyRowState state)
     {
         bool active = state == DecoyRowState.Selected, enabled = state != DecoyRowState.Unavailable;
+        string role = active ? "ui.box.decoy.selected" : enabled ? "ui.box.decoy" : "ui.box.decoy.unavailable";
         Round(c, r, active ? GreenDark : enabled ? DecoyIdle : Box,
-            enabled ? Green.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1);
+            enabled ? Green.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1, role: role);
         float left = r.Right - 8 - (float)PyMath.Max(0, maxCharges - 1) * 9;
         float size = FitSize(text, 11, left - 8 - (r.Left + 7), active);
         T(c, text, r.Left + 7, r.MidY + size * .36f, size, active ? Text : enabled ? Green : Muted, active);
@@ -46,8 +48,9 @@ internal static class BattleDesign
     public static void EvadeButton(SKCanvas c, SKRect r, string text, EvadeButtonState state)
     {
         bool active = state == EvadeButtonState.Selected, enabled = state != EvadeButtonState.Unavailable;
+        string role = active ? "ui.box.evade.selected" : enabled ? "ui.box.evade" : "ui.box.evade.unavailable";
         Round(c, r, active ? PurpleDark : enabled ? EvadeIdle : Box,
-            enabled ? Purple.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1);
+            enabled ? Purple.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1, role: role);
         float size = FitSize(text, 12, r.Width - 10);
         T(c, text, r.MidX, r.MidY + size * .36f, size, active ? Text : enabled ? Purple : Muted, active, SKTextAlign.Center);
     }
@@ -96,6 +99,15 @@ internal static class BattleDesign
     {
         using var p = new SKPaint { IsAntialias = true, Color = TacticalBattleSkinRenderScope.Color(role, "fill", fill) };
         c.DrawRoundRect(r, radius, radius, p);
+        if (Skin.Current is { } skin && !ReferenceEquals(skin, TacticalBattleSkin.Classic) &&
+            Skin.Has(role + ".art", "image") && !r.IsEmpty)
+        {
+            using var clip = new SKRoundRect(r, radius, radius);
+            c.Save();
+            c.ClipRoundRect(clip, antialias: true);
+            Skin.Image(c, role + ".art", r);
+            c.Restore();
+        }
         if (edge is not null) { p.Color = TacticalBattleSkinRenderScope.Color(role, "stroke", edge.Value); p.Style = SKPaintStyle.Stroke; p.StrokeWidth = width; c.DrawRoundRect(r, radius, radius, p); }
     }
     public static void PanelBox(SKCanvas c, SKRect r, bool selected = false, float radius = 6, string role = "ui.panel")
@@ -104,21 +116,50 @@ internal static class BattleDesign
         Round(c, r, selected ? PanelSel : Panel, selected ? Yellow : PanelEdge.WithAlpha(190), selected ? 1.8f : 1.2f, radius, role);
     }
     public static void Tag(SKCanvas c, SKRect r, string text, float size = 11, bool center = false)
-    { Round(c, r, YellowDark, Yellow, 1.2f, 0, "ui.tag"); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + size * 0.36f, size, Yellow, true, center ? SKTextAlign.Center : SKTextAlign.Left); }
+    { Round(c, r, YellowDark, Yellow, 1.2f, 0, "ui.tag"); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + size * 0.36f, size, Yellow, true, center ? SKTextAlign.Center : SKTextAlign.Left, "ui.tag"); }
     public static void BoxText(SKCanvas c, SKRect r, string text, bool center = false)
     { Round(c, r, Box, BoxEdge); float fs = FitSize(text, 11, r.Width - 14); T(c, text, center ? r.MidX : r.Left + 7, r.MidY + fs * 0.36f, fs, Text, align: center ? SKTextAlign.Center : SKTextAlign.Left); }
-    public static void Button(SKCanvas c, SKRect r, string text, bool big = false)
+    public static void Button(SKCanvas c, SKRect r, string text, bool big = false, bool pending = false)
     {
-        if (big) Round(c, r, SKColors.Transparent, Yellow.WithAlpha(60), 4, 5, "ui.button.glow");
-        Round(c, r, big ? Yellow : ButtonFill, big ? null : PanelEdge.WithAlpha(150), radius: big ? 5 : 3, role: big ? "ui.button.primary" : "ui.button");
+        string role = big ? "ui.button.primary" : "ui.button";
+        string pendingRole = role + ".pending";
+        bool dimmed = pending && Skin.Current?.Find<object?>(pendingRole, "fill", null, pendingRole) is not null;
+        if (big && !dimmed) Round(c, r, SKColors.Transparent, Yellow.WithAlpha(60), 4, 5, "ui.button.glow");
+        if (dimmed) role = pendingRole;
+        Round(c, r, big ? Yellow : ButtonFill, big ? null : PanelEdge.WithAlpha(150), radius: big ? 5 : 3, role: role);
         float fs = FitSize(text, big ? 14 : 12, r.Width - (big ? 16 : 10), big);
-        T(c, text, r.MidX, r.MidY + fs * 0.36f, fs, big ? ButtonInk : Text, big, SKTextAlign.Center, big ? "ui.button.primary" : "ui.button");
+        T(c, text, r.MidX, r.MidY + fs * 0.36f, fs, big ? ButtonInk : Text, big, SKTextAlign.Center, role);
     }
     public static void BigButton(SKCanvas c, SKRect r, string text) => Button(c, r, text, true);
     public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color)
-    { Round(c, SKRect.Create(x, y, w, h), Track, radius: h * .5f); if (frac > 0) Round(c, SKRect.Create(x, y, w * (float)PyMath.Clamp(frac, 0, 1), h), color, radius: h * .5f, role: "ui.bar"); }
+    {
+        var track = SKRect.Create(x, y, w, h);
+        Round(c, track, Track, radius: h * .5f);
+        if (!(frac > 0))
+            return;
+
+        var fill = SKRect.Create(x, y, w * (float)PyMath.Clamp(frac, 0, 1), h);
+        Round(c, fill, color, radius: h * .5f, role: "ui.bar");
+        if (Skin.Has("ui.bar.segments", "image"))
+        {
+            using var clip = new SKRoundRect(fill, h * .5f, h * .5f);
+            c.Save();
+            c.ClipRoundRect(clip, antialias: true);
+            Skin.Image(c, "ui.bar.segments", track);
+            c.Restore();
+        }
+    }
     public static void Slider(SKCanvas c, float x0, float x1, float y, double t, SKColor color)
-    { float x = x0 + (x1 - x0) * (float)PyMath.Clamp(t, 0, 1); Stroke(c, new(x0, y), new(x1, y), Track, 4); Stroke(c, new(x0, y), new(x, y), color, 4); Circle(c, new(x, y), 6, color, Text, 1.2f); }
+    {
+        float x = x0 + (x1 - x0) * (float)PyMath.Clamp(t, 0, 1);
+        Stroke(c, new(x0, y), new(x1, y), Skin.Color("ui.slider.track", "stroke", Track), 4);
+        Stroke(c, new(x0, y), new(x, y), color, 4);
+        var edge = Skin.Color("ui.slider.thumb", "stroke", Text);
+        if (Skin.Shape("ui.slider.thumb") == "diamond")
+            Diamond(c, new(x, y), 6, color, edge, 1.2f);
+        else
+            Circle(c, new(x, y), 6, color, edge, 1.2f);
+    }
     public static void Line(SKCanvas c, float x0, float x1, float y) => Stroke(c, new(x0, y), new(x1, y), BoxEdge, 1);
     public static SKRect Callout(SKCanvas c, float x, float y, string text, SKColor edge, SKColor color)
     { float w = Measure(text, 12) + 14; SKRect r = new(x - w * .5f, y - 17, x + w * .5f, y + 2); Round(c, r, edge == Yellow ? YellowDark : Panel, edge, 1.2f); T(c, text, x, y - 3.5f, 12, color, align: SKTextAlign.Center); return r; }

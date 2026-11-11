@@ -31,7 +31,7 @@ internal static class BuildCard
     {
         var u = model.Unit; float top = r.Top + 88;
         if (Recording is { } layout) layout.Rects["build"] = r;
-        PanelBox(c, r, false, 6);
+        PanelBox(c, r, false, 6, "ui.panel.build");
         if (model.Hovered) CursorGlyph(c, r.Left + 9, r.Top + 8, .6f);
         T(c, model.Heading, r.Left + (model.Hovered ? 24 : 9), r.Top + 18, 10.5f, Muted, true);
         PilotCardColumn.Portrait(c, portraits, u.Build?.PilotId ?? "", PilotCardModel.Name(u), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32));
@@ -63,7 +63,8 @@ internal static class BuildCard
             T(c, cell.Name, r.MidX, r.MidY + 3.2f, 9, Muted.WithAlpha(cell.NoSlot ? (byte)120 : (byte)200), align: SKTextAlign.Center);
             return;
         }
-        Round(c, r, Box, cell.Alert ? Red : BoxEdge, cell.Alert ? 1.4f : 1, 3);
+        Round(c, r, Box, cell.Alert ? Red : BoxEdge, cell.Alert ? 1.4f : 1, 3,
+            cell.Alert ? "ui.box.build-slot.alert" : "ui.box.build-slot");
         var tone = cell.Kind switch { TacticalSlotKind.Weapon => Yellow, TacticalSlotKind.Armor => Purple, TacticalSlotKind.Shield => Cyan, TacticalSlotKind.Module => Green, _ => Text };
         using (var stripe = new SKPaint { Color = tone }) c.DrawRect(new(r.Left + 1, r.Top + 4, r.Left + 4, r.Bottom - 4), stripe);
         T(c, BuildCardModel.Ellipsize(cell.Name, r.Width - 12), r.Left + 8, r.Top + 12, 9.5f, Text, true);

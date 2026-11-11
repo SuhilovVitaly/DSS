@@ -50,9 +50,14 @@ internal sealed class AnomalyFieldLayer : IDisposable
         }
     }
 
-    internal static SKImage Build(ImmutableArray<TacticalAnomalySnapshot> anomalies, TacticalAnomalyRulesSnapshot rules,
+    internal static SKImage? Build(ImmutableArray<TacticalAnomalySnapshot> anomalies, TacticalAnomalyRulesSnapshot rules,
         TacticalBattleView view, SKSizeI size, float scale, ParallelOptions options, float? shadingScale = null)
     {
+        var cancellation = options.CancellationToken;
+        if (cancellation.IsCancellationRequested) return null;
+        // Leaving a screen is normal control flow. Parallel.For's cancellation
+        // throws even when handled, which stops a first-chance debugger and the UI.
+        var workers = new ParallelOptions { MaxDegreeOfParallelism = options.MaxDegreeOfParallelism, TaskScheduler = options.TaskScheduler };
         var fields = ToMotion(anomalies);
         // Outside every Gaussian's conservative bound the sum cannot reach t>.002,
         // so the exact specified visual contribution is black; skip expensive exponentials there.
@@ -62,11 +67,13 @@ internal sealed class AnomalyFieldLayer : IDisposable
         for (int x = 0; x < worldX.Length; x++)
             worldX[x] = view.CenterX + ((x + .5) / (double)scale - view.PixelWidth * .5) / (double)view.PixelsPerUnit;
         double pixelsPerUnit = view.PixelsPerUnit * (shadingScale ?? scale);
-        Parallel.For(0, size.Height, options, y =>
+        Parallel.For(0, size.Height, workers, (y, loop) =>
         {
+            if (cancellation.IsCancellationRequested) { loop.Stop(); return; }
             double wy = view.CenterY + ((y + .5) / (double)scale - view.PixelHeight * .5) / (double)view.PixelsPerUnit;
             for (int x = 0; x < size.Width; x++)
             {
+                if ((x & 63) == 0 && cancellation.IsCancellationRequested) { loop.Stop(); return; }
                 double wx = worldX[x];
                 var heat = Color(TacticalAnomalyKind.Heat, wx, wy);
                 var dust = Color(TacticalAnomalyKind.Dust, wx, wy);
@@ -76,6 +83,7 @@ internal sealed class AnomalyFieldLayer : IDisposable
                 pixels[i + 2] = Byte(1 - (1 - heat.R) * (1 - dust.R)); pixels[i + 3] = 255;
             }
         });
+        if (cancellation.IsCancellationRequested) return null;
         using var bitmap = new SKBitmap(new SKImageInfo(size.Width, size.Height, SKColorType.Bgra8888, SKAlphaType.Opaque));
         Marshal.Copy(pixels, 0, bitmap.GetPixels(), pixels.Length);
         bitmap.SetImmutable();

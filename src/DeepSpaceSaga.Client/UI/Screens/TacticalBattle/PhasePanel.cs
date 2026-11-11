@@ -55,7 +55,7 @@ internal sealed partial class PhasePanel
     private void Head(SKCanvas c, string title, string tag)
     { T(c, title, 1050, 84, FitSize(title, 15, 214, true), Text, true); Tag(c, new(1048, 92, 1266, 110), U(tag)); }
     private void ButtonAt(SKCanvas c, string id, SKRect rect, string text, bool big = false)
-    { _buttons[id] = R(rect.Left, rect.Top, rect.Right, rect.Bottom); if (Recording is { } layout) layout.Rects["button:" + id] = _buttons[id]; Button(c, rect, text, big); }
+    { _buttons[id] = R(rect.Left, rect.Top, rect.Right, rect.Bottom); if (Recording is { } layout) layout.Rects["button:" + id] = _buttons[id]; Button(c, rect, text, big, _frame.Pending); }
     private void StandardAction(SKCanvas c, string title, string status, string primary)
     {
         float y = _db + 28;

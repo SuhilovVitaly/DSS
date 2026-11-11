@@ -1,7 +1,7 @@
 # Перестройка навигационного графа
 
 `tools/graphify/rebuild.py` выполняет offline AST extraction и Markdown structure
-для code/docs/Board, включая EP-0015, EP-0016, EP-0017, EP-0018/EP-0019/EP-0020 и map-history EP-0002/3/4, и объединяет свежие host-agent semantic
+для code/docs/Board, включая EP-0015, EP-0016, EP-0017, EP-0018/EP-0019/EP-0020/EP-0022 и map-history EP-0002/3/4, и объединяет свежие host-agent semantic
 fragments. Реальная игра и внешний API не запускаются. Для нового rebuild нужны
 Python с установленным Graphify и результаты semantic чтения по текущим hashes.
 
@@ -35,4 +35,4 @@ Parser coverage warnings сохраняются в ast-warnings.json и GRAPH_RE
 Graphify — средство навигации. Ни связность графа, ни INFERRED edge не доказывают
 Engine outcome, native FPS, звук, физический ввод или human/product acceptance.
 Текущий результат перестройки и residual gates публикуются в
-[ExecutionStatus EP-0020](../../Board/EP-0020-tactical-battle-mechanics/ExecutionStatus.md). Исторические результаты: [ExecutionStatus EP-0017](../../Board/EP-0017-pilot-initiative/ExecutionStatus.md) и [ExecutionStatus EP-0015](../../Board/EP-0015-tactical-carrier-battle/ExecutionStatus.md).
+[ExecutionStatus EP-0022](../../Board/EP-0022-tactical-battle-xenon-star/ExecutionStatus.md). Более ранние запуски описаны в [EP-0020](../../Board/EP-0020-tactical-battle-mechanics/ExecutionStatus.md), [EP-0017](../../Board/EP-0017-pilot-initiative/ExecutionStatus.md) и [EP-0015](../../Board/EP-0015-tactical-carrier-battle/ExecutionStatus.md).
