@@ -144,7 +144,9 @@ internal sealed class PilotCardFireBlock
             var tone = selected ? Yellow : Text;
             float x = bounds.Right - 6;
             float y = bounds.MidY + 3.5f;
-            T(canvas, chance, x, y, 9.5f, candidate.Absorption > 0 ? Heat : tone, true, SKTextAlign.Right);
+            string textRole = selected ? role : "ui.text";
+            T(canvas, chance, x, y, 9.5f, candidate.Absorption > 0 ? Heat : tone, true, SKTextAlign.Right,
+                candidate.Absorption > 0 ? "ui.text" : textRole);
             x -= Measure(chance, 9.5f, true) + 4;
             if (candidate.Absorption > 0)
             {
@@ -152,7 +154,7 @@ internal sealed class PilotCardFireBlock
                 T(canvas, absorption, x, y, 7.5f, Heat, align: SKTextAlign.Right);
                 x -= Measure(absorption, 7.5f) + 4;
             }
-            FittedText(canvas, name, bounds.Left + 6, y, 9.5f, x - bounds.Left - 6, tone, selected);
+            FittedText(canvas, name, bounds.Left + 6, y, 9.5f, x - bounds.Left - 6, tone, selected, role: textRole);
             column.RegisterCommand(row.Drone.Id, "target:" + candidate.TargetId, bounds);
         }
         if (!overflowing) return;

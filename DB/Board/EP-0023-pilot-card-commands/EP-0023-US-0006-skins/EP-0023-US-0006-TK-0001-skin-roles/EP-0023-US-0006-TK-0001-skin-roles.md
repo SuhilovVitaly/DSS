@@ -7,7 +7,7 @@ stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0023-US-0005-TK-0002-remove-panel-controls]
-files_touched: 7
+files_touched: 8
 serves: [US6-AC1, US6-AC3]
 created: 2026-11-11T14:30:00Z
 revision: 1
@@ -40,6 +40,8 @@ A-12. Новые роли не требуют новых полей манифе
 | `src/DeepSpaceSaga.Client/Skins/xenon-star/skin.json` | :33-48 роли карточки, полос, ползунков | Значения новых ролей в палитре Xenon Star. |
 | `src/DeepSpaceSaga.Client/Skins/README.md` | :36-42 описание ролей | Новые роли. |
 | `DB/Documentation/04-Engineering/TacticalBattleSkins.md` | :50-62 таблица поверхностей | Строки новых ролей и запасных значений. |
+
+Итоговое review добавило Ep0022SkinScenesTests.cs для регрессии цвета текста выбранной цели. Прежний список применял ui.box.target.selected.text; новый сохраняет этот контракт, а шанс при поглощении берёт игровой цвет.
 
 ## Public API after the change
 
@@ -89,3 +91,5 @@ git diff --check
 ## Исполнение
 
 US6-AC1/AC3: дорожка, иконки, разделитель и прокрутка потребляют отдельные роли с резервами Classic. Заливка панели не переопределяет шкалы при отсутствии узких ролей. Обновлены оба манифеста v1 и руководство. Xenon Star собран с локальным исходником лицензированных изображений, без добавления изображений в Git. Build, 46/46 тестов, scoped format, diff check и самопроверка: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/us6-tk1/.
+
+Итоговое review выявило потерю роли текста выбранной цели. Исправление применяет её к названию и обычному шансу, сохраняет Heat для поглощения. Build, 24/24 целевых тестов, scoped format и diff check: D:/DeepSpaceSaga/artifacts/validation/ep-0023/20261111-execution-01/target-skin-review-03/.

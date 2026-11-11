@@ -203,12 +203,12 @@ internal sealed class PilotCardColumn
     }
 
     internal static void FittedText(SKCanvas canvas, string text, float x, float y, float size,
-        float width, SKColor tone, bool bold = false, SKTextAlign align = SKTextAlign.Left)
+        float width, SKColor tone, bool bold = false, SKTextAlign align = SKTextAlign.Left, string role = "ui.text")
     {
         while (size > 6.5f && Measure(text, size, bold) > width) size -= .25f;
         string fitted = BuildCardModel.Ellipsize(text, width, size, bold);
-        T(canvas, fitted, x, y, size, tone, bold, align);
-        if (fitted != text) Recording?.Texts.Add(new(text, tone));
+        T(canvas, fitted, x, y, size, tone, bold, align, role);
+        if (fitted != text) Recording?.Texts.Add(new(text, Skin.Color(role, "text", tone)));
     }
 
     private static void DrawChip(SKCanvas c, PilotCard card, SKRect r)

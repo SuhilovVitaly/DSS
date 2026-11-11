@@ -51,6 +51,13 @@ public sealed class Ep0022SkinScenesTests
                     styledBitmap.GetPixel((int)(360 * scale), (int)(92 * scale)));
                 Assert.Equal(PhasePanel.Bottom(frame.Battle.Phase, frame.Salvo), styled.Layout.Rects["phase"].Bottom);
 
+                if (skin.Id == "xenon-star" && scene == "2-fire-hover-own")
+                {
+                    var targetTone = SKColor.Parse("#BEDDEA");
+                    Assert.Contains(styled.Layout.Texts, text => text.Text == "Таг-6" && text.Color == targetTone);
+                    Assert.Contains(styled.Layout.Texts, text => text.Text == "73%" && text.Color == targetTone);
+                }
+
                 var selected = PilotCardModel.Project(frame).SingleOrDefault(card => card.Selected);
                 if (selected is null) continue;
                 var card = styled.Layout.Rects["pilot:" + selected.UnitId];
