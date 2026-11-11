@@ -115,7 +115,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             _lastSelectedDroneId = state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Selected : _orders.Selected;
         }
         var firePlan = planning && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null;
-        _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, OverlayBottom(state, salvo, firePlan));
+        _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, PhasePanel.Bottom(state.Phase, salvo));
         return new(state, _camera.View, _panel, 1, moving || Flow.Pending || presentation.Accepted.Revision != Flow.State?.Revision,
             BlockedNotice is { Length: > 0 } notice ? notice : moving ? L("AnimatingMovement") : Flow.Error,
             Presentation: salvo is null ? TacticalBattlePresentation.Current :

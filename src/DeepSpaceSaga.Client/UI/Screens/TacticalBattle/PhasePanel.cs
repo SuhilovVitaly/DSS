@@ -12,6 +12,10 @@ internal sealed partial class PhasePanel
     internal SKRect Bounds { get; private set; }
     internal SKRect Action { get; private set; }
     internal string Phase => _frame is null ? "" : _frame.Salvo is { InFlight: true } ? "Salvo" : _frame.Salvo is not null ? "Results" : _frame.Battle.Phase == TacticalBattlePhase.Over ? "Outcome" : _frame.Battle.Phase == TacticalBattlePhase.Fire ? "Fire" : "Move";
+    internal static float Bottom(TacticalBattlePhase phase, TacticalSalvoFrame? salvo) =>
+        salvo is { InFlight: true } ? 382 : salvo is not null ? 366 :
+        phase == TacticalBattlePhase.Over ? 358 : 152;
+
     private SKRect R(float x0, float y0, float x1, float y1) => new(x0 + _offset, y0, x1 + _offset, y1);
     internal SKRect ButtonBounds(string key) => _buttons.GetValueOrDefault(key);
     internal string? HitButton(SKPoint point) => _frame is null || _frame.Pending ? null : _buttons.FirstOrDefault(b => b.Value.Contains(point)).Key;
@@ -19,7 +23,7 @@ internal sealed partial class PhasePanel
     {
         _frame = f; _offset = f.Panel.Right - 1274; _buttons.Clear();
         _targetList = SKRect.Empty;
-        _db = Phase switch { "Salvo" => 262, "Results" => 246, "Outcome" => 238, "Fire" => 250 + TargetListHeight(f.FirePlan), _ => 250 };
+        _db = Bottom(f.Battle.Phase, f.Salvo) - 120;
         Bounds = R(1040, 6, 1274, _db + 120); Action = R(1040, _db + 28, 1274, _db + 120);
         layout.Rects["phase"] = Bounds; layout.Rects["action"] = Action; layout.Rects["details"] = R(1048, 68, 1266, _db + 24);
         c.Save(); c.Translate(_offset, 0);
@@ -35,17 +39,17 @@ internal sealed partial class PhasePanel
             int Loss(bool own) => f.Battle.Losses.Where(l => (l.Side == f.Battle.PlayerSide) == own).Sum(l => l.Count);
             string summary = U("Summary", f.Battle.ScenarioName, Count(true), Count(false), Loss(true), Loss(false));
             T(c, summary, 1050, 50, FitSize(summary, 10.5f, 214), Muted);
-            Line(c, 1048, 1266, 59); Line(c, 1048, 1266, _db + 27);
+            Line(c, 1048, 1266, 59);
+            if (_db != 32) Line(c, 1048, 1266, _db + 27);
             switch (Phase)
             {
-                case "Move" when f.Movement is { SelectedOrder: null } move:
-                    StandardAction(c, U("AiSuggestions", move.Orders.Count(o => o.Order == o.Suggestion)), U("MoveStatus"), U("MoveAction"));
+                case "Move":
+                    StandardAction(c, f.Movement is { } move ? U("AiSuggestions", move.Orders.Count(o => o.Order == o.Suggestion)) : "",
+                        U("MoveStatus"), U("MoveAction"));
                     break;
-                case "Move": DrawMove(c); break;
-                case "Fire" when f.FirePlan is { Selected: null } fire:
-                    StandardAction(c, FireSummary(fire), U("FireStatus"), U("FireAction"));
+                case "Fire":
+                    StandardAction(c, f.FirePlan is { } fire ? FireSummary(fire) : "", U("FireStatus"), U("FireAction"));
                     break;
-                case "Fire": DrawFire(c); break;
                 case "Salvo": case "Results": DrawSalvo(c); break;
                 case "Outcome": DrawOutcome(c); break;
             }

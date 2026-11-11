@@ -26,6 +26,7 @@ public sealed partial class HoverCardTests
         Assert.Null(scene.Screen.HoverUnitId); var model = HoverCard.Anomaly(frame)!;
         Assert.Equal("ПОД КУРСОРОМ · АНОМАЛИЯ", model.Heading); Assert.Equal(name, model.Name); Assert.Equal(3, model.Lines.Count);
         foreach (string text in new[] { model.Heading, model.Name }.Concat(model.Lines)) Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == text);
+        Assert.Equal(158, scene.Screen.Layout.Rects["hover"].Top);
         Assert.Contains(scene.Screen.PanelRects, r => r.Top == (frame.Panel.Bottom + 6) * 1.5f);
         Assert.Equal(orders.ToArray(), scene.Screen.BuildMoveRequest().Orders.ToArray());
         var unit = before.Battle.Units.First(u => u.Kind == TacticalUnitKind.Drone);

@@ -14,8 +14,6 @@ public sealed partial class TacticalBattleScreen
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;
     private BattleViewport _viewport = new(1, 1280);
     internal IReadOnlyList<SKRect> PanelRects => OverlayRects().Select(r => new SKRect(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S)).ToArray();
-    private static float OverlayBottom(TacticalBattleSnapshot b, TacticalSalvoFrame? salvo, TacticalFirePlan? firePlan) =>
-        120 + (salvo is { InFlight: true } ? 262 : salvo is not null ? 246 : b.Phase == TacticalBattlePhase.Over ? 238 : 250 + PhasePanel.TargetListHeight(firePlan));
     private SKRect Raw(SKRect r) => new(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S);
     private SKPoint DesignPoint(float x, float y) => new((float)(x / (double)_viewport.S), (float)(y / (double)_viewport.S));
     private IEnumerable<SKRect> OverlayRects()
@@ -67,7 +65,6 @@ public sealed partial class TacticalBattleScreen
             }
             return ScreenEvent.None;
         }
-        if (_phasePanel.BeginDrag(p, _orders)) return ScreenEvent.None;
         var action = _phasePanel.HitButton(p);
         if (ApplyPilotAction(action)) return ScreenEvent.None;
         switch (action)

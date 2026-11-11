@@ -31,7 +31,7 @@ public sealed class OverlayBoundaryTests
         await using var s = await Ep0019Scenes.Create("1-move-no-hover");
         using var b = new SKBitmap(1600, 720); using var c = new SKCanvas(b);
         s.Screen.Render(c, 1600, 720);
-        Assert.Equal(new SKRect(1360, 6, 1594, 370), s.Screen.Layout.Rects["phase"]);
+        Assert.Equal(new SKRect(1360, 6, 1594, 152), s.Screen.Layout.Rects["phase"]);
         Assert.Equal(new SKRect(6, 6, 196, 202), s.Screen.Layout.Rects["pilot:Вера"]);
         Assert.Equal(1, s.Screen.CaptureFrame(1600, 720)!.UiScale);
     }
