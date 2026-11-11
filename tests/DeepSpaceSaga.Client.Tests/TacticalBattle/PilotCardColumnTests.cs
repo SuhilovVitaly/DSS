@@ -21,7 +21,7 @@ public sealed class PilotCardColumnTests
         for (int i = 0; i < cards.Length; i++)
         {
             var r = cards[i];
-            float height = scene == "1-move" && i == 0 ? 196 : 82;
+            float height = (scene, i) switch { ("1-move", 0) => 196, ("2-fire", 1) => 224, _ => 82 };
             Assert.Equal(new SKRect(6, top, 196, top + height), r);
             top = r.Bottom + 5;
             Assert.True(RasterProbe.Fraction(bitmap, new(r.Left + 127, r.Top + 48, r.Left + 131, r.Top + 53), BattleDesign.Purple) >= .8);

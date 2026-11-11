@@ -90,8 +90,13 @@ internal sealed class PilotCardColumn
         Arrange(cards, card => ExpandedHeight(frame, card));
     }
 
-    private static float ExpandedHeight(TacticalBattleFrame frame, PilotCard card) =>
-        frame.Movement?.Selected == card.UnitId ? 10 + PilotCardMoveBlock.Height : 0;
+    private static float ExpandedHeight(TacticalBattleFrame frame, PilotCard card)
+    {
+        if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
+        if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
+            return 10 + PilotCardFireBlock.Height(fire);
+        return 0;
+    }
 
     public void Arrange(IReadOnlyList<PilotCard> cards, Func<PilotCard, float>? expandedHeight = null)
     {
@@ -167,8 +172,11 @@ internal sealed class PilotCardColumn
     {
         float x0 = r.Left + 6, x1 = r.Right - 6;
         Stroke(c, new(x0, r.Top + 83), new(x1, r.Top + 83), BoxEdge, 1, [2, 2]);
+        float top = r.Top + 88;
         if (_frame?.Movement?.SelectedOrder is { } move)
-            PilotCardMoveBlock.Draw(c, this, card.UnitId, move, x0, x1, r.Top + 88);
+            PilotCardMoveBlock.Draw(c, this, card.UnitId, move, x0, x1, top);
+        else if (_frame?.FirePlan?.Selected is { } fire)
+            PilotCardFireBlock.Draw(c, this, _frame.Battle, fire, x0, x1, top);
     }
 
     internal static void CommandButton(SKCanvas c, SKRect bounds, string label, bool active = false, float size = 9.5f)
@@ -176,6 +184,15 @@ internal sealed class PilotCardColumn
         Round(c, bounds, active ? YellowDark : ButtonFill, active ? Yellow : BoxEdge, .8f, 2.5f, "ui.button");
         T(c, BuildCardModel.Ellipsize(label, bounds.Width - 4, size, active), bounds.MidX,
             bounds.MidY + size * .36f, size, active ? Yellow : Text, active, SKTextAlign.Center, "ui.button");
+    }
+
+    internal static void FittedText(SKCanvas canvas, string text, float x, float y, float size,
+        float width, SKColor tone, bool bold = false, SKTextAlign align = SKTextAlign.Left)
+    {
+        while (size > 6.5f && Measure(text, size, bold) > width) size -= .25f;
+        string fitted = BuildCardModel.Ellipsize(text, width, size, bold);
+        T(canvas, fitted, x, y, size, tone, bold, align);
+        if (fitted != text) Recording?.Texts.Add(new(text, tone));
     }
 
     private static void DrawChip(SKCanvas c, PilotCard card, SKRect r)
