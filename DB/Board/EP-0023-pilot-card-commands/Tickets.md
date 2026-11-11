@@ -1,12 +1,14 @@
 ---
 epic: EP-0023-pilot-card-commands
-stage: draft
+stage: implemented
 created: 2026-11-11T14:30:00Z
 ---
 
 # EP-0023 — карта тикетов
 
 [Эпик и решения](Documentation.md) · [UiSpec](UiSpec.md) · 8 историй, 13 тикетов. Порядок строк соблюдает зависимости. База — `main` @ `8b0bf6ce` (после EP-0022).
+
+Все восемь историй и тринадцать тикетов реализованы. [Статус, проверка и публикация](ExecutionStatus.md).
 
 ## Истории
 

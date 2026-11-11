@@ -64,7 +64,7 @@ Classic, Contrast и Xenon Star используют один макет акт�
 | Раскрытая карточка и прокрутка | `ui.pilot-card.divider` (stroke/dash, BoxEdge и [2, 2]), `ui.pilot-card.scroll` (fill/stroke, Track и Muted). Эти роли и шкалы не наследуют заливку или рамку карточки. |
 | Ползунки | `ui.slider.speed/turn` (fill), `ui.slider.track` (stroke), `ui.slider.thumb` (stroke и форма diamond) |
 | Теги и кнопки | `ui.tag`, `ui.button`, `ui.button.primary`, `ui.button.glow` (fill/stroke). Тег и кнопки поддерживают text. Явная `.pending` с fill стилизует недоступную кнопку. |
-| Панель стрельбы | `ui.fire.chance` (text), `ui.box.target.selected` (fill/stroke/text), `ui.box.evade` и `ui.box.decoy` с вариантами `.selected` и `.unavailable` (fill/stroke) |
+| Блок стрельбы выбранного пилота | `ui.box.target.selected` (fill/stroke/text), `ui.box.evade` и `ui.box.decoy` с вариантами `.selected` и `.unavailable` (fill/stroke). Шанс с поглощением сохраняет цвет Heat. |
 | Полёт и результаты | `ui.box.salvo.active` (fill/stroke/text), `ui.salvo.result.hit/miss` и `ui.outcome.victory/defeat` (text), `ui.report` (stroke включает разделитель и знаки результатов) |
 | Остальной текст | ui.text: text; файловая BattleTypography задаёт метрики |
 | Подтверждение выхода | `modal.exit` и `modal.exit.dim` (fill/stroke), `modal.exit.art` (image/opacity) |
@@ -73,6 +73,6 @@ Classic, Contrast и Xenon Star используют один макет акт�
 
 Роли старых вкладок tabs.*, controls вкладок/списков целей, orders.move/orders.fire и флажки enemy-forecast/enemy-rear-sectors/all-fire-sectors относятся к прежнему интерфейсу. Достижимая область при наведении движения рисуется из действующей проекции со штатной палитрой. Торпедные роли остаются зарезервированными.
 
-Карточка сборки использует файловую типографику. Силуэты, пунктир пустого слота и полосы типов рисуются кодом. Процедурные Heat/Dust и метки EV/D сохраняют игровые цвета.
+В раскрытой карточке пилота изображение рамки масштабируется на всю её высоту. Геометрия кнопок и ползунков общая для паков. Карточка сборки использует файловую типографику. Силуэты, пунктир пустого слота и полосы типов рисуются кодом. Процедурные Heat/Dust и метки EV/D сохраняют игровые цвета.
 
 Подготовка, Settings и карта мира используют собственные стили. [Экран боя](../02-FirstRelease/Screens/TacticalBattle.md) описывает управление. [Контракт боя](TacticalBattle.md) описывает владение данными и расписание. Результаты проверки Xenon Star находятся в [Board EP-0022](../../Board/EP-0022-tactical-battle-xenon-star/Documentation.md).
