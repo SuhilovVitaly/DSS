@@ -65,6 +65,7 @@ internal static partial class TacticalBattleMapRenderer
                 }
             }
         }
+        if (Skin.Tabletop && f.Salvo is { } tabletopSalvo) DrawSalvoTemplates(c, f, tabletopSalvo, occupied);
         if (f.Salvo is { InFlight: true } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flying))
             {
@@ -75,7 +76,7 @@ internal static partial class TacticalBattleMapRenderer
                 Circle(c, head, 8, Yellow.WithAlpha(70)); Circle(c, head, TacticalBattleSkinRenderScope.Number("shot.projectile", "size", 3.5f), TacticalBattleSkinRenderScope.Color("shot.projectile", "fill", Shell));
                 if (Recording is { } l) l.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
             }
-        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
+        if (!Skin.Tabletop && f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
         {
             var markers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => f.View.Project(u.Pose)).ToArray();
             foreach (var damage in results.Damage.Where(d => !Skin.Tabletop && d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))

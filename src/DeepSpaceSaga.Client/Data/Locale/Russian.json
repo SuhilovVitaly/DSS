@@ -1,4 +1,9 @@
 {
+  "TacticalBattle.Map.ShotDamage": "−{0}",
+  "TacticalBattle.Map.ShotKilled": "−{0} · сбит",
+  "TacticalBattle.Map.ShotMiss": "промах",
+  "TacticalBattle.Map.ShotDecoyMiss": "промах · ловушка",
+  "TacticalBattle.Map.ShotAbsorbed": "поглощён",
   "TacticalBattle.Map.ThreatBadge": "угроза {0}",
   "TacticalBattle.Map.TemplateTip": "{0}: скорость {1} · поворот {2}°",
   "TacticalBattle.Refusal.EvasionUnavailable": "Недостаточно сознания для уклонения",

@@ -1,4 +1,9 @@
 {
+  "TacticalBattle.Map.ShotDamage": "−{0}",
+  "TacticalBattle.Map.ShotKilled": "−{0} · down",
+  "TacticalBattle.Map.ShotMiss": "miss",
+  "TacticalBattle.Map.ShotDecoyMiss": "miss · decoy",
+  "TacticalBattle.Map.ShotAbsorbed": "absorbed",
   "TacticalBattle.Map.ThreatBadge": "threat {0}",
   "TacticalBattle.Map.TemplateTip": "{0}: speed {1} · turn {2}°",
   "TacticalBattle.Refusal.EvasionUnavailable": "Not enough consciousness to evade",

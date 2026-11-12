@@ -7,6 +7,57 @@ internal static partial class TacticalBattleMapRenderer
 {
     private static readonly SKColor TTRust = SKColor.Parse("#AD5C44"), TTRustEdge = SKColor.Parse("#5A2416"),
         TTReticle = SKColor.Parse("#FF4628"), TTAlt = SKColor.Parse("#FF9A6A");
+    private static readonly SKColor TTMiss = SKColor.Parse("#969CA8"), TTMissEdge = SKColor.Parse("#3C404A");
+
+    private static void DrawSalvoTemplates(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo, List<SKRect> occupied)
+    {
+        var pills = new List<RibbonPill>();
+        foreach (var flight in salvo.Flights)
+        {
+            if (!salvo.PlaybackSkipped && flight.ImpactAgeMs < TacticalBattleResults.FlashMs) continue;
+            var shot = flight.Shot;
+            var a = f.View.Project(shot.From); var b = f.View.Project(shot.To);
+            bool hit = shot.Hit && !shot.Absorbed;
+            bool own = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId)?.Side == f.Battle.PlayerSide;
+            var line = Ribbon(c, a, b, hit ? 13 : 9, hit ? own ? TTSelected : TTRust : TTMiss,
+                hit ? own ? TTEdge : TTRustEdge : TTMissEdge, 16, 24, occupied);
+            if (Recording is { } layout) layout.Rects["result-ribbon:" + flight.Index] =
+                new(Math.Min(line.A.X, line.B.X), Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.X, line.B.X), Math.Max(line.A.Y, line.B.Y));
+            if (!salvo.PlaybackSkipped && flight.ImpactAgeMs < 1400) continue;
+            string text = shot.Absorbed ? M("Map.ShotAbsorbed") : hit ? M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", shot.Damage)
+                : M(shot.Decoyed ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
+            pills.Add(new("result-badge:" + flight.Index, line, text, hit ? 12.5f : 10.5f,
+                hit ? TTGold : SKColor.Parse("#E2EAF6"), hit ? TTBadge : TTMissEdge, hit ? TTGold : SKColor.Parse("#C8D2E4"),
+                SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
+        }
+        var placed = new List<SKRect>();
+        foreach (var pill in pills) PillOnRibbon(c, pill, placed, occupied);
+        foreach (var group in salvo.Flights.Where(flight => salvo.PlaybackSkipped || flight.Arrived).GroupBy(flight => flight.Shot.TargetId))
+        {
+            if (!salvo.PlaybackSkipped && group.Any(flight => flight.ImpactAgeMs < TacticalBattleResults.FlashMs)) continue;
+            var point = f.View.Project(group.Last().Shot.To);
+            if (group.Any(flight => flight.Shot.Hit && !flight.Shot.Absorbed))
+            {
+                var center = point + new SKPoint(-14, -12);
+                Polygon(c, Enumerable.Range(0, 16).Select(i =>
+                {
+                    float angle = i * MathF.PI / 8 + .2f, radius = i % 2 == 0 ? 13 : 13 * .45f;
+                    return center + new SKPoint(MathF.Cos(angle) * radius, MathF.Sin(angle) * radius);
+                }), SKColor.Parse("#FFA83C").WithAlpha(225), TTRustEdge, 1.6f);
+                Circle(c, center, .3f * 13, SKColor.Parse("#FFF2A0"));
+            }
+            else Circle(c, point, 21, SKColors.Transparent, SKColor.Parse("#C8D2E4"), 1.8f);
+            var bounds = SKRect.Create(point.X - 24, point.Y - 24, 48, 48); occupied.Add(bounds);
+            if (Recording is { } layout) layout.Rects["result-marker:" + group.Key] = bounds;
+            if (group.Any(flight => flight.Shot.Killed))
+            {
+                var red = SKColor.Parse("#FF3B2A");
+                Stroke(c, point + new SKPoint(-17, -17), point + new SKPoint(17, 17), red, 4.5f);
+                Stroke(c, point + new SKPoint(-17, 17), point + new SKPoint(17, -17), red, 4.5f);
+                if (Recording is { } crossLayout) crossLayout.Rects["result-killed:" + group.Key] = bounds;
+            }
+        }
+    }
 
     private sealed record RibbonPill(string Id, (SKPoint A, SKPoint B) Line, string Text, float Size,
         SKColor TextColor, SKColor Fill, SKColor Edge, SKPoint? Anchor = null);
