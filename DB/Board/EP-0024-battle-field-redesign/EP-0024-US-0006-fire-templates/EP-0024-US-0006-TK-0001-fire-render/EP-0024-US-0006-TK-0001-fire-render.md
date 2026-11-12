@@ -6,7 +6,7 @@ title: Сектор, ленты, угрозы и прицелы
 stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
-depends_on: [EP-0024-US-0003-TK-0001-plates]
+depends_on: [EP-0024-US-0003-TK-0001-plates, EP-0024-US-0005-TK-0001-templates]
 files_touched: 4
 serves: [US6-AC1]
 created: 2026-11-12T13:00:00Z
