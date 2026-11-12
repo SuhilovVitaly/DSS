@@ -91,3 +91,15 @@ git diff --check
 Кэш по view/scale/clumps, GPU-context path, освобождение экраном проверены. 12 ms gate НЕ закрыт: CPU raster 1627.97/1519.05/1558.23 ms; native GPU NOT RUN. Evidence: cloud-raster-timing.json. Проба центра уточнена на максимальный видимый сгусток: глобальный максимум вне кадра; цвет ближе к тону жара, чем фону.
 
 Проверки: 7/7 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us4-tk2/client.trx`, `us4-tk2-test.log`, `us4-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.
+
+## Дополнение native GPU evidence
+
+Scope до изменения: tools/DeepSpaceSaga.Performance/TacticalBattleNativeEvidence.cs и новый TacticalBattleCloudEvidence.cs. Опциональный замер в реальном текущем GRContext: 1920x1080, фиксированная сцена движения seed1, холодная и 8 тёплых пересборок при смене камеры, ожидание GPU через Flush(true,true), затем reuse. Данные пишутся рядом с native report; production render не синхронизируется принудительно. Verified display layout: DISPLAY2 1920x1080 справа, крупнейший DISPLAY1; изолированный profile, explicit monitor и DSS_VALIDATION_SMALL_MONITOR=1 обязательны.
+
+### Native GPU 1920×1080
+
+Реальный OpenGL, Intel Arc 140V, монитор index1 origin(3440,0), videoMode1920x1080 (не крупнейший3440x1440). Native workflow46/46 PASS: настройки/Tabletop, движение, огонь, E/D, повтор, итог, новый бой, возврат, Save/Load. GPU completion wait включён в замер кэша: seed1/turn1/177сгустков, cold17.7917ms; warm8.5952…11.4795ms (8пересборок); reuse1.2831ms, BuildCount не растёт. Строгий12ms gate остаётся OPEN из-за первого замера; warm PASS не выдаётся за полный PASS. Native draw p95=7.2231ms, max20.0081ms; это не физический FPS.
+
+Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/native-tabletop-1080.json`, `native-tabletop-1080-clouds.json`, `native-tabletop-1080.log`, `native-build.log`, `native-format.log`, фазовые PNG. Build0warnings/errors, scoped format/diff PASS. Самопроверка диагностического пути пройдена; физических нажатий/owner review не было.
+
+Первый запуск остановил harness на проверке размеров: Bounds Silk исключает taskbar (1920x1032), videoMode1920x1080. Проверка исправлена на VideoMode.Resolution с fallback Bounds, как guard SkiaWindow; выбор меньшего монитора остался обязательным. Повтор успешен.

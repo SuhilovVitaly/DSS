@@ -113,7 +113,8 @@ internal static class TacticalBattleNativeEvidence
                             if (Environment.GetEnvironmentVariable("DSS_VALIDATION_SMALL_MONITOR") == "1")
                             {
                                 var monitor = Silk.NET.Windowing.Monitor.GetMonitors(native).Single(m => m.Bounds.Origin == native.Position);
-                                Check("window-fits-smaller-monitor", width <= monitor.Bounds.Size.X && height <= monitor.Bounds.Size.Y);
+                                var resolution = monitor.VideoMode.Resolution ?? monitor.Bounds.Size;
+                                Check("window-fits-smaller-monitor", width <= resolution.X && height <= resolution.Y);
                             }
                             native.Size = new(width, height);
                             step++;
@@ -203,6 +204,9 @@ internal static class TacticalBattleNativeEvidence
                             Check("battle", battle.UiScale == scale && battle.Flow.State is { Seed: 1, ScenarioId: "initial", Phase: TacticalBattlePhase.Move });
                             if (expectedSkin is not null)
                                 Check(restarted ? "restarted-battle-skin" : "battle-skin", battle.SkinId == expectedSkin);
+                            if (!restarted && battle.SkinId == "tabletop" && Environment.GetEnvironmentVariable("DSS_TACTICAL_CLOUD_TIMING") == "1")
+                                TacticalBattleCloudEvidence.Measure(Field<GRContext>(window, "_grContext"), battle.CaptureFrame(1920, 1080)!,
+                                    Path.Combine(directory, Path.GetFileNameWithoutExtension(output) + "-clouds.json"));
                             ulong revision = battle.Flow.State!.Revision;
                             foreach (var key in new[] { Key.F5, Key.F9, Key.F12, Key.F8, Key.Space, Key.I, Key.Number1, Key.Number2, Key.Number3, Key.Number4 })
                                 KeyDown(key);

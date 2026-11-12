@@ -231,3 +231,11 @@ Steel включает прямые углы, тёмные кромки, ско�
 ### EP-0024-US-0013-TK-0004-panel-salvo
 
 Полёт 51: очередь, цель/шанс, прогресс, подсказка. Итог 71: исход, урон, цель, ловушка, броня/корпус своего дрона. 7/7: тексты/высоты/прогресс, отсутствие команд, рамка потери брони Юна и Classic. Визуально сверены salvo-panel-3-salvo-flight-column-x2.png и salvo-panel-4-salvo-results-column-x2.png с Reference/panels/2-fire-results: строки деталей начинаются сверху y41 (baseline47), не пересекают черту y37. Чёрное вне колонки — прозрачный изолированный canvas; полные снимки далее US9. Самопроверка пройдена. 7/7 PASS (us13-tk4); scoped format PASS.
+
+### Native GPU 1920×1080
+
+Реальный OpenGL, Intel Arc 140V, монитор index1 origin(3440,0), videoMode1920x1080 (не крупнейший3440x1440). Native workflow46/46 PASS: настройки/Tabletop, движение, огонь, E/D, повтор, итог, новый бой, возврат, Save/Load. GPU completion wait включён в замер кэша: seed1/turn1/177сгустков, cold17.7917ms; warm8.5952…11.4795ms (8пересборок); reuse1.2831ms, BuildCount не растёт. Строгий12ms gate остаётся OPEN из-за первого замера; warm PASS не выдаётся за полный PASS. Native draw p95=7.2231ms, max20.0081ms; это не физический FPS.
+
+Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/native-tabletop-1080.json`, `native-tabletop-1080-clouds.json`, `native-tabletop-1080.log`, `native-build.log`, `native-format.log`, фазовые PNG. Build0warnings/errors, scoped format/diff PASS. Самопроверка диагностического пути пройдена; физических нажатий/owner review не было.
+
+Первый запуск остановил harness на проверке размеров: Bounds Silk исключает taskbar (1920x1032), videoMode1920x1080. Проверка исправлена на VideoMode.Resolution с fallback Bounds, как guard SkiaWindow; выбор меньшего монитора остался обязательным. Повтор успешен.
