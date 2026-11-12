@@ -12,7 +12,8 @@ internal static partial class TacticalBattleMapRenderer
     static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied, InteractiveAnomalyField? interactiveField)
     {
         if (f.Movement is not null) return;
-        if (f.FirePlan is { } plan)
+        if (Skin.Tabletop && f.FirePlan is { } tabletopPlan) DrawFireTemplates(c, f, tabletopPlan, occupied);
+        if (!Skin.Tabletop && f.FirePlan is { } plan)
         {
             if (plan.Selected?.Drone.Build is { } build)
             {

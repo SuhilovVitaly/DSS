@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0006-fire-templates
 ticket: EP-0024-US-0006-TK-0001-fire-render
 title: Сектор, ленты, угрозы и прицелы
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0003-TK-0001-plates]
@@ -88,3 +88,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us6-tk1
+
+Сектор с затемнением, свои ленты, угрозы Incoming, основные/запасные прицелы и сохранённые отрезки поглощения реализованы. Проверены четыре сцены, геометрия целей, цвета и прежние FirePlanning/MapFire проверки. Build: 0 ошибок/предупреждений.
+
+Проверки: 20/20 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us6-tk1/client.trx`, `us6-tk1-test.log`, `us6-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.
