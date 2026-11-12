@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0002-ship-sprites
 ticket: EP-0024-US-0002-TK-0003-bake-tool
 title: Запекатель спрайтов как инструмент тестового проекта
-stage: draft
+stage: approved
 layer: client-tests
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0001-TK-0001-pack-files]
@@ -88,3 +88,8 @@ git diff --check
 доступной истории Git. Перенос моделей и проверка перезапекания невозможны
 без исходников; копирование PNG не подменяет запекатель. См.
 [ExecutionStatus](../../ExecutionStatus.md).
+
+
+### Текущий статус
+
+BLOCKED только этот тикет: отсутствуют ZzSpriteBake.cs, ZzPixelBake.cs, ZzTypedBake.cs, ZzDetailBake.cs и explosions.py. Пользовательский D-12 разрешил использование готовых PNG и независимые тикеты; D-13 восстановил манифест. Воспроизводимое перезапекание не реализовано и не подменено копированием PNG.

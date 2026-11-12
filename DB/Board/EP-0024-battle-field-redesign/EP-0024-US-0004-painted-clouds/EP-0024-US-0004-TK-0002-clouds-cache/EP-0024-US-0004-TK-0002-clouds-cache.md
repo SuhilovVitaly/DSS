@@ -103,3 +103,8 @@ Scope до изменения: tools/DeepSpaceSaga.Performance/TacticalBattleNat
 Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/native-tabletop-1080.json`, `native-tabletop-1080-clouds.json`, `native-tabletop-1080.log`, `native-build.log`, `native-format.log`, фазовые PNG. Build0warnings/errors, scoped format/diff PASS. Самопроверка диагностического пути пройдена; физических нажатий/owner review не было.
 
 Первый запуск остановил harness на проверке размеров: Bounds Silk исключает taskbar (1920x1032), videoMode1920x1080. Проверка исправлена на VideoMode.Resolution с fallback Bounds, как guard SkiaWindow; выбор меньшего монитора остался обязательным. Повтор успешен.
+
+
+### Повтор на финальном runtime
+
+GPU gate остаётся OPEN: cold20.609ms, warm7.8765…17.3615ms, reuse1.7412ms, BuildCount9 и reused=true. Это 177 сгустков, seed1/turn1, 1920×1080/S1.5, GPU completion wait. Новый замер не подтверждает даже стабильный warm12ms, поэтому прежний warm PASS не является текущей гарантией. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/final-native-tabletop-1080-clouds.json`.

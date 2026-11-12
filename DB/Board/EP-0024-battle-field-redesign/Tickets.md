@@ -1,14 +1,12 @@
 ---
 epic: EP-0024-battle-field-redesign
-stage: draft
+stage: approved
 created: 2026-11-12T13:00:00Z
 ---
 
 # EP-0024 — карта тикетов
 
-Текущее исполнение: **IN PROGRESS** по D-12. Манифест восстанавливается по
-UiSpec; отсутствие запекателя блокирует только US-0002-TK-0003.
-Фактические результаты и SHA — [ExecutionStatus](ExecutionStatus.md).
+Текущее исполнение: **PARTIAL — 24/26 после финальной документации**. Runtime использует переданный манифест D-13 и готовые PNG. US2-TK3 BLOCKED по исходникам; US4-TK2 IMPLEMENTED с открытым GPU12ms gate. [Статусы, проверки и SHA](ExecutionStatus.md), [покрытие](AcceptanceCoverage.md), [влияние на документацию](DocumentationImpact.md).
 
 [Эпик и решения](Documentation.md) · [UiSpec](UiSpec.md) · 13 историй, 26 тикетов. Порядок строк соблюдает зависимости. База — `main` @ `d7895f73` (после EP-0023). Материалы — [Materials](Materials/README.md).
 
@@ -59,7 +57,7 @@ UiSpec; отсутствие запекателя блокирует тольк�
 | [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | Полёт и итог залпа в панели | client-ui | `EP-0024-US-0013-TK-0001-panel-frame` | US13-AC4 |
 | [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | Снимки `tabletop` и проверка Classic | client-tests | `EP-0024-US-0007-TK-0002-torpedo-fx`, `EP-0024-US-0007-TK-0001-salvo`, `EP-0024-US-0008-TK-0001-camera`, `EP-0024-US-0004-TK-0002-clouds-cache`, `EP-0024-US-0005-TK-0001-templates` | US9-AC1, US9-AC2 |
 | [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | Снимки и пробы панелей `tabletop` | client-tests | `EP-0024-US-0009-TK-0001-snapshots`, `EP-0024-US-0011-TK-0003-role-colours`, `EP-0024-US-0013-TK-0002-panel-move`, `EP-0024-US-0013-TK-0003-panel-fire`, `EP-0024-US-0013-TK-0004-panel-salvo` | US9-AC3 |
-| [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | Документация режима и скина | docs | `EP-0024-US-0009-TK-0001-snapshots`, `EP-0024-US-0009-TK-0002-panel-snapshots` | US10-AC1, US10-AC2 |
+| [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | Документация режима и скина | docs | `EP-0024-US-0009-TK-0001-snapshots`, `EP-0024-US-0009-TK-0002-panel-snapshots` | US10-AC1, US10-AC2, US10-AC3, US10-AC4 |
 
 ## Контроль передачи
 

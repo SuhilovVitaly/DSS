@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0007-salvo-results
 title: Залп: пиксельная торпеда и взрыв, затем ленты итога со значками
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0006, EP-0024-US-0002]
 created: 2026-11-12T13:00:00Z
 source_request: "В режиме торпеда летит пиксельным спрайтом со шлейфом и взрывается пиксельной анимацией, цифра урона или промаха отлетает и исчезает как сейчас; после этого на поле остаются ленты итога со значками, вспышки, кресты и кольца."
@@ -52,3 +52,8 @@ D-03, D-06, D-10, A-09, A-10. Сейчас — полёт `BattleMapRenderer.Fir
 |---|---|---|---|---|
 | [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | Итог залпа в режиме tabletop | client-ui | `EP-0024-US-0006-TK-0002-badges` | US7-AC2, US7-AC3 |
 | [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | Пиксельная торпеда, шлейф и анимация взрыва | client-ui | `EP-0024-US-0007-TK-0001-salvo`, `EP-0024-US-0002-TK-0001-sprite-renderer` | US7-AC1, US7-AC2, US7-AC3 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

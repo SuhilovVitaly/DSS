@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0005-move-templates
 title: Движение: ленты-шаблоны, зона досягаемости, «призраки»
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0002, EP-0024-US-0003]
 created: 2026-11-12T13:00:00Z
 source_request: "Рисовать в режиме пути движения картонными лентами с кружком скорости, зону досягаемости выбранного дрона, «призрак» в скобках в конце пути и подсказку."
@@ -50,3 +50,8 @@ D-01. Сейчас — `BattleMapRenderer.Movement.cs:8-41` (сектор из �
 | ID | Название | Слой | Зависимости | Критерии |
 |---|---|---|---|---|
 | [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | Ленты-шаблоны движения | client-ui | `EP-0024-US-0003-TK-0001-plates` | US5-AC1, US5-AC2 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

@@ -2,8 +2,8 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0010-project-documentation
 title: Документация поля «Tabletop»
-stage: draft
-dependencies: [EP-0024-US-0009]
+stage: done
+dependencies: [EP-0024-US-0001, EP-0024-US-0002, EP-0024-US-0003, EP-0024-US-0004, EP-0024-US-0005, EP-0024-US-0006, EP-0024-US-0007, EP-0024-US-0008, EP-0024-US-0009, EP-0024-US-0011, EP-0024-US-0012, EP-0024-US-0013]
 created: 2026-11-12T13:00:00Z
 source_request: "Описать скин `tabletop`, режим поля и новые роли в документации экрана боя и скинов; завести ExecutionStatus эпика."
 current_review: epic
@@ -63,4 +63,12 @@ revision: 1
 
 | ID | Название | Слой | Зависимости | Критерии |
 |---|---|---|---|---|
-| [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | Документация режима и скина | docs | `EP-0024-US-0009-TK-0001-snapshots`, `EP-0024-US-0009-TK-0002-panel-snapshots` | US10-AC1, US10-AC2 |
+| [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | Документация режима и скина | docs | `EP-0024-US-0009-TK-0001-snapshots`, `EP-0024-US-0009-TK-0002-panel-snapshots` | US10-AC1, US10-AC2, US10-AC3, US10-AC4 |
+
+
+## Итог исполнения
+
+DONE: текущие контракты, coverage, ссылки и offline Graphify; публикация подтверждается receipt. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.
+
+
+Зависимости означают инвентаризацию фактического результата всех функциональных историй. Документация частичного исполнения не закрывает отсутствующий Bake или невыполненный бюджет облаков.

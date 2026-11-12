@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0006-fire-templates
 title: Стрельба: ленты выстрелов и угроз, значки, прицелы
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0002, EP-0024-US-0003]
 created: 2026-11-12T13:00:00Z
 source_request: "Рисовать в режиме план стрельбы широкими лентами со значками шанса, угрозы противника ржавыми лентами, цели красными прицелами и сектор выбранного дрона затемнением."
@@ -51,3 +51,8 @@ D-01. Сейчас — `BattleMapRenderer.Fire.cs:12-63` (сектор `:17-25`,
 |---|---|---|---|---|
 | [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | Сектор, ленты, угрозы и прицелы | client-ui | `EP-0024-US-0003-TK-0001-plates` | US6-AC1 |
 | [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | Значки на лентах: раскладка, порядок, строки | client-ui | `EP-0024-US-0006-TK-0001-fire-render` | US6-AC2 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

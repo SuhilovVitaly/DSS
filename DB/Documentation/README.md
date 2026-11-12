@@ -38,7 +38,7 @@
 - [Меню игровой сессии](02-FirstRelease/Screens/GameMenu.md).
 - [Карта игровой сессии](02-FirstRelease/Screens/GameSession.md).
 - [Подготовка боя](02-FirstRelease/Screens/TacticalBattleSetup.md).
-- [Экран тактического боя и команды в карточке пилота](02-FirstRelease/Screens/TacticalBattle.md).
+- [Экран тактического боя, команды пилота и Tabletop](02-FirstRelease/Screens/TacticalBattle.md).
 - [Найм экипажа](02-FirstRelease/Screens/Hire.md).
 - [Загрузка игры](02-FirstRelease/Screens/Load.md).
 - [Главное меню](02-FirstRelease/Screens/MainMenu.md).

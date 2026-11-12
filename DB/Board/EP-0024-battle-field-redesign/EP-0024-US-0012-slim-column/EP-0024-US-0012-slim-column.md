@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0012-slim-column
 title: Узкая колонка пилотов
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0011, EP-0024-US-0002]
 created: 2026-11-12T17:00:00Z
 source_request: "В скине tabletop колонка пилотов — узкие стальные карточки 150×40: портрет, имя, броня и корпус, оружие и пиксельный корабль."
@@ -52,3 +52,8 @@ D-11, A-15, A-16, A-18. Сейчас — `PilotColumnLayout.cs:7-43`, `PilotCard
 |---|---|---|---|---|
 | [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | Раскладка узкой колонки | client-ui | `EP-0024-US-0011-TK-0002-steel-frames` | US12-AC1 |
 | [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | Узкая карточка пилота | client-ui | `EP-0024-US-0012-TK-0001-slim-layout`, `EP-0024-US-0002-TK-0001-sprite-renderer` | US12-AC2, US12-AC3 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

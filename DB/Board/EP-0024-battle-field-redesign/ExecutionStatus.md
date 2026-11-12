@@ -1,6 +1,74 @@
 # EP-0024 — исполнение
 
-## Текущее продолжение 2026-11-12
+## Текущий результат
+
+**PARTIAL: 24 из26 тикетов после публикации финальной документации.** Реализованы выбираемый Tabletop, готовые модели/эффекты, плашки, облака и кэш, ленты, камера, стальные правые окна, узкая колонка и панели движения/огня/залпа. Переданный пользователем манифест D-13 (81 роль,55 ui.*,24 PNG) заменил реконструкцию; нормализован только Markdown-артефакт ui.build.name. Готовые изображения побайтно сохранены.
+
+Завершённые истории: US1,US3,US5–US9,US11–US13; US10 выполнена и публикуется этим коммитом. US2 частична из-за отсутствующих исходников запекателя. US4 частична из-за GPU-бюджета. Ни одна из этих границ не блокировала независимый runtime и документацию. Это не заявление о полном завершении эпика.
+
+Ветка `codex/ep-0024-battle-field-redesign`, origin `https://github.com/SuhilovVitaly/DSS`, база `d7895f73`. Последний функциональный тикет US9-TK2: `0823924bc78d8ce8b491badb70f37f7378eae9c5`. Финальный US10-TK1 и удалённый SHA подтверждаются в [Publication.json](D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/Publication.json) после commit/push; self-hash заранее не записывается в коммит.
+
+- [Проверки и residual gates](FinalValidation.md)
+- [Покрытие всех AC](AcceptanceCoverage.md)
+- [Инвентаризация документации](DocumentationImpact.md)
+- [Текущий экран](../../Documentation/02-FirstRelease/Screens/TacticalBattle.md), [контракт скинов](../../Documentation/04-Engineering/TacticalBattleSkins.md)
+
+## Проверки
+
+Client: union всех2421 test IDs,2413 PASS и8 FAIL. Полный тактический прогон548/548; после выделения неизменной матрицы шума финальная cloud/panel/snapshot регрессия30/30, включая9 новых числовых проб. Нет пропущенных/лишних ID. Все8 ошибок соседней карты мира совпадают с сохранённым EP23 прогоном по именам и сообщениям. Это не зелёная full suite. [Машинный аудит](D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/FinalVerification.json).
+
+Native Tabletop720/S1 и1080/S1.5, Classic720/S1: по46/46 проверок, реальный OpenGL Intel Arc140V, explicit monitor1 origin(3440,0), меньший1920×1080; largest3440×1440 не использовался. Проверены Settings, приказы/мышь/E/D, повтор, итог/новый бой, возврат и Save/Load. Build Release:0 warnings/errors. Физический ввод/scanout, Linux/macOS и owner acceptance не проверены.
+
+GPU-cache1920×1080: cold20.609ms; warm7.8765…17.3615ms; reuse1.7412ms, BuildCount9 без роста при reuse. **12ms gate OPEN**. Предыдущий warm-only PASS не является гарантией последнего прогона. [Замер](D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/final-native-tabletop-1080-clouds.json).
+
+Восемь просмотренных эталонов1920×1080 находятся в `tests/DeepSpaceSaga.Client.Tests/TacticalBattle/View/Snapshots/tabletop`: 1-move-no-hover,1-anomaly-move-dust,2-fire-hover-own,2-anomaly-absorption,3-salvo-flight,4-salvo-results,4-decoy-results,5-outcome. Реальные портреты и DejaVu соответствуют A-15/A-16; геометрия правых окон берётся из клиента, не HTML-макета. Прежние15 Classic PNG не изменены. Коррекция Yellow описана в US9-TK2; гипотеза о bias×255 опровергнута числовыми пробами, формула не менялась.
+
+## Ticket → SHA → push
+
+| Тикет | Статус | Последний SHA тикета | Push |
+|---|---|---|---|
+| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | DONE (automated) | `494423c25a29ab9515c3d44b6077754893c2357c` | PASS |
+| [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | DONE (automated) | `f5bf9d2790e0ea2acc6a9919294045f7d9bc9b97` | PASS |
+| [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | DONE (automated) | `d2a5c8fb2d353816da51b0e32401e94ea7d19084` | PASS |
+| [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | DONE (automated) | `c16e6340a56eee7b959efc5cbd41145a1a53a8b2` | PASS |
+| [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | BLOCKED: исходники Bake | — | — |
+| [EP-0024-US-0003-TK-0001-plates](EP-0024-US-0003-counter-plates/EP-0024-US-0003-TK-0001-plates/EP-0024-US-0003-TK-0001-plates.md) | DONE (automated) | `2a7e0cf0b4c108fb6e59b25bdad21d61ac76678b` | PASS |
+| [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | DONE (automated) | `546995b7657c06b8151bbf4da7f328b64d9db540` | PASS |
+| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | IMPLEMENTED; 12ms OPEN | `b35c834a2ada92adcb4025acdaa3df67992ad4d5` | PASS |
+| [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-move-templates/EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | DONE (automated) | `715e8d6177121ec5448e54cc8399d7726ca6a35e` | PASS |
+| [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | DONE (automated) | `bae46a1a574e99eddbdbec216f74b6a72a8643b2` | PASS |
+| [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | DONE (automated) | `5bde1a3a7e8a928bb79399830beab92de34974b6` | PASS |
+| [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | DONE (automated) | `0d39439bd2d90f1f5d07cd5588927e1fb2aa408f` | PASS |
+| [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | DONE (automated) | `11c03db2a1d5bea4f95550b939d13e8a7765eadd` | PASS |
+| [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-camera/EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | DONE (automated) | `e0cbaf3ead14975df9920f9501712cf14c5801ba` | PASS |
+| [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | DONE (automated) | `4d45b4643807758c809c112eada1fb0e5797d233` | PASS |
+| [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | DONE (automated) | `0823924bc78d8ce8b491badb70f37f7378eae9c5` | PASS |
+| [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | DONE; receipt после публикации | [Publication.json](D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/Publication.json) | см. receipt |
+| [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE (automated) | `cfb3d2b0b556d7ffe7e55076b494aa7a74f17576` | PASS |
+| [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | DONE (automated) | `fc7002cba76316f9173995d3cdfd0e290f911575` | PASS |
+| [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | DONE (automated) | `431c0b7f433be2aabbd33fe1d83c69eaf795d137` | PASS |
+| [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | DONE (automated) | `e73124a4308708b2140d7b8fa73158681e42ee22` | PASS |
+| [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE (automated) | `7e8e852adaf4e6ba07e93c3f4b7d120719091c42` | PASS |
+| [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE (automated) | `cbce3db702db97e3c6bdccaea6349d2cda384529` | PASS |
+| [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | DONE (automated) | `c9eae302fffa01b7b0a6f38f22e8e145002f6351` | PASS |
+| [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | DONE (automated) | `0c932ec5e252ba82929e05ef37cdf8ece860573f` | PASS |
+| [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | DONE (automated) | `a17b3fa5dc4fc6d7df5f48f4ed2050388564d235` | PASS |
+
+## Остаток и сохранность
+
+1. US2-TK3: получить пять оригинальных Bake-файлов, перенести генераторы и доказать попиксельное перезапекание; копирование готовых PNG этого не заменяет.
+2. US4-TK2/US4-AC2: дальнейшая оптимизация и подтверждение GPU-пересборки ≤12ms; текущая машина этот критерий не прошла.
+3. Независимое review, физический ввод, human/product и cross-platform acceptance остаются открытыми. Выполненная самопроверка не независима.
+
+Посторонние VData изменения не включены. Worktree и копии репозитория не создавались. Уборка task-owned временных профилей, slots/cache/scripts проверяется в [FinalValidation](FinalValidation.md); сохраняется только referenced evidence под `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01`. Текущие контракты — Markdown-only в Documentation, история — ниже и в карточках.
+
+## Ход исполнения — исторические записи
+
+Следующие записи отражают состояние на соответствующем шаге. В частности, preflight0/26, отсутствие манифеста и NOT RUN ниже заменены текущим результатом выше; исходники Bake по-прежнему отсутствуют.
+
+## EP-0024 — исполнение
+
+### Текущее продолжение 2026-11-12
 
 Пользователь явно поручил восстановить манифест по UiSpec и продолжить все
 доступные тикеты с готовыми PNG (D-12). Общая preflight-блокировка снята.
@@ -10,7 +78,7 @@
 реконструкцию D-12; исправлен только Markdown-артефакт ключа ui.build.name.
 Новые проверки: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/`.
 
-## История: preflight до уточнения пользователя
+### История: preflight до уточнения пользователя
 
 **BLOCKED на preflight. Выполнено 0 из 26 implementation-тикетов.**
 Пользователь разрешил исполнение всего эпика, актуализацию Board, commit и push.
@@ -23,7 +91,7 @@
 worktree/копии репозитория не создавались. Посторонние изменения `VData` сохранены
 и не включаются в коммит. Production, tests и текущие игровые контракты не менялись.
 
-## Восстановление канонического Board
+### Восстановление канонического Board
 
 В `DB/Board/EP-0024-battle-field-redesign` отсутствовали 10 файлов, доступных
 в переданной копии `VData/Board/EP-0024-battle-field-redesign`:
@@ -41,7 +109,7 @@ worktree/копии репозитория не создавались. Пост
 Состав: 13 историй, 26 тикетов. Последняя US-0010 расширена до раздела 6
 EpicExecutionPrompt (полный impact inventory и Graphify); она не выполнена.
 
-## Блокирующие материалы
+### Блокирующие материалы
 
 В канонических Materials и указанной пользователем папке VData отсутствуют:
 
@@ -74,7 +142,7 @@ EpicExecutionPrompt (полный impact inventory и Graphify); она не в�
 сначала не прошёл в sandbox (DNS), затем успешно выполнен с разрешённым доступом;
 сеть не является оставшимся блокером.
 
-## Проверки этого запуска
+### Проверки этого запуска
 
 - PASS: все 26 ticket dependencies разрешаются, циклов нет.
 - PASS: 279 локальных Markdown link targets существуют; `git diff --cached --check`
@@ -96,7 +164,7 @@ Evidence: [MaterialAudit.json](D:/DeepSpaceSaga/artifacts/validation/ep-0024/202
 Аудит выполнен встроенным Python без создания временного скрипта. JSON хранит
 SHA-256 всех PNG, геометрию и зависимости. Он не доказывает визуальную приёмку.
 
-## Порядок продолжения
+### Порядок продолжения
 
 1. Восстановить исходный `Materials/Assets/skin/skin.json` и `Materials/Bake/*`;
    приложить оставшиеся файлы прототипа для полного комплекта передачи.
@@ -108,38 +176,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 4. Каждый реализованный тикет — отдельный commit и немедленный push с проверкой.
    Подготовительный коммит Board не закрывает ни одного тикета.
 
-## Ticket → SHA → push
 
-| Ticket | Состояние | Implementation SHA | Push |
-|---|---|---|---|
-| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | DONE (automated; см. карточку) | `494423c25a29ab9515c3d44b6077754893c2357c` | PASS |
-| [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | DONE (automated; см. карточку) | `f5bf9d2790e0ea2acc6a9919294045f7d9bc9b97` | PASS |
-| [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | DONE (automated; см. карточку) | `d2a5c8fb2d353816da51b0e32401e94ea7d19084` | PASS |
-| [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | DONE (automated; см. карточку) | `c16e6340a56eee7b959efc5cbd41145a1a53a8b2` | PASS |
-| [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | BLOCKED: source generators | — | — |
-| [EP-0024-US-0003-TK-0001-plates](EP-0024-US-0003-counter-plates/EP-0024-US-0003-TK-0001-plates/EP-0024-US-0003-TK-0001-plates.md) | DONE (automated; см. карточку) | `2a7e0cf0b4c108fb6e59b25bdad21d61ac76678b` | PASS |
-| [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | DONE (automated; см. карточку) | `546995b7657c06b8151bbf4da7f328b64d9db540` | PASS |
-| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | IMPLEMENTED; performance gate OPEN | `b35c834a2ada92adcb4025acdaa3df67992ad4d5` | PASS |
-| [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-move-templates/EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | DONE (automated; см. карточку) | `715e8d6177121ec5448e54cc8399d7726ca6a35e` | PASS |
-| [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | DONE (automated; см. карточку) | `bae46a1a574e99eddbdbec216f74b6a72a8643b2` | PASS |
-| [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | DONE (automated; см. карточку) | `5bde1a3a7e8a928bb79399830beab92de34974b6` | PASS |
-| [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | DONE (automated; см. карточку) | `0d39439bd2d90f1f5d07cd5588927e1fb2aa408f` | PASS |
-| [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | DONE (automated; см. карточку) | `11c03db2a1d5bea4f95550b939d13e8a7765eadd` | PASS |
-| [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-camera/EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | DONE (automated; см. карточку) | `e0cbaf3ead14975df9920f9501712cf14c5801ba` | PASS |
-| [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | DONE (automated; см. карточку) | `4d45b4643807758c809c112eada1fb0e5797d233` | PASS |
-| [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | DONE: 31/31 | текущий commit | проверяется после commit |
-| [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | NOT STARTED: dependencies | — | — |
-| [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE (automated; см. карточку) | `cfb3d2b0b556d7ffe7e55076b494aa7a74f17576` | PASS |
-| [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | DONE (automated; см. карточку) | `fc7002cba76316f9173995d3cdfd0e290f911575` | PASS |
-| [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | DONE (automated; см. карточку) | `431c0b7f433be2aabbd33fe1d83c69eaf795d137` | PASS |
-| [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | DONE (automated; см. карточку) | `e73124a4308708b2140d7b8fa73158681e42ee22` | PASS |
-| [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE (automated; см. карточку) | `7e8e852adaf4e6ba07e93c3f4b7d120719091c42` | PASS |
-| [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE (automated; см. карточку) | `cbce3db702db97e3c6bdccaea6349d2cda384529` | PASS |
-| [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | DONE (automated; см. карточку) | `c9eae302fffa01b7b0a6f38f22e8e145002f6351` | PASS |
-| [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | DONE (automated; см. карточку) | `0c932ec5e252ba82929e05ef37cdf8ece860573f` | PASS |
-| [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | DONE (automated; см. карточку) | `a17b3fa5dc4fc6d7df5f48f4ed2050388564d235` | PASS |
-
-## Публикация и уборка
+### Публикация и уборка
 
 Подготовительный коммит содержит только канонический EP-0024, материалы и
 честный статус блокировки. Его SHA проверяется через Git после создания;
@@ -148,91 +186,91 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 как evidence этого отчёта. Временные скрипты, probes, caches и task-процессы не
 создавались; дополнительных task-каталогов в корнях workspace/repository нет.
 
-### EP-0024-US-0001-TK-0002-tabletop-mode
+#### EP-0024-US-0001-TK-0002-tabletop-mode
 
 Режим задаётся метрикой; листы и эффекты читаются из каталога с проверкой геометрии и таймингов, fallback сохранён. 43/43 PASS (us1-tk2); scoped format PASS.
 
-### EP-0024-US-0002-TK-0001-sprite-renderer
+#### EP-0024-US-0002-TK-0001-sprite-renderer
 
 Модели по типу/стороне/курсу, пиксельная сетка, тени, обломки и маркеры подключены в production. Classic и его 15 снимков проходят без обновления. 47/47 PASS (us2-tk1); scoped format PASS.
 
-### EP-0024-US-0002-TK-0002-sprite-geometry
+#### EP-0024-US-0002-TK-0002-sprite-geometry
 
 Tabletop использует увеличенные области моделей и наведения; ввод проверен вне render scope, Classic сохраняет прежние радиусы. 16/16 PASS (us2-tk2); scoped format PASS.
 
-### EP-0024-US-0003-TK-0001-plates
+#### EP-0024-US-0003-TK-0001-plates
 
 Числовые плашки, порядок кандидатов и fallback, привязки, рамки потерь брони/корпуса реализованы; заменённые выноски отключены только в Tabletop. Проверены три фазы, Classic snapshots и положение плашки относительно модели. Отдельная Client build: 0 предупреждений/ошибок. 41/41 PASS (us3-tk1); scoped format PASS.
 
-### EP-0024-US-0004-TK-0001-clouds-render
+#### EP-0024-US-0004-TK-0001-clouds-render
 
 Реализованы слои пыли/жара по UiSpec с Perlin-масками и зерном. Проверены оттенки, прозрачность, повторяемость и сцены absorption/move-dust без legacy refinement. Сборка: 0 ошибок/предупреждений. Raster evidence: cloud-2-anomaly-absorption.png и cloud-1-anomaly-move-dust.png в run. Кэш и performance gate следуют отдельным тикетом. 12/12 PASS (us4-tk1); scoped format PASS.
 
-### EP-0024-US-0004-TK-0002-clouds-cache
+#### EP-0024-US-0004-TK-0002-clouds-cache
 
 Кэш по view/scale/clumps, GPU-context path, освобождение экраном проверены. 12 ms gate НЕ закрыт: CPU raster 1627.97/1519.05/1558.23 ms; native GPU NOT RUN. Evidence: cloud-raster-timing.json. Проба центра уточнена на максимальный видимый сгусток: глобальный максимум вне кадра; цвет ближе к тону жара, чем фону. 7/7 PASS (us4-tk2); scoped format PASS.
 
-### EP-0024-US-0005-TK-0001-templates
+#### EP-0024-US-0005-TK-0001-templates
 
 Ленты, зона досягаемости, скорость, призраки, скобки, RU/EN-подсказка и выноска пыли реализованы. Проверены две сцены, геометрия handles, отсутствие зависимости рендера движения от оружейного сектора и реальное редактирование приказа перетаскиванием. Значки Edge сохранены по A-11. Build: 0 ошибок/предупреждений. 15/15 PASS (us5-tk1); scoped format PASS.
 
-### EP-0024-US-0006-TK-0001-fire-render
+#### EP-0024-US-0006-TK-0001-fire-render
 
 Сектор с затемнением, свои ленты, угрозы Incoming, основные/запасные прицелы и сохранённые отрезки поглощения реализованы. Проверены четыре сцены, геометрия целей, цвета и прежние FirePlanning/MapFire проверки. Build: 0 ошибок/предупреждений. 20/20 PASS (us6-tk1); scoped format PASS.
 
-### EP-0024-US-0008-TK-0001-camera
+#### EP-0024-US-0008-TK-0001-camera
 
 Кадрирование своей группы/боевых участников с полями 200/110, исключением истории Paths, ключом Phase/Turn и удержанием полёта/результатов. Ручной вид сохраняется до нового боя. Проверены пределы кадра, цели/угрозы/последние выстрелы, вызов CaptureFrame вне skin scope и Classic interaction. Build: 0 ошибок/предупреждений. 4/4 PASS (us8-tk1); scoped format PASS.
 
-### EP-0024-US-0006-TK-0002-badges
+#### EP-0024-US-0006-TK-0002-badges
 
 Значки угроз/своих/запасных целей рисуются после лент; реализованы кандидаты размещения и отдельные записи раскладки. После интеграции камеры Tabletop исходные assertions непересечения chance/плашек и значков проходят. Клик по прицелу выбирает штатную цель и показывает её реальный шанс. Build: 0 ошибок/предупреждений. 18/18 PASS (us6-tk2); scoped format PASS.
 
-### EP-0024-US-0007-TK-0001-salvo
+#### EP-0024-US-0007-TK-0001-salvo
 
 Ленты результатов, значки исходов и маркеры целей реализованы с таймингом ImpactAgeMs/PlaybackSkipped; выноски ловушки/поглощения заменены, отлетающие цифры сохранены. Проверены 0/300/500/1500 ms и три сцены результатов. Build: 0 ошибок/предупреждений. Следующий тикет заменяет полёт/взрыв и сдвигает маркеры на конец соответствующего эффекта. 32/32 PASS (us7-tk1); scoped format PASS.
 
-### EP-0024-US-0007-TK-0002-torpedo-fx
+#### EP-0024-US-0007-TK-0002-torpedo-fx
 
 Пиксельные торпеды, trail и эффекты удара/уничтожения/puff подключены; взрывы рисуются поверх моделей и плашек, маркеры ждут конца эффекта, skip не запускает FX. Проверены кадры 0/100/450/880/1000 ms, опциональность скина и Classic snapshots. Build: 0 ошибок/предупреждений. Сверены kill-100.png и kill-450.png с Reference/salvo/kill-sequence.png; kill-*.png — синтетический killed-shot для тайминга, не outcome реального боя. 58/58 PASS (us7-tk2); scoped format PASS.
 
-### EP-0024-US-0011-TK-0001-steel-roles
+#### EP-0024-US-0011-TK-0001-steel-roles
 
 Закреплены метрики steel/slim, роли панелей/кнопок/показателей, загрузка шести градиентов 4x128 и ресурсный лимит. 25 файлов runtime pack совпадают с каноническими материалами по SHA256. Обновлён контракт ролей. Эталон 3-move-windows-x2 просмотрен; применение скосов/полос и визуальная сверка готового кадра — в следующих TK-0002/TK-0003. Build: 0 ошибок/предупреждений. 45/45 PASS (us11-tk1); scoped format PASS.
 
-### EP-0024-US-0011-TK-0002-steel-frames
+#### EP-0024-US-0011-TK-0002-steel-frames
 
 Steel включает прямые углы, тёмные кромки, скосы с инверсией полей, тени плит и отсутствие glow. Геометрия окон сохранена; проверены пиксели и Xenon Star scenes. Увеличенный steel-frames-windows-x2.png сверен с эталоном: рамки/скос совпадают по принципу; полосы ещё прежние до TK-0003, текст/портрет — штатные ресурсы и текущая локаль. Build: 0 ошибок/предупреждений. 19/19 PASS (us11-tk2); scoped format PASS.
 
-### EP-0024-US-0011-TK-0003-role-colours
+#### EP-0024-US-0011-TK-0003-role-colours
 
 Полосы корпуса/брони, имя своего пилота и броневой слот читают роли. Имя противника остаётся Orange. Реальный русский кадр steel-frames-windows-x2.png сверен с эталоном: зелёная/синяя полосы и светлое имя подтверждены пикселями; портрет штатный, геометрия правой карточки прежняя. В PhasePanel.Salvo на базе есть только полоса брони; новая полоса корпуса не добавлялась. Build: 0 ошибок/предупреждений. 21/21 PASS (us11-tk3); scoped format PASS.
 
-### EP-0024-US-0012-TK-0001-slim-layout
+#### EP-0024-US-0012-TK-0001-slim-layout
 
 Раскладка slim: 150x40, шаг 45, панель отдельно (51,49,150,91), следующая карточка y146. Прокрутка удерживает выбранную пару и передаёт занятый прямоугольник карты. Восемь обычных карточек занимают 355 и помещаются; overflow проверен длинной панелью. Classic layout tests проходят. Визуальная приёмка карточек/панелей остаётся за TK-0002/US-0013. Build: 0 ошибок/предупреждений. 7/7 PASS (us12-tk1); scoped format PASS.
 
-### EP-0024-US-0012-TK-0002-slim-card
+#### EP-0024-US-0012-TK-0002-slim-card
 
 Узкие карточки: штатный портрет, имя, броня/корпус, оружие курсивом и спрайт; рамка выбора, рамки потерь и серый сбитый. Проверены движение/результаты, grayscale и клик выбора. slim-1-move-no-hover-x2.png сопоставлен с эталоном колонки: геометрия/состав совпадают, портреты штатные; место панели пока пустое до US-0013. Build: 0 ошибок/предупреждений. 7/7 PASS (us12-tk2); scoped format PASS.
 
-### EP-0024-US-0013-TK-0001-panel-frame
+#### EP-0024-US-0013-TK-0001-panel-frame
 
 Плита панели (51,49)—(201,140), язычок, clip и overlay/input интегрированы. 4/4 targeted: клик/drag/wheel на выступе панели не передают ввод карте. Содержимое блоков реализуется следующими TK; визуальная сверка всей панели в TK-0002…0004. Самопроверка scope/commands пройдена. 4/4 PASS (us13-tk1); scoped format PASS.
 
-### EP-0024-US-0013-TK-0002-panel-move
+#### EP-0024-US-0013-TK-0002-panel-move
 
 Компактная панель 150x91: два ряда значений, шаги, ползунки, Прямо/ИИ. 4/4 targeted: +2, min/max drag, возврат ИИ; Classic сохранён. Визуальная сверка move-panel-column-x2.png с Reference/panels/3-move-column-x2.png: геометрия и состав совпадают; живые портреты и BattleTypography по A-16, кнопки стрелок ui.button по UiSpec (эталон показывает светлый вариант). Evidence PNG рядом с логами. Самопроверка пройдена. 4/4 PASS (us13-tk2); scoped format PASS.
 
-### EP-0024-US-0013-TK-0003-panel-fire
+#### EP-0024-US-0013-TK-0003-panel-fire
 
 Стрельба: единый путь измерения/отрисовки, цели со спрайтами, броня/угрозы, ловушка/уклон/отказ, перенос текста. 14/14: Юн 129, Вера без целей 106, dust/evade, target click, прокрутка >3 целей и Classic. Визуально проверены fire-panel-2-fire-column-x2.png и fire-panel-2-no-target-column-x2.png; геометрия соответствует Reference/panels/1-fire, выбран Таг-5 после проверочного клика (эталон Таг-6); шрифт/портреты A-16. Самопроверка source/input пройдена. 14/14 PASS (us13-tk3); scoped format PASS.
 
-### EP-0024-US-0013-TK-0004-panel-salvo
+#### EP-0024-US-0013-TK-0004-panel-salvo
 
 Полёт 51: очередь, цель/шанс, прогресс, подсказка. Итог 71: исход, урон, цель, ловушка, броня/корпус своего дрона. 7/7: тексты/высоты/прогресс, отсутствие команд, рамка потери брони Юна и Classic. Визуально сверены salvo-panel-3-salvo-flight-column-x2.png и salvo-panel-4-salvo-results-column-x2.png с Reference/panels/2-fire-results: строки деталей начинаются сверху y41 (baseline47), не пересекают черту y37. Чёрное вне колонки — прозрачный изолированный canvas; полные снимки далее US9. Самопроверка пройдена. 7/7 PASS (us13-tk4); scoped format PASS.
 
-### Native GPU 1920×1080
+#### Native GPU 1920×1080
 
 Реальный OpenGL, Intel Arc 140V, монитор index1 origin(3440,0), videoMode1920x1080 (не крупнейший3440x1440). Native workflow46/46 PASS: настройки/Tabletop, движение, огонь, E/D, повтор, итог, новый бой, возврат, Save/Load. GPU completion wait включён в замер кэша: seed1/turn1/177сгустков, cold17.7917ms; warm8.5952…11.4795ms (8пересборок); reuse1.2831ms, BuildCount не растёт. Строгий12ms gate остаётся OPEN из-за первого замера; warm PASS не выдаётся за полный PASS. Native draw p95=7.2231ms, max20.0081ms; это не физический FPS.
 
@@ -240,10 +278,10 @@ Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-
 
 Первый запуск остановил harness на проверке размеров: Bounds Silk исключает taskbar (1920x1032), videoMode1920x1080. Проверка исправлена на VideoMode.Resolution с fallback Bounds, как guard SkiaWindow; выбор меньшего монитора остался обязательным. Повтор успешен.
 
-### EP-0024-US-0009-TK-0001-snapshots
+#### EP-0024-US-0009-TK-0001-snapshots
 
 Приняты и затем проверены 8 полных сцен 1920×1080 через реальный Tabletop screen и Engine seed1. Визуально сверены поле и панели с Materials/Reference, в том числе вырезки панелей предыдущих US13; реальные портреты/шрифт соответствуют A-15/A-16. Classic PNG не изменены. Регрессия сцен/ввода 93/93 PASS; после уточнения opt-in по metrics.slim вместо ID отдельная проверка Space 3/3 PASS (us9-keyboard-final/client.trx). Space пропускает только полёт без world side effects, включая переименованный slim-пакет. Дополнительно исправлен цвет кольца выбранного дрона по UiSpec. 93/93 PASS (us9-tk1); scoped format PASS.
 
-### EP-0024-US-0009-TK-0002-panel-snapshots
+#### EP-0024-US-0009-TK-0002-panel-snapshots
 
 Пробы §11.13 на S1/S1.5: 150×40, панель51/49/150/91, следующий пилот y146, steel tone, реальные клики Tag5, золотая рамка урона с учётом coverage1.4px и тёмные внешние кромки. Все31 именованные проверки PASS; затем548/548 полного TacticalBattle (final-tactical/client.trx) на нормативном Yellow и обновлённых PNG. После выделения неизменного alpha-filter helper:30/30 cloud/panel/snapshot PASS (us9-cloud-final/client.trx), включая9 новых числовых проб. Все8 снимков просмотрены, 7 обновлены только по цвету выбора, outcome неизменён. Classic baseline не менялся. Подробности двух уточнений review выше. 31/31 PASS (us9-tk2); scoped format PASS.

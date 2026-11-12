@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0013-command-panel
 title: Панель команд под карточкой
-stage: draft
+stage: done
 dependencies: [EP-0024-US-0012]
 created: 2026-11-12T17:00:00Z
 source_request: "В скине tabletop команды выбранного пилота — в стальной панели снизу справа от его карточки с отступом 30 %; карточки ниже сдвигаются."
@@ -55,3 +55,8 @@ D-11, A-19. Сейчас команды — в раскрытой карточк
 | [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | Движение в панели | client-ui | `EP-0024-US-0013-TK-0001-panel-frame` | US13-AC2 |
 | [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | Стрельба в панели | client-ui | `EP-0024-US-0013-TK-0001-panel-frame` | US13-AC3 |
 | [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | Полёт и итог залпа в панели | client-ui | `EP-0024-US-0013-TK-0001-panel-frame` | US13-AC4 |
+
+
+## Итог исполнения
+
+DONE по автоматическим проверкам и просмотренным кадрам. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0004-painted-clouds
 title: Облака жара и пыли «краской»
-stage: draft
+stage: approved
 dependencies: [EP-0024-US-0001]
 created: 2026-11-12T13:00:00Z
 source_request: "Рисовать в режиме облака аномалий из сгустков боя слоями размывки и ядра с шумом и зерном, с кэшем."
@@ -52,3 +52,8 @@ D-01, A-07. Сейчас — `AnomalyFieldLayer.cs`, `InteractiveAnomalyField.cs
 |---|---|---|---|---|
 | [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | Отрисовка облаков в режиме | client-ui | `EP-0024-US-0001-TK-0002-tabletop-mode` | US4-AC1, US4-AC3 |
 | [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | Кэш облаков и бюджет времени | client-ui | `EP-0024-US-0004-TK-0001-clouds-render` | US4-AC2 |
+
+
+## Итог исполнения
+
+PARTIAL: rendering/cache работают; бюджет12ms не выполнен. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

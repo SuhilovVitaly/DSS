@@ -2,7 +2,7 @@
 epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0002-ship-sprites
 title: Пиксельные модели кораблей
-stage: draft
+stage: approved
 dependencies: [EP-0024-US-0001]
 created: 2026-11-12T13:00:00Z
 source_request: "Заменить в режиме tabletop силуэты дронов и шестиугольники носителей пиксельными моделями по типу, стороне и курсу."
@@ -54,3 +54,8 @@ D-01. Сейчас — `BattleMapRenderer.cs:115-140` (силуэт `DroneSilhou
 | [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | Отрисовка модели: кадр, масштаб, тень, маркеры | client-ui | `EP-0024-US-0001-TK-0002-tabletop-mode` | US2-AC1, US2-AC2 |
 | [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | Занятые прямоугольники и наведение на модели | client-ui | `EP-0024-US-0002-TK-0001-sprite-renderer` | US2-AC3 |
 | [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | Запекатель спрайтов как инструмент тестового проекта | client-tests | `EP-0024-US-0001-TK-0001-pack-files` | US2-AC1 |
+
+
+## Итог исполнения
+
+PARTIAL: готовые листы подключены; исходники Bake отсутствуют. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.
