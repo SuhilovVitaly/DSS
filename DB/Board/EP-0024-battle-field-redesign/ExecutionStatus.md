@@ -135,8 +135,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | DONE (automated; см. карточку) | `e73124a4308708b2140d7b8fa73158681e42ee22` | PASS |
 | [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE (automated; см. карточку) | `7e8e852adaf4e6ba07e93c3f4b7d120719091c42` | PASS |
 | [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE (automated; см. карточку) | `cbce3db702db97e3c6bdccaea6349d2cda384529` | PASS |
-| [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | DONE: 4/4 | текущий commit | проверяется после commit |
-| [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | DONE (automated; см. карточку) | `c9eae302fffa01b7b0a6f38f22e8e145002f6351` | PASS |
+| [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | DONE: 14/14 | текущий commit | проверяется после commit |
 | [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | NOT STARTED: dependencies | — | — |
 
 ## Публикация и уборка
@@ -223,3 +223,7 @@ Steel включает прямые углы, тёмные кромки, ско�
 ### EP-0024-US-0013-TK-0002-panel-move
 
 Компактная панель 150x91: два ряда значений, шаги, ползунки, Прямо/ИИ. 4/4 targeted: +2, min/max drag, возврат ИИ; Classic сохранён. Визуальная сверка move-panel-column-x2.png с Reference/panels/3-move-column-x2.png: геометрия и состав совпадают; живые портреты и BattleTypography по A-16, кнопки стрелок ui.button по UiSpec (эталон показывает светлый вариант). Evidence PNG рядом с логами. Самопроверка пройдена. 4/4 PASS (us13-tk2); scoped format PASS.
+
+### EP-0024-US-0013-TK-0003-panel-fire
+
+Стрельба: единый путь измерения/отрисовки, цели со спрайтами, броня/угрозы, ловушка/уклон/отказ, перенос текста. 14/14: Юн 129, Вера без целей 106, dust/evade, target click, прокрутка >3 целей и Classic. Визуально проверены fire-panel-2-fire-column-x2.png и fire-panel-2-no-target-column-x2.png; геометрия соответствует Reference/panels/1-fire, выбран Таг-5 после проверочного клика (эталон Таг-6); шрифт/портреты A-16. Самопроверка source/input пройдена. 14/14 PASS (us13-tk3); scoped format PASS.

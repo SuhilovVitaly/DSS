@@ -9,6 +9,52 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class PilotCardFireBlockTests
 {
+    [Theory]
+    [InlineData("2-fire", 129)]
+    [InlineData("2-no-target", 106)]
+    [InlineData("2-evasion-plan", 106)]
+    [InlineData("2-anomaly-dust", 106)]
+    public async Task Slim_fire_panel_sizes_content_and_preserves_command_eligibility(string sceneName, float height)
+    {
+        using var locale = Localization.UseLocaleForTests("Russian");
+        await using var scene = await Ep0019Scenes.Create(sceneName);
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var screen = new TacticalBattleScreen(scene.Screen.Flow, 1, catalog.GetOrClassic("tabletop"));
+        using var bitmap = new SKBitmap(1920, 1080); using var c = new SKCanvas(bitmap);
+        try
+        {
+            for (int i = 0; i < 16 && screen.CaptureFrame(1920, 1080)!.SelectedDroneId != scene.Frame.SelectedDroneId; i++)
+                screen.OnKeyDown(Key.Tab);
+            Assert.Equal(scene.Frame.SelectedDroneId, screen.CaptureFrame(1920, 1080)!.SelectedDroneId);
+            if (sceneName == "2-evasion-plan") screen.OnKeyDown(Key.E);
+            screen.Render(c, 1920, 1080);
+            var row = screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!;
+            var panel = screen.Layout.Rects["pilot-panel:" + row.Drone.Id];
+            Assert.Equal(height, panel.Height);
+            foreach (var rect in screen.Layout.Rects.Where(kv => kv.Key.StartsWith("card-command:", StringComparison.Ordinal)))
+                Assert.True(panel.Contains(rect.Value), rect.Key);
+            Assert.Equal(row.CanEvade, !screen.CardCommandBounds("evade").IsEmpty);
+            Assert.Equal(row.CanDecoy, !screen.CardCommandBounds("decoy").IsEmpty);
+            if (sceneName == "2-fire")
+            {
+                Assert.False(screen.CardCommandBounds("target:Таг-5").IsEmpty);
+                Assert.False(screen.CardCommandBounds("target:Таг-6").IsEmpty);
+                var target = screen.CardCommandBounds("target:Таг-5");
+                screen.OnMouseDown(target.MidX, target.MidY, MouseButton.Left);
+                Assert.Contains(screen.BuildFireRequest().Targets, t => t.DroneId == row.Drone.Id && t.TargetId == "Таг-5");
+            }
+            else Assert.DoesNotContain(screen.Layout.Rects.Keys, k => k.StartsWith("card-command:target:", StringComparison.Ordinal));
+            if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } folder)
+            {
+                using var crop = new SKBitmap(630, 1440); using var cc = new SKCanvas(crop); cc.Scale(2);
+                screen.Render(cc, 1920, 1080);
+                using var png = crop.Encode(SKEncodedImageFormat.Png, 100);
+                using var file = File.Create(Path.Combine(folder, "fire-panel-" + sceneName + "-column-x2.png")); png.SaveTo(file);
+            }
+        }
+        finally { screen.OnDeactivated(); }
+    }
+
     [Fact]
     public async Task Fire_commands_and_defense_are_in_the_expanded_drone_card()
     {
@@ -46,9 +92,12 @@ public sealed class PilotCardFireBlockTests
         Assert.Contains(scene.Screen.Layout.Texts, item => item.Text == BattleDesign.M("Card.Absorption", 36) && item.Color == BattleDesign.Heat);
     }
 
-    [Fact]
-    public async Task Target_wheel_scrolls_visible_commands_and_resets_with_the_group()
+    [Theory]
+    [InlineData("classic")]
+    [InlineData("tabletop")]
+    public async Task Target_wheel_scrolls_visible_commands_and_resets_with_the_group(string skinId)
     {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
         await using var scene = await Ep0019Scenes.Create("2-fire");
         var frame = scene.Frame;
         var row = frame.FirePlan!.Selected!;
@@ -78,6 +127,7 @@ public sealed class PilotCardFireBlockTests
 
         void Draw()
         {
+            using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic(skinId));
             column.Arrange(frame, PilotCardModel.Project(frame));
             column.Draw(canvas, PilotPortraitCatalog.Default);
         }

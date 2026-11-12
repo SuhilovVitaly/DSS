@@ -101,7 +101,9 @@ internal sealed class PilotCardColumn
 
     private static float ExpandedHeight(TacticalBattleFrame frame, PilotCard card)
     {
-        if (Skin.SlimPilots) return PilotCardMoveBlock.MoveHeight;
+        if (Skin.SlimPilots)
+            return frame.FirePlan?.Selected is { } selectedFire
+                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire) : PilotCardMoveBlock.MoveHeight;
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
             return 10 + PilotCardFireBlock.Height(fire);

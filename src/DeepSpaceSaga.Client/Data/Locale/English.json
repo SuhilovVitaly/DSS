@@ -1,4 +1,7 @@
 {
+  "TacticalBattle.Panel.NoTargets": "no targets",
+  "TacticalBattle.Panel.UnderFireShort": "Under fire: {0} {1}",
+  "TacticalBattle.Panel.EvadeShort": "Evade [E]",
   "TacticalBattle.Map.ShotDamage": "−{0}",
   "TacticalBattle.Map.ShotKilled": "−{0} · down",
   "TacticalBattle.Map.ShotMiss": "miss",
