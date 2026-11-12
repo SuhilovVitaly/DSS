@@ -108,7 +108,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (!moving && presentation.Results is { } results) state = results.Project(now);
         bool planning = !moving && salvo is null;
         _viewport = BattleViewport.From(width, height);
-        _camera.Update(state, (int)_viewport.Wd, 720);
+        _camera.Update(state, (int)_viewport.Wd, 720, salvo is not null, _skin.Metric("field.style", "tabletop", 0) == 1);
         if (planning)
         {
             ObserveOrders(state);
@@ -133,20 +133,23 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     }
 
     private InteractiveAnomalyField? _interactiveField;
+    private PaintedCloudLayer? _paintedClouds;
 
     public override void OnDeactivated()
     {
         _interactiveField?.Dispose();
         _interactiveField = null;
+        _paintedClouds?.Dispose();
+        _paintedClouds = null;
         base.OnDeactivated();
     }
 
     public override void Render(SKCanvas canvas, int width, int height) => RenderFrame(canvas, width, height, null);
 
-    internal void RenderNative(SKCanvas canvas, int width, int height) =>
-        RenderFrame(canvas, width, height, _interactiveField ??= new());
+    internal void RenderNative(SKCanvas canvas, int width, int height, GRContext? context = null) =>
+        RenderFrame(canvas, width, height, _skin.Metric("field.style", "tabletop", 0) == 1 ? null : _interactiveField ??= new(), context);
 
-    private void RenderFrame(SKCanvas canvas, int width, int height, InteractiveAnomalyField? interactiveField)
+    private void RenderFrame(SKCanvas canvas, int width, int height, InteractiveAnomalyField? interactiveField, GRContext? context = null)
     {
         using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame) { base.Render(canvas, width, height); return; }
@@ -160,13 +163,25 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         Layout = new() { Camera = frame.View };
         BattleDesign.Recording = Layout;
         canvas.Save();
-        try { canvas.Scale(_viewport.S); TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom); DrawOverlay(canvas, frame); }
+        try
+        {
+            canvas.Scale(_viewport.S);
+            var clouds = TacticalBattleSkinRenderScope.Tabletop ? _paintedClouds ??= new() : null;
+            TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context, _pilotColumn.Layout.VisiblePanel);
+            DrawOverlay(canvas, frame);
+        }
         finally { canvas.Restore(); BattleDesign.Recording = null; }
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
     }
 
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
+        if (_skin.Metric("ui.pilot-column", "slim", 0) == 1 && key == Key.Space && modifiers == KeyModifiers.None && !repeat &&
+            !ConfirmExit && !TurnBusy && SalvoInFlight)
+        {
+            AdvanceSalvo();
+            return ScreenEvent.None;
+        }
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
         if (TurnBusy) return ScreenEvent.None;
         if (key == Key.Escape && !repeat && OutcomeVisible) return ScreenEvent.CloseTacticalBattle;

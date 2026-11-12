@@ -382,7 +382,7 @@ public sealed class SkiaWindow : IDisposable
             if (index == 1)
                 MenuStyle.DrawDimOverlay(canvas, windowSize.X, windowSize.Y);
 
-            if (screen is TacticalBattleScreen battle) battle.RenderNative(canvas, windowSize.X, windowSize.Y);
+            if (screen is TacticalBattleScreen battle) battle.RenderNative(canvas, windowSize.X, windowSize.Y, _grContext);
             else screen.Render(canvas, windowSize.X, windowSize.Y);
             if (screen is GameSessionScreen sessionScreen) profiledScreen = sessionScreen;
             index++;

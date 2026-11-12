@@ -46,6 +46,8 @@ public sealed class Ep0022SkinScenesTests
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
         Assert.True(catalog.TryGet("contrast", out var contrast));
         var skins = new List<TacticalBattleSkin> { contrast };
+        Assert.True(catalog.TryGet("tabletop", out var tabletop));
+        skins.Add(tabletop);
         if (TryGetXenon(catalog, out var xenon))
         {
             skins.Add(xenon);
@@ -65,8 +67,18 @@ public sealed class Ep0022SkinScenesTests
                 var styled = AnomalySceneSearch.Render(frame, $"{skin.Id}-{scene}-{scale}", scale);
                 using var styledBitmap = styled.Bitmap;
                 Assert.Equal(classic.Layout.Camera, styled.Layout.Camera);
-                Assert.Equal(classic.Layout.Rects, styled.Layout.Rects);
-                Assert.Equal(classic.Layout.Texts.Select(text => text.Text), styled.Layout.Texts.Select(text => text.Text));
+                if (skin.Id == "tabletop")
+                {
+                    var originalWindows = Windows(TacticalBattleSkin.Classic);
+                    var styledWindows = Windows(skin);
+                    Assert.Equal(originalWindows.Rects, styledWindows.Rects);
+                    Assert.Equal(originalWindows.Texts.Select(t => t.Text), styledWindows.Texts.Select(t => t.Text));
+                }
+                else
+                {
+                    Assert.Equal(classic.Layout.Rects, styled.Layout.Rects);
+                    Assert.Equal(classic.Layout.Texts.Select(text => text.Text), styled.Layout.Texts.Select(text => text.Text));
+                }
                 Assert.NotEqual(classicBitmap.GetPixel((int)(360 * scale), (int)(92 * scale)),
                     styledBitmap.GetPixel((int)(360 * scale), (int)(92 * scale)));
                 Assert.Equal(PhasePanel.Bottom(frame.Battle.Phase, frame.Salvo), styled.Layout.Rects["phase"].Bottom);
@@ -81,6 +93,12 @@ public sealed class Ep0022SkinScenesTests
                 var selected = PilotCardModel.Project(frame).SingleOrDefault(card => card.Selected);
                 if (selected is null) continue;
                 var card = styled.Layout.Rects["pilot:" + selected.UnitId];
+                if (skin.Id == "tabletop")
+                {
+                    Assert.Equal((150, 40), (card.Width, card.Height));
+                    Assert.Equal(150, styled.Layout.Rects["pilot-panel:" + selected.UnitId].Width);
+                    continue;
+                }
                 Assert.True(card.Height > 82);
                 for (int i = 0; i < selected.Stats.Count; i++)
                 {
@@ -90,6 +108,20 @@ public sealed class Ep0022SkinScenesTests
                         $"{skin.Id}/{scene}/{scale}: unreadable {selected.Stats[i].Kind} value");
                 }
             }
+        }
+
+        BattleLayout Windows(TacticalBattleSkin skin)
+        {
+            using var scope = TacticalBattleSkinRenderScope.Enter(skin);
+            using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
+            var layout = new BattleLayout(); BattleDesign.Recording = layout;
+            try
+            {
+                new PhasePanel().Draw(canvas, frame, layout);
+                new HoverCard().Draw(canvas, frame, PilotPortraitCatalog.Default);
+            }
+            finally { BattleDesign.Recording = null; }
+            return layout;
         }
     }
 

@@ -12,16 +12,20 @@ internal static partial class TacticalBattleMapRenderer
     static partial void DrawPhaseOverlays(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied, InteractiveAnomalyField? interactiveField)
     {
         if (f.Movement is not null) return;
-        if (f.FirePlan is { } plan)
+        if (Skin.Tabletop && f.FirePlan is { } tabletopPlan) DrawFireTemplates(c, f, tabletopPlan, occupied);
+        if (!Skin.Tabletop && f.FirePlan is { } plan)
         {
             if (plan.Selected?.Drone.Build is { } build)
             {
                 using var path = CreateFireSector(f.View, plan.Selected.Drone.Pose, build.Range, 2 * build.ArcDegrees);
                 DrawFireSector(c, path, Skin.Color("ui.map.fire.sector", "fill", ArcFill),
                     Skin.Color("ui.map.fire.sector", "stroke", ArcEdge));
-                c.Save();
-                try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
-                finally { c.Restore(); }
+                if (!Skin.Tabletop)
+                {
+                    c.Save();
+                    try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
+                    finally { c.Restore(); }
+                }
             }
             foreach (var row in plan.Rows.Where(r => r.Drone.InDust))
             {
@@ -61,7 +65,9 @@ internal static partial class TacticalBattleMapRenderer
                 }
             }
         }
-        if (f.Salvo is { InFlight: true } salvo)
+        if (Skin.Tabletop && f.Salvo is { } tabletopSalvo) DrawSalvoTemplates(c, f, tabletopSalvo, occupied);
+        if (Skin.Tabletop && f.Salvo is { InFlight: true } tabletopFlying) DrawTabletopProjectiles(c, f, tabletopFlying);
+        if (!Skin.Tabletop && f.Salvo is { InFlight: true } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flying))
             {
                 var a = f.View.Project(flight.Shot.From); var b = f.View.Project(flight.Shot.To);
@@ -71,10 +77,10 @@ internal static partial class TacticalBattleMapRenderer
                 Circle(c, head, 8, Yellow.WithAlpha(70)); Circle(c, head, TacticalBattleSkinRenderScope.Number("shot.projectile", "size", 3.5f), TacticalBattleSkinRenderScope.Color("shot.projectile", "fill", Shell));
                 if (Recording is { } l) l.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
             }
-        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
+        if (!Skin.Tabletop && f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
         {
             var markers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => f.View.Project(u.Pose)).ToArray();
-            foreach (var damage in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
+            foreach (var damage in results.Damage.Where(d => !Skin.Tabletop && d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
             {
                 var p = f.View.Project(damage.Unit.Pose); string text = U("ArmorLoss", damage.Armor); float half = (Measure(text, 12) + 14) * .5f;
                 SKPoint q = default;
@@ -213,7 +219,12 @@ internal static partial class TacticalBattleMapRenderer
 
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f)
     {
-        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
+        if (Skin.Tabletop)
+        {
+            if (f.Salvo is { } tabletopSalvo) DrawTabletopExplosions(c, f, tabletopSalvo);
+            return;
+        }
+        if (!Skin.Tabletop && f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
             foreach (var d in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide)) Diamond(c, f.View.Project(d.Unit.Pose), 10, SKColors.Transparent, Yellow, 1.5f);
         if (f.Salvo is { } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flash))

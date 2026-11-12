@@ -247,3 +247,9 @@ stationary movement planning, panning, zooming and salvo playback. The 80 FPS
 budget is p99 at or below 12.5 ms. Submit, flush and swap wait are reported
 separately. Use `DSS_TACTICAL_BENCH_UNCAPPED=1` with cadence measurement to
 measure rendering throughput on a lower-refresh validation display.
+
+## Tabletop cloud-cache timing
+
+Set `DSS_TACTICAL_CLOUD_TIMING=1` with `--tactical-window`, an isolated Tabletop settings profile and `DSS_VALIDATION_SMALL_MONITOR=1`. Verify the display inventory and set an explicit smaller monitor index before launching. The requested framebuffer must fit its video-mode resolution (working-area bounds are the fallback). Never use the largest monitor.
+
+The optional probe writes `<native-report-name>-clouds.json`: one cold and eight warm cache rebuilds at 1920×1080/S1.5, changing the camera each time, followed by a reuse draw with unchanged BuildCount. It uses the current real GRContext and waits for GPU completion before and after each sample. Production rendering does not force those waits. The 12ms rebuild gate includes the cold sample; report cold/warm/reuse separately. Native draw percentiles are a different measure and do not establish physical FPS. Run without concurrent builds/tests and keep hardware, viewport and scene in the report.

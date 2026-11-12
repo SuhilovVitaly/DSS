@@ -5,7 +5,7 @@ using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.PilotCardColumn;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
-internal sealed class PilotCardFireBlock
+internal sealed partial class PilotCardFireBlock
 {
     private const int VisibleRows = 3;
     private const float RowHeight = 20;
@@ -44,6 +44,11 @@ internal sealed class PilotCardFireBlock
     public void Draw(SKCanvas canvas, PilotCardColumn column, TacticalBattleSnapshot battle,
         TacticalFirePlanRow row, float left, float right, float top)
     {
+        if (TacticalBattleSkinRenderScope.SlimPilots)
+        {
+            DrawSlim(canvas, column, battle, row, left, right, top);
+            return;
+        }
         string id = row.Drone.Id;
         float width = right - left;
         float listTop = top + ListTop;

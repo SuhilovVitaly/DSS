@@ -8,6 +8,46 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class PilotCardSalvoBlockTests
 {
+    [Theory]
+    [InlineData("3-salvo-flight", 51)]
+    [InlineData("4-salvo-results", 71)]
+    public async Task Slim_panel_shows_flight_or_confirmed_result_without_commands(string sceneName, float height)
+    {
+        using var locale = Localization.UseLocaleForTests("Russian");
+        await using var scene = await Ep0019Scenes.Create(sceneName);
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop"));
+        using var bitmap = new SKBitmap(630, 1440); using var c = new SKCanvas(bitmap); c.Scale(3);
+        var frame = scene.Frame;
+        var column = new PilotCardColumn(); column.Arrange(frame, PilotCardModel.Project(frame));
+        var layout = new BattleLayout(); BattleDesign.Recording = layout;
+        try { column.Draw(c, PilotPortraitCatalog.Default); }
+        finally { BattleDesign.Recording = null; }
+        Assert.Equal(height, column.Layout.Panel.Height);
+        Assert.DoesNotContain(layout.Rects.Keys, k => k.StartsWith("card-command:", StringComparison.Ordinal));
+        if (frame.Salvo!.InFlight)
+        {
+            Assert.Contains(layout.Texts, t => t.Text == "ОГОНЬ");
+            var flight = frame.Salvo.Flights.Single(f => f.Shot.ShooterId == PilotCardModel.ActiveShooter(frame));
+            Assert.Equal(138 * flight.Progress, layout.Rects["pilot-flight-progress"].Width, .001);
+            Assert.DoesNotContain(layout.Texts, t => t.Text == "ПРОМАХ");
+        }
+        else
+        {
+            var shot = PilotCardModel.ResultShot(frame)!;
+            Assert.True(shot.Decoyed); Assert.False(shot.Hit);
+            Assert.Contains(layout.Texts, t => t.Text == "ПРОМАХ" && t.Color == SKColor.Parse("#C8D4EC"));
+            Assert.Contains(layout.Texts, t => t.Text == BattleDesign.M("Panel.ResultLine", shot.TargetId, BattleDesign.Pct(shot.Chance), 0));
+            Assert.Contains(layout.Texts, t => t.Text.StartsWith("ловушка цели:", StringComparison.Ordinal));
+            Assert.Contains(layout.Rects.Keys, k => k == "pilot-damage-armor:Юн");
+        }
+        if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } folder)
+        {
+            using var png = bitmap.Encode(SKEncodedImageFormat.Png, 100);
+            using var file = File.Create(Path.Combine(folder, "salvo-panel-" + sceneName + "-column-x2.png")); png.SaveTo(file);
+        }
+    }
+
     [Fact]
     public async Task Result_card_shows_shooter_and_read_only_details()
     {

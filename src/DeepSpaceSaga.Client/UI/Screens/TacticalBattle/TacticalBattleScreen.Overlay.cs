@@ -20,6 +20,7 @@ public sealed partial class TacticalBattleScreen
     {
         yield return _panel;
         if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
+        if (!_pilotColumn.Layout.VisiblePanel.IsEmpty) yield return _pilotColumn.Layout.VisiblePanel;
         for (int i = 0; i < _pilotColumn.Layout.Cards.Count; i++)
         {
             var rect = _pilotColumn.Rect(i);
@@ -106,9 +107,10 @@ public sealed partial class TacticalBattleScreen
     private void UpdateHover(SKPoint p)
     {
         if (_hoverFrame is not { } f || OverlayHit(p)) { HoverUnitId = null; return; }
+        bool tabletop = _skin.Metric("field.style", "tabletop", 0) == 1;
         HoverUnitId = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed)
             .Select(u => (Unit: u, Distance: SKPoint.Distance(p, TacticalBattleMapRenderer.HoverPoint(f, u))))
-            .Where(pair => pair.Distance <= (pair.Unit.Kind == TacticalUnitKind.Carrier ? 16 : 12))
+            .Where(pair => pair.Distance <= (pair.Unit.Kind == TacticalUnitKind.Carrier ? tabletop ? 36 : 16 : tabletop ? 26 : 12))
             .OrderBy(pair => pair.Distance).FirstOrDefault().Unit?.Id;
     }
 }

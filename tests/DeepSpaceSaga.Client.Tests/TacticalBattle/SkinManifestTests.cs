@@ -7,6 +7,75 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SkinManifestTests
 {
     [Fact]
+    public void Steel_and_slim_metrics_are_independent_opt_in_flags()
+    {
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"steel","displayName":"Steel","roles":{
+            "ui.style":{"metrics":{"steel":1}},"ui.pilot-column":{"metrics":{"slim":1}}}}
+            """);
+        Assert.Equal(1, skin.Metric("ui.style", "steel", 0));
+        Assert.Equal(1, skin.Metric("ui.pilot-column", "slim", 0));
+        Assert.Equal(0, skin.Metric("field.style", "tabletop", 0));
+        Assert.Equal(0, TacticalBattleSkin.Classic.Metric("ui.style", "steel", 0));
+        Assert.Equal(0, TacticalBattleSkin.Classic.Metric("ui.pilot-column", "slim", 0));
+    }
+
+    [Fact]
+    public void Tabletop_scope_reads_shipped_sheets_and_restores_classic()
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using (TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop")))
+        {
+            Assert.True(TacticalBattleSkinRenderScope.Tabletop);
+            var sheet = TacticalBattleSkinRenderScope.ShipSheet("heavy", "own")!.Value;
+            Assert.Equal((8, 32, 64), (sheet.Columns, sheet.Frames, sheet.Cell));
+            var strip = TacticalBattleSkinRenderScope.EffectStrip("boom-kill")!.Value;
+            Assert.Equal((16, 80, 55f), (strip.Frames, strip.Cell, strip.FrameMs));
+            Assert.NotNull(TacticalBattleSkinRenderScope.EffectStrip("trail"));
+            Assert.Null(TacticalBattleSkinRenderScope.ShipSheet("carrier", "disabled"));
+            Assert.Null(TacticalBattleSkinRenderScope.EffectStrip("missing"));
+            using (TacticalBattleSkinRenderScope.Enter(TacticalBattleSkin.Classic))
+            {
+                Assert.False(TacticalBattleSkinRenderScope.Tabletop);
+                Assert.Null(TacticalBattleSkinRenderScope.ShipSheet("heavy", "own"));
+            }
+            Assert.True(TacticalBattleSkinRenderScope.Tabletop);
+        }
+        foreach (var id in new[] { "classic", "contrast", "xenon-star" })
+        {
+            using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic(id));
+            Assert.False(TacticalBattleSkinRenderScope.Tabletop);
+            Assert.Null(TacticalBattleSkinRenderScope.EffectStrip("puff"));
+        }
+    }
+
+    [Theory]
+    [InlineData(0, 32, 512, 256)]
+    [InlineData(8.5f, 32, 512, 256)]
+    [InlineData(8, 31, 512, 256)]
+    [InlineData(8, 32, 511, 256)]
+    [InlineData(8, 32, 512, 255)]
+    public void Invalid_sheet_geometry_is_ignored(float columns, int frames, int width, int height)
+    {
+        string json = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            schemaVersion = 1,
+            id = "test",
+            displayName = "Test",
+            roles = new Dictionary<string, object>
+            {
+                ["field.style"] = new { metrics = new { tabletop = 1 } },
+                ["field.unit.sprite.heavy.own"] = new { image = "assets/sheet.png", metrics = new { columns, frames } },
+            },
+        });
+        using var bitmap = new SKBitmap(width, height);
+        using var image = SKImage.FromBitmap(bitmap);
+        var skin = TacticalBattleSkin.Parse(json).WithResources(new() { ["assets/sheet.png"] = image });
+        using var scope = TacticalBattleSkinRenderScope.Enter(skin);
+        Assert.Null(TacticalBattleSkinRenderScope.ShipSheet("heavy", "own"));
+    }
+
+    [Fact]
     public void V1_reads_all_property_types_and_keeps_classic_fallbacks()
     {
         var skin = TacticalBattleSkin.Parse("""

@@ -36,8 +36,16 @@ Pilot initiative and the shared fire queue use existing visual roles. All battle
 surfaces read the same admitted FireSteps projection; packs cannot change firing
 order or playback timing. See the [battle contract](../../../DB/Documentation/04-Engineering/TacticalBattle.md).
 
-The active screen uses the compact overlay and expands the selected pilot card for movement, fire or salvo details. Use the current ui.panel, ui.pilot-card, ui.slider and ui.button roles in the authoring contract; legacy tabs/orders controls are no longer connected. Bundled DejaVu typography and height-based layout keep Classic consistent between machines. Packs only change the properties consumed by active primitives.
+Classic, Contrast and Xenon Star use the compact overlay and expand the selected pilot card for movement, fire or salvo details. Use the current ui.panel, ui.pilot-card, ui.slider and ui.button roles in the authoring contract; legacy tabs/orders controls are no longer connected. Bundled DejaVu typography and height-based layout keep Classic consistent between machines. Packs only change the properties consumed by active primitives.
 
 Pilot gauges use `ui.pilot-card.bar.armor/hull/mind` for fill and `ui.pilot-card.gauge.track` for the track. `ui.pilot-card.icon.armor/hull/mind` supplies stroke colors and falls back to the gauge colors. `ui.pilot-card.divider` provides stroke and dash, and `ui.pilot-card.scroll` provides track fill and thumb stroke. The pilot card art scales to its full height; segmented gauge art is clipped to the filled portion.
 
 Build cards use the panel, box, bar and text roles with bundled typography. Slot identities, damage, evasion, decoys and anomaly geometry come from the captured battle data.
+
+## Tabletop
+
+Build and publish also include `Skins/tabletop`, with its ready-to-use manifest and 24 PNGs. Choose **Tabletop** in Settings, then open a battle. It supplies 32-direction pixel ships, torpedoes and impact strips, painted anomaly clouds, movement/fire templates, steel windows and 150×40 pilot cards with a separate command panel. The right windows retain their layout. Battle rules, commands, FireSteps timing and saves are shared with Classic.
+
+The independent opt-in metrics `field.style.tabletop`, `ui.style.steel` and `ui.pilot-column.slim` each use value 1. They work with other package IDs. The slim flight hint supports Space to skip the current playback; Enter remains available. The [authoring contract](../../../DB/Documentation/04-Engineering/TacticalBattleSkins.md) covers sprite geometry, roles and resource limits.
+
+The supplied manifest is preserved in canonical Board; runtime only normalizes a pasted Markdown artifact in the `ui.build.name` key. The24 PNGs are unchanged. Original bake sources are unavailable, so there is currently no supported reproducible rebake command. Runtime installation does not depend on them. See [materials and bake status](../../../DB/Board/EP-0024-battle-field-redesign/Materials/README.md).

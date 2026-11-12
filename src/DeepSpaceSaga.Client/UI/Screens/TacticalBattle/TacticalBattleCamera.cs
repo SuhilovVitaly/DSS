@@ -23,17 +23,25 @@ internal sealed class TacticalBattleCamera
     private int _width = 1, _height = 1;
     private double _fittedPixelsPerUnit = 1;
     private string? _battleId;
+    private (TacticalBattlePhase Phase, int Turn)? _framedPhase;
     private SKPoint? _panOrigin;
     public bool UserView { get; private set; }
     public bool Panning => _panOrigin.HasValue;
     public TacticalBattleView View => new(_width, _height, _camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit);
 
-    public void Update(TacticalBattleSnapshot snapshot, int width, int height)
+    public void Update(TacticalBattleSnapshot snapshot, int width, int height, bool salvo = false, bool tabletop = false)
     {
         Resize(width, height);
-        if (_battleId == snapshot.BattleId) return;
-        _battleId = snapshot.BattleId;
-        Fit(snapshot);
+        if (_battleId != snapshot.BattleId)
+        {
+            _battleId = snapshot.BattleId;
+            Fit(snapshot, tabletop, salvo);
+            _framedPhase = salvo ? null : (snapshot.Phase, snapshot.Turn);
+            return;
+        }
+        if (!tabletop || UserView || salvo || _framedPhase == (snapshot.Phase, snapshot.Turn)) return;
+        Fit(snapshot, true, false);
+        _framedPhase = (snapshot.Phase, snapshot.Turn);
     }
 
     private void Resize(int width, int height)
@@ -44,12 +52,30 @@ internal sealed class TacticalBattleCamera
         EndPan();
     }
 
-    private void Fit(TacticalBattleSnapshot snapshot)
+    private void Fit(TacticalBattleSnapshot snapshot, bool tabletop, bool salvo)
     {
         UserView = false; EndPan();
-        var points = snapshot.Units.Where(u => snapshot.Phase == TacticalBattlePhase.Move || u.Kind == TacticalUnitKind.Drone).Select(u => u.Pose).ToList();
-        points.AddRange(snapshot.Paths.SelectMany(p => p.Points));
-        if (snapshot.Phase == TacticalBattlePhase.Move)
+        bool movement = snapshot.Phase == TacticalBattlePhase.Move && (!tabletop || !salvo);
+        var points = new List<TacticalPoseSnapshot>();
+        if (!tabletop)
+        {
+            points.AddRange(snapshot.Units.Where(u => snapshot.Phase == TacticalBattlePhase.Move || u.Kind == TacticalUnitKind.Drone).Select(u => u.Pose));
+            points.AddRange(snapshot.Paths.SelectMany(p => p.Points));
+        }
+        else if (movement) points.AddRange(snapshot.Units.Where(u => u.Side == snapshot.PlayerSide).Select(u => u.Pose));
+        else
+        {
+            var ids = snapshot.Targets.SelectMany(g => g.List).Select(t => t.TargetId)
+                .Concat(snapshot.Incoming.Select(i => i.ShooterId)).ToHashSet(StringComparer.Ordinal);
+            if (!snapshot.Shots.IsDefaultOrEmpty)
+            {
+                int lastTurn = snapshot.Shots.Max(s => s.Turn);
+                foreach (var shot in snapshot.Shots.Where(s => s.Turn == lastTurn)) { ids.Add(shot.ShooterId); ids.Add(shot.TargetId); }
+            }
+            points.AddRange(snapshot.Units.Where(u => ids.Contains(u.Id) ||
+                u.Side == snapshot.PlayerSide && u.Kind == TacticalUnitKind.Drone && u.State != TacticalUnitState.Destroyed).Select(u => u.Pose));
+        }
+        if (movement)
             foreach (var order in snapshot.Suggestions)
             {
                 var u = snapshot.Units.FirstOrDefault(u => u.Id == order.DroneId);
@@ -59,7 +85,7 @@ internal sealed class TacticalBattleCamera
             }
         if (points.Count == 0) points.Add(new(0, 0, 0));
         double left = points.Min(p => p.X), right = points.Max(p => p.X), top = points.Min(p => p.Y), bottom = points.Max(p => p.Y);
-        double margin = snapshot.Phase == TacticalBattlePhase.Move ? 50 : 70;
+        double margin = tabletop ? movement ? 200 : 110 : snapshot.Phase == TacticalBattlePhase.Move ? 50 : 70;
         double ppu = PyMath.Max(.00001, PyMath.Min((_width - 448 - 2 * margin) / (double)PyMath.Max(1, right - left), (_height - 12 - 2 * margin) / (double)PyMath.Max(1, bottom - top)));
         _fittedPixelsPerUnit = ppu;
         // TacticalBattleView projects around the entire canvas; offset focus to center the safe area.

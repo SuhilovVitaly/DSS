@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Motion.TacticalBattle;
+using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using Skin = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinRenderScope;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
@@ -32,7 +33,7 @@ internal sealed class PilotCardColumn
     public void RegisterCommand(string unitId, string action, SKRect bounds)
     {
         if (unitId != _selectedId) return;
-        var visible = SKRect.Intersect(bounds, PilotColumnLayout.Viewport);
+        var visible = SKRect.Intersect(bounds, Layout.Slim ? Layout.VisiblePanel : PilotColumnLayout.Viewport);
         if (visible.IsEmpty) return;
         _commands.Add(new(unitId, action, bounds, visible));
         if (Recording is { } layout) layout.Rects["card-command:" + action] = visible;
@@ -64,7 +65,8 @@ internal sealed class PilotCardColumn
             EndSlider();
             return false;
         }
-        ApplySlider(orders, command.Action == "slider:speed", point.X, command.Bounds.Left + 7, command.Bounds.Right - 7);
+        float inset = Layout.Slim ? 3 : 7;
+        ApplySlider(orders, command.Action == "slider:speed", point.X, command.Bounds.Left + inset, command.Bounds.Right - inset);
         return true;
     }
 
@@ -83,7 +85,8 @@ internal sealed class PilotCardColumn
 
     public bool Scroll(SKPoint point, float delta)
     {
-        if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 || !PilotColumnLayout.Viewport.Contains(point))
+        if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 ||
+            !PilotColumnLayout.Viewport.Contains(point) && !Layout.VisiblePanel.Contains(point))
             return false;
         _scroll = Math.Clamp(_scroll - 40 * Math.Sign(delta), 0, Layout.MaxScroll);
         return true;
@@ -98,6 +101,10 @@ internal sealed class PilotCardColumn
 
     private static float ExpandedHeight(TacticalBattleFrame frame, PilotCard card)
     {
+        if (Skin.SlimPilots)
+            return frame.FirePlan?.Selected is { } selectedFire
+                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire)
+                : frame.Salvo is { } selectedSalvo ? PilotCardSalvoBlock.SalvoHeight(selectedSalvo.InFlight) : PilotCardMoveBlock.MoveHeight;
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
             return 10 + PilotCardFireBlock.Height(fire);
@@ -108,20 +115,23 @@ internal sealed class PilotCardColumn
     public void Arrange(IReadOnlyList<PilotCard> cards, Func<PilotCard, float>? expandedHeight = null)
     {
         _commands.Clear();
+        bool slim = Skin.SlimPilots;
         int selected = -1;
+        float panelHeight = 0;
         var heights = new float[cards.Count];
         for (int i = 0; i < cards.Count; i++)
         {
-            heights[i] = PilotColumnLayout.BaseHeight;
+            heights[i] = slim ? 40 : PilotColumnLayout.BaseHeight;
             if (!cards[i].Selected) continue;
             selected = i;
-            heights[i] += expandedHeight?.Invoke(cards[i]) ?? 0;
+            if (slim) panelHeight = expandedHeight?.Invoke(cards[i]) ?? 91;
+            else heights[i] += expandedHeight?.Invoke(cards[i]) ?? 0;
         }
 
         string? selectedId = selected < 0 ? null : cards[selected].UnitId;
-        float selectedHeight = selected < 0 ? 0 : heights[selected];
+        float selectedHeight = selected < 0 ? 0 : heights[selected] + panelHeight;
         int reveal = selectedId != _selectedId || selectedHeight != _selectedHeight ? selected : -1;
-        Layout = new(heights, _scroll, reveal);
+        Layout = new(heights, _scroll, reveal, slim, selected, panelHeight);
         _scroll = Layout.Scroll;
         _selectedId = selectedId;
         _selectedHeight = selectedHeight;
@@ -139,8 +149,11 @@ internal sealed class PilotCardColumn
         c.Save();
         try
         {
-            c.ClipRect(PilotColumnLayout.Viewport);
+            var clip = PilotColumnLayout.Viewport;
+            if (Layout.Slim) { clip.Inflate(3, 3); clip.Right = 205; }
+            c.ClipRect(clip);
             DrawCards(c, portraits);
+            if (Layout.Slim) DrawCommandPanel(c);
         }
         finally { c.Restore(); }
 
@@ -166,6 +179,7 @@ internal sealed class PilotCardColumn
             var card = _cards[i];
             var r = Layout.Cards[i];
             if (Recording is { } layout) layout.Rects["pilot:" + card.UnitId] = visible;
+            if (Layout.Slim) { DrawSlimCard(c, card, r, portraits); continue; }
             PanelBox(c, r, card.Selected, 5, card.Selected ? "ui.pilot-card.selected" : "ui.pilot-card");
             Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 6, 34, 34));
             DrawChip(c, card, r);
@@ -176,6 +190,72 @@ internal sealed class PilotCardColumn
             DrawPhase(c, card, r);
             if (card.Selected && r.Height > PilotColumnLayout.BaseHeight)
                 DrawExpanded(c, card, r);
+        }
+    }
+
+    internal static void SmallText(SKCanvas c, string text, float x, float y, float size, SKColor color,
+        bool bold = false, bool italic = false, SKTextAlign align = SKTextAlign.Left)
+    {
+        using var paint = BattleTypography.TextPaint(size, bold);
+        paint.Color = color; paint.TextAlign = align; paint.TextSkewX = italic ? -.18f : 0;
+        c.DrawText(text, x, y, paint); Recording?.Texts.Add(new(text, color));
+    }
+
+    private void DrawSlimCard(SKCanvas c, PilotCard card, SKRect r, PilotPortraitCatalog portraits)
+    {
+        var unit = _frame?.Battle.Units.FirstOrDefault(u => u.Id == card.UnitId);
+        bool destroyed = unit?.State == TacticalUnitState.Destroyed;
+        var gold = SKColor.Parse("#FFD24A");
+        PanelBox(c, r, role: "ui.pilot-card");
+        var portrait = SKRect.Create(r.Left + 4, r.Top + 4, 32, 32);
+        if (destroyed)
+        {
+            using var filter = SKColorFilter.CreateColorMatrix([
+                .2126f, .7152f, .0722f, 0, 0, .2126f, .7152f, .0722f, 0, 0,
+                .2126f, .7152f, .0722f, 0, 0, 0, 0, 0, 1, 0]);
+            using var layer = new SKPaint { ColorFilter = filter };
+            c.SaveLayer(layer); Portrait(c, portraits, card.PilotId, card.Name, portrait); c.Restore();
+        }
+        else Portrait(c, portraits, card.PilotId, card.Name, portrait);
+        var light = Skin.Color("ui.panel.bevel", "fill", SKColor.Parse("#4C5764"));
+        var dark = Skin.Color("ui.panel.bevel", "stroke", SKColor.Parse("#0A0E12"));
+        Stroke(c, new(portrait.Left, portrait.Bottom), new(portrait.Left, portrait.Top), dark, 1.6f);
+        Stroke(c, new(portrait.Left, portrait.Top), new(portrait.Right, portrait.Top), dark, 1.6f);
+        Stroke(c, new(portrait.Right, portrait.Top), new(portrait.Right, portrait.Bottom), light, 1.6f);
+        Stroke(c, new(portrait.Right, portrait.Bottom), new(portrait.Left, portrait.Bottom), light, 1.6f);
+        using var edge = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = SKColor.Parse("#05070A"), StrokeWidth = .7f };
+        c.DrawRect(portrait, edge);
+        SmallText(c, card.Name, r.Left + 41, r.Top + 14, 9.8f, Skin.Color("ui.text", "text", Text), true);
+        var damage = _frame?.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
+        Counter("armor", r.Left + 41, SKColor.Parse("#3A5A8A"), damage?.Armor > 0);
+        Counter("hull", r.Left + 65, SKColor.Parse("#3F6A2C"), damage?.Hull > 0);
+        SmallText(c, BuildCardModel.Ellipsize(card.Weapon, 106, 5.6f, false), r.Left + 41, r.Top + 38, 5.6f, SKColor.Parse("#9AAABB"), italic: true);
+        if (unit is not null)
+        {
+            int factor = Math.Max(1, TacticalShipSprites.Factor(TacticalShipSprites.CanvasScale(c)) / 2);
+            TacticalShipSprites.Draw(c, unit, new(r.Left + 124, r.Top + 22), true, 0, factor: factor);
+        }
+        if (destroyed)
+        {
+            using var dim = new SKPaint { Color = new SKColor(0, 0, 0, 77) }; c.DrawRect(r, dim);
+        }
+        if (card.Selected)
+        {
+            var selection = r; selection.Inflate(2.2f, 2.2f);
+            edge.Color = gold; edge.StrokeWidth = 2; c.DrawRect(selection, edge);
+        }
+        void Counter(string kind, float x, SKColor color, bool damaged)
+        {
+            var box = SKRect.Create(x, r.Top + 20, 24, 12);
+            using var paint = new SKPaint { IsAntialias = true, Color = destroyed ? SKColor.Parse("#555555") : color };
+            c.DrawRect(box, paint); paint.Style = SKPaintStyle.Stroke; paint.Color = SKColors.Black; paint.StrokeWidth = .8f; c.DrawRect(box, paint);
+            string value = card.Stats.FirstOrDefault(s => s.Kind == kind)?.Value.Split('/')[0] ?? "—";
+            SmallText(c, value, box.MidX, box.Top + box.Height * .74f, 7.4f, SKColors.White, true, align: SKTextAlign.Center);
+            if (Recording is { } record) record.Rects[$"pilot-{kind}:{card.UnitId}"] = box;
+            if (!damaged) return;
+            var border = box; border.Inflate(1, 1);
+            paint.Color = SKColor.Parse("#FFE27A"); paint.StrokeWidth = 1.4f; c.DrawRect(border, paint);
+            if (Recording is { } damageRecord) damageRecord.Rects[$"pilot-damage-{kind}:{card.UnitId}"] = border;
         }
     }
 
@@ -195,11 +275,37 @@ internal sealed class PilotCardColumn
             PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, x0, x1, top);
     }
 
+    private void DrawCommandPanel(SKCanvas c)
+    {
+        if (Layout.VisiblePanel.IsEmpty || _selectedId is null) return;
+        var card = _cards.FirstOrDefault(card => card.UnitId == _selectedId);
+        if (card is null) return;
+        var panel = Layout.Panel;
+        PanelBox(c, panel, role: "ui.pilot-card");
+        Polygon(c, [new(panel.Left + 8, panel.Top - 2), new(panel.Left + 14, panel.Top + 2.5f), new(panel.Left + 20, panel.Top - 2)],
+            SKColor.Parse("#FFD24A"), SKColor.Parse("#1B150E"), .5f);
+        if (Recording is { } layout) layout.Rects["pilot-panel:" + card.UnitId] = Layout.VisiblePanel;
+        c.Save();
+        try
+        {
+            c.ClipRect(Layout.VisiblePanel);
+            float left = panel.Left + 6, right = panel.Right - 6, top = panel.Top + 5;
+            if (_frame?.Movement?.SelectedOrder is { } move)
+                PilotCardMoveBlock.Draw(c, this, card.UnitId, move, left, right, top);
+            else if (_frame?.FirePlan?.Selected is { } fire)
+                _fireBlock.Draw(c, this, _frame.Battle, fire, left, right, top);
+            else if (_frame?.Salvo is not null)
+                PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, left, right, top);
+        }
+        finally { c.Restore(); }
+    }
+
     internal static void CommandButton(SKCanvas c, SKRect bounds, string label, bool active = false, float size = 9.5f)
     {
-        Round(c, bounds, active ? YellowDark : ButtonFill, active ? Yellow : BoxEdge, .8f, 2.5f, "ui.button");
+        string role = Skin.Steel && active ? "ui.button.primary" : "ui.button";
+        Round(c, bounds, active ? YellowDark : ButtonFill, active ? Yellow : BoxEdge, .8f, 2.5f, role);
         T(c, BuildCardModel.Ellipsize(label, bounds.Width - 4, size, active), bounds.MidX,
-            bounds.MidY + size * .36f, size, active ? Yellow : Text, active, SKTextAlign.Center, "ui.button");
+            bounds.MidY + size * .36f, size, active ? Yellow : Text, active, SKTextAlign.Center, role);
     }
 
     internal static void FittedText(SKCanvas canvas, string text, float x, float y, float size,
@@ -297,7 +403,7 @@ internal sealed class PilotCardColumn
         Round(c, r, PortraitBg);
         if (catalog.TryGet(id, out var image))
         {
-            c.Save(); using var clip = new SKRoundRect(r, 3, 3); c.ClipRoundRect(clip, antialias: true);
+            c.Save(); using var clip = new SKRoundRect(r, Skin.Steel ? 0 : 3, Skin.Steel ? 0 : 3); c.ClipRoundRect(clip, antialias: true);
             using var p = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
             c.DrawBitmap(image, new SKRect(170, 70, 854, 754), r, p); c.Restore();
         }

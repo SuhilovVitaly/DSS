@@ -99,7 +99,7 @@ internal sealed partial class PhasePanel
                 T(c, U("DamageTitle", Genitive(Name(unit.Id))), 1050, 185, 12, Text, true);
                 T(c, U("ArmorChange", before.Armor, unit.Armor), 1050, 202, 12, Text);
                 double armor = unit.MaxArmor > 0 ? unit.Armor / (double)unit.MaxArmor : 0;
-                Bar(c, 1050, 209, 170, 7, armor, Purple); T(c, Pct(armor), 1264, 216, 11, Text, align: SKTextAlign.Right);
+                Bar(c, 1050, 209, 170, 7, armor, Purple, "ui.bar.armor"); T(c, Pct(armor), 1264, 216, 11, Text, align: SKTextAlign.Right);
                 T(c, before.Hull == unit.Hull ? U("HullNoDamage", unit.Hull, unit.MaxHull) : U("HullChange", before.Hull, unit.Hull), 1050, 234, 12, Text);
                 BoxText(c, new(1048, 242, 1266, 262), PilotCardModel.State(unit), true);
             }

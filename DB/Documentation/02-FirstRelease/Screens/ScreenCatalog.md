@@ -14,7 +14,7 @@ pause/resume; экран не должен добавлять второй не�
 | [Save](Save.md) | Сохранение игры |
 | [Load](Load.md) | Загрузка игры |
 | [TacticalBattleSetup](TacticalBattleSetup.md) | Подготовка тактического боя с карты |
-| [TacticalBattle](TacticalBattle.md) | Полноэкранная карта, раскрываемая карточка команд выбранного пилота, панель фазы и итог |
+| [TacticalBattle](TacticalBattle.md) | Полноэкранная карта, карточка выбранного пилота с командами (отдельная панель в Tabletop), панель фазы и итог |
 | [Station](Station.md) | Окно станции |
 | [Trade](Trade.md) | Торговля |
 | [Finance](Finance.md) | Финансы |

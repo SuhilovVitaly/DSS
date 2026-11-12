@@ -35,12 +35,12 @@ internal static class BuildCard
         if (model.Hovered) CursorGlyph(c, r.Left + 9, r.Top + 8, .6f);
         T(c, model.Heading, r.Left + (model.Hovered ? 24 : 9), r.Top + 18, 10.5f, Muted, true);
         PilotCardColumn.Portrait(c, portraits, u.Build?.PilotId ?? "", PilotCardModel.Name(u), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32));
-        T(c, PilotCardModel.Name(u), r.Left + 48, r.Top + 38, 14, Cyan, true);
+        T(c, PilotCardModel.Name(u), r.Left + 48, r.Top + 38, 14, Cyan, true, role: "ui.build.name");
         T(c, model.Frame, r.Right - 8, r.Top + 38, 10.5f, Muted, align: SKTextAlign.Right);
         T(c, U("HullValue", u.Hull, u.MaxHull), r.Left + 48, r.Top + 56, 10.5f, Text);
-        Bar(c, r.Left + 130, r.Top + 51, r.Width - 138, 5, u.MaxHull > 0 ? u.Hull / (double)u.MaxHull : 0, Cyan);
+        Bar(c, r.Left + 130, r.Top + 51, r.Width - 138, 5, u.MaxHull > 0 ? u.Hull / (double)u.MaxHull : 0, Cyan, "ui.bar.hull");
         T(c, U("ArmorValue", u.Armor, u.MaxArmor), r.Left + 9, r.Top + 75, 10.5f, Text);
-        Bar(c, r.Left + 130, r.Top + 70, r.Width - 138, 5, u.MaxArmor > 0 ? u.Armor / (double)u.MaxArmor : 0, Purple);
+        Bar(c, r.Left + 130, r.Top + 70, r.Width - 138, 5, u.MaxArmor > 0 ? u.Armor / (double)u.MaxArmor : 0, Purple, "ui.bar.armor");
         Polygon(c, Silhouette(u.FrameId).Select(p => new SKPoint(r.MidX + p.X, top + p.Y)), SKColor.Parse("#122024"), BoxEdge, 1);
         foreach (var cell in model.Cells)
         {
@@ -65,7 +65,7 @@ internal static class BuildCard
         }
         Round(c, r, Box, cell.Alert ? Red : BoxEdge, cell.Alert ? 1.4f : 1, 3,
             cell.Alert ? "ui.box.build-slot.alert" : "ui.box.build-slot");
-        var tone = cell.Kind switch { TacticalSlotKind.Weapon => Yellow, TacticalSlotKind.Armor => Purple, TacticalSlotKind.Shield => Cyan, TacticalSlotKind.Module => Green, _ => Text };
+        var tone = cell.Kind switch { TacticalSlotKind.Weapon => Yellow, TacticalSlotKind.Armor => TacticalBattleSkinRenderScope.Color("ui.build.slot.armor", "fill", Purple), TacticalSlotKind.Shield => Cyan, TacticalSlotKind.Module => Green, _ => Text };
         using (var stripe = new SKPaint { Color = tone }) c.DrawRect(new(r.Left + 1, r.Top + 4, r.Left + 4, r.Bottom - 4), stripe);
         T(c, BuildCardModel.Ellipsize(cell.Name, r.Width - 12), r.Left + 8, r.Top + 12, 9.5f, Text, true);
         T(c, BuildCardModel.Ellipsize(cell.Detail, r.Width - 12, 9, false), r.Left + 8, r.Top + 24, 9, cell.Alert ? Red : Muted);

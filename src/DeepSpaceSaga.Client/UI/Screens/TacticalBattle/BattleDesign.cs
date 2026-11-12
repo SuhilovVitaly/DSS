@@ -65,11 +65,11 @@ internal static class BattleDesign
             T(c, text, r.MidX, r.MidY + size * .36f, size, tone, active, SKTextAlign.Center);
         }
     }
-    public static void EvasionRing(SKCanvas c, SKPoint point)
+    public static void EvasionRing(SKCanvas c, SKPoint point, float radius = 15)
     {
         using var effect = SKPathEffect.CreateDash([3, 3], 3);
         using var paint = new SKPaint { IsAntialias = true, Color = Purple, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f, PathEffect = effect };
-        c.DrawCircle(point, 15, paint);
+        c.DrawCircle(point, radius, paint);
     }
     public static readonly SKColor PurpleDark = SKColor.Parse("#2A2145");
     public static string U(string key, params object?[] values) => values.Length == 0 ? Localization.Get("TacticalBattle.Ui." + key) : string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle.Ui." + key), values);
@@ -108,6 +108,19 @@ internal static class BattleDesign
     }
     public static void Round(SKCanvas c, SKRect r, SKColor fill, SKColor? edge = null, float width = 1, float radius = 3, string role = "ui.box")
     {
+        bool steel = Skin.Steel;
+        if (steel)
+        {
+            if (role.EndsWith(".glow", StringComparison.Ordinal)) return;
+            bool plate = role == "ui.panel" || role.StartsWith("ui.panel.", StringComparison.Ordinal) || role is "ui.pilot-card" or "ui.pilot-card.selected";
+            radius = 0; width = plate ? 1.2f : .8f;
+            edge = Skin.Color(role, "stroke", edge ?? SKColor.Parse("#05070A"));
+            if (plate)
+            {
+                using var shadow = new SKPaint { IsAntialias = true, Color = new SKColor(0, 0, 0, 128) };
+                var bounds = r; bounds.Offset(2.4f, 3.2f); c.DrawRect(bounds, shadow);
+            }
+        }
         using var p = new SKPaint { IsAntialias = true, Color = TacticalBattleSkinRenderScope.Color(role, "fill", fill) };
         c.DrawRoundRect(r, radius, radius, p);
         if (Skin.Current is { } skin && !ReferenceEquals(skin, TacticalBattleSkin.Classic) &&
@@ -120,6 +133,17 @@ internal static class BattleDesign
             c.Restore();
         }
         if (edge is not null) { p.Color = TacticalBattleSkinRenderScope.Color(role, "stroke", edge.Value); p.Style = SKPaintStyle.Stroke; p.StrokeWidth = width; c.DrawRoundRect(r, radius, radius, p); }
+        if (steel && r.Width > 2 && r.Height > 2)
+        {
+            var light = Skin.Color("ui.panel.bevel", "fill", SKColor.Parse("#4C5764"));
+            var dark = Skin.Color("ui.panel.bevel", "stroke", SKColor.Parse("#0A0E12"));
+            bool inset = role is "ui.box" or "ui.tag" or "ui.box.build-slot";
+            var inner = r; inner.Inflate(-1, -1);
+            Stroke(c, new(inner.Left, inner.Bottom), new(inner.Left, inner.Top), inset ? dark : light, .9f);
+            Stroke(c, new(inner.Left, inner.Top), new(inner.Right, inner.Top), inset ? dark : light, .9f);
+            Stroke(c, new(inner.Right, inner.Top), new(inner.Right, inner.Bottom), inset ? light : dark, .9f);
+            Stroke(c, new(inner.Right, inner.Bottom), new(inner.Left, inner.Bottom), inset ? light : dark, .9f);
+        }
     }
     public static void PanelBox(SKCanvas c, SKRect r, bool selected = false, float radius = 6, string role = "ui.panel")
     {
@@ -142,7 +166,7 @@ internal static class BattleDesign
         T(c, text, r.MidX, r.MidY + fs * 0.36f, fs, big ? ButtonInk : Text, big, SKTextAlign.Center, role);
     }
     public static void BigButton(SKCanvas c, SKRect r, string text) => Button(c, r, text, true);
-    public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color)
+    public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color, string role = "ui.bar")
     {
         var track = SKRect.Create(x, y, w, h);
         Round(c, track, Track, radius: h * .5f);
@@ -150,7 +174,7 @@ internal static class BattleDesign
             return;
 
         var fill = SKRect.Create(x, y, w * (float)PyMath.Clamp(frac, 0, 1), h);
-        Round(c, fill, color, radius: h * .5f, role: "ui.bar");
+        Round(c, fill, color, radius: h * .5f, role: role);
         if (Skin.Has("ui.bar.segments", "image"))
         {
             using var clip = new SKRoundRect(fill, h * .5f, h * .5f);

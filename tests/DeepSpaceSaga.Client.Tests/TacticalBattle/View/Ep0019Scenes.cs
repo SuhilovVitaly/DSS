@@ -33,13 +33,13 @@ internal sealed class Ep0019Scenes : IAsyncDisposable
         }
     }
     private Ep0019Scenes(BattleNavigationTests.Fixture fixture) => Fixture = fixture;
-    internal static async Task<Ep0019Scenes> Create(string scene, bool withoutModules = false, bool withoutAnomalies = false)
+    internal static async Task<Ep0019Scenes> Create(string scene, bool withoutModules = false, bool withoutAnomalies = false, string? settingsPath = null)
     {
         long seed = scene == "2-anomaly-dust" ? 6 : 1;
         string? directory = null;
         string? settings = withoutModules || withoutAnomalies ? LegacySettings(out directory, withoutModules, withoutModules || withoutAnomalies) : null;
         BattleNavigationTests.Fixture f;
-        try { f = await BattleNavigationTests.Fixture.Create(engineSettingsPath: settings); }
+        try { f = await BattleNavigationTests.Fixture.Create(engineSettingsPath: settings, settingsPath: settingsPath); }
         catch { if (directory is not null) DeleteFixture(directory); throw; }
         var result = new Ep0019Scenes(f) { _contentFixture = directory };
         try

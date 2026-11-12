@@ -3,6 +3,9 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
+internal readonly record struct ShipSheet(SKImage Image, int Columns, int Frames, int Cell);
+internal readonly record struct EffectStrip(SKImage Image, int Frames, int Cell, float FrameMs);
+
 /// <summary>Style inputs for the current synchronous render on this thread.</summary>
 internal static class TacticalBattleSkinRenderScope
 {
@@ -11,6 +14,35 @@ internal static class TacticalBattleSkinRenderScope
 
     internal static TacticalBattleSkin? Current => _skin;
     internal static string? CurrentRole => _role;
+    internal static bool Tabletop => _skin?.Metric("field.style", "tabletop", 0) == 1;
+    internal static bool Steel => _skin?.Metric("ui.style", "steel", 0) == 1;
+    internal static bool SlimPilots => _skin?.Metric("ui.pilot-column", "slim", 0) == 1;
+
+    internal static ShipSheet? ShipSheet(string model, string side)
+    {
+        if (!Tabletop || _skin is null) return null;
+        string role = $"field.unit.sprite.{model}.{side}";
+        var image = _skin.Image(role);
+        float columns = _skin.Metric(role, "columns", 0), frames = _skin.Metric(role, "frames", 0);
+        if (image is null || !PositiveInteger(columns) || !PositiveInteger(frames) ||
+            frames % columns != 0 || image.Width % (int)columns != 0) return null;
+        int cell = image.Width / (int)columns;
+        return cell > 0 && image.Height == cell * ((int)frames / (int)columns)
+            ? new(image, (int)columns, (int)frames, cell) : null;
+    }
+
+    internal static EffectStrip? EffectStrip(string name)
+    {
+        if (!Tabletop || _skin is null) return null;
+        string role = "field.fx." + name;
+        var image = _skin.Image(role);
+        float frames = _skin.Metric(role, "frames", 0), ms = _skin.Metric(role, "frame-ms", 0);
+        if (image is null || !PositiveInteger(frames) || image.Width != image.Height * (int)frames ||
+            !float.IsFinite(ms) || (name == "trail" ? ms < 0 : ms <= 0)) return null;
+        return new(image, (int)frames, image.Height, ms);
+    }
+
+    private static bool PositiveInteger(float value) => value is >= 1 and <= 512 && value == MathF.Truncate(value);
 
     internal static Restore Enter(TacticalBattleSkin skin)
     {
