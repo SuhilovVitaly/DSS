@@ -82,6 +82,12 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var unit in units)
         {
             var p = v.Project(unit.Pose);
+            if (Skin.Tabletop)
+            {
+                float radius = unit.Kind == TacticalUnitKind.Carrier ? 40 : 28;
+                occupied.Add(new(p.X - radius, p.Y - radius * .8f, p.X + radius, p.Y + radius * .8f));
+                continue;
+            }
             if (unit.Kind == TacticalUnitKind.Drone && DroneSilhouette(unit.FrameId) is { } hull)
             {
                 hull.Transform(SKMatrix.CreateRotationDegrees(DroneRotation(unit)), rotatedHull);
@@ -105,7 +111,9 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var wreck in wrecks)
         {
             var point = v.Project(wreck.Pose);
-            occupied.Add(new(point.X - 7, point.Y - 7, point.X + 7, point.Y + 7));
+            float radius = Skin.Tabletop ? wreck.Kind == TacticalUnitKind.Carrier ? 40 : 28 : 7;
+            float height = Skin.Tabletop ? radius * .8f : radius;
+            occupied.Add(new(point.X - radius, point.Y - height, point.X + radius, point.Y + height));
         }
         DrawTraversedPaths(c, f);
         DrawMovement(c, f, occupied); DrawPhaseOverlays(c, f, occupied, interactiveField);

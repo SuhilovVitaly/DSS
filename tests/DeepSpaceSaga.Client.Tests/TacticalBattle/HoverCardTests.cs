@@ -5,6 +5,30 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed partial class HoverCardTests
 {
+    [Fact]
+    public async Task Tabletop_hover_uses_larger_radius_outside_render_scope()
+    {
+        await using var scenes = await Ep0019Scenes.Create("1-move-no-hover", withoutAnomalies: true);
+        using var catalog = DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleSkinCatalog.Load(
+            Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var screen = new DeepSpaceSaga.Client.UI.Screens.TacticalBattle.TacticalBattleScreen(
+            scenes.Screen.Flow, 1, catalog.GetOrClassic("tabletop"));
+        using var bitmap = new SkiaSharp.SKBitmap(1280, 720);
+        using var canvas = new SkiaSharp.SKCanvas(bitmap);
+        screen.Render(canvas, 1280, 720);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        var unit = frame.Battle.Units.First(u => u.Kind == DeepSpaceSaga.Contracts.TacticalUnitKind.Drone &&
+            u.Side == frame.Battle.PlayerSide);
+        var point = frame.View.Project(unit.Pose);
+        screen.OnMouseMove(point.X + 24, point.Y);
+        Assert.Equal(unit.Id, screen.HoverUnitId);
+        scenes.Screen.Render(canvas, 1280, 720);
+        scenes.Screen.OnMouseMove(point.X + 24, point.Y);
+        Assert.NotEqual(unit.Id, scenes.Screen.HoverUnitId);
+        screen.OnMouseMove(point.X + 27, point.Y);
+        Assert.NotEqual(unit.Id, screen.HoverUnitId);
+    }
+
     [Theory]
     [InlineData("Таг-6", "ПОД КУРСОРОМ · ПРОТИВНИК", "Обрез I · 40–50 · дальн. 110 · иниц. 41")]
     [InlineData("Олег", "ПОД КУРСОРОМ · СБОРКА", "Рама «Лёгкий»")]
