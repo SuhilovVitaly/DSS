@@ -133,8 +133,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | DONE (automated; см. карточку) | `fc7002cba76316f9173995d3cdfd0e290f911575` | PASS |
 | [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | DONE (automated; см. карточку) | `431c0b7f433be2aabbd33fe1d83c69eaf795d137` | PASS |
 | [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | DONE (automated; см. карточку) | `e73124a4308708b2140d7b8fa73158681e42ee22` | PASS |
-| [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE: 7/7 | текущий commit | проверяется после commit |
-| [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE (automated; см. карточку) | `7e8e852adaf4e6ba07e93c3f4b7d120719091c42` | PASS |
+| [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE: 4/4 | текущий commit | проверяется после commit |
 | [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | NOT STARTED: dependencies | — | — |
@@ -215,3 +215,7 @@ Steel включает прямые углы, тёмные кромки, ско�
 ### EP-0024-US-0012-TK-0002-slim-card
 
 Узкие карточки: штатный портрет, имя, броня/корпус, оружие курсивом и спрайт; рамка выбора, рамки потерь и серый сбитый. Проверены движение/результаты, grayscale и клик выбора. slim-1-move-no-hover-x2.png сопоставлен с эталоном колонки: геометрия/состав совпадают, портреты штатные; место панели пока пустое до US-0013. Build: 0 ошибок/предупреждений. 7/7 PASS (us12-tk2); scoped format PASS.
+
+### EP-0024-US-0013-TK-0001-panel-frame
+
+Плита панели (51,49)—(201,140), язычок, clip и overlay/input интегрированы. 4/4 targeted: клик/drag/wheel на выступе панели не передают ввод карте. Содержимое блоков реализуется следующими TK; визуальная сверка всей панели в TK-0002…0004. Самопроверка scope/commands пройдена. 4/4 PASS (us13-tk1); scoped format PASS.

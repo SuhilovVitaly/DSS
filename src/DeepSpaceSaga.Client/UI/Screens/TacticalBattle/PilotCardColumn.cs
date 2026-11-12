@@ -33,7 +33,7 @@ internal sealed class PilotCardColumn
     public void RegisterCommand(string unitId, string action, SKRect bounds)
     {
         if (unitId != _selectedId) return;
-        var visible = SKRect.Intersect(bounds, PilotColumnLayout.Viewport);
+        var visible = SKRect.Intersect(bounds, Layout.Slim ? Layout.VisiblePanel : PilotColumnLayout.Viewport);
         if (visible.IsEmpty) return;
         _commands.Add(new(unitId, action, bounds, visible));
         if (Recording is { } layout) layout.Rects["card-command:" + action] = visible;
@@ -84,7 +84,8 @@ internal sealed class PilotCardColumn
 
     public bool Scroll(SKPoint point, float delta)
     {
-        if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 || !PilotColumnLayout.Viewport.Contains(point))
+        if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 ||
+            !PilotColumnLayout.Viewport.Contains(point) && !Layout.VisiblePanel.Contains(point))
             return false;
         _scroll = Math.Clamp(_scroll - 40 * Math.Sign(delta), 0, Layout.MaxScroll);
         return true;
@@ -145,9 +146,10 @@ internal sealed class PilotCardColumn
         try
         {
             var clip = PilotColumnLayout.Viewport;
-            if (Layout.Slim) clip.Inflate(3, 3);
+            if (Layout.Slim) { clip.Inflate(3, 3); clip.Right = 205; }
             c.ClipRect(clip);
             DrawCards(c, portraits);
+            if (Layout.Slim) DrawCommandPanel(c);
         }
         finally { c.Restore(); }
 
@@ -267,6 +269,31 @@ internal sealed class PilotCardColumn
             _fireBlock.Draw(c, this, _frame.Battle, fire, x0, x1, top);
         else if (_frame?.Salvo is not null)
             PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, x0, x1, top);
+    }
+
+    private void DrawCommandPanel(SKCanvas c)
+    {
+        if (Layout.VisiblePanel.IsEmpty || _selectedId is null) return;
+        var card = _cards.FirstOrDefault(card => card.UnitId == _selectedId);
+        if (card is null) return;
+        var panel = Layout.Panel;
+        PanelBox(c, panel, role: "ui.pilot-card");
+        Polygon(c, [new(panel.Left + 8, panel.Top - 2), new(panel.Left + 14, panel.Top + 2.5f), new(panel.Left + 20, panel.Top - 2)],
+            SKColor.Parse("#FFD24A"), SKColor.Parse("#1B150E"), .5f);
+        if (Recording is { } layout) layout.Rects["pilot-panel:" + card.UnitId] = Layout.VisiblePanel;
+        c.Save();
+        try
+        {
+            c.ClipRect(Layout.VisiblePanel);
+            float left = panel.Left + 6, right = panel.Right - 6, top = panel.Top + 5;
+            if (_frame?.Movement?.SelectedOrder is { } move)
+                PilotCardMoveBlock.Draw(c, this, card.UnitId, move, left, right, top);
+            else if (_frame?.FirePlan?.Selected is { } fire)
+                _fireBlock.Draw(c, this, _frame.Battle, fire, left, right, top);
+            else if (_frame?.Salvo is not null)
+                PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, left, right, top);
+        }
+        finally { c.Restore(); }
     }
 
     internal static void CommandButton(SKCanvas c, SKRect bounds, string label, bool active = false, float size = 9.5f)

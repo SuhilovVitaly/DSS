@@ -20,6 +20,7 @@ public sealed partial class TacticalBattleScreen
     {
         yield return _panel;
         if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
+        if (!_pilotColumn.Layout.VisiblePanel.IsEmpty) yield return _pilotColumn.Layout.VisiblePanel;
         for (int i = 0; i < _pilotColumn.Layout.Cards.Count; i++)
         {
             var rect = _pilotColumn.Rect(i);
