@@ -14,45 +14,60 @@ public sealed partial class TacticalBattleScreen
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;
     private BattleViewport _viewport = new(1, 1280);
     internal IReadOnlyList<SKRect> PanelRects => OverlayRects().Select(r => new SKRect(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S)).ToArray();
-    private static float OverlayBottom(TacticalBattleSnapshot b, TacticalSalvoFrame? salvo, TacticalFirePlan? firePlan) =>
-        120 + (salvo is { InFlight: true } ? 262 : salvo is not null ? 246 : b.Phase == TacticalBattlePhase.Over ? 238 : 250 + PhasePanel.TargetListHeight(firePlan));
     private SKRect Raw(SKRect r) => new(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S);
     private SKPoint DesignPoint(float x, float y) => new((float)(x / (double)_viewport.S), (float)(y / (double)_viewport.S));
     private IEnumerable<SKRect> OverlayRects()
     {
         yield return _panel;
         if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
-        int count = Flow.State?.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == Flow.State.PlayerSide) ?? 0;
-        for (int i = 0; i < count; i++) yield return new(6, 6 + 87 * i, 196, 88 + 87 * i);
+        for (int i = 0; i < _pilotColumn.Layout.Cards.Count; i++)
+        {
+            var rect = _pilotColumn.Rect(i);
+            if (!rect.IsEmpty) yield return rect;
+        }
     }
     private bool OverlayHit(SKPoint p) => OverlayRects().Any(r => r.Contains(p));
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)
     {
         _hoverFrame = f;
         _phasePanel.Draw(c, f, Layout);
-        _pilotColumn.Draw(c, PilotCardModel.Project(f, _portraits), _portraits);
+        _pilotColumn.Draw(c, _portraits);
         _hoverCard.Draw(c, f, _portraits);
     }
+    internal SKRect CardCommandBounds(string action) => Raw(_pilotColumn.CommandBounds(action));
+
+    private string? SelectedPlanningDrone => Flow.State?.Phase switch
+    {
+        TacticalBattlePhase.Move => _orders.Selected,
+        TacticalBattlePhase.Fire => _fireOrders.Selected,
+        _ => null
+    };
+
     private ScreenEvent OverlayClick(SKPoint p, MouseButton button)
     {
-        if (button == MouseButton.Left && !HasSalvoPresentation && _pilotColumn.Hit(p) is { } id)
-        { if (Flow.State?.Phase == TacticalBattlePhase.Move) _orders.Select(id); else _fireOrders.Select(id); }
         if (button != MouseButton.Left) return ScreenEvent.None;
-        if (_phasePanel.BeginDrag(p, _orders)) return ScreenEvent.None;
-        var action = _phasePanel.HitButton(p);
-        const string targetPrefix = "target:";
-        if (action?.StartsWith(targetPrefix, StringComparison.Ordinal) == true)
+        if (_pilotColumn.HitCommand(p) is { } command)
         {
-            _fireOrders.Choose(action[targetPrefix.Length..]);
+            if (!HasSalvoPresentation && _hoverFrame is { Pending: false } && SelectedPlanningDrone == command.UnitId)
+            {
+                if (!_pilotColumn.BeginSlider(command, p, _orders))
+                    ApplyPilotAction(command.Action);
+            }
             return ScreenEvent.None;
         }
+        if (_pilotColumn.Hit(p) is { } id)
+        {
+            if (!HasSalvoPresentation && Flow.State is { Phase: TacticalBattlePhase.Move or TacticalBattlePhase.Fire } state)
+            {
+                CancelOrderGesture();
+                if (state.Phase == TacticalBattlePhase.Move) _orders.Select(id);
+                else _fireOrders.Select(id);
+            }
+            return ScreenEvent.None;
+        }
+        var action = _phasePanel.HitButton(p);
         switch (action)
         {
-            case "straight": _orders.Straight(); break;
-            case "ai": _orders.Suggest(); break;
-            case "decoy": if (_fireOrders.Selected is { } decoy) _fireOrders.ToggleDecoy(decoy); break;
-            case "hold": _fireOrders.Choose(null); break;
-            case "evade": if (_fireOrders.Selected is { } evader) _fireOrders.ToggleEvade(evader); break;
             case "primary":
                 if (HasSalvoPresentation) { AdvanceSalvo(); return ScreenEvent.None; }
                 return Flow.State?.Phase == TacticalBattlePhase.Over ? ScreenEvent.CloseTacticalBattle : ActionEvent;
@@ -61,8 +76,33 @@ public sealed partial class TacticalBattleScreen
         }
         return ScreenEvent.None;
     }
-    private bool OverlayDrag(SKPoint p) => _phasePanel.Drag(p, _orders);
-    private void EndOverlayDrag() => _phasePanel.EndDrag();
+    private bool ApplyPilotAction(string? action)
+    {
+        const string targetPrefix = "target:";
+        if (action?.StartsWith(targetPrefix, StringComparison.Ordinal) == true)
+        {
+            _fireOrders.Choose(action[targetPrefix.Length..]);
+            return true;
+        }
+        switch (action)
+        {
+            case "speed-": _orders.Adjust(-2, 0); break;
+            case "speed+": _orders.Adjust(2, 0); break;
+            case "turn-": _orders.Adjust(0, -5); break;
+            case "turn+": _orders.Adjust(0, 5); break;
+            case "straight": _orders.Straight(); break;
+            case "ai": _orders.Suggest(); break;
+            case "decoy": if (_fireOrders.Selected is { } decoy) _fireOrders.ToggleDecoy(decoy); break;
+            case "hold": _fireOrders.Choose(null); break;
+            case "evade": if (_fireOrders.Selected is { } evader) _fireOrders.ToggleEvade(evader); break;
+            default: return false;
+        }
+        return true;
+    }
+
+    private bool OverlayDrag(SKPoint p) => !HasSalvoPresentation && _pilotColumn.DragSlider(p, _orders);
+
+    private void EndOverlayDrag() => _pilotColumn.EndSlider();
     private void UpdateHover(SKPoint p)
     {
         if (_hoverFrame is not { } f || OverlayHit(p)) { HoverUnitId = null; return; }

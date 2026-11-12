@@ -20,6 +20,11 @@ public sealed partial class Ep0019ViewTests
         await using var s = await Ep0019Scenes.Create(name, withoutModules: verifyM2Masks, withoutAnomalies: verifyM3Layout); using var locale = Localization.UseLocaleForTests("Russian"); using var current = s.Render();
         if (seed is not null) Assert.Equal(seed.Value, s.Screen.Flow.State!.Seed);
         if (turn is not null) Assert.Equal(turn.Value, s.Screen.Flow.State!.Turn);
+        if (Environment.GetEnvironmentVariable("DSS_EP0023_PREVIEW_SNAPSHOTS") == "1")
+        {
+            using var candidate = current.Encode(SKEncodedImageFormat.Png, 100);
+            File.WriteAllBytes(Path.Combine(Output(name), "candidate.png"), candidate.ToArray());
+        }
         if (Environment.GetEnvironmentVariable("DSS_EP0019_ACCEPT_SNAPSHOTS") == "1")
         {
             string dir = Path.Combine(SourceDirectory(), "Snapshots"); Directory.CreateDirectory(dir);

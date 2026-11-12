@@ -187,14 +187,16 @@ public sealed class FirePlanningTests
         Assert.Equal(shooter.TargetId, ForShooter().TargetId); // repeated target clicks are idempotent
         for (int i = 0; i < plan.Rows.Length; i++)
         {
-            screen.OnMouseDown(20, 20 + 87 * i, MouseButton.Left);
+            var card = screen.Layout.Rects["pilot:" + plan.Rows[i].Drone.Id];
+            screen.OnMouseDown(20, card.Top + 14, MouseButton.Left);
             screen.Render(canvas, 1280, 720);
-            var hold = screen.Layout.Rects["button:hold"];
+            var hold = screen.CardCommandBounds("hold");
+            Assert.False(hold.IsEmpty);
             screen.OnMouseDown(hold.MidX, hold.MidY, MouseButton.Left);
         }
         Assert.All(screen.BuildFireRequest().Targets, t => Assert.Null(t.TargetId));
-        int index = Array.FindIndex(plan.Rows.ToArray(), r => r.Drone.Id == shooter.Drone.Id);
-        screen.OnMouseDown(20, 20 + 87 * index, MouseButton.Left);
+        var shooterCard = screen.Layout.Rects["pilot:" + shooter.Drone.Id];
+        screen.OnMouseDown(20, shooterCard.Top + 14, MouseButton.Left);
         string chosen = shooter.TargetId!;
         screen.OnMouseDown(point.X, point.Y, MouseButton.Left);
         Assert.Equal(chosen, ForShooter().TargetId);

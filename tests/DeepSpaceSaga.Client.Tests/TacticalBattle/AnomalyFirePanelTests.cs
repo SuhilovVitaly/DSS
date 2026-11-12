@@ -21,11 +21,10 @@ public sealed class AnomalyFirePanelTests
         var frame = AnomalySceneSearch.Frame(state, group.DroneId) with { FirePlan = orders.Capture() };
         Assert.Equal(1, state.Seed); Assert.Equal(4, state.Turn); Assert.Equal("Олег", group.DroneId);
         Assert.Equal(.355, candidate.Absorption, 12); Assert.Equal(.400664818770654, candidate.Chance, 12);
-        string expected = Pct(candidate.Chance) + " · поглощение " + Math.Round(candidate.Absorption * 100) + "%";
-        Assert.Equal(expected, PhasePanel.FireCaption(candidate));
+        string expected = M("Card.Absorption", Math.Round(candidate.Absorption * 100));
         var rendered = AnomalySceneSearch.Render(frame, "heat-plan"); using var bitmap = rendered.Bitmap;
-        Assert.Contains(rendered.Layout.Texts, t => t.Text == expected);
-        Assert.Contains(rendered.Layout.Texts, t => t.Text == "поглощение " + Math.Round(candidate.Absorption * 100) + "%");
+        Assert.Contains(rendered.Layout.Texts, t => t.Text == expected && t.Color == Heat);
+        Assert.Contains(rendered.Layout.Texts, t => t.Text == Pct(candidate.Chance) && t.Color == Heat);
         Assert.Contains(PilotCardModel.Project(frame), p => p.UnitId == group.DroneId && p.Chip.EndsWith(Pct(candidate.Chance), StringComparison.Ordinal));
         var from = state.Units.Single(u => u.Id == group.DroneId); var to = state.Units.Single(u => u.Id == candidate.TargetId);
         var segment = AnomalyPresentation.Segments(state, from.Pose, to.Pose).OrderByDescending(s => s.T1 - s.T0).First();
@@ -57,9 +56,10 @@ public sealed class AnomalyFirePanelTests
         var frame = AnomalySceneSearch.Frame(state, unit.Id);
         var rendered = AnomalySceneSearch.Render(frame, "dust-plan"); using var bitmap = rendered.Bitmap;
         Assert.Equal(("ОГОНЬ НЕВОЗМОЖЕН", "Дрон в пылевой аномалии", "Пыль запрещает стрельбу до выхода из неё"), PhasePanel.DustText);
-        foreach (string text in new[] { PhasePanel.DustText.Tag, PhasePanel.DustText.Message, PhasePanel.DustText.Detail, "в пыли: без огня" })
+        foreach (string text in new[] { PhasePanel.DustText.Message, PhasePanel.DustText.Detail, "в пыли: без огня" })
             Assert.Contains(rendered.Layout.Texts, t => t.Text == text);
-        Assert.InRange(RasterProbe.Fraction(bitmap, new(1049.5f, 94, 1053, 108), PurpleDark), .9, 1);
+        var card = rendered.Layout.Rects["pilot:" + unit.Id];
+        Assert.InRange(RasterProbe.Fraction(bitmap, SKRect.Create(card.Left + 8, card.Top + 109, 3, 22), PurpleDark), .9, 1);
         Assert.Equal("в пыли", PilotCardModel.Project(frame).Single(p => p.UnitId == unit.Id).Chip);
         Assert.Equal(0, TacticalBattleMapRenderer.TargetCount(frame, unit));
         Assert.True(orders.ToggleDecoy(unit.Id)); Assert.True(orders.BuildTargets().Single(t => t.DroneId == unit.Id).Decoy);

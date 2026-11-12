@@ -39,13 +39,15 @@ public sealed class PhaseFireInputTests
     {
 
         await using var s = await Ep0019Scenes.Create("2-fire"); using var locale = Localization.UseLocaleForTests("Russian"); using var b = s.Render();
-        foreach (string text in new[] { "Юн → Таг-6", "73%", "Дистанция 73,4", "Угол 0,4°", "3 стреляют · 1 без цели" })
+        foreach (string text in new[] { "Таг-6 73%", "73%", "73,4 у.е. · 0,4°", "3 стреляют · 1 без цели" })
             Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
         var f = s.Screen.CaptureFrame(1920, 1080)!;
         var point = f.View.Project(f.Battle.Units.Single(u => u.Id == "Таг-2").Pose);
         s.Screen.OnMouseDown(point.X * 1.5f, point.Y * 1.5f, MouseButton.Left);
         Assert.Equal("Таг-6", s.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!.TargetId);
-        s.Screen.OnMouseDown(1150 * 1.5f, 250 * 1.5f, MouseButton.Left);
+        var hold = s.Screen.CardCommandBounds("hold");
+        Assert.False(hold.IsEmpty);
+        s.Screen.OnMouseDown(hold.MidX, hold.MidY, MouseButton.Left);
         Assert.Null(s.Screen.CaptureFrame(1920, 1080)!.FirePlan!.Selected!.TargetId);
     }
 }

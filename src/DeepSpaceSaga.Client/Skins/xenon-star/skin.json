@@ -3,6 +3,12 @@
   "id": "xenon-star",
   "displayName": "Xenon Star",
   "roles": {
+    "ui.pilot-card.gauge.track": {"fill": "#3C5664"},
+    "ui.pilot-card.icon.armor": {"stroke": "#A7A0D0"},
+    "ui.pilot-card.icon.hull": {"stroke": "#6CCCE3"},
+    "ui.pilot-card.icon.mind": {"stroke": "#81C7AD"},
+    "ui.pilot-card.divider": {"stroke": "#354F60", "dash": [2, 2]},
+    "ui.pilot-card.scroll": {"fill": "#3C5664", "stroke": "#9ABFD0"},
     "ui.panel": { "fill": "#101B26", "stroke": "#354F60" },
     "ui.panel.art": { "image": "assets/weapons_bg.png", "opacity": 0.65 },
     "ui.box": { "fill": "#15252D", "stroke": "#324951" },

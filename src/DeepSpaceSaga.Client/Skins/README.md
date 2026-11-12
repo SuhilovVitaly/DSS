@@ -36,6 +36,8 @@ Pilot initiative and the shared fire queue use existing visual roles. All battle
 surfaces read the same admitted FireSteps projection; packs cannot change firing
 order or playback timing. See the [battle contract](../../../DB/Documentation/04-Engineering/TacticalBattle.md).
 
-The active screen uses the compact EP-0019 overlay. Use the current ui.panel, ui.pilot-card, ui.slider and ui.button roles in the authoring contract; legacy tabs/orders controls are no longer connected. Bundled DejaVu typography and height-based layout keep Classic consistent between machines. Packs only change the properties consumed by active primitives.
+The active screen uses the compact overlay and expands the selected pilot card for movement, fire or salvo details. Use the current ui.panel, ui.pilot-card, ui.slider and ui.button roles in the authoring contract; legacy tabs/orders controls are no longer connected. Bundled DejaVu typography and height-based layout keep Classic consistent between machines. Packs only change the properties consumed by active primitives.
+
+Pilot gauges use `ui.pilot-card.bar.armor/hull/mind` for fill and `ui.pilot-card.gauge.track` for the track. `ui.pilot-card.icon.armor/hull/mind` supplies stroke colors and falls back to the gauge colors. `ui.pilot-card.divider` provides stroke and dash, and `ui.pilot-card.scroll` provides track fill and thumb stroke. The pilot card art scales to its full height; segmented gauge art is clipped to the filled portion.
 
 Build cards use the panel, box, bar and text roles with bundled typography. Slot identities, damage, evasion, decoys and anomaly geometry come from the captured battle data.

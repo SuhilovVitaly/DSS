@@ -233,7 +233,7 @@ Select another monitor through `gameSettings.selectedMonitorIndex` in the isolat
 settings profile (zero based); leave the regular user settings untouched. Native
 scripted input does not establish physical-input, human/product or balance acceptance.
 
-The current tactical native workflow also exercises E/D through the live keyboard router, rejects D while evading, checks the build-card model and restores the order flags before submission. It verifies replay, outcome/new battle, unchanged world/camera and quick Save/Load after exit. Run one native case at a time with no concurrent builds/tests; use both 1280x720/S1 and 1920x1080/S1.5 and an isolated settings profile for language/monitor. A passed interaction report does not mean80FPS: inspect nativeDraw timings separately, and keep physical input and human acceptance open.
+The tactical native workflow clicks the selected pilot card to change and restore a movement order and to hold fire, reselect a target, toggle the decoy, and toggle evasion when those commands are available. It checks the compact phase panel and also exercises E/D through the live keyboard router, rejects D while evading, checks the build-card model and restores the order flags before submission. It verifies replay, outcome/new battle, unchanged world/camera and quick Save/Load after exit. Run one native case at a time with no concurrent builds/tests; use both 1280x720/S1 and 1920x1080/S1.5 and an isolated settings profile for language/monitor. A passed interaction report does not mean80FPS: inspect nativeDraw timings separately, and keep physical input and human acceptance open.
 
 
 Set `DSS_VALIDATION_SMALL_MONITOR=1` and supply an isolated settings profile

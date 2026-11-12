@@ -106,12 +106,17 @@ public sealed partial class ResultsPhaseTests
         {
             TacticalBattleMapRenderer.Draw(canvas, f);
             new PhasePanel().Draw(canvas, f, layout);
+            var column = new PilotCardColumn();
+            column.Arrange(f, PilotCardModel.Project(f));
+            column.Draw(canvas, PilotPortraitCatalog.Default);
         }
         finally { Recording = null; }
         Assert.Contains(layout.Texts, t => t.Text == "Ловушка · промах " + PilotCardModel.Name(own) && t.Color == Green);
         Assert.Contains(layout.Texts, t => t.Text == "Ловушка · промах " + PilotCardModel.Name(enemy) && t.Color == Green);
         Assert.Equal(2, layout.Rects.Keys.Count(k => k.StartsWith("decoy-callout:", StringComparison.Ordinal)));
         Assert.Contains(layout.Texts, t => t.Text == "ловушка цели" && t.Color == Green);
+        Assert.Contains(layout.Texts, t => t.Text == M("Card.Dealt", 0));
+        Assert.Equal(122, layout.Rects["pilot:" + own.Id].Height);
         Assert.Contains(layout.Texts, t => t.Text == Pct(.47) + " → " + Pct(.205) && t.Color == Green);
         using var png = bitmap.Encode(SKEncodedImageFormat.Png, 100);
         File.WriteAllBytes(Path.Combine(Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT")!, "decoy-results.png"), png.ToArray());
@@ -131,13 +136,15 @@ public sealed partial class ResultsPhaseTests
         await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true);
         using var locale = Localization.UseLocaleForTests("Russian");
         foreach (var drone in scene.Fixture.Engine.TacticalBattleSessionForTests!.Battle.Drones.Where(d => d.Side == "B")) drone.Jammed = true;
-        for (int i = 0; i < 4; i++)
+        foreach (var row in scene.Frame.FirePlan!.Rows)
         {
             using (var bitmap = scene.Render()) { }
-            scene.Screen.OnMouseDown(30, (20 + 87 * i) * 1.5f, MouseButton.Left);
+            var card = scene.Screen.Layout.Rects["pilot:" + row.Drone.Id];
+            scene.Screen.OnMouseDown(30, (card.Top + 14) * 1.5f, MouseButton.Left);
             using (var bitmap = scene.Render()) { }
-            var hold = scene.Screen.Layout.Rects["button:hold"];
-            scene.Screen.OnMouseDown(hold.MidX * 1.5f, hold.MidY * 1.5f, MouseButton.Left);
+            var hold = scene.Screen.CardCommandBounds("hold");
+            Assert.False(hold.IsEmpty);
+            scene.Screen.OnMouseDown(hold.MidX, hold.MidY, MouseButton.Left);
         }
         scene.Screen.OnKeyDown(Key.D);
         scene.Fixture.ManualAnimation = true;

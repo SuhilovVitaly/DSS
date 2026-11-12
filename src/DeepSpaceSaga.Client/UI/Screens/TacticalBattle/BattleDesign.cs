@@ -17,15 +17,21 @@ internal static class BattleDesign
     public static readonly SKColor Heat = SKColor.Parse("#E05A78"), HeatDark = SKColor.Parse("#3A101E"),
         Dust = SKColor.Parse("#B08CE8"), DustDark = SKColor.Parse("#24183A");
     public static readonly SKColor GreenDark = SKColor.Parse("#1E3A26"), DecoyIdle = SKColor.Parse("#142218");
-    public static void DecoyRow(SKCanvas c, SKRect r, string text, int charges, int maxCharges, DecoyRowState state)
+    public static void DecoyRow(SKCanvas c, SKRect r, string text, int charges, int maxCharges, DecoyRowState state, bool compact = false)
     {
         bool active = state == DecoyRowState.Selected, enabled = state != DecoyRowState.Unavailable;
         string role = active ? "ui.box.decoy.selected" : enabled ? "ui.box.decoy" : "ui.box.decoy.unavailable";
         Round(c, r, active ? GreenDark : enabled ? DecoyIdle : Box,
             enabled ? Green.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1, role: role);
         float left = r.Right - 8 - (float)PyMath.Max(0, maxCharges - 1) * 9;
-        float size = FitSize(text, 11, left - 8 - (r.Left + 7), active);
-        T(c, text, r.Left + 7, r.MidY + size * .36f, size, active ? Text : enabled ? Green : Muted, active);
+        float width = left - 8 - (r.Left + 7);
+        var tone = active ? Text : enabled ? Green : Muted;
+        if (compact) PilotCardColumn.FittedText(c, text, r.Left + 7, r.MidY + 3, 8.5f, width, tone, active);
+        else
+        {
+            float size = FitSize(text, 11, width, active);
+            T(c, text, r.Left + 7, r.MidY + size * .36f, size, tone, active);
+        }
         for (int i = 0; i < maxCharges; i++)
         {
             bool full = i < charges - (active ? 1 : 0);
@@ -45,14 +51,19 @@ internal static class BattleDesign
     public static readonly SKColor EvadeIdle = SKColor.Parse("#1A1A2A");
     public static string M(string key, params object?[] values) => values.Length == 0 ? Localization.Get("TacticalBattle." + key)
         : string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle." + key), values);
-    public static void EvadeButton(SKCanvas c, SKRect r, string text, EvadeButtonState state)
+    public static void EvadeButton(SKCanvas c, SKRect r, string text, EvadeButtonState state, bool compact = false)
     {
         bool active = state == EvadeButtonState.Selected, enabled = state != EvadeButtonState.Unavailable;
         string role = active ? "ui.box.evade.selected" : enabled ? "ui.box.evade" : "ui.box.evade.unavailable";
         Round(c, r, active ? PurpleDark : enabled ? EvadeIdle : Box,
             enabled ? Purple.WithAlpha(active ? (byte)255 : (byte)170) : BoxEdge, active ? 1.6f : 1, role: role);
-        float size = FitSize(text, 12, r.Width - 10);
-        T(c, text, r.MidX, r.MidY + size * .36f, size, active ? Text : enabled ? Purple : Muted, active, SKTextAlign.Center);
+        var tone = active ? Text : enabled ? Purple : Muted;
+        if (compact) PilotCardColumn.FittedText(c, text, r.MidX, r.MidY + 3.4f, 9.5f, r.Width - 8, tone, active, SKTextAlign.Center);
+        else
+        {
+            float size = FitSize(text, 12, r.Width - 10);
+            T(c, text, r.MidX, r.MidY + size * .36f, size, tone, active, SKTextAlign.Center);
+        }
     }
     public static void EvasionRing(SKCanvas c, SKPoint point)
     {

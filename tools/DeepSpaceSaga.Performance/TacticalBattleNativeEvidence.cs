@@ -218,6 +218,14 @@ internal static class TacticalBattleNativeEvidence
                             KeyDown(Key.F10);
                             string screenshots = Path.Combine(Path.GetDirectoryName(InterfaceLog.FileName) ?? "", "Screenshots");
                             Check("F10-screenshot", Directory.Exists(screenshots) && Directory.EnumerateFiles(screenshots, "*.png").Any());
+                            var moveOrder = battle.Movement.SelectedOrder!.Order;
+                            ClickCard(battle, "turn+");
+                            if (battle.Movement.SelectedOrder!.Order == moveOrder) ClickCard(battle, "turn-");
+                            Check("pilot-move-step", battle.Movement.SelectedOrder!.Order != moveOrder);
+                            ClickCard(battle, "ai");
+                            Check("pilot-move-restore", battle.Movement.SelectedOrder!.Order == battle.Movement.SelectedOrder.Suggestion);
+                            Check("pilot-move-panel", battle.Layout.Rects["phase"].Bottom == 152 &&
+                                battle.CardCommandBounds("slider:speed").Left < 202 * height / 720f);
                             var view = battle.View;
                             battle.OnMouseWheel(600 * height / 720f, 500 * height / 720f, 1);
                             Check("wheel-zoom", battle.View.PixelsPerUnit != view.PixelsPerUnit);
@@ -328,6 +336,31 @@ internal static class TacticalBattleNativeEvidence
                             {
                                 fireSeen = true;
                                 Capture(surface, "fire");
+                                var shown = active.CaptureFrame(width, height)!.FirePlan!.Selected!;
+                                var shownId = shown.Drone.Id;
+                                Check("pilot-fire-panel", active.Layout.Rects["phase"].Bottom == 152 &&
+                                    !active.Layout.Rects.ContainsKey("button:hold") && !active.CardCommandBounds("hold").IsEmpty);
+                                if (shown.TargetId is { } planned && !active.CardCommandBounds("target:" + planned).IsEmpty)
+                                {
+                                    ClickCard(active, "hold");
+                                    Check("pilot-fire-hold", active.BuildFireRequest().Targets.Single(t => t.DroneId == shownId).TargetId is null);
+                                    ClickCard(active, "target:" + planned);
+                                    Check("pilot-fire-target", active.BuildFireRequest().Targets.Single(t => t.DroneId == shownId).TargetId == planned);
+                                }
+                                if (shown.CanDecoy)
+                                {
+                                    ClickCard(active, "decoy");
+                                    Check("pilot-fire-decoy", active.BuildFireRequest().Targets.Single(t => t.DroneId == shownId).Decoy);
+                                    ClickCard(active, "decoy");
+                                }
+                                if (shown.CanEvade)
+                                {
+                                    ClickCard(active, "evade");
+                                    Check("pilot-fire-evade", active.BuildFireRequest().Targets.Single(t => t.DroneId == shownId).Evade);
+                                    ClickCard(active, "evade");
+                                    if (shown.TargetId is { } restore && !active.CardCommandBounds("target:" + restore).IsEmpty)
+                                        ClickCard(active, "target:" + restore);
+                                }
                                 KeyDown(Key.Tab);
                                 var frame = active.CaptureFrame(width, height)!;
                                 var target = frame.FirePlan?.Selected?.TargetId;
@@ -454,6 +487,13 @@ internal static class TacticalBattleNativeEvidence
                 verdict = vsync && refreshHz is > 0 and < 80 ? "display-limited"
                     : frame.P99Ms <= 12.5 ? "passed" : "failed"
             };
+        }
+
+        void ClickCard(TacticalBattleScreen screen, string action)
+        {
+            var bounds = screen.CardCommandBounds(action);
+            if (bounds.IsEmpty) throw new InvalidOperationException("Missing pilot card command: " + action);
+            Click(screen, bounds.MidX, bounds.MidY);
         }
 
         void Check(string name, bool ok)

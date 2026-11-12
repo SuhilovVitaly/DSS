@@ -9,6 +9,8 @@ current_review: acceptance-open
 
 # EP-0022 — Xenon Star для интерфейса пошагового боя
 
+> Макет карточек пилота и правой панели обновлён в [EP-0023](../EP-0023-pilot-card-commands/Documentation.md). Текущие роли пака перечислены в [контракте скинов](../../Documentation/04-Engineering/TacticalBattleSkins.md).
+
 ## Исходный запрос
 
 > напиши эпик по изменению UI UX пошагового боя под D:\DeepSpaceSaga\DSS-Images\Xenon Star

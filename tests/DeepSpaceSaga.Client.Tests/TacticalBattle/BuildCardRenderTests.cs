@@ -19,7 +19,7 @@ public sealed class BuildCardRenderTests
         scene.Screen.HoverUnitId = null; using var image = scene.Render();
         var f = scene.Screen.CaptureFrame(1920, 1080)!; var model = BuildCardModel.From(f)!;
         Assert.Equal(4, f.Battle.Turn); Assert.Equal("light", model.Unit.FrameId);
-        var r = scene.Screen.Layout.Rects["build"]; Assert.Equal(300, r.Height); Assert.Equal(1040, r.Left);
+        var r = scene.Screen.Layout.Rects["build"]; Assert.Equal(new SKRect(1040, 158, 1274, 458), r);
         foreach (var (kind, tone) in new[] { (TacticalSlotKind.Weapon, Yellow), (TacticalSlotKind.Armor, Purple), (TacticalSlotKind.Shield, Cyan), (TacticalSlotKind.Module, Green), (TacticalSlotKind.Engine, Text) })
         {
             var cell = scene.Screen.Layout.Rects[$"build:{kind}:0"];

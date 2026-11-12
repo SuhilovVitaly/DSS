@@ -25,11 +25,22 @@ public sealed partial class Ep0019ViewTests
     {
 
         await using var s = await Ep0019Scenes.Create(name); using var locale = Localization.UseLocaleForTests("Russian"); using var bitmap = s.Render(); var f = s.Screen.CaptureFrame(1920, 1080)!; var l = s.Screen.Layout;
-        float db = name switch { "3-salvo-flight" => 262, "4-salvo-results" => 246, "5-outcome" => 238, _ => 250 + PhasePanel.TargetListHeight(f.FirePlan) };
+        float db = name switch { "3-salvo-flight" => 262, "4-salvo-results" => 246, "5-outcome" => 238, _ => 32 };
         Rect(new(1040, 6, 1274, db + 120), l.Rects["phase"]); Rect(new(1040, db + 28, 1274, db + 120), l.Rects["action"]);
-        int i = 0;
+        float top = 6;
         foreach (var u in f.Battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide))
-        { Rect(new(6, 6 + 87 * i, 196, 88 + 87 * i), l.Rects["pilot:" + u.Id]); i++; }
+        {
+            float height = (name, u.Id) switch
+            {
+                ("1-move" or "1-move-no-hover", "Вера") => 196,
+                ("2-fire" or "2-fire-hover-own", "Юн") => 224,
+                ("3-salvo-flight", "Марта") => 108,
+                ("4-salvo-results", "Марта") => 122,
+                _ => 82
+            };
+            Rect(new(6, top, 196, top + height), l.Rects["pilot:" + u.Id]);
+            top += height + 5;
+        }
         bool build = name is "1-move-no-hover" or "2-fire-hover-own";
         Assert.Equal(build, l.Rects.ContainsKey("build"));
         if (build) Rect(new(1040, db + 126, 1274, db + 426), l.Rects["build"]);
@@ -57,8 +68,11 @@ public sealed partial class Ep0019ViewTests
         }
         if (name.StartsWith("2-", StringComparison.Ordinal))
         {
-            Rect(new(1048, 242, 1154, 264), l.Rects["button:hold"]);
-            Rect(new(1160, 242, 1266, 264), l.Rects["button:evade"]);
+            Rect(new(12, 283, 99, 300), l.Rects["card-command:hold"]);
+            Rect(new(103, 283, 190, 300), l.Rects["card-command:evade"]);
+            Rect(new(1048, 116, 1266, 144), l.Rects["button:primary"]);
+            Assert.DoesNotContain(l.Rects.Keys, key => key is "button:hold" or "button:evade" or "button:decoy"
+                || key.StartsWith("button:target:", StringComparison.Ordinal));
             var unit = f.Battle.Units.Single(u => u.Id == "Марта"); var position = f.View.Project(unit.Pose);
             using var text = BattleTypography.TextPaint(10, false);
             float width = Math.Max(25, text.MeasureText("Марта"));
@@ -71,10 +85,10 @@ public sealed partial class Ep0019ViewTests
     }
     private static string[] ExpectedTexts(string name) => name switch
     {
-        "1-move" or "1-move-no-hover" => ["ХОД 1  •", "ДВИЖЕНИЕ", "Начальный бой · свои 4 · враг 6 · потери 0:0", "Вера · манёвр", "ПЛАН ДВИЖЕНИЯ", "Скорость: 77,3", "50,0", "77,3", "Поворот: +5,5°", "−38,4°", "+38,4°", "4 предложения ИИ", "Движение не выполнено", "Выполнить движение [Enter]", "Движение: скорость 77,4 · поворот −24,3°", "Движение: скорость 81,4 · поворот +4,3°", "Движение: скорость 81,6 · поворот −6,8°", "ИИ"],
-        "2-fire" or "2-fire-hover-own" => ["ХОД 4  •", "СТРЕЛЬБА", "Юн → Таг-6", "ПЛАН ВЫСТРЕЛА", "73%", "шанс попадания", "Дистанция 73,4", "Угол 0,4°", "Копьё I · урон 40–60", "Таг-6: броня 20/20, затем корпус 40/40", "Ловушка [D]", "Не стрелять", "Уклониться [E]", "3 стреляют · 1 без цели", "План готов к отправке", "Выполнить залп [Enter]", "нет целей", "Таг-1 55%", "Таг-6 73%", "Таг-6 71%", "Стрельба: целей 2 · урон 40–60 · иниц. 53"],
+        "1-move" or "1-move-no-hover" => ["ХОД 1  •", "ДВИЖЕНИЕ", "Начальный бой · свои 4 · враг 6 · потери 0:0", "Скорость: 77,3", "50,0", "77,3", "Поворот: +5,5°", "−38,4°", "+38,4°", "4 предложения ИИ", "Движение не выполнено", "Выполнить движение [Enter]", "Движение: скорость 77,4 · поворот −24,3°", "Движение: скорость 81,4 · поворот +4,3°", "Движение: скорость 81,6 · поворот −6,8°", "ИИ"],
+        "2-fire" or "2-fire-hover-own" => ["ХОД 4  •", "СТРЕЛЬБА", "73%", "73,4 у.е. · 0,4°", "Копьё I · урон 40–60", "Таг-6: броня 20/20, затем корпус 40/40", "Ловушка [D]", "Не стрелять", "Уклониться [E]", "3 стреляют · 1 без цели", "План готов к отправке", "Выполнить залп [Enter]", "нет целей", "Таг-1 55%", "Таг-6 73%", "Таг-6 71%", "Стрельба: целей 2 · урон 40–60 · иниц. 53"],
         "3-salvo-flight" => ["ХОД 4  •", "ЗАЛП", "Марта → Таг-1", "ВЫСТРЕЛ В ПОЛЁТЕ", "Очерёдность огня", "Снаряды в полёте", "Выстрел 1 из 4", "Пропустить полёт [Enter]", "огонь", "ждёт", "без цели"],
-        "4-salvo-results" => ["ХОД 4  •", "РЕЗУЛЬТАТЫ", "Марта → Таг-1", "РЕЗУЛЬТАТ ВЫСТРЕЛА", "ПРОМАХ", "Нанесённый урон: 0", "Повреждения Марты", "Броня: 80 → 80", "100%", "Корпус: 55/55 · без урона", "В строю", "Залп завершён", "4 выстрела · 3 попадания", "ловушка цели", "55% → 34%", "↺ Повтор", "К движению [Enter]", "не стреляла", "попадание", "промах"],
+        "4-salvo-results" => ["ХОД 4  •", "РЕЗУЛЬТАТЫ", "Марта → Таг-1", "РЕЗУЛЬТАТ ВЫСТРЕЛА", "ПРОМАХ", "Нанесённый урон: 0", "Повреждения Марты", "Броня: 80 → 80", "100%", "Корпус: 55/55 · без урона", "В строю", "Залп завершён", "4 выстрела · 3 попадания", "ловушка цели", "55% → 34%", "→ Таг-1 · 34%", "урон 0", "↺ Повтор", "К движению [Enter]", "не стреляла", "попадание", "промах"],
         _ => ["ХОД 21  •", "ИТОГ", "Начальный бой · свои 4 · враг 1 · потери 1:5", "Начальный бой", "ИТОГ БОЯ", "ПОБЕДА", "носитель Логово уничтожен", "Ходов", "21", "Выстрелов", "40", "Попаданий", "20", "Потери", "свои 1 · враг 5", "Бой окончен", "Esc — вернуться на карту мира", "Новый бой", "Выйти [Esc]", "Итог: нанесено 205 · получено 0", "Итог: нанесено 228 · получено −34", "Итог: нанесено 51 · получено −130", "Итог: нанесено 176 · получено 0"]
     };
     [Theory, MemberData(nameof(Scenes)), Trait("Category", "Ep0019View")]
@@ -95,25 +109,15 @@ public sealed partial class Ep0019ViewTests
         var probes = new List<object>(); var failures = new List<string>();
         void Probe(string key, SKRect r, double limit, params SKColor[] colors)
         { double fraction = RasterProbe.Fraction(b, r, colors); probes.Add(new { key, area = new { r.Left, r.Top, r.Right, r.Bottom }, fraction, limit, passed = fraction >= limit }); if (fraction < limit) failures.Add(key + "=" + fraction.ToString("F3")); }
-        void BarProbe(string key, SKRect area, SKRect card, PilotStat stat, float centerY)
+        void GaugeProbe(string key, SKRect card, PilotStat stat, int index)
         {
-            double x0 = card.Left + 60, x1 = card.Right - 41;
-            double end = x0 + (x1 - x0) * Math.Clamp(stat.Fill, 0, 1);
-            int matches = 0, count = 0;
-            for (int y = (int)Math.Ceiling(area.Top * 1.5); y < area.Bottom * 1.5; y++)
-                for (int x = (int)Math.Ceiling(area.Left * 1.5); x < area.Right * 1.5; x++)
-                {
-                    double px = (x + .5) / 1.5, py = (y + .5) / 1.5;
-                    double dx = px - Math.Clamp(px, x0, end), dy = py - centerY;
-                    var expected = stat.Fill > 0 && dx * dx + dy * dy <= 2.25 ? stat.Tone : Track;
-                    var actual = b.GetPixel(x, y);
-                    if (Math.Abs(actual.Red - expected.Red) <= 40 && Math.Abs(actual.Green - expected.Green) <= 40
-                        && Math.Abs(actual.Blue - expected.Blue) <= 40) matches++;
-                    count++;
-                }
-            double fraction = matches / (double)count;
-            probes.Add(new { key, area = new { area.Left, area.Top, area.Right, area.Bottom }, stat.Fill, fraction, limit = .8 });
-            if (fraction < .8) failures.Add(key + "=" + fraction.ToString("F3"));
+            float x = card.Left + 129 + index * 22;
+            float bottom = card.Top + 56;
+            float fillTop = bottom - 40 * (float)Math.Clamp(stat.Fill, 0, 1);
+            if (fillTop + 2 < bottom - 2)
+                Probe(key + ":fill", new(x - 2, fillTop + 2, x + 2, bottom - 2), .8, stat.Tone);
+            if (card.Top + 18 < fillTop - 2)
+                Probe(key + ":track", new(x - 2, card.Top + 18, x + 2, fillTop - 2), .8, Track);
         }
         void ReferenceProbe(string key, SKRect area, double limit, SKBitmap expected)
         {
@@ -137,14 +141,19 @@ public sealed partial class Ep0019ViewTests
             canvas.Clear(MapBg);
             if (fieldImage is not null) { using var paint = new SKPaint { BlendMode = SKBlendMode.Screen }; canvas.DrawImage(fieldImage, 0, 0, paint); }
         }
-        Probe("panel", new(1046, 62, 1270, 66), .9, Panel); Probe("tag", new(1049.5f, 94, 1053, 108), .9, YellowDark);
+        Probe("panel", new(1046, 62, 1270, 66), .9, Panel);
+        if (f.Movement is not null || f.FirePlan is not null)
+            Probe("status", new(1051, 91, 1053, 105), .9, Box);
+        else
+            Probe("tag", new(1049.5f, 94, 1053, 108), .9, YellowDark);
         ReferenceProbe("map-field", new(700, 690, 760, 700), .95, mapReference);
         var action = l.Rects["action"]; Probe("primary", new(name is "4-salvo-results" or "5-outcome" ? 1150 : 1078, action.Top + 58.5f, 1236, action.Top + 61), .9, Yellow);
         var cards = PilotCardModel.Project(f);
         foreach (var card in cards)
         {
-            var r = l.Rects["pilot:" + card.UnitId]; BarProbe("armor:" + card.UnitId, new(r.Left + 61, r.Top + 40.5f, r.Left + 70, r.Top + 41.5f), r, card.Stats[0], r.Top + 41);
-            BarProbe("mind:" + card.UnitId, new(r.Left + 61, r.Top + 62.5f, r.Left + 70, r.Top + 63.5f), r, card.Stats[2], r.Top + 63);
+            var r = l.Rects["pilot:" + card.UnitId];
+            for (int i = 0; i < card.Stats.Count; i++)
+                GaugeProbe(card.Stats[i].Kind + ":" + card.UnitId, r, card.Stats[i], i);
             if (card.Selected)
             {
                 // Independent literal PanelBox §2.2: account for half-physical-pixel row origins.
@@ -179,7 +188,7 @@ public sealed partial class Ep0019ViewTests
             }
         }
         if (name.StartsWith("1-", StringComparison.Ordinal))
-        { Probe("slider", new(1056, 139, 1060, 141), .9, Cyan); var row = f.Movement!.SelectedOrder!; var p = f.View.Project(row.Path[row.Path.Length / 2]); Probe("path", SKRect.Create(p.X - 1, p.Y - 1, 2, 2), .4, new SKColor(190, 190, 190)); }
+        { Probe("slider", new(22, 116, 26, 118), .9, Cyan); var row = f.Movement!.SelectedOrder!; var p = f.View.Project(row.Path[row.Path.Length / 2]); Probe("path", SKRect.Create(p.X - 1, p.Y - 1, 2, 2), .4, new SKColor(190, 190, 190)); }
         if (name.StartsWith("2-", StringComparison.Ordinal))
         {
             var row = f.FirePlan!.Selected!; var a = f.View.Project(row.Drone.Pose); var z = f.View.Project(f.Battle.Units.Single(u => u.Id == row.TargetId).Pose);

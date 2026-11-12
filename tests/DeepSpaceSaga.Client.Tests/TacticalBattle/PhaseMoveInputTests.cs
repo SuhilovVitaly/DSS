@@ -13,11 +13,18 @@ public sealed class PhaseMoveInputTests
 
         await using var s = await Ep0019Scenes.Create("1-move"); using var locale = Localization.UseLocaleForTests("Russian"); using var b = s.Render();
         Assert.Contains(s.Screen.Layout.Texts, t => t.Text == "77,3");
-        s.Screen.OnMouseDown(1054 * 1.5f, 140 * 1.5f, MouseButton.Left);
-        s.Screen.OnMouseUp(1054 * 1.5f, 140 * 1.5f, MouseButton.Left);
+        var slider = s.Screen.CardCommandBounds("slider:speed");
+        Assert.False(slider.IsEmpty);
+        s.Screen.OnMouseDown(slider.Left + 1, slider.MidY, MouseButton.Left);
+        s.Screen.OnMouseUp(slider.Left + 1, slider.MidY, MouseButton.Left);
         Assert.Equal(50, Assert.Single(s.Screen.BuildMoveRequest().Orders).Speed);
-        s.Screen.OnMouseDown(1200 * 1.5f, 225 * 1.5f, MouseButton.Left);
+
+        var restore = s.Screen.CardCommandBounds("ai");
+        Assert.False(restore.IsEmpty);
+        s.Screen.OnMouseDown(restore.MidX, restore.MidY, MouseButton.Left);
         Assert.InRange(Assert.Single(s.Screen.BuildMoveRequest().Orders).Speed, 77.26, 77.28);
-        Assert.Equal(ScreenEvent.MoveTacticalBattle, s.Screen.OnMouseDown(1150 * 1.5f, 347 * 1.5f, MouseButton.Left));
+
+        var submit = s.Screen.Layout.Rects["button:primary"];
+        Assert.Equal(ScreenEvent.MoveTacticalBattle, s.Screen.OnMouseDown(submit.MidX * 1.5f, submit.MidY * 1.5f, MouseButton.Left));
     }
 }

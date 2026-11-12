@@ -19,8 +19,8 @@ public sealed class Ep0020AnomalyScenesTests
         using var bitmap = scene.Render(); var frame = scene.Screen.CaptureFrame(1920, 1080)!;
         Assert.Equal(seed, frame.Battle.Seed); Assert.Equal(turn, scene.Screen.Flow.State!.Turn);
         if (name == "1-anomaly-move-dust") Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "Конец пути в пыли: без огня");
-        if (name == "2-anomaly-absorption") { Assert.Equal(.355, frame.FirePlan!.Selected!.Target!.Absorption); Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "40% · поглощение 36%"); }
-        if (name == "2-anomaly-dust") { Assert.True(frame.FirePlan!.Selected!.Drone.InDust); Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "ОГОНЬ НЕВОЗМОЖЕН"); }
+        if (name == "2-anomaly-absorption") { Assert.Equal(.355, frame.FirePlan!.Selected!.Target!.Absorption); Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "40%" && t.Color == BattleDesign.Heat); Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "поглощ. 36%" && t.Color == BattleDesign.Heat); }
+        if (name == "2-anomaly-dust") { Assert.True(frame.FirePlan!.Selected!.Drone.InDust); Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "Дрон в пылевой аномалии" && t.Color == BattleDesign.Dust); }
         if (name == "1-anomaly-hover") Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "ПОД КУРСОРОМ · АНОМАЛИЯ");
         if (name == "4-anomaly-absorbed") { Assert.True(PilotCardModel.ResultShot(frame)!.Absorbed); Assert.Contains(scene.Screen.Layout.Texts, t => t.Text == "ПОГЛОЩЁН"); }
         Assert.DoesNotContain(scene.Screen.Layout.Texts, t => t.Text.Contains("TacticalBattle.", StringComparison.Ordinal));
