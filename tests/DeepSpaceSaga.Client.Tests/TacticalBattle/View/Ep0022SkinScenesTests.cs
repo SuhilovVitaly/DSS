@@ -8,6 +8,26 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle.View;
 [Collection("Battle localization")]
 public sealed class Ep0022SkinScenesTests
 {
+    [Fact]
+    public async Task Xenon_map_has_black_space_and_classic_grid()
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        if (!TryGetXenon(catalog, out var xenon))
+            return;
+
+        await using var scenes = await Ep0019Scenes.Create("1-move-no-hover");
+        var frame = scenes.Frame with { Battle = scenes.Frame.Battle with { Units = [], Anomalies = [] } };
+        using var scope = TacticalBattleSkinRenderScope.Enter(xenon);
+        using var bitmap = new SKBitmap(frame.View.PixelWidth, frame.View.PixelHeight);
+        using var canvas = new SKCanvas(bitmap);
+        TacticalBattleMapRenderer.Draw(canvas, frame);
+
+        Assert.Null(xenon.Image("field.atmosphere"));
+        Assert.Equal(BattleDesign.Grid, TacticalBattleSkinRenderScope.Color("field.grid", "stroke", BattleDesign.Grid));
+        Assert.Equal(SKColors.Black, bitmap.GetPixel(100, 12));
+        Assert.NotEqual(SKColors.Black, bitmap.GetPixel(104, 12));
+    }
+
     [Theory]
     [InlineData("1-move-no-hover")]
     [InlineData("1-anomaly-move-dust")]

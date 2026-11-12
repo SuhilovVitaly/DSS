@@ -23,7 +23,6 @@ The [client project](../DeepSpaceSaga.Client.csproj) maps these exact paths unde
 | `Cockpit HUD/In Space/Weapon Systems Screen/weapons_bg.png` | Phase panel, report and exit dialog texture |
 | `Cockpit HUD/In Space/System Map/smb_normal.png` | Secondary button art |
 | `Cockpit HUD/In Space/System Map/smb_hover.png` | Primary action art |
-| `Cockpit HUD/Backgrounds/space_scene_no_cockpit.png` | Subdued map backdrop |
 | `Modular Elements/HUD Frames/hudf11.png` | Side frame behind tactical layers |
 | `Modular Elements/Horizontal Lines/hl1.png` | Top and bottom rules behind tactical layers |
 | `Modular Elements/Target Reticles/tre14.png` | Assigned target accent |
