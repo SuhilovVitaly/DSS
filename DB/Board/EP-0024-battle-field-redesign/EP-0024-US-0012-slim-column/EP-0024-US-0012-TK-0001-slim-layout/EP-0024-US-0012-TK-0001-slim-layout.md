@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0012-slim-column
 ticket: EP-0024-US-0012-TK-0001-slim-layout
 title: Раскладка узкой колонки
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0011-TK-0002-steel-frames]
@@ -89,4 +89,11 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Дополнение Code context перед реализацией: `TacticalBattleScreen.cs` передаёт прямоугольник панели из раскладки в map renderer, чтобы занятые области соответствовали именно показанной прокрученной колонке. Отрисовка содержимого панели остаётся в US-0013.
+
+
+### Результат us12-tk1
+
+Раскладка slim: 150x40, шаг 45, панель отдельно (51,49,150,91), следующая карточка y146. Прокрутка удерживает выбранную пару и передаёт занятый прямоугольник карты. Восемь обычных карточек занимают 355 и помещаются; overflow проверен длинной панелью. Classic layout tests проходят. Визуальная приёмка карточек/панелей остаётся за TK-0002/US-0013. Build: 0 ошибок/предупреждений.
+
+Проверки: 7/7 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us12-tk1/client.trx`, `us12-tk1-test.log`, `us12-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

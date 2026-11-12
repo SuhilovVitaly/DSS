@@ -167,7 +167,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         {
             canvas.Scale(_viewport.S);
             var clouds = TacticalBattleSkinRenderScope.Tabletop ? _paintedClouds ??= new() : null;
-            TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context);
+            TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context, _pilotColumn.Layout.VisiblePanel);
             DrawOverlay(canvas, frame);
         }
         finally { canvas.Restore(); BattleDesign.Recording = null; }

@@ -98,6 +98,7 @@ internal sealed class PilotCardColumn
 
     private static float ExpandedHeight(TacticalBattleFrame frame, PilotCard card)
     {
+        if (Skin.SlimPilots) return 91;
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
             return 10 + PilotCardFireBlock.Height(fire);
@@ -108,20 +109,23 @@ internal sealed class PilotCardColumn
     public void Arrange(IReadOnlyList<PilotCard> cards, Func<PilotCard, float>? expandedHeight = null)
     {
         _commands.Clear();
+        bool slim = Skin.SlimPilots;
         int selected = -1;
+        float panelHeight = 0;
         var heights = new float[cards.Count];
         for (int i = 0; i < cards.Count; i++)
         {
-            heights[i] = PilotColumnLayout.BaseHeight;
+            heights[i] = slim ? 40 : PilotColumnLayout.BaseHeight;
             if (!cards[i].Selected) continue;
             selected = i;
-            heights[i] += expandedHeight?.Invoke(cards[i]) ?? 0;
+            if (slim) panelHeight = expandedHeight?.Invoke(cards[i]) ?? 91;
+            else heights[i] += expandedHeight?.Invoke(cards[i]) ?? 0;
         }
 
         string? selectedId = selected < 0 ? null : cards[selected].UnitId;
-        float selectedHeight = selected < 0 ? 0 : heights[selected];
+        float selectedHeight = selected < 0 ? 0 : heights[selected] + panelHeight;
         int reveal = selectedId != _selectedId || selectedHeight != _selectedHeight ? selected : -1;
-        Layout = new(heights, _scroll, reveal);
+        Layout = new(heights, _scroll, reveal, slim, selected, panelHeight);
         _scroll = Layout.Scroll;
         _selectedId = selectedId;
         _selectedHeight = selectedHeight;
