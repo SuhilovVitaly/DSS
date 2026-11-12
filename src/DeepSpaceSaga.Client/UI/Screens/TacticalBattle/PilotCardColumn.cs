@@ -197,9 +197,10 @@ internal sealed class PilotCardColumn
 
     internal static void CommandButton(SKCanvas c, SKRect bounds, string label, bool active = false, float size = 9.5f)
     {
-        Round(c, bounds, active ? YellowDark : ButtonFill, active ? Yellow : BoxEdge, .8f, 2.5f, "ui.button");
+        string role = Skin.Steel && active ? "ui.button.primary" : "ui.button";
+        Round(c, bounds, active ? YellowDark : ButtonFill, active ? Yellow : BoxEdge, .8f, 2.5f, role);
         T(c, BuildCardModel.Ellipsize(label, bounds.Width - 4, size, active), bounds.MidX,
-            bounds.MidY + size * .36f, size, active ? Yellow : Text, active, SKTextAlign.Center, "ui.button");
+            bounds.MidY + size * .36f, size, active ? Yellow : Text, active, SKTextAlign.Center, role);
     }
 
     internal static void FittedText(SKCanvas canvas, string text, float x, float y, float size,

@@ -129,8 +129,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | NOT STARTED: dependencies | — | — |
-| [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE: 45/45 | текущий commit | проверяется после commit |
-| [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE (automated; см. карточку) | `cfb3d2b0b556d7ffe7e55076b494aa7a74f17576` | PASS |
+| [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | DONE: 19/19 | текущий commit | проверяется после commit |
 | [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | NOT STARTED: dependencies | — | — |
@@ -199,3 +199,7 @@ Tabletop использует увеличенные области моделе
 ### EP-0024-US-0011-TK-0001-steel-roles
 
 Закреплены метрики steel/slim, роли панелей/кнопок/показателей, загрузка шести градиентов 4x128 и ресурсный лимит. 25 файлов runtime pack совпадают с каноническими материалами по SHA256. Обновлён контракт ролей. Эталон 3-move-windows-x2 просмотрен; применение скосов/полос и визуальная сверка готового кадра — в следующих TK-0002/TK-0003. Build: 0 ошибок/предупреждений. 45/45 PASS (us11-tk1); scoped format PASS.
+
+### EP-0024-US-0011-TK-0002-steel-frames
+
+Steel включает прямые углы, тёмные кромки, скосы с инверсией полей, тени плит и отсутствие glow. Геометрия окон сохранена; проверены пиксели и Xenon Star scenes. Увеличенный steel-frames-windows-x2.png сверен с эталоном: рамки/скос совпадают по принципу; полосы ещё прежние до TK-0003, текст/портрет — штатные ресурсы и текущая локаль. Build: 0 ошибок/предупреждений. 19/19 PASS (us11-tk2); scoped format PASS.

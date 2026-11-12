@@ -15,6 +15,7 @@ internal static class TacticalBattleSkinRenderScope
     internal static TacticalBattleSkin? Current => _skin;
     internal static string? CurrentRole => _role;
     internal static bool Tabletop => _skin?.Metric("field.style", "tabletop", 0) == 1;
+    internal static bool Steel => _skin?.Metric("ui.style", "steel", 0) == 1;
 
     internal static ShipSheet? ShipSheet(string model, string side)
     {
