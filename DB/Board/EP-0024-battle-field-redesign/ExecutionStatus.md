@@ -136,8 +136,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE (automated; см. карточку) | `7e8e852adaf4e6ba07e93c3f4b7d120719091c42` | PASS |
 | [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE (automated; см. карточку) | `cbce3db702db97e3c6bdccaea6349d2cda384529` | PASS |
 | [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | DONE (automated; см. карточку) | `c9eae302fffa01b7b0a6f38f22e8e145002f6351` | PASS |
-| [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | DONE: 14/14 | текущий commit | проверяется после commit |
-| [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | DONE (automated; см. карточку) | `0c932ec5e252ba82929e05ef37cdf8ece860573f` | PASS |
+| [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | DONE: 7/7 | текущий commit | проверяется после commit |
 
 ## Публикация и уборка
 
@@ -227,3 +227,7 @@ Steel включает прямые углы, тёмные кромки, ско�
 ### EP-0024-US-0013-TK-0003-panel-fire
 
 Стрельба: единый путь измерения/отрисовки, цели со спрайтами, броня/угрозы, ловушка/уклон/отказ, перенос текста. 14/14: Юн 129, Вера без целей 106, dust/evade, target click, прокрутка >3 целей и Classic. Визуально проверены fire-panel-2-fire-column-x2.png и fire-panel-2-no-target-column-x2.png; геометрия соответствует Reference/panels/1-fire, выбран Таг-5 после проверочного клика (эталон Таг-6); шрифт/портреты A-16. Самопроверка source/input пройдена. 14/14 PASS (us13-tk3); scoped format PASS.
+
+### EP-0024-US-0013-TK-0004-panel-salvo
+
+Полёт 51: очередь, цель/шанс, прогресс, подсказка. Итог 71: исход, урон, цель, ловушка, броня/корпус своего дрона. 7/7: тексты/высоты/прогресс, отсутствие команд, рамка потери брони Юна и Classic. Визуально сверены salvo-panel-3-salvo-flight-column-x2.png и salvo-panel-4-salvo-results-column-x2.png с Reference/panels/2-fire-results: строки деталей начинаются сверху y41 (baseline47), не пересекают черту y37. Чёрное вне колонки — прозрачный изолированный canvas; полные снимки далее US9. Самопроверка пройдена. 7/7 PASS (us13-tk4); scoped format PASS.

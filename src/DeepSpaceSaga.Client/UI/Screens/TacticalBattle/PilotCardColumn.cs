@@ -103,7 +103,8 @@ internal sealed class PilotCardColumn
     {
         if (Skin.SlimPilots)
             return frame.FirePlan?.Selected is { } selectedFire
-                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire) : PilotCardMoveBlock.MoveHeight;
+                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire)
+                : frame.Salvo is { } selectedSalvo ? PilotCardSalvoBlock.SalvoHeight(selectedSalvo.InFlight) : PilotCardMoveBlock.MoveHeight;
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
             return 10 + PilotCardFireBlock.Height(fire);

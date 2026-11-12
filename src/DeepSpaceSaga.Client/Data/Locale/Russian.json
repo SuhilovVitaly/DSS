@@ -1,4 +1,10 @@
 {
+  "TacticalBattle.Panel.FlightTitle": "ОГОНЬ",
+  "TacticalBattle.Panel.FlightQueue": "очередь {0}",
+  "TacticalBattle.Panel.FlightTarget": "цель {0} · шанс {1}",
+  "TacticalBattle.Panel.FlightHint": "торпеда в пути · пробел — пропустить",
+  "TacticalBattle.Panel.ResultLine": "→ {0} · {1} · урон {2}",
+  "TacticalBattle.Panel.SelfState": "{0}: броня {1} → {2} · корпус {3}/{4}",
   "TacticalBattle.Panel.NoTargets": "нет целей",
   "TacticalBattle.Panel.UnderFireShort": "Под прицелом: {0} {1}",
   "TacticalBattle.Panel.EvadeShort": "Уклон [E]",
