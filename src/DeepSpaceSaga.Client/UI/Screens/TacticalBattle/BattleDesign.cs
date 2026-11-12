@@ -166,7 +166,7 @@ internal static class BattleDesign
         T(c, text, r.MidX, r.MidY + fs * 0.36f, fs, big ? ButtonInk : Text, big, SKTextAlign.Center, role);
     }
     public static void BigButton(SKCanvas c, SKRect r, string text) => Button(c, r, text, true);
-    public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color)
+    public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color, string role = "ui.bar")
     {
         var track = SKRect.Create(x, y, w, h);
         Round(c, track, Track, radius: h * .5f);
@@ -174,7 +174,7 @@ internal static class BattleDesign
             return;
 
         var fill = SKRect.Create(x, y, w * (float)PyMath.Clamp(frac, 0, 1), h);
-        Round(c, fill, color, radius: h * .5f, role: "ui.bar");
+        Round(c, fill, color, radius: h * .5f, role: role);
         if (Skin.Has("ui.bar.segments", "image"))
         {
             using var clip = new SKRoundRect(fill, h * .5f, h * .5f);

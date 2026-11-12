@@ -46,6 +46,7 @@ public sealed class TabletopPanelFrameTests
     [Fact]
     public async Task Phase_window_geometry_is_preserved_and_bevel_is_dark_in_real_frame()
     {
+        using var locale = Localization.UseLocaleForTests("Russian");
         await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
         var screen = new TacticalBattleScreen(scene.Screen.Flow, 1, catalog.GetOrClassic("tabletop"));
@@ -73,6 +74,30 @@ public sealed class TabletopPanelFrameTests
                 using var png = crop.Encode(SKEncodedImageFormat.Png, 100);
                 using var file = File.Create(Path.Combine(folder, "steel-frames-windows-x2.png")); png.SaveTo(file);
             }
+        }
+        finally { screen.OnDeactivated(); }
+    }
+
+    [Theory]
+    [InlineData("classic", "#22E3F0", "#A98BF5")]
+    [InlineData("tabletop", "#5C9440", "#5A7CA8")]
+    public async Task Build_card_uses_hull_armor_and_name_roles(string id, string hullHex, string armorHex)
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var screen = new TacticalBattleScreen(scene.Screen.Flow, 1, catalog.GetOrClassic(id));
+        using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
+        try
+        {
+            screen.Render(canvas, 1920, 1080);
+            var build = screen.Layout.Rects["build"];
+            Assert.Equal(SKColor.Parse(hullHex), bitmap.GetPixel((int)((build.Left + 150) * 1.5f), (int)((build.Top + 53.5f) * 1.5f)));
+            Assert.Equal(SKColor.Parse(armorHex), bitmap.GetPixel((int)((build.Left + 150) * 1.5f), (int)((build.Top + 72.5f) * 1.5f)));
+            var unit = screen.Movement.SelectedOrder!.Unit;
+            var nameColor = id == "tabletop" ? SKColor.Parse("#E4ECF4") : BattleDesign.Cyan;
+            Assert.Contains(screen.Layout.Texts, t => t.Text == PilotCardModel.Name(unit) && t.Color == nameColor);
+            var armor = screen.Layout.Rects["build:Armor:0"];
+            Assert.Equal(SKColor.Parse(armorHex), bitmap.GetPixel((int)((armor.Left + 2.5f) * 1.5f), (int)((armor.Top + 10) * 1.5f)));
         }
         finally { screen.OnDeactivated(); }
     }

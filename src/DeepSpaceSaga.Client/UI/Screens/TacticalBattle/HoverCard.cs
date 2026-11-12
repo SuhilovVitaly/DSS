@@ -57,7 +57,8 @@ internal sealed class HoverCard
         float x = r.Left + 9;
         if (own && unit.Kind == TacticalUnitKind.Drone)
         { PilotCardColumn.Portrait(c, portraits, unit.Build?.PilotId ?? "", PilotCardModel.Name(unit), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32)); x = r.Left + 48; }
-        T(c, PilotCardModel.Name(unit), x, r.Top + 38, 14, own ? Cyan : Orange, true);
+        T(c, PilotCardModel.Name(unit), x, r.Top + 38, 14, own ? Cyan : Orange, true,
+            role: own ? "ui.build.name" : TacticalBattleSkinRenderScope.Steel ? "ui.enemy.name" : "ui.text");
         bool evading = TacticalBattleMapRenderer.IsEvading(f, unit.Id);
         bool decoy = TacticalBattleMapRenderer.HasDecoy(f, unit);
         bool marked = evading || decoy;
@@ -66,9 +67,9 @@ internal sealed class HoverCard
         Round(c, chip, evading ? PurpleDark : decoy ? GreenDark : Box, evading ? Purple : decoy ? Green : null);
         T(c, state, chip.MidX, chip.MidY + 4, 10.5f, evading ? Purple : decoy ? Green : Text, marked, align: SKTextAlign.Center);
         T(c, U("HullValue", unit.Hull, unit.MaxHull), x, r.Top + 56, 10.5f, Text);
-        Bar(c, r.Left + 130, r.Top + 51, r.Width - 138, 5, unit.MaxHull > 0 ? unit.Hull / (double)unit.MaxHull : 0, Cyan);
+        Bar(c, r.Left + 130, r.Top + 51, r.Width - 138, 5, unit.MaxHull > 0 ? unit.Hull / (double)unit.MaxHull : 0, Cyan, "ui.bar.hull");
         T(c, U("ArmorValue", unit.Armor, unit.MaxArmor), r.Left + 9, r.Top + 75, 10.5f, Text);
-        Bar(c, r.Left + 130, r.Top + 70, r.Width - 138, 5, unit.MaxArmor > 0 ? unit.Armor / (double)unit.MaxArmor : 0, Purple);
+        Bar(c, r.Left + 130, r.Top + 70, r.Width - 138, 5, unit.MaxArmor > 0 ? unit.Armor / (double)unit.MaxArmor : 0, Purple, "ui.bar.armor");
         string details = unit.Build is { } b ? U(own ? "HoverOwnStats" : "HoverEnemyStats", b.WeaponName, b.DamageMin, b.DamageMax,
             own ? unit.Accuracy : Math.Round(b.Range), unit.Initiative?.ToString() ?? "—") : "—";
         T(c, details, r.MidX, r.Top + 96, FitSize(details, 10.5f, r.Width - 16), Muted, align: SKTextAlign.Center);
