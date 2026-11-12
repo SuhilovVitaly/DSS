@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0001-skin-pack
 ticket: EP-0024-US-0001-TK-0002-tabletop-mode
 title: Признак режима и доступ к листам спрайтов
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0001-TK-0001-pack-files]
@@ -86,3 +86,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us1-tk2
+
+Режим задаётся метрикой; листы и эффекты читаются из каталога с проверкой геометрии и таймингов, fallback сохранён.
+
+Проверки: 43/43 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us1-tk2/client.trx`, `us1-tk2-test.log`, `us1-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

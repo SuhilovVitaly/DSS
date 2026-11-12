@@ -112,8 +112,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 
 | Ticket | Состояние | Implementation SHA | Push |
 |---|---|---|---|
-| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | Реализован; validation 7/7 | — | — |
-| [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | DONE (automated; см. карточку) | `b45631c5799857f80462151452f2ccb407f8d011` | PASS |
+| [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | DONE: 43/43 | текущий commit | проверяется после commit |
 | [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | BLOCKED: source generators | — | — |
@@ -147,3 +147,7 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 Единственный новый diagnostic output — указанный MaterialAudit.json, сохранённый
 как evidence этого отчёта. Временные скрипты, probes, caches и task-процессы не
 создавались; дополнительных task-каталогов в корнях workspace/repository нет.
+
+### EP-0024-US-0001-TK-0002-tabletop-mode
+
+Режим задаётся метрикой; листы и эффекты читаются из каталога с проверкой геометрии и таймингов, fallback сохранён. 43/43 PASS (us1-tk2); scoped format PASS.
