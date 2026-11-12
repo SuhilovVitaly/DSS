@@ -1,5 +1,7 @@
 # Финальная проверка EP-0024
 
+Продолжение US4-TK2 проверено отдельно:32/32 focused,46/46 native; GPU12ms остаётся OPEN. Актуальная оптимизация, метрики и evidence — [CloudOptimization](CloudOptimization.md). Ниже — историческая проверка полного эпика до этой оптимизации.
+
 Run: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01`. Runtime tested commit `0823924b`; последующие изменения документационные.
 
 | Проверка | Результат | Evidence в run |

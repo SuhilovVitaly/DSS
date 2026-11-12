@@ -62,13 +62,25 @@ internal sealed class PaintedCloudLayer : IDisposable
 
             void Layer(bool core)
             {
-                canvas.SaveLayer();
+                // Include the rotated ellipse and the complete finite blur footprint.
+                // Keep noise in screen coordinates; clipping must not re-anchor it.
+                var viewport = SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight);
+                var visible = clumps.Select(clump => (Clump: clump, Bounds: Bounds(clump, core)))
+                    .Where(item => item.Bounds.IntersectsWith(viewport)).ToArray();
+                if (visible.Length == 0) return;
+                var bounds = visible[0].Bounds;
+                foreach (var item in visible) bounds = SKRect.Union(bounds, item.Bounds);
+                bounds = SKRect.Intersect(bounds, viewport);
+                canvas.Save();
+                canvas.ClipRect(bounds);
+                canvas.SaveLayer(bounds, null);
                 try
                 {
                     using var blur = SKMaskFilter.CreateBlur(SKBlurStyle.Normal, core ? 11 : 23);
                     using var paint = new SKPaint { IsAntialias = true, MaskFilter = blur };
-                    foreach (var clump in clumps)
+                    foreach (var item in visible)
                     {
+                        var clump = item.Clump;
                         var point = frame.View.Project(clump.X, clump.Y);
                         canvas.Save();
                         canvas.Translate(point);
@@ -83,17 +95,29 @@ internal sealed class PaintedCloudLayer : IDisposable
                                 (float)(2 * clump.SigmaY * factor * frame.View.PixelsPerUnit), paint);
                         }
                     }
-                    Noise(core ? .075f : .033f, 3, core ? 8 : 5, core ? 1.6f : 1.4f, core ? -.35f : -.25f, SKBlendMode.DstIn);
-                    if (core) Noise(.75f, 1, 2, .45f, -.1f, SKBlendMode.SrcATop);
+                    Noise(core ? .075f : .033f, 3, core ? 8 : 5, core ? 1.6f : 1.4f, core ? -.35f : -.25f, SKBlendMode.DstIn, bounds);
+                    if (core) Noise(.75f, 1, 2, .45f, -.1f, SKBlendMode.SrcATop, bounds);
                 }
-                finally { canvas.Restore(); }
+                finally { canvas.Restore(); canvas.Restore(); }
             }
-            void Noise(float frequency, int octaves, float seed, float gain, float bias, SKBlendMode blend)
+            SKRect Bounds(TacticalClumpSnapshot clump, bool core)
+            {
+                var point = frame.View.Project(clump.X, clump.Y);
+                double factor = core ? .75 : 1.25;
+                double x = 2 * clump.SigmaX * factor * frame.View.PixelsPerUnit;
+                double y = 2 * clump.SigmaY * factor * frame.View.PixelsPerUnit;
+                double cos = Math.Cos(clump.Rotation), sin = Math.Sin(clump.Rotation);
+                double padding = 4 * (core ? 11 : 23) + 2;
+                float dx = (float)(Math.Sqrt(x * x * cos * cos + y * y * sin * sin) + padding);
+                float dy = (float)(Math.Sqrt(x * x * sin * sin + y * y * cos * cos) + padding);
+                return new(MathF.Floor(point.X - dx), MathF.Floor(point.Y - dy), MathF.Ceiling(point.X + dx), MathF.Ceiling(point.Y + dy));
+            }
+            void Noise(float frequency, int octaves, float seed, float gain, float bias, SKBlendMode blend, SKRect bounds)
             {
                 using var noise = SKShader.CreatePerlinNoiseFractalNoise(frequency, frequency, octaves, seed);
                 using var filter = NoiseAlpha(gain, bias);
                 using var paint = new SKPaint { Shader = noise, ColorFilter = filter, BlendMode = blend };
-                canvas.DrawRect(SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight), paint);
+                canvas.DrawRect(bounds, paint);
             }
         }
     }

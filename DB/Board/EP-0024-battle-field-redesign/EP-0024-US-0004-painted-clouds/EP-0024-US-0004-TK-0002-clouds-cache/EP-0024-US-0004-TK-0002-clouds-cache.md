@@ -83,6 +83,12 @@ git diff --check
 
 ## Исполнение
 
+### Продолжение оптимизации 2026-11-12
+
+**Итог: IMPLEMENTED / GPU gate OPEN, stage approved.** Отсечение и ограничение области обработки реализованы. Финально: движение cold7.49ms / warm≤5.3126ms, центр облака cold13.7655ms, обзор177 сгустков cold81.275ms / warm≤44.933ms. Все замеры1920×1080/S1.5 с ожиданием GPU; BuildCount9, reused=true.32/32 focused tests,46/46 native, Release build0 warnings/errors. Исходные PNG и mask blur сохранены. Статус Done не выставлен из-за превышения12ms; итог и точные artifacts — [CloudOptimization](../../CloudOptimization.md).
+
+По запросу пользователя работа ограничена 30 минутами. Scope уточнён до изменений: `TacticalBattleCloudEvidence.cs` расширяет существующий GPU-замер сценами с видимыми аномалиями, `tools/DeepSpaceSaga.Performance/README.md` описывает замер; `DB/Documentation/04-Engineering/TacticalBattle.md` — актуальный механизм кэша. Отсечение невидимых сгустков и ограничение проходов областью с запасом размытия выполняются в разрешённом PaintedCloudLayer; цвета, шум и authoritative данные не меняются. Результат и статус будут определены по фактическим замерам с ожиданием GPU, включая первый кадр.
+
 Расширение Code context перед реализацией: `BattleMapRenderer.cs` получает принадлежащий экрану слой; `UI/SkiaWindow.cs` передаёт существующий GRContext в RenderNative. Это необходимо для кэша в ресурсах текущего GPU-контекста, без глобального кэша и медленной CPU-пересборки в игровом окне. Headless сохраняет CPU-путь. Контекст не принадлежит слою и не освобождается им.
 
 
