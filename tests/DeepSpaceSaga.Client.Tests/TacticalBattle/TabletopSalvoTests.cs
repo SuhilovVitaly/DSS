@@ -8,6 +8,58 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class TabletopSalvoTests
 {
     [Theory]
+    [InlineData(0, 0)]
+    [InlineData(100, 1)]
+    [InlineData(450, 8)]
+    [InlineData(880, -1)]
+    [InlineData(1000, -1)]
+    public async Task Kill_explosion_frames_end_before_target_marker_appears(int age, int expectedFrame)
+    {
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
+        var frame = scene.Frame;
+        var original = frame.Salvo!.Flights[0];
+        var flight = original with
+        {
+            Shot = original.Shot with { Hit = true, Killed = true, Absorbed = false },
+            ElapsedMs = original.LaunchMs + original.DurationMs + age
+        };
+        frame = frame with
+        {
+            Battle = frame.Battle with { Anomalies = [] },
+            Salvo = frame.Salvo with { Flights = [flight], PlaybackSkipped = false }
+        };
+        var layout = Draw(frame, "kill-" + age);
+        var effects = layout.Rects.Keys.Where(k => k.StartsWith("explosion:", StringComparison.Ordinal)).ToArray();
+        if (expectedFrame < 0) Assert.Empty(effects);
+        else Assert.Equal($"explosion:{flight.Index}:boom-kill:{expectedFrame}", Assert.Single(effects));
+        Assert.Equal(age >= 880, layout.Rects.ContainsKey("result-marker:" + flight.Shot.TargetId));
+    }
+
+    [Fact]
+    public async Task Flying_torpedo_uses_sheet_and_effects_stay_opt_in()
+    {
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
+        Assert.True(Draw(scene.Frame).Rects.ContainsKey("projectile"));
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using var bitmap = new SKBitmap(96, 96); using var canvas = new SKCanvas(bitmap);
+        canvas.Clear(SKColors.Transparent);
+        using (TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop")))
+        {
+            Assert.True(TacticalShipSprites.DrawTorpedo(canvas, new(48, 48), 0, true));
+            Assert.InRange(bitmap.Pixels.Count(p => p.Alpha > 0), 20, 1024);
+            Assert.True(TacticalShipSprites.DrawEffect(canvas, "boom-hit", 9, new(48, 48)));
+            Assert.False(TacticalShipSprites.DrawEffect(canvas, "boom-hit", 10, new(48, 48)));
+            Assert.True(TacticalShipSprites.DrawEffect(canvas, "puff", 7, new(48, 48)));
+            Assert.False(TacticalShipSprites.DrawEffect(canvas, "puff", 8, new(48, 48)));
+        }
+        using (TacticalBattleSkinRenderScope.Enter(TacticalBattleSkin.Classic))
+        {
+            Assert.False(TacticalShipSprites.DrawTorpedo(canvas, new(48, 48), 0, true));
+            Assert.False(TacticalShipSprites.DrawEffect(canvas, "boom-kill", 0, new(48, 48)));
+        }
+    }
+
+    [Theory]
     [InlineData(0, false, false)]
     [InlineData(300, false, false)]
     [InlineData(500, true, false)]
@@ -50,10 +102,10 @@ public sealed class TabletopSalvoTests
             if (shot.Killed) Assert.True(layout.Rects.ContainsKey("result-killed:" + shot.TargetId));
         }
         Assert.DoesNotContain(layout.Rects.Keys, k => k.StartsWith("floating-shot:", StringComparison.Ordinal) ||
-            k.StartsWith("decoy-callout:", StringComparison.Ordinal) || k.StartsWith("absorbed:", StringComparison.Ordinal));
+            k.StartsWith("decoy-callout:", StringComparison.Ordinal) || k.StartsWith("absorbed:", StringComparison.Ordinal) || k.StartsWith("explosion:", StringComparison.Ordinal));
     }
 
-    private static BattleLayout Draw(TacticalBattleFrame frame)
+    private static BattleLayout Draw(TacticalBattleFrame frame, string? evidenceName = null)
     {
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
         using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop"));
@@ -61,6 +113,11 @@ public sealed class TabletopSalvoTests
         var layout = new BattleLayout(); BattleDesign.Recording = layout;
         try { TacticalBattleMapRenderer.Draw(canvas, frame); }
         finally { BattleDesign.Recording = null; }
+        if (evidenceName is not null && Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } folder)
+        {
+            using var png = bitmap.Encode(SKEncodedImageFormat.Png, 100);
+            using var file = File.Create(Path.Combine(folder, evidenceName + ".png")); png.SaveTo(file);
+        }
         return layout;
     }
 }

@@ -9,6 +9,51 @@ internal static partial class TacticalBattleMapRenderer
         TTReticle = SKColor.Parse("#FF4628"), TTAlt = SKColor.Parse("#FF9A6A");
     private static readonly SKColor TTMiss = SKColor.Parse("#969CA8"), TTMissEdge = SKColor.Parse("#3C404A");
 
+    private static string ExplosionName(TacticalShotFlight flight) => flight.Shot.Killed ? "boom-kill" :
+        flight.Shot.Hit && !flight.Shot.Absorbed ? "boom-hit" : "puff";
+
+    private static double ExplosionDuration(TacticalShotFlight flight) =>
+        TacticalBattleSkinRenderScope.EffectStrip(ExplosionName(flight)) is { } strip ? strip.Frames * strip.FrameMs : TacticalBattleResults.FlashMs;
+
+    private static void DrawTabletopProjectiles(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo)
+    {
+        foreach (var flight in salvo.Flights.Where(flight => flight.Flying))
+        {
+            var a = f.View.Project(flight.Shot.From); var b = f.View.Project(flight.Shot.To);
+            Stroke(c, a, b, Yellow.WithAlpha(70), 1.1f, [5, 5]);
+            var head = a + Scale(b - a, (float)flight.Progress);
+            float length = SKPoint.Distance(a, b);
+            var dir = Scale(b - a, 1 / Math.Max(.001f, length));
+            float travelled = SKPoint.Distance(a, head);
+            for (int i = 1; i <= 9 && 6 + 7 * i + 6 < travelled; i++)
+                TacticalShipSprites.DrawEffect(c, "trail", (i - 1) * TacticalShipSprites.EffectFrames("trail") / 9,
+                    head - Scale(dir, 6 + 7 * i), (byte)(255 - 18 * i));
+            bool own = f.Battle.Units.FirstOrDefault(u => u.Id == flight.Shot.ShooterId)?.Side == f.Battle.PlayerSide;
+            float course = MathF.Atan2(b.Y - a.Y, b.X - a.X) * 180 / MathF.PI;
+            if (!TacticalShipSprites.DrawTorpedo(c, head, course, own)) Circle(c, head, 4, SKColor.Parse("#FFF2A0"));
+            if (Recording is { } layout) layout.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
+        }
+    }
+
+    private static void DrawTabletopExplosions(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo)
+    {
+        if (salvo.PlaybackSkipped) return;
+        foreach (var flight in salvo.Flights.Where(flight => flight.Arrived))
+        {
+            string name = ExplosionName(flight);
+            var strip = TacticalBattleSkinRenderScope.EffectStrip(name);
+            if (strip is null || flight.ImpactAgeMs >= strip.Value.Frames * strip.Value.FrameMs) continue;
+            int index = (int)Math.Floor(flight.ImpactAgeMs / strip.Value.FrameMs);
+            var point = flight.Shot.Absorbed ? AnomalyPresentation.AbsorptionPoint(f, flight.Shot) : f.View.Project(flight.Shot.To);
+            if (!TacticalShipSprites.DrawEffect(c, name, index, point)) continue;
+            if (Recording is { } layout)
+            {
+                float scale = TacticalShipSprites.CanvasScale(c);
+                layout.Rects[$"explosion:{flight.Index}:{name}:{index}"] = TacticalShipSprites.Bounds(point, strip.Value.Cell, scale, TacticalShipSprites.Factor(scale));
+            }
+        }
+    }
+
     private static void DrawSalvoTemplates(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo, List<SKRect> occupied)
     {
         var pills = new List<RibbonPill>();
@@ -34,7 +79,7 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var pill in pills) PillOnRibbon(c, pill, placed, occupied);
         foreach (var group in salvo.Flights.Where(flight => salvo.PlaybackSkipped || flight.Arrived).GroupBy(flight => flight.Shot.TargetId))
         {
-            if (!salvo.PlaybackSkipped && group.Any(flight => flight.ImpactAgeMs < TacticalBattleResults.FlashMs)) continue;
+            if (!salvo.PlaybackSkipped && group.Any(flight => flight.ImpactAgeMs < ExplosionDuration(flight))) continue;
             var point = f.View.Project(group.Last().Shot.To);
             if (group.Any(flight => flight.Shot.Hit && !flight.Shot.Absorbed))
             {

@@ -66,7 +66,8 @@ internal static partial class TacticalBattleMapRenderer
             }
         }
         if (Skin.Tabletop && f.Salvo is { } tabletopSalvo) DrawSalvoTemplates(c, f, tabletopSalvo, occupied);
-        if (f.Salvo is { InFlight: true } salvo)
+        if (Skin.Tabletop && f.Salvo is { InFlight: true } tabletopFlying) DrawTabletopProjectiles(c, f, tabletopFlying);
+        if (!Skin.Tabletop && f.Salvo is { InFlight: true } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flying))
             {
                 var a = f.View.Project(flight.Shot.From); var b = f.View.Project(flight.Shot.To);
@@ -218,6 +219,11 @@ internal static partial class TacticalBattleMapRenderer
 
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f)
     {
+        if (Skin.Tabletop)
+        {
+            if (f.Salvo is { } tabletopSalvo) DrawTabletopExplosions(c, f, tabletopSalvo);
+            return;
+        }
         if (!Skin.Tabletop && f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
             foreach (var d in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide)) Diamond(c, f.View.Project(d.Unit.Pose), 10, SKColors.Transparent, Yellow, 1.5f);
         if (f.Salvo is { } salvo)
