@@ -1,4 +1,5 @@
 {
+  "TacticalBattle.Map.TemplateTip": "{0}: speed {1} · turn {2}°",
   "TacticalBattle.Refusal.EvasionUnavailable": "Not enough consciousness to evade",
   "TacticalBattle.Evade": "Evade [E]",
   "TacticalBattle.EvadeActive": "Evading [E]",

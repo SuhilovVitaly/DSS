@@ -1,4 +1,5 @@
 {
+  "TacticalBattle.Map.TemplateTip": "{0}: скорость {1} · поворот {2}°",
   "TacticalBattle.Refusal.EvasionUnavailable": "Недостаточно сознания для уклонения",
   "TacticalBattle.Evade": "Уклониться [E]",
   "TacticalBattle.EvadeActive": "Уклоняется [E]",

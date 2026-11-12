@@ -8,6 +8,7 @@ internal static partial class TacticalBattleMapRenderer
     static partial void DrawMovement(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied)
     {
         if (f.Movement is not { } movement) return;
+        if (TacticalBattleSkinRenderScope.Tabletop) { DrawTemplates(c, f, movement, occupied); return; }
         if (movement.SelectedOrder is { } selectedOrder && !selectedOrder.Path.IsDefaultOrEmpty &&
             selectedOrder.Unit.Build is { Range: > 0, ArcDegrees: > 0 } build)
         {

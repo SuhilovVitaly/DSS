@@ -119,8 +119,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | BLOCKED: source generators | — | — |
 | [EP-0024-US-0003-TK-0001-plates](EP-0024-US-0003-counter-plates/EP-0024-US-0003-TK-0001-plates/EP-0024-US-0003-TK-0001-plates.md) | DONE (automated; см. карточку) | `2a7e0cf0b4c108fb6e59b25bdad21d61ac76678b` | PASS |
 | [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | DONE (automated; см. карточку) | `546995b7657c06b8151bbf4da7f328b64d9db540` | PASS |
-| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | DONE: 7/7 | текущий commit | проверяется после commit |
-| [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-move-templates/EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | IMPLEMENTED; performance gate OPEN | `dc9630da9401b86191acd1b9dd58a52affc29a6e` | PASS |
+| [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-move-templates/EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | DONE: 15/15 | текущий commit | проверяется после commit |
 | [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | NOT STARTED: dependencies | — | — |
@@ -171,3 +171,7 @@ Tabletop использует увеличенные области моделе
 ### EP-0024-US-0004-TK-0002-clouds-cache
 
 Кэш по view/scale/clumps, GPU-context path, освобождение экраном проверены. 12 ms gate НЕ закрыт: CPU raster 1627.97/1519.05/1558.23 ms; native GPU NOT RUN. Evidence: cloud-raster-timing.json. Проба центра уточнена на максимальный видимый сгусток: глобальный максимум вне кадра; цвет ближе к тону жара, чем фону. 7/7 PASS (us4-tk2); scoped format PASS.
+
+### EP-0024-US-0005-TK-0001-templates
+
+Ленты, зона досягаемости, скорость, призраки, скобки, RU/EN-подсказка и выноска пыли реализованы. Проверены две сцены, геометрия handles, отсутствие зависимости рендера движения от оружейного сектора и реальное редактирование приказа перетаскиванием. Значки Edge сохранены по A-11. Build: 0 ошибок/предупреждений. 15/15 PASS (us5-tk1); scoped format PASS.
