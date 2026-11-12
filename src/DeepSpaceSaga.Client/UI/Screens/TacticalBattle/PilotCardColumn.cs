@@ -65,7 +65,8 @@ internal sealed class PilotCardColumn
             EndSlider();
             return false;
         }
-        ApplySlider(orders, command.Action == "slider:speed", point.X, command.Bounds.Left + 7, command.Bounds.Right - 7);
+        float inset = Layout.Slim ? 3 : 7;
+        ApplySlider(orders, command.Action == "slider:speed", point.X, command.Bounds.Left + inset, command.Bounds.Right - inset);
         return true;
     }
 
@@ -100,7 +101,7 @@ internal sealed class PilotCardColumn
 
     private static float ExpandedHeight(TacticalBattleFrame frame, PilotCard card)
     {
-        if (Skin.SlimPilots) return 91;
+        if (Skin.SlimPilots) return PilotCardMoveBlock.MoveHeight;
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
             return 10 + PilotCardFireBlock.Height(fire);

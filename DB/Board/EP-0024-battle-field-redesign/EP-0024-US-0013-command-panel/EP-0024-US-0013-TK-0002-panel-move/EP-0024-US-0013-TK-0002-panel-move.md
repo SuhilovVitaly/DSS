@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0013-command-panel
 ticket: EP-0024-US-0013-TK-0002-panel-move
 title: Движение в панели
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0013-TK-0001-panel-frame]
@@ -86,3 +86,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us13-tk2
+
+Компактная панель 150x91: два ряда значений, шаги, ползунки, Прямо/ИИ. 4/4 targeted: +2, min/max drag, возврат ИИ; Classic сохранён. Визуальная сверка move-panel-column-x2.png с Reference/panels/3-move-column-x2.png: геометрия и состав совпадают; живые портреты и BattleTypography по A-16, кнопки стрелок ui.button по UiSpec (эталон показывает светлый вариант). Evidence PNG рядом с логами. Самопроверка пройдена.
+
+Проверки: 4/4 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us13-tk2/client.trx`, `us13-tk2-test.log`, `us13-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

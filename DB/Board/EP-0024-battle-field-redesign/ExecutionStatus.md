@@ -112,7 +112,7 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 
 | Ticket | Состояние | Implementation SHA | Push |
 |---|---|---|---|
-| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | DONE (automated; см. карточку) | `b45631c5799857f80462151452f2ccb407f8d011` | PASS |
+| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | DONE (automated; см. карточку) | `494423c25a29ab9515c3d44b6077754893c2357c` | PASS |
 | [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | DONE (automated; см. карточку) | `f5bf9d2790e0ea2acc6a9919294045f7d9bc9b97` | PASS |
 | [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | DONE (automated; см. карточку) | `d2a5c8fb2d353816da51b0e32401e94ea7d19084` | PASS |
 | [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | DONE (automated; см. карточку) | `c16e6340a56eee7b959efc5cbd41145a1a53a8b2` | PASS |
@@ -134,8 +134,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | DONE (automated; см. карточку) | `431c0b7f433be2aabbd33fe1d83c69eaf795d137` | PASS |
 | [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | DONE (automated; см. карточку) | `e73124a4308708b2140d7b8fa73158681e42ee22` | PASS |
 | [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE (automated; см. карточку) | `7e8e852adaf4e6ba07e93c3f4b7d120719091c42` | PASS |
-| [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE: 4/4 | текущий commit | проверяется после commit |
-| [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE (automated; см. карточку) | `cbce3db702db97e3c6bdccaea6349d2cda384529` | PASS |
+| [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | DONE: 4/4 | текущий commit | проверяется после commit |
 | [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | NOT STARTED: dependencies | — | — |
 
@@ -219,3 +219,7 @@ Steel включает прямые углы, тёмные кромки, ско�
 ### EP-0024-US-0013-TK-0001-panel-frame
 
 Плита панели (51,49)—(201,140), язычок, clip и overlay/input интегрированы. 4/4 targeted: клик/drag/wheel на выступе панели не передают ввод карте. Содержимое блоков реализуется следующими TK; визуальная сверка всей панели в TK-0002…0004. Самопроверка scope/commands пройдена. 4/4 PASS (us13-tk1); scoped format PASS.
+
+### EP-0024-US-0013-TK-0002-panel-move
+
+Компактная панель 150x91: два ряда значений, шаги, ползунки, Прямо/ИИ. 4/4 targeted: +2, min/max drag, возврат ИИ; Classic сохранён. Визуальная сверка move-panel-column-x2.png с Reference/panels/3-move-column-x2.png: геометрия и состав совпадают; живые портреты и BattleTypography по A-16, кнопки стрелок ui.button по UiSpec (эталон показывает светлый вариант). Evidence PNG рядом с логами. Самопроверка пройдена. 4/4 PASS (us13-tk2); scoped format PASS.
