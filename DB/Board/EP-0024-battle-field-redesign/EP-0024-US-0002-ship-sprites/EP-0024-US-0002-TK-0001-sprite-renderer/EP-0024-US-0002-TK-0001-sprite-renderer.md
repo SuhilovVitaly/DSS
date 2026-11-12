@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0002-ship-sprites
 ticket: EP-0024-US-0002-TK-0001-sprite-renderer
 title: Отрисовка модели: кадр, масштаб, тень, маркеры
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0001-TK-0002-tabletop-mode]
@@ -87,3 +87,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us2-tk1
+
+Модели по типу/стороне/курсу, пиксельная сетка, тени, обломки и маркеры подключены в production. Classic и его 15 снимков проходят без обновления.
+
+Проверки: 47/47 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us2-tk1/client.trx`, `us2-tk1-test.log`, `us2-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

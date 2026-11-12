@@ -117,10 +117,18 @@ internal static partial class TacticalBattleMapRenderer
             var p = v.Project(u.Pose); bool own = u.Side == f.Battle.PlayerSide;
             string role = "field.unit." + (u.Kind == TacticalUnitKind.Carrier ? "carrier" : "drone") + (own ? ".own" : ".enemy");
             var color = u.State == TacticalUnitState.Disabled ? DisabledDrone : Skin.Color(role, "fill", own ? Cyan : Orange);
-            if (u.Kind == TacticalUnitKind.Carrier) { if (inside.Contains(p)) Hex(c, p, 15, color); else Edge(c, f, u, p, inside, occupied, color); }
+            if (u.Kind == TacticalUnitKind.Carrier)
+            {
+                if (inside.Contains(p))
+                {
+                    if (!TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course)) Hex(c, p, 15, color);
+                }
+                else Edge(c, f, u, p, inside, occupied, color);
+            }
             else
             {
-                if (DroneSilhouette(u.FrameId) is { } hull)
+                bool sprite = TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course);
+                if (!sprite && DroneSilhouette(u.FrameId) is { } hull)
                 {
                     c.Save();
                     c.Translate(p.X, p.Y);
@@ -131,12 +139,13 @@ internal static partial class TacticalBattleMapRenderer
                     c.DrawLine(0, -5 * DroneSilhouetteScale, 0, 4 * DroneSilhouetteScale, hullPaint);
                     c.Restore();
                 }
-                else if (own) Diamond(c, p, 4.2f, color);
-                else Triangle(c, p, 4.9f, u.Pose.Course, color);
-                if (u.Id == Selected(f)) Circle(c, p, 7, SKColors.Transparent, Text, 1.2f);
+                else if (!sprite && own) Diamond(c, p, 4.2f, color);
+                else if (!sprite) Triangle(c, p, 4.9f, u.Pose.Course, color);
+                if (u.Id == Selected(f)) Circle(c, p, Skin.Tabletop ? 30 : 7, SKColors.Transparent,
+                    Skin.Tabletop ? Yellow : Text, Skin.Tabletop ? 1.6f : 1.2f);
             }
             if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
-                EvasionRing(c, p);
+                EvasionRing(c, p, Skin.Tabletop ? 34 : 15);
         }
         foreach (var u in f.Battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone && HasDecoy(f, u)))
         {
@@ -152,8 +161,11 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var wreck in wrecks)
         {
             var point = v.Project(wreck.Pose);
-            Stroke(c, point + new SKPoint(-6, -6), point + new SKPoint(6, 6), Muted, 1.5f);
-            Stroke(c, point + new SKPoint(-6, 6), point + new SKPoint(6, -6), Muted, 1.5f);
+            if (!TacticalShipSprites.Draw(c, wreck, point, wreck.Side == f.Battle.PlayerSide, wreck.Pose.Course, 170, shadow: false))
+            {
+                Stroke(c, point + new SKPoint(-6, -6), point + new SKPoint(6, 6), Muted, 1.5f);
+                Stroke(c, point + new SKPoint(-6, 6), point + new SKPoint(6, -6), Muted, 1.5f);
+            }
             if (wreck.Kind == TacticalUnitKind.Drone) Label(c, f, wreck, occupied);
         }
         DrawResultHighlights(c, f); DrawHover(c, f);

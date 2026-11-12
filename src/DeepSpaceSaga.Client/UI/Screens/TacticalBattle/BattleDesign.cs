@@ -65,11 +65,11 @@ internal static class BattleDesign
             T(c, text, r.MidX, r.MidY + size * .36f, size, tone, active, SKTextAlign.Center);
         }
     }
-    public static void EvasionRing(SKCanvas c, SKPoint point)
+    public static void EvasionRing(SKCanvas c, SKPoint point, float radius = 15)
     {
         using var effect = SKPathEffect.CreateDash([3, 3], 3);
         using var paint = new SKPaint { IsAntialias = true, Color = Purple, Style = SKPaintStyle.Stroke, StrokeWidth = 1.6f, PathEffect = effect };
-        c.DrawCircle(point, 15, paint);
+        c.DrawCircle(point, radius, paint);
     }
     public static readonly SKColor PurpleDark = SKColor.Parse("#2A2145");
     public static string U(string key, params object?[] values) => values.Length == 0 ? Localization.Get("TacticalBattle.Ui." + key) : string.Format(CultureInfo.InvariantCulture, Localization.Get("TacticalBattle.Ui." + key), values);

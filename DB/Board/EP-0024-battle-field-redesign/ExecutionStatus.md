@@ -113,8 +113,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | Ticket | Состояние | Implementation SHA | Push |
 |---|---|---|---|
 | [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | DONE (automated; см. карточку) | `b45631c5799857f80462151452f2ccb407f8d011` | PASS |
-| [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | DONE: 43/43 | текущий commit | проверяется после commit |
-| [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | DONE (automated; см. карточку) | `f5bf9d2790e0ea2acc6a9919294045f7d9bc9b97` | PASS |
+| [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | DONE: 47/47 | текущий commit | проверяется после commit |
 | [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | BLOCKED: source generators | — | — |
 | [EP-0024-US-0003-TK-0001-plates](EP-0024-US-0003-counter-plates/EP-0024-US-0003-TK-0001-plates/EP-0024-US-0003-TK-0001-plates.md) | NOT STARTED: dependencies | — | — |
@@ -151,3 +151,7 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 ### EP-0024-US-0001-TK-0002-tabletop-mode
 
 Режим задаётся метрикой; листы и эффекты читаются из каталога с проверкой геометрии и таймингов, fallback сохранён. 43/43 PASS (us1-tk2); scoped format PASS.
+
+### EP-0024-US-0002-TK-0001-sprite-renderer
+
+Модели по типу/стороне/курсу, пиксельная сетка, тени, обломки и маркеры подключены в production. Classic и его 15 снимков проходят без обновления. 47/47 PASS (us2-tk1); scoped format PASS.
