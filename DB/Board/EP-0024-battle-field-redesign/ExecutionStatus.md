@@ -1,6 +1,16 @@
 # EP-0024 — исполнение
 
-## Состояние на 2026-11-12
+## Текущее продолжение 2026-11-12
+
+Пользователь явно поручил восстановить манифест по UiSpec и продолжить все
+доступные тикеты с готовыми PNG (D-12). Общая preflight-блокировка снята.
+Только `EP-0024-US-0002-TK-0003-bake-tool` остаётся BLOCKED по исходникам.
+Реализация ведётся в той же опубликованной ветке. Манифест реконструирован:
+72 роли с явными вариантами состояний, 24 изображения; это не побайтовая
+копия утраченного манифеста с заявленными в планировании 51 UI-ролью.
+Новые проверки: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/`.
+
+## История: preflight до уточнения пользователя
 
 **BLOCKED на preflight. Выполнено 0 из 26 implementation-тикетов.**
 Пользователь разрешил исполнение всего эпика, актуализацию Board, commit и push.
@@ -102,7 +112,7 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 
 | Ticket | Состояние | Implementation SHA | Push |
 |---|---|---|---|
-| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | BLOCKED: manifest | — | — |
+| [EP-0024-US-0001-TK-0001-pack-files](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0001-pack-files/EP-0024-US-0001-TK-0001-pack-files.md) | Реализован; validation 7/7 | — | — |
 | [EP-0024-US-0001-TK-0002-tabletop-mode](EP-0024-US-0001-skin-pack/EP-0024-US-0001-TK-0002-tabletop-mode/EP-0024-US-0001-TK-0002-tabletop-mode.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0002-TK-0001-sprite-renderer](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0001-sprite-renderer/EP-0024-US-0002-TK-0001-sprite-renderer.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | NOT STARTED: dependencies | — | — |

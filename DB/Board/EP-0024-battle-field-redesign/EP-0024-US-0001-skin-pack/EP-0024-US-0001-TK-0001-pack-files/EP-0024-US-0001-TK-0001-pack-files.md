@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0001-skin-pack
 ticket: EP-0024-US-0001-TK-0001-pack-files
 title: Пакет `tabletop` в клиенте и в сборке
-stage: draft
+stage: done
 layer: client-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
@@ -25,7 +25,12 @@ revision: 1
 
 ## Assumptions
 
-A-02, A-03. Пакет копируется из материалов без правок.
+A-02, A-03. По прямому уточнению пользователя 2026-11-12 отсутствующий
+манифест восстанавливается по UiSpec; готовые PNG копируются без изменений.
+Scope дополнен `Materials/Assets/skin/skin.json`, записью происхождения пакета
+и актуализацией статуса исполнения. Это реконструкция по нормативному тексту,
+не восстановление утраченного файла побайтно. Запекатель остаётся отдельным
+блокированным тикетом и не блокирует runtime.
 
 ## Code context
 
@@ -92,3 +97,14 @@ git diff --check
 и US1-AC1 не выполнены. 24 PNG прошли проверку размеров, CRC и DEFLATE и
 побайтно совпадают с материалами пользователя; это не проверка загрузки скина.
 Подробности, evidence и отсутствующие файлы — [ExecutionStatus](../../ExecutionStatus.md).
+
+
+### Продолжение по D-12
+
+Восстановлен манифест по UiSpec, 24 исходных PNG перенесены без изменений;
+пакет копируется в build/publish. ShippedSkinTests проверяет реальный output,
+все 13 листов, эффекты, 24 ресурса, Options и откат повреждённого эффекта.
+`dotnet test ... --filter FullyQualifiedName~ShippedSkinTests|FullyQualifiedName~SkinCatalogTests
+--no-restore --results-directory D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us1-tk1`
+— 7/7 PASS, включая сборку Client и tests; log `us1-tk1-test.log` в указанном run.
+Самопроверка: PNG не изменены, schema v1 и другие пакеты не меняются.

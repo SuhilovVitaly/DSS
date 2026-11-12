@@ -1,0 +1,353 @@
+{
+  "schemaVersion": 1,
+  "id": "tabletop",
+  "displayName": "Tabletop",
+  "roles": {
+    "field.style": {
+      "metrics": {
+        "tabletop": 1
+      }
+    },
+    "field.background": {
+      "fill": "#141C28",
+      "image": "assets/field.png"
+    },
+    "field.grid": {
+      "stroke": "#C8B88A10"
+    },
+    "ui.map.ruler": {
+      "stroke": "#FFE27A",
+      "text": "#FFE27A"
+    },
+    "field.unit.sprite.light.own": {
+      "image": "assets/units/pxd-light-own.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.light.enemy": {
+      "image": "assets/units/pxd-light-enemy.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.light.disabled": {
+      "image": "assets/units/pxd-light-disabled.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.heavy.own": {
+      "image": "assets/units/pxd-heavy-own.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.heavy.enemy": {
+      "image": "assets/units/pxd-heavy-enemy.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.heavy.disabled": {
+      "image": "assets/units/pxd-heavy-disabled.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.thug.own": {
+      "image": "assets/units/pxd-thug-own.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.thug.enemy": {
+      "image": "assets/units/pxd-thug-enemy.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.thug.disabled": {
+      "image": "assets/units/pxd-thug-disabled.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.carrier.own": {
+      "image": "assets/units/pxd-carrier-own.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.carrier.enemy": {
+      "image": "assets/units/pxd-carrier-enemy.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.torpedo.own": {
+      "image": "assets/units/pxd-torpedo-own.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.unit.sprite.torpedo.enemy": {
+      "image": "assets/units/pxd-torpedo-enemy.png",
+      "metrics": {
+        "columns": 8,
+        "frames": 32,
+        "pixel": 1
+      }
+    },
+    "field.fx.boom-hit": {
+      "image": "assets/fx/boom-hit.png",
+      "metrics": {
+        "frames": 10,
+        "frame-ms": 45,
+        "pixel": 1
+      }
+    },
+    "field.fx.boom-kill": {
+      "image": "assets/fx/boom-kill.png",
+      "metrics": {
+        "frames": 16,
+        "frame-ms": 55,
+        "pixel": 1
+      }
+    },
+    "field.fx.puff": {
+      "image": "assets/fx/puff.png",
+      "metrics": {
+        "frames": 8,
+        "frame-ms": 60,
+        "pixel": 1
+      }
+    },
+    "field.fx.trail": {
+      "image": "assets/fx/trail.png",
+      "metrics": {
+        "frames": 6,
+        "frame-ms": 0,
+        "pixel": 1
+      }
+    },
+    "ui.style": {
+      "metrics": {
+        "steel": 1
+      }
+    },
+    "ui.pilot-column": {
+      "metrics": {
+        "slim": 1
+      }
+    },
+    "ui.panel.bevel": {
+      "fill": "#4C5764",
+      "stroke": "#0A0E12"
+    },
+    "ui.text": {
+      "text": "#E4ECF4"
+    },
+    "ui.panel": {
+      "fill": "#2C343E",
+      "stroke": "#05070A"
+    },
+    "ui.panel.art": {
+      "image": "assets/ui/steel.png"
+    },
+    "ui.panel.build": {
+      "fill": "#2C343E",
+      "stroke": "#05070A"
+    },
+    "ui.panel.build.art": {
+      "image": "assets/ui/steel.png"
+    },
+    "ui.panel.report": {
+      "fill": "#2C343E",
+      "stroke": "#05070A"
+    },
+    "ui.panel.report.art": {
+      "image": "assets/ui/steel.png"
+    },
+    "ui.pilot-card": {
+      "fill": "#2C343E",
+      "stroke": "#05070A"
+    },
+    "ui.pilot-card.art": {
+      "image": "assets/ui/steel.png"
+    },
+    "ui.pilot-card.selected": {
+      "fill": "#2C343E",
+      "stroke": "#FFD24A"
+    },
+    "ui.pilot-card.selected.art": {
+      "image": "assets/ui/steel.png"
+    },
+    "ui.box": {
+      "fill": "#161C23",
+      "stroke": "#0A0E12",
+      "text": "#E4ECF4"
+    },
+    "ui.tag": {
+      "fill": "#161C23",
+      "stroke": "#0A0E12",
+      "text": "#E4ECF4"
+    },
+    "ui.box.build-slot": {
+      "fill": "#161C23",
+      "stroke": "#0A0E12",
+      "text": "#E4ECF4"
+    },
+    "ui.button": {
+      "fill": "#46525F",
+      "stroke": "#0A0E12",
+      "text": "#E4ECF4"
+    },
+    "ui.button.art": {
+      "image": "assets/ui/steel-button.png"
+    },
+    "ui.button.primary": {
+      "fill": "#F3D88A",
+      "stroke": "#4A3410",
+      "text": "#2A1A08"
+    },
+    "ui.button.primary.art": {
+      "image": "assets/ui/gold-button.png"
+    },
+    "ui.box.target.selected": {
+      "fill": "#F3D88A",
+      "stroke": "#4A3410",
+      "text": "#2A1A08"
+    },
+    "ui.box.target.selected.art": {
+      "image": "assets/ui/gold-button.png"
+    },
+    "ui.box.salvo.active": {
+      "fill": "#F3D88A",
+      "stroke": "#4A3410",
+      "text": "#2A1A08"
+    },
+    "ui.box.salvo.active.art": {
+      "image": "assets/ui/gold-button.png"
+    },
+    "ui.button.pending": {
+      "fill": "#323A44",
+      "stroke": "#0A0E12",
+      "text": "#6A7480"
+    },
+    "ui.button.pending.art": {
+      "image": "assets/ui/off-button.png"
+    },
+    "ui.button.primary.pending": {
+      "fill": "#323A44",
+      "stroke": "#0A0E12",
+      "text": "#6A7480"
+    },
+    "ui.button.primary.pending.art": {
+      "image": "assets/ui/off-button.png"
+    },
+    "ui.box.decoy.unavailable": {
+      "fill": "#323A44",
+      "stroke": "#0A0E12",
+      "text": "#6A7480"
+    },
+    "ui.box.decoy.unavailable.art": {
+      "image": "assets/ui/off-button.png"
+    },
+    "ui.box.evade.unavailable": {
+      "fill": "#323A44",
+      "stroke": "#0A0E12",
+      "text": "#6A7480"
+    },
+    "ui.box.evade.unavailable.art": {
+      "image": "assets/ui/off-button.png"
+    },
+    "ui.box.decoy": {
+      "fill": "#3A5A2E",
+      "stroke": "#0A0E12",
+      "text": "#B8E8A0"
+    },
+    "ui.box.decoy.art": {
+      "image": "assets/ui/decoy-button.png"
+    },
+    "ui.box.decoy.selected": {
+      "fill": "#3A5A2E",
+      "stroke": "#0A0E12",
+      "text": "#B8E8A0"
+    },
+    "ui.box.decoy.selected.art": {
+      "image": "assets/ui/decoy-button.png"
+    },
+    "ui.box.evade": {
+      "fill": "#4A3E66",
+      "stroke": "#0A0E12",
+      "text": "#E0D4FF"
+    },
+    "ui.box.evade.art": {
+      "image": "assets/ui/evade-button.png"
+    },
+    "ui.box.evade.selected": {
+      "fill": "#4A3E66",
+      "stroke": "#0A0E12",
+      "text": "#E0D4FF"
+    },
+    "ui.box.evade.selected.art": {
+      "image": "assets/ui/evade-button.png"
+    },
+    "ui.pilot-card.scroll": {
+      "fill": "#161C23",
+      "stroke": "#9AAABB"
+    },
+    "ui.bar.armor": {
+      "fill": "#5A7CA8"
+    },
+    "ui.bar.hull": {
+      "fill": "#5C9440"
+    },
+    "ui.build.name": {
+      "text": "#E4ECF4"
+    },
+    "ui.build.slot.armor": {
+      "fill": "#5A7CA8"
+    },
+    "ui.salvo.result.hit": {
+      "text": "#FF9A6A"
+    },
+    "ui.salvo.result.miss": {
+      "text": "#C8D4EC"
+    },
+    "ui.report": {
+      "stroke": "#9AAABB"
+    },
+    "ui.outcome.victory": {
+      "text": "#FFE27A"
+    },
+    "ui.outcome.defeat": {
+      "text": "#FF8A6A"
+    }
+  }
+}

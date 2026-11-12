@@ -6,6 +6,57 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class ShippedSkinTests
 {
     [Fact]
+    public void Tabletop_build_output_loads_all_sheets_and_corrupt_pack_falls_back()
+    {
+        string root = Path.Combine(AppContext.BaseDirectory, "Skins");
+        List<string> warnings = [];
+        using var catalog = TacticalBattleSkinCatalog.Load(root, warnings.Add);
+        Assert.Empty(warnings);
+        Assert.Contains(("tabletop", "Tabletop"), catalog.Options);
+        var skin = catalog.GetOrClassic("tabletop");
+        Assert.Equal(1, skin.Metric("field.style", "tabletop", 0));
+        Assert.Equal(1600, Assert.IsType<SKImage>(skin.Image("field.background")).Width);
+        foreach (string model in new[] { "light", "heavy", "thug", "carrier", "torpedo" })
+        {
+            foreach (string side in model is "carrier" or "torpedo" ? new[] { "own", "enemy" } : new[] { "own", "enemy", "disabled" })
+            {
+                string role = $"field.unit.sprite.{model}.{side}";
+                var sheet = Assert.IsType<SKImage>(skin.Image(role));
+                int cell = model == "carrier" ? 96 : model == "torpedo" ? 32 : 64;
+                Assert.Equal(cell * 8, sheet.Width);
+                Assert.Equal(cell * 4, sheet.Height);
+                Assert.Equal(32, skin.Metric(role, "frames", 0));
+            }
+        }
+        Assert.Equal(1280, Assert.IsType<SKImage>(skin.Image("field.fx.boom-kill")).Width);
+        Assert.Equal(16, skin.Metric("field.fx.boom-kill", "frames", 0));
+        Assert.Equal(55, skin.Metric("field.fx.boom-kill", "frame-ms", 0));
+        Assert.Equal(24, skin.ResourceReferences.Select(r => r.Path).Distinct().Count());
+
+        string validation = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath();
+        string temp = Path.Combine(validation, "tabletop-fallback-" + Guid.NewGuid().ToString("N"));
+        string pack = Path.Combine(root, "tabletop"), target = Path.Combine(temp, "tabletop");
+        try
+        {
+            foreach (string file in Directory.GetFiles(pack, "*", SearchOption.AllDirectories))
+            {
+                string destination = Path.Combine(target, Path.GetRelativePath(pack, file));
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.Copy(file, destination);
+            }
+            File.WriteAllText(Path.Combine(target, "assets", "fx", "boom-kill.png"), "broken");
+            warnings.Clear();
+            using var damaged = TacticalBattleSkinCatalog.Load(temp, warnings.Add);
+            Assert.Same(TacticalBattleSkin.Classic, damaged.GetOrClassic("tabletop"));
+            Assert.Contains(warnings, w => w.Contains("boom-kill.png", StringComparison.Ordinal));
+        }
+        finally
+        {
+            if (Directory.Exists(temp)) Directory.Delete(temp, recursive: true);
+        }
+    }
+
+    [Fact]
     public void XenonStar_build_output_loads_and_corrupt_pack_falls_back()
     {
         string root = Path.Combine(AppContext.BaseDirectory, "Skins");

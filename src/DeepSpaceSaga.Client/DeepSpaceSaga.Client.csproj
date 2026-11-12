@@ -40,6 +40,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="Skins/tabletop/skin.json;Skins/tabletop/assets/**/*.png">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
+    </None>
     <None Update="Skins/contrast/skin.json;Skins/contrast/assets/**/*.png;Skins/contrast/assets/**/*.ttf;Skins/contrast/assets/**/*.otf">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
