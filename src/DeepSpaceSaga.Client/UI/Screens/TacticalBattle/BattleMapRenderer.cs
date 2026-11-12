@@ -48,7 +48,7 @@ internal static partial class TacticalBattleMapRenderer
             Skin.Image(c, "field.hud.rule", SKRect.Create(v.PixelWidth / 2f - ruleWidth / 2f, 19, ruleWidth, 12));
             Skin.Image(c, "field.hud.rule", SKRect.Create(v.PixelWidth / 2f - ruleWidth / 2f, 686, ruleWidth, 12));
         }
-        if (interactiveField is null || interactiveField.Prepare(c, f))
+        if (Skin.Tabletop || interactiveField is null || interactiveField.Prepare(c, f))
             DrawAnomalies(c, f, interactiveField);
         bool field = !f.Battle.Anomalies.IsDefaultOrEmpty && f.Battle.Rules.Anomalies is not null;
         using var grid = new SKPaint
@@ -285,7 +285,8 @@ internal static partial class TacticalBattleMapRenderer
 
     private static void DrawAnomalies(SKCanvas canvas, TacticalBattleFrame frame, InteractiveAnomalyField? interactiveField)
     {
-        if (interactiveField is null) AnomalyLayer.Draw(canvas, frame);
+        if (Skin.Tabletop) new PaintedCloudLayer().Draw(canvas, frame);
+        else if (interactiveField is null) AnomalyLayer.Draw(canvas, frame);
         else if (!frame.Battle.Anomalies.IsDefaultOrEmpty && frame.Battle.Rules.Anomalies is not null) interactiveField.Draw(canvas);
     }
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f);

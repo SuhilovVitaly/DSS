@@ -19,9 +19,12 @@ internal static partial class TacticalBattleMapRenderer
                 using var path = CreateFireSector(f.View, plan.Selected.Drone.Pose, build.Range, 2 * build.ArcDegrees);
                 DrawFireSector(c, path, Skin.Color("ui.map.fire.sector", "fill", ArcFill),
                     Skin.Color("ui.map.fire.sector", "stroke", ArcEdge));
-                c.Save();
-                try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
-                finally { c.Restore(); }
+                if (!Skin.Tabletop)
+                {
+                    c.Save();
+                    try { c.ClipPath(path, SKClipOperation.Intersect, true); DrawAnomalies(c, f, interactiveField); }
+                    finally { c.Restore(); }
+                }
             }
             foreach (var row in plan.Rows.Where(r => r.Drone.InDust))
             {

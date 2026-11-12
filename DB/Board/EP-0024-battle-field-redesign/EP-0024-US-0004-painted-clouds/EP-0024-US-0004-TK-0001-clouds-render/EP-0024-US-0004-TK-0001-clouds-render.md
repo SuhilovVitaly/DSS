@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0004-painted-clouds
 ticket: EP-0024-US-0004-TK-0001-clouds-render
 title: Отрисовка облаков в режиме
-stage: draft
+stage: done
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0001-TK-0002-tabletop-mode]
@@ -86,3 +86,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us4-tk1
+
+Реализованы слои пыли/жара по UiSpec с Perlin-масками и зерном. Проверены оттенки, прозрачность, повторяемость и сцены absorption/move-dust без legacy refinement. Сборка: 0 ошибок/предупреждений. Raster evidence: cloud-2-anomaly-absorption.png и cloud-1-anomaly-move-dust.png в run. Кэш и performance gate следуют отдельным тикетом.
+
+Проверки: 12/12 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us4-tk1/client.trx`, `us4-tk1-test.log`, `us4-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.
