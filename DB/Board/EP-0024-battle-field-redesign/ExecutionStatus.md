@@ -118,8 +118,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0002-TK-0002-sprite-geometry](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0002-sprite-geometry/EP-0024-US-0002-TK-0002-sprite-geometry.md) | DONE (automated; см. карточку) | `c16e6340a56eee7b959efc5cbd41145a1a53a8b2` | PASS |
 | [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | BLOCKED: source generators | — | — |
 | [EP-0024-US-0003-TK-0001-plates](EP-0024-US-0003-counter-plates/EP-0024-US-0003-TK-0001-plates/EP-0024-US-0003-TK-0001-plates.md) | DONE (automated; см. карточку) | `2a7e0cf0b4c108fb6e59b25bdad21d61ac76678b` | PASS |
-| [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | DONE: 12/12 | текущий commit | проверяется после commit |
-| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | DONE (automated; см. карточку) | `546995b7657c06b8151bbf4da7f328b64d9db540` | PASS |
+| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | DONE: 7/7 | текущий commit | проверяется после commit |
 | [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-move-templates/EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | NOT STARTED: dependencies | — | — |
@@ -167,3 +167,7 @@ Tabletop использует увеличенные области моделе
 ### EP-0024-US-0004-TK-0001-clouds-render
 
 Реализованы слои пыли/жара по UiSpec с Perlin-масками и зерном. Проверены оттенки, прозрачность, повторяемость и сцены absorption/move-dust без legacy refinement. Сборка: 0 ошибок/предупреждений. Raster evidence: cloud-2-anomaly-absorption.png и cloud-1-anomaly-move-dust.png в run. Кэш и performance gate следуют отдельным тикетом. 12/12 PASS (us4-tk1); scoped format PASS.
+
+### EP-0024-US-0004-TK-0002-clouds-cache
+
+Кэш по view/scale/clumps, GPU-context path, освобождение экраном проверены. 12 ms gate НЕ закрыт: CPU raster 1627.97/1519.05/1558.23 ms; native GPU NOT RUN. Evidence: cloud-raster-timing.json. Проба центра уточнена на максимальный видимый сгусток: глобальный максимум вне кадра; цвет ближе к тону жара, чем фону. 7/7 PASS (us4-tk2); scoped format PASS.

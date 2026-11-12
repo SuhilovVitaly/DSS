@@ -1,12 +1,48 @@
+using System.Collections.Immutable;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 /// <summary>Painted presentation of authoritative anomaly clumps, in design coordinates.</summary>
-internal sealed class PaintedCloudLayer
+internal sealed class PaintedCloudLayer : IDisposable
 {
-    public void Draw(SKCanvas canvas, TacticalBattleFrame frame)
+    private SKImage? _image;
+    private TacticalBattleView _view;
+    private float _scale;
+    private GRContext? _context;
+    private ImmutableArray<TacticalAnomalySnapshot> _source = [];
+    internal int BuildCount { get; private set; }
+    internal bool HasImage => _image is not null;
+
+    public void Draw(SKCanvas canvas, TacticalBattleFrame frame, GRContext? context = null)
+    {
+        if (frame.Battle.Anomalies.IsDefaultOrEmpty) { Dispose(); return; }
+        float scale = TacticalShipSprites.CanvasScale(canvas);
+        if (!float.IsFinite(scale) || scale <= 0 || frame.View.PixelWidth <= 0 || frame.View.PixelHeight <= 0) return;
+        if (_image is null || _view != frame.View || _scale != scale || !ReferenceEquals(_context, context) ||
+            !AnomalyFieldLayer.Same(_source, frame.Battle.Anomalies))
+        {
+            var size = new SKImageInfo((int)MathF.Ceiling(frame.View.PixelWidth * scale), (int)MathF.Ceiling(frame.View.PixelHeight * scale), SKColorType.Rgba8888, SKAlphaType.Premul);
+            using var surface = context is null ? SKSurface.Create(size) : SKSurface.Create(context, false, size);
+            surface.Canvas.Clear(SKColors.Transparent);
+            surface.Canvas.Scale(scale);
+            Paint(surface.Canvas, frame);
+            var next = surface.Snapshot();
+            _image?.Dispose(); _image = next;
+            _view = frame.View; _scale = scale; _context = context; _source = frame.Battle.Anomalies;
+            BuildCount++;
+        }
+        using var paint = new SKPaint { FilterQuality = SKFilterQuality.None };
+        canvas.DrawImage(_image, SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight), paint);
+    }
+
+    public void Dispose()
+    {
+        _image?.Dispose(); _image = null; _source = []; _context = null;
+    }
+
+    private static void Paint(SKCanvas canvas, TacticalBattleFrame frame)
     {
         if (frame.Battle.Anomalies.IsDefaultOrEmpty) return;
         foreach (var kind in new[] { TacticalAnomalyKindCode.Dust, TacticalAnomalyKindCode.Heat })

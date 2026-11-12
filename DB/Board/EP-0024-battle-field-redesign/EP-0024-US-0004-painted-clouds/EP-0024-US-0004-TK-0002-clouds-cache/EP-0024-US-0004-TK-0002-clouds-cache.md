@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0004-painted-clouds
 ticket: EP-0024-US-0004-TK-0002-clouds-cache
 title: Кэш облаков и бюджет времени
-stage: draft
+stage: approved
 layer: client-ui
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0004-TK-0001-clouds-render]
@@ -83,4 +83,11 @@ git diff --check
 
 ## Исполнение
 
-Не начато.
+Расширение Code context перед реализацией: `BattleMapRenderer.cs` получает принадлежащий экрану слой; `UI/SkiaWindow.cs` передаёт существующий GRContext в RenderNative. Это необходимо для кэша в ресурсах текущего GPU-контекста, без глобального кэша и медленной CPU-пересборки в игровом окне. Headless сохраняет CPU-путь. Контекст не принадлежит слою и не освобождается им.
+
+
+### Результат us4-tk2
+
+Кэш по view/scale/clumps, GPU-context path, освобождение экраном проверены. 12 ms gate НЕ закрыт: CPU raster 1627.97/1519.05/1558.23 ms; native GPU NOT RUN. Evidence: cloud-raster-timing.json. Проба центра уточнена на максимальный видимый сгусток: глобальный максимум вне кадра; цвет ближе к тону жара, чем фону.
+
+Проверки: 7/7 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us4-tk2/client.trx`, `us4-tk2-test.log`, `us4-tk2-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

@@ -133,20 +133,23 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     }
 
     private InteractiveAnomalyField? _interactiveField;
+    private PaintedCloudLayer? _paintedClouds;
 
     public override void OnDeactivated()
     {
         _interactiveField?.Dispose();
         _interactiveField = null;
+        _paintedClouds?.Dispose();
+        _paintedClouds = null;
         base.OnDeactivated();
     }
 
     public override void Render(SKCanvas canvas, int width, int height) => RenderFrame(canvas, width, height, null);
 
-    internal void RenderNative(SKCanvas canvas, int width, int height) =>
-        RenderFrame(canvas, width, height, _interactiveField ??= new());
+    internal void RenderNative(SKCanvas canvas, int width, int height, GRContext? context = null) =>
+        RenderFrame(canvas, width, height, _skin.Metric("field.style", "tabletop", 0) == 1 ? null : _interactiveField ??= new(), context);
 
-    private void RenderFrame(SKCanvas canvas, int width, int height, InteractiveAnomalyField? interactiveField)
+    private void RenderFrame(SKCanvas canvas, int width, int height, InteractiveAnomalyField? interactiveField, GRContext? context = null)
     {
         using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame) { base.Render(canvas, width, height); return; }
@@ -160,7 +163,13 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         Layout = new() { Camera = frame.View };
         BattleDesign.Recording = Layout;
         canvas.Save();
-        try { canvas.Scale(_viewport.S); TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom); DrawOverlay(canvas, frame); }
+        try
+        {
+            canvas.Scale(_viewport.S);
+            var clouds = TacticalBattleSkinRenderScope.Tabletop ? _paintedClouds ??= new() : null;
+            TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context);
+            DrawOverlay(canvas, frame);
+        }
         finally { canvas.Restore(); BattleDesign.Recording = null; }
         if (ConfirmExit) DrawExitConfirmation(canvas, width, height);
     }

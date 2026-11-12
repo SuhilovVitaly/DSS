@@ -8,6 +8,78 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class TabletopCloudTests
 {
+    [Fact]
+    public async Task Screen_owns_and_releases_cloud_cache_on_exit()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var screen = new TacticalBattleScreen(scene.Screen.Flow, 1, catalog.GetOrClassic("tabletop"));
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        var field = typeof(TacticalBattleScreen).GetField("_paintedClouds", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!;
+        try
+        {
+            screen.Render(canvas, 1280, 720);
+            var clouds = Assert.IsType<PaintedCloudLayer>(field.GetValue(screen));
+            screen.Render(canvas, 1280, 720);
+            Assert.Equal(1, clouds.BuildCount);
+            screen.OnDeactivated();
+            Assert.Null(field.GetValue(screen));
+            Assert.False(clouds.HasImage);
+        }
+        finally { screen.OnDeactivated(); }
+    }
+
+    [Fact]
+    public async Task Cache_tracks_view_scale_and_clumps_and_disposes_its_image()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        var frame = scene.Frame with { View = new(320, 240, 0, 0, 1) };
+        using var bitmap = new SKBitmap(640, 480);
+        using var canvas = new SKCanvas(bitmap);
+        using var clouds = new PaintedCloudLayer();
+        clouds.Draw(canvas, frame);
+        clouds.Draw(canvas, frame);
+        Assert.Equal(1, clouds.BuildCount);
+        frame = frame with { View = frame.View with { CenterX = 1 } };
+        clouds.Draw(canvas, frame); Assert.Equal(2, clouds.BuildCount);
+        canvas.Scale(2);
+        clouds.Draw(canvas, frame); Assert.Equal(3, clouds.BuildCount);
+        var anomaly = frame.Battle.Anomalies[0];
+        var changed = anomaly with { Clumps = anomaly.Clumps.SetItem(0, anomaly.Clumps[0] with { Amplitude = anomaly.Clumps[0].Amplitude + 1 }) };
+        frame = frame with { Battle = frame.Battle with { Anomalies = frame.Battle.Anomalies.SetItem(0, changed) } };
+        clouds.Draw(canvas, frame); Assert.Equal(4, clouds.BuildCount);
+        clouds.Draw(canvas, frame); Assert.Equal(4, clouds.BuildCount);
+        Assert.True(clouds.HasImage);
+        clouds.Dispose(); Assert.False(clouds.HasImage);
+        clouds.Draw(canvas, frame); Assert.Equal(5, clouds.BuildCount);
+        clouds.Draw(canvas, frame with { Battle = frame.Battle with { Anomalies = [] } });
+        Assert.False(clouds.HasImage);
+    }
+
+    [Fact]
+    public async Task Raster_rebuild_timing_is_recorded_separately_from_native_gpu_acceptance()
+    {
+        await using var scene = await Ep0019Scenes.Create("2-anomaly-absorption");
+        using var bitmap = new SKBitmap(1920, 1080);
+        using var canvas = new SKCanvas(bitmap);
+        canvas.Scale(1.5f);
+        using var clouds = new PaintedCloudLayer();
+        clouds.Draw(canvas, scene.Frame);
+        var values = new List<double>();
+        for (int i = 1; i <= 3; i++)
+        {
+            var frame = scene.Frame with { View = scene.Frame.View with { CenterX = scene.Frame.View.CenterX + i } };
+            var watch = System.Diagnostics.Stopwatch.StartNew();
+            clouds.Draw(canvas, frame);
+            values.Add(watch.Elapsed.TotalMilliseconds);
+        }
+        Assert.Equal(4, clouds.BuildCount);
+        var folder = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT");
+        if (!string.IsNullOrEmpty(folder)) File.WriteAllText(Path.Combine(folder, "cloud-raster-timing.json"),
+            System.Text.Json.JsonSerializer.Serialize(new { backend = "CPU raster", width = 1920, height = 1080, samplesMs = values, budgetMs = 12, nativeGpu = "NOT RUN" }));
+    }
+
     [Theory]
     [InlineData("2-anomaly-absorption")]
     [InlineData("1-anomaly-move-dust")]
@@ -21,6 +93,18 @@ public sealed class TabletopCloudTests
         using var legacy = new InteractiveAnomalyField();
         canvas.Scale(1.5f);
         TacticalBattleMapRenderer.Draw(canvas, scene.Frame, legacy);
+        if (name == "2-anomaly-absorption")
+        {
+            // The global strongest clump can lie beyond this battle camera. Probe the
+            // strongest visible clump, as required by UiSpec's actual-scene calibration.
+            var clump = scene.Frame.Battle.Anomalies.Where(a => a.Kind == TacticalAnomalyKindCode.Heat)
+                .SelectMany(a => a.Clumps).Where(c => new SKRect(20, 20, 1260, 700).Contains(scene.Frame.View.Project(c.X, c.Y)))
+                .MaxBy(c => c.Amplitude)!;
+            var point = scene.Frame.View.Project(clump.X, clump.Y);
+            var color = bitmap.GetPixel((int)(point.X * 1.5f), (int)(point.Y * 1.5f));
+            static double Distance(SKColor a, SKColor b) => Math.Pow(a.Red - b.Red, 2) + Math.Pow(a.Green - b.Green, 2) + Math.Pow(a.Blue - b.Blue, 2);
+            Assert.True(Distance(color, SKColor.Parse("#D0684A")) < Distance(color, SKColor.Parse("#141C28")), color.ToString());
+        }
         Assert.Null(typeof(InteractiveAnomalyField).GetField("_pending", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(legacy));
         Assert.Null(typeof(InteractiveAnomalyField).GetField("_displayed", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)!.GetValue(legacy));
         var folder = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT");
@@ -49,7 +133,8 @@ public sealed class TabletopCloudTests
         using var bitmap = new SKBitmap(320, 240);
         using var canvas = new SKCanvas(bitmap);
         canvas.Clear(SKColors.Transparent);
-        new PaintedCloudLayer().Draw(canvas, frame);
+        using var clouds = new PaintedCloudLayer();
+        clouds.Draw(canvas, frame);
         var color = bitmap.GetPixel(160, 120);
         Assert.True(color.Alpha > 20, color.ToString());
         if (kind == TacticalAnomalyKindCode.Dust) Assert.True(color.Blue > color.Red && color.Red > color.Green, color.ToString());
@@ -58,7 +143,7 @@ public sealed class TabletopCloudTests
         Assert.True(bitmap.Pixels.Distinct().Count() > 100);
         var first = bitmap.Bytes;
         canvas.Clear(SKColors.Transparent);
-        new PaintedCloudLayer().Draw(canvas, frame);
+        clouds.Draw(canvas, frame);
         Assert.Equal(first, bitmap.Bytes);
     }
 }

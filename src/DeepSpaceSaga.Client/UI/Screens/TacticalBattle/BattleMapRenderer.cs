@@ -34,7 +34,8 @@ internal static partial class TacticalBattleMapRenderer
         var safe = Safe(view); safe.Inflate(-34, -34);
         return new((float)PyMath.Clamp(p.X, safe.Left, safe.Right), (float)PyMath.Clamp(p.Y, safe.Top, safe.Bottom));
     }
-    internal static void Draw(SKCanvas c, TacticalBattleFrame f, InteractiveAnomalyField? interactiveField = null, float? pilotColumnBottom = null)
+    internal static void Draw(SKCanvas c, TacticalBattleFrame f, InteractiveAnomalyField? interactiveField = null, float? pilotColumnBottom = null,
+        PaintedCloudLayer? paintedClouds = null, GRContext? context = null)
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
         var fieldBounds = SKRect.Create(v.PixelWidth, v.PixelHeight);
@@ -48,7 +49,12 @@ internal static partial class TacticalBattleMapRenderer
             Skin.Image(c, "field.hud.rule", SKRect.Create(v.PixelWidth / 2f - ruleWidth / 2f, 19, ruleWidth, 12));
             Skin.Image(c, "field.hud.rule", SKRect.Create(v.PixelWidth / 2f - ruleWidth / 2f, 686, ruleWidth, 12));
         }
-        if (Skin.Tabletop || interactiveField is null || interactiveField.Prepare(c, f))
+        if (Skin.Tabletop)
+        {
+            if (paintedClouds is not null) paintedClouds.Draw(c, f, context);
+            else { using var clouds = new PaintedCloudLayer(); clouds.Draw(c, f, context); }
+        }
+        else if (interactiveField is null || interactiveField.Prepare(c, f))
             DrawAnomalies(c, f, interactiveField);
         bool field = !f.Battle.Anomalies.IsDefaultOrEmpty && f.Battle.Rules.Anomalies is not null;
         using var grid = new SKPaint
@@ -285,8 +291,7 @@ internal static partial class TacticalBattleMapRenderer
 
     private static void DrawAnomalies(SKCanvas canvas, TacticalBattleFrame frame, InteractiveAnomalyField? interactiveField)
     {
-        if (Skin.Tabletop) new PaintedCloudLayer().Draw(canvas, frame);
-        else if (interactiveField is null) AnomalyLayer.Draw(canvas, frame);
+        if (interactiveField is null) AnomalyLayer.Draw(canvas, frame);
         else if (!frame.Battle.Anomalies.IsDefaultOrEmpty && frame.Battle.Rules.Anomalies is not null) interactiveField.Draw(canvas);
     }
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f);
