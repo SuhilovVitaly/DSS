@@ -174,7 +174,7 @@ internal static partial class TacticalBattleMapRenderer
                 Stroke(c, point + new SKPoint(-6, -6), point + new SKPoint(6, 6), Muted, 1.5f);
                 Stroke(c, point + new SKPoint(-6, 6), point + new SKPoint(6, -6), Muted, 1.5f);
             }
-            if (wreck.Kind == TacticalUnitKind.Drone) Label(c, f, wreck, occupied);
+            if (wreck.Kind == TacticalUnitKind.Drone || Skin.Tabletop && inside.Contains(point)) Label(c, f, wreck, occupied);
         }
         DrawResultHighlights(c, f); DrawHover(c, f);
     }
@@ -199,6 +199,7 @@ internal static partial class TacticalBattleMapRenderer
 
     private static void Label(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, List<SKRect> occupied)
     {
+        if (Skin.Tabletop) { Plate(c, f, u, f.View.Project(u.Pose), occupied); return; }
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
         bool wreck = u.State == TacticalUnitState.Destroyed;
         bool disabled = u.State == TacticalUnitState.Disabled;

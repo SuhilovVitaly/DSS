@@ -74,7 +74,7 @@ internal static partial class TacticalBattleMapRenderer
         if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
         {
             var markers = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed).Select(u => f.View.Project(u.Pose)).ToArray();
-            foreach (var damage in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
+            foreach (var damage in results.Damage.Where(d => !Skin.Tabletop && d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide))
             {
                 var p = f.View.Project(damage.Unit.Pose); string text = U("ArmorLoss", damage.Armor); float half = (Measure(text, 12) + 14) * .5f;
                 SKPoint q = default;
@@ -213,7 +213,7 @@ internal static partial class TacticalBattleMapRenderer
 
     static partial void DrawResultHighlights(SKCanvas c, TacticalBattleFrame f)
     {
-        if (f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
+        if (!Skin.Tabletop && f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
             foreach (var d in results.Damage.Where(d => d.Armor > 0 && d.Unit.Side == f.Battle.PlayerSide)) Diamond(c, f.View.Project(d.Unit.Pose), 10, SKColors.Transparent, Yellow, 1.5f);
         if (f.Salvo is { } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flash))
