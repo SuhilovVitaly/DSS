@@ -24,6 +24,7 @@
     <Using Include="Xunit" />
     <None Update="TacticalBattle\View\battle-data-seed1.txt" CopyToOutputDirectory="PreserveNewest" TargetPath="battle-data-seed1.txt" />
     <None Update="TacticalBattle\View\Snapshots\*.png" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="TacticalBattle\View\Snapshots\tabletop\*.png" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

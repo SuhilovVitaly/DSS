@@ -176,6 +176,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
 
     public override ScreenEvent OnKeyDown(Key key, KeyModifiers modifiers, bool repeat)
     {
+        if (_skin.Metric("ui.pilot-column", "slim", 0) == 1 && key == Key.Space && modifiers == KeyModifiers.None && !repeat &&
+            !ConfirmExit && !TurnBusy && SalvoInFlight)
+        {
+            AdvanceSalvo();
+            return ScreenEvent.None;
+        }
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
         if (TurnBusy) return ScreenEvent.None;
         if (key == Key.Escape && !repeat && OutcomeVisible) return ScreenEvent.CloseTacticalBattle;

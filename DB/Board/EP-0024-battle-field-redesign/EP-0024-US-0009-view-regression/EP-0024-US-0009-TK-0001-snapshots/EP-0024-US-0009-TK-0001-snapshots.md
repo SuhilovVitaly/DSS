@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0009-view-regression
 ticket: EP-0024-US-0009-TK-0001-snapshots
 title: Снимки `tabletop` и проверка Classic
-stage: draft
+stage: done
 layer: client-tests
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0007-TK-0002-torpedo-fx, EP-0024-US-0007-TK-0001-salvo, EP-0024-US-0008-TK-0001-camera, EP-0024-US-0004-TK-0002-clouds-cache, EP-0024-US-0005-TK-0001-templates]
@@ -87,3 +87,18 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+## Scope и зависимости перед реализацией
+
+Расширение: Ep0019Scenes.cs принимает необязательный settingsPath для настоящего Tabletop screen через существующий Fixture/SkiaWindow catalog. Диагностический профиль с копией готовых PNG создаётся только в DSS_VALIDATION_ROOT и удаляется после сцены. Поскольку US11–13 уже реализованы, исключения сравнения колонки из TK-0002 выполняются здесь: Classic/Contrast/Xenon сохраняют полное равенство, Tabletop отдельно сравнивает геометрию и тексты правых окон, проверяет ширину карточки150/высоту40. TK-0002 дополняет это точными пробами. US4-cache реализован, cold12ms acceptance открыт; он не блокирует снимки доступного runtime по D-12.
+
+При review до принятия снимков найдено расхождение §2.5: кольцо выбранного дрона использовало Classic Yellow вместо Tabletop Gold. В scope добавлен BattleMapRenderer.cs для замены ровно этого цвета на TTGold; геометрия и Classic не меняются.
+
+Подсказка UiSpec «пробел — пропустить» выявила недоступный Space: общий world-key guard его поглощал. В scope добавлены TacticalBattleScreen.cs и TabletopSalvoTests.cs: только Tabletop, только полёт, без модификаторов/repeat/confirm/busy — Space пропускает презентацию тем же AdvanceSalvo, что Enter. В остальных состояниях мировой shortcut остаётся заблокированным.
+
+
+### Результат us9-tk1
+
+Приняты и затем проверены 8 полных сцен 1920×1080 через реальный Tabletop screen и Engine seed1. Визуально сверены поле и панели с Materials/Reference, в том числе вырезки панелей предыдущих US13; реальные портреты/шрифт соответствуют A-15/A-16. Classic PNG не изменены. Регрессия сцен/ввода 93/93 PASS; после уточнения opt-in по metrics.slim вместо ID отдельная проверка Space 3/3 PASS (us9-keyboard-final/client.trx). Space пропускает только полёт без world side effects, включая переименованный slim-пакет. Дополнительно исправлен цвет кольца выбранного дрона по UiSpec.
+
+Проверки: 93/93 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us9-tk1/client.trx`, `us9-tk1-test.log`, `us9-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

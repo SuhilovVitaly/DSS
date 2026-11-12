@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
+using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.Tests.TacticalBattle.View;
 using SkiaSharp;
 
@@ -7,6 +8,35 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class TabletopSalvoTests
 {
+    [Theory]
+    [InlineData("classic")]
+    [InlineData("tabletop")]
+    [InlineData("custom-slim")]
+    public async Task Space_skips_only_tabletop_flight_and_keeps_results_visible(string skin)
+    {
+        using var profile = new TabletopTestProfile();
+        bool tabletop = skin != "classic";
+        if (skin == "custom-slim")
+        {
+            string manifest = Path.Combine(Path.GetDirectoryName(profile.SettingsPath)!, "Skins", "tabletop", "skin.json");
+            File.WriteAllText(manifest, File.ReadAllText(manifest).Replace("\"tabletop\"", "\"custom-slim\"", StringComparison.Ordinal));
+            File.WriteAllText(profile.SettingsPath, File.ReadAllText(profile.SettingsPath).Replace("tabletop", "custom-slim", StringComparison.Ordinal));
+        }
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight", settingsPath: tabletop ? profile.SettingsPath : null);
+        Assert.Equal(skin, scene.Screen.SkinId);
+        Assert.True(scene.Frame.Salvo!.InFlight);
+        scene.Screen.OnKeyDown(Silk.NET.Input.Key.Space, KeyModifiers.Control, false);
+        scene.Screen.OnKeyDown(Silk.NET.Input.Key.Space, KeyModifiers.None, true);
+        Assert.True(scene.Frame.Salvo!.InFlight);
+        var revision = scene.Frame.Battle.Revision;
+        scene.Screen.OnKeyDown(Silk.NET.Input.Key.Space);
+        Assert.Equal(!tabletop, scene.Frame.Salvo!.InFlight);
+        Assert.Equal(revision, scene.Frame.Battle.Revision);
+        scene.Screen.OnKeyDown(Silk.NET.Input.Key.Space);
+        Assert.True(scene.Screen.HasSalvoPresentation);
+        Assert.Equal(revision, scene.Frame.Battle.Revision);
+    }
+
     [Theory]
     [InlineData(0, 0)]
     [InlineData(100, 1)]

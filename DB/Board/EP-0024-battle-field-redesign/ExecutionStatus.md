@@ -119,14 +119,14 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0002-TK-0003-bake-tool](EP-0024-US-0002-ship-sprites/EP-0024-US-0002-TK-0003-bake-tool/EP-0024-US-0002-TK-0003-bake-tool.md) | BLOCKED: source generators | — | — |
 | [EP-0024-US-0003-TK-0001-plates](EP-0024-US-0003-counter-plates/EP-0024-US-0003-TK-0001-plates/EP-0024-US-0003-TK-0001-plates.md) | DONE (automated; см. карточку) | `2a7e0cf0b4c108fb6e59b25bdad21d61ac76678b` | PASS |
 | [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | DONE (automated; см. карточку) | `546995b7657c06b8151bbf4da7f328b64d9db540` | PASS |
-| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | IMPLEMENTED; performance gate OPEN | `dc9630da9401b86191acd1b9dd58a52affc29a6e` | PASS |
+| [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | IMPLEMENTED; performance gate OPEN | `b35c834a2ada92adcb4025acdaa3df67992ad4d5` | PASS |
 | [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-move-templates/EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | DONE (automated; см. карточку) | `715e8d6177121ec5448e54cc8399d7726ca6a35e` | PASS |
 | [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | DONE (automated; см. карточку) | `bae46a1a574e99eddbdbec216f74b6a72a8643b2` | PASS |
 | [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | DONE (automated; см. карточку) | `5bde1a3a7e8a928bb79399830beab92de34974b6` | PASS |
 | [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | DONE (automated; см. карточку) | `0d39439bd2d90f1f5d07cd5588927e1fb2aa408f` | PASS |
 | [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | DONE (automated; см. карточку) | `11c03db2a1d5bea4f95550b939d13e8a7765eadd` | PASS |
 | [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-camera/EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | DONE (automated; см. карточку) | `e0cbaf3ead14975df9920f9501712cf14c5801ba` | PASS |
-| [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | DONE: 93/93 | текущий commit | проверяется после commit |
 | [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE (automated; см. карточку) | `cfb3d2b0b556d7ffe7e55076b494aa7a74f17576` | PASS |
@@ -137,7 +137,7 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | DONE (automated; см. карточку) | `cbce3db702db97e3c6bdccaea6349d2cda384529` | PASS |
 | [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | DONE (automated; см. карточку) | `c9eae302fffa01b7b0a6f38f22e8e145002f6351` | PASS |
 | [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | DONE (automated; см. карточку) | `0c932ec5e252ba82929e05ef37cdf8ece860573f` | PASS |
-| [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | DONE: 7/7 | текущий commit | проверяется после commit |
+| [EP-0024-US-0013-TK-0004-panel-salvo](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0004-panel-salvo/EP-0024-US-0013-TK-0004-panel-salvo.md) | DONE (automated; см. карточку) | `a17b3fa5dc4fc6d7df5f48f4ed2050388564d235` | PASS |
 
 ## Публикация и уборка
 
@@ -239,3 +239,7 @@ Steel включает прямые углы, тёмные кромки, ско�
 Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/native-tabletop-1080.json`, `native-tabletop-1080-clouds.json`, `native-tabletop-1080.log`, `native-build.log`, `native-format.log`, фазовые PNG. Build0warnings/errors, scoped format/diff PASS. Самопроверка диагностического пути пройдена; физических нажатий/owner review не было.
 
 Первый запуск остановил harness на проверке размеров: Bounds Silk исключает taskbar (1920x1032), videoMode1920x1080. Проверка исправлена на VideoMode.Resolution с fallback Bounds, как guard SkiaWindow; выбор меньшего монитора остался обязательным. Повтор успешен.
+
+### EP-0024-US-0009-TK-0001-snapshots
+
+Приняты и затем проверены 8 полных сцен 1920×1080 через реальный Tabletop screen и Engine seed1. Визуально сверены поле и панели с Materials/Reference, в том числе вырезки панелей предыдущих US13; реальные портреты/шрифт соответствуют A-15/A-16. Classic PNG не изменены. Регрессия сцен/ввода 93/93 PASS; после уточнения opt-in по metrics.slim вместо ID отдельная проверка Space 3/3 PASS (us9-keyboard-final/client.trx). Space пропускает только полёт без world side effects, включая переименованный slim-пакет. Дополнительно исправлен цвет кольца выбранного дрона по UiSpec. 93/93 PASS (us9-tk1); scoped format PASS.

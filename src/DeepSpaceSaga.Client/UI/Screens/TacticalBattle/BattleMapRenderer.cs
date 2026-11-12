@@ -157,7 +157,7 @@ internal static partial class TacticalBattleMapRenderer
                 else if (!sprite && own) Diamond(c, p, 4.2f, color);
                 else if (!sprite) Triangle(c, p, 4.9f, u.Pose.Course, color);
                 if (u.Id == Selected(f)) Circle(c, p, Skin.Tabletop ? 30 : 7, SKColors.Transparent,
-                    Skin.Tabletop ? Yellow : Text, Skin.Tabletop ? 1.6f : 1.2f);
+                    Skin.Tabletop ? TTGold : Text, Skin.Tabletop ? 1.6f : 1.2f);
             }
             if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
                 EvasionRing(c, p, Skin.Tabletop ? 34 : 15);
