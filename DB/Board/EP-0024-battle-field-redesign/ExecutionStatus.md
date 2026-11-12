@@ -126,8 +126,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | DONE (automated; см. карточку) | `0d39439bd2d90f1f5d07cd5588927e1fb2aa408f` | PASS |
 | [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | DONE (automated; см. карточку) | `11c03db2a1d5bea4f95550b939d13e8a7765eadd` | PASS |
 | [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-camera/EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | DONE (automated; см. карточку) | `e0cbaf3ead14975df9920f9501712cf14c5801ba` | PASS |
-| [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | DONE: 93/93 | текущий commit | проверяется после commit |
-| [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | DONE (automated; см. карточку) | `4d45b4643807758c809c112eada1fb0e5797d233` | PASS |
+| [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | DONE: 31/31 | текущий commit | проверяется после commit |
 | [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE (automated; см. карточку) | `cfb3d2b0b556d7ffe7e55076b494aa7a74f17576` | PASS |
 | [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | DONE (automated; см. карточку) | `fc7002cba76316f9173995d3cdfd0e290f911575` | PASS |
@@ -243,3 +243,7 @@ Evidence `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-
 ### EP-0024-US-0009-TK-0001-snapshots
 
 Приняты и затем проверены 8 полных сцен 1920×1080 через реальный Tabletop screen и Engine seed1. Визуально сверены поле и панели с Materials/Reference, в том числе вырезки панелей предыдущих US13; реальные портреты/шрифт соответствуют A-15/A-16. Classic PNG не изменены. Регрессия сцен/ввода 93/93 PASS; после уточнения opt-in по metrics.slim вместо ID отдельная проверка Space 3/3 PASS (us9-keyboard-final/client.trx). Space пропускает только полёт без world side effects, включая переименованный slim-пакет. Дополнительно исправлен цвет кольца выбранного дрона по UiSpec. 93/93 PASS (us9-tk1); scoped format PASS.
+
+### EP-0024-US-0009-TK-0002-panel-snapshots
+
+Пробы §11.13 на S1/S1.5: 150×40, панель51/49/150/91, следующий пилот y146, steel tone, реальные клики Tag5, золотая рамка урона с учётом coverage1.4px и тёмные внешние кромки. Все31 именованные проверки PASS; затем548/548 полного TacticalBattle (final-tactical/client.trx) на нормативном Yellow и обновлённых PNG. После выделения неизменного alpha-filter helper:30/30 cloud/panel/snapshot PASS (us9-cloud-final/client.trx), включая9 новых числовых проб. Все8 снимков просмотрены, 7 обновлены только по цвету выбора, outcome неизменён. Classic baseline не менялся. Подробности двух уточнений review выше. 31/31 PASS (us9-tk2); scoped format PASS.

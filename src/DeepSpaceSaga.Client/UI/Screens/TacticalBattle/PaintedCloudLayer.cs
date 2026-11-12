@@ -42,6 +42,12 @@ internal sealed class PaintedCloudLayer : IDisposable
         _image?.Dispose(); _image = null; _source = []; _context = null;
     }
 
+    internal static SKColorFilter NoiseAlpha(float gain, float bias) => SKColorFilter.CreateColorMatrix([
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        0, 0, 0, 0, 0,
+        gain, 0, 0, 0, bias]);
+
     private static void Paint(SKCanvas canvas, TacticalBattleFrame frame)
     {
         if (frame.Battle.Anomalies.IsDefaultOrEmpty) return;
@@ -85,11 +91,7 @@ internal sealed class PaintedCloudLayer : IDisposable
             void Noise(float frequency, int octaves, float seed, float gain, float bias, SKBlendMode blend)
             {
                 using var noise = SKShader.CreatePerlinNoiseFractalNoise(frequency, frequency, octaves, seed);
-                using var filter = SKColorFilter.CreateColorMatrix([
-                    0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0,
-                    0, 0, 0, 0, 0,
-                    gain, 0, 0, 0, bias]);
+                using var filter = NoiseAlpha(gain, bias);
                 using var paint = new SKPaint { Shader = noise, ColorFilter = filter, BlendMode = blend };
                 canvas.DrawRect(SKRect.Create(frame.View.PixelWidth, frame.View.PixelHeight), paint);
             }

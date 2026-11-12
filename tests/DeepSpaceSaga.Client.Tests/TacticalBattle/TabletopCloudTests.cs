@@ -8,6 +8,25 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class TabletopCloudTests
 {
+    [Theory]
+    [InlineData(1.4f, -.25f, 0, 0)]
+    [InlineData(1.4f, -.25f, 64, 26)]
+    [InlineData(1.4f, -.25f, 128, 115)]
+    [InlineData(1.4f, -.25f, 255, 255)]
+    [InlineData(1.6f, -.35f, 64, 13)]
+    [InlineData(1.6f, -.35f, 128, 116)]
+    [InlineData(.45f, -.1f, 64, 3)]
+    [InlineData(.45f, -.1f, 128, 32)]
+    [InlineData(.45f, -.1f, 255, 89)]
+    public void Noise_alpha_matches_normalized_spec_including_bias(float gain, float bias, byte red, int alpha)
+    {
+        using var bitmap = new SKBitmap(1, 1); using var canvas = new SKCanvas(bitmap);
+        using var filter = PaintedCloudLayer.NoiseAlpha(gain, bias);
+        using var paint = new SKPaint { Color = new SKColor(red, 0, 0), ColorFilter = filter, BlendMode = SKBlendMode.Src };
+        canvas.DrawPaint(paint);
+        Assert.InRange(bitmap.GetPixel(0, 0).Alpha, Math.Max(0, alpha - 1), Math.Min(255, alpha + 1));
+    }
+
     [Fact]
     public async Task Screen_owns_and_releases_cloud_cache_on_exit()
     {
