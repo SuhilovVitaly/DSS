@@ -124,12 +124,12 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | DONE (automated; см. карточку) | `bae46a1a574e99eddbdbec216f74b6a72a8643b2` | PASS |
 | [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | DONE (automated; см. карточку) | `5bde1a3a7e8a928bb79399830beab92de34974b6` | PASS |
 | [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | DONE (automated; см. карточку) | `0d39439bd2d90f1f5d07cd5588927e1fb2aa408f` | PASS |
-| [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | DONE: 58/58 | текущий commit | проверяется после commit |
+| [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | DONE (automated; см. карточку) | `11c03db2a1d5bea4f95550b939d13e8a7765eadd` | PASS |
 | [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-camera/EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | DONE (automated; см. карточку) | `e0cbaf3ead14975df9920f9501712cf14c5801ba` | PASS |
 | [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | NOT STARTED: dependencies | — | — |
-| [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE: 45/45 | текущий commit | проверяется после commit |
 | [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | NOT STARTED: dependencies | — | — |
@@ -195,3 +195,7 @@ Tabletop использует увеличенные области моделе
 ### EP-0024-US-0007-TK-0002-torpedo-fx
 
 Пиксельные торпеды, trail и эффекты удара/уничтожения/puff подключены; взрывы рисуются поверх моделей и плашек, маркеры ждут конца эффекта, skip не запускает FX. Проверены кадры 0/100/450/880/1000 ms, опциональность скина и Classic snapshots. Build: 0 ошибок/предупреждений. Сверены kill-100.png и kill-450.png с Reference/salvo/kill-sequence.png; kill-*.png — синтетический killed-shot для тайминга, не outcome реального боя. 58/58 PASS (us7-tk2); scoped format PASS.
+
+### EP-0024-US-0011-TK-0001-steel-roles
+
+Закреплены метрики steel/slim, роли панелей/кнопок/показателей, загрузка шести градиентов 4x128 и ресурсный лимит. 25 файлов runtime pack совпадают с каноническими материалами по SHA256. Обновлён контракт ролей. Эталон 3-move-windows-x2 просмотрен; применение скосов/полос и визуальная сверка готового кадра — в следующих TK-0002/TK-0003. Build: 0 ошибок/предупреждений. 45/45 PASS (us11-tk1); scoped format PASS.

@@ -83,6 +83,9 @@ Classic, Contrast и Xenon Star используют один макет акт�
 | Блок стрельбы выбранного пилота | `ui.box.target.selected` (fill/stroke/text), `ui.box.evade` и `ui.box.decoy` с вариантами `.selected` и `.unavailable` (fill/stroke). Шанс с поглощением сохраняет цвет Heat. |
 | Полёт и результаты | `ui.box.salvo.active` (fill/stroke/text), `ui.salvo.result.hit/miss` и `ui.outcome.victory/defeat` (text), `ui.report` (stroke включает разделитель и знаки результатов) |
 | Остальной текст | ui.text: text; файловая BattleTypography задаёт метрики |
+| Стальные рамки | `ui.style` metrics.steel = 1: прямые углы, тёмная наружная рамка, внутренний скос и тень плит; `ui.panel.bevel` fill/stroke задают светлую/тёмную стороны. `*.glow` в этом режиме не рисуется. |
+| Узкая колонка | `ui.pilot-column` metrics.slim = 1: карточки 150×40 и отдельная панель команд под выбранным пилотом; команды и их identity прежние. |
+| Цвета сборки и показателей | `ui.bar.armor`, `ui.bar.hull` (fill) — горизонтальные полосы правых окон; `ui.build.name` (text) — название сборки; `ui.build.slot.armor` (fill) — цвет типа броневого слота. |
 | Подтверждение выхода | `modal.exit` и `modal.exit.dim` (fill/stroke), `modal.exit.art` (image/opacity) |
 
 Карта и панели читают одну presentation-проекцию. Инициатива, очередность и момент допуска impact определяются результатом боя.

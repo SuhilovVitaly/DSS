@@ -3,7 +3,7 @@ epic: EP-0024-battle-field-redesign
 story: EP-0024-US-0011-steel-panels
 ticket: EP-0024-US-0011-TK-0001-steel-roles
 title: Роли и текстуры стальной темы в пакете
-stage: draft
+stage: done
 layer: client-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0024-US-0001-TK-0001-pack-files]
@@ -86,3 +86,10 @@ git diff --check
 ## Исполнение
 
 Не начато.
+
+
+### Результат us11-tk1
+
+Закреплены метрики steel/slim, роли панелей/кнопок/показателей, загрузка шести градиентов 4x128 и ресурсный лимит. 25 файлов runtime pack совпадают с каноническими материалами по SHA256. Обновлён контракт ролей. Эталон 3-move-windows-x2 просмотрен; применение скосов/полос и визуальная сверка готового кадра — в следующих TK-0002/TK-0003. Build: 0 ошибок/предупреждений.
+
+Проверки: 45/45 PASS; сборка Client/tests выполнена тестовой командой. Scoped whitespace и diff check PASS. Evidence: `D:/DeepSpaceSaga/artifacts/validation/ep-0024/20261112-implementation-01/us11-tk1/client.trx`, `us11-tk1-test.log`, `us11-tk1-format.log` в том же run. Самопроверка diff выполнена; это не независимое review. Native/product gates отдельно в ExecutionStatus.

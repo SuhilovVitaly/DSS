@@ -6,6 +6,41 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class ShippedSkinTests
 {
     [Fact]
+    public void Tabletop_steel_roles_and_all_six_gradients_match_the_ui_contract()
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        var skin = catalog.GetOrClassic("tabletop");
+        Assert.Equal(1, skin.Metric("ui.style", "steel", 0));
+        Assert.Equal(1, skin.Metric("ui.pilot-column", "slim", 0));
+        foreach (string role in new[] { "ui.panel", "ui.panel.build", "ui.panel.report", "ui.pilot-card" })
+        {
+            Assert.Equal(SKColor.Parse("#2C343E"), skin.Color(role, "fill", SKColors.Magenta));
+            Assert.Equal(SKColor.Parse("#05070A"), skin.Color(role, "stroke", SKColors.Magenta));
+            Assert.Equal("assets/ui/steel.png", skin.Resource(role + ".art", "image"));
+        }
+        foreach (var (role, property, hex) in new[] {
+            ("ui.panel.bevel", "fill", "#4C5764"), ("ui.panel.bevel", "stroke", "#0A0E12"),
+            ("ui.text", "text", "#E4ECF4"), ("ui.bar.armor", "fill", "#5A7CA8"), ("ui.bar.hull", "fill", "#5C9440"),
+            ("ui.build.name", "text", "#E4ECF4"), ("ui.build.slot.armor", "fill", "#5A7CA8"),
+            ("ui.button", "text", "#E4ECF4"), ("ui.button.primary", "text", "#2A1A08"),
+            ("ui.button.pending", "text", "#6A7480"), ("ui.box.target.selected", "text", "#2A1A08"),
+            ("ui.box.decoy", "text", "#B8E8A0"), ("ui.box.decoy.selected", "text", "#B8E8A0"),
+            ("ui.box.evade", "text", "#E0D4FF"), ("ui.box.evade.selected", "text", "#E0D4FF"),
+            ("ui.box.decoy.unavailable", "text", "#6A7480"), ("ui.box.evade.unavailable", "text", "#6A7480") })
+            Assert.Equal(SKColor.Parse(hex), skin.Color(role, property, SKColors.Magenta));
+        var images = skin.ResourceReferences.Where(r => r.Path.StartsWith("assets/ui/", StringComparison.Ordinal)).ToArray();
+        Assert.Equal(6, images.Select(r => r.Path).Distinct().Count());
+        foreach (string role in new[] { "ui.panel", "ui.panel.build", "ui.panel.report", "ui.pilot-card", "ui.pilot-card.selected",
+            "ui.button", "ui.button.primary", "ui.button.pending", "ui.button.primary.pending", "ui.box.target.selected", "ui.box.salvo.active",
+            "ui.box.decoy", "ui.box.decoy.selected", "ui.box.decoy.unavailable", "ui.box.evade", "ui.box.evade.selected", "ui.box.evade.unavailable" })
+        {
+            var image = Assert.IsType<SKImage>(skin.Image(role + ".art"));
+            Assert.Equal((4, 128), (image.Width, image.Height));
+        }
+        Assert.InRange(skin.ResourceReferences.Select(r => r.Path).Distinct().Count(), 1, 32);
+    }
+
+    [Fact]
     public void Tabletop_build_output_loads_all_sheets_and_corrupt_pack_falls_back()
     {
         string root = Path.Combine(AppContext.BaseDirectory, "Skins");

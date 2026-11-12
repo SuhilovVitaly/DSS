@@ -7,6 +7,20 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SkinManifestTests
 {
     [Fact]
+    public void Steel_and_slim_metrics_are_independent_opt_in_flags()
+    {
+        var skin = TacticalBattleSkin.Parse("""
+            {"schemaVersion":1,"id":"steel","displayName":"Steel","roles":{
+            "ui.style":{"metrics":{"steel":1}},"ui.pilot-column":{"metrics":{"slim":1}}}}
+            """);
+        Assert.Equal(1, skin.Metric("ui.style", "steel", 0));
+        Assert.Equal(1, skin.Metric("ui.pilot-column", "slim", 0));
+        Assert.Equal(0, skin.Metric("field.style", "tabletop", 0));
+        Assert.Equal(0, TacticalBattleSkin.Classic.Metric("ui.style", "steel", 0));
+        Assert.Equal(0, TacticalBattleSkin.Classic.Metric("ui.pilot-column", "slim", 0));
+    }
+
+    [Fact]
     public void Tabletop_scope_reads_shipped_sheets_and_restores_classic()
     {
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
