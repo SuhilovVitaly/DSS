@@ -132,8 +132,8 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0011-TK-0001-steel-roles](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0001-steel-roles/EP-0024-US-0011-TK-0001-steel-roles.md) | DONE (automated; см. карточку) | `cfb3d2b0b556d7ffe7e55076b494aa7a74f17576` | PASS |
 | [EP-0024-US-0011-TK-0002-steel-frames](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0002-steel-frames/EP-0024-US-0011-TK-0002-steel-frames.md) | DONE (automated; см. карточку) | `fc7002cba76316f9173995d3cdfd0e290f911575` | PASS |
 | [EP-0024-US-0011-TK-0003-role-colours](EP-0024-US-0011-steel-panels/EP-0024-US-0011-TK-0003-role-colours/EP-0024-US-0011-TK-0003-role-colours.md) | DONE (automated; см. карточку) | `431c0b7f433be2aabbd33fe1d83c69eaf795d137` | PASS |
-| [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | DONE: 7/7 | текущий commit | проверяется после commit |
-| [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0012-TK-0001-slim-layout](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0001-slim-layout/EP-0024-US-0012-TK-0001-slim-layout.md) | DONE (automated; см. карточку) | `e73124a4308708b2140d7b8fa73158681e42ee22` | PASS |
+| [EP-0024-US-0012-TK-0002-slim-card](EP-0024-US-0012-slim-column/EP-0024-US-0012-TK-0002-slim-card/EP-0024-US-0012-TK-0002-slim-card.md) | DONE: 7/7 | текущий commit | проверяется после commit |
 | [EP-0024-US-0013-TK-0001-panel-frame](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0001-panel-frame/EP-0024-US-0013-TK-0001-panel-frame.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0013-TK-0002-panel-move](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0002-panel-move/EP-0024-US-0013-TK-0002-panel-move.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0013-TK-0003-panel-fire](EP-0024-US-0013-command-panel/EP-0024-US-0013-TK-0003-panel-fire/EP-0024-US-0013-TK-0003-panel-fire.md) | NOT STARTED: dependencies | — | — |
@@ -211,3 +211,7 @@ Steel включает прямые углы, тёмные кромки, ско�
 ### EP-0024-US-0012-TK-0001-slim-layout
 
 Раскладка slim: 150x40, шаг 45, панель отдельно (51,49,150,91), следующая карточка y146. Прокрутка удерживает выбранную пару и передаёт занятый прямоугольник карты. Восемь обычных карточек занимают 355 и помещаются; overflow проверен длинной панелью. Classic layout tests проходят. Визуальная приёмка карточек/панелей остаётся за TK-0002/US-0013. Build: 0 ошибок/предупреждений. 7/7 PASS (us12-tk1); scoped format PASS.
+
+### EP-0024-US-0012-TK-0002-slim-card
+
+Узкие карточки: штатный портрет, имя, броня/корпус, оружие курсивом и спрайт; рамка выбора, рамки потерь и серый сбитый. Проверены движение/результаты, grayscale и клик выбора. slim-1-move-no-hover-x2.png сопоставлен с эталоном колонки: геометрия/состав совпадают, портреты штатные; место панели пока пустое до US-0013. Build: 0 ошибок/предупреждений. 7/7 PASS (us12-tk2); scoped format PASS.
