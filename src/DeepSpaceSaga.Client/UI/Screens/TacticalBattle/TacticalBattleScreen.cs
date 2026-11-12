@@ -108,7 +108,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (!moving && presentation.Results is { } results) state = results.Project(now);
         bool planning = !moving && salvo is null;
         _viewport = BattleViewport.From(width, height);
-        _camera.Update(state, (int)_viewport.Wd, 720);
+        _camera.Update(state, (int)_viewport.Wd, 720, salvo is not null, _skin.Metric("field.style", "tabletop", 0) == 1);
         if (planning)
         {
             ObserveOrders(state);

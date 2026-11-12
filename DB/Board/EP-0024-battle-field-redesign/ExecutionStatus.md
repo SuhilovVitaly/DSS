@@ -121,11 +121,11 @@ SHA-256 всех PNG, геометрию и зависимости. Он не д
 | [EP-0024-US-0004-TK-0001-clouds-render](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0001-clouds-render/EP-0024-US-0004-TK-0001-clouds-render.md) | DONE (automated; см. карточку) | `546995b7657c06b8151bbf4da7f328b64d9db540` | PASS |
 | [EP-0024-US-0004-TK-0002-clouds-cache](EP-0024-US-0004-painted-clouds/EP-0024-US-0004-TK-0002-clouds-cache/EP-0024-US-0004-TK-0002-clouds-cache.md) | IMPLEMENTED; performance gate OPEN | `dc9630da9401b86191acd1b9dd58a52affc29a6e` | PASS |
 | [EP-0024-US-0005-TK-0001-templates](EP-0024-US-0005-move-templates/EP-0024-US-0005-TK-0001-templates/EP-0024-US-0005-TK-0001-templates.md) | DONE (automated; см. карточку) | `715e8d6177121ec5448e54cc8399d7726ca6a35e` | PASS |
-| [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | DONE: 20/20 | текущий commit | проверяется после commit |
+| [EP-0024-US-0006-TK-0001-fire-render](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0001-fire-render/EP-0024-US-0006-TK-0001-fire-render.md) | DONE (automated; см. карточку) | `bae46a1a574e99eddbdbec216f74b6a72a8643b2` | PASS |
 | [EP-0024-US-0006-TK-0002-badges](EP-0024-US-0006-fire-templates/EP-0024-US-0006-TK-0002-badges/EP-0024-US-0006-TK-0002-badges.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0007-TK-0001-salvo](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0001-salvo/EP-0024-US-0007-TK-0001-salvo.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0007-TK-0002-torpedo-fx](EP-0024-US-0007-salvo-results/EP-0024-US-0007-TK-0002-torpedo-fx/EP-0024-US-0007-TK-0002-torpedo-fx.md) | NOT STARTED: dependencies | — | — |
-| [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-camera/EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | NOT STARTED: dependencies | — | — |
+| [EP-0024-US-0008-TK-0001-camera](EP-0024-US-0008-camera/EP-0024-US-0008-TK-0001-camera/EP-0024-US-0008-TK-0001-camera.md) | DONE: 4/4 | текущий commit | проверяется после commit |
 | [EP-0024-US-0009-TK-0001-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0001-snapshots/EP-0024-US-0009-TK-0001-snapshots.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0009-TK-0002-panel-snapshots](EP-0024-US-0009-view-regression/EP-0024-US-0009-TK-0002-panel-snapshots/EP-0024-US-0009-TK-0002-panel-snapshots.md) | NOT STARTED: dependencies | — | — |
 | [EP-0024-US-0010-TK-0001-docs](EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md) | NOT STARTED: dependencies | — | — |
@@ -179,3 +179,7 @@ Tabletop использует увеличенные области моделе
 ### EP-0024-US-0006-TK-0001-fire-render
 
 Сектор с затемнением, свои ленты, угрозы Incoming, основные/запасные прицелы и сохранённые отрезки поглощения реализованы. Проверены четыре сцены, геометрия целей, цвета и прежние FirePlanning/MapFire проверки. Build: 0 ошибок/предупреждений. 20/20 PASS (us6-tk1); scoped format PASS.
+
+### EP-0024-US-0008-TK-0001-camera
+
+Кадрирование своей группы/боевых участников с полями 200/110, исключением истории Paths, ключом Phase/Turn и удержанием полёта/результатов. Ручной вид сохраняется до нового боя. Проверены пределы кадра, цели/угрозы/последние выстрелы, вызов CaptureFrame вне skin scope и Classic interaction. Build: 0 ошибок/предупреждений. 4/4 PASS (us8-tk1); scoped format PASS.
