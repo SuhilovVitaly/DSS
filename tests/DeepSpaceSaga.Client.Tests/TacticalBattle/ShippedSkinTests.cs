@@ -31,13 +31,16 @@ public sealed class ShippedSkinTests
         var images = skin.ResourceReferences.Where(r => r.Path.StartsWith("assets/ui/", StringComparison.Ordinal)).ToArray();
         Assert.Equal(6, images.Select(r => r.Path).Distinct().Count());
         foreach (string role in new[] { "ui.panel", "ui.panel.build", "ui.panel.report", "ui.pilot-card", "ui.pilot-card.selected",
-            "ui.button", "ui.button.primary", "ui.button.pending", "ui.button.primary.pending", "ui.box.target.selected", "ui.box.salvo.active",
-            "ui.box.decoy", "ui.box.decoy.selected", "ui.box.decoy.unavailable", "ui.box.evade", "ui.box.evade.selected", "ui.box.evade.unavailable" })
+            "ui.button", "ui.button.primary", "ui.button.pending", "ui.box.target.selected", "ui.box.decoy", "ui.box.evade" })
         {
             var image = Assert.IsType<SKImage>(skin.Image(role + ".art"));
             Assert.Equal((4, 128), (image.Width, image.Height));
         }
         Assert.InRange(skin.ResourceReferences.Select(r => r.Path).Distinct().Count(), 1, 32);
+        Assert.Equal(SKColor.Parse("#A8E08A"), skin.Color("ui.box.decoy.selected", "stroke", SKColors.Magenta));
+        Assert.Equal(SKColor.Parse("#C8B8F0"), skin.Color("ui.box.evade.selected", "stroke", SKColors.Magenta));
+        Assert.Equal(SKColor.Parse("#20262E"), skin.Color("ui.box.decoy.unavailable", "fill", SKColors.Magenta));
+        Assert.Equal(SKColor.Parse("#FFE27A"), skin.Color("field.move.handle", "fill", SKColors.Magenta));
     }
 
     [Fact]
