@@ -19,6 +19,7 @@ internal static class TabletopStyle
     private static readonly SKColor BevelDark = new(0x0A, 0x0E, 0x12);
     private static readonly SKColor Primary = new(0xE2, 0xBB, 0x62);
     private static readonly SKColor Disabled = new(0x25, 0x2B, 0x33);
+    [ThreadStatic] private static SKPaint? _fillPaint;
 
     internal static void Panel(SKCanvas canvas, SKRect rect) => Draw(canvas, rect, Steel);
 
@@ -46,7 +47,8 @@ internal static class TabletopStyle
         if (rect.IsEmpty || scale <= 0)
             return;
 
-        using var paint = new SKPaint { Color = highlighted ? Gold : Edge };
+        var paint = _fillPaint ??= new SKPaint();
+        paint.Color = highlighted ? Gold : Edge;
         canvas.DrawRect(rect, paint);
 
         float line = Math.Min(scale, Math.Min(rect.Width, rect.Height) / 4f);

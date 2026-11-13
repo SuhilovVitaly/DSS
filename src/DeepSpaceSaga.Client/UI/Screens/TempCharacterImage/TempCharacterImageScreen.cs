@@ -200,10 +200,9 @@ public sealed class TempCharacterImageScreen : IScreen
     public void Render(SKCanvas canvas, int width, int height)
     {
         _scale = Math.Min(1, Math.Min(width / Width, height / Height)); _left = (width - Width * _scale) / 2; _top = (height - Height * _scale) / 2;
-        canvas.DrawRect(SKRect.Create(width, height), MenuStyle.DimOverlayFill);
         canvas.Save(); canvas.Translate(_left, _top); canvas.Scale(_scale); _buttons.Clear();
-        using var paint = new SKPaint { IsAntialias = true, Color = new SKColor(17, 24, 34) };
-        canvas.DrawRoundRect(SKRect.Create(Width, Height), 12, 12, paint);
+        using var paint = new SKPaint { IsAntialias = true };
+        TabletopStyle.Panel(canvas, SKRect.Create(Width, Height));
         Text(IsUnifiedPortraitPack ? "ПОРТРЕТ · " + Path.GetFileName(_assetRoot) : IsWholeHeadPack ? "ПОРТРЕТ · W2" : IsCompleteFacePack ? "ПОРТРЕТ · W1" : "ПОРТРЕТ В АНФАС", 26, 40, 22);
         Text($"АНФАС · СОЧЕТАНИЙ: {CombinationCount}", 26, 67, 12);
         if (Path.GetFileName(_assetRoot) is "W4" or "M4")
@@ -241,7 +240,7 @@ public sealed class TempCharacterImageScreen : IScreen
         Text(IsUnifiedPortraitPack ? "Голова, волосы и шея — вместе." : IsWholeHeadPack ? "Голова меняется целиком." : IsCompleteFacePack ? "Лицо меняется целиком." : "Детали меняются независимо.", 26, 549, 12);
         Text("Общая посадка воротника.", 26, 570, 12);
         if (!IsUnifiedPortraitPack) Button(new(26, 586, 250, 627), _guides ? "Скрыть пропорции" : "Показать пропорции", () => { _guides = !_guides; SelectLayer(null); });
-        paint.Color = new SKColor(28, 40, 54); canvas.DrawRoundRect(Preview, 8, 8, paint);
+        TabletopStyle.Field(canvas, Preview);
         if (_layer is not null) canvas.DrawBitmap(_layer, Preview);
         else if (_portrait is not null) canvas.DrawImage(_portrait, Preview);
         if (_guides && _selectedLayer is null && _assets is not null)
@@ -251,7 +250,7 @@ public sealed class TempCharacterImageScreen : IScreen
                 float anchor = _assets.Style.Anchors[entry.Item1].Y;
                 if (_appearance?.LibraryVersion == 4) anchor = (anchor * 1024 - 12) / 672;
                 float y = Preview.Top + anchor * Preview.Height;
-                paint.Color = new SKColor(117, 219, 224, 165); paint.StrokeWidth = 1;
+                paint.Color = TabletopStyle.Gold.WithAlpha(165); paint.StrokeWidth = 1;
                 canvas.DrawLine(Preview.Left, y, Preview.Right, y, paint); Text(entry.Item2, Preview.Left + 8, y - 4, 10);
             }
         }
@@ -267,15 +266,12 @@ public sealed class TempCharacterImageScreen : IScreen
             {
                 float y = 132 + (i - start) * 147;
                 bool selected = _appearance.Parts["Portrait"] == choices[i].Id;
-                paint.Color = selected ? new SKColor(39, 65, 78) : new SKColor(23, 33, 44);
                 var rect = new SKRect(814, y, 1094, y + 135);
-                canvas.DrawRoundRect(rect, 8, 8, paint);
+                TabletopStyle.Field(canvas, rect, focused: selected);
                 canvas.DrawBitmap(_constructionPreviews[i].Image, new SKRect(240, 0, 790, 675), new SKRect(821, y + 4, 927, y + 134));
                 string label = _constructionPreviews[i].Label;
                 paint.TextSize = 13; paint.Typeface = MenuStyle.TypefaceRegular;
-                string shortLabel = label;
-                while (shortLabel.Length > 1 && paint.MeasureText(shortLabel + "…") > 146) shortLabel = shortLabel[..^1];
-                Text(shortLabel.Length < label.Length ? shortLabel + "…" : label, 940, y + 57, 13);
+                Text(ControlText.Ellipsize(label, 146, paint), 940, y + 57, 13);
                 Text(selected ? "Выбран" : "Нажмите для выбора", 940, y + 80, 10);
                 string id = choices[i].Id;
                 _buttons.Add((rect, () =>
@@ -317,11 +313,18 @@ public sealed class TempCharacterImageScreen : IScreen
         Button(new(280, 675, 540, 714), "Случайный портрет", Rebuild);
         Button(new(795, 675, 940, 714), "Сохранить JSON", SavePreset);
         Button(new(948, 675, 1094, 714), "Загрузить JSON", LoadPreset);
-        canvas.Save(); canvas.ClipRect(new(26, 716, 1094, 745)); Text(_status, 26, 735, 11); canvas.Restore();
+        var status = new SKRect(18, 718, 1102, 745);
+        TabletopStyle.Field(canvas, status);
+        canvas.Save();
+        canvas.ClipRect(status);
+        bool error = _status.StartsWith("Ошибка", StringComparison.Ordinal) ||
+            _status.StartsWith("Не удалось", StringComparison.Ordinal);
+        Text(_status, 26, 735, 11, error ? TabletopStyle.Danger : TabletopStyle.Secondary);
+        canvas.Restore();
         canvas.Restore();
         _hasRendered = true;
-        void Text(string value, float x, float y, float size)
-        { paint.Color = new SKColor(205, 219, 229); paint.Typeface = MenuStyle.TypefaceRegular; paint.TextSize = size; canvas.DrawText(value, x, y, paint); }
+        void Text(string value, float x, float y, float size, SKColor? color = null)
+        { paint.Color = color ?? TabletopStyle.Ink; paint.Typeface = MenuStyle.TypefaceRegular; paint.TextSize = size; canvas.DrawText(value, x, y, paint); }
         void Button(SKRect rect, string text, Action action)
         { MenuStyle.DrawButton(canvas, rect, text, rect.Contains(_mouseX, _mouseY) ? ButtonState.Hovered : ButtonState.Normal); _buttons.Add((rect, action)); }
     }

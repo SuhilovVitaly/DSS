@@ -234,19 +234,19 @@ internal sealed class DebugTuningPanel : IDisposable
     internal void Render(SKCanvas canvas)
     {
         if (!Visible || _disposed) return;
-        Fill(canvas, Bounds, new SKColor(9, 17, 23, 250));
-        Draw(canvas, _title, Bounds.Left + 10, Bounds.Top + 20, XenonStyle.CyanBright);
+        TabletopStyle.Panel(canvas, Bounds);
+        Draw(canvas, _title, Bounds.Left + 10, Bounds.Top + 20, TabletopStyle.Ink);
         Draw(canvas, _help, Bounds.Right - 20, Bounds.Top + 20, MenuStyle.ColorText);
         for (int i = 0; i < _statusLines.Length; i++)
-            Draw(canvas, _statusLines[i], Bounds.Left + 10, Bounds.Top + 38 + i * 15, _statusError ? SKColors.IndianRed : MenuStyle.ColorTextDim);
+            Draw(canvas, _statusLines[i], Bounds.Left + 10, Bounds.Top + 38 + i * 15, _statusError ? TabletopStyle.Danger : MenuStyle.ColorTextDim);
         canvas.Save();
         canvas.ClipRect(Viewport);
         canvas.Translate(0, Viewport.Top - _scroll);
         for (int i = 0; i < _sections.Length; i++)
         {
             var rect = _sectionBounds[i];
-            Fill(canvas, rect, new SKColor(24, 39, 48));
-            Draw(canvas, _sections[i], rect.Left + 6, rect.Top + 18, XenonStyle.Cyan);
+            TabletopStyle.Field(canvas, rect, focused: !_collapsed[i]);
+            Draw(canvas, _sections[i], rect.Left + 6, rect.Top + 18, TabletopStyle.Secondary);
             canvas.DrawLine(rect.Right - 14, rect.MidY, rect.Right - 6, rect.MidY, Color(MenuStyle.ColorText));
             if (_collapsed[i]) canvas.DrawLine(rect.Right - 10, rect.MidY - 4, rect.Right - 10, rect.MidY + 4, _paint);
         }
@@ -258,7 +258,7 @@ internal sealed class DebugTuningPanel : IDisposable
             canvas.ClipRect(new(rect.Left, rect.Top, rect.Right - 160, rect.Bottom));
             Draw(canvas, row.Label, rect.Left, rect.Top + 20, MenuStyle.ColorText);
             canvas.Restore();
-            Draw(canvas, row.Number, rect.Right - 153, rect.Top + 17, row.Modified ? XenonStyle.OrangeAccent : MenuStyle.ColorText);
+            Draw(canvas, row.Number, rect.Right - 153, rect.Top + 17, row.Modified ? TabletopStyle.Gold : MenuStyle.ColorText);
             if (row.Modified) Draw(canvas, row.DefaultNumber, rect.Right - 153, rect.Top + 33, MenuStyle.ColorTextDim);
             var (min, max, _, _) = Limits(row.Value);
             Button(canvas, _minus, new(rect.Right - 88, rect.Top + 5, rect.Right - 64, rect.Bottom - 5), row.DisplayValue > min);
@@ -274,16 +274,15 @@ internal sealed class DebugTuningPanel : IDisposable
     }
 
     private SKPaint Color(SKColor color) { _paint.Color = color; return _paint; }
-    private void Fill(SKCanvas canvas, SKRect rect, SKColor color) => canvas.DrawRect(rect, Color(color));
     private void Draw(SKCanvas canvas, SKTextBlob blob, float x, float y, SKColor color) => canvas.DrawText(blob, x, y, Color(color));
     private void Button(SKCanvas canvas, SKTextBlob blob, SKRect rect, bool enabled = true)
     {
-        Fill(canvas, rect, enabled ? new SKColor(35, 49, 59) : new SKColor(19, 26, 31));
+        TabletopStyle.Button(canvas, rect, enabled ? ButtonState.Normal : ButtonState.Disabled);
         Draw(canvas, blob, rect.MidX - blob.Bounds.Width / 2, rect.MidY + 4, enabled ? MenuStyle.ColorText : MenuStyle.ColorTextDim);
     }
     private void ResetButton(SKCanvas canvas, SKRect rect, bool enabled)
     {
-        Fill(canvas, rect, enabled ? new SKColor(35, 49, 59) : new SKColor(19, 26, 31));
+        TabletopStyle.Button(canvas, rect, enabled ? ButtonState.Normal : ButtonState.Disabled);
         _paint.Color = enabled ? MenuStyle.ColorText : MenuStyle.ColorTextDim;
         _paint.Style = SKPaintStyle.Stroke; _paint.StrokeWidth = 1.2f;
         float x = rect.MidX, y = rect.MidY;
