@@ -31,21 +31,32 @@ internal static partial class TacticalBattleMapRenderer
             var points = row.Path.Select(f.View.Project).ToArray();
             using var path = new SKPath(); path.AddPoly(points, false);
             float pathWidth = selected ? 14.5f : 6;
-            paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(selected ? (byte)230 : (byte)105); paint.StrokeWidth = pathWidth + 2.5f; c.DrawPath(path, paint);
-            paint.Color = selected ? TTSelected : TTCard.WithAlpha(115); paint.StrokeWidth = pathWidth; c.DrawPath(path, paint);
-            paint.Color = TTEdge.WithAlpha(selected ? (byte)200 : (byte)105); paint.StrokeWidth = 1.1f; paint.PathEffect = centerDash; c.DrawPath(path, paint);
+            paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(selected ? (byte)230 : (byte)45); paint.StrokeWidth = pathWidth + 2.5f; c.DrawPath(path, paint);
+            paint.Color = selected ? TTSelected : TTCard.WithAlpha(55); paint.StrokeWidth = pathWidth; c.DrawPath(path, paint);
+            paint.Color = TTEdge.WithAlpha(selected ? (byte)200 : (byte)50); paint.StrokeWidth = 1.1f; paint.PathEffect = centerDash; c.DrawPath(path, paint);
             for (int i = 0; i < points.Length; i += 2) occupied.Add(SKRect.Create(points[i].X - pathWidth / 2, points[i].Y - pathWidth / 2, pathWidth, pathWidth));
             var mid = points[points.Length / 2];
             Circle(c, mid, 9, TTBadge, TTGold, 1.4f);
             T(c, Math.Round(row.Order.Speed).ToString(CultureInfo.InvariantCulture), mid.X, mid.Y + 3.6f, 10, SKColors.White, true, SKTextAlign.Center, "field.template.text");
             occupied.Add(SKRect.Create(mid.X - 10, mid.Y - 10, 20, 20));
             var end = points[^1];
+            if (Recording is { } layout) layout.Rects["endpoint:" + row.Unit.Id] = SKRect.Create(end.X - 6, end.Y - 6, 12, 12);
+            if (!selected)
+            {
+                float angle = (float)(row.Path[^1].Course * Math.PI / 180);
+                var direction = new SKPoint(MathF.Cos(angle), MathF.Sin(angle));
+                var tail = end - Scale(direction, 9);
+                var side = new SKPoint(-direction.Y * 6, direction.X * 6);
+                var color = TTCard.WithAlpha(95);
+                Stroke(c, tail + side, end, color, 2);
+                Stroke(c, tail - side, end, color, 2);
+                occupied.Add(SKRect.Create(end.X - 11, end.Y - 11, 22, 22));
+                continue;
+            }
             if (!TacticalShipSprites.Draw(c, row.Unit, end, row.Unit.Side == f.Battle.PlayerSide, row.Path[^1].Course, 140, shadow: false, unitScale: f.View.UnitScale))
                 Triangle(c, end, 5, row.Path[^1].Course, TTGold);
-            Brackets(c, end, selected ? TTGold : TTTan, selected ? 2 : 1.4f);
+            Brackets(c, end, TTGold, 2);
             occupied.Add(SKRect.Create(end.X - 22, end.Y - 22, 44, 44));
-            if (Recording is { } layout) layout.Rects["endpoint:" + row.Unit.Id] = SKRect.Create(end.X - 6, end.Y - 6, 12, 12);
-            if (!selected) continue;
             string text = M("Map.TemplateTip", PilotCardModel.Name(row.Unit), F(row.Order.Speed), Deg(row.Order.Turn)[..^1]);
             float width = Measure(text, 11.5f, true) + 16;
             var tip = SKRect.Create(end.X + 30, end.Y - 32, width, 21);
