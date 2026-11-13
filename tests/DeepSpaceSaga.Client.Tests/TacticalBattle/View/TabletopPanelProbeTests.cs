@@ -55,7 +55,14 @@ public sealed class TabletopPanelProbeTests
             Assert.Contains(layout.Texts, text => text.Text is "ПОПАДАНИЕ" or "ПРОМАХ" or "ПОГЛОЩЁН" or "УКЛОНЕНИЕ");
         }
         var phase = layout.Rects["phase"];
+        var minimap = layout.Rects["minimap"];
+        if (name == "1-move-no-hover")
+        {
+            var log = scene.Screen.LogTab.Panel.Bounds;
+            Assert.Equal(Pixel(log.MidX, log.Bottom - 9), Pixel(minimap.MidX, minimap.Top + 6));
+        }
         var bevel = Pixel(phase.MidX, phase.Top + 1);
+        Assert.InRange(Distance(bevel, Pixel(minimap.MidX, minimap.Top + 1)), 0, 6);
         Assert.InRange(bevel.Red, 0x4C - 12, 0x4C + 12);
         Assert.InRange(bevel.Green, 0x57 - 12, 0x57 + 12);
         Assert.InRange(bevel.Blue, 0x64 - 12, 0x64 + 12);

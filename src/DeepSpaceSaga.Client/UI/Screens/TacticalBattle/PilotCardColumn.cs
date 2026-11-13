@@ -240,7 +240,7 @@ internal sealed class PilotCardColumn
         if (unit is not null)
         {
             int factor = Math.Max(1, TacticalShipSprites.Factor(TacticalShipSprites.CanvasScale(c)) / 2);
-            TacticalShipSprites.Draw(c, unit, new(r.Right - 19, r.Top + 10), true, 0,
+            TacticalShipSprites.Draw(c, unit, new(r.Right - 14, r.Top + 10), true, 0,
                 factor: factor, shadow: false, unitScale: .85f);
         }
         if (destroyed)
@@ -260,7 +260,7 @@ internal sealed class PilotCardColumn
             var stat = card.Stats.FirstOrDefault(s => s.Kind == kind);
             double fraction = Math.Clamp(stat?.Fill ?? 0, 0, 1);
             var icon = new SKPoint(r.Left + 45, box.MidY);
-            PilotCardIcons.StatIcon(c, kind, icon, destroyed ? Muted : gold, .65f);
+            PilotCardIcons.StatIcon(c, kind, icon, destroyed ? Muted : gold, .5f);
             Bar(c, box.Left, box.Top, width, height, fraction, color, role);
             string value = stat?.Value ?? "—";
             SmallText(c, value, box.Right + 4, box.MidY + 2.2f, FitSize(value, 7.2f, 36), ink);

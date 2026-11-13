@@ -8,7 +8,9 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed class TacticalBattleLogTab
 {
-    private readonly ScrollTextPanel _panel = new() { AutoScroll = true, StyleRole = "tabs.log" };
+    internal const string FrameStyleRole = "tabs.log";
+    internal const float FrameScale = .68f;
+    private readonly ScrollTextPanel _panel = new() { AutoScroll = true, StyleRole = FrameStyleRole };
     private ImmutableArray<TacticalBattleLogEvent> _last;
     private string? _battleId;
     private string? _title;
@@ -58,7 +60,7 @@ internal sealed class TacticalBattleLogTab
         BattleDesign.PanelBox(canvas, bounds);
         string title = BattleFormat.Localize("Log.Title");
         BattleDesign.T(canvas, title, bounds.Left + 9, bounds.Top + 17, 12, BattleDesign.Text, true);
-        _panel.Layout(new(bounds.Left + 4, bounds.Top + 23, bounds.Right - 4, bounds.Bottom - 4), .68f * frame.UiScale);
+        _panel.Layout(new(bounds.Left + 4, bounds.Top + 23, bounds.Right - 4, bounds.Bottom - 4), FrameScale * frame.UiScale);
         bool newBattle = _battleId != frame.Battle.BattleId;
         if (_last != frame.Battle.Log || newBattle || _title != title)
         {

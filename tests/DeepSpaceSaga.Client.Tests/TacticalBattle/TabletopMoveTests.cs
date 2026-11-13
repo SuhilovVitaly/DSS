@@ -9,7 +9,7 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class TabletopMoveTests
 {
     [Fact]
-    public async Task Selected_arrow_is_visibly_thinner_at_wide_zoom()
+    public async Task Selected_and_unselected_paths_have_the_same_width_at_each_zoom()
     {
         await using var scene = await Ep0019Scenes.Create("1-move-no-hover", withoutAnomalies: true);
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
@@ -23,24 +23,28 @@ public sealed class TabletopMoveTests
             Movement = new([path], row.Unit.Id, [])
         };
 
-        int wide = MeasureStroke(1);
-        int close = MeasureStroke(6);
+        int wide = MeasureStroke(1, selected: true);
+        int close = MeasureStroke(6, selected: true);
         Assert.InRange(wide, 4, 7);
-        Assert.InRange(close, 12, 16);
-        Assert.True(close >= 2 * wide);
+        Assert.InRange(close, 8, 10);
+        Assert.True(close > wide);
+        Assert.Equal(wide, MeasureStroke(1, selected: false));
+        Assert.Equal(close, MeasureStroke(6, selected: false));
 
-        int MeasureStroke(double pixelsPerUnit)
+        int MeasureStroke(double pixelsPerUnit, bool selected)
         {
             var view = frame.View with { CenterX = 0, CenterY = 0, PixelsPerUnit = pixelsPerUnit };
             using var bitmap = new SKBitmap(view.PixelWidth, view.PixelHeight);
             using var canvas = new SKCanvas(bitmap);
-            TacticalBattleMapRenderer.Draw(canvas, frame with { View = view });
+            var movement = frame.Movement! with { Selected = selected ? row.Unit.Id : null };
+            TacticalBattleMapRenderer.Draw(canvas, frame with { View = view, Movement = null });
             var sample = view.Project(-26, 0);
-            var fill = SKColor.Parse("#E8D48C");
+            int x = (int)sample.X, y = (int)sample.Y - 12;
+            var background = Enumerable.Range(y, 24).Select(line => bitmap.GetPixel(x, line)).ToArray();
+            TacticalBattleMapRenderer.Draw(canvas, frame with { View = view, Movement = movement });
             int pixels = 0;
-            // Sample both sides of the dashed centerline, clear of the drone and speed badge.
-            for (int y = (int)sample.Y - 20; y <= (int)sample.Y + 20; y++)
-                if (bitmap.GetPixel((int)sample.X, y) == fill) pixels++;
+            for (int i = 0; i < background.Length; i++)
+                if (bitmap.GetPixel(x, y + i) != background[i]) pixels++;
             return pixels;
         }
     }

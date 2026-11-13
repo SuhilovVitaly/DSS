@@ -27,13 +27,13 @@ internal static partial class TacticalBattleMapRenderer
         // Follow the map scale, with a soft ceiling that keeps close-up paths from obscuring the field.
         double pixelsPerUnit = f.View.PixelsPerUnit;
         float strokeScale = (float)(1.5 * pixelsPerUnit / (pixelsPerUnit + 3));
+        float pathWidth = 6 * strokeScale;
         foreach (var row in movement.Orders.OrderBy(o => o.Unit.Id == movement.Selected ? 1 : 0))
         {
             if (row.Path.IsDefaultOrEmpty) continue;
             bool selected = row.Unit.Id == movement.Selected;
             var points = row.Path.Select(f.View.Project).ToArray();
             using var path = new SKPath(); path.AddPoly(points, false);
-            float pathWidth = (selected ? 14.5f : 6) * strokeScale;
             paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(selected ? (byte)230 : (byte)45); paint.StrokeWidth = pathWidth + 2.5f * strokeScale; c.DrawPath(path, paint);
             paint.Color = selected ? TTSelected : TTCard.WithAlpha(55); paint.StrokeWidth = pathWidth; c.DrawPath(path, paint);
             paint.Color = TTEdge.WithAlpha(selected ? (byte)200 : (byte)50); paint.StrokeWidth = 1.1f * strokeScale; paint.PathEffect = centerDash; c.DrawPath(path, paint);

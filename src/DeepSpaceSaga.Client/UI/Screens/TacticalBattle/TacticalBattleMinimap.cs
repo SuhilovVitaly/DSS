@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
@@ -56,7 +57,11 @@ internal static class TacticalBattleMinimap
             layout.Rects["minimap:viewport"] = viewport;
         }
 
-        Round(canvas, bounds, MapBg, BoxEdge, radius: 4, role: "ui.minimap");
+        PanelBox(canvas, bounds);
+        var inset = bounds;
+        inset.Inflate(-4, -4);
+        ControlVisuals.Frame(canvas, inset, active: false, enabled: true,
+            TacticalBattleLogTab.FrameScale * frame.UiScale, new Skin.Role(TacticalBattleLogTab.FrameStyleRole));
         using var paint = new SKPaint
         {
             IsAntialias = true,
