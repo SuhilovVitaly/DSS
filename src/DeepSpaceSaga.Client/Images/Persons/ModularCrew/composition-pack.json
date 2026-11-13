@@ -1,0 +1,455 @@
+{
+  "schemaVersion": 1,
+  "canvas": [
+    1024,
+    1536
+  ],
+  "suitHeadCanvas": [
+    1024,
+    1024
+  ],
+  "heads": {
+    "violet": {
+      "suit": "heads/violet.png",
+      "casual": "casual/heads/violet.png"
+    },
+    "copper": {
+      "suit": "heads/copper.png",
+      "casual": "casual/heads/copper.png"
+    },
+    "silver": {
+      "suit": "heads/silver.png",
+      "casual": "casual/heads/silver.png"
+    },
+    "crew-f01": {
+      "suit": "heads/crew-f01.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f02": {
+      "suit": "heads/crew-f02.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f03": {
+      "suit": "heads/crew-f03.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f04": {
+      "suit": "heads/crew-f04.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f05": {
+      "suit": "heads/crew-f05.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f06": {
+      "suit": "heads/crew-f06.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f07": {
+      "suit": "heads/crew-f07.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f08": {
+      "suit": "heads/crew-f08.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f09": {
+      "suit": "heads/crew-f09.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f10": {
+      "suit": "heads/crew-f10.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f11": {
+      "suit": "heads/crew-f11.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f12": {
+      "suit": "heads/crew-f12.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f13": {
+      "suit": "heads/crew-f13.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f14": {
+      "suit": "heads/crew-f14.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f15": {
+      "suit": "heads/crew-f15.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f16": {
+      "suit": "heads/crew-f16.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f17": {
+      "suit": "heads/crew-f17.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f18": {
+      "suit": "heads/crew-f18.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f19": {
+      "suit": "heads/crew-f19.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f20": {
+      "suit": "heads/crew-f20.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f21": {
+      "suit": "heads/crew-f21.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f22": {
+      "suit": "heads/crew-f22.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f23": {
+      "suit": "heads/crew-f23.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f24": {
+      "suit": "heads/crew-f24.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    },
+    "crew-f25": {
+      "suit": "heads/crew-f25.png",
+      "compatibleSuits": [
+        "eva",
+        "engineer",
+        "medic",
+        "security",
+        "explorer",
+        "pilot"
+      ]
+    }
+  },
+  "suits": {
+    "eva": {
+      "body": "suits/eva/body.png",
+      "frontCollar": "suits/eva/collar-front.png",
+      "shadowMask": "suits/eva/shadow-mask.png",
+      "headTransform": {
+        "scale": 0.30357142857142855,
+        "tx": 368.57142857142856,
+        "ty": 233.35714285714286
+      }
+    },
+    "engineer": {
+      "body": "suits/engineer/body.png",
+      "frontCollar": "suits/engineer/collar-front.png",
+      "shadowMask": "suits/engineer/shadow-mask.png",
+      "headTransform": {
+        "scale": 0.30357142857142855,
+        "tx": 367.07142857142856,
+        "ty": 237.35714285714286
+      }
+    },
+    "medic": {
+      "body": "suits/medic/body.png",
+      "frontCollar": "suits/medic/collar-front.png",
+      "shadowMask": "suits/medic/shadow-mask.png",
+      "headTransform": {
+        "scale": 0.30357142857142855,
+        "tx": 365.07142857142856,
+        "ty": 238.35714285714286
+      }
+    },
+    "security": {
+      "body": "suits/security/body.png",
+      "frontCollar": "suits/security/collar-front.png",
+      "shadowMask": "suits/security/shadow-mask.png",
+      "headTransform": {
+        "scale": 0.30357142857142855,
+        "tx": 365.57142857142856,
+        "ty": 236.35714285714286
+      }
+    },
+    "explorer": {
+      "body": "suits/explorer/body.png",
+      "frontCollar": "suits/explorer/collar-front.png",
+      "shadowMask": "suits/explorer/shadow-mask.png",
+      "headTransform": {
+        "scale": 0.30357142857142855,
+        "tx": 366.57142857142856,
+        "ty": 236.35714285714286
+      }
+    },
+    "pilot": {
+      "body": "suits/pilot/body.png",
+      "frontCollar": "suits/pilot/collar-front.png",
+      "shadowMask": "suits/pilot/shadow-mask.png",
+      "headTransform": {
+        "scale": 0.30357142857142855,
+        "tx": 367.07142857142856,
+        "ty": 235.35714285714286
+      }
+    }
+  },
+  "casualBodies": {
+    "01": {
+      "violet": "casual/bodies/01__violet.png",
+      "copper": "casual/bodies/01__copper.png",
+      "silver": "casual/bodies/01__silver.png"
+    },
+    "02": {
+      "violet": "casual/bodies/02__violet.png",
+      "copper": "casual/bodies/02__copper.png",
+      "silver": "casual/bodies/02__silver.png"
+    },
+    "03": {
+      "violet": "casual/bodies/03__violet.png",
+      "copper": "casual/bodies/03__copper.png",
+      "silver": "casual/bodies/03__silver.png"
+    },
+    "04": {
+      "violet": "casual/bodies/04__violet.png",
+      "copper": "casual/bodies/04__copper.png",
+      "silver": "casual/bodies/04__silver.png"
+    },
+    "05": {
+      "violet": "casual/bodies/05__violet.png",
+      "copper": "casual/bodies/05__copper.png",
+      "silver": "casual/bodies/05__silver.png"
+    }
+  },
+  "sha256": {
+    "heads/violet.png": "2d529ec6255be509db99113a700881e068ce0f1dab949ffa4c29ddb46c7c5cf8",
+    "casual/heads/violet.png": "7a9c45be407cfb0b9445274e8f07288881b1be05bde03e6c8166de326e03d86c",
+    "heads/copper.png": "464659aeda626de822aa7aa496949b263760ad9175576eb04347b74b895921c4",
+    "casual/heads/copper.png": "7e364c0317ecaea9bfe355629b4631705f5e25f7e524023629fa4a32828ad19e",
+    "heads/silver.png": "42608f211286f5965625a2bd0828fde498c614272d6059c6ed58a0bfc43f4600",
+    "casual/heads/silver.png": "e3e7b280988b99d93a22f6da9f1a3a412332893a6a2d0432376aaf20fb05b26d",
+    "suits/eva/body.png": "7a188f3788e9c71c26183e64b93fec4c7cb193e88bdc1cd03582fb1b9807698b",
+    "suits/eva/collar-front.png": "0f682589a63af853111d4f7f9711761381c690714ef5e0ad870a1cedf20e6ba8",
+    "suits/eva/shadow-mask.png": "020750ecdf27dbad55478fddd9fa620d124ae520189b12a0e37e5f2725a4390a",
+    "suits/engineer/body.png": "c0062accfb1f77c6275ed4a9c29864a48c53423000b3a0402e3a0b3f1647bf0e",
+    "suits/engineer/collar-front.png": "fe18bcbcce84171bd3ff94cbe083983ec726f4de0daaf1191ef3d050f7c1342c",
+    "suits/engineer/shadow-mask.png": "ac9e0a19d34725bf615498a95871168b295e95af3978757e4da47610e74290ca",
+    "suits/medic/body.png": "24fa2093d93780ae1618cb8834f776eac10b42da12f264cdde9744ba8e2d30e7",
+    "suits/medic/collar-front.png": "6d705be2b295a5075b7e9ce9a82bd775b010c5a8d32ee73bb45d4309091ffc1e",
+    "suits/medic/shadow-mask.png": "522d6e59df8b9e5a3a1c296dde1c6167564be8a5f2a255da76996507891db100",
+    "suits/security/body.png": "20acb5ed9b7d7aed4f28fa18144927a74af1bdb8217dba5874a131a2f5c59508",
+    "suits/security/collar-front.png": "4cdac99926606efb6b9fe391a821cc367422708c7bc3fded6be845ceb12b1774",
+    "suits/security/shadow-mask.png": "708f248dc9615361d75f660a5db38e0852f73a697d17563913a417c8616c8f1a",
+    "suits/explorer/body.png": "10435cf598cbf4e1938950fac8daaba998366c83e7ab01b0d5da02a96daf8f27",
+    "suits/explorer/collar-front.png": "71f8b1de8caf3fe276a7cedfb6a7456fbae2b85bdf13855a04caece2da79c91c",
+    "suits/explorer/shadow-mask.png": "2880c9bf31e0cc1e7b8505ab43654ad32336acc3dd2a92a8fd31a0932825e7ac",
+    "suits/pilot/body.png": "1c51305329792853beef43e559d0f34cc15c74bb2b6e283231df86d68cf272e1",
+    "suits/pilot/collar-front.png": "dcf8ebd5594e22bd3104f2322e13540e900609379ebfc1aead3553fb18539fec",
+    "suits/pilot/shadow-mask.png": "85f1fc9db62079a4277916f2dffd0de879576d83fb103df353e32ff92f7a7061",
+    "casual/bodies/01__violet.png": "bc45f6a2fd568c1cf490b49b6601ed7f4c65a04d3d03b72fbe00b1bd4a8194ab",
+    "casual/bodies/01__copper.png": "31322263bb2f1ad400d6f4929ac7ebd79efae0fb9c1ecc5b5d945c294a5c1b20",
+    "casual/bodies/01__silver.png": "b6438ace34762398726aa426b24a20d6b789d1e5876b691335473c1d13815806",
+    "casual/bodies/02__violet.png": "0318bb691138a6acaf5dba1d86593ba13c3dd4c65bc0c08becc9e53d9cdcff55",
+    "casual/bodies/02__copper.png": "d1d47400c7e33fcfd637585766c97594b1d252f9072ea5481525eeaa1eda5b5f",
+    "casual/bodies/02__silver.png": "0b79e319334ac55a4e5bb9bb34e2bab6943dc935b436d3241563f681a94ffb68",
+    "casual/bodies/03__violet.png": "d3e1d1079911eae68e3e86e19e8f006d3ac32d103485eff2f2dbc14c3ef0011d",
+    "casual/bodies/03__copper.png": "54dcb8a3876514936774328c9a30b5cc2dc41f4a89552b1f889760ea4e7afeba",
+    "casual/bodies/03__silver.png": "0b53cacc11ac1b6730dbb52ba472770fea2d18a35ac22f14b52a20070dd2e761",
+    "casual/bodies/04__violet.png": "41d0b0df8c377286fb3233b516ea6d7d867e6213fefd00e32315d982532f9284",
+    "casual/bodies/04__copper.png": "ce2a42c9383077e22ce589124708acaefa77e517f6d38e4a2654c4930a385445",
+    "casual/bodies/04__silver.png": "e0c64c9424044547bbe6bbbd5dbb8c06913693342c31bf11c26f6cfde477cda0",
+    "casual/bodies/05__violet.png": "067c09e23340cc74ed279c066c7196d89358852760849f325b8afc8c183d5264",
+    "casual/bodies/05__copper.png": "17d5652d3564662834b419b6d98609f6f6a113fa42c885e417ca12554b20b10a",
+    "casual/bodies/05__silver.png": "8630e50c6fdb3d5b1566454696cff7561c4e1e5b4548427aed819b29e81eae63",
+    "heads/crew-f01.png": "813d3af5660434eb7a6397181770af48d83a2c0e70052fb0dbe836793fa8a368",
+    "heads/crew-f02.png": "71761e8a0a1d8d6578d5ab10e98fd3b9bc492ad63876673ab0c4c7db8139daff",
+    "heads/crew-f03.png": "114454180fb5261081ceb0feb7588fa036ece12cc6fc72a4a7fc438769c467f2",
+    "heads/crew-f04.png": "6b01c790c48ae062fca5331fc2fd0a79154dfd2d1f0f35fa7ed1f53c0ab646ca",
+    "heads/crew-f05.png": "22bb07b59fa947e5a74550b99aa4601ae3abdeae0aa3d61ca1c5e31bd398c736",
+    "heads/crew-f06.png": "c4c89c301e3a7413c176e9011d69774a13e74cc680ff87639be6cd7b7e4435b5",
+    "heads/crew-f07.png": "8c153012429e1bddbbb9a4e69dc4ca75cb11877a68a8d9a946a9c18226038a47",
+    "heads/crew-f08.png": "d4308674ad4cc7a932bcecfaf9b4c9ec2e38e04631d17aa79c21104e9304da73",
+    "heads/crew-f09.png": "466877dd811c90665b5be0378ee7268828e9ea35c09e174fc3241458472cde2c",
+    "heads/crew-f10.png": "26ae9359af9d9303d8918254bde0bf0c580981888754875c17cf02a61bf08af7",
+    "heads/crew-f11.png": "54a848b6784cdc7df6f7f235b8681fca5e70fe7de21b0f44b48ad1f84423e668",
+    "heads/crew-f12.png": "5302a0b2cbe2f37fe7b7246f8b396cb59016ca4ae8e9ccc48d3b479fbd563692",
+    "heads/crew-f13.png": "1d2b44f71a5c1ba57fbe19c55cda0f965851f369d04cc3d4e3df6790b2399829",
+    "heads/crew-f14.png": "181ccafb83def37e982a6e718aac2c1815316a35611f019349d98d01479da033",
+    "heads/crew-f15.png": "9b678ae1d26ac7f8915283d3dc8f1cf82e1649c9cd83173b79e62dba3e81b24b",
+    "heads/crew-f16.png": "25fd67487a10642705a864212e06174b4ca98d59d6acdbfce0a4f3bd00596117",
+    "heads/crew-f17.png": "9faa17653eaf994ac347c29f182c7edbf9c2f704a563a7f4e95a063326617522",
+    "heads/crew-f18.png": "b7f1cb4725af9fcf70d976bad3d6cbccc99016a622e406e70d5446294d8b11a3",
+    "heads/crew-f19.png": "534d5173eeb8e2660adf7a5d7e96a9030c073165c88358e0782d7558bc50919b",
+    "heads/crew-f20.png": "384a49ab96efb57fda5f6e022f8051a351a71be0cfd7a440e574a64b4b2b2633",
+    "heads/crew-f21.png": "4d80ce46d6ee73fc0678ed42fa2479c7d0917c392550d2b77c1ac56aac8ca00c",
+    "heads/crew-f22.png": "bf93d4cb48c07cf434777b04fab0f8c8325a8ba58b7eb0792f606d2047b40ca0",
+    "heads/crew-f23.png": "26af4dd087c67b89628d30df2d2201a7eccb60c99e3dd483ec2abcd803e0eca3",
+    "heads/crew-f24.png": "6dcae49271db148167ea273a2a30d5586357f8387466695d415bf2beab4d4f2d",
+    "heads/crew-f25.png": "0b811147ab8246eaf9758613e338368d15830a49d9ec4bcb2d23c38304bd51e3"
+  }
+}
