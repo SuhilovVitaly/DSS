@@ -274,7 +274,7 @@ internal static class ControlText
             IsAntialias = true,
             Typeface = MenuStyle.TypefaceRegular,
             TextSize = 14 * scale,
-            Color = enabled ? MenuStyle.ColorText : XenonStyle.DisabledText,
+            Color = enabled ? MenuStyle.ColorText : SkinStyle.Current is null ? TabletopStyle.Secondary : XenonStyle.DisabledText,
         };
         SkinStyle.Text(paint, role ?? SkinStyle.Control("control.label"), scale, text is null ? null : SafeSymbols(text));
         return paint;

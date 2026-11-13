@@ -75,6 +75,12 @@ internal static class ControlVisuals
 {
     internal static void Frame(SKCanvas canvas, SKRect rect, bool active, bool enabled, float scale, SkinStyle.Role? role = null)
     {
+        if (SkinStyle.Current is null)
+        {
+            TabletopStyle.Field(canvas, rect, active && enabled, scale);
+            return;
+        }
+
         var fill = active && enabled ? MenuStyle.ColorButtonHover : MenuStyle.ColorButtonBg;
         var border = !enabled ? XenonStyle.DisabledText : active ? XenonStyle.Cyan : MenuStyle.ColorButtonBorder;
         SkinStyle.Box(canvas, WithFallback(role, "control.frame"), rect, fill, border, scale);
@@ -86,6 +92,8 @@ internal static class ControlVisuals
         if (rect.IsEmpty) return;
         text = ControlText.SafeSymbols(text);
         using var paint = ControlText.Paint(scale, WithFallback(role, "control.label"), text, enabled);
+        if (SkinStyle.Current is null)
+            text = ControlText.Ellipsize(text, rect.Width, paint);
         DrawLabel(canvas, text, rect, paint, center);
     }
 

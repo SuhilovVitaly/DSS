@@ -49,16 +49,15 @@ public static class MenuStyle
         catch { return null; }
     }
 
-    // --- Colors (exact from reference) ---
-    public static readonly SKColor ColorText = new(220, 220, 220);
-    public static readonly SKColor ColorTextDim = new(90, 90, 90);
-    public static readonly SKColor ColorPanelBg = new(0, 0, 0);
-    public static readonly SKColor ColorPanelBorder = new(42, 42, 42);
-    public static readonly SKColor ColorButtonBg = new(18, 18, 18);
-    public static readonly SKColor ColorButtonBorder = new(42, 42, 42);
-    public static readonly SKColor ColorButtonHover = new(58, 58, 58);
-    public static readonly SKColor ColorButtonPressed = new(78, 78, 78);
-    public static readonly SKColor ColorBackground = SKColors.Black;
+    public static readonly SKColor ColorText = TabletopStyle.Ink;
+    public static readonly SKColor ColorTextDim = TabletopStyle.Secondary;
+    public static readonly SKColor ColorPanelBg = TabletopStyle.Steel;
+    public static readonly SKColor ColorPanelBorder = TabletopStyle.Edge;
+    public static readonly SKColor ColorButtonBg = TabletopStyle.Inset;
+    public static readonly SKColor ColorButtonBorder = TabletopStyle.Edge;
+    public static readonly SKColor ColorButtonHover = new(0x3A, 0x44, 0x50);
+    public static readonly SKColor ColorButtonPressed = TabletopStyle.Inset;
+    public static readonly SKColor ColorBackground = TabletopStyle.Background;
     public static readonly SKColor ColorDimOverlay = new(0, 0, 0, 160);
 
     // --- Font sizes (visual property, not layout geometry) ---
@@ -106,29 +105,14 @@ public static class MenuStyle
     /// <summary>Draw a menu-style button at the given rectangle.</summary>
     public static void DrawButton(SKCanvas canvas, SKRect rect, string text, ButtonState state)
     {
-        const float cr = 0f; // sharp corners, matching FlatStyle.Flat
-
-        var fill = state switch
-        {
-            ButtonState.Hovered => ButtonFillHover,
-            ButtonState.Pressed => ButtonFillPressed,
-            _ => ButtonFillNormal
-        };
-        canvas.DrawRoundRect(rect, cr, cr, fill);
-
-        canvas.DrawRoundRect(rect, cr, cr, ButtonBorder);
-
+        TabletopStyle.Button(canvas, rect, state);
         var textPaint = state == ButtonState.Disabled ? TextButtonDim : TextButton;
-        float textY = rect.MidY + textPaint.TextSize / 3f;
-        canvas.DrawText(text, rect.MidX, textY, textPaint);
+        rect.Inflate(-4, 0);
+        TabletopStyle.Label(canvas, rect, text, textPaint);
     }
 
     /// <summary>Draw a centered menu panel with border at the given rect.</summary>
-    public static void DrawPanel(SKCanvas canvas, SKRect rect)
-    {
-        canvas.DrawRect(rect, PanelFill);
-        canvas.DrawRect(rect, PanelBorder);
-    }
+    public static void DrawPanel(SKCanvas canvas, SKRect rect) => TabletopStyle.Panel(canvas, rect);
 
     /// <summary>
     /// Exact baseline Y that vertically centers text in <paramref name="rect"/> using the
@@ -141,7 +125,7 @@ public static class MenuStyle
         return rect.MidY - (metrics.Ascent + metrics.Descent) / 2f;
     }
 
-    /// <summary>Draw fullscreen black background.</summary>
+    /// <summary>Draw the fullscreen Tabletop background.</summary>
     public static void DrawBackground(SKCanvas canvas, int width, int height)
     {
         canvas.DrawRect(0, 0, width, height, BackgroundFill);

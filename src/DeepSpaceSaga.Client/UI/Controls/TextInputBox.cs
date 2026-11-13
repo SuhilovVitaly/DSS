@@ -26,6 +26,7 @@ public sealed class TextInputBox
         TextAlign = SKTextAlign.Left,
         Typeface = MenuStyle.TypefaceRegular
     };
+    private static readonly SKPaint CaretPaint = new() { Color = TabletopStyle.Gold };
 
     private readonly int _maxLength;
     private readonly Func<char, bool>? _characterFilter;
@@ -93,19 +94,26 @@ public sealed class TextInputBox
     /// <summary>Draws the box, current text, and a blinking caret trailing the text.</summary>
     public void Render(SKCanvas canvas, SKRect rect)
     {
-        canvas.DrawRect(rect, MenuStyle.ButtonFillNormal);
-        canvas.DrawRect(rect, MenuStyle.ButtonBorder);
+        if (rect.IsEmpty)
+            return;
 
+        TabletopStyle.Field(canvas, rect, focused: true);
         string text = Text;
-        float textX = rect.Left + PaddingX;
-        float textY = rect.MidY + TextPaint.TextSize / 3f;
-
+        var content = new SKRect(rect.Left + PaddingX, rect.Top, rect.Right - PaddingX, rect.Bottom);
+        if (content.IsEmpty)
+            return;
+        float textWidth = TextPaint.MeasureText(text);
+        float textX = Math.Min(content.Left, content.Right - textWidth - 1);
+        float textY = MenuStyle.VerticalCenterBaseline(rect, TextPaint);
+        canvas.Save();
+        canvas.ClipRect(content);
         canvas.DrawText(text, textX, textY, TextPaint);
 
         if (CaretVisible)
         {
-            float caretX = textX + TextPaint.MeasureText(text);
-            canvas.DrawLine(caretX, rect.Top + 4f, caretX, rect.Bottom - 4f, MenuStyle.ButtonBorder);
+            float caretX = textX + textWidth;
+            canvas.DrawLine(caretX, rect.Top + 4f, caretX, rect.Bottom - 4f, CaretPaint);
         }
+        canvas.Restore();
     }
 }

@@ -3,7 +3,7 @@ epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0001-theme-and-controls
 ticket: EP-0026-US-0001-TK-0001-steel-controls
 title: Общие элементы Tabletop
-stage: draft
+stage: implemented
 ---
 
 # Общие элементы Tabletop
@@ -14,7 +14,14 @@ stage: draft
 
 ## Code context
 
-Область реализации — UI/Controls, растровые тесты Client.
+| Файл | Текущее состояние и изменение |
+|---|---|
+| `UI/Controls/TabletopStyle.cs` | Новая общая палитра и отрисовка плиты, поля и действий по §11 EP-0024. |
+| `UI/Controls/MenuStyle.cs` | Общие меню и панели делегируют отрисовку Tabletop. |
+| `UI/Controls/TabStrip.cs`, `DropDown.cs`, `TextInputBox.cs` | Общие поля, вкладки и подсказки получают стальные состояния вне активного боевого скина. |
+| `tests/DeepSpaceSaga.Client.Tests/TabletopStyleTests.cs` | Проверить геометрию, различимость состояний и контраст утопленного поля. |
+
+Scope включает текст, скос, рамки и clipping. Вызовы внутри активного боевого скина сохраняют его роли. Внедрение в собственные отрисовщики каждого экрана выполняется по его карточке.
 
 ## Критерии приёмки
 
@@ -23,3 +30,10 @@ stage: draft
 ## Проверка
 
 Зафиксировать фактические проверки, review и открытые условия приёмки перед отдельным коммитом.
+
+
+## Результат
+
+Общие плиты, поля, вкладки и меню используют палитру и скос Tabletop. Поле имени слота ограничивает вывод своей областью и оставляет каретку видимой при длинном имени. Общие контролы по-прежнему читают роли в области активного скина боя.
+
+Release Client и Client.Tests собраны. 31/31 целевых проверок прошли: TabletopStyleTests, GameMenuVisualTests, TextInputBoxTests, GlyphCoverageTests, SkinCatalogTests. Отчёт: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/steel-final-20261113-134925/`. Scoped whitespace и git diff --check прошли. Самопроверка сверила clipping, состояния и маршрутизацию ролей. Контрольные кадры главного меню и HUD входят в US-0002/0003, сквозная нативная и продуктовая приёмка — в US-0009.
