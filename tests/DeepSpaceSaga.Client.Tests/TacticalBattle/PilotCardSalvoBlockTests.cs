@@ -39,7 +39,7 @@ public sealed class PilotCardSalvoBlockTests
             Assert.Contains(layout.Texts, t => t.Text == "ПРОМАХ" && t.Color == SKColor.Parse("#C8D4EC"));
             Assert.Contains(layout.Texts, t => t.Text == BattleDesign.M("Panel.ResultLine", shot.TargetId, BattleDesign.Pct(shot.Chance), 0));
             Assert.Contains(layout.Texts, t => t.Text.StartsWith("ловушка цели:", StringComparison.Ordinal));
-            Assert.Contains(layout.Rects.Keys, k => k == "pilot-damage-armor:Юн");
+            Assert.DoesNotContain("pilot-damage-armor:Юн", layout.Rects.Keys);
         }
         if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } folder)
         {

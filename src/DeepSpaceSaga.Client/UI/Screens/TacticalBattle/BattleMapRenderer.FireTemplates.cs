@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
@@ -11,9 +12,6 @@ internal static partial class TacticalBattleMapRenderer
 
     private static string ExplosionName(TacticalShotFlight flight) => flight.Shot.Killed ? "boom-kill" :
         flight.Shot.Hit && !flight.Shot.Absorbed ? "boom-hit" : "puff";
-
-    private static double ExplosionDuration(TacticalShotFlight flight) =>
-        TacticalBattleSkinRenderScope.EffectStrip(ExplosionName(flight)) is { } strip ? strip.Frames * strip.FrameMs : TacticalBattleResults.FlashMs;
 
     private static void DrawTabletopProjectiles(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo)
     {
@@ -56,82 +54,59 @@ internal static partial class TacticalBattleMapRenderer
         }
     }
 
-    private static void DrawSalvoTemplates(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo, List<SKRect> occupied)
+    private static void DrawHoveredSalvoResult(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, List<SKRect> occupied)
     {
-        var badges = new List<(SKRect Bounds, string ShooterId, string Detail, int Index)>();
-        foreach (var flight in salvo.Flights)
+        if (frame.HoverUnitId is not { } id) return;
+        var shooter = frame.Battle.Units.FirstOrDefault(unit => unit.Id == id &&
+            unit.Kind == TacticalUnitKind.Drone && unit.State != TacticalUnitState.Destroyed);
+        if (shooter is null) return;
+        var flight = salvo.Flights.FirstOrDefault(flight => flight.Shot.ShooterId == id &&
+            (salvo.PlaybackSkipped || flight.Arrived));
+        if (flight is null) return;
+
+        var shot = flight.Shot;
+        var from = frame.View.Project(shot.From);
+        var to = frame.View.Project(shot.To);
+        bool hit = shot.Hit && !shot.Absorbed;
+        bool own = shooter.Side == frame.Battle.PlayerSide;
+        var face = hit ? own ? TTSelected : TTRust : TTMiss;
+        var edge = hit ? own ? TTEdge : TTRustEdge : TTMissEdge;
+        var line = Ribbon(canvas, from, to, hit ? 5 : 3.5f, face.WithAlpha(95), edge.WithAlpha(80), 16, 24, occupied);
+        if (line == (from, to)) Stroke(canvas, from, to, face.WithAlpha(180), 1.4f);
+        if (Recording is { } layout) layout.Rects["result-ribbon:" + flight.Index] =
+            new(Math.Min(line.A.X, line.B.X), Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.X, line.B.X), Math.Max(line.A.Y, line.B.Y));
+
+        var target = frame.Battle.Units.FirstOrDefault(unit => unit.Id == shot.TargetId);
+        string outcome = shot.Absorbed ? M("Map.ShotAbsorbed") : hit
+            ? U("HitChip") + " · " + M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", AppliedDamage(frame, shot))
+            : M(shot.Decoyed ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
+        if (hit && shot.Rear) outcome = M("Map.RearHit", outcome);
+        string detail = $"{PilotCardModel.Name(shooter)} → {(target is null ? shot.TargetId : PilotCardModel.Name(target))} · {outcome}";
+        string chance = M("Map.ResultChance", Pct(shot.Chance));
+        if (!salvo.InFlight)
         {
-            if (!salvo.PlaybackSkipped && !flight.Arrived) continue;
-            var shot = flight.Shot;
-            var a = f.View.Project(shot.From); var b = f.View.Project(shot.To);
-            bool hit = shot.Hit && !shot.Absorbed;
-            var shooter = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId);
-            bool own = shooter?.Side == f.Battle.PlayerSide;
-            var face = hit ? own ? TTSelected : TTRust : TTMiss;
-            var edge = hit ? own ? TTEdge : TTRustEdge : TTMissEdge;
-            var line = Ribbon(c, a, b, hit ? 5 : 3.5f, face.WithAlpha(95), edge.WithAlpha(80), 16, 24, occupied);
-            if (Recording is { } layout) layout.Rects["result-ribbon:" + flight.Index] =
-                new(Math.Min(line.A.X, line.B.X), Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.X, line.B.X), Math.Max(line.A.Y, line.B.Y));
-            string result = shot.Absorbed ? M("Map.ShotAbsorbed") : U(hit ? "HitChip" : "MissChip");
-            string detail = shot.Absorbed ? M("Map.ShotAbsorbed") : hit ? M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", AppliedDamage(f, shot))
-                : M(shot.Decoyed ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
-            if (hit && shot.Rear) detail = M("Map.RearHit", detail);
-            var target = f.Battle.Units.FirstOrDefault(u => u.Id == shot.TargetId);
-            detail = $"{(shooter is null ? shot.ShooterId : PilotCardModel.Name(shooter))} → " +
-                $"{(target is null ? shot.TargetId : PilotCardModel.Name(target))} · {detail} · {Pct(shot.Chance)}";
-            var anchor = shooter is null ? a : f.View.Project(shooter.Pose);
-            var safe = Safe(f.View);
-            if (!safe.Contains(anchor)) continue;
-            const float size = 9.5f, height = size + 8;
-            float half = (Measure(result, size, true) + 14) / 2;
-            var point = anchor;
-            foreach (var offset in new SKPoint[] { new(0, -28), new(0, 35), new(half + 24, 0), new(-half - 24, 0) })
-            {
-                point = anchor + offset;
-                point.X = Math.Clamp(point.X, safe.Left + half, Math.Max(safe.Left + half, safe.Right - half));
-                point.Y = Math.Clamp(point.Y, safe.Top + height, safe.Bottom - height);
-                var candidate = SKRect.Create(point.X - half, point.Y - height / 2, 2 * half, height);
-                if (!badges.Any(badge => badge.Bounds.IntersectsWith(candidate)) && !occupied.Any(box => box.IntersectsWith(candidate))) break;
-            }
-            var bounds = Pill(c, point, result, size,
-                shot.Absorbed ? Heat : hit ? TTGold : Text, hit ? TTBadge : TTMissEdge, shot.Absorbed ? Heat : hit ? TTGold : Text);
-            badges.Add((bounds, shot.ShooterId, detail, flight.Index));
-            occupied.Add(bounds);
-            if (Recording is { } recorded) recorded.Rects["result-badge:" + flight.Index] = bounds;
+            var roll = shot.Absorbed ? shot.AbsorptionRoll : shot.HitRoll;
+            if (roll is { } value)
+                chance += " · " + M(shot.Absorbed ? "Map.AbsorptionRoll" : "Map.HitRoll", BattleFormat.Probability(value, 2));
         }
-        foreach (var group in salvo.Flights.Where(flight => salvo.PlaybackSkipped || flight.Arrived).GroupBy(flight => flight.Shot.TargetId))
-        {
-            if (!salvo.PlaybackSkipped && group.Any(flight => flight.ImpactAgeMs < ExplosionDuration(flight))) continue;
-            if (f.Battle.Units.Any(u => u.Id == group.Key && u.State == DeepSpaceSaga.Contracts.TacticalUnitState.Destroyed)) continue;
-            var point = f.View.Project(group.Last().Shot.To);
-            if (group.Any(flight => flight.Shot.Hit && !flight.Shot.Absorbed))
-            {
-                var center = point + new SKPoint(-14, -12);
-                Polygon(c, Enumerable.Range(0, 16).Select(i =>
-                {
-                    float angle = i * MathF.PI / 8 + .2f, radius = i % 2 == 0 ? 13 : 13 * .45f;
-                    return center + new SKPoint(MathF.Cos(angle) * radius, MathF.Sin(angle) * radius);
-                }), SKColor.Parse("#FFA83C").WithAlpha(225), TTRustEdge, 1.6f);
-                Circle(c, center, .3f * 13, SKColor.Parse("#FFF2A0"));
-            }
-            else Circle(c, point, 21, SKColors.Transparent, SKColor.Parse("#C8D2E4"), 1.8f);
-            var bounds = SKRect.Create(point.X - 24, point.Y - 24, 48, 48); occupied.Add(bounds);
-            if (Recording is { } layout) layout.Rects["result-marker:" + group.Key] = bounds;
-        }
-        var hovered = badges.Find(badge => f.HoverPoint is { } point && badge.Bounds.Contains(point));
-        if (hovered.Bounds.IsEmpty && f.HoverUnitId is { } id)
-            hovered = badges.Find(badge => badge.ShooterId == id);
-        if (hovered.Bounds.IsEmpty) return;
-        var field = Safe(f.View);
-        float textSize = FitSize(hovered.Detail, 10.5f, Math.Max(1, field.Width - 18), true);
-        float margin = (Measure(hovered.Detail, textSize, true) + 14) / 2;
-        float x = Math.Clamp(hovered.Bounds.MidX, field.Left + margin, Math.Max(field.Left + margin, field.Right - margin));
-        float y = hovered.Bounds.Top - 12;
-        if (y < field.Top + 10) y = hovered.Bounds.Bottom + 12;
-        var tooltip = Pill(c, new(x, y), hovered.Detail, textSize, Text, TTMissEdge, Text);
-        occupied.Add(tooltip);
-        if (Recording is { } resultLayout) resultLayout.Rects["result-detail:" + hovered.Index] = tooltip;
+        var field = Safe(frame.View);
+        if (field.Width <= 24) return;
+        const float size = 10.5f;
+        detail = BuildCardModel.Ellipsize(detail, field.Width - 24, size);
+        chance = BuildCardModel.Ellipsize(chance, field.Width - 24, size);
+        float width = Math.Max(Measure(detail, size, true), Measure(chance, size, true)) + 16;
+        var anchor = frame.View.Project(shooter.Pose);
+        float x = Math.Clamp(anchor.X - width / 2, field.Left, field.Right - width);
+        float y = anchor.Y - 60;
+        if (y < field.Top) y = anchor.Y + 32;
+        var bounds = SKRect.Create(x, Math.Clamp(y, field.Top, field.Bottom - 34), width, 34);
+        Round(canvas, bounds, Box, BoxEdge);
+        T(canvas, detail, x + 8, bounds.Top + 14, size, shot.Absorbed ? Heat : hit ? TTGold : Text, true, role: "field.ribbon.text");
+        T(canvas, chance, x + 8, bounds.Top + 28, size, Text, true, role: "field.ribbon.text");
+        occupied.Add(bounds);
+        if (Recording is { } resultLayout) resultLayout.Rects["result-detail:" + flight.Index] = bounds;
     }
+
 
     private sealed record RibbonPill(string Id, (SKPoint A, SKPoint B) Line, string Text, float Size,
         SKColor TextColor, SKColor Fill, SKColor Edge, SKPoint? Anchor = null);

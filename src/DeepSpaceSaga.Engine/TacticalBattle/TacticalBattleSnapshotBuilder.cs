@@ -16,7 +16,11 @@ internal static class TacticalBattleSnapshotBuilder
 
     public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
-    { Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy };
+    {
+        Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact,
+        TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy,
+        HitRoll = shot.HitRoll, AbsorptionRoll = shot.AbsorptionRoll
+    };
 
     private static ImmutableArray<TacticalSlotSnapshot> Slots(TacticalDrone d)
     {

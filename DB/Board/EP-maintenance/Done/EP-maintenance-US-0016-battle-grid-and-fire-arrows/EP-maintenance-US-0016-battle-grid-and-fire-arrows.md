@@ -23,3 +23,6 @@ implementation_status: implemented
 
 - Широкий прогон — `D:/DeepSpaceSaga/artifacts/validation/maintenance-battle-grid-fire/20261113-grid-fire-01/final/grid-fire.trx`.
 - Повторная проверка — `D:/DeepSpaceSaga/artifacts/validation/maintenance-battle-grid-fire/20261113-grid-fire-01/recheck/grid-fire-recheck.trx`.
+
+- [Контракт броска](EP-maintenance-US-0016-TK-0004-shot-roll-contract/EP-maintenance-US-0016-TK-0004-shot-roll-contract.md)
+- [Запись броска движком](EP-maintenance-US-0016-TK-0005-capture-shot-rolls/EP-maintenance-US-0016-TK-0005-capture-shot-rolls.md)

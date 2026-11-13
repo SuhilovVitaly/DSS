@@ -47,6 +47,8 @@ internal sealed class HoverCard
             return;
         }
         bool own = unit.Side == f.Battle.PlayerSide;
+        bool disabled = TacticalBattleSkinRenderScope.Tabletop && unit.Kind == TacticalUnitKind.Drone &&
+            unit.State == TacticalUnitState.Disabled;
         if (own && unit.Kind == TacticalUnitKind.Drone && f.Salvo is null && f.Battle.Phase == TacticalBattlePhase.Over) return;
         var r = new SKRect(f.Panel.Left, f.Panel.Bottom + 6, f.Panel.Right, f.Panel.Bottom + 110); Bounds = r;
         Recording!.Rects["hover"] = r; PanelBox(c, r); CursorGlyph(c, r.Left + 9, r.Top + 8, .6f);
@@ -54,8 +56,13 @@ internal sealed class HoverCard
         float x = r.Left + 9;
         if (own && unit.Kind == TacticalUnitKind.Drone)
         { PilotCardColumn.Portrait(c, portraits, unit.Build?.PilotId ?? "", PilotCardModel.Name(unit), SKRect.Create(r.Left + 9, r.Top + 25, 32, 32)); x = r.Left + 48; }
-        T(c, PilotCardModel.Name(unit), x, r.Top + 38, 14, own ? Cyan : Orange, true,
-            role: own ? "ui.build.name" : TacticalBattleSkinRenderScope.Steel ? "ui.enemy.name" : "ui.text");
+        if (disabled)
+        {
+            TacticalBattleMapRenderer.DrawDisabledCross(c, x, r.Top + 25, 14);
+            x += 17;
+        }
+        T(c, PilotCardModel.Name(unit), x, r.Top + 38, 14, disabled ? Green : own ? Cyan : Orange, true,
+            role: disabled ? "field.plate.disabled" : own ? "ui.build.name" : TacticalBattleSkinRenderScope.Steel ? "ui.enemy.name" : "ui.text");
         bool evading = TacticalBattleMapRenderer.IsEvading(f, unit.Id);
         bool decoy = TacticalBattleMapRenderer.HasDecoy(f, unit);
         bool marked = evading || decoy;
@@ -63,6 +70,7 @@ internal sealed class HoverCard
         var chip = new SKRect(r.Right - 8 - w, r.Top + 25, r.Right - 8, r.Top + 41);
         Round(c, chip, evading ? PurpleDark : decoy ? GreenDark : Box, evading ? Purple : decoy ? Green : null);
         T(c, state, chip.MidX, chip.MidY + 4, 10.5f, evading ? Purple : decoy ? Green : Text, marked, align: SKTextAlign.Center);
+        if (disabled) return;
         T(c, U("HullValue", unit.Hull, unit.MaxHull), x, r.Top + 56, 10.5f, Text);
         Bar(c, r.Left + 130, r.Top + 51, r.Width - 138, 5, unit.MaxHull > 0 ? unit.Hull / (double)unit.MaxHull : 0, Cyan, "ui.bar.hull");
         T(c, U("ArmorValue", unit.Armor, unit.MaxArmor), r.Left + 9, r.Top + 75, 10.5f, Text);

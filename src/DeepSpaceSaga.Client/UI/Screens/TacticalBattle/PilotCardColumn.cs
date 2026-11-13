@@ -210,6 +210,7 @@ internal sealed class PilotCardColumn
     {
         var unit = _frame?.Battle.Units.FirstOrDefault(u => u.Id == card.UnitId);
         bool destroyed = unit?.State == TacticalUnitState.Destroyed;
+        bool disabled = unit?.State == TacticalUnitState.Disabled;
         var gold = SKColor.Parse("#FFD24A");
         PanelBox(c, r, role: "ui.pilot-card");
         var portrait = SKRect.Create(r.Left + 4, r.Top + 4, 32, 32);
@@ -231,11 +232,20 @@ internal sealed class PilotCardColumn
         using var edge = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = SKColor.Parse("#05070A"), StrokeWidth = .7f };
         c.DrawRect(portrait, edge);
         var ink = Skin.Color("ui.text", "text", Text);
-        var name = BuildCardModel.Ellipsize(card.Name, 68, 9.8f, true);
-        SmallText(c, name, r.Left + 41, r.Top + 14, 9.8f, ink, true);
-        var damage = _frame?.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
-        DrawHealth("hull", r.Top + 17, Cyan, damage?.Hull > 0);
-        DrawHealth("armor", r.Top + 26, Purple, damage?.Armor > 0);
+        const float nameSize = 9.8f;
+        float nameX = r.Left + 41;
+        if (disabled)
+        {
+            TacticalBattleMapRenderer.DrawDisabledCross(c, nameX, r.Top + 5, nameSize);
+            nameX += nameSize + 3;
+        }
+        var name = BuildCardModel.Ellipsize(card.Name, r.Left + 109 - nameX, nameSize, true);
+        SmallText(c, name, nameX, r.Top + 14, nameSize, disabled ? Green : ink, true);
+        if (!disabled)
+        {
+            DrawHealth("hull", r.Top + 17, Cyan);
+            DrawHealth("armor", r.Top + 26, Purple);
+        }
         DrawWeapon(c, card, r.Left + 41, r.Top + 38, 5.6f, 106, SKColor.Parse("#9AAABB"), italic: true);
         if (unit is not null)
         {
@@ -252,7 +262,7 @@ internal sealed class PilotCardColumn
             var selection = r; selection.Inflate(2.2f, 2.2f);
             edge.Color = gold; edge.StrokeWidth = 2; c.DrawRect(selection, edge);
         }
-        void DrawHealth(string kind, float y, SKColor color, bool damaged)
+        void DrawHealth(string kind, float y, SKColor color)
         {
             const float width = 55, height = 5;
             var box = SKRect.Create(r.Left + 50, y, width, height);
@@ -269,11 +279,6 @@ internal sealed class PilotCardColumn
                 layout.Rects[$"pilot-{kind}:{card.UnitId}"] = box;
                 layout.Rects[$"pilot-{kind}-fill:{card.UnitId}"] = SKRect.Create(box.Left, box.Top, (float)fraction * width, height);
             }
-            if (!damaged) return;
-            var border = box; border.Inflate(1, 1);
-            using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = SKColor.Parse("#FFE27A"), StrokeWidth = 1.4f };
-            c.DrawRect(border, paint);
-            if (Recording is { } damageRecord) damageRecord.Rects[$"pilot-damage-{kind}:{card.UnitId}"] = border;
         }
     }
 

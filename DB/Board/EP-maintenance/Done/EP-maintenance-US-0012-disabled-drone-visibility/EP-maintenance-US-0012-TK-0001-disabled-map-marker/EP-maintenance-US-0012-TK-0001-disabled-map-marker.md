@@ -33,3 +33,7 @@ created: "2026-11-10T14:45:55.523Z"
 ## Статус
 
 34/34 целевых теста клиента, включая растровую проверку Disabled, прошли. Лог: D:/DeepSpaceSaga/artifacts/validation/tactical-map-polish/20261110144815363/client-recheck/test.log.
+
+Tabletop показывает зелёное имя и красный крест размером со шрифт. Броня и корпус скрыты на карте, в карточке пилота и при наведении.
+
+Прошли 46/46 клиентских headless-проверок в Release. Результаты: D:/DeepSpaceSaga/artifacts/validation/tabletop-disabled-roll/20261113T163726168Z/verify.

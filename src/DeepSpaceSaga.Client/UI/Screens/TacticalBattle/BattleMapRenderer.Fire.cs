@@ -65,7 +65,7 @@ internal static partial class TacticalBattleMapRenderer
                 }
             }
         }
-        if (Skin.Tabletop && f.Salvo is { ShowResultCallouts: true } tabletopSalvo) DrawSalvoTemplates(c, f, tabletopSalvo, occupied);
+        if (Skin.Tabletop && f.Salvo is { } tabletopSalvo) DrawHoveredSalvoResult(c, f, tabletopSalvo, occupied);
         if (Skin.Tabletop && f.Salvo is { InFlight: true } tabletopFlying) DrawTabletopProjectiles(c, f, tabletopFlying);
         if (!Skin.Tabletop && f.Salvo is { InFlight: true } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flying))
@@ -136,7 +136,7 @@ internal static partial class TacticalBattleMapRenderer
                 if (Recording is { } layout) layout.Rects["decoy-callout:" + index++] = bounds;
             }
         }
-        if (!Skin.Tabletop && f.Salvo is { PlaybackSkipped: false } feedback)
+        if (f.Salvo is { PlaybackSkipped: false } feedback)
             DrawFloatingShotResults(c, f, feedback, occupied);
     }
 
@@ -148,8 +148,9 @@ internal static partial class TacticalBattleMapRenderer
             double age = flight.ImpactAgeMs;
             if (age < 0 || age >= durationMs) continue;
             var shot = flight.Shot;
+            if (Skin.Tabletop && (!shot.Hit || shot.Absorbed)) continue;
             string text = shot.Absorbed ? M("Absorbed") : shot.Hit ? $"−{AppliedDamage(frame, shot)}" : U("MissChip");
-            if (shot.Hit && !shot.Absorbed && shot.Rear) text = M("Map.RearHit", text);
+            if (!Skin.Tabletop && shot.Hit && !shot.Absorbed && shot.Rear) text = M("Map.RearHit", text);
             float progress = (float)(age / durationMs);
             var color = shot.Absorbed ? Heat : shot.Hit ? Yellow : Text;
             color = color.WithAlpha((byte)(255 * Math.Min(1, (1 - progress) * 2)));

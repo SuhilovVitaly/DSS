@@ -43,7 +43,7 @@ public sealed class TabletopSalvoTests
     [InlineData(450, 8)]
     [InlineData(880, -1)]
     [InlineData(1000, -1)]
-    public async Task Kill_explosion_frames_end_before_target_marker_appears(int age, int expectedFrame)
+    public async Task Kill_explosion_finishes_without_leaving_a_target_marker(int age, int expectedFrame)
     {
         await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
         var frame = scene.Frame;
@@ -62,7 +62,7 @@ public sealed class TabletopSalvoTests
         var effects = layout.Rects.Keys.Where(k => k.StartsWith("explosion:", StringComparison.Ordinal)).ToArray();
         if (expectedFrame < 0) Assert.Empty(effects);
         else Assert.Equal($"explosion:{flight.Index}:boom-kill:{expectedFrame}", Assert.Single(effects));
-        Assert.Equal(age >= 880, layout.Rects.ContainsKey("result-marker:" + flight.Shot.TargetId));
+        Assert.DoesNotContain("result-marker:" + flight.Shot.TargetId, layout.Rects.Keys);
     }
 
     [Fact]
@@ -93,7 +93,8 @@ public sealed class TabletopSalvoTests
     [InlineData(-1, false)]
     [InlineData(0, true)]
     [InlineData(500, true)]
-    public async Task Results_show_a_short_badge_after_impact_and_details_on_hover(int age, bool visible)
+    [InlineData(2000, true)]
+    public async Task Only_hovering_the_shooter_reveals_an_arrived_shot(int age, bool visible)
     {
         await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
         var frame = scene.Frame;
@@ -102,38 +103,75 @@ public sealed class TabletopSalvoTests
         frame = frame with
         {
             Battle = frame.Battle with { Anomalies = [] },
-            Salvo = frame.Salvo with { Flights = [flight], PlaybackSkipped = false }
+            HoverUnitId = null,
+            Salvo = frame.Salvo with { Flights = [flight], PlaybackSkipped = false, ShowResultCallouts = age < 1400 }
         };
         var layout = Draw(frame);
-        Assert.Equal(visible, layout.Rects.ContainsKey("result-ribbon:" + flight.Index));
-        Assert.Equal(visible, layout.Rects.TryGetValue("result-badge:" + flight.Index, out var badge));
-        Assert.DoesNotContain("floating-shot:" + flight.Index, layout.Rects.Keys);
-        if (!visible) return;
+        string ribbon = "result-ribbon:" + flight.Index;
         string detail = "result-detail:" + flight.Index;
+        Assert.DoesNotContain("floating-shot:" + flight.Index, layout.Rects.Keys);
+        Assert.DoesNotContain(ribbon, layout.Rects.Keys);
         Assert.DoesNotContain(detail, layout.Rects.Keys);
-        Assert.Contains(detail, Draw(frame with { HoverPoint = new(badge.MidX, badge.MidY) }).Rects.Keys);
-        Assert.Contains(detail, Draw(frame with { HoverUnitId = flight.Shot.ShooterId }).Rects.Keys);
-        var expired = Draw(frame with { Salvo = frame.Salvo! with { ShowResultCallouts = false } });
-        Assert.DoesNotContain(expired.Rects.Keys, key => key.StartsWith("result-", StringComparison.Ordinal));
+        var other = Draw(frame with { HoverUnitId = flight.Shot.TargetId });
+        Assert.DoesNotContain(ribbon, other.Rects.Keys);
+        var hovered = Draw(frame with { HoverUnitId = flight.Shot.ShooterId });
+        Assert.Equal(visible, hovered.Rects.ContainsKey(ribbon));
+        Assert.Equal(visible, hovered.Rects.ContainsKey(detail));
+        Assert.DoesNotContain("result-badge:" + flight.Index, hovered.Rects.Keys);
+        Assert.DoesNotContain(ribbon, Draw(frame with { HoverUnitId = flight.Shot.ShooterId, Salvo = null }).Rects.Keys);
+    }
+
+    [Fact]
+    public async Task Floating_damage_rises_after_impact_without_revealing_the_shot_line()
+    {
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
+        var frame = scene.Frame;
+        var hit = frame.Salvo!.Flights.First(flight => flight.Shot.Hit && !flight.Shot.Absorbed);
+        string key = "floating-shot:" + hit.Index;
+        BattleLayout At(int age) => Draw(frame with
+        {
+            HoverUnitId = null,
+            Salvo = frame.Salvo with
+            {
+                Flights = [hit with { ElapsedMs = hit.LaunchMs + hit.DurationMs + age }],
+                PlaybackSkipped = false
+            }
+        });
+        Assert.DoesNotContain(key, At(-1).Rects.Keys);
+        var impact = At(0);
+        Assert.Contains(impact.Texts, entry => entry.Text.StartsWith("−", StringComparison.Ordinal));
+        Assert.DoesNotContain("result-ribbon:" + hit.Index, impact.Rects.Keys);
+        Assert.True(At(600).Rects[key].Top < impact.Rects[key].Top);
+        Assert.DoesNotContain(key, At(1400).Rects.Keys);
     }
 
     [Theory]
     [InlineData("4-salvo-results")]
     [InlineData("4-decoy-results")]
     [InlineData("4-anomaly-absorbed")]
-    public async Task Skipped_results_show_each_outcome_and_hide_counters_on_wrecks(string name)
+    public async Task Skipped_results_show_the_hovered_shooters_outcome_and_hide_counters_on_wrecks(string name)
     {
         await using var scene = await Ep0019Scenes.Create(name);
         using var locale = Localization.UseLocaleForTests("Russian");
         var frame = scene.Frame;
-        frame = frame with { Salvo = frame.Salvo! with { PlaybackSkipped = true } };
+        frame = frame with { HoverUnitId = null, Salvo = frame.Salvo! with { PlaybackSkipped = true } };
         var layout = Draw(frame);
+        Assert.DoesNotContain(layout.Rects.Keys, key => key.StartsWith("result-", StringComparison.Ordinal));
         foreach (var flight in frame.Salvo!.Flights)
         {
-            Assert.True(layout.Rects.ContainsKey("result-badge:" + flight.Index));
             var shot = flight.Shot;
-            string text = shot.Absorbed ? "поглощён" : shot.Hit ? "попадание" : "промах";
-            Assert.Contains(layout.Texts, t => t.Text == text);
+            if (frame.Battle.Units.Any(unit => unit.Id == shot.ShooterId && unit.State != DeepSpaceSaga.Contracts.TacticalUnitState.Destroyed))
+            {
+                var hovered = Draw(frame with { HoverUnitId = shot.ShooterId });
+                Assert.Equal("result-ribbon:" + flight.Index, Assert.Single(hovered.Rects.Keys, key =>
+                    key.StartsWith("result-ribbon:", StringComparison.Ordinal)));
+                string text = shot.Absorbed ? "поглощён" : shot.Hit ? "попадание" : "промах";
+                Assert.Contains(hovered.Texts, entry => entry.Text.Contains(text, StringComparison.Ordinal));
+                var roll = shot.Absorbed ? shot.AbsorptionRoll : shot.HitRoll;
+                Assert.NotNull(roll);
+                Assert.Contains(hovered.Texts, entry => entry.Text.Contains("Бросок", StringComparison.Ordinal) &&
+                    entry.Text.Contains(BattleFormat.Probability(roll.Value, 2), StringComparison.Ordinal));
+            }
             if (shot.Killed)
             {
                 Assert.False(layout.Rects.ContainsKey("plate:armor:" + shot.TargetId));

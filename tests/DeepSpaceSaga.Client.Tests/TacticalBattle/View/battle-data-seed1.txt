@@ -9729,7 +9729,9 @@
         "LethalImpact": false,
         "TargetEvading": false,
         "Decoyed": true,
-        "ChanceWithoutDecoy": 0.5547857106633658
+        "ChanceWithoutDecoy": 0.5547857106633658,
+        "HitRoll": 0.8542386966291815,
+        "AbsorptionRoll": 0.8079907614737749
       },
       {
         "Turn": 4,
@@ -9756,7 +9758,9 @@
         "LethalImpact": false,
         "TargetEvading": false,
         "Decoyed": true,
-        "ChanceWithoutDecoy": 0.7275239408769401
+        "ChanceWithoutDecoy": 0.7275239408769401,
+        "HitRoll": 0.2727865446358919,
+        "AbsorptionRoll": null
       },
       {
         "Turn": 4,
@@ -9783,7 +9787,9 @@
         "LethalImpact": true,
         "TargetEvading": false,
         "Decoyed": false,
-        "ChanceWithoutDecoy": null
+        "ChanceWithoutDecoy": null,
+        "HitRoll": 0.30325650586746633,
+        "AbsorptionRoll": null
       },
       {
         "Turn": 4,
@@ -9810,7 +9816,9 @@
         "LethalImpact": false,
         "TargetEvading": false,
         "Decoyed": false,
-        "ChanceWithoutDecoy": null
+        "ChanceWithoutDecoy": null,
+        "HitRoll": 0.2899394116830081,
+        "AbsorptionRoll": null
       }
     ],
     "BeforeSalvoUnits": [
@@ -14759,7 +14767,9 @@
           "LethalImpact": false,
           "TargetEvading": false,
           "Decoyed": true,
-          "ChanceWithoutDecoy": 0.5547857106633658
+          "ChanceWithoutDecoy": 0.5547857106633658,
+          "HitRoll": 0.8542386966291815,
+          "AbsorptionRoll": 0.8079907614737749
         },
         "UnitsAfter": [
           {
@@ -18920,7 +18930,9 @@
           "LethalImpact": false,
           "TargetEvading": false,
           "Decoyed": true,
-          "ChanceWithoutDecoy": 0.7275239408769401
+          "ChanceWithoutDecoy": 0.7275239408769401,
+          "HitRoll": 0.2727865446358919,
+          "AbsorptionRoll": null
         },
         "UnitsAfter": [
           {
@@ -20351,7 +20363,9 @@
           "LethalImpact": true,
           "TargetEvading": false,
           "Decoyed": false,
-          "ChanceWithoutDecoy": null
+          "ChanceWithoutDecoy": null,
+          "HitRoll": 0.30325650586746633,
+          "AbsorptionRoll": null
         },
         "UnitsAfter": [
           {
@@ -23184,7 +23198,9 @@
           "LethalImpact": false,
           "TargetEvading": false,
           "Decoyed": false,
-          "ChanceWithoutDecoy": null
+          "ChanceWithoutDecoy": null,
+          "HitRoll": 0.2899394116830081,
+          "AbsorptionRoll": null
         },
         "UnitsAfter": [
           {
@@ -30240,7 +30256,9 @@
         "LethalImpact": false,
         "TargetEvading": false,
         "Decoyed": false,
-        "ChanceWithoutDecoy": null
+        "ChanceWithoutDecoy": null,
+        "HitRoll": 0.906352398218587,
+        "AbsorptionRoll": null
       },
       {
         "Turn": 21,
@@ -30267,7 +30285,9 @@
         "LethalImpact": true,
         "TargetEvading": false,
         "Decoyed": false,
-        "ChanceWithoutDecoy": null
+        "ChanceWithoutDecoy": null,
+        "HitRoll": 0.4241334544494748,
+        "AbsorptionRoll": null
       }
     ],
     "BeforeSalvoUnits": [
@@ -41647,7 +41667,9 @@
           "LethalImpact": false,
           "TargetEvading": false,
           "Decoyed": false,
-          "ChanceWithoutDecoy": null
+          "ChanceWithoutDecoy": null,
+          "HitRoll": 0.906352398218587,
+          "AbsorptionRoll": null
         },
         "UnitsAfter": [
           {
@@ -43054,7 +43076,9 @@
           "LethalImpact": true,
           "TargetEvading": false,
           "Decoyed": false,
-          "ChanceWithoutDecoy": null
+          "ChanceWithoutDecoy": null,
+          "HitRoll": 0.4241334544494748,
+          "AbsorptionRoll": null
         },
         "UnitsAfter": [
           {

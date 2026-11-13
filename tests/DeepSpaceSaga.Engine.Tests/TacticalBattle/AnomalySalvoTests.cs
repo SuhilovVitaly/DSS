@@ -51,6 +51,8 @@ public sealed class AnomalySalvoTests
         long calls = battle.Random.Calls;
         var shot = Assert.Single(TacticalBattleSalvo.Fire(battle, (d, _) => new(d == a ? b.Id : null, false)).Shots);
         Assert.Equal(0, shot.Absorption); Assert.False(shot.Absorbed); Assert.True(shot.Hit);
+        Assert.Null(shot.AbsorptionRoll);
+        Assert.InRange(shot.HitRoll!.Value, 0, shot.Chance);
         Assert.Equal(2, battle.Random.Calls - calls);
     }
 
@@ -71,6 +73,8 @@ public sealed class AnomalySalvoTests
         Assert.Equal(1, battle.Random.Calls - calls);
         var dto = TacticalBattleSnapshotBuilder.Shot(shot, 1);
         Assert.True(dto.Absorbed); Assert.Equal(1, dto.Absorption);
+        Assert.Null(dto.HitRoll);
+        Assert.InRange(dto.AbsorptionRoll!.Value, 0, 1);
     }
 
     [Fact]

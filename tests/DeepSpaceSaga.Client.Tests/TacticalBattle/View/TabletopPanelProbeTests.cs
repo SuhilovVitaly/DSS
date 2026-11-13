@@ -43,15 +43,10 @@ public sealed class TabletopPanelProbeTests
         }
         else
         {
-            var armor = layout.Rects["pilot-damage-armor:Юн"];
-            var gold = SKColor.Parse("#FFE27A");
-            // A 1.4px stroke centred on an integer edge covers 70% of the pixel at S1.
-            var background = Pixel(armor.MidX, armor.Top - 3);
-            float coverage = scale == 1 ? .7f : 1;
-            var expected = new SKColor((byte)(gold.Red * coverage + background.Red * (1 - coverage)),
-                (byte)(gold.Green * coverage + background.Green * (1 - coverage)),
-                (byte)(gold.Blue * coverage + background.Blue * (1 - coverage)));
-            Assert.InRange(Distance(Pixel(armor.MidX, armor.Top), expected), 0, 36);
+            var armor = layout.Rects["pilot-armor:Юн"];
+            Assert.InRange(Distance(Pixel(armor.Left + 6, armor.MidY), SKColor.Parse("#5A7CA8")), 0, 50);
+            Assert.DoesNotContain("pilot-damage-armor:Юн", layout.Rects.Keys);
+            Assert.DoesNotContain("plate:damage:armor:Юн", layout.Rects.Keys);
             Assert.Contains(layout.Texts, text => text.Text is "ПОПАДАНИЕ" or "ПРОМАХ" or "ПОГЛОЩЁН" or "УКЛОНЕНИЕ");
         }
         var phase = layout.Rects["phase"];

@@ -57,3 +57,7 @@ TabletopSlimCardTests проверяет долю заполнения и выд
 Headless-проверка прошла, 66/66 тестов, включая 23 растровые сцены. Проверка форматирования изменённых файлов клиента прошла. Результаты: D:/DeepSpaceSaga/artifacts/validation/tactical-battle-hud-refinement/20261113T144625876Z/verify.
 
 Иконки корпуса и брони уменьшены. Модель дрона сдвинута ближе к правому краю. Прошли 37/37 headless-проверок в Release. Результаты: D:/DeepSpaceSaga/artifacts/validation/tactical-panel-polish/20261113T154214535Z/verify.
+
+Жёлтые рамки повреждений убраны со шкал корпуса и брони в карточке пилота и со счётчиков на карте.
+
+Прошли 48/48 headless-проверок Release, включая эталоны Tabletop. Результаты: D:/DeepSpaceSaga/artifacts/validation/tabletop-floating-damage/20261113T161825398Z/verify.

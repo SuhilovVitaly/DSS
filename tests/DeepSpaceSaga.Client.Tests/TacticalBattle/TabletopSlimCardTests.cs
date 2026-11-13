@@ -28,8 +28,14 @@ public sealed class TabletopSlimCardTests
         {
             var rect = layout.Rects["pilot:" + card.UnitId];
             Assert.Equal(150, rect.Width); Assert.Equal(40, rect.Height);
+            bool disabled = frame.Battle.Units.Single(unit => unit.Id == card.UnitId).State == TacticalUnitState.Disabled;
             foreach (var (kind, offset) in new[] { ("hull", 17), ("armor", 26) })
             {
+                if (disabled)
+                {
+                    Assert.DoesNotContain($"pilot-{kind}:{card.UnitId}", layout.Rects.Keys);
+                    continue;
+                }
                 var bar = layout.Rects[$"pilot-{kind}:{card.UnitId}"];
                 Assert.Equal(SKRect.Create(rect.Left + 50, rect.Top + offset, 55, 5), bar);
                 var fill = layout.Rects[$"pilot-{kind}-fill:{card.UnitId}"];
@@ -39,9 +45,8 @@ public sealed class TabletopSlimCardTests
             }
             Assert.Contains(layout.Texts, t => t.Text == card.Name);
             Assert.DoesNotContain(layout.Texts, t => t.Text == card.PhaseText && card.PhaseText.Length > 0);
-            var damage = frame.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
-            Assert.Equal(damage?.Armor > 0, layout.Rects.ContainsKey("pilot-damage-armor:" + card.UnitId));
-            Assert.Equal(damage?.Hull > 0, layout.Rects.ContainsKey("pilot-damage-hull:" + card.UnitId));
+            Assert.DoesNotContain("pilot-damage-armor:" + card.UnitId, layout.Rects.Keys);
+            Assert.DoesNotContain("pilot-damage-hull:" + card.UnitId, layout.Rects.Keys);
         }
         Assert.Contains(SKColor.Parse("#5A7CA8"), bitmap.Pixels);
         Assert.Contains(SKColor.Parse("#5C9440"), bitmap.Pixels);

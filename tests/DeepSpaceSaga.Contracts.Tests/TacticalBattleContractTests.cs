@@ -59,6 +59,9 @@ public sealed class TacticalBattleContractTests
         shot.AsObject().Remove("Absorption"); shot.AsObject().Remove("Absorbed");
         var oldShot = JsonSerializer.Deserialize<TacticalShotSnapshot>(shot.ToJsonString())!;
         Assert.Equal(0, oldShot.Absorption); Assert.False(oldShot.Absorbed);
+        Assert.Null(oldShot.HitRoll);
+        Assert.Null(oldShot.AbsorptionRoll);
+        Assert.Equal(.125, RoundTrip(oldShot with { HitRoll = .125 }).HitRoll);
         Assert.Equal(0, JsonSerializer.Deserialize<TacticalTargetCandidateSnapshot>("""{"TargetId":"e","Chance":0.3}""")!.Absorption);
         Assert.Equal(0, JsonSerializer.Deserialize<TacticalIncomingShotSnapshot>("""{"ShooterId":"s","TargetId":"d","Chance":0.3}""")!.Absorption);
         Assert.Equal(8, (int)TacticalFireSkipReason.Evading);
