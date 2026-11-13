@@ -302,9 +302,13 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (_logTab.OnMouseDown(p.X, p.Y, button)) return ScreenEvent.None;
         if (button == MouseButton.Left) _logTab.ResetInput();
         if (button == MouseButton.Left && CenterFromMinimap(p)) return ScreenEvent.None;
+        if (button == MouseButton.Right)
+        {
+            if (!OverlayHit(p)) _camera.BeginPan(p.X, p.Y);
+            return ScreenEvent.None;
+        }
         if (TurnBusy) return ScreenEvent.None;
         if (OverlayHit(p)) return OverlayClick(p, button);
-        if (button == MouseButton.Right) { _camera.BeginPan(p.X, p.Y); return ScreenEvent.None; }
         if (button != MouseButton.Left || HasSalvoPresentation) return ScreenEvent.None;
         if (Flow.State is { Phase: TacticalBattlePhase.Move } state)
         {

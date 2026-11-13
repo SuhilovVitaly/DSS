@@ -222,9 +222,9 @@ internal static partial class TacticalBattleMapRenderer
             reciprocal ? Scale(normal, Math.Clamp(length * .25f, 12, 45)) : SKPoint.Empty);
         if (length < 6) return path;
 
-        int count = Math.Clamp((int)(SKPoint.Distance(path.Start, path.End) / 12) + 1, 1, 96);
-        float size = Math.Min(selected ? 4.3f : 3.5f, length * .18f);
-        using var paint = new SKPaint { IsAntialias = true, Color = color, StrokeWidth = selected ? 2.1f : 1.65f, StrokeCap = SKStrokeCap.Round };
+        int count = Math.Clamp((int)(SKPoint.Distance(path.Start, path.End) / 8) + 1, 1, 144);
+        float size = Math.Min(selected ? 3.1f : 2.6f, length * .18f);
+        using var paint = new SKPaint { IsAntialias = true, Color = color, StrokeWidth = selected ? 1.45f : 1.15f, StrokeCap = SKStrokeCap.Round };
         for (int i = 0; i < count; i++)
         {
             float t = (i + .5f) / count;

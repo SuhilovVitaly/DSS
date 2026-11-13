@@ -19,4 +19,8 @@ serves: [AC2]
 
 ## Проверки
 
+Шевроны уменьшены по ширине и толщине. Номинальный шаг сокращён с 12 до 8 единиц экранной разметки. Это относится к назначенным и входящим выстрелам.
+
 135 headless-тестов Client в Release прошли, включая стартовый обзор, встречные дуги, снятие выделения, переходы камеры и визуальные эталоны. Результаты в `D:/DeepSpaceSaga/artifacts/validation/tabletop-camera-fire/20261113-camera-fire-01/verified/camera-fire.trx`.
+
+24 headless-теста Client в Release прошли. Проверены перетаскивание во время движения, сохранение позиции камеры, встречные дуги и три обновлённых эталона стрельбы. Результаты в `D:/DeepSpaceSaga/artifacts/validation/tabletop-dense-pan/20261113-01/verified/dense-pan.trx`.
