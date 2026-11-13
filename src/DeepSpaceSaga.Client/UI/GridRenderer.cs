@@ -66,11 +66,12 @@ public sealed class GridRenderer
         return t * t * (3 - 2 * t);
     }
 
-    public void Draw(SKCanvas canvas, CameraState camera, int viewportWidth, int viewportHeight)
+    public void Draw(SKCanvas canvas, CameraState camera, int viewportWidth, int viewportHeight, SKColor? background = null)
     {
-        canvas.Clear(SKColors.Black);
+        var field = background ?? SKColors.Black;
+        canvas.Clear(field);
         DrawLines(canvas, camera.FocusX, camera.FocusY, camera.PixelsPerWorldUnit, viewportWidth, viewportHeight,
-            _settings, _paint, SKColors.Black, _settings.GridBaseCellPixels / _settings.MaximumPpu);
+            _settings, _paint, field, _settings.GridBaseCellPixels / _settings.MaximumPpu);
     }
 
     internal static void DrawLines(SKCanvas canvas, double focusX, double focusY, double ppu,

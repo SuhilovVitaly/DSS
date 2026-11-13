@@ -558,7 +558,7 @@ public sealed partial class GameSessionScreen
         float wrappedRowHeight = columns == 4 ? 27 : 0;
         top -= wrappedRowHeight;
         _mapToolbarRect = new(left, top, left + width, top + 74 + layerRowHeight + wrappedRowHeight);
-        canvas.DrawRect(_mapToolbarRect, _panelBgPaint);
+        TabletopStyle.Panel(canvas, _mapToolbarRect);
         string[] keys = ["Map.Follow", "Map.ShipTarget", "Map.Route", "Map.System", "Map.Snapshot", "Map.Orbits", "Map.Belt", "Map.Cluster"];
         float buttonWidth = (width - 12) / columns;
         for (int i = 0; i < keys.Length; i++)
@@ -566,11 +566,9 @@ public sealed partial class GameSessionScreen
             var r = new SKRect(left + 4 + (i % columns) * buttonWidth, top + 4 + (i / columns) * 27, left + 2 + (i % columns + 1) * buttonWidth, top + 27 + (i / columns) * 27);
             _mapViewButtons[i] = r;
             bool enabled = i == 4 ? SnapshotSaveTask.IsCompleted && !_snapshotCaptureRequested && !_captureThisFrame : IsMapViewAvailable(i);
-            canvas.DrawRect(r, (i == 0 && _isFocusAttachedToPlayer || i == 5 && ShowOrbits && IsMapViewAvailable(i)) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
-            canvas.DrawRect(r, _panelBorderPaint);
-            _scaleBtnTextPaint.Color = enabled ? new SKColor(180, 180, 180) : new SKColor(80, 80, 80);
+            bool selected = i == 0 && _isFocusAttachedToPlayer || i == 5 && ShowOrbits && enabled;
             string label = Localization.Get(keys[i]) + (i == 4 && !enabled ? "…" : "");
-            canvas.DrawText(label, r.MidX, r.MidY + 4, _scaleBtnTextPaint);
+            DrawMapToolbarButton(canvas, r, label, enabled, selected);
         }
         string[] layers = ["Territories", "Fields", "POI", Localization.Get("Map.StationLocal")];
         Array.Clear(_mapViewButtons, 8, 4);
@@ -580,12 +578,10 @@ public sealed partial class GameSessionScreen
             var r = new SKRect(left + 4 + i * (width - 8) / 4, top + 31 + wrappedRowHeight, left + 2 + (i + 1) * (width - 8) / 4, top + 54 + wrappedRowHeight);
             _mapViewButtons[8 + i] = r;
             bool enabled = i < 3 || IsMapViewAvailable(11);
-            canvas.DrawRect(r, i < 3 && MapLayers.HasFlag((MapLayerFlags)(1 << (i + 1))) ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
-            canvas.DrawRect(r, _panelBorderPaint);
-            _scaleBtnTextPaint.Color = enabled ? new SKColor(180, 180, 180) : new SKColor(80, 80, 80);
-            canvas.DrawText(ObjectLabelRenderer.FitText(layers[i], _scaleBtnTextPaint, Math.Max(0, r.Width - 8)), r.MidX, r.MidY + 4, _scaleBtnTextPaint);
+            bool selected = i < 3 && MapLayers.HasFlag((MapLayerFlags)(1 << (i + 1)));
+            DrawMapToolbarButton(canvas, r, layers[i], enabled, selected);
         }
-        _scaleBtnTextPaint.Color = new SKColor(180, 180, 180);
+        _scaleBtnTextPaint.Color = TabletopStyle.Secondary;
         string scale = $"1 px = {TacticalMapSettings.FormatDistance(100 / _camera.PixelsPerWorldUnit)}";
         canvas.DrawText(scale, left + 8, top + 46 + layerRowHeight + wrappedRowHeight, _panelTextPaint);
         // Ruler uses raw map pixels even though this canvas is in logical UI coordinates.
@@ -607,8 +603,18 @@ public sealed partial class GameSessionScreen
             string hint = $"{ScaleLabels[hovered]}: 1 px = {TacticalMapSettings.FormatDistance(_mapSettings.MetersPerPixel[hovered])}";
             float hintWidth = _panelTextPaint.MeasureText(hint) + 16;
             var r = new SKRect(_lastScalePanelRect.MidX - hintWidth / 2, top - 26, _lastScalePanelRect.MidX + hintWidth / 2, top - 3);
-            canvas.DrawRect(r, _panelBgPaint); canvas.DrawText(hint, r.Left + 8, r.Bottom - 6, _panelTextPaint);
+            TabletopStyle.Field(canvas, r);
+            canvas.DrawText(hint, r.Left + 8, r.Bottom - 6, _panelTextPaint);
         }
+    }
+
+    private void DrawMapToolbarButton(SKCanvas canvas, SKRect bounds, string label, bool enabled, bool selected)
+    {
+        var state = enabled ? ButtonState.Normal : ButtonState.Disabled;
+        TabletopStyle.Button(canvas, bounds, state, primary: selected);
+        _scaleBtnTextPaint.Color = TabletopStyle.ButtonInk(state, primary: selected);
+        bounds.Inflate(-4, 0);
+        TabletopStyle.Label(canvas, bounds, label, _scaleBtnTextPaint);
     }
 
     private bool IsMapViewAvailable(int index)

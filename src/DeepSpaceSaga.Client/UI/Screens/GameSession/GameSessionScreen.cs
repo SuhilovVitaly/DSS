@@ -68,15 +68,11 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly SKPaint _panelClosePaint;
 
     // Speed panel paints
-    private readonly SKPaint _speedBtnNormalPaint;
-    private readonly SKPaint _speedBtnActivePaint;
     private readonly SKPaint _speedBtnTextPaint;
     private readonly SKPaint _gameTimeTextPaint;
     private readonly SKPaint _speedIndicatorPaint;
 
     // Scale panel paints
-    private readonly SKPaint _scaleBtnNormalPaint;
-    private readonly SKPaint _scaleBtnActivePaint;
     private readonly SKPaint _scaleBtnTextPaint;
     private readonly SKPaint _scaleIndicatorPaint;
 
@@ -360,14 +356,10 @@ public sealed partial class GameSessionScreen : IScreen
         _panelLabelPaint = new SKPaint { Color = new SKColor(140, 140, 140), TextSize = PanelFontSize, IsAntialias = true, Typeface = typeface };
         _panelClosePaint = new SKPaint { Color = new SKColor(180, 80, 80), TextSize = CloseButtonSize, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
-        _speedBtnNormalPaint = new SKPaint { Color = new SKColor(30, 30, 30), Style = SKPaintStyle.Fill };
-        _speedBtnActivePaint = new SKPaint { Color = new SKColor(50, 60, 50), Style = SKPaintStyle.Fill };
         _gameTimeTextPaint = new SKPaint { Color = new SKColor(220, 235, 240), TextSize = 14f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _speedBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _speedIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
 
-        _scaleBtnNormalPaint = new SKPaint { Color = new SKColor(30, 30, 30), Style = SKPaintStyle.Fill };
-        _scaleBtnActivePaint = new SKPaint { Color = new SKColor(50, 60, 50), Style = SKPaintStyle.Fill };
         _scaleBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _scaleIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
 
@@ -1185,7 +1177,7 @@ public sealed partial class GameSessionScreen : IScreen
         }
 
         // 1. Grid
-        _grid.Draw(canvas, _camera, width, height);
+        _grid.Draw(canvas, _camera, width, height, TabletopStyle.Background);
 
         _solarSystemLayer.Draw(canvas, buffered?.Snapshot.SolarSystemMap, _camera, SKRect.Create(width, height),
             ShowOrbits, _renderStates, _clusteredObjectIds, VisibleDistrictOrbits(), _districtOrbitMemberIds);
@@ -1311,6 +1303,10 @@ public sealed partial class GameSessionScreen : IScreen
                         if (TacticalMapMarkerPolicy.UsesGlintMarker(state.Pose.RenderObjectType))
                         {
                             _depthRenderer.DrawGlintMarker(canvas, sx, sy, r, markerColor);
+                        }
+                        else if (state.Pose.RenderObjectType == SpaceObjectType.Station)
+                        {
+                            _depthRenderer.DrawStationToken(canvas, sx, sy, r, markerColor);
                         }
                         else
                         {
@@ -1977,8 +1973,7 @@ public sealed partial class GameSessionScreen : IScreen
         var rect = new SKRect(left, ComputeScaleSpeedRowY() - 128,
             left + width, ComputeScaleSpeedRowY() - 98);
         _lastGameTimeRect = rect;
-        canvas.DrawRect(rect, _panelBgPaint);
-        canvas.DrawRect(rect, _panelBorderPaint);
+        TabletopStyle.Field(canvas, rect);
         canvas.DrawText(text, rect.MidX, rect.Top + 20, _gameTimeTextPaint);
     }
 
@@ -1991,8 +1986,7 @@ public sealed partial class GameSessionScreen : IScreen
         _renderedSpeedValues = values;
         int btnCount = values.Length;
         _lastSpeedPanelRect = ComputeSpeedPanelRect();
-        canvas.DrawRect(_lastSpeedPanelRect, _panelBgPaint);
-        canvas.DrawRect(_lastSpeedPanelRect, _panelBorderPaint);
+        TabletopStyle.Panel(canvas, _lastSpeedPanelRect);
 
         float btnX = _lastSpeedPanelRect.Left + SpeedPanelPadX;
         float btnY = _lastSpeedPanelRect.Top + SpeedPanelPadY;
@@ -2007,8 +2001,8 @@ public sealed partial class GameSessionScreen : IScreen
             _speedButtonRects[i] = btnRect;
 
             bool isActive = i == activeIdx;
-            canvas.DrawRect(btnRect, isActive ? _speedBtnActivePaint : _speedBtnNormalPaint);
-            canvas.DrawRect(btnRect, _panelBorderPaint);
+            TabletopStyle.Button(canvas, btnRect, ButtonState.Normal, primary: isActive);
+            _speedBtnTextPaint.Color = TabletopStyle.ButtonInk(ButtonState.Normal, primary: isActive);
 
             float textY = btnY + SpeedBtnH / 2f + _speedBtnTextPaint.TextSize / 3f;
             canvas.DrawText(labels[i], btnX + SpeedBtnW / 2f, textY, _speedBtnTextPaint);
@@ -2018,7 +2012,7 @@ public sealed partial class GameSessionScreen : IScreen
             {
                 float indX = btnX + SpeedBtnW / 2f - SpeedIndicatorSize / 2f;
                 float indY = btnY + SpeedBtnH + 1f;
-                var path = new SKPath();
+                using var path = new SKPath();
                 path.MoveTo(indX, indY);
                 path.LineTo(indX + SpeedIndicatorSize, indY);
                 path.LineTo(indX + SpeedIndicatorSize / 2f, indY + SpeedIndicatorSize);
@@ -2042,8 +2036,7 @@ public sealed partial class GameSessionScreen : IScreen
         float panelY = ComputeScaleSpeedRowY();
 
         _lastScalePanelRect = new SKRect(panelX, panelY, panelX + totalW, panelY + panelH);
-        canvas.DrawRect(_lastScalePanelRect, _panelBgPaint);
-        canvas.DrawRect(_lastScalePanelRect, _panelBorderPaint);
+        TabletopStyle.Panel(canvas, _lastScalePanelRect);
 
         float btnX = panelX + ScalePanelPadX;
         float btnY = panelY + ScalePanelPadY;
@@ -2056,8 +2049,8 @@ public sealed partial class GameSessionScreen : IScreen
             _scaleButtonRects[i] = btnRect;
 
             bool isActive = (i == activeIdx);
-            canvas.DrawRect(btnRect, isActive ? _scaleBtnActivePaint : _scaleBtnNormalPaint);
-            canvas.DrawRect(btnRect, _panelBorderPaint);
+            TabletopStyle.Button(canvas, btnRect, ButtonState.Normal, primary: isActive);
+            _scaleBtnTextPaint.Color = TabletopStyle.ButtonInk(ButtonState.Normal, primary: isActive);
 
             float textY = btnY + ScaleBtnH / 2f + _scaleBtnTextPaint.TextSize / 3f;
             canvas.DrawText(ScaleLabels[i], btnX + ScaleBtnW / 2f, textY, _scaleBtnTextPaint);
@@ -2068,7 +2061,7 @@ public sealed partial class GameSessionScreen : IScreen
         // Continuous indicator — under the active button or between buttons.
         float indX = ComputeScaleIndicatorPosition() - ScaleIndicatorSize / 2f;
         float indY = panelY + ScalePanelPadY + ScaleBtnH + 1f;
-        var path = new SKPath();
+        using var path = new SKPath();
         path.MoveTo(indX, indY);
         path.LineTo(indX + ScaleIndicatorSize, indY);
         path.LineTo(indX + ScaleIndicatorSize / 2f, indY + ScaleIndicatorSize);

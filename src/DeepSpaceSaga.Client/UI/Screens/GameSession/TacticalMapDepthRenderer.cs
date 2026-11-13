@@ -1,4 +1,5 @@
 using DeepSpaceSaga.Client.UI;
+using DeepSpaceSaga.Client.UI.Controls;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Screens.GameSession;
@@ -178,6 +179,15 @@ internal sealed class TacticalMapDepthRenderer
         IsAntialias = true
     };
 
+    public void DrawStationToken(SKCanvas canvas, float x, float y, float radius, SKColor color)
+    {
+        float halfSide = radius * 0.68f;
+        var plate = new SKRect(x - halfSide, y - halfSide, x + halfSide, y + halfSide);
+        _markerShadowPaint.Color = TabletopStyle.Edge;
+        canvas.DrawRect(plate.Left + 1, plate.Top + 2, plate.Width, plate.Height, _markerShadowPaint);
+        TabletopStyle.Draw(canvas, plate, color);
+    }
+
     public void DrawSphericalMarker(
         SKCanvas canvas,
         float centerX,
@@ -259,7 +269,7 @@ internal sealed class TacticalMapDepthRenderer
         float markerRadius,
         long uiTimeMs = 0)
     {
-        DrawObjectReticle(canvas, centerX, centerY, markerRadius, new SKColor(231, 237, 244, 217), GetSelectedReticleRotationDegrees(uiTimeMs), _selectedGlow);
+        DrawObjectReticle(canvas, centerX, centerY, markerRadius, TabletopStyle.Gold.WithAlpha(217), GetSelectedReticleRotationDegrees(uiTimeMs), _selectedGlow);
     }
 
     /// <summary>
