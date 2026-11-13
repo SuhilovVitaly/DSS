@@ -13,6 +13,7 @@ files_touched:
   - src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.Movement.cs
   - src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.Templates.cs
   - src/DeepSpaceSaga.Client/UI/Screens/TacticalBattle/BattleMapRenderer.cs
+  - tests/DeepSpaceSaga.Client.Tests/TacticalBattle/TabletopMoveTests.cs
 serves: [AC1]
 created: 2026-11-13T14:20:13.611Z
 revision: 1
@@ -24,11 +25,11 @@ revision: 1
 
 ## Why
 
-С уменьшением масштаба траектория утолщается. При приближении линии плана и следа становятся тоньше в Classic и Tabletop.
+При отдалении камеры траектория становится тоньше. В Tabletop разница должна быть заметна на самой стрелке между общим и ближним планами.
 
 ## Decisions and assumptions
 
-Относительный зум камеры определяет толщину штриха.
+Ширина стрелки Tabletop зависит от масштаба поля в пикселях на мировую единицу. На ближнем плане рост ширины плавно замедляется. Стрелка масштабируется по ширине, контуру и наконечнику.
 
 ## Code context and implementation
 
@@ -44,7 +45,7 @@ DrawMovement, DrawTemplates и DrawTraversedPaths рисуют траектор�
 
 ## Tests and definition of done
 
-Клиентские проверки траекторий и растровые сцены Classic и Tabletop.
+Клиентские проверки траекторий и растровые сцены Classic и Tabletop. Для стрелки Tabletop измерить ширину заполнения на растрах при 1 и 6 пикселях на мировую единицу. На ближнем плане заполнение минимум вдвое шире.
 Результаты проверок и сборки записываются перед публикацией.
 
 ## Self-containment check
@@ -56,3 +57,5 @@ DrawMovement, DrawTemplates и DrawTraversedPaths рисуют траектор�
 Уточнённое направление масштаба: при отдалении камеры штрих становится тоньше, при приближении толще. Проверить оба направления.
 
 Headless-проверка прошла, 66/66 тестов, включая 23 растровые сцены. Проверка форматирования изменённых файлов клиента прошла. Результаты: D:/DeepSpaceSaga/artifacts/validation/tactical-battle-hud-refinement/20261113T144625876Z/verify.
+
+Повторная проверка масштаба Tabletop прошла. 17/17 headless-тестов, включая измерение ширины на двух масштабах и сравнение восьми эталонных сцен. Результаты: D:/DeepSpaceSaga/artifacts/validation/tabletop-arrow-zoom/20261113T152116264Z/verify.

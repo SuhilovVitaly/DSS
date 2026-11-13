@@ -24,13 +24,15 @@ internal static partial class TacticalBattleMapRenderer
         }
         using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Butt, StrokeJoin = SKStrokeJoin.Round };
         using var centerDash = SKPathEffect.CreateDash([5, 4], 0);
+        // Follow the map scale, with a soft ceiling that keeps close-up paths from obscuring the field.
+        double pixelsPerUnit = f.View.PixelsPerUnit;
+        float strokeScale = (float)(1.5 * pixelsPerUnit / (pixelsPerUnit + 3));
         foreach (var row in movement.Orders.OrderBy(o => o.Unit.Id == movement.Selected ? 1 : 0))
         {
             if (row.Path.IsDefaultOrEmpty) continue;
             bool selected = row.Unit.Id == movement.Selected;
             var points = row.Path.Select(f.View.Project).ToArray();
             using var path = new SKPath(); path.AddPoly(points, false);
-            float strokeScale = MovementStrokeScale(f.View);
             float pathWidth = (selected ? 14.5f : 6) * strokeScale;
             paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(selected ? (byte)230 : (byte)45); paint.StrokeWidth = pathWidth + 2.5f * strokeScale; c.DrawPath(path, paint);
             paint.Color = selected ? TTSelected : TTCard.WithAlpha(55); paint.StrokeWidth = pathWidth; c.DrawPath(path, paint);
@@ -46,12 +48,13 @@ internal static partial class TacticalBattleMapRenderer
             {
                 float angle = (float)(row.Path[^1].Course * Math.PI / 180);
                 var direction = new SKPoint(MathF.Cos(angle), MathF.Sin(angle));
-                var tail = end - Scale(direction, 9);
-                var side = new SKPoint(-direction.Y * 6, direction.X * 6);
+                var tail = end - Scale(direction, 9 * strokeScale);
+                var side = Scale(new(-direction.Y, direction.X), 6 * strokeScale);
                 var color = TTCard.WithAlpha(95);
-                Stroke(c, tail + side, end, color, 2);
-                Stroke(c, tail - side, end, color, 2);
-                occupied.Add(SKRect.Create(end.X - 11, end.Y - 11, 22, 22));
+                Stroke(c, tail + side, end, color, 2 * strokeScale);
+                Stroke(c, tail - side, end, color, 2 * strokeScale);
+                float radius = 11 * strokeScale;
+                occupied.Add(SKRect.Create(end.X - radius, end.Y - radius, 2 * radius, 2 * radius));
                 continue;
             }
             if (!TacticalShipSprites.Draw(c, row.Unit, end, row.Unit.Side == f.Battle.PlayerSide, row.Path[^1].Course, 140, shadow: false, unitScale: f.View.UnitScale))
