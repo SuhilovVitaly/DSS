@@ -71,11 +71,8 @@ public sealed class ObjectInfoPanel
     // ── Paints ──────────────────────────────────────────────────
     private readonly SKPaint _mainCaptionBgPaint;
     private readonly SKPaint _rowCaptionBgPaint;
-    private readonly SKPaint _captionHighlightPaint;
-    private readonly SKPaint _captionShadowPaint;
     private readonly SKPaint _titlePaint;
     private readonly SKPaint _rowTitlePaint;
-    private readonly SKPaint _panelBgPaint;
     private readonly SKPaint _panelBorderPaint;
     private readonly SKPaint _labelPaint;
     private readonly SKPaint _valuePaint;
@@ -117,14 +114,11 @@ public sealed class ObjectInfoPanel
     {
         var typeface = XenonStyle.TypefaceRegular;
 
-        _mainCaptionBgPaint = new SKPaint { Color = new SKColor(6, 30, 43), Style = SKPaintStyle.Fill, BlendMode = SKBlendMode.Src };
-        _rowCaptionBgPaint = new SKPaint { Color = new SKColor(8, 35, 50), Style = SKPaintStyle.Fill, BlendMode = SKBlendMode.Src };
-        _captionHighlightPaint = new SKPaint { Color = new SKColor(24, 76, 96), Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = false };
-        _captionShadowPaint = new SKPaint { Color = new SKColor(0, 6, 11), Style = SKPaintStyle.Stroke, StrokeWidth = 1f, IsAntialias = false };
-        _titlePaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = CaptionTitleFontSize, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
-        _rowTitlePaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = RowTitleFontSize, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
+        _mainCaptionBgPaint = new SKPaint { Color = TabletopStyle.Steel, Style = SKPaintStyle.Fill, BlendMode = SKBlendMode.Src };
+        _rowCaptionBgPaint = new SKPaint { Color = TabletopStyle.Inset, Style = SKPaintStyle.Fill, BlendMode = SKBlendMode.Src };
+        _titlePaint = new SKPaint { Color = TabletopStyle.Ink, TextSize = CaptionTitleFontSize, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
+        _rowTitlePaint = new SKPaint { Color = TabletopStyle.Ink, TextSize = RowTitleFontSize, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
 
-        _panelBgPaint = new SKPaint { Color = new SKColor(2, 16, 24), Style = SKPaintStyle.Fill, BlendMode = SKBlendMode.Src };
         _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _labelPaint = new SKPaint { Color = new SKColor(140, 140, 140), TextSize = FontSize, IsAntialias = true, Typeface = typeface };
         _valuePaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = FontSize, IsAntialias = true, Typeface = typeface };
@@ -433,8 +427,7 @@ public sealed class ObjectInfoPanel
     private void DrawRowBody(SKCanvas canvas, SKRect bodyRect, ObjectInfoPanelData? data, float scrollOffset, float scrollLimit,
         List<(string Label, string Value)> lines, float valueOffset)
     {
-        canvas.DrawRect(bodyRect, _panelBgPaint);
-        canvas.DrawRect(bodyRect, _panelBorderPaint);
+        TabletopStyle.Field(canvas, bodyRect);
 
         canvas.Save();
         canvas.ClipRect(bodyRect);
@@ -526,19 +519,8 @@ public sealed class ObjectInfoPanel
         return pressed ? _hidePressedImage : hovered ? _hideHoverImage : _hideImage;
     }
 
-    private void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint)
-    {
-        canvas.DrawRect(rect, backgroundPaint);
-
-        float left = rect.Left + 0.5f;
-        float top = rect.Top + 0.5f;
-        float right = rect.Right - 0.5f;
-        float bottom = rect.Bottom - 0.5f;
-        canvas.DrawLine(left, top, right, top, _captionHighlightPaint);
-        canvas.DrawLine(left, top, left, bottom, _captionHighlightPaint);
-        canvas.DrawLine(right, top, right, bottom, _captionShadowPaint);
-        canvas.DrawLine(left, bottom, right, bottom, _captionShadowPaint);
-    }
+    private static void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint) =>
+        TabletopStyle.Draw(canvas, rect, backgroundPaint.Color);
 }
 
 public enum ObjectInfoPanelState

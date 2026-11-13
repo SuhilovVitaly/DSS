@@ -61,8 +61,6 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly SKPath _playerShipGlyphPath = new();
 
     // Shared UI paints
-    private readonly SKPaint _panelBgPaint;
-    private readonly SKPaint _panelBorderPaint;
     private readonly SKPaint _panelTextPaint;
     private readonly SKPaint _panelLabelPaint;
     private readonly SKPaint _panelClosePaint;
@@ -140,8 +138,6 @@ public sealed partial class GameSessionScreen : IScreen
     private readonly ObjectInfoPanel _objectInfoPanel;
 
     // Mechanics panel paints (bottom-center)
-    private readonly SKPaint _mechanicsBtnNormalPaint;
-    private readonly SKPaint _mechanicsBtnHoverPaint;
     private readonly SKPaint _mechanicsBtnTextPaint;
 
     // Camera state
@@ -347,8 +343,6 @@ public sealed partial class GameSessionScreen : IScreen
 
         _trailPaint = new SKPaint { Color = new SKColor(190, 190, 190, 160), Style = SKPaintStyle.Stroke, StrokeWidth = 2f, IsAntialias = true };
 
-        _panelBgPaint = new SKPaint { Color = new SKColor(0, 0, 0, 200), Style = SKPaintStyle.Fill };
-        _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
 
         var typeface = SKTypeface.FromFamilyName("Consolas") ?? SKTypeface.Default;
 
@@ -363,8 +357,6 @@ public sealed partial class GameSessionScreen : IScreen
         _scaleBtnTextPaint = new SKPaint { Color = new SKColor(180, 180, 180), TextSize = 11f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
         _scaleIndicatorPaint = new SKPaint { Color = new SKColor(80, 200, 80), Style = SKPaintStyle.Fill, IsAntialias = true };
 
-        _mechanicsBtnNormalPaint = new SKPaint { Color = new SKColor(30, 30, 30), Style = SKPaintStyle.Fill };
-        _mechanicsBtnHoverPaint = new SKPaint { Color = new SKColor(55, 55, 55), Style = SKPaintStyle.Fill };
         _mechanicsBtnTextPaint = new SKPaint { Color = new SKColor(200, 200, 200), TextSize = 13f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
         _commandsPanel = new CommandsPanel(IsModuleCommandEnabled, SendCommandFromPanel,
@@ -1376,7 +1368,7 @@ public sealed partial class GameSessionScreen : IScreen
         DrawTacticalBattleEntry(canvas);
         if (_panelVisible)
         {
-            canvas.DrawRect(_lastCloseRect, _panelBgPaint);
+            TabletopStyle.Button(canvas, _lastCloseRect, ButtonState.Normal);
             canvas.DrawText("×", _lastCloseRect.MidX, _lastCloseRect.Top + 16, _panelClosePaint);
         }
         if (!_debugTuningPanel.Contains(_uiMouseX, _uiMouseY))
@@ -2282,8 +2274,7 @@ public sealed partial class GameSessionScreen : IScreen
         float panelX = _lastPanelRect.Left, panelY = _lastPanelRect.Top;
         const float gap = 8f;
 
-        canvas.DrawRect(_lastPanelRect, _panelBgPaint);
-        canvas.DrawRect(_lastPanelRect, _panelBorderPaint);
+        TabletopStyle.Panel(canvas, _lastPanelRect);
 
         float textY = panelY + PanelPaddingY + PanelLineHeight - 3f;
         float labelX = panelX + PanelPaddingX;
@@ -2431,8 +2422,7 @@ public sealed partial class GameSessionScreen : IScreen
         float panelY = MechanicsPanelBottom() - panelH;
 
         _lastMechanicsPanelRect = new SKRect(panelX, panelY, panelX + MechanicsPanelWidth, panelY + panelH);
-        canvas.DrawRect(_lastMechanicsPanelRect, _panelBgPaint);
-        canvas.DrawRect(_lastMechanicsPanelRect, _panelBorderPaint);
+        TabletopStyle.Panel(canvas, _lastMechanicsPanelRect);
 
         float btnX = panelX + MechanicsPanelPadding;
         float btnY = panelY + MechanicsPanelPadding;
@@ -2445,15 +2435,13 @@ public sealed partial class GameSessionScreen : IScreen
         DrawMechanicsButton(canvas, _lastShipButtonRect, "S", _isShipButtonHovered);
         btnX += MechanicsButtonWidth + MechanicsButtonGap;
         _lastTempCharacterImageButtonRect = new SKRect(btnX, btnY, btnX + PortraitButtonWidth, btnY + MechanicsButtonHeight);
-        canvas.DrawRect(_lastTempCharacterImageButtonRect, _isTempCharacterImageButtonHovered ? _mechanicsBtnHoverPaint : _mechanicsBtnNormalPaint);
-        canvas.DrawRect(_lastTempCharacterImageButtonRect, _panelBorderPaint);
+        TabletopStyle.Button(canvas, _lastTempCharacterImageButtonRect, _isTempCharacterImageButtonHovered ? ButtonState.Hovered : ButtonState.Normal);
         canvas.DrawText("TempCharacterImage", _lastTempCharacterImageButtonRect.MidX, _lastTempCharacterImageButtonRect.MidY + 5, PortraitButtonTextPaint);
     }
 
     private void DrawMechanicsButton(SKCanvas canvas, SKRect rect, string label, bool hovered)
     {
-        canvas.DrawRect(rect, hovered ? _mechanicsBtnHoverPaint : _mechanicsBtnNormalPaint);
-        canvas.DrawRect(rect, _panelBorderPaint);
+        TabletopStyle.Button(canvas, rect, hovered ? ButtonState.Hovered : ButtonState.Normal);
 
         float textY = rect.MidY + _mechanicsBtnTextPaint.TextSize / 3f;
         canvas.DrawText(label, rect.MidX, textY, _mechanicsBtnTextPaint);

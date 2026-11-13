@@ -21,26 +21,6 @@ public sealed class ShipScreen : IScreen
     private int _screenHeight;
     private bool _isCloseHovered;
 
-    /// <summary>
-    /// Panel background with title bar. The PNG asset is a fixed 1400×900 bitmap;
-    /// since the panel standard (ТЗ ScreenCatalog.md) is now 1400×800, it is drawn
-    /// stretched to <see cref="ShipLayout.PanelWidth"/>x<see cref="ShipLayout.PanelHeight"/>
-    /// (see DrawBitmap call below) until the asset itself is redrawn at the new size.
-    /// Loaded once and shared by every ShipScreen instance; falls back to
-    /// MenuStyle.DrawPanel's plain fill if the file is missing.
-    /// </summary>
-    private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
-
-    private static SKBitmap? LoadImage(string path)
-    {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
-
-    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedBackground => BackgroundImage is not null;
-
     private static readonly string[] PlaceholderLines =
     {
         "Ship (Tetrarch Class) overview: not available yet",
@@ -92,10 +72,7 @@ public sealed class ShipScreen : IScreen
         float pl = ShipLayout.PanelLeft(width);
         float pt = ShipLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + ShipLayout.PanelWidth, pt + ShipLayout.PanelHeight);
-        if (BackgroundImage is not null)
-            canvas.DrawBitmap(BackgroundImage, panelRect);
-        else
-            MenuStyle.DrawPanel(canvas, panelRect);
+        TabletopStyle.Panel(canvas, panelRect);
 
         float cx = pl + ShipLayout.PanelWidth / 2f;
         canvas.DrawText("SHIP", cx, pt + ShipLayout.TitleY, MenuStyle.TextTitle);
