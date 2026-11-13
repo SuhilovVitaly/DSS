@@ -27,12 +27,13 @@ public sealed class FirePanelEvasionTests
         Assert.Equal("Уклонение", PilotCardModel.Project(frame).Single(c => c.UnitId == selected.Drone.Id).Chip);
         Save(bitmap, "evade-plan");
         var point = frame.View.Project(selected.Drone.Pose);
+        float radius = 15 * frame.View.UnitScale;
         int purple = 0;
         for (int i = 0; i < 16; i++)
         {
             double a = i * Math.PI / 8;
-            var color = bitmap.GetPixel((int)Math.Round((point.X + 15 * Math.Cos(a)) * 1.5),
-                (int)Math.Round((point.Y + 15 * Math.Sin(a)) * 1.5));
+            var color = bitmap.GetPixel((int)Math.Round((point.X + radius * Math.Cos(a)) * 1.5),
+                (int)Math.Round((point.Y + radius * Math.Sin(a)) * 1.5));
             if (Math.Abs(color.Red - Purple.Red) <= 40 && Math.Abs(color.Green - Purple.Green) <= 40
                 && Math.Abs(color.Blue - Purple.Blue) <= 40) purple++;
         }

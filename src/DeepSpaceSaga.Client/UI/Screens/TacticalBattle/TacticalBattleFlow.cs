@@ -234,8 +234,10 @@ public class TacticalBattleModalScreen : IScreen
             _confirm.Bounds = SKRect.Create(box.Left + 24 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _cancel.Bounds = SKRect.Create(box.Right - 244 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _confirm.Enabled = !Flow.Pending;
-            BattleDesign.BigButton(canvas, _confirm.Bounds, L("ExitBattle"));
+            BattleDesign.Button(canvas, _confirm.Bounds, L("ExitBattle"), big: true, pending: !_confirm.Enabled);
             BattleDesign.Button(canvas, _cancel.Bounds, L("Cancel"));
+            if (_confirm.Enabled && _confirm.Hovered) BattleDesign.ButtonHover(canvas, _confirm.Bounds);
+            if (!Flow.Pending && _cancel.Hovered) BattleDesign.ButtonHover(canvas, _cancel.Bounds);
             return;
         }
 
@@ -268,7 +270,7 @@ public class TacticalBattleModalScreen : IScreen
         return _queued;
     }
     public virtual bool OnMouseMove(float x, float y) => ConfirmExit
-        ? _confirm.OnMouseMove(x, y) | _cancel.OnMouseMove(x, y)
+        ? (_confirm.OnMouseMove(x, y) | _cancel.OnMouseMove(x, y)) && !Flow.Pending
         : _action.OnMouseMove(x, y) | _close.OnMouseMove(x, y) | _new.OnMouseMove(x, y) | (IsSetup && _error.OnMouseMove(x, y));
     public virtual void OnMouseUp(float x, float y, MouseButton button) { if (IsSetup) _error.OnMouseUp(button); }
     public virtual ScreenEvent OnMouseWheel(float x, float y, float delta) { if (IsSetup) _error.OnMouseWheel(x, y, delta); return ScreenEvent.None; }

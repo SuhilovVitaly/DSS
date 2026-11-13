@@ -7,6 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 /// <summary>Immutable projection captured with a single battle snapshot.</summary>
 public readonly record struct TacticalBattleView(int PixelWidth, int PixelHeight, double CenterX, double CenterY, double PixelsPerUnit)
 {
+    internal float UnitScale { get; init; } = 1;
     public double WorldWidth => (double)PixelWidth / PixelsPerUnit;
     public SKPoint Project(TacticalPoseSnapshot pose) => Project(pose.X, pose.Y);
     public SKPoint Project(double x, double y) => new(
@@ -26,7 +27,12 @@ internal sealed class TacticalBattleCamera
     private SKPoint? _panOrigin;
     public bool UserView { get; private set; }
     public bool Panning => _panOrigin.HasValue;
-    public TacticalBattleView View => new(_width, _height, _camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit);
+    private const double MinZoom = .25, MaxZoom = 8;
+    public TacticalBattleView View => new(_width, _height, _camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit)
+    {
+        UnitScale = (float)(1d / 3 + 2d / 3 * Math.Clamp(
+            Math.Log(_camera.PixelsPerWorldUnit / (_fittedPixelsPerUnit * MinZoom)) / Math.Log(MaxZoom / MinZoom), 0, 1))
+    };
 
     public void Update(TacticalBattleSnapshot snapshot, int width, int height, bool salvo = false, bool tabletop = false)
     {
@@ -95,7 +101,7 @@ internal sealed class TacticalBattleCamera
         if (browserDelta == 0 || !float.IsFinite(browserDelta) || !Contains(x, y)) return;
         UserView = true;
         _camera.ZoomAt(MouseWheelInput.ZoomFactor(browserDelta), x, y, _width, _height,
-            _fittedPixelsPerUnit / 4, _fittedPixelsPerUnit * 8);
+            _fittedPixelsPerUnit * MinZoom, _fittedPixelsPerUnit * MaxZoom);
     }
 
     public bool BeginPan(float x, float y)

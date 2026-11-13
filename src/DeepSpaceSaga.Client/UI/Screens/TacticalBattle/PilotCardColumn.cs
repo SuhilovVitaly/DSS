@@ -22,11 +22,16 @@ internal sealed class PilotCardColumn
     public SKRect Bounds => Layout.Bounds;
     public SKRect Rect(int index) => Layout.Visible(index);
 
-    public string? Hit(SKPoint point)
+    public string? Hit(SKPoint point) => HitCard(point)?.UnitId;
+
+    public (string UnitId, SKRect Bounds)? HitCard(SKPoint point)
     {
         for (int i = 0; i < _cards.Count; i++)
-            if (!Rect(i).IsEmpty && Rect(i).Contains(point))
-                return _cards[i].UnitId;
+        {
+            var bounds = Rect(i);
+            if (!bounds.IsEmpty && bounds.Contains(point))
+                return (_cards[i].UnitId, bounds);
+        }
         return null;
     }
 
@@ -184,7 +189,7 @@ internal sealed class PilotCardColumn
             Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 6, 34, 34));
             DrawChip(c, card, r);
             T(c, BuildCardModel.Ellipsize(card.Name, 108, 11.5f), r.Left + 6, r.Top + 51, 11.5f, Text, true);
-            T(c, BuildCardModel.Ellipsize(card.Weapon, 108, 8.5f, false), r.Left + 6, r.Top + 62, 8.5f, Muted);
+            DrawWeapon(c, card, r.Left + 6, r.Top + 62, 8.5f, 108, Muted);
             for (int j = 0; j < card.Stats.Count; j++)
                 DrawGauge(c, card.Stats[j], r.Left + 129 + 22 * j, r.Top, segmented);
             DrawPhase(c, card, r);
@@ -229,7 +234,7 @@ internal sealed class PilotCardColumn
         var damage = _frame?.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
         Counter("armor", r.Left + 41, SKColor.Parse("#3A5A8A"), damage?.Armor > 0);
         Counter("hull", r.Left + 65, SKColor.Parse("#3F6A2C"), damage?.Hull > 0);
-        SmallText(c, BuildCardModel.Ellipsize(card.Weapon, 106, 5.6f, false), r.Left + 41, r.Top + 38, 5.6f, SKColor.Parse("#9AAABB"), italic: true);
+        DrawWeapon(c, card, r.Left + 41, r.Top + 38, 5.6f, 106, SKColor.Parse("#9AAABB"), italic: true);
         if (unit is not null)
         {
             int factor = Math.Max(1, TacticalShipSprites.Factor(TacticalShipSprites.CanvasScale(c)) / 2);
@@ -273,6 +278,14 @@ internal sealed class PilotCardColumn
             _fireBlock.Draw(c, this, _frame.Battle, fire, x0, x1, top);
         else if (_frame?.Salvo is not null)
             PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, x0, x1, top);
+    }
+
+    private static void DrawWeapon(SKCanvas canvas, PilotCard card, float x, float y, float size, float width,
+        SKColor color, bool italic = false)
+    {
+        string count = card.AvailableTargets is { } available ? " · " + U("AvailableTargets", available) : "";
+        string weapon = BuildCardModel.Ellipsize(card.Weapon, width - Measure(count, size), size, false);
+        SmallText(canvas, weapon + count, x, y, size, color, italic: italic);
     }
 
     private void DrawCommandPanel(SKCanvas c)

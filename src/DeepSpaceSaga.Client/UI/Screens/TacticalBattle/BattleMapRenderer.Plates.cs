@@ -10,9 +10,10 @@ internal static partial class TacticalBattleMapRenderer
     private static void Plate(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, SKPoint p, List<SKRect> occupied)
     {
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
+        bool wreck = u.State == TacticalUnitState.Destroyed;
         float size = carrier ? 13 : 11, boxes = carrier ? 30 : 44, gap = carrier ? 20 : 15;
         string name = carrier ? u.Id : PilotCardModel.Name(u);
-        float width = Math.Max(boxes, Measure(name, size, true)) + 4, height = size + 16;
+        float width = Math.Max(wreck ? 0 : boxes, Measure(name, size, true)) + 4, height = size + (wreck ? 2 : 16);
         var rect = SKRect.Create(p.X - width / 2, p.Y + gap, width, height);
         int chosenOffset = 0;
         bool found = false;
@@ -32,14 +33,16 @@ internal static partial class TacticalBattleMapRenderer
         }
         occupied.Add(rect);
         if (Recording is { } layout) layout.Rects["label:" + u.Id] = rect;
-        if (chosenOffset > 0)
+        if (chosenOffset > 0 && !wreck)
         {
             var q = new SKPoint(Math.Clamp(p.X, rect.Left, rect.Right), Math.Clamp(p.Y, rect.Top, rect.Bottom));
             float distance = SKPoint.Distance(p, q);
             if (distance > 12) Stroke(c, p + Scale(q - p, 12 / distance), q, SKColor.Parse("#CDBF9C").WithAlpha(170), 1);
         }
         var gold = SKColor.Parse("#FFE27A");
-        T(c, name, rect.MidX, rect.Top + size, size, carrier ? gold : SKColor.Parse("#F6EFD8"), true, SKTextAlign.Center, "field.plate.name");
+        T(c, name, rect.MidX, rect.Top + size, size, wreck ? Muted : carrier ? gold : SKColor.Parse("#F6EFD8"), true, SKTextAlign.Center,
+            wreck ? "field.plate.wreck" : "field.plate.name");
+        if (wreck) return;
         var damage = f.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == u.Id) : null;
         float x = rect.MidX - boxes / 2;
         void Box(string kind, int value, float boxWidth, SKColor fill, bool damaged)

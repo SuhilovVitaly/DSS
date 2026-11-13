@@ -168,10 +168,10 @@ public sealed partial class Ep0019ViewTests
         {
             var p = f.View.Project(u.Pose);
             if (name == "5-outcome" && !TacticalBattleMapRenderer.Safe(f.View).Contains(p)) continue;
-            Probe("marker:" + u.Id, SKRect.Create(p.X - 1, p.Y - 1, 2, 2), .4,
+            Probe("marker:" + u.Id, SKRect.Create(p.X - 1.5f, p.Y - 1.5f, 3, 3), .1,
                 u.State == TacticalUnitState.Disabled ? new SKColor(146, 151, 154) : u.Side == f.Battle.PlayerSide ? Cyan : Orange);
         }
-        if (f.HoverUnitId is { } id)
+        if (f.HoverUnitId is { } id && f.Battle.Units.Any(u => u.Id == id && u.State != TacticalUnitState.Destroyed))
         {
             var u = f.Battle.Units.Single(u => u.Id == id); var p = f.View.Project(u.Pose); var color = u.Side == f.Battle.PlayerSide ? Cyan : Orange;
             foreach (int x in new[] { -1, 1 }) foreach (int y in new[] { -1, 1 })

@@ -9,7 +9,7 @@ internal static partial class TacticalBattleMapRenderer
     internal static SKPoint HoverPoint(TacticalBattleFrame f, TacticalUnitSnapshot u) => MarkerPoint(f.View, u);
     static partial void DrawHover(SKCanvas c, TacticalBattleFrame f)
     {
-        var u = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId);
+        var u = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId && u.State != TacticalUnitState.Destroyed);
         var kind = AnomalyPresentation.HoverKind(f);
         if (u is null && kind is null) return;
         var p = u is not null ? HoverPoint(f, u) : f.HoverPoint!.Value;

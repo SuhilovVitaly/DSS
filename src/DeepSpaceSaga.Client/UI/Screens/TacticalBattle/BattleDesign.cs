@@ -166,6 +166,18 @@ internal static class BattleDesign
         T(c, text, r.MidX, r.MidY + fs * 0.36f, fs, big ? ButtonInk : Text, big, SKTextAlign.Center, role);
     }
     public static void BigButton(SKCanvas c, SKRect r, string text) => Button(c, r, text, true);
+    internal static void ButtonHover(SKCanvas canvas, SKRect bounds)
+    {
+        if (bounds.IsEmpty) return;
+        bounds.Inflate(-1, -1);
+        if (bounds.IsEmpty) return;
+        using var paint = new SKPaint { Color = SKColors.White.WithAlpha(42), IsAntialias = true };
+        canvas.DrawRoundRect(bounds, 2, 2, paint);
+        paint.Color = Yellow;
+        paint.Style = SKPaintStyle.Stroke;
+        paint.StrokeWidth = 1.3f;
+        canvas.DrawRoundRect(bounds, 2, 2, paint);
+    }
     public static void Bar(SKCanvas c, float x, float y, float w, float h, double frac, SKColor color, string role = "ui.bar")
     {
         var track = SKRect.Create(x, y, w, h);

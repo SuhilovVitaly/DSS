@@ -145,9 +145,8 @@ internal static partial class TacticalBattleMapRenderer
             double age = flight.ImpactAgeMs;
             if (age < 0 || age >= durationMs) continue;
             var shot = flight.Shot;
-            var damage = frame.Battle.FireSteps.FirstOrDefault(step => step.ShooterId == shot.ShooterId)?.Events
-                .FirstOrDefault(entry => entry.Kind == TacticalBattleLogKind.DamageApplied)?.Damage;
-            string text = shot.Absorbed ? M("Absorbed") : shot.Hit ? $"−{damage?.Hull + damage?.Armor ?? shot.Damage}" : U("MissChip");
+            string text = shot.Absorbed ? M("Absorbed") : shot.Hit ? $"−{AppliedDamage(frame, shot)}" : U("MissChip");
+            if (shot.Hit && !shot.Absorbed && shot.Rear) text = M("Map.RearHit", text);
             float progress = (float)(age / durationMs);
             var color = shot.Absorbed ? Heat : shot.Hit ? Yellow : Text;
             color = color.WithAlpha((byte)(255 * Math.Min(1, (1 - progress) * 2)));
@@ -159,6 +158,13 @@ internal static partial class TacticalBattleMapRenderer
             T(canvas, text, point.X, point.Y, 14, color, true, SKTextAlign.Center);
         }
     }
+    private static int AppliedDamage(TacticalBattleFrame frame, TacticalShotSnapshot shot)
+    {
+        var damage = frame.Battle.FireSteps.FirstOrDefault(step => step.ShooterId == shot.ShooterId)?.Events
+            .FirstOrDefault(entry => entry.Kind == TacticalBattleLogKind.DamageApplied)?.Damage;
+        return damage is null ? shot.Damage : damage.Hull + damage.Armor;
+    }
+
     private static void DrawAlternativeTargets(SKCanvas canvas, TacticalBattleFrame frame, TacticalFirePlanRow shooter, List<SKRect> occupied)
     {
         var origin = frame.View.Project(shooter.Drone.Pose);

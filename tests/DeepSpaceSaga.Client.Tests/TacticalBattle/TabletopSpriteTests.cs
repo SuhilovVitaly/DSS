@@ -30,6 +30,33 @@ public sealed class TabletopSpriteTests
         Assert.Equal(MathF.Round(bounds.Top * scale), bounds.Top * scale, .001f);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void Torpedo_sprite_rotates_from_horizontal_to_vertical(bool own)
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop"));
+        using var bitmap = new SKBitmap(96, 96);
+        using var canvas = new SKCanvas(bitmap);
+        var horizontal = Footprint(0);
+        var vertical = Footprint(90);
+        Assert.True(horizontal.Width > horizontal.Height);
+        Assert.Equal((horizontal.Height, horizontal.Width), vertical);
+
+        (int Width, int Height) Footprint(float angle)
+        {
+            canvas.Clear(SKColors.Transparent);
+            Assert.True(TacticalShipSprites.DrawTorpedo(canvas, new(48, 48), angle, own));
+            var visible = from y in Enumerable.Range(0, bitmap.Height)
+                          from x in Enumerable.Range(0, bitmap.Width)
+                          where bitmap.GetPixel(x, y).Alpha > 0
+                          select (X: x, Y: y);
+            var points = visible.ToArray();
+            return (points.Max(p => p.X) - points.Min(p => p.X), points.Max(p => p.Y) - points.Min(p => p.Y));
+        }
+    }
+
     [Fact]
     public async Task Real_sheet_renders_with_integer_pixels_and_classic_returns_to_silhouette()
     {

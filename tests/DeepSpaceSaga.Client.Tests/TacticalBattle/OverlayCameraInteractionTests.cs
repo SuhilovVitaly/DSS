@@ -17,7 +17,9 @@ public sealed class OverlayCameraInteractionTests
         var anchor = fitted.Unproject(600, 500); camera.Zoom(600, 500, -100); var p = camera.View.Project(anchor.X, anchor.Y);
         Assert.InRange(p.X, 599.99, 600.01); Assert.InRange(p.Y, 499.99, 500.01);
         camera.Zoom(600, 500, -1000000); Assert.Equal(fitted.WorldWidth * .125, camera.View.WorldWidth, 6);
+        Assert.Equal(1f, camera.View.UnitScale);
         camera.Zoom(600, 500, 1000000); Assert.Equal(fitted.WorldWidth * 4, camera.View.WorldWidth, 6);
+        Assert.Equal(1f / 3f, camera.View.UnitScale);
         var manual = camera.View; camera.Update(state with { Revision = state.Revision + 1 }, 1280, 720); Assert.Equal(manual, camera.View);
         camera.Update(state with { Phase = TacticalBattlePhase.Fire }, 1280, 720);
         Assert.True(camera.UserView);

@@ -34,7 +34,7 @@ public sealed class TabletopMoveTests
         }
         Assert.True(layout.Rects.ContainsKey("template-tip"));
         Assert.Contains(SKColor.Parse("#E8D48C"), bitmap.Pixels);
-        Assert.Contains(SKColor.Parse("#D6CBA6"), bitmap.Pixels);
+        Assert.DoesNotContain(SKColor.Parse("#D6CBA6"), bitmap.Pixels);
         Assert.Contains(layout.Texts, t => t.Text.StartsWith(PilotCardModel.Name(frame.Movement.SelectedOrder!.Unit) + ":", StringComparison.Ordinal) && t.Text.EndsWith("°", StringComparison.Ordinal));
         var before = bitmap.Bytes;
         var selected = frame.Movement.SelectedOrder!;

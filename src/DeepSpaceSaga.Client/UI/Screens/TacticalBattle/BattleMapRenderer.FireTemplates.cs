@@ -69,8 +69,9 @@ internal static partial class TacticalBattleMapRenderer
             if (Recording is { } layout) layout.Rects["result-ribbon:" + flight.Index] =
                 new(Math.Min(line.A.X, line.B.X), Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.X, line.B.X), Math.Max(line.A.Y, line.B.Y));
             if (!salvo.PlaybackSkipped && flight.ImpactAgeMs < 1400) continue;
-            string text = shot.Absorbed ? M("Map.ShotAbsorbed") : hit ? M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", shot.Damage)
+            string text = shot.Absorbed ? M("Map.ShotAbsorbed") : hit ? M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", AppliedDamage(f, shot))
                 : M(shot.Decoyed ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
+            if (hit && shot.Rear) text = M("Map.RearHit", text);
             pills.Add(new("result-badge:" + flight.Index, line, text, hit ? 12.5f : 10.5f,
                 hit ? TTGold : SKColor.Parse("#E2EAF6"), hit ? TTBadge : TTMissEdge, hit ? TTGold : SKColor.Parse("#C8D2E4"),
                 SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
@@ -80,6 +81,7 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var group in salvo.Flights.Where(flight => salvo.PlaybackSkipped || flight.Arrived).GroupBy(flight => flight.Shot.TargetId))
         {
             if (!salvo.PlaybackSkipped && group.Any(flight => flight.ImpactAgeMs < ExplosionDuration(flight))) continue;
+            if (f.Battle.Units.Any(u => u.Id == group.Key && u.State == DeepSpaceSaga.Contracts.TacticalUnitState.Destroyed)) continue;
             var point = f.View.Project(group.Last().Shot.To);
             if (group.Any(flight => flight.Shot.Hit && !flight.Shot.Absorbed))
             {
@@ -94,13 +96,6 @@ internal static partial class TacticalBattleMapRenderer
             else Circle(c, point, 21, SKColors.Transparent, SKColor.Parse("#C8D2E4"), 1.8f);
             var bounds = SKRect.Create(point.X - 24, point.Y - 24, 48, 48); occupied.Add(bounds);
             if (Recording is { } layout) layout.Rects["result-marker:" + group.Key] = bounds;
-            if (group.Any(flight => flight.Shot.Killed))
-            {
-                var red = SKColor.Parse("#FF3B2A");
-                Stroke(c, point + new SKPoint(-17, -17), point + new SKPoint(17, 17), red, 4.5f);
-                Stroke(c, point + new SKPoint(-17, 17), point + new SKPoint(17, -17), red, 4.5f);
-                if (Recording is { } crossLayout) crossLayout.Rects["result-killed:" + group.Key] = bounds;
-            }
         }
     }
 

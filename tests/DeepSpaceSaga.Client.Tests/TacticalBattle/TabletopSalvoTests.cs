@@ -115,7 +115,7 @@ public sealed class TabletopSalvoTests
     [InlineData("4-salvo-results")]
     [InlineData("4-decoy-results")]
     [InlineData("4-anomaly-absorbed")]
-    public async Task Skipped_results_show_each_outcome_and_killed_markers(string name)
+    public async Task Skipped_results_show_each_outcome_and_hide_counters_on_wrecks(string name)
     {
         await using var scene = await Ep0019Scenes.Create(name);
         using var locale = Localization.UseLocaleForTests("Russian");
@@ -126,10 +126,18 @@ public sealed class TabletopSalvoTests
         {
             Assert.True(layout.Rects.ContainsKey("result-badge:" + flight.Index));
             var shot = flight.Shot;
-            string text = shot.Absorbed ? "поглощён" : shot.Hit ? "−" + shot.Damage + (shot.Killed ? " · сбит" : "")
+            var applied = frame.Battle.FireSteps.Single(step => step.ShooterId == shot.ShooterId).Events
+                .FirstOrDefault(entry => entry.Kind == DeepSpaceSaga.Contracts.TacticalBattleLogKind.DamageApplied)?.Damage;
+            int damage = applied is null ? shot.Damage : applied.Hull + applied.Armor;
+            string text = shot.Absorbed ? "поглощён" : shot.Hit ? "−" + damage + (shot.Killed ? " · сбит" : "")
                 : shot.Decoyed ? "промах · ловушка" : "промах";
+            if (shot.Hit && !shot.Absorbed && shot.Rear) text += " · в корму, мимо брони";
             Assert.Contains(layout.Texts, t => t.Text == text);
-            if (shot.Killed) Assert.True(layout.Rects.ContainsKey("result-killed:" + shot.TargetId));
+            if (shot.Killed)
+            {
+                Assert.False(layout.Rects.ContainsKey("plate:armor:" + shot.TargetId));
+                Assert.False(layout.Rects.ContainsKey("plate:hull:" + shot.TargetId));
+            }
         }
         Assert.DoesNotContain(layout.Rects.Keys, k => k.StartsWith("floating-shot:", StringComparison.Ordinal) ||
             k.StartsWith("decoy-callout:", StringComparison.Ordinal) || k.StartsWith("absorbed:", StringComparison.Ordinal) || k.StartsWith("explosion:", StringComparison.Ordinal));

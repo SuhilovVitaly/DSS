@@ -34,6 +34,11 @@ public sealed partial class TacticalBattleScreen
         _phasePanel.Draw(c, f, Layout);
         _pilotColumn.Draw(c, _portraits);
         _hoverCard.Draw(c, f, _portraits);
+        if (!ConfirmExit && !f.Pending && !_orderDrag && !_camera.Panning && _lastPointer is { } p)
+        {
+            var bounds = InteractiveBounds(p);
+            if (!bounds.IsEmpty) BattleDesign.ButtonHover(c, bounds);
+        }
     }
     internal SKRect CardCommandBounds(string action) => Raw(_pilotColumn.CommandBounds(action));
 
@@ -43,6 +48,18 @@ public sealed partial class TacticalBattleScreen
         TacticalBattlePhase.Fire => _fireOrders.Selected,
         _ => null
     };
+
+    private SKRect InteractiveBounds(SKPoint p)
+    {
+        if (_pilotColumn.HitCommand(p) is { } command && !HasSalvoPresentation && SelectedPlanningDrone == command.UnitId)
+            return command.Visible;
+        if (_phasePanel.HitButton(p) is { } action && (action != "new" || CanStartNewBattle))
+            return _phasePanel.ButtonBounds(action);
+        if (!HasSalvoPresentation && Flow.State is { Phase: TacticalBattlePhase.Move or TacticalBattlePhase.Fire } &&
+            !_pilotColumn.Layout.VisiblePanel.Contains(p) && _pilotColumn.HitCard(p) is { } card)
+            return card.Bounds;
+        return SKRect.Empty;
+    }
 
     private ScreenEvent OverlayClick(SKPoint p, MouseButton button)
     {
@@ -110,7 +127,8 @@ public sealed partial class TacticalBattleScreen
         bool tabletop = _skin.Metric("field.style", "tabletop", 0) == 1;
         HoverUnitId = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed)
             .Select(u => (Unit: u, Distance: SKPoint.Distance(p, TacticalBattleMapRenderer.HoverPoint(f, u))))
-            .Where(pair => pair.Distance <= (pair.Unit.Kind == TacticalUnitKind.Carrier ? tabletop ? 36 : 16 : tabletop ? 26 : 12))
+            .Where(pair => pair.Distance <= Math.Max(6, (pair.Unit.Kind == TacticalUnitKind.Carrier
+                ? tabletop ? 36 : 16 : tabletop ? 26 : 12) * f.View.UnitScale))
             .OrderBy(pair => pair.Distance).FirstOrDefault().Unit?.Id;
     }
 }

@@ -303,24 +303,28 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             ObserveOrders(state);
             if (_orders.Hit(View, p, 7, true) is { } handle)
             { _orders.Select(handle); _orderDrag = true; _orderDragEdited = false; _lastAim = p; }
-            else if (_orders.Hit(View, p, 12, false) is { } id) _orders.ToggleSelection(id);
+            else if (_orders.Hit(View, p, Math.Max(6, (_skin.Metric("field.style", "tabletop", 0) == 1 ? 27 : 12) * View.UnitScale), false) is { } id)
+                _orders.ToggleSelection(id);
             else { _orderDrag = _orders.Selected is not null; if (_orderDrag) AimOrder(p); }
         }
         else if (Flow.State is { Phase: TacticalBattlePhase.Fire } fire)
-        { ObserveOrders(fire); _fireOrders.ChooseAt(View, p, 1); }
+        {
+            ObserveOrders(fire);
+            _fireOrders.ChooseAt(View, p, Math.Max(.5f, (_skin.Metric("field.style", "tabletop", 0) == 1 ? 2 : 1) * View.UnitScale));
+        }
         return ScreenEvent.None;
     }
     public override bool OnMouseMove(float x, float y)
     {
-        if (ConfirmExit) return base.OnMouseMove(x, y);
         var p = DesignPoint(x, y);
         _lastPointer = p;
+        if (ConfirmExit) return base.OnMouseMove(x, y);
         if (_camera.PanTo(p.X, p.Y)) return true;
         if (TurnBusy) return false;
         if (OverlayDrag(p)) return true;
         if (_orderDrag) { if (p != _lastAim) AimOrder(p); return true; }
         UpdateHover(p);
-        return OverlayHit(p);
+        return !InteractiveBounds(p).IsEmpty;
     }
     public override void OnMouseUp(float x, float y, MouseButton button)
     {

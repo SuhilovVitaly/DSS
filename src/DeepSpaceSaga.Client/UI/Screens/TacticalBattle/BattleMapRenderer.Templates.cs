@@ -30,16 +30,17 @@ internal static partial class TacticalBattleMapRenderer
             bool selected = row.Unit.Id == movement.Selected;
             var points = row.Path.Select(f.View.Project).ToArray();
             using var path = new SKPath(); path.AddPoly(points, false);
-            paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(230); paint.StrokeWidth = 17; c.DrawPath(path, paint);
-            paint.Color = selected ? TTSelected : TTCard; paint.StrokeWidth = 14.5f; c.DrawPath(path, paint);
-            paint.Color = TTEdge.WithAlpha(200); paint.StrokeWidth = 1.1f; paint.PathEffect = centerDash; c.DrawPath(path, paint);
-            for (int i = 0; i < points.Length; i += 2) occupied.Add(SKRect.Create(points[i].X - 7, points[i].Y - 7, 14, 14));
+            float pathWidth = selected ? 14.5f : 6;
+            paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(selected ? (byte)230 : (byte)105); paint.StrokeWidth = pathWidth + 2.5f; c.DrawPath(path, paint);
+            paint.Color = selected ? TTSelected : TTCard.WithAlpha(115); paint.StrokeWidth = pathWidth; c.DrawPath(path, paint);
+            paint.Color = TTEdge.WithAlpha(selected ? (byte)200 : (byte)105); paint.StrokeWidth = 1.1f; paint.PathEffect = centerDash; c.DrawPath(path, paint);
+            for (int i = 0; i < points.Length; i += 2) occupied.Add(SKRect.Create(points[i].X - pathWidth / 2, points[i].Y - pathWidth / 2, pathWidth, pathWidth));
             var mid = points[points.Length / 2];
             Circle(c, mid, 9, TTBadge, TTGold, 1.4f);
             T(c, Math.Round(row.Order.Speed).ToString(CultureInfo.InvariantCulture), mid.X, mid.Y + 3.6f, 10, SKColors.White, true, SKTextAlign.Center, "field.template.text");
             occupied.Add(SKRect.Create(mid.X - 10, mid.Y - 10, 20, 20));
             var end = points[^1];
-            if (!TacticalShipSprites.Draw(c, row.Unit, end, row.Unit.Side == f.Battle.PlayerSide, row.Path[^1].Course, 140, shadow: false))
+            if (!TacticalShipSprites.Draw(c, row.Unit, end, row.Unit.Side == f.Battle.PlayerSide, row.Path[^1].Course, 140, shadow: false, unitScale: f.View.UnitScale))
                 Triangle(c, end, 5, row.Path[^1].Course, TTGold);
             Brackets(c, end, selected ? TTGold : TTTan, selected ? 2 : 1.4f);
             occupied.Add(SKRect.Create(end.X - 22, end.Y - 22, 44, 44));
