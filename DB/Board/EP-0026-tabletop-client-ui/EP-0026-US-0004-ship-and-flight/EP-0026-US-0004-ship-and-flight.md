@@ -28,3 +28,7 @@ dependencies: [EP-0026-US-0001-theme-and-controls, EP-0026-US-0003-world-map]
 ## Ограничения и gaps
 
 Состав экранов и глубина действий следуют текущим возможностям клиента, включая оболочку экрана корабля.
+
+## Тикеты
+
+- [EP-0026-US-0004-TK-0001-flight-panels](EP-0026-US-0004-TK-0001-flight-panels/EP-0026-US-0004-TK-0001-flight-panels.md)

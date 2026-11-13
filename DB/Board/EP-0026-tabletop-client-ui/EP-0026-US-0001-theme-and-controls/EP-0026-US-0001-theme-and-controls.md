@@ -31,3 +31,7 @@ none
 ## Review log
 
 Утверждена пользователем. [Сообщение и время записи](../Documentation.md#review-log).
+
+## Тикеты
+
+- [EP-0026-US-0001-TK-0001-steel-controls](EP-0026-US-0001-TK-0001-steel-controls/EP-0026-US-0001-TK-0001-steel-controls.md)

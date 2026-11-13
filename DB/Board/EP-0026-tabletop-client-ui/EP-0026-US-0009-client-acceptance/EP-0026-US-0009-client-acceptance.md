@@ -33,3 +33,7 @@ dependencies: [EP-0026-US-0002-menus-and-sessions, EP-0026-US-0003-world-map, EP
 ## Ограничения и gaps
 
 G-02 и G-03 фиксируют, какие эталоны и конфигурации нужно согласовать. Автоматические, нативные и продуктовые результаты фиксируются отдельно.
+
+## Тикеты
+
+- [EP-0026-US-0009-TK-0001-route-validation](EP-0026-US-0009-TK-0001-route-validation/EP-0026-US-0009-TK-0001-route-validation.md)

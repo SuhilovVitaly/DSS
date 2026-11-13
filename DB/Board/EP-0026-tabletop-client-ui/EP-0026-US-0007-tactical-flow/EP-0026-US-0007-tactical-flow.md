@@ -28,3 +28,7 @@ dependencies: [EP-0026-US-0001-theme-and-controls, EP-0026-US-0003-world-map]
 ## Ограничения и gaps
 
 EP-0024 даёт исходный рендер. Его открытые проверки запекателя и GPU остаются на исходных тикетах. Политика выбора боевого скина указана в G-01.
+
+## Тикеты
+
+- [EP-0026-US-0007-TK-0001-battle-transition](EP-0026-US-0007-TK-0001-battle-transition/EP-0026-US-0007-TK-0001-battle-transition.md)

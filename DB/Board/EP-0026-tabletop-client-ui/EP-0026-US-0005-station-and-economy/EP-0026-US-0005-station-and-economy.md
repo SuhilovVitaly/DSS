@@ -27,3 +27,7 @@ dependencies: [EP-0026-US-0001-theme-and-controls]
 ## Ограничения и gaps
 
 Состав товара и условия сделки определяет действующий контракт экономики.
+
+## Тикеты
+
+- [EP-0026-US-0005-TK-0001-station-trade](EP-0026-US-0005-TK-0001-station-trade/EP-0026-US-0005-TK-0001-station-trade.md)

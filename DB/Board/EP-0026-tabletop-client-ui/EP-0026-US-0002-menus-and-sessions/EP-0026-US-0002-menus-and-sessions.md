@@ -27,3 +27,7 @@ dependencies: [EP-0026-US-0001-theme-and-controls]
 ## Ограничения и gaps
 
 Правила выбора темы и трактовки старой настройки боевого скина требуют решения G-01.
+
+## Тикеты
+
+- [EP-0026-US-0002-TK-0001-menu-chrome](EP-0026-US-0002-TK-0001-menu-chrome/EP-0026-US-0002-TK-0001-menu-chrome.md)

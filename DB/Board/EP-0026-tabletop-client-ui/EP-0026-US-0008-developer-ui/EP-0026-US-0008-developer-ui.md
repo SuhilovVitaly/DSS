@@ -27,3 +27,7 @@ dependencies: [EP-0026-US-0001-theme-and-controls]
 ## Ограничения и gaps
 
 Доступ и назначение инструментов следуют текущим правилам клиента. Формат портретного набора ведётся в EP-0025.
+
+## Тикеты
+
+- [EP-0026-US-0008-TK-0001-developer-panels](EP-0026-US-0008-TK-0001-developer-panels/EP-0026-US-0008-TK-0001-developer-panels.md)
