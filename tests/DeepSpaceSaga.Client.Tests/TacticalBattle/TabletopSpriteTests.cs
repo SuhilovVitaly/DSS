@@ -43,11 +43,13 @@ public sealed class TabletopSpriteTests
         var vertical = Footprint(90);
         Assert.True(horizontal.Width > horizontal.Height);
         Assert.Equal((horizontal.Height, horizontal.Width), vertical);
+        var distant = Footprint(0, 1f / 3);
+        Assert.InRange((distant.Width + 1f) / (horizontal.Width + 1f), .28f, .38f);
 
-        (int Width, int Height) Footprint(float angle)
+        (int Width, int Height) Footprint(float angle, float scale = 1)
         {
             canvas.Clear(SKColors.Transparent);
-            Assert.True(TacticalShipSprites.DrawTorpedo(canvas, new(48, 48), angle, own));
+            Assert.True(TacticalShipSprites.DrawTorpedo(canvas, new(48, 48), angle, own, scale));
             var visible = from y in Enumerable.Range(0, bitmap.Height)
                           from x in Enumerable.Range(0, bitmap.Width)
                           where bitmap.GetPixel(x, y).Alpha > 0

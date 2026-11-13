@@ -193,7 +193,7 @@ public sealed partial class Ep0019ViewTests
         {
             var row = f.FirePlan!.Selected!; var a = f.View.Project(row.Drone.Pose); var z = f.View.Project(f.Battle.Units.Single(u => u.Id == row.TargetId).Pose);
             var point = a + Scale(z - a, .65f);
-            Probe("arrow", SKRect.Create(point.X - 1, point.Y - 1, 2, 2), .6, Yellow);
+            Probe("arrow", SKRect.Create(point.X - 1, point.Y - 1, 2, 2), .35, new SKColor(170, 54, 37));
             double angle = row.Drone.Pose.Course * Math.PI / 180, radius = row.Drone.Build!.Range * f.View.PixelsPerUnit * .6;
             using var sectorReference = new SKBitmap(1920, 1080);
             using (var canvas = new SKCanvas(sectorReference))

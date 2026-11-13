@@ -39,8 +39,8 @@ internal static partial class TacticalBattleMapRenderer
             {
                 var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId); if (target is null || row.Drone.InDust) continue;
                 var a = f.View.Project(row.Drone.Pose); var b = f.View.Project(target.Pose); bool selected = row.Drone.Id == plan.SelectedDroneId;
-                var lineColor = selected ? Skin.Color("ui.map.fire.assigned", "stroke", Yellow) : Text.WithAlpha(170);
-                Arrow(c, a, b, lineColor, selected ? 2.6f : 1.3f, selected ? 12 : 9);
+                var lineColor = TTReticle.WithAlpha(selected ? (byte)165 : (byte)110);
+                Arrow(c, a, b, lineColor, selected ? 1.8f : 1f, selected ? 9 : 7);
                 if (selected && row.Target is { } candidate)
                 {
                     var targetPoint = MarkerPoint(f.View, target);
@@ -73,9 +73,12 @@ internal static partial class TacticalBattleMapRenderer
                 var a = f.View.Project(flight.Shot.From); var b = f.View.Project(flight.Shot.To);
                 Stroke(c, a, b, Yellow.WithAlpha(70), 1.1f, [5, 5]); var head = a + Scale(b - a, (float)flight.Progress);
                 using var shader = SKShader.CreateLinearGradient(a, head, new SKColor[] { Yellow.WithAlpha(0), Yellow }, null, SKShaderTileMode.Clamp);
-                using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3, StrokeCap = SKStrokeCap.Round, Shader = shader }; c.DrawLine(a, head, paint);
-                Circle(c, head, 8, Yellow.WithAlpha(70)); Circle(c, head, TacticalBattleSkinRenderScope.Number("shot.projectile", "size", 3.5f), TacticalBattleSkinRenderScope.Color("shot.projectile", "fill", Shell));
-                if (Recording is { } l) l.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
+                float scale = f.View.UnitScale;
+                using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 3 * scale, StrokeCap = SKStrokeCap.Round, Shader = shader }; c.DrawLine(a, head, paint);
+                float radius = Skin.Number("shot.projectile", "size", 3.5f) * scale;
+                Circle(c, head, 8 * scale, Yellow.WithAlpha(70)); Circle(c, head, radius, Skin.Color("shot.projectile", "fill", Shell));
+                float markerRadius = 3.5f * scale;
+                if (Recording is { } l) l.Rects["projectile"] = SKRect.Create(head.X - markerRadius, head.Y - markerRadius, 2 * markerRadius, 2 * markerRadius);
             }
         if (!Skin.Tabletop && f.Salvo is { InFlight: false, ShowResultCallouts: true } results)
         {

@@ -16,6 +16,8 @@ internal static partial class TacticalBattleMapRenderer
     private static readonly SKPath ThugDrone = DronePath("M-3 -11 4 -7 5 6 2 9 -5 8 -6 -3Z M-8 -4 -11 -1 -10 7 -7 5Z M7 -2H11V6H7Z");
 
     private static readonly AnomalyFieldLayer AnomalyLayer = new();
+    private static readonly TacticalMapSettings GridSettings = new() { GridMinimumPixels = 16, GridFadePixels = 14 };
+    private const double GridBaseStep = 5;
     internal static readonly SKColor Own = Cyan, Enemy = Orange, Background = MapBg, Inactive = Muted.WithAlpha(140), Jammed = Yellow;
     internal static double RulerLength(double pixelsPerUnit, float uiScale) => 100;
     internal static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame f) => f.Battle.Units;
@@ -60,24 +62,15 @@ internal static partial class TacticalBattleMapRenderer
         using var grid = new SKPaint
         {
             IsAntialias = true,
-            Color = Skin.Color("field.grid", "stroke", Grid),
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1,
             StrokeCap = SKStrokeCap.Round,
             BlendMode = field ? SKBlendMode.Lighten : SKBlendMode.SrcOver
         };
-        using var gridPath = new SKPath();
-        for (float x = 26; x < v.PixelWidth; x += 26)
-        {
-            gridPath.MoveTo(x, 0);
-            gridPath.LineTo(x, v.PixelHeight);
-        }
-        for (float y = 26; y < v.PixelHeight; y += 26)
-        {
-            gridPath.MoveTo(0, y);
-            gridPath.LineTo(v.PixelWidth, y);
-        }
-        c.DrawPath(gridPath, grid);
+        var gridColor = Skin.Color("field.grid", "stroke", Grid.WithAlpha(140));
+        GridRenderer.DrawLines(c, v.CenterX, v.CenterY, v.PixelsPerUnit, v.PixelWidth, v.PixelHeight,
+            GridSettings, grid, SKColors.Black, GridBaseStep,
+            level => gridColor.WithAlpha((byte)Math.Round(gridColor.Alpha * level.Blue / 52d)));
         float len = (float)(100 * v.PixelsPerUnit);
         var ruler = Skin.Color("ui.map.ruler", "stroke", Yellow);
         Stroke(c, new(14, 706), new(14 + len, 706), ruler, 1.3f);

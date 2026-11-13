@@ -100,7 +100,7 @@ public sealed class MapFireTests
             Assert.Contains(new[] { .35f, .5f, .65f }, fraction =>
             {
                 var point = a + BattleDesign.Scale(to - a, fraction);
-                return RasterProbe.Fraction(b, SKRect.Create(point.X - 1, point.Y - 1, 2, 2), BattleDesign.Yellow) >= .6;
+                return RasterProbe.Fraction(b, SKRect.Create(point.X - 1, point.Y - 1, 2, 2), new SKColor(170, 54, 37)) >= .35;
             });
         }
         await using (var s = await Ep0019Scenes.Create("3-salvo-flight"))

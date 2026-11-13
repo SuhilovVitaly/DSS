@@ -59,7 +59,7 @@ public sealed class TabletopFireTests
         }
         if (selected.TargetId is not null) Assert.Contains(SKColor.Parse("#FF4628"), bitmap.Pixels);
         if (selected.Group.List.Any(t => t.TargetId != selected.TargetId)) Assert.Contains(SKColor.Parse("#FF9A6A"), bitmap.Pixels);
-        if (frame.FirePlan.Rows.Any(r => r.TargetId is not null)) Assert.Contains(SKColor.Parse("#D6CBA6"), bitmap.Pixels);
+        if (frame.FirePlan.Rows.Any(r => r.TargetId is not null)) Assert.DoesNotContain(SKColor.Parse("#D6CBA6"), bitmap.Pixels);
         if (name == "2-anomaly-absorption")
         {
             Assert.True(layout.Rects.ContainsKey("absorption:" + selected.Drone.Id));

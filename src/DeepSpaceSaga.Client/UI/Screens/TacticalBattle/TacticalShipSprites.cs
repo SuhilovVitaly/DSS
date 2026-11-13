@@ -87,7 +87,7 @@ internal static class TacticalShipSprites
         return true;
     }
 
-    internal static bool DrawTorpedo(SKCanvas canvas, SKPoint point, float directionDeg, bool own)
+    internal static bool DrawTorpedo(SKCanvas canvas, SKPoint point, float directionDeg, bool own, float unitScale = 1)
     {
         var sheet = Skin.ShipSheet("torpedo", own ? "own" : "enemy");
         if (sheet is null || !float.IsFinite(directionDeg)) return false;
@@ -95,7 +95,7 @@ internal static class TacticalShipSprites
         int frame = Frame(0) % sheet.Value.Frames;
         var source = SKRect.Create(frame % sheet.Value.Columns * sheet.Value.Cell,
             frame / sheet.Value.Columns * sheet.Value.Cell, sheet.Value.Cell, sheet.Value.Cell);
-        return DrawCell(canvas, sheet.Value.Image, source, point, 255, null, false, rotation: directionDeg);
+        return DrawCell(canvas, sheet.Value.Image, source, point, 255, null, false, unitScale, directionDeg);
     }
 
     internal static int EffectFrames(string name) => Skin.EffectStrip(name)?.Frames ?? 0;

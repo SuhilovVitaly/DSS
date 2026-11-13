@@ -30,8 +30,10 @@ internal static partial class TacticalBattleMapRenderer
                     head - Scale(dir, 6 + 7 * i), (byte)(255 - 18 * i));
             bool own = f.Battle.Units.FirstOrDefault(u => u.Id == flight.Shot.ShooterId)?.Side == f.Battle.PlayerSide;
             float course = MathF.Atan2(b.Y - a.Y, b.X - a.X) * 180 / MathF.PI;
-            if (!TacticalShipSprites.DrawTorpedo(c, head, course, own)) Circle(c, head, 4, SKColor.Parse("#FFF2A0"));
-            if (Recording is { } layout) layout.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
+            float scale = f.View.UnitScale;
+            if (!TacticalShipSprites.DrawTorpedo(c, head, course, own, scale)) Circle(c, head, 4 * scale, SKColor.Parse("#FFF2A0"));
+            float radius = 3.5f * scale;
+            if (Recording is { } layout) layout.Rects["projectile"] = SKRect.Create(head.X - radius, head.Y - radius, 2 * radius, 2 * radius);
         }
     }
 
@@ -64,15 +66,16 @@ internal static partial class TacticalBattleMapRenderer
             var a = f.View.Project(shot.From); var b = f.View.Project(shot.To);
             bool hit = shot.Hit && !shot.Absorbed;
             bool own = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId)?.Side == f.Battle.PlayerSide;
-            var line = Ribbon(c, a, b, hit ? 13 : 9, hit ? own ? TTSelected : TTRust : TTMiss,
-                hit ? own ? TTEdge : TTRustEdge : TTMissEdge, 16, 24, occupied);
+            var face = hit ? own ? TTSelected : TTRust : TTMiss;
+            var edge = hit ? own ? TTEdge : TTRustEdge : TTMissEdge;
+            var line = Ribbon(c, a, b, hit ? 5 : 3.5f, face.WithAlpha(95), edge.WithAlpha(80), 16, 24, occupied);
             if (Recording is { } layout) layout.Rects["result-ribbon:" + flight.Index] =
                 new(Math.Min(line.A.X, line.B.X), Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.X, line.B.X), Math.Max(line.A.Y, line.B.Y));
             if (!salvo.PlaybackSkipped && flight.ImpactAgeMs < 1400) continue;
             string text = shot.Absorbed ? M("Map.ShotAbsorbed") : hit ? M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", AppliedDamage(f, shot))
                 : M(shot.Decoyed ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
             if (hit && shot.Rear) text = M("Map.RearHit", text);
-            pills.Add(new("result-badge:" + flight.Index, line, text, hit ? 12.5f : 10.5f,
+            pills.Add(new("result-badge:" + flight.Index, line, text, hit ? 9.5f : 9f,
                 hit ? TTGold : SKColor.Parse("#E2EAF6"), hit ? TTBadge : TTMissEdge, hit ? TTGold : SKColor.Parse("#C8D2E4"),
                 SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
         }
@@ -144,17 +147,17 @@ internal static partial class TacticalBattleMapRenderer
         SKColor face, SKColor edge, float trimA, float trimB, List<SKRect> occupied)
     {
         float length = SKPoint.Distance(a, b);
-        if (length < trimA + trimB + 4) return (a, b);
+        if (length < trimA + trimB + width) return (a, b);
         var dir = Scale(b - a, 1 / length);
         var start = a + Scale(dir, trimA); var tip = b - Scale(dir, trimB);
         var end = tip - Scale(dir, .9f * width);
-        using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Butt, Color = edge.WithAlpha(230), StrokeWidth = width + 2.5f };
+        using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Butt, Color = edge, StrokeWidth = width + 1 };
         canvas.DrawLine(start, end, paint);
         paint.Color = face; paint.StrokeWidth = width; canvas.DrawLine(start, end, paint);
         using var dash = SKPathEffect.CreateDash([5, 4], 0);
         paint.Color = edge; paint.StrokeWidth = 1.1f; paint.PathEffect = dash; canvas.DrawLine(start, end, paint);
-        var side = new SKPoint(-dir.Y * .95f * width, dir.X * .95f * width);
-        Polygon(canvas, [tip, end + side, end - side], face, edge, 1.3f);
+        var side = new SKPoint(-dir.Y * .8f * width, dir.X * .8f * width);
+        Polygon(canvas, [tip, end + side, end - side], face, edge, .8f);
         for (int i = 0; i <= 12; i++)
         {
             var p = start + Scale(end - start, i * .08f);
@@ -190,7 +193,7 @@ internal static partial class TacticalBattleMapRenderer
             var target = f.Battle.Units.FirstOrDefault(u => u.Id == incoming.TargetId);
             if (shooter is null || target is null) continue;
             var a = f.View.Project(shooter.Pose); var b = MarkerPoint(f.View, target);
-            var line = Ribbon(c, a, b, 8, TTRust, TTRustEdge, 16, 18, occupied);
+            var line = Ribbon(c, a, b, 4, TTReticle.WithAlpha(125), TTRustEdge.WithAlpha(95), 16, 18, occupied);
             pills.Add(new("badge:threat:" + pills.Count, line, M("Map.ThreatBadge", Pct(incoming.Chance)), 10,
                 SKColor.Parse("#FFD6C4"), TTRustEdge, SKColor.Parse("#FFB090"), SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
         }
@@ -200,7 +203,8 @@ internal static partial class TacticalBattleMapRenderer
             if (target is null || row.Drone.InDust || row.Evade) continue;
             var a = f.View.Project(row.Drone.Pose); var b = MarkerPoint(f.View, target);
             bool selected = row.Drone.Id == plan.SelectedDroneId;
-            var line = Ribbon(c, a, b, selected ? 14.5f : 11, selected ? TTSelected : TTCard, TTEdge, 16, 24, occupied);
+            var line = Ribbon(c, a, b, selected ? 5.5f : 4, TTReticle.WithAlpha(selected ? (byte)165 : (byte)110),
+                TTRustEdge.WithAlpha(95), 16, 24, occupied);
             if (row.Target is { } shot)
                 pills.Add(new(selected ? "chance" : "badge:own:" + row.Drone.Id, line,
                     selected ? Pct(shot.Chance) : PilotCardModel.Name(row.Drone) + " " + Pct(shot.Chance), selected ? 13 : 10.5f,
