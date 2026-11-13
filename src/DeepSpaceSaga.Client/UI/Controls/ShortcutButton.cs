@@ -14,6 +14,7 @@ public sealed class ShortcutButton(string label, string keyHint = "", string too
     public SKRect Bounds { get; set; }
     public bool Enabled { get; set; } = true;
     public bool HasFocus { get; set; }
+    internal bool Primary { get; set; }
     public bool Hovered { get; private set; }
     public event Action? Clicked;
     public bool OnMouseMove(float x, float y, long? nowMs = null)
@@ -54,7 +55,7 @@ public sealed class ShortcutButton(string label, string keyHint = "", string too
             GenericButtonTypeA.Draw(canvas, SKRect.Create(0, 0, Bounds.Width / uiScale, Bounds.Height / uiScale),
                 textStyle || markerStyle ? "" : caption,
                 !Enabled ? ButtonState.Disabled : Hovered || HasFocus ? ButtonState.Hovered : ButtonState.Normal,
-                showMarker: !markerStyle);
+                showMarker: !markerStyle, primary: Primary && SkinStyle.Current is null);
             canvas.Restore();
             if (!markerStyle && !textStyle)
                 return;

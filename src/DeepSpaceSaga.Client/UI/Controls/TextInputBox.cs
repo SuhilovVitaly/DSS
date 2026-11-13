@@ -92,12 +92,12 @@ public sealed class TextInputBox
     private bool CaretVisible => (_caretClock.ElapsedMilliseconds / CaretBlinkIntervalMs) % 2 == 0;
 
     /// <summary>Draws the box, current text, and a blinking caret trailing the text.</summary>
-    public void Render(SKCanvas canvas, SKRect rect)
+    public void Render(SKCanvas canvas, SKRect rect, bool focused = true)
     {
         if (rect.IsEmpty)
             return;
 
-        TabletopStyle.Field(canvas, rect, focused: true);
+        TabletopStyle.Field(canvas, rect, focused);
         string text = Text;
         var content = new SKRect(rect.Left + PaddingX, rect.Top, rect.Right - PaddingX, rect.Bottom);
         if (content.IsEmpty)
@@ -109,7 +109,7 @@ public sealed class TextInputBox
         canvas.ClipRect(content);
         canvas.DrawText(text, textX, textY, TextPaint);
 
-        if (CaretVisible)
+        if (focused && CaretVisible)
         {
             float caretX = textX + textWidth;
             canvas.DrawLine(caretX, rect.Top + 4f, caretX, rect.Bottom - 4f, CaretPaint);

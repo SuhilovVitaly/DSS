@@ -47,7 +47,8 @@ public sealed class WidgetsListsTests
         using var classic = Draw(TacticalBattleSkin.Classic);
         using var themed = Draw(WidgetSkin());
         using var after = Draw();
-        Assert.Equal(before.Pixels, classic.Pixels);
+        Assert.NotEqual(before.GetPixel(28, 30), classic.GetPixel(28, 30));
+        Assert.Equal(TabletopStyle.Inset, before.GetPixel(28, 30));
         Assert.Equal(before.Pixels, after.Pixels);
         Assert.Equal(new SKColor(123, 45, 99), themed.GetPixel(28, 30));
         Assert.Equal(new SKColor(52, 64, 102), themed.GetPixel(28, 112));
@@ -103,7 +104,8 @@ public sealed class WidgetsListsTests
     {
         using var normal = Draw(355);
         using var wide = Draw(650);
-        Assert.True(normal.GetPixel(20, 17).Blue > 140);
+        Assert.Contains(Enumerable.Range(16, 13), x =>
+            Enumerable.Range(12, 11).Any(y => normal.GetPixel(x, y).Red > 120));
         for (int y = 5; y < 29; y++)
             for (int x = 3; x < 39; x++)
                 Assert.Equal(normal.GetPixel(x, y), wide.GetPixel(x, y));

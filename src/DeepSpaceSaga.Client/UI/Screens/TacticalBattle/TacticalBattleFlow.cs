@@ -176,7 +176,7 @@ public class TacticalBattleModalScreen : IScreen
     protected static string L(string key) => BattleFormat.Localize(key);
     public virtual void Render(SKCanvas canvas, int width, int height)
     {
-        canvas.Clear(new SKColor(2, 12, 22));
+        canvas.Clear(IsSetup ? TabletopStyle.Background : new SKColor(2, 12, 22));
         float s = UiScale;
         if (!IsSetup && TacticalBattleSkinRenderScope.HasBoxStyle("modal.background"))
             TacticalBattleSkinRenderScope.Box(canvas, "modal.background", SKRect.Create(width, height), new(2, 12, 22), null, s);
@@ -188,6 +188,7 @@ public class TacticalBattleModalScreen : IScreen
                 string.Join("\n\n", options.Scenarios.Select(scenario => scenario.Name + "\n" + scenario.Description));
             _error.Layout(new(24 * s, 72 * s, width - 24 * s, height - 120 * s), s);
             _error.SetText(Flow.Error.Length > 0 ? Flow.Error : text);
+            TabletopStyle.Panel(canvas, new(20 * s, 68 * s, width - 20 * s, height - 116 * s));
             _error.Draw(canvas);
         }
         else if (Flow.State is { } state)
@@ -206,6 +207,7 @@ public class TacticalBattleModalScreen : IScreen
             if (Flow.Error.Length > 0) ControlVisuals.Label(canvas, Flow.Error, new(24 * s, height - 115 * s, width - 24 * s, height - 80 * s), true, s, role: "modal.error");
         }
         _action.Label = L(IsSetup ? "Start" : Flow.State?.Phase == TacticalBattlePhase.Fire ? "Fire" : "Move");
+        _action.Primary = IsSetup;
         _action.KeyHint = "Enter"; _action.Enabled = ActionEvent != ScreenEvent.None;
         bool showAction = IsSetup ? Flow.Options is { Availability.Available: true, Scenarios.IsEmpty: false }
             : Flow.State?.Phase is TacticalBattlePhase.Move or TacticalBattlePhase.Fire;

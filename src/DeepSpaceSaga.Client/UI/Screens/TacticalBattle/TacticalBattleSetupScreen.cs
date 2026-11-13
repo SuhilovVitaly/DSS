@@ -141,9 +141,12 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
         if (_scenario is null) { base.Render(canvas, width, height); return; }
         _width = width; _height = height; LayoutControls();
         if (_layout is not { } layout) return;
-        canvas.Clear(new SKColor(2, 12, 22));
+        canvas.Clear(TabletopStyle.Background);
         canvas.Save(); canvas.Scale(UiScale);
-        ControlVisuals.Label(canvas, L("SetupTitle"), new(20, 10, layout.Viewport.Right - 20, 47), true, 1);
+        var title = new SKRect(20, 10, layout.Viewport.Right - 20, 47);
+        TabletopStyle.Panel(canvas, title);
+        ControlVisuals.Label(canvas, L("SetupTitle"), new(32, 10, title.Right - 12, 47), true, 1);
+        TabletopStyle.Field(canvas, layout.Content);
         canvas.Save(); canvas.ClipRect(layout.Content);
         ControlVisuals.Label(canvas, L("Scenario"), layout.ScenarioCaption, true, 1);
         DrawParagraph(canvas, ScenarioSummary, layout.Description);
@@ -160,15 +163,11 @@ public sealed class TacticalBattleSetupScreen : TacticalBattleModalScreen
         ControlVisuals.Label(canvas, L("EnemyTactic"), TacticalBattleSetupLayout.Above(layout.EnemyTactic), true, 1);
         foreach (var field in _fields) { field.Enabled = !Flow.Pending; field.Draw(canvas); }
         ControlVisuals.Label(canvas, L("Seed"), TacticalBattleSetupLayout.Above(layout.Seed), true, 1);
-        _seed.Render(canvas, layout.Seed);
-        if (_focus == SeedFocus)
-        {
-            using var focus = new SKPaint { Color = XenonStyle.Cyan, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
-            canvas.DrawRect(layout.Seed, focus);
-        }
+        _seed.Render(canvas, layout.Seed, focused: _focus == SeedFocus);
         _random.Enabled = !Flow.Pending; _random.Draw(canvas);
         DrawParagraph(canvas, L("KitHelp") + "\n" + L("ChanceFormula"), layout.Help);
         canvas.Restore();
+        _start.Primary = true;
         _start.Enabled = CanStart; _back.Enabled = !Flow.Pending;
         _start.Draw(canvas); _back.Draw(canvas);
         string status = BlockedNotice is { Length: > 0 } notice ? notice : Flow.Pending ? L("Waiting") : !TrySeed(out _) ? L("InvalidSeed") : Flow.Error;

@@ -170,7 +170,7 @@ public sealed class DropDown<T>
         var role = SkinStyle.Control("control.dropdown", !Enabled ? "disabled" : HasFocus ? "focused" : "normal");
         canvas.Save();
         canvas.ClipRect(Bounds);
-        if (SkinStyle.HasBoxStyle(role))
+        if (SkinStyle.Current is null || SkinStyle.HasBoxStyle(role))
         {
             ControlVisuals.Frame(canvas, Bounds, HasFocus, Enabled, _scale, role);
             DrawChevron(canvas, role);
@@ -198,7 +198,7 @@ public sealed class DropDown<T>
         {
             IsAntialias = true,
             StrokeWidth = SkinStyle.Number(mark, "strokeWidth", 1.5f) * _scale,
-            Color = SkinStyle.Color(mark, "stroke", SkinStyle.Color(role, "text", MenuStyle.ColorText)),
+            Color = SkinStyle.Color(mark, "stroke", SkinStyle.Color(role, "text", HasFocus && Enabled ? TabletopStyle.Gold : MenuStyle.ColorText)),
             Style = SKPaintStyle.Stroke,
         };
         using var path = new SKPath();
