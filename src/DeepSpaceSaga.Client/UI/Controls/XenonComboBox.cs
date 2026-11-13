@@ -4,7 +4,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Controls;
 
 /// <summary>
-/// Xenon Star combo box built from the original Options UI drop-down slices. The screen
+/// Tabletop combo box used in Settings. The screen
 /// owns selection, open/closed state, and hit testing; this control only renders them.
 /// </summary>
 public static class XenonComboBox
@@ -29,7 +29,7 @@ public static class XenonComboBox
 
     private static readonly SKPaint LabelText = new()
     {
-        Color = XenonStyle.Cyan,
+        Color = TabletopStyle.Secondary,
         TextSize = 13f,
         IsAntialias = true,
         TextAlign = SKTextAlign.Left,
@@ -38,7 +38,7 @@ public static class XenonComboBox
 
     private static readonly SKPaint ValueText = new()
     {
-        Color = XenonStyle.CyanBright,
+        Color = TabletopStyle.Ink,
         TextSize = 15f,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,
@@ -47,23 +47,11 @@ public static class XenonComboBox
 
     private static readonly SKPaint ActiveValueText = new()
     {
-        Color = SKColors.White,
+        Color = TabletopStyle.Gold,
         TextSize = 15f,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,
         Typeface = XenonStyle.TypefaceSemibold
-    };
-
-    private static readonly SKPaint FallbackFill = new()
-    {
-        Color = new SKColor(2, 22, 31),
-        Style = SKPaintStyle.Fill
-    };
-
-    private static readonly SKPaint FallbackHighlight = new()
-    {
-        Color = XenonStyle.CyanDim,
-        Style = SKPaintStyle.Fill
     };
 
     internal static bool HasAssets => Normal is not null
@@ -77,80 +65,27 @@ public static class XenonComboBox
 
     public static void DrawClosed(SKCanvas canvas, SKRect fieldRect, string label, string value, bool highlighted)
     {
-        var labelRect = new SKRect(
-            fieldRect.Left,
-            fieldRect.Top - LabelHeight,
-            fieldRect.Right,
-            fieldRect.Top);
+        var labelRect = new SKRect(fieldRect.Left + 10, fieldRect.Top - LabelHeight, fieldRect.Right - 10, fieldRect.Top);
+        ControlVisuals.DrawLabel(canvas, ControlText.Ellipsize(label, labelRect.Width, LabelText), labelRect, LabelText);
+        TabletopStyle.Field(canvas, fieldRect, highlighted);
+        var valueRect = new SKRect(fieldRect.Left + 10, fieldRect.Top, fieldRect.Right - 28, fieldRect.Bottom);
+        TabletopStyle.Label(canvas, valueRect, value, highlighted ? ActiveValueText : ValueText);
 
-        if (Label is not null)
-            canvas.DrawBitmap(Label, labelRect);
-        else
-            canvas.DrawRect(labelRect, FallbackFill);
-
-        var fieldImage = highlighted ? Hover : Normal;
-        if (fieldImage is not null)
-            DrawField(canvas, fieldImage, fieldRect);
-        else
-        {
-            canvas.DrawRect(fieldRect, FallbackFill);
-            canvas.DrawRect(fieldRect, XenonStyle.ThinCyanStroke);
-        }
-
-        canvas.DrawText(label, labelRect.Left + 14f,
-            MenuStyle.VerticalCenterBaseline(labelRect, LabelText), LabelText);
-
-        // The reference image reserves its left side for the illuminated chevron.
-        float valueCenterX = fieldRect.Left + 44f + (fieldRect.Width - 56f) / 2f;
-        var textPaint = highlighted ? ActiveValueText : ValueText;
-        canvas.DrawText(value, valueCenterX,
-            MenuStyle.VerticalCenterBaseline(fieldRect, textPaint), textPaint);
+        using var chevron = new SKPaint { Color = highlighted ? TabletopStyle.Gold : TabletopStyle.Secondary, StrokeWidth = 2, IsAntialias = true };
+        float x = fieldRect.Right - 14;
+        float y = fieldRect.MidY;
+        canvas.DrawLine(x - 4, y - 2, x, y + 2, chevron);
+        canvas.DrawLine(x, y + 2, x + 4, y - 2, chevron);
     }
 
-    private static void DrawField(SKCanvas canvas, SKBitmap image, SKRect bounds)
-    {
-        const float leading = 44f, trailing = 12f;
-        float edgeScale = Math.Min(bounds.Height / image.Height, bounds.Width / (leading + trailing + 1));
-        float left = bounds.Left + leading * edgeScale;
-        float right = bounds.Right - trailing * edgeScale;
-        float sourceRight = image.Width - trailing;
-        canvas.DrawBitmap(image, new SKRect(0, 0, leading, image.Height),
-            new SKRect(bounds.Left, bounds.Top, left, bounds.Bottom));
-        canvas.DrawBitmap(image, new SKRect(leading, 0, sourceRight, image.Height),
-            new SKRect(left, bounds.Top, right, bounds.Bottom));
-        canvas.DrawBitmap(image, new SKRect(sourceRight, 0, image.Width, image.Height),
-            new SKRect(right, bounds.Top, bounds.Right, bounds.Bottom));
-    }
-
-    public static void DrawListBackground(SKCanvas canvas, SKRect bounds)
-    {
-        if (List is not null)
-            NinePatch.Draw(canvas, List, bounds, 2f);
-        else
-        {
-            canvas.DrawRect(bounds, FallbackFill);
-            canvas.DrawRect(bounds, XenonStyle.ThinCyanStroke);
-        }
-    }
+    public static void DrawListBackground(SKCanvas canvas, SKRect bounds) => TabletopStyle.Panel(canvas, bounds);
 
     public static void DrawOption(SKCanvas canvas, SKRect bounds, string text, bool highlighted)
     {
+        bounds.Inflate(-OptionHorizontalInset, 0);
         if (highlighted)
-        {
-            var highlightRect = new SKRect(
-                bounds.Left + OptionHorizontalInset,
-                bounds.Top,
-                bounds.Right - OptionHorizontalInset,
-                bounds.Bottom);
-
-            if (OptionHover is not null)
-                canvas.DrawBitmap(OptionHover, highlightRect);
-            else
-                canvas.DrawRect(highlightRect, FallbackHighlight);
-        }
-
-        var textPaint = highlighted ? ActiveValueText : ValueText;
-        canvas.DrawText(text, bounds.MidX,
-            MenuStyle.VerticalCenterBaseline(bounds, textPaint), textPaint);
+            TabletopStyle.Field(canvas, bounds, focused: true);
+        bounds.Inflate(-8, 0);
+        TabletopStyle.Label(canvas, bounds, text, highlighted ? ActiveValueText : ValueText);
     }
 }

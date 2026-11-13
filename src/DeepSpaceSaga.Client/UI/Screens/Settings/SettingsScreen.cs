@@ -54,7 +54,7 @@ public sealed class SettingsScreen : IScreen
     /// <summary>Restart note in the subdued cyan Xenon footer style.</summary>
     private static readonly SKPaint _noteTextPaint = new()
     {
-        Color = XenonStyle.CyanDim,
+        Color = TabletopStyle.Secondary,
         TextSize = XenonStyle.FooterFontSize,
         IsAntialias = true,
         TextAlign = SKTextAlign.Center,

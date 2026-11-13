@@ -4,9 +4,7 @@ using SkiaSharp;
 namespace DeepSpaceSaga.Client.UI.Controls;
 
 /// <summary>
-/// Generic Type A action button. Draws a scalable cyan/navy shell, a diamond marker,
-/// centered caller-provided text, and all standard button states. It owns no hit testing
-/// or action semantics; those remain with the consuming screen.
+/// Shared client action button. The consuming screen owns hit testing and action semantics.
 /// </summary>
 public static class GenericButtonTypeA
 {
@@ -29,113 +27,40 @@ public static class GenericButtonTypeA
 
     public static void Draw(
         SKCanvas canvas, SKRect bounds, string text, ButtonState state,
-        SKColor? textColorOverride = null, bool showMarker = true)
+        SKColor? textColorOverride = null, bool showMarker = true, bool primary = false)
     {
-        if (HasAssets)
+        if (bounds.IsEmpty)
+            return;
+
+        TabletopStyle.Button(canvas, bounds, state, primary);
+        var textBounds = bounds;
+        textBounds.Inflate(-8, 0);
+        if (showMarker && bounds.Width >= 80 && bounds.Height >= 20)
         {
-            var image = state is ButtonState.Hovered or ButtonState.Pressed ? Hover! : Normal!;
-            var imagePaint = state switch
+            using var marker = new SKPaint
             {
-                ButtonState.Disabled => XenonStyle.DisabledImagePaint,
-                ButtonState.Pressed => XenonStyle.PressedImagePaint,
-                _ => null
+                Color = TabletopStyle.ButtonInk(state, primary),
+                IsAntialias = true
             };
-            NinePatch.Draw(canvas, image, bounds, XenonStyle.ButtonSliceInset, imagePaint);
-        }
-        else
-        {
-            MenuStyle.DrawButton(canvas, bounds, text, state);
+            float x = bounds.Left + 16;
+            float y = bounds.MidY;
+            using var path = new SKPath();
+            path.MoveTo(x, y - 4);
+            path.LineTo(x + 4, y);
+            path.LineTo(x, y + 4);
+            path.LineTo(x - 4, y);
+            path.Close();
+            canvas.DrawPath(path, marker);
+            textBounds.Inflate(-16, 0);
         }
 
-        if (showMarker)
-            DrawMarker(canvas, bounds, state);
-        if (!HasAssets)
-            return;
-
-        var textPaint = state switch
+        using var paint = new SKPaint
         {
-            ButtonState.Hovered => XenonStyle.ButtonTextHover,
-            ButtonState.Pressed => XenonStyle.ButtonTextPressed,
-            ButtonState.Disabled => XenonStyle.ButtonTextDisabled,
-            _ => XenonStyle.ButtonText
+            Color = textColorOverride ?? TabletopStyle.ButtonInk(state, primary),
+            TextSize = XenonStyle.ButtonFontSize,
+            Typeface = MenuStyle.TypefaceBold,
+            IsAntialias = true
         };
-
-        // Keep long labels clear of the fixed left marker while preserving the centered
-        // Type A composition. Most labels retain the theme font size; only labels that
-        // would enter the marker's breathing room are scaled down.
-        float maxTextWidth;
-        if (showMarker)
-        {
-            float markerSize = MarkerSize(bounds);
-            float markerLeftInset = MarkerLeftInset(bounds);
-            float markerClearanceX = bounds.Left + markerLeftInset + markerSize + 8f;
-            maxTextWidth = Math.Max(1f, 2f * (bounds.MidX - markerClearanceX));
-        }
-        else
-        {
-            maxTextWidth = Math.Max(1f, bounds.Width - 16f);
-        }
-        float textWidth = textPaint.MeasureText(text);
-
-        if (textWidth > maxTextWidth || textColorOverride.HasValue)
-        {
-            using var fittedPaint = new SKPaint
-            {
-                Color = textColorOverride ?? textPaint.Color,
-                TextSize = textWidth > maxTextWidth
-                    ? textPaint.TextSize * maxTextWidth / textWidth
-                    : textPaint.TextSize,
-                IsAntialias = textPaint.IsAntialias,
-                TextAlign = textPaint.TextAlign,
-                Typeface = textPaint.Typeface
-            };
-            canvas.DrawText(text, bounds.MidX,
-                MenuStyle.VerticalCenterBaseline(bounds, fittedPaint), fittedPaint);
-            return;
-        }
-
-        canvas.DrawText(text, bounds.MidX,
-            MenuStyle.VerticalCenterBaseline(bounds, textPaint), textPaint);
+        TabletopStyle.Label(canvas, textBounds, text, paint);
     }
-
-    private static void DrawMarker(SKCanvas canvas, SKRect bounds, ButtonState state)
-    {
-        var marker = state switch
-        {
-            ButtonState.Hovered or ButtonState.Pressed => MarkerActive,
-            ButtonState.Disabled => MarkerDisabled,
-            _ => Marker
-        };
-
-        float markerSize = MarkerSize(bounds);
-        float leftInset = MarkerLeftInset(bounds);
-        var rect = new SKRect(
-            bounds.Left + leftInset,
-            bounds.MidY - markerSize / 2f,
-            bounds.Left + leftInset + markerSize,
-            bounds.MidY + markerSize / 2f);
-
-        if (marker is not null)
-        {
-            var paint = state == ButtonState.Pressed ? XenonStyle.PressedImagePaint : null;
-            canvas.DrawBitmap(marker, rect, paint);
-            return;
-        }
-
-        var stroke = state == ButtonState.Disabled
-            ? XenonStyle.DimCyanStroke
-            : state is ButtonState.Hovered or ButtonState.Pressed
-                ? XenonStyle.BrightCyanStroke
-                : XenonStyle.ThinCyanStroke;
-        canvas.DrawLine(rect.MidX, rect.Top, rect.Right, rect.MidY, stroke);
-        canvas.DrawLine(rect.Right, rect.MidY, rect.MidX, rect.Bottom, stroke);
-        canvas.DrawLine(rect.MidX, rect.Bottom, rect.Left, rect.MidY, stroke);
-        canvas.DrawLine(rect.Left, rect.MidY, rect.MidX, rect.Top, stroke);
-    }
-
-    private static float MarkerSize(SKRect bounds) =>
-        Math.Min(24f, Math.Max(8f, bounds.Height - 16f));
-
-    private static float MarkerLeftInset(SKRect bounds) =>
-        Math.Min(24f, Math.Max(8f, bounds.Width * 0.08f));
 }

@@ -120,6 +120,6 @@ public sealed class GameMenuScreen : IScreen
 
     private void DrawButton(SKCanvas canvas, int width, int height, string text, GameMenuButton id)
     {
-        GenericButtonTypeA.Draw(canvas, GameMenuLayout.ButtonRect(id, width, height), text, GetState(id));
+        GenericButtonTypeA.Draw(canvas, GameMenuLayout.ButtonRect(id, width, height), text, GetState(id), primary: id == GameMenuButton.Resume);
     }
 }

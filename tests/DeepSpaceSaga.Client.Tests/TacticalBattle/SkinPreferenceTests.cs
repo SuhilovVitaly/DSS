@@ -5,6 +5,17 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 
 public sealed class SkinPreferenceTests
 {
+    [Theory]
+    [InlineData(null, "tabletop")]
+    [InlineData("classic", "classic")]
+    [InlineData("contrast", "contrast")]
+    [InlineData("unavailable-skin", "classic")]
+    public void Client_default_uses_tabletop_and_preserves_explicit_choices(string? savedId, string expected)
+    {
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        Assert.Equal(expected, catalog.GetPreferred(savedId).Id);
+    }
+
     [Fact]
     public void Selected_id_round_trips_without_rewriting_other_settings()
     {

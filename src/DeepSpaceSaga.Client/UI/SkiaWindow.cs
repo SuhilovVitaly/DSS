@@ -110,7 +110,7 @@ public sealed class SkiaWindow : IDisposable
 
         SettingsFilePath = Path.GetFullPath(settingsPath ?? Path.Combine(AppContext.BaseDirectory, "Settings.json"));
         _battleSkinCatalog = TacticalBattleSkinCatalog.Load(Path.Combine(Path.GetDirectoryName(SettingsFilePath)!, "Skins"), LogSkinWarning);
-        _battleSkin = _battleSkinCatalog.GetOrClassic(TacticalBattleSkinPreference.Read(SettingsFilePath, LogSkinWarning));
+        _battleSkin = _battleSkinCatalog.GetPreferred(TacticalBattleSkinPreference.Read(SettingsFilePath, LogSkinWarning));
 
         _screens.SetRoot(initialScreen);
         _window = null!;
