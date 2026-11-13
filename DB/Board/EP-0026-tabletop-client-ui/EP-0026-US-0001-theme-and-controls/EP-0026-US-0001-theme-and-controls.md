@@ -2,7 +2,7 @@
 epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0001-theme-and-controls
 title: Единый стиль и общие элементы
-stage: approved
+stage: implemented
 dependencies: []
 ---
 

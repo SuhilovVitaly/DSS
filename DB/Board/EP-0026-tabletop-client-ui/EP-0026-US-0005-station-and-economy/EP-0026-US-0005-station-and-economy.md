@@ -2,7 +2,7 @@
 epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0005-station-and-economy
 title: Станции, торговля и финансы
-stage: draft
+stage: implemented
 dependencies: [EP-0026-US-0001-theme-and-controls]
 ---
 

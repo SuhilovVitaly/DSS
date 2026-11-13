@@ -2,7 +2,7 @@
 epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0006-crew-and-dialogue
 title: Диалоги, экипаж и контракты
-stage: draft
+stage: implemented
 dependencies: [EP-0026-US-0001-theme-and-controls]
 ---
 

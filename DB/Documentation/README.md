@@ -52,6 +52,7 @@
 
 ### 03-Design
 
+- [Оболочка Tabletop](03-Design/TabletopClient.md).
 - [Портреты в диалогах](03-Design/DialoguePortraits.md).
 - [Портретные наборы и композиция](03-Design/PortraitGenerator.md).
 - [Мужской набор M4](03-Design/PortraitGeneratorM4.md).

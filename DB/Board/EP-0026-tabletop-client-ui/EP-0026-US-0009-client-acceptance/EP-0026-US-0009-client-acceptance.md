@@ -2,7 +2,7 @@
 epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0009-client-acceptance
 title: Сквозная приёмка интерфейса
-stage: draft
+stage: acceptance-open
 dependencies: [EP-0026-US-0002-menus-and-sessions, EP-0026-US-0003-world-map, EP-0026-US-0004-ship-and-flight, EP-0026-US-0005-station-and-economy, EP-0026-US-0006-crew-and-dialogue, EP-0026-US-0007-tactical-flow, EP-0026-US-0008-developer-ui]
 ---
 

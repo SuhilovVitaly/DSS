@@ -13,7 +13,7 @@
 
 ## Результаты сквозного прогона
 
-- Полный Client Release: 2424/2433. Восемь отказов карты совпадают по тестам с ранее зарегистрированными: три EveryStationSelectableAtMaximumNetwork, FullMapInteractionMatrix, BaseAndFieldInfoStayReadable, OverlapPreservesSelectionAndInformationalText и два ApproachCameraIntegrationTests. Ещё один отказ — таймаут сценария заправки SPC-MARKET-MINING.
+- Полный Client Release: 2424/2433. Восемь отказов карты совпадают по тестам с ранее зарегистрированными: три EveryStationSelectableAtMaximumNetwork, FullMapInteractionMatrix, BaseAndFieldInfoStayReadable, OverlapPreservesSelectionAndInformationalText и два ApproachCameraIntegrationTests. Ещё один отказ — таймаут сценария заправки SPC-MARKET-MINING. При отдельном повторе прошли 5/5 сценариев стыковки и сделки. Дополнительная тактическая регрессия прошла 530/530 с фильтром TacticalBattle и исключением класса визуальных эталонов Ep0019ViewTests. Полный Client выше включал этот класс.
 - Растровый прогон: Default_500, seed 1, 1280×720/S1/EN и 1920×1080/S1.5/RU. Карта проверяет фактический LOD. Таймер измеряет CPU render/flush после 30 кадров прогрева, 120 образцов. Сопоставимых исходных данных карты и списка нет.
 - Нативный бой: 1280×720/S1, монитор index 1 (1920×1080), Intel Arc 140V, Tabletop, 46/46 в исходном и итоговом прогонах. p95 CPU nativeDraw 6,48 → 5,86 мс, максимум 16,30 → 17,90 мс. Однократные замеры с разной фоновой нагрузкой; порог регрессии и GPU execution открыты.
 - Эталоны и пороги G-02/G-03, физический ввод и приёмка владельцем открыты.
@@ -24,3 +24,5 @@
 Полный Client, диалог и торговые кадры: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/final-client-20261113-141105/`.
 Нативный исходный и итоговый бой: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/native-baseline-20261113-134750/native.json` и `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/native-final-20261113-141254/native.json`.
 Миграции: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/engine-save-20261113-141505/`.
+
+Повтор экономики и тактическая регрессия: `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/market-retry-20261113-141608/` и `D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/tactical-regression-20261113-141553/`.

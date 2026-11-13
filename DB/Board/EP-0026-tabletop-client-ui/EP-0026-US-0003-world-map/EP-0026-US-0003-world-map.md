@@ -2,7 +2,7 @@
 epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0003-world-map
 title: Карта мира и навигация
-stage: draft
+stage: implemented
 dependencies: [EP-0026-US-0001-theme-and-controls]
 ---
 

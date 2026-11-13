@@ -35,8 +35,11 @@ MECHANICS_EP='DB/Board/EP-0020-tactical-battle-mechanics'
 XENON_EP='DB/Board/EP-0022-tactical-battle-xenon-star'
 PILOT_EP='DB/Board/EP-0023-pilot-card-commands'
 TABLETOP_EP='DB/Board/EP-0024-battle-field-redesign'
+CLIENT_TABLETOP_EP='DB/Board/EP-0026-tabletop-client-ui'
 MAP_HISTORY_EPS=['DB/Board/EP-0002-procedural-solar-system','DB/Board/EP-0003-station-clusters-and-trade-geography','DB/Board/EP-0004-ai-territories-and-map-environment']
-EXCLUDED={**{TABLETOP_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact','FinalValidation','AcceptanceCoverage','Tickets')},
+EXCLUDED={**{CLIENT_TABLETOP_EP+'/'+name+'.md':'graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact','AcceptanceCoverage','Tickets')},
+ CLIENT_TABLETOP_EP+'/EP-0026-US-0010-project-documentation/EP-0026-US-0010-TK-0001-project-docs/EP-0026-US-0010-TK-0001-project-docs.md':'final graph publication receipt',
+ **{TABLETOP_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact','FinalValidation','AcceptanceCoverage','Tickets')},
  TABLETOP_EP+'/EP-0024-US-0010-project-documentation/EP-0024-US-0010-TK-0001-docs/EP-0024-US-0010-TK-0001-docs.md':'final graph publication receipt',
  **{MECHANICS_EP+'/'+name+'.md':'final graph/publication ledger' for name in ('ExecutionStatus','DocumentationImpact','FinalValidation','Tickets')},
  **{PILOT_EP+'/'+name+'.md':'graph/publication ledger' for name in ('ExecutionStatus','Tickets')},
@@ -78,7 +81,7 @@ def nid(p,e): return slug(str(Path(p).with_suffix('')))+'_'+slug(e)
 def main():
  a=argparse.ArgumentParser(description=__doc__); a.add_argument('--prepare-ast',action='store_true'); a.add_argument('--dry-run',action='store_true'); a.add_argument('--force',action='store_true'); args=a.parse_args()
  code=sorted(p for p in collect_files(R,root=R) if p.suffix in ('.cs','.py') and 'graphify-out' not in p.parts)
- docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP, INITIATIVE_EP, GEOGRAPHY_EP, UI_EP, MECHANICS_EP, XENON_EP, PILOT_EP, TABLETOP_EP, *MAP_HISTORY_EPS] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
+ docs=sorted(set((R/'DB'/'Documentation').rglob('*.md')) | {p for ep in [MODULE_EP, EP, OBSERVED_EP, POINT_EP, TUNING_EP, PANELS_EP, TACTICAL_EP, SKINS_EP, INITIATIVE_EP, GEOGRAPHY_EP, UI_EP, MECHANICS_EP, XENON_EP, PILOT_EP, TABLETOP_EP, CLIENT_TABLETOP_EP, *MAP_HISTORY_EPS] for p in (R/ep).rglob('*.md')} | {R/'AGENTS.md',R/'CLAUDE.md'} | set((R/'tools').rglob('README.md')) | set((R/'tools').rglob('EP0013.md')) | {R/'src/DeepSpaceSaga.Client/Skins/README.md'})
  docs=[p for p in docs if not {'bin','obj'} & set(p.parts)]
  docs=[p for p in docs if p.relative_to(R).as_posix() not in EXCLUDED and ('evidence' not in p.relative_to(R).parts or p.relative_to(R).as_posix() in {POINT_EP+'/evidence/balance.md',POINT_EP+'/evidence/native.md'})]
  print(f'Corpus: {len(code)} code files, {len(docs)} Markdown files; aggregated HTML above 5000 nodes.',flush=True)

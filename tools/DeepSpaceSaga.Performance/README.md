@@ -1,3 +1,13 @@
+# Tabletop client raster review
+
+Build Release and run from the DSS checkout with an absolute report path inside the workspace validation root.
+
+```powershell
+dotnet tools/DeepSpaceSaga.Performance/bin/Release/net8.0/DeepSpaceSaga.Performance.dll D:/DeepSpaceSaga/DSS D:/DeepSpaceSaga/artifacts/validation/tabletop-client/unique-run/raster.json --tabletop-client-raster
+```
+
+The runner captures Main Menu, Station and the four verified map detail levels in EN at 1280×720/S1 and RU at 1920×1080/S1.5. The world uses Default_500 seed 1. The report records CPU raster timings over 120 frames after 30 warmup frames. Native GPU, input and owner acceptance are recorded in Board.
+
 # Tactical battle native acceptance
 
 From DSS root, run the built tool with absolute evidence output under workspace artifacts:

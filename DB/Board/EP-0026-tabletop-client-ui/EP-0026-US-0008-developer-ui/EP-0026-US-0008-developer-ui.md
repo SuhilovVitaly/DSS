@@ -2,7 +2,7 @@
 epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0008-developer-ui
 title: Отладочные экраны и мастерская портретов
-stage: draft
+stage: implemented
 dependencies: [EP-0026-US-0001-theme-and-controls]
 ---
 

@@ -1,7 +1,7 @@
 # Перестройка навигационного графа
 
 `tools/graphify/rebuild.py` выполняет offline AST extraction и Markdown structure
-для code/docs/Board, включая EP-0015, EP-0016, EP-0017, EP-0018/EP-0019/EP-0020/EP-0022/EP-0023/EP-0024 и map-history EP-0002/3/4, и объединяет свежие host-agent semantic
+для code/docs/Board, включая EP-0015, EP-0016, EP-0017, EP-0018/EP-0019/EP-0020/EP-0022/EP-0023/EP-0024/EP-0026 и map-history EP-0002/3/4, и объединяет свежие host-agent semantic
 fragments. Реальная игра и внешний API не запускаются. Для нового rebuild нужны
 Python с установленным Graphify и результаты semantic чтения по текущим hashes.
 
