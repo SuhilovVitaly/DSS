@@ -100,6 +100,8 @@
   "TacticalBattle.Log.Line": "Ход {0} · {1}: {2}",
   "TacticalBattle.Log.FirePhase": "Стрельба",
   "TacticalBattle.Log.Title": "Журнал боя",
+  "TacticalBattle.Log.Turn": "Ход {0}",
+  "TacticalBattle.Log.AllNoTargets": "Целей не было. Выстрелов не было.",
   "TacticalBattle.Log.Moved": "{0}: перемещение завершено.",
   "TacticalBattle.Log.Started": "Бой начался.",
   "TacticalBattle.Log.NoAttackers": "{0}: теперь истребитель (атаковать больше некому).",

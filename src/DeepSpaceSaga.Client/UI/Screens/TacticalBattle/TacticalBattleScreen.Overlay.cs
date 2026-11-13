@@ -14,6 +14,7 @@ public sealed partial class TacticalBattleScreen
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;
     private BattleViewport _viewport = new(1, 1280);
     private SKRect _minimap;
+    private TacticalBattleMinimap.Projection _minimapProjection;
     internal IReadOnlyList<SKRect> PanelRects => OverlayRects().Select(r => new SKRect(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S)).ToArray();
     private SKRect Raw(SKRect r) => new(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S);
     private SKPoint DesignPoint(float x, float y) => new((float)(x / (double)_viewport.S), (float)(y / (double)_viewport.S));
@@ -34,7 +35,7 @@ public sealed partial class TacticalBattleScreen
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)
     {
         _hoverFrame = f;
-        TacticalBattleMinimap.Draw(c, f, _minimap);
+        _minimapProjection = TacticalBattleMinimap.Draw(c, f, _minimap);
         _phasePanel.Draw(c, f, Layout);
         _pilotColumn.Draw(c, _portraits);
         _hoverCard.Draw(c, f, _portraits);
@@ -47,6 +48,15 @@ public sealed partial class TacticalBattleScreen
         }
     }
     internal SKRect CardCommandBounds(string action) => Raw(_pilotColumn.CommandBounds(action));
+
+    private bool CenterFromMinimap(SKPoint point)
+    {
+        if (_minimapProjection.Scale <= 0 || !_minimapProjection.Bounds.Contains(point)) return false;
+        CancelOrderGesture();
+        var (x, y) = _minimapProjection.Unproject(point);
+        _camera.CenterOn(x, y);
+        return true;
+    }
 
     private string? SelectedPlanningDrone => Flow.State?.Phase switch
     {

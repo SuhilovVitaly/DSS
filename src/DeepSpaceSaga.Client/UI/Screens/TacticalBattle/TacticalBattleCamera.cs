@@ -104,6 +104,13 @@ internal sealed class TacticalBattleCamera
             _fittedPixelsPerUnit * MinZoom, _fittedPixelsPerUnit * MaxZoom);
     }
 
+    internal void CenterOn(double x, double y)
+    {
+        EndPan();
+        _camera.SetFocus(x, y);
+        UserView = true;
+    }
+
     public bool BeginPan(float x, float y)
     {
         if (!Contains(x, y)) return false;

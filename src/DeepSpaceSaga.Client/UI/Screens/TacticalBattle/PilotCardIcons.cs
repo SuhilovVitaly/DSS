@@ -4,7 +4,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static class PilotCardIcons
 {
-    internal static void StatIcon(SKCanvas canvas, string kind, SKPoint center, SKColor color)
+    internal static void StatIcon(SKCanvas canvas, string kind, SKPoint center, SKColor color, float scale = 1)
     {
         using var path = new SKPath();
         switch (kind)
@@ -33,12 +33,13 @@ internal static class PilotCardIcons
         }
 
         path.Close();
+        if (scale != 1) path.Transform(SKMatrix.CreateScale(scale, scale));
         using var paint = new SKPaint
         {
             Color = color,
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1.3f,
+            StrokeWidth = 1.3f * scale,
             StrokeCap = SKStrokeCap.Round,
             StrokeJoin = SKStrokeJoin.Round
         };
@@ -47,7 +48,7 @@ internal static class PilotCardIcons
         if (kind == "mind")
         {
             paint.Style = SKPaintStyle.Fill;
-            canvas.DrawCircle(center, 1.5f, paint);
+            canvas.DrawCircle(center, 1.5f * scale, paint);
         }
     }
 }

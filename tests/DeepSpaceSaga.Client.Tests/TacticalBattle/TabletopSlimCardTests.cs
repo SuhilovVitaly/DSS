@@ -31,9 +31,11 @@ public sealed class TabletopSlimCardTests
             foreach (var (kind, offset) in new[] { ("hull", 17), ("armor", 26) })
             {
                 var bar = layout.Rects[$"pilot-{kind}:{card.UnitId}"];
-                Assert.Equal(SKRect.Create(rect.Left + 53, rect.Top + offset, 57, 5), bar);
+                Assert.Equal(SKRect.Create(rect.Left + 50, rect.Top + offset, 55, 5), bar);
                 var fill = layout.Rects[$"pilot-{kind}-fill:{card.UnitId}"];
-                Assert.Equal((float)card.Stats.Single(stat => stat.Kind == kind).Fill * bar.Width, fill.Width, 3);
+                var stat = card.Stats.Single(stat => stat.Kind == kind);
+                Assert.Equal((float)stat.Fill * bar.Width, fill.Width, 3);
+                Assert.Contains(layout.Texts, text => text.Text == stat.Value);
             }
             Assert.Contains(layout.Texts, t => t.Text == card.Name);
             Assert.DoesNotContain(layout.Texts, t => t.Text == card.PhaseText && card.PhaseText.Length > 0);

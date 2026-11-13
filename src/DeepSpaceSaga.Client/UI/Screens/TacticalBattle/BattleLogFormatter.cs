@@ -5,7 +5,13 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 public static class BattleLogFormatter
 {
-    public static string Format(TacticalBattleLogEvent entry)
+    public static string Format(TacticalBattleLogEvent entry) =>
+        F("Log.Line", BattleFormat.Number(entry.Turn), Phase(entry.Phase), Body(entry));
+
+    internal static string Phase(TacticalBattlePhase phase) =>
+        L(phase == TacticalBattlePhase.Fire ? "Log.FirePhase" : "Phase." + phase);
+
+    internal static string Body(TacticalBattleLogEvent entry)
     {
         string actor = entry.ActorId ?? "?", target = entry.TargetId ?? "?";
         string chance = entry.Shot is { } shot ? BattleFormat.Probability(shot.Chance) : BattleFormat.Text("—");
@@ -44,8 +50,7 @@ public static class BattleLogFormatter
             _ => L("Log.Unknown")
         };
         if (entry.Shot?.Decoyed == true) body += " · " + L("DecoyChip");
-        string phase = L(entry.Phase == TacticalBattlePhase.Fire ? "Log.FirePhase" : "Phase." + entry.Phase);
-        return F("Log.Line", BattleFormat.Number(entry.Turn), phase, body);
+        return body;
     }
 
     private static string SkipText(TacticalFireSkipReason? reason) => reason switch

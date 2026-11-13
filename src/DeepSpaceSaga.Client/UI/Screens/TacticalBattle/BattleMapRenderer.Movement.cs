@@ -5,7 +5,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
-    internal static float MovementStrokeScale(TacticalBattleView view) => 1.7f - view.UnitScale;
+    internal static float MovementStrokeScale(TacticalBattleView view) => .5f + view.UnitScale;
 
     static partial void DrawMovement(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied)
     {

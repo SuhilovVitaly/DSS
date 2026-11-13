@@ -100,6 +100,8 @@
   "TacticalBattle.Log.Line": "Turn {0} · {1}: {2}",
   "TacticalBattle.Log.FirePhase": "Firing",
   "TacticalBattle.Log.Title": "Battle log",
+  "TacticalBattle.Log.Turn": "Turn {0}",
+  "TacticalBattle.Log.AllNoTargets": "No targets. No shots were fired.",
   "TacticalBattle.Log.Moved": "{0} moved.",
   "TacticalBattle.Log.Started": "Battle started.",
   "TacticalBattle.Log.NoAttackers": "{0} is now a fighter (no attackers remain).",

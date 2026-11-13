@@ -15,7 +15,8 @@ public sealed class OverlayShellTests
     {
         await using var s = await Ep0019Scenes.Create("1-move-no-hover"); using var b = s.Render();
         var before = s.Screen.BuildMoveRequest().Orders;
-        s.Screen.OnMouseDown(1850, 90, MouseButton.Left);
+        s.Screen.OnMouseDown(1850, 90, MouseButton.Right);
+        s.Screen.OnMouseUp(1850, 90, MouseButton.Right);
         Assert.Equal(before, s.Screen.BuildMoveRequest().Orders);
         Assert.Equal(1280, s.Screen.View.PixelWidth);
         Assert.Equal(BattleDesign.MapBg, b.GetPixel(1100, 1040));
@@ -25,7 +26,7 @@ public sealed class OverlayShellTests
         Assert.Equal(ScreenEvent.MoveTacticalBattle, s.Screen.OnMouseDown(primary.MidX * 1.5f, primary.MidY * 1.5f, MouseButton.Left));
         var card = s.Screen.Layout.Rects["battle-log"];
         Assert.DoesNotContain("build", s.Screen.Layout.Rects.Keys);
-        Assert.Contains(s.Screen.Flow.State!.Log.Select(BattleLogFormatter.Format).First(), s.Screen.LogTab.Panel.Text);
+        Assert.Contains(BattleLogFormatter.Body(s.Screen.Flow.State!.Log[0]), s.Screen.LogTab.Panel.Text);
         Assert.Equal(new SKRect(1040, 284, 1274, 714), card);
         s.Screen.OnMouseDown(card.MidX * 1.5f, card.MidY * 1.5f, MouseButton.Left);
         Assert.Equal(before, s.Screen.BuildMoveRequest().Orders);
@@ -51,8 +52,6 @@ public sealed class OverlayShellTests
         var orders = screen.BuildMoveRequest().Orders;
         var x = map.MidX * 1.5f;
         var y = map.MidY * 1.5f;
-        screen.OnMouseDown(x, y, MouseButton.Left);
-        screen.OnMouseUp(x, y, MouseButton.Left);
         screen.OnMouseDown(x, y, MouseButton.Right);
         screen.OnMouseMove(x - 50, y - 50);
         screen.OnMouseUp(x - 50, y - 50, MouseButton.Right);
@@ -78,19 +77,32 @@ public sealed class OverlayShellTests
         Assert.Equal(954, screen.Layout.Rects["minimap"].Right);
         var resizedViewport = screen.Layout.Rects["minimap:viewport"];
         Assert.InRange(resizedViewport.Width / resizedViewport.Height, 1.3332f, 1.3335f);
+
+        var unit = screen.Flow.State!.Units.First(u => u.Kind == TacticalUnitKind.Carrier);
+        var marker = screen.Layout.Rects["minimap:unit:" + unit.Id];
+        var oldZoom = screen.View.PixelsPerUnit;
+        screen.OnMouseDown(marker.MidX * 1.5f, marker.MidY * 1.5f, MouseButton.Left);
+        screen.OnMouseUp(marker.MidX * 1.5f, marker.MidY * 1.5f, MouseButton.Left);
+        Assert.InRange(Math.Abs(screen.View.CenterX - unit.Pose.X), 0, .01);
+        Assert.InRange(Math.Abs(screen.View.CenterY - unit.Pose.Y), 0, .01);
+        Assert.Equal(oldZoom, screen.View.PixelsPerUnit);
+        Assert.Equal(orders, screen.BuildMoveRequest().Orders);
     }
 
     [Fact]
-    public async Task MovementStrokeGetsThinnerWhenZoomingIn()
+    public async Task MovementStrokeGetsThinnerWhenZoomingOut()
     {
         await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
         using var bitmap = scene.Render();
         var screen = scene.Screen;
         var before = screen.View;
-        screen.OnMouseWheel(960, 540, -1000000);
-        Assert.True(screen.View.PixelsPerUnit > before.PixelsPerUnit);
+        screen.OnMouseWheel(960, 540, 1000000);
+        Assert.True(screen.View.PixelsPerUnit < before.PixelsPerUnit);
         Assert.InRange(TacticalBattleMapRenderer.MovementStrokeScale(screen.View), .5f,
             TacticalBattleMapRenderer.MovementStrokeScale(before) - .01f);
+        screen.OnMouseWheel(960, 540, -1000000);
+        Assert.True(TacticalBattleMapRenderer.MovementStrokeScale(screen.View) >
+            TacticalBattleMapRenderer.MovementStrokeScale(before));
     }
 
     [Fact]

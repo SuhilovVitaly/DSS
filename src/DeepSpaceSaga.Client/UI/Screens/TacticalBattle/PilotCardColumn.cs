@@ -230,7 +230,9 @@ internal sealed class PilotCardColumn
         Stroke(c, new(portrait.Right, portrait.Bottom), new(portrait.Left, portrait.Bottom), light, 1.6f);
         using var edge = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = SKColor.Parse("#05070A"), StrokeWidth = .7f };
         c.DrawRect(portrait, edge);
-        SmallText(c, card.Name, r.Left + 41, r.Top + 14, 9.8f, Skin.Color("ui.text", "text", Text), true);
+        var ink = Skin.Color("ui.text", "text", Text);
+        var name = BuildCardModel.Ellipsize(card.Name, 68, 9.8f, true);
+        SmallText(c, name, r.Left + 41, r.Top + 14, 9.8f, ink, true);
         var damage = _frame?.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
         DrawHealth("hull", r.Top + 17, Cyan, damage?.Hull > 0);
         DrawHealth("armor", r.Top + 26, Purple, damage?.Armor > 0);
@@ -238,7 +240,8 @@ internal sealed class PilotCardColumn
         if (unit is not null)
         {
             int factor = Math.Max(1, TacticalShipSprites.Factor(TacticalShipSprites.CanvasScale(c)) / 2);
-            TacticalShipSprites.Draw(c, unit, new(r.Left + 124, r.Top + 22), true, 0, factor: factor);
+            TacticalShipSprites.Draw(c, unit, new(r.Right - 19, r.Top + 10), true, 0,
+                factor: factor, shadow: false, unitScale: .85f);
         }
         if (destroyed)
         {
@@ -251,13 +254,16 @@ internal sealed class PilotCardColumn
         }
         void DrawHealth(string kind, float y, SKColor color, bool damaged)
         {
-            const float width = 57, height = 5;
-            var box = SKRect.Create(r.Left + 53, y, width, height);
+            const float width = 55, height = 5;
+            var box = SKRect.Create(r.Left + 50, y, width, height);
             string role = "ui.bar." + kind;
-            double fraction = Math.Clamp(card.Stats.FirstOrDefault(s => s.Kind == kind)?.Fill ?? 0, 0, 1);
-            var icon = new SKPoint(r.Left + 46, box.MidY);
-            PilotCardIcons.StatIcon(c, kind, icon, destroyed ? Muted : Skin.Color(role, "fill", color));
+            var stat = card.Stats.FirstOrDefault(s => s.Kind == kind);
+            double fraction = Math.Clamp(stat?.Fill ?? 0, 0, 1);
+            var icon = new SKPoint(r.Left + 45, box.MidY);
+            PilotCardIcons.StatIcon(c, kind, icon, destroyed ? Muted : gold, .65f);
             Bar(c, box.Left, box.Top, width, height, fraction, color, role);
+            string value = stat?.Value ?? "—";
+            SmallText(c, value, box.Right + 4, box.MidY + 2.2f, FitSize(value, 7.2f, 36), ink);
             if (Recording is { } layout)
             {
                 layout.Rects[$"pilot-{kind}:{card.UnitId}"] = box;

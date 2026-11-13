@@ -14,11 +14,20 @@ internal static class TacticalBattleMinimap
     internal static SKRect Bounds(TacticalBattleFrame frame)
         => new(frame.Panel.Left, Margin, frame.Panel.Right, Margin + Height);
 
-    internal static void Draw(SKCanvas canvas, TacticalBattleFrame frame, SKRect bounds)
+    internal readonly record struct Projection(SKRect Bounds, double CenterX, double CenterY, double Scale)
+    {
+        internal SKPoint Project(double x, double y) =>
+            new(Bounds.MidX + (float)((x - CenterX) * Scale), Bounds.MidY + (float)((y - CenterY) * Scale));
+
+        internal (double X, double Y) Unproject(SKPoint point) =>
+            (CenterX + (point.X - Bounds.MidX) / Scale, CenterY + (point.Y - Bounds.MidY) / Scale);
+    }
+
+    internal static Projection Draw(SKCanvas canvas, TacticalBattleFrame frame, SKRect bounds)
     {
         var area = bounds;
         area.Inflate(-8, -8);
-        if (area.Width <= 0 || area.Height <= 0) return;
+        if (area.Width <= 0 || area.Height <= 0) return default;
 
         var view = frame.View;
         var (viewLeft, viewTop) = view.Unproject(0, 0);
@@ -36,11 +45,10 @@ internal static class TacticalBattleMinimap
 
         double centerX = (left + right) * .5, centerY = (top + bottom) * .5;
         double scale = Math.Min(area.Width / (right - left), area.Height / (bottom - top));
-        SKPoint Project(double x, double y) =>
-            new(area.MidX + (float)((x - centerX) * scale), area.MidY + (float)((y - centerY) * scale));
+        var projection = new Projection(bounds, centerX, centerY, scale);
 
-        var upperLeft = Project(viewLeft, viewTop);
-        var lowerRight = Project(viewRight, viewBottom);
+        var upperLeft = projection.Project(viewLeft, viewTop);
+        var lowerRight = projection.Project(viewRight, viewBottom);
         var viewport = new SKRect(upperLeft.X, upperLeft.Y, lowerRight.X, lowerRight.Y);
         if (Recording is { } layout)
         {
@@ -61,7 +69,7 @@ internal static class TacticalBattleMinimap
         paint.Style = SKPaintStyle.Fill;
         foreach (var unit in units)
         {
-            var point = Project(unit.Pose.X, unit.Pose.Y);
+            var point = projection.Project(unit.Pose.X, unit.Pose.Y);
             bool own = unit.Side == frame.Battle.PlayerSide;
             paint.Color = Skin.Color(own ? "ui.minimap.own" : "ui.minimap.enemy", "fill", own ? Cyan : Orange);
             float radius = unit.Kind == TacticalUnitKind.Carrier ? 3.5f : 2;
@@ -70,5 +78,6 @@ internal static class TacticalBattleMinimap
             else canvas.DrawCircle(point, radius, paint);
             if (Recording is { } recorded) recorded.Rects["minimap:unit:" + unit.Id] = marker;
         }
+        return projection;
     }
 }
