@@ -23,7 +23,6 @@ internal sealed class TacticalBattleCamera
     private int _width = 1, _height = 1;
     private double _fittedPixelsPerUnit = 1;
     private string? _battleId;
-    private (TacticalBattlePhase Phase, int Turn)? _framedPhase;
     private SKPoint? _panOrigin;
     public bool UserView { get; private set; }
     public bool Panning => _panOrigin.HasValue;
@@ -32,16 +31,9 @@ internal sealed class TacticalBattleCamera
     public void Update(TacticalBattleSnapshot snapshot, int width, int height, bool salvo = false, bool tabletop = false)
     {
         Resize(width, height);
-        if (_battleId != snapshot.BattleId)
-        {
-            _battleId = snapshot.BattleId;
-            Fit(snapshot, tabletop, salvo);
-            _framedPhase = salvo ? null : (snapshot.Phase, snapshot.Turn);
-            return;
-        }
-        if (!tabletop || UserView || salvo || _framedPhase == (snapshot.Phase, snapshot.Turn)) return;
-        Fit(snapshot, true, false);
-        _framedPhase = (snapshot.Phase, snapshot.Turn);
+        if (_battleId == snapshot.BattleId) return;
+        _battleId = snapshot.BattleId;
+        Fit(snapshot, tabletop, salvo);
     }
 
     private void Resize(int width, int height)

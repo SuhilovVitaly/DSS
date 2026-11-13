@@ -24,14 +24,19 @@ public sealed class PhaseCameraTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Execute_movement_keeps_center_and_scale_through_playback_and_fire(bool adjustCamera)
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public async Task Phase_transitions_keep_center_and_scale_through_movement_and_salvo(bool tabletop, bool adjustCamera)
     {
-        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        using var profile = tabletop ? new TabletopTestProfile() : null;
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover", settingsPath: profile?.SettingsPath);
         scene.Fixture.ManualAnimation = true;
         var screen = scene.Screen;
+        Assert.Equal(tabletop ? "tabletop" : "classic", screen.SkinId);
         using var raster = scene.Render();
+        var initial = scene.Frame.View;
         if (adjustCamera)
         {
             screen.OnMouseWheel(900, 540, -100);
@@ -40,6 +45,11 @@ public sealed class PhaseCameraTests
             screen.OnMouseUp(960, 570, MouseButton.Right);
         }
         var expected = scene.Frame.View;
+        if (adjustCamera)
+        {
+            Assert.NotEqual(initial.PixelsPerUnit, expected.PixelsPerUnit);
+            Assert.NotEqual(initial.CenterX, expected.CenterX);
+        }
         while (scene.Frame.Battle.Phase == TacticalBattlePhase.Move)
         {
             Assert.True(scene.Frame.Battle.Turn <= 4);
@@ -52,5 +62,18 @@ public sealed class PhaseCameraTests
             Assert.Equal(expected, scene.Frame.View);
         }
         Assert.Equal(TacticalBattlePhase.Fire, scene.Frame.Battle.Phase);
+
+        await scene.Fixture.Route(screen.OnKeyDown(Key.Enter));
+        var flight = scene.Frame;
+        Assert.True(flight.Salvo?.InFlight);
+        Assert.Equal(expected, flight.View);
+        screen.OnKeyDown(Key.Enter);
+        var results = scene.Frame;
+        Assert.False(results.Salvo?.InFlight);
+        Assert.Equal(expected, results.View);
+        screen.OnKeyDown(Key.Enter);
+        var next = scene.Frame;
+        Assert.Null(next.Salvo);
+        Assert.Equal(expected, next.View);
     }
 }

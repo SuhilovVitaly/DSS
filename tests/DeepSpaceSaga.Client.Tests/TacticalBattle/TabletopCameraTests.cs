@@ -33,7 +33,7 @@ public sealed class TabletopCameraTests
     }
 
     [Fact]
-    public async Task Fire_frame_contains_targets_threats_and_last_shots_then_freezes_until_salvo_exits()
+    public async Task Initial_fire_frame_contains_combatants_and_stays_fixed_through_the_next_turn()
     {
         await using var scene = await Ep0019Scenes.Create("2-fire-hover-own");
         var state = scene.Frame.Battle;
@@ -54,7 +54,7 @@ public sealed class TabletopCameraTests
         camera.Update(moved, 1280, 720, salvo: true, tabletop: true);
         Assert.Equal(before, camera.View);
         camera.Update(moved, 1280, 720, tabletop: true);
-        Assert.NotEqual(before, camera.View);
+        Assert.Equal(before, camera.View);
         camera.Zoom(600, 400, -1); var manual = camera.View;
         camera.Update(state, 1280, 720, tabletop: true);
         Assert.True(camera.UserView); Assert.Equal(manual, camera.View);
