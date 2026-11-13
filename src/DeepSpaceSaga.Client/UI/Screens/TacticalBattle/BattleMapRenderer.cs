@@ -130,6 +130,7 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var u in units)
         {
             var p = v.Project(u.Pose); bool own = u.Side == f.Battle.PlayerSide;
+            if (Skin.Tabletop) p += TabletopDodgeOffset(f, u);
             string role = "field.unit." + (u.Kind == TacticalUnitKind.Carrier ? "carrier" : "drone") + (own ? ".own" : ".enemy");
             var color = u.State == TacticalUnitState.Disabled ? DisabledDrone : Skin.Color(role, "fill", own ? Cyan : Orange);
             if (u.Kind == TacticalUnitKind.Carrier)
@@ -213,7 +214,7 @@ internal static partial class TacticalBattleMapRenderer
 
     private static void Label(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, List<SKRect> occupied)
     {
-        if (Skin.Tabletop) { Plate(c, f, u, f.View.Project(u.Pose), occupied); return; }
+        if (Skin.Tabletop) { Plate(c, f, u, f.View.Project(u.Pose) + TabletopDodgeOffset(f, u), occupied); return; }
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
         bool wreck = u.State == TacticalUnitState.Destroyed;
         bool disabled = u.State == TacticalUnitState.Disabled;

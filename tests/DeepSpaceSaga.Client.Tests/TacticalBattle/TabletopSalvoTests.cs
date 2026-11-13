@@ -9,6 +9,55 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class TabletopSalvoTests
 {
     [Fact]
+    public async Task Dodging_drone_moves_aside_and_returns_after_the_torpedo_flies_past()
+    {
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
+        var frame = scene.Frame;
+        var original = frame.Salvo!.Flights[0];
+        var shot = original.Shot with { TargetEvading = true, Hit = false, Killed = false, Absorbed = false };
+        var target = frame.Battle.Units.Single(unit => unit.Id == shot.TargetId);
+        var start = frame.View.Project(shot.From);
+        var end = frame.View.Project(shot.To);
+        float distance = SKPoint.Distance(start, end);
+        float hull = 56 * frame.View.UnitScale;
+        float crossing = .86f * Math.Clamp(distance / (distance + 2.5f * hull), .54f, .81f);
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop"));
+
+        TacticalBattleFrame At(double progress, bool hit = false, bool absorbed = false, bool decoy = false, bool skipped = false) =>
+            frame with
+            {
+                Salvo = frame.Salvo with
+                {
+                    InFlight = progress < 1 && !skipped,
+                    PlaybackSkipped = skipped,
+                    Flights = [original with
+                    {
+                        Shot = shot with { Hit = hit, Absorbed = absorbed },
+                        DecoyTriggered = decoy,
+                        ElapsedMs = original.LaunchMs + original.DurationMs * progress
+                    }]
+                }
+            };
+
+        var rest = TacticalBattleMapRenderer.HoverPoint(At(.1), target);
+        var dodging = At(crossing);
+        var moved = TacticalBattleMapRenderer.HoverPoint(dodging, target);
+        Assert.Equal(.8f * hull, SKPoint.Distance(rest, moved), .01f);
+        Assert.InRange(Math.Abs((moved.X - rest.X) * (end.X - start.X) + (moved.Y - rest.Y) * (end.Y - start.Y)), 0, .1f);
+        var near = Draw(dodging, "dodge-crossing").Rects["projectile"];
+        Assert.InRange(SKPoint.Distance(new(near.MidX, near.MidY), end), 0, .1f);
+        var past = Draw(At(.859), "dodge-fly-past").Rects["projectile"];
+        Assert.InRange(SKPoint.Distance(new(past.MidX, past.MidY), end) / hull, 2.4f, 2.5f);
+        Assert.DoesNotContain("projectile", Draw(At(.9)).Rects.Keys);
+        Assert.InRange(SKPoint.Distance(rest, TacticalBattleMapRenderer.HoverPoint(At(.9), target)), .01f, .8f * hull);
+        Assert.Equal(rest, TacticalBattleMapRenderer.HoverPoint(At(1), target));
+        Assert.DoesNotContain(Draw(At(1)).Rects.Keys, key => key.StartsWith("explosion:", StringComparison.Ordinal));
+        foreach (var other in new[] { At(crossing, hit: true), At(crossing, absorbed: true), At(crossing, decoy: true), At(crossing, skipped: true) })
+            Assert.Equal(rest, TacticalBattleMapRenderer.HoverPoint(other, target));
+    }
+
+    [Fact]
     public async Task Completed_shot_panels_accumulate_and_clear_on_unselected_movement()
     {
         using var profile = new TabletopTestProfile();

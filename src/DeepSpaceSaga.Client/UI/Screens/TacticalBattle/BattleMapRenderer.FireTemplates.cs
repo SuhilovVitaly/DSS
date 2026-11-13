@@ -14,6 +14,46 @@ internal static partial class TacticalBattleMapRenderer
         (flight.Shot.Hit || flight.InterceptedByDecoy) && !flight.Shot.Absorbed ? "boom-hit" : "puff";
 
     private const float DecoyLaunchProgress = .45f;
+    private const float DodgeFlyPastEnd = .86f;
+
+    private readonly record struct DodgePath(SKPoint From, SKPoint Target, SKPoint Direction, float HullLength)
+    {
+        private float PassDistance => HullLength * 2.5f;
+        private float CrossTime => DodgeFlyPastEnd * Math.Clamp(
+            SKPoint.Distance(From, Target) / (SKPoint.Distance(From, Target) + PassDistance), .54f, .81f);
+        public float FlightLength => SKPoint.Distance(From, Target) + PassDistance;
+
+        public SKPoint Torpedo(float progress) => progress < CrossTime
+            ? From + Scale(Target - From, progress / CrossTime)
+            : Target + Scale(Direction, PassDistance * Math.Clamp((progress - CrossTime) / (DodgeFlyPastEnd - CrossTime), 0, 1));
+
+        public SKPoint Offset(float progress)
+        {
+            float approach = Math.Clamp((progress - CrossTime + .22f) / .22f, 0, 1);
+            float settle = Math.Clamp((1 - progress) / (1 - DodgeFlyPastEnd), 0, 1);
+            float amount = Math.Min(approach, settle);
+            var sideways = new SKPoint(-Direction.Y, Direction.X);
+            if (sideways.Y > 0) sideways = Scale(sideways, -1);
+            return Scale(sideways, HullLength * .8f * amount * amount * (3 - 2 * amount));
+        }
+    }
+
+    private static DodgePath EvasionPath(TacticalBattleView view, TacticalShotFlight flight)
+    {
+        var from = view.Project(flight.Shot.From);
+        var target = view.Project(flight.Shot.To);
+        float length = SKPoint.Distance(from, target);
+        var direction = length > .001f ? Scale(target - from, 1 / length) : new SKPoint(1, 0);
+        return new(from, target, direction, 56 * view.UnitScale);
+    }
+
+    private static SKPoint TabletopDodgeOffset(TacticalBattleFrame frame, TacticalUnitSnapshot unit)
+    {
+        if (unit.Kind != TacticalUnitKind.Drone || frame.Salvo is not { InFlight: true, PlaybackSkipped: false } salvo)
+            return SKPoint.Empty;
+        var flight = salvo.Flights.FirstOrDefault(shot => shot.Flying && shot.Dodged && shot.Shot.TargetId == unit.Id);
+        return flight is null ? SKPoint.Empty : EvasionPath(frame.View, flight).Offset((float)flight.Progress);
+    }
 
     private static SKPoint DecoyOffset(SKPoint from, SKPoint target, int index, float scale)
     {
@@ -40,8 +80,9 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var flight in salvo.Flights.Where(flight => flight.Flying))
         {
             var a = f.View.Project(flight.Shot.From); var b = f.View.Project(flight.Shot.To);
-            Stroke(c, a, b, Yellow.WithAlpha(70), 1.1f, [5, 5]);
             float progress = (float)flight.Progress, scale = f.View.UnitScale;
+            if (flight.Dodged && progress >= DodgeFlyPastEnd) continue;
+            Stroke(c, a, b, Yellow.WithAlpha(70), 1.1f, [5, 5]);
             var offset = flight.DecoyTriggered ? DecoyOffset(a, b, flight.Index, scale) : SKPoint.Empty;
             var redirect = flight.InterceptedByDecoy ? offset : SKPoint.Empty;
             if (flight.DecoyTriggered && progress >= DecoyLaunchProgress)
@@ -57,12 +98,14 @@ internal static partial class TacticalBattleMapRenderer
                     decoyLayout.Rects["decoy-flight:" + flight.Index] =
                         SKRect.Create(decoy.X - flareRadius, decoy.Y - flareRadius, 2 * flareRadius, 2 * flareRadius);
             }
-            var head = TorpedoPoint(a, b, redirect, progress);
-            var tangent = head - TorpedoPoint(a, b, redirect, Math.Max(0, progress - .001f));
-            float length = Math.Max(.001f, SKPoint.Distance(a, b));
+            var dodge = flight.Dodged ? EvasionPath(f.View, flight) : (DodgePath?)null;
+            SKPoint At(float t) => dodge?.Torpedo(t) ?? TorpedoPoint(a, b, redirect, t);
+            var head = At(progress);
+            var tangent = dodge?.Direction ?? (head - At(Math.Max(0, progress - .001f)));
+            float length = Math.Max(.001f, dodge?.FlightLength ?? SKPoint.Distance(a, b));
             for (int i = 1; i <= 9 && 6 + 7 * i + 6 < length * progress; i++)
                 TacticalShipSprites.DrawEffect(c, "trail", (i - 1) * TacticalShipSprites.EffectFrames("trail") / 9,
-                    TorpedoPoint(a, b, redirect, progress - (6 + 7 * i) / length), (byte)(255 - 18 * i));
+                    At(progress - (6 + 7 * i) / length), (byte)(255 - 18 * i));
             bool own = f.Battle.Units.FirstOrDefault(u => u.Id == flight.Shot.ShooterId)?.Side == f.Battle.PlayerSide;
             if (progress == 0) tangent = b - a;
             float course = MathF.Atan2(tangent.Y, tangent.X) * 180 / MathF.PI;
@@ -75,7 +118,7 @@ internal static partial class TacticalBattleMapRenderer
     private static void DrawTabletopExplosions(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo)
     {
         if (salvo.PlaybackSkipped) return;
-        foreach (var flight in salvo.Flights.Where(flight => flight.Arrived))
+        foreach (var flight in salvo.Flights.Where(flight => flight.Arrived && !flight.Dodged))
         {
             string name = ExplosionName(flight);
             var strip = TacticalBattleSkinRenderScope.EffectStrip(name);

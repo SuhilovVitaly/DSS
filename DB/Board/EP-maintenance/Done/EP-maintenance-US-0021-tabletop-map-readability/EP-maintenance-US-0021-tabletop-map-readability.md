@@ -16,6 +16,7 @@ implementation_status: implemented
 - [AC3. Снятие выделения после залпа](EP-maintenance-US-0021-TK-0003-clear-salvo-ring/EP-maintenance-US-0021-TK-0003-clear-salvo-ring.md). Во время полёта карта выделяет текущего стрелка. По завершении или пропуске полёта жёлтый круг стрелка исчезает, результаты под карточками остаются доступными.
 
 - [AC4. Перетаскивание карты во время движения](EP-maintenance-US-0021-TK-0004-pan-during-movement/EP-maintenance-US-0021-TK-0004-pan-during-movement.md). Правая кнопка перетаскивает поле и во время анимации движения. Выбранное положение камеры сохраняется после анимации.
+- [AC5. Анимация успешного уклонения](EP-maintenance-US-0021-TK-0005-animate-successful-dodge/EP-maintenance-US-0021-TK-0005-animate-successful-dodge.md). Дрон отходит от линии огня и возвращается, когда торпеда пролетает мимо и исчезает.
 
 ## Проверки
 

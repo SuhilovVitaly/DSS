@@ -10,6 +10,7 @@ public sealed record TacticalShotFlight(TacticalShotSnapshot Shot, int Index, do
     public double DurationMs { get; init; } = TacticalBattleResults.FlightMs;
     internal bool DecoyTriggered { get; init; }
     internal bool InterceptedByDecoy => DecoyTriggered && !Shot.Hit && !Shot.Absorbed;
+    internal bool Dodged => Shot.TargetEvading && !Shot.Hit && !Shot.Absorbed && !InterceptedByDecoy;
     internal double ImpactAgeMs => ElapsedMs - (LaunchMs + DurationMs);
     public bool Arrived => ImpactAgeMs >= 0;
     public bool Flying => ElapsedMs >= LaunchMs && !Arrived;
