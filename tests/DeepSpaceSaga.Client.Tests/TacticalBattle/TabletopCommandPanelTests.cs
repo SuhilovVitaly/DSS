@@ -17,6 +17,8 @@ public sealed class TabletopCommandPanelTests
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
         try
         {
+            Assert.Null(screen.CaptureFrame(1280, 720)!.SelectedDroneId);
+            screen.OnKeyDown(Key.Tab);
             screen.Render(canvas, 1280, 720);
             string selected = screen.Movement.Selected!;
             var panel = screen.Layout.Rects["pilot-panel:" + selected];

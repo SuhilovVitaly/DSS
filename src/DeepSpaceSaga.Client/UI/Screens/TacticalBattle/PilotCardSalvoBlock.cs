@@ -11,16 +11,20 @@ internal static class PilotCardSalvoBlock
     internal static float SalvoHeight(TacticalBattleFrame frame) => SalvoHeight(frame.Salvo!.InFlight) +
         8 * FactorLines(PilotCardModel.ResultShot(frame), frame.Salvo.InFlight, 138).Count;
 
+    internal static float ResultHeight(TacticalShotFlight flight) =>
+        SalvoHeight(false) + 8 * FactorLines(flight.Shot, false, 138).Count;
+
     private static IReadOnlyList<string> FactorLines(DeepSpaceSaga.Contracts.TacticalShotSnapshot? shot, bool inFlight, float width) =>
         !inFlight && shot?.Factors is { } factors
             ? PilotCardFireBlock.WrapSlim(BattleFormat.HitFactors(factors), width, 6.2f)
             : [];
 
-    public static void Draw(SKCanvas canvas, TacticalBattleFrame frame, string drone, float left, float right, float top)
+    public static void Draw(SKCanvas canvas, TacticalBattleFrame frame, string drone, float left, float right, float top,
+        TacticalShotFlight? result = null)
     {
         if (TacticalBattleSkinRenderScope.SlimPilots)
         {
-            DrawSlim(canvas, frame, drone, left, right, top - 5);
+            DrawSlim(canvas, frame, drone, left, right, top - 5, result);
             return;
         }
         var salvo = frame.Salvo!;
@@ -53,17 +57,19 @@ internal static class PilotCardSalvoBlock
         }
     }
 
-    private static void DrawSlim(SKCanvas c, TacticalBattleFrame frame, string drone, float left, float right, float top)
+    private static void DrawSlim(SKCanvas c, TacticalBattleFrame frame, string drone, float left, float right, float top,
+        TacticalShotFlight? result)
     {
         var salvo = frame.Salvo!;
         var flight = salvo.Flights.FirstOrDefault(f => f.Shot.ShooterId == drone);
-        var shot = salvo.InFlight ? flight?.Shot : PilotCardModel.ResultShot(frame);
+        bool inFlight = result is null && salvo.InFlight;
+        var shot = result?.Shot ?? (inFlight ? flight?.Shot : PilotCardModel.ResultShot(frame));
         var ink = SKColor.Parse("#E4ECF4"); var sub = SKColor.Parse("#9AAABB"); var value = SKColor.Parse("#FFE27A");
         if (shot is null) { TextAt(U("NoTarget"), 12, 7, sub); return; }
         var target = frame.Battle.Units.FirstOrDefault(u => u.Id == shot.TargetId);
         string name = target is null ? shot.TargetId : PilotCardModel.Name(target);
         string chance = Pct(shot.Chance);
-        if (salvo.InFlight)
+        if (inFlight)
         {
             TextAt(M("Panel.FlightTitle"), 16, 11, value, true);
             string number = $"{Array.FindIndex(frame.Battle.FireQueue.ToArray(), q => q.ShooterId == drone) + 1}/{frame.Battle.FireQueue.Length}";
@@ -88,8 +94,12 @@ internal static class PilotCardSalvoBlock
         var tone = shot.Absorbed || shot.TargetEvading ? sub : shot.Hit ? SKColor.Parse("#FF9A6A") : SKColor.Parse("#C8D4EC");
         TextAt(caption, 29, 11, tone, true);
         Stroke(c, new(left, top + 37), new(right, top + 37), SKColor.Parse("#5A4E3E"), .6f);
-        if (target is not null)
-            TextAt(M("Card.TargetAfter", name, target.Armor, target.MaxArmor, target.Hull, target.MaxHull), 47, 6.4f, ink);
+        var targetAfterShot = result is null ? target : frame.Battle.FireSteps
+            .FirstOrDefault(step => step.Shot?.ShooterId == drone)?.UnitsAfter
+            .FirstOrDefault(unit => unit.Id == shot.TargetId) ?? target;
+        if (targetAfterShot is not null)
+            TextAt(M("Card.TargetAfter", name, targetAfterShot.Armor, targetAfterShot.MaxArmor,
+                targetAfterShot.Hull, targetAfterShot.MaxHull), 47, 6.4f, ink);
         if (shot.Decoyed)
             TextAt(M("DecoyOfTarget") + ": " + Pct(shot.ChanceWithoutDecoy ?? shot.Chance) + " → " + chance, 56, 6.4f, SKColor.Parse("#A8E08A"), true);
         var unit = frame.Battle.Units.FirstOrDefault(u => u.Id == drone);
@@ -97,7 +107,7 @@ internal static class PilotCardSalvoBlock
         if (unit is not null && before is not null)
             TextAt(M("Panel.SelfState", PilotCardModel.Name(unit), before.Armor, unit.Armor, unit.Hull, unit.MaxHull), 65, 6.4f, sub);
         float factorY = 74;
-        foreach (var line in FactorLines(shot, salvo.InFlight, right - left))
+        foreach (var line in FactorLines(shot, inFlight, right - left))
         {
             TextAt(line, factorY, 6.2f, sub);
             factorY += 8;

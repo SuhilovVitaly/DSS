@@ -26,8 +26,9 @@ public sealed class TabletopPanelProbeTests
         if (name == "1-move-no-hover")
         {
             Assert.Equal(new SKRect(6, 6, 156, 46), layout.Rects["pilot:Вера"]);
-            Assert.Equal(new SKRect(51, 49, 201, 140), layout.Rects["pilot-panel:Вера"]);
-            Assert.Equal(146, layout.Rects["pilot:Юн"].Top);
+            Assert.Null(scene.Frame.SelectedDroneId);
+            Assert.DoesNotContain(layout.Rects.Keys, key => key.StartsWith("pilot-panel:", StringComparison.Ordinal));
+            Assert.Equal(51, layout.Rects["pilot:Юн"].Top);
             var color = Pixel(112, 12);
             int steel = Math.Min(Distance(color, SKColor.Parse("#3A4450")), Distance(color, SKColor.Parse("#212831")));
             Assert.True(steel < Distance(color, SKColor.Parse("#0E1B1F")));

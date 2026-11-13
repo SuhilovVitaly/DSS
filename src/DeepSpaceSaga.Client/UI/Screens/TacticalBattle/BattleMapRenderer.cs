@@ -37,7 +37,7 @@ internal static partial class TacticalBattleMapRenderer
         return new((float)PyMath.Clamp(p.X, safe.Left, safe.Right), (float)PyMath.Clamp(p.Y, safe.Top, safe.Bottom));
     }
     internal static void Draw(SKCanvas c, TacticalBattleFrame f, InteractiveAnomalyField? interactiveField = null, float? pilotColumnBottom = null,
-        PaintedCloudLayer? paintedClouds = null, GRContext? context = null, SKRect? pilotPanel = null, SKRect? minimap = null)
+        PaintedCloudLayer? paintedClouds = null, GRContext? context = null, IEnumerable<SKRect>? pilotPanels = null, SKRect? minimap = null)
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
         var fieldBounds = SKRect.Create(v.PixelWidth, v.PixelHeight);
@@ -104,7 +104,7 @@ internal static partial class TacticalBattleMapRenderer
         float columnBottom = pilotColumnBottom ?? PilotColumnLayout.CompactBottom(
             f.Battle.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide), Skin.SlimPilots);
         if (columnBottom > 0) occupied.Add(new(0, 0, 202, columnBottom));
-        if (pilotPanel is { IsEmpty: false } panelBounds) occupied.Add(panelBounds);
+        if (pilotPanels is not null) occupied.AddRange(pilotPanels);
         if (minimap is { IsEmpty: false } minimapBounds) occupied.Add(minimapBounds);
         occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, 720));
         occupied.Add(new(10, 686, 18 + len, 714));

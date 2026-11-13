@@ -24,7 +24,7 @@ public sealed partial class TacticalBattleScreen
         if (!_minimap.IsEmpty) yield return _minimap;
         if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
         if (!_logTab.Bounds.IsEmpty) yield return _logTab.Bounds;
-        if (!_pilotColumn.Layout.VisiblePanel.IsEmpty) yield return _pilotColumn.Layout.VisiblePanel;
+        foreach (var panel in _pilotColumn.VisiblePanels) yield return panel;
         for (int i = 0; i < _pilotColumn.Layout.Cards.Count; i++)
         {
             var rect = _pilotColumn.Rect(i);
@@ -72,7 +72,7 @@ public sealed partial class TacticalBattleScreen
         if (_phasePanel.HitButton(p) is { } action && (action != "new" || CanStartNewBattle))
             return _phasePanel.ButtonBounds(action);
         if (!HasSalvoPresentation && Flow.State is { Phase: TacticalBattlePhase.Move or TacticalBattlePhase.Fire } &&
-            !_pilotColumn.Layout.VisiblePanel.Contains(p) && _pilotColumn.HitCard(p) is { } card)
+            !_pilotColumn.ContainsPanel(p) && _pilotColumn.HitCard(p) is { } card)
             return card.Bounds;
         return SKRect.Empty;
     }

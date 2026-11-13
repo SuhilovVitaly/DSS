@@ -170,7 +170,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             canvas.Scale(_viewport.S);
             var clouds = TacticalBattleSkinRenderScope.Tabletop ? _paintedClouds ??= new() : null;
             TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context,
-                _pilotColumn.Layout.VisiblePanel, _minimap);
+                _pilotColumn.VisiblePanels, _minimap);
             DrawOverlay(canvas, frame);
         }
         finally { canvas.Restore(); BattleDesign.Recording = null; }
@@ -282,10 +282,12 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _observedOrders = state;
         var previouslyFiring = _fireOrders.Selected;
         _fireOrders.Observe(state, _orders.Selected);
-        _orders.Observe(state);
+        bool selectOnEntry = _skin.Metric("field.style", "tabletop", 0) != 1;
+        _orders.Observe(state, selectOnEntry);
         if (state.Turn != before?.Turn || state.Phase != before?.Phase)
         {
-            if (state.Phase == TacticalBattlePhase.Move && previouslyFiring is not null) _orders.Select(previouslyFiring);
+            if (selectOnEntry && state.Phase == TacticalBattlePhase.Move && previouslyFiring is not null)
+                _orders.Select(previouslyFiring);
             CancelOrderGesture();
             _movePanel.ResetScroll();
             _firePanel.ResetInput();

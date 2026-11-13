@@ -92,6 +92,7 @@ public sealed class TabletopMoveTests
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
         try
         {
+            screen.OnKeyDown(Silk.NET.Input.Key.Tab);
             screen.Render(canvas, 1280, 720);
             var order = screen.Movement.SelectedOrder!;
             var endpoint = screen.Layout.Rects["endpoint:" + order.Unit.Id];

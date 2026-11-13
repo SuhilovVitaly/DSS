@@ -8,6 +8,41 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class TabletopSalvoTests
 {
+    [Fact]
+    public async Task Completed_shot_panels_accumulate_and_clear_on_unselected_movement()
+    {
+        using var profile = new TabletopTestProfile();
+        await using var scene = await Ep0019Scenes.Create("3-salvo-flight", settingsPath: profile.SettingsPath);
+        var frame = scene.Frame;
+        var ownFlights = frame.Salvo!.Flights.Where(flight => frame.Battle.Units.Any(
+            unit => unit.Id == flight.Shot.ShooterId && unit.Side == frame.Battle.PlayerSide)).ToArray();
+        Assert.True(ownFlights.Length >= 2);
+        var first = ownFlights[0];
+        var next = ownFlights[1];
+        scene.Fixture.AdvanceAnimation((long)Math.Ceiling(first.LaunchMs + first.DurationMs - first.ElapsedMs) + 10);
+        using (var image = scene.Render()) { }
+        Assert.Contains("pilot-panel:" + first.Shot.ShooterId, scene.Screen.Layout.Rects.Keys);
+        Assert.Contains("pilot-flight-progress", scene.Screen.Layout.Rects.Keys);
+        var second = scene.Frame.Salvo!.Flights[next.Index];
+        scene.Fixture.AdvanceAnimation((long)Math.Ceiling(second.LaunchMs + second.DurationMs - second.ElapsedMs) + 10);
+        using (var image = scene.Render()) { }
+        Assert.Contains("pilot-panel:" + first.Shot.ShooterId, scene.Screen.Layout.Rects.Keys);
+        Assert.Contains("pilot-panel:" + next.Shot.ShooterId, scene.Screen.Layout.Rects.Keys);
+
+        if (scene.Frame.Salvo!.InFlight) scene.Screen.OnKeyDown(Silk.NET.Input.Key.Space);
+        using (var image = scene.Render()) { }
+        foreach (var flight in ownFlights)
+            Assert.Contains("pilot-panel:" + flight.Shot.ShooterId, scene.Screen.Layout.Rects.Keys);
+        await scene.Fixture.Route(scene.Screen.OnKeyDown(Silk.NET.Input.Key.Enter));
+        Assert.Null(scene.Frame.Salvo);
+        Assert.NotNull(scene.Frame.Movement);
+        Assert.Null(scene.Frame.SelectedDroneId);
+        using (var image = scene.Render()) { }
+        Assert.DoesNotContain(scene.Screen.Layout.Rects.Keys, key => key.StartsWith("pilot-panel:", StringComparison.Ordinal));
+        scene.Screen.OnKeyDown(Silk.NET.Input.Key.Tab);
+        Assert.NotNull(scene.Frame.SelectedDroneId);
+    }
+
     [Theory]
     [InlineData("classic")]
     [InlineData("tabletop")]
