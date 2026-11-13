@@ -70,6 +70,8 @@ internal sealed partial class PilotCardFireBlock
                     : M("TargetHullOnly", PilotCardModel.Name(defense), defense.Hull, defense.MaxHull);
                 Wrapped(condition, 6.2f, 8, ink);
             }
+            if (row.Target?.Factors is { } factors)
+                Wrapped(BattleFormat.HitFactors(factors), 6.2f, 8, sub);
         }
         else if (row.Evade || row.Drone.InDust)
         {

@@ -156,7 +156,7 @@ internal sealed class TacticalBattleSession
             if (shot is not null)
                 Add(shot.Absorbed ? TacticalBattleLogKind.ShotAbsorbed : shot.Kill ? TacticalBattleLogKind.RearKill : shot.Hit ? TacticalBattleLogKind.ShotHit : TacticalBattleLogKind.ShotMissed,
                     TacticalBattlePhase.Fire, shot.ShooterId, shot.TargetId, amount: shot.Damage,
-                    shot: new TacticalLogShot(shot.Chance, shot.Rear) { Decoyed = shot.Decoyed }, fireStepIndex: step.Index);
+                    shot: new TacticalLogShot(shot.Chance, shot.Rear) { Decoyed = shot.Decoyed, ResolvedShot = shot }, fireStepIndex: step.Index);
             else
                 Add(TacticalBattleLogKind.FireSkipped, TacticalBattlePhase.Fire, step.ShooterId, step.TargetId,
                     skipReason: step.SkipReason, fireStepIndex: step.Index);

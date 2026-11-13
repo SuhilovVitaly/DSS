@@ -19,8 +19,16 @@ internal static class TacticalBattleSnapshotBuilder
     {
         Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact,
         TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy,
-        HitRoll = shot.HitRoll, AbsorptionRoll = shot.AbsorptionRoll
+        HitRoll = shot.HitRoll, AbsorptionRoll = shot.AbsorptionRoll, Factors = shot.Factors
     };
+
+    internal static TacticalHitFactors HitFactors(TacticalCandidate candidate, double conditionalChance)
+    {
+        var terms = candidate.Terms;
+        return new(terms.Base, terms.Accuracy, terms.Maneuver, terms.Weapon, terms.Range, terms.Angle, terms.Rear,
+            terms.Shield, terms.Evasion, terms.Chance * 100 - terms.Raw, (conditionalChance - terms.Chance) * 100,
+            candidate.Absorption);
+    }
 
     private static ImmutableArray<TacticalSlotSnapshot> Slots(TacticalDrone d)
     {
@@ -73,7 +81,7 @@ internal static class TacticalBattleSnapshotBuilder
         var candidates = TacticalBattleSalvo.Candidates(battle, d);
         return new TacticalTargetGroupSnapshot(d.Id, candidates.Select(c => new TacticalTargetCandidateSnapshot(c.Target.Id,
             c.Distance, c.Angle, c.Terms.IsRear, d.Weapon.RearKillChance, c.Chance)
-        { Absorption = c.Absorption }).ToImmutableArray(),
+        { Absorption = c.Absorption, Factors = HitFactors(c, c.Terms.Chance) }).ToImmutableArray(),
             TacticalBattleSalvo.DefaultTarget(d, candidates)?.Target.Id);
     }).ToImmutableArray();
 

@@ -87,13 +87,31 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         {
             var response = await send();
             var previous = Volatile.Read(ref _observed);
-            if (response.Accepted && exiting) Forget();
+            if (response.Accepted && exiting)
+            {
+                if (previous is not null) ExportMetrics(previous.State, exited: true);
+                Forget();
+            }
             else if (response.State is { } state && (starting && response.Accepted || IsLiveBattleRefusal(response) || previous is not null && state.BattleId == previous.State.BattleId && state.Revision >= previous.State.Revision))
+            {
                 Volatile.Write(ref _observed, new(state, WithRecentPaths(state, previous?.Presentation)));
+                if (response.Accepted && (previous?.State.BattleId != state.BattleId || previous.State.Revision != state.Revision))
+                    ExportMetrics(state, exited: false);
+            }
             Volatile.Write(ref _error, response.Accepted ? "" : BattleFormat.Text(GameSessionHandle.TacticalBattleRefusalText(response.Code) + " " + Issue(response.ContentError)));
             return response;
         }
         finally { Volatile.Write(ref _pending, 0); }
+    }
+
+    private static void ExportMetrics(TacticalBattleSnapshot state, bool exited)
+    {
+        try { TacticalBattleMetrics.Write(state, exited); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            try { InterfaceLog.Write("TACTICAL METRICS: " + error.Message); }
+            catch (Exception logError) when (logError is IOException or UnauthorizedAccessException) { }
+        }
     }
 
     private static TacticalBattleSnapshot WithRecentPaths(TacticalBattleSnapshot state, TacticalBattleSnapshot? previous)

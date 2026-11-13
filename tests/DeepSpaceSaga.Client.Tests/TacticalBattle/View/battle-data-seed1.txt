@@ -4705,7 +4705,21 @@
             "Rear": false,
             "RearKillChance": 0.6,
             "Chance": 0.66828965425303,
-            "Absorption": 0
+            "Absorption": 0,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -55,
+              "Weapon": 10,
+              "Range": 14.081038220191035,
+              "Angle": -5.252072794888037,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
           },
           {
             "TargetId": "\u0422\u0430\u0433-6",
@@ -4714,7 +4728,21 @@
             "Rear": false,
             "RearKillChance": 0.6,
             "Chance": 0.7275239408769401,
-            "Absorption": 0
+            "Absorption": 0,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -47,
+              "Weapon": 10,
+              "Range": 6.846081256661281,
+              "Angle": -0.09368716896728226,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
           }
         ],
         "DefaultTargetId": "\u0422\u0430\u0433-6"
@@ -4729,7 +4757,21 @@
             "Rear": false,
             "RearKillChance": 0.7,
             "Chance": 0.5547857106633658,
-            "Absorption": 0.01
+            "Absorption": 0.01,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -40,
+              "Weapon": 0,
+              "Range": 3.3990185719764754,
+              "Angle": -6.360057898909217,
+              "Rear": 0,
+              "Shield": -10,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0.01
+            }
           }
         ],
         "DefaultTargetId": "\u0422\u0430\u0433-1"
@@ -4744,7 +4786,21 @@
             "Rear": true,
             "RearKillChance": 0.6,
             "Chance": 0.400664818770654,
-            "Absorption": 0.355
+            "Absorption": 0.355,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -40,
+              "Weapon": 10,
+              "Range": 0.87980207896523,
+              "Angle": -8.761225525375464,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 7.105427357601002E-15,
+              "Decoy": 0,
+              "Absorption": 0.355
+            }
           },
           {
             "TargetId": "\u0422\u0430\u0433-6",
@@ -4753,7 +4809,21 @@
             "Rear": false,
             "RearKillChance": 0.6,
             "Chance": 0.7107185957176699,
-            "Absorption": 0
+            "Absorption": 0,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -47,
+              "Weapon": 10,
+              "Range": 9.810805167271141,
+              "Angle": -1.7389455955041435,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
           }
         ],
         "DefaultTargetId": "\u0422\u0430\u0433-6"
@@ -9731,7 +9801,21 @@
         "Decoyed": true,
         "ChanceWithoutDecoy": 0.5547857106633658,
         "HitRoll": 0.8542386966291815,
-        "AbsorptionRoll": 0.8079907614737749
+        "AbsorptionRoll": 0.8079907614737749,
+        "Factors": {
+          "Base": 50,
+          "Accuracy": 59,
+          "Maneuver": -40,
+          "Weapon": 0,
+          "Range": 3.3990185719764754,
+          "Angle": -6.360057898909217,
+          "Rear": 0,
+          "Shield": -10,
+          "Evasion": 0,
+          "Clamp": 0,
+          "Decoy": -21.98051966346638,
+          "Absorption": 0.01
+        }
       },
       {
         "Turn": 4,
@@ -9760,7 +9844,21 @@
         "Decoyed": true,
         "ChanceWithoutDecoy": 0.7275239408769401,
         "HitRoll": 0.2727865446358919,
-        "AbsorptionRoll": null
+        "AbsorptionRoll": null,
+        "Factors": {
+          "Base": 50,
+          "Accuracy": 53,
+          "Maneuver": -47,
+          "Weapon": 10,
+          "Range": 6.846081256661281,
+          "Angle": -0.09368716896728226,
+          "Rear": 0,
+          "Shield": -0,
+          "Evasion": 0,
+          "Clamp": 0,
+          "Decoy": -13.623802956152996,
+          "Absorption": 0
+        }
       },
       {
         "Turn": 4,
@@ -9789,7 +9887,21 @@
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
         "HitRoll": 0.30325650586746633,
-        "AbsorptionRoll": null
+        "AbsorptionRoll": null,
+        "Factors": {
+          "Base": 50,
+          "Accuracy": 50,
+          "Maneuver": -47,
+          "Weapon": 10,
+          "Range": 9.810805167271141,
+          "Angle": -1.7389455955041435,
+          "Rear": 0,
+          "Shield": -0,
+          "Evasion": 0,
+          "Clamp": 0,
+          "Decoy": 0,
+          "Absorption": 0
+        }
       },
       {
         "Turn": 4,
@@ -9818,7 +9930,21 @@
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
         "HitRoll": 0.2899394116830081,
-        "AbsorptionRoll": null
+        "AbsorptionRoll": null,
+        "Factors": {
+          "Base": 50,
+          "Accuracy": 46,
+          "Maneuver": -55,
+          "Weapon": 6,
+          "Range": 13.921218780224258,
+          "Angle": -2.6566874453912352,
+          "Rear": 0,
+          "Shield": -20,
+          "Evasion": 0,
+          "Clamp": 0,
+          "Decoy": 0,
+          "Absorption": 0
+        }
       }
     ],
     "BeforeSalvoUnits": [
@@ -12841,7 +12967,50 @@
         "Shot": {
           "Chance": 0.33717856599504864,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+            "TargetId": "\u0422\u0430\u0433-1",
+            "From": {
+              "X": 512.9121144884731,
+              "Y": 116.93810149898286,
+              "Course": -17.98326127196367
+            },
+            "To": {
+              "X": 608.5208310426777,
+              "Y": 131.25588833161206,
+              "Course": -84.65681826076099
+            },
+            "Chance": 0.33717856599504864,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.01,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.5547857106633658,
+            "HitRoll": 0.8542386966291815,
+            "AbsorptionRoll": 0.8079907614737749,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -40,
+              "Weapon": 0,
+              "Range": 3.3990185719764754,
+              "Angle": -6.360057898909217,
+              "Rear": 0,
+              "Shield": -10,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -21.98051966346638,
+              "Absorption": 0.01
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -12902,7 +13071,50 @@
         "Shot": {
           "Chance": 0.5912859113154101,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u0422\u0430\u0433-6",
+            "From": {
+              "X": 488.5871431209661,
+              "Y": 220.99894575732262,
+              "Course": -12.753257251722346
+            },
+            "To": {
+              "X": 560.0613001819464,
+              "Y": 204.36036008627093,
+              "Course": 72.5047829516621
+            },
+            "Chance": 0.5912859113154101,
+            "Hit": true,
+            "Damage": 43,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.7275239408769401,
+            "HitRoll": 0.2727865446358919,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -47,
+              "Weapon": 10,
+              "Range": 6.846081256661281,
+              "Angle": -0.09368716896728226,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -13.623802956152996,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -12949,7 +13161,50 @@
         "Shot": {
           "Chance": 0.7107185957176699,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-6",
+            "From": {
+              "X": 515.2734553882343,
+              "Y": 217.5965280629916,
+              "Course": -9.942963949184616
+            },
+            "To": {
+              "X": 560.0613001819464,
+              "Y": 204.36036008627093,
+              "Course": 72.5047829516621
+            },
+            "Chance": 0.7107185957176699,
+            "Hit": true,
+            "Damage": 58,
+            "Rear": false,
+            "Kill": false,
+            "Killed": true,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": true,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.30325650586746633,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -47,
+              "Weapon": 10,
+              "Range": 9.810805167271141,
+              "Angle": -1.7389455955041435,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -13040,7 +13295,50 @@
         "Shot": {
           "Chance": 0.38264531334833024,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u0422\u0430\u0433-5",
+            "TargetId": "\u042E\u043D",
+            "From": {
+              "X": 496.79716677080984,
+              "Y": 221.9985770102001,
+              "Course": 175.8724847066443
+            },
+            "To": {
+              "X": 488.5871431209661,
+              "Y": 220.99894575732262,
+              "Course": -12.753257251722346
+            },
+            "Chance": 0.38264531334833024,
+            "Hit": true,
+            "Damage": 34,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.2899394116830081,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 46,
+              "Maneuver": -55,
+              "Weapon": 6,
+              "Range": 13.921218780224258,
+              "Angle": -2.6566874453912352,
+              "Rear": 0,
+              "Shield": -20,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -14769,7 +15067,21 @@
           "Decoyed": true,
           "ChanceWithoutDecoy": 0.5547857106633658,
           "HitRoll": 0.8542386966291815,
-          "AbsorptionRoll": 0.8079907614737749
+          "AbsorptionRoll": 0.8079907614737749,
+          "Factors": {
+            "Base": 50,
+            "Accuracy": 59,
+            "Maneuver": -40,
+            "Weapon": 0,
+            "Range": 3.3990185719764754,
+            "Angle": -6.360057898909217,
+            "Rear": 0,
+            "Shield": -10,
+            "Evasion": 0,
+            "Clamp": 0,
+            "Decoy": -21.98051966346638,
+            "Absorption": 0.01
+          }
         },
         "UnitsAfter": [
           {
@@ -16135,7 +16447,50 @@
             "Shot": {
               "Chance": 0.33717856599504864,
               "Rear": false,
-              "Decoyed": true
+              "Decoyed": true,
+              "ResolvedShot": {
+                "Turn": 4,
+                "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+                "TargetId": "\u0422\u0430\u0433-1",
+                "From": {
+                  "X": 512.9121144884731,
+                  "Y": 116.93810149898286,
+                  "Course": -17.98326127196367
+                },
+                "To": {
+                  "X": 608.5208310426777,
+                  "Y": 131.25588833161206,
+                  "Course": -84.65681826076099
+                },
+                "Chance": 0.33717856599504864,
+                "Hit": false,
+                "Damage": 0,
+                "Rear": false,
+                "Kill": false,
+                "Killed": false,
+                "Absorption": 0.01,
+                "Absorbed": false,
+                "LethalImpact": false,
+                "TargetEvading": false,
+                "Decoyed": true,
+                "ChanceWithoutDecoy": 0.5547857106633658,
+                "HitRoll": 0.8542386966291815,
+                "AbsorptionRoll": 0.8079907614737749,
+                "Factors": {
+                  "Base": 50,
+                  "Accuracy": 59,
+                  "Maneuver": -40,
+                  "Weapon": 0,
+                  "Range": 3.3990185719764754,
+                  "Angle": -6.360057898909217,
+                  "Rear": 0,
+                  "Shield": -10,
+                  "Evasion": 0,
+                  "Clamp": 0,
+                  "Decoy": -21.98051966346638,
+                  "Absorption": 0.01
+                }
+              }
             },
             "Damage": null,
             "Unit": null,
@@ -18932,7 +19287,21 @@
           "Decoyed": true,
           "ChanceWithoutDecoy": 0.7275239408769401,
           "HitRoll": 0.2727865446358919,
-          "AbsorptionRoll": null
+          "AbsorptionRoll": null,
+          "Factors": {
+            "Base": 50,
+            "Accuracy": 53,
+            "Maneuver": -47,
+            "Weapon": 10,
+            "Range": 6.846081256661281,
+            "Angle": -0.09368716896728226,
+            "Rear": 0,
+            "Shield": -0,
+            "Evasion": 0,
+            "Clamp": 0,
+            "Decoy": -13.623802956152996,
+            "Absorption": 0
+          }
         },
         "UnitsAfter": [
           {
@@ -20298,7 +20667,50 @@
             "Shot": {
               "Chance": 0.5912859113154101,
               "Rear": false,
-              "Decoyed": true
+              "Decoyed": true,
+              "ResolvedShot": {
+                "Turn": 4,
+                "ShooterId": "\u042E\u043D",
+                "TargetId": "\u0422\u0430\u0433-6",
+                "From": {
+                  "X": 488.5871431209661,
+                  "Y": 220.99894575732262,
+                  "Course": -12.753257251722346
+                },
+                "To": {
+                  "X": 560.0613001819464,
+                  "Y": 204.36036008627093,
+                  "Course": 72.5047829516621
+                },
+                "Chance": 0.5912859113154101,
+                "Hit": true,
+                "Damage": 43,
+                "Rear": false,
+                "Kill": false,
+                "Killed": false,
+                "Absorption": 0,
+                "Absorbed": false,
+                "LethalImpact": false,
+                "TargetEvading": false,
+                "Decoyed": true,
+                "ChanceWithoutDecoy": 0.7275239408769401,
+                "HitRoll": 0.2727865446358919,
+                "AbsorptionRoll": null,
+                "Factors": {
+                  "Base": 50,
+                  "Accuracy": 53,
+                  "Maneuver": -47,
+                  "Weapon": 10,
+                  "Range": 6.846081256661281,
+                  "Angle": -0.09368716896728226,
+                  "Rear": 0,
+                  "Shield": -0,
+                  "Evasion": 0,
+                  "Clamp": 0,
+                  "Decoy": -13.623802956152996,
+                  "Absorption": 0
+                }
+              }
             },
             "Damage": null,
             "Unit": null,
@@ -20365,7 +20777,21 @@
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
           "HitRoll": 0.30325650586746633,
-          "AbsorptionRoll": null
+          "AbsorptionRoll": null,
+          "Factors": {
+            "Base": 50,
+            "Accuracy": 50,
+            "Maneuver": -47,
+            "Weapon": 10,
+            "Range": 9.810805167271141,
+            "Angle": -1.7389455955041435,
+            "Rear": 0,
+            "Shield": -0,
+            "Evasion": 0,
+            "Clamp": 0,
+            "Decoy": 0,
+            "Absorption": 0
+          }
         },
         "UnitsAfter": [
           {
@@ -21731,7 +22157,50 @@
             "Shot": {
               "Chance": 0.7107185957176699,
               "Rear": false,
-              "Decoyed": false
+              "Decoyed": false,
+              "ResolvedShot": {
+                "Turn": 4,
+                "ShooterId": "\u041E\u043B\u0435\u0433",
+                "TargetId": "\u0422\u0430\u0433-6",
+                "From": {
+                  "X": 515.2734553882343,
+                  "Y": 217.5965280629916,
+                  "Course": -9.942963949184616
+                },
+                "To": {
+                  "X": 560.0613001819464,
+                  "Y": 204.36036008627093,
+                  "Course": 72.5047829516621
+                },
+                "Chance": 0.7107185957176699,
+                "Hit": true,
+                "Damage": 58,
+                "Rear": false,
+                "Kill": false,
+                "Killed": true,
+                "Absorption": 0,
+                "Absorbed": false,
+                "LethalImpact": true,
+                "TargetEvading": false,
+                "Decoyed": false,
+                "ChanceWithoutDecoy": null,
+                "HitRoll": 0.30325650586746633,
+                "AbsorptionRoll": null,
+                "Factors": {
+                  "Base": 50,
+                  "Accuracy": 50,
+                  "Maneuver": -47,
+                  "Weapon": 10,
+                  "Range": 9.810805167271141,
+                  "Angle": -1.7389455955041435,
+                  "Rear": 0,
+                  "Shield": -0,
+                  "Evasion": 0,
+                  "Clamp": 0,
+                  "Decoy": 0,
+                  "Absorption": 0
+                }
+              }
             },
             "Damage": null,
             "Unit": null,
@@ -23200,7 +23669,21 @@
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
           "HitRoll": 0.2899394116830081,
-          "AbsorptionRoll": null
+          "AbsorptionRoll": null,
+          "Factors": {
+            "Base": 50,
+            "Accuracy": 46,
+            "Maneuver": -55,
+            "Weapon": 6,
+            "Range": 13.921218780224258,
+            "Angle": -2.6566874453912352,
+            "Rear": 0,
+            "Shield": -20,
+            "Evasion": 0,
+            "Clamp": 0,
+            "Decoy": 0,
+            "Absorption": 0
+          }
         },
         "UnitsAfter": [
           {
@@ -24566,7 +25049,50 @@
             "Shot": {
               "Chance": 0.38264531334833024,
               "Rear": false,
-              "Decoyed": false
+              "Decoyed": false,
+              "ResolvedShot": {
+                "Turn": 4,
+                "ShooterId": "\u0422\u0430\u0433-5",
+                "TargetId": "\u042E\u043D",
+                "From": {
+                  "X": 496.79716677080984,
+                  "Y": 221.9985770102001,
+                  "Course": 175.8724847066443
+                },
+                "To": {
+                  "X": 488.5871431209661,
+                  "Y": 220.99894575732262,
+                  "Course": -12.753257251722346
+                },
+                "Chance": 0.38264531334833024,
+                "Hit": true,
+                "Damage": 34,
+                "Rear": false,
+                "Kill": false,
+                "Killed": false,
+                "Absorption": 0,
+                "Absorbed": false,
+                "LethalImpact": false,
+                "TargetEvading": false,
+                "Decoyed": false,
+                "ChanceWithoutDecoy": null,
+                "HitRoll": 0.2899394116830081,
+                "AbsorptionRoll": null,
+                "Factors": {
+                  "Base": 50,
+                  "Accuracy": 46,
+                  "Maneuver": -55,
+                  "Weapon": 6,
+                  "Range": 13.921218780224258,
+                  "Angle": -2.6566874453912352,
+                  "Rear": 0,
+                  "Shield": -20,
+                  "Evasion": 0,
+                  "Clamp": 0,
+                  "Decoy": 0,
+                  "Absorption": 0
+                }
+              }
             },
             "Damage": null,
             "Unit": null,
@@ -30258,7 +30784,21 @@
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
         "HitRoll": 0.906352398218587,
-        "AbsorptionRoll": null
+        "AbsorptionRoll": null,
+        "Factors": {
+          "Base": 50,
+          "Accuracy": 55,
+          "Maneuver": -35,
+          "Weapon": 0,
+          "Range": 1.7333322378149303,
+          "Angle": -6.2133003174030055,
+          "Rear": 0,
+          "Shield": 0,
+          "Evasion": 0,
+          "Clamp": 0,
+          "Decoy": 0,
+          "Absorption": 0
+        }
       },
       {
         "Turn": 21,
@@ -30287,7 +30827,21 @@
         "Decoyed": false,
         "ChanceWithoutDecoy": null,
         "HitRoll": 0.4241334544494748,
-        "AbsorptionRoll": null
+        "AbsorptionRoll": null,
+        "Factors": {
+          "Base": 50,
+          "Accuracy": 53,
+          "Maneuver": -35,
+          "Weapon": 10,
+          "Range": 4.8189353490298945,
+          "Angle": -3.4459870692045493,
+          "Rear": 0,
+          "Shield": 0,
+          "Evasion": 0,
+          "Clamp": 0,
+          "Decoy": 0,
+          "Absorption": 0
+        }
       }
     ],
     "BeforeSalvoUnits": [
@@ -33378,7 +33932,50 @@
         "Shot": {
           "Chance": 0.33717856599504864,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+            "TargetId": "\u0422\u0430\u0433-1",
+            "From": {
+              "X": 512.9121144884731,
+              "Y": 116.93810149898286,
+              "Course": -17.98326127196367
+            },
+            "To": {
+              "X": 608.5208310426777,
+              "Y": 131.25588833161206,
+              "Course": -84.65681826076099
+            },
+            "Chance": 0.33717856599504864,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.01,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.5547857106633658,
+            "HitRoll": 0.8542386966291815,
+            "AbsorptionRoll": 0.8079907614737749,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -40,
+              "Weapon": 0,
+              "Range": 3.3990185719764754,
+              "Angle": -6.360057898909217,
+              "Rear": 0,
+              "Shield": -10,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -21.98051966346638,
+              "Absorption": 0.01
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -33439,7 +34036,50 @@
         "Shot": {
           "Chance": 0.5912859113154101,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u0422\u0430\u0433-6",
+            "From": {
+              "X": 488.5871431209661,
+              "Y": 220.99894575732262,
+              "Course": -12.753257251722346
+            },
+            "To": {
+              "X": 560.0613001819464,
+              "Y": 204.36036008627093,
+              "Course": 72.5047829516621
+            },
+            "Chance": 0.5912859113154101,
+            "Hit": true,
+            "Damage": 43,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.7275239408769401,
+            "HitRoll": 0.2727865446358919,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -47,
+              "Weapon": 10,
+              "Range": 6.846081256661281,
+              "Angle": -0.09368716896728226,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -13.623802956152996,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -33486,7 +34126,50 @@
         "Shot": {
           "Chance": 0.7107185957176699,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-6",
+            "From": {
+              "X": 515.2734553882343,
+              "Y": 217.5965280629916,
+              "Course": -9.942963949184616
+            },
+            "To": {
+              "X": 560.0613001819464,
+              "Y": 204.36036008627093,
+              "Course": 72.5047829516621
+            },
+            "Chance": 0.7107185957176699,
+            "Hit": true,
+            "Damage": 58,
+            "Rear": false,
+            "Kill": false,
+            "Killed": true,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": true,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.30325650586746633,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -47,
+              "Weapon": 10,
+              "Range": 9.810805167271141,
+              "Angle": -1.7389455955041435,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -33577,7 +34260,50 @@
         "Shot": {
           "Chance": 0.38264531334833024,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 4,
+            "ShooterId": "\u0422\u0430\u0433-5",
+            "TargetId": "\u042E\u043D",
+            "From": {
+              "X": 496.79716677080984,
+              "Y": 221.9985770102001,
+              "Course": 175.8724847066443
+            },
+            "To": {
+              "X": 488.5871431209661,
+              "Y": 220.99894575732262,
+              "Course": -12.753257251722346
+            },
+            "Chance": 0.38264531334833024,
+            "Hit": true,
+            "Damage": 34,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.2899394116830081,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 46,
+              "Maneuver": -55,
+              "Weapon": 6,
+              "Range": 13.921218780224258,
+              "Angle": -2.6566874453912352,
+              "Rear": 0,
+              "Shield": -20,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -33909,7 +34635,50 @@
         "Shot": {
           "Chance": 0.20704434705046404,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 5,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u0422\u0430\u0433-1",
+            "From": {
+              "X": 568.4116378366048,
+              "Y": 174.17346937985118,
+              "Course": -40.98182868029377
+            },
+            "To": {
+              "X": 590.0638514828584,
+              "Y": 79.077299296452,
+              "Course": -124.37401418181236
+            },
+            "Chance": 0.20704434705046404,
+            "Hit": true,
+            "Damage": 60,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.64,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.25234164693392813,
+            "AbsorptionRoll": 0.7921984903514385,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -40,
+              "Weapon": 10,
+              "Range": 4.1633338913873965,
+              "Angle": -9.651015266258499,
+              "Rear": 0,
+              "Shield": -10,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0.64
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -33956,7 +34725,50 @@
         "Shot": {
           "Chance": 0.28570638087341715,
           "Rear": true,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 5,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-1",
+            "From": {
+              "X": 588.8282478901101,
+              "Y": 163.7239875034964,
+              "Course": -51.98551714067398
+            },
+            "To": {
+              "X": 590.0638514828584,
+              "Y": 79.077299296452,
+              "Course": -124.37401418181236
+            },
+            "Chance": 0.28570638087341715,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": true,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.565,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.8700099086854607,
+            "AbsorptionRoll": 0.9540082972962409,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -40,
+              "Weapon": 10,
+              "Range": 5.593810456059749,
+              "Angle": -9.914182669067298,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0.565
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34302,7 +35114,50 @@
         "Shot": {
           "Chance": 0.7125454339991798,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 6,
+            "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 706.1169797363549,
+              "Y": 96.77341522804325,
+              "Course": 8.129595600671223
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.7125454339991798,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.79182173544541,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -35,
+              "Weapon": 0,
+              "Range": 3.0785991604787286,
+              "Angle": -5.82405576056075,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34325,7 +35180,50 @@
         "Shot": {
           "Chance": 0.2169228387305674,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 6,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 664.1082845018382,
+              "Y": 106.61346317759312,
+              "Course": -0.6449108016223306
+            },
+            "To": {
+              "X": 775.5525580105423,
+              "Y": 133.76289709722028,
+              "Course": 166.2672740535013
+            },
+            "Chance": 0.2169228387305674,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.4779485591537116,
+            "HitRoll": 0.22080625081434846,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -55,
+              "Weapon": 0,
+              "Range": 1.2355669501224165,
+              "Angle": -3.440711034751257,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -26.10257204231442,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34348,7 +35246,50 @@
         "Shot": {
           "Chance": 0.34711591447956286,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 6,
+            "ShooterId": "\u0422\u0430\u0433-2",
+            "TargetId": "\u041C\u0430\u0440\u0442\u0430",
+            "From": {
+              "X": 775.5525580105423,
+              "Y": 133.76289709722028,
+              "Course": 166.2672740535013
+            },
+            "To": {
+              "X": 706.1169797363549,
+              "Y": 96.77341522804325,
+              "Course": 8.129595600671223
+            },
+            "Chance": 0.34711591447956286,
+            "Hit": true,
+            "Damage": 34,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.09626300842501223,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 48,
+              "Maneuver": -54,
+              "Weapon": 6,
+              "Range": 4.738237723709357,
+              "Angle": -10.026646275753073,
+              "Rear": 0,
+              "Shield": -10,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34395,7 +35336,50 @@
         "Shot": {
           "Chance": 0.39622744464968207,
           "Rear": true,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 6,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u0422\u0430\u0433-1",
+            "From": {
+              "X": 599.1531027955938,
+              "Y": 106.14620412351535,
+              "Course": -80.50182868029376
+            },
+            "To": {
+              "X": 588.0026847071215,
+              "Y": 35.48915637225039,
+              "Course": -73.70734751514567
+            },
+            "Chance": 0.39622744464968207,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": true,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.49,
+            "Absorbed": true,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.4341516297664547,
+            "HitRoll": null,
+            "AbsorptionRoll": 0.4086632030084729,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -40,
+              "Weapon": 10,
+              "Range": 7.052059649928191,
+              "Angle": -4.924289107486084,
+              "Rear": 10,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -7.4361147287789535,
+              "Absorption": 0.49
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34418,7 +35402,50 @@
         "Shot": {
           "Chance": 0.6539302738336952,
           "Rear": true,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 6,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-1",
+            "From": {
+              "X": 599.0745713084432,
+              "Y": 84.3812665670151,
+              "Course": -101.03516253074488
+            },
+            "To": {
+              "X": 588.0026847071215,
+              "Y": 35.48915637225039,
+              "Course": -73.70734751514567
+            },
+            "Chance": 0.6539302738336952,
+            "Hit": true,
+            "Damage": 58,
+            "Rear": true,
+            "Kill": true,
+            "Killed": true,
+            "Absorption": 0.265,
+            "Absorbed": false,
+            "LethalImpact": true,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.28729558805935085,
+            "AbsorptionRoll": 0.542554419953376,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -40,
+              "Weapon": 10,
+              "Range": 9.429990898992804,
+              "Angle": -0.4598856154968568,
+              "Rear": 10,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0.265
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34851,7 +35878,50 @@
         "Shot": {
           "Chance": 0.794708332737309,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 7,
+            "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 780.2036268604561,
+              "Y": 130.5933300799944,
+              "Course": 34.38030409835662
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.794708332737309,
+            "Hit": true,
+            "Damage": 51,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.3296615306753665,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -35,
+              "Weapon": 0,
+              "Range": 12.391309945076937,
+              "Angle": -6.920476671346039,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34898,7 +35968,50 @@
         "Shot": {
           "Chance": 0.759945131331689,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 7,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 754.9505259745905,
+              "Y": 125.34443639686319,
+              "Course": 19.02802007754258
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.759945131331689,
+            "Hit": true,
+            "Damage": 70,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.036594506120309234,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -35,
+              "Weapon": 0,
+              "Range": 9.857664030514442,
+              "Angle": -3.8631508973455535,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -34945,7 +36058,50 @@
         "Shot": {
           "Chance": 0.2663879697494283,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 7,
+            "ShooterId": "\u0422\u0430\u0433-2",
+            "TargetId": "\u042E\u043D",
+            "From": {
+              "X": 734.7860620364546,
+              "Y": 118.76710312356687,
+              "Course": -139.44701166078437
+            },
+            "To": {
+              "X": 636.6724659783239,
+              "Y": 63.37157376704307,
+              "Course": -29.69040010886519
+            },
+            "Chance": 0.2663879697494283,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.38715033838525414,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 48,
+              "Maneuver": -55,
+              "Weapon": 6,
+              "Range": 0.3036736945638019,
+              "Angle": -2.6648767196209677,
+              "Rear": 0,
+              "Shield": -20,
+              "Evasion": 0,
+              "Clamp": 3.552713678800501E-15,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -35310,7 +36466,50 @@
         "Shot": {
           "Chance": 0.7426959043323771,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 8,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 687.2291167919014,
+              "Y": 66.72796365226743,
+              "Course": 23.891389186622348
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.7426959043323771,
+            "Hit": true,
+            "Damage": 53,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.20862703607417643,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -35,
+              "Weapon": 10,
+              "Range": 0.3030252240025516,
+              "Angle": -4.033434790764849,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -35357,7 +36556,50 @@
         "Shot": {
           "Chance": 0.42164652169434014,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 8,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 673.4965659395745,
+              "Y": 38.18506811831828,
+              "Course": 32.09958924230477
+            },
+            "To": {
+              "X": 723.16453302549,
+              "Y": 76.91353584008581,
+              "Course": -85.16129737507009
+            },
+            "Chance": 0.42164652169434014,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.6144310144628934,
+            "HitRoll": 0.6459614059422165,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -55,
+              "Weapon": 10,
+              "Range": 8.001939275220707,
+              "Angle": -1.5588378289313671,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -19.278449276855326,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -35646,7 +36888,50 @@
         "Shot": {
           "Chance": 0.7415781953831382,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 9,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 734.4839158208817,
+              "Y": 82.95349834942304,
+              "Course": 15.986061025595689
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.7415781953831382,
+            "Hit": true,
+            "Damage": 54,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.1414734951686114,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -35,
+              "Weapon": 10,
+              "Range": 5.328054451488066,
+              "Angle": -9.170234913174257,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -35693,7 +36978,50 @@
         "Shot": {
           "Chance": 0.7467420498798044,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 9,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 727.4020511457579,
+              "Y": 73.77377262641167,
+              "Course": 34.23307366953736
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.7467420498798044,
+            "Hit": true,
+            "Damage": 53,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.2764220417011529,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -35,
+              "Weapon": 10,
+              "Range": 4.040511782940981,
+              "Angle": -4.3663067949605345,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -36177,7 +37505,50 @@
         "Shot": {
           "Chance": 0.2930130868792357,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 10,
+            "ShooterId": "\u0422\u0430\u0433-2",
+            "TargetId": "\u0412\u0435\u0440\u0430",
+            "From": {
+              "X": 793.7384837640531,
+              "Y": 45.35925698080029,
+              "Course": 23.410131196358464
+            },
+            "To": {
+              "X": 851.0896847743513,
+              "Y": 27.13408079308324,
+              "Course": -126.92652537700289
+            },
+            "Chance": 0.2930130868792357,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.9984868622850627,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 48,
+              "Maneuver": -52,
+              "Weapon": 6,
+              "Range": 7.150776260844594,
+              "Angle": -9.849467572921021,
+              "Rear": 0,
+              "Shield": -20,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -36200,7 +37571,50 @@
         "Shot": {
           "Chance": 0.6560961938832709,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 10,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 779.9027370713737,
+              "Y": 67.04836192372214,
+              "Course": -40.47108183154717
+            },
+            "To": {
+              "X": 793.7384837640531,
+              "Y": 45.35925698080029,
+              "Course": 23.410131196358464
+            },
+            "Chance": 0.6560961938832709,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.9777017233427614,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -55,
+              "Weapon": 10,
+              "Range": 12.141516503741276,
+              "Angle": -4.531897115414184,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -36223,7 +37637,50 @@
         "Shot": {
           "Chance": 0.6410568443925706,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 10,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 773.8725492879249,
+              "Y": 65.94619814967731,
+              "Course": -35.83784831627824
+            },
+            "To": {
+              "X": 793.7384837640531,
+              "Y": 45.35925698080029,
+              "Course": 23.410131196358464
+            },
+            "Chance": 0.6410568443925706,
+            "Hit": true,
+            "Damage": 58,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.014685939531773329,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -55,
+              "Weapon": 10,
+              "Range": 11.821217137772251,
+              "Angle": -2.7155326985151835,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -36555,7 +38012,50 @@
         "Shot": {
           "Chance": 0.21953191708495098,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 11,
+            "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+            "TargetId": "\u0422\u0430\u0433-5",
+            "From": {
+              "X": 679.6563580906186,
+              "Y": 133.19526343003815,
+              "Course": -123.84504801431939
+            },
+            "To": {
+              "X": 589.7645621187625,
+              "Y": 54.63148703883626,
+              "Course": -4.72392036190584
+            },
+            "Chance": 0.21953191708495098,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.175,
+            "Absorbed": true,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.42135461138996727,
+            "HitRoll": null,
+            "AbsorptionRoll": 0.1636333386413753,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -55,
+              "Weapon": 0,
+              "Range": 0.6737880794659046,
+              "Angle": -3.6005018503789645,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -24.463356885456523,
+              "Absorption": 0.175
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -36882,7 +38382,50 @@
         "Shot": {
           "Chance": 0.1547027822289209,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 12,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u0422\u0430\u0433-5",
+            "From": {
+              "X": 764.8819225285102,
+              "Y": -41.5121812202113,
+              "Course": 176.93711098663346
+            },
+            "To": {
+              "X": 665.4253289134989,
+              "Y": 26.844579953289735,
+              "Course": -29.431386578476264
+            },
+            "Chance": 0.1547027822289209,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.64,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.9194338403176516,
+            "AbsorptionRoll": 0.8675420086365193,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -55,
+              "Weapon": 0,
+              "Range": 0.5181024831858072,
+              "Angle": -7.54510741959667,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0.64
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37361,7 +38904,50 @@
         "Shot": {
           "Chance": 0.09145670933766924,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 13,
+            "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+            "TargetId": "\u0422\u0430\u0433-3",
+            "From": {
+              "X": 716.6350658635042,
+              "Y": 21.79752099583069,
+              "Course": -72.82157383591561
+            },
+            "To": {
+              "X": 702.3777246635428,
+              "Y": -3.4289605896219744,
+              "Course": -19.805911269699294
+            },
+            "Chance": 0.09145670933766924,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0.86,
+            "Absorbed": true,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": null,
+            "AbsorptionRoll": 0.49689756869338453,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -44,
+              "Weapon": 0,
+              "Range": 11.522800123902064,
+              "Angle": -11.196579168424043,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0.86
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37384,7 +38970,50 @@
         "Shot": {
           "Chance": 0,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 13,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u0422\u0430\u0433-3",
+            "From": {
+              "X": 727.0204855443448,
+              "Y": -11.773644756540817,
+              "Course": 120.80074735026983
+            },
+            "To": {
+              "X": 702.3777246635428,
+              "Y": -3.4289605896219744,
+              "Course": -19.805911269699294
+            },
+            "Chance": 0,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 1,
+            "Absorbed": true,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": null,
+            "AbsorptionRoll": 0.7670733970589936,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -44,
+              "Weapon": 0,
+              "Range": 11.877925110682689,
+              "Angle": -9.71803348467791,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 1
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37445,7 +39074,50 @@
         "Shot": {
           "Chance": 0.7813609877971761,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 13,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 821.5704403871891,
+              "Y": 150.65169932322456,
+              "Course": 149.85009494613303
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.7813609877971761,
+            "Hit": true,
+            "Damage": 48,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.06542236171662807,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -35,
+              "Weapon": 10,
+              "Range": 11.491425990046608,
+              "Angle": -8.35532721032899,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37511,7 +39183,50 @@
         "Shot": {
           "Chance": 0,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 13,
+            "ShooterId": "\u0422\u0430\u0433-3",
+            "TargetId": "\u0412\u0435\u0440\u0430",
+            "From": {
+              "X": 702.3777246635428,
+              "Y": -3.4289605896219744,
+              "Course": -19.805911269699294
+            },
+            "To": {
+              "X": 727.0204855443448,
+              "Y": -11.773644756540817,
+              "Course": 120.80074735026983
+            },
+            "Chance": 0,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 1,
+            "Absorbed": true,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": null,
+            "AbsorptionRoll": 0.735370195703581,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -52,
+              "Weapon": 12,
+              "Range": 11.452187625775782,
+              "Angle": -0.2396650486095392,
+              "Rear": 0,
+              "Shield": -20,
+              "Evasion": 0,
+              "Clamp": -7.105427357601002E-15,
+              "Decoy": 0,
+              "Absorption": 1
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37781,7 +39496,50 @@
         "Shot": {
           "Chance": 0.5471247198198101,
           "Rear": true,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 14,
+            "ShooterId": "\u041C\u0430\u0440\u0442\u0430",
+            "TargetId": "\u0422\u0430\u0433-5",
+            "From": {
+              "X": 775.5906852885071,
+              "Y": -32.001333159577,
+              "Course": -24.117348483802942
+            },
+            "To": {
+              "X": 803.656822445328,
+              "Y": -58.33299219092336,
+              "Course": -32.15109613691769
+            },
+            "Chance": 0.5471247198198101,
+            "Hit": true,
+            "Damage": 65,
+            "Rear": true,
+            "Kill": true,
+            "Killed": true,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": true,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.6980831465465401,
+            "HitRoll": 0.46827786369249225,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 59,
+              "Maneuver": -55,
+              "Weapon": 0,
+              "Range": 10.381848179154417,
+              "Angle": -4.573533524500409,
+              "Rear": 10,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -15.095842672673,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37853,7 +39611,50 @@
         "Shot": {
           "Chance": 0.6299553205262057,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 14,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 717.6414116478644,
+              "Y": 53.783920590564065,
+              "Course": 84.54649938860712
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.6299553205262057,
+            "Hit": true,
+            "Damage": 53,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.2050837732385844,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -35,
+              "Weapon": 0,
+              "Range": 0.5534256956395228,
+              "Angle": -7.557893643018942,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37919,7 +39720,50 @@
         "Shot": {
           "Chance": 0.45766130197268606,
           "Rear": true,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 14,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 789.5956621485338,
+              "Y": 164.92420160735284,
+              "Course": 179.71177531130996
+            },
+            "To": {
+              "X": 698.1230567899522,
+              "Y": 126.19197879608629,
+              "Course": -173.73272594649865
+            },
+            "Chance": 0.45766130197268606,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": true,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": true,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.9383958915714175,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -55,
+              "Weapon": 10,
+              "Range": 3.9627887451672112,
+              "Angle": -6.196658547898595,
+              "Rear": 10,
+              "Shield": 0,
+              "Evasion": -20,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -37942,7 +39786,50 @@
         "Shot": {
           "Chance": 0.3545712659752452,
           "Rear": true,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 14,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 741.1703580954787,
+              "Y": 160.48266194572747,
+              "Course": -173.06408263458889
+            },
+            "To": {
+              "X": 698.1230567899522,
+              "Y": 126.19197879608629,
+              "Course": -173.73272594649865
+            },
+            "Chance": 0.3545712659752452,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": true,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": true,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.6462549108546227,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -55,
+              "Weapon": 10,
+              "Range": 8.884929463922083,
+              "Angle": -8.427802866397565,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": -20,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -38193,7 +40080,50 @@
         "Shot": {
           "Chance": 0.2810542141378396,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 15,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u0422\u0430\u0433-4",
+            "From": {
+              "X": 692.6013325099754,
+              "Y": 104.84472979348688,
+              "Course": 135.06922666133437
+            },
+            "To": {
+              "X": 598.8255665457915,
+              "Y": 152.67930538710252,
+              "Course": -40.51939135239874
+            },
+            "Chance": 0.2810542141378396,
+            "Hit": true,
+            "Damage": 66,
+            "Rear": false,
+            "Kill": false,
+            "Killed": true,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": true,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.5207028094252264,
+            "HitRoll": 0.17920685792341828,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -51,
+              "Weapon": 0,
+              "Range": 2.3674472483497526,
+              "Angle": -4.297166305827111,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -23.96485952873868,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -38284,7 +40214,50 @@
         "Shot": {
           "Chance": 0.4926123803583411,
           "Rear": true,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 15,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 716.0804244046932,
+              "Y": 147.22777895619498,
+              "Course": -158.17168714739313
+            },
+            "To": {
+              "X": 664.9439449519547,
+              "Y": 98.15757906027555,
+              "Course": -119.44701166078433
+            },
+            "Chance": 0.4926123803583411,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": true,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": true,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.885790403932333,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -55,
+              "Weapon": 10,
+              "Range": 7.1253461383961705,
+              "Angle": -5.86410810256206,
+              "Rear": 10,
+              "Shield": 0,
+              "Evasion": -20,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -38326,7 +40299,50 @@
         "Shot": {
           "Chance": 0.5986160699309033,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 15,
+            "ShooterId": "\u0422\u0430\u0433-3",
+            "TargetId": "\u041C\u0430\u0440\u0442\u0430",
+            "From": {
+              "X": 822.1255401455533,
+              "Y": -4.211736143765151,
+              "Course": -26.299582155775227
+            },
+            "To": {
+              "X": 831.5200386203287,
+              "Y": -16.99420710496094,
+              "Course": 38.502369826056224
+            },
+            "Chance": 0.5986160699309033,
+            "Hit": true,
+            "Damage": 46,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.5889332592487335,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -54,
+              "Weapon": 12,
+              "Range": 12.836806056884472,
+              "Angle": -5.975199063794133,
+              "Rear": 0,
+              "Shield": -10,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -38601,7 +40617,50 @@
         "Shot": {
           "Chance": 0.2612260302754379,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 16,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u0422\u0430\u0433-2",
+            "From": {
+              "X": 645.1661358426393,
+              "Y": 113.07704894656553,
+              "Course": -168.794409702302
+            },
+            "To": {
+              "X": 620.382879007258,
+              "Y": 71.97047686326181,
+              "Course": -167.62558308935576
+            },
+            "Chance": 0.2612260302754379,
+            "Hit": true,
+            "Damage": 69,
+            "Rear": false,
+            "Kill": false,
+            "Killed": true,
+            "Absorption": 0.06,
+            "Absorbed": false,
+            "LethalImpact": true,
+            "TargetEvading": true,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.11125145829282701,
+            "AbsorptionRoll": 0.4298311718739569,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -55,
+              "Weapon": 0,
+              "Range": 9.24004989045567,
+              "Angle": -11.4500466696644,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": -20,
+              "Clamp": 3.552713678800501E-15,
+              "Decoy": 0,
+              "Absorption": 0.06
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -39433,7 +41492,50 @@
         "Shot": {
           "Chance": 0.37755495112806026,
           "Rear": false,
-          "Decoyed": true
+          "Decoyed": true,
+          "ResolvedShot": {
+            "Turn": 19,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u0422\u0430\u0433-3",
+            "From": {
+              "X": 786.6938484434045,
+              "Y": 13.395378168815899,
+              "Course": 34.27953234406817
+            },
+            "To": {
+              "X": 813.7988602224905,
+              "Y": 114.56198986951568,
+              "Course": 143.978898856883
+            },
+            "Chance": 0.37755495112806026,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": true,
+            "ChanceWithoutDecoy": 0.5850366340853735,
+            "HitRoll": 0.9158274980727583,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -44,
+              "Weapon": 10,
+              "Range": 3.362807078459913,
+              "Angle": -10.859143669922553,
+              "Rear": 0,
+              "Shield": -0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": -20.74816829573133,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -39665,7 +41767,50 @@
         "Shot": {
           "Chance": 0.7899823141466128,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 20,
+            "ShooterId": "\u041E\u043B\u0435\u0433",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 806.8633422836605,
+              "Y": 73.58912209259798,
+              "Course": 93.79263699937928
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.7899823141466128,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.9079621478449553,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 50,
+              "Maneuver": -35,
+              "Weapon": 10,
+              "Range": 6.305603780356823,
+              "Angle": -2.3073723656955356,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -39688,7 +41833,50 @@
         "Shot": {
           "Chance": 0.5777985250319054,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 20,
+            "ShooterId": "\u0422\u0430\u0433-3",
+            "TargetId": "\u041C\u0430\u0440\u0442\u0430",
+            "From": {
+              "X": 746.8198432691142,
+              "Y": 157.58509921003258,
+              "Course": 149.27003809738937
+            },
+            "To": {
+              "X": 726.9507879404298,
+              "Y": 186.59753680046273,
+              "Course": 23.129727686397104
+            },
+            "Chance": 0.5777985250319054,
+            "Hit": true,
+            "Damage": 50,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.3675118521787226,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -54,
+              "Weapon": 12,
+              "Range": 10.204920727450503,
+              "Angle": -5.425068224259967,
+              "Rear": 0,
+              "Shield": -10,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -39855,7 +42043,50 @@
         "Shot": {
           "Chance": 0.6552003192041193,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 21,
+            "ShooterId": "\u0412\u0435\u0440\u0430",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 773.925677442936,
+              "Y": 40.61924741014454,
+              "Course": 55.7510448431525
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.6552003192041193,
+            "Hit": false,
+            "Damage": 0,
+            "Rear": false,
+            "Kill": false,
+            "Killed": false,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": false,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.906352398218587,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 55,
+              "Maneuver": -35,
+              "Weapon": 0,
+              "Range": 1.7333322378149303,
+              "Angle": -6.2133003174030055,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -39878,7 +42109,50 @@
         "Shot": {
           "Chance": 0.7937294827982535,
           "Rear": false,
-          "Decoyed": false
+          "Decoyed": false,
+          "ResolvedShot": {
+            "Turn": 21,
+            "ShooterId": "\u042E\u043D",
+            "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+            "From": {
+              "X": 789.7635575664353,
+              "Y": 58.370723201689046,
+              "Course": 76.92970138368236
+            },
+            "To": {
+              "X": 790,
+              "Y": 150,
+              "Course": -180
+            },
+            "Chance": 0.7937294827982535,
+            "Hit": true,
+            "Damage": 43,
+            "Rear": false,
+            "Kill": false,
+            "Killed": true,
+            "Absorption": 0,
+            "Absorbed": false,
+            "LethalImpact": true,
+            "TargetEvading": false,
+            "Decoyed": false,
+            "ChanceWithoutDecoy": null,
+            "HitRoll": 0.4241334544494748,
+            "AbsorptionRoll": null,
+            "Factors": {
+              "Base": 50,
+              "Accuracy": 53,
+              "Maneuver": -35,
+              "Weapon": 10,
+              "Range": 4.8189353490298945,
+              "Angle": -3.4459870692045493,
+              "Rear": 0,
+              "Shield": 0,
+              "Evasion": 0,
+              "Clamp": 0,
+              "Decoy": 0,
+              "Absorption": 0
+            }
+          }
         },
         "Damage": null,
         "Unit": null,
@@ -41669,7 +43943,21 @@
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
           "HitRoll": 0.906352398218587,
-          "AbsorptionRoll": null
+          "AbsorptionRoll": null,
+          "Factors": {
+            "Base": 50,
+            "Accuracy": 55,
+            "Maneuver": -35,
+            "Weapon": 0,
+            "Range": 1.7333322378149303,
+            "Angle": -6.2133003174030055,
+            "Rear": 0,
+            "Shield": 0,
+            "Evasion": 0,
+            "Clamp": 0,
+            "Decoy": 0,
+            "Absorption": 0
+          }
         },
         "UnitsAfter": [
           {
@@ -43035,7 +45323,50 @@
             "Shot": {
               "Chance": 0.6552003192041193,
               "Rear": false,
-              "Decoyed": false
+              "Decoyed": false,
+              "ResolvedShot": {
+                "Turn": 21,
+                "ShooterId": "\u0412\u0435\u0440\u0430",
+                "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+                "From": {
+                  "X": 773.925677442936,
+                  "Y": 40.61924741014454,
+                  "Course": 55.7510448431525
+                },
+                "To": {
+                  "X": 790,
+                  "Y": 150,
+                  "Course": -180
+                },
+                "Chance": 0.6552003192041193,
+                "Hit": false,
+                "Damage": 0,
+                "Rear": false,
+                "Kill": false,
+                "Killed": false,
+                "Absorption": 0,
+                "Absorbed": false,
+                "LethalImpact": false,
+                "TargetEvading": false,
+                "Decoyed": false,
+                "ChanceWithoutDecoy": null,
+                "HitRoll": 0.906352398218587,
+                "AbsorptionRoll": null,
+                "Factors": {
+                  "Base": 50,
+                  "Accuracy": 55,
+                  "Maneuver": -35,
+                  "Weapon": 0,
+                  "Range": 1.7333322378149303,
+                  "Angle": -6.2133003174030055,
+                  "Rear": 0,
+                  "Shield": 0,
+                  "Evasion": 0,
+                  "Clamp": 0,
+                  "Decoy": 0,
+                  "Absorption": 0
+                }
+              }
             },
             "Damage": null,
             "Unit": null,
@@ -43078,7 +45409,21 @@
           "Decoyed": false,
           "ChanceWithoutDecoy": null,
           "HitRoll": 0.4241334544494748,
-          "AbsorptionRoll": null
+          "AbsorptionRoll": null,
+          "Factors": {
+            "Base": 50,
+            "Accuracy": 53,
+            "Maneuver": -35,
+            "Weapon": 10,
+            "Range": 4.8189353490298945,
+            "Angle": -3.4459870692045493,
+            "Rear": 0,
+            "Shield": 0,
+            "Evasion": 0,
+            "Clamp": 0,
+            "Decoy": 0,
+            "Absorption": 0
+          }
         },
         "UnitsAfter": [
           {
@@ -44444,7 +46789,50 @@
             "Shot": {
               "Chance": 0.7937294827982535,
               "Rear": false,
-              "Decoyed": false
+              "Decoyed": false,
+              "ResolvedShot": {
+                "Turn": 21,
+                "ShooterId": "\u042E\u043D",
+                "TargetId": "\u041B\u043E\u0433\u043E\u0432\u043E",
+                "From": {
+                  "X": 789.7635575664353,
+                  "Y": 58.370723201689046,
+                  "Course": 76.92970138368236
+                },
+                "To": {
+                  "X": 790,
+                  "Y": 150,
+                  "Course": -180
+                },
+                "Chance": 0.7937294827982535,
+                "Hit": true,
+                "Damage": 43,
+                "Rear": false,
+                "Kill": false,
+                "Killed": true,
+                "Absorption": 0,
+                "Absorbed": false,
+                "LethalImpact": true,
+                "TargetEvading": false,
+                "Decoyed": false,
+                "ChanceWithoutDecoy": null,
+                "HitRoll": 0.4241334544494748,
+                "AbsorptionRoll": null,
+                "Factors": {
+                  "Base": 50,
+                  "Accuracy": 53,
+                  "Maneuver": -35,
+                  "Weapon": 10,
+                  "Range": 4.8189353490298945,
+                  "Angle": -3.4459870692045493,
+                  "Rear": 0,
+                  "Shield": 0,
+                  "Evasion": 0,
+                  "Clamp": 0,
+                  "Decoy": 0,
+                  "Absorption": 0
+                }
+              }
             },
             "Damage": null,
             "Unit": null,

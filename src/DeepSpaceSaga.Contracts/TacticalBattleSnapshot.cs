@@ -1,4 +1,5 @@
 using System.Collections.Immutable;
+using System.Text.Json.Serialization;
 
 namespace DeepSpaceSaga.Contracts;
 
@@ -55,9 +56,15 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
 }
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);
+/// <summary>Additive terms are percentage points. Clamp and decoy are signed adjustments; absorption is a probability.</summary>
+public sealed record TacticalHitFactors(double Base, double Accuracy, double Maneuver, double Weapon, double Range,
+    double Angle, double Rear, double Shield, double Evasion, double Clamp, double Decoy, double Absorption);
+
 public sealed record TacticalTargetCandidateSnapshot(string TargetId, double Distance, double Angle, bool Rear, double RearKillChance, double Chance)
 {
     public double Absorption { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TacticalHitFactors? Factors { get; init; }
 }
 public sealed record TacticalTargetGroupSnapshot(string DroneId, ImmutableArray<TacticalTargetCandidateSnapshot> List, string? DefaultTargetId);
 public sealed record TacticalIncomingShotSnapshot(string ShooterId, string TargetId, double Chance, double Distance, double Angle, bool Rear, double RearKillChance)
@@ -80,6 +87,8 @@ public sealed record TacticalShotSnapshot(int Turn, string ShooterId, string Tar
     /// <summary>The zero-to-one accuracy roll. An absorbed shot never reaches this check.</summary>
     public double? HitRoll { get; init; }
     public double? AbsorptionRoll { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TacticalHitFactors? Factors { get; init; }
 }
 public sealed record TacticalHitRulesSnapshot(double Base, double MinChance, double MaxChance, double RangeBonus,
     double AnglePenalty, double RearBonus, double RearBonusArc);
@@ -107,6 +116,8 @@ public sealed record TacticalOutcomeSnapshot(TacticalBattleOutcomeCode Kind, Imm
 public sealed record TacticalLogShot(double Chance, bool Rear)
 {
     public bool Decoyed { get; init; }
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public TacticalShotSnapshot? ResolvedShot { get; init; }
 }
 public sealed record TacticalLogDamage(int Hull, int Armor, int Hits, int HullRemaining);
 public sealed record TacticalLogUnit(TacticalUnitKind Kind, int Hull, int MaxHull, string? EngineName = null, double? EngineFactor = null);

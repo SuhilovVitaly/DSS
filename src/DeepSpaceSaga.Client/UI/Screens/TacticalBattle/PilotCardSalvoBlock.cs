@@ -8,6 +8,13 @@ internal static class PilotCardSalvoBlock
 {
     public static float Height(TacticalSalvoFrame salvo) => salvo.InFlight ? 16 : 30;
     internal static float SalvoHeight(bool inFlight) => inFlight ? 51 : 71;
+    internal static float SalvoHeight(TacticalBattleFrame frame) => SalvoHeight(frame.Salvo!.InFlight) +
+        8 * FactorLines(PilotCardModel.ResultShot(frame), frame.Salvo.InFlight, 138).Count;
+
+    private static IReadOnlyList<string> FactorLines(DeepSpaceSaga.Contracts.TacticalShotSnapshot? shot, bool inFlight, float width) =>
+        !inFlight && shot?.Factors is { } factors
+            ? PilotCardFireBlock.WrapSlim(BattleFormat.HitFactors(factors), width, 6.2f)
+            : [];
 
     public static void Draw(SKCanvas canvas, TacticalBattleFrame frame, string drone, float left, float right, float top)
     {
@@ -79,7 +86,7 @@ internal static class PilotCardSalvoBlock
         TextAt(M("Panel.ResultLine", name, chance, dealt), 12, 7, ink);
         string caption = shot.Absorbed ? M("AbsorbedChip").ToUpperInvariant() : shot.TargetEvading ? M("EvadeChipResult").ToUpperInvariant() : U(shot.Hit ? "Hit" : "Miss");
         var tone = shot.Absorbed || shot.TargetEvading ? sub : shot.Hit ? SKColor.Parse("#FF9A6A") : SKColor.Parse("#C8D4EC");
-        TextAt(caption, 31, 17, tone, true);
+        TextAt(caption, 29, 11, tone, true);
         Stroke(c, new(left, top + 37), new(right, top + 37), SKColor.Parse("#5A4E3E"), .6f);
         if (target is not null)
             TextAt(M("Card.TargetAfter", name, target.Armor, target.MaxArmor, target.Hull, target.MaxHull), 47, 6.4f, ink);
@@ -89,6 +96,12 @@ internal static class PilotCardSalvoBlock
         var before = frame.Battle.BeforeSalvoUnits.FirstOrDefault(u => u.Id == drone);
         if (unit is not null && before is not null)
             TextAt(M("Panel.SelfState", PilotCardModel.Name(unit), before.Armor, unit.Armor, unit.Hull, unit.MaxHull), 65, 6.4f, sub);
+        float factorY = 74;
+        foreach (var line in FactorLines(shot, salvo.InFlight, right - left))
+        {
+            TextAt(line, factorY, 6.2f, sub);
+            factorY += 8;
+        }
 
         void TextAt(string text, float y, float size, SKColor color, bool bold = false, bool italic = false) =>
             SmallText(c, BuildCardModel.Ellipsize(text, right - left, size, bold), left, top + y, size, color, bold, italic);

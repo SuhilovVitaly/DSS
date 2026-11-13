@@ -91,18 +91,23 @@ internal static partial class TacticalBattleMapRenderer
         }
         var field = Safe(frame.View);
         if (field.Width <= 24) return;
-        const float size = 10.5f;
+        const float size = 9, lineHeight = 12;
         detail = BuildCardModel.Ellipsize(detail, field.Width - 24, size);
         chance = BuildCardModel.Ellipsize(chance, field.Width - 24, size);
-        float width = Math.Max(Measure(detail, size, true), Measure(chance, size, true)) + 16;
+        var lines = new List<string> { detail, chance };
+        if (!salvo.InFlight && shot.Factors is { } factors)
+            lines.AddRange(PilotCardFireBlock.WrapSlim(BattleFormat.HitFactors(factors), Math.Min(270, field.Width - 24), size));
+        float width = lines.Max(lineText => Measure(lineText, size)) + 16;
+        float height = lines.Count * lineHeight + 8;
         var anchor = frame.View.Project(shooter.Pose);
         float x = Math.Clamp(anchor.X - width / 2, field.Left, field.Right - width);
-        float y = anchor.Y - 60;
+        float y = anchor.Y - height - 26;
         if (y < field.Top) y = anchor.Y + 32;
-        var bounds = SKRect.Create(x, Math.Clamp(y, field.Top, field.Bottom - 34), width, 34);
+        var bounds = SKRect.Create(x, Math.Clamp(y, field.Top, field.Bottom - height), width, height);
         Round(canvas, bounds, Box, BoxEdge);
-        T(canvas, detail, x + 8, bounds.Top + 14, size, shot.Absorbed ? Heat : hit ? TTGold : Text, true, role: "field.ribbon.text");
-        T(canvas, chance, x + 8, bounds.Top + 28, size, Text, true, role: "field.ribbon.text");
+        for (int i = 0; i < lines.Count; i++)
+            T(canvas, lines[i], x + 8, bounds.Top + 12 + i * lineHeight, size,
+                i == 0 && shot.Absorbed ? Heat : i == 0 && hit ? TTGold : Text, role: "field.ribbon.text");
         occupied.Add(bounds);
         if (Recording is { } resultLayout) resultLayout.Rects["result-detail:" + flight.Index] = bounds;
     }

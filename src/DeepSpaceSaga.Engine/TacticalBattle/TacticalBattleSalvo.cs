@@ -22,6 +22,7 @@ internal sealed record TacticalShot(TacticalDrone Shooter, TacticalUnit Target, 
     public double? ChanceWithoutDecoy { get; init; }
     public double? HitRoll { get; init; }
     public double? AbsorptionRoll { get; init; }
+    public TacticalHitFactors? Factors { get; init; }
 }
 internal sealed record TacticalDamage(string TargetId, int Hull, int Armor, bool RearKill);
 internal sealed record TacticalSystemChange(string TargetId, string Effect, int? EngineIndex = null);
@@ -192,6 +193,7 @@ internal static class TacticalBattleSalvo
                     Absorbed = absorbed,
                     HitRoll = hitRoll,
                     AbsorptionRoll = absorptionRoll,
+                    Factors = TacticalBattleSnapshotBuilder.HitFactors(candidate, chance),
                     TargetEvading = evading.Contains(target.Id),
                     Decoyed = decoyed,
                     ChanceWithoutDecoy = decoyed ? candidate.Chance : null

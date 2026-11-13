@@ -10,7 +10,7 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class PilotCardFireBlockTests
 {
     [Theory]
-    [InlineData("2-fire", 129)]
+    [InlineData("2-fire", 153)]
     [InlineData("2-no-target", 106)]
     [InlineData("2-evasion-plan", 106)]
     [InlineData("2-anomaly-dust", 106)]

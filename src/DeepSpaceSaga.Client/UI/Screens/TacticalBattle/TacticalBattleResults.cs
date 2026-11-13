@@ -70,7 +70,11 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
 
     private bool Own(string id) => Battle.Units.FirstOrDefault(u => u.Id == id)?.Side == Battle.PlayerSide;
     private TacticalShotSnapshot DisplayShot(TacticalShotSnapshot shot) => shot.Decoyed && !Own(shot.TargetId)
-        ? shot with { Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false, ChanceWithoutDecoy = null } : shot;
+        ? shot with
+        {
+            Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false, ChanceWithoutDecoy = null,
+            Factors = shot.Factors is { } factors ? factors with { Decoy = 0 } : null
+        } : shot;
     private ImmutableArray<TacticalUnitSnapshot> DisplayUnits(ImmutableArray<TacticalUnitSnapshot> units) => units.Select(unit =>
     {
         int? charges = Own(unit.Id) ? Battle.Units.FirstOrDefault(u => u.Id == unit.Id)?.DecoyCharges
@@ -79,9 +83,10 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
     }).ToImmutableArray();
     private TacticalBattleLogEvent DisplayEvent(TacticalBattleLogEvent entry, TacticalShotSnapshot? shot)
     {
-        if (entry.Shot is { } logShot && shot is { Decoyed: true } && !Own(shot.TargetId))
-            return entry with { Shot = logShot with { Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false } };
-        return entry;
+        if (entry.Shot is not { } logShot) return entry;
+        if (shot is { Decoyed: true } && !Own(shot.TargetId))
+            logShot = logShot with { Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false };
+        return entry with { Shot = logShot with { ResolvedShot = null } };
     }
     internal TacticalBattleSnapshot Project(long nowMs)
     {
