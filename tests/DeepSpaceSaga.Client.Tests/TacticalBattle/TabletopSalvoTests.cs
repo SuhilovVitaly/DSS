@@ -90,11 +90,10 @@ public sealed class TabletopSalvoTests
     }
 
     [Theory]
-    [InlineData(0, false, false)]
-    [InlineData(300, false, false)]
-    [InlineData(500, true, false)]
-    [InlineData(1500, true, true)]
-    public async Task Results_follow_impact_age_and_do_not_replace_floating_text_early(int age, bool ribbon, bool badge)
+    [InlineData(-1, false)]
+    [InlineData(0, true)]
+    [InlineData(500, true)]
+    public async Task Results_show_a_short_badge_after_impact_and_details_on_hover(int age, bool visible)
     {
         await using var scene = await Ep0019Scenes.Create("3-salvo-flight");
         var frame = scene.Frame;
@@ -106,9 +105,16 @@ public sealed class TabletopSalvoTests
             Salvo = frame.Salvo with { Flights = [flight], PlaybackSkipped = false }
         };
         var layout = Draw(frame);
-        Assert.Equal(ribbon, layout.Rects.ContainsKey("result-ribbon:" + flight.Index));
-        Assert.Equal(badge, layout.Rects.ContainsKey("result-badge:" + flight.Index));
-        Assert.Equal(age < 1400, layout.Rects.ContainsKey("floating-shot:" + flight.Index));
+        Assert.Equal(visible, layout.Rects.ContainsKey("result-ribbon:" + flight.Index));
+        Assert.Equal(visible, layout.Rects.TryGetValue("result-badge:" + flight.Index, out var badge));
+        Assert.DoesNotContain("floating-shot:" + flight.Index, layout.Rects.Keys);
+        if (!visible) return;
+        string detail = "result-detail:" + flight.Index;
+        Assert.DoesNotContain(detail, layout.Rects.Keys);
+        Assert.Contains(detail, Draw(frame with { HoverPoint = new(badge.MidX, badge.MidY) }).Rects.Keys);
+        Assert.Contains(detail, Draw(frame with { HoverUnitId = flight.Shot.ShooterId }).Rects.Keys);
+        var expired = Draw(frame with { Salvo = frame.Salvo! with { ShowResultCallouts = false } });
+        Assert.DoesNotContain(expired.Rects.Keys, key => key.StartsWith("result-", StringComparison.Ordinal));
     }
 
     [Theory]
@@ -126,12 +132,7 @@ public sealed class TabletopSalvoTests
         {
             Assert.True(layout.Rects.ContainsKey("result-badge:" + flight.Index));
             var shot = flight.Shot;
-            var applied = frame.Battle.FireSteps.Single(step => step.ShooterId == shot.ShooterId).Events
-                .FirstOrDefault(entry => entry.Kind == DeepSpaceSaga.Contracts.TacticalBattleLogKind.DamageApplied)?.Damage;
-            int damage = applied is null ? shot.Damage : applied.Hull + applied.Armor;
-            string text = shot.Absorbed ? "поглощён" : shot.Hit ? "−" + damage + (shot.Killed ? " · сбит" : "")
-                : shot.Decoyed ? "промах · ловушка" : "промах";
-            if (shot.Hit && !shot.Absorbed && shot.Rear) text += " · в корму, мимо брони";
+            string text = shot.Absorbed ? "поглощён" : shot.Hit ? "попадание" : "промах";
             Assert.Contains(layout.Texts, t => t.Text == text);
             if (shot.Killed)
             {
@@ -141,6 +142,27 @@ public sealed class TabletopSalvoTests
         }
         Assert.DoesNotContain(layout.Rects.Keys, k => k.StartsWith("floating-shot:", StringComparison.Ordinal) ||
             k.StartsWith("decoy-callout:", StringComparison.Ordinal) || k.StartsWith("absorbed:", StringComparison.Ordinal) || k.StartsWith("explosion:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Tabletop_doubles_torpedo_flight_duration()
+    {
+        using var profile = new TabletopTestProfile();
+        await using var classic = await Ep0019Scenes.Create("3-salvo-flight");
+        await using var tabletop = await Ep0019Scenes.Create("3-salvo-flight", settingsPath: profile.SettingsPath);
+        var baseline = classic.Frame.Salvo!.Flights[0];
+        var slowed = tabletop.Frame.Salvo!.Flights[0];
+        Assert.Equal(baseline.LaunchMs, slowed.LaunchMs);
+        Assert.Equal(2 * baseline.DurationMs, slowed.DurationMs);
+        Assert.Equal(baseline.Progress / 2, slowed.Progress, 6);
+        var last = tabletop.Frame.Salvo!.Flights[^1];
+        long untilImpact = (long)Math.Ceiling(last.LaunchMs + last.DurationMs - last.ElapsedMs);
+        tabletop.Fixture.AdvanceAnimation(untilImpact);
+        Assert.False(tabletop.Frame.Salvo!.InFlight);
+        Assert.True(tabletop.Frame.Salvo.ShowResultCallouts);
+        tabletop.Fixture.AdvanceAnimation(1400);
+        Assert.False(tabletop.Frame.Salvo!.ShowResultCallouts);
+        Assert.True(tabletop.Screen.HasSalvoPresentation);
     }
 
     private static BattleLayout Draw(TacticalBattleFrame frame, string? evidenceName = null)

@@ -33,7 +33,8 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
 {
     internal const double InitialDelayMs = 300, NominalStepMs = 570, FlightMs = 975, FlashMs = 450, CapMs = 4500;
 
-    internal static TacticalBattleResults? Create(TacticalBattleSnapshot? before, TacticalBattleResponse response, long startMs)
+    internal static TacticalBattleResults? Create(TacticalBattleSnapshot? before, TacticalBattleResponse response, long startMs,
+        bool tabletop = false)
     {
         if (before is null || !response.Accepted || response.State is not { } state ||
             state.BattleId != before.BattleId || state.Revision <= before.Revision ||
@@ -53,14 +54,16 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
         var beforeLog = before.Phase == TacticalBattlePhase.Move
             ? before.Log.AddRange(state.Log.Skip(before.Log.Length).TakeWhile(entry => entry.Phase == TacticalBattlePhase.Move))
             : before.Log;
-        return new(state, shots, damage.ToImmutable(), startMs) { BeforeLog = beforeLog };
+        return new(state, shots, damage.ToImmutable(), startMs) { BeforeLog = beforeLog, Tabletop = tabletop };
     }
 
     internal ImmutableArray<TacticalBattleLogEvent> BeforeLog { get; init; } = [];
     internal long? SkippedAtMs { get; init; }
+    private bool Tabletop { get; init; }
     private int _cachedStep = int.MinValue;
     private TacticalBattleSnapshot? _cachedProjection;
-    internal double DurationMs => Shots.IsEmpty ? 0 : PyMath.Min(FlightMs, (CapMs - InitialDelayMs) / (double)Shots.Length);
+    internal double DurationMs => Shots.IsEmpty ? 0 :
+        PyMath.Min(FlightMs, (CapMs - InitialDelayMs) / (double)Shots.Length) * (Tabletop ? 2 : 1);
     internal double LaunchInterval => DurationMs;
     internal double EndMs => Shots.IsEmpty ? 0 : InitialDelayMs + DurationMs * Shots.Length;
     internal bool InFlight(long nowMs) => !Skipped && nowMs - StartedMs < EndMs;

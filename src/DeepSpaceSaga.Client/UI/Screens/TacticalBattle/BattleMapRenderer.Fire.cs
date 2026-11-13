@@ -65,7 +65,7 @@ internal static partial class TacticalBattleMapRenderer
                 }
             }
         }
-        if (Skin.Tabletop && f.Salvo is { } tabletopSalvo) DrawSalvoTemplates(c, f, tabletopSalvo, occupied);
+        if (Skin.Tabletop && f.Salvo is { ShowResultCallouts: true } tabletopSalvo) DrawSalvoTemplates(c, f, tabletopSalvo, occupied);
         if (Skin.Tabletop && f.Salvo is { InFlight: true } tabletopFlying) DrawTabletopProjectiles(c, f, tabletopFlying);
         if (!Skin.Tabletop && f.Salvo is { InFlight: true } salvo)
             foreach (var flight in salvo.Flights.Where(s => s.Flying))
@@ -136,7 +136,7 @@ internal static partial class TacticalBattleMapRenderer
                 if (Recording is { } layout) layout.Rects["decoy-callout:" + index++] = bounds;
             }
         }
-        if (f.Salvo is { PlaybackSkipped: false } feedback)
+        if (!Skin.Tabletop && f.Salvo is { PlaybackSkipped: false } feedback)
             DrawFloatingShotResults(c, f, feedback, occupied);
     }
 

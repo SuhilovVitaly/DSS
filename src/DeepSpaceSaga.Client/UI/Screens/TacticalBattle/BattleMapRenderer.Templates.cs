@@ -39,9 +39,12 @@ internal static partial class TacticalBattleMapRenderer
             paint.Color = TTEdge.WithAlpha(selected ? (byte)200 : (byte)50); paint.StrokeWidth = 1.1f * strokeScale; paint.PathEffect = centerDash; c.DrawPath(path, paint);
             for (int i = 0; i < points.Length; i += 2) occupied.Add(SKRect.Create(points[i].X - pathWidth / 2, points[i].Y - pathWidth / 2, pathWidth, pathWidth));
             var mid = points[points.Length / 2];
-            Circle(c, mid, 9, TTBadge, TTGold, 1.4f);
-            T(c, Math.Round(row.Order.Speed).ToString(CultureInfo.InvariantCulture), mid.X, mid.Y + 3.6f, 10, SKColors.White, true, SKTextAlign.Center, "field.template.text");
-            occupied.Add(SKRect.Create(mid.X - 10, mid.Y - 10, 20, 20));
+            if (f.AimingMovement)
+            {
+                Circle(c, mid, 9, TTBadge, TTGold, 1.4f);
+                T(c, Math.Round(row.Order.Speed).ToString(CultureInfo.InvariantCulture), mid.X, mid.Y + 3.6f, 10, SKColors.White, true, SKTextAlign.Center, "field.template.text");
+                occupied.Add(SKRect.Create(mid.X - 10, mid.Y - 10, 20, 20));
+            }
             var end = points[^1];
             if (Recording is { } layout) layout.Rects["endpoint:" + row.Unit.Id] = SKRect.Create(end.X - 6, end.Y - 6, 12, 12);
             if (!selected)
@@ -61,21 +64,27 @@ internal static partial class TacticalBattleMapRenderer
                 Triangle(c, end, 5, row.Path[^1].Course, TTGold);
             Brackets(c, end, TTGold, 2);
             occupied.Add(SKRect.Create(end.X - 22, end.Y - 22, 44, 44));
-            string text = M("Map.TemplateTip", PilotCardModel.Name(row.Unit), F(row.Order.Speed), Deg(row.Order.Turn)[..^1]);
-            float width = Measure(text, 11.5f, true) + 16;
-            var tip = SKRect.Create(end.X + 30, end.Y - 32, width, 21);
-            if (tip.Right > Safe(f.View).Right) tip = SKRect.Create(end.X - 30 - width, end.Y - 46, width, 21);
-            using var box = new SKPaint { IsAntialias = true, Color = TTTan };
-            c.DrawRect(tip, box); box.Style = SKPaintStyle.Stroke; box.Color = TTEdge; box.StrokeWidth = 1.5f; c.DrawRect(tip, box);
-            T(c, text, tip.Left + 8, tip.MidY + 11.5f * .36f, 11.5f, TTInk, true, role: "field.template.text");
-            occupied.Add(tip);
-            if (Recording is { } tipLayout) tipLayout.Rects["template-tip"] = tip;
+            if (f.AimingMovement)
+                DrawMovementTip(c, f, occupied, row, end);
             if (AnomalyPresentation.Inside(f.Battle, DeepSpaceSaga.Motion.TacticalBattle.TacticalAnomalyKind.Dust, row.Path[^1]))
             {
                 var dust = Callout(c, end.X, end.Y + 34, M("MoveEndInDust"), Dust, Dust); occupied.Add(dust);
                 if (Recording is { } dustLayout) dustLayout.Rects["callout:endpoint"] = dust;
             }
         }
+    }
+
+    private static void DrawMovementTip(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied, TacticalOrderPreview row, SKPoint end)
+    {
+        string text = M("Map.TemplateTip", PilotCardModel.Name(row.Unit), F(row.Order.Speed), Deg(row.Order.Turn)[..^1]);
+        float width = Measure(text, 11.5f, true) + 16;
+        var tip = SKRect.Create(end.X + 30, end.Y - 32, width, 21);
+        if (tip.Right > Safe(f.View).Right) tip = SKRect.Create(end.X - 30 - width, end.Y - 46, width, 21);
+        using var box = new SKPaint { IsAntialias = true, Color = TTTan };
+        c.DrawRect(tip, box); box.Style = SKPaintStyle.Stroke; box.Color = TTEdge; box.StrokeWidth = 1.5f; c.DrawRect(tip, box);
+        T(c, text, tip.Left + 8, tip.MidY + 11.5f * .36f, 11.5f, TTInk, true, role: "field.template.text");
+        occupied.Add(tip);
+        if (Recording is { } tipLayout) tipLayout.Rects["template-tip"] = tip;
     }
 
     private static void Brackets(SKCanvas c, SKPoint point, SKColor color, float width)

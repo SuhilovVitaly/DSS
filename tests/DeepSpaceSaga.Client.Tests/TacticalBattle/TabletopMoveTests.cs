@@ -73,10 +73,9 @@ public sealed class TabletopMoveTests
             Assert.Equal(point.X, endpoint.MidX, .001f); Assert.Equal(point.Y, endpoint.MidY, .001f);
             Assert.True(layout.Rects.ContainsKey("label:" + order.Unit.Id));
         }
-        Assert.True(layout.Rects.ContainsKey("template-tip"));
+        Assert.False(layout.Rects.ContainsKey("template-tip"));
         Assert.Contains(SKColor.Parse("#E8D48C"), bitmap.Pixels);
         Assert.DoesNotContain(SKColor.Parse("#D6CBA6"), bitmap.Pixels);
-        Assert.Contains(layout.Texts, t => t.Text.StartsWith(PilotCardModel.Name(frame.Movement.SelectedOrder!.Unit) + ":", StringComparison.Ordinal) && t.Text.EndsWith("°", StringComparison.Ordinal));
         var before = bitmap.Bytes;
         var selected = frame.Movement.SelectedOrder!;
         frame = frame with { Movement = frame.Movement with { Orders = frame.Movement.Orders.Replace(selected, selected with { Unit = selected.Unit with { Build = null } }) } };
@@ -97,12 +96,15 @@ public sealed class TabletopMoveTests
             var order = screen.Movement.SelectedOrder!;
             var endpoint = screen.Layout.Rects["endpoint:" + order.Unit.Id];
             screen.OnMouseDown(endpoint.MidX, endpoint.MidY, MouseButton.Left);
+            screen.Render(canvas, 1280, 720);
+            Assert.Contains("template-tip", screen.Layout.Rects.Keys);
             screen.OnMouseMove(endpoint.MidX - 35, endpoint.MidY + 20);
             screen.OnMouseUp(endpoint.MidX - 35, endpoint.MidY + 20, MouseButton.Left);
             var command = Assert.Single(screen.BuildMoveRequest().Orders);
             Assert.Equal(order.Unit.Id, command.DroneId);
             Assert.NotEqual(order.Order, command);
             screen.Render(canvas, 1280, 720);
+            Assert.DoesNotContain("template-tip", screen.Layout.Rects.Keys);
             Assert.NotEqual(endpoint, screen.Layout.Rects["endpoint:" + order.Unit.Id]);
         }
         finally { screen.OnDeactivated(); }

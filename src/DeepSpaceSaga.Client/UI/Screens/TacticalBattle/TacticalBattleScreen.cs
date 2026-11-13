@@ -267,7 +267,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         long now = ClockMilliseconds();
         var projectedResponse = response with { State = state };
         var animation = TacticalBattleMovementAnimation.Create(before, projectedResponse, now);
-        var results = TacticalBattleResults.Create(before, projectedResponse, now + (animation?.PlaybackDurationMs ?? 0));
+        var results = TacticalBattleResults.Create(before, projectedResponse, now + (animation?.PlaybackDurationMs ?? 0),
+            _skin.Metric("field.style", "tabletop", 0) == 1);
         var previousPaths = animation is not null && before is not null && !before.Paths.IsDefaultOrEmpty
             ? before.Paths.Where(path => path.Turn == before.Turn - 1).ToImmutableArray()
             : [];
