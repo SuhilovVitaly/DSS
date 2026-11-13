@@ -20,6 +20,7 @@ public sealed record TacticalFirePlanRow(TacticalUnitSnapshot Drone, TacticalTar
 public sealed record TacticalFirePlan(ImmutableArray<TacticalFirePlanRow> Rows, string? SelectedDroneId)
 {
     public TacticalFirePlanRow? Selected => Rows.FirstOrDefault(r => r.Drone.Id == SelectedDroneId);
+    internal TacticalSalvoForecast? SalvoForecast { get; init; }
 }
 
 internal sealed class TacticalBattleFireOrders
@@ -104,7 +105,14 @@ internal sealed class TacticalBattleFireOrders
         return true;
     }
 
-    public TacticalFirePlan Capture() => _cached ??= new(_rows.ToImmutableArray(), Selected);
+    public TacticalFirePlan Capture()
+    {
+        if (_cached is not null) return _cached;
+        var plan = new TacticalFirePlan(_rows.ToImmutableArray(), Selected);
+        return _cached = _state is { Phase: TacticalBattlePhase.Fire }
+            ? plan with { SalvoForecast = TacticalSalvoForecast.Calculate(_state, plan) }
+            : plan;
+    }
     public ImmutableArray<TacticalFireTarget> BuildTargets() => _rows.Select(r => new TacticalFireTarget(r.Drone.Id, r.TargetId, r.Evade, r.Decoy)).ToImmutableArray();
 
     public bool ChooseAt(TacticalBattleView view, SKPoint pointer, float uiScale)

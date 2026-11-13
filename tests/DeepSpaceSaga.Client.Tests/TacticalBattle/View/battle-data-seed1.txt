@@ -1407,6 +1407,7 @@
       "TurnAtMaxSpeedFraction": 0.5,
       "RearArc": 45,
       "Substeps": 4,
+      "DisabledHullFraction": 0.3,
       "Evasion": {
         "HitPenalty": 20,
         "Cost": 10,
@@ -4859,6 +4860,7 @@
       "TurnAtMaxSpeedFraction": 0.5,
       "RearArc": 45,
       "Substeps": 4,
+      "DisabledHullFraction": 0.3,
       "Evasion": {
         "HitPenalty": 20,
         "Cost": 10,
@@ -11309,6 +11311,7 @@
       "TurnAtMaxSpeedFraction": 0.5,
       "RearArc": 45,
       "Substeps": 4,
+      "DisabledHullFraction": 0.3,
       "Evasion": {
         "HitPenalty": 20,
         "Cost": 10,
@@ -32206,6 +32209,7 @@
       "TurnAtMaxSpeedFraction": 0.5,
       "RearArc": 45,
       "Substeps": 4,
+      "DisabledHullFraction": 0.3,
       "Evasion": {
         "HitPenalty": 20,
         "Cost": 10,

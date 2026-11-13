@@ -119,6 +119,7 @@ internal static class TacticalBattleSnapshotBuilder
         new(r.Hit.Base, r.Hit.MinChance, r.Hit.MaxChance, r.Hit.RangeBonus, r.Hit.AnglePenalty, r.Hit.RearBonus, r.Hit.RearBonusArcDeg),
         r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps)
     {
+        DisabledHullFraction = r.Disabled.HullFraction,
         Evasion = new(r.Evasion.HitPenalty, r.Evasion.Cost, r.Evasion.MinConsciousness, r.Consciousness.RecoveryPerTurn, r.Consciousness.Max),
         Decoy = new(r.Decoy.AiThreatChance),
         Anomalies = new(r.Anomalies.ZoneEdge, r.Anomalies.Background, r.Anomalies.AbsorbSamples)

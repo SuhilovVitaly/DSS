@@ -10,10 +10,10 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class PilotCardFireBlockTests
 {
     [Theory]
-    [InlineData("2-fire", 153)]
-    [InlineData("2-no-target", 106)]
+    [InlineData("2-fire", 186)]
+    [InlineData("2-no-target", 108)]
     [InlineData("2-evasion-plan", 106)]
-    [InlineData("2-anomaly-dust", 106)]
+    [InlineData("2-anomaly-dust", 112)]
     public async Task Slim_fire_panel_sizes_content_and_preserves_command_eligibility(string sceneName, float height)
     {
         using var locale = Localization.UseLocaleForTests("Russian");
@@ -37,11 +37,13 @@ public sealed class PilotCardFireBlockTests
             Assert.Equal(row.CanDecoy, !screen.CardCommandBounds("decoy").IsEmpty);
             if (sceneName == "2-fire")
             {
+                Assert.Equal(2, screen.CaptureFrame(1920, 1080)!.FirePlan!.SalvoForecast!.Shots);
                 Assert.False(screen.CardCommandBounds("target:Таг-5").IsEmpty);
                 Assert.False(screen.CardCommandBounds("target:Таг-6").IsEmpty);
                 var target = screen.CardCommandBounds("target:Таг-5");
                 screen.OnMouseDown(target.MidX, target.MidY, MouseButton.Left);
                 Assert.Contains(screen.BuildFireRequest().Targets, t => t.DroneId == row.Drone.Id && t.TargetId == "Таг-5");
+                Assert.Equal(1, screen.CaptureFrame(1920, 1080)!.FirePlan!.SalvoForecast!.Shots);
             }
             else Assert.DoesNotContain(screen.Layout.Rects.Keys, k => k.StartsWith("card-command:target:", StringComparison.Ordinal));
             if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } folder)

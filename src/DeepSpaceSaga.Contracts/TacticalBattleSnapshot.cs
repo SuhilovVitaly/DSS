@@ -100,6 +100,8 @@ public sealed record TacticalDecoyRulesSnapshot(double AiThreatChance);
 public sealed record TacticalEvasionRulesSnapshot(double HitPenalty, int Cost, int MinConsciousness, int RecoveryPerTurn, int MaxConsciousness);
 public sealed record TacticalForecastRules(TacticalHitRulesSnapshot Hit, double TurnAtMaxSpeedFraction, double RearArc, int Substeps)
 {
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public double? DisabledHullFraction { get; init; }
     public TacticalEvasionRulesSnapshot? Evasion { get; init; }
     public TacticalDecoyRulesSnapshot? Decoy { get; init; }
     public TacticalAnomalyRulesSnapshot? Anomalies { get; init; }

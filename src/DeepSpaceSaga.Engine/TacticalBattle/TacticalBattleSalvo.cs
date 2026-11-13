@@ -228,7 +228,7 @@ internal static class TacticalBattleSalvo
                     if (target is TacticalDrone drone)
                     {
                         if (drone.Hull <= 0) { drone.Status = TacticalDroneStatus.Destroyed; drone.Speed = 0; }
-                        else if (drone.Hull <= PyMath.FloorNonNeg(battle.Catalog.Rules.Disabled.HullFraction * drone.MaxHull))
+                        else if (drone.Hull <= TacticalDamageMath.DisabledHull(drone.MaxHull, battle.Catalog.Rules.Disabled.HullFraction))
                         {
                             drone.Status = TacticalDroneStatus.Disabled; drone.Speed = 0; battle.Statistics.Disabled++;
                         }
@@ -266,11 +266,6 @@ internal static class TacticalBattleSalvo
         return new(shots.ToImmutable(), applications.ToImmutable(), allChanges.ToImmutable()) { Steps = steps.MoveToImmutable(), DecoysLaunched = launched };
     }
 
-    public static (int Hull, int Armor) Split(int damage, int piercing, int armor)
-    {
-        int direct = (int)PyMath.Min(damage, piercing);
-        int remaining = damage - direct;
-        int absorbed = (int)PyMath.Min(PyMath.Max(armor, 0), remaining);
-        return (direct + remaining - absorbed, absorbed);
-    }
+    public static (int Hull, int Armor) Split(int damage, int piercing, int armor) =>
+        TacticalDamageMath.Split(damage, piercing, armor);
 }

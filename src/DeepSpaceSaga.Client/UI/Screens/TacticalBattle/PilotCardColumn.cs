@@ -108,7 +108,7 @@ internal sealed class PilotCardColumn
     {
         if (Skin.SlimPilots)
             return frame.FirePlan?.Selected is { } selectedFire
-                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire)
+                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire, frame.FirePlan.SalvoForecast)
                 : frame.Salvo is not null ? PilotCardSalvoBlock.SalvoHeight(frame) : PilotCardMoveBlock.MoveHeight;
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
@@ -324,7 +324,7 @@ internal sealed class PilotCardColumn
             if (_frame?.Movement?.SelectedOrder is { } move)
                 PilotCardMoveBlock.Draw(c, this, card.UnitId, move, left, right, top);
             else if (_frame?.FirePlan?.Selected is { } fire)
-                _fireBlock.Draw(c, this, _frame.Battle, fire, left, right, top);
+                _fireBlock.Draw(c, this, _frame.Battle, fire, left, right, top, _frame.FirePlan.SalvoForecast);
             else if (_frame?.Salvo is not null)
                 PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, left, right, top);
         }
