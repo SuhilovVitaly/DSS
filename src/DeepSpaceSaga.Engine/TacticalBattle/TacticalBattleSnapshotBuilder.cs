@@ -16,7 +16,19 @@ internal static class TacticalBattleSnapshotBuilder
 
     public static TacticalShotSnapshot Shot(TacticalShot shot, int turn) => new(turn, shot.Shooter.Id, shot.Target.Id,
         Pose(shot.Shooter.Pose), Pose(shot.Target.Pose), shot.Chance, shot.Hit, shot.Damage, shot.Rear, shot.Kill, shot.LethalImpact)
-    { Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact, TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy };
+    {
+        Absorption = shot.Absorption, Absorbed = shot.Absorbed, LethalImpact = shot.LethalImpact,
+        TargetEvading = shot.TargetEvading, Decoyed = shot.Decoyed, ChanceWithoutDecoy = shot.ChanceWithoutDecoy,
+        HitRoll = shot.HitRoll, AbsorptionRoll = shot.AbsorptionRoll, Factors = shot.Factors
+    };
+
+    internal static TacticalHitFactors HitFactors(TacticalCandidate candidate, double conditionalChance)
+    {
+        var terms = candidate.Terms;
+        return new(terms.Base, terms.Accuracy, terms.Maneuver, terms.Weapon, terms.Range, terms.Angle, terms.Rear,
+            terms.Shield, terms.Evasion, terms.Chance * 100 - terms.Raw, (conditionalChance - terms.Chance) * 100,
+            candidate.Absorption);
+    }
 
     private static ImmutableArray<TacticalSlotSnapshot> Slots(TacticalDrone d)
     {
@@ -69,7 +81,7 @@ internal static class TacticalBattleSnapshotBuilder
         var candidates = TacticalBattleSalvo.Candidates(battle, d);
         return new TacticalTargetGroupSnapshot(d.Id, candidates.Select(c => new TacticalTargetCandidateSnapshot(c.Target.Id,
             c.Distance, c.Angle, c.Terms.IsRear, d.Weapon.RearKillChance, c.Chance)
-        { Absorption = c.Absorption }).ToImmutableArray(),
+        { Absorption = c.Absorption, Factors = HitFactors(c, c.Terms.Chance) }).ToImmutableArray(),
             TacticalBattleSalvo.DefaultTarget(d, candidates)?.Target.Id);
     }).ToImmutableArray();
 
@@ -107,6 +119,7 @@ internal static class TacticalBattleSnapshotBuilder
         new(r.Hit.Base, r.Hit.MinChance, r.Hit.MaxChance, r.Hit.RangeBonus, r.Hit.AnglePenalty, r.Hit.RearBonus, r.Hit.RearBonusArcDeg),
         r.TurnAtMaxSpeedFraction, r.Rear.ArcHalfDeg, r.Substeps)
     {
+        DisabledHullFraction = r.Disabled.HullFraction,
         Evasion = new(r.Evasion.HitPenalty, r.Evasion.Cost, r.Evasion.MinConsciousness, r.Consciousness.RecoveryPerTurn, r.Consciousness.Max),
         Decoy = new(r.Decoy.AiThreatChance),
         Anomalies = new(r.Anomalies.ZoneEdge, r.Anomalies.Background, r.Anomalies.AbsorbSamples)

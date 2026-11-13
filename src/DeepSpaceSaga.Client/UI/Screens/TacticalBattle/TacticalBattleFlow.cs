@@ -87,13 +87,31 @@ public sealed class TacticalBattleFlow(GameSessionHandle session)
         {
             var response = await send();
             var previous = Volatile.Read(ref _observed);
-            if (response.Accepted && exiting) Forget();
+            if (response.Accepted && exiting)
+            {
+                if (previous is not null) ExportMetrics(previous.State, exited: true);
+                Forget();
+            }
             else if (response.State is { } state && (starting && response.Accepted || IsLiveBattleRefusal(response) || previous is not null && state.BattleId == previous.State.BattleId && state.Revision >= previous.State.Revision))
+            {
                 Volatile.Write(ref _observed, new(state, WithRecentPaths(state, previous?.Presentation)));
+                if (response.Accepted && (previous?.State.BattleId != state.BattleId || previous.State.Revision != state.Revision))
+                    ExportMetrics(state, exited: false);
+            }
             Volatile.Write(ref _error, response.Accepted ? "" : BattleFormat.Text(GameSessionHandle.TacticalBattleRefusalText(response.Code) + " " + Issue(response.ContentError)));
             return response;
         }
         finally { Volatile.Write(ref _pending, 0); }
+    }
+
+    private static void ExportMetrics(TacticalBattleSnapshot state, bool exited)
+    {
+        try { TacticalBattleMetrics.Write(state, exited); }
+        catch (Exception error) when (error is IOException or UnauthorizedAccessException)
+        {
+            try { InterfaceLog.Write("TACTICAL METRICS: " + error.Message); }
+            catch (Exception logError) when (logError is IOException or UnauthorizedAccessException) { }
+        }
     }
 
     private static TacticalBattleSnapshot WithRecentPaths(TacticalBattleSnapshot state, TacticalBattleSnapshot? previous)
@@ -176,7 +194,7 @@ public class TacticalBattleModalScreen : IScreen
     protected static string L(string key) => BattleFormat.Localize(key);
     public virtual void Render(SKCanvas canvas, int width, int height)
     {
-        canvas.Clear(new SKColor(2, 12, 22));
+        canvas.Clear(IsSetup ? TabletopStyle.Background : new SKColor(2, 12, 22));
         float s = UiScale;
         if (!IsSetup && TacticalBattleSkinRenderScope.HasBoxStyle("modal.background"))
             TacticalBattleSkinRenderScope.Box(canvas, "modal.background", SKRect.Create(width, height), new(2, 12, 22), null, s);
@@ -188,6 +206,7 @@ public class TacticalBattleModalScreen : IScreen
                 string.Join("\n\n", options.Scenarios.Select(scenario => scenario.Name + "\n" + scenario.Description));
             _error.Layout(new(24 * s, 72 * s, width - 24 * s, height - 120 * s), s);
             _error.SetText(Flow.Error.Length > 0 ? Flow.Error : text);
+            TabletopStyle.Panel(canvas, new(20 * s, 68 * s, width - 20 * s, height - 116 * s));
             _error.Draw(canvas);
         }
         else if (Flow.State is { } state)
@@ -206,6 +225,7 @@ public class TacticalBattleModalScreen : IScreen
             if (Flow.Error.Length > 0) ControlVisuals.Label(canvas, Flow.Error, new(24 * s, height - 115 * s, width - 24 * s, height - 80 * s), true, s, role: "modal.error");
         }
         _action.Label = L(IsSetup ? "Start" : Flow.State?.Phase == TacticalBattlePhase.Fire ? "Fire" : "Move");
+        _action.Primary = IsSetup;
         _action.KeyHint = "Enter"; _action.Enabled = ActionEvent != ScreenEvent.None;
         bool showAction = IsSetup ? Flow.Options is { Availability.Available: true, Scenarios.IsEmpty: false }
             : Flow.State?.Phase is TacticalBattlePhase.Move or TacticalBattlePhase.Fire;
@@ -234,8 +254,10 @@ public class TacticalBattleModalScreen : IScreen
             _confirm.Bounds = SKRect.Create(box.Left + 24 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _cancel.Bounds = SKRect.Create(box.Right - 244 * scale, box.Bottom - 68 * scale, 220 * scale, 40 * scale);
             _confirm.Enabled = !Flow.Pending;
-            BattleDesign.BigButton(canvas, _confirm.Bounds, L("ExitBattle"));
+            BattleDesign.Button(canvas, _confirm.Bounds, L("ExitBattle"), big: true, pending: !_confirm.Enabled);
             BattleDesign.Button(canvas, _cancel.Bounds, L("Cancel"));
+            if (_confirm.Enabled && _confirm.Hovered) BattleDesign.ButtonHover(canvas, _confirm.Bounds);
+            if (!Flow.Pending && _cancel.Hovered) BattleDesign.ButtonHover(canvas, _cancel.Bounds);
             return;
         }
 
@@ -268,7 +290,7 @@ public class TacticalBattleModalScreen : IScreen
         return _queued;
     }
     public virtual bool OnMouseMove(float x, float y) => ConfirmExit
-        ? _confirm.OnMouseMove(x, y) | _cancel.OnMouseMove(x, y)
+        ? (_confirm.OnMouseMove(x, y) | _cancel.OnMouseMove(x, y)) && !Flow.Pending
         : _action.OnMouseMove(x, y) | _close.OnMouseMove(x, y) | _new.OnMouseMove(x, y) | (IsSetup && _error.OnMouseMove(x, y));
     public virtual void OnMouseUp(float x, float y, MouseButton button) { if (IsSetup) _error.OnMouseUp(button); }
     public virtual ScreenEvent OnMouseWheel(float x, float y, float delta) { if (IsSetup) _error.OnMouseWheel(x, y, delta); return ScreenEvent.None; }

@@ -26,9 +26,10 @@ public sealed class TabletopPanelProbeTests
         if (name == "1-move-no-hover")
         {
             Assert.Equal(new SKRect(6, 6, 156, 46), layout.Rects["pilot:Вера"]);
-            Assert.Equal(new SKRect(51, 49, 201, 140), layout.Rects["pilot-panel:Вера"]);
-            Assert.Equal(146, layout.Rects["pilot:Юн"].Top);
-            var color = Pixel(100, 30);
+            Assert.Null(scene.Frame.SelectedDroneId);
+            Assert.DoesNotContain(layout.Rects.Keys, key => key.StartsWith("pilot-panel:", StringComparison.Ordinal));
+            Assert.Equal(51, layout.Rects["pilot:Юн"].Top);
+            var color = Pixel(112, 12);
             int steel = Math.Min(Distance(color, SKColor.Parse("#3A4450")), Distance(color, SKColor.Parse("#212831")));
             Assert.True(steel < Distance(color, SKColor.Parse("#0E1B1F")));
         }
@@ -43,19 +44,21 @@ public sealed class TabletopPanelProbeTests
         }
         else
         {
-            var armor = layout.Rects["pilot-damage-armor:Юн"];
-            var gold = SKColor.Parse("#FFE27A");
-            // A 1.4px stroke centred on an integer edge covers 70% of the pixel at S1.
-            var background = Pixel(armor.MidX, armor.Top - 3);
-            float coverage = scale == 1 ? .7f : 1;
-            var expected = new SKColor((byte)(gold.Red * coverage + background.Red * (1 - coverage)),
-                (byte)(gold.Green * coverage + background.Green * (1 - coverage)),
-                (byte)(gold.Blue * coverage + background.Blue * (1 - coverage)));
-            Assert.InRange(Distance(Pixel(armor.MidX, armor.Top), expected), 0, 36);
+            var armor = layout.Rects["pilot-armor:Юн"];
+            Assert.InRange(Distance(Pixel(armor.Left + 6, armor.MidY), SKColor.Parse("#5A7CA8")), 0, 50);
+            Assert.DoesNotContain("pilot-damage-armor:Юн", layout.Rects.Keys);
+            Assert.DoesNotContain("plate:damage:armor:Юн", layout.Rects.Keys);
             Assert.Contains(layout.Texts, text => text.Text is "ПОПАДАНИЕ" or "ПРОМАХ" or "ПОГЛОЩЁН" or "УКЛОНЕНИЕ");
         }
         var phase = layout.Rects["phase"];
+        var minimap = layout.Rects["minimap"];
+        if (name == "1-move-no-hover")
+        {
+            var log = scene.Screen.LogTab.Panel.Bounds;
+            Assert.Equal(Pixel(log.MidX, log.Bottom - 9), Pixel(minimap.MidX, minimap.Top + 6));
+        }
         var bevel = Pixel(phase.MidX, phase.Top + 1);
+        Assert.InRange(Distance(bevel, Pixel(minimap.MidX, minimap.Top + 1)), 0, 6);
         Assert.InRange(bevel.Red, 0x4C - 12, 0x4C + 12);
         Assert.InRange(bevel.Green, 0x57 - 12, 0x57 + 12);
         Assert.InRange(bevel.Blue, 0x64 - 12, 0x64 + 12);

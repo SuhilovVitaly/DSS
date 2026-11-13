@@ -18,7 +18,7 @@ public class ScenarioSelectRowVisualsTests
     private const int ScreenHeight = 1080;
 
     private static readonly SKColor SelectedAccentColor = new(0xFF, 0x84, 0x04);
-    private static readonly SKColor HoveredBorderColor = new(90, 90, 90);
+    private static readonly SKColor HoveredBorderColor = new(0x9A, 0xAA, 0xBB);
 
     private static ScenarioInfo Scenario(string id, string name) =>
         new($"/fake/{id}/scenario.json", id, name, "A short description.");
@@ -75,7 +75,7 @@ public class ScenarioSelectRowVisualsTests
     }
 
     [Fact]
-    public void Hovering_an_unselected_row_draws_a_gray_border()
+    public void Hovering_an_unselected_row_draws_a_steel_border()
     {
         var screen = NewScreenWithTwoRows(out var bitmap);
         MoveMouseTo(screen, RowOne());

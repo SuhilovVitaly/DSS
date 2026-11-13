@@ -59,6 +59,9 @@ public sealed class TacticalBattleContractTests
         shot.AsObject().Remove("Absorption"); shot.AsObject().Remove("Absorbed");
         var oldShot = JsonSerializer.Deserialize<TacticalShotSnapshot>(shot.ToJsonString())!;
         Assert.Equal(0, oldShot.Absorption); Assert.False(oldShot.Absorbed);
+        Assert.Null(oldShot.HitRoll);
+        Assert.Null(oldShot.AbsorptionRoll);
+        Assert.Equal(.125, RoundTrip(oldShot with { HitRoll = .125 }).HitRoll);
         Assert.Equal(0, JsonSerializer.Deserialize<TacticalTargetCandidateSnapshot>("""{"TargetId":"e","Chance":0.3}""")!.Absorption);
         Assert.Equal(0, JsonSerializer.Deserialize<TacticalIncomingShotSnapshot>("""{"ShooterId":"s","TargetId":"d","Chance":0.3}""")!.Absorption);
         Assert.Equal(8, (int)TacticalFireSkipReason.Evading);
@@ -222,7 +225,9 @@ public sealed class TacticalBattleContractTests
         Assert.Equal(TacticalBattleLogKind.DamageApplied, entry.Kind);
         Assert.Null(entry.SkipReason);
         Assert.Null(entry.FireStepIndex);
-        Assert.Equal(Enumerable.Range(0, 17), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
+        Assert.Equal(Enumerable.Range(0, 18), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
+        var moved = new TacticalBattleLogEvent(1, 2, TacticalBattlePhase.Move, TacticalBattleLogKind.Moved, "drone");
+        Assert.Equal(moved, RoundTrip(moved));
         var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!.AsObject();
         node.Remove("FireQueue"); node.Remove("FireSteps");
         var legacy = JsonSerializer.Deserialize<TacticalBattleSnapshot>(node.ToJsonString())!;

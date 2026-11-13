@@ -309,6 +309,7 @@ public sealed class BattleNavigationTests
         internal readonly SkiaWindow Window;
         internal readonly ConnectionProxy Proxy;
         private long _clockMilliseconds;
+        private readonly string? _ownedSettingsDirectory;
         internal bool ManualAnimation { get; set; }
         internal void AdvanceAnimation(long ms) => Interlocked.Add(ref _clockMilliseconds, ms);
         internal void FinishPresentation()
@@ -330,6 +331,14 @@ public sealed class BattleNavigationTests
             Proxy.Inner = new LocalGameSessionConnection(Engine, saveDirectory);
             Handle = new GameSessionHandle(connection, deferDebugTuningWrites: true);
             Game = new GameSessionScreen(Handle.Buffer, new LinearMotionPredictor(), Handle, uiScale: uiScale, tacticalBattleInputs: inputs);
+            if (settingsPath is null)
+            {
+                string validationRoot = Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") ?? Path.GetTempPath();
+                _ownedSettingsDirectory = Path.Combine(validationRoot, $"classic-profile-{Guid.NewGuid():N}");
+                Directory.CreateDirectory(_ownedSettingsDirectory);
+                settingsPath = Path.Combine(_ownedSettingsDirectory, "Settings.json");
+                File.WriteAllText(settingsPath, """{"gameSettings":{"tacticalBattleSkinId":"classic"}}""");
+            }
             Window = new SkiaWindow(Game, this, null, createNativeWindow: false, settingsPath);
             Set(Window, "_session", Handle); Set(Window, "_gameSessionScreen", Game);
         }
@@ -376,7 +385,19 @@ public sealed class BattleNavigationTests
         public SaveSlotInfo[] ListSaveSlots() => [];
         public bool HasQuickSave() => false;
         public void DeleteSaveSlot(string id) { }
-        public async ValueTask DisposeAsync() { Window.Dispose(); await Handle.DisposeAsync(); }
+        public async ValueTask DisposeAsync()
+        {
+            try
+            {
+                Window.Dispose();
+                await Handle.DisposeAsync();
+            }
+            finally
+            {
+                if (_ownedSettingsDirectory is not null)
+                    Directory.Delete(_ownedSettingsDirectory, recursive: true);
+            }
+        }
     }
     private static T Field<T>(object owner, string name) => (T)owner.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.GetValue(owner)!;
     private static void Set(object owner, string name, object value) => owner.GetType().GetField(name, BindingFlags.Instance | BindingFlags.NonPublic)!.SetValue(owner, value);

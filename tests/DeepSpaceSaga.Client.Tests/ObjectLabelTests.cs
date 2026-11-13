@@ -473,7 +473,7 @@ public class ObjectLabelTests
         Assert.NotEqual(new SKColor(240, 128, 136), bitmap.GetPixel((int)rect.MidX, (int)rect.Bottom - 2));
         var background = bitmap.GetPixel((int)rect.Right - 3, (int)rect.Top + 3);
         Assert.InRange(background.Alpha, 234, 236);
-        Assert.InRange(background.Blue, 42, 44);
+        Assert.InRange(background.Blue, 34, 36);
         Assert.Contains(Enumerable.Range((int)rect.Left + 2, (int)rect.Width - 4),
             x => Enumerable.Range((int)rect.Top + 2, (int)rect.Height - 4)
                 .Any(y => { var color = bitmap.GetPixel(x, y); return color.Blue > 200 && color.Green > 200 && color.Red > 190; }));

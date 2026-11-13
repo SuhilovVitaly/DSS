@@ -16,6 +16,8 @@ internal static partial class TacticalBattleMapRenderer
     private static readonly SKPath ThugDrone = DronePath("M-3 -11 4 -7 5 6 2 9 -5 8 -6 -3Z M-8 -4 -11 -1 -10 7 -7 5Z M7 -2H11V6H7Z");
 
     private static readonly AnomalyFieldLayer AnomalyLayer = new();
+    private static readonly TacticalMapSettings GridSettings = new() { GridMinimumPixels = 16, GridFadePixels = 14 };
+    private const double GridBaseStep = 5;
     internal static readonly SKColor Own = Cyan, Enemy = Orange, Background = MapBg, Inactive = Muted.WithAlpha(140), Jammed = Yellow;
     internal static double RulerLength(double pixelsPerUnit, float uiScale) => 100;
     internal static ImmutableArray<TacticalUnitSnapshot> VisibleUnits(TacticalBattleFrame f) => f.Battle.Units;
@@ -25,7 +27,12 @@ internal static partial class TacticalBattleMapRenderer
         unit.Side == frame.Battle.PlayerSide && frame.FirePlan?.Rows.Any(r => r.Drone.Id == unit.Id && r.Decoy) == true
         || frame.Salvo is { } salvo && salvo.DecoysLaunched.Contains(unit.Id) && (!salvo.InFlight || unit.Side == frame.Battle.PlayerSide);
     internal static int TargetCount(TacticalBattleFrame f, TacticalUnitSnapshot u) => u.Jammed || u.InDust || u.State != TacticalUnitState.Air || f.FirePlan is null ? 0 : u.Side == f.Battle.PlayerSide ? f.FirePlan.Rows.FirstOrDefault(r => r.Drone.Id == u.Id)?.Group.List.Length ?? 0 : f.Battle.Incoming.Count(i => i.ShooterId == u.Id);
-    internal static string? Selected(TacticalBattleFrame f) => f.Salvo is { InFlight: true } ? PilotCardModel.ActiveShooter(f) : f.Salvo is not null ? PilotCardModel.ResultShot(f)?.ShooterId : f.SelectedDroneId;
+    internal static string? Selected(TacticalBattleFrame f) => f.Salvo switch
+    {
+        { InFlight: true } => PilotCardModel.ActiveShooter(f),
+        null => f.SelectedDroneId,
+        _ => Skin.Tabletop ? null : PilotCardModel.ResultShot(f)?.ShooterId
+    };
     internal static SKRect Safe(TacticalBattleView v) => new(202, 6, v.PixelWidth - 246, 714);
     internal static SKPoint MarkerPoint(TacticalBattleView view, TacticalUnitSnapshot unit)
     {
@@ -35,7 +42,7 @@ internal static partial class TacticalBattleMapRenderer
         return new((float)PyMath.Clamp(p.X, safe.Left, safe.Right), (float)PyMath.Clamp(p.Y, safe.Top, safe.Bottom));
     }
     internal static void Draw(SKCanvas c, TacticalBattleFrame f, InteractiveAnomalyField? interactiveField = null, float? pilotColumnBottom = null,
-        PaintedCloudLayer? paintedClouds = null, GRContext? context = null, SKRect? pilotPanel = null)
+        PaintedCloudLayer? paintedClouds = null, GRContext? context = null, IEnumerable<SKRect>? pilotPanels = null, SKRect? minimap = null)
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
         var fieldBounds = SKRect.Create(v.PixelWidth, v.PixelHeight);
@@ -60,24 +67,15 @@ internal static partial class TacticalBattleMapRenderer
         using var grid = new SKPaint
         {
             IsAntialias = true,
-            Color = Skin.Color("field.grid", "stroke", Grid),
             Style = SKPaintStyle.Stroke,
             StrokeWidth = 1,
             StrokeCap = SKStrokeCap.Round,
             BlendMode = field ? SKBlendMode.Lighten : SKBlendMode.SrcOver
         };
-        using var gridPath = new SKPath();
-        for (float x = 26; x < v.PixelWidth; x += 26)
-        {
-            gridPath.MoveTo(x, 0);
-            gridPath.LineTo(x, v.PixelHeight);
-        }
-        for (float y = 26; y < v.PixelHeight; y += 26)
-        {
-            gridPath.MoveTo(0, y);
-            gridPath.LineTo(v.PixelWidth, y);
-        }
-        c.DrawPath(gridPath, grid);
+        var gridColor = Skin.Color("field.grid", "stroke", Grid.WithAlpha(140));
+        GridRenderer.DrawLines(c, v.CenterX, v.CenterY, v.PixelsPerUnit, v.PixelWidth, v.PixelHeight,
+            GridSettings, grid, SKColors.Black, GridBaseStep,
+            level => gridColor.WithAlpha((byte)Math.Round(gridColor.Alpha * level.Blue / 52d)));
         float len = (float)(100 * v.PixelsPerUnit);
         var ruler = Skin.Color("ui.map.ruler", "stroke", Yellow);
         Stroke(c, new(14, 706), new(14 + len, 706), ruler, 1.3f);
@@ -90,35 +88,37 @@ internal static partial class TacticalBattleMapRenderer
             var p = v.Project(unit.Pose);
             if (Skin.Tabletop)
             {
-                float radius = unit.Kind == TacticalUnitKind.Carrier ? 40 : 28;
+                float radius = (unit.Kind == TacticalUnitKind.Carrier ? 40 : 28) * v.UnitScale;
                 occupied.Add(new(p.X - radius, p.Y - radius * .8f, p.X + radius, p.Y + radius * .8f));
                 continue;
             }
             if (unit.Kind == TacticalUnitKind.Drone && DroneSilhouette(unit.FrameId) is { } hull)
             {
-                hull.Transform(SKMatrix.CreateRotationDegrees(DroneRotation(unit)), rotatedHull);
+                hull.Transform(SKMatrix.Concat(SKMatrix.CreateRotationDegrees(DroneRotation(unit)),
+                    SKMatrix.CreateScale(v.UnitScale, v.UnitScale)), rotatedHull);
                 var bounds = rotatedHull.Bounds;
                 bounds.Offset(p.X, p.Y);
                 occupied.Add(bounds);
             }
             else
             {
-                float radius = unit.Kind == TacticalUnitKind.Carrier ? 16 : 5;
+                float radius = (unit.Kind == TacticalUnitKind.Carrier ? 16 : 5) * v.UnitScale;
                 occupied.Add(new(p.X - radius, p.Y - radius, p.X + radius, p.Y + radius));
             }
         }
         float columnBottom = pilotColumnBottom ?? PilotColumnLayout.CompactBottom(
             f.Battle.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide), Skin.SlimPilots);
         if (columnBottom > 0) occupied.Add(new(0, 0, 202, columnBottom));
-        if (pilotPanel is { IsEmpty: false } panelBounds) occupied.Add(panelBounds);
-        occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, f.Panel.Bottom + (HoverCard.Build(f) is not null ? 306 : f.HoverUnitId is null && AnomalyPresentation.HoverKind(f) is null ? 6 : 116)));
+        if (pilotPanels is not null) occupied.AddRange(pilotPanels);
+        if (minimap is { IsEmpty: false } minimapBounds) occupied.Add(minimapBounds);
+        occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, 720));
         occupied.Add(new(10, 686, 18 + len, 714));
         occupied.AddRange([new(0, 0, v.PixelWidth, 2), new(0, 718, v.PixelWidth, 720), new(0, 0, 2, 720), new(v.PixelWidth - 2, 0, v.PixelWidth, 720)]);
         var wrecks = f.Battle.Units.Where(u => u.State == TacticalUnitState.Destroyed).ToArray();
         foreach (var wreck in wrecks)
         {
             var point = v.Project(wreck.Pose);
-            float radius = Skin.Tabletop ? wreck.Kind == TacticalUnitKind.Carrier ? 40 : 28 : 7;
+            float radius = (Skin.Tabletop ? wreck.Kind == TacticalUnitKind.Carrier ? 40 : 28 : 7) * v.UnitScale;
             float height = Skin.Tabletop ? radius * .8f : radius;
             occupied.Add(new(point.X - radius, point.Y - height, point.X + radius, point.Y + height));
         }
@@ -130,40 +130,50 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var u in units)
         {
             var p = v.Project(u.Pose); bool own = u.Side == f.Battle.PlayerSide;
+            if (Skin.Tabletop) p += TabletopDodgeOffset(f, u);
             string role = "field.unit." + (u.Kind == TacticalUnitKind.Carrier ? "carrier" : "drone") + (own ? ".own" : ".enemy");
             var color = u.State == TacticalUnitState.Disabled ? DisabledDrone : Skin.Color(role, "fill", own ? Cyan : Orange);
             if (u.Kind == TacticalUnitKind.Carrier)
             {
                 if (inside.Contains(p))
                 {
-                    if (!TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course)) Hex(c, p, 15, color);
+                    if (!TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course, unitScale: v.UnitScale)) Hex(c, p, 15 * v.UnitScale, color);
                 }
                 else Edge(c, f, u, p, inside, occupied, color);
             }
             else
             {
-                bool sprite = TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course);
+                bool sprite = TacticalShipSprites.Draw(c, u, p, own, u.Pose.Course, unitScale: v.UnitScale);
                 if (!sprite && DroneSilhouette(u.FrameId) is { } hull)
                 {
                     c.Save();
                     c.Translate(p.X, p.Y);
                     c.RotateDegrees(DroneRotation(u));
+                    c.Scale(v.UnitScale);
                     hullPaint.Color = color;
                     c.DrawPath(hull, hullPaint);
                     hullPaint.Color = seamColor;
                     c.DrawLine(0, -5 * DroneSilhouetteScale, 0, 4 * DroneSilhouetteScale, hullPaint);
                     c.Restore();
                 }
-                else if (!sprite && own) Diamond(c, p, 4.2f, color);
-                else if (!sprite) Triangle(c, p, 4.9f, u.Pose.Course, color);
-                if (u.Id == Selected(f)) Circle(c, p, Skin.Tabletop ? 30 : 7, SKColors.Transparent,
+                else if (!sprite && own) Diamond(c, p, 4.2f * v.UnitScale, color);
+                else if (!sprite) Triangle(c, p, 4.9f * v.UnitScale, u.Pose.Course, color);
+                if (u.Id == Selected(f)) Circle(c, p, (Skin.Tabletop ? 30 : 7) * v.UnitScale, SKColors.Transparent,
                     Skin.Tabletop ? Yellow : Text, Skin.Tabletop ? 1.6f : 1.2f);
             }
-            if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
-                EvasionRing(c, p, Skin.Tabletop ? 34 : 15);
+            if (u.Kind == TacticalUnitKind.Drone && (!Skin.Tabletop || f.Salvo is null) && IsEvading(f, u.Id))
+            {
+                float radius = (Skin.Tabletop ? 34 : 15) * v.UnitScale;
+                EvasionRing(c, p, radius);
+                if (Recording is { } layout)
+                    layout.Rects["evade-ring:" + u.Id] = SKRect.Create(p.X - radius, p.Y - radius, radius * 2, radius * 2);
+            }
         }
-        foreach (var u in f.Battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone && HasDecoy(f, u)))
+        foreach (var u in units.Where(u => u.Kind == TacticalUnitKind.Drone && HasDecoy(f, u)))
         {
+            if (Skin.Tabletop && f.Salvo is { PlaybackSkipped: false } salvo &&
+                salvo.Flights.Any(flight => flight.DecoyTriggered && flight.Shot.TargetId == u.Id))
+                continue;
             var p = v.Project(u.Pose);
             DecoyMark(c, p, u.Pose.Course);
             var q = DecoyPoint(p, u.Pose.Course);
@@ -176,7 +186,10 @@ internal static partial class TacticalBattleMapRenderer
         foreach (var wreck in wrecks)
         {
             var point = v.Project(wreck.Pose);
-            if (!TacticalShipSprites.Draw(c, wreck, point, wreck.Side == f.Battle.PlayerSide, wreck.Pose.Course, 170, shadow: false))
+            bool drawn = wreck.Kind == TacticalUnitKind.Drone
+                ? TacticalShipSprites.DrawWreck(c, point, wreck.Pose.Course, (Skin.Tabletop ? 58 : 14) * v.UnitScale)
+                : TacticalShipSprites.Draw(c, wreck, point, wreck.Side == f.Battle.PlayerSide, wreck.Pose.Course, 170, shadow: false, unitScale: v.UnitScale);
+            if (!drawn)
             {
                 Stroke(c, point + new SKPoint(-6, -6), point + new SKPoint(6, 6), Muted, 1.5f);
                 Stroke(c, point + new SKPoint(-6, 6), point + new SKPoint(6, -6), Muted, 1.5f);
@@ -206,7 +219,7 @@ internal static partial class TacticalBattleMapRenderer
 
     private static void Label(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, List<SKRect> occupied)
     {
-        if (Skin.Tabletop) { Plate(c, f, u, f.View.Project(u.Pose), occupied); return; }
+        if (Skin.Tabletop) { Plate(c, f, u, f.View.Project(u.Pose) + TabletopDodgeOffset(f, u), occupied); return; }
         bool carrier = u.Kind == TacticalUnitKind.Carrier;
         bool wreck = u.State == TacticalUnitState.Destroyed;
         bool disabled = u.State == TacticalUnitState.Disabled;
@@ -226,7 +239,7 @@ internal static partial class TacticalBattleMapRenderer
             if (found) break;
         }
         occupied.Add(rect); if (Recording is { } layout) layout.Rects["label:" + u.Id] = rect;
-        if (chosenOffset > 0)
+        if (chosenOffset > 0 && !wreck)
         { var q = new SKPoint((float)PyMath.Clamp(p.X, rect.Left, rect.Right), (float)PyMath.Clamp(p.Y, rect.Top, rect.Bottom)); float distance = SKPoint.Distance(p, q); if (distance > 0) Stroke(c, p + Scale(q - p, (float)(10d / distance)), q, Muted.WithAlpha(140), .9f); }
         float y = rect.Top + size - 1;
         T(c, text, rect.MidX, y, size, wreck ? Muted : Text, align: SKTextAlign.Center);
@@ -249,7 +262,7 @@ internal static partial class TacticalBattleMapRenderer
     private static void Edge(SKCanvas c, TacticalBattleFrame f, TacticalUnitSnapshot u, SKPoint p, SKRect safe, List<SKRect> occupied, SKColor color)
     {
         var q = MarkerPoint(f.View, u);
-        Hex(c, q, 11, color.WithAlpha(200)); float distance = SKPoint.Distance(q, p); var direction = Scale(p - q, (float)(1d / PyMath.Max(1, distance)));
+        Hex(c, q, 11 * f.View.UnitScale, color.WithAlpha(200)); float distance = SKPoint.Distance(q, p); var direction = Scale(p - q, (float)(1d / PyMath.Max(1, distance)));
         var tip = q + Scale(direction, 24); var side = new SKPoint(-direction.Y * 6, direction.X * 6);
         Stroke(c, tip, tip - Scale(direction, 7) + side, color, 2); Stroke(c, tip, tip - Scale(direction, 7) - side, color, 2);
         string text = u.Id + " · " + Math.Round((double)distance / f.View.PixelsPerUnit).ToString(System.Globalization.CultureInfo.InvariantCulture) + " " + BattleFormat.Localize("MapUnits");
@@ -279,7 +292,8 @@ internal static partial class TacticalBattleMapRenderer
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
             Color = Text.WithAlpha(95),
-            StrokeWidth = .85f,
+            StrokeWidth = frame.Battle.Phase == TacticalBattlePhase.Move && frame.Salvo is null
+                ? .85f * MovementStrokeScale(frame.View) : .85f,
             StrokeCap = SKStrokeCap.Round,
             StrokeJoin = SKStrokeJoin.Round,
             PathEffect = dots

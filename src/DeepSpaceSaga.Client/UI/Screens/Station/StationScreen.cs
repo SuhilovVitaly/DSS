@@ -428,11 +428,10 @@ public sealed class StationScreen : IScreen
         {
             var row = rows[i + _routeScroll];
             var rect = RouteRect(i);
-            canvas.DrawRect(rect, row.DestinationStationObjectId == _selectedDestinationId ? MenuStyle.ButtonFillPressed : MenuStyle.ButtonFillNormal);
-            canvas.DrawRect(rect, MenuStyle.ButtonBorder);
+            TabletopStyle.Field(canvas, rect, focused: row.DestinationStationObjectId == _selectedDestinationId);
             text.TextSize = 12;
             text.Color = !row.IsEnabled ? MenuStyle.ColorTextDim : row.Availability == TradingRouteAvailability.Restricted || row.Risk == TradingRouteRisk.Elevated
-                ? new SKColor(255, 190, 80) : MenuStyle.ColorText;
+                ? TabletopStyle.Danger : MenuStyle.ColorText;
             canvas.DrawText(row.PrimaryText, rect.Left + 8, rect.Top + 15, text);
             canvas.DrawText(row.SecondaryText, rect.Left + 8, rect.Top + 33, text);
             string? blocker = snapshot?.Voyage?.RouteOptions.IsDefaultOrEmpty == false ? snapshot.Voyage.RouteOptions

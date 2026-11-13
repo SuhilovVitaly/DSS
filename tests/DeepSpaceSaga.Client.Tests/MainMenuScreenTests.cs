@@ -40,8 +40,9 @@ public class MainMenuScreenTests
         MainMenuScreen.DrawWindowShell(canvas, panel);
         canvas.Flush();
 
-        var borderPixel = bitmap.GetPixel((int)panel.MidX, (int)panel.Top + 2);
+        var borderPixel = bitmap.GetPixel((int)panel.MidX, (int)panel.Top);
         var interiorPixel = bitmap.GetPixel((int)panel.MidX, (int)panel.Top + 30);
-        Assert.NotEqual(borderPixel, interiorPixel);
+        Assert.Equal(TabletopStyle.Edge, borderPixel);
+        Assert.Equal(TabletopStyle.Steel, interiorPixel);
     }
 }

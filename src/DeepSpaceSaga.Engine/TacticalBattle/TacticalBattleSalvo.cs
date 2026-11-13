@@ -20,6 +20,9 @@ internal sealed record TacticalShot(TacticalDrone Shooter, TacticalUnit Target, 
     public bool TargetEvading { get; init; }
     public bool Decoyed { get; init; }
     public double? ChanceWithoutDecoy { get; init; }
+    public double? HitRoll { get; init; }
+    public double? AbsorptionRoll { get; init; }
+    public TacticalHitFactors? Factors { get; init; }
 }
 internal sealed record TacticalDamage(string TargetId, int Hull, int Armor, bool RearKill);
 internal sealed record TacticalSystemChange(string TargetId, string Effect, int? EngineIndex = null);
@@ -169,8 +172,10 @@ internal static class TacticalBattleSalvo
                 bool decoyed = lured.Remove(target.Id);
                 double chance = decoyed ? TacticalHitChance.WithDecoy(candidate.Terms.Chance,
                     ((TacticalDrone)target).Decoy!.MissFactor, battle.Catalog.Rules.Hit.MinChance / 100.0) : candidate.Terms.Chance;
-                bool absorbed = candidate.Absorption > 0 && battle.Random.Random() < candidate.Absorption;
-                bool hit = !absorbed && battle.Random.Random() < chance;
+                double? absorptionRoll = candidate.Absorption > 0 ? battle.Random.Random() : null;
+                bool absorbed = absorptionRoll < candidate.Absorption;
+                double? hitRoll = absorbed ? null : battle.Random.Random();
+                bool hit = hitRoll < chance;
                 double effectiveChance = chance * (1 - candidate.Absorption);
                 int damage = hit ? battle.Random.RandInt(shooter.Weapon.DamageMin, shooter.Weapon.DamageMax) : 0;
                 bool rear = candidate.Terms.IsRear;
@@ -186,6 +191,9 @@ internal static class TacticalBattleSalvo
                 {
                     Absorption = candidate.Absorption,
                     Absorbed = absorbed,
+                    HitRoll = hitRoll,
+                    AbsorptionRoll = absorptionRoll,
+                    Factors = TacticalBattleSnapshotBuilder.HitFactors(candidate, chance),
                     TargetEvading = evading.Contains(target.Id),
                     Decoyed = decoyed,
                     ChanceWithoutDecoy = decoyed ? candidate.Chance : null
@@ -220,7 +228,7 @@ internal static class TacticalBattleSalvo
                     if (target is TacticalDrone drone)
                     {
                         if (drone.Hull <= 0) { drone.Status = TacticalDroneStatus.Destroyed; drone.Speed = 0; }
-                        else if (drone.Hull <= PyMath.FloorNonNeg(battle.Catalog.Rules.Disabled.HullFraction * drone.MaxHull))
+                        else if (drone.Hull <= TacticalDamageMath.DisabledHull(drone.MaxHull, battle.Catalog.Rules.Disabled.HullFraction))
                         {
                             drone.Status = TacticalDroneStatus.Disabled; drone.Speed = 0; battle.Statistics.Disabled++;
                         }
@@ -258,11 +266,6 @@ internal static class TacticalBattleSalvo
         return new(shots.ToImmutable(), applications.ToImmutable(), allChanges.ToImmutable()) { Steps = steps.MoveToImmutable(), DecoysLaunched = launched };
     }
 
-    public static (int Hull, int Armor) Split(int damage, int piercing, int armor)
-    {
-        int direct = (int)PyMath.Min(damage, piercing);
-        int remaining = damage - direct;
-        int absorbed = (int)PyMath.Min(PyMath.Max(armor, 0), remaining);
-        return (direct + remaining - absorbed, absorbed);
-    }
+    public static (int Hull, int Armor) Split(int damage, int piercing, int armor) =>
+        TacticalDamageMath.Split(damage, piercing, armor);
 }

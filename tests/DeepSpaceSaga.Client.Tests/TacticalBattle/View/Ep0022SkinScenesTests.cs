@@ -81,7 +81,7 @@ public sealed class Ep0022SkinScenesTests
                 }
                 Assert.NotEqual(classicBitmap.GetPixel((int)(360 * scale), (int)(92 * scale)),
                     styledBitmap.GetPixel((int)(360 * scale), (int)(92 * scale)));
-                Assert.Equal(PhasePanel.Bottom(frame.Battle.Phase, frame.Salvo), styled.Layout.Rects["phase"].Bottom);
+                Assert.Equal(frame.Panel, styled.Layout.Rects["phase"]);
 
                 if (skin.Id == "xenon-star" && scene == "2-fire-hover-own")
                 {

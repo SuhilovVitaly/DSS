@@ -42,11 +42,11 @@ internal sealed partial class PilotCardFireBlock
     public static float Height(TacticalFirePlanRow row) => ListTop + BodyHeight(row) + 78;
 
     public void Draw(SKCanvas canvas, PilotCardColumn column, TacticalBattleSnapshot battle,
-        TacticalFirePlanRow row, float left, float right, float top)
+        TacticalFirePlanRow row, float left, float right, float top, TacticalSalvoForecast? forecast = null)
     {
         if (TacticalBattleSkinRenderScope.SlimPilots)
         {
-            DrawSlim(canvas, column, battle, row, left, right, top);
+            DrawSlim(canvas, column, battle, row, forecast, left, right, top);
             return;
         }
         string id = row.Drone.Id;

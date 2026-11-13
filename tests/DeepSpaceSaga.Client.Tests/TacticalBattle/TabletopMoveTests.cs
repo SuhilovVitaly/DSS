@@ -8,6 +8,47 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 [Collection("InterfaceLog")]
 public sealed class TabletopMoveTests
 {
+    [Fact]
+    public async Task Selected_and_unselected_paths_have_the_same_width_at_each_zoom()
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover", withoutAnomalies: true);
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop"));
+        var frame = scene.Frame;
+        var row = frame.Movement!.SelectedOrder!;
+        var path = row with { Path = [new(-50, 0, 0), new(0, 0, 0), new(50, 0, 0)] };
+        frame = frame with
+        {
+            Battle = frame.Battle with { Units = [] },
+            Movement = new([path], row.Unit.Id, [])
+        };
+
+        int wide = MeasureStroke(1, selected: true);
+        int close = MeasureStroke(6, selected: true);
+        Assert.InRange(wide, 4, 7);
+        Assert.InRange(close, 8, 10);
+        Assert.True(close > wide);
+        Assert.Equal(wide, MeasureStroke(1, selected: false));
+        Assert.Equal(close, MeasureStroke(6, selected: false));
+
+        int MeasureStroke(double pixelsPerUnit, bool selected)
+        {
+            var view = frame.View with { CenterX = 0, CenterY = 0, PixelsPerUnit = pixelsPerUnit };
+            using var bitmap = new SKBitmap(view.PixelWidth, view.PixelHeight);
+            using var canvas = new SKCanvas(bitmap);
+            var movement = frame.Movement! with { Selected = selected ? row.Unit.Id : null };
+            TacticalBattleMapRenderer.Draw(canvas, frame with { View = view, Movement = null });
+            var sample = view.Project(-26, 0);
+            int x = (int)sample.X, y = (int)sample.Y - 12;
+            var background = Enumerable.Range(y, 24).Select(line => bitmap.GetPixel(x, line)).ToArray();
+            TacticalBattleMapRenderer.Draw(canvas, frame with { View = view, Movement = movement });
+            int pixels = 0;
+            for (int i = 0; i < background.Length; i++)
+                if (bitmap.GetPixel(x, y + i) != background[i]) pixels++;
+            return pixels;
+        }
+    }
+
     [Theory]
     [InlineData("1-move-no-hover")]
     [InlineData("1-anomaly-move-dust")]
@@ -32,10 +73,9 @@ public sealed class TabletopMoveTests
             Assert.Equal(point.X, endpoint.MidX, .001f); Assert.Equal(point.Y, endpoint.MidY, .001f);
             Assert.True(layout.Rects.ContainsKey("label:" + order.Unit.Id));
         }
-        Assert.True(layout.Rects.ContainsKey("template-tip"));
+        Assert.False(layout.Rects.ContainsKey("template-tip"));
         Assert.Contains(SKColor.Parse("#E8D48C"), bitmap.Pixels);
-        Assert.Contains(SKColor.Parse("#D6CBA6"), bitmap.Pixels);
-        Assert.Contains(layout.Texts, t => t.Text.StartsWith(PilotCardModel.Name(frame.Movement.SelectedOrder!.Unit) + ":", StringComparison.Ordinal) && t.Text.EndsWith("°", StringComparison.Ordinal));
+        Assert.DoesNotContain(SKColor.Parse("#D6CBA6"), bitmap.Pixels);
         var before = bitmap.Bytes;
         var selected = frame.Movement.SelectedOrder!;
         frame = frame with { Movement = frame.Movement with { Orders = frame.Movement.Orders.Replace(selected, selected with { Unit = selected.Unit with { Build = null } }) } };
@@ -52,16 +92,20 @@ public sealed class TabletopMoveTests
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
         try
         {
+            screen.OnKeyDown(Silk.NET.Input.Key.Tab);
             screen.Render(canvas, 1280, 720);
             var order = screen.Movement.SelectedOrder!;
             var endpoint = screen.Layout.Rects["endpoint:" + order.Unit.Id];
             screen.OnMouseDown(endpoint.MidX, endpoint.MidY, MouseButton.Left);
+            screen.Render(canvas, 1280, 720);
+            Assert.Contains("template-tip", screen.Layout.Rects.Keys);
             screen.OnMouseMove(endpoint.MidX - 35, endpoint.MidY + 20);
             screen.OnMouseUp(endpoint.MidX - 35, endpoint.MidY + 20, MouseButton.Left);
             var command = Assert.Single(screen.BuildMoveRequest().Orders);
             Assert.Equal(order.Unit.Id, command.DroneId);
             Assert.NotEqual(order.Order, command);
             screen.Render(canvas, 1280, 720);
+            Assert.DoesNotContain("template-tip", screen.Layout.Rects.Keys);
             Assert.NotEqual(endpoint, screen.Layout.Rects["endpoint:" + order.Unit.Id]);
         }
         finally { screen.OnDeactivated(); }

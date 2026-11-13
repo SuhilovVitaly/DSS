@@ -5,6 +5,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal static partial class TacticalBattleMapRenderer
 {
+    internal static float MovementStrokeScale(TacticalBattleView view) => .5f + view.UnitScale;
+
     static partial void DrawMovement(SKCanvas c, TacticalBattleFrame f, List<SKRect> occupied)
     {
         if (f.Movement is not { } movement) return;
@@ -23,13 +25,13 @@ internal static partial class TacticalBattleMapRenderer
             bool selected = row.Unit.Id == movement.Selected;
             if (row.Path.IsDefaultOrEmpty) continue;
             using var path = new SKPath(); path.AddPoly(row.Path.Select(f.View.Project).ToArray(), false);
-            paint.Color = selected ? new SKColor(190, 190, 190) : new SKColor(128, 128, 128);
-            paint.StrokeWidth = selected ? 1.5f : 1f;
+            paint.Color = selected ? new SKColor(190, 190, 190) : new SKColor(128, 128, 128, 60);
+            paint.StrokeWidth = (selected ? 1.5f : .75f) * MovementStrokeScale(f.View);
             c.DrawPath(path, paint);
             var end = f.View.Project(row.Path[^1]); float radius = selected ? 5 : 4;
             var rect = new SKRect(end.X - radius, end.Y - radius, end.X + radius, end.Y + radius);
             var color = TacticalBattleSkinRenderScope.Color("field.move.handle", "fill", Cyan);
-            Triangle(c, end, radius, row.Path[^1].Course, selected ? color : color.WithAlpha(150));
+            Triangle(c, end, radius, row.Path[^1].Course, selected ? color : color.WithAlpha(95));
             if (Recording is { } layout) layout.Rects["endpoint:" + row.Unit.Id] = rect;
             var inflated = rect; inflated.Inflate(1, 1); occupied.Add(inflated);
             if (selected && AnomalyPresentation.Inside(f.Battle, DeepSpaceSaga.Motion.TacticalBattle.TacticalAnomalyKind.Dust, row.Path[^1]))

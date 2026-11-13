@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Contracts;
 using SkiaSharp;
 using static DeepSpaceSaga.Client.UI.Screens.TacticalBattle.BattleDesign;
 
@@ -10,41 +11,125 @@ internal static partial class TacticalBattleMapRenderer
     private static readonly SKColor TTMiss = SKColor.Parse("#969CA8"), TTMissEdge = SKColor.Parse("#3C404A");
 
     private static string ExplosionName(TacticalShotFlight flight) => flight.Shot.Killed ? "boom-kill" :
-        flight.Shot.Hit && !flight.Shot.Absorbed ? "boom-hit" : "puff";
+        (flight.Shot.Hit || flight.InterceptedByDecoy) && !flight.Shot.Absorbed ? "boom-hit" : "puff";
 
-    private static double ExplosionDuration(TacticalShotFlight flight) =>
-        TacticalBattleSkinRenderScope.EffectStrip(ExplosionName(flight)) is { } strip ? strip.Frames * strip.FrameMs : TacticalBattleResults.FlashMs;
+    private const float DecoyLaunchProgress = .45f;
+    private const float DodgeFlyPastEnd = .86f;
+
+    private readonly record struct DodgePath(SKPoint From, SKPoint Target, SKPoint Direction, float HullLength)
+    {
+        private float PassDistance => HullLength * 2.5f;
+        private float CrossTime => DodgeFlyPastEnd * Math.Clamp(
+            SKPoint.Distance(From, Target) / (SKPoint.Distance(From, Target) + PassDistance), .54f, .81f);
+        public float FlightLength => SKPoint.Distance(From, Target) + PassDistance;
+
+        public SKPoint Torpedo(float progress) => progress < CrossTime
+            ? From + Scale(Target - From, progress / CrossTime)
+            : Target + Scale(Direction, PassDistance * Math.Clamp((progress - CrossTime) / (DodgeFlyPastEnd - CrossTime), 0, 1));
+
+        public SKPoint Offset(float progress)
+        {
+            float approach = Math.Clamp((progress - CrossTime + .22f) / .22f, 0, 1);
+            float settle = Math.Clamp((1 - progress) / (1 - DodgeFlyPastEnd), 0, 1);
+            float amount = Math.Min(approach, settle);
+            var sideways = new SKPoint(-Direction.Y, Direction.X);
+            if (sideways.Y > 0) sideways = Scale(sideways, -1);
+            return Scale(sideways, HullLength * .8f * amount * amount * (3 - 2 * amount));
+        }
+    }
+
+    private static DodgePath EvasionPath(TacticalBattleView view, TacticalShotFlight flight)
+    {
+        var from = view.Project(flight.Shot.From);
+        var target = view.Project(flight.Shot.To);
+        float length = SKPoint.Distance(from, target);
+        var direction = length > .001f ? Scale(target - from, 1 / length) : new SKPoint(1, 0);
+        return new(from, target, direction, 56 * view.UnitScale);
+    }
+
+    private static SKPoint TabletopDodgeOffset(TacticalBattleFrame frame, TacticalUnitSnapshot unit)
+    {
+        if (unit.Kind != TacticalUnitKind.Drone || frame.Salvo is not { InFlight: true, PlaybackSkipped: false } salvo)
+            return SKPoint.Empty;
+        var flight = salvo.Flights.FirstOrDefault(shot => shot.Flying && shot.Dodged && shot.Shot.TargetId == unit.Id);
+        return flight is null ? SKPoint.Empty : EvasionPath(frame.View, flight).Offset((float)flight.Progress);
+    }
+
+    private static SKPoint DecoyOffset(SKPoint from, SKPoint target, int index, float scale)
+    {
+        var direction = target - from;
+        float length = SKPoint.Distance(from, target);
+        direction = length > .001f ? Scale(direction, 1 / length) : new SKPoint(1, 0);
+        var lateral = new SKPoint(-direction.Y, direction.X);
+        // Keep the flare clear of the pilot label beneath the drone.
+        float side = Math.Abs(lateral.Y) > .3f ? -Math.Sign(lateral.Y) : index % 2 == 0 ? 1 : -1;
+        return Scale(direction, 14 * scale) + Scale(lateral, side * Math.Max(38, 58 * scale));
+    }
+
+    private static float DecoyTravel(float progress) =>
+        Math.Clamp((progress - DecoyLaunchProgress) / (1 - DecoyLaunchProgress), 0, 1);
+
+    private static SKPoint TorpedoPoint(SKPoint from, SKPoint target, SKPoint offset, float progress)
+    {
+        float turn = DecoyTravel(progress);
+        return from + Scale(target - from, progress) + Scale(offset, turn * turn);
+    }
 
     private static void DrawTabletopProjectiles(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo)
     {
         foreach (var flight in salvo.Flights.Where(flight => flight.Flying))
         {
             var a = f.View.Project(flight.Shot.From); var b = f.View.Project(flight.Shot.To);
+            float progress = (float)flight.Progress, scale = f.View.UnitScale;
+            if (flight.Dodged && progress >= DodgeFlyPastEnd) continue;
             Stroke(c, a, b, Yellow.WithAlpha(70), 1.1f, [5, 5]);
-            var head = a + Scale(b - a, (float)flight.Progress);
-            float length = SKPoint.Distance(a, b);
-            var dir = Scale(b - a, 1 / Math.Max(.001f, length));
-            float travelled = SKPoint.Distance(a, head);
-            for (int i = 1; i <= 9 && 6 + 7 * i + 6 < travelled; i++)
+            var offset = flight.DecoyTriggered ? DecoyOffset(a, b, flight.Index, scale) : SKPoint.Empty;
+            var redirect = flight.InterceptedByDecoy ? offset : SKPoint.Empty;
+            if (flight.DecoyTriggered && progress >= DecoyLaunchProgress)
+            {
+                float travel = DecoyTravel(progress);
+                var decoy = b + Scale(offset, 1 - (1 - travel) * (1 - travel));
+                Stroke(c, b, decoy, Green.WithAlpha(145), 1, [3, 3]);
+                float flareRadius = Math.Max(4, 6 * scale);
+                Circle(c, decoy, flareRadius + 3, Green.WithAlpha(65));
+                Diamond(c, decoy, flareRadius, MapBg, Green, 1.5f);
+                Circle(c, decoy, flareRadius / 3, Green);
+                if (Recording is { } decoyLayout)
+                    decoyLayout.Rects["decoy-flight:" + flight.Index] =
+                        SKRect.Create(decoy.X - flareRadius, decoy.Y - flareRadius, 2 * flareRadius, 2 * flareRadius);
+            }
+            var dodge = flight.Dodged ? EvasionPath(f.View, flight) : (DodgePath?)null;
+            SKPoint At(float t) => dodge?.Torpedo(t) ?? TorpedoPoint(a, b, redirect, t);
+            var head = At(progress);
+            var tangent = dodge?.Direction ?? (head - At(Math.Max(0, progress - .001f)));
+            float length = Math.Max(.001f, dodge?.FlightLength ?? SKPoint.Distance(a, b));
+            for (int i = 1; i <= 9 && 6 + 7 * i + 6 < length * progress; i++)
                 TacticalShipSprites.DrawEffect(c, "trail", (i - 1) * TacticalShipSprites.EffectFrames("trail") / 9,
-                    head - Scale(dir, 6 + 7 * i), (byte)(255 - 18 * i));
+                    At(progress - (6 + 7 * i) / length), (byte)(255 - 18 * i));
             bool own = f.Battle.Units.FirstOrDefault(u => u.Id == flight.Shot.ShooterId)?.Side == f.Battle.PlayerSide;
-            float course = MathF.Atan2(b.Y - a.Y, b.X - a.X) * 180 / MathF.PI;
-            if (!TacticalShipSprites.DrawTorpedo(c, head, course, own)) Circle(c, head, 4, SKColor.Parse("#FFF2A0"));
-            if (Recording is { } layout) layout.Rects["projectile"] = SKRect.Create(head.X - 3.5f, head.Y - 3.5f, 7, 7);
+            if (progress == 0) tangent = b - a;
+            float course = MathF.Atan2(tangent.Y, tangent.X) * 180 / MathF.PI;
+            if (!TacticalShipSprites.DrawTorpedo(c, head, course, own, scale)) Circle(c, head, 4 * scale, SKColor.Parse("#FFF2A0"));
+            float radius = 3.5f * scale;
+            if (Recording is { } layout) layout.Rects["projectile"] = SKRect.Create(head.X - radius, head.Y - radius, 2 * radius, 2 * radius);
         }
     }
 
     private static void DrawTabletopExplosions(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo)
     {
         if (salvo.PlaybackSkipped) return;
-        foreach (var flight in salvo.Flights.Where(flight => flight.Arrived))
+        foreach (var flight in salvo.Flights.Where(flight => flight.Arrived && !flight.Dodged))
         {
             string name = ExplosionName(flight);
             var strip = TacticalBattleSkinRenderScope.EffectStrip(name);
             if (strip is null || flight.ImpactAgeMs >= strip.Value.Frames * strip.Value.FrameMs) continue;
             int index = (int)Math.Floor(flight.ImpactAgeMs / strip.Value.FrameMs);
-            var point = flight.Shot.Absorbed ? AnomalyPresentation.AbsorptionPoint(f, flight.Shot) : f.View.Project(flight.Shot.To);
+            var point = TabletopShotEndpoint(f, flight);
+            if (flight.InterceptedByDecoy && flight.ImpactAgeMs < 220)
+            {
+                float fade = (float)(flight.ImpactAgeMs / 220);
+                Circle(c, point, 6 + 12 * fade, SKColors.Transparent, Yellow.WithAlpha((byte)(210 * (1 - fade))), 1.5f);
+            }
             if (!TacticalShipSprites.DrawEffect(c, name, index, point)) continue;
             if (Recording is { } layout)
             {
@@ -54,57 +139,81 @@ internal static partial class TacticalBattleMapRenderer
         }
     }
 
-    private static void DrawSalvoTemplates(SKCanvas c, TacticalBattleFrame f, TacticalSalvoFrame salvo, List<SKRect> occupied)
+    private static SKPoint TabletopShotEndpoint(TacticalBattleFrame frame, TacticalShotFlight flight)
     {
-        var pills = new List<RibbonPill>();
-        foreach (var flight in salvo.Flights)
-        {
-            if (!salvo.PlaybackSkipped && flight.ImpactAgeMs < TacticalBattleResults.FlashMs) continue;
-            var shot = flight.Shot;
-            var a = f.View.Project(shot.From); var b = f.View.Project(shot.To);
-            bool hit = shot.Hit && !shot.Absorbed;
-            bool own = f.Battle.Units.FirstOrDefault(u => u.Id == shot.ShooterId)?.Side == f.Battle.PlayerSide;
-            var line = Ribbon(c, a, b, hit ? 13 : 9, hit ? own ? TTSelected : TTRust : TTMiss,
-                hit ? own ? TTEdge : TTRustEdge : TTMissEdge, 16, 24, occupied);
-            if (Recording is { } layout) layout.Rects["result-ribbon:" + flight.Index] =
-                new(Math.Min(line.A.X, line.B.X), Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.X, line.B.X), Math.Max(line.A.Y, line.B.Y));
-            if (!salvo.PlaybackSkipped && flight.ImpactAgeMs < 1400) continue;
-            string text = shot.Absorbed ? M("Map.ShotAbsorbed") : hit ? M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", shot.Damage)
-                : M(shot.Decoyed ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
-            pills.Add(new("result-badge:" + flight.Index, line, text, hit ? 12.5f : 10.5f,
-                hit ? TTGold : SKColor.Parse("#E2EAF6"), hit ? TTBadge : TTMissEdge, hit ? TTGold : SKColor.Parse("#C8D2E4"),
-                SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
-        }
-        var placed = new List<SKRect>();
-        foreach (var pill in pills) PillOnRibbon(c, pill, placed, occupied);
-        foreach (var group in salvo.Flights.Where(flight => salvo.PlaybackSkipped || flight.Arrived).GroupBy(flight => flight.Shot.TargetId))
-        {
-            if (!salvo.PlaybackSkipped && group.Any(flight => flight.ImpactAgeMs < ExplosionDuration(flight))) continue;
-            var point = f.View.Project(group.Last().Shot.To);
-            if (group.Any(flight => flight.Shot.Hit && !flight.Shot.Absorbed))
-            {
-                var center = point + new SKPoint(-14, -12);
-                Polygon(c, Enumerable.Range(0, 16).Select(i =>
-                {
-                    float angle = i * MathF.PI / 8 + .2f, radius = i % 2 == 0 ? 13 : 13 * .45f;
-                    return center + new SKPoint(MathF.Cos(angle) * radius, MathF.Sin(angle) * radius);
-                }), SKColor.Parse("#FFA83C").WithAlpha(225), TTRustEdge, 1.6f);
-                Circle(c, center, .3f * 13, SKColor.Parse("#FFF2A0"));
-            }
-            else Circle(c, point, 21, SKColors.Transparent, SKColor.Parse("#C8D2E4"), 1.8f);
-            var bounds = SKRect.Create(point.X - 24, point.Y - 24, 48, 48); occupied.Add(bounds);
-            if (Recording is { } layout) layout.Rects["result-marker:" + group.Key] = bounds;
-            if (group.Any(flight => flight.Shot.Killed))
-            {
-                var red = SKColor.Parse("#FF3B2A");
-                Stroke(c, point + new SKPoint(-17, -17), point + new SKPoint(17, 17), red, 4.5f);
-                Stroke(c, point + new SKPoint(-17, 17), point + new SKPoint(17, -17), red, 4.5f);
-                if (Recording is { } crossLayout) crossLayout.Rects["result-killed:" + group.Key] = bounds;
-            }
-        }
+        if (flight.Shot.Absorbed) return AnomalyPresentation.AbsorptionPoint(frame, flight.Shot);
+        var target = frame.View.Project(flight.Shot.To);
+        return flight.InterceptedByDecoy
+            ? target + DecoyOffset(frame.View.Project(flight.Shot.From), target, flight.Index, frame.View.UnitScale)
+            : target;
     }
 
-    private sealed record RibbonPill(string Id, (SKPoint A, SKPoint B) Line, string Text, float Size,
+    private static void DrawHoveredSalvoResult(SKCanvas canvas, TacticalBattleFrame frame, TacticalSalvoFrame salvo, List<SKRect> occupied)
+    {
+        if (frame.HoverUnitId is not { } id) return;
+        var shooter = frame.Battle.Units.FirstOrDefault(unit => unit.Id == id &&
+            unit.Kind == TacticalUnitKind.Drone && unit.State != TacticalUnitState.Destroyed);
+        if (shooter is null) return;
+        var flight = salvo.Flights.FirstOrDefault(flight => flight.Shot.ShooterId == id &&
+            (salvo.PlaybackSkipped || flight.Arrived));
+        if (flight is null) return;
+
+        var shot = flight.Shot;
+        var from = frame.View.Project(shot.From);
+        var to = flight.InterceptedByDecoy ? TabletopShotEndpoint(frame, flight) : frame.View.Project(shot.To);
+        bool hit = shot.Hit && !shot.Absorbed;
+        bool own = shooter.Side == frame.Battle.PlayerSide;
+        var face = hit ? own ? TTSelected : TTRust : TTMiss;
+        var edge = hit ? own ? TTEdge : TTRustEdge : TTMissEdge;
+        var line = Ribbon(canvas, from, to, hit ? 5 : 3.5f, face.WithAlpha(95), edge.WithAlpha(80), 16, 24, occupied);
+        if (line == (from, to)) Stroke(canvas, from, to, face.WithAlpha(180), 1.4f);
+        if (Recording is { } layout) layout.Rects["result-ribbon:" + flight.Index] =
+            new(Math.Min(line.A.X, line.B.X), Math.Min(line.A.Y, line.B.Y), Math.Max(line.A.X, line.B.X), Math.Max(line.A.Y, line.B.Y));
+
+        var target = frame.Battle.Units.FirstOrDefault(unit => unit.Id == shot.TargetId);
+        string outcome = shot.Absorbed ? M("Map.ShotAbsorbed") : hit
+            ? U("HitChip") + " · " + M(shot.Killed ? "Map.ShotKilled" : "Map.ShotDamage", AppliedDamage(frame, shot))
+            : M(flight.InterceptedByDecoy ? "Map.ShotDecoyMiss" : "Map.ShotMiss");
+        if (hit && shot.Rear) outcome = M("Map.RearHit", outcome);
+        string detail = $"{PilotCardModel.Name(shooter)} → {(target is null ? shot.TargetId : PilotCardModel.Name(target))} · {outcome}";
+        string chance = M("Map.ResultChance", Pct(shot.Chance));
+        if (!salvo.InFlight)
+        {
+            var roll = shot.Absorbed ? shot.AbsorptionRoll : shot.HitRoll;
+            if (roll is { } value)
+                chance += " · " + M(shot.Absorbed ? "Map.AbsorptionRoll" : "Map.HitRoll", BattleFormat.Probability(value, 2));
+        }
+        var field = Safe(frame.View);
+        if (field.Width <= 24) return;
+        const float size = 9, lineHeight = 12;
+        detail = BuildCardModel.Ellipsize(detail, field.Width - 24, size);
+        chance = BuildCardModel.Ellipsize(chance, field.Width - 24, size);
+        var lines = new List<string> { detail, chance };
+        if (!salvo.InFlight && shot.Factors is { } factors)
+            lines.AddRange(PilotCardFireBlock.WrapSlim(BattleFormat.HitFactors(factors), Math.Min(270, field.Width - 24), size));
+        float width = lines.Max(lineText => Measure(lineText, size)) + 16;
+        float height = lines.Count * lineHeight + 8;
+        var anchor = frame.View.Project(shooter.Pose);
+        float x = Math.Clamp(anchor.X - width / 2, field.Left, field.Right - width);
+        float y = anchor.Y - height - 26;
+        if (y < field.Top) y = anchor.Y + 32;
+        var bounds = SKRect.Create(x, Math.Clamp(y, field.Top, field.Bottom - height), width, height);
+        Round(canvas, bounds, Box, BoxEdge);
+        for (int i = 0; i < lines.Count; i++)
+            T(canvas, lines[i], x + 8, bounds.Top + 12 + i * lineHeight, size,
+                i == 0 && shot.Absorbed ? Heat : i == 0 && hit ? TTGold : Text, role: "field.ribbon.text");
+        occupied.Add(bounds);
+        if (Recording is { } resultLayout) resultLayout.Rects["result-detail:" + flight.Index] = bounds;
+    }
+
+
+    private readonly record struct FirePath(SKPoint Start, SKPoint End, SKPoint Offset)
+    {
+        public SKPoint At(float t) => Start + Scale(End - Start, t) + Scale(Offset, 4 * t * (1 - t));
+        public SKPoint Tangent(float t) => End - Start + Scale(Offset, 4 * (1 - 2 * t));
+    }
+
+    private sealed record RibbonPill(string Id, FirePath Line, string Text, float Size,
         SKColor TextColor, SKColor Fill, SKColor Edge, SKPoint? Anchor = null);
 
     private static SKRect Pill(SKCanvas canvas, SKPoint center, string text, float size, SKColor color, SKColor fill, SKColor edge)
@@ -121,17 +230,17 @@ internal static partial class TacticalBattleMapRenderer
 
     private static SKRect PillOnRibbon(SKCanvas canvas, RibbonPill pill, List<SKRect> placed, List<SKRect> occupied)
     {
-        var (a, b) = pill.Line;
         float width = Measure(pill.Text, pill.Size, true) + 14, height = pill.Size + 8;
-        var point = pill.Anchor ?? a + Scale(b - a, .5f);
+        var point = pill.Anchor ?? pill.Line.At(.5f);
         if (pill.Anchor is null)
         {
-            var dir = Scale(b - a, 1 / Math.Max(1, SKPoint.Distance(a, b)));
+            var tangent = pill.Line.Tangent(.5f);
+            var dir = Scale(tangent, 1 / Math.Max(1, SKPoint.Distance(SKPoint.Empty, tangent)));
             var normal = new SKPoint(-dir.Y, dir.X);
             var candidates = new List<SKPoint>();
-            foreach (float t in new[] { .5f, .35f, .65f, .22f, .78f }) candidates.Add(a + Scale(b - a, t));
+            foreach (float t in new[] { .5f, .35f, .65f, .22f, .78f }) candidates.Add(pill.Line.At(t));
             foreach (float t in new[] { .5f, .35f, .65f })
-                foreach (int sign in new[] { 1, -1 }) candidates.Add(a + Scale(b - a, t) + Scale(normal, sign * (height + 4)));
+                foreach (int sign in new[] { 1, -1 }) candidates.Add(pill.Line.At(t) + Scale(normal, sign * (height + 4)));
             foreach (var candidate in candidates)
             {
                 var rect = SKRect.Create(candidate.X - width / 2, candidate.Y - height / 2, width, height); rect.Inflate(3, 2);
@@ -145,21 +254,53 @@ internal static partial class TacticalBattleMapRenderer
         return bounds;
     }
 
+    private static FirePath DrawFireChevrons(SKCanvas canvas, SKPoint from, SKPoint to, bool reciprocal,
+        bool selected, SKColor color, float targetTrim, string id, List<SKRect> occupied)
+    {
+        float length = SKPoint.Distance(from, to);
+        var direction = Scale(to - from, 1 / Math.Max(.001f, length));
+        var normal = new SKPoint(-direction.Y, direction.X);
+        float sourceTrim = Math.Min(16, length * .25f);
+        var path = new FirePath(from + Scale(direction, sourceTrim), to - Scale(direction, Math.Min(targetTrim, length * .35f)),
+            reciprocal ? Scale(normal, Math.Clamp(length * .25f, 12, 45)) : SKPoint.Empty);
+        if (length < 6) return path;
+
+        int count = Math.Clamp((int)(SKPoint.Distance(path.Start, path.End) / 8) + 1, 1, 144);
+        float size = Math.Min(selected ? 3.1f : 2.6f, length * .18f);
+        using var paint = new SKPaint { IsAntialias = true, Color = color, StrokeWidth = selected ? 1.45f : 1.15f, StrokeCap = SKStrokeCap.Round };
+        for (int i = 0; i < count; i++)
+        {
+            float t = (i + .5f) / count;
+            var center = path.At(t);
+            var tangent = path.Tangent(t);
+            var forward = Scale(tangent, size / Math.Max(.001f, SKPoint.Distance(SKPoint.Empty, tangent)));
+            var side = new SKPoint(-forward.Y, forward.X);
+            var tip = center + Scale(forward, .5f);
+            var back = center - Scale(forward, .65f);
+            canvas.DrawLine(back + side, tip, paint);
+            canvas.DrawLine(back - side, tip, paint);
+            var bounds = SKRect.Create(center.X - size, center.Y - size, 2 * size, 2 * size);
+            occupied.Add(bounds);
+            if (i == count / 2 && Recording is { } layout) layout.Rects["fire-chevron:" + id] = bounds;
+        }
+        return path;
+    }
+
     private static (SKPoint A, SKPoint B) Ribbon(SKCanvas canvas, SKPoint a, SKPoint b, float width,
         SKColor face, SKColor edge, float trimA, float trimB, List<SKRect> occupied)
     {
         float length = SKPoint.Distance(a, b);
-        if (length < trimA + trimB + 4) return (a, b);
+        if (length < trimA + trimB + width) return (a, b);
         var dir = Scale(b - a, 1 / length);
         var start = a + Scale(dir, trimA); var tip = b - Scale(dir, trimB);
         var end = tip - Scale(dir, .9f * width);
-        using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Butt, Color = edge.WithAlpha(230), StrokeWidth = width + 2.5f };
+        using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeCap = SKStrokeCap.Butt, Color = edge, StrokeWidth = width + 1 };
         canvas.DrawLine(start, end, paint);
         paint.Color = face; paint.StrokeWidth = width; canvas.DrawLine(start, end, paint);
         using var dash = SKPathEffect.CreateDash([5, 4], 0);
         paint.Color = edge; paint.StrokeWidth = 1.1f; paint.PathEffect = dash; canvas.DrawLine(start, end, paint);
-        var side = new SKPoint(-dir.Y * .95f * width, dir.X * .95f * width);
-        Polygon(canvas, [tip, end + side, end - side], face, edge, 1.3f);
+        var side = new SKPoint(-dir.Y * .8f * width, dir.X * .8f * width);
+        Polygon(canvas, [tip, end + side, end - side], face, edge, .8f);
         for (int i = 0; i <= 12; i++)
         {
             var p = start + Scale(end - start, i * .08f);
@@ -189,23 +330,30 @@ internal static partial class TacticalBattleMapRenderer
             paint.Style = SKPaintStyle.Stroke; paint.Color = TTGold; paint.StrokeWidth = 1.6f; paint.PathEffect = dash;
             c.DrawPath(sector, paint);
         }
+        var assigned = plan.Rows.Where(row => row.TargetId is not null && !row.Drone.InDust && !row.Drone.Jammed && !row.Evade).ToArray();
+        var outgoingPairs = assigned.Select(row => (row.Drone.Id, row.TargetId!)).ToHashSet();
+        var incomingPairs = f.Battle.Incoming.Select(shot => (shot.ShooterId, shot.TargetId)).ToHashSet();
         foreach (var incoming in f.Battle.Incoming)
         {
             var shooter = f.Battle.Units.FirstOrDefault(u => u.Id == incoming.ShooterId);
             var target = f.Battle.Units.FirstOrDefault(u => u.Id == incoming.TargetId);
             if (shooter is null || target is null) continue;
             var a = f.View.Project(shooter.Pose); var b = MarkerPoint(f.View, target);
-            var line = Ribbon(c, a, b, 8, TTRust, TTRustEdge, 16, 18, occupied);
+            bool reciprocal = outgoingPairs.Contains((incoming.TargetId, incoming.ShooterId));
+            var line = DrawFireChevrons(c, a, b, reciprocal, false, TTAlt.WithAlpha(215), 18, incoming.ShooterId, occupied);
             pills.Add(new("badge:threat:" + pills.Count, line, M("Map.ThreatBadge", Pct(incoming.Chance)), 10,
-                SKColor.Parse("#FFD6C4"), TTRustEdge, SKColor.Parse("#FFB090"), SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
+                SKColor.Parse("#FFD6C4"), TTRustEdge, SKColor.Parse("#FFB090"),
+                !reciprocal && SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
         }
-        foreach (var row in plan.Rows.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
+        foreach (var row in assigned.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
         {
             var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId);
-            if (target is null || row.Drone.InDust || row.Evade) continue;
+            if (target is null) continue;
             var a = f.View.Project(row.Drone.Pose); var b = MarkerPoint(f.View, target);
             bool selected = row.Drone.Id == plan.SelectedDroneId;
-            var line = Ribbon(c, a, b, selected ? 14.5f : 11, selected ? TTSelected : TTCard, TTEdge, 16, 24, occupied);
+            bool reciprocal = incomingPairs.Contains((target.Id, row.Drone.Id));
+            var line = DrawFireChevrons(c, a, b, reciprocal, selected, TTGold.WithAlpha(selected ? (byte)255 : (byte)180),
+                24, row.Drone.Id, occupied);
             if (row.Target is { } shot)
                 pills.Add(new(selected ? "chance" : "badge:own:" + row.Drone.Id, line,
                     selected ? Pct(shot.Chance) : PilotCardModel.Name(row.Drone) + " " + Pct(shot.Chance), selected ? 13 : 10.5f,

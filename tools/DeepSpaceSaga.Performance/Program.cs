@@ -10,6 +10,12 @@ using DeepSpaceSaga.Engine.Scenario;
 using DeepSpaceSaga.Motion;
 using SkiaSharp;
 
+if (args.Length == 3 && args[2] == "--tabletop-client-raster")
+{
+    TabletopClientRaster.Run(Path.GetFullPath(args[0]), args[1]);
+    return;
+}
+
 if (args.Length == 3 && args[2] == "--tactical-performance")
 {
     Environment.ExitCode = await TacticalBattlePerformance.Run(Path.GetFullPath(args[0]), Path.GetFullPath(args[1]));

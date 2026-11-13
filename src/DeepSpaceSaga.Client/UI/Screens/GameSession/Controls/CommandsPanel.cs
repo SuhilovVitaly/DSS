@@ -109,7 +109,6 @@ public sealed class CommandsPanel
     }
 
     private const string XenonAssetsPath = "Images/UI/Themes/Xenon/GameSession/CommandPanels";
-    private const float XenonBodySliceInset = 12f;
     private const float XenonButtonSliceInset = 8f;
     private const float ModuleTitleOffsetY = -4f;
     private const float CaptionTitleFontSize = 16f;
@@ -268,9 +267,7 @@ public sealed class CommandsPanel
     private readonly SKPaint _panelBgPaint;
     private readonly SKPaint _mainCaptionBgPaint;
     private readonly SKPaint _moduleCaptionBgPaint;
-    private readonly SKPaint _mainCaptionHighlightPaint;
-    private readonly SKPaint _mainCaptionShadowPaint;
-    private readonly SKPaint _panelBorderPaint;
+    private const float BodyContentInset = 12f;
     private readonly SKPaint _titlePaint;
 
     private readonly SKPaint _btnNormalPaint;
@@ -292,12 +289,9 @@ public sealed class CommandsPanel
     private readonly SKPaint _commandBtnIconPaint;
 
     // Status bar paints (hovered command name, bottom of the whole widget)
-    private readonly SKPaint _statusBarBgPaint;
-    private readonly SKPaint _statusBarBorderPaint;
     private readonly SKPaint _statusBarTextPaint;
 
     // ── Images ──────────────────────────────────────────────────
-    private readonly SKBitmap? _moduleBodyBackgroundImage;
     private readonly SKBitmap? _hideImage;
     private readonly SKBitmap? _showImage;
     private readonly SKBitmap? _hideHoverImage;
@@ -334,40 +328,25 @@ public sealed class CommandsPanel
 
         _panelBgPaint = new SKPaint
         {
-            Color = new SKColor(2, 16, 24),
+            Color = TabletopStyle.Inset,
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Src
         };
         _mainCaptionBgPaint = new SKPaint
         {
-            Color = new SKColor(6, 30, 43),
+            Color = TabletopStyle.Steel,
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Src
         };
         _moduleCaptionBgPaint = new SKPaint
         {
-            Color = new SKColor(8, 35, 50),
+            Color = TabletopStyle.Inset,
             Style = SKPaintStyle.Fill,
             BlendMode = SKBlendMode.Src
         };
-        _mainCaptionHighlightPaint = new SKPaint
-        {
-            Color = new SKColor(24, 76, 96),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1f,
-            IsAntialias = false
-        };
-        _mainCaptionShadowPaint = new SKPaint
-        {
-            Color = new SKColor(0, 6, 11),
-            Style = SKPaintStyle.Stroke,
-            StrokeWidth = 1f,
-            IsAntialias = false
-        };
-        _panelBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _titlePaint = new SKPaint
         {
-            Color = XenonStyle.CyanBright,
+            Color = TabletopStyle.Ink,
             TextSize = CaptionTitleFontSize,
             IsAntialias = true,
             Typeface = XenonStyle.TypefaceSemibold
@@ -388,13 +367,10 @@ public sealed class CommandsPanel
         _commandBtnBorderPaint = new SKPaint { Color = new SKColor(80, 80, 80), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
         _commandBtnIconPaint = new SKPaint { IsAntialias = true, FilterQuality = SKFilterQuality.High };
 
-        _moduleCaptionTextPaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 14f, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
+        _moduleCaptionTextPaint = new SKPaint { Color = TabletopStyle.Ink, TextSize = 14f, IsAntialias = true, Typeface = XenonStyle.TypefaceSemibold };
 
-        _statusBarBgPaint = new SKPaint { Color = new SKColor(8, 35, 50), Style = SKPaintStyle.Fill };
-        _statusBarBorderPaint = new SKPaint { Color = new SKColor(42, 42, 42), Style = SKPaintStyle.Stroke, StrokeWidth = 1f };
-        _statusBarTextPaint = new SKPaint { Color = XenonStyle.CyanBright, TextSize = 12f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
+        _statusBarTextPaint = new SKPaint { Color = TabletopStyle.Ink, TextSize = 12f, IsAntialias = true, Typeface = typeface, TextAlign = SKTextAlign.Center };
 
-        _moduleBodyBackgroundImage = LoadImage($"{XenonAssetsPath}/module-body.png");
         _hideImage = LoadImage($"{XenonAssetsPath}/collapse-normal.png");
         _hideHoverImage = LoadImage($"{XenonAssetsPath}/collapse-hover.png");
         _hidePressedImage = LoadImage($"{XenonAssetsPath}/collapse-pressed.png");
@@ -464,9 +440,8 @@ public sealed class CommandsPanel
     internal bool HasLoadedActiveIconFor(string commandTypeId) =>
         _commandIcons.TryGetValue(commandTypeId, out var pair) && pair.Active is not null;
 
-    /// <summary>True when the complete Xenon command-panel chrome was found.</summary>
+    /// <summary>True when the command-panel button artwork was found.</summary>
     internal bool HasLoadedXenonChrome =>
-        _moduleBodyBackgroundImage is not null &&
         _hideImage is not null && _hideHoverImage is not null && _hidePressedImage is not null &&
         _showImage is not null && _showHoverImage is not null && _showPressedImage is not null &&
         _commandButtonNormalImage is not null &&
@@ -656,7 +631,7 @@ public sealed class CommandsPanel
                 var definition = panels.First(p => p.Key == name);
                 int rows = (definition.CommandTypeIds.Length + 3) / 4;
                 return BodyPaddingY * 2 + rows * CommandButtonHeight + (rows - 1) * CommandButtonGap +
-                    StatusBarHeight + XenonBodySliceInset + details[name].Length * 16f;
+                    StatusBarHeight + BodyContentInset + details[name].Length * 16f;
             }
             var firstExpanded = panels.OrderBy(p => p.Key == _preferredOpenedPanel ? -1 : ExpansionPriority(p))
                 .FirstOrDefault(p => !_panelOpenedByName.TryGetValue(p.Key, out bool requested) || requested);
@@ -709,15 +684,15 @@ public sealed class CommandsPanel
                 // The per-panel status bar overlays the bottom of the panel's own
                 // fixed-height body (it never grows the body) and only shows a
                 // name when the hovered command button belongs to this panel.
-                // Inset by the nine-patch body border (XenonBodySliceInset) on
+                // Inset by the body padding on
                 // every side so it sits inside the panel's frame rather than
                 // painting over it.
                 var statusBarRect = opened
                     ? new SKRect(
-                        bodyRect.Left + XenonBodySliceInset,
-                        bodyRect.Bottom - XenonBodySliceInset - StatusBarHeight,
-                        bodyRect.Right - XenonBodySliceInset,
-                        bodyRect.Bottom - XenonBodySliceInset)
+                        bodyRect.Left + BodyContentInset,
+                        bodyRect.Bottom - BodyContentInset - StatusBarHeight,
+                        bodyRect.Right - BodyContentInset,
+                        bodyRect.Bottom - BodyContentInset)
                     : SKRect.Empty;
                 string? hoveredText = opened &&
                     _hoveredCommandButtonIndex >= rowStartOrdinal &&
@@ -932,9 +907,7 @@ public sealed class CommandsPanel
 
         if (row.Opened && row.BodyRect.Height > 0)
         {
-            canvas.DrawRect(row.BodyRect, _panelBgPaint);
-            if (_moduleBodyBackgroundImage is not null)
-                NinePatch.Draw(canvas, _moduleBodyBackgroundImage, row.BodyRect, XenonBodySliceInset);
+            TabletopStyle.Field(canvas, row.BodyRect);
 
             foreach (var button in row.Buttons)
             {
@@ -947,12 +920,12 @@ public sealed class CommandsPanel
             DrawPanelStatusBar(canvas, row);
             if (!row.DetailLines.IsDefaultOrEmpty)
             {
-                var paint = _detailsPaint!; paint.Color = XenonStyle.CyanBright;
+                var paint = _detailsPaint!; paint.Color = TabletopStyle.Ink;
                 canvas.Save();
                 canvas.ClipRect(new SKRect(row.BodyRect.Left + 8, row.BodyRect.Top + 4, row.BodyRect.Right - 8, row.StatusBarRect.Top));
                 for (int i = 0; i < row.DetailLines.Length; i++)
                 {
-                    paint.Color = row.DetailsMuted ? XenonStyle.CyanBright.WithAlpha(100) : XenonStyle.CyanBright;
+                    paint.Color = row.DetailsMuted ? TabletopStyle.Ink.WithAlpha(100) : TabletopStyle.Ink;
                     float y = Math.Max(row.BodyRect.Top + 16, row.Buttons.IsDefaultOrEmpty ? 0 : row.Buttons.Max(b => b.Rect.Bottom) + 16) + i * 16;
                     DrawDetailLine(canvas, row.DetailLines[i], row.BodyRect.Left + 10, y, paint);
                 }
@@ -973,26 +946,14 @@ public sealed class CommandsPanel
         if (row.StatusBarText is null)
             return;
 
-        canvas.DrawRect(row.StatusBarRect, _statusBarBgPaint);
-        canvas.DrawRect(row.StatusBarRect, _statusBarBorderPaint);
+        TabletopStyle.Field(canvas, row.StatusBarRect);
 
         float textY = row.StatusBarRect.MidY + _statusBarTextPaint.TextSize / 3f;
         canvas.DrawText(TruncateLabel(row.StatusBarText, _statusBarTextPaint, row.StatusBarRect.Width - 12), row.StatusBarRect.MidX, textY, _statusBarTextPaint);
     }
 
-    private void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint)
-    {
-        canvas.DrawRect(rect, backgroundPaint);
-
-        float left = rect.Left + 0.5f;
-        float top = rect.Top + 0.5f;
-        float right = rect.Right - 0.5f;
-        float bottom = rect.Bottom - 0.5f;
-        canvas.DrawLine(left, top, right, top, _mainCaptionHighlightPaint);
-        canvas.DrawLine(left, top, left, bottom, _mainCaptionHighlightPaint);
-        canvas.DrawLine(right, top, right, bottom, _mainCaptionShadowPaint);
-        canvas.DrawLine(left, bottom, right, bottom, _mainCaptionShadowPaint);
-    }
+    private static void DrawBeveledCaption(SKCanvas canvas, SKRect rect, SKPaint backgroundPaint) =>
+        TabletopStyle.Draw(canvas, rect, backgroundPaint.Color);
 
     private void DrawCommandButton(SKCanvas canvas, int index)
     {

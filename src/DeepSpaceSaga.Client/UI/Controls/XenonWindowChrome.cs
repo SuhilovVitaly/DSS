@@ -2,7 +2,7 @@ using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
-/// <summary>Reusable Xenon-style window frame. Interactive rectangles stay owned by the screen layout.</summary>
+/// <summary>Reusable client window frame. Interactive rectangles stay owned by the screen layout.</summary>
 public static class XenonWindowChrome
 {
     internal static bool HasChromeAssets => GenericWindowTypeA.HasAssets;
@@ -22,7 +22,7 @@ public static class XenonWindowChrome
 
     private static void DrawFooter(SKCanvas canvas, SKRect rect, string left)
     {
-        canvas.DrawLine(rect.Left, rect.Top, rect.Right, rect.Top, XenonStyle.DimCyanStroke);
+        canvas.DrawLine(rect.Left, rect.Top, rect.Right, rect.Top, MenuStyle.PanelBorder);
         float baseline = MenuStyle.VerticalCenterBaseline(rect, XenonStyle.FooterLeftText) + 2f;
         canvas.DrawText(left, rect.Left + 8f, baseline, XenonStyle.FooterLeftText);
     }

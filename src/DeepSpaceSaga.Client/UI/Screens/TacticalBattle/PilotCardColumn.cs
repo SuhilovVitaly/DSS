@@ -15,18 +15,27 @@ internal sealed class PilotCardColumn
     private PilotCardCommand? _slider;
     private readonly PilotCardFireBlock _fireBlock = new();
     private TacticalBattleFrame? _frame;
+    private readonly Dictionary<string, TacticalShotFlight> _results = new(StringComparer.Ordinal);
     private float _scroll;
     private string? _selectedId;
     private float _selectedHeight;
     public PilotColumnLayout Layout { get; private set; } = new([], 0);
     public SKRect Bounds => Layout.Bounds;
     public SKRect Rect(int index) => Layout.Visible(index);
+    public IEnumerable<SKRect> VisiblePanels => Enumerable.Range(0, _cards.Count)
+        .Select(Layout.VisiblePanelAt).Where(rect => !rect.IsEmpty);
+    public bool ContainsPanel(SKPoint point) => VisiblePanels.Any(rect => rect.Contains(point));
 
-    public string? Hit(SKPoint point)
+    public string? Hit(SKPoint point) => HitCard(point)?.UnitId;
+
+    public (string UnitId, SKRect Bounds)? HitCard(SKPoint point)
     {
         for (int i = 0; i < _cards.Count; i++)
-            if (!Rect(i).IsEmpty && Rect(i).Contains(point))
-                return _cards[i].UnitId;
+        {
+            var bounds = Rect(i);
+            if (!bounds.IsEmpty && bounds.Contains(point))
+                return (_cards[i].UnitId, bounds);
+        }
         return null;
     }
 
@@ -86,7 +95,7 @@ internal sealed class PilotCardColumn
     public bool Scroll(SKPoint point, float delta)
     {
         if (!float.IsFinite(delta) || delta == 0 || Layout.MaxScroll == 0 ||
-            !PilotColumnLayout.Viewport.Contains(point) && !Layout.VisiblePanel.Contains(point))
+            !PilotColumnLayout.Viewport.Contains(point) && !ContainsPanel(point))
             return false;
         _scroll = Math.Clamp(_scroll - 40 * Math.Sign(delta), 0, Layout.MaxScroll);
         return true;
@@ -95,6 +104,11 @@ internal sealed class PilotCardColumn
     public void Arrange(TacticalBattleFrame frame, IReadOnlyList<PilotCard> cards)
     {
         _frame = frame;
+        _results.Clear();
+        if (Skin.Tabletop && Skin.SlimPilots && frame.Salvo is { } salvo)
+            foreach (var flight in salvo.Flights)
+                if (flight.Arrived || salvo.PlaybackSkipped)
+                    _results[flight.Shot.ShooterId] = flight;
         _fireBlock.Observe(frame.FirePlan?.Selected);
         Arrange(cards, card => ExpandedHeight(frame, card));
     }
@@ -103,8 +117,8 @@ internal sealed class PilotCardColumn
     {
         if (Skin.SlimPilots)
             return frame.FirePlan?.Selected is { } selectedFire
-                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire)
-                : frame.Salvo is { } selectedSalvo ? PilotCardSalvoBlock.SalvoHeight(selectedSalvo.InFlight) : PilotCardMoveBlock.MoveHeight;
+                ? PilotCardFireBlock.FireHeight(frame.Battle, selectedFire, frame.FirePlan.SalvoForecast)
+                : frame.Salvo is not null ? PilotCardSalvoBlock.SalvoHeight(frame) : PilotCardMoveBlock.MoveHeight;
         if (frame.Movement?.Selected == card.UnitId) return 10 + PilotCardMoveBlock.Height;
         if (frame.FirePlan?.Selected is { } fire && fire.Drone.Id == card.UnitId)
             return 10 + PilotCardFireBlock.Height(fire);
@@ -119,19 +133,28 @@ internal sealed class PilotCardColumn
         int selected = -1;
         float panelHeight = 0;
         var heights = new float[cards.Count];
+        var panels = new float[cards.Count];
         for (int i = 0; i < cards.Count; i++)
         {
+            var card = cards[i];
             heights[i] = slim ? 40 : PilotColumnLayout.BaseHeight;
-            if (!cards[i].Selected) continue;
+            if (slim && _results.TryGetValue(card.UnitId, out var flight))
+                panels[i] = PilotCardSalvoBlock.ResultHeight(flight);
+            if (!card.Selected) continue;
             selected = i;
-            if (slim) panelHeight = expandedHeight?.Invoke(cards[i]) ?? 91;
-            else heights[i] += expandedHeight?.Invoke(cards[i]) ?? 0;
+            if (slim)
+            {
+                if (panels[i] == 0 && !(Skin.Tabletop && _frame?.Salvo is { InFlight: false }))
+                    panels[i] = expandedHeight?.Invoke(card) ?? 91;
+                panelHeight = panels[i];
+            }
+            else heights[i] += expandedHeight?.Invoke(card) ?? 0;
         }
 
         string? selectedId = selected < 0 ? null : cards[selected].UnitId;
         float selectedHeight = selected < 0 ? 0 : heights[selected] + panelHeight;
         int reveal = selectedId != _selectedId || selectedHeight != _selectedHeight ? selected : -1;
-        Layout = new(heights, _scroll, reveal, slim, selected, panelHeight);
+        Layout = new(heights, _scroll, reveal, slim, selected, panelHeights: panels);
         _scroll = Layout.Scroll;
         _selectedId = selectedId;
         _selectedHeight = selectedHeight;
@@ -140,6 +163,8 @@ internal sealed class PilotCardColumn
 
     public void Draw(SKCanvas c, IReadOnlyList<PilotCard> cards, PilotPortraitCatalog portraits)
     {
+        _frame = null;
+        _results.Clear();
         Arrange(cards);
         Draw(c, portraits);
     }
@@ -153,7 +178,9 @@ internal sealed class PilotCardColumn
             if (Layout.Slim) { clip.Inflate(3, 3); clip.Right = 205; }
             c.ClipRect(clip);
             DrawCards(c, portraits);
-            if (Layout.Slim) DrawCommandPanel(c);
+            if (Layout.Slim)
+                for (int i = 0; i < _cards.Count; i++)
+                    DrawCommandPanel(c, i);
         }
         finally { c.Restore(); }
 
@@ -184,7 +211,7 @@ internal sealed class PilotCardColumn
             Portrait(c, portraits, card.PilotId, card.Name, SKRect.Create(r.Left + 6, r.Top + 6, 34, 34));
             DrawChip(c, card, r);
             T(c, BuildCardModel.Ellipsize(card.Name, 108, 11.5f), r.Left + 6, r.Top + 51, 11.5f, Text, true);
-            T(c, BuildCardModel.Ellipsize(card.Weapon, 108, 8.5f, false), r.Left + 6, r.Top + 62, 8.5f, Muted);
+            DrawWeapon(c, card, r.Left + 6, r.Top + 62, 8.5f, 108, Muted);
             for (int j = 0; j < card.Stats.Count; j++)
                 DrawGauge(c, card.Stats[j], r.Left + 129 + 22 * j, r.Top, segmented);
             DrawPhase(c, card, r);
@@ -205,6 +232,7 @@ internal sealed class PilotCardColumn
     {
         var unit = _frame?.Battle.Units.FirstOrDefault(u => u.Id == card.UnitId);
         bool destroyed = unit?.State == TacticalUnitState.Destroyed;
+        bool disabled = unit?.State == TacticalUnitState.Disabled;
         var gold = SKColor.Parse("#FFD24A");
         PanelBox(c, r, role: "ui.pilot-card");
         var portrait = SKRect.Create(r.Left + 4, r.Top + 4, 32, 32);
@@ -225,15 +253,27 @@ internal sealed class PilotCardColumn
         Stroke(c, new(portrait.Right, portrait.Bottom), new(portrait.Left, portrait.Bottom), light, 1.6f);
         using var edge = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = SKColor.Parse("#05070A"), StrokeWidth = .7f };
         c.DrawRect(portrait, edge);
-        SmallText(c, card.Name, r.Left + 41, r.Top + 14, 9.8f, Skin.Color("ui.text", "text", Text), true);
-        var damage = _frame?.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
-        Counter("armor", r.Left + 41, SKColor.Parse("#3A5A8A"), damage?.Armor > 0);
-        Counter("hull", r.Left + 65, SKColor.Parse("#3F6A2C"), damage?.Hull > 0);
-        SmallText(c, BuildCardModel.Ellipsize(card.Weapon, 106, 5.6f, false), r.Left + 41, r.Top + 38, 5.6f, SKColor.Parse("#9AAABB"), italic: true);
+        var ink = Skin.Color("ui.text", "text", Text);
+        const float nameSize = 9.8f;
+        float nameX = r.Left + 41;
+        if (disabled)
+        {
+            TacticalBattleMapRenderer.DrawDisabledCross(c, nameX, r.Top + 5, nameSize);
+            nameX += nameSize + 3;
+        }
+        var name = BuildCardModel.Ellipsize(card.Name, r.Left + 109 - nameX, nameSize, true);
+        SmallText(c, name, nameX, r.Top + 14, nameSize, disabled ? Green : ink, true);
+        if (!disabled)
+        {
+            DrawHealth("hull", r.Top + 17, Cyan);
+            DrawHealth("armor", r.Top + 26, Purple);
+        }
+        DrawWeapon(c, card, r.Left + 41, r.Top + 38, 5.6f, 106, SKColor.Parse("#9AAABB"), italic: true);
         if (unit is not null)
         {
             int factor = Math.Max(1, TacticalShipSprites.Factor(TacticalShipSprites.CanvasScale(c)) / 2);
-            TacticalShipSprites.Draw(c, unit, new(r.Left + 124, r.Top + 22), true, 0, factor: factor);
+            TacticalShipSprites.Draw(c, unit, new(r.Right - 14, r.Top + 10), true, 0,
+                factor: factor, shadow: false, unitScale: .85f);
         }
         if (destroyed)
         {
@@ -244,18 +284,23 @@ internal sealed class PilotCardColumn
             var selection = r; selection.Inflate(2.2f, 2.2f);
             edge.Color = gold; edge.StrokeWidth = 2; c.DrawRect(selection, edge);
         }
-        void Counter(string kind, float x, SKColor color, bool damaged)
+        void DrawHealth(string kind, float y, SKColor color)
         {
-            var box = SKRect.Create(x, r.Top + 20, 24, 12);
-            using var paint = new SKPaint { IsAntialias = true, Color = destroyed ? SKColor.Parse("#555555") : color };
-            c.DrawRect(box, paint); paint.Style = SKPaintStyle.Stroke; paint.Color = SKColors.Black; paint.StrokeWidth = .8f; c.DrawRect(box, paint);
-            string value = card.Stats.FirstOrDefault(s => s.Kind == kind)?.Value.Split('/')[0] ?? "—";
-            SmallText(c, value, box.MidX, box.Top + box.Height * .74f, 7.4f, SKColors.White, true, align: SKTextAlign.Center);
-            if (Recording is { } record) record.Rects[$"pilot-{kind}:{card.UnitId}"] = box;
-            if (!damaged) return;
-            var border = box; border.Inflate(1, 1);
-            paint.Color = SKColor.Parse("#FFE27A"); paint.StrokeWidth = 1.4f; c.DrawRect(border, paint);
-            if (Recording is { } damageRecord) damageRecord.Rects[$"pilot-damage-{kind}:{card.UnitId}"] = border;
+            const float width = 55, height = 5;
+            var box = SKRect.Create(r.Left + 50, y, width, height);
+            string role = "ui.bar." + kind;
+            var stat = card.Stats.FirstOrDefault(s => s.Kind == kind);
+            double fraction = Math.Clamp(stat?.Fill ?? 0, 0, 1);
+            var icon = new SKPoint(r.Left + 45, box.MidY);
+            PilotCardIcons.StatIcon(c, kind, icon, destroyed ? Muted : gold, .5f);
+            Bar(c, box.Left, box.Top, width, height, fraction, color, role);
+            string value = stat?.Value ?? "—";
+            SmallText(c, value, box.Right + 4, box.MidY + 2.2f, FitSize(value, 7.2f, 36), ink);
+            if (Recording is { } layout)
+            {
+                layout.Rects[$"pilot-{kind}:{card.UnitId}"] = box;
+                layout.Rects[$"pilot-{kind}-fill:{card.UnitId}"] = SKRect.Create(box.Left, box.Top, (float)fraction * width, height);
+            }
         }
     }
 
@@ -275,27 +320,35 @@ internal sealed class PilotCardColumn
             PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, x0, x1, top);
     }
 
-    private void DrawCommandPanel(SKCanvas c)
+    private static void DrawWeapon(SKCanvas canvas, PilotCard card, float x, float y, float size, float width,
+        SKColor color, bool italic = false)
     {
-        if (Layout.VisiblePanel.IsEmpty || _selectedId is null) return;
-        var card = _cards.FirstOrDefault(card => card.UnitId == _selectedId);
-        if (card is null) return;
-        var panel = Layout.Panel;
+        string count = card.AvailableTargets is { } available ? " · " + U("AvailableTargets", available) : "";
+        string weapon = BuildCardModel.Ellipsize(card.Weapon, width - Measure(count, size), size, false);
+        SmallText(canvas, weapon + count, x, y, size, color, italic: italic);
+    }
+
+    private void DrawCommandPanel(SKCanvas c, int index)
+    {
+        var visible = Layout.VisiblePanelAt(index);
+        if (visible.IsEmpty) return;
+        var card = _cards[index];
+        var panel = Layout.PanelAt(index);
         PanelBox(c, panel, role: "ui.pilot-card");
         Polygon(c, [new(panel.Left + 8, panel.Top - 2), new(panel.Left + 14, panel.Top + 2.5f), new(panel.Left + 20, panel.Top - 2)],
             SKColor.Parse("#FFD24A"), SKColor.Parse("#1B150E"), .5f);
-        if (Recording is { } layout) layout.Rects["pilot-panel:" + card.UnitId] = Layout.VisiblePanel;
+        if (Recording is { } layout) layout.Rects["pilot-panel:" + card.UnitId] = visible;
         c.Save();
         try
         {
-            c.ClipRect(Layout.VisiblePanel);
+            c.ClipRect(visible);
             float left = panel.Left + 6, right = panel.Right - 6, top = panel.Top + 5;
             if (_frame?.Movement?.SelectedOrder is { } move)
                 PilotCardMoveBlock.Draw(c, this, card.UnitId, move, left, right, top);
             else if (_frame?.FirePlan?.Selected is { } fire)
-                _fireBlock.Draw(c, this, _frame.Battle, fire, left, right, top);
+                _fireBlock.Draw(c, this, _frame.Battle, fire, left, right, top, _frame.FirePlan.SalvoForecast);
             else if (_frame?.Salvo is not null)
-                PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, left, right, top);
+                PilotCardSalvoBlock.Draw(c, _frame, card.UnitId, left, right, top, _results.GetValueOrDefault(card.UnitId));
         }
         finally { c.Restore(); }
     }

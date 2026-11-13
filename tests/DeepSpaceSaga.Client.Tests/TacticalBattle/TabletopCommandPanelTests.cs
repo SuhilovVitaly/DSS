@@ -17,6 +17,8 @@ public sealed class TabletopCommandPanelTests
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
         try
         {
+            Assert.Null(screen.CaptureFrame(1280, 720)!.SelectedDroneId);
+            screen.OnKeyDown(Key.Tab);
             screen.Render(canvas, 1280, 720);
             string selected = screen.Movement.Selected!;
             var panel = screen.Layout.Rects["pilot-panel:" + selected];
@@ -32,6 +34,15 @@ public sealed class TabletopCommandPanelTests
             Assert.Equal(before, screen.View);
             Assert.Equal(selected, screen.Movement.Selected);
             Assert.True(panel.Contains(screen.CardCommandBounds("speed-")));
+            var button = screen.CardCommandBounds("straight");
+            int x = (int)button.Left + 5, y = (int)button.Top + 4;
+            var normal = bitmap.GetPixel(x, y);
+            Assert.True(screen.OnMouseMove(x, y));
+            screen.Render(canvas, 1280, 720);
+            Assert.NotEqual(normal, bitmap.GetPixel(x, y));
+            Assert.False(screen.OnMouseMove(200, 138));
+            screen.Render(canvas, 1280, 720);
+            Assert.Equal(normal, bitmap.GetPixel(x, y));
             var tongue = bitmap.GetPixel(65, 48);
             Assert.True(tongue.Red > 200 && tongue.Green > 150 && tongue.Blue < 120);
         }

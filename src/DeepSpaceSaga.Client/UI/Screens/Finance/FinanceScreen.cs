@@ -69,26 +69,6 @@ public sealed class FinanceScreen : IScreen
         _buffer = buffer;
     }
 
-    /// <summary>
-    /// Panel background with title bar. The PNG asset is a fixed 1400×900 bitmap;
-    /// since the panel standard (ТЗ ScreenCatalog.md) is now 1400×800, it is drawn
-    /// stretched to <see cref="FinanceLayout.PanelWidth"/>x<see cref="FinanceLayout.PanelHeight"/>
-    /// (see DrawBitmap call below) until the asset itself is redrawn at the new size.
-    /// Loaded once and shared by every FinanceScreen instance; falls back to
-    /// MenuStyle.DrawPanel's plain fill if the file is missing.
-    /// </summary>
-    private static readonly SKBitmap? BackgroundImage =
-        LoadImage("Images/UI/mechanics-window-background-titlebar-1400x900.png");
-
-    private static SKBitmap? LoadImage(string path)
-    {
-        try { return File.Exists(path) ? SKBitmap.Decode(path) : null; }
-        catch { return null; }
-    }
-
-    /// <summary>True if the background PNG file was found and decoded at startup.</summary>
-    internal static bool HasLoadedBackground => BackgroundImage is not null;
-
     public void OnActivated()
     {
         _isStationNameHovered = false;
@@ -194,10 +174,7 @@ public sealed class FinanceScreen : IScreen
         float pl = FinanceLayout.PanelLeft(width);
         float pt = FinanceLayout.PanelTop(height);
         var panelRect = new SKRect(pl, pt, pl + FinanceLayout.PanelWidth, pt + FinanceLayout.PanelHeight);
-        if (BackgroundImage is not null)
-            canvas.DrawBitmap(BackgroundImage, panelRect);
-        else
-            MenuStyle.DrawPanel(canvas, panelRect);
+        TabletopStyle.Panel(canvas, panelRect);
 
         var snapshot = _buffer?.Latest?.Snapshot;
         string? stationName = StationToolbar.ResolveDockedStationName(snapshot);

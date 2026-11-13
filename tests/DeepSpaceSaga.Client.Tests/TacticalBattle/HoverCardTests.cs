@@ -20,18 +20,18 @@ public sealed partial class HoverCardTests
         var unit = frame.Battle.Units.First(u => u.Kind == DeepSpaceSaga.Contracts.TacticalUnitKind.Drone &&
             u.Side == frame.Battle.PlayerSide);
         var point = frame.View.Project(unit.Pose);
-        screen.OnMouseMove(point.X + 24, point.Y);
+        screen.OnMouseMove(point.X + 24 * frame.View.UnitScale, point.Y);
         Assert.Equal(unit.Id, screen.HoverUnitId);
         scenes.Screen.Render(canvas, 1280, 720);
-        scenes.Screen.OnMouseMove(point.X + 24, point.Y);
+        scenes.Screen.OnMouseMove(point.X + 24 * frame.View.UnitScale, point.Y);
         Assert.NotEqual(unit.Id, scenes.Screen.HoverUnitId);
-        screen.OnMouseMove(point.X + 27, point.Y);
+        screen.OnMouseMove(point.X + 27 * frame.View.UnitScale, point.Y);
         Assert.NotEqual(unit.Id, screen.HoverUnitId);
     }
 
     [Theory]
     [InlineData("Таг-6", "ПОД КУРСОРОМ · ПРОТИВНИК", "Обрез I · 40–50 · дальн. 110 · иниц. 41")]
-    [InlineData("Олег", "ПОД КУРСОРОМ · СБОРКА", "Рама «Лёгкий»")]
+    [InlineData("Олег", "ПОД КУРСОРОМ · ПИЛОТ", "Корпус 55/55")]
     public async Task Mouse_hover_changes_only_hover_projection(string id, string heading, string details)
     {
 

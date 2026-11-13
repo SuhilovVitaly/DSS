@@ -8,12 +8,12 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class PilotCardFireBlock
 {
-    internal static float FireHeight(TacticalBattleSnapshot battle, TacticalFirePlanRow row) =>
-        new PilotCardFireBlock().DrawSlim(null, null, battle, row, 6, 144, 5);
+    internal static float FireHeight(TacticalBattleSnapshot battle, TacticalFirePlanRow row, TacticalSalvoForecast? forecast) =>
+        new PilotCardFireBlock().DrawSlim(null, null, battle, row, forecast, 6, 144, 5);
 
     // Measurement and drawing share every vertical increment and wrapped text run.
     private float DrawSlim(SKCanvas? c, PilotCardColumn? column, TacticalBattleSnapshot battle,
-        TacticalFirePlanRow row, float left, float right, float top)
+        TacticalFirePlanRow row, TacticalSalvoForecast? forecast, float left, float right, float top)
     {
         var ink = SKColor.Parse("#E4ECF4"); var sub = SKColor.Parse("#9AAABB");
         var damage = SKColor.Parse("#FFA060"); var threat = SKColor.Parse("#FF8A6A");
@@ -70,6 +70,16 @@ internal sealed partial class PilotCardFireBlock
                     : M("TargetHullOnly", PilotCardModel.Name(defense), defense.Hull, defense.MaxHull);
                 Wrapped(condition, 6.2f, 8, ink);
             }
+            if (row.Target?.Factors is { } factors)
+                Wrapped(BattleFormat.HitFactors(factors), 6.2f, 8, sub);
+            if (forecast is not null)
+            {
+                Wrapped(M("Card.SalvoForecast", forecast.Shots, BattleFormat.Probability(forecast.DisableChance, 1)), 7, 9, ink);
+                Wrapped(M("Card.SalvoDamage", forecast.MinDamage, forecast.MaxDamage), 6.6f, 8, damage);
+                Wrapped(M("Card.SalvoAssumption"), 6, 8, sub);
+            }
+            else if (row.TargetId is null)
+                Wrapped(M("Card.FireHeld"), 6.6f, 9, sub);
         }
         else if (row.Evade || row.Drone.InDust)
         {
@@ -87,8 +97,20 @@ internal sealed partial class PilotCardFireBlock
                 using var p = new SKPaint { Color = sub, IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = .7f, PathEffect = dash };
                 c.DrawRect(SKRect.Create(left, y, width, 13), p);
             }
-            TextAt(M("Panel.NoTargets"), (left + right) / 2, y + 9, 7, sub, italic: true, align: SKTextAlign.Center);
+            TextAt(M(row.Drone.Jammed ? "Card.FireJammed" : "Card.NoShot"), (left + right) / 2, y + 9,
+                7, sub, italic: true, align: SKTextAlign.Center);
             y += 16;
+        }
+
+        if (!row.Evade && !HasTargets(row) && TacticalFireBlocker.Nearest(battle, row.Drone) is { } blocker)
+        {
+            Wrapped(M("Card.NearestTarget", PilotCardModel.Name(blocker.Target)), 7, 9, ink);
+            if (blocker.RangeGap > 0)
+                Wrapped(M("Card.RangeGap", BattleFormat.Number(Math.Ceiling(blocker.RangeGap * 10) / 10, 1)), 6.6f, 9, sub);
+            if (blocker.AngleGap > 0)
+                Wrapped(M("Card.AngleGap", BattleFormat.Degrees(Math.Ceiling(blocker.AngleGap * 10) / 10, 1)), 6.6f, 9, sub);
+            if (row.Drone.InDust)
+                Wrapped(M("Card.ClearDust"), 6.6f, 9, sub);
         }
 
         var incoming = battle.Incoming.Where(i => i.TargetId == row.Drone.Id).ToArray();

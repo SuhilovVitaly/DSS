@@ -19,7 +19,9 @@ public sealed class MapDesignTests
         foreach (var u in f.Battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone))
         {
             var p = f.View.Project(u.Pose);
-            Assert.True(RasterProbe.Fraction(b, SKRect.Create(p.X - 1.5f, p.Y - 1.5f, 3, 3), u.Side == f.Battle.PlayerSide ? BattleDesign.Cyan : BattleDesign.Orange) >= .5);
+            float radius = 1.5f * f.View.UnitScale;
+            Assert.True(RasterProbe.Fraction(b, SKRect.Create(p.X - radius, p.Y - radius, 2 * radius, 2 * radius),
+                u.Side == f.Battle.PlayerSide ? BattleDesign.Cyan : BattleDesign.Orange) >= .5);
             var r = s.Screen.Layout.Rects["label:" + u.Id]; Assert.False(r.Contains(p));
         }
     }

@@ -243,7 +243,7 @@ public sealed class LoadScreen : IScreen
         DrawBottomButtons(canvas, pl, pt);
         if (ErrorMessage is { } error)
         {
-            using var paint = new SKPaint { Color = new SKColor(255, 170, 110), TextSize = 14, IsAntialias = true, Typeface = MenuStyle.TypefaceRegular };
+            using var paint = new SKPaint { Color = TabletopStyle.Danger, TextSize = 14, IsAntialias = true, Typeface = MenuStyle.TypefaceRegular };
             float available = LoadLayout.ContentPanelWidth;
             float measured = paint.MeasureText(error);
             if (measured > available) paint.TextSize *= available / measured;
@@ -283,7 +283,7 @@ public sealed class LoadScreen : IScreen
 
             canvas.Save();
             canvas.ClipRect(rowRect);
-            canvas.DrawText(slot.DisplayName, rowRect.Left + 10f, rowRect.MidY - 4f, _rowTextPaint);
+            canvas.DrawText(ControlText.Ellipsize(slot.DisplayName, rowRect.Width - 20f, _rowTextPaint), rowRect.Left + 10f, rowRect.MidY - 4f, _rowTextPaint);
             canvas.DrawText(
                 GameTimeDisplay.Minutes(slot.GameTimeMs) + "  |  " + slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);
@@ -302,13 +302,14 @@ public sealed class LoadScreen : IScreen
         var deleteState = !hasSelection || isQuicksaveSelected
             ? ButtonState.Disabled
             : _hoveredZone == LoadZone.Delete ? ButtonState.Hovered : ButtonState.Normal;
-        GenericButtonTypeA.Draw(canvas, deleteRect, isConfirming ? "CONFIRM?" : "DELETE", deleteState);
+        GenericButtonTypeA.Draw(canvas, deleteRect, isConfirming ? "CONFIRM?" : "DELETE", deleteState,
+            isConfirming ? TabletopStyle.Danger : null);
 
         var loadRect = CombinedRect(pl, pt, LoadLayout.LoadButtonRect());
         var loadState = !hasSelection
             ? ButtonState.Disabled
             : _hoveredZone == LoadZone.Load ? ButtonState.Hovered : ButtonState.Normal;
-        GenericButtonTypeA.Draw(canvas, loadRect, "LOAD", loadState);
+        GenericButtonTypeA.Draw(canvas, loadRect, "LOAD", loadState, primary: true);
 
         var closeRect = CombinedRect(pl, pt, LoadLayout.CloseButtonRect());
         var closeState = _hoveredZone == LoadZone.Close ? ButtonState.Hovered : ButtonState.Normal;

@@ -44,6 +44,8 @@ Build cards use the panel, box, bar and text roles with bundled typography. Slot
 
 ## Tabletop
 
+A profile with no saved battle skin selects the bundled Tabletop pack when available. Explicit choices still apply to the active battle. The rest of the desktop client uses the shared [Tabletop shell](../../../DB/Documentation/03-Design/TabletopClient.md).
+
 Build and publish also include `Skins/tabletop`, with its ready-to-use manifest and 24 PNGs. Choose **Tabletop** in Settings, then open a battle. It supplies 32-direction pixel ships, torpedoes and impact strips, painted anomaly clouds, movement/fire templates, steel windows and 150×40 pilot cards with a separate command panel. The right windows retain their layout. Battle rules, commands, FireSteps timing and saves are shared with Classic.
 
 The independent opt-in metrics `field.style.tabletop`, `ui.style.steel` and `ui.pilot-column.slim` each use value 1. They work with other package IDs. The slim flight hint supports Space to skip the current playback; Enter remains available. The [authoring contract](../../../DB/Documentation/04-Engineering/TacticalBattleSkins.md) covers sprite geometry, roles and resource limits.

@@ -1,3 +1,4 @@
+using DeepSpaceSaga.Client.UI.Controls;
 using DeepSpaceSaga.Client.UI.Screens;
 using DeepSpaceSaga.Client.UI.Screens.Ship;
 using Silk.NET.Input;
@@ -25,12 +26,13 @@ public class ShipScreenTests
     }
 
     [Fact]
-    public void Background_image_is_loaded()
+    public void Ship_shell_renders_a_steel_background()
     {
-        // Regression: the mechanics-window-background-titlebar-1400x900.png asset must
-        // resolve at the client's working directory and be registered in the .csproj
-        // with CopyToOutputDirectory, or the panel silently falls back to a plain fill.
-        Assert.True(ShipScreen.HasLoadedBackground);
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        new ShipScreen().Render(canvas, ScreenWidth, ScreenHeight);
+        Assert.Equal(TabletopStyle.Steel, bitmap.GetPixel(
+            (int)ShipLayout.PanelLeft(ScreenWidth) + 8, (int)ShipLayout.PanelTop(ScreenHeight) + 8));
     }
 
     [Fact]

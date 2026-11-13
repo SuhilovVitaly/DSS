@@ -13,14 +13,18 @@ public sealed partial class TacticalBattleScreen
     private readonly PilotCardColumn _pilotColumn = new();
     private readonly PilotPortraitCatalog _portraits = PilotPortraitCatalog.Default;
     private BattleViewport _viewport = new(1, 1280);
+    private SKRect _minimap;
+    private TacticalBattleMinimap.Projection _minimapProjection;
     internal IReadOnlyList<SKRect> PanelRects => OverlayRects().Select(r => new SKRect(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S)).ToArray();
     private SKRect Raw(SKRect r) => new(r.Left * _viewport.S, r.Top * _viewport.S, r.Right * _viewport.S, r.Bottom * _viewport.S);
     private SKPoint DesignPoint(float x, float y) => new((float)(x / (double)_viewport.S), (float)(y / (double)_viewport.S));
     private IEnumerable<SKRect> OverlayRects()
     {
         yield return _panel;
+        if (!_minimap.IsEmpty) yield return _minimap;
         if (!_hoverCard.Bounds.IsEmpty) yield return _hoverCard.Bounds;
-        if (!_pilotColumn.Layout.VisiblePanel.IsEmpty) yield return _pilotColumn.Layout.VisiblePanel;
+        if (!_logTab.Bounds.IsEmpty) yield return _logTab.Bounds;
+        foreach (var panel in _pilotColumn.VisiblePanels) yield return panel;
         for (int i = 0; i < _pilotColumn.Layout.Cards.Count; i++)
         {
             var rect = _pilotColumn.Rect(i);
@@ -31,11 +35,28 @@ public sealed partial class TacticalBattleScreen
     private void DrawOverlay(SKCanvas c, TacticalBattleFrame f)
     {
         _hoverFrame = f;
+        _minimapProjection = TacticalBattleMinimap.Draw(c, f, _minimap);
         _phasePanel.Draw(c, f, Layout);
         _pilotColumn.Draw(c, _portraits);
         _hoverCard.Draw(c, f, _portraits);
+        float logTop = Math.Max(f.Panel.Bottom, _hoverCard.Bounds.Bottom) + 6;
+        _logTab.Draw(c, f, new(f.Panel.Left, logTop, f.Panel.Right, 714));
+        if (!ConfirmExit && !f.Pending && !_orderDrag && !_camera.Panning && _lastPointer is { } p)
+        {
+            var bounds = InteractiveBounds(p);
+            if (!bounds.IsEmpty) BattleDesign.ButtonHover(c, bounds);
+        }
     }
     internal SKRect CardCommandBounds(string action) => Raw(_pilotColumn.CommandBounds(action));
+
+    private bool CenterFromMinimap(SKPoint point)
+    {
+        if (_minimapProjection.Scale <= 0 || !_minimapProjection.Bounds.Contains(point)) return false;
+        CancelOrderGesture();
+        var (x, y) = _minimapProjection.Unproject(point);
+        _camera.CenterOn(x, y);
+        return true;
+    }
 
     private string? SelectedPlanningDrone => Flow.State?.Phase switch
     {
@@ -43,6 +64,18 @@ public sealed partial class TacticalBattleScreen
         TacticalBattlePhase.Fire => _fireOrders.Selected,
         _ => null
     };
+
+    private SKRect InteractiveBounds(SKPoint p)
+    {
+        if (_pilotColumn.HitCommand(p) is { } command && !HasSalvoPresentation && SelectedPlanningDrone == command.UnitId)
+            return command.Visible;
+        if (_phasePanel.HitButton(p) is { } action && (action != "new" || CanStartNewBattle))
+            return _phasePanel.ButtonBounds(action);
+        if (!HasSalvoPresentation && Flow.State is { Phase: TacticalBattlePhase.Move or TacticalBattlePhase.Fire } &&
+            !_pilotColumn.ContainsPanel(p) && _pilotColumn.HitCard(p) is { } card)
+            return card.Bounds;
+        return SKRect.Empty;
+    }
 
     private ScreenEvent OverlayClick(SKPoint p, MouseButton button)
     {
@@ -110,7 +143,8 @@ public sealed partial class TacticalBattleScreen
         bool tabletop = _skin.Metric("field.style", "tabletop", 0) == 1;
         HoverUnitId = f.Battle.Units.Where(u => u.State != TacticalUnitState.Destroyed)
             .Select(u => (Unit: u, Distance: SKPoint.Distance(p, TacticalBattleMapRenderer.HoverPoint(f, u))))
-            .Where(pair => pair.Distance <= (pair.Unit.Kind == TacticalUnitKind.Carrier ? tabletop ? 36 : 16 : tabletop ? 26 : 12))
+            .Where(pair => pair.Distance <= Math.Max(6, (pair.Unit.Kind == TacticalUnitKind.Carrier
+                ? tabletop ? 36 : 16 : tabletop ? 26 : 12) * f.View.UnitScale))
             .OrderBy(pair => pair.Distance).FirstOrDefault().Unit?.Id;
     }
 }

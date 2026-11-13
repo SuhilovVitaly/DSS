@@ -1,12 +1,11 @@
 using DeepSpaceSaga.Client.UI.Assets;
+using DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 using SkiaSharp;
 
 namespace DeepSpaceSaga.Client.UI.Controls;
 
 /// <summary>
-/// Generic Type A window shell. Draws only the scalable background and cyan frame with
-/// clipped corners; titles, buttons, dividers, footers, and all interaction belong to
-/// the consuming screen.
+/// Window shell for client screens. Active battle skin scopes retain their legacy fallback shell.
 /// </summary>
 public static class GenericWindowTypeA
 {
@@ -45,6 +44,12 @@ public static class GenericWindowTypeA
     /// <summary>Draws a Type A shell into any positive-size destination rectangle.</summary>
     public static void Draw(SKCanvas canvas, SKRect bounds)
     {
+        if (TacticalBattleSkinRenderScope.Current is null)
+        {
+            TabletopStyle.Panel(canvas, bounds);
+            return;
+        }
+
         if (Shell is not null)
         {
             NinePatch.Draw(canvas, Shell, bounds, XenonStyle.WindowSliceInset);
@@ -61,6 +66,12 @@ public static class GenericWindowTypeA
     /// </summary>
     public static void DrawOpaque(SKCanvas canvas, SKRect bounds)
     {
+        if (TacticalBattleSkinRenderScope.Current is null)
+        {
+            TabletopStyle.Panel(canvas, bounds);
+            return;
+        }
+
         float corner = Math.Min(20f, Math.Min(bounds.Width, bounds.Height) / 2f);
         using var path = new SKPath();
         path.MoveTo(bounds.Left + corner, bounds.Top);

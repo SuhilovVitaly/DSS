@@ -311,7 +311,7 @@ public sealed class ScenarioSelectScreen : IScreen
         var playState = !canPlay
             ? ButtonState.Disabled
             : _hoveredZone == ScenarioSelectZone.Play ? ButtonState.Hovered : ButtonState.Normal;
-        GenericButtonTypeA.Draw(canvas, playRect, Localization.Get("ScenarioSelect.Play"), playState);
+        GenericButtonTypeA.Draw(canvas, playRect, Localization.Get("ScenarioSelect.Play"), playState, primary: true);
     }
 
     internal static void DrawWindowShell(SKCanvas canvas, SKRect bounds) =>

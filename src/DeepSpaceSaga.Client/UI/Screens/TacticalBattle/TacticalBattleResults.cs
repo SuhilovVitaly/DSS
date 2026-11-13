@@ -8,6 +8,9 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 public sealed record TacticalShotFlight(TacticalShotSnapshot Shot, int Index, double LaunchMs, double ElapsedMs)
 {
     public double DurationMs { get; init; } = TacticalBattleResults.FlightMs;
+    internal bool DecoyTriggered { get; init; }
+    internal bool InterceptedByDecoy => DecoyTriggered && !Shot.Hit && !Shot.Absorbed;
+    internal bool Dodged => Shot.TargetEvading && !Shot.Hit && !Shot.Absorbed && !InterceptedByDecoy;
     internal double ImpactAgeMs => ElapsedMs - (LaunchMs + DurationMs);
     public bool Arrived => ImpactAgeMs >= 0;
     public bool Flying => ElapsedMs >= LaunchMs && !Arrived;
@@ -33,7 +36,8 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
 {
     internal const double InitialDelayMs = 300, NominalStepMs = 570, FlightMs = 975, FlashMs = 450, CapMs = 4500;
 
-    internal static TacticalBattleResults? Create(TacticalBattleSnapshot? before, TacticalBattleResponse response, long startMs)
+    internal static TacticalBattleResults? Create(TacticalBattleSnapshot? before, TacticalBattleResponse response, long startMs,
+        bool tabletop = false)
     {
         if (before is null || !response.Accepted || response.State is not { } state ||
             state.BattleId != before.BattleId || state.Revision <= before.Revision ||
@@ -50,21 +54,30 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
             bool stateChanged = original.State != unit.State;
             if (armor > 0 || hull > 0 || stateChanged) damage.Add(new(unit, armor, hull, stateChanged));
         }
-        return new(state, shots, damage.ToImmutable(), startMs) { BeforeLog = before.Log };
+        var beforeLog = before.Phase == TacticalBattlePhase.Move
+            ? before.Log.AddRange(state.Log.Skip(before.Log.Length).TakeWhile(entry => entry.Phase == TacticalBattlePhase.Move))
+            : before.Log;
+        return new(state, shots, damage.ToImmutable(), startMs) { BeforeLog = beforeLog, Tabletop = tabletop };
     }
 
     internal ImmutableArray<TacticalBattleLogEvent> BeforeLog { get; init; } = [];
     internal long? SkippedAtMs { get; init; }
+    private bool Tabletop { get; init; }
     private int _cachedStep = int.MinValue;
     private TacticalBattleSnapshot? _cachedProjection;
-    internal double DurationMs => Shots.IsEmpty ? 0 : PyMath.Min(FlightMs, (CapMs - InitialDelayMs) / (double)Shots.Length);
+    internal double DurationMs => Shots.IsEmpty ? 0 :
+        PyMath.Min(FlightMs, (CapMs - InitialDelayMs) / (double)Shots.Length) * (Tabletop ? 2 : 1);
     internal double LaunchInterval => DurationMs;
     internal double EndMs => Shots.IsEmpty ? 0 : InitialDelayMs + DurationMs * Shots.Length;
     internal bool InFlight(long nowMs) => !Skipped && nowMs - StartedMs < EndMs;
 
     private bool Own(string id) => Battle.Units.FirstOrDefault(u => u.Id == id)?.Side == Battle.PlayerSide;
     private TacticalShotSnapshot DisplayShot(TacticalShotSnapshot shot) => shot.Decoyed && !Own(shot.TargetId)
-        ? shot with { Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false, ChanceWithoutDecoy = null } : shot;
+        ? shot with
+        {
+            Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false, ChanceWithoutDecoy = null,
+            Factors = shot.Factors is { } factors ? factors with { Decoy = 0 } : null
+        } : shot;
     private ImmutableArray<TacticalUnitSnapshot> DisplayUnits(ImmutableArray<TacticalUnitSnapshot> units) => units.Select(unit =>
     {
         int? charges = Own(unit.Id) ? Battle.Units.FirstOrDefault(u => u.Id == unit.Id)?.DecoyCharges
@@ -73,9 +86,10 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
     }).ToImmutableArray();
     private TacticalBattleLogEvent DisplayEvent(TacticalBattleLogEvent entry, TacticalShotSnapshot? shot)
     {
-        if (entry.Shot is { } logShot && shot is { Decoyed: true } && !Own(shot.TargetId))
-            return entry with { Shot = logShot with { Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false } };
-        return entry;
+        if (entry.Shot is not { } logShot) return entry;
+        if (shot is { Decoyed: true } && !Own(shot.TargetId))
+            logShot = logShot with { Chance = shot.ChanceWithoutDecoy ?? shot.Chance, Decoyed = false };
+        return entry with { Shot = logShot with { ResolvedShot = null } };
     }
     internal TacticalBattleSnapshot Project(long nowMs)
     {
@@ -125,7 +139,7 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
     {
         double elapsed = Skipped ? EndMs + FlashMs : nowMs - StartedMs;
         var flights = Shots.Select((shot, i) => new TacticalShotFlight(InFlight(nowMs) ? DisplayShot(shot) : shot, i, InitialDelayMs + i * DurationMs, elapsed)
-        { DurationMs = DurationMs }).ToImmutableArray();
+        { DurationMs = DurationMs, DecoyTriggered = Tabletop && shot.Decoyed }).ToImmutableArray();
         var projection = Project(nowMs);
         var damage = ImmutableArray.CreateBuilder<TacticalSalvoDamage>();
         foreach (var unit in projection.Units)

@@ -16,6 +16,7 @@ internal sealed record PilotCard(string UnitId, string Name, string Weapon, stri
     public string PhaseText => string.Concat(Segments.Select(s => s.Text));
     public bool Evading { get; init; }
     public bool Decoy { get; init; }
+    public int? AvailableTargets { get; init; }
 }
 
 internal static class PilotCardModel
@@ -45,6 +46,7 @@ internal static class PilotCardModel
         foreach (var u in own)
         {
             string pilot = u.Build?.PilotId ?? "", chip = "";
+            int? availableTargets = f.FirePlan is null ? null : TacticalBattleMapRenderer.TargetCount(f, u);
             bool accent = false;
             string? selected = f.SelectedDroneId;
             var segments = new List<PilotSegment>();
@@ -97,7 +99,7 @@ internal static class PilotCardModel
             {
                 var row = f.FirePlan?.Rows.FirstOrDefault(r => r.Drone.Id == u.Id);
                 bool has = row?.Target is not null;
-                int targetCount = row?.Group.List.Length ?? 0;
+                int targetCount = availableTargets ?? 0;
                 chip = row?.Evade == true ? BattleFormat.Localize("EvadeChip")
                     : u.InDust ? M("InDust") : has ? row!.TargetId + " " + Pct(row.Target!.Chance)
                     : U(targetCount > 0 ? "HoldFire" : "NoTargets");
@@ -112,6 +114,7 @@ internal static class PilotCardModel
                      (u.Consciousness ?? 100) / (double)PyMath.Max(1, f.Battle.Rules.Evasion?.MaxConsciousness ?? 100))
                  { ValueTone = u.Consciousness < (f.Battle.Rules.Evasion?.MinConsciousness ?? 0) ? Red : null }], chip, accent, segments)
             {
+                AvailableTargets = availableTargets,
                 Decoy = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Decoy) == true,
                 Evading = f.FirePlan?.Rows.Any(r => r.Drone.Id == u.Id && r.Evade) == true
                 || f.Salvo is { InFlight: false } result && result.Evading.Contains(u.Id)

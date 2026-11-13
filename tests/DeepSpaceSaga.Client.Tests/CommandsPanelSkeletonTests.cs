@@ -181,7 +181,7 @@ public class CommandsPanelSkeletonTests
     }
 
     [Fact]
-    public void Xenon_panel_caption_and_module_bodies_are_fully_opaque()
+    public void Tabletop_panel_caption_and_module_bodies_are_fully_opaque()
     {
         var panel = new CommandsPanel();
         using var bitmap = new SKBitmap(384, 856);
@@ -198,9 +198,8 @@ public class CommandsPanelSkeletonTests
         var moduleCaptionColor = bitmap.GetPixel(200, 54);
         Assert.Equal(mainCaptionColor, bitmap.GetPixel(340, 20));
         Assert.Equal(moduleCaptionColor, bitmap.GetPixel(340, 54));
-        Assert.True(mainCaptionColor.Red < moduleCaptionColor.Red);
-        Assert.True(mainCaptionColor.Green < moduleCaptionColor.Green);
-        Assert.True(mainCaptionColor.Blue < moduleCaptionColor.Blue);
+        Assert.Equal(DeepSpaceSaga.Client.UI.Controls.TabletopStyle.Steel, mainCaptionColor);
+        Assert.Equal(DeepSpaceSaga.Client.UI.Controls.TabletopStyle.Inset, moduleCaptionColor);
     }
 
     [Fact]

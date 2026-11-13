@@ -56,6 +56,8 @@ internal sealed class TacticalBattleSkinCatalog : IDisposable
     internal TacticalBattleSkin GetOrClassic(string? id) =>
         id is not null && TryGet(id, out var skin) ? skin : TacticalBattleSkin.Classic;
 
+    internal TacticalBattleSkin GetPreferred(string? savedId) => GetOrClassic(savedId ?? "tabletop");
+
     internal bool TryGet(string id, out TacticalBattleSkin skin)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);

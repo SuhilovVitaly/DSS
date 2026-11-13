@@ -22,7 +22,7 @@ public sealed partial class TradeScreen
         canvas.ClipRect(new SKRect(0, StationToolbar.Height, TradeLayout.PanelWidth, TradeLayout.PanelHeight));
         using (var p = new TradePainter(canvas))
         {
-            p.Box(new(1, 61, 1599, 799), TradePainter.Background, radius: 0);
+            p.Box(new(1, 61, 1599, 799), TradePainter.Background);
             Button(p, TradeLayout.MarketTab, L("Market"), !Model.FuelMode);
             Button(p, TradeLayout.FuelTab, L("Fuel"), Model.FuelMode);
             p.Text(L(_buffer?.Latest?.Snapshot.DockedStationTrade is null ? "NotDocked" : "Paused"), R(450, 84, 240, 42), 14, TradePainter.Muted, align: SKTextAlign.Right);
@@ -36,8 +36,8 @@ public sealed partial class TradeScreen
             p.Text(L("Keys"), R(420, 757, 1140, 30), 13, TradePainter.Muted, align: SKTextAlign.Right);
             if (CurrentCount > TradeLayout.VisibleRows)
             {
-                p.Box(TradeLayout.Scroll, TradePainter.Border, radius: 5);
-                p.Box(ScrollThumb, TradePainter.Muted, radius: 5);
+                p.Box(TradeLayout.Scroll, TradePainter.Border);
+                p.Box(ScrollThumb, TradePainter.Muted);
             }
             if (_moduleOpen) DrawModuleOptions(p);
             DrawMarketEvents(canvas, p);
@@ -72,14 +72,14 @@ public sealed partial class TradeScreen
 
     private void DrawCatalog(TradePainter p)
     {
-        p.Box(TradeLayout.Search, border: _focus == InputFocus.Search ? TradePainter.Cyan : TradePainter.Border);
+        p.Box(TradeLayout.Search, border: _focus == InputFocus.Search ? TradePainter.Accent : TradePainter.Border);
         p.Text(Model.Query.Length == 0 ? L("Search") : Model.Query + (_focus == InputFocus.Search ? " |" : ""), R(48, 160, 383, 40), 16,
             Model.Query.Length == 0 ? TradePainter.Muted : TradePainter.TextColor);
         if (Model.Query.Length > 0) p.Text("×", TradeLayout.SearchClear, 22, TradePainter.Muted, align: SKTextAlign.Center);
         Button(p, TradeLayout.All, L("All"), Model.Filter == TradeFilter.All);
         Button(p, TradeLayout.Resources, L("Resources"), Model.Filter == TradeFilter.Resources);
         Button(p, TradeLayout.Goods, L("Goods"), Model.Filter == TradeFilter.Goods);
-        p.Box(R(38, 218, 18, 18), Model.CargoOnly ? TradePainter.Cyan : TradePainter.Surface, TradePainter.Border, 3);
+        p.Box(R(38, 218, 18, 18), Model.CargoOnly ? TradePainter.Accent : TradePainter.Surface, TradePainter.Border);
         p.Text(L("CargoOnly"), R(67, 211, 390, 33), 15, TradePainter.Muted);
         string[] headings = [L("Item"), L("Price"), L("StationStock"), L("SelectedCargo")];
         for (int i = 0; i < headings.Length; i++)
@@ -92,8 +92,8 @@ public sealed partial class TradeScreen
         {
             var item = Model.Rows[row + _scroll]; var rect = TradeLayout.Row(row);
             bool selected = item.ItemTypeId == Model.SelectedItemId;
-            if (selected || rect.Contains(_pointer)) p.Box(rect, selected ? TradePainter.Selected : TradePainter.Surface, radius: 0);
-            if (selected) p.Box(R(rect.Left, rect.Top + 3, 3, rect.Height - 6), TradePainter.Cyan, radius: 1);
+            if (selected || rect.Contains(_pointer)) p.Box(rect, selected ? TradePainter.Selected : TradePainter.Surface);
+            if (selected) p.Box(R(rect.Left, rect.Top + 3, 3, rect.Height - 6), TradePainter.Accent);
             p.Icon(item.ItemTypeId, R(47, rect.Top + 6, 38, 38));
             if (MarketStockSummary(item) is { } summary)
             {
@@ -120,7 +120,7 @@ public sealed partial class TradeScreen
         for (int row = 0; row < TradeLayout.VisibleRows && row + _scroll < Model.Modules.Length; row++)
         {
             var tank = Model.Modules[row + _scroll]; var rect = TradeLayout.Row(row);
-            p.Box(rect, tank.ModuleId == Model.SelectedModuleId ? TradePainter.Selected : TradePainter.Surface, radius: 0);
+            p.Box(rect, tank.ModuleId == Model.SelectedModuleId ? TradePainter.Selected : TradePainter.Surface);
             p.Text(ModuleLabel(tank), R(48, rect.Top, 525, 50), 17);
             p.Text(F("KgCapacity", N(tank.FuelAmountKg ?? 0), N(tank.FuelCapacityKg ?? 0)), R(590, rect.Top, 365, 32), 16, align: SKTextAlign.Right);
             double fraction = (double)(tank.FuelAmountKg ?? 0) / Math.Max(1, tank.FuelCapacityKg ?? 0);
@@ -143,7 +143,7 @@ public sealed partial class TradeScreen
         p.Text(TradeItemPresentation.ItemDisplayName(item.ItemTypeId), R(1123, 95, 430, 36), 25, bold: true);
         p.Text(Model.FuelMode ? L("FuelService") : TradeItemPresentation.FormatUnitMass(item.ItemTypeId, item.UnitMassKg), R(1123, 135, 430, 26), 15, TradePainter.Muted);
         p.Text(TradeItemPresentation.ItemDescription(item.ItemTypeId), R(1040, 164, 520, 20), 12, TradePainter.Muted);
-        if (Model.FuelMode) p.Text(L("FillTank"), R(1040, 192, 520, 36), 19, TradePainter.Cyan);
+        if (Model.FuelMode) p.Text(L("FillTank"), R(1040, 192, 520, 36), 19, TradePainter.Accent);
         else { Button(p, TradeLayout.Buy, L("Buy"), Model.Mode == TradeMode.Buy); Button(p, TradeLayout.Sell, L("Sell"), Model.Mode == TradeMode.Sell); }
         p.Text(L(Model.FuelMode ? "Tank" : Model.Mode == TradeMode.Buy ? "Destination" : "Source"), R(1040, 233, 520), 14, TradePainter.Muted);
         string moduleText = Model.Module is { } m ? ModuleLabel(m) + " · " + (Model.FuelMode
@@ -155,14 +155,14 @@ public sealed partial class TradeScreen
             Localization.Get("Trade.QuantityWithUnit"), TradeItemPresentation.ItemUnitLabel(item.ItemTypeId));
         p.Text(quantityLabel, R(1040, 307, 520), 14, TradePainter.Muted);
         Button(p, TradeLayout.Minus, "−"); Button(p, TradeLayout.Plus, "+"); Button(p, TradeLayout.Max, L("Max"), size: 12);
-        p.Box(TradeLayout.Quantity, border: _focus == InputFocus.Quantity ? TradePainter.Cyan : TradePainter.Border);
+        p.Box(TradeLayout.Quantity, border: _focus == InputFocus.Quantity ? TradePainter.Accent : TradePainter.Border);
         string quantityText = _focus == InputFocus.Quantity ? _quantityText + " |" : N(Model.Quantity);
         p.Text(quantityText, R(1110, 337, 320, 40), 22, bold: true, align: SKTextAlign.Center);
         for (int i = 0; i < 3; i++) Button(p, TradeLayout.Presets[i], Model.FuelMode ? new[] { "50%", "75%", "100%" }[i] : new[] { "10", "50", "100" }[i]);
         var quote = Model.Quote;
         double fraction = quote.Maximum <= 1 ? 0 : (double)(Math.Clamp(Model.Quantity, 1, quote.Maximum) - 1) / (quote.Maximum - 1);
         p.Bar(R(1040, 449, 520, 5), fraction, fraction);
-        p.Box(R(1040 + (float)fraction * 508, 445, 12, 12), TradePainter.Cyan, radius: 6);
+        p.Box(R(1040 + (float)fraction * 508, 445, 12, 12), TradePainter.Accent);
         p.Text(QuoteMessage, R(1040, 470, 520, 25), 13, quote.DisabledReason is null ? TradePainter.Muted : TradePainter.Red);
         p.Line(1040, 504, 1560);
         p.Text(L("Preview"), R(1040, 513, 520, 22), 13, TradePainter.Muted, true);
@@ -232,7 +232,7 @@ public sealed partial class TradeScreen
     private static SKColor StockStateColor(StationMarketStockState state) => state switch
     {
         StationMarketStockState.Shortage => TradePainter.Amber,
-        StationMarketStockState.Surplus => TradePainter.Cyan,
+        StationMarketStockState.Surplus => TradePainter.Accent,
         _ => TradePainter.Muted
     };
     /// <summary>"state · target · max" in trade units, or null for legacy/Fuel rows without a bounded economy.</summary>

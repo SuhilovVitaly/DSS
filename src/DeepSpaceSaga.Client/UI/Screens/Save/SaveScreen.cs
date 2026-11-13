@@ -293,7 +293,7 @@ public sealed class SaveScreen : IScreen
 
             canvas.Save();
             canvas.ClipRect(rowRect);
-            canvas.DrawText(slot.DisplayName, rowRect.Left + 10f, rowRect.MidY - 4f, _rowTextPaint);
+            canvas.DrawText(ControlText.Ellipsize(slot.DisplayName, rowRect.Width - 20f, _rowTextPaint), rowRect.Left + 10f, rowRect.MidY - 4f, _rowTextPaint);
             canvas.DrawText(
                 GameTimeDisplay.Minutes(slot.GameTimeMs) + "  |  " + slot.SavedAtUtc.ToLocalTime().ToString("g"),
                 rowRect.Left + 10f, rowRect.MidY + 14f, _rowDatePaint);

@@ -7,6 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 /// <summary>Immutable projection captured with a single battle snapshot.</summary>
 public readonly record struct TacticalBattleView(int PixelWidth, int PixelHeight, double CenterX, double CenterY, double PixelsPerUnit)
 {
+    internal float UnitScale { get; init; } = 1;
     public double WorldWidth => (double)PixelWidth / PixelsPerUnit;
     public SKPoint Project(TacticalPoseSnapshot pose) => Project(pose.X, pose.Y);
     public SKPoint Project(double x, double y) => new(
@@ -23,25 +24,22 @@ internal sealed class TacticalBattleCamera
     private int _width = 1, _height = 1;
     private double _fittedPixelsPerUnit = 1;
     private string? _battleId;
-    private (TacticalBattlePhase Phase, int Turn)? _framedPhase;
     private SKPoint? _panOrigin;
     public bool UserView { get; private set; }
     public bool Panning => _panOrigin.HasValue;
-    public TacticalBattleView View => new(_width, _height, _camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit);
+    private const double MinZoom = .25, MaxZoom = 8;
+    public TacticalBattleView View => new(_width, _height, _camera.FocusX, _camera.FocusY, _camera.PixelsPerWorldUnit)
+    {
+        UnitScale = (float)(1d / 3 + 2d / 3 * Math.Clamp(
+            Math.Log(_camera.PixelsPerWorldUnit / (_fittedPixelsPerUnit * MinZoom)) / Math.Log(MaxZoom / MinZoom), 0, 1))
+    };
 
     public void Update(TacticalBattleSnapshot snapshot, int width, int height, bool salvo = false, bool tabletop = false)
     {
         Resize(width, height);
-        if (_battleId != snapshot.BattleId)
-        {
-            _battleId = snapshot.BattleId;
-            Fit(snapshot, tabletop, salvo);
-            _framedPhase = salvo ? null : (snapshot.Phase, snapshot.Turn);
-            return;
-        }
-        if (!tabletop || UserView || salvo || _framedPhase == (snapshot.Phase, snapshot.Turn)) return;
-        Fit(snapshot, true, false);
-        _framedPhase = (snapshot.Phase, snapshot.Turn);
+        if (_battleId == snapshot.BattleId) return;
+        _battleId = snapshot.BattleId;
+        Fit(snapshot, tabletop, salvo);
     }
 
     private void Resize(int width, int height)
@@ -56,13 +54,15 @@ internal sealed class TacticalBattleCamera
     {
         UserView = false; EndPan();
         bool movement = snapshot.Phase == TacticalBattlePhase.Move && (!tabletop || !salvo);
+        bool opening = tabletop && movement && snapshot.Turn <= 1;
         var points = new List<TacticalPoseSnapshot>();
         if (!tabletop)
         {
             points.AddRange(snapshot.Units.Where(u => snapshot.Phase == TacticalBattlePhase.Move || u.Kind == TacticalUnitKind.Drone).Select(u => u.Pose));
             points.AddRange(snapshot.Paths.SelectMany(p => p.Points));
         }
-        else if (movement) points.AddRange(snapshot.Units.Where(u => u.Side == snapshot.PlayerSide).Select(u => u.Pose));
+        else if (movement) points.AddRange(snapshot.Units.Where(u =>
+            u.Side == snapshot.PlayerSide || opening && u.Kind == TacticalUnitKind.Carrier).Select(u => u.Pose));
         else
         {
             var ids = snapshot.Targets.SelectMany(g => g.List).Select(t => t.TargetId)
@@ -85,7 +85,7 @@ internal sealed class TacticalBattleCamera
             }
         if (points.Count == 0) points.Add(new(0, 0, 0));
         double left = points.Min(p => p.X), right = points.Max(p => p.X), top = points.Min(p => p.Y), bottom = points.Max(p => p.Y);
-        double margin = tabletop ? movement ? 200 : 110 : snapshot.Phase == TacticalBattlePhase.Move ? 50 : 70;
+        double margin = tabletop ? opening ? 42 : movement ? 200 : 110 : snapshot.Phase == TacticalBattlePhase.Move ? 50 : 70;
         double ppu = PyMath.Max(.00001, PyMath.Min((_width - 448 - 2 * margin) / (double)PyMath.Max(1, right - left), (_height - 12 - 2 * margin) / (double)PyMath.Max(1, bottom - top)));
         _fittedPixelsPerUnit = ppu;
         // TacticalBattleView projects around the entire canvas; offset focus to center the safe area.
@@ -103,7 +103,14 @@ internal sealed class TacticalBattleCamera
         if (browserDelta == 0 || !float.IsFinite(browserDelta) || !Contains(x, y)) return;
         UserView = true;
         _camera.ZoomAt(MouseWheelInput.ZoomFactor(browserDelta), x, y, _width, _height,
-            _fittedPixelsPerUnit / 4, _fittedPixelsPerUnit * 8);
+            _fittedPixelsPerUnit * MinZoom, _fittedPixelsPerUnit * MaxZoom);
+    }
+
+    internal void CenterOn(double x, double y)
+    {
+        EndPan();
+        _camera.SetFocus(x, y);
+        UserView = true;
     }
 
     public bool BeginPan(float x, float y)

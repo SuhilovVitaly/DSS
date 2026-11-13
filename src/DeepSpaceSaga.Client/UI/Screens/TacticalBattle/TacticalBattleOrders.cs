@@ -40,7 +40,7 @@ internal sealed class TacticalBattleOrders
 
     private readonly record struct AimCandidate(double Speed, double Turn, TacticalPoseSnapshot End);
 
-    public void Observe(TacticalBattleSnapshot state)
+    public void Observe(TacticalBattleSnapshot state, bool selectOnEntry = true)
     {
         if (ReferenceEquals(_state, state)) return;
         var previous = _state;
@@ -59,7 +59,8 @@ internal sealed class TacticalBattleOrders
             var suggestion = state.Suggestions.FirstOrDefault(s => s.DroneId == unit.Id);
             if (suggestion is not null) _entries.Add(new(unit, suggestion));
         }
-        _selected = _entries.FirstOrDefault(e => e.Unit.Id == previousSelected) ?? _entries.FirstOrDefault();
+        if (selectOnEntry)
+            _selected = _entries.FirstOrDefault(e => e.Unit.Id == previousSelected) ?? _entries.FirstOrDefault();
     }
 
     public ImmutableArray<TacticalDroneOrder> EditedOrders() =>

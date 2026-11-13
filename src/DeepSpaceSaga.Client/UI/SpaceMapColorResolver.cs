@@ -53,7 +53,7 @@ internal static class TacticalMapPalette
 {
     internal static readonly SKColor Label = new(220, 230, 238, 242);
     internal static readonly SKColor Annotation = new(220, 230, 238, 230);
-    internal static readonly SKColor LabelBackground = new(21, 32, 43, 235);
+    internal static readonly SKColor LabelBackground = Controls.TabletopStyle.Inset.WithAlpha(235);
     internal static readonly SKColor OtherTrail = new(151, 168, 184);
     internal static readonly SKColor Target = new(255, 209, 138, 230);
 

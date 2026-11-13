@@ -10,6 +10,38 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class SidesAndLogTests
 {
     [Fact]
+    public async Task JournalGroupsTurnsAndPhasesAndSummarizesOnlyCompleteNoTargetQueues()
+    {
+        await using var fixture = await BattleNavigationTests.Fixture.Create();
+        var screen = await Start(fixture);
+        var frame = screen.CaptureFrame(1280, 720)!;
+        var move = new TacticalBattleLogEvent(1, 1, TacticalBattlePhase.Move, TacticalBattleLogKind.Moved, "pilot");
+        var automatic = new TacticalBattleLogEvent(2, 1, TacticalBattlePhase.Move, TacticalBattleLogKind.NoTargets);
+        var first = new TacticalBattleLogEvent(3, 1, TacticalBattlePhase.Fire, TacticalBattleLogKind.FireSkipped, "no-target-a")
+        { SkipReason = TacticalFireSkipReason.NoTarget, FireStepIndex = 0 };
+        var second = first with { Sequence = 4, ActorId = "no-target-b", FireStepIndex = 1 };
+        var later = move with { Sequence = 5, Turn = 2 };
+        using var locale = Localization.UseLocaleForTests("English");
+
+        var full = frame with { Battle = frame.Battle with { Log = [move, automatic, first, second, later] } };
+        var lines = TacticalBattleLogTab.FormatJournal(full).Split('\n');
+        Assert.Equal(new[] { "── Turn 1 ──", "─ Movement", "pilot moved.", "─ Firing",
+            "No targets. No shots were fired.", "", "── Turn 2 ──", "─ Movement", "pilot moved." }, lines);
+
+        var partial = full with
+        {
+            Battle = full.Battle with { Turn = 1, Log = [move, first], FireQueue = [new(0, "a", 50), new(1, "b", 40)] },
+            Salvo = new(true, false, [], []) { Turn = 1 }
+        };
+        Assert.DoesNotContain("No targets", TacticalBattleLogTab.FormatJournal(partial));
+        var mixed = full with { Battle = full.Battle with { Log = [move, first, second with { SkipReason = TacticalFireSkipReason.InDust }] } };
+        var mixedText = TacticalBattleLogTab.FormatJournal(mixed);
+        Assert.DoesNotContain("no-target-a", mixedText);
+        Assert.DoesNotContain("No targets", mixedText);
+        Assert.Contains("no-target-b", mixedText);
+    }
+
+    [Fact]
     public async Task JournalShowsOnlyArrivedStepEventsAndTypedSkipReasons()
     {
         await using var fixture = await BattleNavigationTests.Fixture.Create();

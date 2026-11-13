@@ -10,7 +10,7 @@ public sealed class PilotCardSalvoBlockTests
 {
     [Theory]
     [InlineData("3-salvo-flight", 51)]
-    [InlineData("4-salvo-results", 71)]
+    [InlineData("4-salvo-results", 103)]
     public async Task Slim_panel_shows_flight_or_confirmed_result_without_commands(string sceneName, float height)
     {
         using var locale = Localization.UseLocaleForTests("Russian");
@@ -39,7 +39,8 @@ public sealed class PilotCardSalvoBlockTests
             Assert.Contains(layout.Texts, t => t.Text == "ПРОМАХ" && t.Color == SKColor.Parse("#C8D4EC"));
             Assert.Contains(layout.Texts, t => t.Text == BattleDesign.M("Panel.ResultLine", shot.TargetId, BattleDesign.Pct(shot.Chance), 0));
             Assert.Contains(layout.Texts, t => t.Text.StartsWith("ловушка цели:", StringComparison.Ordinal));
-            Assert.Contains(layout.Rects.Keys, k => k == "pilot-damage-armor:Юн");
+            Assert.Contains(layout.Texts, t => t.Text.Contains("Точность", StringComparison.Ordinal));
+            Assert.DoesNotContain("pilot-damage-armor:Юн", layout.Rects.Keys);
         }
         if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } folder)
         {

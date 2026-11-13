@@ -91,7 +91,7 @@ public sealed class BuildCardModelTests
         var point = frame.View.Project(own.Pose);
         scene.Screen.OnMouseMove(point.X * 1.5f, point.Y * 1.5f);
         using var hovered = scene.Render();
-        Assert.Contains("build", scene.Screen.Layout.Rects.Keys);
+        Assert.Contains("hover", scene.Screen.Layout.Rects.Keys);
         Assert.DoesNotContain("salvo-report", scene.Screen.Layout.Rects.Keys);
         var enemy = frame.Battle.Units.First(unit => unit.Kind == TacticalUnitKind.Drone &&
             unit.Side != frame.Battle.PlayerSide && unit.State == TacticalUnitState.Air &&
@@ -124,6 +124,8 @@ public sealed class BuildCardModelTests
         var before = Draw();
         Assert.Contains(before.Texts, t => t.Text == "Shooter 0 → Target");
         Assert.DoesNotContain(before.Texts, t => t.Text == "Shooter 11 → Target");
+        Assert.True(card.ScrollResults(new(card.Bounds.MidX, card.Bounds.MidY), -100));
+        Assert.True(card.ScrollResults(new(card.Bounds.MidX, card.Bounds.MidY), -100));
         Assert.True(card.ScrollResults(new(card.Bounds.MidX, card.Bounds.MidY), -100));
         var after = Draw();
         Assert.DoesNotContain(after.Texts, t => t.Text == "Shooter 0 → Target");

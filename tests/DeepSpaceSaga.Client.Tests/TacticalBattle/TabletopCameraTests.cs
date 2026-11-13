@@ -10,22 +10,28 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class TabletopCameraTests
 {
     [Fact]
-    public async Task Movement_fits_own_group_and_suggestion_ends_without_history_or_enemy_carrier()
+    public async Task Opening_fits_both_carriers_near_playable_edges_and_ignores_history()
     {
         await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
         var state = scene.Frame.Battle;
         var camera = new TacticalBattleCamera(); camera.Update(state, 1280, 720, tabletop: true);
-        var safe = new SKRect(401.9f, 205.9f, 834.1f, 514.1f);
+        var safe = new SKRect(243.9f, 47.9f, 992.1f, 672.1f);
         foreach (var unit in state.Units.Where(u => u.Side == state.PlayerSide)) Assert.True(safe.Contains(camera.View.Project(unit.Pose)), unit.Id);
         foreach (var row in scene.Frame.Movement!.Orders) Assert.True(safe.Contains(camera.View.Project(row.Path[^1])), row.Unit.Id);
         var changed = state with
         {
             BattleId = state.BattleId + "-copy",
             Paths = [new(1, "old", [new(999999, 999999, 0)])],
-            Units = state.Units.Select(u => u.Side != state.PlayerSide ? u with { Pose = new(99999, 99999, 0) } : u).ToImmutableArray()
+            Units = state.Units.Select(u => u.Side != state.PlayerSide && u.Kind == TacticalUnitKind.Drone
+                ? u with { Pose = new(99999, 99999, 0) } : u).ToImmutableArray()
         };
         var other = new TacticalBattleCamera(); other.Update(changed, 1280, 720, tabletop: true);
         Assert.Equal(camera.View, other.View);
+        var carriers = state.Units.Where(unit => unit.Kind == TacticalUnitKind.Carrier)
+            .Select(unit => camera.View.Project(unit.Pose)).OrderBy(point => point.X).ToArray();
+        Assert.Equal(2, carriers.Length);
+        Assert.Equal(244, carriers[0].X, .1f);
+        Assert.Equal(992, carriers[1].X, .1f);
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
         var screen = new TacticalBattleScreen(scene.Screen.Flow, 1, catalog.GetOrClassic("tabletop"));
         Assert.Equal(camera.View, screen.CaptureFrame(1280, 720)!.View);
@@ -33,7 +39,7 @@ public sealed class TabletopCameraTests
     }
 
     [Fact]
-    public async Task Fire_frame_contains_targets_threats_and_last_shots_then_freezes_until_salvo_exits()
+    public async Task Initial_fire_frame_contains_combatants_and_stays_fixed_through_the_next_turn()
     {
         await using var scene = await Ep0019Scenes.Create("2-fire-hover-own");
         var state = scene.Frame.Battle;
@@ -54,7 +60,7 @@ public sealed class TabletopCameraTests
         camera.Update(moved, 1280, 720, salvo: true, tabletop: true);
         Assert.Equal(before, camera.View);
         camera.Update(moved, 1280, 720, tabletop: true);
-        Assert.NotEqual(before, camera.View);
+        Assert.Equal(before, camera.View);
         camera.Zoom(600, 400, -1); var manual = camera.View;
         camera.Update(state, 1280, 720, tabletop: true);
         Assert.True(camera.UserView); Assert.Equal(manual, camera.View);

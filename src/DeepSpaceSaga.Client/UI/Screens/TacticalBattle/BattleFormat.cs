@@ -1,5 +1,6 @@
 using System.Globalization;
 using DeepSpaceSaga.Client.UI.Controls;
+using DeepSpaceSaga.Contracts;
 
 namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
@@ -26,6 +27,21 @@ public static class BattleFormat
     public static string Percent(double value, int decimals = 0) => Number(value, decimals) + "%";
     /// <summary>Engine hit/rear-kill chances and scenario goals are zero-to-one probabilities.</summary>
     public static string Probability(double value, int decimals = 0) => Percent(value * 100.0, decimals);
+    internal static string HitFactors(TacticalHitFactors factors)
+    {
+        (string Key, double Value)[] terms =
+        [
+            ("Base", factors.Base), ("Accuracy", factors.Accuracy), ("Maneuver", factors.Maneuver),
+            ("Weapon", factors.Weapon), ("Range", factors.Range), ("Angle", factors.Angle),
+            ("Rear", factors.Rear), ("Shield", factors.Shield), ("Evasion", factors.Evasion),
+            ("Clamp", factors.Clamp), ("Decoy", factors.Decoy)
+        ];
+        var labels = terms.Where(term => term.Value != 0).Select(term =>
+            Localize("Factors." + term.Key) + " " + Signed(term.Value, 1)).ToList();
+        if (factors.Absorption > 0)
+            labels.Add(Localize("Factors.Absorption") + " " + Probability(factors.Absorption, 1));
+        return string.Join(" · ", labels);
+    }
     public static string Degrees(double value, int decimals = 0) => Number(value, decimals) + Text("°");
     public static string Seed(long seed) => Text(seed.ToString(CultureInfo.InvariantCulture).Replace('-', '−'));
 }

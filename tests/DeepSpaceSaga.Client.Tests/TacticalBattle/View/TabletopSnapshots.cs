@@ -10,7 +10,7 @@ public sealed class TabletopSnapshots
 {
     public static TheoryData<string> Scenes => new()
     {
-        "1-move-no-hover", "1-anomaly-move-dust", "2-fire-hover-own", "2-anomaly-absorption",
+        "1-move-no-hover", "1-anomaly-move-dust", "2-fire-hover-own", "2-anomaly-absorption", "2-no-target",
         "3-salvo-flight", "4-salvo-results", "4-decoy-results", "5-outcome"
     };
 

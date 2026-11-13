@@ -12,7 +12,7 @@ public sealed class TabletopSlimCardTests
     [Theory]
     [InlineData("1-move-no-hover")]
     [InlineData("4-salvo-results")]
-    public async Task Slim_cards_show_numeric_boxes_and_damage_without_old_phase_lines(string name)
+    public async Task Slim_cards_show_proportional_bars_and_damage_without_old_phase_lines(string name)
     {
         await using var scene = await Ep0019Scenes.Create(name);
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
@@ -28,16 +28,28 @@ public sealed class TabletopSlimCardTests
         {
             var rect = layout.Rects["pilot:" + card.UnitId];
             Assert.Equal(150, rect.Width); Assert.Equal(40, rect.Height);
-            var armor = layout.Rects["pilot-armor:" + card.UnitId];
-            Assert.Equal(SKRect.Create(rect.Left + 41, rect.Top + 20, 24, 12), armor);
+            bool disabled = frame.Battle.Units.Single(unit => unit.Id == card.UnitId).State == TacticalUnitState.Disabled;
+            foreach (var (kind, offset) in new[] { ("hull", 17), ("armor", 26) })
+            {
+                if (disabled)
+                {
+                    Assert.DoesNotContain($"pilot-{kind}:{card.UnitId}", layout.Rects.Keys);
+                    continue;
+                }
+                var bar = layout.Rects[$"pilot-{kind}:{card.UnitId}"];
+                Assert.Equal(SKRect.Create(rect.Left + 50, rect.Top + offset, 55, 5), bar);
+                var fill = layout.Rects[$"pilot-{kind}-fill:{card.UnitId}"];
+                var stat = card.Stats.Single(stat => stat.Kind == kind);
+                Assert.Equal((float)stat.Fill * bar.Width, fill.Width, 3);
+                Assert.Contains(layout.Texts, text => text.Text == stat.Value);
+            }
             Assert.Contains(layout.Texts, t => t.Text == card.Name);
             Assert.DoesNotContain(layout.Texts, t => t.Text == card.PhaseText && card.PhaseText.Length > 0);
-            var damage = frame.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
-            Assert.Equal(damage?.Armor > 0, layout.Rects.ContainsKey("pilot-damage-armor:" + card.UnitId));
-            Assert.Equal(damage?.Hull > 0, layout.Rects.ContainsKey("pilot-damage-hull:" + card.UnitId));
+            Assert.DoesNotContain("pilot-damage-armor:" + card.UnitId, layout.Rects.Keys);
+            Assert.DoesNotContain("pilot-damage-hull:" + card.UnitId, layout.Rects.Keys);
         }
-        Assert.Contains(SKColor.Parse("#3A5A8A"), bitmap.Pixels);
-        Assert.Contains(SKColor.Parse("#3F6A2C"), bitmap.Pixels);
+        Assert.Contains(SKColor.Parse("#5A7CA8"), bitmap.Pixels);
+        Assert.Contains(SKColor.Parse("#5C9440"), bitmap.Pixels);
         if (Environment.GetEnvironmentVariable("DSS_VALIDATION_ROOT") is { Length: > 0 } folder)
         {
             using var png = bitmap.Encode(SKEncodedImageFormat.Png, 100);
@@ -57,8 +69,8 @@ public sealed class TabletopSlimCardTests
         using var bitmap = new SKBitmap(1280, 720); using var canvas = new SKCanvas(bitmap);
         var column = new PilotCardColumn(); column.Arrange(frame, PilotCardModel.Project(frame));
         column.Draw(canvas, PilotPortraitCatalog.Default);
-        var color = bitmap.GetPixel(49, 28);
-        Assert.Equal(color.Red, color.Green); Assert.Equal(color.Green, color.Blue); Assert.InRange(color.Red, 50, 65);
+        var track = bitmap.GetPixel(80, 27);
+        Assert.DoesNotContain(track, new[] { SKColor.Parse("#5A7CA8"), SKColor.Parse("#5C9440") });
         var portrait = bitmap.GetPixel(22, 22);
         Assert.InRange(Math.Abs(portrait.Red - portrait.Green), 0, 1); Assert.InRange(Math.Abs(portrait.Green - portrait.Blue), 0, 1);
         var screen = new TacticalBattleScreen(scene.Screen.Flow, 1, catalog.GetOrClassic("tabletop"));
