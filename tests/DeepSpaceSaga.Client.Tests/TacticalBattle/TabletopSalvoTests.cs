@@ -30,6 +30,9 @@ public sealed class TabletopSalvoTests
         Assert.Contains("pilot-panel:" + next.Shot.ShooterId, scene.Screen.Layout.Rects.Keys);
 
         if (scene.Frame.Salvo!.InFlight) scene.Screen.OnKeyDown(Silk.NET.Input.Key.Space);
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using (TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop")))
+            Assert.Null(TacticalBattleMapRenderer.Selected(scene.Frame));
         using (var image = scene.Render()) { }
         foreach (var flight in ownFlights)
             Assert.Contains("pilot-panel:" + flight.Shot.ShooterId, scene.Screen.Layout.Rects.Keys);

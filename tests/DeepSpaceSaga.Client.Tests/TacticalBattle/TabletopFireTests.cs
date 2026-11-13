@@ -9,6 +9,32 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class TabletopFireTests
 {
     [Fact]
+    public async Task Reciprocal_attack_chevrons_run_on_opposite_sides_of_the_direct_line()
+    {
+        await using var scene = await Ep0019Scenes.Create("2-fire-hover-own");
+        using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
+        using var scope = TacticalBattleSkinRenderScope.Enter(catalog.GetOrClassic("tabletop"));
+        using var bitmap = new SKBitmap(1280, 720);
+        using var canvas = new SKCanvas(bitmap);
+        var frame = scene.Frame;
+        var selected = frame.FirePlan!.Selected!;
+        var target = frame.Battle.Units.Single(unit => unit.Id == selected.TargetId);
+        var from = frame.View.Project(selected.Drone.Pose);
+        var to = frame.View.Project(target.Pose);
+        float Offset(SKRect rect) => (to.X - from.X) * (rect.MidY - from.Y) - (to.Y - from.Y) * (rect.MidX - from.X);
+        frame = frame with { Battle = frame.Battle with
+        {
+            Incoming = [new(target.Id, selected.Drone.Id, .5, 50, 0, false, 0)]
+        } };
+        var layout = new BattleLayout();
+        BattleDesign.Recording = layout;
+        try { TacticalBattleMapRenderer.Draw(canvas, frame); }
+        finally { BattleDesign.Recording = null; }
+        Assert.True(Offset(layout.Rects["fire-chevron:" + selected.Drone.Id]) > 0);
+        Assert.True(Offset(layout.Rects["fire-chevron:" + target.Id]) < 0);
+    }
+
+    [Fact]
     public async Task Clicking_a_reticle_assigns_the_same_candidate_as_the_pilot_card()
     {
         await using var scene = await Ep0019Scenes.Create("2-fire-hover-own");

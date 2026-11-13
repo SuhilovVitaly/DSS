@@ -54,13 +54,15 @@ internal sealed class TacticalBattleCamera
     {
         UserView = false; EndPan();
         bool movement = snapshot.Phase == TacticalBattlePhase.Move && (!tabletop || !salvo);
+        bool opening = tabletop && movement && snapshot.Turn <= 1;
         var points = new List<TacticalPoseSnapshot>();
         if (!tabletop)
         {
             points.AddRange(snapshot.Units.Where(u => snapshot.Phase == TacticalBattlePhase.Move || u.Kind == TacticalUnitKind.Drone).Select(u => u.Pose));
             points.AddRange(snapshot.Paths.SelectMany(p => p.Points));
         }
-        else if (movement) points.AddRange(snapshot.Units.Where(u => u.Side == snapshot.PlayerSide).Select(u => u.Pose));
+        else if (movement) points.AddRange(snapshot.Units.Where(u =>
+            u.Side == snapshot.PlayerSide || opening && u.Kind == TacticalUnitKind.Carrier).Select(u => u.Pose));
         else
         {
             var ids = snapshot.Targets.SelectMany(g => g.List).Select(t => t.TargetId)
@@ -83,7 +85,7 @@ internal sealed class TacticalBattleCamera
             }
         if (points.Count == 0) points.Add(new(0, 0, 0));
         double left = points.Min(p => p.X), right = points.Max(p => p.X), top = points.Min(p => p.Y), bottom = points.Max(p => p.Y);
-        double margin = tabletop ? movement ? 200 : 110 : snapshot.Phase == TacticalBattlePhase.Move ? 50 : 70;
+        double margin = tabletop ? opening ? 42 : movement ? 200 : 110 : snapshot.Phase == TacticalBattlePhase.Move ? 50 : 70;
         double ppu = PyMath.Max(.00001, PyMath.Min((_width - 448 - 2 * margin) / (double)PyMath.Max(1, right - left), (_height - 12 - 2 * margin) / (double)PyMath.Max(1, bottom - top)));
         _fittedPixelsPerUnit = ppu;
         // TacticalBattleView projects around the entire canvas; offset focus to center the safe area.

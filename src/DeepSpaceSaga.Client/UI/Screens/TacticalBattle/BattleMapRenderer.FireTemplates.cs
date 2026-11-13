@@ -164,7 +164,13 @@ internal static partial class TacticalBattleMapRenderer
     }
 
 
-    private sealed record RibbonPill(string Id, (SKPoint A, SKPoint B) Line, string Text, float Size,
+    private readonly record struct FirePath(SKPoint Start, SKPoint End, SKPoint Offset)
+    {
+        public SKPoint At(float t) => Start + Scale(End - Start, t) + Scale(Offset, 4 * t * (1 - t));
+        public SKPoint Tangent(float t) => End - Start + Scale(Offset, 4 * (1 - 2 * t));
+    }
+
+    private sealed record RibbonPill(string Id, FirePath Line, string Text, float Size,
         SKColor TextColor, SKColor Fill, SKColor Edge, SKPoint? Anchor = null);
 
     private static SKRect Pill(SKCanvas canvas, SKPoint center, string text, float size, SKColor color, SKColor fill, SKColor edge)
@@ -181,17 +187,17 @@ internal static partial class TacticalBattleMapRenderer
 
     private static SKRect PillOnRibbon(SKCanvas canvas, RibbonPill pill, List<SKRect> placed, List<SKRect> occupied)
     {
-        var (a, b) = pill.Line;
         float width = Measure(pill.Text, pill.Size, true) + 14, height = pill.Size + 8;
-        var point = pill.Anchor ?? a + Scale(b - a, .5f);
+        var point = pill.Anchor ?? pill.Line.At(.5f);
         if (pill.Anchor is null)
         {
-            var dir = Scale(b - a, 1 / Math.Max(1, SKPoint.Distance(a, b)));
+            var tangent = pill.Line.Tangent(.5f);
+            var dir = Scale(tangent, 1 / Math.Max(1, SKPoint.Distance(SKPoint.Empty, tangent)));
             var normal = new SKPoint(-dir.Y, dir.X);
             var candidates = new List<SKPoint>();
-            foreach (float t in new[] { .5f, .35f, .65f, .22f, .78f }) candidates.Add(a + Scale(b - a, t));
+            foreach (float t in new[] { .5f, .35f, .65f, .22f, .78f }) candidates.Add(pill.Line.At(t));
             foreach (float t in new[] { .5f, .35f, .65f })
-                foreach (int sign in new[] { 1, -1 }) candidates.Add(a + Scale(b - a, t) + Scale(normal, sign * (height + 4)));
+                foreach (int sign in new[] { 1, -1 }) candidates.Add(pill.Line.At(t) + Scale(normal, sign * (height + 4)));
             foreach (var candidate in candidates)
             {
                 var rect = SKRect.Create(candidate.X - width / 2, candidate.Y - height / 2, width, height); rect.Inflate(3, 2);
@@ -203,6 +209,38 @@ internal static partial class TacticalBattleMapRenderer
         placed.Add(bounds); occupied.Add(bounds);
         if (Recording is { } layout) layout.Rects[pill.Id] = bounds;
         return bounds;
+    }
+
+    private static FirePath DrawFireChevrons(SKCanvas canvas, SKPoint from, SKPoint to, bool reciprocal,
+        bool selected, SKColor color, float targetTrim, string id, List<SKRect> occupied)
+    {
+        float length = SKPoint.Distance(from, to);
+        var direction = Scale(to - from, 1 / Math.Max(.001f, length));
+        var normal = new SKPoint(-direction.Y, direction.X);
+        float sourceTrim = Math.Min(16, length * .25f);
+        var path = new FirePath(from + Scale(direction, sourceTrim), to - Scale(direction, Math.Min(targetTrim, length * .35f)),
+            reciprocal ? Scale(normal, Math.Clamp(length * .25f, 12, 45)) : SKPoint.Empty);
+        if (length < 6) return path;
+
+        int count = Math.Clamp((int)(SKPoint.Distance(path.Start, path.End) / 12) + 1, 1, 96);
+        float size = Math.Min(selected ? 4.3f : 3.5f, length * .18f);
+        using var paint = new SKPaint { IsAntialias = true, Color = color, StrokeWidth = selected ? 2.1f : 1.65f, StrokeCap = SKStrokeCap.Round };
+        for (int i = 0; i < count; i++)
+        {
+            float t = (i + .5f) / count;
+            var center = path.At(t);
+            var tangent = path.Tangent(t);
+            var forward = Scale(tangent, size / Math.Max(.001f, SKPoint.Distance(SKPoint.Empty, tangent)));
+            var side = new SKPoint(-forward.Y, forward.X);
+            var tip = center + Scale(forward, .5f);
+            var back = center - Scale(forward, .65f);
+            canvas.DrawLine(back + side, tip, paint);
+            canvas.DrawLine(back - side, tip, paint);
+            var bounds = SKRect.Create(center.X - size, center.Y - size, 2 * size, 2 * size);
+            occupied.Add(bounds);
+            if (i == count / 2 && Recording is { } layout) layout.Rects["fire-chevron:" + id] = bounds;
+        }
+        return path;
     }
 
     private static (SKPoint A, SKPoint B) Ribbon(SKCanvas canvas, SKPoint a, SKPoint b, float width,
@@ -249,24 +287,30 @@ internal static partial class TacticalBattleMapRenderer
             paint.Style = SKPaintStyle.Stroke; paint.Color = TTGold; paint.StrokeWidth = 1.6f; paint.PathEffect = dash;
             c.DrawPath(sector, paint);
         }
+        var assigned = plan.Rows.Where(row => row.TargetId is not null && !row.Drone.InDust && !row.Drone.Jammed && !row.Evade).ToArray();
+        var outgoingPairs = assigned.Select(row => (row.Drone.Id, row.TargetId!)).ToHashSet();
+        var incomingPairs = f.Battle.Incoming.Select(shot => (shot.ShooterId, shot.TargetId)).ToHashSet();
         foreach (var incoming in f.Battle.Incoming)
         {
             var shooter = f.Battle.Units.FirstOrDefault(u => u.Id == incoming.ShooterId);
             var target = f.Battle.Units.FirstOrDefault(u => u.Id == incoming.TargetId);
             if (shooter is null || target is null) continue;
             var a = f.View.Project(shooter.Pose); var b = MarkerPoint(f.View, target);
-            var line = Ribbon(c, a, b, 4, TTReticle.WithAlpha(125), TTRustEdge.WithAlpha(95), 16, 18, occupied);
+            bool reciprocal = outgoingPairs.Contains((incoming.TargetId, incoming.ShooterId));
+            var line = DrawFireChevrons(c, a, b, reciprocal, false, TTAlt.WithAlpha(215), 18, incoming.ShooterId, occupied);
             pills.Add(new("badge:threat:" + pills.Count, line, M("Map.ThreatBadge", Pct(incoming.Chance)), 10,
-                SKColor.Parse("#FFD6C4"), TTRustEdge, SKColor.Parse("#FFB090"), SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
+                SKColor.Parse("#FFD6C4"), TTRustEdge, SKColor.Parse("#FFB090"),
+                !reciprocal && SKPoint.Distance(a, b) < 60 ? b + new SKPoint(0, 40) : null));
         }
-        foreach (var row in plan.Rows.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
+        foreach (var row in assigned.OrderBy(r => r.Drone.Id == plan.SelectedDroneId ? 1 : 0))
         {
             var target = f.Battle.Units.FirstOrDefault(u => u.Id == row.TargetId);
-            if (target is null || row.Drone.InDust || row.Evade) continue;
+            if (target is null) continue;
             var a = f.View.Project(row.Drone.Pose); var b = MarkerPoint(f.View, target);
             bool selected = row.Drone.Id == plan.SelectedDroneId;
-            var line = Ribbon(c, a, b, selected ? 5.5f : 4, TTReticle.WithAlpha(selected ? (byte)165 : (byte)110),
-                TTRustEdge.WithAlpha(95), 16, 24, occupied);
+            bool reciprocal = incomingPairs.Contains((target.Id, row.Drone.Id));
+            var line = DrawFireChevrons(c, a, b, reciprocal, selected, TTGold.WithAlpha(selected ? (byte)255 : (byte)180),
+                24, row.Drone.Id, occupied);
             if (row.Target is { } shot)
                 pills.Add(new(selected ? "chance" : "badge:own:" + row.Drone.Id, line,
                     selected ? Pct(shot.Chance) : PilotCardModel.Name(row.Drone) + " " + Pct(shot.Chance), selected ? 13 : 10.5f,
