@@ -56,4 +56,6 @@ D-01, A-07. Сейчас — `AnomalyFieldLayer.cs`, `InteractiveAnomalyField.cs
 
 ## Итог исполнения
 
+Продолжение US4-TK2 уменьшило первую сборку камеры движения с20.609ms до7.49ms. Центр облака13.7655ms и обзор177 сгустков81.275ms превышают бюджет; история остаётся PARTIAL. Проверки32/32, native46/46; подробности — [CloudOptimization](../CloudOptimization.md).
+
 PARTIAL: rendering/cache работают; бюджет12ms не выполнен. Критерии и границы приёмки — [AcceptanceCoverage](../AcceptanceCoverage.md), проверки и SHA — [ExecutionStatus](../ExecutionStatus.md). Физический ввод и owner acceptance отдельно, не заменены автоматизацией.

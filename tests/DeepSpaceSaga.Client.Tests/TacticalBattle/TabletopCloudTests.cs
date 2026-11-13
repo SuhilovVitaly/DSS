@@ -9,6 +9,38 @@ namespace DeepSpaceSaga.Client.Tests.TacticalBattle;
 public sealed class TabletopCloudTests
 {
     [Theory]
+    [InlineData(1f)]
+    [InlineData(1.5f)]
+    public async Task Viewport_crop_preserves_rotated_offscreen_cloud_and_blur_tail(float scale)
+    {
+        await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
+        var anomaly = scene.Frame.Battle.Anomalies[0];
+        var clump = anomaly.Clumps[0] with { X = -178, Y = 0, SigmaX = 30, SigmaY = 10, Rotation = Math.PI / 3, Amplitude = 150 };
+        var frame = scene.Frame with
+        {
+            Battle = scene.Frame.Battle with { Anomalies = [anomaly with { Clumps = [clump] }] },
+            View = new(320, 240, 0, 0, 1)
+        };
+        using var small = new SKBitmap((int)(320 * scale), (int)(240 * scale));
+        using var large = new SKBitmap((int)(640 * scale), (int)(480 * scale));
+        using var smallCanvas = new SKCanvas(small); using var largeCanvas = new SKCanvas(large);
+        smallCanvas.Scale(scale); largeCanvas.Scale(scale);
+        using var smallClouds = new PaintedCloudLayer(); using var largeClouds = new PaintedCloudLayer();
+        smallClouds.Draw(smallCanvas, frame);
+        // The larger viewport has exactly the same projection and screen-noise origin.
+        largeClouds.Draw(largeCanvas, frame with { View = new(640, 480, 160, 120, 1) });
+        Assert.True(small.Pixels.Max(c => c.Alpha) > 20);
+        for (int y = 0; y < small.Height; y++)
+            for (int x = 0; x < small.Width; x++)
+                Assert.Equal(large.GetPixel(x, y), small.GetPixel(x, y));
+        var before = small.Bytes;
+        var distant = clump with { X = 10000, Y = 10000 };
+        smallCanvas.Clear(SKColors.Transparent);
+        smallClouds.Draw(smallCanvas, frame with { Battle = frame.Battle with { Anomalies = [anomaly with { Clumps = [clump, distant] }] } });
+        Assert.Equal(before, small.Bytes);
+    }
+
+    [Theory]
     [InlineData(1.4f, -.25f, 0, 0)]
     [InlineData(1.4f, -.25f, 64, 26)]
     [InlineData(1.4f, -.25f, 128, 115)]
