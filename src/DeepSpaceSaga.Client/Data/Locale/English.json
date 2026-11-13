@@ -99,6 +99,8 @@
   "TacticalBattle.Sides.Engine": "{0}: {1}",
   "TacticalBattle.Log.Line": "Turn {0} · {1}: {2}",
   "TacticalBattle.Log.FirePhase": "Firing",
+  "TacticalBattle.Log.Title": "Battle log",
+  "TacticalBattle.Log.Moved": "{0} moved.",
   "TacticalBattle.Log.Started": "Battle started.",
   "TacticalBattle.Log.NoAttackers": "{0} is now a fighter (no attackers remain).",
   "TacticalBattle.Log.Role": "{0} is now a {1}.",

@@ -26,7 +26,8 @@ public sealed partial class Ep0019ViewTests
 
         await using var s = await Ep0019Scenes.Create(name); using var locale = Localization.UseLocaleForTests("Russian"); using var bitmap = s.Render(); var f = s.Screen.CaptureFrame(1920, 1080)!; var l = s.Screen.Layout;
         float db = name switch { "3-salvo-flight" => 262, "4-salvo-results" => 246, "5-outcome" => 238, _ => 32 };
-        Rect(new(1040, 6, 1274, db + 120), l.Rects["phase"]); Rect(new(1040, db + 28, 1274, db + 120), l.Rects["action"]);
+        Rect(new(1040, 132, 1274, db + 246), l.Rects["phase"]); Rect(new(1040, db + 154, 1274, db + 246), l.Rects["action"]);
+        Rect(new(1040, 6, 1274, 126), l.Rects["minimap"]);
         float top = 6;
         foreach (var u in f.Battle.Units.Where(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide))
         {
@@ -41,12 +42,13 @@ public sealed partial class Ep0019ViewTests
             Rect(new(6, top, 196, top + height), l.Rects["pilot:" + u.Id]);
             top += height + 5;
         }
-        bool build = name is "1-move-no-hover" or "2-fire-hover-own";
-        Assert.Equal(build, l.Rects.ContainsKey("build"));
-        if (build) Rect(new(1040, db + 126, 1274, db + 426), l.Rects["build"]);
-        bool hover = name is not ("1-move-no-hover" or "2-fire-hover-own" or "4-salvo-results" or "5-outcome"); Assert.Equal(hover, l.Rects.ContainsKey("hover"));
+        Assert.DoesNotContain("build", l.Rects.Keys);
+        bool hover = name is not ("1-move-no-hover" or "4-salvo-results" or "5-outcome"); Assert.Equal(hover, l.Rects.ContainsKey("hover"));
         Assert.Equal(name == "4-salvo-results", l.Rects.ContainsKey("salvo-report"));
-        if (hover) Rect(new(1040, db + 126, 1274, db + 230), l.Rects["hover"]);
+        if (hover) Rect(new(1040, db + 252, 1274, db + 356), l.Rects["hover"]);
+        float logTop = Math.Max(f.Panel.Bottom, Math.Max(l.Rects.GetValueOrDefault("hover").Bottom,
+            l.Rects.GetValueOrDefault("salvo-report").Bottom)) + 6;
+        Rect(new(1040, logTop, 1274, 714), l.Rects["battle-log"]);
         if (f.Movement is { } movement)
             foreach (var row in movement.Orders)
             { var p = f.View.Project(row.Path[^1]); float r = row.Unit.Id == movement.Selected ? 5 : 4; Rect(new(p.X - r, p.Y - r, p.X + r, p.Y + r), l.Rects["endpoint:" + row.Unit.Id]); }
@@ -70,7 +72,7 @@ public sealed partial class Ep0019ViewTests
         {
             Rect(new(12, 283, 99, 300), l.Rects["card-command:hold"]);
             Rect(new(103, 283, 190, 300), l.Rects["card-command:evade"]);
-            Rect(new(1048, 116, 1266, 144), l.Rects["button:primary"]);
+            Rect(new(1048, 242, 1266, 270), l.Rects["button:primary"]);
             Assert.DoesNotContain(l.Rects.Keys, key => key is "button:hold" or "button:evade" or "button:decoy"
                 || key.StartsWith("button:target:", StringComparison.Ordinal));
             var unit = f.Battle.Units.Single(u => u.Id == "Марта"); var position = f.View.Project(unit.Pose);
@@ -97,7 +99,8 @@ public sealed partial class Ep0019ViewTests
         await using var s = await Ep0019Scenes.Create(name); using var locale = Localization.UseLocaleForTests("Russian"); using var bitmap = s.Render();
         foreach (string text in ExpectedTexts(name)) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
         if (name is not ("1-move-no-hover" or "4-salvo-results" or "5-outcome"))
-            foreach (string text in name == "2-fire-hover-own" ? new[] { "ПОД КУРСОРОМ · СБОРКА", "Олег", "Корпус 55/55", "Броня 80/80", "Рама «Лёгкий»" } : new[] { "ПОД КУРСОРОМ · ПРОТИВНИК", "Таг-6", name == "4-salvo-results" ? "Корпус 0/40" : "Корпус 40/40", name == "4-salvo-results" ? "Броня 0/20" : "Броня 20/20", "Обрез I · 40–50 · дальн. 110 · иниц. 41" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
+            foreach (string text in name == "2-fire-hover-own" ? new[] { "ПОД КУРСОРОМ · ПИЛОТ", "Олег", "Корпус 55/55", "Броня 80/80" } : new[] { "ПОД КУРСОРОМ · ПРОТИВНИК", "Таг-6", "Корпус 40/40", "Броня 20/20", "Обрез I · 40–50 · дальн. 110 · иниц. 41" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
+        Assert.Contains(s.Screen.Layout.Texts, t => t.Text == "Журнал боя");
         if (name == "3-salvo-flight")
             foreach (string row in new[] { "Марта → Таг-1", "Вера — нет цели", "Таг-2 — нет цели", "Юн → Таг-6", "Олег → Таг-6", "Таг-1 — нет цели", "Таг-5 → Юн", "Таг-3 — нет цели", "Таг-4 — нет цели", "Таг-6 — нет цели" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == row);
         Assert.DoesNotContain(s.Screen.Layout.Texts, t => t.Text.Contains("TacticalBattle.", StringComparison.Ordinal));
@@ -141,11 +144,11 @@ public sealed partial class Ep0019ViewTests
             canvas.Clear(MapBg);
             if (fieldImage is not null) { using var paint = new SKPaint { BlendMode = SKBlendMode.Screen }; canvas.DrawImage(fieldImage, 0, 0, paint); }
         }
-        Probe("panel", new(1046, 62, 1270, 66), .9, Panel);
+        Probe("panel", new(1046, 188, 1270, 192), .9, Panel);
         if (f.Movement is not null || f.FirePlan is not null)
-            Probe("status", new(1051, 91, 1053, 105), .9, Box);
+            Probe("status", new(1051, 217, 1053, 231), .9, Box);
         else
-            Probe("tag", new(1049.5f, 94, 1053, 108), .9, YellowDark);
+            Probe("tag", new(1049.5f, 220, 1053, 234), .9, YellowDark);
         ReferenceProbe("map-field", new(700, 690, 760, 700), .95, mapReference);
         var action = l.Rects["action"]; Probe("primary", new(name is "4-salvo-results" or "5-outcome" ? 1150 : 1078, action.Top + 58.5f, 1236, action.Top + 61), .9, Yellow);
         var cards = PilotCardModel.Project(f);
@@ -214,7 +217,7 @@ public sealed partial class Ep0019ViewTests
             if (f.Salvo.Damage.All(d => d.Armor == 0 || d.Unit.Side != f.Battle.PlayerSide))
                 Assert.DoesNotContain(l.Rects.Keys, key => key.StartsWith("callout:", StringComparison.Ordinal));
         }
-        if (name == "5-outcome") Probe("victory", new(1052, 128, 1060, 140), .15, Yellow);
+        if (name == "5-outcome") Probe("victory", new(1052, 254, 1060, 266), .15, Yellow);
         Save(name, b, l); File.WriteAllText(Path.Combine(Output(name), "probes.json"), JsonSerializer.Serialize(probes, new JsonSerializerOptions { WriteIndented = true }));
         Assert.True(failures.Count == 0, name + ": " + string.Join(", ", failures));
     }

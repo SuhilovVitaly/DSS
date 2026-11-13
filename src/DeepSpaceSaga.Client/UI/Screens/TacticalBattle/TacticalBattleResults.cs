@@ -50,7 +50,10 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
             bool stateChanged = original.State != unit.State;
             if (armor > 0 || hull > 0 || stateChanged) damage.Add(new(unit, armor, hull, stateChanged));
         }
-        return new(state, shots, damage.ToImmutable(), startMs) { BeforeLog = before.Log };
+        var beforeLog = before.Phase == TacticalBattlePhase.Move
+            ? before.Log.AddRange(state.Log.Skip(before.Log.Length).TakeWhile(entry => entry.Phase == TacticalBattlePhase.Move))
+            : before.Log;
+        return new(state, shots, damage.ToImmutable(), startMs) { BeforeLog = beforeLog };
     }
 
     internal ImmutableArray<TacticalBattleLogEvent> BeforeLog { get; init; } = [];

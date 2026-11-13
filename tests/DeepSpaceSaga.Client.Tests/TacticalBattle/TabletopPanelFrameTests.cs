@@ -81,7 +81,7 @@ public sealed class TabletopPanelFrameTests
     [Theory]
     [InlineData("classic", "#22E3F0", "#A98BF5")]
     [InlineData("tabletop", "#5C9440", "#5A7CA8")]
-    public async Task Build_card_uses_hull_armor_and_name_roles(string id, string hullHex, string armorHex)
+    public async Task Hover_card_uses_hull_armor_and_name_roles(string id, string hullHex, string armorHex)
     {
         await using var scene = await Ep0019Scenes.Create("1-move-no-hover");
         using var catalog = TacticalBattleSkinCatalog.Load(Path.Combine(AppContext.BaseDirectory, "Skins"));
@@ -89,15 +89,12 @@ public sealed class TabletopPanelFrameTests
         using var bitmap = new SKBitmap(1920, 1080); using var canvas = new SKCanvas(bitmap);
         try
         {
+            screen.HoverUnitId = "Вера";
             screen.Render(canvas, 1920, 1080);
-            var build = screen.Layout.Rects["build"];
+            var build = screen.Layout.Rects["hover"];
             Assert.Equal(SKColor.Parse(hullHex), bitmap.GetPixel((int)((build.Left + 150) * 1.5f), (int)((build.Top + 53.5f) * 1.5f)));
             Assert.Equal(SKColor.Parse(armorHex), bitmap.GetPixel((int)((build.Left + 150) * 1.5f), (int)((build.Top + 72.5f) * 1.5f)));
-            var unit = screen.Movement.SelectedOrder!.Unit;
-            var nameColor = id == "tabletop" ? SKColor.Parse("#E4ECF4") : BattleDesign.Cyan;
-            Assert.Contains(screen.Layout.Texts, t => t.Text == PilotCardModel.Name(unit) && t.Color == nameColor);
-            var armor = screen.Layout.Rects["build:Armor:0"];
-            Assert.Equal(SKColor.Parse(armorHex), bitmap.GetPixel((int)((armor.Left + 2.5f) * 1.5f), (int)((armor.Top + 10) * 1.5f)));
+            Assert.Contains(screen.Layout.Texts, t => t.Text == "Вера");
         }
         finally { screen.OnDeactivated(); }
     }

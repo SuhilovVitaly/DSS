@@ -16,8 +16,9 @@ public sealed class PhasePanelTests
     {
 
         await using var s = await Ep0019Scenes.Create(name); using var locale = Localization.UseLocaleForTests("Russian"); using var b = s.Render();
-        Assert.Equal(bottom, s.Screen.Layout.Rects["phase"].Bottom);
+        var phase = s.Screen.Layout.Rects["phase"];
+        Assert.Equal(bottom + 126, phase.Bottom);
         Assert.Contains(s.Screen.Layout.Texts, t => t.Text.StartsWith("ХОД ", StringComparison.Ordinal));
-        Assert.True(RasterProbe.Fraction(b, new(1046, 62, 1270, 66), BattleDesign.Panel) >= .9);
+        Assert.True(RasterProbe.Fraction(b, new(1046, phase.Top + 56, 1270, phase.Top + 60), BattleDesign.Panel) >= .9);
     }
 }

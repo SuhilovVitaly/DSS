@@ -37,7 +37,7 @@ internal static partial class TacticalBattleMapRenderer
         return new((float)PyMath.Clamp(p.X, safe.Left, safe.Right), (float)PyMath.Clamp(p.Y, safe.Top, safe.Bottom));
     }
     internal static void Draw(SKCanvas c, TacticalBattleFrame f, InteractiveAnomalyField? interactiveField = null, float? pilotColumnBottom = null,
-        PaintedCloudLayer? paintedClouds = null, GRContext? context = null, SKRect? pilotPanel = null)
+        PaintedCloudLayer? paintedClouds = null, GRContext? context = null, SKRect? pilotPanel = null, SKRect? minimap = null)
     {
         var v = f.View; var units = VisibleUnits(f).Where(u => u.State != TacticalUnitState.Destroyed).ToArray();
         var fieldBounds = SKRect.Create(v.PixelWidth, v.PixelHeight);
@@ -105,7 +105,8 @@ internal static partial class TacticalBattleMapRenderer
             f.Battle.Units.Count(u => u.Kind == TacticalUnitKind.Drone && u.Side == f.Battle.PlayerSide), Skin.SlimPilots);
         if (columnBottom > 0) occupied.Add(new(0, 0, 202, columnBottom));
         if (pilotPanel is { IsEmpty: false } panelBounds) occupied.Add(panelBounds);
-        occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, f.Panel.Bottom + (HoverCard.Build(f) is not null ? 306 : f.HoverUnitId is null && AnomalyPresentation.HoverKind(f) is null ? 6 : 116)));
+        if (minimap is { IsEmpty: false } minimapBounds) occupied.Add(minimapBounds);
+        occupied.Add(new(v.PixelWidth - 246, 0, v.PixelWidth, 720));
         occupied.Add(new(10, 686, 18 + len, 714));
         occupied.AddRange([new(0, 0, v.PixelWidth, 2), new(0, 718, v.PixelWidth, 720), new(0, 0, 2, 720), new(v.PixelWidth - 2, 0, v.PixelWidth, 720)]);
         var wrecks = f.Battle.Units.Where(u => u.State == TacticalUnitState.Destroyed).ToArray();
@@ -277,7 +278,8 @@ internal static partial class TacticalBattleMapRenderer
             IsAntialias = true,
             Style = SKPaintStyle.Stroke,
             Color = Text.WithAlpha(95),
-            StrokeWidth = .85f,
+            StrokeWidth = frame.Battle.Phase == TacticalBattlePhase.Move && frame.Salvo is null
+                ? .85f * MovementStrokeScale(frame.View) : .85f,
             StrokeCap = SKStrokeCap.Round,
             StrokeJoin = SKStrokeJoin.Round,
             PathEffect = dots

@@ -80,6 +80,17 @@ public sealed class JournalEventsTests
             frame = response.State!;
             Assert.Equal(before.Log.AsEnumerable(), frame.Log.Take(before.Log.Length));
             Assert.Equal(response.NewEvents.AsEnumerable(), frame.Log.Skip(before.Log.Length));
+            if (before.Phase == TacticalBattlePhase.Move)
+            {
+                var moves = response.NewEvents.Take(frame.Paths.Length).ToArray();
+                Assert.Equal(frame.Paths.Select(path => (path.Turn, path.DroneId)),
+                    moves.Select(entry => (entry.Turn, entry.ActorId!)));
+                Assert.All(moves, entry =>
+                {
+                    Assert.Equal(TacticalBattleLogKind.Moved, entry.Kind);
+                    Assert.Equal(TacticalBattlePhase.Move, entry.Phase);
+                });
+            }
             if (frame.Shots.IsEmpty) continue;
 
             var fired = response.NewEvents.Where(e => e.Shot is not null).ToArray();

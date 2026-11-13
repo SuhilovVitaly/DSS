@@ -7,7 +7,7 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 internal sealed partial class PhasePanel
 {
     private TacticalBattleFrame _frame = null!;
-    private float _offset, _db;
+    private float _offset, _topOffset, _db;
     private readonly Dictionary<string, SKRect> _buttons = [];
     internal SKRect Bounds { get; private set; }
     internal SKRect Action { get; private set; }
@@ -16,16 +16,16 @@ internal sealed partial class PhasePanel
         salvo is { InFlight: true } ? 382 : salvo is not null ? 366 :
         phase == TacticalBattlePhase.Over ? 358 : 152;
 
-    private SKRect R(float x0, float y0, float x1, float y1) => new(x0 + _offset, y0, x1 + _offset, y1);
+    private SKRect R(float x0, float y0, float x1, float y1) => new(x0 + _offset, y0 + _topOffset, x1 + _offset, y1 + _topOffset);
     internal SKRect ButtonBounds(string key) => _buttons.GetValueOrDefault(key);
     internal string? HitButton(SKPoint point) => _frame is null || _frame.Pending ? null : _buttons.FirstOrDefault(b => b.Value.Contains(point)).Key;
     internal void Draw(SKCanvas c, TacticalBattleFrame f, BattleLayout layout)
     {
-        _frame = f; _offset = f.Panel.Right - 1274; _buttons.Clear();
+        _frame = f; _offset = f.Panel.Right - 1274; _topOffset = f.Panel.Top - 6; _buttons.Clear();
         _db = Bottom(f.Battle.Phase, f.Salvo) - 120;
         Bounds = R(1040, 6, 1274, _db + 120); Action = R(1040, _db + 28, 1274, _db + 120);
         layout.Rects["phase"] = Bounds; layout.Rects["action"] = Action; layout.Rects["details"] = R(1048, 68, 1266, _db + 24);
-        c.Save(); c.Translate(_offset, 0);
+        c.Save(); c.Translate(_offset, _topOffset);
         try
         {
             PanelBox(c, new(1040, 6, 1274, _db + 120));

@@ -12,6 +12,7 @@ public static class BattleLogFormatter
         string body = entry.Kind switch
         {
             TacticalBattleLogKind.Started => L("Log.Started"),
+            TacticalBattleLogKind.Moved => F("Log.Moved", actor),
             TacticalBattleLogKind.RoleChanged when entry.NoAttackers => F("Log.NoAttackers", actor),
             TacticalBattleLogKind.RoleChanged => F("Log.Role", actor, entry.RoleName ?? entry.RoleId ?? ""),
             TacticalBattleLogKind.FighterBreak => F("Log.FighterBreak", actor),

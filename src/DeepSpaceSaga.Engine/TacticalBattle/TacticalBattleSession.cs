@@ -90,6 +90,8 @@ internal sealed class TacticalBattleSession
         Battle.Movement(); // current Motion limits clamp all orders, including untouched AI suggestions
         _paths = Battle.LastMovement.Select(m => new TacticalMovementPath(Battle.Turn, m.DroneId,
             m.Path.Select(TacticalBattleSnapshotBuilder.Pose).ToImmutableArray())).ToImmutableArray();
+        foreach (var path in _paths)
+            Add(TacticalBattleLogKind.Moved, TacticalBattlePhase.Move, actor: path.DroneId);
         if (Battle.Result is not null) AddOutcome(TacticalBattlePhase.Move);
         else if (!Battle.ActiveDrones(PlayerSide).Any(d => !TacticalBattleSalvo.Candidates(Battle, d).IsEmpty)
             && !Battle.ActiveDrones(Battle.EnemySide(PlayerSide)).Any(d =>

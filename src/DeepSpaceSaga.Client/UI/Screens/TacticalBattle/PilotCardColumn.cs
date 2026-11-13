@@ -232,8 +232,8 @@ internal sealed class PilotCardColumn
         c.DrawRect(portrait, edge);
         SmallText(c, card.Name, r.Left + 41, r.Top + 14, 9.8f, Skin.Color("ui.text", "text", Text), true);
         var damage = _frame?.Salvo is { InFlight: false } salvo ? salvo.Damage.FirstOrDefault(d => d.Unit.Id == card.UnitId) : null;
-        Counter("armor", r.Left + 41, SKColor.Parse("#3A5A8A"), damage?.Armor > 0);
-        Counter("hull", r.Left + 65, SKColor.Parse("#3F6A2C"), damage?.Hull > 0);
+        DrawHealth("hull", r.Top + 17, Cyan, damage?.Hull > 0);
+        DrawHealth("armor", r.Top + 26, Purple, damage?.Armor > 0);
         DrawWeapon(c, card, r.Left + 41, r.Top + 38, 5.6f, 106, SKColor.Parse("#9AAABB"), italic: true);
         if (unit is not null)
         {
@@ -249,17 +249,24 @@ internal sealed class PilotCardColumn
             var selection = r; selection.Inflate(2.2f, 2.2f);
             edge.Color = gold; edge.StrokeWidth = 2; c.DrawRect(selection, edge);
         }
-        void Counter(string kind, float x, SKColor color, bool damaged)
+        void DrawHealth(string kind, float y, SKColor color, bool damaged)
         {
-            var box = SKRect.Create(x, r.Top + 20, 24, 12);
-            using var paint = new SKPaint { IsAntialias = true, Color = destroyed ? SKColor.Parse("#555555") : color };
-            c.DrawRect(box, paint); paint.Style = SKPaintStyle.Stroke; paint.Color = SKColors.Black; paint.StrokeWidth = .8f; c.DrawRect(box, paint);
-            string value = card.Stats.FirstOrDefault(s => s.Kind == kind)?.Value.Split('/')[0] ?? "—";
-            SmallText(c, value, box.MidX, box.Top + box.Height * .74f, 7.4f, SKColors.White, true, align: SKTextAlign.Center);
-            if (Recording is { } record) record.Rects[$"pilot-{kind}:{card.UnitId}"] = box;
+            const float width = 57, height = 5;
+            var box = SKRect.Create(r.Left + 53, y, width, height);
+            string role = "ui.bar." + kind;
+            double fraction = Math.Clamp(card.Stats.FirstOrDefault(s => s.Kind == kind)?.Fill ?? 0, 0, 1);
+            var icon = new SKPoint(r.Left + 46, box.MidY);
+            PilotCardIcons.StatIcon(c, kind, icon, destroyed ? Muted : Skin.Color(role, "fill", color));
+            Bar(c, box.Left, box.Top, width, height, fraction, color, role);
+            if (Recording is { } layout)
+            {
+                layout.Rects[$"pilot-{kind}:{card.UnitId}"] = box;
+                layout.Rects[$"pilot-{kind}-fill:{card.UnitId}"] = SKRect.Create(box.Left, box.Top, (float)fraction * width, height);
+            }
             if (!damaged) return;
             var border = box; border.Inflate(1, 1);
-            paint.Color = SKColor.Parse("#FFE27A"); paint.StrokeWidth = 1.4f; c.DrawRect(border, paint);
+            using var paint = new SKPaint { IsAntialias = true, Style = SKPaintStyle.Stroke, Color = SKColor.Parse("#FFE27A"), StrokeWidth = 1.4f };
+            c.DrawRect(border, paint);
             if (Recording is { } damageRecord) damageRecord.Rects[$"pilot-damage-{kind}:{card.UnitId}"] = border;
         }
     }

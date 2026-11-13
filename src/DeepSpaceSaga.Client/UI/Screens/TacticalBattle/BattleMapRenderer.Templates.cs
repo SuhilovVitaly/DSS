@@ -30,10 +30,11 @@ internal static partial class TacticalBattleMapRenderer
             bool selected = row.Unit.Id == movement.Selected;
             var points = row.Path.Select(f.View.Project).ToArray();
             using var path = new SKPath(); path.AddPoly(points, false);
-            float pathWidth = selected ? 14.5f : 6;
-            paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(selected ? (byte)230 : (byte)45); paint.StrokeWidth = pathWidth + 2.5f; c.DrawPath(path, paint);
+            float strokeScale = MovementStrokeScale(f.View);
+            float pathWidth = (selected ? 14.5f : 6) * strokeScale;
+            paint.PathEffect = null; paint.Color = TTEdge.WithAlpha(selected ? (byte)230 : (byte)45); paint.StrokeWidth = pathWidth + 2.5f * strokeScale; c.DrawPath(path, paint);
             paint.Color = selected ? TTSelected : TTCard.WithAlpha(55); paint.StrokeWidth = pathWidth; c.DrawPath(path, paint);
-            paint.Color = TTEdge.WithAlpha(selected ? (byte)200 : (byte)50); paint.StrokeWidth = 1.1f; paint.PathEffect = centerDash; c.DrawPath(path, paint);
+            paint.Color = TTEdge.WithAlpha(selected ? (byte)200 : (byte)50); paint.StrokeWidth = 1.1f * strokeScale; paint.PathEffect = centerDash; c.DrawPath(path, paint);
             for (int i = 0; i < points.Length; i += 2) occupied.Add(SKRect.Create(points[i].X - pathWidth / 2, points[i].Y - pathWidth / 2, pathWidth, pathWidth));
             var mid = points[points.Length / 2];
             Circle(c, mid, 9, TTBadge, TTGold, 1.4f);

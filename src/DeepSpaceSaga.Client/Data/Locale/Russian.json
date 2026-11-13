@@ -99,6 +99,8 @@
   "TacticalBattle.Sides.Engine": "{0}: {1}",
   "TacticalBattle.Log.Line": "Ход {0} · {1}: {2}",
   "TacticalBattle.Log.FirePhase": "Стрельба",
+  "TacticalBattle.Log.Title": "Журнал боя",
+  "TacticalBattle.Log.Moved": "{0}: перемещение завершено.",
   "TacticalBattle.Log.Started": "Бой начался.",
   "TacticalBattle.Log.NoAttackers": "{0}: теперь истребитель (атаковать больше некому).",
   "TacticalBattle.Log.Role": "{0}: теперь {1}.",

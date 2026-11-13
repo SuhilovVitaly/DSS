@@ -8,14 +8,13 @@ internal sealed record AnomalyHoverCard(string Heading, string Name, SKColor Ton
 
 internal sealed class HoverCard
 {
-    private const int ReportVisibleRows = 10;
+    private const int ReportVisibleRows = 5;
     private SKRect _reportBounds;
     private (string BattleId, int Turn)? _reportKey;
     private int _reportFirst, _reportCount;
     internal static AnomalyHoverCard? Anomaly(TacticalBattleFrame frame) => AnomalyPresentation.HoverKind(frame) is { } kind
         ? new(M("Anomaly.Hover"), M("Anomaly." + kind), kind == TacticalAnomalyKindCode.Heat ? Heat : Dust,
             M("Anomaly." + kind + "Lines").Split(" / ", StringSplitOptions.None)) : null;
-    internal static BuildCardModel? Build(TacticalBattleFrame frame) => BuildCardModel.From(frame);
     public SKRect Bounds { get; private set; }
     internal bool ScrollResults(SKPoint point, float delta)
     {
@@ -28,8 +27,6 @@ internal sealed class HoverCard
     {
         Bounds = SKRect.Empty;
         _reportBounds = SKRect.Empty;
-        if (Build(f) is { } build)
-        { Bounds = BuildCard.Bounds(f); BuildCard.Draw(c, build, Bounds, portraits); return; }
         var unit = f.Battle.Units.FirstOrDefault(u => u.Id == f.HoverUnitId);
         if (f.Salvo is { InFlight: false } salvo &&
             unit is not { Kind: TacticalUnitKind.Drone, State: not TacticalUnitState.Destroyed })

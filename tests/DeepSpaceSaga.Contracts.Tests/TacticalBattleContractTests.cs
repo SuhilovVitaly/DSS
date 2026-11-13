@@ -222,7 +222,9 @@ public sealed class TacticalBattleContractTests
         Assert.Equal(TacticalBattleLogKind.DamageApplied, entry.Kind);
         Assert.Null(entry.SkipReason);
         Assert.Null(entry.FireStepIndex);
-        Assert.Equal(Enumerable.Range(0, 17), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
+        Assert.Equal(Enumerable.Range(0, 18), Enum.GetValues<TacticalBattleLogKind>().Select(e => (int)e));
+        var moved = new TacticalBattleLogEvent(1, 2, TacticalBattlePhase.Move, TacticalBattleLogKind.Moved, "drone");
+        Assert.Equal(moved, RoundTrip(moved));
         var node = System.Text.Json.Nodes.JsonNode.Parse(JsonSerializer.Serialize(Frame()))!.AsObject();
         node.Remove("FireQueue"); node.Remove("FireSteps");
         var legacy = JsonSerializer.Deserialize<TacticalBattleSnapshot>(node.ToJsonString())!;

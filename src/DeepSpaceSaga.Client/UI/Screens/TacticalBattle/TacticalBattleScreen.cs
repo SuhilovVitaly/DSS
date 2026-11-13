@@ -115,7 +115,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
             _lastSelectedDroneId = state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Selected : _orders.Selected;
         }
         var firePlan = planning && state.Phase == TacticalBattlePhase.Fire ? _fireOrders.Capture() : null;
-        _panel = new(_viewport.Wd - 240, 6, _viewport.Wd - 6, PhasePanel.Bottom(state.Phase, salvo));
+        _panel = new(_viewport.Wd - 240, TacticalBattleMinimap.PhaseTop, _viewport.Wd - 6,
+            PhasePanel.Bottom(state.Phase, salvo) + TacticalBattleMinimap.PhaseTop - 6);
         return new(state, _camera.View, _panel, 1, moving || Flow.Pending || presentation.Accepted.Revision != Flow.State?.Revision,
             BlockedNotice is { Length: > 0 } notice ? notice : moving ? L("AnimatingMovement") : Flow.Error,
             Presentation: salvo is null ? TacticalBattlePresentation.Current :
@@ -153,6 +154,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     {
         using var skin = TacticalBattleSkinRenderScope.Enter(_skin);
         if (CaptureFrame(width, height) is not { } frame) { base.Render(canvas, width, height); return; }
+        _minimap = TacticalBattleMinimap.Bounds(frame);
         _pilotColumn.Arrange(frame, PilotCardModel.Project(frame, _portraits));
         if (_lastPointer is { } pointer)
         {
@@ -167,7 +169,8 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         {
             canvas.Scale(_viewport.S);
             var clouds = TacticalBattleSkinRenderScope.Tabletop ? _paintedClouds ??= new() : null;
-            TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context, _pilotColumn.Layout.VisiblePanel);
+            TacticalBattleMapRenderer.Draw(canvas, frame, interactiveField, _pilotColumn.Bounds.Bottom, clouds, context,
+                _pilotColumn.Layout.VisiblePanel, _minimap);
             DrawOverlay(canvas, frame);
         }
         finally { canvas.Restore(); BattleDesign.Recording = null; }
@@ -185,8 +188,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         if (BlockWorldKey(key, modifiers)) return ScreenEvent.None;
         if (TurnBusy) return ScreenEvent.None;
         if (key == Key.Escape && !repeat && OutcomeVisible) return ScreenEvent.CloseTacticalBattle;
-
-
+        if (!ConfirmExit && modifiers == KeyModifiers.None && _logTab.OnKeyDown(key)) return ScreenEvent.None;
         if (!ConfirmExit && HasSalvoPresentation)
         {
             if (!repeat && key is Key.Enter or Key.KeypadEnter) AdvanceSalvo();
@@ -293,8 +295,10 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseDown(float x, float y, MouseButton button)
     {
         if (ConfirmExit) return base.OnMouseDown(x, y, button);
-        if (TurnBusy) return ScreenEvent.None;
         var p = DesignPoint(x, y);
+        if (_logTab.OnMouseDown(p.X, p.Y, button)) return ScreenEvent.None;
+        if (button == MouseButton.Left) _logTab.ResetInput();
+        if (TurnBusy) return ScreenEvent.None;
         if (OverlayHit(p)) return OverlayClick(p, button);
         if (button == MouseButton.Right) { _camera.BeginPan(p.X, p.Y); return ScreenEvent.None; }
         if (button != MouseButton.Left || HasSalvoPresentation) return ScreenEvent.None;
@@ -320,6 +324,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
         _lastPointer = p;
         if (ConfirmExit) return base.OnMouseMove(x, y);
         if (_camera.PanTo(p.X, p.Y)) return true;
+        if (_logTab.Panel.IsDragging) return _logTab.OnMouseMove(p.X, p.Y);
         if (TurnBusy) return false;
         if (OverlayDrag(p)) return true;
         if (_orderDrag) { if (p != _lastAim) AimOrder(p); return true; }
@@ -328,6 +333,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     }
     public override void OnMouseUp(float x, float y, MouseButton button)
     {
+        _logTab.OnMouseUp(button);
         if (button == MouseButton.Right) _camera.EndPan();
         if (button != MouseButton.Left) return;
         EndOverlayDrag();
@@ -338,6 +344,7 @@ public sealed partial class TacticalBattleScreen : TacticalBattleModalScreen
     public override ScreenEvent OnMouseWheel(float x, float y, float delta)
     {
         var p = DesignPoint(x, y);
+        if (!ConfirmExit && _logTab.OnMouseWheel(p.X, p.Y, delta)) return ScreenEvent.None;
         if (!ConfirmExit && !TurnBusy && !HasSalvoPresentation && _pilotColumn.ScrollTargets(SelectedPlanningDrone, p, delta))
             return ScreenEvent.None;
         if (!ConfirmExit && (_pilotColumn.Scroll(p, delta) || _phasePanel.ScrollQueue(p, delta) || _hoverCard.ScrollResults(p, delta))) return ScreenEvent.None;

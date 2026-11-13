@@ -15,8 +15,10 @@ public sealed class PhaseOutcomeTests
         {
             using var b = s.Render();
             foreach (string text in new[] { "ПОБЕДА", "носитель Логово уничтожен", "21", "40", "20", "свои 1 · враг 5" }) Assert.Contains(s.Screen.Layout.Texts, t => t.Text == text);
-            Assert.Equal(ScreenEvent.NewTacticalBattle, s.Screen.OnMouseDown(1080 * 1.5f, 337 * 1.5f, MouseButton.Left));
-            Assert.Equal(ScreenEvent.CloseTacticalBattle, s.Screen.OnMouseDown(1200 * 1.5f, 337 * 1.5f, MouseButton.Left));
+            var start = s.Screen.Layout.Rects["button:new"];
+            var exit = s.Screen.Layout.Rects["button:primary"];
+            Assert.Equal(ScreenEvent.NewTacticalBattle, s.Screen.OnMouseDown(start.MidX * 1.5f, start.MidY * 1.5f, MouseButton.Left));
+            Assert.Equal(ScreenEvent.CloseTacticalBattle, s.Screen.OnMouseDown(exit.MidX * 1.5f, exit.MidY * 1.5f, MouseButton.Left));
         }
         await s.Fixture.Route(ScreenEvent.CloseTacticalBattle);
         Assert.Same(s.Fixture.Game, s.Fixture.Screens.Current);

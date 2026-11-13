@@ -31,7 +31,7 @@ public sealed partial class HoverCardTests
 
     [Theory]
     [InlineData("Таг-6", "ПОД КУРСОРОМ · ПРОТИВНИК", "Обрез I · 40–50 · дальн. 110 · иниц. 41")]
-    [InlineData("Олег", "ПОД КУРСОРОМ · СБОРКА", "Рама «Лёгкий»")]
+    [InlineData("Олег", "ПОД КУРСОРОМ · ПИЛОТ", "Корпус 55/55")]
     public async Task Mouse_hover_changes_only_hover_projection(string id, string heading, string details)
     {
 
