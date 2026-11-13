@@ -160,6 +160,9 @@ internal static partial class TacticalBattleMapRenderer
         }
         foreach (var u in units.Where(u => u.Kind == TacticalUnitKind.Drone && HasDecoy(f, u)))
         {
+            if (Skin.Tabletop && f.Salvo is { PlaybackSkipped: false } salvo &&
+                salvo.Flights.Any(flight => flight.DecoyTriggered && flight.Shot.TargetId == u.Id))
+                continue;
             var p = v.Project(u.Pose);
             DecoyMark(c, p, u.Pose.Course);
             var q = DecoyPoint(p, u.Pose.Course);

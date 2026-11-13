@@ -23,6 +23,7 @@ implementation_status: implemented
 - [AC5. Маршруты остальных дронов](./EP-maintenance-US-0015-TK-0005-dim-unselected-paths/EP-maintenance-US-0015-TK-0005-dim-unselected-paths.md). В фазе планирования движения линии невыбранных дронов тоньше и прозрачнее и заканчиваются стрелкой по курсу.
 - [AC6. Попадание в корму](./EP-maintenance-US-0015-TK-0006-explain-rear-hits/EP-maintenance-US-0015-TK-0006-explain-rear-hits.md). Результат кормового попадания отмечает обход брони. Прямое попадание и кормовое добивание используют существующие боевые правила.
 - [AC7. Общий спрайт обломков](./EP-maintenance-US-0015-TK-0007-draw-drone-wrecks/EP-maintenance-US-0015-TK-0007-draw-drone-wrecks.md). На поле уничтоженные дроны обеих сторон используют один серый спрайт и серое имя без показателей брони и корпуса.
+- [AC8. Анимация ложной цели](./EP-maintenance-US-0015-TK-0008-animate-decoy-interception/EP-maintenance-US-0015-TK-0008-animate-decoy-interception.md). В Tabletop ловушка отлетает от дрона во время залпа. При промахе после её срабатывания торпеда попадает в ложную цель сбоку от дрона.
 
 ## Проверки
 

@@ -122,6 +122,51 @@ public sealed class TabletopSalvoTests
     }
 
     [Fact]
+    public async Task Enemy_decoy_leaves_drone_and_intercepts_torpedo_off_axis()
+    {
+        using var profile = new TabletopTestProfile();
+        await using var scene = await Ep0019Scenes.Create("2-fire", withoutAnomalies: true, settingsPath: profile.SettingsPath);
+        scene.Fixture.ManualAnimation = true;
+        await scene.Fixture.Route(ScreenEvent.FireTacticalBattle);
+        var frame = scene.Frame;
+        var actual = scene.Screen.Flow.State!;
+        var shot = actual.Shots.First(s => s.Decoyed && !s.Hit && !s.Absorbed &&
+            actual.Units.Single(u => u.Id == s.TargetId).Side != actual.PlayerSide);
+        var flight = frame.Salvo!.Flights.Single(f => f.Shot.ShooterId == shot.ShooterId);
+        Assert.False(flight.Shot.Decoyed);
+        Assert.True(flight.InterceptedByDecoy);
+
+        BattleLayout At(double progress, bool hit = false, bool absorbed = false, bool skipped = false, string? evidence = null) => Draw(frame with
+        {
+            Salvo = frame.Salvo with
+            {
+                InFlight = progress < 1 && !skipped,
+                Flights = [flight with
+                {
+                    ElapsedMs = flight.LaunchMs + flight.DurationMs * progress,
+                    Shot = flight.Shot with { Hit = hit, Absorbed = absorbed }
+                }],
+                PlaybackSkipped = skipped
+            }
+        }, evidence);
+
+        string decoy = "decoy-flight:" + flight.Index, impact = $"explosion:{flight.Index}:boom-hit:0";
+        var target = frame.View.Project(shot.To);
+        static SKPoint Center(SKRect rect) => new(rect.MidX, rect.MidY);
+        Assert.DoesNotContain(decoy, At(.2).Rects.Keys);
+        Assert.InRange(SKPoint.Distance(target, Center(At(.46).Rects[decoy])), 0, 5);
+        var late = At(.99, evidence: "decoy-approach");
+        Assert.True(SKPoint.Distance(target, Center(late.Rects[decoy])) > 30 * frame.View.UnitScale);
+        Assert.InRange(SKPoint.Distance(Center(late.Rects[decoy]), Center(late.Rects["projectile"])), 0, 12);
+        var landed = At(1.001, evidence: "decoy-impact");
+        Assert.DoesNotContain(decoy, landed.Rects.Keys);
+        Assert.InRange(SKPoint.Distance(Center(late.Rects[decoy]), Center(landed.Rects[impact])), 0, 2);
+        Assert.InRange(SKPoint.Distance(target, Center(At(1.001, hit: true).Rects[impact])), 0, 1);
+        Assert.DoesNotContain(impact, At(1.001, absorbed: true).Rects.Keys);
+        Assert.DoesNotContain(impact, At(1.001, skipped: true).Rects.Keys);
+    }
+
+    [Fact]
     public async Task Floating_damage_rises_after_impact_without_revealing_the_shot_line()
     {
         await using var scene = await Ep0019Scenes.Create("3-salvo-flight");

@@ -8,6 +8,8 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 public sealed record TacticalShotFlight(TacticalShotSnapshot Shot, int Index, double LaunchMs, double ElapsedMs)
 {
     public double DurationMs { get; init; } = TacticalBattleResults.FlightMs;
+    internal bool DecoyTriggered { get; init; }
+    internal bool InterceptedByDecoy => DecoyTriggered && !Shot.Hit && !Shot.Absorbed;
     internal double ImpactAgeMs => ElapsedMs - (LaunchMs + DurationMs);
     public bool Arrived => ImpactAgeMs >= 0;
     public bool Flying => ElapsedMs >= LaunchMs && !Arrived;
@@ -136,7 +138,7 @@ internal sealed record TacticalBattleResults(TacticalBattleSnapshot Battle, Immu
     {
         double elapsed = Skipped ? EndMs + FlashMs : nowMs - StartedMs;
         var flights = Shots.Select((shot, i) => new TacticalShotFlight(InFlight(nowMs) ? DisplayShot(shot) : shot, i, InitialDelayMs + i * DurationMs, elapsed)
-        { DurationMs = DurationMs }).ToImmutableArray();
+        { DurationMs = DurationMs, DecoyTriggered = Tabletop && shot.Decoyed }).ToImmutableArray();
         var projection = Project(nowMs);
         var damage = ImmutableArray.CreateBuilder<TacticalSalvoDamage>();
         foreach (var unit in projection.Units)
