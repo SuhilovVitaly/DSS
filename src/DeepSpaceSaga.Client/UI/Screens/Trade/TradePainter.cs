@@ -10,17 +10,16 @@ internal sealed class TradePainter(SKCanvas canvas) : IDisposable
     // The menu's display fonts do not cover every UI arrow; use a body font with Cyrillic and symbol coverage.
     private static readonly SKTypeface Regular = SKTypeface.FromFamilyName("Segoe UI", SKFontStyle.Normal) ?? MenuStyle.TypefaceRegular;
     private static readonly SKTypeface Bold = SKTypeface.FromFamilyName("Segoe UI", SKFontStyle.Bold) ?? MenuStyle.TypefaceBold;
-    internal static readonly SKColor Background = new(9, 18, 27), Surface = new(13, 28, 40), Border = new(43, 68, 86),
-        TextColor = new(230, 239, 245), Muted = new(147, 173, 190), Cyan = new(50, 198, 224), Amber = new(245, 177, 65),
-        Green = new(119, 208, 160), Red = new(242, 146, 134), Selected = new(17, 56, 73);
-    private readonly SKPaint _fill = new() { IsAntialias = true };
+    internal static readonly SKColor Background = TabletopStyle.Background, Surface = TabletopStyle.Inset,
+        Border = TabletopStyle.Edge, TextColor = TabletopStyle.Ink, Muted = TabletopStyle.Secondary,
+        Accent = TabletopStyle.Gold, Amber = TabletopStyle.Gold, Green = TabletopStyle.Success,
+        Red = TabletopStyle.Danger, Selected = TabletopStyle.Steel;
     private readonly SKPaint _line = new() { IsAntialias = true, Style = SKPaintStyle.Stroke, StrokeWidth = 1 };
     private readonly SKPaint _text = new() { IsAntialias = true, Typeface = MenuStyle.TypefaceRegular };
-    internal void Box(SKRect rect, SKColor? color = null, SKColor? border = null, float radius = 6)
-    {
-        _fill.Color = color ?? Surface; canvas.DrawRoundRect(rect, radius, radius, _fill);
-        if (border is { } edge) { _line.Color = edge; canvas.DrawRoundRect(rect, radius, radius, _line); }
-    }
+    internal void Box(SKRect rect, SKColor? color = null, SKColor? border = null) =>
+        TabletopStyle.Draw(canvas, rect, color ?? Surface,
+            recessed: color is null, highlighted: border is not null && border != Border);
+
     internal void Line(float x, float y, float right, SKColor? color = null)
     { _line.Color = color ?? Border; canvas.DrawLine(x, y, right, y, _line); }
     internal void Text(string text, SKRect rect, float size = 17, SKColor? color = null, bool bold = false, SKTextAlign align = SKTextAlign.Left)
@@ -57,11 +56,11 @@ internal sealed class TradePainter(SKCanvas canvas) : IDisposable
     }
     internal void Button(SKRect rect, string text, bool hovered = false, bool active = false, bool enabled = true, bool primary = false, float size = 16)
     {
-        var color = !enabled ? Surface : primary ? Amber : active ? Selected : hovered ? new SKColor(28, 51, 66) : Surface;
-        Box(rect, color, enabled && (hovered || active || primary) ? primary ? Amber : Cyan : Border);
+        var state = !enabled ? ButtonState.Disabled : hovered ? ButtonState.Hovered : ButtonState.Normal;
+        TabletopStyle.Button(canvas, rect, state, primary || active);
         float padding = rect.Width < 70 ? 4 : 10;
         Text(text, new(rect.Left + padding, rect.Top, rect.Right - padding, rect.Bottom), size,
-            !enabled ? Muted : primary ? Background : active ? Cyan : TextColor, primary, SKTextAlign.Center);
+            TabletopStyle.ButtonInk(state, primary || active), primary, SKTextAlign.Center);
     }
     internal void Chevron(float x, float y)
     {
@@ -71,12 +70,12 @@ internal sealed class TradePainter(SKCanvas canvas) : IDisposable
     }
     internal void Bar(SKRect rect, double before, double after)
     {
-        Box(rect, Border, radius: 3);
+        Box(rect, Border);
         float first = rect.Left + rect.Width * (float)Math.Clamp(before, 0, 1);
         float last = rect.Left + rect.Width * (float)Math.Clamp(after, 0, 1);
-        if (first > rect.Left) Box(new(rect.Left, rect.Top, first, rect.Bottom), Cyan, radius: 3);
-        if (last > first) Box(new(first, rect.Top, last, rect.Bottom), Green, radius: 2);
-        if (last < first) Box(new(last, rect.Top, first, rect.Bottom), Amber.WithAlpha(180), radius: 2);
+        if (first > rect.Left) Box(new(rect.Left, rect.Top, first, rect.Bottom), Accent);
+        if (last > first) Box(new(first, rect.Top, last, rect.Bottom), Green);
+        if (last < first) Box(new(last, rect.Top, first, rect.Bottom), Amber.WithAlpha(180));
     }
     internal void Icon(string itemId, SKRect rect)
     {
@@ -86,5 +85,5 @@ internal sealed class TradePainter(SKCanvas canvas) : IDisposable
         float scale = Math.Min(rect.Width / bitmap.Width, rect.Height / bitmap.Height);
         canvas.DrawBitmap(bitmap, SKRect.Create(rect.MidX - bitmap.Width * scale / 2, rect.MidY - bitmap.Height * scale / 2, bitmap.Width * scale, bitmap.Height * scale));
     }
-    public void Dispose() { _fill.Dispose(); _line.Dispose(); _text.Dispose(); }
+    public void Dispose() { _line.Dispose(); _text.Dispose(); }
 }

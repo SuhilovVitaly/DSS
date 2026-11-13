@@ -156,12 +156,12 @@ public static class StationToolbar
 
     private const string SeparatorText = ">>";
 
-    public static readonly SKColor ColorBackground = new(0x5e, 0x5e, 0x5e);
-    public static readonly SKColor ColorBorder = new(0x99, 0x99, 0x99);
+    public static readonly SKColor ColorBackground = TabletopStyle.Steel;
+    public static readonly SKColor ColorBorder = TabletopStyle.Edge;
 
     /// <summary>Station-name color on the Station hub itself — the current, active location.
     /// Also the color of the breadcrumb window-name segment on every other station window.</summary>
-    public static readonly SKColor ColorNameActive = new(0xe9, 0x9e, 0x58);
+    public static readonly SKColor ColorNameActive = TabletopStyle.Gold;
 
     /// <summary>Station-name color everywhere else — a clickable link back to the hub.</summary>
     public static readonly SKColor ColorNameLink = new(0xff, 0xff, 0xff);
@@ -229,7 +229,7 @@ public static class StationToolbar
     private static readonly float FuelValueFieldWidth = ResourceValuePaint.MeasureText(FuelValueFieldSample);
 
     private static readonly SKPaint TooltipBackgroundPaint =
-        new() { Color = new SKColor(0x1a, 0x1a, 0x1a, 235), Style = SKPaintStyle.Fill, IsAntialias = true };
+        new() { Color = TabletopStyle.Inset.WithAlpha(235), Style = SKPaintStyle.Fill, IsAntialias = true };
 
     private static readonly SKPaint TooltipBorderPaint = new()
     {

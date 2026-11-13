@@ -3,7 +3,7 @@ epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0005-station-and-economy
 ticket: EP-0026-US-0005-TK-0001-station-trade
 title: Станция, торговля и финансы
-stage: draft
+stage: implemented
 ---
 
 # Станция, торговля и финансы
@@ -23,3 +23,13 @@ stage: draft
 ## Проверка
 
 Зафиксировать фактические проверки, review и открытые условия приёмки перед отдельным коммитом.
+
+
+## Уточнение области
+
+TradePainter, StationScreen, FinanceScreen и StationToolbar получают общие плиты, поля, состояния и семантические цвета. Растровый тест Finance проверяет новый фон в production-рендере.
+
+
+## Результат
+
+Станция, торговля, финансы, панель ресурсов и списки используют стальную палитру, золотой выбор и цвета статусов. Код котировок и проводок не менялся. Release и 211/211 целевых проверок TradeUx, FinanceScreen, StationToolbar, StationScreen и StationRoutePresentation прошли. Отчёт D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/economy-ui-20261113-140112/. git diff --check прошёл. Scoped formatter выявил существующие отступы вне изменённых участков. Сквозной нативный маршрут ведётся в US-0009.

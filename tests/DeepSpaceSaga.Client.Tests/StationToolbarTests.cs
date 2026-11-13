@@ -629,7 +629,7 @@ public class StationToolbarTests
         canvas.Flush();
 
         var interior = bitmap.GetPixel(700, 40);
-        Assert.Equal(new SKColor(0x5e, 0x5e, 0x5e), interior);
+        Assert.Equal(new SKColor(0x2C, 0x34, 0x3E), interior);
     }
 
     [Fact]
@@ -643,7 +643,7 @@ public class StationToolbarTests
         canvas.Flush();
 
         var borderPixel = bitmap.GetPixel(700, 10);
-        Assert.Equal(new SKColor(0x99, 0x99, 0x99), borderPixel);
+        Assert.Equal(new SKColor(0x05, 0x07, 0x0A), borderPixel);
     }
 
     [Fact]
@@ -695,7 +695,7 @@ public class StationToolbarTests
         canvas.Flush();
 
         Assert.True(RectContainsColor(bitmap, StationToolbar.NameLocalRect("Alpha Station"), 10, 10,
-            new SKColor(0xe9, 0x9e, 0x58)));
+            new SKColor(0xFF, 0xD2, 0x4A)));
     }
 
     [Fact]

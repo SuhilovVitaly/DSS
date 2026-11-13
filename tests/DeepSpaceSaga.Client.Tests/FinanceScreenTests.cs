@@ -27,12 +27,13 @@ public class FinanceScreenTests
     }
 
     [Fact]
-    public void Background_image_is_loaded()
+    public void Finance_shell_renders_a_steel_background()
     {
-        // Regression: the mechanics-window-background-titlebar-1400x900.png asset must
-        // resolve at the client's working directory and be registered in the .csproj
-        // with CopyToOutputDirectory, or the panel silently falls back to a plain fill.
-        Assert.True(FinanceScreen.HasLoadedBackground);
+        using var bitmap = new SKBitmap(ScreenWidth, ScreenHeight);
+        using var canvas = new SKCanvas(bitmap);
+        new FinanceScreen().Render(canvas, ScreenWidth, ScreenHeight);
+        Assert.Equal(TabletopStyle.Steel, bitmap.GetPixel(
+            (int)FinanceLayout.PanelLeft(ScreenWidth) + 8, (int)FinanceLayout.PanelTop(ScreenHeight) + 8));
     }
 
     [Fact]
