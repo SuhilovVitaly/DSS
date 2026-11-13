@@ -162,8 +162,12 @@ public sealed class HireScreen : IScreen
             fuelAmountKg: StationToolbar.ResolveFuelAmountKg(snapshot),
             fuelCapacityKg: StationToolbar.ResolveFuelCapacityKg(snapshot), gameTimeMs: snapshot?.GameTimeMs, missingRations: snapshot?.MissingRations ?? 0);
 
-        float cx = pl + HireLayout.PanelWidth / 2f;
-        canvas.DrawText(PlaceholderLine, cx, pt + HireLayout.BodyStartY, MenuStyle.TextStatus);
+        float center = pl + HireLayout.PanelWidth / 2f;
+        float top = pt + HireLayout.BodyStartY - 24;
+        var emptyState = new SKRect(center - 270, top, center + 270, top + 38);
+        TabletopStyle.Field(canvas, emptyState);
+        emptyState.Inflate(-10, 0);
+        TabletopStyle.Label(canvas, emptyState, PlaceholderLine, MenuStyle.TextStatus);
 
         // Drawn last: the tooltip hangs below the toolbar into the body area and must
         // stay on top of everything the screen drew.

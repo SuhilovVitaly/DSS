@@ -3,7 +3,7 @@ epic: EP-0026-tabletop-client-ui
 story: EP-0026-US-0006-crew-and-dialogue
 ticket: EP-0026-US-0006-TK-0001-dialogue-panels
 title: Диалоги и экипаж
-stage: draft
+stage: implemented
 ---
 
 # Диалоги и экипаж
@@ -23,3 +23,13 @@ stage: draft
 ## Проверка
 
 Зафиксировать фактические проверки, review и открытые условия приёмки перед отдельным коммитом.
+
+
+## Уточнение области
+
+DialogueScreen использует общие плиты и перенос по графемам. Hire и Contracts получают явную утопленную область пустого состояния. Композиция и привязка портретов остаются в текущем DialoguePortraitComposer.
+
+
+## Результат
+
+Диалог рисует стальную плиту, портреты в утопленных рамках, ограниченный блок реплики и читаемые причины отказа. Hire и Contracts показывают оформленные пустые состояния. Портреты берутся из действующего W4/M4 runtime. Release, 50/50 тестов Dialogue/Hire/Contracts/PortraitComposer, scoped whitespace и git diff --check прошли. Отчёт D:/DeepSpaceSaga/artifacts/validation/ep0026-tabletop-client-ui/crew-20261113-140214/. Нативная проверка и приёмка кадров остаются в US-0009.

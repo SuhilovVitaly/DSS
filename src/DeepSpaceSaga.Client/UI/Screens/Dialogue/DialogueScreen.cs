@@ -19,12 +19,6 @@ internal sealed class DialogueScreen : IScreen
     private int _width, _height, _hover = -1, _scroll;
     private SKBitmap? _speakerPortrait, _captainPortrait;
     private (string? Path, string Person)? _speakerKey, _captainKey;
-    private static readonly SKBitmap? Background = LoadBackground();
-    private static SKBitmap? LoadBackground()
-    {
-        var path = Path.Combine(AppContext.BaseDirectory, "Images/UI/mechanics-window-background-titlebar-1400x900.png");
-        return File.Exists(path) ? SKBitmap.Decode(path) : null;
-    }
     internal bool IsPending => _pendingCommandId is not null;
     internal DialogueState State => _state;
     internal string? Error => _error;
@@ -114,7 +108,7 @@ internal sealed class DialogueScreen : IScreen
         _width = width; _height = height;
         Poll();
         var panel = DialogueLayout.Panel(width, height);
-        if (Background is not null) canvas.DrawBitmap(Background, panel); else MenuStyle.DrawPanel(canvas, panel);
+        TabletopStyle.Panel(canvas, panel);
         canvas.DrawText(Localization.Get("Dialogue.Title"), panel.MidX, panel.Top + 60, MenuStyle.TextTitle);
         var captain = _buffer.Latest?.Snapshot.Objects.FirstOrDefault(o => o.ObjectId == _buffer.Latest.Snapshot.PlayerShipObjectId);
         string speakerPerson = _state.SpeakerRole == "Captain" && captain is not null ? captain.ObjectId :
@@ -136,34 +130,58 @@ internal sealed class DialogueScreen : IScreen
         DrawPortrait(canvas, DialogueLayout.Operator(width, height), _speakerPortrait, _state.SpeakerDisplayName);
         DrawPortrait(canvas, DialogueLayout.Captain(width, height), _captainPortrait, captain?.CaptainDisplayName);
         using var paint = new SKPaint { Color = MenuStyle.ColorText, TextSize = 18, Typeface = MenuStyle.TypefaceRegular, IsAntialias = true };
-        DrawWrapped(canvas, Text(_state.TextKey), new(panel.Left + 410, panel.Top + 155, panel.Left + 990, panel.Top + 435), paint);
+        var speech = new SKRect(panel.Left + 410, panel.Top + 155, panel.Left + 990, panel.Top + 435);
+        TabletopStyle.Field(canvas, speech);
+        speech.Inflate(-18, -14);
+        DrawWrapped(canvas, Text(_state.TextKey), speech, paint);
         for (int i = 0; i < DialogueLayout.VisibleChoices && i + _scroll < _state.Choices.Length; i++)
         {
             var choice = _state.Choices[i + _scroll];
             var rect = DialogueLayout.Choice(i, width, height);
             GenericButtonTypeA.Draw(canvas, rect, Text(choice.TextKey), !choice.Enabled || IsPending ? ButtonState.Disabled : _hover == i ? ButtonState.Hovered : ButtonState.Normal);
             if (choice.DisabledReasonKey is { } reason)
-                canvas.DrawText(ErrorText(reason), rect.MidX, rect.Bottom + 12, MenuStyle.TextStatus);
+            {
+                using var reasonPaint = MenuStyle.TextStatus.Clone();
+                reasonPaint.Color = TabletopStyle.Danger;
+                TabletopStyle.Label(canvas, new(rect.Left, rect.Bottom, rect.Right, rect.Bottom + 16),
+                    ErrorText(reason), reasonPaint);
+            }
         }
-        if (_error is { } error) canvas.DrawText(ErrorText(error), panel.MidX, panel.Top + 705, MenuStyle.TextStatus);
+        if (_error is { } error)
+        {
+            using var errorPaint = MenuStyle.TextStatus.Clone();
+            errorPaint.Color = TabletopStyle.Danger;
+            TabletopStyle.Label(canvas, new(speech.Left, panel.Top + 697, speech.Right, panel.Top + 722),
+                ErrorText(error), errorPaint);
+        }
         if (_state.CanAbort) GenericButtonTypeA.Draw(canvas, DialogueLayout.Cancel(width, height), Localization.Get("Dialogue.Cancel"), IsPending ? ButtonState.Disabled : ButtonState.Normal);
     }
     private static void DrawPortrait(SKCanvas canvas, SKRect rect, SKBitmap? image, string? name)
     {
-        if (image is not null) canvas.DrawBitmap(image, rect);
-        if (name is not null) canvas.DrawText(name, rect.MidX, rect.Bottom + 24, MenuStyle.TextStatus);
+        TabletopStyle.Field(canvas, rect);
+        if (image is not null)
+        {
+            var content = rect;
+            content.Inflate(-4, -4);
+            canvas.DrawBitmap(image, content);
+        }
+        if (name is not null)
+            TabletopStyle.Label(canvas, new(rect.Left, rect.Bottom + 5, rect.Right, rect.Bottom + 35),
+                name, MenuStyle.TextButton);
     }
+
     private static void DrawWrapped(SKCanvas canvas, string text, SKRect bounds, SKPaint paint)
     {
-        float y = bounds.Top + paint.TextSize;
-        string line = "";
-        foreach (string word in text.Split(' '))
+        float y = bounds.Top - paint.FontMetrics.Ascent;
+        canvas.Save();
+        canvas.ClipRect(bounds);
+        foreach (string line in ControlText.Wrap(text, bounds.Width, paint))
         {
-            string next = line.Length == 0 ? word : line + " " + word;
-            if (paint.MeasureText(next) > bounds.Width && line.Length > 0)
-            { canvas.DrawText(line, bounds.Left, y, paint); y += 27; line = word; }
-            else line = next;
+            if (y > bounds.Bottom)
+                break;
+            canvas.DrawText(line, bounds.Left, y, paint);
+            y += Math.Max(27, paint.FontSpacing);
         }
-        canvas.DrawText(line, bounds.Left, y, paint);
+        canvas.Restore();
     }
 }
