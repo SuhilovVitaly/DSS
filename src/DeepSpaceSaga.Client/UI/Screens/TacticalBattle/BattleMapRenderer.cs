@@ -161,8 +161,13 @@ internal static partial class TacticalBattleMapRenderer
                 if (u.Id == Selected(f)) Circle(c, p, (Skin.Tabletop ? 30 : 7) * v.UnitScale, SKColors.Transparent,
                     Skin.Tabletop ? Yellow : Text, Skin.Tabletop ? 1.6f : 1.2f);
             }
-            if (u.Kind == TacticalUnitKind.Drone && IsEvading(f, u.Id))
-                EvasionRing(c, p, (Skin.Tabletop ? 34 : 15) * v.UnitScale);
+            if (u.Kind == TacticalUnitKind.Drone && (!Skin.Tabletop || f.Salvo is null) && IsEvading(f, u.Id))
+            {
+                float radius = (Skin.Tabletop ? 34 : 15) * v.UnitScale;
+                EvasionRing(c, p, radius);
+                if (Recording is { } layout)
+                    layout.Rects["evade-ring:" + u.Id] = SKRect.Create(p.X - radius, p.Y - radius, radius * 2, radius * 2);
+            }
         }
         foreach (var u in units.Where(u => u.Kind == TacticalUnitKind.Drone && HasDecoy(f, u)))
         {

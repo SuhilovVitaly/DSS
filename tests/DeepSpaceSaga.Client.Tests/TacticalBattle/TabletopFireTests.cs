@@ -75,6 +75,7 @@ public sealed class TabletopFireTests
         try { TacticalBattleMapRenderer.Draw(canvas, frame); }
         finally { BattleDesign.Recording = null; }
         var selected = frame.FirePlan!.Selected!;
+        if (name == "2-evasion-plan") Assert.Contains("evade-ring:" + selected.Drone.Id, layout.Rects.Keys);
         Assert.Equal(selected.Group.List.Length, layout.Rects.Keys.Count(k => k.StartsWith("candidate:", StringComparison.Ordinal)));
         foreach (var candidate in selected.Group.List)
         {

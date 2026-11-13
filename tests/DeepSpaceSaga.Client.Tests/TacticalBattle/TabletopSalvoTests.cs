@@ -31,6 +31,7 @@ public sealed class TabletopSalvoTests
                 {
                     InFlight = progress < 1 && !skipped,
                     PlaybackSkipped = skipped,
+                    Evading = frame.Salvo.Evading.Add(target.Id),
                     Flights = [original with
                     {
                         Shot = shot with { Hit = hit, Absorbed = absorbed },
@@ -45,14 +46,18 @@ public sealed class TabletopSalvoTests
         var moved = TacticalBattleMapRenderer.HoverPoint(dodging, target);
         Assert.Equal(.8f * hull, SKPoint.Distance(rest, moved), .01f);
         Assert.InRange(Math.Abs((moved.X - rest.X) * (end.X - start.X) + (moved.Y - rest.Y) * (end.Y - start.Y)), 0, .1f);
-        var near = Draw(dodging, "dodge-crossing").Rects["projectile"];
+        var crossingLayout = Draw(dodging, "dodge-crossing");
+        Assert.DoesNotContain("evade-ring:" + target.Id, crossingLayout.Rects.Keys);
+        var near = crossingLayout.Rects["projectile"];
         Assert.InRange(SKPoint.Distance(new(near.MidX, near.MidY), end), 0, .1f);
         var past = Draw(At(.859), "dodge-fly-past").Rects["projectile"];
         Assert.InRange(SKPoint.Distance(new(past.MidX, past.MidY), end) / hull, 2.4f, 2.5f);
         Assert.DoesNotContain("projectile", Draw(At(.9)).Rects.Keys);
         Assert.InRange(SKPoint.Distance(rest, TacticalBattleMapRenderer.HoverPoint(At(.9), target)), .01f, .8f * hull);
         Assert.Equal(rest, TacticalBattleMapRenderer.HoverPoint(At(1), target));
-        Assert.DoesNotContain(Draw(At(1)).Rects.Keys, key => key.StartsWith("explosion:", StringComparison.Ordinal));
+        var result = Draw(At(1));
+        Assert.DoesNotContain("evade-ring:" + target.Id, result.Rects.Keys);
+        Assert.DoesNotContain(result.Rects.Keys, key => key.StartsWith("explosion:", StringComparison.Ordinal));
         foreach (var other in new[] { At(crossing, hit: true), At(crossing, absorbed: true), At(crossing, decoy: true), At(crossing, skipped: true) })
             Assert.Equal(rest, TacticalBattleMapRenderer.HoverPoint(other, target));
     }
