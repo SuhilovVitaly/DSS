@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0003-officer-lessons
 ticket: EP-0028-US-0003-TK-0001-officer
 title: Офицер «Скитальца»
-stage: approved
+stage: implemented
 layer: content-data
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0002-TK-0002-comms-panel, EP-0028-US-0002-TK-0001-ui-texts]
@@ -109,6 +109,31 @@ dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj -
 
 Путь головы, ключ композиции, ключи локали, тексты и тестовые API указаны явно.
 
+## Результат
+
+Создан поставляемый `src/DeepSpaceSaga.Client/Data/Tutorial/battle-tutorial.json`: `schemaVersion: 1`, `officer` (`nameKey: Tutorial.Officer.Name`, `roleKey: Tutorial.Officer.Role`, `portrait: Images/Persons/W4/Portraits/CHR-20260915-104309-12BAB0.png`, `portraitKey: tutorial.officer`), `limits` по умолчанию (2500 / 15000 / 2), шаг `intro` (Move, turn 1, `pilot-selected`, `pilot:{own}`, 100). Файл копируется в выход существующим правилом `Data\**\*.json` (`DeepSpaceSaga.Client.csproj:296`) — проверено наличием в `bin/…/Data/Tutorial/` клиента и тестов; csproj не менялся.
+
+Ключи (RU / EN), добавлены после `Tutorial.Journal.Close`:
+
+| Key | RU | EN |
+|---|---|---|
+| `Tutorial.Officer.Name` | Ирина Вольская | Irina Volskaya |
+| `Tutorial.Officer.Role` | лейтенант связи «Скитальца» | Comms Lieutenant, Skitalets |
+| `Tutorial.Line.Intro` | Командир, на связи Вольская. Крыло ждёт приказов — щёлкните карточку пилота слева. | Commander, Volskaya on comms. The wing awaits orders — click a pilot card on the left. |
+
+Заголовок панели «Ирина Вольская · лейтенант связи «Скитальца»» / "Irina Volskaya · Comms Lieutenant, Skitalets" — 44 символа, без многоточия; приветствие — 2 строки панели в обоих языках.
+
+Тесты: новый `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialContentTests.cs` (коллекция `"Battle localization"`) — `ShippedScriptLoadsWithoutWarnings`, `EveryLineKeyExistsInBothLocales`, `EveryLineFitsTwoPanelLinesInBothLanguages` (`TutorialCommsPanel.Wrap(Localization.Get(key)).Length <= 2` в RU и EN для каждого шага сценария), `OfficerHeaderFitsThePanelWithoutEllipsis` (≤ 45 символов и без многоточия жирным 11 в `TextWidth`), `OfficerIsTheSkitaletsCommsOfficerInBothLanguages`, `IntroMatchesTheCatalog`, `OfficerPortraitComposesDeterministicallyFromExistingHead`; новый `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialLessonFlowTests.cs` (коллекция `InterfaceLog`) — помощник `LiveTutorial` (живой бой обучения: `TacticalBattleFlow { IsTutorial = true }` и тот же запрос, что в `SkiaWindow.StartTutorialAsync` — seed 1, сценарий по умолчанию `initial`, комплектация по умолчанию; Tabletop из `Skins`; сессия с поставляемым сценарием) и `IntroGreetsOnFirstMoveAndClosesWhenPilotSelected` (RU, EN): первый кадр Move — `intro`, имя офицера на текущем языке в `Layout.Texts`, подсветка `pilot:*`, портрет скомпонован; Tab → `intro` Completed.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0003-tk0001-20261114T181256/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт: 9/9 новых тестов падали — `TUTORIAL: …/Data/Tutorial/battle-tutorial.json not found` (`../us0003-tk0001-red/red.log`).
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial|FullyQualifiedName~DialoguePortraitComposerTests|FullyQualifiedName~TutorialFlowTests"` — **168/168** — `officer.trx`, `officer.log` (включая паритет `TutorialLocaleParityTests` и регрессию `TutorialFlowTests` EP-0027 с появившейся панелью).
+- Растровые снимки панели RU/EN: `snap/panel-ru-intro.png`, `snap/panel-en-intro.png`; строки панели — `snap/lines.txt` (временный тест-дамп, не закоммичен).
+- `git diff --stat` без `.png`; правок кода и в `UI/Screens/TacticalBattle/` нет (ForbiddenCalls не затрагивается).
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) звание перенесено из имени в должность («Ирина Вольская» + «лейтенант связи «Скитальца»»; EN "Irina Volskaya" + "Comms Lieutenant, Skitalets"), чтобы заголовок «имя · должность» укладывался в ~45 символов без многоточия (предложение A-05 давало ~64 символа и обрезалось); ключи не менялись. (2) Текст приветствия переписан под ёмкость панели (≈ 41–47 символов RU и 49–54 EN на строку, `us0002-tk0005/snap/capacity.txt`) и тон по указанию пользователя 2026-11-14: спокойная, доброжелательная, чуть суховатый юмор, обращение «Командир», говорит как в эфире и называет конкретный элемент управления. (3) Живые flow-тесты идут в настоящем бою обучения (`IsTutorial = true`, тот же запрос старта, что у «Новой игры»), а не в бою F8 — так проверяется именно бой, который увидит игрок; фикстура — `BattleNavigationTests.Fixture` (скорость 0, как у старта обучения). (4) Добавлены проверки заголовка и персонажа (`OfficerHeaderFitsThePanelWithoutEllipsis`, `OfficerIsTheSkitaletsCommsOfficerInBothLanguages`) и каталога `intro`. Гайд тона в документе истории не менялся (файл вне `files_touched`); уточнения тона от пользователя — сюда и в итоговую документацию US-0006-TK-0003.

@@ -1,0 +1,20 @@
+{
+  "schemaVersion": 1,
+  "officer": {
+    "nameKey": "Tutorial.Officer.Name",
+    "roleKey": "Tutorial.Officer.Role",
+    "portrait": "Images/Persons/W4/Portraits/CHR-20260915-104309-12BAB0.png",
+    "portraitKey": "tutorial.officer"
+  },
+  "limits": { "minGapMs": 2500, "autoCollapseMs": 15000, "maxLinesPerPhase": 2 },
+  "steps": [
+    {
+      "id": "intro",
+      "lineKey": "Tutorial.Line.Intro",
+      "when": { "phase": "Move", "turn": 1 },
+      "complete": "pilot-selected",
+      "anchor": "pilot:{own}",
+      "priority": 100
+    }
+  ]
+}
