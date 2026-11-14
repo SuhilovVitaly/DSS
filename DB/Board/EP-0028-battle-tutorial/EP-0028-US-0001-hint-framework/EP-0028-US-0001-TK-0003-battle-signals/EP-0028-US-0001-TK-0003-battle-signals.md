@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0001-hint-framework
 ticket: EP-0028-US-0001-TK-0003-battle-signals
 title: Контекстные сигналы боя
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0001-TK-0002-director-core]
@@ -117,6 +117,18 @@ Process-tree cap 300000 ms.
 
 Таблица задаёт каждое условие через поля Contracts с `path:line`.
 
+## Результат
+
+Реализован `TutorialSignals.Find` (+ `TutorialSignalHit`) по таблице правил; директор пропускает шаг с `when.signal != None` только при активном сигнале и сохраняет `TutorialLine.SignalUnitId` в момент показа. Вычисление читает только переданный снимок (`TutorialObservation.Battle` — проекция кадра), без `Flow.State`, RNG, `FireSteps`/`BeforeSalvoUnits`; порядок — порядок коллекций снимка.
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0001-tk0003-20261114T173344/`):
+
+- Красный старт: `TutorialSignals`, `TutorialSignalHit`, `TutorialLine.SignalUnitId` отсутствовали — `../us0001-tk0003-red/build-red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial"` (`DSS_VALIDATION_ROOT` = папка прогона) — **98/98**; новые: Theory `TutorialSignalsTests.FindsEachSignalFromTheVisibleSnapshot` ×8, `NoSignalOnCleanSnapshot`, `UnderFireOnlyInFirePhase`, `LowConsciousnessNeedsEvasionRules`, `OutcomeFollowsThePlayerSide`, `DroneLostFollowsTheProjectionNotTheFinalState`, `TutorialDirectorTests.SignalStepWaitsForItsSignalAndCarriesUnitId` — `signals.trx`, `test.log`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 предупреждений, 0 ошибок — `build.log`.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие допущения исполнителя: `Consciousness == null` не считается низким; `own-damaged` включает `Disabled` (исключён только `Destroyed`, как в таблице); исходы не зависят от имени фазы; при `PlayerSide` вне {A, B} код A/B трактуется как поражение. `DroneLostFollowsTheProjectionNotTheFinalState` проверен на синтетических снимках: будущие `FireSteps[].UnitsAfter` и `BeforeSalvoUnits` с потерей не дают сигнала, пока `Units` проекции её не показали.

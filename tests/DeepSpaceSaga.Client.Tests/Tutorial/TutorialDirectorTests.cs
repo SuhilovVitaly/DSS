@@ -270,6 +270,26 @@ public sealed class TutorialDirectorTests
     }
 
     [Fact]
+    public void SignalStepWaitsForItsSignalAndCarriesUnitId()
+    {
+        var director = Director(
+            Step("hit", "Fire", TutorialCompletion.EvadeOrDecoy, priority: 100, signal: TutorialSignal.UnderFire),
+            Step("plain", "Fire", TutorialCompletion.Acknowledged, priority: 10));
+        director.Observe(Fire(TutorialTestBattle.Plan(FireBattle), now: 1));
+        Assert.Equal("plain", director.Current?.Step.Id);
+        Assert.Null(director.Current!.SignalUnitId);
+        director.Acknowledge();
+        Assert.Equal(TutorialStepState.Waiting, director.StateOf("hit"));
+
+        var underFire = FireBattle with { Incoming = [new("tag-1", "yun", 0.5, 100, 0, false, 0)] };
+        director.Observe(new TutorialObservation("Fire", 1, underFire, "vera", null, TutorialTestBattle.Plan(underFire), 2));
+
+        Assert.Equal("hit", director.Current?.Step.Id);
+        Assert.Equal("yun", director.Current!.SignalUnitId);
+        Assert.Equal(2, director.Current!.ShownAtMs);
+    }
+
+    [Fact]
     public void ObservationFromFrameCopiesFrameFacts()
     {
         var movement = TutorialTestBattle.Movement(MoveBattle, "vera", "vera");

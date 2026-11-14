@@ -4,7 +4,8 @@ internal enum TutorialStepState { Waiting, Shown, Completed, Dismissed, Expired 
 
 internal sealed record TutorialEvent(string StepId, TutorialStepState State, string Phase, int Turn, long AtMs);
 
-internal sealed record TutorialLine(TutorialStep Step, long ShownAtMs);
+/// <summary>A shown line; SignalUnitId is the unit of the step's signal at show time (target of the {signal} anchor).</summary>
+internal sealed record TutorialLine(TutorialStep Step, long ShownAtMs, string? SignalUnitId = null);
 
 /// <summary>
 /// Deterministic, advisory step logic: decides which single line is shown from a sequence of frame observations and closes
@@ -73,7 +74,9 @@ internal sealed class TutorialDirector(TutorialScript script)
                 next = step;
         }
         if (next is null) return;
-        Current = new TutorialLine(next, observation.NowMs);
+        string? signalUnit = next.When.Signal == TutorialSignal.None ? null
+            : TutorialSignals.Find(observation.Battle, next.When.Signal, observation.Phase).UnitId;
+        Current = new TutorialLine(next, observation.NowMs, signalUnit);
         _shownPhase = observation.Phase;
         _shownTurn = observation.Turn;
         _heard.Add(next.Id);
@@ -101,7 +104,8 @@ internal sealed class TutorialDirector(TutorialScript script)
         if (when.Turn is { } turn && observation.Turn != turn) return false;
         if (when.MinTurn is { } minTurn && observation.Turn < minTurn) return false;
         if (when.After is { } after && StateOf(after) is TutorialStepState.Waiting or TutorialStepState.Shown) return false;
-        return when.Signal == TutorialSignal.None;
+        return when.Signal == TutorialSignal.None ||
+            TutorialSignals.Find(observation.Battle, when.Signal, observation.Phase).Signal != TutorialSignal.None;
     }
 
     private bool Done(TutorialCompletion completion, TutorialObservation observation, bool phaseLeft) => completion switch
