@@ -82,6 +82,24 @@ public sealed class TutorialContentTests
         }
     }
 
+    /// <summary>
+    /// US-0006-TK-0004: heat zones may absorb a shot (a chance, not a certainty), and hit chances are shown on the card of the
+    /// selected pilot only — the two lines say exactly that.
+    /// </summary>
+    [Theory]
+    [InlineData("Russian", "жар может поглотить залп", "из пыли дрон не стреляет", "на карточке выбранного пилота")]
+    [InlineData("English", "heat zones can swallow shots", "a drone in dust can't fire", "on the selected pilot's card")]
+    public void AnomalyAndFireSubmitLinesAreAccurate(string language, string heat, string dust, string card)
+    {
+        using var locale = Localization.UseLocaleForTests(language);
+        string anomaly = Localization.Get("Tutorial.Line.CtxAnomaly");
+        Assert.Contains(heat, anomaly, StringComparison.Ordinal);
+        Assert.Contains(dust, anomaly, StringComparison.Ordinal);
+        Assert.DoesNotContain("гасит выстрелы", anomaly, StringComparison.Ordinal);
+        Assert.DoesNotContain("zones swallow", anomaly, StringComparison.Ordinal);
+        Assert.Contains(card, Localization.Get("Tutorial.Line.FireSubmit"), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void OfficerHeaderFitsThePanelWithoutEllipsis()
     {
