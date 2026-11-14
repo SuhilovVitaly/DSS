@@ -52,10 +52,17 @@ public sealed record ScenarioFile(
 /// for backward compatibility with scenario/save files predating it — a save's metadata
 /// is never shown in that picker, so it never needs one.
 /// </param>
+/// <param name="Hidden">
+/// True keeps the scenario out of the New Game picker (the Tutorial is started directly by the
+/// client). Optional and omitted from JSON when null, so existing scenario and save files keep
+/// their exact shape.
+/// </param>
 public sealed record ScenarioMetadata(
     [property: JsonPropertyName("scenarioId")] string ScenarioId,
     [property: JsonPropertyName("name")] string Name,
-    [property: JsonPropertyName("description")] string? Description = null);
+    [property: JsonPropertyName("description")] string? Description = null,
+    [property: JsonPropertyName("hidden"), JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    bool? Hidden = null);
 
 /// <summary>Initial game state.</summary>
 /// <param name="MasterSeed">

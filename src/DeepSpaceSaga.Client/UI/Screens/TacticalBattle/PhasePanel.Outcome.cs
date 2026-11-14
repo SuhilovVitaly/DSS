@@ -6,6 +6,9 @@ namespace DeepSpaceSaga.Client.UI.Screens.TacticalBattle;
 
 internal sealed partial class PhasePanel
 {
+    /// <summary>Tutorial outcome offers no new battle; its only button returns to the map.</summary>
+    internal bool Tutorial { get; set; }
+
     partial void DrawOutcome(SKCanvas c)
     {
         var b = _frame.Battle; if (b.Outcome is not { } outcome) return;
@@ -24,6 +27,11 @@ internal sealed partial class PhasePanel
         { T(c, U(keys[i]), 1050, 185 + 18 * i, 12, Muted); T(c, values[i], 1264, 185 + 18 * i, 12, Text, true, SKTextAlign.Right); }
         float y = _db + 28;
         T(c, U("BattleOver"), 1050, y + 20, 14, Text, true); BoxText(c, new(1048, y + 28, 1266, y + 48), U("ExitHelp"));
+        if (Tutorial)
+        {
+            ButtonAt(c, "primary", new(1048, y + 56, 1266, _db + 112), Localization.Get("TacticalBattle.ToMap"), true);
+            return;
+        }
         ButtonAt(c, "new", new(1048, y + 56, 1132, _db + 112), U("NewBattle")); ButtonAt(c, "primary", new(1138, y + 56, 1266, _db + 112), U("Exit"), true);
     }
 }
