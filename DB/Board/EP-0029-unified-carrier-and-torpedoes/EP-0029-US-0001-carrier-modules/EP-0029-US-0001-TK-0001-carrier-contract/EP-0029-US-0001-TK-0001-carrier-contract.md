@@ -12,7 +12,7 @@ files_touched: 4
 serves: [AC-01, AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Проекция корпуса и вместимости
@@ -104,4 +104,11 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Implemented in `src/DeepSpaceSaga.Contracts/CarrierOperations.cs` (`CarrierOperationsSnapshot`, `HangarSlotSnapshot`, `HabitationSnapshot`), `AuthoritativeSnapshot.CarrierOperations` (optional, null for legacy), `InstalledModuleSnapshot.DroneCapacity` (optional int?).
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter "FullyQualifiedName~Ep0029Us0001Tk0001Tests"` — **2/2 passed** (`OptionalSnapshotRoundTrips`, `CapacityAndIdentityRoundTrip`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-001-tk0001/US-0001-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Contracts --no-restore` — 0 warnings, 0 errors.
+- `dotnet format --verify-no-changes --include <4 files>` — clean (after converting the two new files to CRLF).
+- `git diff --check` — clean.
+
+Status: automated PASS (contracts layer); native/product acceptance remains OPEN.
