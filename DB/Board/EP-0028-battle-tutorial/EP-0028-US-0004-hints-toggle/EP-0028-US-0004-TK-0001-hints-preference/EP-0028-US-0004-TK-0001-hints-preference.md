@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0004-hints-toggle
 ticket: EP-0028-US-0004-TK-0001-hints-preference
 title: Предпочтение tutorialHints
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
@@ -98,6 +98,21 @@ UI (TK-0002, TK-0003); правка `TacticalBattleSkinPreference.cs`; пост�
 
 Образец указан построчно; API и правила по умолчанию заданы.
 
+## Результат
+
+`src/DeepSpaceSaga.Client/UI/Screens/Tutorial/TutorialHintsPreference.cs` — новый `internal static class TutorialHintsPreference` (копия логики `TacticalBattleSkinPreference`, без наследования и без правки образца): `Property = "tutorialHints"`; `Read` — нет файла/каталога/группы/свойства → `true` без предупреждения; `true`/`false` → значение; иной тип (`"yes"`, число, `null`, массив, объект) или повреждённый файл/корень/группа → `true` + `warning`. `TryWrite` — `JsonNode`-merge в существующий объект (все прочие группы и ключи сохраняются), без перезаписи при том же булевом значении, некорректное значение перезаписывается булевым, отсутствующий файл создаётся как `{"gameSettings":{"tutorialHints":…}}`; атомарная замена через `.Settings.json.<guid>.tmp` + `File.Move(overwrite: true)`, temp удаляется в `finally`; ошибки → `false` + `warning`, прежний файл не меняется.
+
+Тесты `tests/DeepSpaceSaga.Client.Tests/Tutorial/TutorialHintsPreferenceTests.cs`: `MissingSettingDefaultsToEnabled`, `WritePreservesUnrelatedSettingsAndIsReadBack` (`language`, `uiScale`, `tacticalBattleSkinId`, `tacticalMap`, посторонние корневые ключи; повторная запись не трогает файл; создание файла), `InvalidValueReadsAsEnabledWithWarning`, `WriteFailureKeepsOriginalFileAndLeavesNoTemp` (`{`, `[]`, `gameSettings: null/42`, заблокированный файл — файл не испорчен, temp не остаётся).
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0004-tk0001-20261114T193630/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт (класс-заглушка с `NotImplementedException`): 4 failed / 0 passed — `red/red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~TutorialHintsPreferenceTests|FullyQualifiedName~SkinPreferenceTests"` — **11/11** — `preference.trx`, `preference.log`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 warnings, 0 errors.
+- Правок в `/TacticalBattle/` нет; поставляемый `Settings.json` не менялся.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) JSON `null` и нечисловые/небулевы значения трактуются как «некорректный тип» (`true` + предупреждение), а не как «отсутствует»; (2) сравнение «то же значение» делается только для булева JSON-значения, поэтому некорректное значение всегда перезаписывается.
