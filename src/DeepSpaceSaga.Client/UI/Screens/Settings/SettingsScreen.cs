@@ -36,6 +36,12 @@ public sealed class SettingsScreen : IScreen
     internal string? SelectedSkinId => _skinPicker is { HasSelection: true } ? _skinPicker.SelectedItem.Id : null;
     internal bool SkinSaveFailed { get; private set; }
 
+    private readonly Toggle? _tutorialHints;
+    private readonly Func<bool, bool>? _trySetTutorialHints;
+    /// <summary>The tutorial-hints toggle state (true when the row is absent: the preference default).</summary>
+    internal bool TutorialHintsEnabled => _tutorialHints?.Value ?? true;
+    internal bool TutorialHintsSaveFailed { get; private set; }
+
     private SettingsButton _hoveredButton = SettingsButton.None;
     private SettingsButton _pressedButton = SettingsButton.None;
 
@@ -86,7 +92,8 @@ public sealed class SettingsScreen : IScreen
     internal SettingsScreen(
         IReadOnlyList<string> monitorNames, int selectedMonitorIndex, Action<int> onMonitorSelected,
         double selectedUiScale, Action<double> onUiScaleSelected, string selectedLanguage, Action<string> onLanguageSelected,
-        IReadOnlyList<(string Id, string DisplayName)> skins, string effectiveSkinId, Func<string, bool> trySelectSkin)
+        IReadOnlyList<(string Id, string DisplayName)> skins, string effectiveSkinId, Func<string, bool> trySelectSkin,
+        bool tutorialHints = true, Func<bool, bool>? trySetTutorialHints = null)
         : this(monitorNames, selectedMonitorIndex, onMonitorSelected, selectedUiScale, onUiScaleSelected, selectedLanguage, onLanguageSelected)
     {
         _skinPicker = new(skins, skin => skin.Id == TacticalBattleSkin.ClassicId
@@ -108,6 +115,10 @@ public sealed class SettingsScreen : IScreen
             else
                 _selectedSkinIndex = _skinPicker.SelectedIndex;
         };
+        if (trySetTutorialHints is null)
+            return;
+        _trySetTutorialHints = trySetTutorialHints;
+        _tutorialHints = new(string.Empty, tutorialHints);
     }
 
     public void OnActivated()
@@ -211,6 +222,12 @@ public sealed class SettingsScreen : IScreen
         }
 
         var hit = HitTest(x, y);
+        if (hit == SettingsButton.TutorialHints)
+        {
+            ToggleTutorialHints();
+            return ScreenEvent.None;
+        }
+
         if (hit == SettingsButton.SkinCombo)
         {
             _skinPicker?.OnMouseDown(x, y, button);
@@ -285,7 +302,17 @@ public sealed class SettingsScreen : IScreen
     }
 
     private SettingsButton HitTest(float x, float y) =>
-        SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight, _skinPicker is not null);
+        SettingsLayout.HitTest(x, y, _screenWidth, _screenHeight, _skinPicker is not null, _tutorialHints is not null);
+
+    /// <summary>Flips the toggle and saves it at once; a failed save keeps the box as it was and shows the failure line.</summary>
+    private void ToggleTutorialHints()
+    {
+        var toggle = _tutorialHints!;
+        bool value = !toggle.Value;
+        TutorialHintsSaveFailed = !_trySetTutorialHints!(value);
+        if (!TutorialHintsSaveFailed)
+            toggle.SetValue(value);
+    }
 
     public void Render(SKCanvas canvas, int width, int height)
     {
@@ -307,6 +334,8 @@ public sealed class SettingsScreen : IScreen
         DrawUiScaleRow(canvas, pl, pt);
         if (_skinPicker is not null)
             DrawSkinRow(canvas, width, height);
+        if (_tutorialHints is not null)
+            DrawTutorialHintsRow(canvas, width, height);
         DrawButton(canvas, pl, pt, _skinPicker is null ? SettingsLayout.ExitY : SettingsLayout.SkinExitY,
             Localization.Get("Settings.Exit"), SettingsButton.Exit);
 
@@ -334,6 +363,20 @@ public sealed class SettingsScreen : IScreen
             picker.IsOpen || _hoveredButton == SettingsButton.SkinCombo);
         if (SkinSaveFailed)
             ControlVisuals.Label(canvas, Localization.Get("Settings.TacticalBattleSkin.SaveFailed"),
+                new(bounds.Left, bounds.Bottom + 3, bounds.Right, bounds.Bottom + 25), true, 1, center: true);
+    }
+
+    private void DrawTutorialHintsRow(SKCanvas canvas, int width, int height)
+    {
+        var toggle = _tutorialHints!;
+        var bounds = SettingsLayout.TutorialHintsField(width, height);
+        toggle.Bounds = bounds;
+        toggle.HasFocus = _hoveredButton == SettingsButton.TutorialHints;
+        toggle.Label = Localization.Get("Settings.TutorialHints") + ": " +
+            Localization.Get(toggle.Value ? "Settings.TutorialHints.On" : "Settings.TutorialHints.Off");
+        toggle.Draw(canvas);
+        if (TutorialHintsSaveFailed)
+            ControlVisuals.Label(canvas, Localization.Get("Settings.TutorialHints.SaveFailed"),
                 new(bounds.Left, bounds.Bottom + 3, bounds.Right, bounds.Bottom + 25), true, 1, center: true);
     }
 

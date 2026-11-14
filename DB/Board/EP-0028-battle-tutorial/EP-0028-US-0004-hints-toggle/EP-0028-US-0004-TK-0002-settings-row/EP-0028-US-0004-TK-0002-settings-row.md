@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0004-hints-toggle
 ticket: EP-0028-US-0004-TK-0002-settings-row
 title: Строка подсказок в Настройках
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: [EP-0028-US-0004-TK-0001-hints-preference, EP-0028-US-0002-TK-0001-ui-texts]
@@ -115,6 +115,23 @@ Process-tree cap 300000 ms.
 
 Ограничения геометрии, контрол, ключи, точки вставки и затронутые тесты заданы с `path:line`.
 
+## Результат
+
+- `SettingsLayout.cs`: `SettingsButton.TutorialHints`; `TutorialHintsRowY = 402`, `TutorialHintsRowHeight = 26`; `TutorialHintsField(width, height)` — ширина и центр поля скина; `HitTest(..., hasSkinPicker, hasTutorialHints = false)` распознаёт строку. Интервалы строк под заметкой о перезапуске сжаты до 4 px: `LanguageRowY` 229 → 216, `UiScaleRowY` 312 → 278, `SkinRowY` 388 → 340. Итоговая вертикаль панели (локальные Y): монитор 100–158, заметка ≈168–185, язык 192–250, масштаб 254–312, скин 316–374, ошибка скина 377–399, подсказки 402–428, ошибка подсказок 431–453, выход 455–511. `ExitY` (396) и `SkinExitY` (455) не менялись.
+- `SettingsScreen.cs`: внутренний конструктор со скинами получил `bool tutorialHints = true, Func<bool, bool>? trySetTutorialHints = null`; строка (существующий `Toggle`, подпись `Settings.TutorialHints: Settings.TutorialHints.On|Off`) есть только при колбэке; левый клик переключает и сразу сохраняет; `false` от колбэка — флажок не меняется, под строкой `Settings.TutorialHints.SaveFailed`; при открытом списке клик уходит списку (как у прочих строк); ховер подсвечивает строку. Свойства `TutorialHintsEnabled`, `TutorialHintsSaveFailed`. Публичный конструктор строку не показывает.
+- `SkiaWindow.cs` (`OpenSettingsAsync`): передаёт `TutorialHintsPreference.Read(SettingsFilePath, …)` и `TrySetTutorialHints` → `TutorialHintsPreference.TryWrite`; сообщения — в InterfaceLog с префиксом `TUTORIAL: `.
+
+Тесты: `SettingsScreenTests.Tutorial_hints_row_fits_between_skin_row_and_exit_without_overlap` (640×480, 1280×720: попарное непересечение меток+полей всех строк, заметки, двух сообщений об ошибке и выхода; всё в окне; hit-test строки/скина/выхода; `ExitY == 396`), `Tutorial_hints_click_toggles_and_failed_save_restores`; `Tutorial/TutorialSettingsIntegrationTests.MainMenuSettingsTogglePersistsHintsAndKeepsOtherSettings` (через `SkiaWindow`: профиль без значения → вкл; клик → `false` в файле, прочие ключи `language/uiScale/tacticalBattleSkinId/tacticalMap/unrelated` без изменений; повторное открытие показывает `false`; обратно `true`; строка отрисована в RU и EN).
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0004-tk0002-20261114T193953/`, `DSS_VALIDATION_ROOT` = папка прогона):
+
+- Красный старт: компиляция тестов падает на отсутствующих `SettingsButton.TutorialHints`, `TutorialHintsField`, `TutorialHintsEnabled`, `hasTutorialHints`, `tutorialHints` — `red/red.log`.
+- `dotnet test … --filter "FullyQualifiedName~SettingsScreenTests|FullyQualifiedName~TutorialSettingsIntegrationTests|FullyQualifiedName~SkinBattleIntegrationTests|FullyQualifiedName~ScreenEventTests|FullyQualifiedName~LocalizationCoverageTests"` — **111/111** — `settings.trx`, `settings.log`. `SkinBattleIntegrationTests` и `ScreenEventTests` прошли без правок (клики считаются от констант).
+- Растровые снимки Настроек: `settings-russian.png`, `settings-english.png` (1280×720), `settings-hints-off.png`.
+- Правок в `/TacticalBattle/` нет.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие решения исполнителя: (1) два состояния показаны подписью `ПОДСКАЗКИ ОБУЧЕНИЯ: Включены/Выключены` (ключи `Settings.TutorialHints.On/Off` из US-0002-TK-0001) рядом с флажком; (2) сжатие интервалов действует и для публичного конструктора (строки языка и масштаба выше на 13 и 34 px) — его выход (`ExitY` 396) и геометрия проверок не изменились; (3) Space/Enter для строки не добавлялись (в Настройках нет фокуса клавиатуры у строк). `SkinBattleIntegrationTests.cs` и `ScreenEventTests.cs` не менялись — только регрессия.

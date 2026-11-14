@@ -10,7 +10,8 @@ public enum SettingsButton
     UiScaleCombo,
     LanguageCombo,
     Exit,
-    SkinCombo
+    SkinCombo,
+    TutorialHints
 }
 
 /// <summary>
@@ -30,7 +31,11 @@ public sealed class SettingsLayout
 
     /// <summary>Same local Y as MainMenu's EXIT button.</summary>
     public const float ExitY = 396f;
-    internal const float SkinRowY = 388f;
+    // Rows below the monitor note are packed 4px apart so the skin row, its save-failure line, the tutorial-hints row and
+    // its save-failure line all fit above the skin-variant exit (455) while the exit stays inside a 640x480 window.
+    internal const float SkinRowY = 340f;
+    internal const float TutorialHintsRowY = 402f;
+    internal const float TutorialHintsRowHeight = 26f;
     internal const float SkinExitY = 455f;
 
     /// <summary>Right edge, from the panel's left edge, that every row's combo box aligns to.</summary>
@@ -42,12 +47,12 @@ public sealed class SettingsLayout
     public const float MonitorOptionHeight = XenonComboBox.OptionHeight;
     public const float MonitorNoteY = 181f;
 
-    public const float UiScaleRowY = 312f;
+    public const float UiScaleRowY = 278f;
     public const float UiScaleComboWidth = XenonComboBox.NativeWidth;
     public const float UiScaleComboHeight = XenonComboBox.FieldHeight;
     public const float UiScaleOptionHeight = XenonComboBox.OptionHeight;
 
-    public const float LanguageRowY = 229f;
+    public const float LanguageRowY = 216f;
     public const float LanguageComboWidth = XenonComboBox.NativeWidth;
     public const float LanguageComboHeight = XenonComboBox.FieldHeight;
     public const float LanguageOptionHeight = XenonComboBox.OptionHeight;
@@ -68,10 +73,18 @@ public sealed class SettingsLayout
         return SKRect.Create((width - fieldWidth) / 2f, PanelTop(height) + SkinRowY, fieldWidth, XenonComboBox.FieldHeight);
     }
 
+    /// <summary>The tutorial-hints toggle row: the skin field's width and centre line, between the skin row and the exit.</summary>
+    internal static SKRect TutorialHintsField(int width, int height)
+    {
+        float fieldWidth = Math.Clamp(width - 16f, 0, XenonComboBox.NativeWidth);
+        return SKRect.Create((width - fieldWidth) / 2f, PanelTop(height) + TutorialHintsRowY, fieldWidth, TutorialHintsRowHeight);
+    }
+
     public static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight) =>
         HitTest(screenX, screenY, screenWidth, screenHeight, hasSkinPicker: false);
 
-    internal static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight, bool hasSkinPicker)
+    internal static SettingsButton HitTest(float screenX, float screenY, int screenWidth, int screenHeight, bool hasSkinPicker,
+        bool hasTutorialHints = false)
     {
         float panelLeft = PanelLeft(screenWidth);
         float panelTop = PanelTop(screenHeight);
@@ -83,6 +96,7 @@ public sealed class SettingsLayout
         if (IsInUiScaleCombo(lx, ly)) return SettingsButton.UiScaleCombo;
         if (IsInLanguageCombo(lx, ly)) return SettingsButton.LanguageCombo;
         if (hasSkinPicker && SkinField(screenWidth, screenHeight).Contains(screenX, screenY)) return SettingsButton.SkinCombo;
+        if (hasTutorialHints && TutorialHintsField(screenWidth, screenHeight).Contains(screenX, screenY)) return SettingsButton.TutorialHints;
         if (IsInButton(lx, ly, hasSkinPicker ? SkinExitY : ExitY)) return SettingsButton.Exit;
         return SettingsButton.None;
     }

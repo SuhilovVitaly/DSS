@@ -1383,8 +1383,14 @@ public sealed class SkiaWindow : IDisposable
             monitorNames, selectedMonitorIndex, SaveSelectedMonitorIndex,
             uiScale, SaveUiScale,
             language, SaveLanguage,
-            _battleSkinCatalog.Options, _battleSkin.Id, TrySelectBattleSkin));
+            _battleSkinCatalog.Options, _battleSkin.Id, TrySelectBattleSkin,
+            TutorialHintsPreference.Read(SettingsFilePath, LogTutorialHintsWarning), TrySetTutorialHints));
     }
+
+    private bool TrySetTutorialHints(bool enabled) =>
+        TutorialHintsPreference.TryWrite(SettingsFilePath, enabled, LogTutorialHintsWarning);
+
+    private static void LogTutorialHintsWarning(string message) => LogTutorialWarning("TUTORIAL: " + message);
 
     private bool TrySelectBattleSkin(string id)
     {

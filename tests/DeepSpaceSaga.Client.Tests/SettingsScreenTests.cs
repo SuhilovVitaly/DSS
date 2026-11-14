@@ -115,6 +115,128 @@ public class SettingsScreenTests
         Assert.Equal(SettingsButton.Exit, SettingsLayout.HitTest(width / 2f, exitY + 12, width, height, hasSkinPicker: true));
     }
 
+    [Theory]
+    [InlineData(640, 480)]
+    [InlineData(1280, 720)]
+    public void Tutorial_hints_row_fits_between_skin_row_and_exit_without_overlap(int width, int height)
+    {
+        float top = SettingsLayout.PanelTop(height);
+        var hints = SettingsLayout.TutorialHintsField(width, height);
+        var skin = SettingsLayout.SkinField(width, height);
+        var exit = Button(SettingsLayout.SkinExitY);
+        var window = SKRect.Create(width, height);
+        // Every element the screen can draw at once: label strips and fields of each row, the restart note,
+        // the two save-failure messages and the exit button.
+        var elements = new (string Name, SKRect Rect)[]
+        {
+            ("monitor", Row(SettingsLayout.MonitorRowY)),
+            ("note", new(0, top + SettingsLayout.MonitorNoteY - XenonStyle.FooterFontSize, width, top + SettingsLayout.MonitorNoteY + 4)),
+            ("language", Row(SettingsLayout.LanguageRowY)),
+            ("scale", Row(SettingsLayout.UiScaleRowY)),
+            ("skin", new(skin.Left, skin.Top - XenonComboBox.LabelHeight, skin.Right, skin.Bottom)),
+            ("skin-error", new(skin.Left, skin.Bottom + 3, skin.Right, skin.Bottom + 25)),
+            ("hints", hints),
+            ("hints-error", new(hints.Left, hints.Bottom + 3, hints.Right, hints.Bottom + 25)),
+            ("exit", exit),
+        };
+        for (int i = 0; i < elements.Length; i++)
+        for (int j = i + 1; j < elements.Length; j++)
+            Assert.False(elements[i].Rect.IntersectsWith(elements[j].Rect), $"{elements[i].Name} overlaps {elements[j].Name}");
+        foreach (var (name, rect) in elements)
+            Assert.True(window.Contains(rect), $"{name} leaves the {width}x{height} window");
+        Assert.Equal(XenonComboBox.NativeWidth, hints.Width);
+        Assert.Equal(26f, hints.Height);
+        Assert.True(hints.Top > skin.Bottom && hints.Bottom < exit.Top);
+
+        Assert.Equal(SettingsButton.TutorialHints,
+            SettingsLayout.HitTest(hints.MidX, hints.MidY, width, height, hasSkinPicker: true, hasTutorialHints: true));
+        Assert.Equal(SettingsButton.None,
+            SettingsLayout.HitTest(hints.MidX, hints.MidY, width, height, hasSkinPicker: true, hasTutorialHints: false));
+        Assert.Equal(SettingsButton.SkinCombo,
+            SettingsLayout.HitTest(skin.MidX, skin.MidY, width, height, hasSkinPicker: true, hasTutorialHints: true));
+        Assert.Equal(SettingsButton.Exit,
+            SettingsLayout.HitTest(width / 2f, exit.Top + 12, width, height, hasSkinPicker: true, hasTutorialHints: true));
+        Assert.Equal(396f, SettingsLayout.ExitY); // the public path is unchanged
+
+        SKRect Row(float rowY)
+        {
+            float left = SettingsLayout.PanelLeft(width) + SettingsLayout.RowRightX - XenonComboBox.NativeWidth;
+            return new(left, top + rowY - XenonComboBox.LabelHeight, left + XenonComboBox.NativeWidth, top + rowY + XenonComboBox.FieldHeight);
+        }
+
+        SKRect Button(float buttonY)
+        {
+            float left = SettingsLayout.PanelLeft(width) + (SettingsLayout.PanelWidth - SettingsLayout.ButtonWidth) / 2f;
+            return new(left, top + buttonY, left + SettingsLayout.ButtonWidth, top + buttonY + SettingsLayout.ButtonHeight);
+        }
+    }
+
+    [Fact]
+    public void Tutorial_hints_click_toggles_and_failed_save_restores()
+    {
+        const int width = 640, height = 480;
+        using var bitmap = new SKBitmap(width, height);
+        using var canvas = new SKCanvas(bitmap);
+        var calls = new List<bool>();
+        bool accept = true;
+        var screen = new SettingsScreen(["Monitor 1"], 0, _ => { }, 1, _ => { }, "English", _ => { },
+            [("classic", "Classic")], "classic", _ => true,
+            tutorialHints: true, trySetTutorialHints: value =>
+            {
+                calls.Add(value);
+                return accept;
+            });
+        screen.Render(canvas, width, height);
+        var row = SettingsLayout.TutorialHintsField(width, height);
+        Assert.True(screen.TutorialHintsEnabled);
+
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(row.MidX, row.MidY, MouseButton.Left));
+        Assert.False(screen.TutorialHintsEnabled);
+        Assert.False(screen.TutorialHintsSaveFailed);
+        Assert.Equal(ScreenEvent.None, screen.OnMouseDown(row.MidX, row.MidY, MouseButton.Right)); // only the left button
+        Assert.False(screen.TutorialHintsEnabled);
+
+        accept = false;
+        screen.OnMouseDown(row.MidX, row.MidY, MouseButton.Left);
+        Assert.False(screen.TutorialHintsEnabled); // restored
+        Assert.True(screen.TutorialHintsSaveFailed);
+        using (var failed = Snapshot(screen))
+        {
+            accept = true;
+            screen.OnMouseDown(row.MidX, row.MidY, MouseButton.Left);
+            Assert.True(screen.TutorialHintsEnabled);
+            Assert.False(screen.TutorialHintsSaveFailed);
+            using var saved = Snapshot(screen);
+            Assert.NotEqual(PixelSignature(failed), PixelSignature(saved)); // the failure message is drawn under the row
+        }
+        Assert.Equal(new[] { false, true, true }, calls);
+
+        // An open drop-down owns the click: the row underneath does not toggle.
+        float languageY = SettingsLayout.PanelTop(height) + SettingsLayout.LanguageRowY + 10;
+        screen.OnMouseDown(width / 2f, languageY, MouseButton.Left);
+        screen.OnMouseDown(row.MidX, row.MidY, MouseButton.Left);
+        Assert.True(screen.TutorialHintsEnabled);
+        Assert.Equal(3, calls.Count);
+
+        // Hover reports the row; without the callback there is no row at all.
+        Assert.True(screen.OnMouseMove(row.MidX, row.MidY));
+        var plain = new SettingsScreen(["Monitor 1"], 0, _ => { }, 1, _ => { }, "English", _ => { },
+            [("classic", "Classic")], "classic", _ => true);
+        plain.Render(canvas, width, height);
+        Assert.False(plain.OnMouseMove(row.MidX, row.MidY));
+        Assert.True(plain.TutorialHintsEnabled);
+
+        static SKBitmap Snapshot(SettingsScreen screen)
+        {
+            var bitmap = new SKBitmap(width, height);
+            bitmap.Erase(SKColors.Transparent);
+            using var canvas = new SKCanvas(bitmap);
+            screen.Render(canvas, width, height);
+            canvas.Flush();
+            return bitmap;
+        }
+    }
+
     private static SKBitmap DrawCombo(bool highlighted)
     {
         var bitmap = new SKBitmap(375, 78);
