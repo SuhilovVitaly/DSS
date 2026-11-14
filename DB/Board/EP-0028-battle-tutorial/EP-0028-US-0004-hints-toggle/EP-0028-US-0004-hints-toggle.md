@@ -2,7 +2,7 @@
 epic: EP-0028-battle-tutorial
 story: EP-0028-US-0004-hints-toggle
 title: Отключение подсказок
-stage: approved
+stage: implemented
 dependencies: [EP-0028-US-0001-hint-framework, EP-0028-US-0002-comms-panel]
 created: 2026-11-14T15:04:43Z
 source_request: "US-0004 Отключение: gameSettings.tutorialHints preference; Settings row; in-battle toggle."
@@ -62,3 +62,5 @@ US-0001 (сессия создаётся в `SkiaWindow`), US-0002 (кнопка
 ## Журнал
 
 2026-11-14T15:04:43Z — история создана по утверждённому плану.
+
+2026-11-14 — история реализована, `stage: implemented`. Тикеты: TK-0001 eed62a74, TK-0002 b81b2ddc, TK-0003 03495f6c. Evidence: тесты предпочтения, Настроек и переключателя зелёные; нативно — строка Настроек EN меняет только `tutorialHints`, кнопка в бою сохраняет `false`/`true` (US-0006-TK-0002). 640×480 и read-only Settings — ручной чек-лист в US-0006-TK-0002.

@@ -2,7 +2,7 @@
 epic: EP-0028-battle-tutorial
 story: EP-0028-US-0006-metrics-acceptance-docs
 title: Метрики, приёмка и документация
-stage: approved
+stage: implemented
 dependencies: [EP-0028-US-0001-hint-framework, EP-0028-US-0002-comms-panel, EP-0028-US-0003-officer-lessons, EP-0028-US-0004-hints-toggle, EP-0028-US-0005-reliable-first-battle]
 created: 2026-11-14T15:04:43Z
 source_request: "US-0006 Метрики и приёмка: per-step metrics; playtest (small monitor) + docs."
@@ -63,3 +63,5 @@ revision: 1
 ## Журнал
 
 2026-11-14T15:04:43Z — история создана по утверждённому плану.
+
+2026-11-14 — история реализована, `stage: implemented`. Тикеты: TK-0001 33ef1eb1, TK-0002 013b6530, TK-0003 — коммит документации. Evidence: `TutorialMetricsTests` зелёные; полный прогон 7360/6727/633, все 633 падения есть на базе d8ab8f71 (0 новых); нативная приёмка 11 строк PASS, G-01/G-02 закрыты; документы `Screens/TacticalBattle.md`, `Screens/Settings.md`, `04-Engineering/TacticalBattle.md` обновлены. Приёмка владельцем продукта — по чек-листу TK-0002.

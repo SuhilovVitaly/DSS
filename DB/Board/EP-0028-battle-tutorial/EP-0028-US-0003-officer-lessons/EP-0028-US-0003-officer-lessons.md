@@ -2,7 +2,7 @@
 epic: EP-0028-battle-tutorial
 story: EP-0028-US-0003-officer-lessons
 title: Офицер «Скитальца» и уроки боя
-stage: approved
+stage: implemented
 dependencies: [EP-0028-US-0001-hint-framework, EP-0028-US-0002-comms-panel]
 created: 2026-11-14T15:04:43Z
 source_request: "US-0003 Офицер и уроки: officer character (name RU/EN, portrait, tone); T1 Move; Fire & salvo; contextual lessons; debrief. RU/EN parity."
@@ -96,3 +96,5 @@ US-0001 (формат, директор, сигналы, интеграция) �
 ## Журнал
 
 2026-11-14T15:04:43Z — история создана по утверждённому плану.
+
+2026-11-14 — история реализована, `stage: implemented`. Тикеты: TK-0001 bbaf63de, TK-0002 a2bebb6b, TK-0003 23a81270, TK-0004 22803fb0, TK-0005 9d74edc8. Evidence: `TutorialContentTests`, `TutorialLessonFlowTests`, паритет RU/EN зелёные; нативные снимки уроков RU/EN — `us0006-tk0002-20261114T2010/shots/`. Отклонения от каталога: `maxLinesPerPhase` 3; `minTurn` вместо `turn` у уроков огня; `ctx.under-fire` приоритет 79; `ctx.anomaly` с 3-го хода; звание в должности (заголовок «имя · должность»); E/D названы в `ctx.under-fire`.

@@ -2,7 +2,7 @@
 epic: EP-0028-battle-tutorial
 story: EP-0028-US-0001-hint-framework
 title: Каркас подсказок обучения
-stage: approved
+stage: implemented
 dependencies: []
 created: 2026-11-14T15:04:43Z
 source_request: "US-0001 Каркас подсказок: data format + loader/validation; TutorialDirector step logic; screen integration (IsTutorial only)."
@@ -64,3 +64,5 @@ G-03 эпика (базовые падения ForbiddenCalls) учитывае�
 ## Журнал
 
 2026-11-14T15:04:43Z — история создана по утверждённому плану.
+
+2026-11-14 — история реализована, `stage: implemented`. Тикеты: TK-0001 6e37ad60, TK-0002 b44c8844, TK-0003 13308156, TK-0004 40da186a. Evidence: зелёные `Tutorial.*` по тикетам; полный прогон после US-0006-TK-0001 — 0 новых падений, `ForbiddenCallsTests` — 183 находки на базе и HEAD, разница пуста (`us0006-tk0001-full/`).

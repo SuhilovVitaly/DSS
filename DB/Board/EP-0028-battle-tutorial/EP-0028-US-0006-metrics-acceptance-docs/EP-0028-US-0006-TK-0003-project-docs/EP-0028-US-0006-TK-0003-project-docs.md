@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0006-metrics-acceptance-docs
 ticket: EP-0028-US-0006-TK-0003-project-docs
 title: Документация проекта
-stage: approved
+stage: implemented
 layer: documentation
 test_project: none
 depends_on: [EP-0028-US-0006-TK-0002-native-acceptance]
@@ -97,6 +97,29 @@ git grep -n "tutorialHints\|battle-tutorial\|Режим обучения" -- DB/
 
 Перечень документов, разделы с `path:line`, правило для graphify и проверки заданы.
 
+## Результат
+
+Инвентаризация (`git diff d8ab8f71..HEAD --stat` — 69 файлов: `src/DeepSpaceSaga.Client` 20, `tests/DeepSpaceSaga.Client.Tests` 17, остальное — Board; поиск `Tutorial`, `tutorialHints`, `battle-tutorial`, `seed 1` по `DB/Documentation`, README, `src/**/README.md`, `Skins/README.md`, `tools`):
+
+| Документ | Что изменилось в коде | Обновление | Проверка |
+|---|---|---|---|
+| `02-FirstRelease/Screens/TacticalBattle.md` | Панель связи, офицер, подсветка, правила тишины, журнал H, E/D, принудительный Tabletop, `TutorialBattleSeed`, вкл/выкл | «Режим обучения» дополнен (заголовок сохранён), новый подраздел «Подсказки офицера», источники | ссылки/якоря |
+| `02-FirstRelease/Screens/Settings.md` | Строка «Подсказки обучения», `gameSettings.tutorialHints`, шаг строк 4 px, 640×480 | Перечень настроек, абзац о строке, источник `TutorialHintsPreference.cs` | ссылки/якоря |
+| `04-Engineering/TacticalBattle.md` | `TutorialBattleSeed`, выбор скина обучения, namespace `Tutorial`, формат `battle-tutorial.json`, директор/сигналы/тишина, предпочтение, метрики | «Запуск обучения» уточнён, новый раздел «Подсказки обучения» | ссылки/якоря, `git grep seed` |
+| `02-FirstRelease/Screens/MainMenu.md` | Нет (запуск обучения прежний) | Не меняется — ссылка `TacticalBattle.md#режим-обучения` валидна | якорь |
+| `02-FirstRelease/Screens/TacticalBattleSetup.md` | Нет (seed 1 прежний) | Не меняется — «seed 1» верен (`TutorialBattleSeed = 1`) | `git grep seed` |
+| `04-Engineering/TacticalBattleSkins.md`, `Skins/README.md`, `src/**/README.md`, `tools/DeepSpaceSaga.Performance/README.md` | Нет | Не меняются (упоминаний обучения нет или они вне эпика) | `git grep` |
+| `tools/graphify/rebuild.py` | — | Не меняется: граф в рамках эпика не перестраивался (Assumptions тикета) | — |
+
+Board: эпик `Documentation.md` → `stage: implemented`, статусы G-01…G-04, таблица коммитов 22 тикетов, покрытие критериев, отклонения от каталога уроков, отложенное «Повторить обучение»; `Tickets.md` — строка статуса; истории US-0001…US-0006 → `implemented` с коммитами и evidence.
+
+Проверки 2026-11-14 (`D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0006-tk0003-20261114T2045/`):
+
+- временный скрипт проверки относительных ссылок и якорей по изменённым и связанным `.md` (документы, эпик, Tickets, истории, тикеты US-0006) — 0 битых ссылок, 0 отсутствующих якорей (`links.txt`); скрипт удалён;
+- в `DB/Documentation` только `.md`; `git diff --check` чист; `git grep "seed 1"` согласован с `SkiaWindow.TutorialBattleSeed = 1` (`checks.txt`).
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — документация и Board синхронизированы, `stage: implemented`. Эпик — `implemented`, не `done`: приёмку выполняет пользователь (чек-лист US-0006-TK-0002). Узкие решения исполнителя: (1) `tools/graphify/rebuild.py` и `Screens/MainMenu.md` не изменены (граф не перестраивался; меню описано верно); (2) отдельный документ об обучении не создавался — разделы в существующих документах; (3) исторические записи других эпиков не правились.

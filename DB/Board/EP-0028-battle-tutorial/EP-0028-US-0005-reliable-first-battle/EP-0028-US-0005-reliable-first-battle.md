@@ -2,7 +2,7 @@
 epic: EP-0028-battle-tutorial
 story: EP-0028-US-0005-reliable-first-battle
 title: Надёжный первый бой
-stage: approved
+stage: implemented
 dependencies: [EP-0028-US-0001-hint-framework]
 created: 2026-11-14T15:04:43Z
 source_request: "US-0005 Надёжный первый бой: winnability check/seed; forced Tabletop skin for tutorial."
@@ -60,3 +60,5 @@ G-04 эпика закрывается TK-0002. Если ни один seed в �
 ## Журнал
 
 2026-11-14T15:04:43Z — история создана по утверждённому плану.
+
+2026-11-14 — история реализована, `stage: implemented`. Тикеты: TK-0001 f8025c6a, TK-0002 3663b5e8. Evidence: seed 1 (`SkiaWindow.TutorialBattleSeed`) — победа и «только Enter», и «по подсказкам»; нативно обучение в Tabletop при выбранном Classic, сохранённый скин не меняется (US-0006-TK-0002).

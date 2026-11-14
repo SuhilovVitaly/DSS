@@ -2,7 +2,7 @@
 epic: EP-0028-battle-tutorial
 story: EP-0028-US-0002-comms-panel
 title: Панель связи
-stage: approved
+stage: implemented
 dependencies: [EP-0028-US-0001-hint-framework]
 created: 2026-11-14T15:04:43Z
 source_request: "US-0002 Панель связи: panel; anchor highlight + arrow; don't-interrupt rules; journal (H)."
@@ -66,3 +66,5 @@ G-02 (H не опрашивается нативно) закрывается в 
 ## Журнал
 
 2026-11-14T15:04:43Z — история создана по утверждённому плану.
+
+2026-11-14 — история реализована, `stage: implemented`. Тикеты: TK-0001 80f60d7d, TK-0002 b55b35a9, TK-0003 467e805c, TK-0004 d54b421e, TK-0005 0358c0b9. Evidence: зелёные `Tutorial.*`; нативно (US-0006-TK-0002) панель RU/EN не пересекает карточки, H открывает журнал, E/D/H опрашиваются (G-02 закрыт).
