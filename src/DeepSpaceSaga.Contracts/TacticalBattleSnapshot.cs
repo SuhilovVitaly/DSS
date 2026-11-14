@@ -57,6 +57,10 @@ public sealed record TacticalUnitSnapshot(string Id, string Side, TacticalUnitKi
     public int? Initiative { get; init; }
     public int? Consciousness { get; init; }
     public int? DecoyCharges { get; init; }
+    /// <summary>Owned drone id when this unit represents a persistent wing drone (else null).</summary>
+    public string? SourceDroneId { get; init; }
+    /// <summary>World ship id this unit originates from (carrier or drone).</summary>
+    public string? SourceShipId { get; init; }
 }
 public sealed record TacticalDroneOrder(string DroneId, double Speed, double Turn);
 public sealed record TacticalMovementPath(int Turn, string DroneId, ImmutableArray<TacticalPoseSnapshot> Points);

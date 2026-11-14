@@ -12,7 +12,7 @@ files_touched: 3
 serves: [AC-01, AC-02]
 created: 2026-11-14T19:42:24Z
 revision: 1
-implementation_status: not-started
+implementation_status: implemented
 ---
 
 # Контракт постоянного дрона
@@ -104,4 +104,9 @@ Stdout/stderr build/format перенаправить в абсолютные ф
 
 ## Execution evidence
 
-NOT STARTED. Создание planning-документа не является implementation, build, test или game launch.
+Added `OwnedDroneSnapshot` (+`DroneEngineStateSnapshot`) and `OwnedDrones` array to `CarrierOperationsSnapshot`; added `SourceDroneId`/`SourceShipId` to `TacticalUnitSnapshot` so world and tactical units are bound by stable technical ids.
+
+- `dotnet test tests/DeepSpaceSaga.Contracts.Tests --filter "FullyQualifiedName~Ep0029Us0003Tk0001Tests"` — **2/2 passed** (`DroneIdentitySurvivesProjection`, `ImmutableEquipmentArraysRoundTrip`) — `D:/DeepSpaceSaga/artifacts/validation/ep-0029/run-008-us0003tk0001/US-0003-TK-0001/focused.trx`.
+- `dotnet build src/DeepSpaceSaga.Engine --no-restore` — 0 warnings, 0 errors; `dotnet format --verify-no-changes` clean; `git diff --check` clean.
+
+Status: automated PASS (contracts layer); native/product acceptance remains OPEN.

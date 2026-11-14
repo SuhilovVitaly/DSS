@@ -29,6 +29,8 @@ public sealed record CarrierOperationsSnapshot(
     ImmutableArray<HangarSlotSnapshot> Hangars = default,
     [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<CrewMemberSnapshot>))]
     ImmutableArray<CrewMemberSnapshot> Crew = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<OwnedDroneSnapshot>))]
+    ImmutableArray<OwnedDroneSnapshot> OwnedDrones = default,
     CabinReservationSnapshot? CabinReservation = null);
 
 /// <summary>
@@ -68,3 +70,41 @@ public sealed record CrewMemberSnapshot(
     int Accuracy = 0,
     int Maneuver = 0,
     int Initiative = 0);
+
+/// <summary>
+/// One owned drone of the player's persistent wing, placed at a unique hangar slot.
+/// Technical ids (<see cref="Id"/>, <see cref="ShipId"/>, <see cref="CrewId"/>,
+/// <see cref="HangarModuleId"/>, <see cref="FrameId"/>, equipment ids) are stable and never
+/// derived from display names or localization.
+/// </summary>
+public sealed record OwnedDroneSnapshot(
+    string Id,
+    string ShipId,
+    string HangarModuleId,
+    int SlotIndex,
+    string CrewId,
+    string FrameId,
+    string WeaponId,
+    string ArmorId,
+    string? ShieldId = null,
+    int ShieldCount = 0,
+    int ShieldSlots = 0,
+    string? DecoyId = null,
+    int DecoyMaxCharges = 0,
+    int DecoyCharges = 0,
+    int CurrentHull = 0,
+    int MaxHull = 0,
+    int Armor = 0,
+    int MaxArmor = 0,
+    int AmmoCurrent = 0,
+    int AmmoCapacity = 0,
+    bool Jammed = false,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> EngineIds = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<DroneEngineStateSnapshot>))]
+    ImmutableArray<DroneEngineStateSnapshot> EngineDamage = default,
+    [property: JsonConverter(typeof(ImmutableArrayDefaultJsonConverter<string>))]
+    ImmutableArray<string> ReadinessReasons = default);
+
+/// <summary>One engine slot state on an owned drone; State is a stable code (Ok/Jammed/Damaged).</summary>
+public sealed record DroneEngineStateSnapshot(int Index, string EngineId, string State);
