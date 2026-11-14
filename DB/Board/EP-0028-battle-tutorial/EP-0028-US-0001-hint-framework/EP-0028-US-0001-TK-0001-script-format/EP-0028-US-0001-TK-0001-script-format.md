@@ -3,7 +3,7 @@ epic: EP-0028-battle-tutorial
 story: EP-0028-US-0001-hint-framework
 ticket: EP-0028-US-0001-TK-0001-script-format
 title: Формат и загрузчик сценария обучения
-stage: approved
+stage: implemented
 layer: client
 test_project: tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj
 depends_on: []
@@ -129,6 +129,18 @@ Process-tree cap 300000 ms на тестовый процесс. Временн�
 
 Схема, правила валидации, образец обработки ошибок и пути указаны полностью; исполнителю не нужно искать другие файлы.
 
+## Результат
+
+Реализованы модель `TutorialScript` (records/enums по разделу Public API) и `TutorialScriptLoader` (`Parse` через `JsonDocument` с полной валидацией и путём поля в начале сообщения `FormatException`; `Load` без исключений наружу, одно предупреждение на ошибку). Сам `battle-tutorial.json` не создавался (US-0003).
+
+Проверки 2026-11-14 (артефакты `D:/DeepSpaceSaga/artifacts/validation/ep0028-battle-tutorial/us0001-tk0001-20261114T172756/`):
+
+- Красный старт: `TutorialScriptLoaderTests` не компилировался (namespace `DeepSpaceSaga.Client.UI.Screens.Tutorial` отсутствовал) — `../us0001-tk0001-red/build-red.log`.
+- `dotnet test tests/DeepSpaceSaga.Client.Tests/DeepSpaceSaga.Client.Tests.csproj --filter "FullyQualifiedName~DeepSpaceSaga.Client.Tests.Tutorial.TutorialScriptLoaderTests"` (`DSS_VALIDATION_ROOT` = папка прогона) — **58/58**: `ParsesValidScriptPreservingStepOrder`, `OptionalSectionsUseDefaults`, `EveryCompletionAndSignalNameParses`, Theory `RejectsInvalidScript` (52 случая), `LoadReturnsEmptyAndWarnsOnMissingOrBrokenFile`, `EmptyScriptHasNoStepsAndDefaultLimits` — `loader.trx`, `test.log`.
+- `dotnet build src/DeepSpaceSaga.Client/DeepSpaceSaga.Client.csproj` — 0 предупреждений, 0 ошибок — `build.log`.
+
 ## Журнал
 
 2026-11-14T15:04:43Z — тикет создан.
+
+2026-11-14 — реализовано (TDD), `stage: implemented`. Узкие допущения исполнителя: `priority` необязателен (по умолчанию 0); `when.signal` принимает только восемь имён сигналов (`none` — ошибка, отсутствие поля = `None`); `steps` обязателен (пустой массив допустим); `lineKey` длиннее префикса `Tutorial.Line.`; при `warning == null` предупреждение пишется через `InterfaceLog.Write`; синтаксически некорректный JSON в `Parse` даёт `JsonException` (не оборачивается), его перехватывает `Load`.
